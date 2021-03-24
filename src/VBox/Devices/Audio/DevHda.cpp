@@ -1448,11 +1448,13 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                 pTag->pStreamR3 = &pThisCC->aStreams[uSD];
 
 # ifdef LOG_ENABLED
-                PDMAUDIOPCMPROPS Props;
-                rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &Props);
-                AssertRC(rc2);
-                LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
-                         uSD, Props.uHz, Props.cbSample * 8 /* Bit */, Props.cChannels));
+                if (LogIsEnabled())
+                {
+                    PDMAUDIOPCMPROPS Props = { 0 };
+                    rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &Props); AssertRC(rc2);
+                    LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
+                             uSD, Props.uHz, PDMAudioPropsSampleBits(&Props), PDMAudioPropsChannels(&Props)));
+                }
 # endif
                 /* (Re-)initialize the stream with current values. */
                 rc2 = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, pStreamR3, uSD);
@@ -1666,7 +1668,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
      */
 
     /** @todo Make the following configurable through mixer API and/or CFGM? */
-    switch (pCfg->Props.cChannels)
+    switch (PDMAudioPropsGetChannels(&pCfg->Props))
     {
         case 3:  /* 2.1: Front (Stereo) + LFE. */
         {
@@ -1705,7 +1707,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
     if (rc == VERR_NOT_SUPPORTED)
     {
-        LogRel2(("HDA: Warning: Unsupported channel count (%RU8), falling back to stereo channels (2)\n", pCfg->Props.cChannels));
+        LogRel2(("HDA: Warning: Unsupported channel count (%RU8), falling back to stereo channels (2)\n", pCfg->Props.cChannelsX));
 
         /* Fall back to 2 channels (see below in fUseFront block). */
         rc = VINF_SUCCESS;
@@ -1722,8 +1724,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
             pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_FRONT;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
+            /// @todo PDMAudioPropsSetChannels(&pCfg->Props, 2); ?
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
@@ -1736,9 +1737,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
             pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_CENTER_LFE;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            pCfg->Props.cChannels   = (fUseCenter && fUseLFE) ? 2 : 1;
-            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
+            PDMAudioPropsSetChannels(&pCfg->Props, fUseCenter && fUseLFE ? 2 : 1);
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
         }
@@ -1750,9 +1749,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
             pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_REAR;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            pCfg->Props.cChannels   = 2;
-            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
+            PDMAudioPropsSetChannels(&pCfg->Props, 2);
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
@@ -1911,8 +1908,8 @@ static VBOXSTRICTRC hdaRegWriteSDFMT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     PDMAUDIOPCMPROPS Props;
     int rc2 = hdaR3SDFMTToPCMProps(RT_LO_U16(u32Value), &Props);
     AssertRC(rc2);
-    LogFunc(("[SD%RU8] Set to %#x (%RU32Hz, %RU8bit, %RU8 channel(s))\n",
-             HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value, Props.uHz, Props.cbSample * 8 /* Bit */, Props.cChannels));
+    LogFunc(("[SD%RU8] Set to %#x (%RU32Hz, %RU8bit, %RU8 channel(s))\n", HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value,
+             PDMAudioPropsHz(&Props), PDMAudioPropsSampleBits(&Props), PDMAudioPropsChannels(&Props)));
 
     /*
      * Write the wanted stream format into the register in any case.
@@ -2318,7 +2315,7 @@ static int hdaR3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg,
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
-    LogFunc(("szSink=%s, szStream=%s, cChannels=%RU8\n", pMixSink->pszName, pCfg->szName, pCfg->Props.cChannels));
+    LogFunc(("szSink=%s, szStream=%s, cChannels=%RU8\n", pMixSink->pszName, pCfg->szName, PDMAudioPropsChannels(&pCfg->Props)));
 
     PPDMAUDIOSTREAMCFG pStreamCfg = PDMAudioStrmCfgDup(pCfg);
     if (!pStreamCfg)
@@ -5355,12 +5352,18 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                "True if the stream is in RUN mode.",        "Stream%u/fRunning", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The stream frequency.",                     "Stream%u/Cfg/Hz", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cChannels, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The number of channels.",                   "Stream%u/Cfg/FrameSize-Host", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Mapping.GuestProps.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The number of channels.",                   "Stream%u/Cfg/FrameSize-Guest", idxStream);
+#if 0 /** @todo this would require some callback */
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cChannelsX, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The number of channels.",                   "Stream%u/Cfg/Channels-Host", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Mapping.GuestProps.cChannels, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The number of channels.",                   "Stream%u/Cfg/Channels-Guest", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbSample, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The size of a sample (per channel).",       "Stream%u/Cfg/cbSample", idxStream);
+#endif
     }
 
     return VINF_SUCCESS;

@@ -178,20 +178,22 @@ PDMAUDIOFMT AudioHlpStrToAudFmt(const char *pszFmt)
  */
 bool AudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pCfg, false);
-
-    AssertReturn(PDMAudioStrmCfgIsValid(pCfg), false);
-
-    bool fValid = (   pCfg->enmDir == PDMAUDIODIR_IN
-                   || pCfg->enmDir == PDMAUDIODIR_OUT);
-
-    fValid &= (   pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED
-               || pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
-
-    if (fValid)
-        fValid = AudioHlpPcmPropsAreValid(&pCfg->Props);
-
-    return fValid;
+    /* Ugly! HDA attach code calls us with uninitialized (all zero) config. */
+    if (   pCfg->enmLayout != PDMAUDIOSTREAMLAYOUT_INVALID
+        || PDMAudioPropsHz(&pCfg->Props) != 0)
+    {
+        if (PDMAudioStrmCfgIsValid(pCfg))
+        {
+            if (   pCfg->enmDir == PDMAUDIODIR_IN
+                || pCfg->enmDir == PDMAUDIODIR_OUT)
+            {
+                if (   pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED
+                    || pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
+                    return AudioHlpPcmPropsAreValid(&pCfg->Props);
+            }
+        }
+    }
+    return false;
 }
 
 /**
@@ -218,7 +220,8 @@ uint32_t AudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  *        unsigned samples elsewhere (like DrvAudioHlpClearBuf()), but this
  *        function will flag such properties as not valid.
  *
- * @todo  r=bird: See note and explain properly.
+ * @todo  r=bird: See note and explain properly. Perhaps rename to
+ *        AudioHlpPcmPropsAreValidAndSupported?
  *
  * @returns @c true if the properties are valid, @c false if not.
  * @param   pProps      The PCM properties to check.
@@ -226,48 +229,42 @@ uint32_t AudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
 bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
-
     AssertReturn(PDMAudioPropsAreValid(pProps), false);
 
-    /** @todo r=bird: This code is cannot make up its mind whether to return on
-     *        false, or whether to return at the end. (hint: just return
-     *        immediately, duh.) */
-
     /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
-    bool fValid = (   pProps->cChannels >= 1
-                   && pProps->cChannels <= 8);
-
-    if (fValid)
+    if (PDMAudioPropsChannels(pProps) >= 1 && PDMAudioPropsChannels(pProps) <= 8)
     {
-        switch (pProps->cbSample)
+        switch (PDMAudioPropsSampleSize(pProps))
         {
             case 1: /* 8 bit */
-               if (pProps->fSigned)
-                   fValid = false;
+               if (PDMAudioPropsIsSigned(pProps))
+                   return false;
                break;
             case 2: /* 16 bit */
-                if (!pProps->fSigned)
-                    fValid = false;
+                if (!PDMAudioPropsIsSigned(pProps))
+                    return false;
                 break;
             /** @todo Do we need support for 24 bit samples? */
             case 4: /* 32 bit */
-                if (!pProps->fSigned)
-                    fValid = false;
+                if (!PDMAudioPropsIsSigned(pProps))
+                    return false;
+                break;
+            case 8: /* 64-bit raw */
+                if (   !PDMAudioPropsIsSigned(pProps)
+                    || !pProps->fRaw)
+                    return false;
                 break;
             default:
-                fValid = false;
-                break;
+                return false;
+        }
+
+        if (pProps->uHz > 0)
+        {
+            if (!pProps->fSwapEndian) /** @todo Handling Big Endian audio data is not supported yet. */
+                return true;
         }
     }
-
-    if (!fValid)
-        return false;
-
-    fValid &= pProps->uHz > 0;
-    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
-    fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
-
-    return fValid;
+    return false;
 }
 
 
@@ -519,6 +516,7 @@ int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);
     /** @todo Validate fOpen flags. */
     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
+    Assert(PDMAudioPropsAreValid(pProps));
 
     int rc;
 
@@ -528,10 +526,6 @@ int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
     }
     else if (pFile->enmType == PDMAUDIOFILETYPE_WAV)
     {
-        Assert(pProps->cChannels);
-        Assert(pProps->uHz);
-        Assert(pProps->cbSample);
-
         pFile->pvData = (PAUDIOWAVFILEDATA)RTMemAllocZ(sizeof(AUDIOWAVFILEDATA));
         if (pFile->pvData)
         {
@@ -548,11 +542,11 @@ int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
             pData->Hdr.u32Fmt           = AUDIO_MAKE_FOURCC('f','m','t',' ');
             pData->Hdr.u32Size1         = 16; /* Means PCM. */
             pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
-            pData->Hdr.u16NumChannels   = pProps->cChannels;
+            pData->Hdr.u16NumChannels   = PDMAudioPropsChannels(pProps);
             pData->Hdr.u32SampleRate    = pProps->uHz;
             pData->Hdr.u32ByteRate      = PDMAudioPropsGetBitrate(pProps) / 8;
-            pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cbSample;
-            pData->Hdr.u16BitsPerSample = pProps->cbSample * 8;
+            pData->Hdr.u16BlockAlign    = PDMAudioPropsFrameSize(pProps);
+            pData->Hdr.u16BitsPerSample = PDMAudioPropsSampleBits(pProps);
 
             /* Data chunk. */
             pData->Hdr.u32ID2           = AUDIO_MAKE_FOURCC('d','a','t','a');
@@ -583,9 +577,7 @@ int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
         rc = VERR_INVALID_PARAMETER;
 
     if (RT_SUCCESS(rc))
-    {
         LogRel2(("Audio: Opened file '%s'\n", pFile->szName));
-    }
     else
         LogRel(("Audio: Failed opening file '%s', rc=%Rrc\n", pFile->szName, rc));
 

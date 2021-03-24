@@ -364,7 +364,7 @@ DECLINLINE(void) PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
 {
     if (pCfg)
         LogFunc(("szName=%s enmDir=%RU32 uHz=%RU32 cBits=%RU8%s cChannels=%RU8\n", pCfg->szName, pCfg->enmDir,
-                 pCfg->Props.uHz, pCfg->Props.cbSample * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
+                 pCfg->Props.uHz, pCfg->Props.cbSampleX * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannelsX));
 }
 
 /**
@@ -466,6 +466,78 @@ DECLINLINE(bool) PDMAudioStrmStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
 *********************************************************************************************************************************/
 
 /**
+ * Initialize PCM audio properties.
+ */
+DECLINLINE(void) PDMAudioPropsInit(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample, bool fSigned, uint8_t cChannels, uint32_t uHz)
+{
+    pProps->cbFrame     = cbSample * cChannels;
+    pProps->cbSampleX   = cbSample;
+    pProps->cChannelsX  = cChannels;
+    pProps->cShiftX     = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cbSample, cChannels);
+    pProps->fSigned     = fSigned;
+    pProps->fSwapEndian = false;
+    pProps->fRaw        = false;
+    pProps->uHz         = uHz;
+
+    Assert(pProps->cbFrame    == (uint32_t)cbSample * cChannels);
+    Assert(pProps->cbSampleX  == cbSample);
+    Assert(pProps->cChannelsX == cChannels);
+}
+
+/**
+ * Initialize PCM audio properties, extended version.
+ */
+DECLINLINE(void) PDMAudioPropsInitEx(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample, bool fSigned, uint8_t cChannels, uint32_t uHz,
+                                     bool fLittleEndian, bool fRaw)
+{
+    Assert(!fRaw || cbSample == sizeof(int64_t));
+    pProps->cbFrame     = cbSample * cChannels;
+    pProps->cbSampleX   = cbSample;
+    pProps->cChannelsX  = cChannels;
+    pProps->cShiftX     = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cbSample, cChannels);
+    pProps->fSigned     = fSigned;
+#ifdef RT_LITTLE_ENDIAN
+    pProps->fSwapEndian = !fLittleEndian;
+#else
+    pProps->fSwapEndian = fLittleEndian;
+#endif
+    pProps->fRaw        = fRaw;
+    pProps->uHz         = uHz;
+
+    Assert(pProps->cbFrame    == (uint32_t)cbSample * cChannels);
+    Assert(pProps->cbSampleX  == cbSample);
+    Assert(pProps->cChannelsX == cChannels);
+}
+
+/**
+ * Modifies the channel count.
+ *
+ * @param   pProps              The PCM properties to update.
+ * @param   cChannels           The new channel count.
+ */
+DECLINLINE(void) PDMAudioPropsSetChannels(PPDMAUDIOPCMPROPS pProps, uint8_t cChannels)
+{
+    Assert(cChannels > 0); Assert(cChannels < 16);
+    pProps->cChannelsX  = cChannels;
+    pProps->cbFrame     = pProps->cbSampleX * cChannels;
+    pProps->cShiftX     = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSampleX, cChannels);
+}
+
+/**
+ * Modifies the sample size.
+ *
+ * @param   pProps              The PCM properties to update.
+ * @param   cbSample            The new sample size (in bytes).
+ */
+DECLINLINE(void) PDMAudioPropsSetSampleSize(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample)
+{
+    Assert(cbSample == 1 || cbSample == 2 || cbSample == 4 || cbSample == 8);
+    pProps->cbSampleX   = cbSample;
+    pProps->cbFrame     = cbSample * pProps->cChannelsX;
+    pProps->cShiftX     = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cbSample, pProps->cChannelsX);
+}
+
+/**
  * Gets the bitrate.
  *
  * Divide the result by 8 to get the byte rate.
@@ -475,7 +547,96 @@ DECLINLINE(bool) PDMAudioStrmStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
  */
 DECLINLINE(uint32_t) PDMAudioPropsGetBitrate(PCPDMAUDIOPCMPROPS pProps)
 {
-    return pProps->cbSample * pProps->cChannels * pProps->uHz * 8;
+    Assert(pProps->cbFrame == pProps->cbSampleX * pProps->cChannelsX);
+    return pProps->cbFrame * pProps->uHz * 8;
+}
+
+/**
+ * Gets the number of channels.
+ * @returns The channel count.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(uint8_t) PDMAudioPropsChannels(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->cChannelsX;
+}
+
+/**
+ * Gets the sample size in bytes.
+ * @returns Number of bytes per sample.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(uint8_t) PDMAudioPropsSampleSize(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->cbSampleX;
+}
+
+/**
+ * Gets the sample size in bits.
+ * @returns Number of bits per sample.
+ * @param   pProps      The PCM properties.
+ */
+DECLINLINE(uint8_t) PDMAudioPropsSampleBits(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->cbSampleX * 8;
+}
+
+/**
+ * Gets the frame size in bytes.
+ * @returns Number of bytes per frame.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(uint8_t) PDMAudioPropsFrameSize(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->cbFrame;
+}
+
+/**
+ * Gets the frequency.
+ * @returns Frequency.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(uint32_t) PDMAudioPropsHz(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->uHz;
+}
+
+/**
+ * Checks if the format is signed or unsigned.
+ * @returns true if signed, false if unsigned.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(bool) PDMAudioPropsIsSigned(PCPDMAUDIOPCMPROPS pProps)
+{
+    return pProps->fSigned;
+}
+
+/**
+ * Checks if the format is little-endian or not.
+ * @returns true if little-endian (or if 8-bit), false if big-endian.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(bool) PDMAudioPropsIsLittleEndian(PCPDMAUDIOPCMPROPS pProps)
+{
+#ifdef RT_LITTLE_ENDIAN
+    return !pProps->fSwapEndian || pProps->cbSampleX < 2;
+#else
+    return pProps->fSwapEndian  || pProps->cbSampleX < 2;
+#endif
+}
+
+/**
+ * Checks if the format is big-endian or not.
+ * @returns true if big-endian (or if 8-bit), false if little-endian.
+ * @param   pProps      The PCM properties.
+ */
+DECL_FORCE_INLINE(bool) PDMAudioPropsIsBigEndian(PCPDMAUDIOPCMPROPS pProps)
+{
+#ifdef RT_LITTLE_ENDIAN
+    return pProps->fSwapEndian || pProps->cbSampleX < 2;
+#else
+    return !pProps->fSwapEndian  || pProps->cbSampleX < 2;
+#endif
 }
 
 /**
@@ -774,7 +935,7 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
      * Validate input
      */
     AssertPtrReturnVoid(pProps);
-    Assert(pProps->cbSample);
+    Assert(pProps->cbSampleX);
     if (!cbBuf || !cFrames)
         return;
     AssertPtrReturnVoid(pvBuf);
@@ -787,8 +948,8 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
     size_t cbToClear = PDMAudioPropsFramesToBytes(pProps, cFrames);
     AssertStmt(cbToClear <= cbBuf, cbToClear = cbBuf);
 
-    Log2Func(("pProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
-              pProps, pvBuf, cFrames, pProps->fSigned, pProps->cbSample));
+    Log2Func(("pProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cbSample=%RU8\n",
+              pProps, pvBuf, cFrames, pProps->fSigned, pProps->cbSampleX));
 
     /*
      * Do the job.
@@ -797,7 +958,7 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
         RT_BZERO(pvBuf, cbToClear);
     else /* Unsigned formats. */
     {
-        switch (pProps->cbSample)
+        switch (pProps->cbSampleX)
         {
             case 1: /* 8 bit */
                 memset(pvBuf, 0x80, cbToClear);
@@ -819,7 +980,7 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
                 break;
 
             default:
-                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pProps->cbSample));
+                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pProps->cbSampleX));
         }
     }
 }
@@ -840,8 +1001,8 @@ DECLINLINE(bool) PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCM
         return true;
 
     return pProps1->uHz         == pProps2->uHz
-        && pProps1->cChannels   == pProps2->cChannels
-        && pProps1->cbSample    == pProps2->cbSample
+        && pProps1->cChannelsX  == pProps2->cChannelsX
+        && pProps1->cbSampleX   == pProps2->cbSampleX
         && pProps1->fSigned     == pProps2->fSigned
         && pProps1->fSwapEndian == pProps2->fSwapEndian;
 }
@@ -861,13 +1022,17 @@ DECLINLINE(bool) PDMAudioPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
 
-    AssertReturn(pProps->cChannels != 0, false);
-    AssertMsgReturn(pProps->cbSample == 1 || pProps->cbSample == 2 || pProps->cbSample == 4,
-                    ("%u\n", pProps->cbSample), false);
-    AssertMsgReturn(pProps->uHz >= 1000 && pProps->uHz < 1000000, ("%u\n", pProps->uHz), false);
-    AssertMsgReturn(pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels),
-                    ("cShift=%u cbSample=%u cChannels=%u\n", pProps->cShift, pProps->cbSample, pProps->cChannels),
+    AssertReturn(pProps->cChannelsX != 0, false);
+    AssertMsgReturn(   pProps->cbSampleX == 1 || pProps->cbSampleX == 2 || pProps->cbSampleX == 4  || (pProps->cbSampleX == 8 && pProps->fRaw),
+                    ("%u\n", pProps->cbSampleX), false);
+    AssertMsgReturn(pProps->cbFrame == pProps->cbSampleX * pProps->cChannelsX,
+                    ("cbFrame=%u cbSample=%u cChannels=%u\n", pProps->cbFrame, pProps->cbSampleX, pProps->cChannelsX),
                     false);
+    AssertMsgReturn(pProps->uHz >= 1000 && pProps->uHz < 1000000, ("%u\n", pProps->uHz), false);
+    AssertMsgReturn(pProps->cShiftX == PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps),
+                    ("cShift=%u cbSample=%u cChannels=%u\n", pProps->cShiftX, pProps->cbSampleX, pProps->cChannelsX),
+                    false);
+    AssertReturn(!pProps->fRaw || (pProps->fSigned && pProps->cbSampleX == sizeof(int64_t)), false);
     return true;
 }
 
@@ -886,15 +1051,38 @@ DECLINLINE(uint32_t) PDMAudioPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
 /**
  * Prints PCM properties to the debug log.
  *
- * @param   pProps              Stream configuration to log.
+ * @param   pProps  PCM properties to use.
  */
 DECLINLINE(void) PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturnVoid(pProps);
 
     Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
-         pProps->uHz, pProps->cChannels, pProps->cbSample * 8, pProps->fSigned ? "S" : "U"));
+         pProps->uHz, pProps->cChannelsX, pProps->cbSampleX * 8, pProps->fSigned ? "S" : "U"));
 }
+
+/** Max necessary buffer space for  PDMAudioPropsToString  */
+#define PDMAUDIOPROPSTOSTRING_MAX   sizeof("16ch S64 4294967296Hz swap raw")
+
+/**
+ * Formats the PCM audio properties into a string buffer.
+ *
+ * @returns pszDst
+ * @param   pProps  PCM properties to use.
+ * @param   pszDst  The destination buffer.
+ * @param   cchDst  The size of the destination buffer.  Recommended to be at
+ *                  least PDMAUDIOPROPSTOSTRING_MAX bytes.
+ */
+DECLINLINE(char *) PDMAudioPropsToString(PCPDMAUDIOPCMPROPS pProps, char *pszDst, size_t cchDst)
+{
+    /* 2ch S64 44100Hz swap raw */
+    RTStrPrintf(pszDst, cchDst, "%uch %c%u %RU32Hz%s%s",
+                PDMAudioPropsChannels(pProps), PDMAudioPropsIsSigned(pProps) ? 'S' : 'U', PDMAudioPropsSampleBits(pProps),
+                PDMAudioPropsHz(pProps), pProps->fSwapEndian ? " swap" : "", pProps->fRaw ? " raw" : "");
+    return pszDst;
+}
+
+
 
 /** @} */
 

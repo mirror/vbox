@@ -149,10 +149,10 @@ static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescri
 {
     char pszSampleRate[32];
     LogRel2(("CoreAudio: %s description:\n", pszDesc));
-    LogRel2(("CoreAudio:\tFormat ID: %RU32 (%c%c%c%c)\n", pASBD->mFormatID,
+    LogRel2(("CoreAudio:  Format ID: %RU32 (%c%c%c%c)\n", pASBD->mFormatID,
              RT_BYTE4(pASBD->mFormatID), RT_BYTE3(pASBD->mFormatID),
              RT_BYTE2(pASBD->mFormatID), RT_BYTE1(pASBD->mFormatID)));
-    LogRel2(("CoreAudio:\tFlags: %RU32", pASBD->mFormatFlags));
+    LogRel2(("CoreAudio:  Flags: %RU32", pASBD->mFormatFlags));
     if (pASBD->mFormatFlags & kAudioFormatFlagIsFloat)
         LogRel2((" Float"));
     if (pASBD->mFormatFlags & kAudioFormatFlagIsBigEndian)
@@ -170,32 +170,34 @@ static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescri
     if (pASBD->mFormatFlags & kAudioFormatFlagsAreAllClear)
         LogRel2((" AllClear"));
     LogRel2(("\n"));
-    snprintf(pszSampleRate, 32, "%.2f", (float)pASBD->mSampleRate); /** @todo r=andy Use RTStrPrint*. */
-    LogRel2(("CoreAudio:\tSampleRate      : %s\n", pszSampleRate));
-    LogRel2(("CoreAudio:\tChannelsPerFrame: %RU32\n", pASBD->mChannelsPerFrame));
-    LogRel2(("CoreAudio:\tFramesPerPacket : %RU32\n", pASBD->mFramesPerPacket));
-    LogRel2(("CoreAudio:\tBitsPerChannel  : %RU32\n", pASBD->mBitsPerChannel));
-    LogRel2(("CoreAudio:\tBytesPerFrame   : %RU32\n", pASBD->mBytesPerFrame));
-    LogRel2(("CoreAudio:\tBytesPerPacket  : %RU32\n", pASBD->mBytesPerPacket));
+    LogRel2(("CoreAudio:  SampleRate      : %RU64.%02u Hz\n",
+             (uint64_t)pASBD->mSampleRate, (unsigned)(pASBD->mSampleRate * 100) % 100));
+    LogRel2(("CoreAudio:  ChannelsPerFrame: %RU32\n", pASBD->mChannelsPerFrame));
+    LogRel2(("CoreAudio:  FramesPerPacket : %RU32\n", pASBD->mFramesPerPacket));
+    LogRel2(("CoreAudio:  BitsPerChannel  : %RU32\n", pASBD->mBitsPerChannel));
+    LogRel2(("CoreAudio:  BytesPerFrame   : %RU32\n", pASBD->mBytesPerFrame));
+    LogRel2(("CoreAudio:  BytesPerPacket  : %RU32\n", pASBD->mBytesPerPacket));
 }
 
-static void coreAudioPCMPropsToASBD(PDMAUDIOPCMPROPS *pPCMProps, AudioStreamBasicDescription *pASBD)
+static void coreAudioPCMPropsToASBD(PCPDMAUDIOPCMPROPS pProps, AudioStreamBasicDescription *pASBD)
 {
-    AssertPtrReturnVoid(pPCMProps);
+    AssertPtrReturnVoid(pProps);
     AssertPtrReturnVoid(pASBD);
 
     RT_BZERO(pASBD, sizeof(AudioStreamBasicDescription));
 
     pASBD->mFormatID         = kAudioFormatLinearPCM;
     pASBD->mFormatFlags      = kAudioFormatFlagIsPacked;
-    pASBD->mFramesPerPacket  = 1; /* For uncompressed audio, set this to 1. */
-    pASBD->mSampleRate       = (Float64)pPCMProps->uHz;
-    pASBD->mChannelsPerFrame = pPCMProps->cChannels;
-    pASBD->mBitsPerChannel   = pPCMProps->cbSample * 8;
-    if (pPCMProps->fSigned)
+    if (pProps->fSigned)
         pASBD->mFormatFlags |= kAudioFormatFlagIsSignedInteger;
-    pASBD->mBytesPerFrame    = pASBD->mChannelsPerFrame * (pASBD->mBitsPerChannel / 8);
-    pASBD->mBytesPerPacket   = pASBD->mFramesPerPacket * pASBD->mBytesPerFrame;
+    if (PDMAudioPropsIsBigEndian(pProps))
+        pASBD->mFormatFlags |= kAudioFormatFlagIsBigEndian;
+    pASBD->mSampleRate       = PDMAudioPropsHz(pProps);
+    pASBD->mChannelsPerFrame = PDMAudioPropsChannels(pProps);
+    pASBD->mBitsPerChannel   = PDMAudioPropsSampleBits(pProps);
+    pASBD->mBytesPerFrame    = PDMAudioPropsFrameSize(pProps);
+    pASBD->mFramesPerPacket  = 1; /* For uncompressed audio, set this to 1. */
+    pASBD->mBytesPerPacket   = PDMAudioPropsFrameSize(pProps) * pASBD->mFramesPerPacket;
 }
 
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
@@ -204,14 +206,22 @@ static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDI
     AssertPtrReturn(pASBD, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pCfg,  VERR_INVALID_PARAMETER);
 
-    pCfg->Props.cChannels = pASBD->mChannelsPerFrame;
-    pCfg->Props.uHz       = (uint32_t)pASBD->mSampleRate;
-    AssertMsg(!(pASBD->mBitsPerChannel & 7), ("%u\n", pASBD->mBitsPerChannel));
-    pCfg->Props.cbSample  = pASBD->mBitsPerChannel / 8;
-    pCfg->Props.fSigned   = RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger);
-    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
-    /** @todo r=bird: pCfg->Props.fSwapEndian is not initialized here!  */
+    AssertLogRelMsgReturn(pASBD->mChannelsPerFrame > 0, VERR_NOT_SUPPORTED);
+    AssertLogRelMsgReturn(pASBD->mChannelsPerFrame < 16, VERR_NOT_SUPPORTED);
+    AssertLogRelMsgReturn(   pASBD->mBitsPerChannel == 8
+                          || pASBD->mBitsPerChannel == 16
+                          || pASBD->mBitsPerChannel == 32,
+                          ("%u\n", pASBD->mBitsPerChannel), VERR_NOT_SUPPORTED);
+    AssertLogRelMsgReturn(!(pASBD->mFormatFlags & (kAudioFormatFlagIsFloat /** @todo more we don't like?*/)),
+                          ("%#x\n", pASBD->mFormatFlags), VERR_NOT_SUPPORTED);
 
+    PDMAudioPropsInitEx(&pCfg->Props,
+                        pASBD->mBitsPerChannel / 8,
+                        RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger),
+                        pASBD->mChannelsPerFrame,
+                        (uint32_t)pASBD->mSampleRate,
+                        RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsBigEndian),
+                        false /*fRaw*/);
     return VINF_SUCCESS;
 }
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */

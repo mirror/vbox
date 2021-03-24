@@ -738,9 +738,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     }
 
     /* Serious paranoia: */
-    ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % (pCfg->Props.cbSample * pCfg->Props.cChannels) == 0,
+    ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % PDMAudioPropsFrameSize(&pCfg->Props) == 0,
                                  ("Ring buffer size (%RU32) for stream #%RU8 not aligned to the (host) frame size (%RU8)\n",
-                                  cbCircBuf, uSD, pCfg->Props.cbSample * pCfg->Props.cChannels),
+                                  cbCircBuf, uSD, PDMAudioPropsFrameSize(&pCfg->Props)),
                                  rc = VERR_INVALID_PARAMETER);
     ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf, ("Ring buffer size for stream #%RU8 is invalid\n", uSD),
                                  rc = VERR_INVALID_PARAMETER);

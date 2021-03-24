@@ -268,11 +268,11 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
     RT_BZERO(pFmt, sizeof(WAVEFORMATEX));
 
     pFmt->wFormatTag      = WAVE_FORMAT_PCM;
-    pFmt->nChannels       = pCfg->Props.cChannels;
-    pFmt->wBitsPerSample  = pCfg->Props.cbSample * 8;
-    pFmt->nSamplesPerSec  = pCfg->Props.uHz;
-    pFmt->nBlockAlign     = pFmt->nChannels * pFmt->wBitsPerSample / 8;
-    pFmt->nAvgBytesPerSec = pFmt->nSamplesPerSec * pFmt->nBlockAlign;
+    pFmt->nChannels       = PDMAudioPropsChannels(&pCfg->Props);
+    pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
+    pFmt->nSamplesPerSec  = PDMAudioPropsHz(&pCfg->Props);
+    pFmt->nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
+    pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
     pFmt->cbSize          = 0; /* No extra data specified. */
 
     return VINF_SUCCESS;
@@ -613,12 +613,14 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
 
+/** @todo r=bird: I cannot see any code populating pCfgAcq... */
+
     LogFlowFuncEnter();
 
     Assert(pStreamDS->Out.pDSB == NULL);
 
-    DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n",
-           pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8, pCfgReq->Props.fSigned));
+    DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n", pCfgReq->Props.uHz,
+           PDMAudioPropsChannels(&pCfgReq->Props), PDMAudioPropsSampleBits(&pCfgReq->Props), pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;
     int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
@@ -1368,12 +1370,14 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
 
+    /** @todo r=bird: I cannot see any code populating pCfgAcq... */
+
     LogFlowFuncEnter();
 
     Assert(pStreamDS->In.pDSCB == NULL);
 
-    DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n",
-           pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8, pCfgReq->Props.fSigned));
+    DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n", pCfgReq->Props.uHz,
+           PDMAudioPropsChannels(&pCfgReq->Props), PDMAudioPropsSampleBits(&pCfgReq->Props), pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;
     int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
@@ -2066,9 +2070,9 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     LogFunc(("pStreamDS=%p, pCfgReq=%p, enmRecSource=%s\n",
              pStreamDS, pCfgReq, PDMAudioRecSrcGetName(pCfgReq->u.enmSrc)));
 
-    int rc = VINF_SUCCESS;
 
     /* Try to open capture in case the device is already there. */
+    int rc;
     HRESULT hr = directSoundCaptureOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
     if (SUCCEEDED(hr))
     {
@@ -2362,6 +2366,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
+        /** @todo already copied   */
         rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
         if (RT_SUCCESS(rc))
             rc = RTCritSectInit(&pStreamDS->CritSect);

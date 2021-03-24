@@ -715,29 +715,27 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
 #endif
 
     LogRel2(("Audio: Creating stream '%s'\n", pStream->szName));
-    LogRel2(("Audio: Guest %s format for '%s': %RU32Hz, %u%s, %RU8 %s\n",
+    LogRel2(("Audio: Guest %s format for '%s': %RU32Hz, %u%s, %RU8 channel%s\n",
              pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
-             pCfgGuest->Props.uHz, pCfgGuest->Props.cbSample * 8, pCfgGuest->Props.fSigned ? "S" : "U",
-             pCfgGuest->Props.cChannels, pCfgGuest->Props.cChannels == 1 ? "Channel" : "Channels"));
-    LogRel2(("Audio: Requested host %s format for '%s': %RU32Hz, %u%s, %RU8 %s\n",
+             pCfgGuest->Props.uHz, PDMAudioPropsSampleBits(&pCfgGuest->Props), pCfgGuest->Props.fSigned ? "S" : "U",
+             PDMAudioPropsChannels(&pCfgGuest->Props), PDMAudioPropsChannels(&pCfgGuest->Props) == 1 ? "" : "s"));
+    LogRel2(("Audio: Requested host %s format for '%s': %RU32Hz, %u%s, %RU8 channel%s\n",
              pCfgHost->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
-             pCfgHost->Props.uHz, pCfgHost->Props.cbSample * 8, pCfgHost->Props.fSigned ? "S" : "U",
-             pCfgHost->Props.cChannels, pCfgHost->Props.cChannels == 1 ? "Channel" : "Channels"));
+             pCfgHost->Props.uHz, PDMAudioPropsSampleBits(&pCfgHost->Props), pCfgHost->Props.fSigned ? "S" : "U",
+             PDMAudioPropsChannels(&pCfgHost->Props), PDMAudioPropsChannels(&pCfgHost->Props) == 1 ? "" : "s"));
 
     PDMAUDIOSTREAMCFG CfgHostAcq;
     int rc = drvAudioStreamCreateInternalBackend(pThis, pStream, pCfgHost, &CfgHostAcq);
     if (RT_FAILURE(rc))
         return rc;
 
-#ifdef LOG_ENABLED
     LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
     PDMAudioStrmCfgLog(&CfgHostAcq);
-#endif
-
-    LogRel2(("Audio: Acquired host %s format for '%s': %RU32Hz, %u%s, %RU8 %s\n",
+    LogRel2(("Audio: Acquired host %s format for '%s': %RU32Hz, %u%s, %RU8 channel%s\n",
              CfgHostAcq.enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-             CfgHostAcq.Props.uHz, CfgHostAcq.Props.cbSample * 8, CfgHostAcq.Props.fSigned ? "S" : "U",
-             CfgHostAcq.Props.cChannels, CfgHostAcq.Props.cChannels == 1 ? "Channel" : "Channels"));
+             CfgHostAcq.Props.uHz, PDMAudioPropsSampleBits(&CfgHostAcq.Props), CfgHostAcq.Props.fSigned ? "S" : "U",
+             PDMAudioPropsChannels(&CfgHostAcq.Props), PDMAudioPropsChannels(&CfgHostAcq.Props) == 1 ? "" : "s"));
+    Assert(PDMAudioPropsAreValid(&CfgHostAcq.Props));
 
     /* Let the user know if the backend changed some of the tweakable values. */
     if (CfgHostAcq.Backend.cFramesBufferSize != pCfgHost->Backend.cFramesBufferSize)
@@ -754,6 +752,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
         LogRel2(("Audio: Backend changed pre-buffering size from %RU64ms (%RU32 frames) to %RU64ms (%RU32 frames)\n",
                  PDMAudioPropsFramesToMilli(&pCfgHost->Props, pCfgHost->Backend.cFramesPreBuffering), pCfgHost->Backend.cFramesPreBuffering,
                  PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering), CfgHostAcq.Backend.cFramesPreBuffering));
+
     /*
      * Configure host buffers.
      */
@@ -800,9 +799,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pStream->Host.MixBuf);
 
-    /* Make sure to (re-)set the host buffer's shift size. */
-    CfgHostAcq.Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(CfgHostAcq.Props.cbSample, CfgHostAcq.Props.cChannels);
-
     rc = AudioMixBufInit(&pStream->Host.MixBuf, pStream->szName, &CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize);
     AssertRC(rc);
 
@@ -824,9 +820,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
 
     /* Set the guests's default audio data layout. */
     pCfgGuest->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-    /* Make sure to (re-)set the guest buffer's shift size. */
-    pCfgGuest->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgGuest->Props.cbSample, pCfgGuest->Props.cChannels);
 
     rc = AudioMixBufInit(&pStream->Guest.MixBuf, pStream->szName, &pCfgGuest->Props, CfgHostAcq.Backend.cFramesBufferSize);
     AssertRC(rc);
@@ -1447,19 +1440,18 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 }
 
 /**
- * Worker for drvAudioStreamPlay that plays non-interleaved data.
+ * Worker for drvAudioStreamPlay that does the actual playing.
  *
  * @returns VBox status code.
  * @param   pThis           The audio driver instance data.
  * @param   pStream         The stream to play.
- * @param   cFramesToPlay   Number of audio frames to play.
+ * @param   cFramesToPlay   Number of audio frames to play.  The backend is
+ *                          supposed to have buffer space for this.
  * @param   pcFramesPlayed  Where to return the number of audio frames played.
  */
-static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
-                                            uint32_t cFramesToPlay, uint32_t *pcFramesPlayed)
+static int drvAudioStreamPlayDoIt(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t cFramesToPlay, uint32_t *pcFramesPlayed)
 {
     Assert(pStream->enmDir == PDMAUDIODIR_OUT);
-    Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
 
     /*
      * Push data to the host device.
@@ -1489,96 +1481,26 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pSt
         rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend, abChunk, cbRead, &cbPlayed);
         if (RT_SUCCESS(rc))
         {
-            if (cbPlayed)
-            {
-                if (pThis->Out.Cfg.Dbg.fEnabled)
-                    AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, abChunk, cbPlayed, 0 /* fFlags */);
+            if (pThis->Out.Cfg.Dbg.fEnabled)
+                AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, abChunk, cbPlayed, 0 /* fFlags */);
 
-                if (cbRead != cbPlayed)
-                    LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
-                             pStream->szName, cbRead, cbPlayed));
+            if (cbRead != cbPlayed)
+                LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
+                         pStream->szName, cbRead, cbPlayed));
 
-                cFramesPlayed  = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
-                AssertStmt(cFramesLeft >= cFramesPlayed, cFramesPlayed = cFramesLeft);
-                cFramesLeft   -= cFramesPlayed;
-            }
-            else
-            {
-                /** @todo r=bird: If the backend is doing non-blocking writes, we'll probably
-                 *        be spinning like crazy here...  The ALSA backend is non-blocking.   */
-            }
+            cFramesPlayed  = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
+            AssertStmt(cFramesLeft >= cFramesPlayed, cFramesPlayed = cFramesLeft);
+            cFramesLeft   -= cFramesPlayed;
         }
 
         AudioMixBufReleaseReadBlock(&pStream->Host.MixBuf, cFramesPlayed);
 
         AssertRCBreak(rc); /* (this is here for Acquire/Release symmetry - which isn't at all necessary) */
+        AssertBreak(cbPlayed > 0); /* (ditto) */
     }
 
     Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cFramesToPlay - cFramesLeft, cFramesToPlay, rc));
     *pcFramesPlayed = cFramesToPlay - cFramesLeft;
-    return rc;
-}
-
-/**
- * Plays an audio host output stream which has been configured for raw audio (layout) data.
- *
- * @returns VBox status code.
- * @param   pThis               Pointer to driver instance.
- * @param   pStream             Stream to play.
- * @param   cFramesToPlay       Number of audio frames to play.
- * @param   pcFramesPlayed      Where to return number of audio frames played.
- */
-static int drvAudioStreamPlayRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t cFramesToPlay, uint32_t *pcFramesPlayed)
-{
-    Assert(pStream->enmDir == PDMAUDIODIR_OUT);
-    Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
-
-    /*
-     * ...
-     */
-    int      rc          = VINF_SUCCESS;
-    uint32_t cFramesLeft = cFramesToPlay;
-    while (cFramesLeft > 0)
-    {
-        PDMAUDIOFRAME   aFrames[_2K];
-        uint32_t        cFramesRead = 0;
-        /** @todo r=bird: Peek functions do _not_ generally drop stuff from what they're
-         *        peeking into.  We normally name such functions Read.  (Oh man, am I
-         *        getting tired of this kind of crap.) */
-        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cFramesLeft, aFrames,
-                             RT_MIN(cFramesLeft, RT_ELEMENTS(aFrames)), &cFramesRead);
-        if (RT_SUCCESS(rc))
-        {
-            Assert(cFramesRead <= RT_ELEMENTS(aFrames));
-            if (cFramesRead)
-            {
-                uint32_t cbPlayed = 0;
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                         aFrames, cFramesRead * sizeof(aFrames[0]), &cbPlayed);
-                AssertRCBreak(rc);
-                /** @todo r=bird: This is a natural follow up to the non-peeking peek crap
-                 *        above.  It works because VRDE is the only consumer and it always
-                 *        processes all that it gets. */
-                AssertBreakStmt(cbPlayed == cFramesRead * sizeof(aFrames[0]), rc = VERR_INTERNAL_ERROR_2);
-
-                Assert(cFramesRead <= cFramesLeft);
-                cFramesLeft -= cFramesRead;
-            }
-            else
-            {
-/** @todo r=bird: This looks totally loopy.  Why should another call return data
- *        when the first one didn't? */
-                if (rc == VINF_AUDIO_MORE_DATA_AVAILABLE) /* Do another peeking round if there is more data available. */
-                    continue;
-                break;
-            }
-        }
-        else
-            break;
-    }
-
-    *pcFramesPlayed = cFramesToPlay - cFramesLeft;
-    Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cFramesToPlay - cFramesLeft, cFramesToPlay, rc));
     return rc;
 }
 
@@ -1674,8 +1596,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
          */
         if (cFramesLive >= pStream->Host.Cfg.Backend.cFramesPreBuffering)
         {
-            LogRel2(("Audio: Stream '%s' buffering complete\n", pStream->szName));
-            Log3Func(("[%s] Dbg: Buffering complete!\n", pStream->szName));
+            LogRel2(("Audio: Stream '%s' buffering complete!\n", pStream->szName));
             pStream->fThresholdReached = fJustStarted = true;
         }
         /*
@@ -1689,8 +1610,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         else if (   cFramesLive > 0
                  && (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
         {
-            LogRel2(("Audio: Stream '%s' buffering complete (short sound)\n", pStream->szName));
-            Log3Func(("[%s] Dbg: Buffering complete (short)!\n", pStream->szName));
+            LogRel2(("Audio: Stream '%s' buffering complete (short sound)!\n", pStream->szName));
             pStream->fThresholdReached = fJustStarted = true;
         }
         /*
@@ -1755,12 +1675,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
          *
          *        https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio
          */
-        if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
-            rc = drvAudioStreamPlayNonInterleaved(pThis, pStream, cFramesToPlay, pcFramesPlayed);
-        else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
-            rc = drvAudioStreamPlayRaw(pThis, pStream, cFramesToPlay, pcFramesPlayed);
-        else
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = drvAudioStreamPlayDoIt(pThis, pStream, cFramesToPlay, pcFramesPlayed);
 
         if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
             pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pStream->pvBackend);
@@ -3084,10 +2999,11 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     /*
      * PCM
      */
-    if (pDrvCfg->Props.cbSample) /* Anything set via custom extra-data? */
+    if (PDMAudioPropsSampleSize(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
     {
-        pCfgReq->Props.cbSample = pDrvCfg->Props.cbSample;
-        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n", pCfgReq->Props.cbSample, pStream->szName));
+        PDMAudioPropsSetSampleSize(&pCfgReq->Props, PDMAudioPropsSampleSize(&pDrvCfg->Props));
+        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
+                 PDMAudioPropsSampleSize(&pCfgReq->Props), pStream->szName));
     }
 
     if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
@@ -3110,14 +3026,11 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
                  pCfgReq->Props.fSwapEndian ? "swapped" : "original", pStream->szName));
     }
 
-    if (pDrvCfg->Props.cChannels) /* Anything set via custom extra-data? */
+    if (PDMAudioPropsChannels(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
     {
-        pCfgReq->Props.cChannels = pDrvCfg->Props.cChannels;
-        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", pCfgReq->Props.cChannels, pStream->szName));
+        PDMAudioPropsSetChannels(&pCfgReq->Props, PDMAudioPropsChannels(&pDrvCfg->Props));
+        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pStream->szName));
     }
-
-    /* Make sure to (re-)set the host buffer's shift size. */
-    pCfgReq->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgReq->Props.cbSample, pCfgReq->Props.cChannels);
 
     /* Validate PCM properties. */
     if (!AudioHlpPcmPropsAreValid(&pCfgReq->Props))
@@ -3236,11 +3149,11 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     }
 
     /* Validate acquired configuration. */
-    if (!AudioHlpStreamCfgIsValid(pCfgAcq))
-    {
-        LogRel(("Audio: Creating stream '%s' returned an invalid backend configuration, skipping\n", pStream->szName));
-        return VERR_INVALID_PARAMETER;
-    }
+    char szTmp[PDMAUDIOPROPSTOSTRING_MAX];
+    AssertLogRelMsgReturn(AudioHlpStreamCfgIsValid(pCfgAcq),
+                          ("Audio: Creating stream '%s' returned an invalid backend configuration (%s), skipping\n",
+                           pStream->szName, PDMAudioPropsToString(&pCfgAcq->Props, szTmp, sizeof(szTmp))),
+                          VERR_INVALID_PARAMETER);
 
     /* Let the user know that the backend changed one of the values requested above. */
     if (pCfgAcq->Backend.cFramesBufferSize != pCfgReq->Backend.cFramesBufferSize)
@@ -3636,6 +3549,7 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
     }
 
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Out.StatsReBuffering);
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsActive);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsCreated);
@@ -3786,17 +3700,21 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                   "", pDrvIns->pReg->szName, pDrvIns->iInstance);
         AssertRCReturn(rc, rc);
 
-        QUERY_VAL_RET(8,  "PCMSampleBit",        &pAudioCfg->Props.cbSample,    0,
-                         pAudioCfg->Props.cbSample == 0
-                      || pAudioCfg->Props.cbSample == 8
-                      || pAudioCfg->Props.cbSample == 16
-                      || pAudioCfg->Props.cbSample == 32
-                      || pAudioCfg->Props.cbSample == 64,
+        uint8_t cSampleBits = 0;
+        QUERY_VAL_RET(8,  "PCMSampleBit",        &cSampleBits,                  0,
+                         cSampleBits == 0
+                      || cSampleBits == 8
+                      || cSampleBits == 16
+                      || cSampleBits == 32
+                      || cSampleBits == 64,
                       "Must be either 0, 8, 16, 32 or 64");
-        pAudioCfg->Props.cbSample /= 8;
+        if (cSampleBits)
+            PDMAudioPropsSetSampleSize(&pAudioCfg->Props, cSampleBits / 8);
 
-        QUERY_VAL_RET(8,  "PCMSampleChannels",   &pAudioCfg->Props.cChannels,   0,
-                      pAudioCfg->Props.cChannels <= 16, "Max 16");
+        uint8_t cChannels;
+        QUERY_VAL_RET(8,  "PCMSampleChannels",   &cChannels,                    0, cChannels <= 16, "Max 16");
+        if (cChannels)
+            PDMAudioPropsSetChannels(&pAudioCfg->Props, cChannels);
 
         QUERY_VAL_RET(32, "PCMSampleHz",         &pAudioCfg->Props.uHz,         0,
                       pAudioCfg->Props.uHz == 0 || (pAudioCfg->Props.uHz >= 6000 && pAudioCfg->Props.uHz <= 768000),

@@ -909,12 +909,7 @@ static void sb16CmdResetLegacy(PSB16STATE pThis)
     pCfg->enmDir          = PDMAUDIODIR_OUT;
     pCfg->u.enmDst        = PDMAUDIOPLAYBACKDST_FRONT;
     pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-    pCfg->Props.uHz       = pThis->freq;
-    pCfg->Props.cChannels = 1; /* Mono */
-    pCfg->Props.cbSample  = 1 /* 8-bit */;
-    pCfg->Props.fSigned   = false;
-    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
+    PDMAudioPropsInit(&pCfg->Props, 1 /*8-bit*/, false /*fSigned*/, 1 /*mono*/, pThis->freq);
 
     AssertCompile(sizeof(pCfg->szName) >= sizeof("Output"));
     memcpy(pCfg->szName, "Output", sizeof("Output"));
@@ -1832,12 +1827,7 @@ static int sb16CheckAndReOpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis)
         /* At the moment we only have one stream, the output stream. */
         PDMAUDIOSTREAMCFG Cfg;
         RT_ZERO(Cfg);
-
-        Cfg.Props.uHz       = pThis->freq;
-        Cfg.Props.cChannels = 1 << pThis->fmt_stereo;
-        Cfg.Props.cbSample  = pThis->fmt_bits / 8;
-        Cfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
-        Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cbSample, Cfg.Props.cChannels);
+        PDMAudioPropsInit(&Cfg.Props, pThis->fmt_bits / 8, pThis->fmt_signed != 0, 1 << pThis->fmt_stereo, pThis->freq);
 
         if (!PDMAudioStrmCfgMatchesProps(&Cfg, &pThis->Out.Cfg.Props))
         {

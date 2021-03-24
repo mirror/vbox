@@ -148,23 +148,25 @@ typedef struct ALSAAUDIOSTREAMCFG
  */
 static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cbSample)
+    switch (PDMAudioPropsSampleSize(pProps))
     {
         case 1:
             return pProps->fSigned ? SND_PCM_FORMAT_S8 : SND_PCM_FORMAT_U8;
 
         case 2:
-            return pProps->fSigned ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U16_LE;
+            if (PDMAudioPropsIsLittleEndian(pProps))
+                return pProps->fSigned ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U16_LE;
+            return pProps->fSigned ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_U16_BE;
 
         case 4:
-            return pProps->fSigned ? SND_PCM_FORMAT_S32_LE : SND_PCM_FORMAT_U32_LE;
+            if (PDMAudioPropsIsLittleEndian(pProps))
+                return pProps->fSigned ? SND_PCM_FORMAT_S32_LE : SND_PCM_FORMAT_U32_LE;
+            return pProps->fSigned ? SND_PCM_FORMAT_S32_BE : SND_PCM_FORMAT_U32_BE;
 
         default:
-            break;
+            AssertMsgFailed(("%RU8 bytes not supported\n", PDMAudioPropsSampleSize(pProps)));
+            return SND_PCM_FORMAT_U8;
     }
-
-    AssertMsgFailed(("%RU8 bytes not supported\n", pProps->cbSample));
-    return SND_PCM_FORMAT_U8;
 }
 
 
@@ -172,90 +174,60 @@ static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
  * Converts an ALSA PCM format to internal PCM properties.
  *
  * @returns VBox status code.
- * @param   fmt                 ALSA PCM format to convert.
- * @param   pProps              Where to store the converted PCM properties on success.
+ * @param   pProps      Where to store the converted PCM properties on success.
+ * @param   fmt         ALSA PCM format to convert.
+ * @param   cChannels   Number of channels.
+ * @param   uHz         Frequency.
  */
-static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
+static int alsaALSAToAudioProps(PPDMAUDIOPCMPROPS pProps, snd_pcm_format_t fmt, int cChannels, unsigned uHz)
 {
+    AssertReturn(cChannels > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cChannels < 16, VERR_INVALID_PARAMETER);
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
-            pProps->cbSample    = 1;
-            pProps->fSigned     = true;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInit(pProps, 1 /*8-bit*/,  true /*signed*/, cChannels, uHz);
             break;
 
         case SND_PCM_FORMAT_U8:
-            pProps->cbSample    = 1;
-            pProps->fSigned     = false;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInit(pProps, 1 /*8-bit*/, false /*signed*/, cChannels, uHz);
             break;
 
         case SND_PCM_FORMAT_S16_LE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/,  true /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_U16_LE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = false;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, false /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_S16_BE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/,  true /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_U16_BE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = false;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, false /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_S32_LE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = true;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/,  true /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_U32_LE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = false;
-            pProps->fSwapEndian = false;
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/, false /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_S32_BE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = true;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/,  true /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case SND_PCM_FORMAT_U32_BE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = false;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/, false /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         default:
             AssertMsgFailedReturn(("Format %d not supported\n", fmt), VERR_NOT_SUPPORTED);
     }
-
-    AssertReturn(pProps->cbSample > 0,  VERR_NOT_SUPPORTED);
-    AssertReturn(pProps->cChannels > 0, VERR_INVALID_PARAMETER);
-
-    pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
-
     return VINF_SUCCESS;
 }
 
@@ -936,8 +908,8 @@ static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStream
     {
         ALSAAUDIOSTREAMCFG req;
         req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-        req.freq        = pCfgReq->Props.uHz;
-        req.nchannels   = pCfgReq->Props.cChannels;
+        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
+        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
         req.period_size = pCfgReq->Backend.cFramesPeriod;
         req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
         req.threshold   = pCfgReq->Backend.cFramesPreBuffering;
@@ -947,10 +919,7 @@ static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStream
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->Props.uHz       = obt.freq;
-        pCfgAcq->Props.cChannels = obt.nchannels;
-
-        rc = alsaALSAToAudioProps(obt.fmt, &pCfgAcq->Props);
+        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
         if (RT_FAILURE(rc))
             break;
 
@@ -999,8 +968,8 @@ static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamA
     {
         ALSAAUDIOSTREAMCFG req;
         req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-        req.freq        = pCfgReq->Props.uHz;
-        req.nchannels   = pCfgReq->Props.cChannels;
+        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
+        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
         req.period_size = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
         req.buffer_size = req.period_size * 2; /** @todo Make this configurable. */
         req.threshold   = req.period_size;
@@ -1010,10 +979,7 @@ static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamA
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->Props.uHz       = obt.freq;
-        pCfgAcq->Props.cChannels = obt.nchannels;
-
-        rc = alsaALSAToAudioProps(obt.fmt, &pCfgAcq->Props);
+        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
         if (RT_FAILURE(rc))
             break;
 

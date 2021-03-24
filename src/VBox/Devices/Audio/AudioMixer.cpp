@@ -263,7 +263,7 @@ int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer
             *ppMixer = pMixer;
         }
         else
-            RTMemFree(pMixer);
+            RTMemFree(pMixer); /** @todo leaks pszName due to badly structured code */
     }
     else
         rc = VERR_NO_MEMORY;
@@ -610,8 +610,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %u bits, %RU8 channels, %RU32Hz)\n",
-                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cbSample * 8, pCfg->Props.cChannels, pCfg->Props.uHz));
+    LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %u bits, %RU8 channels, %RU32Hz)\n", pSink->pszName, fFlags, pCfg->enmDir,
+                 PDMAudioPropsSampleBits(&pCfg->Props), PDMAudioPropsChannels(&pCfg->Props), pCfg->Props.uHz));
 
     /*
      * Initialize the host-side configuration for the stream to be created.
@@ -1487,13 +1487,13 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     }
 
     if (pSink->PCMProps.uHz)
-        LogFlowFunc(("[%s] Old format: %u bit, %RU8 channels, %RU32Hz\n",
-                     pSink->pszName, pSink->PCMProps.cbSample * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+        LogFlowFunc(("[%s] Old format: %u bit, %RU8 channels, %RU32Hz\n", pSink->pszName,
+                     PDMAudioPropsSampleBits(&pSink->PCMProps), PDMAudioPropsChannels(&pSink->PCMProps), pSink->PCMProps.uHz));
 
     memcpy(&pSink->PCMProps, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
 
-    LogFlowFunc(("[%s] New format %u bit, %RU8 channels, %RU32Hz\n",
-                 pSink->pszName, pSink->PCMProps.cbSample * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+    LogFlowFunc(("[%s] New format %u bit, %RU8 channels, %RU32Hz\n", pSink->pszName, PDMAudioPropsSampleBits(&pSink->PCMProps),
+                 PDMAudioPropsChannels(&pSink->PCMProps), pSink->PCMProps.uHz));
 
     /* Also update the sink's mixing buffer format. */
     AudioMixBufDestroy(&pSink->MixBuf);

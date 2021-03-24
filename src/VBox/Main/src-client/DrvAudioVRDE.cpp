@@ -83,12 +83,15 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     RT_NOREF(pCfgReq);
     AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
 
-    pCfgAcq->Props.uHz         = 22050; /* The VRDP server's internal frequency. */
-    pCfgAcq->Props.cChannels   = 2;
-    pCfgAcq->Props.cbSample    = 2; /* 16 bit. */
-    pCfgAcq->Props.fSigned     = true;
-    pCfgAcq->Props.fSwapEndian = false;
-    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
+    /*
+     * The VRDP server does its own mixing and resampling as it may server
+     * multiple clients all with different sound formats.  So, it feeds us
+     * raw mixer frames (somewhat akind to stereo signed 64-bit, see
+     * st_sample_t and PDMAUDIOFRAME).
+     */
+    pCfgAcq->enmLayout = PDMAUDIOSTREAMLAYOUT_RAW;
+    PDMAudioPropsInitEx(&pCfgAcq->Props, 8 /*64-bit*/, true /*fSigned*/, 2 /*stereo*/, 22050 /*Hz*/,
+                        true /*fLittleEndian*/, true /*fRaw*/);
 
     /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
     const uint32_t cFramesVrdpServer = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 200 /*ms*/);
@@ -96,14 +99,6 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Because of historical reasons the VRDP server operates on st_sample_t structures internally,
-         * which is 2 * int64_t for left/right (stereo) channels.
-         *
-         * As the audio connector also uses this format, set the layout to "raw" and just let pass through
-         * the data without any layout modification needed.
-         */
-        pCfgAcq->enmLayout                      = PDMAUDIOSTREAMLAYOUT_RAW;
         pCfgAcq->Backend.cFramesPeriod          = cFramesVrdpServer;
 /** @todo r=bird: This is inconsistent with the above buffer allocation and I
  * think also ALSA and Pulse backends way of setting cFramesBufferSize. */
@@ -118,29 +113,26 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
 static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pStreamVRDE, pCfgReq);
+    AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
 
-    if (pCfgAcq)
-    {
-        /*
-         * Because of historical reasons the VRDP server operates on st_sample_t structures internally,
-         * which is 2 * int64_t for left/right (stereo) channels.
-         *
-         * As the audio connector also uses this format, set the layout to "raw" and just let pass through
-         * the data without any layout modification needed.
-         */
-        pCfgAcq->enmLayout = PDMAUDIOSTREAMLAYOUT_RAW;
+    /*
+     * The VRDP server does its own mixing and resampling because it may be
+     * sending the audio to any number of different clients all with different
+     * formats (including clients which hasn't yet connected).  So, it desires
+     * the raw data from the mixer (somewhat akind to stereo signed 64-bit,
+     * see st_sample_t and PDMAUDIOFRAME).
+     */
+    pCfgAcq->enmLayout = PDMAUDIOSTREAMLAYOUT_RAW;
+    PDMAudioPropsInitEx(&pCfgAcq->Props, 8 /*64-bit*/, true /*fSigned*/, 2 /*stereo*/, 22050 /*Hz*/,
+                        true /*fLittleEndian*/, true /*fRaw*/);
 
-        pCfgAcq->Props.uHz       = 22050; /* The VRDP server's internal frequency. */
-        pCfgAcq->Props.cChannels = 2;
-        pCfgAcq->Props.cbSample  = 2; /* 16 bit. */
-        pCfgAcq->Props.fSigned   = true;
-        pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
-
-        /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-        pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
-        pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
-        pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
-    }
+    /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
+    /** @todo r=bird: So, if VRDP does 200ms chunks, why do we report 100ms
+     *        buffer and 20ms period?  How does these parameters at all correlate
+     *        with the above comment?!? */
+    pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
+    pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
+    pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
 
     return VINF_SUCCESS;
 }
@@ -175,8 +167,9 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
         {
             rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
                                                                PDMAudioPropsMilliToFrames(&pStreamVRDE->pCfg->Props, 200 /*ms*/),
-                                                               pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
-                                                               pStreamVRDE->pCfg->Props.cbSample * 8 /* Bit */);
+                                                               PDMAudioPropsHz(&pStreamVRDE->pCfg->Props),
+                                                               PDMAudioPropsChannels(&pStreamVRDE->pCfg->Props),
+                                                               PDMAudioPropsSampleBits(&pStreamVRDE->pCfg->Props));
             if (rc == VERR_NOT_SUPPORTED)
             {
                 LogRel(("Audio: No VRDE client connected, so no input recording available\n"));
@@ -286,10 +279,11 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
 
     /* Prepate the format. */
     PPDMAUDIOPCMPROPS pProps = &pStreamVRDE->pCfg->Props;
-    VRDEAUDIOFORMAT const VrdpFormat = VRDE_AUDIO_FMT_MAKE(pProps->uHz,
-                                                           pProps->cChannels,
-                                                           pProps->cbSample * 8 /* Bit */,
-                                                           pProps->fSigned);
+    VRDEAUDIOFORMAT const uVrdpFormat = VRDE_AUDIO_FMT_MAKE(PDMAudioPropsHz(pProps),
+                                                            PDMAudioPropsChannels(pProps),
+                                                            PDMAudioPropsSampleBits(pProps),
+                                                            pProps->fSigned);
+    Assert(uVrdpFormat == VRDE_AUDIO_FMT_MAKE(PDMAudioPropsHz(pProps), 2, 64, true));
 
     /* We specified PDMAUDIOSTREAMLAYOUT_RAW (== S64), so
        convert the buffer pointe and size accordingly:  */
@@ -313,7 +307,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
 
         /* Note: The VRDP server expects int64_t samples per channel, regardless
                  of the actual  sample bits (e.g 8 or 16 bits). */
-        pDrv->pConsoleVRDPServer->SendAudioSamples(&paSampleBuf[cFramesWritten], cFramesChunk /* Frames */, VrdpFormat);
+        pDrv->pConsoleVRDPServer->SendAudioSamples(&paSampleBuf[cFramesWritten], cFramesChunk /* Frames */, uVrdpFormat);
 
         cFramesWritten += cFramesChunk;
     }

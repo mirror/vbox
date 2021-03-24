@@ -150,49 +150,32 @@ static uint32_t lsbindex(uint32_t u)
 }
 
 
-static int ossOSSToAudioProps(int fmt, PPDMAUDIOPCMPROPS pProps)
+static int ossOSSToAudioProps(PPDMAUDIOPCMPROPS pProps, int fmt, int cChannels, int uHz)
 {
-    RT_BZERO(pProps, sizeof(PDMAUDIOPCMPROPS));
-
-    /** @todo r=bird: What's the assumption about the incoming pProps?  Code is
-     *        clearly ASSUMING something about how it's initialized, but even so,
-     *        the fSwapEndian isn't correct in a portable way. */
     switch (fmt)
     {
         case AFMT_S8:
-            pProps->cbSample    = 1;
-            pProps->fSigned     = true;
+            PDMAudioPropsInit(pProps, 1 /*8-bit*/, true /*signed*/, cChannels, uHz);
             break;
 
         case AFMT_U8:
-            pProps->cbSample    = 1;
-            pProps->fSigned     = false;
+            PDMAudioPropsInit(pProps, 1 /*8-bit*/, false /*signed*/, cChannels, uHz);
             break;
 
         case AFMT_S16_LE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, true /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case AFMT_U16_LE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = false;
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, false /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
-       case AFMT_S16_BE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+        case AFMT_S16_BE:
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, true /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case AFMT_U16_BE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = false;
-#ifdef RT_LITTLE_ENDIAN
-            pProps->fSwapEndian = true;
-#endif
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, false /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         default:
@@ -239,7 +222,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         }
 
         int iFormat;
-        switch (pOSSReq->Props.cbSample)
+        switch (PDMAudioPropsSampleSize(&pOSSReq->Props))
         {
             case 1:
                 iFormat = pOSSReq->Props.fSigned ? AFMT_S8 : AFMT_U8;
@@ -265,11 +248,11 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
             break;
         }
 
-        int cChannels = pOSSReq->Props.cChannels;
+        int cChannels = PDMAudioPropsChannels(&pOSSReq->Props);
         if (ioctl(fdFile, SNDCTL_DSP_CHANNELS, &cChannels))
         {
             LogRel(("OSS: Failed to set number of audio channels (%RU8): %s (%d)\n",
-                    pOSSReq->Props.cChannels, strerror(errno), errno));
+                    PDMAudioPropsChannels(&pOSSReq->Props), strerror(errno), errno));
             break;
         }
 
@@ -310,13 +293,9 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
             break;
         }
 
-        rc = ossOSSToAudioProps(iFormat, &pOSSAcq->Props);
+        rc = ossOSSToAudioProps(&pOSSAcq->Props, iFormat, cChannels, freq);
         if (RT_SUCCESS(rc))
         {
-            pOSSAcq->Props.cChannels = cChannels;
-            pOSSAcq->Props.uHz       = freq;
-            pOSSAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pOSSAcq->Props.cbSample, pOSSAcq->Props.cChannels);
-
             pOSSAcq->cFragments      = abinfo.fragstotal;
             pOSSAcq->cbFragmentSize  = abinfo.fragsize;
 

@@ -229,7 +229,7 @@ DECLCALLBACK(int) AudioDriver::detachDriverOnEmt(AudioDriver *pThis)
     int rc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
                                "AUDIO", 0 /* iOccurrence */,  0 /* fFlags */);
     if (RT_SUCCESS(rc))
-        rc = pThis->configure(pCfg->uLUN, false /* Detach */);
+        rc = pThis->configure(pCfg->uLUN, false /* Detach */);/** @todo r=bird: Illogical and from what I can tell pointless! */
 
     if (RT_SUCCESS(rc))
     {

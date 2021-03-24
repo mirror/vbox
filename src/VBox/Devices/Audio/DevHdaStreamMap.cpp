@@ -208,39 +208,39 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
      *        - are in a consecutive order with no gaps in between
      *        - have a simple (raw) data layout
      *        - work in a non-striped fashion, e.g. interleaved (only on one SDn, not spread over multiple SDns) */
-    if  (   pProps->cChannels == 1  /* Mono */
-         || pProps->cChannels == 2  /* Stereo */
-         || pProps->cChannels == 4  /* Quadrophonic */
-         || pProps->cChannels == 6) /* Surround (5.1) */
+    uint8_t cChannels = PDMAudioPropsChannels(pProps);
+    if  (   cChannels == 1  /* Mono */
+         || cChannels == 2  /* Stereo */
+         || cChannels == 4  /* Quadrophonic */
+         || cChannels == 6) /* Surround (5.1) */
     {
         /*
          * Copy the guest stream properties and see if we need to change the host properties.
          */
         memcpy(&pMap->GuestProps, pProps, sizeof(PDMAUDIOPCMPROPS));
-        if (pProps->cChannels != cHostChannels)
+        if (cChannels != cHostChannels)
         {
-            if (pProps->cChannels == 1)
+            if (cChannels == 1)
                 LogRelMax(32, ("HDA: Warning: Guest mono, host stereo.\n"));
-            else if (cHostChannels == 1 && pProps->cChannels == 2)
+            else if (cHostChannels == 1 && cChannels == 2)
                 LogRelMax(32, ("HDA: Warning: Host mono, guest stereo.\n"));
             else
 #ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 LogRelMax(32, ("HDA: Warning: Guest configured %u channels, host only supports %u. Ignoring additional channels.\n",
-                               pProps->cChannels, cHostChannels));
+                               cChannels, cHostChannels));
 #else
 # error reconsider the above logic
 #endif
-            pProps->cChannels = cHostChannels;
-            pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps);
+            PDMAudioPropsSetChannels(pProps, cHostChannels);
         }
 
         /*
          * Pick conversion functions.
          */
-        Assert(pMap->GuestProps.cbSample == pProps->cbSample);
+        Assert(PDMAudioPropsSampleSize(&pMap->GuestProps) == PDMAudioPropsSampleSize(pProps));
 
         /* If the channel count matches, we can use the memcpy converters: */
-        if (pProps->cChannels == pMap->GuestProps.cChannels)
+        if (PDMAudioPropsChannels(pProps) == PDMAudioPropsChannels(&pMap->GuestProps))
         {
             pMap->pfnGuestToHost = hdaR3StreamMap_GenericCopy;
             pMap->pfnHostToGuest = hdaR3StreamMap_GenericCopy;
@@ -251,10 +251,10 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
             /* For multi-speaker guest configs, we currently just pick the
                first two channels and map this onto the host stereo ones. */
             AssertReturn(cHostChannels == 2, VERR_NOT_SUPPORTED);
-            switch (pMap->GuestProps.cbSample)
+            switch (PDMAudioPropsSampleSize(&pMap->GuestProps))
             {
                 case 2:
-                    if (pMap->GuestProps.cChannels > 1)
+                    if (PDMAudioPropsChannels(&pMap->GuestProps) > 1)
                     {
                         pMap->pfnGuestToHost = hdaR3StreamMap_G2H_GenericS16_NonMono2Stereo;
                         pMap->pfnHostToGuest = hdaR3StreamMap_H2G_GenericS16_Stereo2NonMono;
@@ -267,7 +267,7 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
                     break;
 
                 case 4:
-                    if (pMap->GuestProps.cChannels > 1)
+                    if (PDMAudioPropsChannels(&pMap->GuestProps) > 1)
                     {
                         pMap->pfnGuestToHost = hdaR3StreamMap_G2H_GenericS32_NonMono2Stereo;
                         pMap->pfnHostToGuest = hdaR3StreamMap_H2G_GenericS32_Stereo2NonMono;
@@ -280,7 +280,7 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
                     break;
 
                 default:
-                    AssertMsgFailedReturn(("cbSample=%u\n", pMap->GuestProps.cbSample), VERR_NOT_SUPPORTED);
+                    AssertMsgFailedReturn(("cbSample=%u\n", PDMAudioPropsChannels(&pMap->GuestProps)), VERR_NOT_SUPPORTED);
             }
             pMap->fMappingNeeded = true;
         }
@@ -296,8 +296,8 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
             PPDMAUDIOSTREAMMAP pMapLR = &pMap->paMappings[0];
             pMapLR->aenmIDs[0]  = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
             pMapLR->aenmIDs[1]  = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
-            pMapLR->cbFrame     = pProps->cbSample * pProps->cChannels;
-            pMapLR->cbStep      = pProps->cbSample * 2 /* Front left + Front right channels */;
+            pMapLR->cbFrame     = PDMAudioPropsFrameSize(pProps);
+            pMapLR->cbStep      = PDMAudioPropsSampleSize(pProps) * 2 /* Front left + Front right channels */;
             pMapLR->offFirst    = 0;
             pMapLR->offNext     = pMapLR->offFirst;
 
@@ -333,7 +333,7 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, uint8_t cHostChannels, PPDMAUDIOPCMPR
 
     hdaR3StreamMapReset(pMap);
 
-    pMap->cbGuestFrame = pProps->cChannels * pProps->cbSample;
+    pMap->cbGuestFrame = PDMAudioPropsFrameSize(pProps);
     int rc = hdaR3StreamMapSetup(pMap, pProps, cHostChannels);
     if (RT_SUCCESS(rc))
     {
@@ -345,7 +345,7 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, uint8_t cHostChannels, PPDMAUDIOPCMPR
 #endif
         {
             LogFunc(("cChannels=%RU8, cBytes=%RU8 -> cbGuestFrame=%RU32\n",
-                     pProps->cChannels, pProps->cbSample, pMap->cbGuestFrame));
+                     PDMAudioPropsChannels(pProps), PDMAudioPropsSampleSize(pProps), pMap->cbGuestFrame));
 
             Assert(pMap->cbGuestFrame); /* Frame size must not be 0. */
             pMap->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;

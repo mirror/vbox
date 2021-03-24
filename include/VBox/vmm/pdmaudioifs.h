@@ -569,19 +569,22 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     PDMAUDIOSTREAMLAYOUT_INVALID = 0,
     /** Unknown access type; do not use (hdaR3StreamMapReset uses it). */
     PDMAUDIOSTREAMLAYOUT_UNKNOWN,
-    /** Non-interleaved access, that is, consecutive
-     *  access to the data. */
+    /** Non-interleaved access, that is, consecutive access to the data.
+     * @todo r=bird: For plain stereo this is actually interleaves left/right.  What
+     *       I guess non-interleaved means, is that there are no additional
+     *       information interleaved next to the interleaved stereo.
+     *       https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio */
     PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED,
-    /** Interleaved access, where the data can be
-     *  mixed together with data of other audio streams. */
+    /** Interleaved access, where the data can be mixed together with data of other audio streams. */
     PDMAUDIOSTREAMLAYOUT_INTERLEAVED,
-    /** Complex layout, which does not fit into the
-     *  interleaved / non-interleaved layouts. */
+    /** Complex layout, which does not fit into the interleaved / non-interleaved layouts. */
     PDMAUDIOSTREAMLAYOUT_COMPLEX,
     /** Raw (pass through) data, with no data layout processing done.
      *
      *  This means that this stream will operate on PDMAUDIOFRAME data
-     *  directly. Don't use this if you don't have to. */
+     *  directly. Don't use this if you don't have to.
+     *
+     * @deprecated Replaced by S64 (signed, 64-bit sample size).  */
     PDMAUDIOSTREAMLAYOUT_RAW,
     /** End of valid values. */
     PDMAUDIOSTREAMLAYOUT_END,
@@ -688,24 +691,23 @@ typedef PDMAUDIOSTREAMMAP *PPDMAUDIOSTREAMMAP;
  */
 typedef struct PDMAUDIOPCMPROPS
 {
-/** @todo squeeze cbSample and cChannels into one uint8_t; Add cbFrame. */
+    /** The frame size. */
+    uint8_t     cbFrame;
     /** Sample width (in bytes). */
-    uint8_t     cbSample;
+    uint8_t     cbSampleX : 4;
     /** Number of audio channels. */
-    uint8_t     cChannels;
+    uint8_t     cChannelsX : 4;
     /** Shift count used with PDMAUDIOPCMPROPS_F2B and PDMAUDIOPCMPROPS_B2F.
      * Depends on number of stream channels and the stream format being used, calc
      * value using PDMAUDIOPCMPROPS_MAKE_SHIFT.
-     * @sa   PDMAUDIOSTREAMCFG_B2F, PDMAUDIOSTREAMCFG_F2B
-     * @todo r=bird: The original brief description: "Shift count used
-     *       for faster calculation of various values, such as the alignment, bytes
-     *       to frames and so on."  I cannot make heads or tails from that.
-     * @todo Use some RTAsmXXX functions instead? */
-    uint8_t     cShift;
+     * @sa   PDMAUDIOSTREAMCFG_B2F, PDMAUDIOSTREAMCFG_F2B */
+    uint8_t     cShiftX;
     /** Signed or unsigned sample. */
     bool        fSigned : 1;
     /** Whether the endianness is swapped or not. */
     bool        fSwapEndian : 1;
+    /** Raw mixer frames, only applicable for signed 64-bit samples. */
+    bool        fRaw : 1;
     /** Sample frequency in Hertz (Hz). */
     uint32_t    uHz;
 } PDMAUDIOPCMPROPS;
@@ -718,13 +720,12 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
 
 /** @name Macros for use with PDMAUDIOPCMPROPS
  * @{ */
-/** Initializer for PDMAUDIOPCMPROPS.
- * @todo /PDMAUDIOPCMPROPS_INITIALIZOR/PDMAUDIOPCMPROPS_INITIALIZER/ */
-#define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBytes, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
-    { a_cBytes, a_cCannels, a_cShift, a_fSigned, a_fSwapEndian, a_uHz }
+/** Initializer for PDMAUDIOPCMPROPS. */
+#define PDMAUDIOPCMPROPS_INITIALIZER(a_cbSample, a_fSigned, a_cChannels, a_uHz, a_fSwapEndian) \
+    { (a_cbSample) * (a_cChannels), a_cbSample, a_cChannels, PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), \
+      a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
- * @note This only works when the frame size is a
- * Does only support mono/stereo channels for now, for non-stereo/mono we
+ * @note Does only support mono/stereo channels for now, for non-stereo/mono we
  *       returns a special value which the two conversion functions detect
  *       and make them fall back on cbSample * cChannels. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cbSample, cChannels) \
@@ -732,15 +733,17 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
       ? (uint8_t)(ASMBitFirstSetU32((unsigned)((cChannels) * (cbSample))) - 1) : (uint8_t)UINT8_MAX )
 /** Calculates the cShift value of a PDMAUDIOPCMPROPS structure. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps) \
-    PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cbSample, (pProps)->cChannels)
+    PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cbSampleX, (pProps)->cChannelsX)
 /** Converts (audio) frames to bytes.
- *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
+ * @note Requires properly initialized properties, i.e. cbFrames correctly calculated
+ *       and cShift set using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
 #define PDMAUDIOPCMPROPS_F2B(pProps, cFrames) \
-    ( (pProps)->cShift != UINT8_MAX ? (cFrames) << (pProps)->cShift : (cFrames) * ((pProps)->cbSample * (pProps)->cChannels) )
+    ( (pProps)->cShiftX != UINT8_MAX ? (cFrames) << (pProps)->cShiftX : (cFrames) * (pProps)->cbFrame )
 /** Converts bytes to (audio) frames.
- *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
+ * @note Requires properly initialized properties, i.e. cbFrames correctly calculated
+ *       and cShift set using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
 #define PDMAUDIOPCMPROPS_B2F(pProps, cb) \
-    ( (pProps)->cShift != UINT8_MAX ?      (cb) >> (pProps)->cShift : (cb)      / ((pProps)->cbSample * (pProps)->cChannels) )
+    ( (pProps)->cShiftX != UINT8_MAX ?      (cb) >> (pProps)->cShiftX :      (cb) / (pProps)->cbFrame )
 /** @}   */
 
 /**
@@ -765,7 +768,9 @@ typedef struct PDMAUDIOSTREAMCFG
      *
      *  PDMAUDIOSTREAMLAYOUT_RAW:
      *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
-     *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done. */
+     *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done.
+     *
+     * @todo r=bird: See PDMAUDIOSTREAMLAYOUT comments. */
     PDMAUDIOSTREAMLAYOUT    enmLayout;
     /** Device emulation-specific data needed for the audio connector. */
     struct
@@ -805,9 +810,9 @@ typedef PDMAUDIOSTREAMCFG *PPDMAUDIOSTREAMCFG;
 typedef PDMAUDIOSTREAMCFG const *PCPDMAUDIOSTREAMCFG;
 
 /** Converts (audio) frames to bytes. */
-#define PDMAUDIOSTREAMCFG_F2B(pCfg, frames) ((frames) << (pCfg->Props).cShift)
+#define PDMAUDIOSTREAMCFG_F2B(pCfg, frames)     PDMAUDIOPCMPROPS_F2B(&(pCfg)->Props, (frames))
 /** Converts bytes to (audio) frames. */
-#define PDMAUDIOSTREAMCFG_B2F(pCfg, cb)  (cb >> (pCfg->Props).cShift)
+#define PDMAUDIOSTREAMCFG_B2F(pCfg, cb)         PDMAUDIOPCMPROPS_B2F(&(pCfg)->Props, (cb))
 
 /**
  * Audio mixer controls.
@@ -1007,9 +1012,7 @@ typedef struct PDMAUDIOMIXBUF
 {
     /** Magic value (PDMAUDIOMIXBUF_MAGIC). */
     uint32_t                    uMagic;
-    /** For quickly converting frames <-> bytes and vice versa. */
-    uint8_t                     cShift;
-    uint8_t                     abPadding[3];
+    uint8_t                     abPadding[4];
     /* ???Undocumented??? */
     RTLISTNODE                  Node;
     /** Name of the buffer. */
@@ -1047,10 +1050,18 @@ typedef struct PDMAUDIOMIXBUF
      *       which is not define here.  Does this structure really belong here at
      *       all?  */
     PDMAUDIOMIXBUFFMT           uAudioFmt;
+    /** Audio input properties.
+     * @note There is only one set of audio properties here because we have one
+     *       mixer buffer for the guest side and a separate one for the host side.
+     * @todo r=bird: Why exactly do we need to use separate mixer buffers?
+     *       Couldn't we just have different conversion fuctions and save the
+     *       extra copying? */
+    PDMAUDIOPCMPROPS            Props;
     /** Standard conversion-to function for set uAudioFmt. */
     PFNPDMAUDIOMIXBUFCONVTO     pfnConvTo;
     /** Standard conversion-from function for set uAudioFmt. */
     PFNPDMAUDIOMIXBUFCONVFROM   pfnConvFrom;
+
     /** Ratio of the associated parent stream's frequency by this stream's
      * frequency (1<<32), represented as a signed 64 bit integer.
      *

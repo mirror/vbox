@@ -216,7 +216,7 @@ static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 
 static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cbSample)
+    switch (PDMAudioPropsSampleSize(pProps))
     {
         case 1:
             if (!pProps->fSigned)
@@ -225,64 +225,55 @@ static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
 
         case 2:
             if (pProps->fSigned)
-                return PA_SAMPLE_S16LE;
+                return PDMAudioPropsIsLittleEndian(pProps) ? PA_SAMPLE_S16LE : PA_SAMPLE_S16BE;
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case 4:
             if (pProps->fSigned)
-                return PA_SAMPLE_S32LE;
+                return PDMAudioPropsIsLittleEndian(pProps) ? PA_SAMPLE_S32LE : PA_SAMPLE_S32BE;
             break;
 #endif
-
-        default:
-            break;
     }
 
-    AssertMsgFailed(("%RU8%s not supported\n", pProps->cbSample, pProps->fSigned ? "S" : "U"));
+    AssertMsgFailed(("%RU8%s not supported\n", PDMAudioPropsSampleSize(pProps), pProps->fSigned ? "S" : "U"));
     return PA_SAMPLE_INVALID;
 }
 
 
-static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pProps)
+static int paPulseToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format_t pulsefmt, uint8_t cChannels, uint32_t uHz)
 {
-    /** @todo r=bird: You are assuming undocumented stuff about
-     *        pProps->fSwapEndian. */
+    AssertReturn(cChannels > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cChannels < 16, VERR_INVALID_PARAMETER);
+
     switch (pulsefmt)
     {
         case PA_SAMPLE_U8:
-            pProps->cbSample    = 1;
-            pProps->fSigned     = false;
+            PDMAudioPropsInit(pProps, 1 /*8-bit*/, false /*signed*/, cChannels, uHz);
             break;
 
         case PA_SAMPLE_S16LE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, true /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 
         case PA_SAMPLE_S16BE:
-            pProps->cbSample    = 2;
-            pProps->fSigned     = true;
-            /** @todo Handle Endianess. */
+            PDMAudioPropsInitEx(pProps, 2 /*16-bit*/, true /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case PA_SAMPLE_S32LE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = true;
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/, true /*signed*/, cChannels, uHz, true /*fLittleEndian*/, false /*fRaw*/);
             break;
 #endif
 
 #ifdef PA_SAMPLE_S32BE
         case PA_SAMPLE_S32BE:
-            pProps->cbSample    = 4;
-            pProps->fSigned     = true;
-            /** @todo Handle Endianess. */
+            PDMAudioPropsInitEx(pProps, 4 /*32-bit*/, true /*signed*/, cChannels, uHz, false /*fLittleEndian*/, false /*fRaw*/);
             break;
 #endif
 
         default:
-            AssertLogRelMsgFailed(("PulseAudio: Format (%ld) not supported\n", pulsefmt));
+            AssertLogRelMsgFailed(("PulseAudio: Format (%d) not supported\n", pulsefmt));
             return VERR_NOT_SUPPORTED;
     }
 
@@ -788,8 +779,8 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->pDrainOp            = NULL;
 
     pStreamPA->SampleSpec.format   = paAudioPropsToPulse(&pCfgReq->Props);
-    pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
-    pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
+    pStreamPA->SampleSpec.rate     = PDMAudioPropsHz(&pCfgReq->Props);
+    pStreamPA->SampleSpec.channels = PDMAudioPropsChannels(&pCfgReq->Props);
 
     pStreamPA->curLatencyUs        = PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize) * RT_US_1MS;
 
@@ -815,16 +806,13 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = paPulseToAudioProps(pStreamPA->SampleSpec.format, &pCfgAcq->Props);
+    rc = paPulseToAudioProps(&pCfgAcq->Props, pStreamPA->SampleSpec.format,
+                             pStreamPA->SampleSpec.channels, pStreamPA->SampleSpec.rate);
     if (RT_FAILURE(rc))
     {
         LogRel(("PulseAudio: Cannot find audio output format %ld\n", pStreamPA->SampleSpec.format));
         return rc;
     }
-
-    pCfgAcq->Props.uHz       = pStreamPA->SampleSpec.rate;
-    pCfgAcq->Props.cChannels = pStreamPA->SampleSpec.channels;
-    pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
     LogFunc(("Acquired: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
              pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
@@ -843,8 +831,8 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
                             PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     pStreamPA->SampleSpec.format   = paAudioPropsToPulse(&pCfgReq->Props);
-    pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
-    pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
+    pStreamPA->SampleSpec.rate     = PDMAudioPropsHz(&pCfgReq->Props);
+    pStreamPA->SampleSpec.channels = PDMAudioPropsChannels(&pCfgReq->Props);
 
     pStreamPA->BufAttr.fragsize    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
     pStreamPA->BufAttr.maxlength   = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
@@ -859,7 +847,8 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = paPulseToAudioProps(pStreamPA->SampleSpec.format, &pCfgAcq->Props);
+    rc = paPulseToAudioProps(&pCfgAcq->Props, pStreamPA->SampleSpec.format,
+                             pStreamPA->SampleSpec.channels, pStreamPA->SampleSpec.rate);
     if (RT_FAILURE(rc))
     {
         LogRel(("PulseAudio: Cannot find audio capture format %ld\n", pStreamPA->SampleSpec.format));
@@ -868,9 +857,6 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
 
     pStreamPA->pDrv       = pThis;
     pStreamPA->pu8PeekBuf = NULL;
-
-    pCfgAcq->Props.uHz         = pStreamPA->SampleSpec.rate;
-    pCfgAcq->Props.cChannels   = pStreamPA->SampleSpec.channels;
 
     pCfgAcq->Backend.cFramesPeriod       = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamPA->BufAttr.fragsize);
     pCfgAcq->Backend.cFramesBufferSize   = pStreamPA->BufAttr.maxlength != UINT32_MAX /* paranoia */

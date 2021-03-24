@@ -303,10 +303,10 @@ typedef struct DRVAUDIORECORDING
  */
 static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
-    uint32_t uHz       = pCodecParms->PCMProps.uHz;
-    uint8_t  cBytes    = pCodecParms->PCMProps.cbSample;
-    uint8_t  cChannels = pCodecParms->PCMProps.cChannels;
-    uint32_t uBitrate  = pCodecParms->uBitrate;
+    uint32_t       uHz       = PDMAudioPropsHz(&pCodecParms->PCMProps);
+    uint8_t const  cbSample  = PDMAudioPropsSampleSize(&pCodecParms->PCMProps);
+    uint8_t        cChannels = PDMAudioPropsChannels(&pCodecParms->PCMProps);
+    uint32_t       uBitrate  = pCodecParms->uBitrate;
 
     /* Opus only supports certain input sample rates in an efficient manner.
      * So make sure that we use those by resampling the data to the requested rate. */
@@ -390,7 +390,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
                                                      WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cBytes * 8 /* Bits */,
+                        rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cbSample * 8 /* Bits */,
                                                                   &pSink->Con.WebM.uTrack);
                         if (RT_SUCCESS(rc))
                         {
@@ -421,12 +421,8 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 
         PAVRECCODEC pCodec = &pSink->Codec;
 
-        pCodec->Parms.PCMProps.uHz       = uHz;
-        pCodec->Parms.PCMProps.cChannels = cChannels;
-        pCodec->Parms.PCMProps.cbSample  = cBytes;
-        pCodec->Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cbSample,
-                                                                             pSink->Codec.Parms.PCMProps.cChannels);
-        pCodec->Parms.uBitrate           = uBitrate;
+        PDMAudioPropsInit(&pCodec->Parms.PCMProps, cbSample, pCodecParms->PCMProps.fSigned, cChannels, uHz);
+        pCodec->Parms.uBitrate  = uBitrate;
 
         pCodec->Opus.pEnc       = pEnc;
         pCodec->Opus.msFrame    = AVREC_OPUS_FRAME_MS_DEFAULT;
@@ -542,18 +538,16 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
                 pStreamAV->pSink      = pSink; /* Assign sink to stream. */
                 pStreamAV->uLastPTSMs = 0;
 
-                if (pCfgAcq)
-                {
-                    /* Make sure to let the driver backend know that we need the audio data in
-                     * a specific sampling rate Opus is optimized for. */
-                    pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
-                    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
+                /* Make sure to let the driver backend know that we need the audio data in
+                 * a specific sampling rate Opus is optimized for. */
+/** @todo r=bird: pCfgAcq->Props isn't initialized at all, except for uHz... */
+                pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
+//                pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
-                    /* Every Opus frame marks a period for now. Optimize this later. */
-                    pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame);
-                    pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
-                    pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
-                }
+                /* Every Opus frame marks a period for now. Optimize this later. */
+                pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame);
+                pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
+                pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -650,15 +644,13 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_Init(PPDMIHOSTAUDIO pInterface)
 
     PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
 
-    LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 %s\n",
-            pThis->CodecParms.PCMProps.uHz, pThis->CodecParms.PCMProps.cbSample * 8,
-            pThis->CodecParms.PCMProps.cChannels, pThis->CodecParms.PCMProps.cChannels == 1 ? "channel" : "channels"));
+    LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 channel%s\n",
+            PDMAudioPropsHz(&pThis->CodecParms.PCMProps), PDMAudioPropsSampleBits(&pThis->CodecParms.PCMProps),
+            PDMAudioPropsChannels(&pThis->CodecParms.PCMProps), PDMAudioPropsChannels(&pThis->CodecParms.PCMProps) == 1 ? "" : "s"));
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
     if (RT_FAILURE(rc))
-    {
         LogRel(("Recording: Audio recording driver failed to initialize, rc=%Rrc\n", rc));
-    }
     else
         LogRel2(("Recording: Audio recording driver initialized\n"));
 
@@ -1196,7 +1188,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     PAVRECCONTAINERPARMS pConParams  = &pThis->ContainerParms;
     PAVRECCODECPARMS     pCodecParms = &pThis->CodecParms;
-    PPDMAUDIOPCMPROPS    pPCMProps   = &pCodecParms->PCMProps;
 
     RT_ZERO(pThis->ContainerParms);
     RT_ZERO(pThis->CodecParms);
@@ -1215,22 +1206,24 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
             break;
     }
 
-    rc = CFGMR3QueryU32(pCfg, "CodecHz", &pPCMProps->uHz);
+    uint32_t uHz = 0;
+    rc = CFGMR3QueryU32(pCfg, "CodecHz", &uHz);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryU8(pCfg,  "CodecBits", &pPCMProps->cbSample); /** @todo CodecBits != CodecBytes */
+
+    uint8_t cSampleBits = 0;
+    rc = CFGMR3QueryU8(pCfg,  "CodecBits", &cSampleBits); /** @todo CodecBits != CodecBytes */
     AssertRCReturn(rc, rc);
-    pPCMProps->cbSample /= 8; /* Bits to bytes. */
-    rc = CFGMR3QueryU8(pCfg,  "CodecChannels", &pPCMProps->cChannels);
+
+    uint8_t cChannels = 0;
+    rc = CFGMR3QueryU8(pCfg,  "CodecChannels", &cChannels);
     AssertRCReturn(rc, rc);
+
+    PDMAudioPropsInit(&pCodecParms->PCMProps, cSampleBits / 8, true /*fSigned*/, cChannels, uHz);
+    AssertMsgReturn(PDMAudioPropsAreValid(&pCodecParms->PCMProps),
+                    ("Configuration error: Audio configuration is invalid!\n"), VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES); /** @todo wrong status code. */
+
     rc = CFGMR3QueryU32(pCfg, "CodecBitrate", &pCodecParms->uBitrate);
     AssertRCReturn(rc, rc);
-
-    pPCMProps->cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pPCMProps->cbSample, pPCMProps->cChannels);
-    pPCMProps->fSigned     = true;
-    pPCMProps->fSwapEndian = false;
-
-    AssertMsgReturn(PDMAudioPropsAreValid(pPCMProps),
-                    ("Configuration error: Audio configuration is invalid!\n"), VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES);
 
     pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;
     AssertPtrReturn(pThis->pAudioVideoRec, VERR_INVALID_POINTER);

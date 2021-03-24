@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/rand.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
 
@@ -210,21 +210,19 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterf
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostDebugAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                        const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                        const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
+    PDEBUGAUDIOSTREAM pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
     RT_NOREF(pInterface);
-    PDEBUGAUDIOSTREAM  pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
 
-    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
     if (RT_FAILURE(rc))
     {
         LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc));
         return rc;
     }
 
-    if (puWritten)
-        *puWritten = uBufSize;
-
+    *pcbWritten = cbBuf;
     return VINF_SUCCESS;
 }
 
@@ -242,12 +240,13 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCapture(PPDMIHOSTAUDIO pInter
     PPDMAUDIOSTREAMCFG pCfg = pStreamDbg->pCfg;
     AssertPtr(pCfg);
 
-    Assert(uBufSize % pCfg->Props.cbSample == 0);
+    Assert(uBufSize % PDMAudioPropsSampleSize(&pCfg->Props) == 0);
+    size_t const cSamples = uBufSize / PDMAudioPropsSampleSize(&pCfg->Props);
 
     uint16_t *paBuf = (uint16_t *)pvBuf;
 
     /* Generate a simple mono sine wave. */
-    for (size_t i = 0; i < uBufSize / pCfg->Props.cbSample; i++)
+    for (size_t i = 0; i < cSamples; i++)
     {
         paBuf[i] = 32760 * sin((2.f * float(3.1415) * pStreamDbg->In.uFreqHz) / pCfg->Props.uHz * pStreamDbg->In.uSample);
         if (pStreamDbg->In.uSample == UINT64_MAX)

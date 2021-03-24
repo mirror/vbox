@@ -2136,20 +2136,16 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
  */
 static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
 {
-    PDMAUDIOSTREAMCFG Cfg;
+    int                 rc = VINF_SUCCESS;
+    PAUDMIXSINK         pMixSink;
+    PDMAUDIOSTREAMCFG   Cfg;
     RT_ZERO(Cfg);
-    Cfg.Props.cChannels = 2;
-    Cfg.Props.cbSample  = 2 /* 16-bit */;
-    Cfg.Props.fSigned   = true;
-    Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cbSample, Cfg.Props.cChannels);
-
-    int rc = VINF_SUCCESS;
-    PAUDMIXSINK pMixSink;
     switch (pStream->u8SD)
     {
         case AC97SOUNDSOURCE_PI_INDEX:
         {
-            Cfg.Props.uHz   = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
+                              ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
             Cfg.u.enmSrc    = PDMAUDIORECSRC_LINE;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
@@ -2161,7 +2157,8 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
 
         case AC97SOUNDSOURCE_MC_INDEX:
         {
-            Cfg.Props.uHz   = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
+                              ichac97MixerGet(pThis, AC97_MIC_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
             Cfg.u.enmSrc    = PDMAUDIORECSRC_MIC;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
@@ -2173,7 +2170,8 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
 
         case AC97SOUNDSOURCE_PO_INDEX:
         {
-            Cfg.Props.uHz   = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
+                              ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_OUT;
             Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
@@ -2196,8 +2194,8 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
         if (   !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
             || fForce)
         {
-            LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n",
-                     Cfg.szName, Cfg.Props.uHz, Cfg.Props.cChannels, Cfg.Props.fSigned ? "S" : "U", Cfg.Props.cbSample * 8));
+            LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
+                     PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
 
             LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
 

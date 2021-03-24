@@ -21,18 +21,20 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/time.h>
 
 #include <VBox/AssertGuest.h>
+#include <VBox/vmm/pdmaudioinline.h>
 
-#define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <VBox/log.h>
 
 #include "DevHda.h"
 #include "DevHdaCommon.h"
 #include "DevHdaStream.h"
+
 
 
 /**
@@ -303,17 +305,17 @@ int hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps)
             break;
     }
 
-    uint8_t cBytes = 0;
+    uint8_t cbSample = 0;
     switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
-            cBytes = 1;
+            cbSample = 1;
             break;
         case 1:
-            cBytes = 2;
+            cbSample = 2;
             break;
         case 4:
-            cBytes = 4;
+            cbSample = 4;
             break;
         default:
             AssertMsgFailed(("Unsupported bits per sample %x\n",
@@ -323,15 +325,7 @@ int hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps)
     }
 
     if (RT_SUCCESS(rc))
-    {
-        RT_BZERO(pProps, sizeof(PDMAUDIOPCMPROPS));
-
-        pProps->cbSample  = cBytes;
-        pProps->fSigned   = true;
-        pProps->cChannels = (u16SDFMT & 0xf) + 1;
-        pProps->uHz       = u32Hz * u32HzMult / u32HzDiv;
-        pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
-    }
+        PDMAudioPropsInit(pProps, cbSample, true /*fSigned*/, (u16SDFMT & 0xf) + 1 /*cChannels*/, u32Hz * u32HzMult / u32HzDiv);
 
 # undef EXTRACT_VALUE
     return rc;
