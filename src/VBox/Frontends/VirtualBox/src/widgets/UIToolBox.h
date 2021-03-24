@@ -33,6 +33,8 @@ class QVBoxLayout;
 class QLabel;
 class UIToolBoxPage;
 
+/** A Qframe extension with similar API and functionality like QToolBox. I needed some for
+  * flexibility (like a second icon at the right hand side of the title etc.). */
 class  SHARED_LIBRARY_STUFF UIToolBox : public QIWithRetranslateUI<QFrame>
 {
 
