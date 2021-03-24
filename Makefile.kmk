@@ -273,7 +273,7 @@ else # win x11
     # ugly but we need to prevent kBuild from hard-linking otherwise we
     # (indirectly) change the binaries in tools
     ifneq ($(KBUILD_TARGET),solaris)
-     QT5_VERSION = 5.15.2
+     QT5_VERSION = 5.6.3
     else
      QT5_VERSION = 5.6.2
     endif
