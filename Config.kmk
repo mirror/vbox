@@ -2315,7 +2315,7 @@ ifneq ($(KBUILD_TARGET),win)
    ifeq ($(KBUILD_HOST),solaris)
     VBOX_LIBIDL_CONFIG_FALLBACK = $(lastword $(wildcard $(KBUILD_DEVTOOLS)/solaris.amd64/libIDL/*/bin/libIDL-config-2))
    endif
-   export VBOX_LIBIDL_CONFIG := $(firstword $(which libIDL-config-2 libIDL-config $(VBOX_LIBIDL_CONFIG_FALLBACK)) libIDL-config-2-not-found)
+   export VBOX_LIBIDL_CONFIG := $(firstword $(which libIDL-config-2 libIDL-config) $(VBOX_LIBIDL_CONFIG_FALLBACK) libIDL-config-2-not-found)
   endif
  endif
 endif
