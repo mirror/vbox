@@ -1611,7 +1611,7 @@ EOF
       for q in $QT5DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v5.*; do
         echo "(Qt5 from '$q')" >> $LOG
         INCQT5="$q/include $q/include/QtCore"
-        FLGQT5="-DQT_SHARED"
+        FLGQT5="-DQT_SHARED -std=c++11"
         I_INCQT5=`prefix_I "$INCQT5"`
         LIBQT5="-L$q/lib -lQt5CoreVBox"
         TOOLQT5="$q"
