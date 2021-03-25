@@ -216,14 +216,11 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
 
     int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
-    if (RT_FAILURE(rc))
-    {
+    if (RT_SUCCESS(rc))
+        *pcbWritten = cbBuf;
+    else
         LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc));
-        return rc;
-    }
-
-    *pcbWritten = cbBuf;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

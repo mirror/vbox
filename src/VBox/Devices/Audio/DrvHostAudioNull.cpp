@@ -137,20 +137,12 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostNullAudioHA_GetStatus(PPDMIHOSTAU
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostNullAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                       const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-
     RT_NOREF(pInterface, pStream, pvBuf);
 
-    /* Note: No copying of samples needed here, as this a NULL backend. */
-
-    if (puWritten)
-        *puWritten = uBufSize; /* Return all bytes as written. */
-
+    /* The bitbucket never overflows. */
+    *pcbWritten = cbBuf;
     return VINF_SUCCESS;
 }
 
