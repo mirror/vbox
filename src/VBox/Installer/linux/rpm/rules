@@ -147,6 +147,12 @@ else
  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/packages/$(verpkg)\""
 endif
 
+ifeq ($(NOQT),)
+ ifeq ($(rpmrel),el7)
+  export PATH := /opt/rh/devtoolset-4/root/usr/bin:$(PATH)
+ endif
+endif
+
 # EL5 ships Python 2.4 while our Python support requires Python 2.6 or later
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(NOSDL),--disable-vboxsdl,) \
