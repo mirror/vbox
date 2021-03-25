@@ -975,6 +975,22 @@ static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS p
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestAddrWidths} */
+static DECLCALLBACK(void) pdmR3DevHlp_CpuGetGuestAddrWidths(PPDMDEVINS pDevIns, uint8_t *pcPhysAddrWidth,
+                                                            uint8_t *pcLinearAddrWidth)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_CpuGetGuestAddrWidths: caller='%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    AssertPtrReturnVoid(pcPhysAddrWidth);
+    AssertPtrReturnVoid(pcLinearAddrWidth);
+
+    CPUMGetGuestAddrWidths(pVM, pcPhysAddrWidth, pcLinearAddrWidth);
+
+    Log(("pdmR3DevHlp_CpuGetGuestAddrWidths: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysReadGCVirt} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
 {
@@ -4393,6 +4409,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
+    pdmR3DevHlp_CpuGetGuestAddrWidths,
     0,
     0,
     0,
@@ -4740,6 +4757,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
+    pdmR3DevHlp_CpuGetGuestAddrWidths,
     0,
     0,
     0,
@@ -5244,6 +5262,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
+    pdmR3DevHlp_CpuGetGuestAddrWidths,
     0,
     0,
     0,

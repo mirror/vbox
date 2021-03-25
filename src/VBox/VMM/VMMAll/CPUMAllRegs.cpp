@@ -1076,6 +1076,24 @@ VMMDECL(CPUMMICROARCH) CPUMGetGuestMicroarch(PCVM pVM)
 }
 
 
+/**
+ * Gets the maximum number of physical and linear address bits supported by the
+ * guest.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   pcPhysAddrWidth     Where to store the physical address width.
+ * @param   pcLinearAddrWidth   Where to store the linear address width.
+ */
+VMMDECL(void) CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidth, uint8_t *pcLinearAddrWidth)
+{
+    AssertPtr(pVM);
+    AssertReturnVoid(pcPhysAddrWidth);
+    AssertReturnVoid(pcLinearAddrWidth);
+    *pcPhysAddrWidth   = pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth;
+    *pcLinearAddrWidth = pVM->cpum.s.GuestFeatures.cMaxLinearAddrWidth;
+}
+
+
 VMMDECL(int) CPUMSetGuestDR0(PVMCPUCC pVCpu, uint64_t uDr0)
 {
     pVCpu->cpum.s.Guest.dr[0] = uDr0;

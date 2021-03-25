@@ -1480,6 +1480,7 @@ VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
 VMMDECL(CPUMMICROARCH)  CPUMGetGuestMicroarch(PCVM pVM);
+VMMDECL(void)           CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidth, uint8_t *pcLinearAddrWidth);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
 VMMDECL(CPUMMICROARCH)  CPUMGetHostMicroarch(PCVM pVM);
 /** @} */

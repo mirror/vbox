@@ -2348,7 +2348,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 46, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 47, 0)
 
 /**
  * PDM Device API.
@@ -4246,6 +4246,18 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(CPUMMICROARCH, pfnCpuGetGuestMicroarch,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the number of physical and linear address bits supported by the guest.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   pcPhysAddrWidth     Where to store the number of physical address bits
+     *                              supported by the guest.
+     * @param   pcLinearAddrWidth   Where to store the number of linear address bits
+     *                              supported by the guest.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnCpuGetGuestAddrWidths,(PPDMDEVINS pDevIns, uint8_t *pcPhysAddrWidth,
+                                                         uint8_t *pcLinearAddrWidth));
 
     /** Space reserved for future members.
      * @{ */
@@ -6636,6 +6648,14 @@ DECLINLINE(void) PDMDevHlpPhysBulkReleasePageMappingLocks(PPDMDEVINS pDevIns, ui
 DECLINLINE(CPUMMICROARCH) PDMDevHlpCpuGetGuestMicroarch(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestMicroarch(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnCpuGetGuestAddrWidths
+ */
+DECLINLINE(void) PDMDevHlpCpuGetGuestAddrWidths(PPDMDEVINS pDevIns, uint8_t *pcPhysAddrWidth, uint8_t *pcLinearAddrWidth)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestAddrWidths(pDevIns, pcPhysAddrWidth, pcLinearAddrWidth);
 }
 
 /**
