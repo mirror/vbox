@@ -585,6 +585,64 @@ int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
 }
 
 /**
+ * Creates a debug file structure and opens a file for it, extended version.
+ *
+ * @returns VBox status code.
+ * @param   ppFile      Where to return the debug file instance on success.
+ * @param   enmType     The file type.
+ * @param   pszDir      The directory to open the file in.
+ * @param   pszName     The base filename.
+ * @param   iInstance   The device/driver instance.
+ * @param   fFilename   PDMAUDIOFILENAME_FLAGS_XXX.
+ * @param   fCreate     PDMAUDIOFILE_FLAGS_XXX.
+ * @param   pProps      PCM audio properties for the file.
+ * @param   fOpen       RTFILE_O_XXX or PDMAUDIOFILE_DEFAULT_OPEN_FLAGS.
+ */
+int AudioHlpFileCreateAndOpenEx(PPDMAUDIOFILE *ppFile, PDMAUDIOFILETYPE enmType, const char *pszDir, const char *pszName,
+                                uint32_t iInstance, uint32_t fFilename, uint32_t fCreate,
+                                PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen)
+{
+    char szFile[RTPATH_MAX];
+    int rc = AudioHlpFileNameGet(szFile, sizeof(szFile), pszDir, pszName, iInstance, enmType, fFilename);
+    if (RT_SUCCESS(rc))
+    {
+        PPDMAUDIOFILE pFile = NULL;
+        rc = AudioHlpFileCreate(enmType, szFile, fCreate, &pFile);
+        if (RT_SUCCESS(rc))
+        {
+            rc = AudioHlpFileOpen(pFile, fOpen, pProps);
+            if (RT_SUCCESS(rc))
+            {
+                *ppFile = pFile;
+                return rc;
+            }
+            AudioHlpFileDestroy(pFile);
+        }
+    }
+    *ppFile = NULL;
+    return rc;
+}
+
+/**
+ * Creates a debug wav-file structure and opens a file for it, default flags.
+ *
+ * @returns VBox status code.
+ * @param   ppFile      Where to return the debug file instance on success.
+ * @param   pszDir      The directory to open the file in.
+ * @param   pszName     The base filename.
+ * @param   iInstance   The device/driver instance.
+ * @param   pProps      PCM audio properties for the file.
+ */
+int AudioHlpFileCreateAndOpen(PPDMAUDIOFILE *ppFile, const char *pszDir, const char *pszName,
+                              uint32_t iInstance, PCPDMAUDIOPCMPROPS pProps)
+{
+    return AudioHlpFileCreateAndOpenEx(ppFile, PDMAUDIOFILETYPE_WAV, pszDir, pszName, iInstance,
+                                       PDMAUDIOFILENAME_FLAGS_NONE, PDMAUDIOFILE_FLAGS_NONE,
+                                       pProps, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS);
+}
+
+
+/**
  * Closes an audio file.
  *
  * @returns IPRT status code.
