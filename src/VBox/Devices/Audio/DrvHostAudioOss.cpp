@@ -82,38 +82,14 @@ typedef struct OSSAUDIOSTREAM
     PPDMAUDIOSTREAMCFG pCfg;
     /** Buffer alignment. */
     uint8_t            uAlign;
-    union
-    {
-        struct
-        {
-
-        } In;
-        struct
-        {
-#ifndef RT_OS_L4
-            /** Whether we use a memory mapped file instead of our
-             *  own allocated PCM buffer below. */
-            /** @todo The memory mapped code seems to be utterly broken.
-             *        Needs investigation! */
-            bool       fMMIO;
-#endif
-        } Out;
-    };
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
-    /** Own PCM buffer. */
-    void              *pvBuf;
-    /** Size (in bytes) of own PCM buffer. */
-    size_t             cbBuf;
     int                old_optr;
 } OSSAUDIOSTREAM, *POSSAUDIOSTREAM;
 
 typedef struct OSSAUDIOCFG
 {
-#ifndef RT_OS_L4
-    bool try_mmap;
-#endif
     int nfrags;
     int fragsize;
     const char *devpath_out;
@@ -123,9 +99,6 @@ typedef struct OSSAUDIOCFG
 
 static OSSAUDIOCFG s_OSSConf =
 {
-#ifndef RT_OS_L4
-    false,
-#endif
     4,
     4096,
     "/dev/dsp",
@@ -338,9 +311,6 @@ static int ossControlStreamOut(PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            PDMAudioPropsClearBuffer(&pStreamOSS->pCfg->Props, pStreamOSS->pvBuf, pStreamOSS->cbBuf,
-                                     PDMAUDIOPCMPROPS_B2F(&pStreamOSS->pCfg->Props, pStreamOSS->cbBuf));
-
             int mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
             {
@@ -390,78 +360,45 @@ static DECLCALLBACK(int) drvHostOssAudioHA_Init(PPDMIHOSTAUDIO pInterface)
 static DECLCALLBACK(int) drvHostOssAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                          void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
-    RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
     POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
+    RT_NOREF(pInterface);
 
-    int rc = VINF_SUCCESS;
 
-    size_t cbToRead = RT_MIN(pStreamOSS->cbBuf, uBufSize);
-
+    size_t cbToRead = uBufSize;
     LogFlowFunc(("cbToRead=%zi\n", cbToRead));
 
-    uint32_t cbReadTotal = 0;
-    uint32_t cbTemp;
-    ssize_t  cbRead;
-    size_t   offWrite = 0;
-
-    while (cbToRead)
+    uint8_t * const pbDst    = (uint8_t *)pvBuf;
+    size_t          offWrite = 0;
+    while (cbToRead > 0)
     {
-        cbTemp = RT_MIN(cbToRead, pStreamOSS->cbBuf);
-        AssertBreakStmt(cbTemp, rc = VERR_NO_DATA);
-        cbRead = read(pStreamOSS->hFile, (uint8_t *)pStreamOSS->pvBuf, cbTemp);
-
-        LogFlowFunc(("cbRead=%zi, cbTemp=%RU32, cbToRead=%zu\n", cbRead, cbTemp, cbToRead));
-
-        if (cbRead < 0)
+        ssize_t cbRead = read(pStreamOSS->hFile, &pbDst[offWrite], cbToRead);
+        if (cbRead)
         {
-            switch (errno)
-            {
-                case 0:
-                {
-                    LogFunc(("Failed to read %z frames\n", cbRead));
-                    rc = VERR_ACCESS_DENIED;
-                    break;
-                }
-
-                case EINTR:
-                case EAGAIN:
-                    rc = VERR_NO_DATA;
-                    break;
-
-                default:
-                    LogFlowFunc(("Failed to read %zu input frames, rc=%Rrc\n", cbTemp, rc));
-                    rc = VERR_GENERAL_FAILURE; /** @todo Fix this. */
-                    break;
-            }
-
-            if (RT_FAILURE(rc))
-                break;
-        }
-        else if (cbRead)
-        {
-            memcpy((uint8_t *)pvBuf + offWrite, pStreamOSS->pvBuf, cbRead);
-
+            LogFlowFunc(("cbRead=%zi, offWrite=%zu cbToRead=%zu\n", cbRead, offWrite, cbToRead));
             Assert((ssize_t)cbToRead >= cbRead);
             cbToRead    -= cbRead;
             offWrite    += cbRead;
-            cbReadTotal += cbRead;
         }
-        else /* No more data, try next round. */
+        else
+        {
+            LogFunc(("cbRead=%zi, offWrite=%zu cbToRead=%zu errno=%d\n", cbRead, offWrite, cbToRead, errno));
+
+            /* Don't complain about errors if we've retrieved some audio data already.  */
+            if (cbRead < 0 && offWrite == 0 && errno != EINTR && errno != EAGAIN)
+            {
+                AssertStmt(errno != 0, errno = EACCES);
+                int rc = RTErrConvertFromErrno(errno);
+                LogFunc(("Failed to read %zu input frames, errno=%d rc=%Rrc\n", cbToRead, errno, rc));
+                return rc;
+            }
             break;
+        }
     }
 
-    if (rc == VERR_NO_DATA)
-        rc = VINF_SUCCESS;
-
-    if (RT_SUCCESS(rc))
-    {
-        if (puRead)
-            *puRead = cbReadTotal;
-    }
-
-    return rc;
+    if (puRead)
+        *puRead = offWrite;
+    return VINF_SUCCESS;
 }
 
 
@@ -470,16 +407,6 @@ static int ossDestroyStreamIn(PPDMAUDIOBACKENDSTREAM pStream)
     POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
 
     LogFlowFuncEnter();
-
-    if (pStreamOSS->pvBuf)
-    {
-        Assert(pStreamOSS->cbBuf);
-
-        RTMemFree(pStreamOSS->pvBuf);
-        pStreamOSS->pvBuf = NULL;
-    }
-
-    pStreamOSS->cbBuf = 0;
 
     ossStreamClose(&pStreamOSS->hFile);
 
@@ -490,39 +417,6 @@ static int ossDestroyStreamIn(PPDMAUDIOBACKENDSTREAM pStream)
 static int ossDestroyStreamOut(PPDMAUDIOBACKENDSTREAM pStream)
 {
     POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
-
-#ifndef RT_OS_L4
-    if (pStreamOSS->Out.fMMIO)
-    {
-        if (pStreamOSS->pvBuf)
-        {
-            Assert(pStreamOSS->cbBuf);
-
-            int rc2 = munmap(pStreamOSS->pvBuf, pStreamOSS->cbBuf);
-            if (rc2 == 0)
-            {
-                pStreamOSS->pvBuf      = NULL;
-                pStreamOSS->cbBuf      = 0;
-
-                pStreamOSS->Out.fMMIO  = false;
-            }
-            else
-                LogRel(("OSS: Failed to memory unmap playback buffer on close: %s\n", strerror(errno)));
-        }
-    }
-    else
-#endif
-    {
-        if (pStreamOSS->pvBuf)
-        {
-            Assert(pStreamOSS->cbBuf);
-
-            RTMemFree(pStreamOSS->pvBuf);
-            pStreamOSS->pvBuf = NULL;
-        }
-
-        pStreamOSS->cbBuf = 0;
-    }
 
     ossStreamClose(&pStreamOSS->hFile);
 
@@ -631,17 +525,7 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
 
             if (RT_SUCCESS(rc))
             {
-                size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, ossAcq.cFragments * ossAcq.cbFragmentSize);
-                void  *pvBuf = RTMemAlloc(cbBuf);
-                if (!pvBuf)
-                {
-                    LogRel(("OSS: Failed allocating capturing buffer with (%zu bytes)\n", cbBuf));
-                    rc = VERR_NO_MEMORY;
-                }
-
                 pStreamOSS->hFile = hFile;
-                pStreamOSS->pvBuf = pvBuf;
-                pStreamOSS->cbBuf = cbBuf;
 
                 pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cbFragmentSize);
                 pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering". */
@@ -661,114 +545,32 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
 
 static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    int rc;
+    OSSAUDIOSTREAMCFG reqStream;
+    RT_ZERO(reqStream);
+
+    memcpy(&reqStream.Props, &pCfgReq->Props, sizeof(PDMAUDIOPCMPROPS));
+    reqStream.cFragments     = s_OSSConf.nfrags;
+    reqStream.cbFragmentSize = s_OSSConf.fragsize;
+
+    OSSAUDIOSTREAMCFG obtStream;
+    RT_ZERO(obtStream);
+
     int hFile = -1;
-
-    do
+    int rc = ossStreamOpen(s_OSSConf.devpath_out, O_WRONLY, &reqStream, &obtStream, &hFile);
+    if (RT_SUCCESS(rc))
     {
-        OSSAUDIOSTREAMCFG reqStream;
-        RT_ZERO(reqStream);
+        memcpy(&pCfgAcq->Props, &obtStream.Props, sizeof(PDMAUDIOPCMPROPS));
 
-        OSSAUDIOSTREAMCFG obtStream;
-        RT_ZERO(obtStream);
+        if ((obtStream.cFragments * obtStream.cbFragmentSize) & pStreamOSS->uAlign)
+            LogRel(("OSS: Warning: Misaligned playback buffer: Size = %zu, Alignment = %u\n",
+                    obtStream.cFragments * obtStream.cbFragmentSize, pStreamOSS->uAlign + 1));
 
-        memcpy(&reqStream.Props, &pCfgReq->Props, sizeof(PDMAUDIOPCMPROPS));
+        pStreamOSS->hFile = hFile;
 
-        reqStream.cFragments     = s_OSSConf.nfrags;
-        reqStream.cbFragmentSize = s_OSSConf.fragsize;
+        pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cbFragmentSize);
+        pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering" */
 
-        rc = ossStreamOpen(s_OSSConf.devpath_out, O_WRONLY, &reqStream, &obtStream, &hFile);
-        if (RT_SUCCESS(rc))
-        {
-            memcpy(&pCfgAcq->Props, &obtStream.Props, sizeof(PDMAUDIOPCMPROPS));
-
-            if (obtStream.cFragments * obtStream.cbFragmentSize & pStreamOSS->uAlign)
-            {
-                LogRel(("OSS: Warning: Misaligned playback buffer: Size = %zu, Alignment = %u\n",
-                        obtStream.cFragments * obtStream.cbFragmentSize, pStreamOSS->uAlign + 1));
-            }
-        }
-
-        if (RT_SUCCESS(rc)) /** @todo r=bird: great code structure ... */
-        {
-            pStreamOSS->Out.fMMIO = false;
-
-            size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, obtStream.cFragments * obtStream.cbFragmentSize);
-            Assert(cbBuf);
-
-#ifndef RT_OS_L4
-            if (s_OSSConf.try_mmap)
-            {
-                pStreamOSS->pvBuf = mmap(0, cbBuf, PROT_READ | PROT_WRITE, MAP_SHARED, hFile, 0);
-                if (pStreamOSS->pvBuf == MAP_FAILED)
-                {
-                    LogRel(("OSS: Failed to memory map %zu bytes of playback buffer: %s\n", cbBuf, strerror(errno)));
-                    rc = RTErrConvertFromErrno(errno);
-                    break;
-                }
-                else
-                {
-                    int mask = 0;
-                    if (ioctl(hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
-                    {
-                        LogRel(("OSS: Failed to retrieve initial trigger mask for playback buffer: %s\n", strerror(errno)));
-                        rc = RTErrConvertFromErrno(errno);
-                        /* Note: No break here, need to unmap file first! */
-                    }
-                    else
-                    {
-                        mask = PCM_ENABLE_OUTPUT;
-                        if (ioctl (hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
-                        {
-                            LogRel(("OSS: Failed to retrieve PCM_ENABLE_OUTPUT mask: %s\n", strerror(errno)));
-                            rc = RTErrConvertFromErrno(errno);
-                            /* Note: No break here, need to unmap file first! */
-                        }
-                        else
-                        {
-                            pStreamOSS->Out.fMMIO = true;
-                            LogRel(("OSS: Using MMIO\n"));
-                        }
-                    }
-
-                    if (RT_FAILURE(rc))
-                    {
-                        int rc2 = munmap(pStreamOSS->pvBuf, cbBuf);
-                        if (rc2)
-                            LogRel(("OSS: Failed to memory unmap playback buffer: %s\n", strerror(errno)));
-                        break;
-                    }
-                }
-            }
-#endif /* !RT_OS_L4 */
-
-            /* Memory mapping failed above? Try allocating an own buffer. */
-#ifndef RT_OS_L4
-            if (!pStreamOSS->Out.fMMIO)
-            {
-#endif
-                void *pvBuf = RTMemAlloc(cbBuf);
-                if (!pvBuf)
-                {
-                    LogRel(("OSS: Failed allocating playback buffer with %zu bytes\n", cbBuf));
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-
-                pStreamOSS->hFile = hFile;
-                pStreamOSS->pvBuf = pvBuf;
-                pStreamOSS->cbBuf = cbBuf;
-#ifndef RT_OS_L4
-            }
-#endif
-            pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cbFragmentSize);
-            pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering" */
-        }
-
-    } while (0);
-
-    if (RT_FAILURE(rc))
-        ossStreamClose(&hFile);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -789,56 +591,29 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
      * Figure out now much to write.
      */
     uint32_t cbToWrite;
-#ifndef RT_OS_L4
-    count_info CountInfo = {0,0,0};
-    if (pStreamOSS->Out.fMMIO)
-    {
-        /* Get current playback pointer. */
-        int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOPTR, &CountInfo);
-        AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback pointer: %s (%d)\n", strerror(errno), errno),
-                              RTErrConvertFromErrno(errno));
-
-        int cbData;
-        if (CountInfo.ptr >= pStreamOSS->old_optr)
-            cbData = CountInfo.ptr - pStreamOSS->old_optr;
-        else
-            cbData = pStreamOSS->cbBuf + CountInfo.ptr - pStreamOSS->old_optr;
-        Assert(cbData >= 0);
-        cbToWrite = (unsigned)cbData;
-    }
-    else
-#endif
-    {
-        audio_buf_info abinfo;
-        int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
-        AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback buffer: %s (%d)\n", strerror(errno), errno),
-                              RTErrConvertFromErrno(errno));
+    audio_buf_info abinfo;
+    int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
+    AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback buffer: %s (%d)\n", strerror(errno), errno),
+                          RTErrConvertFromErrno(errno));
 
 #if 0   /** @todo r=bird: WTF do we make a fuss over abinfo.bytes for when we don't even use it?!? */
-        AssertLogRelMsgReturn(abinfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", abinfo.bytes), VERR_INTERNAL_ERROR_3);
-        if ((unsigned)abinfo.bytes > cbBuf)
-        {
-            LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, cbBuf, cbBuf));
-            abinfo.bytes = cbBuf;
-            /* Keep going. */
-        }
-#endif
-        cbToWrite = (unsigned)(abinfo.fragments * abinfo.fragsize);
+    AssertLogRelMsgReturn(abinfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", abinfo.bytes), VERR_INTERNAL_ERROR_3);
+    if ((unsigned)abinfo.bytes > cbBuf)
+    {
+        LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, cbBuf, cbBuf));
+        abinfo.bytes = cbBuf;
+        /* Keep going. */
     }
+#endif
+    cbToWrite = (unsigned)(abinfo.fragments * abinfo.fragsize);
     cbToWrite = RT_MIN(cbToWrite, cbBuf);
-    cbToWrite = RT_MIN(cbToWrite, pStreamOSS->cbBuf);
-
-    /*
-     * This is probably for the mmap functionality and not needed in the no-mmap case.
-     */
-    /** @todo skip for non-mmap?   */
-    uint8_t *pbBuf = (uint8_t *)memcpy(pStreamOSS->pvBuf, pvBuf, cbToWrite);
 
     /*
      * Write.
      */
-    uint32_t cbChunk  = cbToWrite;
-    uint32_t offChunk = 0;
+    uint8_t const *pbBuf    = (uint8_t const *)pvBuf;
+    uint32_t       cbChunk  = cbToWrite;
+    uint32_t       offChunk = 0;
     while (cbChunk > 0)
     {
         ssize_t cbWritten = write(pStreamOSS->hFile, &pbBuf[offChunk], RT_MIN(cbChunk, (unsigned)s_OSSConf.fragsize));
@@ -857,12 +632,6 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
             return RTErrConvertFromErrno(errno);
         }
     }
-
-#ifndef RT_OS_L4
-    /* Update read pointer. */
-    if (pStreamOSS->Out.fMMIO)
-        pStreamOSS->old_optr = CountInfo.ptr;
-#endif
 
     *pcbWritten = cbToWrite;
     return VINF_SUCCESS;
@@ -1012,45 +781,22 @@ static DECLCALLBACK(uint32_t) drvHostOssAudioHA_StreamGetWritable(PPDMIHOSTAUDIO
      *
      * The logic here must match what StreamPlay does.
      */
-    uint32_t cbWritable;
-#ifndef RT_OS_L4
-    count_info CountInfo = {0,0,0};
-    if (pStreamOSS->Out.fMMIO)
-    {
-        /* Get current playback pointer. */
-        int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOPTR, &CountInfo);
-        AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETOPTR failed: %s (%d)\n", strerror(errno), errno), 0);
-
-        int cbData;
-        if (CountInfo.ptr >= pStreamOSS->old_optr)
-            cbData = CountInfo.ptr - pStreamOSS->old_optr;
-        else
-            cbData = pStreamOSS->cbBuf + CountInfo.ptr - pStreamOSS->old_optr;
-        Assert(cbData >= 0);
-        cbWritable = (unsigned)cbData;
-    }
-    else
-#endif
-    {
-        audio_buf_info abinfo = { 0, 0, 0, 0 };
-        int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
-        AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETOSPACE failed: %s (%d)\n", strerror(errno), errno), 0);
+    audio_buf_info abinfo = { 0, 0, 0, 0 };
+    int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
+    AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETOSPACE failed: %s (%d)\n", strerror(errno), errno), 0);
 
 #if 0 /** @todo we could return abinfo.bytes here iff StreamPlay didn't use the fragmented approach */
-        /** @todo r=bird: WTF do we make a fuss over abinfo.bytes for when we don't even use it?!? */
-        AssertLogRelMsgReturn(abinfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", abinfo.bytes), VERR_INTERNAL_ERROR_3);
-        if ((unsigned)abinfo.bytes > cbBuf)
-        {
-            LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, cbBuf, cbBuf));
-            abinfo.bytes = cbBuf;
-            /* Keep going. */
-        }
+    /** @todo r=bird: WTF do we make a fuss over abinfo.bytes for when we don't even use it?!? */
+    AssertLogRelMsgReturn(abinfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", abinfo.bytes), VERR_INTERNAL_ERROR_3);
+    if ((unsigned)abinfo.bytes > cbBuf)
+    {
+        LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, cbBuf, cbBuf));
+        abinfo.bytes = cbBuf;
+        /* Keep going. */
+    }
 #endif
 
-        cbWritable = (uint32_t)(abinfo.fragments * abinfo.fragsize);
-    }
-    cbWritable = RT_MIN(cbWritable, pStreamOSS->cbBuf);
-    return cbWritable;
+    return (uint32_t)(abinfo.fragments * abinfo.fragsize);
 }
 
 
