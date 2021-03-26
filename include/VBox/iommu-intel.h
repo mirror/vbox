@@ -1800,7 +1800,7 @@ typedef struct ACPIDRHD
     uint16_t        uType;
     /** Length (must be 16 + size of device scope structure). */
     uint16_t        cbLength;
-    /** Flags, see ACPI_DMAR_F_XXX. */
+    /** Flags, see ACPI_DRHD_F_XXX. */
     uint8_t         fFlags;
     /** Reserved (MBZ). */
     uint8_t         bRsvd;
