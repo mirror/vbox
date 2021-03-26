@@ -2348,7 +2348,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 47, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 47, 1)
 
 /**
  * PDM Device API.
@@ -4261,7 +4261,16 @@ typedef struct PDMDEVHLPR3
 
     /** Space reserved for future members.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
+    /**
+     * Deregister zero or more samples given their name prefix.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pszPrefix   The name prefix of the samples to remove.  If this does
+     *                      not start with a '/', the default prefix will be
+     *                      prepended, otherwise it will be used as-is.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSTAMDeregisterByPrefix,(PPDMDEVINS pDevIns, const char *pszPrefix));
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
@@ -6851,6 +6860,14 @@ DECLINLINE(void) RT_IPRT_FORMAT_ATTR(7, 8) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDe
     va_start(va, pszName);
     pDevIns->pHlpR3->pfnSTAMRegisterV(pDevIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
     va_end(va);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSTAMDeregisterByPrefix
+ */
+DECLINLINE(int) PDMDevHlpSTAMDeregisterByPrefix(PPDMDEVINS pDevIns, const char *pszPrefix)
+{
+    return pDevIns->pHlpR3->pfnSTAMDeregisterByPrefix(pDevIns, pszPrefix);
 }
 
 /**
