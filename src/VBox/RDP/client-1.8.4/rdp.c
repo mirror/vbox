@@ -38,28 +38,11 @@
 
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
-
-#if defined(RT_OS_SOLARIS) && !defined(_XPG6)
-# define VBOX_XPG6_TMP_DEF
-# define _XPG6
-#endif
-#if defined(RT_OS_SOLARIS) && defined(__USE_LEGACY_PROTOTYPES__)
-# define VBOX_LEGACY_PROTO_TMP_DEF
-# undef __USE_LEGACY_PROTOTYPES__
-#endif
 #include <iconv.h>
-#if defined(VBOX_XPG6_TMP_DEF)
-# undef _XPG6
-# undef VBOX_XPG6_TMP_DEF
-#endif
-#if defined(VBOX_LEGACY_PROTO_TMP_DEF)
-# define  __USE_LEGACY_PROTOTYPES__
-# undef VBOX_LEGACY_PROTO_TMP_DEF
 #endif
 
 #ifndef ICONV_CONST
 #define ICONV_CONST ""
-#endif
 #endif
 #endif
 
@@ -728,12 +711,12 @@ rdp_out_general_caps(STREAM s)
 	out_uint16(s, 0);	/* Pad */
 	out_uint16(s, 0);	/* Compression types */
 	out_uint16_le(s, (g_rdp_version >= RDP_V5) ? 0x40d : 0);
-	/* Pad, according to T.128. 0x40d seems to 
+	/* Pad, according to T.128. 0x40d seems to
 	   trigger
-	   the server to start sending RDP5 packets. 
+	   the server to start sending RDP5 packets.
 	   However, the value is 0x1d04 with W2KTSK and
 	   NT4MS. Hmm.. Anyway, thankyou, Microsoft,
-	   for sending such information in a padding 
+	   for sending such information in a padding
 	   field.. */
 	out_uint16(s, 0);	/* Update capability */
 	out_uint16(s, 0);	/* Remote unshare capability */

@@ -38,10 +38,12 @@
 # pragma D depends_on library vbox-types.d
 #endif
 
-/* Workaround for Solaris sys/regset.h defining CS, DS */
+/** Workaround for Solaris sys/regset.h defining CS, DS and sys/controlregs.h
+ * defining MSR_IA32_FLUSH_CMD */
 #ifdef RT_OS_SOLARIS
 # undef CS
 # undef DS
+# undef MSR_IA32_FLUSH_CMD
 #endif
 
 /** @defgroup grp_rt_x86   x86 Types and Definitions

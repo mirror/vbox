@@ -187,7 +187,7 @@ int
 utils_locale_to_utf8(const char *src, size_t is, char *dest, size_t os)
 {
 #ifdef HAVE_ICONV
-	static iconv_t *iconv_h = (iconv_t) - 1;
+	static iconv_t iconv_h = (iconv_t) - 1;
 	if (strncmp(g_codepage, "UTF-8", strlen("UTF-8")) == 0)
 		goto pass_trough_as_is;
 

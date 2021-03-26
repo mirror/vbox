@@ -62,9 +62,9 @@ static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
      * Get the instance number from the interface name, then clip it off.
      */
     int cbInstance = 0;
-    int cbIface = strlen(pszIfaceName);
+    size_t cbIface = strlen(pszIfaceName);
     const char *pszEnd = pszIfaceName + cbIface - 1;
-    for (int i = 0; i < cbIface - 1; i++)
+    for (size_t i = 0; i < cbIface - 1; i++)
     {
         if (!RT_C_IS_DIGIT(*pszEnd))
             break;
@@ -332,9 +332,9 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
      * Get the instance number from the interface name, then clip it off.
      */
     int cbInstance = 0;
-    int cbIface = strlen(szIfaceName);
+    size_t cbIface = strlen(szIfaceName);
     const char *pszEnd = pszIface + cbIface - 1;
-    for (int i = 0; i < cbIface - 1; i++)
+    for (size_t i = 0; i < cbIface - 1; i++)
     {
         if (!RT_C_IS_DIGIT(*pszEnd))
             break;
