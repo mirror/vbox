@@ -1689,6 +1689,7 @@ typedef struct PDMIHOSTAUDIO
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @deprecated Just stub this and do the real work in the driver constructor.
      */
     DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
 
@@ -1697,6 +1698,7 @@ typedef struct PDMIHOSTAUDIO
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @deprecated Just stub this and do the real work in the driver destructor.
      */
     DECLR3CALLBACKMEMBER(void, pfnShutdown, (PPDMIHOSTAUDIO pInterface));
 

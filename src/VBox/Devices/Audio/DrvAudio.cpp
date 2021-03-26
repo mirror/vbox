@@ -470,7 +470,7 @@ static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface,
 /**
  * Controls an audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to control.
  * @param   enmStreamCmd        Control command.
@@ -578,7 +578,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
  * Controls a stream's backend.
  * If the stream has no backend available, VERR_NOT_FOUND is returned.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to control.
  * @param   enmStreamCmd        Control command.
@@ -709,7 +709,7 @@ static void drvAudioStreamFree(PPDMAUDIOSTREAM pStream)
  * Schedules a re-initialization of all current audio streams.
  * The actual re-initialization will happen at some later point in time.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  */
 static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
@@ -737,13 +737,15 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
 /**
- * Re-initializes an audio stream with its existing host and guest stream configuration.
- * This might be the case if the backend told us we need to re-initialize because something
- * on the host side has changed.
+ * Re-initializes an audio stream with its existing host and guest stream
+ * configuration.
  *
- * Note: Does not touch the stream's status flags.
+ * This might be the case if the backend told us we need to re-initialize
+ * because something on the host side has changed.
  *
- * @returns IPRT status code.
+ * @note    Does not touch the stream's status flags.
+ *
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to re-initialize.
  */
@@ -1139,7 +1141,7 @@ static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
  * This function gives the backend the chance of iterating / altering data and
  * does the actual mixing between the guest <-> host mixing buffers.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to iterate.
  */
@@ -1515,7 +1517,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
 /**
  * Captures non-interleaved input from a host stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pStream             Stream to capture from.
  * @param   pcfCaptured         Number of (host) audio frames captured. Optional.
@@ -1619,7 +1621,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
  *
  * Needed for e.g. the VRDP audio backend (in Main).
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pStream             Stream to capture from.
  * @param   pcfCaptured         Number of (host) audio frames captured. Optional.
@@ -1934,7 +1936,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
  *
  * @note Must not hold the driver's critical section!
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance to be called.
  * @param   fLog                Whether to print the enumerated device to the release log or not.
  * @param   pDevEnum            Where to store the device enumeration.
@@ -2011,8 +2013,39 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 static int drvAudioHostInit(PDRVAUDIO pThis)
 {
     LogFlowFuncEnter();
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
+    /*
+     * Check the function pointers, make sure the ones we define as
+     * mandatory are present.
+     */
+    PPDMIHOSTAUDIO pHostDrvAudio = pThis->pHostDrvAudio;
+    AssertPtrReturn(pHostDrvAudio, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnInit, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnShutdown, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnSetCallback, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetReadable, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetWritable, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamGetPending, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetStatus, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamIterate, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamPlayBegin, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamPlay, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamPlayEnd, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamCaptureBegin, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamCapture, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamCaptureEnd, VERR_INVALID_POINTER);
+
+    /*
+     * Call the init method.
+     */
+    /** @todo r=bird: This is superfluous.  This duplicates the driver
+     *        constructor code.  Just get rid of it!! */
     AssertPtr(pThis->pHostDrvAudio);
     int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
     if (RT_FAILURE(rc))
@@ -2036,10 +2069,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
 
     LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
 
-    LogRel2(("Audio: Host driver '%s' supports %RU32 input streams and %RU32 output streams at once\n",
-             pThis->szName,
-             /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
-             RT_MIN(64, pThis->In.cStreamsFree), RT_MIN(64, pThis->Out.cStreamsFree)));
+    LogRel2(("Audio: Host driver '%s' supports %RU32 input streams and %RU32 output streams at once.\n",
+             pThis->szName, pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
 
 #ifdef VBOX_WITH_AUDIO_ENUM
     int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
@@ -2088,7 +2119,9 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
     {
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
+        {
             drvAudioStreamControlInternal(pThis, pStream, enmCmd);
+        }
     }
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -2452,7 +2485,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
 /**
  * Worker for drvAudioStreamCreate that initializes the audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to initialize.
  * @param   pCfgHost            Stream configuration to use for the host side (backend).
@@ -3089,54 +3122,12 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
 }
 
 /**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamDestroy}
- */
-static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
-{
-    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
-    AssertPtr(pThis);
-
-    if (!pStream)
-        return VINF_SUCCESS;
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    Assert(pStream->uMagic == PDMAUDIOSTREAM_MAGIC);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
-    LogRel2(("Audio: Destroying stream '%s'\n", pStream->szName));
-
-    LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
-    if (pStream->cRefs <= 1)
-    {
-        rc = drvAudioStreamUninitInternal(pThis, pStream);
-        if (RT_SUCCESS(rc))
-        {
-            if (pStream->enmDir == PDMAUDIODIR_IN)
-                pThis->In.cStreamsFree++;
-            else /* Out */
-                pThis->Out.cStreamsFree++;
-
-            RTListNodeRemove(&pStream->ListEntry);
-
-            drvAudioStreamFree(pStream);
-            pStream = NULL;
-        }
-        else
-            LogRel(("Audio: Uninitializing stream '%s' failed with %Rrc\n", pStream->szName, rc));
-    }
-    else
-        rc = VERR_WRONG_ORDER;
-
-    RTCritSectLeave(&pThis->CritSect);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Calls the backend to give it the chance to destroy its part of the audio stream.
  *
- * @returns IPRT status code.
+ * Called from drvAudioPowerOff, drvAudioStreamUninitInternal and
+ * drvAudioStreamReInitInternal.
+ *
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Audio stream destruct backend for.
  */
@@ -3169,11 +3160,14 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 }
 
 /**
- * Uninitializes an audio stream.
+ * Uninitializes an audio stream - worker for drvAudioStreamDestroy,
+ * drvAudioDestruct and drvAudioStreamCreate.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Pointer to audio stream to uninitialize.
+ *
+ * @note    Caller owns the critical section.
  */
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 {
@@ -3225,8 +3219,9 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
             pStream->In.Dbg.pFileStreamRead = NULL;
         }
     }
-    else if (pStream->enmDir == PDMAUDIODIR_OUT)
+    else
     {
+        Assert(pStream->enmDir == PDMAUDIODIR_OUT);
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalFramesPlayed);
         PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalTimesPlayed);
@@ -3242,10 +3237,54 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
             pStream->Out.Dbg.pFileStreamWrite = NULL;
         }
     }
-    else
-        AssertFailed();
 
     LogFlowFunc(("Returning %Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamDestroy}
+ */
+static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+{
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
+
+    if (!pStream)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    Assert(pStream->uMagic == PDMAUDIOSTREAM_MAGIC);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    LogRel2(("Audio: Destroying stream '%s'\n", pStream->szName));
+
+    LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
+    AssertMsg(pStream->cRefs <= 1, ("%u %s\n", pStream->cRefs, pStream->szName));
+    if (pStream->cRefs <= 1)
+    {
+        rc = drvAudioStreamUninitInternal(pThis, pStream);
+        if (RT_SUCCESS(rc))
+        {
+            if (pStream->enmDir == PDMAUDIODIR_IN)
+                pThis->In.cStreamsFree++;
+            else /* Out */
+                pThis->Out.cStreamsFree++;
+
+            RTListNodeRemove(&pStream->ListEntry);
+
+            drvAudioStreamFree(pStream);
+            pStream = NULL;
+        }
+        else
+            LogRel(("Audio: Uninitializing stream '%s' failed with %Rrc\n", pStream->szName, rc));
+    }
+    else
+        rc = VERR_WRONG_ORDER;
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -3286,27 +3325,30 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
 
     LogFlowFuncEnter();
 
-    if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
-        return;
-
-    /* Just destroy the host stream on the backend side.
-     * The rest will either be destructed by the device emulation or
-     * in drvAudioDestruct(). */
-    PPDMAUDIOSTREAM pStream;
-    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
+    /** @todo locking?   */
+    if (pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
     {
-        drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
-        drvAudioStreamDestroyInternalBackend(pThis, pStream);
+        /*
+         * Just destroy the host stream on the backend side.
+         * The rest will either be destructed by the device emulation or
+         * in drvAudioDestruct().
+         */
+        PPDMAUDIOSTREAM pStream;
+        RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
+        {
+            drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
+            drvAudioStreamDestroyInternalBackend(pThis, pStream);
+        }
+
+        /*
+         * Last call for the driver below us.
+         * Let it know that we reached end of life.
+         */
+        if (pThis->pHostDrvAudio->pfnShutdown)
+            pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
+
+        pThis->pHostDrvAudio = NULL;
     }
-
-    /*
-     * Last call for the driver below us.
-     * Let it know that we reached end of life.
-     */
-    if (pThis->pHostDrvAudio->pfnShutdown)
-        pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
-
-    pThis->pHostDrvAudio = NULL;
 
     LogFlowFuncLeave();
 }
@@ -3361,12 +3403,14 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
              * If everything went well, initialize the lower driver.
              */
             rc = drvAudioHostInit(pThis);
+            if (RT_FAILURE(rc))
+                pThis->pHostDrvAudio = NULL;
         }
         else
         {
             LogRel(("Audio: Failed to query interface for underlying host driver '%s'\n", pThis->szName));
             rc = PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
-                                  N_("Host audio backend missing or invalid"));
+                                  N_("The host audio driver does not implement PDMIHOSTAUDIO!"));
         }
     }
 
