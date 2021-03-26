@@ -1238,7 +1238,13 @@ endif
 # For the docs build box.
 #
 ifdef VBOX_ONLY_DOCS
- VBOX_WITH_DOCS_CHM = 1
+ # Phase out the .chm docs
+ VBOX_WITH_DOCS_CHM =
+ # Always produce HTML docs (for publishing on website as part of release)
+ VBOX_WITH_DOCS_HTML = 1
+ # Always produce QHelp docs (for help in the UI, replacing CHM)
+ VBOX_WITH_DOCS_QHELP = 1
+ VBOX_WITH_TOOLS_QT_LINUX = 1
 endif
 
 #
