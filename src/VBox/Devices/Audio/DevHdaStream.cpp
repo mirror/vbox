@@ -190,6 +190,8 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
     {
         RTCircBufDestroy(pStreamR3->State.pCircBuf);
         pStreamR3->State.pCircBuf = NULL;
+        pStreamR3->State.StatDmaBufSize = 0;
+        pStreamR3->State.StatDmaBufUsed = 0;
     }
 
 #ifdef DEBUG
@@ -691,6 +693,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     {
         RTCircBufDestroy(pStreamR3->State.pCircBuf);
         pStreamR3->State.pCircBuf = NULL;
+        pStreamR3->State.StatDmaBufSize = 0;
+        pStreamR3->State.StatDmaBufUsed = 0;
     }
     pStreamR3->State.offWrite = 0;
     pStreamR3->State.offRead  = 0;
@@ -749,6 +753,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
         if (RT_SUCCESS(rc))
         {
+            pStreamR3->State.StatDmaBufSize = cbCircBuf;
+
             /*
              * Forward the timer frequency hint to TM as well for better accuracy on
              * systems w/o preemption timers (also good for 'info timers').
@@ -1215,9 +1221,10 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The shared HDA device state.
- * @param   pStreamShared   HDA stream to update (shared).
+ * @param   pStreamShared   The HDA stream (shared).
+ * @param   pStreamR3       The HDA stream (ring-3).
  */
-DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared)
+DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 {
     /*
      * Clear the (pointless) FIFORDY bit again.
@@ -1231,6 +1238,11 @@ DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, P
      * actually have.
      */
     pStreamShared->State.tsTransferLast = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
+
+    /*
+     * Update the buffer statistics.
+     */
+    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
 }
 
 /**
@@ -1512,7 +1524,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared, pStreamR3);
 
     /*
      * Log and leave.
@@ -1595,6 +1607,9 @@ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStr
         Assert(cbRead <= cbSinkReadable);
         cbSinkReadable -= cbRead;
     }
+
+    /* Update buffer stats. */
+    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
 }
 
 /**
@@ -1796,7 +1811,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared, pStreamR3);
 
     /*
      * Log and leave.
@@ -1862,6 +1877,12 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
         cbToReadFromStream -= cbWritten;
     }
 
+    /* Update buffer stats. */
+    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
+
+    /*
+     * Push the stuff thru the mixer jungle and down the host audio driver (backend).
+     */
     int rc2 = AudioMixerSinkUpdate(pSink);
     AssertRC(rc2);
 }

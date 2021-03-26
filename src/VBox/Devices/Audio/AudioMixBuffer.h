@@ -53,13 +53,12 @@
 #define AUDIOMIXBUF_F2F_RATIO(a_pMixBuf, a_cFrames) (((int64_t)(a_cFrames) << 32) / (a_pMixBuf)->iFreqRatio)
 
 
-inline uint32_t AudioMixBufBytesToSamples(PPDMAUDIOMIXBUF pMixBuf);
+int     AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
+void    AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf);
-void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear);
 uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf);
-int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf);
 int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent);
 uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf);

@@ -1963,12 +1963,9 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps
         Assert(cToWrite);
 
         PDMAUDMIXBUFCONVOPTS convOpts;
-        RT_ZERO(convOpts);
-
         convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
         convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
         convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
-
         convOpts.cFrames = cToWrite;
 
         cWritten = pfnConvFrom(pMixBuf->pFrames + pMixBuf->offWrite,

@@ -1427,6 +1427,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         if (cbWritable > pStream->Out.cbBackendMaxWritable)
             pStream->Out.cbBackendMaxWritable = cbWritable;
     }
+    pStream->Out.Stats.cbBackendWritableBefore = cbWritable;
 
     /*
      * Figure out how much to play now.
@@ -1457,6 +1458,8 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
             pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pStream->pvBackend);
 
         pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
+        pStream->Out.Stats.cbBackendWritableAfter = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio,
+                                                                                               pStream->pvBackend);
     }
     else
         rc = VINF_SUCCESS;
@@ -2645,39 +2648,59 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
     /*
      * Register statistics.
      */
+    PPDMDRVINS const pDrvIns = pThis->pDrvIns;
+    /** @todo expose config and more. */
+    if (pCfgGuest->enmDir == PDMAUDIODIR_OUT)
+    {
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableBefore, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Free space in backend buffer before play",  "%s/HostBackedBufFreeBefore", pStream->szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableAfter, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Free space in backend buffer after play",   "%s/HostBackedBufFreeAfter", pStream->szName);
+    }
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.Cfg.Backend.cFramesBufferSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Host side: The size of the backend buffer (in frames)", "%s/HostBackedBufSize", pStream->szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Host side: The size of the mixer buffer (in frames)",   "%s/HostMixBufSize", pStream->szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Host side: Number of frames in the mixer buffer",       "%s/HostMixBufUsed", pStream->szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Guest side: The size of the mixer buffer (in frames)",  "%s/GuestMixBufSize", pStream->szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Guest side: Number of frames in the mixer buffer",      "%s/GuestMixBufUsed", pStream->szName);
+
 #ifdef VBOX_WITH_STATISTICS
     char szStatName[255];
     if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
     {
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalFramesCaptured", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->In.Stats.TotalFramesCaptured,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->In.Stats.TotalFramesCaptured,
                                   szStatName, STAMUNIT_COUNT, "Total frames played.");
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalTimesCaptured", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->In.Stats.TotalTimesCaptured,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->In.Stats.TotalTimesCaptured,
                                   szStatName, STAMUNIT_COUNT, "Total number of playbacks.");
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalFramesRead", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->In.Stats.TotalFramesRead,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->In.Stats.TotalFramesRead,
                                   szStatName, STAMUNIT_COUNT, "Total frames read.");
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalTimesRead", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->In.Stats.TotalTimesRead,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->In.Stats.TotalTimesRead,
                                   szStatName, STAMUNIT_COUNT, "Total number of reads.");
     }
     else
     {
         Assert(pCfgGuest->enmDir == PDMAUDIODIR_OUT);
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalFramesPlayed", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->Out.Stats.TotalFramesPlayed,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->Out.Stats.TotalFramesPlayed,
                                   szStatName, STAMUNIT_COUNT, "Total frames played.");
 
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalTimesPlayed", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->Out.Stats.TotalTimesPlayed,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->Out.Stats.TotalTimesPlayed,
                                   szStatName, STAMUNIT_COUNT, "Total number of playbacks.");
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalFramesWritten", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->Out.Stats.TotalFramesWritten,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->Out.Stats.TotalFramesWritten,
                                   szStatName, STAMUNIT_COUNT, "Total frames written.");
 
         RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/TotalTimesWritten", pStream->szName);
-        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pStream->Out.Stats.TotalTimesWritten,
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pStream->Out.Stats.TotalTimesWritten,
                                   szStatName, STAMUNIT_COUNT, "Total number of writes.");
     }
 #endif /* VBOX_WITH_STATISTICS */
@@ -3202,13 +3225,14 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
         pStream->fStatus = PDMAUDIOSTREAMSTS_FLAGS_NONE;
     }
 
+    PPDMDRVINS const pDrvIns = pThis->pDrvIns;
     if (pStream->enmDir == PDMAUDIODIR_IN)
     {
 #ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->In.Stats.TotalFramesCaptured);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->In.Stats.TotalTimesCaptured);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->In.Stats.TotalFramesRead);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->In.Stats.TotalTimesRead);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->In.Stats.TotalFramesCaptured);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->In.Stats.TotalTimesCaptured);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->In.Stats.TotalFramesRead);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->In.Stats.TotalTimesRead);
 #endif
         if (pThis->In.Cfg.Dbg.fEnabled)
         {
@@ -3223,10 +3247,10 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     {
         Assert(pStream->enmDir == PDMAUDIODIR_OUT);
 #ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalFramesPlayed);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalTimesPlayed);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalFramesWritten);
-        PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pStream->Out.Stats.TotalTimesWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.TotalFramesPlayed);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.TotalTimesPlayed);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.TotalFramesWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.TotalTimesWritten);
 #endif
         if (pThis->Out.Cfg.Dbg.fEnabled)
         {
@@ -3236,7 +3260,14 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
             AudioHlpFileDestroy(pStream->Out.Dbg.pFileStreamWrite);
             pStream->Out.Dbg.pFileStreamWrite = NULL;
         }
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.cbBackendWritableAfter);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.cbBackendWritableBefore);
     }
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.Cfg.Backend.cFramesBufferSize);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cFrames);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cUsed);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cFrames);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cUsed);
 
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;

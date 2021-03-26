@@ -85,6 +85,8 @@ typedef struct AUDMIXSTREAM
     RTLISTNODE              Node;
     /** Name of this stream. */
     char                   *pszName;
+    /** The statistics prefix. */
+    char                   *pszStatPrefix;
     /** The streams's critical section. */
     RTCRITSECT              CritSect;
     /** Sink this stream is attached to. */
@@ -102,6 +104,10 @@ typedef struct AUDMIXSTREAM
     /** The stream's circular buffer for temporarily
      *  holding (raw) device audio data. */
     PRTCIRCBUF              pCircBuf;
+    /** Stats: Number of bytes used in the circular buffer. */
+    uint32_t                StatsCircBufUsed;
+    /** Stats: Size of circular buffer. */
+    uint32_t                StatsCircBufSize;
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
 
 /** Defines an audio sink's current status. */
@@ -258,17 +264,18 @@ typedef enum AUDMIXOP
 #define AUDMIXER_FLAGS_VALID_MASK       UINT32_C(0x00000001)
 
 int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
-int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
-void AudioMixerDestroy(PAUDIOMIXER pMixer);
+int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
+void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
-int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, AUDMIXSTREAMFLAGS fFlags, PAUDMIXSTREAM *ppStream);
+int     AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg,
+                                   AUDMIXSTREAMFLAGS fFlags, PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream);
 int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd);
-void AudioMixerSinkDestroy(PAUDMIXSINK pSink);
+void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
 AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
@@ -290,7 +297,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
 
 int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
-void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream);
+void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pStream);
 bool AudioMixerStreamIsValid(PAUDMIXSTREAM pStream);
 

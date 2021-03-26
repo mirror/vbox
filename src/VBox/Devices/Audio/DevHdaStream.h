@@ -315,6 +315,10 @@ typedef struct HDASTREAMR3
         /** Asynchronous I/O state members. */
         HDASTREAMSTATEAIO       AIO;
 #endif
+        /** Size of the DMA buffer (pCircBuf) in bytes. */
+        uint32_t                StatDmaBufSize;
+        /** Number of used bytes in the DMA buffer (pCircBuf). */
+        uint32_t                StatDmaBufUsed;
         /** Counter for all under/overflows problems. */
         STAMCOUNTER             StatDmaFlowProblems;
         /** Counter for unresovled under/overflows problems. */
@@ -324,7 +328,7 @@ typedef struct HDASTREAMR3
     } State;
     /** Debug bits. */
     HDASTREAMDEBUG              Dbg;
-    uint64_t                    au64Alignment[2];
+    uint64_t                    au64Alignment[1];
 } HDASTREAMR3;
 AssertCompileSizeAlignment(HDASTREAMR3, 64);
 /** Pointer to an HDA stream (SDI / SDO).  */

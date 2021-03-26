@@ -1033,9 +1033,8 @@ typedef struct PDMAUDIOMIXBUF
      * @note Count always is specified in parent frames, as the sample count can
      *       differ between parent and child.  */
     uint32_t                    cMixed;
-    /** How much audio frames are currently being used
-     *  in this buffer.
-     *  Note: This also is known as the distance in ring buffer terms. */
+    /** How much audio frames are currently being used in this buffer.
+     * @note This also is known as the distance in ring buffer terms. */
     uint32_t                    cUsed;
     /** Number of children mix buffers kept in lstChildren. */
     uint32_t                    cChildren;
@@ -1239,6 +1238,8 @@ typedef struct PDMAUDIOSTREAMOUT
         STAMCOUNTER     TotalFramesWritten;
         STAMCOUNTER     AvgFramesWritten;
         STAMCOUNTER     TotalTimesWritten;
+        uint32_t        cbBackendWritableBefore;
+        uint32_t        cbBackendWritableAfter;
     } Stats;
     /** Hack alert: Max writable amount reported by the backend.
      * This is used to aid buffer underrun detection in DrvAudio while playing.
@@ -1523,6 +1524,8 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pCfgHost        Stream configuration for host side.
      * @param   pCfgGuest       Stream configuration for guest side.
      * @param   ppStream        Pointer where to return the created audio stream on success.
+     * @todo r=bird: It is not documented how pCfgHost and pCfgGuest can be
+     *       modified the DrvAudio...
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost,
                                                 PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream));

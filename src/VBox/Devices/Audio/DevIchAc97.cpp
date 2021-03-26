@@ -681,7 +681,8 @@ typedef AC97STATER3 *PAC97STATER3;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
-static int                ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce);
+static int                ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
+                                              PAC97STREAMR3 pStreamCC, bool fForce);
 static int                ichac97R3StreamClose(PAC97STREAM pStream);
 static void               ichac97R3StreamLock(PAC97STREAMR3 pStreamCC);
 static void               ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC);
@@ -694,8 +695,8 @@ static void               ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE p
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 
-static void               ichac97R3MixerRemoveDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir,
-                                                         PDMAUDIODSTSRCUNION dstSrc);
+static void               ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
+                                                         PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc);
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC);
@@ -967,15 +968,16 @@ static bool ichac97R3StreamIsEnabled(PAC97STATER3 pThisCC, PAC97STREAM pStream)
  * Enables or disables an AC'97 audio stream.
  *
  * @returns VBox status code.
- * @param   pThis               The shared AC'97 state.
- * @param   pThisCC             The ring-3 AC'97 state.
- * @param   pStream             The AC'97 stream to enable or disable (shared
- *                              state).
- * @param   pStreamCC           The ring-3 stream state (matching to @a pStream).
- * @param   fEnable             Whether to enable or disable the stream.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared AC'97 state.
+ * @param   pThisCC     The ring-3 AC'97 state.
+ * @param   pStream     The AC'97 stream to enable or disable (shared
+ *                      state).
+ * @param   pStreamCC   The ring-3 stream state (matching to @a pStream).
+ * @param   fEnable     Whether to enable or disable the stream.
  *
  */
-static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STATER3 pThisCC,
+static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
                                  PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fEnable)
 {
     ichac97R3StreamLock(pStreamCC);
@@ -994,7 +996,7 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STATER3 pThisCC,
         if (pStreamCC->State.pCircBuf)
             RTCircBufReset(pStreamCC->State.pCircBuf);
 
-        rc = ichac97R3StreamOpen(pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
+        rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
 
         if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
         { /* likely */ }
@@ -1175,10 +1177,11 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream, PAC97S
 /**
  * Destroys all AC'97 audio streams of the device.
  *
- * @param   pThis               The shared AC'97 state.
- * @param   pThisCC             The ring-3 AC'97 state.
+ * @param   pDevIns     The device AC'97 instance.
+ * @param   pThis       The shared AC'97 state.
+ * @param   pThisCC     The ring-3 AC'97 state.
  */
-static void ichac97R3StreamsDestroy(PAC97STATE pThis, PAC97STATER3 pThisCC)
+static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC)
 {
     LogFlowFuncEnter();
 
@@ -1196,27 +1199,27 @@ static void ichac97R3StreamsDestroy(PAC97STATE pThis, PAC97STATER3 pThisCC)
     if (pThisCC->pSinkLineIn)
     {
         dstSrc.enmSrc = PDMAUDIORECSRC_LINE;
-        ichac97R3MixerRemoveDrvStreams(pThisCC, pThisCC->pSinkLineIn, PDMAUDIODIR_IN, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkLineIn, PDMAUDIODIR_IN, dstSrc);
 
-        AudioMixerSinkDestroy(pThisCC->pSinkLineIn);
+        AudioMixerSinkDestroy(pThisCC->pSinkLineIn, pDevIns);
         pThisCC->pSinkLineIn = NULL;
     }
 
     if (pThisCC->pSinkMicIn)
     {
         dstSrc.enmSrc = PDMAUDIORECSRC_MIC;
-        ichac97R3MixerRemoveDrvStreams(pThisCC, pThisCC->pSinkMicIn, PDMAUDIODIR_IN, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkMicIn, PDMAUDIODIR_IN, dstSrc);
 
-        AudioMixerSinkDestroy(pThisCC->pSinkMicIn);
+        AudioMixerSinkDestroy(pThisCC->pSinkMicIn, pDevIns);
         pThisCC->pSinkMicIn = NULL;
     }
 
     if (pThisCC->pSinkOut)
     {
         dstSrc.enmDst = PDMAUDIOPLAYBACKDST_FRONT;
-        ichac97R3MixerRemoveDrvStreams(pThisCC, pThisCC->pSinkOut, PDMAUDIODIR_OUT, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkOut, PDMAUDIODIR_OUT, dstSrc);
 
-        AudioMixerSinkDestroy(pThisCC->pSinkOut);
+        AudioMixerSinkDestroy(pThisCC->pSinkOut, pDevIns);
         pThisCC->pSinkOut = NULL;
     }
 }
@@ -1838,11 +1841,12 @@ static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODI
  * Adds a driver stream to a specific mixer sink.
  *
  * @returns VBox status code.
- * @param   pMixSink            Mixer sink to add driver stream to.
- * @param   pCfg                Stream configuration to use.
- * @param   pDrv                Driver stream to add.
+ * @param   pDevIns     The device instance.
+ * @param   pMixSink    Mixer sink to add driver stream to.
+ * @param   pCfg        Stream configuration to use.
+ * @param   pDrv        Driver stream to add.
  */
-static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv)
+static int ichac97R3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv)
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
 
@@ -1866,7 +1870,7 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
         AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
         PAUDMIXSTREAM pMixStrm;
-        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
+        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, pDevIns, &pMixStrm);
         LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
         if (RT_SUCCESS(rc))
         {
@@ -1912,7 +1916,7 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
              * VERR_AUDIO_STREAM_NOT_READY when configured for 8000HZ, then it asserts in
              * STAM when 48000Hz is configured right afterwards. */
             if (RT_FAILURE(rc))
-                AudioMixerStreamDestroy(pMixStrm);
+                AudioMixerStreamDestroy(pMixStrm, pDevIns);
         }
 
         if (RT_SUCCESS(rc))
@@ -1931,11 +1935,12 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
  * Adds all current driver streams to a specific mixer sink.
  *
  * @returns VBox status code.
- * @param   pThisCC             The ring-3 AC'97 state.
- * @param   pMixSink            Mixer sink to add stream to.
- * @param   pCfg                Stream configuration to use.
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The ring-3 AC'97 state.
+ * @param   pMixSink    Mixer sink to add stream to.
+ * @param   pCfg        Stream configuration to use.
  */
-static int ichac97R3MixerAddDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
+static int ichac97R3MixerAddDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
 
@@ -1949,7 +1954,7 @@ static int ichac97R3MixerAddDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSin
     PAC97DRIVER pDrv;
     RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        int rc2 = ichac97R3MixerAddDrvStream(pMixSink, pCfg, pDrv);
+        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
         if (RT_FAILURE(rc2))
             LogFunc(("Attaching stream failed with %Rrc\n", rc2));
 
@@ -1965,26 +1970,30 @@ static int ichac97R3MixerAddDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSin
  * Adds a specific AC'97 driver to the driver chain.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 device state.
  * @param   pDrv        The AC'97 driver to add.
  */
-static int ichac97R3MixerAddDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
+static int ichac97R3MixerAddDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 {
     int rc = VINF_SUCCESS;
 
     if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg))
-        rc = ichac97R3MixerAddDrvStream(pThisCC->pSinkLineIn, &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg, pDrv);
+        rc = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkLineIn,
+                                        &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg, pDrv);
 
     if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg))
     {
-        int rc2 = ichac97R3MixerAddDrvStream(pThisCC->pSinkOut, &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg, pDrv);
+        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkOut,
+                                             &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
     if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg))
     {
-        int rc2 = ichac97R3MixerAddDrvStream(pThisCC->pSinkMicIn, &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg, pDrv);
+        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkMicIn,
+                                             &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1996,10 +2005,11 @@ static int ichac97R3MixerAddDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
  * Removes a specific AC'97 driver from the driver chain and destroys its
  * associated streams.
  *
- * @param pThisCC               The ring-3 AC'97 device state.
- * @param pDrv                  AC'97 driver to remove.
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The ring-3 AC'97 device state.
+ * @param   pDrv        AC'97 driver to remove.
  */
-static void ichac97R3MixerRemoveDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
+static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 {
     if (pDrv->MicIn.pMixStrm)
     {
@@ -2007,7 +2017,7 @@ static void ichac97R3MixerRemoveDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
             AudioMixerSinkSetRecordingSource(pThisCC->pSinkMicIn, NULL);
 
         AudioMixerSinkRemoveStream(pThisCC->pSinkMicIn,  pDrv->MicIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns);
         pDrv->MicIn.pMixStrm = NULL;
     }
 
@@ -2017,14 +2027,14 @@ static void ichac97R3MixerRemoveDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
             AudioMixerSinkSetRecordingSource(pThisCC->pSinkLineIn, NULL);
 
         AudioMixerSinkRemoveStream(pThisCC->pSinkLineIn, pDrv->LineIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns);
         pDrv->LineIn.pMixStrm = NULL;
     }
 
     if (pDrv->Out.pMixStrm)
     {
         AudioMixerSinkRemoveStream(pThisCC->pSinkOut,    pDrv->Out.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm, pDevIns);
         pDrv->Out.pMixStrm = NULL;
     }
 
@@ -2034,12 +2044,14 @@ static void ichac97R3MixerRemoveDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 /**
  * Removes a driver stream from a specific mixer sink.
  *
- * @param   pMixSink            Mixer sink to remove audio streams from.
- * @param   enmDir              Stream direction to remove.
- * @param   dstSrc              Stream destination / source to remove.
- * @param   pDrv                Driver stream to remove.
+ * @param   pDevIns     The device instance.
+ * @param   pMixSink    Mixer sink to remove audio streams from.
+ * @param   enmDir      Stream direction to remove.
+ * @param   dstSrc      Stream destination / source to remove.
+ * @param   pDrv        Driver stream to remove.
  */
-static void ichac97R3MixerRemoveDrvStream(PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc, PAC97DRIVER pDrv)
+static void ichac97R3MixerRemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir,
+                                          PDMAUDIODSTSRCUNION dstSrc, PAC97DRIVER pDrv)
 {
     PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pDrv, enmDir, dstSrc);
     if (pDrvStream)
@@ -2048,7 +2060,7 @@ static void ichac97R3MixerRemoveDrvStream(PAUDMIXSINK pMixSink, PDMAUDIODIR enmD
         {
             AudioMixerSinkRemoveStream(pMixSink, pDrvStream->pMixStrm);
 
-            AudioMixerStreamDestroy(pDrvStream->pMixStrm);
+            AudioMixerStreamDestroy(pDrvStream->pMixStrm, pDevIns);
             pDrvStream->pMixStrm = NULL;
         }
     }
@@ -2057,12 +2069,13 @@ static void ichac97R3MixerRemoveDrvStream(PAUDMIXSINK pMixSink, PDMAUDIODIR enmD
 /**
  * Removes all driver streams from a specific mixer sink.
  *
- * @param   pThisCC             The ring-3 AC'97 state.
- * @param   pMixSink            Mixer sink to remove audio streams from.
- * @param   enmDir              Stream direction to remove.
- * @param   dstSrc              Stream destination / source to remove.
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The ring-3 AC'97 state.
+ * @param   pMixSink    Mixer sink to remove audio streams from.
+ * @param   enmDir      Stream direction to remove.
+ * @param   dstSrc      Stream destination / source to remove.
  */
-static void ichac97R3MixerRemoveDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
+static void ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
                                            PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
 {
     AssertPtrReturnVoid(pMixSink);
@@ -2070,7 +2083,7 @@ static void ichac97R3MixerRemoveDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMi
     PAC97DRIVER pDrv;
     RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        ichac97R3MixerRemoveDrvStream(pMixSink, enmDir, dstSrc, pDrv);
+        ichac97R3MixerRemoveDrvStream(pDevIns, pMixSink, enmDir, dstSrc, pDrv);
     }
 }
 
@@ -2127,14 +2140,16 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
  * the last set sample rate in the AC'97 mixer for this stream.
  *
  * @returns VBox status code.
- * @param   pThis               The shared AC'97 device state (shared).
- * @param   pThisCC             The shared AC'97 device state (ring-3).
- * @param   pStream             The AC'97 stream to open (shared).
- * @param   pStreamCC           The AC'97 stream to open (ring-3).
- * @param   fForce              Whether to force re-opening the stream or not.
- *                              Otherwise re-opening only will happen if the PCM properties have changed.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared AC'97 device state (shared).
+ * @param   pThisCC     The shared AC'97 device state (ring-3).
+ * @param   pStream     The AC'97 stream to open (shared).
+ * @param   pStreamCC   The AC'97 stream to open (ring-3).
+ * @param   fForce      Whether to force re-opening the stream or not.
+ *                      Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
+static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
+                               PAC97STREAMR3 pStreamCC, bool fForce)
 {
     int                 rc = VINF_SUCCESS;
     PAUDMIXSINK         pMixSink;
@@ -2229,9 +2244,9 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
                 rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
                 if (RT_SUCCESS(rc))
                 {
-                    ichac97R3MixerRemoveDrvStreams(pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
+                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
 
-                    rc = ichac97R3MixerAddDrvStreams(pThisCC, pMixSink, &Cfg);
+                    rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
                     if (RT_SUCCESS(rc))
                         rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
                 }
@@ -2263,14 +2278,15 @@ static int ichac97R3StreamClose(PAC97STREAM pStream)
  * side with the current AC'97 mixer settings for this stream.
  *
  * @returns VBox status code.
- * @param   pThis               The shared AC'97 device state.
- * @param   pThisCC             The ring-3 AC'97 device state.
- * @param   pStream             The AC'97 stream to re-open (shared).
- * @param   pStreamCC           The AC'97 stream to re-open (ring-3).
- * @param   fForce              Whether to force re-opening the stream or not.
- *                              Otherwise re-opening only will happen if the PCM properties have changed.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared AC'97 device state.
+ * @param   pThisCC     The ring-3 AC'97 device state.
+ * @param   pStream     The AC'97 stream to re-open (shared).
+ * @param   pStreamCC   The AC'97 stream to re-open (ring-3).
+ * @param   fForce      Whether to force re-opening the stream or not.
+ *                      Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STATER3 pThisCC,
+static int ichac97R3StreamReOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
                                  PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
@@ -2280,7 +2296,7 @@ static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STATER3 pThisCC,
 
     int rc = ichac97R3StreamClose(pStream);
     if (RT_SUCCESS(rc))
-        rc = ichac97R3StreamOpen(pThis, pThisCC, pStream, pStreamCC, fForce);
+        rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
 
     return rc;
 }
@@ -3243,7 +3259,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0). */
                             Assert((pRegs->cr & AC97_CR_RPBM) == 0);
 
-                            ichac97R3StreamEnable(pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
+                            ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
                             ichac97R3StreamReset(pThis, pStream, pStreamCC);
 
                             ichac97StreamUpdateSR(pDevIns, pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
@@ -3256,7 +3272,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             {
                                 Log3Func(("[SD%RU8] Disable\n", pStream->u8SD));
 
-                                ichac97R3StreamEnable(pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
+                                ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
 
                                 pRegs->sr |= AC97_SR_DCH;
                             }
@@ -3274,7 +3290,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 # ifdef LOG_ENABLED
                                 ichac97R3BDLEDumpAll(pDevIns, pStream->Regs.bdbar, pStream->Regs.lvi + 1);
 # endif
-                                ichac97R3StreamEnable(pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
+                                ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
 
                                 /* Arm the timer for this stream. */
                                 /** @todo r=bird: This function returns bool, not VBox status! */
@@ -3556,11 +3572,11 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     if (!(u32 & AC97_EACS_VRA)) /* Check if VRA bit is not set. */
                     {
                         ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 0xbb80); /* Set default (48000 Hz). */
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
 
                         ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
                     else
@@ -3572,7 +3588,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     if (!(u32 & AC97_EACS_VRM)) /* Check if VRM bit is not set. */
                     {
                         ichac97MixerSet(pThis, AC97_MIC_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
                     else
@@ -3590,7 +3606,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting front DAC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
                     }
                     else
@@ -3605,7 +3621,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting microphone ADC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
                     else
@@ -3620,7 +3636,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting line-in ADC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
-                        ichac97R3StreamReOpen(pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
+                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
                     else
@@ -3800,7 +3816,7 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
         const PAC97STREAM   pStream   = &pThis->aStreams[i];
         const PAC97STREAMR3 pStreamCC = &pThisCC->aStreams[i];
 
-        rc2 = ichac97R3StreamEnable(pThis, pThisCC, pStream, pStreamCC, fEnable);
+        rc2 = ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, fEnable);
         AssertRC(rc2);
         if (   fEnable
             && RT_SUCCESS(rc2))
@@ -3850,7 +3866,7 @@ static DECLCALLBACK(void) ichac97R3PowerOff(PPDMDEVINS pDevIns)
 
     /* Note: Involves mixer stream / sink destruction, so also do this here
      *       instead of in ichac97R3Destruct(). */
-    ichac97R3StreamsDestroy(pThis, pThisCC);
+    ichac97R3StreamsDestroy(pDevIns, pThis, pThisCC);
 
     /*
      * Note: Destroy the mixer while powering off and *not* in ichac97R3Destruct,
@@ -3859,7 +3875,7 @@ static DECLCALLBACK(void) ichac97R3PowerOff(PPDMDEVINS pDevIns)
      */
     if (pThisCC->pMixer)
     {
-        AudioMixerDestroy(pThisCC->pMixer);
+        AudioMixerDestroy(pThisCC->pMixer, pDevIns);
         pThisCC->pMixer = NULL;
     }
 }
@@ -3890,7 +3906,7 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
      */
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        ichac97R3StreamEnable(pThis, pThisCC, &pThis->aStreams[i], &pThisCC->aStreams[i], false /* fEnable */);
+        ichac97R3StreamEnable(pDevIns, pThis, pThisCC, &pThis->aStreams[i], &pThisCC->aStreams[i], false /* fEnable */);
         ichac97R3StreamReset(pThis, &pThis->aStreams[i], &pThisCC->aStreams[i]);
     }
 
@@ -3987,17 +4003,18 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
  * during runtime.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 device state.
  * @param   pDrv        Driver to detach from device.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static int ichac97R3DetachInternal(PAC97STATER3 pThisCC, PAC97DRIVER pDrv, uint32_t fFlags)
+static int ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
 
     /* First, remove the driver from our list and destory it's associated streams.
      * This also will un-set the driver as a recording source (if associated). */
-    ichac97R3MixerRemoveDrv(pThisCC, pDrv);
+    ichac97R3MixerRemoveDrv(pDevIns, pThisCC, pDrv);
 
     /* Next, search backwards for a capable (attached) driver which now will be the
      * new recording source. */
@@ -4053,7 +4070,7 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     PAC97DRIVER pDrv;
     int rc2 = ichac97R3AttachInternal(pDevIns, pThisCC, iLUN, fFlags, &pDrv);
     if (RT_SUCCESS(rc2))
-        rc2 = ichac97R3MixerAddDrv(pThisCC, pDrv);
+        rc2 = ichac97R3MixerAddDrv(pDevIns, pThisCC, pDrv);
 
     if (RT_FAILURE(rc2))
         LogFunc(("Failed with %Rrc\n", rc2));
@@ -4080,7 +4097,7 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
     {
         if (pDrv->uLUN == iLUN)
         {
-            int rc2 = ichac97R3DetachInternal(pThisCC, pDrv, fFlags);
+            int rc2 = ichac97R3DetachInternal(pDevIns, pThisCC, pDrv, fFlags);
             if (RT_SUCCESS(rc2))
             {
                 RTStrFree(pDrv->pszDesc);
@@ -4311,11 +4328,14 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThisCC->pMixer);
     AssertRCReturn(rc, rc);
 
-    rc = AudioMixerCreateSink(pThisCC->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThisCC->pSinkLineIn);
+    rc = AudioMixerCreateSink(pThisCC->pMixer, "Line In",
+                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->pSinkLineIn);
     AssertRCReturn(rc, rc);
-    rc = AudioMixerCreateSink(pThisCC->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThisCC->pSinkMicIn);
+    rc = AudioMixerCreateSink(pThisCC->pMixer, "Microphone In",
+                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->pSinkMicIn);
     AssertRCReturn(rc, rc);
-    rc = AudioMixerCreateSink(pThisCC->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThisCC->pSinkOut);
+    rc = AudioMixerCreateSink(pThisCC->pMixer, "PCM Output",
+                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->pSinkOut);
     AssertRCReturn(rc, rc);
 
     /*
