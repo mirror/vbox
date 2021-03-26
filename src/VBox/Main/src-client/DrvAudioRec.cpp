@@ -295,7 +295,7 @@ typedef struct DRVAUDIORECORDING
 /**
  * Initializes a recording sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pSink               Sink to initialize.
  * @param   pConParms           Container parameters to set.
@@ -456,7 +456,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 /**
  * Shuts down (closes) a recording sink,
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Recording sink to shut down.
  */
 static void avRecSinkShutdown(PAVRECSINK pSink)
@@ -498,7 +498,7 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
 /**
  * Creates an audio output stream and associates it with the specified recording sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pStreamAV           Audio output stream to create.
  * @param   pSink               Recording sink to associate audio output stream to.
@@ -568,7 +568,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
 /**
  * Destroys (closes) an audio output stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pStreamAV           Audio output stream to destroy.
  */
@@ -605,7 +605,7 @@ static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
 /**
  * Controls an audio output stream
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Driver instance.
  * @param   pStreamAV           Audio output stream to control.
  * @param   enmStreamCmd        Stream command to issue.
@@ -1071,7 +1071,7 @@ AudioVideoRec::~AudioVideoRec(void)
 /**
  * Applies a video recording configuration to this driver instance.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   Settings        Capturing configuration to apply.
  */
 int AudioVideoRec::applyConfiguration(const settings::RecordingSettings &Settings)

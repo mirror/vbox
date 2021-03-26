@@ -276,7 +276,7 @@ bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
  * Sanitizes the file name component so that unsupported characters
  * will be replaced by an underscore ("_").
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
@@ -312,7 +312,7 @@ int AudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
 /**
  * Constructs an unique file name, based on the given path and the audio file type.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pszFile             Where to store the constructed file name.
  * @param   cchFile             Size (in characters) of the file name buffer.
  * @param   pszPath             Base path to use.
@@ -436,7 +436,7 @@ int AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, cons
 /**
  * Creates an audio file.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   enmType             Audio file type to open / create.
  * @param   pszFile             File path of file to open or create.
  * @param   fFlags              Audio file flags, PDMAUDIOFILE_FLAGS_XXX.
@@ -505,7 +505,7 @@ void AudioHlpFileDestroy(PPDMAUDIOFILE pFile)
 /**
  * Opens or creates an audio file.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pFile               Pointer to audio file handle to use.
  * @param   fOpen               Open flags.
  *                              Use PDMAUDIOFILE_DEFAULT_OPEN_FLAGS for the default open flags.
@@ -645,7 +645,7 @@ int AudioHlpFileCreateAndOpen(PPDMAUDIOFILE *ppFile, const char *pszDir, const c
 /**
  * Closes an audio file.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pFile               Audio file handle to close.
  */
 int AudioHlpFileClose(PPDMAUDIOFILE pFile)
@@ -708,7 +708,7 @@ int AudioHlpFileClose(PPDMAUDIOFILE pFile)
 /**
  * Deletes an audio file.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pFile               Audio file handle to delete.
  */
 int AudioHlpFileDelete(PPDMAUDIOFILE pFile)
@@ -775,7 +775,7 @@ bool AudioHlpFileIsOpen(PPDMAUDIOFILE pFile)
 /**
  * Write PCM data to a wave (.WAV) file.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pFile               Audio file handle to write PCM data to.
  * @param   pvBuf               Audio data to write.
  * @param   cbBuf               Size (in bytes) of audio data to write.

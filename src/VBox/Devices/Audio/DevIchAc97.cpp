@@ -840,7 +840,7 @@ DECLINLINE(PAUDMIXSINK) ichac97R3IndexToSink(PAC97STATER3 pThisCC, uint8_t uInde
 /**
  * Fetches the current BDLE (Buffer Descriptor List Entry) of an AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDevIns             The device instance.
  * @param   pStream             AC'97 stream to fetch BDLE for.
  *
@@ -950,7 +950,7 @@ static void ichac97StreamWriteSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STRE
 /**
  * Returns whether an AC'97 stream is enabled or not.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 AC'97 device state.
  * @param   pStream             Stream to return status for.
  */
@@ -966,7 +966,7 @@ static bool ichac97R3StreamIsEnabled(PAC97STATER3 pThisCC, PAC97STREAM pStream)
 /**
  * Enables or disables an AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to enable or disable (shared
@@ -1071,7 +1071,7 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream, PAC97STR
 /**
  * Creates an AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to create (shared).
  * @param   pStreamCC           The AC'97 stream to create (ring-3).
@@ -1131,7 +1131,7 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
 /**
  * Destroys an AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pStream             The AC'97 stream to destroy (shared).
  * @param   pStreamCC           The AC'97 stream to destroy (ring-3).
@@ -1224,7 +1224,7 @@ static void ichac97R3StreamsDestroy(PAC97STATE pThis, PAC97STATER3 pThisCC)
 /**
  * Writes audio data from a mixer sink into an AC'97 stream's DMA buffer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDstStreamCC        The AC'97 stream to write to (ring-3).
  * @param   pSrcMixSink         Mixer sink to get audio data to write from.
  * @param   cbToWrite           Number of bytes to write.
@@ -1267,7 +1267,7 @@ static int ichac97R3StreamWrite(PAC97STREAMR3 pDstStreamCC, PAUDMIXSINK pSrcMixS
 /**
  * Reads audio data from an AC'97 stream's DMA buffer and writes into a specified mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSrcStreamCC        AC'97 stream to read audio data from (ring-3).
  * @param   pDstMixSink         Mixer sink to write audio data to.
  * @param   cbToRead            Number of bytes to read.
@@ -1334,7 +1334,7 @@ static int ichac97R3StreamRead(PAC97STREAMR3 pSrcStreamCC, PAUDMIXSINK pDstMixSi
  * Asynchronous I/O thread for an AC'97 stream.
  * This will do the heavy lifting work for us as soon as it's getting notified by another thread.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   hThreadSelf         Thread handle.
  * @param   pvUser              User argument. Must be of type PAC97STREAMTHREADCTX.
  */
@@ -1405,7 +1405,7 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
 /**
  * Creates the async I/O thread for a specific AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state (shared).
  * @param   pThisCC             The shared AC'97 state (ring-3).
  * @param   pStream             AC'97 audio stream to create the async I/O thread for (shared).
@@ -1462,7 +1462,7 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, 
 /**
  * Lets the stream's async I/O thread know that there is some data to process.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamCC             The AC'97 stream to notify async I/O thread
  *                                for (ring-3).
  */
@@ -1475,7 +1475,7 @@ static int ichac97R3StreamAsyncIONotify(PAC97STREAMR3 pStreamCC)
 /**
  * Destroys the async I/O thread of a specific AC'97 audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pStreamCC           AC'97 audio stream to destroy the async I/O thread for.
  */
@@ -1751,7 +1751,7 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
 /**
  * Sets a AC'97 mixer control to a specific value.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   uMixerIdx           Mixer control to set value for.
  * @param   uVal                Value to set.
@@ -1837,7 +1837,7 @@ static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODI
 /**
  * Adds a driver stream to a specific mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixSink            Mixer sink to add driver stream to.
  * @param   pCfg                Stream configuration to use.
  * @param   pDrv                Driver stream to add.
@@ -1930,7 +1930,7 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
 /**
  * Adds all current driver streams to a specific mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pMixSink            Mixer sink to add stream to.
  * @param   pCfg                Stream configuration to use.
@@ -1964,9 +1964,9 @@ static int ichac97R3MixerAddDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSin
 /**
  * Adds a specific AC'97 driver to the driver chain.
  *
- * @return IPRT status code.
- * @param  pThisCC              The ring-3 AC'97 device state.
- * @param  pDrv                 The AC'97 driver to add.
+ * @returns VBox status code.
+ * @param   pThisCC     The ring-3 AC'97 device state.
+ * @param   pDrv        The AC'97 driver to add.
  */
 static int ichac97R3MixerAddDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 {
@@ -2126,7 +2126,7 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
  * This will open an AC'97 stream with 2 (stereo) channels, 16-bit samples and
  * the last set sample rate in the AC'97 mixer for this stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 device state (shared).
  * @param   pThisCC             The shared AC'97 device state (ring-3).
  * @param   pStream             The AC'97 stream to open (shared).
@@ -2248,7 +2248,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
 /**
  * Closes an AC'97 stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStream             The AC'97 stream to close (shared).
  */
 static int ichac97R3StreamClose(PAC97STREAM pStream)
@@ -2262,7 +2262,7 @@ static int ichac97R3StreamClose(PAC97STREAM pStream)
  * Re-opens (that is, closes and opens again) an AC'97 stream on the backend
  * side with the current AC'97 mixer settings for this stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 device state.
  * @param   pThisCC             The ring-3 AC'97 device state.
  * @param   pStream             The AC'97 stream to re-open (shared).
@@ -2288,7 +2288,7 @@ static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STATER3 pThisCC,
 /**
  * Locks an AC'97 stream for serialized access.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamCC           The AC'97 stream to lock (ring-3).
  */
 static void ichac97R3StreamLock(PAC97STREAMR3 pStreamCC)
@@ -2300,7 +2300,7 @@ static void ichac97R3StreamLock(PAC97STREAMR3 pStreamCC)
 /**
  * Unlocks a formerly locked AC'97 stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamCC           The AC'97 stream to unlock (ring-3).
  */
 static void ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC)
@@ -2342,7 +2342,7 @@ static uint32_t ichac97R3StreamGetFree(PAC97STREAMR3 pStreamCC)
  *
  * This currently only supports attenuation -- gain support is currently not implemented.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   index               AC'97 mixer index to set volume for.
@@ -2446,7 +2446,7 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, PAC97STATER3 pThisCC, int i
  *
  * NB: gain support is currently not implemented in PDM audio.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   index               AC'97 mixer index to set volume for.
@@ -2627,7 +2627,7 @@ static void ichac97R3MixerRecordSelect(PAC97STATE pThis, uint32_t val)
 /**
  * Resets the AC'97 mixer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   pThisCC             The ring-3 AC'97 state.
  */
@@ -2799,7 +2799,7 @@ DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint
  * For an SDI (input) stream this is reading audio data from the AC'97 stream's
  * internal FIFO buffer and writing it as DMA data to the device.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared AC'97 state.
  * @param   pStream             The AC'97 stream to update (shared).
@@ -3717,7 +3717,7 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * Loads an AC'97 stream from SSM.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDevIns             The device instance.
  * @param   pSSM                Saved state manager (SSM) handle to use.
  * @param   pStream             AC'97 stream to load.

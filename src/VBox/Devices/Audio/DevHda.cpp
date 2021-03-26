@@ -669,7 +669,7 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
 /**
  * Synchronizes the CORB / RIRB buffers between internal <-> device state.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  *
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared HDA device state.
@@ -1641,7 +1641,7 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
 /**
  * Adds an audio output stream to the device setup using the given configuration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pCfg                Stream configuration to use for adding a stream.
  */
@@ -1764,7 +1764,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 /**
  * Adds an audio input stream to the device setup using the given configuration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pCfg                Stream configuration to use for adding a stream.
  */
@@ -1799,7 +1799,7 @@ static int hdaR3AddStreamIn(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 /**
  * Adds an audio stream to the device setup using the given configuration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pCfg                Stream configuration to use for adding a stream.
  */
@@ -1834,7 +1834,7 @@ static int hdaR3AddStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 /**
  * Removes an audio stream from the device setup using the given configuration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pCfg                Stream configuration to use for removing a stream.
  */
@@ -2183,9 +2183,9 @@ static PHDAMIXERSINK hdaR3MixerControlToSink(PHDASTATER3 pThisCC, PDMAUDIOMIXERC
 /**
  * Adds a specific HDA driver to the driver chain.
  *
- * @return IPRT status code.
- * @param   pThisCC             The ring-3 HDA device state.
- * @param  pDrv                 HDA driver to add.
+ * @returns VBox status code.
+ * @param   pThisCC     The ring-3 HDA device state.
+ * @param   pDrv        HDA driver to add.
  */
 static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 {
@@ -2305,7 +2305,7 @@ static void hdaR3MixerRemoveDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 /**
  * Adds a driver stream to a specific mixer sink.
  *
- * @returns IPRT status code (ignored by caller).
+ * @returns VBox status code (ignored by caller).
  * @param   pMixSink            Audio mixer sink to add audio streams to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.
  * @param   pDrv                Driver stream to add.
@@ -2428,7 +2428,7 @@ static int hdaR3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg,
 /**
  * Adds all current driver streams to a specific mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pMixSink            Audio mixer sink to add stream to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.

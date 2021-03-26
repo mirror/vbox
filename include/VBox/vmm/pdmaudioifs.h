@@ -1422,7 +1422,7 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
  *
  * This function will be called from a backend to communicate with the host audio interface.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDrvIns             Pointer to driver instance which called us.
  * @param   enmType             Callback type.
  * @param   pvUser              User argument.

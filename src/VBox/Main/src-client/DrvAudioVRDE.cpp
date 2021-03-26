@@ -622,7 +622,7 @@ int AudioVRDE::onVRDEControl(bool fEnable, uint32_t uFlags)
  * Marks the beginning of sending captured audio data from a connected
  * RDP client.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pvContext               The context; in this case a pointer to a
  *                                  VRDESTREAMIN structure.
  * @param   pVRDEAudioBegin         Pointer to a VRDEAUDIOINBEGIN structure.

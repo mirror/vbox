@@ -1754,7 +1754,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 /**
  * Creates the output PDM audio stream for a specific driver.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCfg                Stream configuration to use.
  * @param   pDrv                Driver stream to create PDM stream for.
  */

@@ -317,7 +317,7 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
 /**
  * Initializes a stream mapping structure according to the given PCM properties.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMap            Pointer to mapping to initialize.
  * @param   cHostChannels   The number of host channels to map to.
  * @param   pProps          Input: The stream PCM properties from the guest.

@@ -247,7 +247,7 @@ DECLINLINE(const char *) PDMAudioFormatGetName(PDMAUDIOFMT enmFmt)
 /**
  * Initializes a stream configuration from PCM properties.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pCfg        The stream configuration to initialize.
  * @param   pProps      The PCM properties to use.
  */
@@ -312,7 +312,7 @@ DECLINLINE(bool) PDMAudioStrmCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 /**
  * Copies one stream configuration to another.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDstCfg     The destination stream configuration.
  * @param   pSrcCfg     The source stream configuration.
  */

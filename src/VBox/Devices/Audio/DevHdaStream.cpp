@@ -54,7 +54,7 @@ static int  hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3);
 /**
  * Creates an HDA stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamShared       The HDA stream to construct - shared bits.
  * @param   pStreamR3           The HDA stream to construct - ring-3 bits.
  * @param   pThis               The shared HDA device instance.
@@ -447,7 +447,7 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
 /**
  * Sets up ((re-)iniitalizes) an HDA stream.
  *
- * @returns IPRT status code. VINF_NO_CHANGE if the stream does not need
+ * @returns VBox status code. VINF_NO_CHANGE if the stream does not need
  *          be set-up again because the stream's (hardware) parameters did
  *          not change.
  * @param   pDevIns         The device instance.
@@ -877,7 +877,7 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
 /**
  * Enables or disables an HDA audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamShared       HDA stream to enable or disable - shared bits.
  * @param   pStreamR3           HDA stream to enable or disable - ring-3 bits.
  * @param   fEnable             Whether to enable or disble the stream.
@@ -2276,7 +2276,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 /**
  * Locks an HDA stream for serialized access.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamShared       HDA stream to lock (shared bits).
  */
 void hdaStreamLock(PHDASTREAM pStreamShared)
@@ -2291,7 +2291,7 @@ void hdaStreamLock(PHDASTREAM pStreamShared)
 /**
  * Unlocks a formerly locked HDA stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamShared       HDA stream to unlock (shared bits).
  */
 void hdaStreamUnlock(PHDASTREAM pStreamShared)
@@ -2572,7 +2572,7 @@ static DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pv
 /**
  * Creates the async I/O thread for a specific HDA audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamR3           HDA audio stream to create the async I/O thread for.
  */
 int hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3)
@@ -2609,7 +2609,7 @@ int hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3)
 /**
  * Destroys the async I/O thread of a specific HDA audio stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamR3           HDA audio stream to destroy the async I/O thread for.
  */
 static int hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3)
@@ -2651,7 +2651,7 @@ static int hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3)
 /**
  * Lets the stream's async I/O thread know that there is some data to process.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pStreamR3           HDA stream to notify async I/O thread for.
  */
 int hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3)

@@ -259,7 +259,7 @@ uint32_t hdaGetINTSTS(PHDASTATE pThis)
 /**
  * Converts an HDA stream's SDFMT register into a given PCM properties structure.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   u16SDFMT            The HDA stream's SDFMT value to convert.
  * @param   pProps              PCM properties structure to hold converted result on success.
  */
