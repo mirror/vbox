@@ -1037,7 +1037,9 @@ typedef struct PDMDRVHLPR3
      * @param   pvSample    Pointer to the sample.
      * @param   enmType     Sample type. This indicates what pvSample is pointing at.
      * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
-     *                      Further nesting is possible.
+     *                      Further nesting is possible.  If this does not start
+     *                      with a '/', the default prefix will be prepended,
+     *                      otherwise it will be used as-is.
      * @param   enmUnit     Sample unit.
      * @param   pszDesc     Sample description.
      */
@@ -1054,7 +1056,9 @@ typedef struct PDMDRVHLPR3
      * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
      * @param   enmUnit     Sample unit.
      * @param   pszDesc     Sample description.
-     * @param   pszName     The sample name format string.
+     * @param   pszName     The sample name format string.  If this does not start
+     *                      with a '/', the default prefix will be prepended,
+     *                      otherwise it will be used as-is.
      * @param   ...         Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterF,(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
@@ -1071,7 +1075,9 @@ typedef struct PDMDRVHLPR3
      * @param   enmVisibility   Visibility type specifying whether unused statistics should be visible or not.
      * @param   enmUnit         Sample unit.
      * @param   pszDesc         Sample description.
-     * @param   pszName         The sample name format string.
+     * @param   pszName         The sample name format string.  If this does not
+     *                          start with a '/', the default prefix will be prepended,
+     *                          otherwise it will be used as-is.
      * @param   args            Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,

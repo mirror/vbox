@@ -1441,27 +1441,18 @@ static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegister(PPDMDRVINS pDrvIns, void *pvS
                                                    STAMUNIT enmUnit, const char *pszDesc)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
 
-    STAM_REG(pDrvIns->Internal.s.pVMR3, pvSample, enmType, pszName, enmUnit, pszDesc);
-    RT_NOREF6(pDrvIns, pvSample, enmType, pszName, enmUnit, pszDesc);
-    /** @todo track the samples so they can be dumped & deregistered when the driver instance is destroyed.
-     * For now we just have to be careful not to use this call for drivers which can be unloaded. */
-}
-
-
-/** @interface_method_impl{PDMDRVHLPR3,pfnSTAMRegisterF} */
-static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                    STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-
-    va_list args;
-    va_start(args, pszName);
-    int rc = STAMR3RegisterV(pDrvIns->Internal.s.pVMR3, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
-    va_end(args);
-    AssertRC(rc);
+#ifdef VBOX_WITH_STATISTICS /** @todo rework this to always be compiled in */
+    if (*pszName == '/')
+        STAM_REG(pDrvIns->Internal.s.pVMR3, pvSample, enmType, pszName, enmUnit, pszDesc);
+    else
+        STAMR3RegisterF(pVM, pvSample, enmType, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                        "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+#else
+    RT_NOREF(pDrvIns, pvSample, enmType, pszName, enmUnit, pszDesc, pVM);
+#endif
 }
 
 
@@ -1470,10 +1461,39 @@ static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void *pv
                                                     STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
 
-    int rc = STAMR3RegisterV(pDrvIns->Internal.s.pVMR3, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+    int rc;
+    if (*pszName == '/')
+        rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+    else
+    {
+        /* We need to format it to check whether it starts with a
+           slash or not (will rework this later). */
+        char szFormatted[2048];
+        ssize_t cchBase = RTStrPrintf2(szFormatted, sizeof(szFormatted) - 1024, "/Drivers/%s-%u/",
+                                       pDrvIns->pReg->szName, pDrvIns->iInstance);
+        AssertReturnVoid(cchBase > 0);
+
+        ssize_t cch2 = RTStrPrintf2V(&szFormatted[cchBase], sizeof(szFormatted) - cchBase, pszName, args);
+        AssertReturnVoid(cch2 > 0);
+
+        rc = STAMR3Register(pVM, pvSample, enmType, enmVisibility,
+                            &szFormatted[szFormatted[cchBase] == '/' ? cchBase : 0], enmUnit, pszDesc);
+    }
     AssertRC(rc);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnSTAMRegisterF} */
+static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                                    STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...)
+{
+    va_list va;
+    va_start(va, pszName);
+    pdmR3DrvHlp_STAMRegisterV(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    va_end(va);
 }
 
 
