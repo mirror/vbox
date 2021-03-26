@@ -368,8 +368,11 @@ buildserver-docs_INST = $(INST_BIN)
 buildserver-docs_MODE = 0644
 buildserver-docs_SOURCES = \
 	$(addprefix $(PATH_TARGET)/, \
-		VirtualBox.chm UserManual.pdf \
-		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
+		$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox.chm,) \
+		UserManual.pdf \
+		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
+			$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox_$(f).chm,) \
+			UserManual_$(f).pdf))
 buildserver-docs_CLEANS = \
 	$(buildserver-docs_0_OUTDIR)/unpacked.ts \
 	$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip \
@@ -378,14 +381,19 @@ buildserver-docs_CLEANS = \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 
-$$(buildserver-docs_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManual.pdf \
+$$(buildserver-docs_0_OUTDIR)/unpacked.ts +| \
+	$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox.chm,) \
+	$(PATH_TARGET)/UserManual.pdf \
 $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf): \
 		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
-	$(TOUCH) -c -- $(PATH_TARGET)/VirtualBox.chm \
+	$(TOUCH) -c -- \
+		$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox.chm,) \
 		$(PATH_TARGET)/UserManual.pdf \
-		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf)
+		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
+			$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox_$(f).chm,) \
+			$(PATH_TARGET)/UserManual_$(f).pdf)
 	$(APPEND) -t $@ "done"
 
 $$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)

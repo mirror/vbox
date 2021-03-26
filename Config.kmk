@@ -386,8 +386,9 @@ VBOX_WITH_DOCS = 1
 # Include documentation in the package
 VBOX_WITH_DOCS_PACKING = 1
 # Include CHM when building docs (unset in LocalConfig.kmk to suppress CHM)
+## @todo CHM docs are on the way out...
 if1of ($(KBUILD_TARGET), win)
- VBOX_WITH_DOCS_CHM = 1
+ VBOX_WITH_DOCS_CHM =
 endif
 # By default only include translations in documentation-only builds
 ifdef VBOX_ONLY_DOCS
@@ -721,7 +722,8 @@ VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Only build the limited Python extension API version for 3.3 and later.
 VBOX_WITH_ONLY_PYTHON_LIMITED_API = 1
 # Enable the kchmviewer.
-VBOX_WITH_KCHMVIEWER = 1
+## @todo CHM docs are on the way out...
+VBOX_WITH_KCHMVIEWER =
 # Build the Validation Kit.
 VBOX_WITH_VALIDATIONKIT = 1
 # Build the testcases.
