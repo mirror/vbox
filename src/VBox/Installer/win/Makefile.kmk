@@ -346,9 +346,11 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi: $(VBOX_WIN_INST_MAKEFILE_DEP) | $$(dir 
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
 ifdef VBOX_WITH_DOCS_PACKING
+ ifdef VBOX_WITH_DOCS_CHM_PACKING
 	$(APPEND) $@ '	<File Id="file_VirtualBox.chm" Name="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/VirtualBox.chm)"></File>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
 		     '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/VirtualBox_$(lang).chm)"></File>')
+ endif
 endif
 	$(APPEND) $@ '</Include>'
 

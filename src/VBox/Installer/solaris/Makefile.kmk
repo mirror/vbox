@@ -438,9 +438,11 @@ SOLARIS_COMMON_EXES += \
 # Documentation (packed as DOCS as they are arch. neutral)
 ifdef VBOX_WITH_DOCS_PACKING
  SOLARIS_COMMON += \
-	VirtualBox.chm \
+	$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox.chm,) \
 	UserManual.pdf \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
+		$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox_$(f).chm,) \
+		UserManual_$(f).pdf)
 endif
 
 # Python XPCOM glue
