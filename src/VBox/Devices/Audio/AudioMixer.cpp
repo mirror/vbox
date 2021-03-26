@@ -159,7 +159,7 @@ static const char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus, char pszD
 /**
  * Creates an audio sink and attaches it to the given mixer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to attach created sink to.
  * @param   pszName             Name of the sink to create.
  * @param   enmDir              Direction of the sink to create.
@@ -209,7 +209,7 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
 /**
  * Creates an audio mixer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pcszName            Name of the audio mixer.
  * @param   fFlags              Creation flags.
  * @param   ppMixer             Pointer which returns the created mixer object.
@@ -341,7 +341,7 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer)
 /**
  * Invalidates all internal data, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to invalidate data for.
  */
 int audioMixerInvalidateInternal(PAUDIOMIXER pMixer)
@@ -364,7 +364,7 @@ int audioMixerInvalidateInternal(PAUDIOMIXER pMixer)
 /**
  * Invalidates all internal data.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to invalidate data for.
  */
 void AudioMixerInvalidate(PAUDIOMIXER pMixer)
@@ -410,7 +410,7 @@ static int audioMixerAddSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
 /**
  * Removes a formerly attached audio sink for an audio mixer, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to remove sink from.
  * @param   pSink               Sink to remove.
  */
@@ -441,7 +441,7 @@ static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
 /**
  * Removes a formerly attached audio sink for an audio mixer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to remove sink from.
  * @param   pSink               Sink to remove.
  */
@@ -459,7 +459,7 @@ void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
 /**
  * Sets the mixer's master volume.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixer              Mixer to set master volume for.
  * @param   pVol                Volume to set.
  */
@@ -493,7 +493,7 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
 /**
  * Adds an audio stream to a specific audio sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to add audio stream to.
  * @param   pStream             Stream to add.
  */
@@ -556,7 +556,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
 /**
  * Creates an audio mixer stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to use for creating the stream.
  * @param   pConn               Audio connector interface to use.
  * @param   pCfg                Audio stream configuration to use.
@@ -707,7 +707,7 @@ static PDMAUDIOSTREAMCMD audioMixerSinkToStreamCmd(AUDMIXSINKCMD enmCmd)
 /**
  * Controls a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Mixer sink to control.
  * @param   enmSinkCmd          Sink command to set.
  */
@@ -1183,7 +1183,7 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
 /**
  * Reads audio data from a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Mixer sink to read data from.
  * @param   enmOp               Mixer operation to use for reading the data.
  * @param   pvBuf               Buffer where to store the read data.
@@ -1290,7 +1290,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
 /**
  * Removes a mixer stream from a mixer sink, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to remove mixer stream from.
  * @param   pStream             Stream to remove.
  */
@@ -1454,7 +1454,7 @@ void AudioMixerSinkGetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
 /**
  * Sets the audio format of a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to set audio format for.
  * @param   pPCMProps           Audio format (PCM properties) to set.
  */
@@ -1527,7 +1527,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
 /**
  * Set the current recording source of an input mixer sink, internal version.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Input mixer sink to set recording source for.
  * @param   pStream             Mixer stream to set as current recording source. Must be an input stream.
  *                              Specify NULL to un-set the current recording source.
@@ -1600,7 +1600,7 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 /**
  * Set the current recording source of an input mixer sink.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Input mixer sink to set recording source for.
  * @param   pStream             Mixer stream to set as current recording source. Must be an input stream.
  *                              Set to NULL to un-set the current recording source.
@@ -1624,7 +1624,7 @@ int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
 /**
  * Sets the volume of an individual sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to set volume for.
  * @param   pVol                Volume to set.
  */
@@ -1657,7 +1657,7 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
 /**
  * Updates a mixer sink, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Mixer sink to update.
  */
 static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
@@ -1818,7 +1818,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 /**
  * Updates (invalidates) a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Mixer sink to update.
  */
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
@@ -1840,7 +1840,7 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
 /**
  * Updates the (master) volume of a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Mixer sink to update volume for.
  * @param   pVolMaster          Master volume to set.
  */
@@ -1881,7 +1881,7 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
 /**
  * Writes (buffered) output data of a sink's stream to the bound audio connector stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink of stream that contains the mixer stream.
  * @param   pMixStream          Mixer stream to write output data for.
  */
@@ -1896,7 +1896,7 @@ static int audioMixerSinkWriteToStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStre
 /**
  * Writes (buffered) output data of a sink's stream to the bound audio connector stream, extended version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink of stream that contains the mixer stream.
  * @param   pMixStream          Mixer stream to write output data for.
  * @param   cbToWrite           Size (in bytes) to write.
@@ -1988,7 +1988,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
  * Multiplexes audio output data to all connected mixer streams in a synchronized fashion, e.g.
  * only multiplex as much data as all streams can handle at this time.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink       Sink to write audio output to.
  * @param   pvBuf       Pointer to audio data to write.
  * @param   cbBuf       Size (in bytes) of audio data to write.
@@ -2061,7 +2061,7 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, const void *pvBuf, uin
 /**
  * Writes data to a mixer sink.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pSink               Sink to write data to.
  * @param   enmOp               Mixer operation to use when writing data to the sink.
  * @param   pvBuf               Buffer containing the audio data to write.
@@ -2124,7 +2124,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 /**
  * Controls a mixer stream, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixStream          Mixer stream to control.
  * @param   enmCmd              Mixer stream command to use.
  * @param   fCtl                Additional control flags. Pass 0.
@@ -2186,7 +2186,7 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
 /**
  * Controls a mixer stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixStream          Mixer stream to control.
  * @param   enmCmd              Mixer stream command to use.
  * @param   fCtl                Additional control flags. Pass 0.

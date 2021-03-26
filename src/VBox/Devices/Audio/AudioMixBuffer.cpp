@@ -141,7 +141,7 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
  * Returns a mutable pointer to the mixing buffer's audio frame buffer for writing raw
  * audio frames.
  *
- * @return  IPRT status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
+ * @returns VBox status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
  * @param   pMixBuf                 Mixing buffer to acquire audio frames from.
  * @param   cFrames                 Number of requested audio frames to write.
  * @param   ppvFrames               Returns a mutable pointer to the buffer's audio frame data.
@@ -363,7 +363,7 @@ uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
 /**
  * Allocates the internal audio frame buffer.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to allocate frame buffer for.
  * @param   cFrames                 Number of audio frames to allocate.
  */
@@ -773,7 +773,7 @@ static PFNPDMAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps
 /**
  * Converts a PDM audio volume to an internal mixing buffer volume.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pVolDst                 Where to store the converted mixing buffer volume.
  * @param   pVolSrc                 Volume to convert.
  */
@@ -797,7 +797,7 @@ static int audioMixBufConvVol(PPDMAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
 /**
  * Initializes a mixing buffer.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to initialize.
  * @param   pszName                 Name of mixing buffer for easier identification. Optional.
  * @param   pProps                  PCM audio properties to use for the mixing buffer.
@@ -907,7 +907,7 @@ static int64_t audioMixBufCalcFreqRatio(PPDMAUDIOMIXBUF pMixBufA, PPDMAUDIOMIXBU
  * The audio format of each mixing buffer can vary; the internal mixing code
  * then will automatically do the (needed) conversion.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to link parent to.
  * @param   pParent                 Parent mixing buffer to use for linking.
  *
@@ -1048,7 +1048,7 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
 /**
  * Mixes audio frames from a source mixing buffer to a destination mixing buffer.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  *          VERR_BUFFER_UNDERFLOW if the source did not have enough audio data.
  *          VERR_BUFFER_OVERFLOW if the destination did not have enough space to store the converted source audio data.
  *
@@ -1231,7 +1231,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 /**
  * Mixes audio frames down to the parent mixing buffer, extended version.
  *
- * @return  IPRT status code. See audioMixBufMixTo() for a more detailed explanation.
+ * @returns VBox status code. See audioMixBufMixTo() for a more detailed explanation.
  * @param   pMixBuf                 Source mixing buffer to mix to its parent.
  * @param   cSrcOffset              Offset (in frames) of source mixing buffer.
  * @param   cSrcFrames              Number of source audio frames to mix to its parent.
@@ -1249,7 +1249,7 @@ int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint3
 /**
  * Mixes audio frames down to the parent mixing buffer.
  *
- * @return  IPRT status code. See audioMixBufMixTo() for a more detailed explanation.
+ * @returns VBox status code. See audioMixBufMixTo() for a more detailed explanation.
  * @param   pMixBuf                 Source mixing buffer to mix to its parent.
  * @param   cSrcFrames              Number of source audio frames to mix to its parent.
  * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
@@ -1264,7 +1264,7 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_
  * Prints a single mixing buffer.
  * Internal helper function for debugging. Do not use directly.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  * @param   pszFunc                 Function name to log this for.
  * @param   fIsParent               Whether this is a parent buffer or not.
@@ -1318,7 +1318,7 @@ DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf)
  * Internal helper function for audioMixBufPrintChain().
  * Do not use directly.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  * @param   pszFunc                 Function name to print the chain for.
  * @param   uIdtLvl                 Indention level to use.
@@ -1363,7 +1363,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PPDMAUDIOMIXBUF pMixBuf
  * starting from the top root mixing buffer.
  * For debug versions only.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  */
 void AudioMixBufDbgPrintChain(PPDMAUDIOMIXBUF pMixBuf)
@@ -1392,7 +1392,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf, con
  * Prints statistics and status of a mixing buffer to the logger.
  * For debug versions only.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  */
 void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
@@ -1428,7 +1428,7 @@ uint32_t AudioMixBufUsedBytes(PPDMAUDIOMIXBUF pMixBuf)
 /**
  * Reads audio frames at a specific offset.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to read audio frames from.
  * @param   offFrames               Offset (in audio frames) to start reading from.
  * @param   pvBuf                   Pointer to buffer to write output to.
@@ -1445,7 +1445,7 @@ int AudioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, void *pvBuf, 
  * If the audio format of the mixing buffer and the requested audio format do
  * not match the output will be converted accordingly.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf     Mixing buffer to read audio frames from.
  * @param   pDstProps   The target format.
  * @param   offFrames   Offset (in audio frames) to start reading from.
@@ -1632,7 +1632,7 @@ void AudioMixBufReleaseReadBlock(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 /**
  * Returns the current read position of a mixing buffer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to return position for.
  */
 uint32_t AudioMixBufReadPos(PPDMAUDIOMIXBUF pMixBuf)
@@ -1705,7 +1705,7 @@ uint32_t AudioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
 /**
  * Unlinks a mixing buffer from its parent, if any.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to unlink from parent.
  */
 void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
@@ -1767,7 +1767,7 @@ void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
  * Writes audio frames at a specific offset.
  * The sample format being written must match the format of the mixing buffer.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   offFrames               Offset (in frames) starting to write at.
  * @param   pvBuf                   Pointer to audio buffer to be written.
@@ -1788,7 +1788,7 @@ int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *
  * The audio sample format to be written can be different from the audio format
  * the mixing buffer operates on.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf     Pointer to mixing buffer to write to.
  * @param   pSrcProps   The source format.
  * @param   offFrames   Offset (in frames) starting to write at.
@@ -1891,8 +1891,9 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
  *
  * The sample format being written must match the format of the mixing buffer.
  *
- * @return  IPRT status code, or VERR_BUFFER_OVERFLOW if frames which not have
- *          been processed yet have been overwritten (due to cyclic buffer).
+ * @returns VBox status code
+ * @retval  VERR_BUFFER_OVERFLOW if frames which not have been processed yet
+ *          have been overwritten (due to cyclic buffer).
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   pvBuf                   Pointer to audio buffer to be written.
  * @param   cbBuf                   Size (in bytes) of audio buffer.
@@ -1907,7 +1908,8 @@ int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf, const void *pvBuf, uint32_t cb
  * Writes audio frames of a specific format.
  * This function might write less data at once than requested.
  *
- * @return  IPRT status code, or VERR_BUFFER_OVERFLOW no space is available for writing anymore.
+ * @returns VBox status code
+ * @retval  VERR_BUFFER_OVERFLOW no space is available for writing anymore.
  * @param   pMixBuf     Pointer to mixing buffer to write to.
  * @param   pSrcProps   The source format.
  * @param   enmFmt      Audio format supplied in the buffer.
@@ -2008,7 +2010,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps
 /**
  * Returns the current write position of a mixing buffer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to return position for.
  */
 uint32_t AudioMixBufWritePos(PPDMAUDIOMIXBUF pMixBuf)
