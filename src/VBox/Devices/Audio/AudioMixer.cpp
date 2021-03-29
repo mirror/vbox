@@ -596,8 +596,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
             rc = RTCircBufCreate(&pMixStream->pCircBuf, PDMAudioPropsMilliToBytes(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable. */
             if (RT_SUCCESS(rc))
             {
-                pMixStream->StatsCircBufSize = RTCircBufSize(pMixStream->pCircBuf);
-                pMixStream->StatsCircBufUsed = RTCircBufUsed(pMixStream->pCircBuf);
+                pMixStream->StatsCircBufSize = (uint32_t)RTCircBufSize(pMixStream->pCircBuf);
+                pMixStream->StatsCircBufUsed = (uint32_t)RTCircBufUsed(pMixStream->pCircBuf);
 
                 /*
                  * Lock the sink so we can safely get it's properties and call
@@ -1969,7 +1969,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
         cbWritten += (uint32_t)cbChunkWritten;
     }
 
-    pMixStream->StatsCircBufUsed = RTCircBufUsed(pCircBuf);
+    pMixStream->StatsCircBufUsed = (uint32_t)RTCircBufUsed(pCircBuf);
     Log3Func(("[%s] cbWritten=%RU32\n", pMixStream->pszName, cbWritten));
 
     if (pcbWritten)
@@ -2045,7 +2045,7 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, const void *pvBuf, uin
                 Assert(offWritten == cbToWrite);
 
                 pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
-                pMixStream->StatsCircBufUsed    = RTCircBufUsed(pCircBuf);
+                pMixStream->StatsCircBufUsed    = (uint32_t)RTCircBufUsed(pCircBuf);
                 Log3Func(("[%s] Mixer stream '%s' -> cbWrittenBuf=%RU32\n", pSink->pszName, pMixStream->pszName, cbToWrite));
             }
         }

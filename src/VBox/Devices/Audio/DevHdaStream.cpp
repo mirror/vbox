@@ -1242,7 +1242,7 @@ DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, P
     /*
      * Update the buffer statistics.
      */
-    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
+    pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
 }
 
 /**
@@ -1609,7 +1609,7 @@ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStr
     }
 
     /* Update buffer stats. */
-    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
+    pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
 }
 
 /**
@@ -1878,7 +1878,7 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
     }
 
     /* Update buffer stats. */
-    pStreamR3->State.StatDmaBufUsed = RTCircBufUsed(pStreamR3->State.pCircBuf);
+    pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
 
     /*
      * Push the stuff thru the mixer jungle and down the host audio driver (backend).
