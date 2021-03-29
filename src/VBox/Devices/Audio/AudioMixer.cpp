@@ -186,6 +186,15 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
             {
                 RTCritSectLeave(&pMixer->CritSect);
 
+                char szPrefix[128];
+                RTStrPrintf(szPrefix, sizeof(szPrefix), "MixerSink-%s/", pSink->pszName);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Sink mixer buffer size in frames.",         "%sMixBufSize", szPrefix);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Sink mixer buffer fill size in frames.",    "%sMixBufUsed", szPrefix);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->cStreams, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Number of streams attached to the sink.",   "%sStreams", szPrefix);
+
                 if (ppSink)
                     *ppSink = pSink;
                 return VINF_SUCCESS;
@@ -587,7 +596,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
 
     /* Assign the backend's name to the mixer stream's name for easier identification in the (release) log. */
     pMixStream->pszName = RTStrAPrintf2("[%s] %s", pCfg->szName, BackendCfg.szName);
-    pMixStream->pszStatPrefix = RTStrAPrintf2("Mix-%s/[%s] %s/", pSink->pszName, pCfg->szName, BackendCfg.szName);
+    pMixStream->pszStatPrefix = RTStrAPrintf2("MixerSink-%s/%s/", pSink->pszName, BackendCfg.szName);
     if (pMixStream->pszName && pMixStream->pszStatPrefix)
     {
         rc = RTCritSectInit(&pMixStream->CritSect);
@@ -921,6 +930,10 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
         AudioHlpFileDestroy(pSink->Dbg.pFile);
         pSink->Dbg.pFile = NULL;
     }
+
+    char szPrefix[128];
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "MixerSink-%s/", pSink->pszName);
+    PDMDevHlpSTAMDeregisterByPrefix(pDevIns, szPrefix);
 
     RTStrFree(pSink->pszName);
     pSink->pszName = NULL;
@@ -1452,10 +1465,10 @@ void AudioMixerSinkGetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
  * Sets the audio format of a mixer sink.
  *
  * @returns VBox status code.
- * @param   pSink               Sink to set audio format for.
- * @param   pPCMProps           Audio format (PCM properties) to set.
+ * @param   pSink       The sink to set audio format for.
+ * @param   pPCMProps   Audio format (PCM properties) to set.
  */
-int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
+int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps)
 {
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
