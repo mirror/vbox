@@ -218,8 +218,8 @@ typedef struct AUDMIXSINK
     /** Number of streams assigned. */
     uint8_t                 cStreams;
     /** List of assigned streams.
-     *  Note: All streams have the same PCM properties, so the
-     *        mixer does not do any conversion. */
+     * @note All streams have the same PCM properties, so the mixer does not do
+     *       any conversion. */
     /** @todo Use something faster -- vector maybe? */
     RTLISTANCHOR            lstStreams;
     /** The volume of this sink. The volume always will

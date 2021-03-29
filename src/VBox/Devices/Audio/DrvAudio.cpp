@@ -2650,23 +2650,31 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
      */
     PPDMDRVINS const pDrvIns = pThis->pDrvIns;
     /** @todo expose config and more. */
-    if (pCfgGuest->enmDir == PDMAUDIODIR_OUT)
-    {
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableBefore, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Host side: Free space in backend buffer before play",  "%s/HostBackedBufFreeBefore", pStream->szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableAfter, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Host side: Free space in backend buffer after play",   "%s/HostBackedBufFreeAfter", pStream->szName);
-    }
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.Cfg.Backend.cFramesBufferSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Host side: The size of the backend buffer (in frames)", "%s/HostBackedBufSize", pStream->szName);
+                           "Host side: The size of the backend buffer (in frames)", "%s/0-HostBackendBufSize", pStream->szName);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Host side: The size of the mixer buffer (in frames)",   "%s/HostMixBufSize", pStream->szName);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Host side: Number of frames in the mixer buffer",       "%s/HostMixBufUsed", pStream->szName);
+                           "Host side: The size of the mixer buffer (in frames)",   "%s/1-HostMixBufSize", pStream->szName);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Guest side: The size of the mixer buffer (in frames)",  "%s/GuestMixBufSize", pStream->szName);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Guest side: Number of frames in the mixer buffer",      "%s/GuestMixBufUsed", pStream->szName);
+                           "Guest side: The size of the mixer buffer (in frames)",  "%s/2-GuestMixBufSize", pStream->szName);
+    if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
+    {
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cMixed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Number of frames in the mixer buffer",   "%s/1-HostMixBufUsed", pStream->szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Guest side: Number of frames in the mixer buffer",  "%s/2-GuestMixBufUsed", pStream->szName);
+    }
+    else
+    {
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Host.MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Number of frames in the mixer buffer",     "%s/1-HostMixBufUsed", pStream->szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Guest.MixBuf.cMixed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Guest side: Number of frames in the mixer buffer",    "%s/2-GuestMixBufUsed", pStream->szName);
+
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableBefore, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Free space in backend buffer before play", "%s/0-HostBackendBufFreeBefore", pStream->szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStream->Out.Stats.cbBackendWritableAfter, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Host side: Free space in backend buffer after play",  "%s/0-HostBackendBufFreeAfter", pStream->szName);
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     char szStatName[255];
@@ -3242,6 +3250,8 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
             AudioHlpFileDestroy(pStream->In.Dbg.pFileStreamRead);
             pStream->In.Dbg.pFileStreamRead = NULL;
         }
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cMixed);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cUsed);
     }
     else
     {
@@ -3262,12 +3272,12 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
         }
         PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.cbBackendWritableAfter);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Out.Stats.cbBackendWritableBefore);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cUsed);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cMixed);
     }
     PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.Cfg.Backend.cFramesBufferSize);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cFrames);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Host.MixBuf.cUsed);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cFrames);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pStream->Guest.MixBuf.cUsed);
 
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;

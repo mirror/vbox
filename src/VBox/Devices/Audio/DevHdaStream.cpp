@@ -1541,7 +1541,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
  *
  * @param   pStreamShared   HDA stream to update (shared bits).
  * @param   pStreamR3       HDA stream to update (ring-3 bits).
- * @param   pSink           The mixer sink to push to.
+ * @param   pSink           The mixer sink to pull from.
  */
 static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
 {
