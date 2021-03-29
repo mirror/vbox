@@ -406,6 +406,8 @@
                       Source="$(env.PATH_OUT)\bin\platforms\qoffscreen.dll" />
                 <File Id="file_qwindows.dll" Name="qwindows.dll"
                       Source="$(env.PATH_OUT)\bin\platforms\qwindows.dll" />
+                <File Id="file_qsqlite.dll" Name="qsqlite.dll"
+                      Source="$(env.PATH_OUT)\bin\sqldrivers\qsqlite.dll" />
                 <File Id="file_qwindowsvistastyle.dll" Name="qwindowsvistastyle.dll"
                       Source="$(env.PATH_OUT)\bin\styles\qwindowsvistastyle.dll" />
             </Component>
