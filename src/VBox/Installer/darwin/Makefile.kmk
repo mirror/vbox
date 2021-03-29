@@ -545,6 +545,7 @@ ifdef VBOX_WITH_QTGUI
  	plugins/platforms/libqcocoa$(SUFF_DLL) \
  	plugins/platforms/libqminimal$(SUFF_DLL) \
  	plugins/platforms/libqoffscreen$(SUFF_DLL) \
+ 	plugins/sqldrivers/libqsqlite$(SUFF_DLL) \
  	plugins/styles/libqmacstyle$(SUFF_DLL)
  VBOX_DI_VBAPP_MISC_FILES += \
  	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
