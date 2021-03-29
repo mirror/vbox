@@ -257,9 +257,6 @@ ifdef VBOX_WITH_QTGUI
  	$(if $(VBOX_WITH_ORACLE_QT),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm) \
  	icons
- VBOX_LNX_NO_STRIP += \
-  	$(if $(VBOX_WITH_ORACLE_QT),$(VBOX_QT_PLUGINS)) \
-	$(addprefix legacy/,$(VBOX_QT_LEGACY_LIBS))
 endif
 
 # Guest Additions
@@ -521,8 +518,7 @@ BLDDIRS += $(foreach d,\
 	$(if $(VBOX_WITH_ORACLE_QT), \
 	  archive/plugins/platforms \
 	  archive/plugins/sqldrivers \
-	  archive/plugins/xcbglintegrations \
-	  archive/legacy,) \
+	  archive/plugins/xcbglintegrations,) \
 	$(if $(VBOX_WITH_PYTHON),\
 	  archive/sdk/installer \
 	  archive/sdk/installer/vboxapi \
