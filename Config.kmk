@@ -6991,6 +6991,7 @@ ifdef VBOX_WITH_QTGUI
    VBOX_QT_LEGACY_LIBS = $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
    VBOX_QT_PLUGINS = \
    	plugins/platforms/libqxcb.so \
+   	plugins/sqldrivers/libqsqlite.so \
    	plugins/xcbglintegrations/libqxcb-glx-integration.so
   else ifeq ($(KBUILD_TARGET), win)
    VBOX_QT_MOD += Qt5WinExtras
