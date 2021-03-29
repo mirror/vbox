@@ -32,6 +32,7 @@
 #include "../AudioMixBuffer.h"
 #include "../AudioHlp.h"
 
+#define _USE_MATH_DEFINES
 #include <math.h> /* sin, M_PI */
 
 
