@@ -20,12 +20,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IOMMU
-#include <VBox/vmm/pdmdev.h>
-#include <VBox/iommu-intel.h>
+#include "VBoxDD.h"
+#include "DevIommuIntel.h"
 
 #include <iprt/string.h>
-
-#include "VBoxDD.h"
 
 
 /*********************************************************************************************************************************
