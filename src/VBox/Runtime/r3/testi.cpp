@@ -175,6 +175,22 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...)
 }
 
 
+RTR3DECL(int) RTTestIErrContextV(const char *pszFormat, va_list va)
+{
+    return RTTestErrContextV(NIL_RTTEST, pszFormat, va);
+}
+
+
+RTR3DECL(int) RTTestErrContext(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTTestIErrContextV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
 RTR3DECL(int) RTTestIDisableAssertions(void)
 {
     return RTTestDisableAssertions(NIL_RTTEST);

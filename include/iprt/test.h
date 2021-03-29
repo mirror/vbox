@@ -638,6 +638,30 @@ RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list
 RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
+ * Sets error context info to be printed with the first failure.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message, no trailing newline.  NULL to clear the
+ *                      context message.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestErrContextV(RTTEST hTest, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+
+/**
+ * Sets error context info to be printed with the first failure.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message, no trailing newline.  NULL to clear the
+ *                      context message.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestErrContext(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+
+/**
  * Disables and shuts up assertions.
  *
  * Max 8 nestings.
@@ -1114,6 +1138,26 @@ RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va) RT_IPRT_
  * @param   ...         Arguments.
  */
 RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+/**
+ * Sets error context info to be printed with the first failure.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat   The message, no trailing newline.  NULL to clear the
+ *                      context message.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestIErrContextV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+
+/**
+ * Sets error context info to be printed with the first failure.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat   The message, no trailing newline.  NULL to clear the
+ *                      context message.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestIErrContext(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Disables and shuts up assertions.
