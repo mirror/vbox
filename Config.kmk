@@ -389,7 +389,10 @@ VBOX_WITH_DOCS_PACKING = 1
 ## @todo CHM docs are on the way out...
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_DOCS_CHM =
+ VBOX_WITH_DOCS_CHM_PACKING =
 endif
+# Include QHelp documentation in the package
+VBOX_WITH_DOCS_QHELP_PACKING = 1
 # By default only include translations in documentation-only builds
 ifdef VBOX_ONLY_DOCS
  ifndef VBOX_NO_DOCS_TRANSLATIONS
@@ -673,6 +676,10 @@ VBOX_WITH_QTGUI = 1
 # Indicates the Qt is Cocoa based on the Mac.
 ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
+endif
+# Enable the QHelp based help function in UI.
+if1of ($(KBUILD_TARGET), darwin linux win)
+ VBOX_WITH_QHELP_VIEWER = 1
 endif
 # VBox Ballooning Control frontend.
 VBOX_WITH_FE_BALLOONCTRL = 1
