@@ -525,8 +525,8 @@ static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 
     uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
-    uint64_t const fRw1cBits = ~(fRw1cMask & uReg);     /* Clear newly written RW1C bits. */
-    uint64_t const uNewReg   = (fRoBits | fRwBits) & fRw1cBits;
+    uint64_t const fRw1cBits = uReg & fRw1cMask;        /* Clear 1s written to RW1C bits. */
+    uint64_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
 
     /* Write new value to the 64-bit register. */
     iommuIntelRegWriteRaw64(pThis, offReg, uNewReg);
@@ -551,8 +551,8 @@ static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
 
     uint32_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint32_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
-    uint32_t const fRw1cBits = ~(fRw1cMask & uReg);     /* Clear newly written RW1C bits. */
-    uint32_t const uNewReg   = (fRoBits | fRwBits) & fRw1cBits;
+    uint32_t const fRw1cBits = uReg & fRw1cMask;        /* Clear 1s written to RW1C bits. */
+    uint32_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
 
     /* Write new value to the 32-bit register. */
     iommuIntelRegWriteRaw32(pThis, offReg, uNewReg);
