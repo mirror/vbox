@@ -541,7 +541,7 @@ static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 32-bit value to write.
  */
-static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
 {
     /* Read current value from the 32-bit register. */
     uint32_t uCurReg;
