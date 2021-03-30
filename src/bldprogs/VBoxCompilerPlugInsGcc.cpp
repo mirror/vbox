@@ -242,13 +242,17 @@ static const struct attribute_spec g_AttribSpecs[] =
         decl_required           : false,
         type_required           : true,
         function_type_required  : true,
-# if RT_GNUC_PREREQ(4, 6)
+// gcc 7.3 at least moves this field to after "handler", and with 8.3 it is back
+#if RT_GNUC_PREREQ(4, 6) && !(RT_GNUC_PREREQ(7, 0) && !RT_GNUC_PREREQ(8, 0))
         affects_type_identity   : false,
 #endif
         handler                 : AttributeHandler,
-# if RT_GNUC_PREREQ(10, 0)
+#if RT_GNUC_PREREQ(7, 0) && !RT_GNUC_PREREQ(8, 0)
+        affects_type_identity   : false,
+#endif
+#if RT_GNUC_PREREQ(8, 0)
         exclude                 : NULL,
-# endif
+#endif
     },
     {
         name                    : "iprt_format_maybe_null",
@@ -257,13 +261,16 @@ static const struct attribute_spec g_AttribSpecs[] =
         decl_required           : false,
         type_required           : true,
         function_type_required  : true,
-# if RT_GNUC_PREREQ(4, 6)
+#if RT_GNUC_PREREQ(4, 6) && !(RT_GNUC_PREREQ(7, 0) && !RT_GNUC_PREREQ(8, 0))
         affects_type_identity   : false,
 #endif
         handler                 : AttributeHandler,
-# if RT_GNUC_PREREQ(10, 0)
+#if RT_GNUC_PREREQ(7, 0) && !RT_GNUC_PREREQ(8, 0)
+        affects_type_identity   : false,
+#endif
+#if RT_GNUC_PREREQ(8, 0)
         exclude                 : NULL,
-# endif
+#endif
     }
 };
 
