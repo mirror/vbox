@@ -280,7 +280,7 @@ else # win x11
     ifneq ($(KBUILD_TARGET),solaris)
      QT5_VERSION = 5.15.2
     else
-     QT5_VERSION = 5.6.2
+     QT5_VERSION = 5.15.2
     endif
     qt5-bin_SOURCES = \
      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
