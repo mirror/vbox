@@ -808,6 +808,24 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
      */
 #endif
 
+    /** @todo VTD: Intercept PCI config space accesses for debugging. */
+#if 0
+    /*
+     * Intercept PCI config. space accesses.
+     */
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, ..);
+    AssertLogRelRCReturn(rc, rc);
+#endif
+
+    /*
+     * Register MMIO region.
+     */
+    AssertCompile(!(VTD_MMIO_BASE_PHYSADDR & X86_PAGE_4K_OFFSET_MASK));
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, VTD_MMIO_BASE_PHYSADDR, VTD_MMIO_SIZE, iommuIntelMmioWrite, iommuIntelMmioRead,
+                                   IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED,
+                                   "Intel-IOMMU", &pThis->hMmio);
+    AssertRCReturn(rc, rc);
+
     return VERR_NOT_IMPLEMENTED;
 }
 

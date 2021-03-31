@@ -35,7 +35,8 @@
 #define VTD_ACPI_DMAR_FLAGS                         (ACPI_DMAR_F_INTR_REMAP | ACPI_DMAR_F_X2APIC_OPT_OUT)
 
 /** The MMIO base address of the DMAR unit (taken from real hardware). */
-#define VTD_MMIO_BASE_ADDR                          0xfed90000
-
+#define VTD_MMIO_BASE_PHYSADDR                      UINT64_C(0xfed90000)
+/** The size of the MMIO region (in bytes). */
+#define VTD_MMIO_SIZE                               4096
 
 #endif /* !VBOX_INCLUDED_SRC_Bus_DevIommuIntel_h */
