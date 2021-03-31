@@ -404,6 +404,9 @@ static const uint8_t *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8
 /** Array of RW1C masks for each register group. */
 static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
 
+/* Masks arrays must be identical in size (even bounds checking code assumes this). */
+AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -413,7 +416,8 @@ static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
  * @returns Pointer to the first element of the register group.
  * @param   pThis       The shared IOMMU device state.
  * @param   offReg      The MMIO offset of the register.
- * @param   cbReg       The size of the access being made.
+ * @param   cbReg       The size of the access being made (for bounds checking on
+ *                      debug builds).
  * @param   pIdxGroup   Where to store the index of the register group the register
  *                      belongs to.
  */
@@ -474,6 +478,7 @@ DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t 
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
     *puReg      = *(uint64_t *)(pabRegs      + offReg);
@@ -495,6 +500,7 @@ DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t 
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
     *puReg      = *(uint32_t *)(pabRegs      + offReg);
