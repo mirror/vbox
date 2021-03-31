@@ -4529,7 +4529,14 @@ define TOOL_DTraceAndVBoxTpG_DTRACE_HDR_CMDS
 	$(MV) -f -- "$(out).tmp" "$(out)"
 endef
 TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_NOT_NEEDED = $(TOOL_StandardDTrace_DTRACE_OBJ_NOT_NEEDED)
-TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $$(filter-out %.gch,$(TOOL_StandardDTrace_DTRACE_OBJ_CMDS))
+TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $(TOOL_StandardDTrace_DTRACE_OBJ_CMDS)
+define TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS # remove when fixed upstream
+	$(QUIET)$(TOOL_StandardDTrace_DTRACE) \
+		$(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) \
+		$(flags) \
+		-o "$(out)" -s "$(source)" \
+		$$(filter-out %-dtrace-object-format.o %.gch, $$($(target)_2_OBJS))
+endef
 
 
 ifdef VBOX_WITH_RAW_MODE
