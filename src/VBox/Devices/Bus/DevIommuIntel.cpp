@@ -160,7 +160,7 @@ typedef struct IOMMURC
 /** Pointer to the raw-mode IOMMU device state. */
 typedef IOMMURC *PIOMMURC;
 /** Pointer to the const raw-mode IOMMU device state. */
-typedef const IOMMURC *CPIOMMURC;
+typedef const IOMMURC *PCIOMMURC;
 
 /** The IOMMU device state for the current context. */
 typedef CTX_SUFF(IOMMU)  IOMMUCC;
