@@ -4529,7 +4529,7 @@ define TOOL_DTraceAndVBoxTpG_DTRACE_HDR_CMDS
 	$(MV) -f -- "$(out).tmp" "$(out)"
 endef
 TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_NOT_NEEDED = $(TOOL_StandardDTrace_DTRACE_OBJ_NOT_NEEDED)
-TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $(filter-out %.gch,$(TOOL_StandardDTrace_DTRACE_OBJ_CMDS))
+TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $$(filter-out %.gch,$(TOOL_StandardDTrace_DTRACE_OBJ_CMDS))
 
 
 ifdef VBOX_WITH_RAW_MODE
