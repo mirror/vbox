@@ -29,22 +29,19 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def VTD_LO_U32
- * Gets the low uint32_t of a uint64_t or something equivalent.
+/** Gets the low uint32_t of a uint64_t or something equivalent.
  *
  * This is suitable for casting constants outside code (since RT_LO_U32 can't be
  * used as it asserts for correctness when compiling on certain compilers). */
 #define VTD_LO_U32(a)       (uint32_t)(UINT32_MAX & (a))
 
-/** @def VTD_HI_U32
- * Gets the high uint32_t of a uint64_t or something equivalent.
+/** Gets the high uint32_t of a uint64_t or something equivalent.
  *
  * This is suitable for casting constants outside code (since RT_HI_U32 can't be
  * used as it asserts for correctness when compiling on certain compilers). */
 #define VTD_HI_U32(a)       (uint32_t)((a) >> 32)
 
-/** @def VTD_ASSERT_MMIO_ACCESS
- * Asserts MMIO access' offset and size are valid or returns appropriate error
+/** Asserts MMIO access' offset and size are valid or returns appropriate error
  * code suitable for returning from MMIO access handlers. */
 #define VTD_ASSERT_MMIO_ACCESS_RET(a_off, a_cb) \
     do { \
@@ -52,8 +49,7 @@
          AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF); \
     } while (0);
 
-/** @def VTD_IS_MMIO_OFF_VALID
- * Returns @c true if the MMIO offset is valid, or @c false otherwise. */
+/** Checks whether the MMIO offset is valid. */
 #define VTD_IS_MMIO_OFF_VALID(a_off)                (   (a_off) < VTD_MMIO_GROUP_0_OFF_END \
                                                      || (a_off) - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE)
 
@@ -82,7 +78,7 @@ AssertCompile(!(VTD_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** Offset of first register in group 1. */
 #define VTD_MMIO_GROUP_1_OFF_FIRST                  VTD_MMIO_OFF_VCCAP_REG
 /** Offset of last register in group 1 (inclusive). */
-#define VTD_MMIO_GROUP_1_OFF_LAST                   VTD_MMIO_OFF_FRCD_LO_REG + 8 * VTD_FRCD_REG_COUNT
+#define VTD_MMIO_GROUP_1_OFF_LAST                   (VTD_MMIO_OFF_FRCD_LO_REG + 8) * VTD_FRCD_REG_COUNT
 /** Last valid offset in group 1 (exclusive). */
 #define VTD_MMIO_GROUP_1_OFF_END                    (VTD_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof FRCD_HI_REG */)
 /** Size of the group 1 (in bytes). */
@@ -427,7 +423,7 @@ DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8
     AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
     AssertMsg(VTD_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
 
-    uint8_t *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
+    uint8_t *const apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
     *pIdxGroup = !(offLast < VTD_MMIO_GROUP_0_OFF_END);
     return apbRegs[*pIdxGroup];
 }
@@ -770,6 +766,41 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
+    /*
+     * Initialize PCI configuration registers.
+     */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    /* Header. */
+    PDMPciDevSetVendorId(pPciDev,          VTD_PCI_VENDOR_ID);         /* Intel */
+    PDMPciDevSetDeviceId(pPciDev,          VTD_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
+    PDMPciDevSetRevisionId(pPciDev,        VTD_PCI_REVISION_ID);       /* VirtualBox specific device implementation revision */
+    PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_OTHER); /* Other */
+    PDMPciDevSetHeaderType(pPciDev,        0x0);                       /* Single function, type 0 */
+    PDMPciDevSetSubSystemId(pPciDev,       VTD_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
+    PDMPciDevSetSubSystemVendorId(pPciDev, VTD_PCI_VENDOR_ID);         /* Intel */
+
+    /** @todo VTD: Chipset spec says PCI Express Capability Id. Relevant for us? */
+    PDMPciDevSetStatus(pPciDev,            0);
+    PDMPciDevSetCapabilityList(pPciDev,    0);
+
+    /** @todo VTD: VTBAR at 0x180? */
+
+    /*
+     * Register the PCI function with PDM.
+     */
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @todo VTD: Register MSI but what's the MSI capability offset? */
+#if 0
+    /*
+     * Register MSI support for the PCI device.
+     * This must be done -after- registering it as a PCI device!
+     */
+#endif
 
     return VERR_NOT_IMPLEMENTED;
 }

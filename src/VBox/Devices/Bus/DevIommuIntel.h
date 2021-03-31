@@ -23,9 +23,17 @@
 
 #include <VBox/iommu-intel.h>
 
+/** Intel vendor ID for the DMAR unit. */
+#define VTD_PCI_VENDOR_ID                           0x8086
+/** VirtualBox DMAR unit's device ID. */
+#define VTD_PCI_DEVICE_ID                           0xc0de
+/** VirtualBox DMAR unit's device revision ID. */
+#define VTD_PCI_REVISION_ID                         0x01
+
 /** Feature/capability flags exposed to the guest (x2APIC Opt Out until we get
  *  regular APIC setup working). */
 #define VTD_ACPI_DMAR_FLAGS                         (ACPI_DMAR_F_INTR_REMAP | ACPI_DMAR_F_X2APIC_OPT_OUT)
+
 /** The MMIO base address of the DMAR unit (taken from real hardware). */
 #define VTD_MMIO_BASE_ADDR                          0xfed90000
 
