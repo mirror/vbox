@@ -108,11 +108,11 @@ my_get_name()
 # @param    $1      The library base path relative to root.
 my_get_newest_ver()
 {
-    cd "${MY_ABS_DIR}"
+    cd "${MY_ROOT_DIR}" > /dev/null
     latest=
     for ver in "$1"*;
     do
-        if test -z "${latest}" || "${MY_EXPR}" "${ver}" ">" "${latest}"; then
+        if test -z "${latest}" || "${MY_EXPR}" "${ver}" ">" "${latest}" > /dev/null; then
             latest="${ver}"
         fi
     done
