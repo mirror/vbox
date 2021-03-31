@@ -843,7 +843,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         uMcfgBase = _4G - cbRamHole;
     }
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     IommuType_T iommuType;
     hrc = pMachine->COMGETTER(IommuType)(&iommuType);                                       H();
 
@@ -853,25 +853,33 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         if (ASMIsAmdCpu())
             iommuType = IommuType_AMD;
         else if (ASMIsIntelCpu())
-        {
-            iommuType = IommuType_None;
-            LogRel(("WARNING! Intel IOMMU implemention is not yet supported. Disabled IOMMU.\n"));
-        }
+            iommuType = IommuType_Intel;
         else
         {
             /** @todo Should we handle other CPUs like Shanghai, VIA etc. here? */
-            LogRel(("WARNING! Unrecognized CPU type. Disabled IOMMU.\n"));
+            LogRel(("WARNING! Unrecognized CPU type, IOMMU disabled.\n"));
             iommuType = IommuType_None;
         }
     }
 
-    /* Handle AMD IOMMU specifics. */
-    if (   iommuType == IommuType_AMD
+    if (iommuType == IommuType_AMD)
+    {
+#ifndef VBOX_WITH_IOMMU_AMD
+        LogRel(("WARNING! AMD IOMMU not supported, IOMMU disabled.\n"));
+        iommuType = IommuType_None;
+#endif
+    }
+    if (iommuType != IommuType_Intel)
+    {
+#ifndef VBOX_WITH_IOMMU_INTEL
+        LogRel(("WARNING! Intel IOMMU not supported, IOMMU disabled.\n"));
+        iommuType = IommuType_None;
+#endif
+    }
+    if (   (iommuType == IommuType_AMD || iommuType == IommuType_Intel)
         && chipsetType != ChipsetType_ICH9)
-        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                            N_("AMD IOMMU uses MSIs which requires the ICH9 chipset implementation."));
-
-    /** @todo Handle Intel IOMMU specifics. */
+            return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                N_("IOMMU uses MSIs which requires the ICH9 chipset implementation."));
 #else
     IommuType_T const iommuType = IommuType_None;
 #endif
@@ -1574,7 +1582,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                           H();
 #endif
 
-#ifdef VBOX_WITH_IOMMU_AMD
             if (iommuType == IommuType_AMD)
             {
                 /* AMD IOMMU. */
@@ -1582,7 +1589,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pDev,     "0", &pInst);
                 InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
                 InsertConfigNode(pInst,    "Config", &pCfg);
-                hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                             H();
+                hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                         H();
 
                 /*
                  * Reserve the specific PCI address of the "SB I/O APIC" when using
@@ -1591,10 +1598,16 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
-#endif
+            else if (iommuType == IommuType_Intel)
+            {
+                /* Intel IOMMU. */
+                InsertConfigNode(pDevices, "iommu-intel", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                hrc = pBusMgr->assignPCIDevice("iommu-intel", pInst);                       H();
+            }
         }
-        /** @todo IOMMU: Disallow creating a VM without ICH9 chipset if an IOMMU is
-         *        configured. */
 
         /*
          * Enable the following devices: HPET, SMC and LPC on MacOS X guests or on ICH9 chipset
@@ -3360,7 +3373,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "NvmePciAddress",    u32NvmePCIAddr);
                 }
             }
-#ifdef VBOX_WITH_IOMMU_AMD
             if (iommuType == IommuType_AMD)
             {
                 PCIBusAddress Address;
@@ -3368,7 +3380,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 {
                     uint32_t u32IommuAddress = (Address.miDevice << 16) | Address.miFn;
                     InsertConfigInteger(pCfg, "IommuAmdEnabled", true);
-                    InsertConfigInteger(pCfg, "IommuAmdPciAddress", u32IommuAddress);
+                    InsertConfigInteger(pCfg, "IommuPciAddress", u32IommuAddress);
                     if (pBusMgr->findPCIAddress("sb-ioapic", 0, Address))
                     {
                         uint32_t u32SbIoapicAddress = (Address.miDevice << 16) | Address.miFn;
@@ -3378,7 +3390,17 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         LogRel(("IOMMU: AMD IOMMU is enabled, but southbridge I/O APIC is not assigned a PCI address!\n"));
                 }
             }
-#endif
+            else if (iommuType == IommuType_Intel)
+            {
+                PCIBusAddress Address;
+                if (pBusMgr->findPCIAddress("iommu-intel", 0, Address))
+                {
+                    uint32_t u32IommuAddress = (Address.miDevice << 16) | Address.miFn;
+                    InsertConfigInteger(pCfg, "IommuIntelEnabled", true);
+                    InsertConfigInteger(pCfg, "IommuPciAddress", u32IommuAddress);
+                }
+            }
+
             InsertConfigInteger(pCfg,  "IocPciAddress", uIocPCIAddress);
             if (chipsetType == ChipsetType_ICH9)
             {

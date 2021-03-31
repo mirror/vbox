@@ -237,7 +237,7 @@ static const DeviceAssignmentRule g_aIch9Rules[] =
  * conflicts with the SB I/O APIC, we assign the LSI Logic controller
  * to device number 23 when the VM is configured for an AMD IOMMU.
  */
-static const DeviceAssignmentRule g_aIch9IommuLsiRules[] =
+static const DeviceAssignmentRule g_aIch9IommuAmdRules[] =
 {
     /* AMD IOMMU. */
     {"iommu-amd",     0,  0,  0, 0},
@@ -246,6 +246,24 @@ static const DeviceAssignmentRule g_aIch9IommuLsiRules[] =
 
     /* Storage controller */
     {"lsilogic",      0, 23,  0, 1},
+    { NULL,          -1, -1, -1, 0}
+};
+#endif
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+/*
+ * Intel IOMMU.
+ * The VT-d misc, address remapping, system management device is
+ * located at BDF 00:5:0 on real hardware so we mimick the same.
+ * LSI logic remains at 0:20:0.
+ */
+static const DeviceAssignmentRule g_aIch9IommuIntelRules[] =
+{
+    /* Intel IOMMU. */
+    {"iommu-intel",   0,  5,  0, 0},
+
+    /* Storage controller */
+    {"lsilogic",      0, 20,  0, 1},
     { NULL,          -1, -1, -1, 0}
 };
 #endif
@@ -333,8 +351,16 @@ struct BusAssignmentManager::State
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType, IommuType_T iommuType)
 {
-    /* Currently we only support AMD IOMMU. */
-    Assert(iommuType == IommuType_None || iommuType == IommuType_AMD);
+    if (iommuType != IommuType_None)
+    {
+#if defined(VBOX_WITH_IOMMU_AMD) && defined(VBOX_WITH_IOMMU_INTEL)
+        Assert(iommuType == IommuType_AMD || iommuType == IommuType_Intel);
+#elif defined(VBOX_WITH_IOMMU_AMD)
+        Assert(iommuType == IommuType_AMD);
+#elif defined(VBOX_WITH_IOMMU_INTEL)
+        Assert(iommuType == IommuType_Intel);
+#endif
+    }
 
     mChipsetType = chipsetType;
     mIommuType   = iommuType;
@@ -404,7 +430,12 @@ void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRules
             aArrays[1] = g_aIch9Rules;
 #ifdef VBOX_WITH_IOMMU_AMD
             if (mIommuType == IommuType_AMD)
-                aArrays[2] = g_aIch9IommuLsiRules;
+                aArrays[2] = g_aIch9IommuAmdRules;
+            else
+#endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+            if (mIommuType == IommuType_Intel)
+                aArrays[2] = g_aIch9IommuIntelRules;
             else
 #endif
             {

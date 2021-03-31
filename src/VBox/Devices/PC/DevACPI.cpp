@@ -208,7 +208,7 @@ enum
     SYSTEM_INFO_INDEX_PARALLEL1_IRQ     = 29,
     SYSTEM_INFO_INDEX_PREF64_MEMORY_MAX = 30,
     SYSTEM_INFO_INDEX_NVME_ADDRESS      = 31, /**< First NVMe controller PCI address, or 0 */
-    SYSTEM_INFO_INDEX_IOMMU_AMD_ADDRESS = 32, /**< AMD IOMMU PCI address, or 0 */
+    SYSTEM_INFO_INDEX_IOMMU_ADDRESS     = 32, /**< IOMMU PCI address, or 0 */
     SYSTEM_INFO_INDEX_SB_IOAPIC_ADDRESS = 33, /**< Southbridge I/O APIC (needed by AMD IOMMU) PCI address, or 0 */
     SYSTEM_INFO_INDEX_END               = 34,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
@@ -401,8 +401,8 @@ typedef struct ACPISTATE
     uint32_t            u32IocPciAddress;
     /** PCI address of the host bus controller device. */
     uint32_t            u32HbcPciAddress;
-    /** PCI address of the AMD IOMMU device. */
-    uint32_t            u32IommuAmdPciAddress;
+    /** PCI address of the IOMMU device. */
+    uint32_t            u32IommuPciAddress;
     /** PCI address of the southbridge I/O APIC device. */
     uint32_t            u32SbIoApicPciAddress;
 
@@ -1654,8 +1654,8 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void
             *pu32 = pThis->uParallel1Irq;
             break;
 
-        case SYSTEM_INFO_INDEX_IOMMU_AMD_ADDRESS:
-            *pu32 = pThis->u32IommuAmdPciAddress;
+        case SYSTEM_INFO_INDEX_IOMMU_ADDRESS:
+            *pu32 = pThis->u32IommuPciAddress;
             break;
 
         case SYSTEM_INFO_INDEX_SB_IOAPIC_ADDRESS:
@@ -3219,8 +3219,8 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     RT_ZERO(Ivrs);
 
     uint16_t const uIommuBus = 0;
-    uint16_t const uIommuDev = RT_HI_U16(pThis->u32IommuAmdPciAddress);
-    uint16_t const uIommuFn  = RT_LO_U16(pThis->u32IommuAmdPciAddress);
+    uint16_t const uIommuDev = RT_HI_U16(pThis->u32IommuPciAddress);
+    uint16_t const uIommuFn  = RT_LO_U16(pThis->u32IommuPciAddress);
 
     /* IVRS header. */
     acpiR3PrepareHeader(pThis, &Ivrs.Hdr.header, "IVRS", sizeof(Ivrs), ACPI_IVRS_FMT_REV_FIXED);
@@ -3386,7 +3386,7 @@ static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS
     /* DRHD. */
     VtdTable.Drhd.cbLength     = sizeof(ACPIDRHD) /* + sizeof(VtdTable.DevScope) */;
     VtdTable.Drhd.fFlags       = ACPI_DRHD_F_INCLUDE_PCI_ALL;
-    VtdTable.Drhd.uRegBaseAddr = VTD_MMIO_BASE_ADDR;
+    VtdTable.Drhd.uRegBaseAddr = VTD_MMIO_BASE_PHYSADDR;
 
     /* Finally, compute checksum. */
     VtdTable.Dmar.Hdr.u8Checksum = acpiR3Checksum(&VtdTable, sizeof(VtdTable));
@@ -4073,8 +4073,9 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "|Parallel1IoPortBase"
                                   "|Parallel0Irq"
                                   "|Parallel1Irq"
+                                  "|IommuIntelEnabled"
                                   "|IommuAmdEnabled"
-                                  "|IommuAmdPciAddress"
+                                  "|IommuPciAddress"
                                   "|SbIoApicPciAddress"
                                   , "");
 
@@ -4241,9 +4242,9 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (pThis->fUseIommuAmd)
     {
         /* Query IOMMU AMD address (IOMA). */
-        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuAmdPciAddress", &pThis->u32IommuAmdPciAddress, 0);
+        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress, 0);
         if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuAmdAddress\""));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuPciAddress\""));
 
         /* Query southbridge I/O APIC address (required when an AMD IOMMU is configured). */
         rc = pHlp->pfnCFGMQueryU32Def(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress, 0);
@@ -4253,7 +4254,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         /* Warn if the IOMMU Address is at the PCI host-bridge address. */
         /** @todo We should eventually not assign the IOMMU at this address, see
          *        @bugref{9654#c53}. */
-        if (!pThis->u32IommuAmdPciAddress)
+        if (!pThis->u32IommuPciAddress)
             LogRel(("ACPI: Warning! AMD IOMMU assigned the PCI host bridge address.\n"));
 
         /* Warn if the SB IOAPIC is not at the required address if an AMD IOMMU is configured. */
@@ -4271,6 +4272,14 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IommuIntelEnabled", &pThis->fUseIommuIntel, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuIntelEnabled\""));
+
+    if (pThis->fUseIommuIntel)
+    {
+        /* Query IOMMU Intel address. */
+        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress, 0);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuPciAddress\""));
+    }
 #endif
 
     /* Don't even think about enabling an Intel and an AMD IOMMU at the same time! */
