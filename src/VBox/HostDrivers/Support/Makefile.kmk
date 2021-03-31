@@ -776,7 +776,7 @@ $$(vboxdrv-src_0_OUTDIR)/Makefile: \
 		$(if-expr !defined(VBOX_WITH_RAM_IN_KERNEL) \
 		 , -e 's;VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV;;g' -e 's;IPRT_WITHOUT_EFLAGS_AC_PRESERVING;;g',) \
 		--output $@ $<
-	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-src-1.dep' \
+	%$(QUIET2)$(APPEND) -t -n '$(PATH_TARGET)/vboxdrv-src-1.dep' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_RAM_IN_KERNEL=$(VBOX_WITH_RAM_IN_KERNEL)'
 
