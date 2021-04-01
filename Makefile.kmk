@@ -267,7 +267,7 @@ else # win x11
    ifdef VBOX_WITH_HARDENING
     # The wildcards are necessary to install the libs instead of the symlinks
     qt5-bin_SOURCES = \
-     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*)=>lib$(qtmod).so.5) \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.5) \
      $(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
      ifneq ($(KBUILD_TARGET),solaris)
       qt5-bin_SOURCES += \
