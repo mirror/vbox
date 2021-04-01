@@ -1774,7 +1774,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
 /** INTR_REMAP: Interrupt remapping supported. */
 #define ACPI_DMAR_F_INTR_REMAP                                  RT_BIT(0)
 /** X2APIC_OPT_OUT: Request system software to opt-out of enabling x2APIC. */
-#define ACPI_DMAR_F_X2APIC_OPT_OUT                              RT_BIT(0)
+#define ACPI_DMAR_F_X2APIC_OPT_OUT                              RT_BIT(1)
 /** DMA_CTRL_PLATFORM_OPT_IN_FLAG: Firmware initiated DMA restricted to reserved
  *  memory regions (RMRR). */
 #define ACPI_DMAR_F_DMA_CTRL_PLATFORM_OPT_IN                    RT_BIT(2)
