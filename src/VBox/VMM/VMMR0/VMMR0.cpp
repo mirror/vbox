@@ -825,42 +825,63 @@ static int vmmR0DoHalt(PGVM pGVM, PGVMCPU pGVCpu)
                         }
                     }
 
-                    /* Block.  We have to set the state to VMCPUSTATE_STARTED_HALTED here so ring-3
-                       knows when to notify us (cannot access VMINTUSERPERVMCPU::fWait from here). */
-                    VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED_HALTED, VMCPUSTATE_STARTED);
-                    uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
-                    int rc = GVMMR0SchedHalt(pGVM, pGVCpu, u64GipTime);
-                    uint64_t const u64EndSchedHalt     = RTTimeNanoTS();
-                    uint64_t const cNsElapsedSchedHalt = u64EndSchedHalt - u64StartSchedHalt;
-                    VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
-                    STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlock, cNsElapsedSchedHalt);
-                    if (   rc == VINF_SUCCESS
-                        || rc == VERR_INTERRUPTED)
-
+                    /*
+                     * We have to set the state to VMCPUSTATE_STARTED_HALTED here so ring-3
+                     * knows when to notify us (cannot access VMINTUSERPERVMCPU::fWait from here).
+                     * After changing the state we must recheck the force flags of course.
+                     */
+                    if (VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED_HALTED, VMCPUSTATE_STARTED))
                     {
-                        /* Keep some stats like ring-3 does. */
-                        int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
-                        if (cNsOverslept > 50000)
-                            STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockOverslept, cNsOverslept);
-                        else if (cNsOverslept < -50000)
-                            STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockInsomnia,  cNsElapsedSchedHalt);
-                        else
-                            STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockOnTime,    cNsElapsedSchedHalt);
-
-                        /*
-                         * Recheck whether we can resume execution or have to go to ring-3.
-                         */
                         if (   !VM_FF_IS_ANY_SET(pGVM, fVmFFs)
                             && !VMCPU_FF_IS_ANY_SET(pGVCpu, fCpuFFs))
                         {
                             if (VMCPU_FF_TEST_AND_CLEAR(pGVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pGVCpu);
+
                             if (VMCPU_FF_IS_ANY_SET(pGVCpu, fIntMask))
                             {
-                                STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltExecFromBlock);
+                                VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
                                 return vmmR0DoHaltInterrupt(pGVCpu, uMWait, enmInterruptibility);
                             }
+
+                            /* Okay, block! */
+                            uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
+                            int rc = GVMMR0SchedHalt(pGVM, pGVCpu, u64GipTime);
+                            uint64_t const u64EndSchedHalt     = RTTimeNanoTS();
+                            uint64_t const cNsElapsedSchedHalt = u64EndSchedHalt - u64StartSchedHalt;
+
+                            VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
+                            STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlock, cNsElapsedSchedHalt);
+                            if (   rc == VINF_SUCCESS
+                                || rc == VERR_INTERRUPTED)
+                            {
+                                /* Keep some stats like ring-3 does. */
+                                int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
+                                if (cNsOverslept > 50000)
+                                    STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockOverslept, cNsOverslept);
+                                else if (cNsOverslept < -50000)
+                                    STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockInsomnia,  cNsElapsedSchedHalt);
+                                else
+                                    STAM_REL_PROFILE_ADD_PERIOD(&pGVCpu->vmm.s.StatR0HaltBlockOnTime,    cNsElapsedSchedHalt);
+
+                                /*
+                                 * Recheck whether we can resume execution or have to go to ring-3.
+                                 */
+                                if (   !VM_FF_IS_ANY_SET(pGVM, fVmFFs)
+                                    && !VMCPU_FF_IS_ANY_SET(pGVCpu, fCpuFFs))
+                                {
+                                    if (VMCPU_FF_TEST_AND_CLEAR(pGVCpu, VMCPU_FF_UPDATE_APIC))
+                                        APICUpdatePendingInterrupts(pGVCpu);
+                                    if (VMCPU_FF_IS_ANY_SET(pGVCpu, fIntMask))
+                                    {
+                                        STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltExecFromBlock);
+                                        return vmmR0DoHaltInterrupt(pGVCpu, uMWait, enmInterruptibility);
+                                    }
+                                }
+                            }
                         }
+                        else
+                            VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
                     }
                 }
             }
