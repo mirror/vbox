@@ -435,7 +435,13 @@ typedef struct VMMCPU
     STAMCOUNTER                 StatR0HaltExec;
     STAMCOUNTER                 StatR0HaltExecFromBlock;
     STAMCOUNTER                 StatR0HaltExecFromSpin;
+    STAMCOUNTER                 StatR0HaltToR3;
     STAMCOUNTER                 StatR0HaltToR3FromSpin;
+    STAMCOUNTER                 StatR0HaltToR3Other;
+    STAMCOUNTER                 StatR0HaltToR3PendingFF;
+    STAMCOUNTER                 StatR0HaltToR3SmallDelta;
+    STAMCOUNTER                 StatR0HaltToR3PostNoInt;
+    STAMCOUNTER                 StatR0HaltToR3PostPendingFF;
 } VMMCPU;
 AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 /** Pointer to VMMCPU. */

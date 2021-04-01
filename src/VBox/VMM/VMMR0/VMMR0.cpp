@@ -600,7 +600,6 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, VMCPUID idCpu)
     return VINF_SUCCESS;
 }
 
-#if 0 /** @todo temporarily disabled, see oem2 ticket 40 */
 
 /**
  * An interrupt or unhalt force flag is set, deal with it.
@@ -644,6 +643,7 @@ static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIB
     else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI))
     {
         Log12(("vmmR0DoHaltInterrupt: CPU%d failed #3\n", pVCpu->idCpu));
+        STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3);
         return VINF_EM_HALT;
     }
     /*
@@ -655,6 +655,7 @@ static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIB
         {
             /** @todo later. */
             Log12(("vmmR0DoHaltInterrupt: CPU%d failed #2 (uMWait=%u enmInt=%d)\n", pVCpu->idCpu, uMWait, enmInterruptibility));
+            STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3);
             return VINF_EM_HALT;
         }
     }
@@ -669,6 +670,7 @@ static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIB
              *        here before injecting the virtual interrupt. See emR3ForcedActions
              *        for details. */
             Log12(("vmmR0DoHaltInterrupt: CPU%d failed #1 (uMWait=%u enmInt=%d)\n", pVCpu->idCpu, uMWait, enmInterruptibility));
+            STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3);
             return VINF_EM_HALT;
         }
     }
@@ -687,6 +689,7 @@ static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIB
     }
 
     Log12(("vmmR0DoHaltInterrupt: CPU%d failed #0 (uMWait=%u enmInt=%d)\n", pVCpu->idCpu, uMWait, enmInterruptibility));
+    STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3);
     return VINF_EM_HALT;
 }
 
@@ -813,12 +816,14 @@ static int vmmR0DoHalt(PGVM pGVM, PGVMCPU pGVCpu)
                             if (VM_FF_IS_ANY_SET(pGVM, fVmFFs))
                             {
                                 STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3FromSpin);
+                                STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3);
                                 return VINF_EM_HALT;
                             }
                             ASMNopPause();
                             if (VMCPU_FF_IS_ANY_SET(pGVCpu, fCpuFFs))
                             {
                                 STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3FromSpin);
+                                STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3);
                                 return VINF_EM_HALT;
                             }
                             ASMNopPause();
@@ -884,38 +889,63 @@ static int vmmR0DoHalt(PGVM pGVM, PGVMCPU pGVCpu)
                                         STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltExecFromBlock);
                                         return vmmR0DoHaltInterrupt(pGVCpu, uMWait, enmInterruptibility);
                                     }
+                                    STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3PostNoInt);
                                     Log12(("vmmR0DoHalt: CPU%d post #2 - No pending interrupt\n", pGVCpu->idCpu));
                                 }
                                 else
+                                {
+                                    STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3PostPendingFF);
                                     Log12(("vmmR0DoHalt: CPU%d post #1 - Pending FF\n", pGVCpu->idCpu));
+                                }
                             }
                             else
+                            {
+                                STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3Other);
                                 Log12(("vmmR0DoHalt: CPU%d GVMMR0SchedHalt failed: %Rrc\n", pGVCpu->idCpu, rc));
+                            }
                         }
                         else
                         {
                             VMCPU_CMPXCHG_STATE(pGVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
-                            Log12(("vmmR0DoHalt: CPU%d failed #4 - Pending FF\n", pGVCpu->idCpu));
+                            STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3PendingFF);
+                            Log12(("vmmR0DoHalt: CPU%d failed #5 - Pending FF\n", pGVCpu->idCpu));
                         }
                     }
                     else
-                        Log12(("vmmR0DoHalt: CPU%d failed #3 - enmState=%d\n", pGVCpu->idCpu, VMCPU_GET_STATE(pGVCpu)));
+                    {
+                        STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3Other);
+                        Log12(("vmmR0DoHalt: CPU%d failed #4 - enmState=%d\n", pGVCpu->idCpu, VMCPU_GET_STATE(pGVCpu)));
+                    }
                 }
                 else
-                    Log12(("vmmR0DoHalt: CPU%d failed #2 - Pending FF\n", pGVCpu->idCpu));
+                {
+                    STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3SmallDelta);
+                    Log12(("vmmR0DoHalt: CPU%d failed #3 - delta too small: %RU64\n", pGVCpu->idCpu, u64Delta));
+                }
+            }
+            else
+            {
+                STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3PendingFF);
+                Log12(("vmmR0DoHalt: CPU%d failed #2 - Pending FF\n", pGVCpu->idCpu));
             }
         }
         else
+        {
+            STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3PendingFF);
             Log12(("vmmR0DoHalt: CPU%d failed #1 - Pending FF\n", pGVCpu->idCpu));
+        }
     }
     else
+    {
+        STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3Other);
         Log12(("vmmR0DoHalt: CPU%d failed #0 - fMayHaltInRing0=%d TRPMHasTrap=%d enmInt=%d uMWait=%u\n",
                pGVCpu->idCpu, pGVCpu->vmm.s.fMayHaltInRing0, TRPMHasTrap(pGVCpu), enmInterruptibility, uMWait));
+    }
 
+    STAM_REL_COUNTER_INC(&pGVCpu->vmm.s.StatR0HaltToR3);
     return VINF_EM_HALT;
 }
 
-#endif
 
 /**
  * VMM ring-0 thread-context callback.
@@ -1515,7 +1545,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
 #ifdef VBOX_WITH_STATISTICS
                     vmmR0RecordRC(pGVM, pGVCpu, rc);
 #endif
-#if 0 /** @todo temporarily disabled, see oem2 ticket 40 */
                     /*
                      * If this is a halt.
                      */
@@ -1531,7 +1560,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                         }
                         pGVCpu->vmm.s.cR0HaltsToRing3++;
                     }
-#endif
                 }
                 /*
                  * Invalid CPU set index or TSC delta in need of measuring.
