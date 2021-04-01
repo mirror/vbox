@@ -235,7 +235,7 @@ enum
     MODIFYVM_RECORDING_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     MODIFYVM_IOMMU,
 #endif
     MODIFYVM_DEFAULTFRONTEND,
@@ -411,7 +411,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     { "--iommu",                    MODIFYVM_IOMMU,                     RTGETOPT_REQ_STRING },
 #endif
 #ifdef VBOX_WITH_RECORDING
@@ -3012,7 +3012,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
             case MODIFYVM_IOMMU:
             {
                 if (   !RTStrICmp(ValueUnion.psz, "none")
@@ -3020,12 +3020,15 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_None));
                 else if (!RTStrICmp(ValueUnion.psz, "amd"))
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_AMD));
-                /** @todo Add Intel when it's supported, remove warning from below. */
+                else if (!RTStrICmp(ValueUnion.psz, "intel"))
+                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Intel));
                 else if (!RTStrICmp(ValueUnion.psz, "automatic"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Automatic));
+#ifndef VBOX_WITH_IOMMU_INTEL
                     RTStrmPrintf(g_pStdErr,
                                  "Warning: On Intel hosts, 'automatic' will not enable an IOMMU since the Intel IOMMU device is not supported yet.\n");
+#endif
                 }
                 else
                 {
