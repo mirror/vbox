@@ -3381,12 +3381,12 @@ static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS
     PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cPhysAddrBits, &cLinearAddrBits);
     Assert(cPhysAddrBits > 0); NOREF(cLinearAddrBits);
     VtdTable.Dmar.uHostAddrWidth = cPhysAddrBits - 1;
-    VtdTable.Dmar.fFlags         = VTD_ACPI_DMAR_FLAGS;
+    VtdTable.Dmar.fFlags         = DMAR_ACPI_DMAR_FLAGS;
 
     /* DRHD. */
     VtdTable.Drhd.cbLength     = sizeof(ACPIDRHD) /* + sizeof(VtdTable.DevScope) */;
     VtdTable.Drhd.fFlags       = ACPI_DRHD_F_INCLUDE_PCI_ALL;
-    VtdTable.Drhd.uRegBaseAddr = VTD_MMIO_BASE_PHYSADDR;
+    VtdTable.Drhd.uRegBaseAddr = DMAR_MMIO_BASE_PHYSADDR;
 
     /* Finally, compute checksum. */
     VtdTable.Dmar.Hdr.u8Checksum = acpiR3Checksum(&VtdTable, sizeof(VtdTable));

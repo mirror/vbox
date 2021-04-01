@@ -33,158 +33,158 @@
  *
  * This is suitable for casting constants outside code (since RT_LO_U32 can't be
  * used as it asserts for correctness when compiling on certain compilers). */
-#define VTD_LO_U32(a)       (uint32_t)(UINT32_MAX & (a))
+#define DMAR_LO_U32(a)       (uint32_t)(UINT32_MAX & (a))
 
 /** Gets the high uint32_t of a uint64_t or something equivalent.
  *
  * This is suitable for casting constants outside code (since RT_HI_U32 can't be
  * used as it asserts for correctness when compiling on certain compilers). */
-#define VTD_HI_U32(a)       (uint32_t)((a) >> 32)
+#define DMAR_HI_U32(a)       (uint32_t)((a) >> 32)
 
 /** Asserts MMIO access' offset and size are valid or returns appropriate error
  * code suitable for returning from MMIO access handlers. */
-#define VTD_ASSERT_MMIO_ACCESS_RET(a_off, a_cb) \
+#define DMAR_ASSERT_MMIO_ACCESS_RET(a_off, a_cb) \
     do { \
          AssertReturn(!(off & 3), VINF_IOM_MMIO_UNUSED_FF); \
          AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF); \
     } while (0);
 
 /** Checks whether the MMIO offset is valid. */
-#define VTD_IS_MMIO_OFF_VALID(a_off)                (   (a_off) < VTD_MMIO_GROUP_0_OFF_END \
-                                                     || (a_off) - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE)
+#define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
+                                                     || (a_off) - DMAR_MMIO_GROUP_1_OFF_FIRST < DMAR_MMIO_GROUP_1_SIZE)
 
 /** The number of fault recording registers our implementation supports.
  *  Normal guest operation shouldn't trigger faults anyway, so we only support the
  *  minimum number of registers (which is 1).
  *
  *  See Intel VT-d spec. 10.4.2 "Capability Register" (CAP_REG::NFR). */
-#define VTD_FRCD_REG_COUNT                          UINT32_C(1)
+#define DMAR_FRCD_REG_COUNT                         UINT32_C(1)
 
 /** Offset of first register in group 0. */
-#define VTD_MMIO_GROUP_0_OFF_FIRST                  VTD_MMIO_OFF_VER_REG
+#define DMAR_MMIO_GROUP_0_OFF_FIRST                 VTD_MMIO_OFF_VER_REG
 /** Offset of last register in group 0 (inclusive). */
-#define VTD_MMIO_GROUP_0_OFF_LAST                   VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
+#define DMAR_MMIO_GROUP_0_OFF_LAST                  VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
 /** Last valid offset in group 0 (exclusive). */
-#define VTD_MMIO_GROUP_0_OFF_END                    (VTD_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
+#define DMAR_MMIO_GROUP_0_OFF_END                   (DMAR_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
 /** Size of the group 0 (in bytes). */
-#define VTD_MMIO_GROUP_0_SIZE                       (VTD_MMIO_GROUP_0_OFF_END - VTD_MMIO_GROUP_0_OFF_FIRST)
+#define DMAR_MMIO_GROUP_0_SIZE                      (DMAR_MMIO_GROUP_0_OFF_END - DMAR_MMIO_GROUP_0_OFF_FIRST)
 
-#define VTD_MMIO_OFF_IVA_REG                        0xe40   /**< Implementation-specific MMIO offset of IVA_REG. */
-#define VTD_MMIO_OFF_IOTLB_REG                      0xe48   /**< Implementation-specific MMIO offset of IOTLB_REG. */
-#define VTD_MMIO_OFF_FRCD_LO_REG                    0xe60   /**< Implementation-specific MMIO offset of FRCD_LO_REG. */
-#define VTD_MMIO_OFF_FRCD_HI_REG                    0xe68   /**< Implementation-specific MMIO offset of FRCD_HI_REG. */
-AssertCompile(!(VTD_MMIO_OFF_FRCD_LO_REG & 0xf));
+#define DMAR_MMIO_OFF_IVA_REG                       0xe40   /**< Implementation-specific MMIO offset of IVA_REG. */
+#define DMAR_MMIO_OFF_IOTLB_REG                     0xe48   /**< Implementation-specific MMIO offset of IOTLB_REG. */
+#define DMAR_MMIO_OFF_FRCD_LO_REG                   0xe60   /**< Implementation-specific MMIO offset of FRCD_LO_REG. */
+#define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe68   /**< Implementation-specific MMIO offset of FRCD_HI_REG. */
+AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 
 /** Offset of first register in group 1. */
-#define VTD_MMIO_GROUP_1_OFF_FIRST                  VTD_MMIO_OFF_VCCAP_REG
+#define DMAR_MMIO_GROUP_1_OFF_FIRST                 VTD_MMIO_OFF_VCCAP_REG
 /** Offset of last register in group 1 (inclusive). */
-#define VTD_MMIO_GROUP_1_OFF_LAST                   (VTD_MMIO_OFF_FRCD_LO_REG + 8) * VTD_FRCD_REG_COUNT
+#define DMAR_MMIO_GROUP_1_OFF_LAST                  (DMAR_MMIO_OFF_FRCD_LO_REG + 8) * DMAR_FRCD_REG_COUNT
 /** Last valid offset in group 1 (exclusive). */
-#define VTD_MMIO_GROUP_1_OFF_END                    (VTD_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof FRCD_HI_REG */)
+#define DMAR_MMIO_GROUP_1_OFF_END                   (DMAR_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof FRCD_HI_REG */)
 /** Size of the group 1 (in bytes). */
-#define VTD_MMIO_GROUP_1_SIZE                       (VTD_MMIO_GROUP_1_OFF_END - VTD_MMIO_GROUP_1_OFF_FIRST)
+#define DMAR_MMIO_GROUP_1_SIZE                      (DMAR_MMIO_GROUP_1_OFF_END - DMAR_MMIO_GROUP_1_OFF_FIRST)
 
 /** Release log prefix string. */
-#define IOMMU_LOG_PFX                               "Intel-IOMMU"
+#define DMAR_LOG_PFX                                "Intel-IOMMU"
 
 /** The current saved state version. */
-#define IOMMU_SAVED_STATE_VERSION                   1
+#define DMAR_SAVED_STATE_VERSION                    1
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The shared IOMMU device state.
+ * The shared DMAR device state.
  */
-typedef struct IOMMU
+typedef struct DMAR
 {
-    /** IOMMU device index (0 is at the top of the PCI tree hierarchy). */
+    /** IOMMU device index. */
     uint32_t                    idxIommu;
-    /** IOMMU magic. */
+    /** DMAR magic. */
     uint32_t                    u32Magic;
 
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
 
-    /** IOMMU registers (group 0). */
-    uint8_t                     abRegs0[VTD_MMIO_GROUP_0_SIZE];
-    /** IOMMU registers (group 1). */
-    uint8_t                     abRegs1[VTD_MMIO_GROUP_1_SIZE];
-} IOMMU;
-/** Pointer to the IOMMU device state. */
-typedef IOMMU *PIOMMU;
-/** Pointer to the const IOMMU device state. */
-typedef const IOMMU *PCIOMMU;
+    /** DMAR registers (group 0). */
+    uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
+    /** DMAR registers (group 1). */
+    uint8_t                     abRegs1[DMAR_MMIO_GROUP_1_SIZE];
+} DMAR;
+/** Pointer to the DMAR device state. */
+typedef DMAR *PDMAR;
+/** Pointer to the const DMAR device state. */
+typedef const DMAR *PCDMAR;
 
 /**
- * The ring-3 IOMMU device state.
+ * The ring-3 DMAR device state.
  */
-typedef struct IOMMUR3
+typedef struct DMARR3
 {
     /** Device instance. */
     PPDMDEVINSR3                pDevInsR3;
     /** The IOMMU helper. */
     R3PTRTYPE(PCPDMIOMMUHLPR3)  pIommuHlpR3;
-} IOMMUR3;
-/** Pointer to the ring-3 IOMMU device state. */
-typedef IOMMUR3 *PIOMMUR3;
-/** Pointer to the const ring-3 IOMMU device state. */
-typedef const IOMMUR3 *PCIOMMUR3;
+} DMARR3;
+/** Pointer to the ring-3 DMAR device state. */
+typedef DMARR3 *PDMARR3;
+/** Pointer to the const ring-3 DMAR device state. */
+typedef const DMARR3 *PCDMARR3;
 
 /**
- * The ring-0 IOMMU device state.
+ * The ring-0 DMAR device state.
  */
-typedef struct IOMMUR0
+typedef struct DMARR0
 {
     /** Device instance. */
     PPDMDEVINSR0                pDevInsR0;
     /** The IOMMU helper. */
     R0PTRTYPE(PCPDMIOMMUHLPR0)  pIommuHlpR0;
-} IOMMUR0;
+} DMARR0;
 /** Pointer to the ring-0 IOMMU device state. */
-typedef IOMMUR0 *PIOMMUR0;
+typedef DMARR0 *PDMARR0;
 /** Pointer to the const ring-0 IOMMU device state. */
-typedef const IOMMUR0 *PCIOMMUR0;
+typedef const DMARR0 *PCDMARR0;
 
 /**
- * The raw-mode IOMMU device state.
+ * The raw-mode DMAR device state.
  */
-typedef struct IOMMURC
+typedef struct DMARRC
 {
     /** Device instance. */
     PPDMDEVINSRC                pDevInsRC;
     /** The IOMMU helper. */
     RCPTRTYPE(PCPDMIOMMUHLPRC)  pIommuHlpRC;
-} IOMMURC;
-/** Pointer to the raw-mode IOMMU device state. */
-typedef IOMMURC *PIOMMURC;
-/** Pointer to the const raw-mode IOMMU device state. */
-typedef const IOMMURC *PCIOMMURC;
+} DMARRC;
+/** Pointer to the raw-mode DMAR device state. */
+typedef DMARRC *PDMARRC;
+/** Pointer to the const raw-mode DMAR device state. */
+typedef const DMARRC *PCIDMARRC;
 
-/** The IOMMU device state for the current context. */
-typedef CTX_SUFF(IOMMU)  IOMMUCC;
-/** Pointer to the IOMMU device state for the current context. */
-typedef CTX_SUFF(PIOMMU) PIOMMUCC;
+/** The DMAR device state for the current context. */
+typedef CTX_SUFF(DMAR)  DMARCC;
+/** Pointer to the DMAR device state for the current context. */
+typedef CTX_SUFF(PDMAR) PDMARCC;
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Read-write masks for IOMMU registers (group 0).
+ * Read-write masks for DMAR registers (group 0).
  */
 static const uint32_t g_au32RwMasks0[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0x000   VER_REG               */  VTD_VER_REG_RW_MASK,
     /* 0x004   Reserved              */  0,
-    /* 0x008   CAP_REG               */  VTD_LO_U32(VTD_CAP_REG_RW_MASK),           VTD_HI_U32(VTD_CAP_REG_RW_MASK),
-    /* 0x010   ECAP_REG              */  VTD_LO_U32(VTD_ECAP_REG_RW_MASK),          VTD_HI_U32(VTD_ECAP_REG_RW_MASK),
+    /* 0x008   CAP_REG               */  DMAR_LO_U32(VTD_CAP_REG_RW_MASK),          DMAR_HI_U32(VTD_CAP_REG_RW_MASK),
+    /* 0x010   ECAP_REG              */  DMAR_LO_U32(VTD_ECAP_REG_RW_MASK),         DMAR_HI_U32(VTD_ECAP_REG_RW_MASK),
     /* 0x018   GCMD_REG              */  VTD_GCMD_REG_RW_MASK,
     /* 0x01c   GSTS_REG              */  VTD_GSTS_REG_RW_MASK,
-    /* 0x020   RTADDR_REG            */  VTD_LO_U32(VTD_RTADDR_REG_RW_MASK),        VTD_HI_U32(VTD_RTADDR_REG_RW_MASK),
-    /* 0x028   CCMD_REG              */  VTD_LO_U32(VTD_CCMD_REG_RW_MASK),          VTD_HI_U32(VTD_CCMD_REG_RW_MASK),
+    /* 0x020   RTADDR_REG            */  DMAR_LO_U32(VTD_RTADDR_REG_RW_MASK),       DMAR_HI_U32(VTD_RTADDR_REG_RW_MASK),
+    /* 0x028   CCMD_REG              */  DMAR_LO_U32(VTD_CCMD_REG_RW_MASK),         DMAR_HI_U32(VTD_CCMD_REG_RW_MASK),
     /* 0x030   Reserved              */  0,
     /* 0x034   FSTS_REG              */  VTD_FSTS_REG_RW_MASK,
     /* 0x038   FECTL_REG             */  VTD_FECTL_REG_RW_MASK,
@@ -193,27 +193,27 @@ static const uint32_t g_au32RwMasks0[] =
     /* 0x044   FEUADDR_REG           */  VTD_FEUADDR_REG_RW_MASK,
     /* 0x048   Reserved              */  0,                                         0,
     /* 0x050   Reserved              */  0,                                         0,
-    /* 0x058   AFLOG_REG             */  VTD_LO_U32(VTD_AFLOG_REG_RW_MASK),         VTD_HI_U32(VTD_AFLOG_REG_RW_MASK),
+    /* 0x058   AFLOG_REG             */  DMAR_LO_U32(VTD_AFLOG_REG_RW_MASK),        DMAR_HI_U32(VTD_AFLOG_REG_RW_MASK),
     /* 0x060   Reserved              */  0,
     /* 0x064   PMEN_REG              */  0, /* RO as we don't support PLMR and PHMR. */
     /* 0x068   PLMBASE_REG           */  0, /* RO as we don't support PLMR. */
     /* 0x06c   PLMLIMIT_REG          */  0, /* RO as we don't support PLMR. */
     /* 0x070   PHMBASE_REG           */  0,                                         0, /* RO as we don't support PHMR. */
     /* 0x078   PHMLIMIT_REG          */  0,                                         0, /* RO as we don't support PHMR. */
-    /* 0x080   IQH_REG               */  VTD_LO_U32(VTD_IQH_REG_RW_MASK),           VTD_HI_U32(VTD_IQH_REG_RW_MASK),
-    /* 0x088   IQT_REG               */  VTD_LO_U32(VTD_IQT_REG_RW_MASK),           VTD_HI_U32(VTD_IQT_REG_RW_MASK),
-    /* 0x090   IQA_REG               */  VTD_LO_U32(VTD_IQA_REG_RW_MASK),           VTD_HI_U32(VTD_IQA_REG_RW_MASK),
+    /* 0x080   IQH_REG               */  DMAR_LO_U32(VTD_IQH_REG_RW_MASK),          DMAR_HI_U32(VTD_IQH_REG_RW_MASK),
+    /* 0x088   IQT_REG               */  DMAR_LO_U32(VTD_IQT_REG_RW_MASK),          DMAR_HI_U32(VTD_IQT_REG_RW_MASK),
+    /* 0x090   IQA_REG               */  DMAR_LO_U32(VTD_IQA_REG_RW_MASK),          DMAR_HI_U32(VTD_IQA_REG_RW_MASK),
     /* 0x098   Reserved              */  0,
     /* 0x09c   ICS_REG               */  VTD_ICS_REG_RW_MASK,
     /* 0x0a0   IECTL_REG             */  VTD_IECTL_REG_RW_MASK,
     /* 0x0a4   IEDATA_REG            */  VTD_IEDATA_REG_RW_MASK,
     /* 0x0a8   IEADDR_REG            */  VTD_IEADDR_REG_RW_MASK,
     /* 0x0ac   IEUADDR_REG           */  VTD_IEUADDR_REG_RW_MASK,
-    /* 0x0b0   IQERCD_REG            */  VTD_LO_U32(VTD_IQERCD_REG_RW_MASK),        VTD_HI_U32(VTD_IQERCD_REG_RW_MASK),
-    /* 0x0b8   IRTA_REG              */  VTD_LO_U32(VTD_IRTA_REG_RW_MASK),          VTD_HI_U32(VTD_IRTA_REG_RW_MASK),
-    /* 0x0c0   PQH_REG               */  VTD_LO_U32(VTD_PQH_REG_RW_MASK),           VTD_HI_U32(VTD_PQH_REG_RW_MASK),
-    /* 0x0c8   PQT_REG               */  VTD_LO_U32(VTD_PQT_REG_RW_MASK),           VTD_HI_U32(VTD_PQT_REG_RW_MASK),
-    /* 0x0d0   PQA_REG               */  VTD_LO_U32(VTD_PQA_REG_RW_MASK),           VTD_HI_U32(VTD_PQA_REG_RW_MASK),
+    /* 0x0b0   IQERCD_REG            */  DMAR_LO_U32(VTD_IQERCD_REG_RW_MASK),       DMAR_HI_U32(VTD_IQERCD_REG_RW_MASK),
+    /* 0x0b8   IRTA_REG              */  DMAR_LO_U32(VTD_IRTA_REG_RW_MASK),         DMAR_HI_U32(VTD_IRTA_REG_RW_MASK),
+    /* 0x0c0   PQH_REG               */  DMAR_LO_U32(VTD_PQH_REG_RW_MASK),          DMAR_HI_U32(VTD_PQH_REG_RW_MASK),
+    /* 0x0c8   PQT_REG               */  DMAR_LO_U32(VTD_PQT_REG_RW_MASK),          DMAR_HI_U32(VTD_PQT_REG_RW_MASK),
+    /* 0x0d0   PQA_REG               */  DMAR_LO_U32(VTD_PQA_REG_RW_MASK),          DMAR_HI_U32(VTD_PQA_REG_RW_MASK),
     /* 0x0d8   Reserved              */  0,
     /* 0x0dc   PRS_REG               */  VTD_PRS_REG_RW_MASK,
     /* 0x0e0   PECTL_REG             */  VTD_PECTL_REG_RW_MASK,
@@ -222,7 +222,7 @@ static const uint32_t g_au32RwMasks0[] =
     /* 0x0ec   PEUADDR_REG           */  VTD_PEUADDR_REG_RW_MASK,
     /* 0x0f0   Reserved              */  0,                                         0,
     /* 0x0f8   Reserved              */  0,                                         0,
-    /* 0x100   MTRRCAP_REG           */  VTD_LO_U32(VTD_MTRRCAP_REG_RW_MASK),       VTD_HI_U32(VTD_MTRRCAP_REG_RW_MASK),
+    /* 0x100   MTRRCAP_REG           */  DMAR_LO_U32(VTD_MTRRCAP_REG_RW_MASK),      DMAR_HI_U32(VTD_MTRRCAP_REG_RW_MASK),
     /* 0x108   MTRRDEF_REG           */  0,                                         0, /* RO as we don't support MTS. */
     /* 0x110   Reserved              */  0,                                         0,
     /* 0x118   Reserved              */  0,                                         0,
@@ -259,144 +259,144 @@ static const uint32_t g_au32RwMasks0[] =
     /* 0x210   MTRR_PHYSBASE9_REG    */  0,                                         0,
     /* 0x218   MTRR_PHYSMASK9_REG    */  0,                                         0,
 };
-AssertCompile(sizeof(g_au32RwMasks0) == VTD_MMIO_GROUP_0_SIZE);
+AssertCompile(sizeof(g_au32RwMasks0) == DMAR_MMIO_GROUP_0_SIZE);
 
 /**
- * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 0).
+ * Read-only Status, Write-1-to-clear masks for DMAR registers (group 0).
  */
 static const uint32_t g_au32Rw1cMasks0[] =
 {
-    /* Offset  Register                  Low                      High */
+    /* Offset  Register                  Low                        High */
     /* 0x000   VER_REG               */  0,
     /* 0x004   Reserved              */  0,
-    /* 0x008   CAP_REG               */  0,                       0,
-    /* 0x010   ECAP_REG              */  0,                       0,
+    /* 0x008   CAP_REG               */  0,                         0,
+    /* 0x010   ECAP_REG              */  0,                         0,
     /* 0x018   GCMD_REG              */  0,
     /* 0x01c   GSTS_REG              */  0,
-    /* 0x020   RTADDR_REG            */  0,                       0,
-    /* 0x028   CCMD_REG              */  0,                       0,
+    /* 0x020   RTADDR_REG            */  0,                         0,
+    /* 0x028   CCMD_REG              */  0,                         0,
     /* 0x030   Reserved              */  0,
     /* 0x034   FSTS_REG              */  VTD_FSTS_REG_RW1C_MASK,
     /* 0x038   FECTL_REG             */  0,
     /* 0x03c   FEDATA_REG            */  0,
     /* 0x040   FEADDR_REG            */  0,
     /* 0x044   FEUADDR_REG           */  0,
-    /* 0x048   Reserved              */  0,                       0,
-    /* 0x050   Reserved              */  0,                       0,
-    /* 0x058   AFLOG_REG             */  0,                       0,
+    /* 0x048   Reserved              */  0,                         0,
+    /* 0x050   Reserved              */  0,                         0,
+    /* 0x058   AFLOG_REG             */  0,                         0,
     /* 0x060   Reserved              */  0,
     /* 0x064   PMEN_REG              */  0,
     /* 0x068   PLMBASE_REG           */  0,
     /* 0x06c   PLMLIMIT_REG          */  0,
-    /* 0x070   PHMBASE_REG           */  0,                       0,
-    /* 0x078   PHMLIMIT_REG          */  0,                       0,
-    /* 0x080   IQH_REG               */  0,                       0,
-    /* 0x088   IQT_REG               */  0,                       0,
-    /* 0x090   IQA_REG               */  0,                       0,
+    /* 0x070   PHMBASE_REG           */  0,                         0,
+    /* 0x078   PHMLIMIT_REG          */  0,                         0,
+    /* 0x080   IQH_REG               */  0,                         0,
+    /* 0x088   IQT_REG               */  0,                         0,
+    /* 0x090   IQA_REG               */  0,                         0,
     /* 0x098   Reserved              */  0,
     /* 0x09c   ICS_REG               */  VTD_ICS_REG_RW1C_MASK,
     /* 0x0a0   IECTL_REG             */  0,
     /* 0x0a4   IEDATA_REG            */  0,
     /* 0x0a8   IEADDR_REG            */  0,
     /* 0x0ac   IEUADDR_REG           */  0,
-    /* 0x0b0   IQERCD_REG            */  0,                       0,
-    /* 0x0b8   IRTA_REG              */  0,                       0,
-    /* 0x0c0   PQH_REG               */  0,                       0,
-    /* 0x0c8   PQT_REG               */  0,                       0,
-    /* 0x0d0   PQA_REG               */  0,                       0,
+    /* 0x0b0   IQERCD_REG            */  0,                         0,
+    /* 0x0b8   IRTA_REG              */  0,                         0,
+    /* 0x0c0   PQH_REG               */  0,                         0,
+    /* 0x0c8   PQT_REG               */  0,                         0,
+    /* 0x0d0   PQA_REG               */  0,                         0,
     /* 0x0d8   Reserved              */  0,
     /* 0x0dc   PRS_REG               */  0,
     /* 0x0e0   PECTL_REG             */  0,
     /* 0x0e4   PEDATA_REG            */  0,
     /* 0x0e8   PEADDR_REG            */  0,
     /* 0x0ec   PEUADDR_REG           */  0,
-    /* 0x0f0   Reserved              */  0,                       0,
-    /* 0x0f8   Reserved              */  0,                       0,
-    /* 0x100   MTRRCAP_REG           */  0,                       0,
-    /* 0x108   MTRRDEF_REG           */  0,                       0,
-    /* 0x110   Reserved              */  0,                       0,
-    /* 0x118   Reserved              */  0,                       0,
-    /* 0x120   MTRR_FIX64_00000_REG  */  0,                       0,
-    /* 0x128   MTRR_FIX16K_80000_REG */  0,                       0,
-    /* 0x130   MTRR_FIX16K_A0000_REG */  0,                       0,
-    /* 0x138   MTRR_FIX4K_C0000_REG  */  0,                       0,
-    /* 0x140   MTRR_FIX4K_C8000_REG  */  0,                       0,
-    /* 0x148   MTRR_FIX4K_D0000_REG  */  0,                       0,
-    /* 0x150   MTRR_FIX4K_D8000_REG  */  0,                       0,
-    /* 0x158   MTRR_FIX4K_E0000_REG  */  0,                       0,
-    /* 0x160   MTRR_FIX4K_E8000_REG  */  0,                       0,
-    /* 0x168   MTRR_FIX4K_F0000_REG  */  0,                       0,
-    /* 0x170   MTRR_FIX4K_F8000_REG  */  0,                       0,
-    /* 0x178   Reserved              */  0,                       0,
-    /* 0x180   MTRR_PHYSBASE0_REG    */  0,                       0,
-    /* 0x188   MTRR_PHYSMASK0_REG    */  0,                       0,
-    /* 0x190   MTRR_PHYSBASE1_REG    */  0,                       0,
-    /* 0x198   MTRR_PHYSMASK1_REG    */  0,                       0,
-    /* 0x1a0   MTRR_PHYSBASE2_REG    */  0,                       0,
-    /* 0x1a8   MTRR_PHYSMASK2_REG    */  0,                       0,
-    /* 0x1b0   MTRR_PHYSBASE3_REG    */  0,                       0,
-    /* 0x1b8   MTRR_PHYSMASK3_REG    */  0,                       0,
-    /* 0x1c0   MTRR_PHYSBASE4_REG    */  0,                       0,
-    /* 0x1c8   MTRR_PHYSMASK4_REG    */  0,                       0,
-    /* 0x1d0   MTRR_PHYSBASE5_REG    */  0,                       0,
-    /* 0x1d8   MTRR_PHYSMASK5_REG    */  0,                       0,
-    /* 0x1e0   MTRR_PHYSBASE6_REG    */  0,                       0,
-    /* 0x1e8   MTRR_PHYSMASK6_REG    */  0,                       0,
-    /* 0x1f0   MTRR_PHYSBASE7_REG    */  0,                       0,
-    /* 0x1f8   MTRR_PHYSMASK7_REG    */  0,                       0,
-    /* 0x200   MTRR_PHYSBASE8_REG    */  0,                       0,
-    /* 0x208   MTRR_PHYSMASK8_REG    */  0,                       0,
-    /* 0x210   MTRR_PHYSBASE9_REG    */  0,                       0,
-    /* 0x218   MTRR_PHYSMASK9_REG    */  0,                       0,
+    /* 0x0f0   Reserved              */  0,                         0,
+    /* 0x0f8   Reserved              */  0,                         0,
+    /* 0x100   MTRRCAP_REG           */  0,                         0,
+    /* 0x108   MTRRDEF_REG           */  0,                         0,
+    /* 0x110   Reserved              */  0,                         0,
+    /* 0x118   Reserved              */  0,                         0,
+    /* 0x120   MTRR_FIX64_00000_REG  */  0,                         0,
+    /* 0x128   MTRR_FIX16K_80000_REG */  0,                         0,
+    /* 0x130   MTRR_FIX16K_A0000_REG */  0,                         0,
+    /* 0x138   MTRR_FIX4K_C0000_REG  */  0,                         0,
+    /* 0x140   MTRR_FIX4K_C8000_REG  */  0,                         0,
+    /* 0x148   MTRR_FIX4K_D0000_REG  */  0,                         0,
+    /* 0x150   MTRR_FIX4K_D8000_REG  */  0,                         0,
+    /* 0x158   MTRR_FIX4K_E0000_REG  */  0,                         0,
+    /* 0x160   MTRR_FIX4K_E8000_REG  */  0,                         0,
+    /* 0x168   MTRR_FIX4K_F0000_REG  */  0,                         0,
+    /* 0x170   MTRR_FIX4K_F8000_REG  */  0,                         0,
+    /* 0x178   Reserved              */  0,                         0,
+    /* 0x180   MTRR_PHYSBASE0_REG    */  0,                         0,
+    /* 0x188   MTRR_PHYSMASK0_REG    */  0,                         0,
+    /* 0x190   MTRR_PHYSBASE1_REG    */  0,                         0,
+    /* 0x198   MTRR_PHYSMASK1_REG    */  0,                         0,
+    /* 0x1a0   MTRR_PHYSBASE2_REG    */  0,                         0,
+    /* 0x1a8   MTRR_PHYSMASK2_REG    */  0,                         0,
+    /* 0x1b0   MTRR_PHYSBASE3_REG    */  0,                         0,
+    /* 0x1b8   MTRR_PHYSMASK3_REG    */  0,                         0,
+    /* 0x1c0   MTRR_PHYSBASE4_REG    */  0,                         0,
+    /* 0x1c8   MTRR_PHYSMASK4_REG    */  0,                         0,
+    /* 0x1d0   MTRR_PHYSBASE5_REG    */  0,                         0,
+    /* 0x1d8   MTRR_PHYSMASK5_REG    */  0,                         0,
+    /* 0x1e0   MTRR_PHYSBASE6_REG    */  0,                         0,
+    /* 0x1e8   MTRR_PHYSMASK6_REG    */  0,                         0,
+    /* 0x1f0   MTRR_PHYSBASE7_REG    */  0,                         0,
+    /* 0x1f8   MTRR_PHYSMASK7_REG    */  0,                         0,
+    /* 0x200   MTRR_PHYSBASE8_REG    */  0,                         0,
+    /* 0x208   MTRR_PHYSMASK8_REG    */  0,                         0,
+    /* 0x210   MTRR_PHYSBASE9_REG    */  0,                         0,
+    /* 0x218   MTRR_PHYSMASK9_REG    */  0,                         0,
 };
-AssertCompile(sizeof(g_au32Rw1cMasks0) == VTD_MMIO_GROUP_0_SIZE);
+AssertCompile(sizeof(g_au32Rw1cMasks0) == DMAR_MMIO_GROUP_0_SIZE);
 
 /**
- * Read-write masks for IOMMU registers (group 1).
+ * Read-write masks for DMAR registers (group 1).
  */
 static const uint32_t g_au32RwMasks1[] =
 {
-    /* Offset  Register                  Low                                    High */
-    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),     VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
-    /* 0xe08   Reserved              */  0,                                     0,
-    /* 0xe10   VCMD_REG              */  0,                                     0, /* RO as we don't support VCS. */
-    /* 0xe18   VCMDRSVD_REG          */  0,                                     0,
-    /* 0xe20   VCRSP_REG             */  0,                                     0, /* RO as we don't support VCS. */
-    /* 0xe28   VCRSPRSVD_REG         */  0,                                     0,
-    /* 0xe30   Reserved              */  0,                                     0,
-    /* 0xe38   Reserved              */  0,                                     0,
-    /* 0xe40   IVA_REG               */  VTD_LO_U32(VTD_IVA_REG_RW_MASK),       VTD_HI_U32(VTD_IVA_REG_RW_MASK),
-    /* 0xe48   IOTLB_REG             */  VTD_LO_U32(VTD_IOTLB_REG_RW_MASK),     VTD_HI_U32(VTD_IOTLB_REG_RW_MASK),
-    /* 0xe50   Reserved              */  0,                                     0,
-    /* 0xe58   Reserved              */  0,                                     0,
-    /* 0xe60   FRCD_REG_LO           */  VTD_LO_U32(VTD_FRCD_REG_LO_RW_MASK),   VTD_HI_U32(VTD_FRCD_REG_LO_RW_MASK),
-    /* 0xe68   FRCD_REG_HI           */  VTD_LO_U32(VTD_FRCD_REG_HI_RW_MASK),   VTD_HI_U32(VTD_FRCD_REG_HI_RW_MASK),
+    /* Offset  Register                  Low                                        High */
+    /* 0xe00   VCCAP_REG             */  DMAR_LO_U32(VTD_VCCAP_REG_RW_MASK),        DMAR_HI_U32(VTD_VCCAP_REG_RW_MASK),
+    /* 0xe08   Reserved              */  0,                                         0,
+    /* 0xe10   VCMD_REG              */  0,                                         0, /* RO: VCS not supported. */
+    /* 0xe18   VCMDRSVD_REG          */  0,                                         0,
+    /* 0xe20   VCRSP_REG             */  0,                                         0, /* RO: VCS not supported. */
+    /* 0xe28   VCRSPRSVD_REG         */  0,                                         0,
+    /* 0xe30   Reserved              */  0,                                         0,
+    /* 0xe38   Reserved              */  0,                                         0,
+    /* 0xe40   IVA_REG               */  DMAR_LO_U32(VTD_IVA_REG_RW_MASK),          DMAR_HI_U32(VTD_IVA_REG_RW_MASK),
+    /* 0xe48   IOTLB_REG             */  DMAR_LO_U32(VTD_IOTLB_REG_RW_MASK),        DMAR_HI_U32(VTD_IOTLB_REG_RW_MASK),
+    /* 0xe50   Reserved              */  0,                                         0,
+    /* 0xe58   Reserved              */  0,                                         0,
+    /* 0xe60   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_LO_RW_MASK),
+    /* 0xe68   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_HI_RW_MASK),
 };
-AssertCompile(sizeof(g_au32RwMasks1) == VTD_MMIO_GROUP_1_SIZE);
-AssertCompile((VTD_MMIO_OFF_FRCD_LO_REG - VTD_MMIO_GROUP_1_OFF_FIRST) + VTD_FRCD_REG_COUNT * 2 * sizeof(uint64_t) );
+AssertCompile(sizeof(g_au32RwMasks1) == DMAR_MMIO_GROUP_1_SIZE);
+AssertCompile((DMAR_MMIO_OFF_FRCD_LO_REG - DMAR_MMIO_GROUP_1_OFF_FIRST) + DMAR_FRCD_REG_COUNT * 2 * sizeof(uint64_t) );
 
 /**
- * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 1).
+ * Read-only Status, Write-1-to-clear masks for DMAR registers (group 1).
  */
 static const uint32_t g_au32Rw1cMasks1[] =
 {
-    /* Offset  Register                  Low                                    High */
-    /* 0xe00   VCCAP_REG             */  0,                                     0,
-    /* 0xe08   Reserved              */  0,                                     0,
-    /* 0xe10   VCMD_REG              */  0,                                     0,
-    /* 0xe18   VCMDRSVD_REG          */  0,                                     0,
-    /* 0xe20   VCRSP_REG             */  0,                                     0,
-    /* 0xe28   VCRSPRSVD_REG         */  0,                                     0,
-    /* 0xe30   Reserved              */  0,                                     0,
-    /* 0xe38   Reserved              */  0,                                     0,
-    /* 0xe40   IVA_REG               */  0,                                     0,
-    /* 0xe48   IOTLB_REG             */  0,                                     0,
-    /* 0xe50   Reserved              */  0,                                     0,
-    /* 0xe58   Reserved              */  0,                                     0,
-    /* 0xe60   FRCD_REG_LO           */  VTD_LO_U32(VTD_FRCD_REG_LO_RW1C_MASK), VTD_HI_U32(VTD_FRCD_REG_LO_RW1C_MASK),
-    /* 0xe68   FRCD_REG_HI           */  VTD_LO_U32(VTD_FRCD_REG_HI_RW1C_MASK), VTD_HI_U32(VTD_FRCD_REG_HI_RW1C_MASK),
+    /* Offset  Register                  Low                                        High */
+    /* 0xe00   VCCAP_REG             */  0,                                         0,
+    /* 0xe08   Reserved              */  0,                                         0,
+    /* 0xe10   VCMD_REG              */  0,                                         0,
+    /* 0xe18   VCMDRSVD_REG          */  0,                                         0,
+    /* 0xe20   VCRSP_REG             */  0,                                         0,
+    /* 0xe28   VCRSPRSVD_REG         */  0,                                         0,
+    /* 0xe30   Reserved              */  0,                                         0,
+    /* 0xe38   Reserved              */  0,                                         0,
+    /* 0xe40   IVA_REG               */  0,                                         0,
+    /* 0xe48   IOTLB_REG             */  0,                                         0,
+    /* 0xe50   Reserved              */  0,                                         0,
+    /* 0xe58   Reserved              */  0,                                         0,
+    /* 0xe60   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_LO_RW1C_MASK),
+    /* 0xe68   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_HI_RW1C_MASK),
 };
-AssertCompile(sizeof(g_au32Rw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
+AssertCompile(sizeof(g_au32Rw1cMasks1) == DMAR_MMIO_GROUP_1_SIZE);
 
 /** Array of RW masks for each register group. */
 static const uint8_t *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
@@ -414,21 +414,21 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
  * Gets the group the register belongs to given its MMIO offset.
  *
  * @returns Pointer to the first element of the register group.
- * @param   pThis       The shared IOMMU device state.
+ * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   cbReg       The size of the access being made (for bounds checking on
  *                      debug builds).
  * @param   pIdxGroup   Where to store the index of the register group the register
  *                      belongs to.
  */
-DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
+DECLINLINE(uint8_t *) dmarRegGetGroup(PDMAR pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
     uint16_t const offLast = offReg + cbReg - 1;
-    AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
-    AssertMsg(VTD_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
+    AssertCompile(DMAR_MMIO_GROUP_0_OFF_FIRST == 0);
+    AssertMsg(DMAR_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
 
     uint8_t *const apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
-    *pIdxGroup = !(offLast < VTD_MMIO_GROUP_0_OFF_END);
+    *pIdxGroup = !(offLast < DMAR_MMIO_GROUP_0_OFF_END);
     return apbRegs[*pIdxGroup];
 }
 
@@ -436,14 +436,14 @@ DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8
 /**
  * Writes a 64-bit register with the exactly the supplied value.
  *
- * @param   pThis       The shared IOMMU device state.
+ * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   uReg        The 64-bit value to write.
  */
-DECLINLINE(void) iommuIntelRegWriteRaw64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+DECLINLINE(void) dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 {
     uint8_t idxGroup;
-    uint8_t *pabRegs = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
     NOREF(idxGroup);
     *(uint64_t *)(pabRegs + offReg) = uReg;
 }
@@ -452,14 +452,14 @@ DECLINLINE(void) iommuIntelRegWriteRaw64(PIOMMU pThis, uint16_t offReg, uint64_t
 /**
  * Writes a 32-bit register with the exactly the supplied value.
  *
- * @param   pThis       The shared IOMMU device state.
+ * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   uReg        The 32-bit value to write.
  */
-DECLINLINE(void) iommuIntelRegWriteRaw32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
+DECLINLINE(void) dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 {
     uint8_t idxGroup;
-    uint8_t *pabRegs = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
     NOREF(idxGroup);
     *(uint32_t *)(pabRegs + offReg) = uReg;
 }
@@ -468,16 +468,16 @@ DECLINLINE(void) iommuIntelRegWriteRaw32(PIOMMU pThis, uint16_t offReg, uint32_t
 /**
  * Reads a 64-bit register with exactly the value it contains.
  *
- * @param   pThis       The shared IOMMU device state.
+ * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   puReg       Where to store the raw 64-bit register value.
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+DECLINLINE(void) dmarRegReadRaw64(PDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
 {
     uint8_t idxGroup;
-    uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    uint8_t const *pabRegs      = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
     Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
@@ -490,16 +490,16 @@ DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t 
 /**
  * Reads a 32-bit register with exactly the value it contains.
  *
- * @param   pThis       The shared IOMMU device state.
+ * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   puReg       Where to store the raw 32-bit register value.
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
+DECLINLINE(void) dmarRegReadRaw32(PDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
 {
     uint8_t idxGroup;
-    uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    uint8_t const *pabRegs      = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
     Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
@@ -513,17 +513,17 @@ DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t 
  * Writes a 64-bit register as it would be when written by software.
  * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
- * @param   pThis   The shared IOMMU device state.
+ * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 64-bit value to write.
  */
-static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+static void dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 {
     /* Read current value from the 64-bit register. */
     uint64_t uCurReg;
     uint64_t fRwMask;
     uint64_t fRw1cMask;
-    iommuIntelRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
 
     uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -531,7 +531,7 @@ static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
     uint64_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
 
     /* Write new value to the 64-bit register. */
-    iommuIntelRegWriteRaw64(pThis, offReg, uNewReg);
+    dmarRegWriteRaw64(pThis, offReg, uNewReg);
 }
 
 
@@ -539,17 +539,17 @@ static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
  * Writes a 32-bit register as it would be when written by software.
  * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
- * @param   pThis   The shared IOMMU device state.
+ * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 32-bit value to write.
  */
-static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
+static void dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 {
     /* Read current value from the 32-bit register. */
     uint32_t uCurReg;
     uint32_t fRwMask;
     uint32_t fRw1cMask;
-    iommuIntelRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
 
     uint32_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint32_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -557,7 +557,7 @@ static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
     uint32_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
 
     /* Write new value to the 32-bit register. */
-    iommuIntelRegWriteRaw32(pThis, offReg, uNewReg);
+    dmarRegWriteRaw32(pThis, offReg, uNewReg);
 }
 
 
@@ -565,15 +565,15 @@ static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
  * Reads a 64-bit register as it would be when read by software.
  *
  * @returns The 64-bit register value.
- * @param   pThis   The shared IOMMU device state.
+ * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
-static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
+static uint64_t dmarRegRead64(PDMAR pThis, uint16_t offReg)
 {
     uint64_t uCurReg;
     uint64_t fRwMask;
     uint64_t fRw1cMask;
-    iommuIntelRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
     NOREF(fRwMask); NOREF(fRw1cMask);
     return uCurReg;
 }
@@ -583,15 +583,15 @@ static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
  * Reads a 32-bit register as it would be when read by software.
  *
  * @returns The 32-bit register value.
- * @param   pThis   The shared IOMMU device state.
+ * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
-static uint32_t iommuIntelRegRead32(PIOMMU pThis, uint16_t offReg)
+static uint32_t dmarRegRead32(PDMAR pThis, uint16_t offReg)
 {
     uint32_t uCurReg;
     uint32_t fRwMask;
     uint32_t fRw1cMask;
-    iommuIntelRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
     NOREF(fRwMask); NOREF(fRw1cMask);
     return uCurReg;
 }
@@ -660,24 +660,24 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     RT_NOREF1(pvUser);
-    VTD_ASSERT_MMIO_ACCESS_RET(off, cb);
+    DMAR_ASSERT_MMIO_ACCESS_RET(off, cb);
 
-    PIOMMU         pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PDMAR          pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     uint16_t const offReg  = off;
     uint16_t const offLast = offReg + cb - 1;
-    if (VTD_IS_MMIO_OFF_VALID(offLast))
+    if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
         switch (off)
         {
             default:
             {
                 if (cb == 8)
-                    iommuIntelRegWrite64(pThis, offReg, *(uint64_t *)pv);
+                    dmarRegWrite64(pThis, offReg, *(uint64_t *)pv);
                 else
-                    iommuIntelRegWrite32(pThis, offReg, *(uint32_t *)pv);
+                    dmarRegWrite32(pThis, offReg, *(uint32_t *)pv);
                 break;
             }
         }
@@ -690,20 +690,20 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioWrite(PPDMDEVINS pDevIns, void *
 /**
  * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     RT_NOREF1(pvUser);
-    VTD_ASSERT_MMIO_ACCESS_RET(off, cb);
+    DMAR_ASSERT_MMIO_ACCESS_RET(off, cb);
 
-    PIOMMU         pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PDMAR          pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     uint16_t const offReg  = off;
     uint16_t const offLast = offReg + cb - 1;
-    if (VTD_IS_MMIO_OFF_VALID(offLast))
+    if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
         if (cb == 8)
-            *(uint64_t *)pv = iommuIntelRegRead64(pThis, offReg);
+            *(uint64_t *)pv = dmarRegRead64(pThis, offReg);
         else
-            *(uint32_t *)pv = iommuIntelRegRead32(pThis, offReg);
+            *(uint32_t *)pv = dmarRegRead32(pThis, offReg);
         return VINF_SUCCESS;
     }
 
@@ -738,8 +738,8 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
 {
     RT_NOREF(pCfg);
 
-    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    PDMAR   pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PDMARR3);
     pThisR3->pDevInsR3 = pDevIns;
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
@@ -779,14 +779,14 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     /* Header. */
-    PDMPciDevSetVendorId(pPciDev,          VTD_PCI_VENDOR_ID);         /* Intel */
-    PDMPciDevSetDeviceId(pPciDev,          VTD_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
-    PDMPciDevSetRevisionId(pPciDev,        VTD_PCI_REVISION_ID);       /* VirtualBox specific device implementation revision */
+    PDMPciDevSetVendorId(pPciDev,          DMAR_PCI_VENDOR_ID);         /* Intel */
+    PDMPciDevSetDeviceId(pPciDev,          DMAR_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
+    PDMPciDevSetRevisionId(pPciDev,        DMAR_PCI_REVISION_ID);       /* VirtualBox specific device implementation revision */
     PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
     PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_OTHER); /* Other */
     PDMPciDevSetHeaderType(pPciDev,        0x0);                       /* Single function, type 0 */
-    PDMPciDevSetSubSystemId(pPciDev,       VTD_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
-    PDMPciDevSetSubSystemVendorId(pPciDev, VTD_PCI_VENDOR_ID);         /* Intel */
+    PDMPciDevSetSubSystemId(pPciDev,       DMAR_PCI_DEVICE_ID);        /* VirtualBox DMAR device */
+    PDMPciDevSetSubSystemVendorId(pPciDev, DMAR_PCI_VENDOR_ID);        /* Intel */
 
     /** @todo VTD: Chipset spec says PCI Express Capability Id. Relevant for us? */
     PDMPciDevSetStatus(pPciDev,            0);
@@ -820,8 +820,8 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Register MMIO region.
      */
-    AssertCompile(!(VTD_MMIO_BASE_PHYSADDR & X86_PAGE_4K_OFFSET_MASK));
-    rc = PDMDevHlpMmioCreateAndMap(pDevIns, VTD_MMIO_BASE_PHYSADDR, VTD_MMIO_SIZE, iommuIntelMmioWrite, iommuIntelMmioRead,
+    AssertCompile(!(DMAR_MMIO_BASE_PHYSADDR & X86_PAGE_4K_OFFSET_MASK));
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, DMAR_MMIO_BASE_PHYSADDR, DMAR_MMIO_SIZE, dmarMmioWrite, dmarMmioRead,
                                    IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED,
                                    "Intel-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
@@ -837,8 +837,8 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
 static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PDMAR   pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDMARCC);
     pThisCC->CTX_SUFF(pDevIns) = pDevIns;
 
     /* We will use PDM's critical section (via helpers) for the IOMMU device. */
@@ -846,7 +846,7 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
     AssertRCReturn(rc, rc);
 
     /* Set up the MMIO RZ handlers. */
-    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, iommuIntelMmioWrite, iommuIntelMmioRead, NULL /* pvUser */);
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, dmarMmioWrite, dmarMmioRead, NULL /* pvUser */);
     AssertRCReturn(rc, rc);
 
     /* Set up the IOMMU RZ callbacks. */
@@ -883,9 +883,9 @@ const PDMDEVREG g_DeviceIommuIntel =
     /* .fClass = */                 PDM_DEVREG_CLASS_PCI_BUILTIN,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
-    /* .cbInstanceShared = */       sizeof(IOMMU),
-    /* .cbInstanceCC = */           sizeof(IOMMUCC),
-    /* .cbInstanceRC = */           sizeof(IOMMURC),
+    /* .cbInstanceShared = */       sizeof(DMAR),
+    /* .cbInstanceCC = */           sizeof(DMARCC),
+    /* .cbInstanceRC = */           sizeof(DMARRC),
     /* .cMaxPciDevices = */         1,          /** @todo Make this 0 if this isn't a PCI device. */
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "IOMMU (Intel)",
