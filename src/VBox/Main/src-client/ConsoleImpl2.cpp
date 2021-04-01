@@ -869,7 +869,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         iommuType = IommuType_None;
 #endif
     }
-    if (iommuType != IommuType_Intel)
+    if (iommuType == IommuType_Intel)
     {
 #ifndef VBOX_WITH_IOMMU_INTEL
         LogRel(("WARNING! Intel IOMMU not supported, IOMMU disabled.\n"));
