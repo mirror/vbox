@@ -1252,48 +1252,58 @@ VMMR3_INT_DECL(void) VMR3AsyncPdmNotificationWakeupU(PUVM pUVM)
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    PUVM        pUVM = pVM->pUVM;
-    uintptr_t   i    = (uintptr_t)pvUser;
+    PUVM      pUVM = pVM->pUVM;
+    int       rc   = VINF_SUCCESS;
+    uintptr_t i    = (uintptr_t)pvUser;
     Assert(i < RT_ELEMENTS(g_aHaltMethods));
-    NOREF(pVCpu);
 
     /*
-     * Terminate the old one.
+     * Main job is done once on EMT0 (it goes thru here first).
      */
-    if (    pUVM->vm.s.enmHaltMethod != VMHALTMETHOD_INVALID
-        &&  g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm)
+    if (pVCpu->idCpu == 0)
     {
-        g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm(pUVM);
-        pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
-    }
-
-    /* Assert that the failure fallback is where we expect. */
-    Assert(g_aHaltMethods[0].enmHaltMethod == VMHALTMETHOD_BOOTSTRAP);
-    Assert(!g_aHaltMethods[0].pfnTerm && !g_aHaltMethods[0].pfnInit);
-
-    /*
-     * Init the new one.
-     */
-    int rc = VINF_SUCCESS;
-    memset(&pUVM->vm.s.Halt, 0, sizeof(pUVM->vm.s.Halt));
-    if (g_aHaltMethods[i].pfnInit)
-    {
-        rc = g_aHaltMethods[i].pfnInit(pUVM);
-        if (RT_FAILURE(rc))
+        /*
+         * Terminate the old one.
+         */
+        if (    pUVM->vm.s.enmHaltMethod != VMHALTMETHOD_INVALID
+            &&  g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm)
         {
-            /* Fall back on the bootstrap method. This requires no
-               init/term (see assertion above), and will always work. */
-            AssertLogRelRC(rc);
-            i = 0;
+            g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm(pUVM);
+            pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
         }
+
+        /* Assert that the failure fallback is where we expect. */
+        Assert(g_aHaltMethods[0].enmHaltMethod == VMHALTMETHOD_BOOTSTRAP);
+        Assert(!g_aHaltMethods[0].pfnTerm && !g_aHaltMethods[0].pfnInit);
+
+        /*
+         * Init the new one.
+         */
+        memset(&pUVM->vm.s.Halt, 0, sizeof(pUVM->vm.s.Halt));
+        if (g_aHaltMethods[i].pfnInit)
+        {
+            rc = g_aHaltMethods[i].pfnInit(pUVM);
+            if (RT_FAILURE(rc))
+            {
+                /* Fall back on the bootstrap method. This requires no
+                   init/term (see assertion above), and will always work. */
+                AssertLogRelRC(rc);
+                i = 0;
+            }
+        }
+
+        /*
+         * Commit it.
+         */
+        pUVM->vm.s.enmHaltMethod = g_aHaltMethods[i].enmHaltMethod;
+        ASMAtomicWriteU32(&pUVM->vm.s.iHaltMethod, i);
     }
+    else
+        i = pUVM->vm.s.iHaltMethod;
 
     /*
-     * Commit it.
+     * All EMTs must update their ring-0 halt configuration.
      */
-    pUVM->vm.s.enmHaltMethod = g_aHaltMethods[i].enmHaltMethod;
-    ASMAtomicWriteU32(&pUVM->vm.s.iHaltMethod, i);
-
     VMMR3SetMayHaltInRing0(pVCpu, g_aHaltMethods[i].fMayHaltInRing0,
                            g_aHaltMethods[i].enmHaltMethod == VMHALTMETHOD_GLOBAL_1
                            ? pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg : 0);
@@ -1350,7 +1360,7 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
     /*
      * This needs to be done while the other EMTs are not sleeping or otherwise messing around.
      */
-    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3SetHaltMethodCallback, (void *)(uintptr_t)i);
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING, vmR3SetHaltMethodCallback, (void *)(uintptr_t)i);
 }
 
 
