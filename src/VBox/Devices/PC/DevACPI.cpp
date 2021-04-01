@@ -866,7 +866,7 @@ typedef struct ACPITBLVTD
     ACPIDMAR            Dmar;
     ACPIDRHD            Drhd;
     /* ACPIDMARDEVSCOPE    DevScope; */
-} ACPITBLDMAR;
+} ACPITBLVTD;
 #endif  /* VBOX_WITH_IOMMU_INTEL */
 
 /** MCFG Descriptor Structure */
