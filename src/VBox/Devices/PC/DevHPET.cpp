@@ -27,7 +27,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/log.h>
-#include <iprt/assert.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/asm-math.h>
 #include <iprt/string.h>
 
@@ -230,7 +230,7 @@ typedef struct HPETTIMER
 
     /** @name Hidden register state.
      * @{ */
-    /** Last value written to comparator. */
+    /** Accumulator / Last value written to comparator. */
     uint64_t                    u64Period;
     /** @} */
 
@@ -260,8 +260,10 @@ typedef struct HPET
      * @{ */
     /** Capabilities. */
     uint32_t                    u32Capabilities;
-    /** HPET_PERIOD - . */
-    uint32_t                    u32Period;
+    /** Used to be u32Period.  We only implement two period values depending on
+     * fIch9, and since we usually would have to RT_MIN(u32Period,1) we could
+     * just as well select between HPET_CLK_PERIOD_ICH9 and HPET_CLK_PERIOD_PIIX. */
+    uint32_t                    u32Padding;
     /** Configuration. */
     uint64_t                    u64HpetConfig;
     /** Interrupt status register. */
@@ -359,12 +361,12 @@ DECLINLINE(uint64_t) hpetInvalidValue(PHPETTIMER pHpetTimer)
 
 DECLINLINE(uint64_t) hpetTicksToNs(PHPET pThis, uint64_t value)
 {
-    return ASMMultU64ByU32DivByU32(value,  pThis->u32Period, FS_PER_NS);
+    return ASMMultU64ByU32DivByU32(value, pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX, FS_PER_NS);
 }
 
 DECLINLINE(uint64_t) nsToHpetTicks(PCHPET pThis, uint64_t u64Value)
 {
-    return ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, RT_MAX(pThis->u32Period, 1 /* no div/zero */));
+    return ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX);
 }
 
 DECLINLINE(uint64_t) hpetGetTicksEx(PCHPET pThis, uint64_t tsNow)
@@ -692,6 +694,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
                     else if (fConfigNew & HPET_TN_32BIT)
                     {
                         Log(("HPET[%u]: Changing timer to 32-bit mode.\n", iTimerNo));
+                        /* Clear the top bits of the comparator and period to be on the safe side. */
                         ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp,    (uint32_t)pHpetTimer->u64Cmp);
                         ASMAtomicUoWriteU64(&pHpetTimer->u64Period, (uint32_t)pHpetTimer->u64Period);
                     }
@@ -706,7 +709,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
                     else
                     {
                         LogRelMax(10, ("HPET[%u]: Level-triggered config not yet supported\n", iTimerNo));
-                        AssertFailed();
+                        ASSERT_GUEST_MSG_FAILED(("Level-triggered config not yet supported"));
                     }
                 }
                 break;
@@ -875,9 +878,7 @@ static VBOXSTRICTRC hpetConfigRegRead32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
             break;
 
         case HPET_PERIOD:
-            DEVHPET_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
-            u32Value = pThis->u32Period;
-            DEVHPET_UNLOCK(pDevIns, pThis);
+            u32Value = pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX;
             Log(("read HPET_PERIOD: %#x\n", u32Value));
             break;
 
@@ -1368,10 +1369,10 @@ static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp,
                     "HPET status:\n"
                     " config=%016RX64     isr=%016RX64\n"
-                    " offset=%016RX64 counter=%016RX64 frequency=%08x\n"
+                    " offset=%016RX64 counter=%016RX64 frequency=%u fs\n"
                     " legacy-mode=%s  timer-count=%u\n",
                     pThis->u64HpetConfig, pThis->u64Isr,
-                    pThis->u64HpetOffset, pThis->u64HpetCounter, pThis->u32Period,
+                    pThis->u64HpetOffset, pThis->u64HpetCounter, pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX,
                     !!(pThis->u64HpetConfig & HPET_CFG_LEGACY) ? "on " : "off",
                     HPET_CAP_GET_TIMERS(pThis->u32Capabilities));
     pHlp->pfnPrintf(pHlp,
@@ -1435,7 +1436,7 @@ static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     pHlp->pfnSSMPutU64(pSSM, pThis->u64HpetOffset);
-    uint64_t u64CapPer = RT_MAKE_U64(pThis->u32Capabilities, pThis->u32Period);
+    uint64_t u64CapPer = RT_MAKE_U64(pThis->u32Capabilities, pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX);
     pHlp->pfnSSMPutU64(pSSM, u64CapPer);
     pHlp->pfnSSMPutU64(pSSM, pThis->u64HpetConfig);
     pHlp->pfnSSMPutU64(pSSM, pThis->u64Isr);
@@ -1511,7 +1512,10 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                                        RT_LO_U32(u64CapPer), (unsigned)HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer)), RT_ELEMENTS(pThis->aTimers));
 
     pThis->u32Capabilities  = RT_LO_U32(u64CapPer);
-    pThis->u32Period        = RT_HI_U32(u64CapPer);
+    uint32_t const uExpectedPeriod = pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX;
+    if (RT_HI_U32(u64CapPer) != uExpectedPeriod)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - Expected period %RU32 fs, loaded %RU32 fs"),
+                                       uExpectedPeriod, RT_HI_U32(u64CapPer));
 
     /*
      * Set the timer frequency hints.
@@ -1598,7 +1602,6 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
     AssertCompile(HPET_NUM_TIMERS_ICH9 <= RT_ELEMENTS(pThis->aTimers));
     AssertCompile(HPET_NUM_TIMERS_PIIX <= RT_ELEMENTS(pThis->aTimers));
 
-    pThis->u32Period = pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD_PIIX;
 
     /*
      * Notify the PIT/RTC devices.
