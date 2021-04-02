@@ -1,6 +1,25 @@
 /* $Id$ */
 /** @file
  * HPET virtual device - High Precision Event Timer emulation.
+ *
+ * This implementation is based on the (generic) Intel IA-PC HPET specification
+ * and the Intel ICH9 datasheet.
+ *
+ * Typical windows 1809 usage (efi, smp) is to do repated one-shots and
+ * a variable rate.  The reprogramming sequence is as follows (all accesses
+ * are 32-bit):
+ *  -# counter register read.
+ *  -# timer 0: config register read.
+ *  -# timer 0: write 0x134 to config register.
+ *  -# timer 0: write comparator register.
+ *  -# timer 0: write 0x134 to config register.
+ *  -# timer 0: read comparator register.
+ *  -# counter register read.
+ *
+ * Typical linux will configure the timer at Hz but not necessarily enable
+ * interrupts (HPET_TN_ENABLE not set).  It would be nice to emulate this
+ * mode without using timers.
+ *
  */
 
 /*
@@ -13,10 +32,6 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- */
-
-/* This implementation is based on the (generic) Intel IA-PC HPET specification
- * and the Intel ICH9 datasheet.
  */
 
 
@@ -131,7 +146,7 @@
 #define HPET_TN_PERIODIC                RT_BIT_64(3)
 #define HPET_TN_PERIODIC_CAP            RT_BIT_64(4)
 #define HPET_TN_SIZE_CAP                RT_BIT_64(5)
-#define HPET_TN_SETVAL                  RT_BIT_64(6)
+#define HPET_TN_SETVAL                  RT_BIT_64(6)    /**< Periodic timers only: Change COMPARATOR as well as ACCUMULATOR. */
 #define HPET_TN_32BIT                   RT_BIT_64(8)
 #define HPET_TN_INT_ROUTE_MASK          UINT64_C(0x3e00)
 #define HPET_TN_CFG_WRITE_MASK          UINT64_C(0x3e46)
@@ -722,14 +737,15 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
             case HPET_TN_CMP: /* lower bits of comparator register */
             {
                 DEVHPET_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-                Log(("HPET[%u]: write32 HPET_TN_CMP: %#x\n", iTimerNo, u32NewValue));
                 uint64_t fConfig = ASMAtomicUoReadU64(&pHpetTimer->u64Config);
+                Log(("HPET[%u]: write32 HPET_TN_CMP: %#x (fCfg=%#RX32)\n", iTimerNo, u32NewValue, (uint32_t)fConfig));
 
-/** @todo r=bird: This is wrong.  Specification says: "By writing this bit to a 1, the software is then allowed to directly set a periodic timer’s accumulator."
- * See https://wiki.osdev.org/HPET and hpet_clkevt_set_state_periodic() in linux. */
                 if (fConfig & HPET_TN_PERIODIC)
                     ASMAtomicUoWriteU64(&pHpetTimer->u64Period, RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Period)));
-                ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Cmp)));
+
+                if (!(fConfig & HPET_TN_PERIODIC) || (fConfig & HPET_TN_SETVAL))
+                    ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Cmp)));
+
                 ASMAtomicAndU64(&pHpetTimer->u64Config, ~HPET_TN_SETVAL);
                 Log2(("HPET[%u]: after32 HPET_TN_CMP cmp=%#llx per=%#llx\n", iTimerNo, pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
@@ -739,6 +755,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
                 break;
             }
 
+            /** @todo figure out how exactly it behaves wrt to HPET_TN_SETVAL   */
             case HPET_TN_CMP + 4: /* upper bits of comparator register */
             {
                 DEVHPET_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
@@ -746,12 +763,13 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
 
                 if (!hpet32bitTimerEx(fConfig))
                 {
-                    Log(("HPET[%u]: write32 HPET_TN_CMP + 4: %#x\n", iTimerNo, u32NewValue));
-/** @todo r=bird: This is wrong.  Specification says: "By writing this bit to a 1, the software is then allowed to directly set a periodic timer’s accumulator."
- * See https://wiki.osdev.org/HPET and hpet_clkevt_set_state_periodic() in linux. */
+                    Log(("HPET[%u]: write32 HPET_TN_CMP + 4: %#x (fCfg=%#RX32)\n", iTimerNo, u32NewValue, (uint32_t)fConfig));
                     if (fConfig & HPET_TN_PERIODIC)
                         ASMAtomicUoWriteU64(&pHpetTimer->u64Period, RT_MAKE_U64(RT_LO_U32(pHpetTimer->u64Period), u32NewValue));
-                    ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, RT_MAKE_U64(RT_LO_U32(pHpetTimer->u64Cmp), u32NewValue));
+
+                    if (!(fConfig & HPET_TN_PERIODIC) || (fConfig & HPET_TN_SETVAL))
+                        ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, RT_MAKE_U64(RT_LO_U32(pHpetTimer->u64Cmp), u32NewValue));
+
                     ASMAtomicAndU64(&pHpetTimer->u64Config, ~HPET_TN_SETVAL);
                     Log2(("HPET[%u]: after32 HPET_TN_CMP+4: cmp=%#llx per=%#llx\n", iTimerNo, pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
@@ -759,7 +777,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
                         hpetProgramTimer(pDevIns, pThis, pHpetTimer, PDMDevHlpTimerGet(pDevIns, pHpetTimer->hTimer));
                 }
                 else
-                    Log(("HPET[%u]: write32 HPET_TN_CMP + 4: %#x - but timer is 32-bit!!\n", iTimerNo, u32NewValue));
+                    Log(("HPET[%u]: write32 HPET_TN_CMP + 4: %#x - but timer is 32-bit!! (fCfg=%#RX32)\n", iTimerNo, u32NewValue, (uint32_t)fConfig));
                 DEVHPET_UNLOCK_BOTH(pDevIns, pThis);
                 break;
             }
@@ -792,7 +810,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
  * @param   pThis           The shared HPET state.
  * @param   iTimerNo        The timer being written to.
  * @param   iTimerReg       The register being written to.
- * @param   u32NewValue     The value being written.
+ * @param   u64NewValue     The value being written.
  *
  * @remarks The caller should not hold any locks.
  */
@@ -817,14 +835,22 @@ static VBOXSTRICTRC hpetTimerRegWrite64(PPDMDEVINS pDevIns, PHPET pThis, uint32_
             case HPET_TN_CMP:
             {
                 DEVHPET_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-                Log(("HPET[%u]: write64 HPET_TN_CMP: %#RX64\n", iTimerNo, u64NewValue));
                 uint64_t fConfig = ASMAtomicUoReadU64(&pHpetTimer->u64Config);
+                Log(("HPET[%u]: write64 HPET_TN_CMP: %#RX64 (fCfg=%#RX64)\n", iTimerNo, u64NewValue, (uint32_t)fConfig));
 
-/** @todo r=bird: This is wrong.  Specification says: "By writing this bit to a 1, the software is then allowed to directly set a periodic timer’s accumulator."
- * See https://wiki.osdev.org/HPET and hpet_clkevt_set_state_periodic() in linux. */
+                /** @todo not sure if this is right, but it is consistent with the 32-bit config
+                 *        change behaviour and defensive wrt mixups. */
+                if (!hpet32bitTimerEx(fConfig))
+                { /* likely */ }
+                else
+                    u64NewValue = (uint32_t)u64NewValue;
+
                 if (fConfig & HPET_TN_PERIODIC)
                     ASMAtomicUoWriteU64(&pHpetTimer->u64Period, u64NewValue);
-                ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, u64NewValue);
+
+                if (!(fConfig & HPET_TN_PERIODIC) || (fConfig & HPET_TN_SETVAL))
+                    ASMAtomicUoWriteU64(&pHpetTimer->u64Cmp, u64NewValue);
+
                 ASMAtomicAndU64(&pHpetTimer->u64Config, ~HPET_TN_SETVAL);
                 Log2(("HPET[%u]: after64 HPET_TN_CMP cmp=%#llx per=%#llx\n", iTimerNo, pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
@@ -1379,11 +1405,44 @@ static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
                     "Timers:\n");
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
-        pHlp->pfnPrintf(pHlp, " %d: comparator=%016RX64 period(hidden)=%016RX64 cfg=%016RX64\n",
+        static const struct
+        {
+            const char *psz;
+            uint32_t cch;
+            uint32_t fFlags;
+        } s_aFlags[] =
+        {
+            { RT_STR_TUPLE(" lvl"),     HPET_TN_INT_TYPE },
+            { RT_STR_TUPLE(" en"),      HPET_TN_ENABLE },
+            { RT_STR_TUPLE(" per"),     HPET_TN_PERIODIC },
+            { RT_STR_TUPLE(" cap_per"), HPET_TN_PERIODIC_CAP },
+            { RT_STR_TUPLE(" cap_64"),  HPET_TN_SIZE_CAP },
+            { RT_STR_TUPLE(" setval"),  HPET_TN_SETVAL },
+            { RT_STR_TUPLE(" 32b"),     HPET_TN_32BIT },
+        };
+        char        szTmp[64];
+        uint64_t    fCfg = pThis->aTimers[i].u64Config;
+        size_t      off  = 0;
+        for (unsigned j = 0; j < RT_ELEMENTS(s_aFlags); j++)
+            if (fCfg & s_aFlags[j].fFlags)
+            {
+                memcpy(&szTmp[off], s_aFlags[j].psz, s_aFlags[j].cch);
+                off  += s_aFlags[j].cch;
+                fCfg &= ~(uint64_t)s_aFlags[j].fFlags;
+            }
+        szTmp[off] = '\0';
+        Assert(off < sizeof(szTmp));
+
+        pHlp->pfnPrintf(pHlp,
+                        " %d: comparator=%016RX64 accumulator=%016RX64 (%RU64 ns)\n"
+                         "        config=%016RX64 irq=%d%s\n",
                         pThis->aTimers[i].idxTimer,
                         pThis->aTimers[i].u64Cmp,
                         pThis->aTimers[i].u64Period,
-                        pThis->aTimers[i].u64Config);
+                        hpetTicksToNs(pThis, pThis->aTimers[i].u64Period),
+                        pThis->aTimers[i].u64Config,
+                        hpetR3TimerGetIrq(pThis, &pThis->aTimers[i], pThis->aTimers[i].u64Config),
+                        szTmp);
     }
 }
 
