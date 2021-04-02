@@ -105,7 +105,7 @@ DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
  * @param   pDev            The audio device enum entry to duplicate.
  * @param   fOnlyCoreData
  */
-DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData)
+DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PCPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData)
 {
     AssertPtrReturn(pDev, NULL);
     Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
@@ -119,7 +119,7 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PPDMAUDIOHOSTDEV pDev, bool fOnl
     {
         memcpy(pDevDup, pDev, cbToDup);
         RTListInit(&pDevDup->ListEntry);
-        pDev->cbSelf = cbToDup;
+        pDevDup->cbSelf = cbToDup;
     }
 
     return pDevDup;
