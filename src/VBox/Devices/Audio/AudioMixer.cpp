@@ -1518,12 +1518,12 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps)
 
         char szFile[RTPATH_MAX];
         int rc2 = AudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, szName,
-                                      0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                                      0 /* Instance */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
         if (RT_SUCCESS(rc2))
         {
-            rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pSink->Dbg.pFile);
+            rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szFile, AUDIOHLPFILE_FLAGS_NONE, &pSink->Dbg.pFile);
             if (RT_SUCCESS(rc2))
-                rc2 = AudioHlpFileOpen(pSink->Dbg.pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pSink->PCMProps);
+                rc2 = AudioHlpFileOpen(pSink->Dbg.pFile, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS, &pSink->PCMProps);
         }
     }
 

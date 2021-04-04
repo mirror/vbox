@@ -38,7 +38,7 @@ typedef struct DEBUGAUDIOSTREAM
     /** The stream's acquired configuration. */
     PPDMAUDIOSTREAMCFG pCfg;
     /** Audio file to dump output to or read input from. */
-    PPDMAUDIOFILE      pFile;
+    PAUDIOHLPFILE      pFile;
     union
     {
         struct
@@ -134,10 +134,10 @@ static int debugCreateFile(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg
 {
     char szFile[RTPATH_MAX];
     int rc = AudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, fIn ? "DebugAudioIn" : "DebugAudioOut",
-                                 pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                                 pDrv->pDrvIns->iInstance, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
-        rc = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
+        rc = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szFile, AUDIOHLPFILE_FLAGS_NONE, &pStreamDbg->pFile);
         if (RT_SUCCESS(rc))
             rc = AudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pCfg->Props);
         if (RT_FAILURE(rc))

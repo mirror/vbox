@@ -401,11 +401,11 @@ typedef struct AC97STREAMDEBUGRT
     /** File for dumping stream reads / writes.
      *  For input streams, this dumps data being written to the device FIFO,
      *  whereas for output streams this dumps data being read from the device FIFO. */
-    R3PTRTYPE(PPDMAUDIOFILE)    pFileStream;
+    R3PTRTYPE(PAUDIOHLPFILE)    pFileStream;
     /** File for dumping DMA reads / writes.
      *  For input streams, this dumps data being written to the device DMA,
      *  whereas for output streams this dumps data being read from the device DMA. */
-    R3PTRTYPE(PPDMAUDIOFILE)    pFileDMA;
+    R3PTRTYPE(PAUDIOHLPFILE)    pFileDMA;
 } AC97STREAMDEBUGRT;
 
 /**
@@ -1004,14 +1004,14 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
         {
             if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
             {
-                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
                                            &pStreamCC->State.Cfg.Props);
                 AssertRC(rc2);
             }
 
             if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
             {
-                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
                                            &pStreamCC->State.Cfg.Props);
                 AssertRC(rc2);
             }
@@ -1105,9 +1105,9 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
 
         char szPath[RTPATH_MAX];
         int rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                                      0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
         AssertRC(rc2);
-        rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileStream);
+        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
 
         if (ichac97GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
@@ -1116,10 +1116,10 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
             RTStrPrintf(szFile, sizeof(szFile), "ac97DMAReadSD%RU8", pStream->u8SD);
 
         rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                  0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                                  0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileDMA);
+        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileDMA);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */

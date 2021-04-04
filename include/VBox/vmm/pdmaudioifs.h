@@ -904,68 +904,6 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
 #define PDMAUDIO_VOLUME_MAX     (255)
 
 
-/** @name PDMAUDIOFILE_FLAGS_XXX
- * @{ */
-/** No flags defined. */
-#define PDMAUDIOFILE_FLAGS_NONE             UINT32_C(0)
-/** Keep the audio file even if it contains no audio data. */
-#define PDMAUDIOFILE_FLAGS_KEEP_IF_EMPTY    RT_BIT_32(0)
-/** Audio file flag validation mask. */
-#define PDMAUDIOFILE_FLAGS_VALID_MASK       UINT32_C(0x1)
-/** @} */
-
-/** Audio file default open flags.
- * @todo r=bird: What is the exact purpose of this?  */
-#define PDMAUDIOFILE_DEFAULT_OPEN_FLAGS (RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE)
-
-/**
- * Audio file types.
- * @todo r=bird: This does not really belong here.
- */
-typedef enum PDMAUDIOFILETYPE
-{
-    /** The customary invalid zero value. */
-    PDMAUDIOFILETYPE_INVALID = 0,
-    /** Unknown type, do not use. */
-    PDMAUDIOFILETYPE_UNKNOWN,
-    /** Raw (PCM) file. */
-    PDMAUDIOFILETYPE_RAW,
-    /** Wave (.WAV) file. */
-    PDMAUDIOFILETYPE_WAV,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOFILETYPE_32BIT_HACK = 0x7fffffff
-} PDMAUDIOFILETYPE;
-
-/** @name PDMAUDIOFILENAME_FLAGS_XXX
- * @{ */
-/** No flags defined. */
-#define PDMAUDIOFILENAME_FLAGS_NONE         UINT32_C(0)
-/** Adds an ISO timestamp to the file name. */
-#define PDMAUDIOFILENAME_FLAGS_TS           RT_BIT(0)
-/** @} */
-
-/**
- * Audio file handle.
- */
-typedef struct PDMAUDIOFILE
-{
-    /** Type of the audio file. */
-    PDMAUDIOFILETYPE    enmType;
-    /** Audio file flags, PDMAUDIOFILE_FLAGS_XXX. */
-    uint32_t            fFlags;
-    /** Actual file handle. */
-    RTFILE              hFile;
-    /** Data needed for the specific audio file type implemented.
-     * Optional, can be NULL. */
-    void               *pvData;
-    /** Data size (in bytes). */
-    size_t              cbData;
-    /** File name and path. */
-    char                szName[RTPATH_MAX];
-} PDMAUDIOFILE;
-/** Pointer to an audio file handle. */
-typedef PDMAUDIOFILE *PPDMAUDIOFILE;
-
 /** @name PDMAUDIOSTREAMSTS_FLAGS_XXX
  * @{ */
 /** No flags being set. */

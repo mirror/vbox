@@ -60,13 +60,13 @@ typedef struct HDASTREAMDEBUGRT
     /** File for dumping stream reads / writes.
      *  For input streams, this dumps data being written to the device FIFO,
      *  whereas for output streams this dumps data being read from the device FIFO. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileStream;
+    R3PTRTYPE(PAUDIOHLPFILE) pFileStream;
     /** File for dumping raw DMA reads / writes.
      *  For input streams, this dumps data being written to the device DMA,
      *  whereas for output streams this dumps data being read from the device DMA. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileDMARaw;
+    R3PTRTYPE(PAUDIOHLPFILE) pFileDMARaw;
     /** File for dumping mapped (that is, extracted) DMA reads / writes. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileDMAMapped;
+    R3PTRTYPE(PAUDIOHLPFILE) pFileDMAMapped;
 } HDASTREAMDEBUGRT;
 
 /**

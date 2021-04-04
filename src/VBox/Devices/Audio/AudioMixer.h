@@ -29,6 +29,7 @@
 
 #include <VBox/vmm/pdmaudioifs.h>
 #include "AudioMixBuffer.h"
+#include "AudioHlp.h"
 
 
 /** Pointer to an audio mixer sink. */
@@ -235,7 +236,7 @@ typedef struct AUDMIXSINK
     uint64_t                tsLastReadWrittenNs;
     struct
     {
-        PPDMAUDIOFILE       pFile;
+        PAUDIOHLPFILE       pFile;
     } Dbg;
 } AUDMIXSINK;
 
