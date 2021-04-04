@@ -277,6 +277,10 @@ typedef struct DRVAUDIO
 #endif
     /** Our audio connector interface. */
     PDMIAUDIOCONNECTOR      IAudioConnector;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /** Interface used by the host backend. */
+    PDMIAUDIONOTIFYFROMHOST IAudioNotifyFromHost;
+#endif
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
@@ -835,13 +839,10 @@ static void drvAudioStreamFree(PDRVAUDIOSTREAM pStreamEx)
  * Schedules a re-initialization of all current audio streams.
  * The actual re-initialization will happen at some later point in time.
  *
- * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  */
-static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
+static void drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
     LogFunc(("\n"));
 
     /* Mark all host streams to re-initialize. */
@@ -857,8 +858,6 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
     /* Re-enumerate all host devices as soon as possible. */
     pThis->fEnumerateDevices = true;
 # endif
-
-    return VINF_SUCCESS;
 }
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
@@ -1937,7 +1936,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
     {
         case PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED:
             LogRel(("Audio: Device configuration of driver '%s' has changed\n", pThis->szName));
-            rc = drvAudioScheduleReInitInternal(pThis);
+            drvAudioScheduleReInitInternal(pThis);
             break;
 
         default:
@@ -3405,6 +3404,25 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
 }
 
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+/*********************************************************************************************************************************
+*   PDMIAUDIONOTIFYFROMHOST interface implementation.                                                                            *
+*********************************************************************************************************************************/
+
+/**
+ * @interface_method_impl{PDMIAUDIONOTIFYFROMHOST,pfnNotifyDevicesChanged}
+ */
+static DECLCALLBACK(void) drvAudioNotifyFromHost_NotifyDevicesChanged(PPDMIAUDIONOTIFYFROMHOST pInterface)
+{
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioNotifyFromHost);
+
+    LogRel(("Audio: Device configuration of driver '%s' has changed\n", pThis->szName));
+    drvAudioScheduleReInitInternal(pThis);
+}
+
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
+
 /*********************************************************************************************************************************
 *   PDMIBASE interface implementation.                                                                                           *
 *********************************************************************************************************************************/
@@ -3421,6 +3439,9 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const c
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIONOTIFYFROMHOST, &pThis->IAudioNotifyFromHost);
+#endif
 
     return NULL;
 }
@@ -3847,6 +3868,10 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
     pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
     pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /* IAudioNotifyFromHost */
+    pThis->IAudioNotifyFromHost.pfnNotifyDevicesChanged = drvAudioNotifyFromHost_NotifyDevicesChanged;
+#endif
 
     /*
      * Statistics.

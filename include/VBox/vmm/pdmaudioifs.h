@@ -1450,6 +1450,30 @@ typedef struct PDMIHOSTAUDIO
 /** PDMIHOSTAUDIO interface ID. */
 #define PDMIHOSTAUDIO_IID                           "be34182b-d579-41e8-96e0-abb94900460f"
 
+
+/** Pointer to a audio notify from host interface. */
+typedef struct PDMIAUDIONOTIFYFROMHOST *PPDMIAUDIONOTIFYFROMHOST;
+
+/**
+ * PDM audio notification interface, for use by host audio.
+ *
+ * @todo better name?
+ */
+typedef struct PDMIAUDIONOTIFYFROMHOST
+{
+    /**
+     * One or more audio devices have changed in some way.
+     *
+     * The upstream driver/device should re-evaluate the devices they're using.
+     *
+     * @param   pInterface          Pointer to this interface.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDevicesChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface));
+} PDMIAUDIONOTIFYFROMHOST;
+
+/** PDMIAUDIONOTIFYFROMHOST interface ID. */
+#define PDMIAUDIONOTIFYFROMHOST_IID                 "ec10f36b-ec2d-4b97-9044-2a59fba837ad"
+
 /** @} */
 
 #endif /* !VBOX_INCLUDED_vmm_pdmaudioifs_h */
