@@ -63,8 +63,8 @@
 #endif
 
 #ifdef DEBUG
-DECLINLINE(void)        audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf, const char *pszFunc);
-DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf);
+DECLINLINE(void)        audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
+DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
 #endif
 
 /*
@@ -151,7 +151,7 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
  */
 /** @todo r=bird: This isn't a 'ing Peek function, it's a Read function!
  *        Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaarg!!!!!!!!!!!!!!!!!!! */
-int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames,
+int AudioMixBufPeekMutable(PAUDIOMIXBUF pMixBuf, uint32_t cFrames,
                            PPDMAUDIOFRAME *ppvFrames, uint32_t *pcFramesToWrite)
 {
     AssertPtrReturn(pMixBuf,         VERR_INVALID_POINTER);
@@ -196,7 +196,7 @@ int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames,
  * @param   pMixBuf                 Mixing buffer to clear.
  *
  */
-void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufClear(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturnVoid(pMixBuf);
 
@@ -211,7 +211,7 @@ void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf)
  * @param   pMixBuf                 Mixing buffer to clear.
  * @param   cFramesToClear          Number of audio frames to clear.
  */
-void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
+void AudioMixBufFinish(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
 {
     AUDMIXBUF_LOG(("cFramesToClear=%RU32\n", cFramesToClear));
     AUDMIXBUF_LOG(("%s: offRead=%RU32, cUsed=%RU32\n",
@@ -220,8 +220,8 @@ void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
     AssertStmt(cFramesToClear <= pMixBuf->cFrames, cFramesToClear = pMixBuf->cFrames);
 
 /** @todo r=bird: Why isn't this done when reading/releaseing ? */
-    PPDMAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, PDMAUDIOMIXBUF, Node)
+    PAUDIOMIXBUF pIter;
+    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
     {
         AUDMIXBUF_LOG(("\t%s: cMixed=%RU32 -> %RU32\n",
                        pIter->pszName, pIter->cMixed, pIter->cMixed - cFramesToClear));
@@ -270,14 +270,14 @@ void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
  *
  * @param   pMixBuf                 Mixing buffer to destroy.
  */
-void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
 {
     if (!pMixBuf)
         return;
 
     /* Ignore calls for an uninitialized (zeroed) or already destroyed instance.  Happens a lot. */
     if (   pMixBuf->uMagic == 0
-        || pMixBuf->uMagic == ~PDMAUDIOMIXBUF_MAGIC)
+        || pMixBuf->uMagic == ~AUDIOMIXBUF_MAGIC)
     {
         Assert(!pMixBuf->pszName);
         Assert(!pMixBuf->pRate);
@@ -286,8 +286,8 @@ void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
         return;
     }
 
-    Assert(pMixBuf->uMagic == PDMAUDIOMIXBUF_MAGIC);
-    pMixBuf->uMagic = ~PDMAUDIOMIXBUF_MAGIC;
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    pMixBuf->uMagic = ~AUDIOMIXBUF_MAGIC;
 
     AudioMixBufUnlink(pMixBuf);
 
@@ -322,7 +322,7 @@ void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t                Size (in audio frames) of free audio buffer space.
  * @param   pMixBuf                 Mixing buffer to return free size for.
  */
-uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
@@ -355,7 +355,7 @@ uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t                Size (in bytes) of free audio buffer space.
  * @param   pMixBuf                 Mixing buffer to return free size for.
  */
-uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
 {
     return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
 }
@@ -367,7 +367,7 @@ uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
  * @param   pMixBuf                 Mixing buffer to allocate frame buffer for.
  * @param   cFrames                 Number of audio frames to allocate.
  */
-static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
+static int audioMixBufAlloc(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
     AssertReturn(cFrames, VERR_INVALID_PARAMETER);
@@ -423,7 +423,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
     } \
     \
     DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
-                                                               PCPDMAUDMIXBUFCONVOPTS pOpts) \
+                                                               PCAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
         uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType)); \
@@ -440,7 +440,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
     } \
     \
     DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Mono(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
-                                                             PCPDMAUDMIXBUFCONVOPTS pOpts) \
+                                                             PCAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
         const uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType)); \
@@ -457,7 +457,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
         return cFrames; \
     } \
     \
-    DECLCALLBACK(void) audioMixBufConvTo##_aName##Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
+    DECLCALLBACK(void) audioMixBufConvTo##_aName##Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts) \
     { \
         PCPDMAUDIOFRAME pSrc = paSrc; \
         _aType *pDst = (_aType *)pvDst; \
@@ -473,7 +473,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
         } \
     } \
     \
-    DECLCALLBACK(void) audioMixBufConvTo##_aName##Mono(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
+    DECLCALLBACK(void) audioMixBufConvTo##_aName##Mono(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts) \
     { \
         PCPDMAUDIOFRAME pSrc = paSrc; \
         _aType *pDst = (_aType *)pvDst; \
@@ -505,7 +505,7 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
  */
 #if 0
 DECLCALLBACK(uint32_t) audioMixBufConvFromS64Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
-                                                    PCPDMAUDMIXBUFCONVOPTS pOpts)
+                                                    PCAUDMIXBUFCONVOPTS pOpts)
 {
     _aType const *pSrc = (_aType const *)pvSrc;
     uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType));
@@ -522,7 +522,7 @@ DECLCALLBACK(uint32_t) audioMixBufConvFromS64Stereo(PPDMAUDIOFRAME paDst, const 
 }
 #endif
 
-DECLCALLBACK(void) audioMixBufConvToRawS64Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts)
+DECLCALLBACK(void) audioMixBufConvToRawS64Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts)
 {
     AssertCompile(sizeof(paSrc[0]) == sizeof(int64_t) * 2);
     memcpy(pvDst, paSrc, sizeof(int64_t) * 2 * pOpts->cFrames);
@@ -534,7 +534,7 @@ DECLCALLBACK(void) audioMixBufConvToRawS64Stereo(void *pvDst, PCPDMAUDIOFRAME pa
 #define AUDMIXBUF_MIXOP(_aName, _aOp) \
     static void audioMixBufOp##_aName(PPDMAUDIOFRAME paDst, uint32_t cDstFrames, \
                                       PPDMAUDIOFRAME paSrc, uint32_t cSrcFrames, \
-                                      PPDMAUDIOSTREAMRATE pRate, \
+                                      PAUDIOSTREAMRATE pRate, \
                                       uint32_t *pcDstWritten, uint32_t *pcSrcRead) \
     { \
         AUDMIXBUF_MACRO_LOG(("cSrcFrames=%RU32, cDstFrames=%RU32\n", cSrcFrames, cDstFrames)); \
@@ -630,7 +630,7 @@ AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */)
 
 /** Dummy conversion used when the source is muted. */
 static DECLCALLBACK(uint32_t)
-audioMixBufConvFromSilence(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, PCPDMAUDMIXBUFCONVOPTS pOpts)
+audioMixBufConvFromSilence(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, PCAUDMIXBUFCONVOPTS pOpts)
 {
     RT_NOREF(cbSrc, pvSrc);
 
@@ -646,7 +646,7 @@ audioMixBufConvFromSilence(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbS
  * @returns Pointer to matching conversion function, NULL if not supported.
  * @param   pProps  The audio format to find a "from" converter for.
  */
-static PFNPDMAUDIOMIXBUFCONVFROM audioMixBufConvFromLookup(PCPDMAUDIOPCMPROPS pProps)
+static PFNAUDIOMIXBUFCONVFROM audioMixBufConvFromLookup(PCPDMAUDIOPCMPROPS pProps)
 {
     if (PDMAudioPropsIsSigned(pProps))
     {
@@ -709,7 +709,7 @@ static PFNPDMAUDIOMIXBUFCONVFROM audioMixBufConvFromLookup(PCPDMAUDIOPCMPROPS pP
  * @returns Pointer to matching conversion function, NULL if not supported.
  * @param   pProps  The audio format to find a "to" converter for.
  */
-static PFNPDMAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps)
+static PFNAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps)
 {
     if (PDMAudioPropsIsSigned(pProps))
     {
@@ -772,7 +772,7 @@ static PFNPDMAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps
  * @param   pVolDst                 Where to store the converted mixing buffer volume.
  * @param   pVolSrc                 Volume to convert.
  */
-static int audioMixBufConvVol(PPDMAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
+static int audioMixBufConvVol(PAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
 {
     if (!pVolSrc->fMuted) /* Only change/convert the volume value if we're not muted. */
     {
@@ -798,14 +798,14 @@ static int audioMixBufConvVol(PPDMAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
  * @param   pProps                  PCM audio properties to use for the mixing buffer.
  * @param   cFrames                 Maximum number of audio frames the mixing buffer can hold.
  */
-int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
     Assert(PDMAudioPropsAreValid(pProps));
 
-    pMixBuf->uMagic  = PDMAUDIOMIXBUF_MAGIC;
+    pMixBuf->uMagic  = AUDIOMIXBUF_MAGIC;
     pMixBuf->pParent = NULL;
 
     RTListInit(&pMixBuf->lstChildren);
@@ -861,7 +861,7 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMP
  * @return  bool                    @c true if there are any audio frames available for processing, @c false if not.
  * @param   pMixBuf                 Mixing buffer to return value for.
  */
-bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf)
+bool AudioMixBufIsEmpty(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, true);
 
@@ -877,7 +877,7 @@ bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf)
  * @param   pMixBufA            First mixing buffer.
  * @param   pMixBufB            Second mixing buffer.
  */
-static int64_t audioMixBufCalcFreqRatio(PPDMAUDIOMIXBUF pMixBufA, PPDMAUDIOMIXBUF pMixBufB)
+static int64_t audioMixBufCalcFreqRatio(PAUDIOMIXBUF pMixBufA, PAUDIOMIXBUF pMixBufB)
 {
     int64_t iRatio = (int64_t)((uint64_t)PDMAudioPropsHz(&pMixBufA->Props) << 32) / PDMAudioPropsHz(&pMixBufB->Props);
     AssertStmt(iRatio, iRatio = RT_BIT_64(32) /*1:1*/);
@@ -905,7 +905,7 @@ static int64_t audioMixBufCalcFreqRatio(PPDMAUDIOMIXBUF pMixBufA, PPDMAUDIOMIXBU
  *
  * @remark  Circular linking is not allowed.
  */
-int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
+int AudioMixBufLinkTo(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUF pParent)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pParent, VERR_INVALID_POINTER);
@@ -968,11 +968,11 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
     {
         if (!pMixBuf->pRate)
         {
-            pMixBuf->pRate = (PPDMAUDIOSTREAMRATE)RTMemAllocZ(sizeof(PDMAUDIOSTREAMRATE));
+            pMixBuf->pRate = (PAUDIOSTREAMRATE)RTMemAllocZ(sizeof(AUDIOSTREAMRATE));
             AssertReturn(pMixBuf->pRate, VERR_NO_MEMORY);
         }
         else
-            RT_BZERO(pMixBuf->pRate, sizeof(PDMAUDIOSTREAMRATE));
+            RT_BZERO(pMixBuf->pRate, sizeof(AUDIOSTREAMRATE));
 
         /*
          * Some examples to get an idea of what uDstInc holds:
@@ -1007,7 +1007,7 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
  * @return  uint32_t                Number of live frames available.
  * @param   pMixBuf                 Mixing buffer to return value for.
  */
-uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
@@ -1050,7 +1050,7 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
  * @param   cSrcFrames              Number of source audio frames to mix.
  * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSrcOff, uint32_t cSrcFrames,
+static int audioMixBufMixTo(PAUDIOMIXBUF pDst, PAUDIOMIXBUF pSrc, uint32_t cSrcOff, uint32_t cSrcFrames,
                             uint32_t *pcSrcMixed)
 {
     AssertPtrReturn(pDst,  VERR_INVALID_POINTER);
@@ -1188,7 +1188,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
         uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2F(pDst, sizeof(auBuf)), RT_MIN(cLeft, pDst->cFrames - offRead));
         Assert(cToRead <= pDst->cUsed);
 
-        PDMAUDMIXBUFCONVOPTS convOpts;
+        AUDMIXBUFCONVOPTS convOpts;
         RT_ZERO(convOpts);
         convOpts.cFrames = cToRead;
 
@@ -1229,7 +1229,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
  * @param   cSrcFrames              Number of source audio frames to mix to its parent.
  * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
+int AudioMixBufMixToParentEx(PAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
 {
     AssertMsgReturn(VALID_PTR(pMixBuf->pParent),
                     ("Buffer is not linked to a parent buffer\n"),
@@ -1246,7 +1246,7 @@ int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint3
  * @param   cSrcFrames              Number of source audio frames to mix to its parent.
  * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
+int AudioMixBufMixToParent(PAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
 {
     return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, pMixBuf->offRead, cSrcFrames, pcSrcMixed);
 }
@@ -1262,7 +1262,7 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_
  * @param   fIsParent               Whether this is a parent buffer or not.
  * @param   uIdtLvl                 Indention level to use.
  */
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, const char *pszFunc, bool fIsParent, uint16_t uIdtLvl)
+DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, bool fIsParent, uint16_t uIdtLvl)
 {
     Log(("%s: %*s[%s] %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
          pszFunc, uIdtLvl * 4, "", fIsParent ? "PARENT" : "CHILD",
@@ -1275,7 +1275,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, const
  * @return  @true if the buffer state is valid or @false if not.
  * @param   pMixBuf                 Mixing buffer to validate.
  */
-DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf)
+DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
 {
     //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cFrames;
     //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cFrames - pMixBuf->cUsed)) % pMixBuf->cFrames;
@@ -1316,20 +1316,20 @@ DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf)
  * @param   uIdtLvl                 Indention level to use.
  * @param   pcChildren              Pointer to children counter.
  */
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainHelper(PPDMAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl,
+DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainHelper(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl,
                                                        size_t *pcChildren)
 {
-    PPDMAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, PDMAUDIOMIXBUF, Node)
+    PAUDIOMIXBUF pIter;
+    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
     {
         audioMixBufDbgPrintSingle(pIter, pszFunc, false /* ifIsParent */, uIdtLvl + 1);
         *pcChildren++;
     }
 }
 
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PPDMAUDIOMIXBUF pMixBuf, const char *pszFunc)
+DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
 {
-    PPDMAUDIOMIXBUF pParent = pMixBuf->pParent;
+    PAUDIOMIXBUF pParent = pMixBuf->pParent;
     while (pParent)
     {
         if (!pParent->pParent)
@@ -1358,21 +1358,21 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PPDMAUDIOMIXBUF pMixBuf
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  */
-void AudioMixBufDbgPrintChain(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufDbgPrintChain(PAUDIOMIXBUF pMixBuf)
 {
     audioMixBufDbgPrintChainInternal(pMixBuf, __FUNCTION__);
 }
 
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf, const char *pszFunc)
+DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
 {
-    PPDMAUDIOMIXBUF pParent = pMixBuf;
+    PAUDIOMIXBUF pParent = pMixBuf;
     if (pMixBuf->pParent)
         pParent = pMixBuf->pParent;
 
     audioMixBufDbgPrintSingle(pMixBuf, pszFunc, pParent == pMixBuf /* fIsParent */, 0 /* iIdtLevel */);
 
-    PPDMAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, PDMAUDIOMIXBUF, Node)
+    PAUDIOMIXBUF pIter;
+    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
     {
         if (pIter == pMixBuf)
             continue;
@@ -1387,7 +1387,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf, con
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  */
-void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufDbgPrint(PAUDIOMIXBUF pMixBuf)
 {
     audioMixBufDbgPrintInternal(pMixBuf, __FUNCTION__);
 }
@@ -1399,7 +1399,7 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t
  * @param   pMixBuf
  */
-uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return pMixBuf->cUsed;
@@ -1411,7 +1411,7 @@ uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t
  * @param   pMixBuf
  */
-uint32_t AudioMixBufUsedBytes(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cUsed);
@@ -1427,7 +1427,7 @@ uint32_t AudioMixBufUsedBytes(PPDMAUDIOMIXBUF pMixBuf)
  * @param   cbBuf                   Size (in bytes) of buffer to write to.
  * @param   pcbRead                 Size (in bytes) of data read. Optional.
  */
-int AudioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+int AudioMixBufReadAt(PAUDIOMIXBUF pMixBuf, uint32_t offFrames, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     return AudioMixBufReadAtEx(pMixBuf, &pMixBuf->Props, offFrames, pvBuf, cbBuf, pcbRead);
 }
@@ -1445,7 +1445,7 @@ int AudioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, void *pvBuf, 
  * @param   cbBuf       Size (in bytes) of buffer to write to.
  * @param   pcbRead     Size (in bytes) of data read. Optional.
  */
-int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
+int AudioMixBufReadAtEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
                         uint32_t offFrames, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1465,14 +1465,14 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
     int rc;
     if (cToProcess)
     {
-        PFNPDMAUDIOMIXBUFCONVTO pfnConvTo = NULL;
+        PFNAUDIOMIXBUFCONVTO pfnConvTo = NULL;
         if (PDMAudioPropsAreEqual(&pMixBuf->Props, pDstProps))
             pfnConvTo = pMixBuf->pfnConvTo;
         else
             pfnConvTo = audioMixBufConvToLookup(pDstProps);
         if (pfnConvTo)
         {
-            PDMAUDMIXBUFCONVOPTS convOpts;
+            AUDMIXBUFCONVOPTS convOpts;
             RT_ZERO(convOpts);
             /* Note: No volume handling/conversion done in the conversion-to macros (yet). */
 
@@ -1514,7 +1514,7 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
  * @param   pcAcquiredFrames    Where to return the number of frames in
  *                              the block that was acquired.
  */
-int AudioMixBufAcquireReadBlock(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames)
+int AudioMixBufAcquireReadBlock(PAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames)
 {
     return AudioMixBufAcquireReadBlockEx(pMixBuf, &pMixBuf->Props, pvBuf, cbBuf, pcAcquiredFrames);
 }
@@ -1533,7 +1533,7 @@ int AudioMixBufAcquireReadBlock(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t c
  * @param   pcAcquiredFrames    Where to return the number of frames in
  *                              the block that was acquired.
  */
-int AudioMixBufAcquireReadBlockEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
+int AudioMixBufAcquireReadBlockEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
                                   void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1562,7 +1562,7 @@ int AudioMixBufAcquireReadBlockEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pD
         return VINF_SUCCESS;
     }
 
-    PFNPDMAUDIOMIXBUFCONVTO pfnConvTo;
+    PFNAUDIOMIXBUFCONVTO pfnConvTo;
     if (PDMAudioPropsAreEqual(&pMixBuf->Props, pDstProps))
         pfnConvTo = pMixBuf->pfnConvTo;
     else
@@ -1572,7 +1572,7 @@ int AudioMixBufAcquireReadBlockEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pD
     cFramesToRead = RT_MIN(cFramesToRead, pMixBuf->cFrames - pMixBuf->offRead);
     if (cFramesToRead)
     {
-        PDMAUDMIXBUFCONVOPTS convOpts;
+        AUDMIXBUFCONVOPTS convOpts;
         RT_ZERO(convOpts);
         convOpts.cFrames = cFramesToRead;
 
@@ -1609,7 +1609,7 @@ int AudioMixBufAcquireReadBlockEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pD
  * @param   cFrames     The number of frames to release.  (Can be less than the
  *                      acquired count.)
  */
-void AudioMixBufReleaseReadBlock(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
+void AudioMixBufReleaseReadBlock(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 {
     AssertPtrReturnVoid(pMixBuf);
 
@@ -1627,7 +1627,7 @@ void AudioMixBufReleaseReadBlock(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to return position for.
  */
-uint32_t AudioMixBufReadPos(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
@@ -1639,7 +1639,7 @@ uint32_t AudioMixBufReadPos(PPDMAUDIOMIXBUF pMixBuf)
  *
  * @param   pMixBuf                 Mixing buffer to reset.
  */
-void AudioMixBufReset(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufReset(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturnVoid(pMixBuf);
 
@@ -1659,7 +1659,7 @@ void AudioMixBufReset(PPDMAUDIOMIXBUF pMixBuf)
  * @param   pMixBuf                 Mixing buffer to set volume for.
  * @param   pVol                    Pointer to volume structure to set.
  */
-void AudioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
+void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
 {
     AssertPtrReturnVoid(pMixBuf);
     AssertPtrReturnVoid(pVol);
@@ -1676,7 +1676,7 @@ void AudioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
  * @return  uint32_t                Size (in audio frames) the mixing buffer can hold.
  * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
  */
-uint32_t AudioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return pMixBuf->cFrames;
@@ -1688,7 +1688,7 @@ uint32_t AudioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t                Size (in bytes) the mixing buffer can hold.
  * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
  */
-uint32_t AudioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
@@ -1700,7 +1700,7 @@ uint32_t AudioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to unlink from parent.
  */
-void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufUnlink(PAUDIOMIXBUF pMixBuf)
 {
     if (!pMixBuf || !pMixBuf->pszName)
         return;
@@ -1724,8 +1724,8 @@ void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
         pMixBuf->pParent = NULL;
     }
 
-    PPDMAUDIOMIXBUF pChild, pChildNext;
-    RTListForEachSafe(&pMixBuf->lstChildren, pChild, pChildNext, PDMAUDIOMIXBUF, Node)
+    PAUDIOMIXBUF pChild, pChildNext;
+    RTListForEachSafe(&pMixBuf->lstChildren, pChild, pChildNext, AUDIOMIXBUF, Node)
     {
         AUDMIXBUF_LOG(("\tUnlinking \"%s\"\n", pChild->pszName));
 
@@ -1766,7 +1766,7 @@ void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
  * @param   cbBuf                   Size (in bytes) of audio buffer.
  * @param   pcWritten               Returns number of audio frames written. Optional.
  */
-int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
+int AudioMixBufWriteAt(PAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
 {
     return AudioMixBufWriteAtEx(pMixBuf, &pMixBuf->Props, offFrames, pvBuf, cbBuf, pcWritten);
 }
@@ -1788,7 +1788,7 @@ int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *
  * @param   cbBuf       Size (in bytes) of audio buffer.
  * @param   pcWritten   Returns number of audio frames written. Optional.
  */
-int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
+int AudioMixBufWriteAtEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
                          uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1825,7 +1825,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
     /*
      * Pick the conversion function and do the conversion.
      */
-    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
+    PFNAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
     if (!pMixBuf->Volume.fMuted)
     {
         if (PDMAudioPropsAreEqual(&pMixBuf->Props, pSrcProps))
@@ -1842,7 +1842,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
     uint32_t cWritten;
     if (cToWrite)
     {
-        PDMAUDMIXBUFCONVOPTS convOpts;
+        AUDMIXBUFCONVOPTS convOpts;
 
         convOpts.cFrames            = cToWrite;
         convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
@@ -1891,7 +1891,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
  * @param   cbBuf                   Size (in bytes) of audio buffer.
  * @param   pcWritten               Returns number of audio frames written. Optional.
  */
-int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
+int AudioMixBufWriteCirc(PAUDIOMIXBUF pMixBuf, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
 {
     return AudioMixBufWriteCircEx(pMixBuf, &pMixBuf->Props, pvBuf, cbBuf, pcWritten);
 }
@@ -1909,7 +1909,7 @@ int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf, const void *pvBuf, uint32_t cb
  * @param   cbBuf       Size (in bytes) of audio buffer.
  * @param   pcWritten   Returns number of audio frames written. Optional.
  */
-int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
+int AudioMixBufWriteCircEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
                            const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1929,7 +1929,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps
     Assert(pMixBuf->cFrames);
     AssertPtr(pMixBuf->pFrames);
 
-    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
+    PFNAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
     if (!pMixBuf->Volume.fMuted)
     {
         if (PDMAudioPropsAreEqual(&pMixBuf->Props, pSrcProps))
@@ -1954,7 +1954,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps
         uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), RT_MIN(pMixBuf->cFrames - pMixBuf->offWrite, cFree));
         Assert(cToWrite);
 
-        PDMAUDMIXBUFCONVOPTS convOpts;
+        AUDMIXBUFCONVOPTS convOpts;
         convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
         convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
         convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
@@ -2002,7 +2002,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to return position for.
  */
-uint32_t AudioMixBufWritePos(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 

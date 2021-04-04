@@ -28,6 +28,7 @@
 #include <iprt/critsect.h>
 
 #include <VBox/vmm/pdmaudioifs.h>
+#include "AudioMixBuffer.h"
 
 
 /** Pointer to an audio mixer sink. */
@@ -54,6 +55,7 @@ typedef struct AUDIOMIXER
 } AUDIOMIXER;
 /** Pointer to an audio mixer instance. */
 typedef AUDIOMIXER *PAUDIOMIXER;
+
 
 /** Defines an audio mixer stream's flags. */
 #define AUDMIXSTREAMFLAGS uint32_t
@@ -200,7 +202,7 @@ typedef struct AUDMIXSINK
     RTCRITSECT              CritSect;
     /** This sink's mixing buffer, acting as
      * a parent buffer for all streams this sink owns. */
-    PDMAUDIOMIXBUF          MixBuf;
+    AUDIOMIXBUF          MixBuf;
     /** Scratch buffer for multiplexing / mixing. Might be NULL if not needed. */
     uint8_t                *pabScratchBuf;
     /** Size (in bytes) of pabScratchBuf. Might be 0 if not needed. */

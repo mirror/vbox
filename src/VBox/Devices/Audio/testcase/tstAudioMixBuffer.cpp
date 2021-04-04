@@ -205,7 +205,7 @@ static int tstSingle(RTTEST hTest)
     /*
      * General stuff.
      */
-    PDMAUDIOMIXBUF mb;
+    AUDIOMIXBUF mb;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&mb, "Single", &config, cBufSize));
     RTTESTI_CHECK(AudioMixBufSize(&mb) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_B2F(&mb, AudioMixBufSizeBytes(&mb)) == cBufSize);
@@ -322,7 +322,7 @@ static int tstParentChild(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
-    PDMAUDIOMIXBUF parent;
+    AUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cParentBufSize));
 
     /* 22050Hz, 2 Channels, S16 */
@@ -339,7 +339,7 @@ static int tstParentChild(RTTEST hTest)
     uint32_t cFrames      = 16;
     uint32_t cChildBufSize = RTRandU32Ex(cFrames /* Min */, 64 /* Max */);
 
-    PDMAUDIOMIXBUF child1;
+    AUDIOMIXBUF child1;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child1, "Child1", &cfg_c1, cChildBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child1, &parent));
 
@@ -354,7 +354,7 @@ static int tstParentChild(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c2));
 
-    PDMAUDIOMIXBUF child2;
+    AUDIOMIXBUF child2;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2, cChildBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child2, &parent));
 
@@ -459,14 +459,14 @@ static void tstDownsampling(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
     uint32_t const         cFramesParent = RTRandU32Ex(16, RT_ELEMENTS(aDstFrames));
     PDMAUDIOPCMPROPS const CfgDst = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uToHz, false /*fSwap*/);
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgDst));
-    PDMAUDIOMIXBUF Parent;
+    AUDIOMIXBUF Parent;
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&Parent, "ParentDownsampling", &CfgDst, cFramesParent));
 
     /* Child (source) buffer is yyykHz 2ch S16 */
     PDMAUDIOPCMPROPS const CfgSrc = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uFromHz, false /*fSwap*/);
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgSrc));
     uint32_t const cFramesChild = RTRandU32Ex(32, RT_ELEMENTS(aSrcFrames));
-    PDMAUDIOMIXBUF Child;
+    AUDIOMIXBUF Child;
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&Child, "ChildDownsampling", &CfgSrc, cFramesChild));
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufLinkTo(&Child, &Parent));
 
@@ -566,7 +566,7 @@ static int tstConversion8(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
-    PDMAUDIOMIXBUF parent;
+    AUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
 
     /* Child uses half the sample rate; that ensures the mixing engine can't
@@ -588,7 +588,7 @@ static int tstConversion8(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c));
 
-    PDMAUDIOMIXBUF child;
+    AUDIOMIXBUF child;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 
@@ -668,7 +668,7 @@ static int tstConversion16(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
-    PDMAUDIOMIXBUF parent;
+    AUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
 
     /* 22050Hz, 1 Channel, S16 */
@@ -682,7 +682,7 @@ static int tstConversion16(RTTEST hTest)
 
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c));
 
-    PDMAUDIOMIXBUF child;
+    AUDIOMIXBUF child;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 
@@ -762,10 +762,10 @@ static int tstVolume(RTTEST hTest)
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg));
 
     PDMAUDIOVOLUME vol = { false, 0, 0 };   /* Not muted. */
-    PDMAUDIOMIXBUF parent;
+    AUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg, cBufSize));
 
-    PDMAUDIOMIXBUF child;
+    AUDIOMIXBUF child;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 

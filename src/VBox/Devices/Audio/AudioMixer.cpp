@@ -650,7 +650,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                      * Create the stream.
                      */
                     PPDMAUDIOSTREAM pStream;
-                    rc = pConn->pfnStreamCreate(pConn, &CfgHost, pCfg, &pStream);
+                    rc = pConn->pfnStreamCreate(pConn, 0 /*fFlags*/, &CfgHost, pCfg, &pStream);
                     if (RT_SUCCESS(rc))
                     {
                         /* Save the audio stream pointer to this mixing stream. */

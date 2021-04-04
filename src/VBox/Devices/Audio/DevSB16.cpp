@@ -1774,7 +1774,7 @@ static int sb16CreateDrvStream(PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
     /* Disable pre-buffering for SB16; not needed for that bit of data. */
     pCfgHost->Backend.cFramesPreBuffering = 0;
 
-    int rc = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, pCfgHost, pCfg /* pCfgGuest */, &pDrv->Out.pStream);
+    int rc = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, 0 /*fFlags*/, pCfgHost, pCfg /* pCfgGuest */, &pDrv->Out.pStream);
     if (RT_SUCCESS(rc))
     {
         pDrv->pConnector->pfnStreamRetain(pDrv->pConnector, pDrv->Out.pStream);
