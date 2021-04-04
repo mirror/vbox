@@ -459,6 +459,12 @@ typedef PDMAUDIOBACKENDCFG *PPDMAUDIOBACKENDCFG;
  *       VRDP's input / output processing in DrvAudioVRDE, as VRDP
  *       expects audio data in st_sample_t format (historical reasons)
  *       which happens to be the same as PDMAUDIOFRAME for now.
+ *
+ * @todo r=bird: This is an internal AudioMixBuffer structure which should not
+ *       be exposed here, I think.  Only used to some sizeof statements in VRDE.
+ *       (The problem with exposing it, is that we would like to move away from
+ *       stereo and instead to anything from 1 to 16 channels.  That means
+ *       removing this structure entirely.)
  */
 typedef struct PDMAUDIOFRAME
 {
@@ -471,32 +477,6 @@ typedef struct PDMAUDIOFRAME
 typedef PDMAUDIOFRAME *PPDMAUDIOFRAME;
 /** Pointer to a const single (stereo) audio frame. */
 typedef PDMAUDIOFRAME const *PCPDMAUDIOFRAME;
-
-typedef enum PDMAUDIOENDIANNESS
-{
-    /** The usual invalid value. */
-    PDMAUDIOENDIANNESS_INVALID = 0,
-    /** Little endian. */
-    PDMAUDIOENDIANNESS_LITTLE,
-    /** Bit endian. */
-    PDMAUDIOENDIANNESS_BIG,
-    /** Endianness doesn't have a meaning in the context. */
-    PDMAUDIOENDIANNESS_NA,
-    /** The end of the valid endian values (exclusive). */
-    PDMAUDIOENDIANNESS_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOENDIANNESS_32BIT_HACK = 0x7fffffff
-} PDMAUDIOENDIANNESS;
-
-/** @def PDMAUDIOHOSTENDIANNESS
- * The PDMAUDIOENDIANNESS value for the host. */
-#if defined(RT_LITTLE_ENDIAN)
-# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
-#elif defined(RT_BIG_ENDIAN)
-# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_BIG
-#else
-# error "Port me!"
-#endif
 
 /**
  * Audio playback destinations.
@@ -682,6 +662,18 @@ typedef struct PDMAUDIOSTREAMMAP
     uint32_t                    offNext;
     /** Associated data buffer. */
     PDMAUDIOSTREAMCHANNELDATA   Data;
+
+    /** @todo r=bird: I'd structure this very differently.
+     * I would've had an array of channel descriptors like this:
+     *
+     * struct PDMAUDIOCHANNELDESC
+     * {
+     *     uint8_t      off;    //< Stream offset in bytes.
+     *     uint8_t      id;     //< PDMAUDIOSTREAMCHANNELID
+     * };
+     *
+     * And I'd baked it into PDMAUDIOPCMPROPS as a fixed sized array with 16 entries
+     * (max HDA channel count IIRC).  */
 } PDMAUDIOSTREAMMAP;
 /** Pointer to an audio stream channel mapping. */
 typedef PDMAUDIOSTREAMMAP *PPDMAUDIOSTREAMMAP;
@@ -1001,65 +993,6 @@ typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 
 
 /**
- * Audio callback source.
- */
-typedef enum PDMAUDIOCBSOURCE
-{
-    /** Invalid, do not use. */
-    PDMAUDIOCBSOURCE_INVALID = 0,
-    /** Device emulation. */
-    PDMAUDIOCBSOURCE_DEVICE,
-    /** Audio connector interface. */
-    PDMAUDIOCBSOURCE_CONNECTOR,
-    /** Backend (lower). */
-    PDMAUDIOCBSOURCE_BACKEND,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOCBSOURCE_32BIT_HACK = 0x7fffffff
-} PDMAUDIOCBSOURCE;
-
-/**
- * Audio device callback types.
- * Those callbacks are being sent from the audio connector ->  device emulation.
- */
-typedef enum PDMAUDIODEVICECBTYPE
-{
-    /** Invalid, do not use. */
-    PDMAUDIODEVICECBTYPE_INVALID = 0,
-    /** Data is availabe as input for passing to the device emulation. */
-    PDMAUDIODEVICECBTYPE_DATA_INPUT,
-    /** Free data for the device emulation to write to the backend. */
-    PDMAUDIODEVICECBTYPE_DATA_OUTPUT,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIODEVICECBTYPE_32BIT_HACK = 0x7fffffff
-} PDMAUDIODEVICECBTYPE;
-
-#if 0 /** @todo r=bird: Who needs this exactly?  Fix the style or remove  */
-/**
- * Device callback data for audio input.
- */
-typedef struct PDMAUDIODEVICECBDATA_DATA_INPUT
-{
-    /** Input: How many bytes are availabe as input for passing
-     *         to the device emulation. */
-    uint32_t cbInAvail;
-    /** Output: How many bytes have been read. */
-    uint32_t cbOutRead;
-} PDMAUDIODEVICECBDATA_DATA_INPUT;
-typedef PDMAUDIODEVICECBDATA_DATA_INPUT *PPDMAUDIODEVICECBDATA_DATA_INPUT;
-
-/**
- * Device callback data for audio output.
- */
-typedef struct PDMAUDIODEVICECBDATA_DATA_OUTPUT
-{
-    /** Input:  How many bytes are free for the device emulation to write. */
-    uint32_t cbInFree;
-    /** Output: How many bytes were written by the device emulation. */
-    uint32_t cbOutWritten;
-} PDMAUDIODEVICECBDATA_DATA_OUTPUT, *PPDMAUDIODEVICECBDATA_DATA_OUTPUT;
-#endif
-
-/**
  * Audio backend callback types.
  * Those callbacks are being sent from the backend -> audio connector.
  */
@@ -1094,32 +1027,6 @@ typedef DECLCALLBACKTYPE(int, FNPDMHOSTAUDIOCALLBACK,(PPDMDRVINS pDrvIns, PDMAUD
 /** Pointer to a FNPDMHOSTAUDIOCALLBACK(). */
 typedef FNPDMHOSTAUDIOCALLBACK *PFNPDMHOSTAUDIOCALLBACK;
 
-/**
- * Audio callback registration record.
- */
-typedef struct PDMAUDIOCBRECORD
-{
-    /** List node. */
-    RTLISTANCHOR        Node;
-    /** Callback source. */
-    PDMAUDIOCBSOURCE    enmSource;
-    /** Callback type, based on the given source. */
-    union
-    {
-        /** Device callback stuff. */
-        struct
-        {
-            PDMAUDIODEVICECBTYPE enmType;
-        } Device;
-    } RT_UNION_NM(u);
-    /** Pointer to context data. Optional. */
-    void               *pvCtx;
-    /** Size (in bytes) of context data.
-     *  Must be 0 if pvCtx is NULL. */
-    size_t              cbCtx;
-} PDMAUDIOCBRECORD;
-/** Pointer to an audio callback registration record.   */
-typedef PDMAUDIOCBRECORD *PPDMAUDIOCBRECORD;
 
 /** @todo r=bird: What is this exactly? */
 #define PPDMAUDIOBACKENDSTREAM void *
@@ -1324,26 +1231,10 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
                                                  uint32_t *pcFramesCaptured));
 
-    /**
-     * Registers (device) callbacks.
-     * This is handy for letting the device emulation know of certain events, e.g. processing input / output data
-     * or configuration changes.
-     *
-     * @returns VBox status code.
-     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   paCallbacks          Pointer to array of callbacks to register.
-     * @param   cCallbacks           Number of callbacks to register.
-     *
-     * @todo r=bird: Total misdesign. See more notes in drvAudioBackendCallback on
-     *       the subject.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCBRECORD paCallbacks,
-                                                     size_t cCallbacks));
-
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "23c23c64-89aa-43b1-b20e-ba6881ab5746"
+#define PDMIAUDIOCONNECTOR_IID                  "122511ca-deb3-4630-ad31-ade9f3177df4"
 
 
 /**

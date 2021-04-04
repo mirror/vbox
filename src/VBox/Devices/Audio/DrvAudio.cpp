@@ -293,9 +293,6 @@ typedef struct DRVAUDIO
         /** Max. number of free input streams.
          *  UINT32_MAX for unlimited streams. */
         uint32_t            cStreamsFree;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-        RTLISTANCHOR        lstCB;
-#endif
         /** The driver's input confguration (tweakable via CFGM). */
         DRVAUDIOCFG         Cfg;
     } In;
@@ -307,9 +304,6 @@ typedef struct DRVAUDIO
         /** Max. number of free output streams.
          *  UINT32_MAX for unlimited streams. */
         uint32_t            cStreamsFree;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-        RTLISTANCHOR        lstCB;
-#endif
         /** The driver's output confguration (tweakable via CFGM). */
         DRVAUDIOCFG         Cfg;
         /** Number of times underruns triggered re-(pre-)buffering. */
@@ -1899,113 +1893,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 }
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS  /** @todo r=bird: All this is non-sense that shall be replaced by a PDMIHOSTAUDIO partner interface. */
-
-/**
- * Duplicates an audio callback.
- *
- * @returns Pointer to duplicated callback, or NULL on failure.
- * @param   pCB                 Callback to duplicate.
- */
-static PPDMAUDIOCBRECORD drvAudioCallbackDuplicate(PPDMAUDIOCBRECORD pCB)
-{
-    AssertPtrReturn(pCB, NULL);
-
-    PPDMAUDIOCBRECORD pCBCopy = (PPDMAUDIOCBRECORD)RTMemDup((void *)pCB, sizeof(PDMAUDIOCBRECORD));
-    if (!pCBCopy)
-        return NULL;
-
-    if (pCB->pvCtx)
-    {
-        pCBCopy->pvCtx = RTMemDup(pCB->pvCtx, pCB->cbCtx);
-        if (!pCBCopy->pvCtx)
-        {
-            RTMemFree(pCBCopy);
-            return NULL;
-        }
-
-        pCBCopy->cbCtx = pCB->cbCtx;
-    }
-
-    return pCBCopy;
-}
-
-/**
- * Destroys a given callback.
- *
- * @param   pCB                 Callback to destroy.
- */
-static void drvAudioCallbackDestroy(PPDMAUDIOCBRECORD pCB)
-{
-    if (!pCB)
-        return;
-
-    RTListNodeRemove(&pCB->Node);
-    if (pCB->pvCtx)
-    {
-        Assert(pCB->cbCtx);
-        RTMemFree(pCB->pvCtx);
-    }
-    RTMemFree(pCB);
-}
-
-/**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnRegisterCallbacks}
- */
-static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterface,
-                                                   PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks)
-{
-    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
-    AssertPtr(pThis);
-    AssertPtrReturn(paCallbacks, VERR_INVALID_POINTER);
-    AssertReturn(cCallbacks,     VERR_INVALID_PARAMETER);
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
-    /*
-     *
-     */
-    for (size_t i = 0; i < cCallbacks; i++)
-    {
-        PPDMAUDIOCBRECORD pCB = drvAudioCallbackDuplicate(&paCallbacks[i]);
-        if (!pCB)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        switch (pCB->enmSource)
-        {
-            case PDMAUDIOCBSOURCE_DEVICE:
-            {
-                switch (pCB->Device.enmType)
-                {
-                    case PDMAUDIODEVICECBTYPE_DATA_INPUT:
-                        RTListAppend(&pThis->In.lstCB, &pCB->Node);
-                        break;
-
-                    case PDMAUDIODEVICECBTYPE_DATA_OUTPUT:
-                        RTListAppend(&pThis->Out.lstCB, &pCB->Node);
-                        break;
-
-                    default:
-                        AssertMsgFailed(("Not supported\n"));
-                        break;
-                }
-
-                break;
-            }
-
-            default:
-               AssertMsgFailed(("Not supported\n"));
-               break;
-        }
-    }
-
-    /** @todo Undo allocations on error. */
-
-    RTCritSectLeave(&pThis->CritSect);
-    return rc;
-}
 
 /**
  * @callback_method_impl{FNPDMHOSTAUDIOCALLBACK, Backend callback implementation.}
@@ -3735,18 +3622,6 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     /* Sanity. */
     Assert(RTListIsEmpty(&pThis->lstStreams));
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    /*
-     * Destroy callbacks, if any.
-     */
-    PPDMAUDIOCBRECORD pCB, pCBNext;
-    RTListForEachSafe(&pThis->In.lstCB, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
-        drvAudioCallbackDestroy(pCB);
-
-    RTListForEachSafe(&pThis->Out.lstCB, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
-        drvAudioCallbackDestroy(pCB);
-#endif
-
     if (RTCritSectIsInitialized(&pThis->CritSect))
     {
         int rc = RTCritSectLeave(&pThis->CritSect);
@@ -3793,10 +3668,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
      * Basic instance init.
      */
     RTListInit(&pThis->lstStreams);
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    RTListInit(&pThis->In.lstCB);
-    RTListInit(&pThis->Out.lstCB);
-#endif
 
     /*
      * Read configuration.
@@ -3976,9 +3847,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
     pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
     pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
-#endif
 
     /*
      * Statistics.
