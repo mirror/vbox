@@ -107,9 +107,8 @@ typedef struct DRVHOSTCOREAUDIO
      *  Can be NULL if none assigned. */
     PCOREAUDIODEVICEDATA    pDefaultDevOut;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
-    /** Callback function to the upper driver.
-     *  Can be NULL if not being used / registered. */
-    PFNPDMHOSTAUDIOCALLBACK pfnCallback;
+    /** Upwards notification interface. */
+    PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost;
 #endif
 } DRVHOSTCOREAUDIO, *PDRVHOSTCOREAUDIO;
 
@@ -1031,17 +1030,14 @@ static DECLCALLBACK(OSStatus) coreAudioDefaultDeviceChangedCb(AudioObjectID prop
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
     }
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    PFNPDMHOSTAUDIOCALLBACK pfnCallback = pThis->pfnCallback;
-#endif
-
-    /* Make sure to leave the critical section before calling the callback. */
+    /* Make sure to leave the critical section before notify higher drivers/devices. */
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
-    if (pfnCallback)
-        pfnCallback(pThis->pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0); /* Ignore rc */
+    /* Notify the driver/device above us about possible changes in devices. */
+    if (pThis->pIAudioNotifyFromHost)
+        pThis->pIAudioNotifyFromHost->pfnNotifyDevicesChanged(pThis->pIAudioNotifyFromHost);
 #endif
 
     return noErr;
@@ -2205,42 +2201,6 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface
 }
 
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnSetCallback}
- */
-static DECLCALLBACK(int) drvHostCoreAudioHA_SetCallback(PPDMIHOSTAUDIO pInterface, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    /* pfnCallback will be handled below. */
-
-    PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        LogFunc(("pfnCallback=%p\n", pfnCallback));
-
-        if (pfnCallback) /* Register. */
-        {
-            Assert(pThis->pfnCallback == NULL);
-            pThis->pfnCallback = pfnCallback;
-        }
-        else /* Unregister. */
-        {
-            if (pThis->pfnCallback)
-                pThis->pfnCallback = NULL;
-        }
-
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-    }
-
-    return rc;
-}
-#endif
-
-
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
@@ -2602,12 +2562,7 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamIterate      = drvHostCoreAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostCoreAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostCoreAudioHA_StreamCapture;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    pThis->IHostAudio.pfnSetCallback        = drvHostCoreAudioHA_SetCallback;
-    pThis->pfnCallback                      = NULL;
-#else
     pThis->IHostAudio.pfnSetCallback        = NULL;
-#endif
     pThis->IHostAudio.pfnGetDevices         = drvHostCoreAudioHA_GetDevices;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
     pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
@@ -2617,6 +2572,14 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /*
+     * Query the notification interface from the driver/device above us.
+     */
+    pThis->pIAudioNotifyFromHost = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIONOTIFYFROMHOST);
+    Assert(pThis->pIAudioNotifyFromHost);
+#endif
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "caConverterCbInput.pcm");
