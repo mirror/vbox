@@ -42,16 +42,13 @@ class DrvHostAudioDSoundMMNotifClient : IMMNotificationClient
 {
 public:
 
-    DrvHostAudioDSoundMMNotifClient();
+    DrvHostAudioDSoundMMNotifClient(PPDMIAUDIONOTIFYFROMHOST pInterface);
     virtual ~DrvHostAudioDSoundMMNotifClient();
 
     HRESULT Initialize();
 
     HRESULT Register(void);
     void    Unregister(void);
-
-    int     RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback);
-    void    UnregisterCallback(void);
 
     /** @name IUnknown interface
      * @{ */
@@ -66,8 +63,7 @@ private:
 
     long                        m_cRef;
 
-    PPDMDRVINS                  m_pDrvIns;
-    PFNPDMHOSTAUDIOCALLBACK     m_pfnCallback;
+    PPDMIAUDIONOTIFYFROMHOST    m_pIAudioNotifyFromHost;
 
     HRESULT AttachToDefaultEndpoint();
     void    DetachFromEndpoint();

@@ -29,9 +29,10 @@
 #include <VBox/log.h>
 
 
-DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(void)
+DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(PPDMIAUDIONOTIFYFROMHOST pInterface)
     : m_fRegisteredClient(false)
     , m_cRef(1)
+    , m_pIAudioNotifyFromHost(pInterface)
 {
 }
 
@@ -85,31 +86,6 @@ HRESULT DrvHostAudioDSoundMMNotifClient::Initialize(void)
 }
 
 /**
- * Registration callback implementation for storing our (required) contexts.
- *
- * @return  IPRT status code.
- * @param   pDrvIns             Driver instance to register the notification client to.
- * @param   pfnCallback         Audio callback to call by the notification client in case of new events.
- */
-int DrvHostAudioDSoundMMNotifClient::RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
-{
-    this->m_pDrvIns     = pDrvIns;
-    this->m_pfnCallback = pfnCallback;
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Unregistration callback implementation for cleaning up our mess when we're done handling
- * with notifications.
- */
-void DrvHostAudioDSoundMMNotifClient::UnregisterCallback(void)
-{
-    this->m_pDrvIns     = NULL;
-    this->m_pfnCallback = NULL;
-}
-
-/**
  * Stub being called when attaching to the default audio endpoint.
  * Does nothing at the moment.
  */
@@ -132,13 +108,8 @@ void DrvHostAudioDSoundMMNotifClient::DetachFromEndpoint(void)
  */
 void DrvHostAudioDSoundMMNotifClient::doCallback(void)
 {
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    AssertPtr(this->m_pDrvIns);
-    AssertPtr(this->m_pfnCallback);
-
-    if (this->m_pfnCallback)
-        /* Ignore rc */ this->m_pfnCallback(this->m_pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0);
-#endif
+    if (m_pIAudioNotifyFromHost)
+        m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
 }
 
 /**

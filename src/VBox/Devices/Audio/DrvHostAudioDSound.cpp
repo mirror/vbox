@@ -213,7 +213,7 @@ typedef struct DRVHOSTDSOUND
     /** DirectSound configuration options. */
     DSOUNDHOSTCFG               Cfg;
     /** List of devices of last enumeration. */
-    PDMAUDIOHOSTENUM          DeviceEnum;
+    PDMAUDIOHOSTENUM            DeviceEnum;
     /** Whether this backend supports any audio input. */
     bool                        fEnabledIn;
     /** Whether this backend supports any audio output. */
@@ -223,12 +223,7 @@ typedef struct DRVHOSTDSOUND
     /** The Direct Sound capturing interface. */
     LPDIRECTSOUNDCAPTURE8       pDSC;
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-    DrvHostAudioDSoundMMNotifClient   *m_pNotificationClient;
-#endif
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    /** Callback function to the upper driver.
-     *  Can be NULL if not being used / registered. */
-    PFNPDMHOSTAUDIOCALLBACK     pfnCallback;
+    DrvHostAudioDSoundMMNotifClient *m_pNotificationClient;
 #endif
     /** Pointer to the input stream. */
     PDSOUNDSTREAM               pDSStrmIn;
@@ -2539,51 +2534,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamIterate(PPDMIHOSTAUDIO pInterface
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnSetCallback}
- */
-static DECLCALLBACK(int) drvHostDSoundHA_SetCallback(PPDMIHOSTAUDIO pInterface, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    /* pfnCallback will be handled below. */
-
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        LogFunc(("pfnCallback=%p\n", pfnCallback));
-
-        if (pfnCallback) /* Register. */
-        {
-            Assert(pThis->pfnCallback == NULL);
-            pThis->pfnCallback = pfnCallback;
-
-#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-            if (pThis->m_pNotificationClient)
-                pThis->m_pNotificationClient->RegisterCallback(pThis->pDrvIns, pfnCallback);
-#endif
-        }
-        else /* Unregister. */
-        {
-            if (pThis->pfnCallback)
-                pThis->pfnCallback = NULL;
-
-#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-            if (pThis->m_pNotificationClient)
-                pThis->m_pNotificationClient->UnregisterCallback();
-#endif
-        }
-
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-    }
-
-    return rc;
-}
-#endif
-
 
 /*********************************************************************************************************************************
 *   PDMDRVINS::IBase Interface                                                                                                   *
@@ -2678,12 +2628,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IHostAudio.pfnStreamIterate      = drvHostDSoundHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostDSoundHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostDSoundHA_StreamCapture;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    pThis->IHostAudio.pfnSetCallback        = drvHostDSoundHA_SetCallback;
-    pThis->pfnCallback                      = NULL;
-#else
     pThis->IHostAudio.pfnSetCallback        = NULL;
-#endif
     pThis->IHostAudio.pfnGetDevices         = drvHostDSoundHA_GetDevices;
     pThis->IHostAudio.pfnStreamGetPending   = drvHostDSoundHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
@@ -2715,9 +2660,17 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     if (fUseNotificationClient)
     {
+        /* Get the notification interface. */
+# ifdef VBOX_WITH_AUDIO_CALLBACKS
+        PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIONOTIFYFROMHOST);
+        Assert(pIAudioNotifyFromHost);
+# else
+        PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = NULL;
+# endif
+
         try
         {
-            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient();
+            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIAudioNotifyFromHost);
 
             hr = pThis->m_pNotificationClient->Initialize();
             if (SUCCEEDED(hr))
