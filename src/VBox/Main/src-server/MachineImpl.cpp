@@ -1258,7 +1258,7 @@ HRESULT Machine::setIommuType(IommuType_T aIommuType)
         {
 #ifndef VBOX_WITH_IOMMU_INTEL
             LogRelFunc(("Setting Intel IOMMU when Intel IOMMU support not available!\n"));
-            return NS_ERROR_UNEXPECTED;
+            return E_UNEXPECTED;
 #endif
         }
 
