@@ -992,44 +992,10 @@ typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 #define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 2, 0)
 
 
-/**
- * Audio backend callback types.
- * Those callbacks are being sent from the backend -> audio connector.
- */
-typedef enum PDMAUDIOBACKENDCBTYPE
-{
-    /** Invalid, do not use. */
-    PDMAUDIOBACKENDCBTYPE_INVALID = 0,
-    /** The backend's status has changed. */
-    PDMAUDIOBACKENDCBTYPE_STATUS,
-    /** One or more host audio devices have changed. */
-    PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOBACKENDCBTYPE_32BIT_HACK = 0x7fffffff
-} PDMAUDIOBACKENDCBTYPE;
-
-/** Pointer to a host audio interface. */
-typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
-
-/**
- * Host audio callback function.
- *
- * This function will be called from a backend to communicate with the host audio interface.
- *
- * @returns VBox status code.
- * @param   pDrvIns             Pointer to driver instance which called us.
- * @param   enmType             Callback type.
- * @param   pvUser              User argument.
- * @param   cbUser              Size (in bytes) of user argument.
- */
-typedef DECLCALLBACKTYPE(int, FNPDMHOSTAUDIOCALLBACK,(PPDMDRVINS pDrvIns, PDMAUDIOBACKENDCBTYPE enmType,
-                                                      void *pvUser, size_t cbUser));
-/** Pointer to a FNPDMHOSTAUDIOCALLBACK(). */
-typedef FNPDMHOSTAUDIOCALLBACK *PFNPDMHOSTAUDIOCALLBACK;
-
 
 /** @todo r=bird: What is this exactly? */
 #define PPDMAUDIOBACKENDSTREAM void *
+
 
 /** Pointer to a audio connector interface. */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
@@ -1237,6 +1203,9 @@ typedef struct PDMIAUDIOCONNECTOR
 #define PDMIAUDIOCONNECTOR_IID                  "122511ca-deb3-4630-ad31-ade9f3177df4"
 
 
+/** Pointer to a host audio interface. */
+typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
+
 /**
  * PDM host audio interface.
  */
@@ -1286,15 +1255,6 @@ typedef struct PDMIHOSTAUDIO
      * @param   enmDir              Audio direction to get status for. Pass PDMAUDIODIR_DUPLEX for overall status.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
-
-    /**
-     * Sets a callback the audio backend can call. Optional.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pfnCallback         The callback function to use, or NULL when unregistering.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetCallback, (PPDMIHOSTAUDIO pInterface, PFNPDMHOSTAUDIOCALLBACK pfnCallback));
 
     /**
      * Creates an audio stream using the requested stream configuration.
@@ -1448,7 +1408,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "be34182b-d579-41e8-96e0-abb94900460f"
+#define PDMIHOSTAUDIO_IID                           "fafc2dfb-eaa8-4e8f-9d13-ffe9163e7c51"
 
 
 /** Pointer to a audio notify from host interface. */

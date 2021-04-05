@@ -1891,67 +1891,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS  /** @todo r=bird: All this is non-sense that shall be replaced by a PDMIHOSTAUDIO partner interface. */
-
-/**
- * @callback_method_impl{FNPDMHOSTAUDIOCALLBACK, Backend callback implementation.}
- *
- * @par Important:
- * No calls back to the backend within this function, as the backend
- * might hold any locks / critical sections while executing this
- * callback. Will result in some ugly deadlocks (or at least locking
- * order violations) then.
- *
- * @todo r=bird: The above warning is extremely bogus. You enter the critical
- *       section of the driver here, if anything, that will be the lock order
- *       violation.
- */
-static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBACKENDCBTYPE enmType, void *pvUser, size_t cbUser)
-{
-    AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
-    RT_NOREF(pvUser, cbUser);
-    /* pvUser and cbUser are optional. */
-
-/** @todo r=bird: WTF *is* this?  Seriously?!?
- *
- * DrvAudio will provide the host driver with a "callback" interface
- * with methods like pfnNotifyDevicesChanged and pfnNotifyStatusChanged.
- * The host drivers that implements callbacks can query the callback
- * interface and make use of it.
- */
-
-    /* Get the upper driver (PDMIAUDIOCONNECTOR). */
-    AssertPtr(pDrvIns->pUpBase);
-    PPDMIAUDIOCONNECTOR pInterface = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
-    AssertPtr(pInterface);
-    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
-    AssertPtr(pThis);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
-    LogFunc(("pThis=%p, enmType=%RU32, pvUser=%p, cbUser=%zu\n", pThis, enmType, pvUser, cbUser));
-
-    switch (enmType)
-    {
-        case PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED:
-            LogRel(("Audio: Device configuration of driver '%s' has changed\n", pThis->szName));
-            drvAudioScheduleReInitInternal(pThis);
-            break;
-
-        default:
-            AssertMsgFailed(("Not supported\n"));
-            break;
-    }
-
-    RTCritSectLeave(&pThis->CritSect);
-
-    LogFlowFunc(("Returning %Rrc\n", rc));
-    return rc;
-}
-
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
-
 #ifdef VBOX_WITH_AUDIO_ENUM
 /**
  * Enumerates all host audio devices.
@@ -2052,7 +1991,6 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnSetCallback, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
@@ -2106,21 +2044,6 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
 
     RT_NOREF(rc2);
     /* Ignore rc. */
-#endif
-
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    /*
-     * If the backend supports it, offer a callback to this connector.
-     */
-/** @todo r=bird: Total misdesign.  If the backend wants to talk to us, it
- *                should use PDMIBASE_QUERY_INTERFACE to get an interface from us. */
-    if (pThis->pHostDrvAudio->pfnSetCallback)
-    {
-        rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
-        if (RT_FAILURE(rc2))
-             LogRel(("Audio: Error registering callback for host driver '%s', rc=%Rrc\n", pThis->szName, rc2));
-        /* Not fatal. */
-    }
 #endif
 
     LogFlowFuncLeave();
@@ -3404,11 +3327,10 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
 }
 
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
 /*********************************************************************************************************************************
 *   PDMIAUDIONOTIFYFROMHOST interface implementation.                                                                            *
 *********************************************************************************************************************************/
-
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
  * @interface_method_impl{PDMIAUDIONOTIFYFROMHOST,pfnNotifyDevicesChanged}
  */

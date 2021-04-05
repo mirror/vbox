@@ -1155,7 +1155,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IHostAudio.pfnStreamIterate      = drvAudioVideoRecHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvAudioVideoRecHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvAudioVideoRecHA_StreamCapture;
-    pThis->IHostAudio.pfnSetCallback        = NULL;
     pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
     pThis->IHostAudio.pfnStreamPlayBegin    = NULL;

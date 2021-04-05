@@ -1701,7 +1701,6 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     pThis->IHostAudio.pfnStreamIterate      = drvHostPulseAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostPulseAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostPulseAudioHA_StreamCapture;
-    pThis->IHostAudio.pfnSetCallback        = NULL;
     pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
     pThis->IHostAudio.pfnStreamPlayBegin    = NULL;

@@ -424,7 +424,6 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->IHostAudio.pfnStreamIterate      = drvHostValKitAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostValKitAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostValKitAudioHA_StreamCapture;
-    pThis->IHostAudio.pfnSetCallback        = NULL;
     pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
     pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
