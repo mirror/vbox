@@ -111,6 +111,26 @@ typedef struct DMAR
     uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
     /** DMAR registers (group 1). */
     uint8_t                     abRegs1[DMAR_MMIO_GROUP_1_SIZE];
+
+#ifdef VBOX_WITH_STATISTICS
+    STAMCOUNTER                 StatMmioReadR3;         /**< Number of MMIO reads in R3. */
+    STAMCOUNTER                 StatMmioReadRZ;         /**< Number of MMIO reads in RZ. */
+    STAMCOUNTER                 StatMmioWriteR3;        /**< Number of MMIO writes in R3. */
+    STAMCOUNTER                 StatMmioWriteRZ;        /**< Number of MMIO writes in RZ. */
+
+    STAMCOUNTER                 StatMsiRemapR3;         /**< Number of MSI remap requests in R3. */
+    STAMCOUNTER                 StatMsiRemapRZ;         /**< Number of MSI remap requests in RZ. */
+
+    STAMCOUNTER                 StatMemReadR3;          /**< Number of memory read translation requests in R3. */
+    STAMCOUNTER                 StatMemReadRZ;          /**< Number of memory read translation requests in RZ. */
+    STAMCOUNTER                 StatMemWriteR3;         /**< Number of memory write translation requests in R3. */
+    STAMCOUNTER                 StatMemWriteRZ;         /**< Number of memory write translation requests in RZ. */
+
+    STAMCOUNTER                 StatMemBulkReadR3;      /**< Number of memory read bulk translation requests in R3. */
+    STAMCOUNTER                 StatMemBulkReadRZ;      /**< Number of memory read bulk translation requests in RZ. */
+    STAMCOUNTER                 StatMemBulkWriteR3;     /**< Number of memory write bulk translation requests in R3. */
+    STAMCOUNTER                 StatMemBulkWriteRZ;     /**< Number of memory write bulk translation requests in RZ. */
+#endif
 } DMAR;
 /** Pointer to the DMAR device state. */
 typedef DMAR *PDMAR;
@@ -665,7 +685,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
     RT_NOREF1(pvUser);
     DMAR_ASSERT_MMIO_ACCESS_RET(off, cb);
 
-    PDMAR          pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite));
+
     uint16_t const offReg  = off;
     uint16_t const offLast = offReg + cb - 1;
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
@@ -698,7 +720,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
     RT_NOREF1(pvUser);
     DMAR_ASSERT_MMIO_ACCESS_RET(off, cb);
 
-    PDMAR          pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead));
+
     uint16_t const offReg  = off;
     uint16_t const offLast = offReg + cb - 1;
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
@@ -833,7 +857,33 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
                                    "Intel-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
-    LogRel(("%s: Cap=%#RX64 Ext. Cap=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
+# ifdef VBOX_WITH_STATISTICS
+    /*
+     * Statistics.
+     */
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "R3/MmioRead",  STAMUNIT_OCCURENCES, "Number of MMIO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "RZ/MmioRead",  STAMUNIT_OCCURENCES, "Number of MMIO reads in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapR3, STAMTYPE_COUNTER, "R3/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRZ, STAMTYPE_COUNTER, "RZ/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadR3,  STAMTYPE_COUNTER, "R3/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadRZ,  STAMTYPE_COUNTER, "RZ/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteR3,  STAMTYPE_COUNTER, "R3/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteRZ,  STAMTYPE_COUNTER, "RZ/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkReadR3,  STAMTYPE_COUNTER, "R3/MemBulkRead",  STAMUNIT_OCCURENCES, "Number of memory bulk read translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkReadRZ,  STAMTYPE_COUNTER, "RZ/MemBulkRead",  STAMUNIT_OCCURENCES, "Number of memory bulk read translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteR3, STAMTYPE_COUNTER, "R3/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteRZ, STAMTYPE_COUNTER, "RZ/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in RZ.");
+# endif
+
+    LogRel(("%s: Capabilities=%#RX64 Extended-Capabilities=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
             dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG)));
     return VINF_SUCCESS;
 }
