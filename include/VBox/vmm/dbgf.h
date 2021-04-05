@@ -2917,22 +2917,31 @@ typedef DBGFFLOWBRANCHTBLIT *PDBGFFLOWBRANCHTBLIT;
 /** @name DBGFFLOWBB Flags.
  * @{ */
 /** The basic block is the entry into the owning control flow graph. */
-#define DBGF_FLOW_BB_F_ENTRY             RT_BIT_32(0)
+#define DBGF_FLOW_BB_F_ENTRY                                RT_BIT_32(0)
 /** The basic block was not populated because the limit was reached. */
-#define DBGF_FLOW_BB_F_EMPTY             RT_BIT_32(1)
+#define DBGF_FLOW_BB_F_EMPTY                                RT_BIT_32(1)
 /** The basic block is not complete because an error happened during disassembly. */
-#define DBGF_FLOW_BB_F_INCOMPLETE_ERR    RT_BIT_32(2)
+#define DBGF_FLOW_BB_F_INCOMPLETE_ERR                       RT_BIT_32(2)
 /** The basic block is reached through a branch table. */
-#define DBGF_FLOW_BB_F_BRANCH_TABLE      RT_BIT_32(3)
+#define DBGF_FLOW_BB_F_BRANCH_TABLE                         RT_BIT_32(3)
+/** The basic block consists only of a single call instruction because
+ * DBGF_FLOW_CREATE_F_CALL_INSN_SEPARATE_BB was given. */
+#define DBGF_FLOW_BB_F_CALL_INSN                            RT_BIT_32(4)
+/** The branch target of the call instruction could be deduced and can be queried with
+ * DBGFR3FlowBbGetBranchAddress(). May only be available when DBGF_FLOW_BB_F_CALL_INSN
+ * is set. */
+#define DBGF_FLOW_BB_F_CALL_INSN_TARGET_KNOWN               RT_BIT_32(5)
 /** @} */
 
 /** @name Flags controlling the creating of a control flow graph.
  * @{ */
 /** Default options. */
-#define DBGF_FLOW_CREATE_F_DEFAULT                       0
+#define DBGF_FLOW_CREATE_F_DEFAULT                          0
 /** Tries to resolve indirect branches, useful for code using
  * jump tables generated for large switch statements by some compilers. */
-#define DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES RT_BIT_32(0)
+#define DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES    RT_BIT_32(0)
+/** Call instructions are placed in a separate basic block. */
+#define DBGF_FLOW_CREATE_F_CALL_INSN_SEPARATE_BB            RT_BIT_32(1)
 /** @} */
 
 /**
@@ -2993,6 +3002,7 @@ VMMR3DECL(int)               DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADD
 VMMR3DECL(int)               DBGFR3FlowQueryBranchTblByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBRANCHTBL phFlowBranchTbl);
 VMMR3DECL(uint32_t)          DBGFR3FlowGetBbCount(DBGFFLOW hFlow);
 VMMR3DECL(uint32_t)          DBGFR3FlowGetBranchTblCount(DBGFFLOW hFlow);
+VMMR3DECL(uint32_t)          DBGFR3FlowGetCallInsnCount(DBGFFLOW hFlow);
 
 VMMR3DECL(uint32_t)          DBGFR3FlowBbRetain(DBGFFLOWBB hFlowBb);
 VMMR3DECL(uint32_t)          DBGFR3FlowBbRelease(DBGFFLOWBB hFlowBb);

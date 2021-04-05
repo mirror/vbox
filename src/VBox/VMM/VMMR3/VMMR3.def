@@ -162,6 +162,7 @@ EXPORTS
     DBGFR3FlowQueryBranchTblByAddress
     DBGFR3FlowGetBbCount
     DBGFR3FlowGetBranchTblCount
+    DBGFR3FlowGetCallInsnCount
     DBGFR3FlowBbRetain
     DBGFR3FlowBbRelease
     DBGFR3FlowBbGetStartAddress
