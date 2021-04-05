@@ -1254,6 +1254,14 @@ HRESULT Machine::setIommuType(IommuType_T aIommuType)
 
     if (aIommuType != mHWData->mIommuType)
     {
+        if (aIommuType == IommuType_Intel)
+        {
+#ifndef VBOX_WITH_IOMMU_INTEL
+            LogRelFunc(("Setting Intel IOMMU when Intel IOMMU support not available!\n"));
+            return NS_ERROR_UNEXPECTED;
+#endif
+        }
+
         i_setModified(IsModified_MachineData);
         mHWData.backup();
         mHWData->mIommuType = aIommuType;
