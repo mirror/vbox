@@ -31,7 +31,7 @@
 #include "UIWizardNewVM.h"
 
 /*********************************************************************************************************************************
-*   UIToolPageButton definition.                                                                                    *
+*   UIToolPageButton definition.                                                                                                 *
 *********************************************************************************************************************************/
 /** A QAbstractButton extension used to show collapse/expand icons. More importantly
   * it is buddy to the title label which may include some mnemonics. This makes it possible
@@ -61,7 +61,7 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   UIToolBoxPage definition.                                                                                    *
+*   UIToolBoxPage definition.                                                                                                    *
 *********************************************************************************************************************************/
 
 class UIToolBoxPage : public QWidget
@@ -116,11 +116,11 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   UIToolPageButton implementation.                                                                                    *
+*   UIToolPageButton implementation.                                                                                             *
 *********************************************************************************************************************************/
 
 UIToolPageButton::UIToolPageButton(QWidget *pParent /* = 0 */)
-    :QAbstractButton(pParent)
+    : QAbstractButton(pParent)
 {
 }
 
@@ -130,25 +130,30 @@ void UIToolPageButton::paintEvent(QPaintEvent *pEvent)
     if (!m_pixmap.isNull())
     {
         QPainter painter(this);
-        painter.drawPixmap(0, 0, m_pixmap.width(), m_pixmap.height(), m_pixmap);
+        painter.drawPixmap(0 /* origin X */,
+                           0 /* origin Y */,
+                           m_pixmap.width() / m_pixmap.devicePixelRatio() /* width */,
+                           m_pixmap.height() / m_pixmap.devicePixelRatio() /* height */,
+                           m_pixmap /* pixmap itself */);
     }
 }
 
 void UIToolPageButton::setPixmap(const QPixmap &pixmap)
 {
     m_pixmap = pixmap;
+    updateGeometry();
     update();
 }
 
 QSize UIToolPageButton::sizeHint() const
 {
     if (m_pixmap.isNull())
-        return QSize (0,0);
-    return m_pixmap.size();
+        return QSize(0,0);
+    return m_pixmap.size() / m_pixmap.devicePixelRatio();
 }
 
 /*********************************************************************************************************************************
-*   UIToolBoxPage implementation.                                                                                    *
+*   UIToolBoxPage implementation.                                                                                                *
 *********************************************************************************************************************************/
 
 UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget *pParent /* = 0 */)
@@ -328,7 +333,7 @@ void UIToolBoxPage::setExpandCollapseIcon()
 }
 
 /*********************************************************************************************************************************
-*   UIToolBox implementation.                                                                                    *
+*   UIToolBox implementation.                                                                                                    *
 *********************************************************************************************************************************/
 
 UIToolBox::UIToolBox(QWidget *pParent /*  = 0 */)
