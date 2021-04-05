@@ -584,8 +584,12 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 #endif
                      "                            [--firmware bios|efi|efi32|efi64]\n"
                      "                            [--chipset ich9|piix3]\n"
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) && defined(VBOX_WITH_IOMMU_INTEL)
+                     "                            [--iommu none|automatic|amd|intel]\n"
+#elif defined(VBOX_WITH_IOMMU_AMD)
                      "                            [--iommu none|automatic|amd]\n"
+#elif defined(VBOX_WITH_IOMMU_INTEL)
+                     "                            [--iommu none|automatic|intel]\n"
 #endif
                      "                            [--bioslogofadein on|off]\n"
                      "                            [--bioslogofadeout on|off]\n"

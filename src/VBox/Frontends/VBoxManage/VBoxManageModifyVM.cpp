@@ -3021,7 +3021,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "amd"))
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_AMD));
                 else if (!RTStrICmp(ValueUnion.psz, "intel"))
+                {
+#ifdef VBOX_WITH_IOMMU_INTEL
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Intel));
+#else
+                    errorArgument("Invalid --iommu argument '%s' (valid: none,amd,automatic)", ValueUnion.psz);
+                    rc = E_FAIL;
+#endif
+                }
                 else if (!RTStrICmp(ValueUnion.psz, "automatic"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Automatic));
