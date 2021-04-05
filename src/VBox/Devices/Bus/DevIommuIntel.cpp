@@ -45,8 +45,8 @@
  * code suitable for returning from MMIO access handlers. */
 #define DMAR_ASSERT_MMIO_ACCESS_RET(a_off, a_cb) \
     do { \
-         AssertReturn(!(off & 3), VINF_IOM_MMIO_UNUSED_FF); \
-         AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF); \
+         AssertReturn((a_cb) == 4 || (a_cb) == 8, VINF_IOM_MMIO_UNUSED_FF); \
+         AssertReturn(!((a_off) & ((a_cb) - 1)), VINF_IOM_MMIO_UNUSED_FF); \
     } while (0);
 
 /** Checks whether the MMIO offset is valid. */
@@ -681,8 +681,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
                 break;
             }
         }
+
+        LogFlowFunc(("offReg=%#x\n", offReg));
         return VINF_SUCCESS;
     }
+
     return VINF_IOM_MMIO_UNUSED_FF;
 }
 
@@ -704,6 +707,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
             *(uint64_t *)pv = dmarRegRead64(pThis, offReg);
         else
             *(uint32_t *)pv = dmarRegRead32(pThis, offReg);
+
+        LogFlowFunc(("offReg=%#x\n", offReg));
         return VINF_SUCCESS;
     }
 
@@ -718,6 +723,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
 {
     RT_NOREF1(pDevIns);
+    LogFlowFunc(("\n"));
 }
 
 
@@ -727,7 +733,8 @@ static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
 {
     RT_NOREF(pDevIns);
-    return VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("\n"));
+    return VINF_SUCCESS;
 }
 
 
@@ -826,7 +833,9 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
                                    "Intel-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
-    return VERR_NOT_IMPLEMENTED;
+    LogRel(("%s: Cap=%#RX64 Ext. Cap=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
+            dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG)));
+    return VINF_SUCCESS;
 }
 
 #else
@@ -858,6 +867,7 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
     IommuReg.pfnMemBulkAccess = iommuIntelMemBulkAccess;
     IommuReg.pfnMsiRemap      = iommuIntelMsiRemap;
     IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
+
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp), VERR_IOMMU_IPE_1);
@@ -865,6 +875,7 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
     AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd  == CTX_SUFF(PDM_IOMMUHLP)_VERSION, VERR_VERSION_MISMATCH);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,   VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock, VERR_INVALID_POINTER);
+
     return VINF_SUCCESS;
 }
 
