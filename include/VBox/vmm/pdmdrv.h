@@ -1321,7 +1321,7 @@ typedef struct PDMDRVHLPR3
 
     /** @name Space reserved for minor interface changes.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved0,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(int,  pfnTimerSetMillies,(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext));
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMDRVINS pDrvIns));
@@ -1337,7 +1337,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 1)
 
 #endif /* IN_RING3 */
 
@@ -1523,6 +1523,15 @@ DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFN
 
 {
     return pDrvIns->pHlpR3->pfnTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnTimerSetMillies
+ */
+DECLINLINE(int) PDMDrvHlpTimerSetMillies(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
+
+{
+    return pDrvIns->pHlpR3->pfnTimerSetMillies(pDrvIns, hTimer, cMilliesToNext);
 }
 
 /**

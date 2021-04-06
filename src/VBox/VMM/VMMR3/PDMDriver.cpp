@@ -1352,6 +1352,13 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enm
 }
 
 
+/** @interface_method_impl{PDMDRVHLPR3,pfnTimerSetMillies} */
+static DECLCALLBACK(int) pdmR3DrvHlp_TimerSetMillies(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    return TMTimerSetMillies(pDrvIns->Internal.s.pVMR3, hTimer, cMilliesToNext);
+}
+
 
 /** @interface_method_impl{PDMDRVHLPR3,pfnSSMRegister} */
 static DECLCALLBACK(int) pdmR3DrvHlp_SSMRegister(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
@@ -1902,7 +1909,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_BlkCacheRetain,
     pdmR3DrvHlp_VMGetSuspendReason,
     pdmR3DrvHlp_VMGetResumeReason,
-    NULL,
+    pdmR3DrvHlp_TimerSetMillies,
     NULL,
     NULL,
     NULL,
