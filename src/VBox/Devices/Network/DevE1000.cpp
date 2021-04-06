@@ -1737,16 +1737,16 @@ DECLINLINE(bool) e1kUpdateRxDContext(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRX
              pThis->szPrf, pcszCallee, pContext->rdh, cRxRingSize));
         return VINF_SUCCESS;
     }
-    if (pContext->rdt >= cRxRingSize)
+    if (pContext->rdt > cRxRingSize)
     {
-        Log(("%s e1kUpdateRxDContext: called from %s, will return false because RDT too big (%u >= %u)\n",
+        Log(("%s e1kUpdateRxDContext: called from %s, will return false because RDT too big (%u > %u)\n",
              pThis->szPrf, pcszCallee, pContext->rdt, cRxRingSize));
         return VINF_SUCCESS;
     }
 #else /* !DEBUG */
     RT_NOREF(pcszCallee);
 #endif /* !DEBUG */
-    return pContext->rdh < cRxRingSize && pContext->rdt < cRxRingSize; // && (RCTL & RCTL_EN);
+    return pContext->rdh < cRxRingSize && pContext->rdt <= cRxRingSize; // && (RCTL & RCTL_EN);
 }
 #endif /* E1K_WITH_RXD_CACHE */
 
