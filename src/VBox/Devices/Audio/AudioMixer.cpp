@@ -135,9 +135,9 @@ static const char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus, char pszD
         uint32_t    fStatus;
     } s_aFlags[] =
     {
-        { RT_STR_TUPLE("RUNNING"),          AUDMIXSINK_STS_RUNNING },
-        { RT_STR_TUPLE("PENDING_DISABLE"),  AUDMIXSINK_STS_PENDING_DISABLE },
-        { RT_STR_TUPLE("DIRTY"),            AUDMIXSINK_STS_DIRTY },
+        { RT_STR_TUPLE("RUNNING "),          AUDMIXSINK_STS_RUNNING },
+        { RT_STR_TUPLE("PENDING_DISABLE "),  AUDMIXSINK_STS_PENDING_DISABLE },
+        { RT_STR_TUPLE("DIRTY "),            AUDMIXSINK_STS_DIRTY },
     };
     char *psz = pszDst;
     for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
@@ -1790,6 +1790,8 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                     LogFunc(("%s: Failed playing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
                     continue;
                 }
+                /** @todo r=bird: Maybe a pfnStreamIterate call here?  It's a bit risky wrt
+                 *        prematurely disabling the stream. */
             }
             else
             {
