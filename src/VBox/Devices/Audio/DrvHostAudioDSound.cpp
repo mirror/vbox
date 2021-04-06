@@ -20,9 +20,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#define INITGUID
 #include <VBox/log.h>
 #include <iprt/win/windows.h>
 #include <dsound.h>
+#include <Mmdeviceapi.h>
+#include <functiondiscoverykeys_devpkey.h>
 
 #include <iprt/alloc.h>
 #include <iprt/system.h>
@@ -58,11 +61,11 @@
  * Debug logging still uses the common Log* macros from IPRT.
  * Messages which always should go to the release log use LogRel.
  */
-/* General code behavior. */
+/** General code behavior. */
 #define DSLOG(a)    do { LogRel2(a); } while(0)
-/* Something which produce a lot of logging during playback/recording. */
+/** Something which produce a lot of logging during playback/recording. */
 #define DSLOGF(a)   do { LogRel3(a); } while(0)
-/* Important messages like errors. Limited in the default release log to avoid log flood. */
+/** Important messages like errors. Limited in the default release log to avoid log flood. */
 #define DSLOGREL(a) \
     do {  \
         static int8_t s_cLogged = 0; \
@@ -214,9 +217,11 @@ typedef struct DRVHOSTDSOUND
     DSOUNDHOSTCFG               Cfg;
     /** List of devices of last enumeration. */
     PDMAUDIOHOSTENUM            DeviceEnum;
-    /** Whether this backend supports any audio input. */
+    /** Whether this backend supports any audio input.
+     * @todo r=bird: This is not actually used for anything. */
     bool                        fEnabledIn;
-    /** Whether this backend supports any audio output. */
+    /** Whether this backend supports any audio output.
+     * @todo r=bird: This is not actually used for anything. */
     bool                        fEnabledOut;
     /** The Direct Sound playback interface. */
     LPDIRECTSOUND8              pDS;
@@ -638,6 +643,10 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
            wfx.wBitsPerSample,
            wfx.cbSize));
 
+    /** @todo r=bird: Why is this called every time?  It triggers a device
+     * enumeration. Andy claimed on IRC that enumeration was only done once...
+     * It's generally a 'ing waste of time here too, as we dont really use any of
+     * the information we gather there. */
     dsoundUpdateStatusInternal(pThis);
 
     HRESULT hr = directSoundPlayInterfaceCreate(pThis->Cfg.pGuidPlay, &pThis->pDS);
@@ -1379,6 +1388,8 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
+    /** @todo r=bird: Why is this called every time?  It triggers a device
+     * enumeration. Andy claimed on IRC that enumeration was only done once... */
     dsoundUpdateStatusInternal(pThis);
 
     HRESULT hr = directSoundCaptureInterfaceCreate(pThis->Cfg.pGuidCapture, &pThis->pDSC);
@@ -1568,7 +1579,7 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
  * @param   pwszModule          Pointer to module name of enumerated device.
  * @param   lpContext           Pointer to PDSOUNDENUMCBCTX context for storing the enumerated information.
  *
- * @note    Carbon copy of dsoundDevicesEnumCbPlayback with OUT direction.
+ * @note    Carbon copy of dsoundDevicesEnumCbCapture with OUT direction.
  */
 static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
 {
@@ -1774,6 +1785,108 @@ static int dsoundDeviceQueryInfo(PDRVHOSTDSOUND pThis, PDSOUNDDEV pDev)
     return rc;
 }
 
+
+/**
+ * Queries information for @a pDevice and adds an entry to the enumeration.
+ *
+ * @returns VBox status code.
+ * @param   pDevEnm     The enumeration to add the device to.
+ * @param   pDevice     The device.
+ * @param   enmType     The type of device.
+ * @param   fDefault    Whether it's the default device.
+ */
+static int dsoundDeviceNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pDevice, EDataFlow enmType, bool fDefault)
+{
+    int rc = VINF_SUCCESS; /* ignore most errors */
+
+    /*
+     * Gather the necessary properties.
+     */
+    IPropertyStore *pProperties = NULL;
+    HRESULT hrc = pDevice->OpenPropertyStore(STGM_READ, &pProperties);
+    if (SUCCEEDED(hrc))
+    {
+        /* Get the friendly name. */
+        PROPVARIANT VarName;
+        PropVariantInit(&VarName);
+        hrc = pProperties->GetValue(PKEY_Device_FriendlyName, &VarName);
+        if (SUCCEEDED(hrc))
+        {
+            /* Get the DirectSound GUID. */
+            PROPVARIANT VarGUID;
+            PropVariantInit(&VarGUID);
+            hrc = pProperties->GetValue(PKEY_AudioEndpoint_GUID, &VarGUID);
+            if (SUCCEEDED(hrc))
+            {
+                /* Get the device format. */
+                PROPVARIANT VarFormat;
+                PropVariantInit(&VarFormat);
+                hrc = pProperties->GetValue(PKEY_AudioEngine_DeviceFormat, &VarFormat);
+                if (SUCCEEDED(hrc))
+                {
+                    WAVEFORMATEX const * const pFormat = (WAVEFORMATEX const *)VarFormat.blob.pBlobData;
+                    AssertPtr(pFormat);
+
+                    /*
+                     * Create a enumeration entry for it.
+                     */
+                    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
+                    if (pDev)
+                    {
+                        pDev->Core.enmUsage = enmType == eRender ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN;
+                        pDev->Core.enmType  = PDMAUDIODEVICETYPE_BUILTIN;
+                        if (enmType == eRender)
+                            pDev->Core.cMaxOutputChannels = pFormat->nChannels;
+                        else
+                            pDev->Core.cMaxInputChannels  = pFormat->nChannels;
+
+                        RT_NOREF(fDefault);
+                        //if (fDefault)
+                            hrc = UuidFromStringW(VarGUID.pwszVal, &pDev->Guid);
+                        if (SUCCEEDED(hrc))
+                        {
+                            char *pszName;
+                            rc = RTUtf16ToUtf8(VarName.pwszVal, &pszName);
+                            if (RT_SUCCESS(rc))
+                            {
+                                RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
+                                RTStrFree(pszName);
+
+                                PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
+                            }
+                            else
+                                PDMAudioHostDevFree(&pDev->Core);
+                        }
+                        else
+                        {
+                            LogFunc(("UuidFromStringW(%ls): %Rhrc\n", VarGUID.pwszVal, hrc));
+                            PDMAudioHostDevFree(&pDev->Core);
+                        }
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                    PropVariantClear(&VarFormat);
+                }
+                else
+                    LogFunc(("Failed to get PKEY_AudioEngine_DeviceFormat: %Rhrc\n", hrc));
+                PropVariantClear(&VarGUID);
+            }
+            else
+                LogFunc(("Failed to get PKEY_AudioEndpoint_GUID: %Rhrc\n", hrc));
+            PropVariantClear(&VarName);
+        }
+        else
+            LogFunc(("Failed to get PKEY_Device_FriendlyName: %Rhrc\n", hrc));
+        pProperties->Release();
+    }
+    else
+        LogFunc(("OpenPropertyStore failed: %Rhrc\n", hrc));
+
+    if (hrc == E_OUTOFMEMORY && RT_SUCCESS_NP(rc))
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
 /**
  * Does a (Re-)enumeration of the host's playback + capturing devices.
  *
@@ -1788,6 +1901,67 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
 
     DSLOG(("DSound: Enumerating devices ...\n"));
 
+    /*
+     * Use the Vista+ API.
+     */
+    IMMDeviceEnumerator *pEnumerator;
+    HRESULT hrc = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_ALL,
+                                   __uuidof(IMMDeviceEnumerator), (void **)&pEnumerator);
+    if (SUCCEEDED(hrc))
+    {
+        int rc = VINF_SUCCESS;
+        for (unsigned idxPass = 0; idxPass < 2 && RT_SUCCESS(rc); idxPass++)
+        {
+            EDataFlow const enmType = idxPass == 0 ? EDataFlow::eRender : EDataFlow::eCapture;
+
+            /* Get the default device first. */
+            IMMDevice *pDefaultDevice = NULL;
+            hrc = pEnumerator->GetDefaultAudioEndpoint(enmType, eMultimedia, &pDefaultDevice);
+            if (SUCCEEDED(hrc))
+                rc = dsoundDeviceNewStyleAdd(pDevEnm, pDefaultDevice, enmType, true);
+            else
+                pDefaultDevice = NULL;
+
+            /* Enumerate the devices. */
+            IMMDeviceCollection *pCollection = NULL;
+            hrc = pEnumerator->EnumAudioEndpoints(enmType, DEVICE_STATE_ACTIVE /*| DEVICE_STATE_UNPLUGGED?*/, &pCollection);
+            if (SUCCEEDED(hrc) && pCollection != NULL)
+            {
+                UINT cDevices = 0;
+                hrc = pCollection->GetCount(&cDevices);
+                if (SUCCEEDED(hrc))
+                {
+                    for (UINT idxDevice = 0; idxDevice < cDevices && RT_SUCCESS(rc); idxDevice++)
+                    {
+                        IMMDevice *pDevice = NULL;
+                        hrc = pCollection->Item(idxDevice, &pDevice);
+                        if (SUCCEEDED(hrc) && pDevice)
+                        {
+                            if (pDevice != pDefaultDevice)
+                                rc = dsoundDeviceNewStyleAdd(pDevEnm, pDevice, enmType, false);
+                            pDevice->Release();
+                        }
+                    }
+                }
+                pCollection->Release();
+            }
+            else
+                LogRelMax(10, ("EnumAudioEndpoints(%s) failed: %Rhrc\n", idxPass == 0 ? "output" : "input", hrc));
+
+            if (pDefaultDevice)
+                pDefaultDevice->Release();
+        }
+        pEnumerator->Release();
+        if (pDevEnm->cDevices > 0 || RT_FAILURE(rc))
+        {
+            DSLOG(("DSound: Enumerating devices done - %u device (%Rrc)\n", pDevEnm->cDevices, rc));
+            return rc;
+        }
+    }
+
+    /*
+     * Fall back on dsound.
+     */
     RTLDRMOD hDSound = NULL;
     int rc = RTLdrLoadSystem("dsound.dll", true /*fNoUnload*/, &hDSound);
     if (RT_SUCCESS(rc))
@@ -1854,15 +2028,21 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
  * Updates this host driver's internal status, according to the global, overall input/output
  * state and all connected (native) audio streams.
  *
+ * @todo r=bird: This is a 'ing waste of 'ing time!  We're doing this everytime
+ *       an 'ing stream is created and we doesn't 'ing use the information here
+ *       for any darn thing!  Given the reported slowness of enumeration and
+ *       issues with eh 'ing code the only appropriate response is:
+ *       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARG!!!!!!!
+ *
  * @param   pThis               Host audio driver instance.
  */
 static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
 {
+#if 0 /** @todo r=bird: This isn't doing *ANYTHING* useful. So, I've just disabled it.  */
     AssertPtrReturnVoid(pThis);
-    /* pCfg is optional. */
-
     LogFlowFuncEnter();
 
+    PDMAudioHostEnumDelete(&pThis->DeviceEnum);
     int rc = dsoundDevicesEnumerate(pThis, &pThis->DeviceEnum);
     if (RT_SUCCESS(rc))
     {
@@ -1879,6 +2059,9 @@ static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
     }
 
     LogFlowFuncLeaveRC(rc);
+#else
+    RT_NOREF(pThis);
+#endif
 }
 
 static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
