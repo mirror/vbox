@@ -90,7 +90,7 @@ typedef struct DRVAUDIOSTREAM
      * faked up stuff from the device (DRVAUDIOSTREAM_MAGIC). */
     uintptr_t           uMagic;
 
-    /** List entry (some DrvAudio internal list). */
+    /** List entry in DRVAUDIO::lstStreams. */
     RTLISTNODE          ListEntry;
 
     /** Data to backend-specific stream data.
@@ -313,6 +313,14 @@ typedef struct DRVAUDIO
         /** Number of times underruns triggered re-(pre-)buffering. */
         STAMCOUNTER         StatsReBuffering;
     } Out;
+
+    /** Handle to the disable-iteration timer. */
+    TMTIMERHANDLE           hTimer;
+    /** Set if hTimer is armed. */
+    bool volatile           fTimerArmed;
+    /** Unique name for the the disable-iteration timer.  */
+    char                    szTimerName[23];
+
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for the statistics manager (STAM). */
     DRVAUDIOSTATS           Stats;
@@ -335,7 +343,8 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
 static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static void drvAudioStreamFree(PDRVAUDIOSTREAM pStream);
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
-static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
+static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, bool fWorkMixBuf);
+static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, uint32_t *pcFramesPlayed);
 static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 
@@ -650,6 +659,18 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 {
                     LogFunc(("[%s] Pending disable/pause\n", pStreamEx->Core.szName));
                     pStreamEx->Core.fStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE;
+
+                    /* Schedule a follow up timer to the pending-disable state.  We cannot rely
+                       on the device to provide further callouts to finish the state transition.
+                       10ms is taking out of thin air and may be too course grained, we should
+                       really consider the amount of unplayed buffer in the backend and what not... */
+                    if (!pThis->fTimerArmed)
+                    {
+                        LogFlowFunc(("Arming emergency pending-disable hack...\n"));
+                        int rc2 = PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hTimer, 10 /*ms*/);
+                        AssertRC(rc2);
+                        pThis->fTimerArmed = true;
+                    }
                 }
 
                 /* Can we close the host stream as well (not in pending disable mode)? */
@@ -729,7 +750,6 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
     if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
         return VINF_SUCCESS;
 
-    int rc = VINF_SUCCESS;
 
     /*
      * Whether to propagate commands down to the backend.
@@ -752,6 +772,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
     LogRel2(("Audio: %s stream '%s' in backend (%s is %s)\n", PDMAudioStrmCmdGetName(enmStreamCmd), pStreamEx->Core.szName,
                                                               PDMAudioDirGetName(pStreamEx->Core.enmDir),
                                                               fEnabled ? "enabled" : "disabled"));
+    int rc = VINF_SUCCESS;
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
@@ -1179,7 +1200,7 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    rc = drvAudioStreamIterateInternal(pThis, pStreamEx);
+    rc = drvAudioStreamIterateInternal(pThis, pStreamEx, false /*fWorkMixBuf*/); /** @todo r=bird: why didn't it work the mixing buffer initially.  We can probably set this to true...  It may cause repeat work though. */
 
     RTCritSectLeave(&pThis->CritSect);
 
@@ -1263,14 +1284,19 @@ static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
 
 /**
  * Does one iteration of an audio stream.
+ *
  * This function gives the backend the chance of iterating / altering data and
  * does the actual mixing between the guest <-> host mixing buffers.
  *
  * @returns VBox status code.
  * @param   pThis       Pointer to driver instance.
  * @param   pStreamEx   Stream to iterate.
+ * @param   fWorkMixBuf Push data from the mixing buffer to the backend.
+ * @todo    r=bird: Don't know why the default behavior isn't to push data into
+ *          the backend...  We'll never get out of the pending-disable state if
+ *          the mixing buffer doesn't empty out.
  */
-static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, bool fWorkMixBuf)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -1307,7 +1333,15 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
         {
             /* No audio frames to transfer from guest to host (anymore)?
              * Then try closing this stream if marked so in the next block. */
-            const uint32_t cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
+            uint32_t cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
+            if (cFramesLive && fWorkMixBuf)
+            {
+                uint32_t cIgnored = 0;
+                drvAudioStreamPlayLocked(pThis, pStreamEx, &cIgnored);
+
+                cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
+            }
+
             fTryClosePending = cFramesLive == 0;
             Log3Func(("[%s] fTryClosePending=%RTbool, cFramesLive=%RU32\n", pStreamEx->Core.szName, fTryClosePending, cFramesLive));
         }
@@ -1357,6 +1391,49 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
         LogFunc(("[%s] Failed with %Rrc\n", pStreamEx->Core.szName, rc));
 
     return rc;
+}
+
+/**
+ * @callback_method_impl{FNTMTIMERDRV}
+ */
+static DECLCALLBACK(void) drvAudioEmergencyIterateTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    RT_NOREF(hTimer, pvUser);
+    RTCritSectEnter(&pThis->CritSect);
+
+    /*
+     * Iterate any stream with the pending-disable flag set.
+     */
+    uint32_t        cMilliesToNext = 0;
+    PDRVAUDIOSTREAM pStreamEx, pStreamExNext;
+    RTListForEachSafe(&pThis->lstStreams, pStreamEx, pStreamExNext, DRVAUDIOSTREAM, ListEntry)
+    {
+        if (   pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC
+            && pStreamEx->Core.cRefs >= 1)
+        {
+            if (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
+            {
+                drvAudioStreamIterateInternal(pThis, pStreamEx, true /*fWorkMixBuf*/);
+
+                if (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
+                    cMilliesToNext = 10;
+            }
+        }
+    }
+
+    /*
+     * Re-arm the timer if we still got streams in the pending state.
+     */
+    if (cMilliesToNext)
+    {
+        pThis->fTimerArmed = true;
+        PDMDrvHlpTimerSetMillies(pDrvIns, pThis->hTimer, cMilliesToNext);
+    }
+    else
+        pThis->fTimerArmed = false;
+
+    RTCritSectLeave(&pThis->CritSect);
 }
 
 /**
@@ -3832,6 +3909,18 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
                                  STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
+
+    /*
+     * Create a timer to do finish closing output streams in PENDING_DISABLE state.
+     *
+     * The device won't call us again after it has disabled a the stream and this is
+     * a real problem for truely cyclic buffer backends like DSound which will just
+     * continue to loop and loop if not stopped.
+     */
+    RTStrPrintf(pThis->szTimerName, sizeof(pThis->szTimerName), "AudioIterate-%u", pDrvIns->iInstance);
+    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_VIRTUAL, drvAudioEmergencyIterateTimer, NULL /*pvUser*/,
+                                0 /*fFlags*/, pThis->szTimerName, &pThis->hTimer);
+    AssertRCReturn(rc, rc);
 
     /*
      * Attach the host driver, if present.
