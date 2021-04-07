@@ -345,6 +345,8 @@
               Source="$(env.PATH_OUT)\bin\Qt5Widgets$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt5PrintSupport$(var.VBOX_QT_INFIX).dll"
               Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_Qt5Help$(var.VBOX_QT_INFIX).dll" Name="Qt5Help$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5Help$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
               Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_VirtualBox.VisualElementsManifest.xml" Name="VirtualBox.VisualElementsManifest.xml"
