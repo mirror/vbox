@@ -687,15 +687,15 @@ typedef VTD_IRTE_T const *PCVTD_IRTE_T;
  * In accordance with the Intel spec.
  *  @{ */
 /** Min: Minor Version Number. */
-#define VTX_BF_VER_REG_MIN_SHIFT                                0
-#define VTX_BF_VER_REG_MIN_MASK                                 UINT32_C(0x0000000f)
+#define VTD_BF_VER_REG_MIN_SHIFT                                0
+#define VTD_BF_VER_REG_MIN_MASK                                 UINT32_C(0x0000000f)
 /** Max: Major Version Number. */
-#define VTX_BF_VER_REG_MAX_SHIFT                                4
-#define VTX_BF_VER_REG_MAX_MASK                                 UINT32_C(0x000000f0)
+#define VTD_BF_VER_REG_MAX_SHIFT                                4
+#define VTD_BF_VER_REG_MAX_MASK                                 UINT32_C(0x000000f0)
 /** R: Reserved (bits 31:8). */
-#define VTX_BF_VER_REG_RSVD_31_8_SHIFT                          8
-#define VTX_BF_VER_REG_RSVD_31_8_MASK                           UINT32_C(0xffffff00)
-RT_BF_ASSERT_COMPILE_CHECKS(VTX_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
+#define VTD_BF_VER_REG_RSVD_31_8_SHIFT                          8
+#define VTD_BF_VER_REG_RSVD_31_8_MASK                           UINT32_C(0xffffff00)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
                             (MIN, MAX, RSVD_31_8));
 /** RW: Read/write mask. */
 #define VTD_VER_REG_RW_MASK                                     UINT32_C(0)
