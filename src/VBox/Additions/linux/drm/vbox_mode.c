@@ -888,7 +888,7 @@ out_unmap_bo:
 out_unreserve_bo:
 	vbox_bo_unreserve(bo);
 out_unref_obj:
-#if RTLNX_VER_MIN(5,9,0)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
 	drm_gem_object_put(obj);
 #else
 	drm_gem_object_put_unlocked(obj);

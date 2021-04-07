@@ -578,7 +578,7 @@ err_free_vboxbo:
 
 static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 {
-#if RTLNX_VER_MIN(5,9,0)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
 	return bo->bo.mem.start << PAGE_SHIFT;
 #else
 	return bo->bo.offset;
