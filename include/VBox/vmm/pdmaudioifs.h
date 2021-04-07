@@ -1221,11 +1221,11 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
 
     /**
-     * Shuts down the host backend (driver).
+     * Shuts down the host backend (driver) - optional and obsolete.
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @deprecated Just stub this and do the real work in the driver destructor.
+     * @deprecated Just stub this and do the real work in the driver power off callback.
      */
     DECLR3CALLBACKMEMBER(void, pfnShutdown, (PPDMIHOSTAUDIO pInterface));
 
