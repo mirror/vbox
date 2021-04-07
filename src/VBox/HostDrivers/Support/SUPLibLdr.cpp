@@ -766,7 +766,16 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         }
         *ppvImageBase = (void *)OpenReq.u.Out.pvImageBase;
         if (rc != VERR_MODULE_NOT_FOUND)
+        {
+            if (fIsVMMR0)
+                g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
+            LogRel(("SUP: Opened %s (%s) at %#RKv%s.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
+                    OpenReq.u.Out.fNativeLoader ? " loaded by the native ring-0 loader" : ""));
+#ifdef RT_OS_WINDOWS
+            LogRel(("SUP: windbg> .reload /f %s=%#RKv\n", pszFilename, OpenReq.u.Out.pvImageBase));
+#endif
             return rc;
+        }
     }
 
     /*
