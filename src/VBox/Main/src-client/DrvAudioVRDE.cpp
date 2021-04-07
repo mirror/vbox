@@ -714,8 +714,6 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVrdeQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit              = NULL;
-    pThis->IHostAudio.pfnShutdown          = NULL;
     pThis->IHostAudio.pfnGetConfig         = drvAudioVrdeHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices        = NULL;
     pThis->IHostAudio.pfnGetStatus         = drvAudioVrdeHA_GetStatus;

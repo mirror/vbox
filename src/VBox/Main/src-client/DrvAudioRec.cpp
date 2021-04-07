@@ -1136,8 +1136,6 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = NULL;
-    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvAudioVideoRecHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvAudioVideoRecHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvAudioVideoRecHA_StreamCreate;

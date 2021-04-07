@@ -2047,8 +2047,6 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
      */
     PPDMIHOSTAUDIO pHostDrvAudio = pThis->pHostDrvAudio;
     AssertPtrReturn(pHostDrvAudio, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnInit, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnShutdown, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
@@ -2063,24 +2061,9 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrReturn(pHostDrvAudio->pfnStreamCapture, VERR_INVALID_POINTER);
 
     /*
-     * Call the init method.
-     */
-    /** @todo r=bird: This is superfluous.  This duplicates the driver
-     *        constructor code.  Just get rid of it!! */
-    AssertPtr(pThis->pHostDrvAudio);
-    int rc = VINF_SUCCESS;
-    if (pThis->pHostDrvAudio->pfnInit)
-        rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("Audio: Initialization of host driver '%s' failed with %Rrc\n", pThis->szName, rc));
-        return VERR_AUDIO_BACKEND_INIT_FAILED;
-    }
-
-    /*
      * Get the backend configuration.
      */
-    rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
+    int rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
     if (RT_FAILURE(rc))
     {
         LogRel(("Audio: Getting configuration for driver '%s' failed with %Rrc\n", pThis->szName, rc));
@@ -3456,13 +3439,6 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
             drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
             drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
         }
-
-        /*
-         * Last call for the driver below us.
-         * Let it know that we reached end of life.
-         */
-        if (pThis->pHostDrvAudio->pfnShutdown)
-            pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
 
         pThis->pHostDrvAudio = NULL;
     }

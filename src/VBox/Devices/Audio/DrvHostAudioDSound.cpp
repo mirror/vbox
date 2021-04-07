@@ -2628,8 +2628,6 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = NULL;
-    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostDSoundHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostDSoundHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostDSoundHA_StreamCreate;

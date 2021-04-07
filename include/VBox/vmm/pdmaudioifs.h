@@ -1212,24 +1212,6 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
 typedef struct PDMIHOSTAUDIO
 {
     /**
-     * Initializes the host backend (driver) - optional and obsolete.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @deprecated Just stub this and do the real work in the driver constructor.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
-
-    /**
-     * Shuts down the host backend (driver) - optional and obsolete.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @deprecated Just stub this and do the real work in the driver power off callback.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnShutdown, (PPDMIHOSTAUDIO pInterface));
-
-    /**
      * Returns the host backend's configuration (backend).
      *
      * @returns VBox status code.
@@ -1367,7 +1349,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "28ae3ee3-c328-4dd9-89c1-6e2b602f2d41"
+#define PDMIHOSTAUDIO_IID                           "cf04d235-2af6-4921-8323-a0f85c5cf96b"
 
 
 /** Pointer to a audio notify from host interface. */

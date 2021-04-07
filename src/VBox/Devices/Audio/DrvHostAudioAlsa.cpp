@@ -1444,8 +1444,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAlsaAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = NULL;
-    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostAlsaAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostAlsaAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostAlsaAudioHA_StreamCreate;

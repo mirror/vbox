@@ -383,8 +383,6 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostValKitAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = NULL;
-    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostValKitAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostValKitAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostValKitAudioHA_StreamCreate;
