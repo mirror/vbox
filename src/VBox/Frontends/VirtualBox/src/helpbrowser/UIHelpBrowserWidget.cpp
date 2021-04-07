@@ -261,7 +261,7 @@ public:
 
     UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
                             const QStringList &urlList, QWidget *pParent = 0);
-    /* Return the list of urls of all open tabs as QStringList. */
+    /* Returns the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList() const;
     QStringList tabTitleList() const;
 
@@ -272,9 +272,9 @@ public:
     void setSource(const QUrl &url, bool fNewTab = false);
     void setToolBarVisible(bool fVisible);
     void printCurrent(QPrinter &printer);
-    int initialFontPointSize() const;
+    int  initialFontPointSize() const;
     void setFontPointSize(int iPointSize);
-    int fontPointSize() const;
+    int  fontPointSize() const;
     void setFontScaleWidgetVisible(bool fToggled);
     void switchToTab(int iIndex);
 
@@ -307,6 +307,8 @@ private:
     void updateTabUrlTitleList();
     /** Closes all tabs other than the one with index @param iTabIndex. */
     void closeAllTabsBut(int iTabIndex);
+    /* Returns the tab index with @Url if there is one. Returns -1 otherwise. */
+    int  findTab(const QUrl &Url) const;
     const QHelpEngine* m_pHelpEngine;
     UIFontScaleWidget *m_pFontScaleWidget;
     QUrl m_homeUrl;
@@ -837,32 +839,40 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
 
 void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground)
 {
-   UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
-   AssertReturnVoid(pTabWidget);
-   pTabWidget->setToolBarVisible(m_fToolBarVisible);
-   int index = addTab(pTabWidget, pTabWidget->documentTitle());
-   connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
-           this, &UIHelpBrowserTabManager::sigSourceChanged);
-   connect(pTabWidget, &UIHelpBrowserTab::sigTitleUpdate,
-           this, &UIHelpBrowserTabManager::sltHandletabTitleChange);
-   connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
-           this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
-   connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
-           this, &UIHelpBrowserTabManager::sigAddBookmark);
-   connect(pTabWidget, &UIHelpBrowserTab::sigFontPointSizeChanged,
-           this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
-   connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
-           this, &UIHelpBrowserTabManager::sigLinkHighlighted);
+    /* If there is already a tab with a source which is equal to @initialUrl then make it current: */
+    int iExistIndex = findTab(initialUrl);
+    if (iExistIndex != -1)
+    {
+        setCurrentIndex(iExistIndex);
+        return;
+    }
 
-   if (!fBackground)
-       setCurrentIndex(index);
+    UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
+    AssertReturnVoid(pTabWidget);
+    pTabWidget->setToolBarVisible(m_fToolBarVisible);
+    int index = addTab(pTabWidget, pTabWidget->documentTitle());
+    connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
+            this, &UIHelpBrowserTabManager::sigSourceChanged);
+    connect(pTabWidget, &UIHelpBrowserTab::sigTitleUpdate,
+            this, &UIHelpBrowserTabManager::sltHandletabTitleChange);
+    connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
+            this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
+    connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
+            this, &UIHelpBrowserTabManager::sigAddBookmark);
+    connect(pTabWidget, &UIHelpBrowserTab::sigFontPointSizeChanged,
+            this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
+    connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
+            this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
-   if (!m_pFontScaleWidget)
-   {
-       m_pFontScaleWidget = new UIFontScaleWidget(initialFontPointSize(), this);
-       connect(m_pFontScaleWidget, &UIFontScaleWidget::sigFontPointSizeChanged,
-               this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
-   }
+    if (!fBackground)
+        setCurrentIndex(index);
+
+    if (!m_pFontScaleWidget)
+    {
+        m_pFontScaleWidget = new UIFontScaleWidget(initialFontPointSize(), this);
+        connect(m_pFontScaleWidget, &UIFontScaleWidget::sigFontPointSizeChanged,
+                this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
+    }
 }
 
 void UIHelpBrowserTabManager::updateTabUrlTitleList()
@@ -892,6 +902,19 @@ void UIHelpBrowserTabManager::closeAllTabsBut(int iTabIndex)
     }
     addTab(widgetList[iTabIndex], strTitle);
     updateTabUrlTitleList();
+}
+
+int  UIHelpBrowserTabManager::findTab(const QUrl &Url) const
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (!pTab || !pTab->source().isValid())
+            continue;
+        if (pTab->source() == Url)
+            return i;
+    }
+    return -1;
 }
 
 void UIHelpBrowserTabManager::initializeTabs()
@@ -955,7 +978,6 @@ QStringList UIHelpBrowserTabManager::tabTitleList() const
     }
     return list;
 }
-
 
 void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
 {

@@ -30,6 +30,7 @@
 #include <QMenu>
 #include <QHBoxLayout>
 #include <QScrollBar>
+#include <QTextBlock>
 #include <QWidgetAction>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
@@ -373,6 +374,7 @@ void UIHelpViewer::setSource(const QUrl &url)
 {
     QTextBrowser::setSource(url);
     QTextDocument *pDocument = document();
+    //iterateDocumentImages();
     if (!pDocument || pDocument->isEmpty())
     {
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
@@ -524,8 +526,12 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
     QString strAnchor = anchorAt(pEvent->pos());
     if (!strAnchor.isEmpty())
     {
-        QString strLink = source().resolved(strAnchor).toString();
-        emit sigOpenLinkInNewTab(strLink, true);
+        if (pEvent->modifiers() & Qt::ControlModifier)
+        {
+            QString strLink = source().resolved(strAnchor).toString();
+            emit sigOpenLinkInNewTab(strLink, true);
+            return;
+        }
     }
     QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
 }
@@ -617,6 +623,21 @@ void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
     cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex) + iSearchStringLength, QTextCursor::KeepAnchor);
     ensureCursorVisible();
     setTextCursor(cursor);
+}
+
+void UIHelpViewer::iterateDocumentImages()
+{
+    QTextCursor cursor = textCursor();
+    cursor.movePosition(QTextCursor::Start);
+    while (!cursor.atEnd())
+    {
+        cursor.movePosition(QTextCursor::NextCharacter);
+        if (cursor.charFormat().isImageFormat())
+        {
+            QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
+            printf("%s %lf\n", qPrintable(imageFormat.name()), imageFormat.width());
+        }
+    }
 }
 
 void UIHelpViewer::sltHandleOpenLinkInNewTab()
