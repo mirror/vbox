@@ -53,6 +53,8 @@
 #define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
                                                      || (a_off) - DMAR_MMIO_GROUP_1_OFF_FIRST < DMAR_MMIO_GROUP_1_SIZE)
 
+/** @name DMAR implementation specifics.
+ * @{ */
 /** The number of fault recording registers our implementation supports.
  *  Normal guest operation shouldn't trigger faults anyway, so we only support the
  *  minimum number of registers (which is 1).
@@ -84,9 +86,22 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** Size of the group 1 (in bytes). */
 #define DMAR_MMIO_GROUP_1_SIZE                      (DMAR_MMIO_GROUP_1_OFF_END - DMAR_MMIO_GROUP_1_OFF_FIRST)
 
+/** DMAR implementation's minor version number (exposed to software). */
+#define DMAR_VER_MINOR                              0
+/** DMAR implementation's major version number (exposed to software). */
+#define DMAR_VER_MAJOR                              1
+/** Number of domains supported (0=16, 1=64, 2=256, 3=1024, 4=4K, 5=16K, 6=64K,
+ *  7=(Reserved). */
+#define DMAR_CAP_ND                                 2
+/** Large page support level (0=2M, 1=1GB pages). */
+#define DMAR_CAP_LARGE_PAGE_LVL                     0
+/** Maximum address mask value. */
+#define DMAR_CAP_MAMV                               9
+
+/** @} */
+
 /** Release log prefix string. */
 #define DMAR_LOG_PFX                                "Intel-IOMMU"
-
 /** The current saved state version. */
 #define DMAR_SAVED_STATE_VERSION                    1
 
@@ -672,7 +687,10 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
  */
 static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
-    RT_NOREF4(pDevIns, idDevice, pMsiIn, pMsiOut);
+    RT_NOREF3(idDevice, pMsiIn, pMsiOut);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap)); NOREF(pThis);
+
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -741,6 +759,49 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 
 
 #ifdef IN_RING3
+/**
+ * Initializes read-only (constant) registers in the DMAR unit.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void dmarR3RegInitReadOnly(PPDMDEVINS pDevIns)
+{
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    /* VER_REG */
+    {
+        uint8_t const uVer = RT_BF_MAKE(VTD_BF_VER_REG_MIN, DMAR_VER_MINOR)
+                           | RT_BF_MAKE(VTD_BF_VER_REG_MAX, DMAR_VER_MAJOR);
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, uVer);
+    }
+    /* CAP_REG */
+    {
+        uint8_t cGstPhysAddrBits;
+        uint8_t cGstLinearAddrBits;
+        PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cGstPhysAddrBits, &cGstLinearAddrBits);
+        uint64_t const uCap = RT_BF_MAKE(VTD_BF_CAP_REG_ND,     DMAR_CAP_ND)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,    0)  /* AFL: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,   0)  /* Software need not flush write-buffers. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,   0)  /* PLMR: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,   0)  /* PHMR: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_CM,     1)  /** @todo Figure out if required when we impl. caching. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,  0)  /* SLS: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   cGstPhysAddrBits)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,    1)  /** @todo Zero-length read? */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    DMAR_MMIO_OFF_FRCD_LO_REG >> 4)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,  DMAR_CAP_LARGE_PAGE_LVL)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,    1)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,    DMAR_FRCD_REG_COUNT - 1)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,   DMAR_CAP_MAMV)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,    1)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,  0)  /* FLTS: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_PI,     0)  /* PI: not supported. */
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,  0); /* FLTS: not supported. */
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, uCap);
+    }
+    /** @todo Rest of read-only registers. */
+}
+
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -813,11 +874,11 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     PDMPciDevSetVendorId(pPciDev,          DMAR_PCI_VENDOR_ID);         /* Intel */
     PDMPciDevSetDeviceId(pPciDev,          DMAR_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
     PDMPciDevSetRevisionId(pPciDev,        DMAR_PCI_REVISION_ID);       /* VirtualBox specific device implementation revision */
-    PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
-    PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_OTHER); /* Other */
-    PDMPciDevSetHeaderType(pPciDev,        0x0);                       /* Single function, type 0 */
-    PDMPciDevSetSubSystemId(pPciDev,       DMAR_PCI_DEVICE_ID);        /* VirtualBox DMAR device */
-    PDMPciDevSetSubSystemVendorId(pPciDev, DMAR_PCI_VENDOR_ID);        /* Intel */
+    PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);      /* System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_OTHER);  /* Other */
+    PDMPciDevSetHeaderType(pPciDev,        0);                          /* Single function, type 0 */
+    PDMPciDevSetSubSystemId(pPciDev,       DMAR_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
+    PDMPciDevSetSubSystemVendorId(pPciDev, DMAR_PCI_VENDOR_ID);         /* Intel */
 
     /** @todo VTD: Chipset spec says PCI Express Capability Id. Relevant for us? */
     PDMPciDevSetStatus(pPciDev,            0);
@@ -837,15 +898,6 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Register MSI support for the PCI device.
      * This must be done -after- registering it as a PCI device!
      */
-#endif
-
-    /** @todo VTD: Intercept PCI config space accesses for debugging. */
-#if 0
-    /*
-     * Intercept PCI config. space accesses.
-     */
-    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, ..);
-    AssertLogRelRCReturn(rc, rc);
 #endif
 
     /*
@@ -882,6 +934,11 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteR3, STAMTYPE_COUNTER, "R3/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteRZ, STAMTYPE_COUNTER, "RZ/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in RZ.");
 # endif
+
+    /*
+     * Initialize read-only registers.
+     */
+    dmarR3RegInitReadOnly(pDevIns);
 
     LogRel(("%s: Capabilities=%#RX64 Extended-Capabilities=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
             dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG)));
