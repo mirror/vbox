@@ -374,7 +374,7 @@ void UIHelpViewer::setSource(const QUrl &url)
 {
     QTextBrowser::setSource(url);
     QTextDocument *pDocument = document();
-    //iterateDocumentImages();
+    iterateDocumentImages();
     if (!pDocument || pDocument->isEmpty())
     {
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
@@ -507,7 +507,11 @@ void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 
 void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 {
+    Q_UNUSED(pEvent);
+    /* Disable wheel scaling for now: */
+#if 0
     int iPreviousSize = font().pointSize();
+    /* QTextBrowser::wheelEvent sets a new font size: */
     QTextBrowser::wheelEvent(pEvent);
     /* Don't allow font size to get too large or small: */
     if (font().pointSize() >= UIHelpBrowserWidget::fontScaleMinMax.second * m_iInitialFontPointSize ||
@@ -519,6 +523,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
     }
     else
         emit sigFontPointSizeChanged(font().pointSize());
+#endif
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)

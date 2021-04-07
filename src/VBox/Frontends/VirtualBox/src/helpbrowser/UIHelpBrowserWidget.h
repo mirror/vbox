@@ -92,7 +92,7 @@ private slots:
     void sltOpenLink();
     void sltCopyLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
-    void sltHandleFontSizeActions();
+    void sltHandleZoomActions();
     void sltHandleTabListChanged(const QStringList &titleList);
     void sltHandleTabChoose();
     void sltHandleCurrentTabChanged(int iIndex);
