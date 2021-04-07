@@ -652,17 +652,14 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamCapture(PPDMIHOSTAUDIO pInterf
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                       const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-    /* puWritten is optional. */
-
-    PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     RT_NOREF(pThis);
-    PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
+    PAVRECSTREAM pStreamAV = (PAVRECSTREAM)pStream;
+    AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
 
@@ -682,7 +679,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     void  *pvCircBuf;
     size_t cbCircBuf;
 
-    uint32_t cbToWrite = uBufSize;
+    uint32_t cbToWrite = cbBuf;
 
     /*
      * Fetch as much as we can into our internal ring buffer.
@@ -820,12 +817,10 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
             break;
     }
 
-    if (puWritten)
-        *puWritten = cbWrittenTotal;
+    *pcbWritten = cbWrittenTotal;
 #else
     /* Report back all data as being processed. */
-    if (puWritten)
-        *puWritten = uBufSize;
+    *pcbWritten = cbBuf;
 
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */

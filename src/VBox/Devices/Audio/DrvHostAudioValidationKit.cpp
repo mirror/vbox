@@ -36,12 +36,12 @@ typedef struct VAKITAUDIOSTREAM
     PPDMAUDIOSTREAMCFG pCfg;
     /** Audio file to dump output to or read input from. */
     PPDMAUDIOFILE      pFile;
-    /** Text file to store timing of audio buffers submittions**/
+    /** Text file to store timing of audio buffers submittions. */
     RTFILE             hFileTiming;
-    /** Timestamp of the first play or record request**/
+    /** Timestamp of the first play or record request. */
     uint64_t           tsStarted;
-    /** Total number of samples played or recorded so far**/
-    uint32_t           uSamplesSinceStarted;
+    /** Total number of frames played or recorded so far. */
+    uint32_t           cFramesSinceStarted;
     union
     {
         struct
@@ -121,7 +121,7 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDI
     RT_NOREF(pDrv, pCfgAcq);
 
     pStreamDbg->tsStarted = 0;
-    pStreamDbg->uSamplesSinceStarted = 0;
+    pStreamDbg->cFramesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
     pStreamDbg->Out.cbPlayBuffer  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
@@ -196,44 +196,43 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                         const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                         const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    PDRVHOSTVAKITAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+    PDRVHOSTVAKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
     PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
-    RT_NOREF(pDrv);
+    RT_NOREF(pThis);
 
-    uint64_t tsSinceStart;
-    size_t cch;
-    char szTimingInfo[128];
-
-    if (pStreamDbg->tsStarted == 0)
-    {
-        pStreamDbg->tsStarted = RTTimeNanoTS();
-        tsSinceStart = 0;
-    }
+    uint64_t cNsSinceStart;
+    if (pStreamDbg->tsStarted != 0)
+        cNsSinceStart = RTTimeNanoTS() - pStreamDbg->tsStarted;
     else
     {
-        tsSinceStart = RTTimeNanoTS() - pStreamDbg->tsStarted;
+        pStreamDbg->tsStarted = RTTimeNanoTS();
+        cNsSinceStart = 0;
     }
 
     // Microseconds are used everythere below
-    uint32_t sBuf = uBufSize >> pStreamDbg->pCfg->Props.cShift;
-    cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "%d %d %d %d\n",
-        (uint32_t)(tsSinceStart / 1000), // Host time elapsed since Guest submitted the first buffer for playback
-        (uint32_t)(pStreamDbg->uSamplesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz), // how long all the samples submitted previously were played
-        (uint32_t)(sBuf * 1.0E6 / pStreamDbg->pCfg->Props.uHz), // how long a new uSamplesReady samples should\will be played
-        sBuf);
+    uint32_t const cFrames = PDMAudioPropsBytesToFrames(&pStreamDbg->pCfg->Props, cbBuf);
+    char szTimingInfo[128];
+    size_t cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "%d %d %d %d\n",
+                             // Host time elapsed since Guest submitted the first buffer for playback:
+                             (uint32_t)(cNsSinceStart / 1000),
+                             // how long all the samples submitted previously were played:
+                             (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                             // how long a new uSamplesReady samples should/will be played:
+                             (uint32_t)(cFrames * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                             cFrames);
     RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
-    pStreamDbg->uSamplesSinceStarted += sBuf;
+    pStreamDbg->cFramesSinceStarted += cFrames;
 
     /* Remember when samples were consumed. */
-   // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);;
+   // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pThis->pDrvIns);
 
-    int rc2 = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    int rc2 = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
         LogRel(("VaKitAudio: Writing output failed with %Rrc\n", rc2));
 
-    *puWritten = uBufSize;
+    *pcbWritten = cbBuf;
 
     return VINF_SUCCESS;
 }
