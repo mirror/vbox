@@ -528,19 +528,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioVrdeHA_StreamGetStatus(PPDMIHOSTA
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
- */
-static DECLCALLBACK(int) drvAudioVrdeHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    /* Nothing to do here for VRDE. */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) drvAudioVrdeQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -727,7 +714,6 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnStreamGetWritable = drvAudioVrdeHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending  = NULL;
     pThis->IHostAudio.pfnStreamGetStatus   = drvAudioVrdeHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate     = drvAudioVrdeHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay        = drvAudioVrdeHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture     = drvAudioVrdeHA_StreamCapture;
 

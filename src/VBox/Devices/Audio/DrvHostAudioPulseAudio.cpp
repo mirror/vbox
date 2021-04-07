@@ -1627,21 +1627,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostPulseAudioHA_StreamGetStatus(PPDMI
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
- */
-static DECLCALLBACK(int) drvHostPulseAudioHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    /* Nothing to do here for PulseAudio. */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -1698,7 +1683,6 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostPulseAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostPulseAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostPulseAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate      = drvHostPulseAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostPulseAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostPulseAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = NULL;

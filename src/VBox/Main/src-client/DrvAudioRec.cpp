@@ -1023,21 +1023,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioVideoRecHA_StreamGetStatus(PPDMIH
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
- */
-static DECLCALLBACK(int) drvAudioVideoRecHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    /* Nothing to do here for video recording. */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -1152,7 +1137,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IHostAudio.pfnStreamGetReadable  = drvAudioVideoRecHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvAudioVideoRecHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetStatus    = drvAudioVideoRecHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate      = drvAudioVideoRecHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvAudioVideoRecHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvAudioVideoRecHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = NULL;

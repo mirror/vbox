@@ -371,13 +371,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostValKitAudioHA_StreamGetStatus(PPDM
     return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
 }
 
-static DECLCALLBACK(int) drvHostValKitAudioHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    return VINF_SUCCESS;
-}
-
-
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -421,7 +414,6 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostValKitAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostValKitAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostValKitAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate      = drvHostValKitAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostValKitAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostValKitAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = NULL;

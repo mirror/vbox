@@ -2429,21 +2429,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostCoreAudioHA_StreamGetStatus(PPDMIH
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
- */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    RT_NOREF(pInterface, pStream);
-
-    /* Nothing to do here for Core Audio. */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
 static DECLCALLBACK(int) drvHostCoreAudioHA_Init(PPDMIHOSTAUDIO pInterface)
@@ -2559,7 +2544,6 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostCoreAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostCoreAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostCoreAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate      = drvHostCoreAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostCoreAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostCoreAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = drvHostCoreAudioHA_GetDevices;

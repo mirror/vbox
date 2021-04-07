@@ -301,16 +301,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostNullAudioHA_StreamGetStatus(PPDMIH
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
- */
-static DECLCALLBACK(int) drvHostNullAudioHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) drvHostNullAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -356,7 +346,6 @@ static DECLCALLBACK(int) drvHostNullAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostNullAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostNullAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostNullAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamIterate      = drvHostNullAudioHA_StreamIterate;
     pThis->IHostAudio.pfnStreamPlay         = drvHostNullAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostNullAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = NULL;

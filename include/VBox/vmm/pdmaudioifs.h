@@ -1337,15 +1337,6 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Gives the host backend the chance to do some (necessary) iteration work.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
-
-    /**
      * Plays (writes to) an audio (output) stream.
      *
      * @returns VBox status code.
