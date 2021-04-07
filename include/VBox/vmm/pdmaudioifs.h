@@ -1212,7 +1212,7 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
 typedef struct PDMIHOSTAUDIO
 {
     /**
-     * Initializes the host backend (driver).
+     * Initializes the host backend (driver) - optional and obsolete.
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.

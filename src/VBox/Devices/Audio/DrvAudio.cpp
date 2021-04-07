@@ -2047,7 +2047,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
      */
     PPDMIHOSTAUDIO pHostDrvAudio = pThis->pHostDrvAudio;
     AssertPtrReturn(pHostDrvAudio, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnInit, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnInit, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnShutdown, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
@@ -2068,7 +2068,9 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     /** @todo r=bird: This is superfluous.  This duplicates the driver
      *        constructor code.  Just get rid of it!! */
     AssertPtr(pThis->pHostDrvAudio);
-    int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
+    int rc = VINF_SUCCESS;
+    if (pThis->pHostDrvAudio->pfnInit)
+        rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
     if (RT_FAILURE(rc))
     {
         LogRel(("Audio: Initialization of host driver '%s' failed with %Rrc\n", pThis->szName, rc));

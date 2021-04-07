@@ -634,31 +634,6 @@ static int avRecControlStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvAudioVideoRecHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
-
-    LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 channel%s\n",
-            PDMAudioPropsHz(&pThis->CodecParms.PCMProps), PDMAudioPropsSampleBits(&pThis->CodecParms.PCMProps),
-            PDMAudioPropsChannels(&pThis->CodecParms.PCMProps), PDMAudioPropsChannels(&pThis->CodecParms.PCMProps) == 1 ? "" : "s"));
-
-    int rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
-    if (RT_FAILURE(rc))
-        LogRel(("Recording: Audio recording driver failed to initialize, rc=%Rrc\n", rc));
-    else
-        LogRel2(("Recording: Audio recording driver initialized\n"));
-
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvAudioVideoRecHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -1127,7 +1102,7 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = drvAudioVideoRecHA_Init;
+    pThis->IHostAudio.pfnInit               = NULL;
     pThis->IHostAudio.pfnShutdown           = drvAudioVideoRecHA_Shutdown;
     pThis->IHostAudio.pfnGetConfig          = drvAudioVideoRecHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvAudioVideoRecHA_GetStatus;
@@ -1213,6 +1188,8 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Get the interface for the above driver (DrvAudio) to make mixer/conversion calls.
      * Described in CFGM tree.
      */
+/** @todo r=bird: What on earth do you think you need this for?!? It's not an
+ * interface lower drivers are supposed to be messing with! */
     pThis->pDrvAudio = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
     AssertMsgReturn(pThis->pDrvAudio, ("Configuration error: No upper interface specified!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
@@ -1221,7 +1198,20 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.pcm");
 #endif
 
-    return VINF_SUCCESS;
+    /*
+     * Init the recording sink.
+     */
+    LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 channel%s\n",
+            PDMAudioPropsHz(&pThis->CodecParms.PCMProps), PDMAudioPropsSampleBits(&pThis->CodecParms.PCMProps),
+            PDMAudioPropsChannels(&pThis->CodecParms.PCMProps), PDMAudioPropsChannels(&pThis->CodecParms.PCMProps) == 1 ? "" : "s"));
+
+    rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
+    if (RT_SUCCESS(rc))
+        LogRel2(("Recording: Audio recording driver initialized\n"));
+    else
+        LogRel(("Recording: Audio recording driver initialization failed: %Rrc\n", rc));
+
+    return rc;
 }
 
 

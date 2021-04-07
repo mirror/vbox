@@ -212,19 +212,6 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
     return rc;
 }
 
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvAudioVrdeHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    RT_NOREF(pInterface);
-    LogFlowFuncEnter();
-
-    return VINF_SUCCESS;
-}
-
-
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
@@ -702,7 +689,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVrdeQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit              = drvAudioVrdeHA_Init;
+    pThis->IHostAudio.pfnInit              = NULL;
     pThis->IHostAudio.pfnShutdown          = drvAudioVrdeHA_Shutdown;
     pThis->IHostAudio.pfnGetConfig         = drvAudioVrdeHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices        = NULL;

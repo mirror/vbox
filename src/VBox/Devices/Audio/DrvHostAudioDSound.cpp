@@ -2354,37 +2354,6 @@ static DECLCALLBACK(void) drvHostDSoundHA_Shutdown(PPDMIHOSTAUDIO pInterface)
     LogFlowFuncLeave();
 }
 
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvHostDSoundHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
-    LogFlowFuncEnter();
-
-    int rc;
-
-    /* Verify that IDirectSound is available. */
-    LPDIRECTSOUND pDirectSound = NULL;
-    HRESULT hr = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_ALL, IID_IDirectSound, (void **)&pDirectSound);
-    if (SUCCEEDED(hr))
-    {
-        IDirectSound_Release(pDirectSound);
-
-        rc = VINF_SUCCESS;
-
-        dsoundUpdateStatusInternal(pThis);
-    }
-    else
-    {
-        DSLOGREL(("DSound: DirectSound not available: %Rhrc\n", hr));
-        rc = VERR_NOT_SUPPORTED;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
 static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID *pUuid)
 {
     LPCGUID pGuid = NULL;
@@ -2405,7 +2374,7 @@ static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID
     return pGuid;
 }
 
-static int dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
+static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 {
     pThis->Cfg.pGuidPlay    = dsoundConfigQueryGUID(pCfg, "DeviceGuidOut", &pThis->Cfg.uuidPlay);
     pThis->Cfg.pGuidCapture = dsoundConfigQueryGUID(pCfg, "DeviceGuidIn",  &pThis->Cfg.uuidCapture);
@@ -2413,8 +2382,6 @@ static int dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
     DSLOG(("DSound: Configuration: DeviceGuidOut {%RTuuid}, DeviceGuidIn {%RTuuid}\n",
            &pThis->Cfg.uuidPlay,
            &pThis->Cfg.uuidCapture));
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2662,19 +2629,10 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
-
-    LogRel(("Audio: Initializing DirectSound audio driver\n"));
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (FAILED(hr))
-    {
-        DSLOGREL(("DSound: CoInitializeEx failed with %Rhrc\n", hr));
-        return VERR_NOT_SUPPORTED;
-    }
+    PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
+    RT_NOREF(fFlags);
+    LogRel(("Audio: Initializing DirectSound audio driver\n"));
 
     /*
      * Init basic data members and interfaces.
@@ -2683,7 +2641,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = drvHostDSoundHA_Init;
+    pThis->IHostAudio.pfnInit               = NULL;
     pThis->IHostAudio.pfnShutdown           = drvHostDSoundHA_Shutdown;
     pThis->IHostAudio.pfnGetConfig          = drvHostDSoundHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostDSoundHA_GetStatus;
@@ -2706,61 +2664,76 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->fEnabledIn  = false;
     pThis->fEnabledOut = false;
 
-    int rc = VINF_SUCCESS;
-
-#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-    bool fUseNotificationClient = false;
-
-    char szOSVersion[32];
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOSVersion, sizeof(szOSVersion));
-    if (RT_SUCCESS(rc))
+    /*
+     * Verify that IDirectSound is available.
+     */
+    HRESULT hrc = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (SUCCEEDED(hrc))
     {
-        /* IMMNotificationClient is available starting at Windows Vista. */
-        if (RTStrVersionCompare(szOSVersion, "6.0") >= 0)
-            fUseNotificationClient = true;
+        LPDIRECTSOUND pDirectSound = NULL;
+        hrc = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_ALL, IID_IDirectSound, (void **)&pDirectSound);
+        if (SUCCEEDED(hrc))
+            IDirectSound_Release(pDirectSound);
+        else
+        {
+            LogRel(("DSound: DirectSound not available: %Rhrc\n", hrc));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
+    }
+    else
+    {
+        LogRel(("DSound: CoInitializeEx(,COINIT_MULTITHREADED) failed: %Rhrc\n", hrc));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
-    if (fUseNotificationClient)
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+    /*
+     * Set up WASAPI device change notifications (Vista+).
+     */
+    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
     {
-        /* Get the notification interface. */
+        /* Get the notification interface (from DrvAudio). */
 # ifdef VBOX_WITH_AUDIO_CALLBACKS
         PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIONOTIFYFROMHOST);
         Assert(pIAudioNotifyFromHost);
 # else
         PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = NULL;
 # endif
-
         try
         {
             pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIAudioNotifyFromHost);
-
-            hr = pThis->m_pNotificationClient->Initialize();
-            if (SUCCEEDED(hr))
-                hr = pThis->m_pNotificationClient->Register();
-
-            if (FAILED(hr))
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
         }
         catch (std::bad_alloc &)
         {
-            rc = VERR_NO_MEMORY;
+            return VERR_NO_MEMORY;
+        }
+        hrc = pThis->m_pNotificationClient->Initialize();
+        if (SUCCEEDED(hrc))
+        {
+            hrc = pThis->m_pNotificationClient->Register();
+            if (SUCCEEDED(hrc))
+                LogRel2(("DSound: Notification client is enabled (ver %#RX64)\n", RTSystemGetNtVersion()));
+            else
+            {
+                LogRel(("DSound: Notification client registration failed: %Rhrc\n", hrc));
+                return VERR_AUDIO_BACKEND_INIT_FAILED;
+            }
+        }
+        else
+        {
+            LogRel(("DSound: Notification client initialization failed: %Rhrc\n", hrc));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
     }
-
-    LogRel2(("DSound: Notification client is %s\n", fUseNotificationClient ? "enabled" : "disabled"));
+    else
+        LogRel2(("DSound: Notification client is disabled (ver %#RX64)\n", RTSystemGetNtVersion()));
 #endif
 
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Initialize configuration values.
-         */
-        rc = dsoundConfigInit(pThis, pCfg);
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&pThis->CritSect);
-    }
-
-    return rc;
+    /*
+     * Initialize configuration values and critical section.
+     */
+    dsoundConfigInit(pThis, pCfg);
+    return RTCritSectInit(&pThis->CritSect);
 }
 
 
