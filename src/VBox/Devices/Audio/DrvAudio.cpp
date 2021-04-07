@@ -1647,13 +1647,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
     int rc;
     if (cFramesToPlay)
     {
-        if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
-            pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStreamEx->pvBackend);
-
         rc = drvAudioStreamPlayDoIt(pThis, pStreamEx, cFramesToPlay, pcFramesPlayed);
-
-        if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
-            pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pStreamEx->pvBackend);
 
         pStreamEx->nsLastPlayedCaptured = RTTimeNanoTS();
         pStreamEx->Out.Stats.cbBackendWritableAfter = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio,
@@ -1934,18 +1928,12 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         /*
          * Do the actual capturing.
          */
-        if (pThis->pHostDrvAudio->pfnStreamCaptureBegin)
-            pThis->pHostDrvAudio->pfnStreamCaptureBegin(pThis->pHostDrvAudio, pStreamEx->pvBackend);
-
         if (RT_LIKELY(pStreamEx->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
             rc = drvAudioStreamCaptureNonInterleaved(pThis, pStreamEx, &cfCaptured);
         else if (pStreamEx->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
             rc = drvAudioStreamCaptureRaw(pThis, pStreamEx, &cfCaptured);
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-
-        if (pThis->pHostDrvAudio->pfnStreamCaptureEnd)
-            pThis->pHostDrvAudio->pfnStreamCaptureEnd(pThis->pHostDrvAudio, pStreamEx->pvBackend);
 
         if (RT_SUCCESS(rc))
         {
@@ -2076,12 +2064,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrNullReturn(pHostDrvAudio->pfnStreamGetPending, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamGetStatus, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamIterate, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamPlayBegin, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamPlay, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamPlayEnd, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamCaptureBegin, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamCapture, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamCaptureEnd, VERR_INVALID_POINTER);
 
     /*
      * Call the init method.

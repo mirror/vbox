@@ -1157,10 +1157,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IHostAudio.pfnStreamCapture      = drvAudioVideoRecHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
-    pThis->IHostAudio.pfnStreamPlayEnd      = NULL;
-    pThis->IHostAudio.pfnStreamCaptureBegin = NULL;
-    pThis->IHostAudio.pfnStreamCaptureEnd   = NULL;
 
     /*
      * Get the Console object pointer.

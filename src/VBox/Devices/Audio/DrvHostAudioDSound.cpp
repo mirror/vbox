@@ -2707,10 +2707,6 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IHostAudio.pfnStreamCapture      = drvHostDSoundHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = drvHostDSoundHA_GetDevices;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
-    pThis->IHostAudio.pfnStreamPlayEnd      = NULL;
-    pThis->IHostAudio.pfnStreamCaptureBegin = NULL;
-    pThis->IHostAudio.pfnStreamCaptureEnd   = NULL;
 
     /*
      * Init the static parts.

@@ -1367,22 +1367,6 @@ typedef struct PDMIHOSTAUDIO
                                               const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
-     * Signals the backend that the host finished playing for this iteration. Optional.
-     *
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnStreamPlayEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
-
-    /**
-     * Signals the backend that the host wants to begin capturing for this iteration. Optional.
-     *
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnStreamCaptureBegin, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
-
-    /**
      * Captures (reads from) an audio (input) stream.
      *
      * @returns VBox status code.
@@ -1397,18 +1381,10 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                  void *pvBuf, uint32_t uBufSize, uint32_t *puRead));
 
-    /**
-     * Signals the backend that the host finished capturing for this iteration. Optional.
-     *
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnStreamCaptureEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
-
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "fafc2dfb-eaa8-4e8f-9d13-ffe9163e7c51"
+#define PDMIHOSTAUDIO_IID                           "cf8dcd5f-0077-499e-9db1-1161b046fded"
 
 
 /** Pointer to a audio notify from host interface. */

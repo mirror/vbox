@@ -2564,10 +2564,6 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamCapture      = drvHostCoreAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices         = drvHostCoreAudioHA_GetDevices;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
-    pThis->IHostAudio.pfnStreamPlayEnd      = NULL;
-    pThis->IHostAudio.pfnStreamCaptureBegin = NULL;
-    pThis->IHostAudio.pfnStreamCaptureEnd   = NULL;
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
