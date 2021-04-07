@@ -3104,9 +3104,6 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
 # NASM (--allow-64-bit: 2.12rc2)
 	$(QUIET)$(APPEND) '$@' 'VBOX_NASM_allow_64_bit         ?= $(call VBOX_NASM_CHECK,--allow-64-bit,)'
-ifeq ($(KBUILD_HOST),linux)
-	$(QUIET)$(APPEND) '$@' 'VBOX_LD_HAS_LIBXCB             ?= $(shell /sbin/ldconfig -p|grep -q "\<libxcb\.so\.1\>" && echo "1")'
-endif
 if1of ($(KBUILD_TARGET), linux)
  ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
 	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
@@ -6994,8 +6991,6 @@ ifdef VBOX_WITH_QTGUI
   VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
    VBOX_QT_MOD += Qt5DBus Qt5XcbQpa Qt5X11Extras
-   # legacy libraries required to be installed on EL5
-   VBOX_QT_LEGACY_LIBS = $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
    VBOX_QT_PLUGINS = \
    	plugins/platforms/libqxcb.so \
    	plugins/sqldrivers/libqsqlite.so \
@@ -7165,10 +7160,6 @@ ifdef VBOX_WITH_QTGUI
 	X11
     TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
 	$(VBOX_LIBPATH_X11)
-   if defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_LD_HAS_LIBXCB)
-    TEMPLATE_VBOXQTGUIEXE_LIBPATH += $(PATH_SDK_QT5_LIB)/legacy
-    TEMPLATE_VBOXQTGUIEXE_INCS    += $(PATH_SDK_QT5_INC)/legacy
-   endif
   else ifeq ($(KBUILD_TARGET),darwin)
    TEMPLATE_VBOXQTGUIEXE_SDKS.darwin        += $(VBOX_DARWIN_DEF_SDK_SDKS)
    TEMPLATE_VBOXQTGUIEXE_DEFS.darwin        += $(VBOX_DARWIN_DEF_SDK_DEFS)
