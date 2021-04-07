@@ -65,6 +65,18 @@
 /*********************************************************************************************************************************
 *   Structures                                                                                                                   *
 *********************************************************************************************************************************/
+/**
+ * Callback context for the server init context state changed callback.
+ */
+typedef struct PULSEAUDIOSTATECHGCTX
+{
+    /** The event semaphore. */
+    RTSEMEVENT                      hEvtInit;
+    /** The returned context state. */
+    volatile pa_context_state_t     enmCtxState;
+} PULSEAUDIOSTATECHGCTX;
+/** Pointer to a server init context state changed callback context. */
+typedef PULSEAUDIOSTATECHGCTX *PPULSEAUDIOSTATECHGCTX;
 
 /**
  * Host Pulse audio driver instance data.
@@ -96,6 +108,9 @@ typedef struct DRVHOSTPULSEAUDIO
      *  streams in the PulseAudio mixer controls if multiple
      *  VMs are running at the same time. */
     char                  szStreamName[64];
+
+    /** Don't want to put this on the stack... */
+    PULSEAUDIOSTATECHGCTX   InitStateChgCtx;
 } DRVHOSTPULSEAUDIO, *PDRVHOSTPULSEAUDIO;
 
 typedef struct PULSEAUDIOSTREAM
@@ -149,20 +164,6 @@ typedef struct PULSEAUDIOENUMCBCTX
     /** Name of default source being used. Must be free'd using RTStrFree(). */
     char               *pszDefaultSource;
 } PULSEAUDIOENUMCBCTX, *PPULSEAUDIOENUMCBCTX;
-
-
-/**
- * Callback context for the server init context state changed callback.
- */
-typedef struct PULSEAUDIOSTATECHGCTX
-{
-    /** The event semaphore. */
-    RTSEMEVENT                      hEvtInit;
-    /** The returned context state. */
-    volatile pa_context_state_t     enmCtxState;
-} PULSEAUDIOSTATECHGCTX;
-/** Pointer to a server init context state changed callback context. */
-typedef PULSEAUDIOSTATECHGCTX *PPULSEAUDIOSTATECHGCTX;
 
 
 /*
@@ -638,136 +639,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 
     if (pStream)
         pa_stream_unref(pStream);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-
-    PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
-
-    LogFlowFuncEnter();
-
-    int rc = audioLoadPulseLib();
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("PulseAudio: Failed to load the PulseAudio shared library! Error %Rrc\n", rc));
-        return rc;
-    }
-
-    LogRel(("PulseAudio: Using v%s\n", pa_get_library_version()));
-
-    pThis->fAbortLoop = false;
-    pThis->pMainLoop = pa_threaded_mainloop_new();
-    if (!pThis->pMainLoop)
-    {
-        LogRel(("PulseAudio: Failed to allocate main loop: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
-        return VERR_NO_MEMORY;
-    }
-
-    bool fLocked = false;
-
-    do
-    {
-        if (!(pThis->pContext = pa_context_new(pa_threaded_mainloop_get_api(pThis->pMainLoop), "VirtualBox")))
-        {
-            LogRel(("PulseAudio: Failed to allocate context: %s\n",
-                     pa_strerror(pa_context_errno(pThis->pContext))));
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        if (pa_threaded_mainloop_start(pThis->pMainLoop) < 0)
-        {
-            LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n",
-                     pa_strerror(pa_context_errno(pThis->pContext))));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-            break;
-        }
-
-        PULSEAUDIOSTATECHGCTX InitStateChgCtx;
-        InitStateChgCtx.hEvtInit    = NIL_RTSEMEVENT;
-        InitStateChgCtx.enmCtxState = PA_CONTEXT_UNCONNECTED;
-        rc = RTSemEventCreate(&InitStateChgCtx.hEvtInit);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("PulseAudio: Failed to create init event semaphore: %Rrc\n", rc));
-            break;
-        }
-
-        /*
-         * Install a dedicated init state callback so we can do a timed wait on our own event semaphore if connecting
-         * to the pulseaudio server takes too long.
-         */
-        pa_context_set_state_callback(pThis->pContext, paContextCbStateChangedInit, &InitStateChgCtx /* pvUserData */);
-
-        pa_threaded_mainloop_lock(pThis->pMainLoop);
-        fLocked = true;
-
-        if (!pa_context_connect(pThis->pContext, NULL /* pszServer */,
-                                PA_CONTEXT_NOFLAGS, NULL))
-        {
-            /* Wait on our init event semaphore and time out if connecting to the pulseaudio server takes too long. */
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            fLocked = false;
-
-            rc = RTSemEventWait(InitStateChgCtx.hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
-            if (RT_SUCCESS(rc))
-            {
-                if (InitStateChgCtx.enmCtxState != PA_CONTEXT_READY)
-                {
-                    LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", InitStateChgCtx.enmCtxState, rc));
-                    if (RT_SUCCESS(rc))
-                        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                }
-                else
-                {
-                    pa_threaded_mainloop_lock(pThis->pMainLoop);
-                    fLocked = true;
-
-                    /* Install the main state changed callback to know if something happens to our acquired context. */
-                    pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
-                }
-            }
-            else
-                LogRel(("PulseAudio: Waiting for context to become ready failed with %Rrc\n", rc));
-        }
-        else
-            LogRel(("PulseAudio: Failed to connect to server: %s\n",
-                     pa_strerror(pa_context_errno(pThis->pContext))));
-
-        RTSemEventDestroy(InitStateChgCtx.hEvtInit);
-    }
-    while (0);
-
-    if (fLocked)
-        pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-    if (RT_FAILURE(rc))
-    {
-        if (pThis->pMainLoop)
-            pa_threaded_mainloop_stop(pThis->pMainLoop);
-
-        if (pThis->pContext)
-        {
-            pa_context_disconnect(pThis->pContext);
-            pa_context_unref(pThis->pContext);
-            pThis->pContext = NULL;
-        }
-
-        if (pThis->pMainLoop)
-        {
-            pa_threaded_mainloop_free(pThis->pMainLoop);
-            pThis->pMainLoop = NULL;
-        }
-    }
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1397,37 +1268,6 @@ static int paControlStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
- */
-static DECLCALLBACK(void) drvHostPulseAudioHA_Shutdown(PPDMIHOSTAUDIO pInterface)
-{
-    AssertPtrReturnVoid(pInterface);
-
-    PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
-
-    LogFlowFuncEnter();
-
-    if (pThis->pMainLoop)
-        pa_threaded_mainloop_stop(pThis->pMainLoop);
-
-    if (pThis->pContext)
-    {
-        pa_context_disconnect(pThis->pContext);
-        pa_context_unref(pThis->pContext);
-        pThis->pContext = NULL;
-    }
-
-    if (pThis->pMainLoop)
-    {
-        pa_threaded_mainloop_free(pThis->pMainLoop);
-        pThis->pMainLoop = NULL;
-    }
-
-    LogFlowFuncLeave();
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
 static DECLCALLBACK(int) drvHostPulseAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
@@ -1644,6 +1484,34 @@ static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) drvHostPulseAudioPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
+    LogFlowFuncEnter();
+
+    if (pThis->pMainLoop)
+        pa_threaded_mainloop_stop(pThis->pMainLoop);
+
+    if (pThis->pContext)
+    {
+        pa_context_disconnect(pThis->pContext);
+        pa_context_unref(pThis->pContext);
+        pThis->pContext = NULL;
+    }
+
+    if (pThis->pMainLoop)
+    {
+        pa_threaded_mainloop_free(pThis->pMainLoop);
+        pThis->pMainLoop = NULL;
+    }
+
+    LogFlowFuncLeave();
+}
+
+
+/**
  * Destructs a PulseAudio Audio driver instance.
  *
  * @copydoc FNPDMDRVDESTRUCT
@@ -1652,6 +1520,8 @@ static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     LogFlowFuncEnter();
+    drvHostPulseAudioPowerOff(pDrvIns);
+    LogFlowFuncLeave();
 }
 
 
@@ -1669,12 +1539,15 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
     LogRel(("Audio: Initializing PulseAudio driver\n"));
 
+    /*
+     * Initialize instance data.
+     */
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostPulseAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = drvHostPulseAudioHA_Init;
-    pThis->IHostAudio.pfnShutdown           = drvHostPulseAudioHA_Shutdown;
+    pThis->IHostAudio.pfnInit               = NULL;
+    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostPulseAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostPulseAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostPulseAudioHA_StreamCreate;
@@ -1688,10 +1561,98 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnStreamGetPending   = NULL;
 
+    /*
+     * Read configuration.
+     */
     int rc2 = CFGMR3QueryString(pCfg, "StreamName", pThis->szStreamName, sizeof(pThis->szStreamName));
     AssertMsgRCReturn(rc2, ("Confguration error: No/bad \"StreamName\" value, rc=%Rrc\n", rc2), rc2);
 
-    return VINF_SUCCESS;
+    /*
+     * Load the pulse audio library.
+     */
+    int rc = audioLoadPulseLib();
+    if (RT_SUCCESS(rc))
+        LogRel(("PulseAudio: Using version %s\n", pa_get_library_version()));
+    else
+    {
+        LogRel(("PulseAudio: Failed to load the PulseAudio shared library! Error %Rrc\n", rc));
+        return rc;
+    }
+
+    /*
+     * Set up the basic pulse audio bits (remember the destructore is always called).
+     */
+    //pThis->fAbortLoop = false;
+    pThis->pMainLoop = pa_threaded_mainloop_new();
+    if (!pThis->pMainLoop)
+    {
+        LogRel(("PulseAudio: Failed to allocate main loop: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
+        return VERR_NO_MEMORY;
+    }
+
+    pThis->pContext = pa_context_new(pa_threaded_mainloop_get_api(pThis->pMainLoop), "VirtualBox");
+    if (!pThis->pContext)
+    {
+        LogRel(("PulseAudio: Failed to allocate context: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
+        return VERR_NO_MEMORY;
+    }
+
+    if (pa_threaded_mainloop_start(pThis->pMainLoop) < 0)
+    {
+        LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
+    /*
+     * Connect to the pulse audio server.
+     *
+     * We install an init state callback so we can do a timed wait in case
+     * connecting to the pulseaudio server should take too long.
+     */
+    pThis->InitStateChgCtx.hEvtInit    = NIL_RTSEMEVENT;
+    pThis->InitStateChgCtx.enmCtxState = PA_CONTEXT_UNCONNECTED;
+    rc = RTSemEventCreate(&pThis->InitStateChgCtx.hEvtInit);
+    AssertLogRelRCReturn(rc, rc);
+
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
+    pa_context_set_state_callback(pThis->pContext, paContextCbStateChangedInit, &pThis->InitStateChgCtx);
+    if (!pa_context_connect(pThis->pContext, NULL /* pszServer */, PA_CONTEXT_NOFLAGS, NULL))
+    {
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+
+        rc = RTSemEventWait(pThis->InitStateChgCtx.hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
+        if (RT_SUCCESS(rc))
+        {
+            if (pThis->InitStateChgCtx.enmCtxState == PA_CONTEXT_READY)
+            {
+                /* Install the main state changed callback to know if something happens to our acquired context. */
+                pa_threaded_mainloop_lock(pThis->pMainLoop);
+                pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
+                pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            }
+            else
+            {
+                LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", pThis->InitStateChgCtx.enmCtxState, rc));
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            }
+        }
+        else
+        {
+            LogRel(("PulseAudio: Waiting for context to become ready failed: %Rrc\n", rc));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
+    }
+    else
+    {
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+        LogRel(("PulseAudio: Failed to connect to server: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
+        rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* bird: This used to be VINF_SUCCESS. */
+    }
+
+    RTSemEventDestroy(pThis->InitStateChgCtx.hEvtInit);
+    pThis->InitStateChgCtx.hEvtInit = NIL_RTSEMEVENT;
+
+    return rc;
 }
 
 
@@ -1739,7 +1700,7 @@ const PDMDRVREG g_DrvHostPulseAudio =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    drvHostPulseAudioPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
