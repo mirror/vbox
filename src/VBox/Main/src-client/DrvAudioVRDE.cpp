@@ -349,19 +349,6 @@ static DECLCALLBACK(int) drvAudioVrdeHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPD
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
- */
-static DECLCALLBACK(void) drvAudioVrdeHA_Shutdown(PPDMIHOSTAUDIO pInterface)
-{
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    AssertPtrReturnVoid(pDrv);
-
-    if (pDrv->pConsoleVRDPServer)
-        pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL);
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVrdeHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -661,6 +648,44 @@ int AudioVRDE::onVRDEInputIntercept(bool fEnabled)
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+/*static*/ DECLCALLBACK(void) AudioVRDE::drvPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
+    LogFlowFuncEnter();
+
+    if (pThis->pConsoleVRDPServer)
+        pThis->pConsoleVRDPServer->SendAudioInputEnd(NULL);
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
+/*static*/ DECLCALLBACK(void) AudioVRDE::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
+    LogFlowFuncEnter();
+
+    /** @todo For runtime detach maybe:
+    if (pThis->pConsoleVRDPServer)
+        pThis->pConsoleVRDPServer->SendAudioInputEnd(NULL); */
+
+    /*
+     * If the AudioVRDE object is still alive, we must clear it's reference to
+     * us since we'll be invalid when we return from this method.
+     */
+    if (pThis->pAudioVRDE)
+    {
+        pThis->pAudioVRDE->mpDrv = NULL;
+        pThis->pAudioVRDE = NULL;
+    }
+}
+
+
+/**
  * Construct a VRDE audio driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -690,7 +715,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pDrvIns->IBase.pfnQueryInterface = drvAudioVrdeQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnInit              = NULL;
-    pThis->IHostAudio.pfnShutdown          = drvAudioVrdeHA_Shutdown;
+    pThis->IHostAudio.pfnShutdown          = NULL;
     pThis->IHostAudio.pfnGetConfig         = drvAudioVrdeHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices        = NULL;
     pThis->IHostAudio.pfnGetStatus         = drvAudioVrdeHA_GetStatus;
@@ -737,52 +762,6 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
 
 /**
- * @interface_method_impl{PDMDRVREG,pfnDestruct}
- */
-/* static */
-DECLCALLBACK(void) AudioVRDE::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
-    LogFlowFuncEnter();
-
-    /*
-     * If the AudioVRDE object is still alive, we must clear it's reference to
-     * us since we'll be invalid when we return from this method.
-     */
-    if (pThis->pAudioVRDE)
-    {
-        pThis->pAudioVRDE->mpDrv = NULL;
-        pThis->pAudioVRDE = NULL;
-    }
-}
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnAttach}
- */
-/* static */
-DECLCALLBACK(int) AudioVRDE::drvAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(pDrvIns, fFlags);
-
-    LogFlowFuncEnter();
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnDetach}
- */
-/* static */
-DECLCALLBACK(void) AudioVRDE::drvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(pDrvIns, fFlags);
-
-    LogFlowFuncEnter();
-}
-
-
-/**
  * VRDE audio driver registration record.
  */
 const PDMDRVREG AudioVRDE::DrvReg =
@@ -821,11 +800,11 @@ const PDMDRVREG AudioVRDE::DrvReg =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    AudioVRDE::drvAttach,
-    /* pfnDetach */
-    AudioVRDE::drvDetach,
-    /* pfnPowerOff */
     NULL,
+    /* pfnDetach */
+    NULL,
+    /* pfnPowerOff */
+    AudioVRDE::drvPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

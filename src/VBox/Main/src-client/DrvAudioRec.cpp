@@ -855,19 +855,6 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_GetConfig(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
- */
-static DECLCALLBACK(void) drvAudioVideoRecHA_Shutdown(PPDMIHOSTAUDIO pInterface)
-{
-    LogFlowFuncEnter();
-
-    PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
-
-    avRecSinkShutdown(&pThis->Sink);
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVideoRecHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -1077,12 +1064,59 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+/*static*/ DECLCALLBACK(void) AudioVideoRec::drvPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
+    LogFlowFuncEnter();
+    avRecSinkShutdown(&pThis->Sink);
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
+/*static*/ DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
+
+    LogFlowFuncEnter();
+
+    switch (pThis->ContainerParms.enmType)
+    {
+        case AVRECCONTAINERTYPE_WEBM:
+        {
+            avRecSinkShutdown(&pThis->Sink);
+            RTStrFree(pThis->ContainerParms.WebM.pszFile);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    /*
+     * If the AudioVideoRec object is still alive, we must clear it's reference to
+     * us since we'll be invalid when we return from this method.
+     */
+    if (pThis->pAudioVideoRec)
+    {
+        pThis->pAudioVideoRec->mpDrv = NULL;
+        pThis->pAudioVideoRec = NULL;
+    }
+
+    LogFlowFuncLeave();
+}
+
+
+/**
  * Construct a audio video recording driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-/* static */
-DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
+/*static*/ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
@@ -1103,7 +1137,7 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnInit               = NULL;
-    pThis->IHostAudio.pfnShutdown           = drvAudioVideoRecHA_Shutdown;
+    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvAudioVideoRecHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvAudioVideoRecHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvAudioVideoRecHA_StreamCreate;
@@ -1216,68 +1250,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
 
 /**
- * @interface_method_impl{PDMDRVREG,pfnDestruct}
- */
-/* static */
-DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
-
-    LogFlowFuncEnter();
-
-    switch (pThis->ContainerParms.enmType)
-    {
-        case AVRECCONTAINERTYPE_WEBM:
-        {
-            avRecSinkShutdown(&pThis->Sink);
-            RTStrFree(pThis->ContainerParms.WebM.pszFile);
-            break;
-        }
-
-        default:
-            break;
-    }
-
-    /*
-     * If the AudioVideoRec object is still alive, we must clear it's reference to
-     * us since we'll be invalid when we return from this method.
-     */
-    if (pThis->pAudioVideoRec)
-    {
-        pThis->pAudioVideoRec->mpDrv = NULL;
-        pThis->pAudioVideoRec = NULL;
-    }
-
-    LogFlowFuncLeave();
-}
-
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnAttach}
- */
-/* static */
-DECLCALLBACK(int) AudioVideoRec::drvAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(pDrvIns, fFlags);
-
-    LogFlowFuncEnter();
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnDetach}
- */
-/* static */
-DECLCALLBACK(void) AudioVideoRec::drvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(pDrvIns, fFlags);
-
-    LogFlowFuncEnter();
-}
-
-/**
  * Video recording audio driver registration record.
  */
 const PDMDRVREG AudioVideoRec::DrvReg =
@@ -1316,11 +1288,11 @@ const PDMDRVREG AudioVideoRec::DrvReg =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    AudioVideoRec::drvAttach,
-    /* pfnDetach */
-    AudioVideoRec::drvDetach,
-    /* pfnPowerOff */
     NULL,
+    /* pfnDetach */
+    NULL,
+    /* pfnPowerOff */
+    AudioVideoRec::drvPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
