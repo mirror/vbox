@@ -183,26 +183,6 @@ static int ossStreamClose(int *phFile)
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvHostOssAudioHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    RT_NOREF(pInterface);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
- */
-static DECLCALLBACK(void) drvHostOssAudioHA_Shutdown(PPDMIHOSTAUDIO pInterface)
-{
-    RT_NOREF(pInterface);
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
 static DECLCALLBACK(int) drvHostOssAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
@@ -729,8 +709,8 @@ static DECLCALLBACK(int) drvHostOSSAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostOSSAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = drvHostOssAudioHA_Init;
-    pThis->IHostAudio.pfnShutdown           = drvHostOssAudioHA_Shutdown;
+    pThis->IHostAudio.pfnInit               = NULL;
+    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostOssAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostOssAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostOssAudioHA_StreamCreate;
