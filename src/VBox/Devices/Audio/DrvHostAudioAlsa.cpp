@@ -568,28 +568,6 @@ static int alsaStreamResume(snd_pcm_t *phPCM)
 }
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
- */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_Init(PPDMIHOSTAUDIO pInterface)
-{
-    RT_NOREF(pInterface);
-
-    LogFlowFuncEnter();
-
-    int rc = audioLoadAlsaLib();
-    if (RT_FAILURE(rc))
-        LogRel(("ALSA: Failed to load the ALSA shared library, rc=%Rrc\n", rc));
-    else
-    {
-#ifdef DEBUG
-        snd_lib_error_set_handler(alsaDbgErrorHandler);
-#endif
-    }
-
-    return rc;
-}
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -1249,15 +1227,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
- */
-static DECLCALLBACK(void) drvHostAlsaAudioHA_Shutdown(PPDMIHOSTAUDIO pInterface)
-{
-    RT_NOREF(pInterface);
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAlsaAudioHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -1475,8 +1444,8 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAlsaAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnInit               = drvHostAlsaAudioHA_Init;
-    pThis->IHostAudio.pfnShutdown           = drvHostAlsaAudioHA_Shutdown;
+    pThis->IHostAudio.pfnInit               = NULL;
+    pThis->IHostAudio.pfnShutdown           = NULL;
     pThis->IHostAudio.pfnGetConfig          = drvHostAlsaAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus          = drvHostAlsaAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostAlsaAudioHA_StreamCreate;
@@ -1500,6 +1469,18 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     rc = CFGMR3QueryStringDef(pCfg, "DefaultOutput", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
     AssertRCReturn(rc, rc);
 
+    /*
+     * Init the alsa library.
+     */
+    rc = audioLoadAlsaLib();
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("ALSA: Failed to load the ALSA shared library: %Rrc\n", rc));
+        return rc;
+    }
+#ifdef DEBUG
+    snd_lib_error_set_handler(alsaDbgErrorHandler);
+#endif
     return VINF_SUCCESS;
 }
 
