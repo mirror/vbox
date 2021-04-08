@@ -388,6 +388,7 @@ void UIHelpViewer::setSource(const QUrl &url)
         document()->undo();
         m_pFindInPageWidget->clearSearchField();
     }
+    scaleImages();
 }
 
 void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
@@ -462,6 +463,7 @@ void UIHelpViewer::setZoomPercentage(int iZoomPercentage)
 
     m_iZoomPercentage = iZoomPercentage;
     scaleFont();
+    scaleImages();
     emit sigZoomPercentageChanged(m_iZoomPercentage);
 }
 
@@ -729,7 +731,7 @@ void UIHelpViewer::sltSelectNextMatch()
 
 void UIHelpViewer::iterateDocumentImages()
 {
-    m_imageSizesMap.clear();
+    m_imageMap.clear();
     QTextCursor cursor = textCursor();
     cursor.movePosition(QTextCursor::Start);
     while (!cursor.atEnd())
@@ -737,8 +739,11 @@ void UIHelpViewer::iterateDocumentImages()
         cursor.movePosition(QTextCursor::NextCharacter);
         if (cursor.charFormat().isImageFormat())
         {
+            DocumentImage image;
            QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
-           m_imageSizesMap[imageFormat.name()] = imageFormat.width();
+           image.m_fInitialWidth = imageFormat.width();
+           image.m_iPosition = cursor.position();
+           m_imageMap[imageFormat.name()] = image;
         }
     }
 }
@@ -749,6 +754,27 @@ void UIHelpViewer::scaleFont()
     mFont.setPointSize(m_iInitialFontPointSize * m_iZoomPercentage / 100.);
     setFont(mFont);
 }
+
+void UIHelpViewer::scaleImages()
+{
+    for (QMap<QString, DocumentImage>::iterator iterator = m_imageMap.begin();
+         iterator != m_imageMap.end(); ++iterator)
+    {
+        QTextCursor cursor = textCursor();
+        cursor.movePosition(QTextCursor::Start);
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, (*iterator).m_iPosition - 1);
+        if (cursor.isNull())
+            continue;
+        QTextCharFormat format = cursor.charFormat();
+        if (!format.isImageFormat())
+            continue;
+        QTextImageFormat imageFormat = format.toImageFormat();
+        imageFormat.setWidth((*iterator).m_fInitialWidth * m_iZoomPercentage / 100.);
+        cursor.deleteChar();
+        cursor.insertImage(imageFormat);
+    }
+}
+
 
 #include "UIHelpViewer.moc"
 

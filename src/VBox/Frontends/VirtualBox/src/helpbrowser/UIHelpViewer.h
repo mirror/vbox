@@ -94,6 +94,12 @@ private slots:
 
 private:
 
+    struct DocumentImage
+    {
+        qreal m_fInitialWidth;
+        int m_iPosition;
+    };
+
     void retranslateUi();
     bool isRectInside(const QRect &rect, int iMargin) const;
     void moveFindWidgetIn(int iMargin);
@@ -102,6 +108,7 @@ private:
     void selectMatch(int iMatchIndex, int iSearchStringLength);
     void iterateDocumentImages();
     void scaleFont();
+    void scaleImages();
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
     /** Initilized as false and set to true once the user drag moves the find widget. */
@@ -112,8 +119,8 @@ private:
     int m_iSelectedMatchIndex;
     int m_iSearchTermLength;
     int m_iInitialFontPointSize;
-    /** A container to store the original image sizes in the document. key is image name value is the width. */
-    QMap<QString, qreal> m_imageSizesMap;
+    /** A container to store the original image sizes/positions in the document. key is image name value is DocumentImage. */
+    QMap<QString, DocumentImage> m_imageMap;
     /** As percentage. */
     int m_iZoomPercentage;
 };
