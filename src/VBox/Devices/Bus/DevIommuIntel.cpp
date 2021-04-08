@@ -448,6 +448,20 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+/**
+ * Gets the number of supported adjusted guest-address width (SAGAW) in bits given a
+ * CAP_REG.SAGAW value.
+ *
+ * @returns Number of SAGAW bits.
+ * @param   uSagaw  The CAP_REG.SAGAW value.
+ */
+DECLINLINE(uint8_t) vtdGetSupGstAddrBits(uint8_t uSagaw)
+{
+    if (uSagaw > 0 && uSagaw < 4)
+        return uSagaw + 2;
+    return 0;
+}
+
 
 /**
  * Gets the group the register belongs to given its MMIO offset.
@@ -1012,8 +1026,10 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
 
     uint64_t const fCap     = dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG);
     uint64_t const fExtCap  = dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG);
-    uint8_t const  uMaxGstAddrWidth = RT_BF_GET(fCap, VTD_BF_CAP_REG_MGAW) + 1;
-    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u)\n", DMAR_LOG_PFX, fCap, fExtCap, uMaxGstAddrWidth));
+    uint8_t const  uMaxGstAddrBits = RT_BF_GET(fCap, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const  uSupGstAddrBits = vtdGetSupGstAddrBits(RT_BF_GET(fCap, VTD_BF_CAP_REG_SAGAW));
+    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits)\n", DMAR_LOG_PFX, fCap, fExtCap, uMaxGstAddrBits,
+            uSupGstAddrBits));
     return VINF_SUCCESS;
 }
 
