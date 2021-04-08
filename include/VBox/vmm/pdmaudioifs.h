@@ -993,10 +993,6 @@ typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 
 
 
-/** @todo r=bird: What is this exactly? */
-#define PPDMAUDIOBACKENDSTREAM void *
-
-
 /** Pointer to a audio connector interface. */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
 
@@ -1202,6 +1198,11 @@ typedef struct PDMIAUDIOCONNECTOR
 /** PDMIAUDIOCONNECTOR interface ID. */
 #define PDMIAUDIOCONNECTOR_IID                  "122511ca-deb3-4630-ad31-ade9f3177df4"
 
+
+/** Opque pointer host audio specific stream data.
+ * @todo r=bird: should extend this to a public part that at least includes a
+ *       PPDMAUDIOSTREAM member. */
+typedef struct PDMAUDIOBACKENDSTREAM *PPDMAUDIOBACKENDSTREAM;
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;

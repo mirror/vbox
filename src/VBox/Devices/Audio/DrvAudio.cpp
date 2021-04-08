@@ -97,7 +97,7 @@ typedef struct DRVAUDIOSTREAM
      *  This data block will be casted by the backend to access its backend-dependent data.
      *
      *  That way the backends do not have access to the audio connector's data. */
-    void               *pvBackend;
+    PPDMAUDIOBACKENDSTREAM pBackend;
 
     /** For output streams this indicates whether the stream has reached
      *  its playback threshold, e.g. is playing audio.
@@ -778,39 +778,39 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             if (fEnabled)
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_ENABLE);
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_ENABLE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_DISABLE);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_DISABLE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
             if (fEnabled) /* Needed, as resume below also is being checked for. */
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_PAUSE);
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_PAUSE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_RESUME:
         {
             if (fEnabled)
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_RESUME);
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_RESUME);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_DRAIN:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_DRAIN);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_DRAIN);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_DROP:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pvBackend, PDMAUDIOSTREAMCMD_DROP);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_DROP);
             break;
         }
 
@@ -848,7 +848,7 @@ static void drvAudioStreamFree(PDRVAUDIOSTREAM pStreamEx)
         Assert(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC);
 
         pStreamEx->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
-        pStreamEx->pvBackend = NULL;
+        pStreamEx->pBackend       = NULL;
         pStreamEx->uMagic         = DRVAUDIOSTREAM_MAGIC_DEAD;
 
         RTMemFree(pStreamEx);
@@ -1045,7 +1045,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     {
         if (   !pThis->Out.fEnabled         /* (see @bugref{9882}) */
             || pThis->pHostDrvAudio == NULL /* (we used to work this condition differently) */
-            || !PDMAudioStrmStatusCanWrite(pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pvBackend)))
+            || !PDMAudioStrmStatusCanWrite(pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend)))
         {
             Log3Func(("[%s] Backend stream %s, discarding the data\n", pStreamEx->Core.szName,
                       !pThis->Out.fEnabled ? "disabled" : !pThis->pHostDrvAudio ? "not attached" : "not ready yet"));
@@ -1356,7 +1356,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
             {
                 if (pThis->pHostDrvAudio->pfnStreamGetPending) /* Optional to implement. */
                 {
-                    const uint32_t cxPending = pThis->pHostDrvAudio->pfnStreamGetPending(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+                    const uint32_t cxPending = pThis->pHostDrvAudio->pfnStreamGetPending(pThis->pHostDrvAudio, pStreamEx->pBackend);
                     Log3Func(("[%s] cxPending=%RU32\n", pStreamEx->Core.szName, cxPending));
 
                     /* Only try close pending if no audio data is pending on the backend-side anymore. */
@@ -1471,7 +1471,7 @@ static int drvAudioStreamPlayDoIt(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, ui
          */
         uint32_t cFramesPlayed = 0;
         uint32_t cbPlayed      = 0;
-        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStreamEx->pvBackend, abChunk, cbRead, &cbPlayed);
+        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStreamEx->pBackend, abChunk, cbRead, &cbPlayed);
         if (RT_SUCCESS(rc))
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
@@ -1548,7 +1548,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
            buffered.  We don't have a direct way of querying that, so instead we'll use
            some heuristics based on number of writable bytes now compared to when
            prebuffering ended the first time around. */
-        uint32_t cbBuffered = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+        uint32_t cbBuffered = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
         if (cbBuffered < pStreamEx->Out.cbBackendMaxWritable)
             cbBuffered = pStreamEx->Out.cbBackendMaxWritable - cbBuffered;
         else
@@ -1579,7 +1579,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
     if (pStreamEx->fThresholdReached)
     {
         /* not-prebuffering, likely after a while at least */
-        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
     }
     else
     {
@@ -1617,7 +1617,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
         }
 
         /* Hack alert! This is for the underrun detection.  */
-        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
         if (cbWritable > pStreamEx->Out.cbBackendMaxWritable)
             pStreamEx->Out.cbBackendMaxWritable = cbWritable;
     }
@@ -1647,7 +1647,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
 
         pStreamEx->nsLastPlayedCaptured = RTTimeNanoTS();
         pStreamEx->Out.Stats.cbBackendWritableAfter = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio,
-                                                                                                 pStreamEx->pvBackend);
+                                                                                                 pStreamEx->pBackend);
     }
     else
         rc = VINF_SUCCESS;
@@ -1726,7 +1726,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
      * ...
      */
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
-    uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+    uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
     if (!cbReadable)
         Log2Func(("[%s] No readable data available\n", pStreamEx->Core.szName));
 
@@ -1746,7 +1746,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
     {
         uint8_t  abChunk[_4K];
         uint32_t cbCaptured;
-        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStreamEx->pvBackend,
+        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStreamEx->pBackend,
                                                     abChunk, RT_MIN(cbReadable, (uint32_t)sizeof(abChunk)), &cbCaptured);
         if (RT_FAILURE(rc))
         {
@@ -1828,7 +1828,7 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
      * ...
      */
     /* Note: Raw means *audio frames*, not bytes! */
-    uint32_t cfReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+    uint32_t cfReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
     if (!cfReadable)
         Log2Func(("[%s] No readable data available\n", pStreamEx->Core.szName));
 
@@ -1854,7 +1854,7 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, 
             break;
 
         uint32_t cfCaptured;
-        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStreamEx->pvBackend,
+        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStreamEx->pBackend,
                                                     paFrames, cfWritable, &cfCaptured);
         if (RT_FAILURE(rc))
         {
@@ -2408,7 +2408,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
      */
     AssertPtr(pThis->pHostDrvAudio);
     if (pThis->pHostDrvAudio)
-        rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pStreamEx->pvBackend, pCfgReq, pCfgAcq);
+        rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pStreamEx->pBackend, pCfgReq, pCfgAcq);
     else
         rc = VERR_PDM_NO_ATTACHED_DRIVER;
     if (RT_FAILURE(rc))
@@ -2797,7 +2797,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
             pStreamEx->Core.enmDir    = pCfgHost->enmDir;
             pStreamEx->Core.cbBackend = (uint32_t)cbHstStrm;
             if (cbHstStrm)
-                pStreamEx->pvBackend = pStreamEx + 1;
+                pStreamEx->pBackend   = (PPDMAUDIOBACKENDSTREAM)(pStreamEx + 1);
             pStreamEx->fNoMixBufs     = RT_BOOL(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF);
             pStreamEx->uMagic         = DRVAUDIOSTREAM_MAGIC;
 
@@ -3037,7 +3037,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
        )
     {
         if (pStreamEx->fNoMixBufs)
-            cbReadable = pThis->pHostDrvAudio ? pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream) : 0;
+            cbReadable = pThis->pHostDrvAudio
+                       ? pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend) : 0;
         else
         {
             const uint32_t cfReadable = AudioMixBufLive(&pStreamEx->Guest.MixBuf);
@@ -3056,7 +3057,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
              */
             PDMAUDIOSTREAMSTS fStatus = PDMAUDIOSTREAMSTS_FLAGS_NONE;
             if (pThis->pHostDrvAudio->pfnStreamGetStatus)
-                fStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+                fStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend);
             if (   !PDMAudioStrmStatusCanRead(fStatus)
                 || fDisabled)
             {
@@ -3111,7 +3112,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     if (PDMAudioStrmStatusCanWrite(pStreamEx->Core.fStatus))
     {
         if (pStreamEx->fNoMixBufs)
-            cbWritable = pThis->pHostDrvAudio ? pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream) : 0;
+            cbWritable = pThis->pHostDrvAudio
+                       ? pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend) : 0;
         else
             cbWritable = AudioMixBufFreeBytes(&pStreamEx->Host.MixBuf);
 
@@ -3203,12 +3205,12 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
 
     if (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED)
     {
-        AssertPtr(pStreamEx->pvBackend);
+        AssertPtr(pStreamEx->pBackend);
 
         /* Check if the pointer to  the host audio driver is still valid.
          * It can be NULL if we were called in drvAudioDestruct, for example. */
         if (pThis->pHostDrvAudio)
-            rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStreamEx->pvBackend);
+            rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStreamEx->pBackend);
 
         pStreamEx->Core.fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
     }

@@ -2064,10 +2064,8 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
     return VINF_SUCCESS;
 }
 
-static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDSTREAM pStream)
+static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
-
     LogFlowFuncEnter();
 
     HRESULT hr = directSoundPlayStop(pThis, pStreamDS, true /* fFlush */);
