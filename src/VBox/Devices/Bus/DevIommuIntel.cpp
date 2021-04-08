@@ -840,13 +840,35 @@ static void dmarR3RegsInitImmutable(PPDMDEVINS pDevIns)
 
 
 /**
- * Initializes read-write registers in the DMAR unit.
+ * Initializes all registers in the DMAR unit.
  *
  * @param   pDevIns     The IOMMU device instance.
  */
-static void dmarR3RegsInitMutable(PPDMDEVINS pDevIns)
+static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 {
-    NOREF(pDevIns);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    RT_ZERO(pThis->abRegs0);
+    RT_ZERO(pThis->abRegs1);
+
+    /* Initialize immutable registers prior to other registers. */
+    dmarR3RegsInitImmutable(pDevIns);
+
+    /* FECTL_REG */
+    {
+        uint32_t const uReg = RT_BF_MAKE(VTD_BF_FECTL_REG_IM, 1);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uReg);
+    }
+    /* ICETL_REG */
+    {
+        uint32_t const uReg = RT_BF_MAKE(VTD_BF_IECTL_REG_IM, 1);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uReg);
+    }
+
+#ifdef VBOX_STRICT
+    uint64_t const fExtCap = dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG);
+    Assert(!RT_BF_GET(fExtCap, VTD_BF_ECAP_REG_PRS));    /* PECTL_REG - Reserved if don't support PRS. */
+    Assert(!RT_BF_GET(fExtCap, VTD_BF_ECAP_REG_MTS));    /* MTRRCAP_REG - Reserved if we don't support MTS. */
+#endif
 }
 
 
@@ -986,8 +1008,7 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Initialize all DMAR registers (order is important).
      */
-    dmarR3RegsInitImmutable(pDevIns);
-    dmarR3RegsInitMutable(pDevIns);
+    dmarR3RegsInit(pDevIns);
 
     LogRel(("%s: Capabilities=%#RX64 Extended-Capabilities=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
             dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG)));
