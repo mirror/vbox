@@ -543,23 +543,9 @@ void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 
 void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
-    /* Disable wheel scaling for now: */
-#if 0
-    int iPreviousSize = font().pointSize();
-    /* QTextBrowser::wheelEvent sets a new font size: */
-    QTextBrowser::wheelEvent(pEvent);
-    /* Don't allow font size to get too large or small: */
-    if (font().pointSize() >= UIHelpBrowserWidget::fontScaleMinMax.second * m_iInitialFontPointSize ||
-        font().pointSize() <= UIHelpBrowserWidget::fontScaleMinMax.first * m_iInitialFontPointSize)
-    {
-        QFont mFont = font();
-        mFont.setPointSize(iPreviousSize);
-        setFont(mFont);
-    }
-    else
-        emit sigFontPointSizeChanged(font().pointSize());
-#endif
+    /* QTextBrowser::wheelEvent scales font when some modifiers are pressed. We dont want: */
+    if (pEvent && pEvent->modifiers() == Qt::NoModifier)
+        QTextBrowser::wheelEvent(pEvent);
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
