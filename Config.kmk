@@ -678,7 +678,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
 endif
 # Enable the QHelp based help function in UI.
-if1of ($(KBUILD_TARGET), darwin linux win)
+if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_QHELP_VIEWER = 1
 endif
 # VBox Ballooning Control frontend.
