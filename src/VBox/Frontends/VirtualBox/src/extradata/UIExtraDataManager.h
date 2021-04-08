@@ -788,6 +788,8 @@ public:
       * @{ */
         void setHelpBrowserLastUrlList(const QStringList &urlList);
         QStringList helpBrowserLastUrlList();
+        void setHelpBrowserZoomPercentage(int iZoomPercentage);
+        int helpBrowserZoomPercentage();
         QRect helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         void setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized);
         bool helpBrowserDialogShouldBeMaximized();

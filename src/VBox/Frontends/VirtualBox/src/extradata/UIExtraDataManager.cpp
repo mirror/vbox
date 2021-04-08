@@ -1983,7 +1983,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LogWindowGeometry
            << GUI_HelpBrowserLastURLList
            << GUI_HelpBrowserDialogGeometry
-           << GUI_HelpBrowserBookmarks;
+           << GUI_HelpBrowserBookmarks
+           << GUI_HelpBrowserZoomPercentage;
 }
 
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
@@ -4602,6 +4603,16 @@ void UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
 QStringList UIExtraDataManager::helpBrowserLastUrlList()
 {
     return extraDataStringList(GUI_HelpBrowserLastURLList);
+}
+
+void UIExtraDataManager::setHelpBrowserZoomPercentage(int iZoomPercentage)
+{
+    setExtraDataString(GUI_HelpBrowserZoomPercentage, QString::number(iZoomPercentage));
+}
+
+int UIExtraDataManager::helpBrowserZoomPercentage()
+{
+    return extraDataString(GUI_HelpBrowserZoomPercentage).toInt();
 }
 
 QRect UIExtraDataManager::helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)

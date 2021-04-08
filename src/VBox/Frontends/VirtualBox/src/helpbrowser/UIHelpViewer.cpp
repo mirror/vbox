@@ -440,23 +440,35 @@ void UIHelpViewer::zoom(ZoomOperation enmZoomOperation)
     switch (enmZoomOperation)
     {
         case ZoomOperation_In:
-            m_iZoomPercentage += iZoomPercentageStep;
+            iPrevZoom += iZoomPercentageStep;
             break;
         case ZoomOperation_Out:
-            m_iZoomPercentage -= iZoomPercentageStep;
+            iPrevZoom -= iZoomPercentageStep;
             break;
         case ZoomOperation_Reset:
         default:
-            m_iZoomPercentage = 100;
+            iPrevZoom = 100;
             break;
     }
+    setZoomPercentage(iPrevZoom);
+}
 
-    if (m_iZoomPercentage > zoomPercentageMinMax.second ||
-        m_iZoomPercentage < zoomPercentageMinMax.first)
-        m_iZoomPercentage = iPrevZoom;
+void UIHelpViewer::setZoomPercentage(int iZoomPercentage)
+{
+    if (iZoomPercentage > zoomPercentageMinMax.second ||
+        iZoomPercentage < zoomPercentageMinMax.first ||
+        m_iZoomPercentage == iZoomPercentage)
+        return;
+
+    m_iZoomPercentage = iZoomPercentage;
     scaleFont();
-
     emit sigZoomPercentageChanged(m_iZoomPercentage);
+}
+
+
+int UIHelpViewer::zoomPercentage() const
+{
+    return m_iZoomPercentage;
 }
 
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)

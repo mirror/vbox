@@ -200,6 +200,8 @@ public:
     void setToolBarVisible(bool fVisible);
     void print(QPrinter &printer);
     void zoom(UIHelpViewer::ZoomOperation enmZoomOperation);
+    int zoomPercentage() const;
+    void setZoomPercentage(int iZoomPercentage);
 
 private slots:
 
@@ -269,6 +271,10 @@ public:
     void printCurrent(QPrinter &printer);
     void setZoomWidgetVisible(bool fToggled);
     void switchToTab(int iIndex);
+    /** returns the zoom percentage of 0th tab. */
+    int zoomPercentage() const;
+    /** Sets the zoom percentage of all tabs. */
+    void setZoomPercentage(int iZoomPercentage);
 
 public slots:
 
@@ -573,6 +579,19 @@ void UIHelpBrowserTab::zoom(UIHelpViewer::ZoomOperation enmZoomOperation)
 {
     if (m_pContentViewer)
         m_pContentViewer->zoom(enmZoomOperation);
+}
+
+void UIHelpBrowserTab::setZoomPercentage(int iZoomPercentage)
+{
+    if (m_pContentViewer)
+        m_pContentViewer->setZoomPercentage(iZoomPercentage);
+}
+
+int UIHelpBrowserTab::zoomPercentage() const
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->zoomPercentage();
+    return 100;
 }
 
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
@@ -976,6 +995,25 @@ void UIHelpBrowserTabManager::switchToTab(int iIndex)
         return;
     setCurrentIndex(iIndex);
 }
+
+int UIHelpBrowserTabManager::zoomPercentage() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(0));
+    if (pTab)
+        return pTab->zoomPercentage();
+    return 100;
+}
+
+void UIHelpBrowserTabManager::setZoomPercentage(int iZoomPercentage)
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (pTab)
+            pTab->setZoomPercentage(iZoomPercentage);
+    }
+}
+
 
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
@@ -1407,6 +1445,8 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
+    if (m_pTabManager)
+        m_pTabManager->setZoomPercentage(gEDataManager->helpBrowserZoomPercentage());
 }
 
 QStringList UIHelpBrowserWidget::loadSavedUrlList()
@@ -1442,7 +1482,10 @@ void UIHelpBrowserWidget::saveBookmarks()
 void UIHelpBrowserWidget::saveOptions()
 {
     if (m_pTabManager)
+    {
         gEDataManager->setHelpBrowserLastUrlList(m_pTabManager->tabUrlList());
+        gEDataManager->setHelpBrowserZoomPercentage(m_pTabManager->zoomPercentage());
+    }
 }
 
 QUrl UIHelpBrowserWidget::findIndexHtml() const

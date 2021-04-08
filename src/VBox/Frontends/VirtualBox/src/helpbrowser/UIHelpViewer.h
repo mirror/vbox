@@ -66,6 +66,8 @@ public:
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
     void zoom(ZoomOperation enmZoomOperation);
+    int zoomPercentage() const;
+    void setZoomPercentage(int iZoomPercentage);
 
     static const QPair<int, int> zoomPercentageMinMax;
 
