@@ -455,10 +455,10 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
  * @returns Number of SAGAW bits.
  * @param   uSagaw  The CAP_REG.SAGAW value.
  */
-DECLINLINE(uint8_t) vtdGetSupGstAddrBits(uint8_t uSagaw)
+static uint8_t vtdGetSupGstAddrBits(uint8_t uSagaw)
 {
     if (uSagaw > 0 && uSagaw < 4)
-        return uSagaw + 2;
+        return 30 + (uSagaw * 9);
     return 0;
 }
 
