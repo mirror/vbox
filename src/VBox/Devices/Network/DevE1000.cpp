@@ -1379,6 +1379,7 @@ static FNE1KREGWRITE e1kRegWriteEERD;
 static FNE1KREGWRITE e1kRegWriteMDIC;
 static FNE1KREGREAD  e1kRegReadICR;
 static FNE1KREGWRITE e1kRegWriteICR;
+static FNE1KREGREAD  e1kRegReadICS;
 static FNE1KREGWRITE e1kRegWriteICS;
 static FNE1KREGWRITE e1kRegWriteIMS;
 static FNE1KREGWRITE e1kRegWriteIMC;
@@ -1434,7 +1435,7 @@ static const struct E1kRegMap_st
     { 0x00038, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "VET"     , "VLAN EtherType" },
     { 0x000c0, 0x00004, 0x0001F6DF, 0x0001F6DF, e1kRegReadICR          , e1kRegWriteICR          , "ICR"     , "Interrupt Cause Read" },
     { 0x000c4, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "ITR"     , "Interrupt Throttling" },
-    { 0x000c8, 0x00004, 0x00000000, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteICS          , "ICS"     , "Interrupt Cause Set" },
+    { 0x000c8, 0x00004, 0x0001F6DF, 0xFFFFFFFF, e1kRegReadICS          , e1kRegWriteICS          , "ICS"     , "Interrupt Cause Set" },
     { 0x000d0, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteIMS          , "IMS"     , "Interrupt Mask Set/Read" },
     { 0x000d8, 0x00004, 0x00000000, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteIMC          , "IMC"     , "Interrupt Mask Clear" },
     { 0x00100, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteRCTL         , "RCTL"    , "Receive Control" },
@@ -3235,6 +3236,25 @@ static int e1kRegReadICR(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, u
     e1kCsLeave(pThis);
 
     return rc;
+}
+
+/**
+ * Read handler for Interrupt Cause Set register.
+ *
+ * VxWorks driver uses this undocumented feature of real H/W to read ICR without acknowledging interrupts.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pThis       The device state structure.
+ * @param   offset      Register offset in memory-mapped frame.
+ * @param   index       Register index in register array.
+ * @param   pu32Value   Where to store the value of the register.
+ * @thread  EMT
+ */
+static int e1kRegReadICS(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
+{
+    RT_NOREF_PV(index);
+    return e1kRegReadDefault(pDevIns, pThis, offset, ICR_IDX, pu32Value);
 }
 
 /**
