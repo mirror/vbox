@@ -445,10 +445,8 @@ static int ossControlStreamIn(/*PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREA
 }
 
 
-static int ossControlStreamOut(PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static int ossControlStreamOut(POSSAUDIOSTREAM pStreamOSS, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
-
     int rc = VINF_SUCCESS;
 
     switch (enmStreamCmd)
