@@ -834,6 +834,8 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
     connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
+    pTabWidget->setZoomPercentage(zoomPercentage());
+
     if (!fBackground)
         setCurrentIndex(index);
 
