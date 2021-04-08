@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -467,6 +467,7 @@ UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, bool fShowToolbar /* =
     , m_pIconSnapshotOffline(0)
     , m_pIconSnapshotOnline(0)
     , m_pTimerUpdateAge(0)
+    , m_pLayoutMain(0)
     , m_pToolBar(0)
     , m_pSnapshotTree(0)
     , m_pCurrentSnapshotItem(0)
@@ -1187,7 +1188,7 @@ void UISnapshotPane::prepare()
 
     /* Create timer: */
     m_pTimerUpdateAge = new QTimer;
-    AssertPtrReturnVoid(m_pTimerUpdateAge);
+    if (m_pTimerUpdateAge)
     {
         /* Configure timer: */
         m_pTimerUpdateAge->setSingleShot(true);
@@ -1255,15 +1256,15 @@ void UISnapshotPane::prepareActions()
 void UISnapshotPane::prepareWidgets()
 {
     /* Create layout: */
-    new QVBoxLayout(this);
-    AssertPtrReturnVoid(layout());
+    m_pLayoutMain = new QVBoxLayout(this);
+    if (m_pLayoutMain)
     {
         /* Configure layout: */
-        layout()->setContentsMargins(0, 0, 0, 0);
+        m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-        layout()->setSpacing(10);
+        m_pLayoutMain->setSpacing(10);
 #else
-        layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+        m_pLayoutMain->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
 
         /* Prepare toolbar, if requested: */
@@ -1297,7 +1298,7 @@ void UISnapshotPane::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Snapshot_S_Clone));
 
         /* Add into layout: */
-        layout()->addWidget(m_pToolBar);
+        m_pLayoutMain->addWidget(m_pToolBar);
     }
 }
 
@@ -1305,7 +1306,7 @@ void UISnapshotPane::prepareTreeWidget()
 {
     /* Create snapshot tree: */
     m_pSnapshotTree = new UISnapshotTree(this);
-    AssertPtrReturnVoid(m_pSnapshotTree);
+    if (m_pSnapshotTree)
     {
         /* Configure tree: */
         connect(m_pSnapshotTree, &UISnapshotTree::currentItemChanged,
@@ -1318,15 +1319,15 @@ void UISnapshotPane::prepareTreeWidget()
                 this, &UISnapshotPane::sltHandleItemDoubleClick);
 
         /* Add into layout: */
-        layout()->addWidget(m_pSnapshotTree);
+        m_pLayoutMain->addWidget(m_pSnapshotTree, 1);
     }
 }
 
 void UISnapshotPane::prepareDetailsWidget()
 {
     /* Create details-widget: */
-    m_pDetailsWidget = new UISnapshotDetailsWidget;
-    AssertPtrReturnVoid(m_pDetailsWidget);
+    m_pDetailsWidget = new UISnapshotDetailsWidget(this);
+    if (m_pDetailsWidget)
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
@@ -1334,7 +1335,7 @@ void UISnapshotPane::prepareDetailsWidget()
                 this, &UISnapshotPane::sltApplySnapshotDetailsChanges);
 
         /* Add into layout: */
-        layout()->addWidget(m_pDetailsWidget);
+        m_pLayoutMain->addWidget(m_pDetailsWidget, 1);
     }
 }
 

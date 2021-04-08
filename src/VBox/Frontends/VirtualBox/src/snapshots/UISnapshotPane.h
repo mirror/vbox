@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,12 +33,13 @@ class QIcon;
 class QReadWriteLock;
 class QTimer;
 class QTreeWidgetItem;
+class QVBoxLayout;
+class QIToolBar;
 class QITreeWidgetItem;
 class UIActionPool;
 class UISnapshotDetailsWidget;
 class UISnapshotItem;
 class UISnapshotTree;
-class QIToolBar;
 
 
 /** Snapshot age format. */
@@ -238,6 +239,9 @@ private:
 
     /** @name Widget variables.
       * @{ */
+        /** Holds the main layout instance. */
+        QVBoxLayout *m_pLayoutMain;
+
         /** Holds the toolbar instance. */
         QIToolBar *m_pToolBar;
 
