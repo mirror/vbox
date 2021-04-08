@@ -29,6 +29,8 @@
 
 /* Forward declarations: */
 class QHelpEngine;
+class QGraphicsBlurEffect;
+class QLabel;
 class UIFindInPageWidget;
 
 #ifdef VBOX_WITH_QHELP_VIEWER
@@ -68,6 +70,7 @@ public:
     void zoom(ZoomOperation enmZoomOperation);
     int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
+    void setHelpFileList(const QList<QUrl> &helpFileList);
 
     static const QPair<int, int> zoomPercentageMinMax;
 
@@ -81,6 +84,9 @@ protected:
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
     virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
 private slots:
 
@@ -109,6 +115,10 @@ private:
     void iterateDocumentImages();
     void scaleFont();
     void scaleImages();
+    /** If there is image at @p globalPosition then its data is loaded to m_overlayPixmap. */
+    void loadImageAtPosition(const QPoint &globalPosition);
+    void clearOverlay();
+
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
     /** Initilized as false and set to true once the user drag moves the find widget. */
@@ -123,6 +133,15 @@ private:
     QMap<QString, DocumentImage> m_imageMap;
     /** As percentage. */
     int m_iZoomPercentage;
+    QCursor m_defaultCursor;
+    QCursor m_handCursor;
+    QList<QUrl> m_helpFileList;
+    QPixmap m_overlayPixmap;
+    bool m_fImageOverlay;
+
+    QWidget *m_pOverlayWidget;
+    QLabel *m_pOverlayLabel;
+    QGraphicsBlurEffect *m_pOverlayBlurEffect;
 };
 
 #endif /* #ifdef VBOX_WITH_QHELP_VIEWER */

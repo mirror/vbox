@@ -202,6 +202,7 @@ public:
     void zoom(UIHelpViewer::ZoomOperation enmZoomOperation);
     int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
+    void setHelpFileList(const QList<QUrl> &helpFileList);
 
 private slots:
 
@@ -275,6 +276,7 @@ public:
     int zoomPercentage() const;
     /** Sets the zoom percentage of all tabs. */
     void setZoomPercentage(int iZoomPercentage);
+    void setHelpFileList(const QList<QUrl> &helpFileList);
 
 public slots:
 
@@ -317,6 +319,7 @@ private:
     bool m_fSwitchToNewTab;
     bool m_fToolBarVisible;
     QStringList m_tabTitleList;
+    QList<QUrl> m_helpFileList;
 };
 
 
@@ -587,6 +590,12 @@ void UIHelpBrowserTab::setZoomPercentage(int iZoomPercentage)
         m_pContentViewer->setZoomPercentage(iZoomPercentage);
 }
 
+void UIHelpBrowserTab::setHelpFileList(const QList<QUrl> &helpFileList)
+{
+    if (m_pContentViewer)
+        m_pContentViewer->setHelpFileList(helpFileList);
+}
+
 int UIHelpBrowserTab::zoomPercentage() const
 {
     if (m_pContentViewer)
@@ -835,6 +844,7 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
     pTabWidget->setZoomPercentage(zoomPercentage());
+    pTabWidget->setHelpFileList(m_helpFileList);
 
     if (!fBackground)
         setCurrentIndex(index);
@@ -1016,6 +1026,10 @@ void UIHelpBrowserTabManager::setZoomPercentage(int iZoomPercentage)
     }
 }
 
+void UIHelpBrowserTabManager::setHelpFileList(const QList<QUrl> &helpFileList)
+{
+    m_helpFileList = helpFileList;
+}
 
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
@@ -1298,6 +1312,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pBookmarksWidget = new UIBookmarksListContainer(this);
     m_pTabWidget = new QITabWidget;
     m_pTabManager = new UIHelpBrowserTabManager(m_pHelpEngine, findIndexHtml(), loadSavedUrlList());
+    m_pTabManager->setHelpFileList(m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList()));
 
     AssertReturnVoid(m_pTabWidget &&
                      m_pHelpEngine &&
