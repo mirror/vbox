@@ -99,7 +99,6 @@ private slots:
 private:
 
     void prepare();
-    //int fontPercentage() const;
 
     QHBoxLayout  *m_pMainLayout;
     QIToolButton *m_pMinusButton;
@@ -188,6 +187,7 @@ signals:
     void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     void sigLinkHighlighted(const QString &strLink);
+    void sigZoomPercentageChanged(int iPercentage);
 
 public:
 
@@ -220,9 +220,6 @@ private:
     void prepareToolBarAndAddressBar();
     virtual void retranslateUi() /* override */;
     void setActionTextAndToolTip(QAction *pAction, const QString &strText, const QString &strToolTip);
-    // int initialFontPointSize() const;
-    // void setFontPointSize(int iPointSize);
-    // int fontPointSize() const;
 
     QAction     *m_pHomeAction;
     QAction     *m_pForwardAction;
@@ -277,6 +274,7 @@ public slots:
 
     void sltHandleCloseCurrentTab();
     void sltHandleCloseOtherTabs();
+    void sltHandleZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
 
 protected:
 
@@ -289,9 +287,9 @@ private slots:
     void sltHandleTabClose(int iTabIndex);
     void sltHandleContextMenuTabClose();
     void sltHandleCurrentChanged(int iTabIndex);
-    void sltHandleZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
     void sltShowTabBarContextMenu(const QPoint &pos);
     void sltHandleCloseOtherTabsContextMenuAction();
+    void sltZoomPercentageChanged(int iPercentage);
 
 private:
 
@@ -304,9 +302,6 @@ private:
     void closeAllTabsBut(int iTabIndex);
     /* Returns the tab index with @Url if there is one. Returns -1 otherwise. */
     int  findTab(const QUrl &Url) const;
-    // void setFontPointSize(int iPointSize);
-    // int  initialFontPointSize() const;
-    // int  fontPointSize() const;
 
     const QHelpEngine* m_pHelpEngine;
     UIZoomWidget *m_pZoomWidget;
@@ -353,8 +348,6 @@ void UIZoomWidget::prepare()
                      m_pResetButton &&
                      m_pPlusButton &&
                      m_pValueLabel);
-
-    //m_pValueLabel->setText(QString("%1%2").arg(QString::number(fontPercentage())).arg("%"));
 
     m_pMinusButton->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
     m_pResetButton->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
@@ -581,37 +574,6 @@ void UIHelpBrowserTab::zoom(UIHelpViewer::ZoomOperation enmZoomOperation)
     if (m_pContentViewer)
         m_pContentViewer->zoom(enmZoomOperation);
 }
-// void UIHelpBrowserTab::setZoomPercentage(int iZoomPercentage)
-// {
-//     if (m_pContentViewer)
-//         m_pContentViewer->setZoomPercentage(iZoomPercentage);
-// }
-
-// int UIHelpBrowserTab::initialFontPointSize() const
-// {
-//     if (m_pContentViewer)
-//         return m_pContentViewer->initialFontPointSize();
-//     return 0;
-// }
-
-// void UIHelpBrowserTab::setFontPointSize(int iPointSize)
-// {
-//     if (m_pContentViewer)
-//     {
-//         if (m_pContentViewer->font().pointSize() == iPointSize)
-//             return;
-//         QFont mFont = m_pContentViewer->font();
-//         mFont.setPointSize(iPointSize);
-//         m_pContentViewer->setFont(mFont);
-//     }
-// }
-
-// int UIHelpBrowserTab::fontPointSize() const
-// {
-//     if (!m_pContentViewer)
-//         return 0;
-//     return m_pContentViewer->font().pointSize();
-// }
 
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
 {
@@ -651,6 +613,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
+    connect(m_pContentViewer, &UIHelpViewer::sigZoomPercentageChanged,
+            this, &UIHelpBrowserTab::sigZoomPercentageChanged);
 
     m_pContentViewer->setSource(initialUrl);
 }
@@ -846,8 +810,8 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
     connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
             this, &UIHelpBrowserTabManager::sigAddBookmark);
-    // connect(pTabWidget, &UIHelpBrowserTab::sigZoomPercentageChanged,
-    //         this, &UIHelpBrowserTabManager::sltHandleZoomOperation);
+    connect(pTabWidget, &UIHelpBrowserTab::sigZoomPercentageChanged,
+            this, &UIHelpBrowserTabManager::sltZoomPercentageChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
@@ -859,6 +823,7 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
         m_pZoomWidget = new UIZoomWidget(this);
         connect(m_pZoomWidget, &UIZoomWidget::sigZoomChanged,
                 this, &UIHelpBrowserTabManager::sltHandleZoomOperation);
+        m_pZoomWidget->setZoomPercentage(100);
     }
 }
 
@@ -999,35 +964,6 @@ void UIHelpBrowserTabManager::paintEvent(QPaintEvent *pEvent)
     QITabWidget::paintEvent(pEvent);
 }
 
-// int UIHelpBrowserTabManager::initialFontPointSize() const
-// {
-//     UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
-//     if (!pTab)
-//         return 0;
-//     return pTab->initialFontPointSize();
-// }
-
-// void UIHelpBrowserTabManager::setFontPointSize(int iPointSize)
-// {
-//     for (int i = 0; i < count(); ++i)
-//     {
-//         UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
-//         if (!pTab)
-//             continue;
-//         pTab->setFontPointSize(iPointSize);
-//     }
-//     // if (m_pZoomWidget)
-//     //     m_pZoomWidget->setFontPointSize(iPointSize);
-// }
-
-// int UIHelpBrowserTabManager::fontPointSize() const
-// {
-//     UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
-//     if (!pTab)
-//         return 0;
-//     return pTab->fontPointSize();
-// }
-
 void UIHelpBrowserTabManager::setZoomWidgetVisible(bool fToggled)
 {
     if (m_pZoomWidget)
@@ -1095,6 +1031,12 @@ void UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction()
     if (iTabIndex < 0 || iTabIndex >= count())
         return;
     closeAllTabsBut(iTabIndex);
+}
+
+void UIHelpBrowserTabManager::sltZoomPercentageChanged(int iPercentage)
+{
+    if (m_pZoomWidget)
+        m_pZoomWidget->setZoomPercentage(iPercentage);
 }
 
 void UIHelpBrowserTabManager::sltHandleCloseCurrentTab()
@@ -1198,7 +1140,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pShowHideStatusBarAction(0)
     , m_pZoomInAction(0)
     , m_pZoomOutAction(0)
-    , m_pFontSizeResetAction(0)
+    , m_pZoomResetAction(0)
     , m_fModelContentCreated(false)
     , m_fIndexingFinished(false)
 {
@@ -1295,14 +1237,14 @@ void UIHelpBrowserWidget::prepareActions()
     m_pZoomOutAction = new QAction(this);
     m_pZoomOutAction->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
 
-    m_pFontSizeResetAction = new QAction(this);
-    m_pFontSizeResetAction->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
+    m_pZoomResetAction = new QAction(this);
+    m_pZoomResetAction->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
 
     connect(m_pZoomInAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltHandleZoomActions);
     connect(m_pZoomOutAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltHandleZoomActions);
-    connect(m_pFontSizeResetAction, &QAction::triggered,
+    connect(m_pZoomResetAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltHandleZoomActions);
 }
 
@@ -1450,8 +1392,8 @@ void UIHelpBrowserWidget::prepareMenu()
         m_pViewMenu->addAction(m_pZoomInAction);
     if (m_pZoomOutAction)
         m_pViewMenu->addAction(m_pZoomOutAction);
-    if (m_pFontSizeResetAction)
-        m_pViewMenu->addAction(m_pFontSizeResetAction);
+    if (m_pZoomResetAction)
+        m_pViewMenu->addAction(m_pZoomResetAction);
     m_pViewMenu->addSeparator();
     if (m_pShowHideSideBarAction)
         m_pViewMenu->addAction(m_pShowHideSideBarAction);
@@ -1577,7 +1519,7 @@ void UIHelpBrowserWidget::retranslateUi()
     if (m_pShowHideToolBarAction)
         m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
     if (m_pShowHideZoomWidgetAction)
-        m_pShowHideZoomWidgetAction->setText(tr("Show Font Scale Widget"));
+        m_pShowHideZoomWidgetAction->setText(tr("Show Zoom Widget"));
     if (m_pShowHideStatusBarAction)
         m_pShowHideStatusBarAction->setText(tr("Show Status Bar"));
 
@@ -1591,8 +1533,8 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pZoomInAction->setText(tr("Zoom &In"));
     if (m_pZoomOutAction)
         m_pZoomOutAction->setText(tr("Zoom &Out"));
-    if (m_pFontSizeResetAction)
-        m_pFontSizeResetAction->setText(tr("&Reset Zoom"));
+    if (m_pZoomResetAction)
+        m_pZoomResetAction->setText(tr("&Reset Zoom"));
 }
 
 
@@ -1863,20 +1805,16 @@ void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
 
 void UIHelpBrowserWidget::sltHandleZoomActions()
 {
-    // if (!sender() || !m_pTabManager)
-    //     return;
-    // int iFontPointSize = m_pTabManager->fontPointSize();
-    // if (sender() == m_pFontSizeResetAction)
-    //     iFontPointSize = m_pTabManager->initialFontPointSize();
-    // else if (sender() == m_pZoomInAction)
-    //     iFontPointSize += iZoomPercentageStep;
-    // else if (sender() == m_pZoomOutAction)
-    //     iFontPointSize -= iZoomPercentageStep;
-
-    // if (iFontPointSize >= zoomPercentageMinMax.second * m_pTabManager->initialFontPointSize() ||
-    //     iFontPointSize <= zoomPercentageMinMax.first * m_pTabManager->initialFontPointSize())
-    //     return;
-    // m_pTabManager->setFontPointSize(iFontPointSize);
+    if (!sender() || !m_pTabManager)
+        return;
+    UIHelpViewer::ZoomOperation enmOperation = UIHelpViewer::ZoomOperation_Reset;
+    if (sender() == m_pZoomResetAction)
+        enmOperation = UIHelpViewer::ZoomOperation_Reset;
+    else if (sender() == m_pZoomInAction)
+        enmOperation = UIHelpViewer::ZoomOperation_In;
+    else if (sender() == m_pZoomOutAction)
+        enmOperation = UIHelpViewer::ZoomOperation_Out;
+    m_pTabManager->sltHandleZoomOperation(enmOperation);
 }
 
 void UIHelpBrowserWidget::sltHandleTabListChanged(const QStringList &titleList)

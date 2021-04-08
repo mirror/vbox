@@ -49,7 +49,7 @@
 
 #ifdef VBOX_WITH_QHELP_VIEWER
 
-//static int iZoomPercentageStep = 20;
+static int iZoomPercentageStep = 20;
 const QPair<int, int> UIHelpViewer::zoomPercentageMinMax = QPair<int, int>(20, 300);
 
 
@@ -340,6 +340,7 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     , m_iMarginForFindWidget(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
+    , m_iZoomPercentage(100)
 {
     m_iInitialFontPointSize = font().pointSize();
     setUndoRedoEnabled(true);
@@ -414,11 +415,6 @@ void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
         m_pFindInPageWidget->setFocus();
 }
 
-int UIHelpViewer::initialFontPointSize() const
-{
-    return m_iInitialFontPointSize;
-}
-
 void UIHelpViewer::setFont(const QFont &font)
 {
     QIWithRetranslateUI<QTextBrowser>::setFont(font);
@@ -440,9 +436,28 @@ bool UIHelpViewer::isFindInPageWidgetVisible() const
 
 void UIHelpViewer::zoom(ZoomOperation enmZoomOperation)
 {
-    Q_UNUSED(enmZoomOperation);
-}
+    int iPrevZoom = m_iZoomPercentage;
+    switch (enmZoomOperation)
+    {
+        case ZoomOperation_In:
+            m_iZoomPercentage += iZoomPercentageStep;
+            break;
+        case ZoomOperation_Out:
+            m_iZoomPercentage -= iZoomPercentageStep;
+            break;
+        case ZoomOperation_Reset:
+        default:
+            m_iZoomPercentage = 100;
+            break;
+    }
 
+    if (m_iZoomPercentage > zoomPercentageMinMax.second ||
+        m_iZoomPercentage < zoomPercentageMinMax.first)
+        m_iZoomPercentage = iPrevZoom;
+    scaleFont();
+
+    emit sigZoomPercentageChanged(m_iZoomPercentage);
+}
 
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 {
@@ -639,22 +654,6 @@ void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
     setTextCursor(cursor);
 }
 
-void UIHelpViewer::iterateDocumentImages()
-{
-    m_imageSizesMap.clear();
-    QTextCursor cursor = textCursor();
-    cursor.movePosition(QTextCursor::Start);
-    while (!cursor.atEnd())
-    {
-        cursor.movePosition(QTextCursor::NextCharacter);
-        if (cursor.charFormat().isImageFormat())
-        {
-           QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
-           m_imageSizesMap[imageFormat.name()] = imageFormat.width();
-        }
-    }
-}
-
 void UIHelpViewer::sltHandleOpenLinkInNewTab()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
@@ -728,6 +727,29 @@ void UIHelpViewer::sltSelectNextMatch()
     selectMatch(m_iSelectedMatchIndex, m_iSearchTermLength);
     if (m_pFindInPageWidget)
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
+}
+
+void UIHelpViewer::iterateDocumentImages()
+{
+    m_imageSizesMap.clear();
+    QTextCursor cursor = textCursor();
+    cursor.movePosition(QTextCursor::Start);
+    while (!cursor.atEnd())
+    {
+        cursor.movePosition(QTextCursor::NextCharacter);
+        if (cursor.charFormat().isImageFormat())
+        {
+           QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
+           m_imageSizesMap[imageFormat.name()] = imageFormat.width();
+        }
+    }
+}
+
+void UIHelpViewer::scaleFont()
+{
+    QFont mFont = font();
+    mFont.setPointSize(m_iInitialFontPointSize * m_iZoomPercentage / 100.);
+    setFont(mFont);
 }
 
 #include "UIHelpViewer.moc"

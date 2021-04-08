@@ -35,6 +35,7 @@ class UIFindInPageWidget;
 
 class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 {
+
     Q_OBJECT;
 
 signals:
@@ -46,6 +47,7 @@ signals:
     void sigGoForward();
     void sigGoHome();
     void sigAddBookmark();
+    void sigZoomPercentageChanged(int iPercentage);
 
 public:
 
@@ -61,7 +63,6 @@ public:
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
     void setSource(const QUrl &url) /* override */;
-    int initialFontPointSize() const;
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
     void zoom(ZoomOperation enmZoomOperation);
@@ -98,6 +99,7 @@ private:
     void highlightFinds(int iSearchTermLength);
     void selectMatch(int iMatchIndex, int iSearchStringLength);
     void iterateDocumentImages();
+    void scaleFont();
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
     /** Initilized as false and set to true once the user drag moves the find widget. */
@@ -110,6 +112,8 @@ private:
     int m_iInitialFontPointSize;
     /** A container to store the original image sizes in the document. key is image name value is the width. */
     QMap<QString, qreal> m_imageSizesMap;
+    /** As percentage. */
+    int m_iZoomPercentage;
 };
 
 #endif /* #ifdef VBOX_WITH_QHELP_VIEWER */

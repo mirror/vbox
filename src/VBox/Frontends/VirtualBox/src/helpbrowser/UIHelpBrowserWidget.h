@@ -168,7 +168,7 @@ private:
     QAction             *m_pShowHideStatusBarAction;
     QAction             *m_pZoomInAction;
     QAction             *m_pZoomOutAction;
-    QAction             *m_pFontSizeResetAction;
+    QAction             *m_pZoomResetAction;
 
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
