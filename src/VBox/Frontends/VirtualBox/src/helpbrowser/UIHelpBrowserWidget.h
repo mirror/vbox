@@ -67,8 +67,6 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
-    static const QPair<float, float> fontScaleMinMax;
-
 protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
@@ -166,10 +164,10 @@ private:
     QAction             *m_pCloseDialogAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
-    QAction             *m_pShowHideFontScaleWidgetAction;
+    QAction             *m_pShowHideZoomWidgetAction;
     QAction             *m_pShowHideStatusBarAction;
-    QAction             *m_pFontSizeLargerAction;
-    QAction             *m_pFontSizeSmallerAction;
+    QAction             *m_pZoomInAction;
+    QAction             *m_pZoomOutAction;
     QAction             *m_pFontSizeResetAction;
 
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */

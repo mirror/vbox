@@ -49,6 +49,14 @@ signals:
 
 public:
 
+    enum ZoomOperation
+    {
+        ZoomOperation_In = 0,
+        ZoomOperation_Out,
+        ZoomOperation_Reset,
+        ZoomOperation_Max
+    };
+
     UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
@@ -56,6 +64,9 @@ public:
     int initialFontPointSize() const;
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
+    void zoom(ZoomOperation enmZoomOperation);
+
+    static const QPair<int, int> zoomPercentageMinMax;
 
 public slots:
 

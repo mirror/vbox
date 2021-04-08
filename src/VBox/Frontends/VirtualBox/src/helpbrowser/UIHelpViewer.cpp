@@ -49,6 +49,9 @@
 
 #ifdef VBOX_WITH_QHELP_VIEWER
 
+//static int iZoomPercentageStep = 20;
+const QPair<int, int> UIHelpViewer::zoomPercentageMinMax = QPair<int, int>(20, 300);
+
 
 /*********************************************************************************************************************************
 *   UIContextMenuNavigationAction definition.                                                                                    *
@@ -434,6 +437,12 @@ bool UIHelpViewer::isFindInPageWidgetVisible() const
         return m_pFindInPageWidget->isVisible();
     return false;
 }
+
+void UIHelpViewer::zoom(ZoomOperation enmZoomOperation)
+{
+    Q_UNUSED(enmZoomOperation);
+}
+
 
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 {
