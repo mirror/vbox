@@ -791,7 +791,7 @@ static void dmarR3RegsInitImmutable(PPDMDEVINS pDevIns)
                             | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,   0)  /* Protected High-Memory Region not supported. */
                             | RT_BF_MAKE(VTD_BF_CAP_REG_CM,     1)  /** @todo Figure out if required when we impl. caching. */
                             | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,  0)  /* 0 as Second-level Translation not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   cGstPhysAddrBits)
+                            | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   cGstPhysAddrBits - 1)
                             | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,    1)  /** @todo Zero-length read? */
                             | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    DMAR_MMIO_OFF_FRCD_LO_REG >> 4)
                             | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,  DMAR_CAP_LARGE_PAGE_LVL)
@@ -855,13 +855,13 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
     /* FECTL_REG */
     {
-        uint32_t const uReg = RT_BF_MAKE(VTD_BF_FECTL_REG_IM, 1);
-        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uReg);
+        uint32_t const uCtl = RT_BF_MAKE(VTD_BF_FECTL_REG_IM, 1);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uCtl);
     }
     /* ICETL_REG */
     {
-        uint32_t const uReg = RT_BF_MAKE(VTD_BF_IECTL_REG_IM, 1);
-        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uReg);
+        uint32_t const uCtl = RT_BF_MAKE(VTD_BF_IECTL_REG_IM, 1);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uCtl);
     }
 
 #ifdef VBOX_STRICT
@@ -1010,8 +1010,10 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
      */
     dmarR3RegsInit(pDevIns);
 
-    LogRel(("%s: Capabilities=%#RX64 Extended-Capabilities=%#RX64\n", DMAR_LOG_PFX, dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG),
-            dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG)));
+    uint64_t const fCap     = dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG);
+    uint64_t const fExtCap  = dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG);
+    uint8_t const  uMaxGstAddrWidth = RT_BF_GET(fCap, VTD_BF_CAP_REG_MGAW) + 1;
+    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u)\n", DMAR_LOG_PFX, fCap, fExtCap, uMaxGstAddrWidth));
     return VINF_SUCCESS;
 }
 
