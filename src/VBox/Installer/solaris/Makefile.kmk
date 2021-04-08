@@ -361,6 +361,7 @@ ifdef VBOX_WITH_QTGUI
   	libQt5XcbQpaVBox.so.5 \
   	libQt5PrintSupportVBox.so.5 \
   	libQt5HelpVBox.so.5 \
+  	libQt5NetworkVBox.so.5 \
   	libQt5SqlVBox.so.5 \
   	libQt5DBusVBox.so.5 \
   	libQt5X11ExtrasVBox.so.5 \
