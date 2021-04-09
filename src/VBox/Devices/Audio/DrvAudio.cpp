@@ -3453,7 +3453,7 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
     AssertPtrReturn(pVol, VERR_INVALID_POINTER);
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(pStreamEx->fNoMixBufs, VWRN_INVALID_STATE);
+    AssertReturn(!pStreamEx->fNoMixBufs, VWRN_INVALID_STATE);
 
     LogFlowFunc(("[%s] volL=%RU32, volR=%RU32, fMute=%RTbool\n", pStreamEx->Core.szName, pVol->uLeft, pVol->uRight, pVol->fMuted));
 
