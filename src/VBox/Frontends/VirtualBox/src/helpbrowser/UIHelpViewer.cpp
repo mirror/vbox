@@ -453,6 +453,7 @@ bool UIHelpViewer::isFindInPageWidgetVisible() const
 
 void UIHelpViewer::zoom(ZoomOperation enmZoomOperation)
 {
+    clearOverlay();
     int iPrevZoom = m_iZoomPercentage;
     switch (enmZoomOperation)
     {
