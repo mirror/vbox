@@ -45,6 +45,7 @@ class QIToolBar;
 class UIActionPool;
 class UIBookmarksListContainer;
 class UIHelpBrowserTabManager;
+class UIZoomMenuAction;
 
 #ifdef VBOX_WITH_QHELP_VIEWER
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
@@ -90,10 +91,11 @@ private slots:
     void sltOpenLink();
     void sltCopyLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
-    void sltHandleZoomActions();
+    void sltHandleZoomActions(int iZoomOperation);
     void sltHandleTabListChanged(const QStringList &titleList);
     void sltHandleTabChoose();
     void sltHandleCurrentTabChanged(int iIndex);
+    void sltZoomPercentageChanged(int iPercentage);
 
 private:
 
@@ -164,11 +166,8 @@ private:
     QAction             *m_pCloseDialogAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
-    QAction             *m_pShowHideZoomWidgetAction;
     QAction             *m_pShowHideStatusBarAction;
-    QAction             *m_pZoomInAction;
-    QAction             *m_pZoomOutAction;
-    QAction             *m_pZoomResetAction;
+    UIZoomMenuAction    *m_pZoomMenuAction;
 
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;

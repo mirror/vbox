@@ -77,12 +77,6 @@ public:
     void setBackwardAvailable(bool fAvailable);
     void setForwardAvailable(bool fAvailable);
 
-protected:
-
-
-private slots:
-
-
 private:
 
     void prepare();
@@ -184,7 +178,6 @@ void UIContextMenuNavigationAction::prepare()
     pMainLayout->addWidget(m_pHomeButton);
     pMainLayout->addWidget(m_pAddBookmarkButton);
     pMainLayout->setContentsMargins(0, 0, 0, 0);
-    //pMainLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed));
 
     connect(m_pBackwardButton, &QIToolButton::pressed,
             this, &UIContextMenuNavigationAction::sigGoBackward);

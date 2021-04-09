@@ -38,6 +38,7 @@
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
 #endif
+#include <QWidgetAction>
 
 /* GUI includes: */
 #include "QIAdvancedSlider.h"
@@ -70,22 +71,20 @@ Q_DECLARE_METATYPE(HelpBrowserTabs);
 static const int iBookmarkUrlDataType = 6;
 
 /*********************************************************************************************************************************
-*   UIZoomWidget definition.                                                                                         *
+*   UIZoomMenuAction definition.                                                                                    *
 *********************************************************************************************************************************/
-class UIZoomWidget : public QIWithRetranslateUI<QWidget>
+class UIZoomMenuAction : public QIWithRetranslateUI<QWidgetAction>
 {
 
     Q_OBJECT;
 
 signals:
 
-    void sigZoomChanged(UIHelpViewer::ZoomOperation enmOperation);
+    void sigZoomChanged(int iOperation);
 
 public:
 
-
-    UIZoomWidget(QWidget *pParent = 0);
-    int zoomPercentage() const;
+    UIZoomMenuAction(QWidget *pParent = 0);
     void setZoomPercentage(int iZoomPercentage);
 
 protected:
@@ -100,11 +99,11 @@ private:
 
     void prepare();
 
-    QHBoxLayout  *m_pMainLayout;
     QIToolButton *m_pMinusButton;
     QIToolButton *m_pResetButton;
     QIToolButton *m_pPlusButton;
     QLabel *m_pValueLabel;
+    QLabel *m_pLabel;
 };
 
 
@@ -254,6 +253,7 @@ signals:
     /** list.first is tab title and list.second is tab's index. */
     void sigTabsListChanged(const QStringList &titleList);
     void sigLinkHighlighted(const QString &strLink);
+    void sigZoomPercentageChanged(int iPercentage);
 
 public:
 
@@ -270,9 +270,8 @@ public:
     void setSource(const QUrl &url, bool fNewTab = false);
     void setToolBarVisible(bool fVisible);
     void printCurrent(QPrinter &printer);
-    void setZoomWidgetVisible(bool fToggled);
     void switchToTab(int iIndex);
-    /** returns the zoom percentage of 0th tab. */
+    /** Returns the zoom percentage of 0th tab. */
     int zoomPercentage() const;
     /** Sets the zoom percentage of all tabs. */
     void setZoomPercentage(int iZoomPercentage);
@@ -284,10 +283,6 @@ public slots:
     void sltHandleCloseOtherTabs();
     void sltHandleZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
 
-protected:
-
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-
 private slots:
 
     void sltHandletabTitleChange(const QString &strTitle);
@@ -297,7 +292,6 @@ private slots:
     void sltHandleCurrentChanged(int iTabIndex);
     void sltShowTabBarContextMenu(const QPoint &pos);
     void sltHandleCloseOtherTabsContextMenuAction();
-    void sltZoomPercentageChanged(int iPercentage);
 
 private:
 
@@ -312,7 +306,6 @@ private:
     int  findTab(const QUrl &Url) const;
 
     const QHelpEngine* m_pHelpEngine;
-    UIZoomWidget *m_pZoomWidget;
     QUrl m_homeUrl;
     QStringList m_savedUrlList;
     /** Immediately switch the newly created tab. Otherwise open the tab in background. */
@@ -324,35 +317,50 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIZoomWidget implementation.                                                                                          *
+*   UIZoomMenuAction implementation.                                                                                *
 *********************************************************************************************************************************/
-
-UIZoomWidget::UIZoomWidget(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QWidget>(pParent)
-    , m_pMainLayout(0)
+UIZoomMenuAction::UIZoomMenuAction(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QWidgetAction>(pParent)
     , m_pMinusButton(0)
     , m_pResetButton(0)
     , m_pPlusButton(0)
     , m_pValueLabel(0)
+    , m_pLabel(0)
 {
     prepare();
+    retranslateUi();
 }
 
-void UIZoomWidget::retranslateUi()
+void UIZoomMenuAction::setZoomPercentage(int iZoomPercentage)
 {
+    if (m_pValueLabel)
+        m_pValueLabel->setText(QString("%1%2").arg(QString::number(iZoomPercentage)).arg("%"));
 }
 
-void UIZoomWidget::prepare()
+void UIZoomMenuAction::retranslateUi()
 {
-    setAutoFillBackground(true);
-    m_pMainLayout = new QHBoxLayout(this);
-    AssertReturnVoid(m_pMainLayout);
-    m_pMainLayout->setSpacing(0);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+    if (m_pLabel)
+        m_pLabel->setText(UIHelpBrowserWidget::tr("Zoom"));
+}
+
+void UIZoomMenuAction::prepare()
+{
+    QWidget *pWidget = new QWidget;
+    setDefaultWidget(pWidget);
+    // if (pWidget)
+    //     pWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+    QHBoxLayout *pMainLayout = new QHBoxLayout(pWidget);
+    pMainLayout->setSpacing(0);
+    AssertReturnVoid(pMainLayout);
+
+    m_pLabel = new QLabel;
     m_pMinusButton = new QIToolButton;
     m_pResetButton = new QIToolButton;
     m_pPlusButton = new QIToolButton;
     m_pValueLabel = new QLabel;
+    m_pValueLabel->setAlignment(Qt::AlignCenter);
+    m_pValueLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     AssertReturnVoid(m_pMinusButton &&
                      m_pResetButton &&
                      m_pPlusButton &&
@@ -362,23 +370,18 @@ void UIZoomWidget::prepare()
     m_pResetButton->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
     m_pPlusButton->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
 
-    connect(m_pPlusButton, &QIToolButton::pressed, this, &UIZoomWidget::sltZoomOperation);
-    connect(m_pMinusButton, &QIToolButton::pressed, this, &UIZoomWidget::sltZoomOperation);
-    connect(m_pResetButton, &QIToolButton::pressed, this, &UIZoomWidget::sltZoomOperation);
+    connect(m_pPlusButton, &QIToolButton::pressed, this, &UIZoomMenuAction::sltZoomOperation);
+    connect(m_pMinusButton, &QIToolButton::pressed, this, &UIZoomMenuAction::sltZoomOperation);
+    connect(m_pResetButton, &QIToolButton::pressed, this, &UIZoomMenuAction::sltZoomOperation);
 
-    m_pMainLayout->addWidget(m_pResetButton);
-    m_pMainLayout->addWidget(m_pMinusButton);
-    m_pMainLayout->addWidget(m_pValueLabel);
-    m_pMainLayout->addWidget(m_pPlusButton);
+    pMainLayout->addWidget(m_pLabel);
+    pMainLayout->addWidget(m_pResetButton);
+    pMainLayout->addWidget(m_pMinusButton);
+    pMainLayout->addWidget(m_pValueLabel, Qt::AlignCenter);
+    pMainLayout->addWidget(m_pPlusButton);
 }
 
-void UIZoomWidget::setZoomPercentage(int iZoomPercentage)
-{
-    if (m_pValueLabel)
-        m_pValueLabel->setText(QString("%1%2").arg(QString::number(iZoomPercentage)).arg("%"));
-}
-
-void UIZoomWidget::sltZoomOperation()
+void UIZoomMenuAction::sltZoomOperation()
 {
     if (!sender())
         return;
@@ -389,7 +392,7 @@ void UIZoomWidget::sltZoomOperation()
         enmOperation = UIHelpViewer::ZoomOperation_In;
     else if (sender() == m_pResetButton)
         enmOperation = UIHelpViewer::ZoomOperation_Reset;
-    emit sigZoomChanged(enmOperation);
+    emit sigZoomChanged((int)enmOperation);
 }
 
 
@@ -806,7 +809,6 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
                                                  const QStringList &urlList, QWidget *pParent /* = 0 */)
     : QITabWidget(pParent)
     , m_pHelpEngine(pHelpEngine)
-    , m_pZoomWidget(0)
     , m_homeUrl(homeUrl)
     , m_savedUrlList(urlList)
     , m_fSwitchToNewTab(true)
@@ -839,7 +841,7 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
     connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
             this, &UIHelpBrowserTabManager::sigAddBookmark);
     connect(pTabWidget, &UIHelpBrowserTab::sigZoomPercentageChanged,
-            this, &UIHelpBrowserTabManager::sltZoomPercentageChanged);
+            this, &UIHelpBrowserTabManager::sigZoomPercentageChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
@@ -848,14 +850,6 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
 
     if (!fBackground)
         setCurrentIndex(index);
-
-    if (!m_pZoomWidget)
-    {
-        m_pZoomWidget = new UIZoomWidget(this);
-        connect(m_pZoomWidget, &UIZoomWidget::sigZoomChanged,
-                this, &UIHelpBrowserTabManager::sltHandleZoomOperation);
-        m_pZoomWidget->setZoomPercentage(100);
-    }
 }
 
 void UIHelpBrowserTabManager::updateTabUrlTitleList()
@@ -984,23 +978,6 @@ void UIHelpBrowserTabManager::printCurrent(QPrinter &printer)
     return pTab->print(printer);
 }
 
-void UIHelpBrowserTabManager::paintEvent(QPaintEvent *pEvent)
-{
-    if (m_pZoomWidget)
-    {
-        int iMargin = 1.5 * qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
-        m_pZoomWidget->move(width() - m_pZoomWidget->width() - iMargin,
-                            height() - m_pZoomWidget->height() - iMargin);
-    }
-    QITabWidget::paintEvent(pEvent);
-}
-
-void UIHelpBrowserTabManager::setZoomWidgetVisible(bool fToggled)
-{
-    if (m_pZoomWidget)
-        m_pZoomWidget->setVisible(fToggled);
-}
-
 void UIHelpBrowserTabManager::switchToTab(int iIndex)
 {
     if (iIndex == currentIndex())
@@ -1085,12 +1062,6 @@ void UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction()
     if (iTabIndex < 0 || iTabIndex >= count())
         return;
     closeAllTabsBut(iTabIndex);
-}
-
-void UIHelpBrowserTabManager::sltZoomPercentageChanged(int iPercentage)
-{
-    if (m_pZoomWidget)
-        m_pZoomWidget->setZoomPercentage(iPercentage);
 }
 
 void UIHelpBrowserTabManager::sltHandleCloseCurrentTab()
@@ -1190,11 +1161,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pPrintAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
-    , m_pShowHideZoomWidgetAction(0)
     , m_pShowHideStatusBarAction(0)
-    , m_pZoomInAction(0)
-    , m_pZoomOutAction(0)
-    , m_pZoomResetAction(0)
+    , m_pZoomMenuAction(0)
     , m_fModelContentCreated(false)
     , m_fIndexingFinished(false)
 {
@@ -1263,12 +1231,6 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pShowHideToolBarAction, &QAction::toggled,
             this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
-    m_pShowHideZoomWidgetAction = new QAction(this);
-    m_pShowHideZoomWidgetAction->setCheckable(true);
-    m_pShowHideZoomWidgetAction->setChecked(true);
-    connect(m_pShowHideZoomWidgetAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
-
     m_pShowHideStatusBarAction = new QAction(this);
     m_pShowHideStatusBarAction->setCheckable(true);
     m_pShowHideStatusBarAction->setChecked(true);
@@ -1284,21 +1246,8 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pCloseDialogAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigCloseDialog);
 
-    /* For size control actions: */
-    m_pZoomInAction = new QAction(this);
-    m_pZoomInAction->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
-
-    m_pZoomOutAction = new QAction(this);
-    m_pZoomOutAction->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
-
-    m_pZoomResetAction = new QAction(this);
-    m_pZoomResetAction->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
-
-    connect(m_pZoomInAction, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltHandleZoomActions);
-    connect(m_pZoomOutAction, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltHandleZoomActions);
-    connect(m_pZoomResetAction, &QAction::triggered,
+    m_pZoomMenuAction = new UIZoomMenuAction(this);
+    connect(m_pZoomMenuAction, &UIZoomMenuAction::sigZoomChanged,
             this, &UIHelpBrowserWidget::sltHandleZoomActions);
 }
 
@@ -1347,6 +1296,8 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleCurrentTabChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigLinkHighlighted,
             this, &UIHelpBrowserWidget::sigLinkHighlighted);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigZoomPercentageChanged,
+            this, &UIHelpBrowserWidget::sltZoomPercentageChanged);
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
@@ -1443,19 +1394,12 @@ void UIHelpBrowserWidget::prepareMenu()
     if (m_pCloseDialogAction)
         m_pFileMenu->addAction(m_pCloseDialogAction);
 
-    if (m_pZoomInAction)
-        m_pViewMenu->addAction(m_pZoomInAction);
-    if (m_pZoomOutAction)
-        m_pViewMenu->addAction(m_pZoomOutAction);
-    if (m_pZoomResetAction)
-        m_pViewMenu->addAction(m_pZoomResetAction);
-    m_pViewMenu->addSeparator();
+    if (m_pZoomMenuAction)
+        m_pViewMenu->addAction(m_pZoomMenuAction);
     if (m_pShowHideSideBarAction)
         m_pViewMenu->addAction(m_pShowHideSideBarAction);
     if (m_pShowHideToolBarAction)
         m_pViewMenu->addAction(m_pShowHideToolBarAction);
-    if (m_pShowHideZoomWidgetAction)
-        m_pViewMenu->addAction(m_pShowHideZoomWidgetAction);
     if (m_pShowHideStatusBarAction)
         m_pViewMenu->addAction(m_pShowHideStatusBarAction);
 }
@@ -1578,23 +1522,13 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pShowHideSideBarAction->setText(tr("Show Side Bar"));
     if (m_pShowHideToolBarAction)
         m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
-    if (m_pShowHideZoomWidgetAction)
-        m_pShowHideZoomWidgetAction->setText(tr("Show Zoom Widget"));
     if (m_pShowHideStatusBarAction)
         m_pShowHideStatusBarAction->setText(tr("Show Status Bar"));
-
 
     if (m_pPrintAction)
         m_pPrintAction->setText(tr("Print..."));
     if (m_pCloseDialogAction)
         m_pCloseDialogAction->setText(tr("Close"));
-
-    if (m_pZoomInAction)
-        m_pZoomInAction->setText(tr("Zoom &In"));
-    if (m_pZoomOutAction)
-        m_pZoomOutAction->setText(tr("Zoom &Out"));
-    if (m_pZoomResetAction)
-        m_pZoomResetAction->setText(tr("&Reset Zoom"));
 }
 
 
@@ -1633,11 +1567,6 @@ void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
     {
         if (m_pTabManager)
             m_pTabManager->setToolBarVisible(fToggled);
-    }
-    else if (sender() == m_pShowHideZoomWidgetAction)
-    {
-        if (m_pTabManager)
-            m_pTabManager->setZoomWidgetVisible(fToggled);
     }
     else if (sender() == m_pShowHideStatusBarAction)
         emit sigStatusBarVisible(fToggled);
@@ -1863,17 +1792,11 @@ void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
         m_pTabManager->setSource(url, false);
 }
 
-void UIHelpBrowserWidget::sltHandleZoomActions()
+void UIHelpBrowserWidget::sltHandleZoomActions(int iZoomOperation)
 {
-    if (!sender() || !m_pTabManager)
+    if (iZoomOperation >= (int) UIHelpViewer::ZoomOperation_Max)
         return;
-    UIHelpViewer::ZoomOperation enmOperation = UIHelpViewer::ZoomOperation_Reset;
-    if (sender() == m_pZoomResetAction)
-        enmOperation = UIHelpViewer::ZoomOperation_Reset;
-    else if (sender() == m_pZoomInAction)
-        enmOperation = UIHelpViewer::ZoomOperation_In;
-    else if (sender() == m_pZoomOutAction)
-        enmOperation = UIHelpViewer::ZoomOperation_Out;
+    UIHelpViewer::ZoomOperation enmOperation = (UIHelpViewer::ZoomOperation)(iZoomOperation);
     m_pTabManager->sltHandleZoomOperation(enmOperation);
 }
 
@@ -1906,6 +1829,12 @@ void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
     if (iIndex+3 >= list.size())
         return;
     list[iIndex+3]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
+}
+
+void UIHelpBrowserWidget::sltZoomPercentageChanged(int iPercentage)
+{
+    if (m_pZoomMenuAction)
+        m_pZoomMenuAction->setZoomPercentage(iPercentage);
 }
 
 
