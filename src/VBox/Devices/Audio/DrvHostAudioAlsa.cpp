@@ -63,18 +63,8 @@ RT_C_DECLS_END
 
 
 /*********************************************************************************************************************************
-*   Defines                                                                                                                      *
-*********************************************************************************************************************************/
-
-/** Makes DRVHOSTALSAAUDIO out of PDMIHOSTAUDIO. */
-#define PDMIHOSTAUDIO_2_DRVHOSTALSAAUDIO(pInterface) \
-    ( (PDRVHOSTALSAAUDIO)((uintptr_t)pInterface - RT_UOFFSETOF(DRVHOSTALSAAUDIO, IHostAudio)) )
-
-
-/*********************************************************************************************************************************
 *   Structures                                                                                                                   *
 *********************************************************************************************************************************/
-
 /**
  * Structure for maintaining an ALSA audio stream.
  */
@@ -136,6 +126,174 @@ typedef struct ALSAAUDIOSTREAMCFG
      *  For Capturing: Starting to capture threshold (in audio frames). */
     unsigned long       threshold;
 } ALSAAUDIOSTREAMCFG, *PALSAAUDIOSTREAMCFG;
+
+
+
+/**
+ * Closes an ALSA stream
+ *
+ * @returns VBox status code.
+ * @param   pphPCM              ALSA stream to close.
+ */
+static int alsaStreamClose(snd_pcm_t **pphPCM)
+{
+    if (!pphPCM || !*pphPCM)
+        return VINF_SUCCESS;
+
+    int rc;
+    int rc2 = snd_pcm_close(*pphPCM);
+    if (rc2)
+    {
+        LogRel(("ALSA: Closing PCM descriptor failed: %s\n", snd_strerror(rc2)));
+        rc = VERR_GENERAL_FAILURE; /** @todo */
+    }
+    else
+    {
+        *pphPCM = NULL;
+        rc = VINF_SUCCESS;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+#ifdef DEBUG
+static void alsaDbgErrorHandler(const char *file, int line, const char *function,
+                                int err, const char *fmt, ...)
+{
+    /** @todo Implement me! */
+    RT_NOREF(file, line, function, err, fmt);
+}
+#endif
+
+
+/**
+ * Tries to recover an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream handle.
+ */
+static int alsaStreamRecover(snd_pcm_t *phPCM)
+{
+    AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
+
+    int err = snd_pcm_prepare(phPCM);
+    if (err < 0)
+    {
+        LogFunc(("Failed to recover stream %p: %s\n", phPCM, snd_strerror(err)));
+        return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Resumes an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream to resume.
+ */
+static int alsaStreamResume(snd_pcm_t *phPCM)
+{
+    AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
+
+    int err = snd_pcm_resume(phPCM);
+    if (err < 0)
+    {
+        LogFunc(("Failed to resume stream %p: %s\n", phPCM, snd_strerror(err)));
+        return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
+ */
+static DECLCALLBACK(int) drvHostAlsaAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
+{
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
+
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "ALSA");
+
+    pBackendCfg->cbStreamIn  = sizeof(ALSAAUDIOSTREAM);
+    pBackendCfg->cbStreamOut = sizeof(ALSAAUDIOSTREAM);
+
+    /* Enumerate sound devices. */
+    char **pszHints;
+    int err = snd_device_name_hint(-1 /* All cards */, "pcm", (void***)&pszHints);
+    if (err == 0)
+    {
+        char** pszHintCur = pszHints;
+        while (*pszHintCur != NULL)
+        {
+            char *pszDev = snd_device_name_get_hint(*pszHintCur, "NAME");
+            bool fSkip =    !pszDev
+                         || !RTStrICmp("null", pszDev);
+            if (fSkip)
+            {
+                if (pszDev)
+                    free(pszDev);
+                pszHintCur++;
+                continue;
+            }
+
+            char *pszIOID = snd_device_name_get_hint(*pszHintCur, "IOID");
+            if (pszIOID)
+            {
+#if 0
+                if (!RTStrICmp("input", pszIOID))
+
+                else if (!RTStrICmp("output", pszIOID))
+#endif
+            }
+            else /* NULL means bidirectional, input + output. */
+            {
+            }
+
+            LogRel2(("ALSA: Found %s device: %s\n", pszIOID ?  RTStrToLower(pszIOID) : "bidirectional", pszDev));
+
+            /* Special case for ALSAAudio. */
+            if (   pszDev
+                && RTStrIStr("pulse", pszDev) != NULL)
+                LogRel2(("ALSA: ALSAAudio plugin in use\n"));
+
+            if (pszIOID)
+                free(pszIOID);
+
+            if (pszDev)
+                free(pszDev);
+
+            pszHintCur++;
+        }
+
+        snd_device_name_free_hint((void **)pszHints);
+        pszHints = NULL;
+    }
+    else
+        LogRel2(("ALSA: Error enumerating PCM devices: %Rrc (%d)\n", RTErrConvertFromErrno(err), err));
+
+    /* ALSA allows exactly one input and one output used at a time for the selected device(s). */
+    pBackendCfg->cMaxStreamsIn  = 1;
+    pBackendCfg->cMaxStreamsOut = 1;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
+ */
+static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAlsaAudioHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+{
+    RT_NOREF(enmDir);
+    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
+
+    return PDMAUDIOBACKENDSTS_RUNNING;
+}
 
 
 /**
@@ -227,35 +385,6 @@ static int alsaALSAToAudioProps(PPDMAUDIOPCMPROPS pProps, snd_pcm_format_t fmt, 
             AssertMsgFailedReturn(("Format %d not supported\n", fmt), VERR_NOT_SUPPORTED);
     }
     return VINF_SUCCESS;
-}
-
-
-/**
- * Closes an ALSA stream
- *
- * @returns VBox status code.
- * @param   pphPCM              ALSA stream to close.
- */
-static int alsaStreamClose(snd_pcm_t **pphPCM)
-{
-    if (!pphPCM || !*pphPCM)
-        return VINF_SUCCESS;
-
-    int rc;
-    int rc2 = snd_pcm_close(*pphPCM);
-    if (rc2)
-    {
-        LogRel(("ALSA: Closing PCM descriptor failed: %s\n", snd_strerror(rc2)));
-        rc = VERR_GENERAL_FAILURE; /** @todo */
-    }
-    else
-    {
-        *pphPCM = NULL;
-        rc = VINF_SUCCESS;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 
 
@@ -475,14 +604,362 @@ static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfg
 }
 
 
-#ifdef DEBUG
-static void alsaDbgErrorHandler(const char *file, int line, const char *function,
-                                int err, const char *fmt, ...)
+/**
+ * Creates an ALSA output stream.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The ALSA driver instance data.
+ * @param   pStreamALSA ALSA output stream to create.
+ * @param   pCfgReq     Requested configuration to create stream with.
+ * @param   pCfgAcq     Obtained configuration the stream got created
+ *                      with on success.
+ */
+static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
+                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    /** @todo Implement me! */
-    RT_NOREF(file, line, function, err, fmt);
+    snd_pcm_t *phPCM = NULL;
+
+    int rc;
+
+    do
+    {
+        ALSAAUDIOSTREAMCFG req;
+        req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
+        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
+        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
+        req.period_size = pCfgReq->Backend.cFramesPeriod;
+        req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
+        req.threshold   = pCfgReq->Backend.cFramesPreBuffering;
+
+        ALSAAUDIOSTREAMCFG obt;
+        rc = alsaStreamOpen(pThis->szDefaultOut, false /* fIn */, &req, &obt, &phPCM);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
+        if (RT_FAILURE(rc))
+            break;
+
+        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
+        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
+        pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
+
+        pStreamALSA->phPCM = phPCM;
+    }
+    while (0);
+
+    if (RT_FAILURE(rc))
+        alsaStreamClose(&phPCM);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
-#endif
+
+
+/**
+ * Creates an ALSA input stream.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The ALSA driver instance data.
+ * @param   pStreamALSA ALSA input stream to create.
+ * @param   pCfgReq     Requested configuration to create stream with.
+ * @param   pCfgAcq     Obtained configuration the stream got created
+ *                      with on success.
+ */
+static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
+                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    int rc;
+
+    snd_pcm_t *phPCM = NULL;
+
+    do
+    {
+        ALSAAUDIOSTREAMCFG req;
+        req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
+        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
+        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
+        req.period_size = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
+        req.buffer_size = req.period_size * 2; /** @todo Make this configurable. */
+        req.threshold   = req.period_size;
+
+        ALSAAUDIOSTREAMCFG obt;
+        rc = alsaStreamOpen(pThis->szDefaultIn, true /* fIn */, &req, &obt, &phPCM);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
+        if (RT_FAILURE(rc))
+            break;
+
+        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
+        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
+        pCfgAcq->Backend.cFramesPreBuffering = 0; /* No pre-buffering. */
+
+        pStreamALSA->phPCM = phPCM;
+    }
+    while (0);
+
+    if (RT_FAILURE(rc))
+        alsaStreamClose(&phPCM);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
+ */
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                         PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    PDRVHOSTALSAAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTALSAAUDIO, IHostAudio);
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
+
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+
+    int rc;
+    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+        rc = alsaCreateStreamIn( pThis, pStreamALSA, pCfgReq, pCfgAcq);
+    else
+        rc = alsaCreateStreamOut(pThis, pStreamALSA, pCfgReq, pCfgAcq);
+    if (RT_SUCCESS(rc))
+    {
+        pStreamALSA->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
+        if (!pStreamALSA->pCfg)
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
+ */
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+
+    if (!pStreamALSA->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
+
+    int rc = alsaStreamClose(&pStreamALSA->phPCM);
+    /** @todo r=bird: It's not like we can do much with a bad status... Check
+     *        what the caller does... */
+    if (RT_SUCCESS(rc))
+    {
+        PDMAudioStrmCfgFree(pStreamALSA->pCfg);
+        pStreamALSA->pCfg = NULL;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Controls an ALSA input stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA input stream to control.
+ * @param   enmStreamCmd        Stream command to issue.
+ */
+static int alsaControlStreamIn(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
+{
+    int rc = VINF_SUCCESS;
+
+    int err;
+
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
+        {
+            err = snd_pcm_prepare(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error preparing input stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            else
+            {
+                Assert(snd_pcm_state(pStreamALSA->phPCM) == SND_PCM_STATE_PREPARED);
+
+                /* Only start the PCM stream for input streams. */
+                err = snd_pcm_start(pStreamALSA->phPCM);
+                if (err < 0)
+                {
+                    LogRel(("ALSA: Error starting input stream: %s\n", snd_strerror(err)));
+                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+                }
+            }
+
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            err = snd_pcm_drop(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error disabling input stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_PAUSE:
+        {
+            err = snd_pcm_drop(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error pausing input stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * Controls an ALSA output stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA output stream to control.
+ * @param   enmStreamCmd        Stream command to issue.
+ */
+static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
+{
+    int rc = VINF_SUCCESS;
+
+    int err;
+
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
+        {
+            err = snd_pcm_prepare(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error preparing output stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            else
+            {
+                Assert(snd_pcm_state(pStreamALSA->phPCM) == SND_PCM_STATE_PREPARED);
+            }
+
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            err = snd_pcm_drop(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error disabling output stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_PAUSE:
+        {
+            /** @todo shouldn't this try snd_pcm_pause first? */
+            err = snd_pcm_drop(pStreamALSA->phPCM);
+            if (err < 0)
+            {
+                LogRel(("ALSA: Error pausing output stream: %s\n", snd_strerror(err)));
+                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+            }
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DRAIN:
+        {
+            snd_pcm_state_t streamState = snd_pcm_state(pStreamALSA->phPCM);
+            Log2Func(("Stream state is: %d\n", streamState));
+
+            if (   streamState == SND_PCM_STATE_PREPARED
+                || streamState == SND_PCM_STATE_RUNNING)
+            {
+                /** @todo r=bird: You want EMT to block here for potentially 200-300ms worth
+                 *        of buffer to be drained?  That's a certifiably bad idea.  */
+                err = snd_pcm_nonblock(pStreamALSA->phPCM, 0);
+                if (err < 0)
+                {
+                    LogRel(("ALSA: Error disabling output non-blocking mode: %s\n", snd_strerror(err)));
+                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+                    break;
+                }
+
+                err = snd_pcm_drain(pStreamALSA->phPCM);
+                if (err < 0)
+                {
+                    LogRel(("ALSA: Error draining output: %s\n", snd_strerror(err)));
+                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+                    break;
+                }
+
+                err = snd_pcm_nonblock(pStreamALSA->phPCM, 1);
+                if (err < 0)
+                {
+                    LogRel(("ALSA: Error re-enabling output non-blocking mode: %s\n", snd_strerror(err)));
+                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+                }
+            }
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
+ */
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
+                                                          PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+
+    if (!pStreamALSA->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
+
+    int rc;
+    if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_IN)
+        rc = alsaControlStreamIn (pStreamALSA, enmStreamCmd);
+    else
+        rc = alsaControlStreamOut(pStreamALSA, enmStreamCmd);
+
+    return rc;
+}
+
 
 /**
  * Returns the available audio frames queued.
@@ -531,45 +1008,116 @@ static int alsaStreamGetAvail(snd_pcm_t *phPCM, snd_pcm_sframes_t *pcFramesAvail
     return rc;
 }
 
-/**
- * Tries to recover an ALSA stream.
- *
- * @returns VBox status code.
- * @param   phPCM               ALSA stream handle.
- */
-static int alsaStreamRecover(snd_pcm_t *phPCM)
-{
-    AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
-
-    int err = snd_pcm_prepare(phPCM);
-    if (err < 0)
-    {
-        LogFunc(("Failed to recover stream %p: %s\n", phPCM, snd_strerror(err)));
-        return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-    }
-
-    return VINF_SUCCESS;
-}
 
 /**
- * Resumes an ALSA stream.
- *
- * @returns VBox status code.
- * @param   phPCM               ALSA stream to resume.
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
-static int alsaStreamResume(snd_pcm_t *phPCM)
+static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
+    RT_NOREF(pInterface);
 
-    int err = snd_pcm_resume(phPCM);
-    if (err < 0)
-    {
-        LogFunc(("Failed to resume stream %p: %s\n", phPCM, snd_strerror(err)));
-        return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-    }
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
 
-    return VINF_SUCCESS;
+    uint32_t cbAvail = 0;
+
+    snd_pcm_sframes_t cFramesAvail;
+    int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
+    if (RT_SUCCESS(rc))
+        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
+
+    return cbAvail;
 }
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+
+    uint32_t cbAvail = 0;
+
+    snd_pcm_sframes_t cFramesAvail;
+    int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
+    if (RT_SUCCESS(rc))
+        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
+
+    return cbAvail;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetPending}
+ */
+static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamALSA, 0);
+    AssertPtr(pStreamALSA->pCfg);
+
+    /*
+     * This is only relevant to output streams (input streams can't have
+     * any pending, unplayed data).
+     */
+    uint32_t cbPending = 0;
+    if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_OUT)
+    {
+        /*
+         * Getting the delay (in audio frames) reports the time it will take
+         * to hear a new sample after all queued samples have been played out.
+         *
+         * We use snd_pcm_avail_delay instead of snd_pcm_delay here as it will
+         * update the buffer positions, and we can use the extra value against
+         * the buffer size to double check since the delay value may include
+         * fixed built-in delays in the processing chain and hardware.
+         */
+        snd_pcm_sframes_t cFramesAvail = 0;
+        snd_pcm_sframes_t cFramesDelay = 0;
+        int rc = snd_pcm_avail_delay(pStreamALSA->phPCM, &cFramesAvail, &cFramesDelay);
+
+        /*
+         * We now also get the state as the pending value should be zero when
+         * we're not in a playing state.
+         */
+        snd_pcm_state_t enmState = snd_pcm_state(pStreamALSA->phPCM);
+        switch (enmState)
+        {
+            case SND_PCM_STATE_RUNNING:
+            case SND_PCM_STATE_DRAINING:
+                if (rc >= 0)
+                {
+                    if (cFramesAvail >= pStreamALSA->pCfg->Backend.cFramesBufferSize)
+                        cbPending = 0;
+                    else
+                        cbPending = PDMAudioPropsFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
+                }
+                break;
+
+            default:
+                break;
+        }
+        Log2Func(("returns %u (%#x) - cFramesBufferSize=%RU32 cFramesAvail=%ld cFramesDelay=%ld rc=%d; enmState=%s (%d) \n",
+                  cbPending, cbPending, pStreamALSA->pCfg->Backend.cFramesBufferSize, cFramesAvail, cFramesDelay, rc,
+                  snd_pcm_state_name(enmState), enmState));
+    }
+    return cbPending;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ */
+static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAlsaAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+
+    return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
+}
+
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
@@ -813,557 +1361,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     return rc;
 }
 
-/**
- * Creates an ALSA output stream.
- *
- * @returns VBox status code.
- * @param   pThis       The ALSA driver instance data.
- * @param   pStreamALSA ALSA output stream to create.
- * @param   pCfgReq     Requested configuration to create stream with.
- * @param   pCfgAcq     Obtained configuration the stream got created
- *                      with on success.
- */
-static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
-                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    snd_pcm_t *phPCM = NULL;
-
-    int rc;
-
-    do
-    {
-        ALSAAUDIOSTREAMCFG req;
-        req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
-        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
-        req.period_size = pCfgReq->Backend.cFramesPeriod;
-        req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
-        req.threshold   = pCfgReq->Backend.cFramesPreBuffering;
-
-        ALSAAUDIOSTREAMCFG obt;
-        rc = alsaStreamOpen(pThis->szDefaultOut, false /* fIn */, &req, &obt, &phPCM);
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
-        if (RT_FAILURE(rc))
-            break;
-
-        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
-        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
-        pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
-
-        pStreamALSA->phPCM = phPCM;
-    }
-    while (0);
-
-    if (RT_FAILURE(rc))
-        alsaStreamClose(&phPCM);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Creates an ALSA input stream.
- *
- * @returns VBox status code.
- * @param   pThis       The ALSA driver instance data.
- * @param   pStreamALSA ALSA input stream to create.
- * @param   pCfgReq     Requested configuration to create stream with.
- * @param   pCfgAcq     Obtained configuration the stream got created
- *                      with on success.
- */
-static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
-                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    int rc;
-
-    snd_pcm_t *phPCM = NULL;
-
-    do
-    {
-        ALSAAUDIOSTREAMCFG req;
-        req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-        req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
-        req.nchannels   = PDMAudioPropsChannels(&pCfgReq->Props);
-        req.period_size = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
-        req.buffer_size = req.period_size * 2; /** @todo Make this configurable. */
-        req.threshold   = req.period_size;
-
-        ALSAAUDIOSTREAMCFG obt;
-        rc = alsaStreamOpen(pThis->szDefaultIn, true /* fIn */, &req, &obt, &phPCM);
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = alsaALSAToAudioProps(&pCfgAcq->Props, obt.fmt, obt.nchannels, obt.freq);
-        if (RT_FAILURE(rc))
-            break;
-
-        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
-        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
-        pCfgAcq->Backend.cFramesPreBuffering = 0; /* No pre-buffering. */
-
-        pStreamALSA->phPCM = phPCM;
-    }
-    while (0);
-
-    if (RT_FAILURE(rc))
-        alsaStreamClose(&phPCM);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Controls an ALSA input stream.
- *
- * @returns VBox status code.
- * @param   pStreamALSA         ALSA input stream to control.
- * @param   enmStreamCmd        Stream command to issue.
- */
-static int alsaControlStreamIn(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    int rc = VINF_SUCCESS;
-
-    int err;
-
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
-        {
-            err = snd_pcm_prepare(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error preparing input stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            else
-            {
-                Assert(snd_pcm_state(pStreamALSA->phPCM) == SND_PCM_STATE_PREPARED);
-
-                /* Only start the PCM stream for input streams. */
-                err = snd_pcm_start(pStreamALSA->phPCM);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Error starting input stream: %s\n", snd_strerror(err)));
-                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-                }
-            }
-
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_DISABLE:
-        {
-            err = snd_pcm_drop(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error disabling input stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_PAUSE:
-        {
-            err = snd_pcm_drop(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error pausing input stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            break;
-        }
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Controls an ALSA output stream.
- *
- * @returns VBox status code.
- * @param   pStreamALSA         ALSA output stream to control.
- * @param   enmStreamCmd        Stream command to issue.
- */
-static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    int rc = VINF_SUCCESS;
-
-    int err;
-
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
-        {
-            err = snd_pcm_prepare(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error preparing output stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            else
-            {
-                Assert(snd_pcm_state(pStreamALSA->phPCM) == SND_PCM_STATE_PREPARED);
-            }
-
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_DISABLE:
-        {
-            err = snd_pcm_drop(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error disabling output stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_PAUSE:
-        {
-            /** @todo shouldn't this try snd_pcm_pause first? */
-            err = snd_pcm_drop(pStreamALSA->phPCM);
-            if (err < 0)
-            {
-                LogRel(("ALSA: Error pausing output stream: %s\n", snd_strerror(err)));
-                rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-            }
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_DRAIN:
-        {
-            snd_pcm_state_t streamState = snd_pcm_state(pStreamALSA->phPCM);
-            Log2Func(("Stream state is: %d\n", streamState));
-
-            if (   streamState == SND_PCM_STATE_PREPARED
-                || streamState == SND_PCM_STATE_RUNNING)
-            {
-                /** @todo r=bird: You want EMT to block here for potentially 200-300ms worth
-                 *        of buffer to be drained?  That's a certifiably bad idea.  */
-                err = snd_pcm_nonblock(pStreamALSA->phPCM, 0);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Error disabling output non-blocking mode: %s\n", snd_strerror(err)));
-                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-                    break;
-                }
-
-                err = snd_pcm_drain(pStreamALSA->phPCM);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Error draining output: %s\n", snd_strerror(err)));
-                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-                    break;
-                }
-
-                err = snd_pcm_nonblock(pStreamALSA->phPCM, 1);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Error re-enabling output non-blocking mode: %s\n", snd_strerror(err)));
-                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-                }
-            }
-            break;
-        }
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
- */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
-{
-    RT_NOREF(pInterface);
-    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
-
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "ALSA");
-
-    pBackendCfg->cbStreamIn  = sizeof(ALSAAUDIOSTREAM);
-    pBackendCfg->cbStreamOut = sizeof(ALSAAUDIOSTREAM);
-
-    /* Enumerate sound devices. */
-    char **pszHints;
-    int err = snd_device_name_hint(-1 /* All cards */, "pcm", (void***)&pszHints);
-    if (err == 0)
-    {
-        char** pszHintCur = pszHints;
-        while (*pszHintCur != NULL)
-        {
-            char *pszDev = snd_device_name_get_hint(*pszHintCur, "NAME");
-            bool fSkip =    !pszDev
-                         || !RTStrICmp("null", pszDev);
-            if (fSkip)
-            {
-                if (pszDev)
-                    free(pszDev);
-                pszHintCur++;
-                continue;
-            }
-
-            char *pszIOID = snd_device_name_get_hint(*pszHintCur, "IOID");
-            if (pszIOID)
-            {
-#if 0
-                if (!RTStrICmp("input", pszIOID))
-
-                else if (!RTStrICmp("output", pszIOID))
-#endif
-            }
-            else /* NULL means bidirectional, input + output. */
-            {
-            }
-
-            LogRel2(("ALSA: Found %s device: %s\n", pszIOID ?  RTStrToLower(pszIOID) : "bidirectional", pszDev));
-
-            /* Special case for ALSAAudio. */
-            if (   pszDev
-                && RTStrIStr("pulse", pszDev) != NULL)
-                LogRel2(("ALSA: ALSAAudio plugin in use\n"));
-
-            if (pszIOID)
-                free(pszIOID);
-
-            if (pszDev)
-                free(pszDev);
-
-            pszHintCur++;
-        }
-
-        snd_device_name_free_hint((void **)pszHints);
-        pszHints = NULL;
-    }
-    else
-        LogRel2(("ALSA: Error enumerating PCM devices: %Rrc (%d)\n", RTErrConvertFromErrno(err), err));
-
-    /* ALSA allows exactly one input and one output used at a time for the selected device(s). */
-    pBackendCfg->cMaxStreamsIn  = 1;
-    pBackendCfg->cMaxStreamsOut = 1;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
- */
-static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAlsaAudioHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
-{
-    RT_NOREF(enmDir);
-    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
-
-    return PDMAUDIOBACKENDSTS_RUNNING;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
- */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                         PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    PDRVHOSTALSAAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTALSAAUDIO, IHostAudio);
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    int rc;
-    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = alsaCreateStreamIn( pThis, pStreamALSA, pCfgReq, pCfgAcq);
-    else
-        rc = alsaCreateStreamOut(pThis, pStreamALSA, pCfgReq, pCfgAcq);
-
-    if (RT_SUCCESS(rc))
-    {
-        pStreamALSA->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
-        if (!pStreamALSA->pCfg)
-            rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
- */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    if (!pStreamALSA->pCfg) /* Not (yet) configured? Skip. */
-        return VINF_SUCCESS;
-
-    int rc = alsaStreamClose(&pStreamALSA->phPCM);
-    /** @todo r=bird: It's not like we can do much with a bad status... Check
-     *        what the caller does... */
-    if (RT_SUCCESS(rc))
-    {
-        PDMAudioStrmCfgFree(pStreamALSA->pCfg);
-        pStreamALSA->pCfg = NULL;
-    }
-
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
- */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                          PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    if (!pStreamALSA->pCfg) /* Not (yet) configured? Skip. */
-        return VINF_SUCCESS;
-
-    int rc;
-    if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = alsaControlStreamIn (pStreamALSA, enmStreamCmd);
-    else
-        rc = alsaControlStreamOut(pStreamALSA, enmStreamCmd);
-
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    uint32_t cbAvail = 0;
-
-    snd_pcm_sframes_t cFramesAvail;
-    int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
-    if (RT_SUCCESS(rc))
-        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
-
-    return cbAvail;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    uint32_t cbAvail = 0;
-
-    snd_pcm_sframes_t cFramesAvail;
-    int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
-    if (RT_SUCCESS(rc))
-        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
-
-    return cbAvail;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetPending}
- */
-static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-    AssertPtrReturn(pStreamALSA, 0);
-    AssertPtr(pStreamALSA->pCfg);
-
-    /*
-     * This is only relevant to output streams (input streams can't have
-     * any pending, unplayed data).
-     */
-    uint32_t cbPending = 0;
-    if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_OUT)
-    {
-        /*
-         * Getting the delay (in audio frames) reports the time it will take
-         * to hear a new sample after all queued samples have been played out.
-         *
-         * We use snd_pcm_avail_delay instead of snd_pcm_delay here as it will
-         * update the buffer positions, and we can use the extra value against
-         * the buffer size to double check since the delay value may include
-         * fixed built-in delays in the processing chain and hardware.
-         */
-        snd_pcm_sframes_t cFramesAvail = 0;
-        snd_pcm_sframes_t cFramesDelay = 0;
-        int rc = snd_pcm_avail_delay(pStreamALSA->phPCM, &cFramesAvail, &cFramesDelay);
-
-        /*
-         * We now also get the state as the pending value should be zero when
-         * we're not in a playing state.
-         */
-        snd_pcm_state_t enmState = snd_pcm_state(pStreamALSA->phPCM);
-        switch (enmState)
-        {
-            case SND_PCM_STATE_RUNNING:
-            case SND_PCM_STATE_DRAINING:
-                if (rc >= 0)
-                {
-                    if (cFramesAvail >= pStreamALSA->pCfg->Backend.cFramesBufferSize)
-                        cbPending = 0;
-                    else
-                        cbPending = PDMAudioPropsFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
-                }
-                break;
-
-            default:
-                break;
-        }
-        Log2Func(("returns %u (%#x) - cFramesBufferSize=%RU32 cFramesAvail=%ld cFramesDelay=%ld rc=%d; enmState=%s (%d) \n",
-                  cbPending, cbPending, pStreamALSA->pCfg->Backend.cFramesBufferSize, cFramesAvail, cFramesDelay, rc,
-                  snd_pcm_state_name(enmState), enmState));
-    }
-    return cbPending;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
- */
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAlsaAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-
-    return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
-}
-
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -1399,17 +1396,17 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pDrvIns->IBase.pfnQueryInterface = drvHostAlsaAudioQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig          = drvHostAlsaAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnGetStatus          = drvHostAlsaAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostAlsaAudioHA_StreamCreate;
     pThis->IHostAudio.pfnStreamDestroy      = drvHostAlsaAudioHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamControl      = drvHostAlsaAudioHA_StreamControl;
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostAlsaAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostAlsaAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending   = drvHostAlsaAudioHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostAlsaAudioHA_StreamGetStatus;
     pThis->IHostAudio.pfnStreamPlay         = drvHostAlsaAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostAlsaAudioHA_StreamCapture;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
-    pThis->IHostAudio.pfnStreamGetPending   = drvHostALSAStreamGetPending;
 
     /*
      * Read configuration.
