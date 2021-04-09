@@ -94,7 +94,7 @@ void UIWizardCloneVMPage1::composeCloneFilePath()
     CVirtualBox vbox = uiCommon().virtualBox();
     setCloneFilePath(vbox.ComposeMachineFilename(m_pNameLineEdit ? m_pNameLineEdit->text() : QString(),
                                                  m_strGroup,
-                                                 QString::null,
+                                                 QString(),
                                                  m_pPathSelector ? m_pPathSelector->path() : QString()));
     const QFileInfo fileInfo(m_strCloneFilePath);
     m_strCloneFolder = fileInfo.absolutePath();

@@ -322,7 +322,7 @@ void UIMachineSettingsGeneral::putToCache()
     /* Gather new 'Description' data: */
     AssertPtrReturnVoid(m_pEditorDescription);
     newGeneralData.m_strDescription = m_pEditorDescription->toPlainText().isEmpty() ?
-                                      QString::null : m_pEditorDescription->toPlainText();
+                                      QString() : m_pEditorDescription->toPlainText();
 
     /* Gather new 'Encryption' data: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);

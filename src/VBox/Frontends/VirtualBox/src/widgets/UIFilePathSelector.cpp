@@ -195,7 +195,7 @@ const QString& UIFilePathSelector::defaultPath() const
 
 void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
 {
-    m_strPath = strPath.isEmpty() ? QString::null :
+    m_strPath = strPath.isEmpty() ? QString() :
             QDir::toNativeSeparators(strPath);
     if (fRefreshText)
         refreshText();
@@ -339,7 +339,7 @@ void UIFilePathSelector::onActivated(int iIndex)
         case ResetId:
         {
             if (m_strDefaultPath.isEmpty())
-                changePath(QString::null);
+                changePath(QString());
             else
                 changePath(m_strDefaultPath);
             break;

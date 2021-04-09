@@ -115,7 +115,7 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     /* Create a new machine object. */
-    CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString::null, QString::null);
+    CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString(), QString());
     if (!vbox.isOk())
     {
         msgCenter().cannotCreateMachine(vbox, this);
