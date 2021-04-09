@@ -344,8 +344,8 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
     , m_iZoomPercentage(100)
-    , m_fImageOverlay(false)
-    , m_pOverlayWidget(0)
+    , m_fOverlayMode(false)
+    , m_fCursorChanged(false)
     , m_pOverlayLabel(0)
 {
     m_iInitialFontPointSize = font().pointSize();
@@ -367,17 +367,20 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
 
     m_pFindInPageWidget->setVisible(false);
 
-
-    m_pOverlayWidget = new QWidget(this);
-    QHBoxLayout *overlayLayout = new QHBoxLayout(m_pOverlayWidget);
-    m_pOverlayLabel = new QLabel;
-    overlayLayout->addWidget(m_pOverlayLabel);
-    m_pOverlayWidget->hide();
+    m_pOverlayLabel = new QLabel(this);
+    if (m_pOverlayLabel)
+    {
+        m_pOverlayLabel->hide();
+        m_pOverlayLabel->installEventFilter(this);
+    }
 
     m_pOverlayBlurEffect = new QGraphicsBlurEffect(this);
-    viewport()->setGraphicsEffect(m_pOverlayBlurEffect);
-    m_pOverlayBlurEffect->setEnabled(false);
-    m_pOverlayBlurEffect->setBlurRadius(8);
+    if (m_pOverlayBlurEffect)
+    {
+        viewport()->setGraphicsEffect(m_pOverlayBlurEffect);
+        m_pOverlayBlurEffect->setEnabled(false);
+        m_pOverlayBlurEffect->setBlurRadius(8);
+    }
     retranslateUi();
 }
 
@@ -397,13 +400,12 @@ void UIHelpViewer::emitHistoryChangedSignal()
 
 void UIHelpViewer::setSource(const QUrl &url)
 {
+    clearOverlay();
     QTextBrowser::setSource(url);
     QTextDocument *pDocument = document();
     iterateDocumentImages();
     if (!pDocument || pDocument->isEmpty())
-    {
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
-    }
     if (m_pFindInPageWidget && m_pFindInPageWidget->isVisible())
     {
         document()->undo();
@@ -493,6 +495,11 @@ void UIHelpViewer::setHelpFileList(const QList<QUrl> &helpFileList)
     m_helpFileList = helpFileList;
 }
 
+bool UIHelpViewer::isInOverlayMode() const
+{
+    return m_fOverlayMode;
+}
+
 int UIHelpViewer::zoomPercentage() const
 {
     return m_iZoomPercentage;
@@ -559,6 +566,7 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 
 void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 {
+    clearOverlay();
     /* Make sure the widget stays inside the parent during parent resize: */
     if (m_pFindInPageWidget)
     {
@@ -570,9 +578,8 @@ void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 
 void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 {
-    if (m_fImageOverlay)
+    if (m_fOverlayMode)
         return;
-
     /* QTextBrowser::wheelEvent scales font when some modifiers are pressed. We dont want: */
     if (pEvent && pEvent->modifiers() == Qt::NoModifier)
         QTextBrowser::wheelEvent(pEvent);
@@ -580,11 +587,9 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
 {
-    if (m_fImageOverlay)
-        clearOverlay();
+    clearOverlay();
 
     QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
-
     QString strAnchor = anchorAt(pEvent->pos());
     if (!strAnchor.isEmpty())
     {
@@ -595,58 +600,64 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
             return;
         }
     }
-
     loadImageAtPosition(pEvent->globalPos());
 }
 
 void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
 {
-    if (m_fImageOverlay)
+    if (m_fOverlayMode)
         return;
-
-    QIWithRetranslateUI<QTextBrowser>::mouseMoveEvent(pEvent);
 
     QPoint viewportCoordinates = viewport()->mapFromGlobal(pEvent->globalPos());
     QTextCursor cursor = cursorForPosition(viewportCoordinates);
-    if (cursor.charFormat().isImageFormat())
+    if (!m_fCursorChanged && cursor.charFormat().isImageFormat())
+    {
+        m_fCursorChanged = true;
         viewport()->setCursor(m_handCursor);
-    else
+    }
+    if (m_fCursorChanged && !cursor.charFormat().isImageFormat())
+    {
         viewport()->setCursor(m_defaultCursor);
+        m_fCursorChanged = false;
+    }
+    QIWithRetranslateUI<QTextBrowser>::mouseMoveEvent(pEvent);
 }
 
 void UIHelpViewer::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {
-    if (m_fImageOverlay)
-        clearOverlay();
-
+    clearOverlay();
     QIWithRetranslateUI<QTextBrowser>::mouseDoubleClickEvent(pEvent);
 }
 
 void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
 {
     QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
-    // if (m_pOverlayBlurEffect && m_pOverlayBlurEffect->isEnabled())
-    //     m_pOverlayBlurEffect->setEnabled(false);
 
-    if (m_pOverlayLabel && m_pOverlayWidget)
+    if (m_pOverlayLabel)
     {
-        if (m_fImageOverlay)
+        if (m_fOverlayMode)
         {
-
-            // QPainter painter(viewport());
-            // painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
             QSize size(0.8 * width(), 0.8 * height());
             m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            m_pOverlayWidget->move(0.1 * width(), 0.1 * height());
-            m_pOverlayWidget->show();
-            // QRect rect(10, 10, 0.4 * width() - 20, height() - 20);
-            // painter.drawPixmap(rect, m_overlayPixmap);
-            //painter.fillRect(rect, Qt::red);
+            int x = 0.5 * (width() - m_pOverlayLabel->width());
+            int y = 0.5 * (height() - m_pOverlayLabel->height());
+            m_pOverlayLabel->move(x, y);
+            m_pOverlayLabel->show();
         }
         else
-            m_pOverlayWidget->hide();
-
+            m_pOverlayLabel->hide();
     }
+}
+
+bool UIHelpViewer::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (pObject == m_pOverlayLabel)
+    {
+        if (pEvent->type() == QEvent::MouseButtonPress ||
+            pEvent->type() == QEvent::MouseButtonDblClick)
+            clearOverlay();
+    }
+    return QIWithRetranslateUI<QTextBrowser>::eventFilter(pObject, pEvent);
 }
 
 void UIHelpViewer::retranslateUi()
@@ -861,10 +872,13 @@ void UIHelpViewer::scaleImages()
 
 void UIHelpViewer::clearOverlay()
 {
+    if (!m_fOverlayMode)
+        return;
     m_overlayPixmap = QPixmap();
-    m_fImageOverlay = false;
+    m_fOverlayMode = false;
     if (m_pOverlayBlurEffect)
         m_pOverlayBlurEffect->setEnabled(false);
+    emit sigOverlayModeChanged(false);
 }
 
 void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
@@ -894,10 +908,11 @@ void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
         m_overlayPixmap.loadFromData(fileData,"PNG");
         if (!m_overlayPixmap.isNull())
         {
-            m_fImageOverlay = true;
+            m_fOverlayMode = true;
             if (m_pOverlayBlurEffect)
                 m_pOverlayBlurEffect->setEnabled(true);
             viewport()->setCursor(m_defaultCursor);
+            emit sigOverlayModeChanged(true);
         }
     }
 }

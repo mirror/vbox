@@ -50,6 +50,7 @@ signals:
     void sigGoHome();
     void sigAddBookmark();
     void sigZoomPercentageChanged(int iPercentage);
+    void sigOverlayModeChanged(bool fEnabled);
 
 public:
 
@@ -71,6 +72,7 @@ public:
     int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
+    bool isInOverlayMode() const;
 
     static const QPair<int, int> zoomPercentageMinMax;
 
@@ -87,6 +89,7 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
 private slots:
 
@@ -137,11 +140,11 @@ private:
     QCursor m_handCursor;
     QList<QUrl> m_helpFileList;
     QPixmap m_overlayPixmap;
-    bool m_fImageOverlay;
-
-    QWidget *m_pOverlayWidget;
+    bool m_fOverlayMode;
+    bool m_fCursorChanged;
     QLabel *m_pOverlayLabel;
     QGraphicsBlurEffect *m_pOverlayBlurEffect;
+
 };
 
 #endif /* #ifdef VBOX_WITH_QHELP_VIEWER */
