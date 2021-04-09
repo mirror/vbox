@@ -417,6 +417,7 @@ endif
 #
 
 UICommon_CXXFLAGS.linux += -Wno-class-memaccess
+UICommon_CXXFLAGS.win += -wd4868 # prevents std::stable_sort from using functor/function comparator
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
