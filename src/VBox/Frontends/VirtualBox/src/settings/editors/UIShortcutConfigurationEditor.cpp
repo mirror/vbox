@@ -634,7 +634,7 @@ bool UIShortcutConfigurationModel::setData(const QModelIndex &index, const QVari
 void UIShortcutConfigurationModel::sort(int iColumn, Qt::SortOrder order /* = Qt::AscendingOrder */)
 {
     /* Sort whole the list: */
-    qStableSort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutItemSortingFunctor(iColumn, order));
+    std::stable_sort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutItemSortingFunctor(iColumn, order));
     /* Make sure host-combo item is always the first one: */
     UIShortcutConfigurationItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString(), QString());
     UIShortcutTableViewRow fakeHostComboTableViewRow(0, fakeHostComboItem);

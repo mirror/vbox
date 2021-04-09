@@ -3778,7 +3778,7 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
         screenSize[i] = r.width() * r.height();
     }
     /* Now sort the vector: */
-    qSort(screenSize.begin(), screenSize.end(), qGreater<int>());
+    std::sort(screenSize.begin(), screenSize.end(), std::greater<int>());
     /* For the case that there are more guest screens configured then host
      * screens available, replace all zeros with the greatest value in the
      * vector. */
