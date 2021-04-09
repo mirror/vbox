@@ -1453,7 +1453,7 @@ const PDMDRVREG g_DrvHostALSAAudio =
     /* pszDescription */
     "ALSA host audio driver",
     /* fFlags */
-     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+    PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
     /* fClass. */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
