@@ -41,11 +41,26 @@ typedef struct AUDIOSTREAMRATE
     uint64_t        uDstInc;
     /** Current (absolute) offset in the input stream. */
     uint32_t        offSrc;
-    /** Explicit alignment padding. */
-    uint32_t        u32AlignmentPadding;
+    /** Set if no conversion is necessary. */
+    bool            fNoConversionNeeded;
+    bool            afPadding[3];
+
     /** Last processed frame of the input stream.
      *  Needed for interpolation. */
-    PDMAUDIOFRAME   SrcFrameLast;
+    union
+    {
+        int64_t         ai64Samples[2];
+        PDMAUDIOFRAME   Frame;
+    } SrcLast;
+
+    /**
+     * Resampling function.
+     * @returns Number of destination frames written.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnResample, (int64_t *pi64Dst, uint32_t cDstFrames,
+                                                 int64_t const *pi64Src, uint32_t cSrcFrames, uint32_t *pcSrcFramesRead,
+                                                 struct AUDIOSTREAMRATE *pRate));
+
 } AUDIOSTREAMRATE;
 /** Pointer to rate processing information of a stream. */
 typedef AUDIOSTREAMRATE *PAUDIOSTREAMRATE;
@@ -128,6 +143,29 @@ typedef FNAUDIOMIXBUFCONVTO *PFNAUDIOMIXBUFCONVTO;
 
 /** Pointer to audio mixing buffer.  */
 typedef struct AUDIOMIXBUF *PAUDIOMIXBUF;
+/** Pointer to a const audio mixing buffer.  */
+typedef struct AUDIOMIXBUF const *PCAUDIOMIXBUF;
+
+
+/**
+ * State & config for AudioMixBufPeek created by AudioMixBufInitPeekState.
+ */
+typedef struct AUDIOMIXBUFPEEKSTATE
+{
+    /** Encodes @a cFrames from @a paSrc to @a pvDst. */
+    DECLR3CALLBACKMEMBER(void,  pfnEncode,(void *pvDst, int64_t const *paSrc, uint32_t cFrames, struct AUDIOMIXBUFPEEKSTATE *pState));
+    /** Sample rate conversion state (only used when needed). */
+    AUDIOSTREAMRATE             Rate;
+    /** Source (mixer) channels. */
+    uint8_t                     cSrcChannels;
+    /** Destination (mixer) channels. */
+    uint8_t                     cDstChannels;
+    /** Destination frame size. */
+    uint8_t                     cbDstFrame;
+} AUDIOMIXBUFPEEKSTATE;
+/** Pointer to peek state & config. */
+typedef AUDIOMIXBUFPEEKSTATE *PAUDIOMIXBUFPEEKSTATE;
+
 
 /**
  * Audio mixing buffer.
@@ -233,6 +271,13 @@ typedef struct AUDIOMIXBUF
 
 int     AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 void    AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf);
+
+int     AudioMixBufInitPeekState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFPEEKSTATE pState, PCPDMAUDIOPCMPROPS pDstProps);
+void    AudioMixBufPeek(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxSrcFrames, uint32_t *pcSrcFramesPeeked,
+                        PAUDIOMIXBUFPEEKSTATE pState, void *pvDst, uint32_t cbDst, uint32_t *pcbDstPeeked);
+void    AudioMixBufAdvance(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
+void    AudioMixBufDrop(PAUDIOMIXBUF pMixBuf);
+
 void AudioMixBufClear(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufFinish(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear);
 uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf);

@@ -547,6 +547,111 @@ static void tstDownsampling(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
 }
 
 
+static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
+{
+    RTTestSubF(hTest, "New peek %u to %u Hz (S16)", uFromHz, uToHz);
+
+    struct { int16_t l, r; }
+        aSrcFrames[4096],
+        aDstFrames[4096];
+
+    /* Mix buffer is uFromHz 2ch S16 */
+    uint32_t const         cFrames = RTRandU32Ex(16, RT_ELEMENTS(aSrcFrames));
+    PDMAUDIOPCMPROPS const CfgSrc  = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uFromHz, false /*fSwap*/);
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgSrc));
+    AUDIOMIXBUF MixBuf;
+    RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&MixBuf, "NewPeekMixBuf", &CfgSrc, cFrames));
+
+    /* Peek state (destination) is uToHz 2ch S16 */
+    PDMAUDIOPCMPROPS const CfgDst = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uToHz, false /*fSwap*/);
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgDst));
+    AUDIOMIXBUFPEEKSTATE PeekState;
+    RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInitPeekState(&MixBuf, &PeekState, &CfgDst));
+
+    /*
+     * Test parameters.
+     */
+    uint32_t const cMaxSrcFrames = RT_MIN(cFrames * uFromHz / uToHz - 1, cFrames);
+    uint32_t const cIterations   = RTRandU32Ex(64, 1024);
+    RTTestErrContext(hTest, "cFrames=%RU32 cMaxSrcFrames=%RU32 cIterations=%RU32", cFrames, cMaxSrcFrames, cIterations);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "cFrames=%RU32 cMaxSrcFrames=%RU32 cIterations=%RU32\n",
+                 cFrames, cMaxSrcFrames, cIterations);
+
+    /*
+     * We generate a simple "A" sine wave as input.
+     */
+    uint32_t iSrcFrame = 0;
+    uint32_t iDstFrame = 0;
+    double   rdFixed = 2.0 * M_PI * 440.0 /* A */ / PDMAudioPropsHz(&CfgSrc); /* Fixed sin() input. */
+    for (uint32_t i = 0; i < cIterations; i++)
+    {
+        RTTestPrintf(hTest, RTTESTLVL_DEBUG, "i=%RU32\n", i);
+
+        /*
+         * Generate source frames and write them.
+         */
+        uint32_t const cSrcFrames = i < cIterations / 2
+                                  ? RTRandU32Ex(2, cMaxSrcFrames) & ~(uint32_t)1
+                                  : RTRandU32Ex(1, cMaxSrcFrames - 1) | 1;
+        for (uint32_t j = 0; j < cSrcFrames; j++, iSrcFrame++)
+            aSrcFrames[j].r = aSrcFrames[j].l = 32760 /*Amplitude*/ * sin(rdFixed * iSrcFrame);
+
+        uint32_t cSrcFramesWritten = UINT32_MAX / 2;
+        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteCirc(&MixBuf, &aSrcFrames, cSrcFrames * sizeof(aSrcFrames[0]), &cSrcFramesWritten));
+        RTTESTI_CHECK_MSG_BREAK(cSrcFrames == cSrcFramesWritten,
+                                ("cSrcFrames=%RU32 vs cSrcFramesWritten=%RU32 cLiveFrames=%RU32\n",
+                                 cSrcFrames, cSrcFramesWritten, AudioMixBufLive(&MixBuf)));
+
+        /*
+         * Read out all the frames using the peek function.
+         */
+        uint32_t offSrcFrame = 0;
+        while (offSrcFrame < cSrcFramesWritten)
+        {
+            uint32_t cSrcFramesToRead = cSrcFramesWritten - offSrcFrame;
+            uint32_t cTmp = (uint64_t)cSrcFramesToRead * uToHz / uFromHz;
+            if (cTmp + 32 >= RT_ELEMENTS(aDstFrames))
+                cSrcFramesToRead = ((uint64_t)RT_ELEMENTS(aDstFrames) - 32) * uFromHz / uToHz; /* kludge */
+
+            uint32_t cSrcFramesPeeked = UINT32_MAX / 4;
+            uint32_t cbDstPeeked      = UINT32_MAX / 2;
+            RTRandBytes(aDstFrames, sizeof(aDstFrames));
+            AudioMixBufPeek(&MixBuf, offSrcFrame, cSrcFramesToRead, &cSrcFramesPeeked,
+                            &PeekState, aDstFrames, sizeof(aDstFrames), &cbDstPeeked);
+            uint32_t cDstFramesPeeked = PDMAudioPropsBytesToFrames(&CfgDst, cbDstPeeked);
+            RTTESTI_CHECK(cbDstPeeked > 0 || cSrcFramesPeeked > 0);
+
+            if (uFromHz == uToHz)
+            {
+                for (uint32_t iDst = 0; iDst < cDstFramesPeeked; iDst++)
+                    if (memcmp(&aDstFrames[iDst], &aSrcFrames[offSrcFrame + iDst], sizeof(aSrcFrames[0])) != 0)
+                        RTTestFailed(hTest, "Frame #%u differs: %#x / %#x, expected %#x / %#x\n", iDstFrame + iDst,
+                                     aDstFrames[iDst].l, aDstFrames[iDst].r,
+                                     aSrcFrames[iDst + offSrcFrame].l, aSrcFrames[iDst + offSrcFrame].r);
+            }
+
+            offSrcFrame += cSrcFramesPeeked;
+            iDstFrame   += cDstFramesPeeked;
+        }
+
+        /*
+         * Then advance.
+         */
+        AudioMixBufAdvance(&MixBuf, cSrcFrames);
+        RTTESTI_CHECK(AudioMixBufLive(&MixBuf) == 0);
+    }
+
+    /** @todo this is a bit lax...   */
+    uint32_t const cDstMinExpect = ((uint64_t)iSrcFrame * uToHz - uFromHz - 1) / uFromHz;
+    uint32_t const cDstMaxExpect = ((uint64_t)iSrcFrame * uToHz + uFromHz - 1) / uFromHz;
+    RTTESTI_CHECK_MSG(iDstFrame >= cDstMinExpect && iDstFrame <= cDstMaxExpect,
+                      ("iSrcFrame=%#x -> %#x..%#x; iDstFrame=%#x (delta %d)\n",
+                       iSrcFrame, cDstMinExpect, cDstMaxExpect, iDstFrame, (cDstMinExpect + cDstMaxExpect) / 2 - iDstFrame));
+
+    AudioMixBufDestroy(&MixBuf);
+}
+
+
 /* Test 8-bit sample conversion (8-bit -> internal -> 8-bit). */
 static int tstConversion8(RTTEST hTest)
 {
@@ -882,6 +987,13 @@ int main(int argc, char **argv)
     tstDownsampling(hTest, 48000, 44100);
     tstDownsampling(hTest, 48000, 22050);
     tstDownsampling(hTest, 48000, 11000);
+    tstNewPeek(hTest, 48000, 48000);
+    tstNewPeek(hTest, 48000, 11000);
+    tstNewPeek(hTest, 48000, 44100);
+    tstNewPeek(hTest, 44100, 22050);
+    tstNewPeek(hTest, 44100, 11000);
+    //tstNewPeek(hTest, 11000, 48000);
+    //tstNewPeek(hTest, 22050, 44100);
 
     /*
      * Summary

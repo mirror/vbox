@@ -844,7 +844,10 @@ typedef enum PDMAUDIOSTREAMCMD
 {
     /** Invalid zero value as per usual (guards against using unintialized values). */
     PDMAUDIOSTREAMCMD_INVALID = 0,
-    /** Unknown command, do not use. */
+    /** Unknown command, do not use.
+     * @todo r=bird: WTF is this supposed to be?  Is DrvAudio or a device
+     *       supposed to issue an unknown command to someone?  For conversion
+     *       mismatches (e.g. mixer), you use the INVALID value. */
     PDMAUDIOSTREAMCMD_UNKNOWN,
     /** Enables the stream. */
     PDMAUDIOSTREAMCMD_ENABLE,
@@ -853,14 +856,21 @@ typedef enum PDMAUDIOSTREAMCMD
      *  For input streams this will deliver the remaining (captured) audio data and not accepting
      *  any new audio input data afterwards. */
     PDMAUDIOSTREAMCMD_DISABLE,
-    /** Pauses the stream. */
+    /** Pauses the stream.
+     * This is currently only issued when the VM is suspended (paused). */
     PDMAUDIOSTREAMCMD_PAUSE,
-    /** Resumes the stream. */
+    /** Resumes the stream.
+     *This is currently only issued when the VM is resumed. */
     PDMAUDIOSTREAMCMD_RESUME,
-    /** Tells the stream to drain itself.
-     *  For output streams this plays all remaining (buffered) audio frames,
-     *  for input streams this permits receiving any new audio frames.
-     *  No supported by all backends. */
+    /** Drain the stream, that is, play what's in the buffer and then stop.
+     * The effect on input streams amounts to a stop.
+     *
+     * A separate DISABLE command will be issued to disable the stream.
+     *
+     * @note This should not wait for the stream to finish draining, just change the
+     *       state.  (EMT cannot wait hundreds of milliseconds of
+     *       buffer to finish draining.)
+     * @note No supported by all backends. */
     PDMAUDIOSTREAMCMD_DRAIN,
     /** Tells the stream to drop all (buffered) audio data immediately.
      *  No supported by all backends. */
@@ -979,6 +989,9 @@ typedef struct PDMAUDIOSTREAM
     /** Warnings shown already in the release log.
      *  See PDMAUDIOSTREAM_WARN_FLAGS_XXX. */
     uint32_t                fWarningsShown;
+    /** The stream properties (both sides when PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF
+     * is used, otherwise the guest side). */
+    PDMAUDIOPCMPROPS        Props;
 
     /** Name of this stream. */
     char                    szName[64];
@@ -989,7 +1002,7 @@ typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 
 /** Magic value for PDMAUDIOSTREAM. */
-#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 2, 0)
+#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 3, 0)
 
 
 
@@ -1297,15 +1310,18 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns the amount which is pending (in other words has not yet been processed) by/from the backend yet.
-     * Optional.
+     * Returns the number of buffered bytes that hasn't been played yet.
      *
-     * For input streams this is read audio data by the backend which has not been processed by the host yet.
-     * For output streams this is written audio data to the backend which has not been processed by the backend yet.
+     * This function is used by DrvAudio to detect when it is appropriate to fully
+     * disable an output stream w/o cutting off the playback too early.  The backend
+     * should have already received the PDMAUDIOSTREAMCMD_DRAIN command prior to
+     * this.  It doesn't really matter whether the returned value is 100% correct,
+     * as long as it isn't reported as zero too early.
      *
-     * @returns For non-raw layout streams: Number of pending bytes.
-     *          for raw layout streams    : Number of pending audio frames.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * Shoul return zero if called on an input stream.
+     *
+     * @returns Number of pending bytes.
+     * @param   pInterface          Pointer to this interface.
      * @param   pStream             Pointer to audio stream.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetPending, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));

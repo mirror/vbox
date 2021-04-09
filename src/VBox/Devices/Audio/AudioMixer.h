@@ -90,8 +90,6 @@ typedef struct AUDMIXSTREAM
     char                   *pszName;
     /** The statistics prefix. */
     char                   *pszStatPrefix;
-    /** The streams's critical section. */
-    RTCRITSECT              CritSect;
     /** Sink this stream is attached to. */
     PAUDMIXSINK             pSink;
     /** Stream flags of type AUDMIXSTREAM_F_. */
@@ -102,15 +100,12 @@ typedef struct AUDMIXSTREAM
     PPDMIAUDIOCONNECTOR     pConn;
     /** Pointer to PDM audio stream this mixer stream handles. */
     PPDMAUDIOSTREAM         pStream;
+    /** Mixing buffer peeking state & config. */
+    AUDIOMIXBUFPEEKSTATE    PeekState;
     /** Last read (recording) / written (playback) timestamp (in ns). */
     uint64_t                tsLastReadWrittenNs;
-    /** The stream's circular buffer for temporarily
-     *  holding (raw) device audio data. */
-    PRTCIRCBUF              pCircBuf;
-    /** Stats: Number of bytes used in the circular buffer. */
-    uint32_t                StatsCircBufUsed;
-    /** Stats: Size of circular buffer. */
-    uint32_t                StatsCircBufSize;
+    /** The streams's critical section. */
+    RTCRITSECT              CritSect;
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
 
 /** Defines an audio sink's current status. */
@@ -123,15 +118,15 @@ typedef struct AUDMIXSTREAM
 /** The sink is in a pending disable state. */
 #define AUDMIXSINK_STS_PENDING_DISABLE       RT_BIT(1)
 /** Dirty flag.
- *  For output sinks this means that there is data in the
- *  sink which has not been played yet.
- *  For input sinks this means that there is data in the
- *  sink which has been recorded but not transferred to the
- *  destination yet. */
+ * - For output sinks this means that there is data in the sink which has not
+ *   been played yet.
+ * - For input sinks this means that there is data in the sink which has been
+ *   recorded but not transferred to the destination yet. */
 #define AUDMIXSINK_STS_DIRTY                 RT_BIT(2)
 
 /**
  * Audio mixer sink direction.
+ * @todo r=bird: use PDMAUDIODIR instead.
  */
 typedef enum AUDMIXSINKDIR
 {

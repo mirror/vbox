@@ -127,6 +127,8 @@ typedef struct DRVAUDIOSTREAM
     /** Timestamp (in ns) since last read (input streams) or
      *  write (output streams). */
     uint64_t            nsLastReadWritten;
+    /** Internal stream position (as per pfnStreamWrite/Read). */
+    uint64_t            offInternal;
 
 
     /** Union for input/output specifics depending on enmDir. */
@@ -178,6 +180,16 @@ typedef struct DRVAUDIOSTREAM
                 uint32_t        cbBackendWritableBefore;
                 uint32_t        cbBackendWritableAfter;
             } Stats;
+
+            /** Space for pre-buffering. */
+            uint8_t            *pbPreBuf;
+            /** The size of the pre-buffer allocation (in bytes). */
+            uint32_t            cbPreBufAlloc;
+            /** Number of bytes we've prebuffered. */
+            uint32_t            cbPreBuffered;
+            /** The pre-buffering threshold expressed in bytes. */
+            uint32_t            cbPreBufThreshold;
+
             /** Hack alert: Max writable amount reported by the backend.
              * This is used to aid buffer underrun detection in DrvAudio while playing.
              * Ideally, the backend should have a method for querying number of buffered
@@ -957,8 +969,11 @@ static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
 
     LogFunc(("[%s]\n", pStreamEx->Core.szName));
 
-    AudioMixBufReset(&pStreamEx->Guest.MixBuf);
-    AudioMixBufReset(&pStreamEx->Host.MixBuf);
+    if (pStreamEx->fNoMixBufs)
+    {
+        AudioMixBufReset(&pStreamEx->Guest.MixBuf);
+        AudioMixBufReset(&pStreamEx->Host.MixBuf);
+    }
 
     pStreamEx->fThresholdReached    = false;
     pStreamEx->nsLastIterated       = 0;
@@ -1004,6 +1019,191 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
 #endif
 }
 
+
+/**
+ * The no-mixing-buffers worker for drvAudioStreamWrite and
+ * drvAudioStreamIterateInternal.
+ *
+ * The buffer is NULL and has a zero length when called from the interate
+ * function.  This only occures when there is pre-buffered audio data that need
+ * to be pushed to the backend due to a pending disabling of the stream.
+ *
+ * Caller owns the lock.
+ */
+static int drvAudioStreamWriteNoMixBufs(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
+                                        const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+{
+    Log3Func(("%s: @%#RX64: cbBuf=%#x\n", pStreamEx->Core.szName, pStreamEx->offInternal, cbBuf));
+
+    /*
+     * Are we pre-buffering?
+     *
+     * Note! We do not restart pre-buffering in this version, as we'd
+     *       need some kind of cooperation with the backend buffer
+     *       managment to correctly detect an underrun.
+     */
+    bool     fJustStarted = false;
+    uint32_t cbWritten = 0;
+    int      rc;
+    if (   pStreamEx->fThresholdReached
+        && pStreamEx->Out.cbPreBuffered == 0)
+    {
+        /* not-prebuffering, likely after a while at least */
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        /*
+         * Copy as much as we can to the pre-buffer.
+         */
+        uint32_t cbFree = pStreamEx->Out.cbPreBufAlloc - pStreamEx->Out.cbPreBuffered;
+        AssertReturn((int32_t)cbFree >= 0, VERR_INTERNAL_ERROR_2);
+        if (cbFree > 0 && cbBuf > 0)
+        {
+            cbWritten = RT_MIN(cbFree, cbBuf);
+            cbWritten = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Core.Props, cbWritten);
+            memcpy(&pStreamEx->Out.pbPreBuf[pStreamEx->Out.cbPreBuffered], pbBuf, cbWritten);
+            pStreamEx->Out.cbPreBuffered += cbWritten;
+            cbBuf                        -= cbWritten;
+            pbBuf                        += cbWritten;
+            pStreamEx->offInternal       += cbWritten;
+        }
+
+        /*
+         * Get the special case of buggy backend drivers out of the way.
+         * We get here if we couldn't write out all the pre-buffered data when
+         * we hit the threshold.
+         */
+        if (pStreamEx->fThresholdReached)
+            LogRel2(("Audio: @%#RX64: Stream '%s' pre-buffering commit problem: cbBuf=%#x cbPreBuffered=%#x\n",
+                     pStreamEx->offInternal, pStreamEx->Core.szName, cbBuf, pStreamEx->Out.cbPreBuffered));
+        /*
+         * Did we reach the backend's playback (pre-buffering) threshold?
+         * Can be 0 if no pre-buffering desired.
+         */
+        else if (pStreamEx->Out.cbPreBuffered + cbBuf >= pStreamEx->Out.cbPreBufThreshold)
+        {
+            LogRel2(("Audio: @%#RX64: Stream '%s' buffering complete! (%#x + %#x bytes)\n",
+                     pStreamEx->offInternal, pStreamEx->Core.szName, pStreamEx->Out.cbPreBuffered, cbBuf));
+            pStreamEx->fThresholdReached = fJustStarted = true;
+        }
+        /*
+         * Some audio files are shorter than the pre-buffering level (e.g. the
+         * "click" Explorer sounds on some Windows guests), so make sure that we
+         * also play those by checking if the stream already is pending disable
+         * mode, even if we didn't hit the pre-buffering watermark yet.
+         *
+         * Try play "Windows Navigation Start.wav" on Windows 7 (2824 samples).
+         */
+        else if (   (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
+                 && pStreamEx->Out.cbPreBuffered > 0)
+        {
+            LogRel2(("Audio: @%#RX64: Stream '%s' buffering complete - short sound! (%#x + %#x bytes)\n",
+                     pStreamEx->offInternal, pStreamEx->Core.szName, pStreamEx->Out.cbPreBuffered, cbBuf));
+            pStreamEx->fThresholdReached = fJustStarted = true;
+        }
+        /*
+         * Not yet, so still buffering audio data.
+         */
+        else
+        {
+            LogRel2(("Audio: @%#RX64: Stream '%s' is buffering (%RU8%% complete)...\n", pStreamEx->offInternal,
+                     pStreamEx->Core.szName, (100 * pStreamEx->Out.cbPreBuffered) / pStreamEx->Out.cbPreBufThreshold));
+            Assert(cbBuf == 0);
+            *pcbWritten = cbWritten;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Write the pre-buffered chunk.
+         */
+        uint32_t off = 0;
+        uint32_t cbPreBufWritten;
+        do
+        {
+            cbPreBufWritten = 0;
+            rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStreamEx->pBackend, &pStreamEx->Out.pbPreBuf[off],
+                                                     pStreamEx->Out.cbPreBuffered - off, &cbPreBufWritten);
+            AssertRCBreak(rc);
+            off += cbPreBufWritten;
+        } while (off < pStreamEx->Out.cbPreBuffered && cbPreBufWritten != 0);
+
+        if (off >= pStreamEx->Out.cbPreBuffered)
+        {
+            Assert(off == pStreamEx->Out.cbPreBuffered);
+            LogFunc(("@%#RX64: Wrote all %#x bytes of pre-buffered audio data.\n", pStreamEx->offInternal, off));
+            pStreamEx->Out.cbPreBuffered = 0;
+        }
+        else
+        {
+            LogRel2(("Audio: @%#RX64: Stream '%s' pre-buffering commit problem: wrote %#x out of %#x + %#x%s - rc=%Rrc *pcbWritten=%#x\n",
+                     pStreamEx->offInternal, pStreamEx->Core.szName, off, pStreamEx->Out.cbPreBuffered, cbBuf,
+                     fJustStarted ? " (just started)" : "", rc, cbWritten));
+            AssertMsg(!fJustStarted || RT_FAILURE(rc),
+                      ("Buggy host driver buffer reporting: off=%#x cbPreBuffered=%#x\n", off, pStreamEx->Out.cbPreBuffered));
+            if (off > 0)
+            {
+                memmove(pStreamEx->Out.pbPreBuf, &pStreamEx->Out.pbPreBuf[off], pStreamEx->Out.cbPreBuffered - off);
+                pStreamEx->Out.cbPreBuffered -= off;
+            }
+            pStreamEx->nsLastPlayedCaptured = RTTimeNanoTS();
+            *pcbWritten = cbWritten;
+            return cbWritten ? VINF_SUCCESS : rc;
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            *pcbWritten = cbWritten;
+            return rc;
+        }
+    }
+
+    /*
+     * Do the writing.
+     */
+    uint32_t cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+    pStreamEx->Out.Stats.cbBackendWritableBefore = cbWritable;
+
+    uint8_t const cbFrame = PDMAudioPropsFrameSize(&pStreamEx->Core.Props);
+    while (cbBuf >= cbFrame && cbWritable >= cbFrame)
+    {
+        uint32_t const cbToWrite    = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Core.Props, RT_MIN(cbBuf, cbWritable));
+        uint32_t       cbWrittenNow = 0;
+        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStreamEx->pBackend, pbBuf, cbToWrite, &cbWrittenNow);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbWrittenNow != cbToWrite)
+                Log3Func(("%s: @%#RX64: Wrote less bytes than requested: %#x, requested %#x\n",
+                          pStreamEx->Core.szName, pStreamEx->offInternal, cbWrittenNow, cbToWrite));
+#ifdef DEBUG_bird
+            Assert(cbWrittenNow == cbToWrite);
+#endif
+            AssertStmt(cbWrittenNow <= cbToWrite, cbWrittenNow = cbToWrite);
+            cbWritten += cbWrittenNow;
+            cbBuf     -= cbWrittenNow;
+            pbBuf     += cbWrittenNow;
+            pStreamEx->offInternal += cbWrittenNow;
+        }
+        else
+        {
+            *pcbWritten = cbWritten;
+            LogFunc(("%s: @%#RX64: pfnStreamPlay failed writing %#x bytes (%#x previous written, %#x writable): %Rrc\n",
+                     pStreamEx->Core.szName, pStreamEx->offInternal, cbToWrite, cbWritten, cbWritable, rc));
+            return cbWritten ? VINF_SUCCESS : rc;
+        }
+        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+    }
+
+    *pcbWritten = cbWritten;
+    pStreamEx->Out.Stats.cbBackendWritableAfter = cbWritable;
+    if (cbWritten)
+        pStreamEx->nsLastPlayedCaptured = RTTimeNanoTS();
+
+    Log3Func(("%s: @%#RX64: Wrote %#x bytes (%#x bytes left)\n", pStreamEx->Core.szName, pStreamEx->offInternal, cbWritten, cbBuf));
+    return rc;
+}
+
+
 /**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamWrite}
  */
@@ -1021,7 +1221,10 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     AssertPtrReturn(pStreamEx, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(pcbWritten, VERR_INVALID_PARAMETER);
+    uint32_t uTmp;
+    if (!pcbWritten)
+        pcbWritten = &uTmp;
+    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
@@ -1050,6 +1253,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             Log3Func(("[%s] Backend stream %s, discarding the data\n", pStreamEx->Core.szName,
                       !pThis->Out.fEnabled ? "disabled" : !pThis->pHostDrvAudio ? "not attached" : "not ready yet"));
             *pcbWritten = cbBuf;
+            pStreamEx->offInternal += cbBuf;
         }
         /*
          * No-mixing buffer mode:  Write the data directly to the backend, unless
@@ -1057,7 +1261,13 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
          */
         else if (pStreamEx->fNoMixBufs)
         {
-            rc = VERR_NOT_IMPLEMENTED;
+            uint64_t offInternalBefore = pStreamEx->offInternal; RT_NOREF(offInternalBefore);
+            rc = drvAudioStreamWriteNoMixBufs(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+            Assert(offInternalBefore + *pcbWritten == pStreamEx->offInternal);
+            if (!pThis->Out.Cfg.Dbg.fEnabled || RT_FAILURE(rc))
+            { /* likely */ }
+            else
+                AudioHlpFileWrite(pStreamEx->Out.Dbg.pFilePlayNonInterleaved, pvBuf, *pcbWritten, 0 /* fFlags */);
         }
         /*
          * Legacy mode:  Here we just dump the data in the guest side mixing buffer
@@ -1138,8 +1348,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             }
             else
                 rc = VERR_BUFFER_OVERFLOW;
-            if (pcbWritten)
-                *pcbWritten = cbWrittenTotal;
+            *pcbWritten = cbWrittenTotal;
+            pStreamEx->offInternal += cbWrittenTotal;
         }
     }
     else
@@ -1318,67 +1528,94 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
         return VINF_SUCCESS;
     }
 
-    /* Whether to try closing a pending to close stream. */
-    bool fTryClosePending = false;
-
+    /*
+     * Pending disable is really what we're here for.  This only happens to output streams.
+     */
     int rc = VINF_SUCCESS;
-
-    do
+    if (!(pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
+    { /* likely until we get to the end of the stream at least. */ }
+    else
     {
-        if (pStreamEx->Core.enmDir == PDMAUDIODIR_OUT)
+        AssertReturn(pStreamEx->Core.enmDir == PDMAUDIODIR_OUT, VINF_SUCCESS);
+        /** @todo Add a timeout to these proceedings.  A few that of the reported buffer
+         *        size. */
+
+        /*
+         * Check if we have any data we need to write to the backend, try
+         * move it now.
+         */
+        /** @todo r=bird: It is possible the device has data buffered (e.g.
+         *        internal DMA buffer (HDA) or mixing buffer (HDA + AC'97).  We're
+         *        not taking that into account here.  I also suspect that neither is
+         *        the device/mixer code, and that if the guest is too quick disabling
+         *        the stream, it will just remain there till the next time something
+         *        is played.  That means that this code and associated timer hack
+         *        should probably not be here at all. */
+        uint32_t cFramesLive;
+        if (pStreamEx->fNoMixBufs)
         {
-            /* No audio frames to transfer from guest to host (anymore)?
-             * Then try closing this stream if marked so in the next block. */
-            uint32_t cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
-            if (cFramesLive && fWorkMixBuf)
+            cFramesLive = pStreamEx->Out.cbPreBuffered;
+            if (cFramesLive > 0)
+            {
+                uint32_t cbIgnored = 0;
+                drvAudioStreamWriteNoMixBufs(pThis, pStreamEx, NULL, 0, &cbIgnored);
+                cFramesLive = PDMAudioPropsBytesToFrames(&pStreamEx->Core.Props, pStreamEx->Out.cbPreBuffered);
+            }
+        }
+        else
+        {
+            cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
+            if (cFramesLive > 0 && fWorkMixBuf)
             {
                 uint32_t cIgnored = 0;
                 drvAudioStreamPlayLocked(pThis, pStreamEx, &cIgnored);
 
                 cFramesLive = AudioMixBufLive(&pStreamEx->Host.MixBuf);
             }
-
-            fTryClosePending = cFramesLive == 0;
-            Log3Func(("[%s] fTryClosePending=%RTbool, cFramesLive=%RU32\n", pStreamEx->Core.szName, fTryClosePending, cFramesLive));
         }
-
-        /* Has the host stream marked as pending to disable?
-         * Try disabling the stream then. */
-        if (   pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE
-            && fTryClosePending)
+        Log3Func(("[%s] cFramesLive=%RU32\n", pStreamEx->Core.szName, cFramesLive));
+        if (cFramesLive == 0)
         {
-            /* Tell the backend to drain the stream, that is, play the remaining (buffered) data
-             * on the backend side. */
+            /*
+             * Tell the backend to start draining the stream, that is,
+             * play the remaining buffered data and stop.
+             */
             rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DRAIN);
-            if (rc == VERR_NOT_SUPPORTED) /* Not all backends support draining. */
+            if (rc == VERR_NOT_SUPPORTED) /* Not all backends support draining yet. */
                 rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
             {
-                if (pThis->pHostDrvAudio->pfnStreamGetPending) /* Optional to implement. */
+                /*
+                 * Before we disable the stream, check if the backend has
+                 * finished playing the buffered data.
+                 */
+                uint32_t cbPending;
+                if (!pThis->pHostDrvAudio->pfnStreamGetPending) /* Optional. */
+                    cbPending = 0;
+                else
                 {
-                    const uint32_t cxPending = pThis->pHostDrvAudio->pfnStreamGetPending(pThis->pHostDrvAudio, pStreamEx->pBackend);
-                    Log3Func(("[%s] cxPending=%RU32\n", pStreamEx->Core.szName, cxPending));
-
-                    /* Only try close pending if no audio data is pending on the backend-side anymore. */
-                    fTryClosePending = cxPending == 0;
+                    cbPending = pThis->pHostDrvAudio->pfnStreamGetPending(pThis->pHostDrvAudio, pStreamEx->pBackend);
+                    Log3Func(("[%s] cbPending=%RU32 (%#RX32)\n", pStreamEx->Core.szName, cbPending, cbPending));
                 }
-
-                if (fTryClosePending)
+                if (cbPending == 0)
                 {
+                    /*
+                     * Okay, disable it.
+                     */
                     LogFunc(("[%s] Closing pending stream\n", pStreamEx->Core.szName));
                     rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
                     if (RT_SUCCESS(rc))
                     {
                         pStreamEx->Core.fStatus &= ~(PDMAUDIOSTREAMSTS_FLAGS_ENABLED | PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE);
-                        drvAudioStreamDropInternal(pThis, pStreamEx);
+                        drvAudioStreamDropInternal(pThis, pStreamEx); /* Not a DROP command, just a stream reset. */
                     }
                     else
-                       LogFunc(("[%s] Backend vetoed against closing pending input stream, rc=%Rrc\n", pStreamEx->Core.szName, rc));
+                        LogFunc(("[%s] Backend vetoed against closing pending input stream, rc=%Rrc\n", pStreamEx->Core.szName, rc));
                 }
             }
         }
 
-    } while (0);
+    }
 
     /* Update timestamps. */
     pStreamEx->nsLastIterated = RTTimeNanoTS();
@@ -2357,8 +2594,8 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
     {
         if (pCfgReq->Backend.cFramesPreBuffering == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
         {
-            /* For pre-buffering to finish the buffer at least must be full one time. */
-            pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize;
+            /* Pre-buffer 66% of the buffer. */
+            pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize * 2 / 3;
             pszWhat = "default";
         }
     }
@@ -2522,6 +2759,14 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
              PDMAudioPropsChannels(&CfgHostAcq.Props), PDMAudioPropsChannels(&CfgHostAcq.Props) == 1 ? "" : "s"));
     Assert(PDMAudioPropsAreValid(&CfgHostAcq.Props));
 
+    /* Set the stream properties (currently guest side, when DevSB16 is
+       converted to mixer and PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF becomes
+       default, this will just be the stream properties). */
+    if (fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF)
+        pStreamEx->Core.Props = CfgHostAcq.Props;
+    else
+        pStreamEx->Core.Props = pCfgGuest->Props;
+
     /* Let the user know if the backend changed some of the tweakable values. */
     if (CfgHostAcq.Backend.cFramesBufferSize != pCfgHost->Backend.cFramesBufferSize)
         LogRel2(("Audio: Backend changed buffer size from %RU64ms (%RU32 frames) to %RU64ms (%RU32 frames)\n",
@@ -2539,47 +2784,55 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
                  PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering), CfgHostAcq.Backend.cFramesPreBuffering));
 
     /*
-     * Configure host buffers.
+     * Check if the backend did return sane values and correct if necessary.
+     * Should never happen with our own backends, but you never know ...
      */
-
-    /* Check if the backend did return sane values and correct if necessary.
-     * Should never happen with our own backends, but you never know ... */
-    if (CfgHostAcq.Backend.cFramesBufferSize < CfgHostAcq.Backend.cFramesPreBuffering)
+    uint32_t const cFramesPreBufferingMax = CfgHostAcq.Backend.cFramesBufferSize - RT_MIN(16, CfgHostAcq.Backend.cFramesBufferSize);
+    if (CfgHostAcq.Backend.cFramesPreBuffering > cFramesPreBufferingMax)
     {
-        LogRel2(("Audio: Warning: Pre-buffering size (%RU32 frames) of stream '%s' does not match buffer size (%RU32 frames), "
-                 "setting pre-buffering size to %RU32 frames\n",
-                 CfgHostAcq.Backend.cFramesPreBuffering, pStreamEx->Core.szName, CfgHostAcq.Backend.cFramesBufferSize, CfgHostAcq.Backend.cFramesBufferSize));
-        CfgHostAcq.Backend.cFramesPreBuffering = CfgHostAcq.Backend.cFramesBufferSize;
+        LogRel2(("Audio: Warning: Pre-buffering size of %RU32 frames for stream '%s' is too close to or larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
+                 CfgHostAcq.Backend.cFramesPreBuffering, pStreamEx->Core.szName, CfgHostAcq.Backend.cFramesBufferSize, cFramesPreBufferingMax));
+        AssertFailed();
+        CfgHostAcq.Backend.cFramesPreBuffering = cFramesPreBufferingMax;
     }
 
     if (CfgHostAcq.Backend.cFramesPeriod > CfgHostAcq.Backend.cFramesBufferSize)
     {
-        LogRel2(("Audio: Warning: Period size (%RU32 frames) of stream '%s' does not match buffer size (%RU32 frames), setting to %RU32 frames\n",
-                 CfgHostAcq.Backend.cFramesPeriod, pStreamEx->Core.szName, CfgHostAcq.Backend.cFramesBufferSize, CfgHostAcq.Backend.cFramesBufferSize));
-        CfgHostAcq.Backend.cFramesPeriod = CfgHostAcq.Backend.cFramesBufferSize;
+        LogRel2(("Audio: Warning: Period size of %RU32 frames for stream '%s' is larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
+                 CfgHostAcq.Backend.cFramesPeriod, pStreamEx->Core.szName, CfgHostAcq.Backend.cFramesBufferSize, CfgHostAcq.Backend.cFramesBufferSize / 2));
+        AssertFailed();
+        CfgHostAcq.Backend.cFramesPeriod = CfgHostAcq.Backend.cFramesBufferSize / 2;
     }
 
-    uint64_t msBufferSize = PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize);
-    LogRel2(("Audio: Buffer size of stream '%s' is %RU64ms (%RU32 frames)\n",
-             pStreamEx->Core.szName, msBufferSize, CfgHostAcq.Backend.cFramesBufferSize));
-
-    /* If no own pre-buffer is set, let the backend choose. */
-    uint64_t msPreBuf = PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering);
-    LogRel2(("Audio: Pre-buffering size of stream '%s' is %RU64ms (%RU32 frames)\n",
-             pStreamEx->Core.szName, msPreBuf, CfgHostAcq.Backend.cFramesPreBuffering));
+    LogRel2(("Audio: Buffer size of stream '%s' is %RU64 ms / %RU32 frames\n", pStreamEx->Core.szName,
+             PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize), CfgHostAcq.Backend.cFramesBufferSize));
+    LogRel2(("Audio: Pre-buffering size of stream '%s' is %RU64 ms / %RU32 frames\n", pStreamEx->Core.szName,
+             PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering), CfgHostAcq.Backend.cFramesPreBuffering));
 
     /* Make sure the configured buffer size by the backend at least can hold the configured latency. */
     const uint32_t msPeriod = PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPeriod);
-
-    LogRel2(("Audio: Period size of stream '%s' is %RU64ms (%RU32 frames)\n",
+    LogRel2(("Audio: Period size of stream '%s' is %RU64 ms / %RU32 frames\n",
              pStreamEx->Core.szName, msPeriod, CfgHostAcq.Backend.cFramesPeriod));
 
     if (   pCfgGuest->Device.cMsSchedulingHint             /* Any scheduling hint set? */
         && pCfgGuest->Device.cMsSchedulingHint > msPeriod) /* This might lead to buffer underflows. */
-    {
         LogRel(("Audio: Warning: Scheduling hint of stream '%s' is bigger (%RU64ms) than used period size (%RU64ms)\n",
                 pStreamEx->Core.szName, pCfgGuest->Device.cMsSchedulingHint, msPeriod));
-    }
+
+    /*
+     * Make a copy of the acquired host stream configuration and the guest side one.
+     */
+    rc = PDMAudioStrmCfgCopy(&pStreamEx->Host.Cfg, &CfgHostAcq);
+    AssertRC(rc);
+
+    /* Set the guests's default audio data layout. */
+    pCfgGuest->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED; /** @todo r=bird: WTF DO WE DO THIS?  It's input and probably should've been const... */
+    rc = PDMAudioStrmCfgCopy(&pStreamEx->Guest.Cfg, pCfgGuest);
+    AssertRC(rc);
+
+    /*
+     * Configure host buffers.
+     */
 
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pStreamEx->Host.MixBuf);
@@ -2589,15 +2842,24 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
         rc = AudioMixBufInit(&pStreamEx->Host.MixBuf, pStreamEx->Core.szName, &CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize);
         AssertRCReturn(rc, rc);
     }
-
-    /* Make a copy of the acquired host stream configuration. */
-    rc = PDMAudioStrmCfgCopy(&pStreamEx->Host.Cfg, &CfgHostAcq);
-    AssertRC(rc);
+    /* Allocate space for pre-buffering of output stream w/o mixing buffers. */
+    else if (pCfgHost->enmDir == PDMAUDIODIR_OUT)
+    {
+        Assert(pStreamEx->Out.cbPreBufAlloc == 0);
+        Assert(pStreamEx->Out.cbPreBufThreshold == 0);
+        Assert(pStreamEx->Out.cbPreBuffered == 0);
+        if (CfgHostAcq.Backend.cFramesPreBuffering != 0)
+        {
+            pStreamEx->Out.cbPreBufThreshold = PDMAudioPropsFramesToBytes(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering);
+            pStreamEx->Out.cbPreBufAlloc = RT_ALIGN_32(pStreamEx->Out.cbPreBufThreshold + _8K, _4K);
+            pStreamEx->Out.pbPreBuf = (uint8_t *)RTMemAllocZ(pStreamEx->Out.cbPreBufAlloc);
+            AssertReturn(pStreamEx->Out.pbPreBuf, VERR_NO_MEMORY);
+        }
+    }
 
     /*
      * Init guest stream.
      */
-
     if (pCfgGuest->Device.cMsSchedulingHint)
         LogRel2(("Audio: Stream '%s' got a scheduling hint of %RU32ms (%RU32 bytes)\n",
                  pStreamEx->Core.szName, pCfgGuest->Device.cMsSchedulingHint,
@@ -2606,18 +2868,11 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pStreamEx->Guest.MixBuf);
 
-    /* Set the guests's default audio data layout. */
-    pCfgGuest->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
     if (!(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF))
     {
         rc = AudioMixBufInit(&pStreamEx->Guest.MixBuf, pStreamEx->Core.szName, &pCfgGuest->Props, CfgHostAcq.Backend.cFramesBufferSize);
         AssertRCReturn(rc, rc);
     }
-
-    /* Make a copy of the guest stream configuration. */
-    rc = PDMAudioStrmCfgCopy(&pStreamEx->Guest.Cfg, pCfgGuest);
-    AssertRC(rc);
 
     if (RT_FAILURE(rc))
         LogRel(("Audio: Creating stream '%s' failed with %Rrc\n", pStreamEx->Core.szName, rc));
@@ -2731,7 +2986,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
     /*
      * Assert sanity.
      */
-    AssertReturn(!(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF), VERR_INVALID_FLAGS);
     AssertPtrReturn(pCfgHost,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgGuest,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppStream,   VERR_INVALID_POINTER);
@@ -3098,7 +3353,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     AssertPtrReturn(pStreamEx, 0);
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, 0);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, 0);
-    AssertMsg(pStreamEx->Core.enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"));
+    AssertMsgReturn(pStreamEx->Core.enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"), 0);
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, 0);
 
@@ -3107,13 +3362,40 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
      */
     uint32_t cbWritable = 0;
 
-    /* Note: We don't propage the backend stream's status to the outside -- it's the job of this
+    /* Note: We don't propagate the backend stream's status to the outside -- it's the job of this
      *       audio connector to make sense of it. */
     if (PDMAudioStrmStatusCanWrite(pStreamEx->Core.fStatus))
     {
         if (pStreamEx->fNoMixBufs)
+        {
+            Assert(pThis->pHostDrvAudio);
             cbWritable = pThis->pHostDrvAudio
                        ? pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend) : 0;
+            if (pStreamEx->fThresholdReached)
+            {
+                if (pStreamEx->Out.cbPreBuffered == 0)
+                { /* likely */ }
+                else
+                {
+                    /* Buggy backend: We weren't able to copy all the pre-buffered data to it
+                       when reaching the threshold.  Try escape this situation, or at least
+                       keep the extra buffering to a minimum.  We must try write something
+                       as long as there is space for it, as we need the pfnStreamWrite call
+                       to move the data. */
+                    uint32_t const cbMin = PDMAudioPropsFramesToBytes(&pStreamEx->Core.Props, 8);
+                    if (cbWritable >= pStreamEx->Out.cbPreBuffered + cbMin)
+                        cbWritable -= pStreamEx->Out.cbPreBuffered + cbMin / 2;
+                    else
+                        cbWritable = RT_MIN(cbMin, pStreamEx->Out.cbPreBufAlloc - pStreamEx->Out.cbPreBuffered);
+                    AssertLogRel(cbWritable);
+                }
+            }
+            else
+            {
+                Assert(cbWritable >= pStreamEx->Out.cbPreBufThreshold);
+                cbWritable = pStreamEx->Out.cbPreBufAlloc - pStreamEx->Out.cbPreBufThreshold;
+            }
+        }
         else
             cbWritable = AudioMixBufFreeBytes(&pStreamEx->Host.MixBuf);
 
@@ -3171,9 +3453,9 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
     AssertPtrReturn(pVol, VERR_INVALID_POINTER);
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pStreamEx->fNoMixBufs, VWRN_INVALID_STATE);
 
     LogFlowFunc(("[%s] volL=%RU32, volR=%RU32, fMute=%RTbool\n", pStreamEx->Core.szName, pVol->uLeft, pVol->uRight, pVol->fMuted));
-    AssertReturn(!pStreamEx->fNoMixBufs, VERR_ACCESS_DENIED);
 
     AudioMixBufSetVolume(&pStreamEx->Guest.MixBuf, pVol);
     AudioMixBufSetVolume(&pStreamEx->Host.MixBuf,  pVol);
@@ -3247,6 +3529,16 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     /* Destroy mixing buffers. */
     AudioMixBufDestroy(&pStreamEx->Guest.MixBuf);
     AudioMixBufDestroy(&pStreamEx->Host.MixBuf);
+
+    /* Free pre-buffer space. */
+    if (   pStreamEx->Core.enmDir == PDMAUDIODIR_OUT
+        && pStreamEx->Out.pbPreBuf)
+    {
+        RTMemFree(pStreamEx->Out.pbPreBuf);
+        pStreamEx->Out.pbPreBuf      = NULL;
+        pStreamEx->Out.cbPreBufAlloc = 0;
+        pStreamEx->Out.cbPreBuffered = 0;
+    }
 
     if (RT_SUCCESS(rc))
     {
