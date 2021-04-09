@@ -93,15 +93,6 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 #define DMAR_VER_MINOR                              0
 /** DMAR implementation's major version number (exposed to software). */
 #define DMAR_VER_MAJOR                              1
-/** Number of domains supported (0=16, 1=64, 2=256, 3=1024, 4=4K, 5=16K, 6=64K,
- *  7=(Reserved). */
-#define DMAR_CAP_ND                                 2
-/** Large page support level (0=2M, 1=1GB pages). */
-#define DMAR_CAP_LARGE_PAGE_LVL                     0
-/** Maximum address mask value (9 for 2M, 18 for 1G). */
-#define DMAR_CAP_MAMV                               (X86_PAGE_2M_SHIFT - X86_PAGE_4K_SHIFT)
-/** Maximum handle mask value (must be 0 to 0xf). */
-#define DMAR_ECAP_MHMV                              0xf
 /** @} */
 
 /** Release log prefix string. */
@@ -126,10 +117,18 @@ typedef struct DMAR
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
 
-    /** DMAR registers (group 0). */
+    /** Registers (group 0). */
     uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
-    /** DMAR registers (group 1). */
+    /** Registers (group 1). */
     uint8_t                     abRegs1[DMAR_MMIO_GROUP_1_SIZE];
+
+    /** @name Register copies for a tiny bit faster and more convenient access.
+     *  @{ */
+    /** Copy of CAP_REG. */
+    uint64_t                    fCap;
+    /** Copy of ECAP_REG. */
+    uint64_t                    fExtCap;
+    /** @} */
 
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER                 StatMmioReadR3;         /**< Number of MMIO reads in R3. */
@@ -457,8 +456,27 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
  */
 static uint8_t vtdGetSupGstAddrBits(uint8_t uSagaw)
 {
-    if (uSagaw > 0 && uSagaw < 4)
+    if (RT_LIKELY(uSagaw > 0 && uSagaw < 4))
         return 30 + (uSagaw * 9);
+    return 0;
+}
+
+
+/**
+ * Gets the supported adjusted guest-address width (SAGAW) given the maximum guest
+ * address width (MGAW).
+ *
+ * @returns The CAP.SAGAW value.
+ * @param   uMgaw  The CAP_REG.MGAW value.
+ */
+static uint8_t vtdGetSupGstAddrWidth(uint8_t uMgaw)
+{
+    switch (uMgaw + 1)
+    {
+        case 39:    return 1;
+        case 48:    return 2;
+        case 57:    return 3;
+    }
     return 0;
 }
 
@@ -778,82 +796,6 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef IN_RING3
 /**
- * Initializes registers in the DMAR unit that are constant through the lifetime of
- * the VM (immutable by software and not mutated by hardware once initialized).
- *
- * @param   pDevIns     The IOMMU device instance.
- */
-static void dmarR3RegsInitImmutable(PPDMDEVINS pDevIns)
-{
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    /* VER_REG */
-    {
-        uint8_t const uVer = RT_BF_MAKE(VTD_BF_VER_REG_MIN, DMAR_VER_MINOR)
-                           | RT_BF_MAKE(VTD_BF_VER_REG_MAX, DMAR_VER_MAJOR);
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, uVer);
-    }
-    /* CAP_REG */
-    {
-        uint8_t cGstPhysAddrBits;
-        uint8_t cGstLinearAddrBits;
-        PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cGstPhysAddrBits, &cGstLinearAddrBits);
-        NOREF(cGstLinearAddrBits);
-        uint64_t const uCap = RT_BF_MAKE(VTD_BF_CAP_REG_ND,     DMAR_CAP_ND)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,    0)  /* Advanced Fault Logging not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,   0)  /* Software need not flush write-buffers. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,   0)  /* Protected Low-Memory Region not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,   0)  /* Protected High-Memory Region not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_CM,     1)  /** @todo Figure out if required when we impl. caching. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,  0)  /* 0 as Second-level Translation not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   cGstPhysAddrBits - 1)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,    1)  /** @todo Zero-length read? */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    DMAR_MMIO_OFF_FRCD_LO_REG >> 4)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,  DMAR_CAP_LARGE_PAGE_LVL)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,    1)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,    DMAR_FRCD_REG_COUNT - 1)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,   DMAR_CAP_MAMV)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,    1)
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,  0)  /* 0 as First-level Translation not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_PI,     0)  /* Posted Interrupts not supported. */
-                            | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,  0); /* 0 as First-level Translation not supported. */
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, uCap);
-    }
-    /* ECAP_REG */
-    {
-        uint64_t const uCap = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     1)
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     1)
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    0)  /* Extended Interrupt Mode (32-bit APIC ID) not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_PT,     1)
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SC,     0)  /* Snoop Control not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_IRO,    DMAR_MMIO_OFF_IVA_REG >> 4)
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_MHMV,   DMAR_ECAP_MHMV)
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_MTS,    0)  /* Memory Type not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_NEST,   0)  /* Nested Translation not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_PRS,    0)  /* Page Request not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    0)  /* Execute Request not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    0)  /* Supervisor Request not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    0)  /* Supervisor Request not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /* 0 as SMTS not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as SMTS not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* 0 as SMTS not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_DIT,    0)  /* 0 as DT not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_PDS,    0)  /* 0 as DT not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SMTS,   0)  /** @todo SMTS? Figure out if we can do this or requires PASID? */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_VCS,    0)  /* 0 as PASID not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SLADS,  0)  /* 0 as SMTS not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SLTS,   0)  /** @todo SLTS? Figure out if we can do this */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_FLTS,   0)  /** @todo FLTS? Figure out if we can do this */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_SMPWCS, 0)  /* 0 as SMTS not supported. */
-                            | RT_BF_MAKE(VTD_BF_ECAP_REG_RPS,    0); /* 0 as SMTS not supported. */
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_ECAP_REG, uCap);
-    }
-}
-
-
-/**
  * Initializes all registers in the DMAR unit.
  *
  * @param   pDevIns     The IOMMU device instance.
@@ -864,14 +806,110 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
     RT_ZERO(pThis->abRegs0);
     RT_ZERO(pThis->abRegs1);
 
-    /* Initialize immutable registers prior to other registers. */
-    dmarR3RegsInitImmutable(pDevIns);
+    /*
+     * Initialize registers not mutable by software prior to initializing other registers.
+     */
+    /* VER_REG */
+    {
+        uint8_t const uVer = RT_BF_MAKE(VTD_BF_VER_REG_MIN, DMAR_VER_MINOR)
+                           | RT_BF_MAKE(VTD_BF_VER_REG_MAX, DMAR_VER_MAJOR);
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, uVer);
+    }
 
+    uint8_t const fFlts  = 1;                    /* First-Level translation support. */
+    uint8_t const fSlts  = 1;                    /* Second-Level translation support. */
+    uint8_t const fPt    = 1;                    /* Pass-Through support. */
+    uint8_t const fNest  = 0;                    /* Nested translation support. */
+    uint8_t const fSmts  = fFlts & fSlts & fPt;  /* Scalable mode translation support.*/
+
+    /* CAP_REG */
+    {
+        uint8_t const fFl1gp = 1;                               /* First-Level 1GB pages support. */
+        uint8_t const fFl5lp = 1;                               /* First-level 5-level paging support (PML5E). */
+        uint8_t const fSl2mp = fSlts & 1;                       /* Second-Level 2MB pages support. */
+        uint8_t const fSl2gp = fSlts & 1;                       /* Second-Level 1GB pages support. */
+        uint8_t const fSllps = fSl2mp                           /* Second-Level large page Support. */
+                             | ((fSl2mp & fFl1gp) & RT_BIT(1));
+        uint8_t const fMamv  = (fSl2gp ?                        /* Maximum address mask value (for second-level invalidations). */
+                                X86_PAGE_1G_SHIFT : X86_PAGE_2M_SHIFT) - X86_PAGE_4K_SHIFT;
+        uint8_t const fNd    = 2;                               /* Number of domains (0=16, 1=64, 2=256, 3=1K, 4=4K, 5=16K, 6=64K,
+                                                                   7=Reserved). */
+        uint8_t const fPsi   = 1;                               /* Page selective invalidation. */
+        uint8_t cGstPhysAddrBits;
+        uint8_t cGstLinearAddrBits;
+        PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cGstPhysAddrBits, &cGstLinearAddrBits);
+        NOREF(cGstLinearAddrBits);
+        uint8_t const uMgaw  = cGstPhysAddrBits - 1;            /* Maximum guest address width. */
+        uint8_t const uSagaw = vtdGetSupGstAddrWidth(uMgaw);    /* Supported adjust guest address width. */
+
+        pThis->fCap = RT_BF_MAKE(VTD_BF_CAP_REG_ND,     fNd)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,    0)      /* Advanced fault logging not supported. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,   0)      /* Software need not flush write-buffers. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,   0)      /* Protected Low-Memory Region not supported. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,   0)      /* Protected High-Memory Region not supported. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_CM,     1)      /** @todo Figure out if required when we impl. caching. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,  fSlts & uSagaw)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   uMgaw)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,    1)      /** @todo Figure out if/how to support zero-length reads. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    DMAR_MMIO_OFF_FRCD_LO_REG >> 4)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,  fSlts & fSllps)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,    fPsi)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,    DMAR_FRCD_REG_COUNT - 1)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,   fPsi & fMamv)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,    1)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,  fFlts & fFl1gp)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_PI,     0)      /* Posted Interrupts not supported. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,  fFlts & fFl5lp);
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCap);
+    }
+
+    /* ECAP_REG */
+    {
+        uint8_t const  fIr     = 1;                             /* Interrupt remapping support. */
+        uint8_t const  fMhmv   = 0xf;                           /* Maximum handle mask value. */
+        uint16_t const offIro  = DMAR_MMIO_OFF_IVA_REG >> 4;    /* MMIO offset of IOTLB registers. */
+        uint8_t const  fSrs    = 1;                             /* Supervisor request support. */
+        uint8_t const  fEim    = 1;                             /* Extended interrupt mode.*/
+
+        pThis->fExtCap = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     1)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fIr)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    fIr & fEim)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PT,     fPt)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SC,     0)  /* Snoop control not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IRO,    offIro)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_MHMV,   fIr & fMhmv)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_MTS,    0)  /* Memory type not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_NEST,   fNest)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PRS,    0)  /* 0 as DT not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    0)  /* Execute request not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    fSmts & fSrs)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /* 0 as PASID not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as PASID not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* PASID support. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_DIT,    0)  /* 0 as DT not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PDS,    0)  /* 0 as DT not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SMTS,   fSmts)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_VCS,    0)  /* 0 as PASID not supported (commands seem PASID specific). */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SLADS,  0)  /* Second-level accessed/dirty not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SLTS,   fSlts)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_FLTS,   fFlts)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SMPWCS, 0)  /* 0 as PASID not supported. */
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_RPS,    0); /* 0 as PASID not supported. */
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_ECAP_REG, pThis->fExtCap);
+    }
+
+    /*
+     * Initialize registers mutable by software.
+     */
     /* FECTL_REG */
     {
         uint32_t const uCtl = RT_BF_MAKE(VTD_BF_FECTL_REG_IM, 1);
         dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uCtl);
     }
+
     /* ICETL_REG */
     {
         uint32_t const uCtl = RT_BF_MAKE(VTD_BF_IECTL_REG_IM, 1);
@@ -893,6 +931,8 @@ static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
 {
     RT_NOREF1(pDevIns);
     LogFlowFunc(("\n"));
+
+    dmarR3RegsInit(pDevIns);
 }
 
 
@@ -993,7 +1033,7 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
                                    "Intel-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
-# ifdef VBOX_WITH_STATISTICS
+#ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
@@ -1017,19 +1057,17 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteR3, STAMTYPE_COUNTER, "R3/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteRZ, STAMTYPE_COUNTER, "RZ/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in RZ.");
-# endif
+#endif
 
     /*
-     * Initialize all DMAR registers (order is important).
+     * Initialize registers.
      */
     dmarR3RegsInit(pDevIns);
 
-    uint64_t const fCap     = dmarRegRead64(pThis, VTD_MMIO_OFF_CAP_REG);
-    uint64_t const fExtCap  = dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG);
-    uint8_t const  uMaxGstAddrBits = RT_BF_GET(fCap, VTD_BF_CAP_REG_MGAW) + 1;
-    uint8_t const  uSupGstAddrBits = vtdGetSupGstAddrBits(RT_BF_GET(fCap, VTD_BF_CAP_REG_SAGAW));
-    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits)\n", DMAR_LOG_PFX, fCap, fExtCap, uMaxGstAddrBits,
-            uSupGstAddrBits));
+    uint8_t const cMaxGstAddrBits = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const cSupGstAddrBits = vtdGetSupGstAddrBits(RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_SAGAW));
+    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits)\n", DMAR_LOG_PFX, pThis->fCap, pThis->fExtCap,
+            cMaxGstAddrBits, cSupGstAddrBits));
     return VINF_SUCCESS;
 }
 
