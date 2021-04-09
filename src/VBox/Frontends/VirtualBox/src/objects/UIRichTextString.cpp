@@ -67,10 +67,10 @@ QString UIRichTextString::toString() const
     return strString;
 }
 
-QList<QTextLayout::FormatRange> UIRichTextString::formatRanges(int iShift /* = 0 */) const
+QVector<QTextLayout::FormatRange> UIRichTextString::formatRanges(int iShift /* = 0 */) const
 {
     /* Prepare format range list: */
-    QList<QTextLayout::FormatRange> ranges;
+    QVector<QTextLayout::FormatRange> ranges;
 
     /* Add own format range first: */
     QTextLayout::FormatRange range;

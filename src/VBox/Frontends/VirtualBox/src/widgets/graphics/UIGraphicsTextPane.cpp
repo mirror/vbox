@@ -448,7 +448,7 @@ QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice
 
     /* Create layout; */
     QTextLayout *pTextLayout = new QTextLayout(ms.toString(), font, pPaintDevice);
-    pTextLayout->setAdditionalFormats(ms.formatRanges());
+    pTextLayout->setFormats(ms.formatRanges());
 
     /* Configure layout: */
     QTextOption textOption;
@@ -488,7 +488,7 @@ QString UIGraphicsTextPane::searchForHoveredAnchor(QPaintDevice *pPaintDevice, c
         const QString strLayoutText = pTextLayout->text();
 
         /* Enumerate format ranges: */
-        foreach (const QTextLayout::FormatRange &range, pTextLayout->additionalFormats())
+        foreach (const QTextLayout::FormatRange &range, pTextLayout->formats())
         {
             /* Skip unrelated formats: */
             if (!range.format.isAnchor())

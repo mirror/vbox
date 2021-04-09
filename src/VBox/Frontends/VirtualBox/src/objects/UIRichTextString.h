@@ -60,7 +60,7 @@ public:
 
     /** Returns the list of existing format ranges appropriate for QTextLayout.
       * @param  iShift  Brings the shift of <i>this</i> rich text block accordig to it's root. */
-    QList<QTextLayout::FormatRange> formatRanges(int iShift = 0) const;
+    QVector<QTextLayout::FormatRange> formatRanges(int iShift = 0) const;
 
     /** Defines the anchor to highlight in <i>this</i> rich text block and in it's children. */
     void setHoveredAnchor(const QString &strHoveredAnchor);
