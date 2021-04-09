@@ -323,7 +323,7 @@ static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG
  * @param   phPCM   ALSA stream to set software parameters for.
  * @param   pCfgReq Requested configuration to set.
  * @param   pCfgObt Obtained configuration on success. Might differ from
- *                       requested configuration.
+ *                  requested configuration.
  */
 static int alsaStreamSetHwParams(snd_pcm_t *phPCM, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
 {
@@ -407,7 +407,7 @@ static int alsaStreamSetHwParams(snd_pcm_t *phPCM, PALSAAUDIOSTREAMCFG pCfgReq, 
     pCfgObt->access  = pCfgReq->access;
     pCfgObt->fmt     = pCfgReq->fmt;
 
-    LogRel2(("ALSA: HW params: %u Hz, %ul frames period, %ul frames buffer, %u channel(s), fmt=%d, access=%d\n",
+    LogRel2(("ALSA: HW params: %u Hz, %lu frames period, %lu frames buffer, %u channel(s), fmt=%d, access=%d\n",
              pCfgObt->freq, pCfgObt->period_size, pCfgObt->buffer_size, pCfgObt->nchannels, pCfgObt->fmt, pCfgObt->access));
     return 0;
 }
@@ -746,10 +746,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                 if (cbToWrite > cbBuf)
                     cbToWrite = cbBuf;
 
-                /*
-                 * Now we copy the stuff into our scratch buffer for some
-                 * totally unexplained reason.
-                 */
+                /* Now we copy the stuff into our scratch buffer for some totally unexplained reason. */
                 memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
 
                 /*
@@ -964,7 +961,7 @@ static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamA
 
         pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
-        /* No pre-buffering. */
+        pCfgAcq->Backend.cFramesPreBuffering = 0; /* No pre-buffering. */
 
         pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * PDMAudioPropsBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAlloc(pStreamALSA->cbBuf);
