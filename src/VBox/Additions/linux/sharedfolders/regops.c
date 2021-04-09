@@ -3406,7 +3406,16 @@ static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct page *page
 
 
 /* Special page fault callback for mapping pages: */
-# if RTLNX_VER_MIN(4,10,0)
+# if RTLNX_VER_MIN(5,12,0)
+static vm_fault_t vbsf_vmlog_map_pages(struct vm_fault *vmf, pgoff_t start, pgoff_t end)
+{
+    vm_fault_t rc;
+    SFLOGFLOW(("vbsf_vmlog_map_pages: vmf=%p (flags=%#x addr=%p) start=%p end=%p\n", vmf, vmf->flags, vmf->address, start, end));
+    rc = g_pGenericFileVmOps->map_pages(vmf, start, end);
+    SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
+    return rc;
+}
+# elif RTLNX_VER_MIN(4,10,0)
 static void vbsf_vmlog_map_pages(struct vm_fault *vmf, pgoff_t start, pgoff_t end)
 {
     SFLOGFLOW(("vbsf_vmlog_map_pages: vmf=%p (flags=%#x addr=%p) start=%p end=%p\n", vmf, vmf->flags, vmf->address, start, end));
