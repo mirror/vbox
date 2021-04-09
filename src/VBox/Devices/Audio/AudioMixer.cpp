@@ -524,7 +524,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
             rc = VINF_SUCCESS; /* Not fatal here, stream can become available at some later point in time. */
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && pSink->enmDir != AUDMIXSINKDIR_OUTPUT)
     {
         /* Apply the sink's combined volume to the stream. */
         rc = pStream->pConn->pfnStreamSetVolume(pStream->pConn, pStream->pStream, &pSink->VolumeCombined);
@@ -1809,60 +1809,63 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
     Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x\n", pSink->pszName,
               AudioMixBufLive(&pSink->MixBuf), cFramesToRead, cWritableStreams));
 
-    if (cWritableStreams)
+    if (cWritableStreams > 0)
     {
-        /*
-         * For each of the enabled streams, convert cFramesToRead frames from
-         * the mixing buffer and write that to the downstream driver.
-         */
-        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+        if (cFramesToRead > 0)
         {
-            if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
+            /*
+             * For each of the enabled streams, convert cFramesToRead frames from
+             * the mixing buffer and write that to the downstream driver.
+             */
+            RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
             {
-                uint32_t offSrcFrame = 0;
-                do
+                if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
                 {
-                    /* Convert a chunk from the mixer buffer.  */
-                    union
+                    uint32_t offSrcFrame = 0;
+                    do
                     {
-                        uint8_t  ab[8192];
-                        uint64_t au64[8192 / sizeof(uint64_t)]; /* Use uint64_t to ensure good alignment. */
-                    } Buf;
-                    uint32_t cbDstPeeked      = sizeof(Buf);
-                    uint32_t cSrcFramesPeeked = cFramesToRead - offSrcFrame;
-                    AudioMixBufPeek(&pSink->MixBuf, offSrcFrame, cSrcFramesPeeked, &cSrcFramesPeeked,
-                                    &pMixStream->PeekState, &Buf, sizeof(Buf), &cbDstPeeked);
-                    offSrcFrame += cSrcFramesPeeked;
+                        /* Convert a chunk from the mixer buffer.  */
+                        union
+                        {
+                            uint8_t  ab[8192];
+                            uint64_t au64[8192 / sizeof(uint64_t)]; /* Use uint64_t to ensure good alignment. */
+                        } Buf;
+                        uint32_t cbDstPeeked      = sizeof(Buf);
+                        uint32_t cSrcFramesPeeked = cFramesToRead - offSrcFrame;
+                        AudioMixBufPeek(&pSink->MixBuf, offSrcFrame, cSrcFramesPeeked, &cSrcFramesPeeked,
+                                        &pMixStream->PeekState, &Buf, sizeof(Buf), &cbDstPeeked);
+                        offSrcFrame += cSrcFramesPeeked;
 
-                    /* Write it to the backend.  Since've checked that there is buffer
-                       space available, this should always write the whole buffer. */
-                    uint32_t cbDstWritten = 0;
-                    int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream,
-                                                                &Buf, cbDstPeeked, &cbDstWritten);
-                    Log3Func(("%s: %#x L %#x => %#x bytes; wrote %#x rc2=%Rrc %s\n", pSink->pszName, offSrcFrame,
-                              cSrcFramesPeeked - cSrcFramesPeeked, cbDstPeeked, cbDstWritten, rc2, pMixStream->pszName));
-                    if (RT_SUCCESS(rc2))
-                        AssertLogRelMsg(cbDstWritten == cbDstPeeked,
-                                        ("cbDstWritten=%#x cbDstPeeked=%#x - (sink '%s')\n",
-                                         cbDstWritten, cbDstPeeked, pSink->pszName));
-                    else if (rc2 == VERR_AUDIO_STREAM_NOT_READY)
-                    {
-                        LogRel2(("Audio Mixer: '%s' (sink '%s'): Stream not ready - skipping.\n", pMixStream->pszName, pSink->pszName));
-                        break; /* must've changed status, stop processing */
-                    }
-                    else
-                    {
-                        Assert(rc2 != VERR_BUFFER_OVERFLOW);
-                        LogRel2(("Audio Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
-                                 pMixStream->pszName, pSink->pszName, rc2));
-                        break;
-                    }
-                } while (offSrcFrame < cFramesToRead);
-                Assert(offSrcFrame == cFramesToRead);
+                        /* Write it to the backend.  Since've checked that there is buffer
+                           space available, this should always write the whole buffer. */
+                        uint32_t cbDstWritten = 0;
+                        int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream,
+                                                                    &Buf, cbDstPeeked, &cbDstWritten);
+                        Log3Func(("%s: %#x L %#x => %#x bytes; wrote %#x rc2=%Rrc %s\n", pSink->pszName, offSrcFrame,
+                                  cSrcFramesPeeked - cSrcFramesPeeked, cbDstPeeked, cbDstWritten, rc2, pMixStream->pszName));
+                        if (RT_SUCCESS(rc2))
+                            AssertLogRelMsg(cbDstWritten == cbDstPeeked,
+                                            ("cbDstWritten=%#x cbDstPeeked=%#x - (sink '%s')\n",
+                                             cbDstWritten, cbDstPeeked, pSink->pszName));
+                        else if (rc2 == VERR_AUDIO_STREAM_NOT_READY)
+                        {
+                            LogRel2(("Audio Mixer: '%s' (sink '%s'): Stream not ready - skipping.\n",
+                                     pMixStream->pszName, pSink->pszName));
+                            break; /* must've changed status, stop processing */
+                        }
+                        else
+                        {
+                            Assert(rc2 != VERR_BUFFER_OVERFLOW);
+                            LogRel2(("Audio Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
+                                     pMixStream->pszName, pSink->pszName, rc2));
+                            break;
+                        }
+                    } while (offSrcFrame < cFramesToRead);
+                }
             }
-        }
 
-        AudioMixBufAdvance(&pSink->MixBuf, cFramesToRead);
+            AudioMixBufAdvance(&pSink->MixBuf, cFramesToRead);
+        }
 
         /*
          * Update the dirty flag for what it's worth.
