@@ -85,6 +85,7 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *event) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;

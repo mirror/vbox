@@ -578,23 +578,33 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
         QTextBrowser::wheelEvent(pEvent);
 }
 
-void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
+void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
     clearOverlay();
 
-    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
     QString strAnchor = anchorAt(pEvent->pos());
     if (!strAnchor.isEmpty())
     {
-        if (pEvent->modifiers() & Qt::ControlModifier)
+        if ((pEvent->modifiers() & Qt::ControlModifier) ||
+            pEvent->button() == Qt::MidButton)
         {
             QString strLink = source().resolved(strAnchor).toString();
             emit sigOpenLinkInNewTab(strLink, true);
             return;
         }
     }
+    QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
+
     loadImageAtPosition(pEvent->globalPos());
 }
+
+void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
+{
+    clearOverlay();
+    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
+    loadImageAtPosition(pEvent->globalPos());
+}
+
 
 void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
 {
