@@ -90,6 +90,8 @@ typedef struct ALSAAUDIOSTREAM
     void               *pvBuf;
     /** Size (in bytes) of allocated scratch buffer. */
     size_t              cbBuf;
+    /** Internal stream offset (for debugging). */
+    uint64_t            offInternal;
 } ALSAAUDIOSTREAM, *PALSAAUDIOSTREAM;
 
 /* latency = period_size * periods / (rate * bytes_per_frame) */
@@ -722,7 +724,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
-    Log4Func(("pvBuf=%p uBufSize=%#x (%u) state=%s - %s\n", pvBuf, cbBuf, cbBuf,
+    Log4Func(("@%#RX64: pvBuf=%p cbBuf=%#x (%u) state=%s - %s\n", pStreamALSA->offInternal, pvBuf, cbBuf, cbBuf,
               snd_pcm_state_name(snd_pcm_state(pStreamALSA->phPCM)), pStreamALSA->pCfg->szName));
 
     /*
@@ -760,6 +762,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                     Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
                               cbToWrite, cFramesWritten, cFramesAvail));
                     *pcbWritten = PDMAudioPropsFramesToBytes(pProps, cFramesWritten);
+                    pStreamALSA->offInternal += *pcbWritten;
                     return VINF_SUCCESS;
                 }
                 LogFunc(("snd_pcm_writei w/ cbToWrite=%u -> %ld [cFramesAvail=%ld]\n", cbToWrite, cFramesWritten, cFramesAvail));
@@ -799,6 +802,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                         Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
                                   cbToWrite, cFramesWritten, cFramesAvail));
                         *pcbWritten = PDMAudioPropsFramesToBytes(pProps, cFramesWritten);
+                        pStreamALSA->offInternal += *pcbWritten;
                         return VINF_SUCCESS;
                     }
                     LogFunc(("snd_pcm_writei w/ cbToWrite=%u -> %ld [cFramesAvail=%ld, iTry=%d]\n", cbToWrite, cFramesWritten, cFramesAvail, iTry));
@@ -1098,6 +1102,7 @@ static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD 
 
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
+            /** @todo shouldn't this try snd_pcm_pause first? */
             err = snd_pcm_drop(pStreamALSA->phPCM);
             if (err < 0)
             {
@@ -1115,6 +1120,8 @@ static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD 
             if (   streamState == SND_PCM_STATE_PREPARED
                 || streamState == SND_PCM_STATE_RUNNING)
             {
+                /** @todo r=bird: You want EMT to block here for potentially 200-300ms worth
+                 *        of buffer to be drained?  That's a certifiably bad idea.  */
                 err = snd_pcm_nonblock(pStreamALSA->phPCM, 0);
                 if (err < 0)
                 {
