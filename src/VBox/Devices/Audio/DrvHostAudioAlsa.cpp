@@ -1375,35 +1375,56 @@ static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetWritable(PPDMIHOSTAUDI
 static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, 0);
-
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
-
-    snd_pcm_sframes_t cFramesDelay  = 0;
-    snd_pcm_state_t   enmState = snd_pcm_state(pStreamALSA->phPCM);
-
-    int rc = VINF_SUCCESS;
-
+    AssertPtrReturn(pStreamALSA, 0);
     AssertPtr(pStreamALSA->pCfg);
+
+    /*
+     * This is only relevant to output streams (input streams can't have
+     * any pending, unplayed data).
+     */
+    uint32_t cbPending = 0;
     if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_OUT)
     {
-        /* Getting the delay (in audio frames) reports the time it will take
-         * to hear a new sample after all queued samples have been played out. */
-        int rc2 = snd_pcm_delay(pStreamALSA->phPCM, &cFramesDelay);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        /*
+         * Getting the delay (in audio frames) reports the time it will take
+         * to hear a new sample after all queued samples have been played out.
+         *
+         * We use snd_pcm_avail_delay instead of snd_pcm_delay here as it will
+         * update the buffer positions, and we can use the extra value against
+         * the buffer size to double check since the delay value may include
+         * fixed built-in delays in the processing chain and hardware.
+         */
+        snd_pcm_sframes_t cFramesAvail = 0;
+        snd_pcm_sframes_t cFramesDelay = 0;
+        int rc = snd_pcm_avail_delay(pStreamALSA->phPCM, &cFramesAvail, &cFramesDelay);
 
-        /* Make sure to check the stream's status.
-         * If it's anything but SND_PCM_STATE_RUNNING, the delay is meaningless and therefore 0. */
-        if (enmState != SND_PCM_STATE_RUNNING)
-            cFramesDelay = 0;
+        /*
+         * We now also get the state as the pending value should be zero when
+         * we're not in a playing state.
+         */
+        snd_pcm_state_t enmState = snd_pcm_state(pStreamALSA->phPCM);
+        switch (enmState)
+        {
+            case SND_PCM_STATE_RUNNING:
+            case SND_PCM_STATE_DRAINING:
+                if (rc >= 0)
+                {
+                    if (cFramesAvail >= pStreamALSA->pCfg->Backend.cFramesBufferSize)
+                        cbPending = 0;
+                    else
+                        cbPending = PDMAudioPropsFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
+                }
+                break;
+
+            default:
+                break;
+        }
+        Log2Func(("returns %u (%#x) - cFramesBufferSize=%RU32 cFramesAvail=%ld cFramesDelay=%ld rc=%d; enmState=%s (%d) \n",
+                  cbPending, cbPending, pStreamALSA->pCfg->Backend.cFramesBufferSize, cFramesAvail, cFramesDelay, rc,
+                  snd_pcm_state_name(enmState), enmState));
     }
-
-    /* Note: For input streams we never have pending data left. */
-
-    Log2Func(("cFramesDelay=%RI32, enmState=%d, rc=%d\n", cFramesDelay, enmState, rc));
-
-    return PDMAudioPropsFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
+    return cbPending;
 }
 
 

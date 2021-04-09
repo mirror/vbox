@@ -57,8 +57,9 @@ PROXY_STUB(snd_device_name_get_hint, char *,
 PROXY_STUB(snd_pcm_avail_update, snd_pcm_sframes_t, (snd_pcm_t *pcm),
            (pcm))
 PROXY_STUB(snd_pcm_close, int, (snd_pcm_t *pcm), (pcm))
-PROXY_STUB(snd_pcm_delay, int, (snd_pcm_t *pcm, snd_pcm_sframes_t *frames),
-           (pcm, frames))
+PROXY_STUB(snd_pcm_avail_delay, int,
+           (snd_pcm_t *pcm, snd_pcm_sframes_t *availp, snd_pcm_sframes_t *delayp),
+           (pcm, availp, delayp))
 PROXY_STUB(snd_pcm_nonblock, int, (snd_pcm_t *pcm, int *onoff),
            (pcm, onoff))
 PROXY_STUB(snd_pcm_drain, int, (snd_pcm_t *pcm),
@@ -165,8 +166,8 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(snd_device_name_free_hint),
 
     ELEMENT(snd_pcm_avail_update),
+    ELEMENT(snd_pcm_avail_delay),
     ELEMENT(snd_pcm_close),
-    ELEMENT(snd_pcm_delay),
     ELEMENT(snd_pcm_drain),
     ELEMENT(snd_pcm_drop),
     ELEMENT(snd_pcm_nonblock),

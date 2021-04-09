@@ -34,7 +34,7 @@
 
 #define snd_pcm_avail_update                    ALSA_MANGLER(snd_pcm_avail_update)
 #define snd_pcm_close                           ALSA_MANGLER(snd_pcm_close)
-#define snd_pcm_delay                           ALSA_MANGLER(snd_pcm_delay)
+#define snd_pcm_avail_delay                     ALSA_MANGLER(snd_pcm_avail_delay)
 #define snd_pcm_drain                           ALSA_MANGLER(snd_pcm_drain)
 #define snd_pcm_drop                            ALSA_MANGLER(snd_pcm_drop)
 #define snd_pcm_nonblock                        ALSA_MANGLER(snd_pcm_nonblock)
