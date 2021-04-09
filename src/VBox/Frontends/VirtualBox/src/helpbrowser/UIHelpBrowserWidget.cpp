@@ -347,8 +347,6 @@ void UIZoomMenuAction::prepare()
 {
     QWidget *pWidget = new QWidget;
     setDefaultWidget(pWidget);
-    // if (pWidget)
-    //     pWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
     QHBoxLayout *pMainLayout = new QHBoxLayout(pWidget);
     pMainLayout->setSpacing(0);

@@ -90,6 +90,7 @@ protected:
     virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private slots:
 

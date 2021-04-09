@@ -653,6 +653,13 @@ bool UIHelpViewer::eventFilter(QObject *pObject, QEvent *pEvent)
     return QIWithRetranslateUI<QTextBrowser>::eventFilter(pObject, pEvent);
 }
 
+void UIHelpViewer::keyPressEvent(QKeyEvent *pEvent)
+{
+    if (pEvent && pEvent->key() == Qt::Key_Escape)
+        clearOverlay();
+    QIWithRetranslateUI<QTextBrowser>::keyPressEvent(pEvent);
+}
+
 void UIHelpViewer::retranslateUi()
 {
 }
