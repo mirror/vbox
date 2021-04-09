@@ -84,12 +84,6 @@ typedef struct ALSAAUDIOSTREAM
     PPDMAUDIOSTREAMCFG pCfg;
     /** Pointer to allocated ALSA PCM configuration to use. */
     snd_pcm_t          *phPCM;
-    /** Scratch buffer.
-     * @todo r=bird: WHY THE *BEEEEP* DO WE NEED THIS? Do I have to go search svn
-     *       history for this (probably just an 'updates' commit)? */
-    void               *pvBuf;
-    /** Size (in bytes) of allocated scratch buffer. */
-    size_t              cbBuf;
     /** Internal stream offset (for debugging). */
     uint64_t            offInternal;
 } ALSAAUDIOSTREAM, *PALSAAUDIOSTREAM;
@@ -494,38 +488,46 @@ static void alsaDbgErrorHandler(const char *file, int line, const char *function
  * Returns the available audio frames queued.
  *
  * @returns VBox status code.
- * @param   phPCM               ALSA stream handle.
- * @param   pFramesAvail        Where to store the available frames.
+ * @param   phPCM           ALSA stream handle.
+ * @param   pcFramesAvail   Where to store the available frames.
  */
-static int alsaStreamGetAvail(snd_pcm_t *phPCM, snd_pcm_sframes_t *pFramesAvail)
+static int alsaStreamGetAvail(snd_pcm_t *phPCM, snd_pcm_sframes_t *pcFramesAvail)
 {
-    AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
-    /* pFramesAvail is optional. */
+    AssertPtr(phPCM);
+    AssertPtr(pcFramesAvail);
 
     int rc;
-
-    snd_pcm_sframes_t framesAvail = snd_pcm_avail_update(phPCM);
-    if (framesAvail < 0)
+    snd_pcm_sframes_t cFramesAvail = snd_pcm_avail_update(phPCM);
+    if (cFramesAvail > 0)
     {
-        if (framesAvail == -EPIPE)
+        LogFunc(("cFramesAvail=%ld\n", cFramesAvail));
+        *pcFramesAvail = cFramesAvail;
+        return VINF_SUCCESS;
+    }
+
+    if (cFramesAvail == -EPIPE)
+    {
+        rc = alsaStreamRecover(phPCM);
+        if (RT_SUCCESS(rc))
         {
-            rc = alsaStreamRecover(phPCM);
-            if (RT_SUCCESS(rc))
-                framesAvail = snd_pcm_avail_update(phPCM);
+            cFramesAvail = snd_pcm_avail_update(phPCM);
+            if (cFramesAvail >= 0)
+            {
+                LogFunc(("cFramesAvail=%ld\n", cFramesAvail));
+                *pcFramesAvail = cFramesAvail;
+                return VINF_SUCCESS;
+            }
         }
         else
-            rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pFramesAvail)
-            *pFramesAvail = framesAvail;
+        {
+            *pcFramesAvail = 0;
+            return rc;
+        }
     }
 
-    LogFunc(("cFrames=%ld, rc=%Rrc\n", framesAvail, rc));
+    rc = RTErrConvertFromErrno(-cFramesAvail);
+    LogFunc(("failed - cFramesAvail=%ld rc=%Rrc\n", cFramesAvail, rc));
+    *pcFramesAvail = 0;
     return rc;
 }
 
@@ -573,142 +575,132 @@ static int alsaStreamResume(snd_pcm_t *phPCM)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                          void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
+                                                          void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
-
+    RT_NOREF_PV(pInterface);
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamALSA, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
+    PPDMAUDIOSTREAMCFG pCfg = pStreamALSA->pCfg;
+    AssertPtr(pCfg);
 
+    /*
+     * Figure out how much we can read without trouble (we're doing
+     * non-blocking reads, but whatever).
+     */
     snd_pcm_sframes_t cAvail;
     int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cAvail);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        if (!cAvail) /* No data yet? */
+        {
+            snd_pcm_state_t enmState = snd_pcm_state(pStreamALSA->phPCM);
+            switch (enmState)
+            {
+                case SND_PCM_STATE_PREPARED:
+                    /** @todo r=bird: explain the logic here...    */
+                    cAvail = PDMAudioPropsBytesToFrames(&pCfg->Props, cbBuf);
+                    break;
+
+                case SND_PCM_STATE_SUSPENDED:
+                    rc = alsaStreamResume(pStreamALSA->phPCM);
+                    if (RT_SUCCESS(rc))
+                    {
+                        LogFlowFunc(("Resumed suspended input stream.\n"));
+                        break;
+                    }
+                    LogFunc(("Failed resuming suspended input stream: %Rrc\n", rc));
+                    return rc;
+
+                default:
+                    LogFlow(("No frames available: state=%s (%d)\n", snd_pcm_state_name(enmState), enmState));
+                    break;
+            }
+            if (!cAvail)
+            {
+                *pcbRead = 0;
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    else
     {
         LogFunc(("Error getting number of captured frames, rc=%Rrc\n", rc));
         return rc;
     }
 
-    PPDMAUDIOSTREAMCFG pCfg = pStreamALSA->pCfg;
-    AssertPtr(pCfg);
-
-    if (!cAvail) /* No data yet? */
-    {
-        snd_pcm_state_t state = snd_pcm_state(pStreamALSA->phPCM);
-        switch (state)
-        {
-            case SND_PCM_STATE_PREPARED:
-                cAvail = PDMAUDIOSTREAMCFG_B2F(pCfg, uBufSize);
-                break;
-
-            case SND_PCM_STATE_SUSPENDED:
-            {
-                rc = alsaStreamResume(pStreamALSA->phPCM);
-                if (RT_FAILURE(rc))
-                    break;
-
-                LogFlow(("Resuming suspended input stream\n"));
-                break;
-            }
-
-            default:
-                LogFlow(("No frames available, state=%d\n", state));
-                break;
-        }
-
-        if (!cAvail)
-        {
-            if (puRead)
-                *puRead = 0;
-            return VINF_SUCCESS;
-        }
-    }
-
-    /*
-     * Check how much we can read from the capture device without overflowing
-     * the mixer buffer.
-     */
-    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_F2B(pCfg, cAvail), uBufSize);
-
+    size_t cbToRead = PDMAudioPropsFramesToBytes(&pCfg->Props, cAvail);
+    cbToRead = RT_MIN(cbToRead, cbBuf);
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
+    /*
+     * Read loop.
+     */
     uint32_t cbReadTotal = 0;
-
-    snd_pcm_uframes_t cToRead;
-    snd_pcm_sframes_t cRead;
-
-    while (   cbToRead
-           && RT_SUCCESS(rc))
+    while (cbToRead > 0)
     {
-        cToRead = RT_MIN(PDMAUDIOSTREAMCFG_B2F(pCfg, cbToRead),
-                         PDMAUDIOSTREAMCFG_B2F(pCfg, pStreamALSA->cbBuf));
-        AssertBreakStmt(cToRead, rc = VERR_NO_DATA);
-        cRead = snd_pcm_readi(pStreamALSA->phPCM, pStreamALSA->pvBuf, cToRead);
-        if (cRead <= 0)
+        /*
+         * Do the reading.
+         */
+        snd_pcm_uframes_t const cFramesToRead = PDMAudioPropsBytesToFrames(&pCfg->Props, cbToRead);
+        AssertBreakStmt(cFramesToRead > 0, rc = VERR_NO_DATA);
+
+        snd_pcm_sframes_t cFramesRead = snd_pcm_readi(pStreamALSA->phPCM, pvBuf, cFramesToRead);
+        if (cFramesRead > 0)
         {
-            switch (cRead)
-            {
-                case 0:
-                {
-                    LogFunc(("No input frames available\n"));
-                    rc = VERR_ACCESS_DENIED;
-                    break;
-                }
+            /*
+             * We should not run into a full mixer buffer or we lose samples and
+             * run into an endless loop if ALSA keeps producing samples ("null"
+             * capture device for example).
+             */
+            uint32_t const cbRead = PDMAudioPropsFramesToBytes(&pCfg->Props, cFramesRead);
+            Assert(cbRead <= cbToRead);
 
-                case -EAGAIN:
-                {
-                    /*
-                     * Don't set error here because EAGAIN means there are no further frames
-                     * available at the moment, try later. As we might have read some frames
-                     * already these need to be processed instead.
-                     */
-                    cbToRead = 0;
-                    break;
-                }
-
-                case -EPIPE:
-                {
-                    rc = alsaStreamRecover(pStreamALSA->phPCM);
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    LogFlowFunc(("Recovered from capturing\n"));
-                    continue;
-                }
-
-                default:
-                {
-                    LogFunc(("Failed to read input frames: %s\n", snd_strerror(cRead)));
-                    rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
-                    break;
-                }
-            }
+            cbToRead    -= cbRead;
+            cbReadTotal += cbRead;
+            pvBuf        = (uint8_t *)pvBuf + cbRead;
         }
         else
         {
             /*
-             * We should not run into a full mixer buffer or we loose samples and
-             * run into an endless loop if ALSA keeps producing samples ("null"
-             * capture device for example).
+             * Try recover from overrun and re-try.
+             * Other conditions/errors we cannot and will just quit the loop.
              */
-            uint32_t cbRead = PDMAUDIOSTREAMCFG_F2B(pCfg, cRead);
+            if (cFramesRead == -EPIPE)
+            {
+                rc = alsaStreamRecover(pStreamALSA->phPCM);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("Successfully recovered from overrun\n"));
+                    continue;
+                }
+                LogFunc(("Failed to recover from overrun: %Rrc\n", rc));
+            }
+            else if (cFramesRead == -EAGAIN)
+                LogFunc(("No input frames available (EAGAIN)\n"));
+            else if (cFramesRead == 0)
+                LogFunc(("No input frames available (0)\n"));
+            else
+            {
+                rc = RTErrConvertFromErrno(-(int)cFramesRead);
+                LogFunc(("Failed to read input frames: %s (%ld, %Rrc)\n", snd_strerror(cFramesRead), cFramesRead, rc));
+            }
 
-            memcpy(pvBuf, pStreamALSA->pvBuf, cbRead);
-
-            Assert(cbToRead >= cbRead);
-            cbToRead    -= cbRead;
-            cbReadTotal += cbRead;
+            /* If we've read anything, suppress the error. */
+            if (RT_FAILURE(rc) && cbReadTotal > 0)
+            {
+                LogFunc(("Suppressing %Rrc because %#x bytes has been read already\n", rc, cbReadTotal));
+                rc = VINF_SUCCESS;
+            }
+            break;
         }
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        if (puRead)
-            *puRead = cbReadTotal;
-    }
-
+    LogFlowFunc(("returns %Rrc and %#x (%d) bytes (%u bytes left)\n", rc, cbReadTotal, cbReadTotal, cbToRead));
+    pStreamALSA->offInternal += cbReadTotal;
+    *pcbRead = cbReadTotal;
     return rc;
 }
 
@@ -740,20 +732,16 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         {
             PCPDMAUDIOPCMPROPS pProps    = &pStreamALSA->pCfg->Props;
             uint32_t           cbToWrite = PDMAudioPropsFramesToBytes(pProps, (uint32_t)cFramesAvail);
-            cbToWrite = RT_MIN(cbToWrite, (uint32_t)pStreamALSA->cbBuf);
             if (cbToWrite)
             {
                 if (cbToWrite > cbBuf)
                     cbToWrite = cbBuf;
 
-                /* Now we copy the stuff into our scratch buffer for some totally unexplained reason. */
-                memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
-
                 /*
                  * Try write the data.
                  */
                 uint32_t cFramesToWrite = PDMAudioPropsBytesToFrames(pProps, cbToWrite);
-                snd_pcm_sframes_t cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf, cFramesToWrite);
+                snd_pcm_sframes_t cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pvBuf, cFramesToWrite);
                 if (cFramesWritten > 0)
                 {
                     Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
@@ -793,7 +781,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                         LogFlowFunc(("Resumed suspended output stream (iTry=%u)\n", iTry));
                     }
 
-                    cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf, cFramesToWrite);
+                    cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pvBuf, cFramesToWrite);
                     if (cFramesWritten > 0)
                     {
                         Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
@@ -823,44 +811,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         LogFunc(("Error getting number of playback frames, rc=%Rrc\n", rc));
     *pcbWritten = 0;
     return rc;
-}
-
-/**
- * Destroys an ALSA input stream.
- *
- * @returns VBox status code.
- * @param   pStreamALSA         ALSA input stream to destroy.
- */
-static int alsaDestroyStreamIn(PALSAAUDIOSTREAM pStreamALSA)
-{
-    alsaStreamClose(&pStreamALSA->phPCM);
-
-    if (pStreamALSA->pvBuf)
-    {
-        RTMemFree(pStreamALSA->pvBuf);
-        pStreamALSA->pvBuf = NULL;
-    }
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Destroys an ALSA output stream.
- *
- * @returns VBox status code.
- * @param   pStreamALSA         ALSA output stream to destroy.
- */
-static int alsaDestroyStreamOut(PALSAAUDIOSTREAM pStreamALSA)
-{
-    alsaStreamClose(&pStreamALSA->phPCM);
-
-    if (pStreamALSA->pvBuf)
-    {
-        RTMemFree(pStreamALSA->pvBuf);
-        pStreamALSA->pvBuf = NULL;
-    }
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -902,15 +852,6 @@ static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStream
         pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
-
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * PDMAudioPropsBytesPerFrame(&pCfgAcq->Props);
-        pStreamALSA->pvBuf = RTMemAllocZ(pStreamALSA->cbBuf);
-        if (!pStreamALSA->pvBuf)
-        {
-            LogRel(("ALSA: Not enough memory for output DAC buffer (%zu frames)\n", pCfgAcq->Backend.cFramesBufferSize));
-            rc = VERR_NO_MEMORY;
-            break;
-        }
 
         pStreamALSA->phPCM = phPCM;
     }
@@ -962,15 +903,6 @@ static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamA
         pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         pCfgAcq->Backend.cFramesPreBuffering = 0; /* No pre-buffering. */
-
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * PDMAudioPropsBytesPerFrame(&pCfgAcq->Props);
-        pStreamALSA->pvBuf = RTMemAlloc(pStreamALSA->cbBuf);
-        if (!pStreamALSA->pvBuf)
-        {
-            LogRel(("ALSA: Not enough memory for input ADC buffer (%zu frames)\n", pCfgAcq->Backend.cFramesBufferSize));
-            rc = VERR_NO_MEMORY;
-            break;
-        }
 
         pStreamALSA->phPCM = phPCM;
     }
@@ -1286,12 +1218,9 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
     if (!pStreamALSA->pCfg) /* Not (yet) configured? Skip. */
         return VINF_SUCCESS;
 
-    int rc;
-    if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = alsaDestroyStreamIn(pStreamALSA);
-    else
-        rc = alsaDestroyStreamOut(pStreamALSA);
-
+    int rc = alsaStreamClose(&pStreamALSA->phPCM);
+    /** @todo r=bird: It's not like we can do much with a bad status... Check
+     *        what the caller does... */
     if (RT_SUCCESS(rc))
     {
         PDMAudioStrmCfgFree(pStreamALSA->pCfg);
