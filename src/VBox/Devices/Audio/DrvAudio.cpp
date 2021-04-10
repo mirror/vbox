@@ -2837,7 +2837,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
         if (CfgHostAcq.Backend.cFramesPreBuffering != 0)
         {
             pStreamEx->Out.cbPreBufThreshold = PDMAudioPropsFramesToBytes(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesPreBuffering);
-            pStreamEx->Out.cbPreBufAlloc = RT_ALIGN_32(pStreamEx->Out.cbPreBufThreshold + _8K, _4K);
+            pStreamEx->Out.cbPreBufAlloc = PDMAudioPropsFramesToBytes(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize - 2);
+            pStreamEx->Out.cbPreBufAlloc = RT_MIN(RT_ALIGN_32(pStreamEx->Out.cbPreBufThreshold + _8K, _4K),
+                                                  pStreamEx->Out.cbPreBufAlloc);
             pStreamEx->Out.pbPreBuf = (uint8_t *)RTMemAllocZ(pStreamEx->Out.cbPreBufAlloc);
             AssertReturn(pStreamEx->Out.pbPreBuf, VERR_NO_MEMORY);
         }
