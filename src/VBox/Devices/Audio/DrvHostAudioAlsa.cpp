@@ -912,7 +912,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterfac
             AssertMsg(rc2 >= 0, ("snd_pcm_nonblock(, 0) -> %d\n", rc2));
 #endif
             rc = snd_pcm_drain(pStreamALSA->hPCM);
-            if (rc >= 0)
+            if (rc >= 0 || rc == -EAGAIN)
                 rc = VINF_SUCCESS;
             else
             {
