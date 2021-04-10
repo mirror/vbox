@@ -718,14 +718,6 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
             break;
         }
 
-        case PDMAUDIOSTREAMCMD_DROP:
-        {
-            rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DROP);
-            if (RT_SUCCESS(rc))
-                drvAudioStreamDropInternal(pThis, pStreamEx);
-            break;
-        }
-
         default:
             rc = VERR_NOT_IMPLEMENTED;
             break;
@@ -817,12 +809,6 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
         case PDMAUDIOSTREAMCMD_DRAIN:
         {
             rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_DRAIN);
-            break;
-        }
-
-        case PDMAUDIOSTREAMCMD_DROP:
-        {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend, PDMAUDIOSTREAMCMD_DROP);
             break;
         }
 

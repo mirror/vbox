@@ -379,13 +379,11 @@ DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
     switch (enmCmd)
     {
         case PDMAUDIOSTREAMCMD_INVALID: return "Invalid";
-        case PDMAUDIOSTREAMCMD_UNKNOWN: return "Unknown";
         case PDMAUDIOSTREAMCMD_ENABLE:  return "Enable";
         case PDMAUDIOSTREAMCMD_DISABLE: return "Disable";
         case PDMAUDIOSTREAMCMD_PAUSE:   return "Pause";
         case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
         case PDMAUDIOSTREAMCMD_DRAIN:   return "Drain";
-        case PDMAUDIOSTREAMCMD_DROP:    return "Drop";
         case PDMAUDIOSTREAMCMD_END:
         case PDMAUDIOSTREAMCMD_32BIT_HACK:
             break;

@@ -844,11 +844,6 @@ typedef enum PDMAUDIOSTREAMCMD
 {
     /** Invalid zero value as per usual (guards against using unintialized values). */
     PDMAUDIOSTREAMCMD_INVALID = 0,
-    /** Unknown command, do not use.
-     * @todo r=bird: WTF is this supposed to be?  Is DrvAudio or a device
-     *       supposed to issue an unknown command to someone?  For conversion
-     *       mismatches (e.g. mixer), you use the INVALID value. */
-    PDMAUDIOSTREAMCMD_UNKNOWN,
     /** Enables the stream. */
     PDMAUDIOSTREAMCMD_ENABLE,
     /** Disables the stream.
@@ -863,18 +858,15 @@ typedef enum PDMAUDIOSTREAMCMD
      *This is currently only issued when the VM is resumed. */
     PDMAUDIOSTREAMCMD_RESUME,
     /** Drain the stream, that is, play what's in the buffer and then stop.
-     * The effect on input streams amounts to a stop.
      *
      * A separate DISABLE command will be issued to disable the stream.
      *
      * @note This should not wait for the stream to finish draining, just change the
      *       state.  (EMT cannot wait hundreds of milliseconds of
      *       buffer to finish draining.)
+     * @note Does not apply to input streams. Backends should refuse such requests.
      * @note No supported by all backends. */
     PDMAUDIOSTREAMCMD_DRAIN,
-    /** Tells the stream to drop all (buffered) audio data immediately.
-     *  No supported by all backends. */
-    PDMAUDIOSTREAMCMD_DROP,
     /** End of valid values. */
     PDMAUDIOSTREAMCMD_END,
     /** Hack to blow the type up to 32-bit. */

@@ -707,12 +707,11 @@ static PDMAUDIOSTREAMCMD audioMixerSinkToStreamCmd(AUDMIXSINKCMD enmCmd)
         case AUDMIXSINKCMD_DISABLE:  return PDMAUDIOSTREAMCMD_DISABLE;
         case AUDMIXSINKCMD_PAUSE:    return PDMAUDIOSTREAMCMD_PAUSE;
         case AUDMIXSINKCMD_RESUME:   return PDMAUDIOSTREAMCMD_RESUME;
-        case AUDMIXSINKCMD_DROP:     return PDMAUDIOSTREAMCMD_DROP;
         default:                     break;
     }
 
     AssertMsgFailed(("Unsupported sink command %d\n", enmCmd));
-    return PDMAUDIOSTREAMCMD_UNKNOWN;
+    return PDMAUDIOSTREAMCMD_INVALID;
 }
 
 /**
@@ -727,7 +726,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
 
     PDMAUDIOSTREAMCMD enmCmdStream = audioMixerSinkToStreamCmd(enmSinkCmd);
-    if (enmCmdStream == PDMAUDIOSTREAMCMD_UNKNOWN)
+    if (enmCmdStream == PDMAUDIOSTREAMCMD_INVALID)
         return VERR_NOT_SUPPORTED;
 
     int rc = RTCritSectEnter(&pSink->CritSect);
@@ -793,15 +792,6 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
                  * The final status (disabled) will be set in the sink's iteration. */
                 pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
             }
-            break;
-        }
-
-        case AUDMIXSINKCMD_DROP:
-        {
-            AudioMixBufReset(&pSink->MixBuf);
-
-            /* Clear dirty bit, keep others. */
-            pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
             break;
         }
 
