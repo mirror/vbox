@@ -516,6 +516,14 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
                     return msgCenter().cannotRemoveHostNetworkInterface(comProgress, strInterfaceName, this);
                 else
                 {
+                    /* Move selection to somewhere else: */
+                    if (m_pTreeWidgetHostNetwork->itemBelow(pItem))
+                        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemBelow(pItem));
+                    else if (m_pTreeWidgetHostNetwork->itemAbove(pItem))
+                        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemAbove(pItem));
+                    else
+                        m_pTreeWidgetHostNetwork->setCurrentItem(0);
+
                     /* Remove interface from the tree: */
                     delete pItem;
 
@@ -649,6 +657,14 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
             msgCenter().cannotRemoveNATNetwork(comVBox, strNetworkName, this);
         else
         {
+            /* Move selection to somewhere else: */
+            if (m_pTreeWidgetNATNetwork->itemBelow(pItem))
+                m_pTreeWidgetNATNetwork->setCurrentItem(m_pTreeWidgetNATNetwork->itemBelow(pItem));
+            else if (m_pTreeWidgetNATNetwork->itemAbove(pItem))
+                m_pTreeWidgetNATNetwork->setCurrentItem(m_pTreeWidgetNATNetwork->itemAbove(pItem));
+            else
+                m_pTreeWidgetNATNetwork->setCurrentItem(0);
+
             /* Remove interface from the tree: */
             delete pItem;
 
