@@ -43,7 +43,7 @@
 typedef struct VAKITAUDIOSTREAM
 {
     /** The stream's acquired configuration. */
-    PPDMAUDIOSTREAMCFG  pCfg;
+    PDMAUDIOSTREAMCFG   Cfg;
     /** Audio file to dump output to or read input from. */
     PAUDIOHLPFILE       pFile;
     /** Text file to store timing of audio buffers submittions. */
@@ -206,13 +206,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
         rc = drvHostValKitAudioCreateStreamIn( pThis, pStreamDbg, pCfgReq, pCfgAcq);
     else
         rc = drvHostValKitAudioCreateStreamOut(pThis, pStreamDbg, pCfgReq, pCfgAcq);
-    if (RT_SUCCESS(rc))
-    {
-        pStreamDbg->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
-        if (!pStreamDbg->pCfg)
-            rc = VERR_NO_MEMORY;
-    }
-
+    PDMAudioStrmCfgCopy(&pStreamDbg->Cfg, pCfgAcq);
     return rc;
 }
 
@@ -226,7 +220,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
     PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 
-    if (   pStreamDbg->pCfg->enmDir == PDMAUDIODIR_OUT
+    if (   pStreamDbg->Cfg.enmDir == PDMAUDIODIR_OUT
         && pStreamDbg->Out.pbPlayBuffer)
     {
         RTMemFree(pStreamDbg->Out.pbPlayBuffer);
@@ -247,12 +241,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
     {
         RTStrmClose(pStreamDbg->pFileTiming);
         pStreamDbg->pFileTiming = NULL;
-    }
-
-    if (pStreamDbg->pCfg)
-    {
-        PDMAudioStrmCfgFree(pStreamDbg->pCfg);
-        pStreamDbg->pCfg = NULL;
     }
 
     return VINF_SUCCESS;
@@ -327,14 +315,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     }
 
     // Microseconds are used everythere below
-    uint32_t const cFrames = PDMAudioPropsBytesToFrames(&pStreamDbg->pCfg->Props, cbBuf);
+    uint32_t const cFrames = PDMAudioPropsBytesToFrames(&pStreamDbg->Cfg.Props, cbBuf);
     RTStrmPrintf(pStreamDbg->pFileTiming, "%d %d %d %d\n",
                  // Host time elapsed since Guest submitted the first buffer for playback:
                  (uint32_t)(cNsSinceStart / 1000),
                  // how long all the samples submitted previously were played:
-                 (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                 (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->Cfg.Props.uHz),
                  // how long a new uSamplesReady samples should/will be played:
-                 (uint32_t)(cFrames * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                 (uint32_t)(cFrames * 1.0E6 / pStreamDbg->Cfg.Props.uHz),
                  cFrames);
 
     pStreamDbg->cFramesSinceStarted += cFrames;
