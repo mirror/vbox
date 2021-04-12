@@ -474,7 +474,7 @@ const HDAREGALIAS g_aHdaRegAliases[] =
 
 #ifdef IN_RING3
 
-/** HDABDLEDESC field descriptors for the v7 saved state. */
+/** HDABDLEDESC field descriptors for the v7+ saved state. */
 static SSMFIELD const g_aSSMBDLEDescFields7[] =
 {
     SSMFIELD_ENTRY(HDABDLEDESC, u64BufAddr),
@@ -492,7 +492,7 @@ static SSMFIELD const g_aSSMBDLEDescFields6[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-/** HDABDLESTATE field descriptors for the v6+ saved state. */
+/** HDABDLESTATE field descriptors for the v6 saved state. */
 static SSMFIELD const g_aSSMBDLEStateFields6[] =
 {
     SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BDLIndex),
@@ -502,7 +502,7 @@ static SSMFIELD const g_aSSMBDLEStateFields6[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-/** HDABDLESTATE field descriptors for the v7 saved state. */
+/** HDABDLESTATE field descriptors for the v7+ saved state. */
 static SSMFIELD const g_aSSMBDLEStateFields7[] =
 {
     SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BDLIndex),
@@ -522,7 +522,7 @@ static SSMFIELD const g_aSSMStreamStateFields6[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-/** HDASTREAMSTATE field descriptors for the v7 saved state. */
+/** HDASTREAMSTATE field descriptors for the v7+ saved state. */
 static SSMFIELD const g_aSSMStreamStateFields7[] =
 {
     SSMFIELD_ENTRY(HDASTREAMSTATE, idxCurBdle),         /* For backward compatibility we save this. We use LPIB on restore. */
@@ -3452,42 +3452,48 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
 
     uint32_t cbCircBuf     = 0;
     uint32_t cbCircBufUsed = 0;
-
     if (pStreamR3->State.pCircBuf)
     {
-        cbCircBuf     = (uint32_t)RTCircBufSize(pStreamR3->State.pCircBuf);
-        cbCircBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
+        cbCircBuf = (uint32_t)RTCircBufSize(pStreamR3->State.pCircBuf);
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        /* We take the AIO lock here and releases it after saving the buffer,
+           otherwise the AIO thread could race us reading out the buffer data. */
+        if (   !pStreamR3->State.AIO.fStarted
+            || RT_SUCCESS(RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect)))
+#endif
+        {
+            cbCircBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+            if (cbCircBufUsed == 0 && pStreamR3->State.AIO.fStarted)
+                RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+#endif
+        }
     }
 
     pHlp->pfnSSMPutU32(pSSM, cbCircBuf);
     rc = pHlp->pfnSSMPutU32(pSSM, cbCircBufUsed);
-    AssertRCReturn(rc, rc);
 
-    if (cbCircBufUsed)
+    if (cbCircBufUsed > 0)
     {
-        /*
-         * We now need to get the circular buffer's data without actually modifying
-         * the internal read / used offsets -- otherwise we would end up with broken audio
-         * data after saving the state.
-         *
-         * So get the current read offset and serialize the buffer data manually based on that.
-         */
+        /* HACK ALERT! We cannot remove data from the buffer (live snapshot),
+                       we use RTCircBufOffsetRead and RTCircBufAcquireReadBlock
+                       creatively to get at the other buffer segment in case
+                       of a wraparound. */
         size_t const offBuf = RTCircBufOffsetRead(pStreamR3->State.pCircBuf);
-        void  *pvBuf;
-        size_t cbBuf;
+        void        *pvBuf  = NULL;
+        size_t       cbBuf  = 0;
         RTCircBufAcquireReadBlock(pStreamR3->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
         Assert(cbBuf);
-        if (cbBuf)
-        {
-            rc = pHlp->pfnSSMPutMem(pSSM, pvBuf, cbBuf);
-            AssertRC(rc);
-            if (   RT_SUCCESS(rc)
-                && cbBuf < cbCircBufUsed)
-            {
-                rc = pHlp->pfnSSMPutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
-            }
-        }
-        RTCircBufReleaseReadBlock(pStreamR3->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
+        rc = pHlp->pfnSSMPutMem(pSSM, pvBuf, cbBuf);
+        if (cbBuf < cbCircBufUsed)
+            rc = pHlp->pfnSSMPutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
+        RTCircBufReleaseReadBlock(pStreamR3->State.pCircBuf, 0 /* Don't advance read pointer! */);
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        if (pStreamR3->State.AIO.fStarted)
+            RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+#endif
     }
 
     Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", pStreamR3->u8SD, HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD),
@@ -3534,18 +3540,14 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * Does tail processing after having loaded our saved state.
- *
- * @param   pDevIns     The device instance.
- * @param   pThis       Pointer to the shared HDA state.
- * @param   pThisCC     Pointer to the ring-3 HDA state.
- * @param   pSSM        The saved state handle.
- *
- * @todo    r=bird: Replace by a post load callback.
+ * @callback_method_impl{FNSSMDEVLOADDONE,
+ * Finishes stream setup and resuming.}
  */
-static int hdaR3LoadExecTail(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) hdaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    int rc = VINF_SUCCESS; /** @todo r=bird: Really, what's the point of this? */
+    PHDASTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATER3   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    LogFlowFuncEnter();
 
     /*
      * Enable all previously active streams.
@@ -3641,16 +3643,17 @@ static int hdaR3LoadExecTail(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
 
             /* Avoid going through the timer here by calling the stream's timer function directly.
              * Should speed up starting the stream transfers. */
+            PDMDevHlpTimerLockClock2(pDevIns, pStreamShared->hTimer, &pThis->CritSect, VERR_IGNORED);
             uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+            PDMDevHlpTimerUnlockClock2(pDevIns, pStreamShared->hTimer, &pThis->CritSect);
 
             hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
 }
-
 
 /**
  * Handles loading of all saved state versions older than the current one.
@@ -3903,12 +3906,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     }
 
     if (uVersion <= HDA_SAVED_STATE_VERSION_6) /* Handle older saved states? */
-    {
-        rc = hdaR3LoadExecLegacy(pDevIns, pThis, pThisCC, pSSM, uVersion);
-        if (RT_SUCCESS(rc))
-            rc = hdaR3LoadExecTail(pDevIns, pThis, pThisCC, pSSM);
-        return rc;
-    }
+        return hdaR3LoadExecLegacy(pDevIns, pThis, pThisCC, pSSM, uVersion);
 
     /*
      * Load MMIO registers.
@@ -3940,10 +3938,11 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     pThis->fDMAPosition = RT_BOOL(HDA_REG(pThis, DPLBASE) & RT_BIT_32(0));
 
     /*
-     * Load controller-specifc internals.
-     * Don't annoy other team mates (forgot this for state v7).
+     * Load controller-specific internals.
      */
-    if (   pHlp->pfnSSMHandleRevision(pSSM) >= 116273
+    if (   uVersion >= HDA_SAVED_STATE_WITHOUT_PERIOD
+        /* Don't annoy other team mates (forgot this for state v7): */
+        || pHlp->pfnSSMHandleRevision(pSSM) >= 116273
         || pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
         pHlp->pfnSSMGetU64(pSSM, &pThis->tsWalClkStart); /* Was current wall clock */
@@ -3994,7 +3993,9 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
                             ("HDA stream ID=%RU8 not supported, skipping loadingit ...\n", idStream),
                             RT_ZERO(StreamDummyShared); RT_ZERO(StreamDummyR3));
 
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /* timer code requires this */
         rc = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, pStreamR3, idStream);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         if (RT_FAILURE(rc))
         {
             LogRel(("HDA: Stream #%RU8: Setting up failed, rc=%Rrc\n", idStream, rc));
@@ -4020,9 +4021,9 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         Log2Func(("[SD%RU8]\n", pStreamShared->u8SD));
 
         /*
-         * Load period state.
+         * Load period state if present.
          */
-        if (uVersion <= HDA_SAVED_STATE_WITHOUT_PERIOD)
+        if (uVersion < HDA_SAVED_STATE_WITHOUT_PERIOD)
         {
             static SSMFIELD const s_aSSMStreamPeriodFields7[] = /* For the removed HDASTREAMPERIOD structure. */
             {
@@ -4038,7 +4039,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         }
 
         /*
-         * Load internal (FIFO) buffer.
+         * Load internal DMA buffer.
          */
         uint32_t cbCircBuf = 0;
         pHlp->pfnSSMGetU32(pSSM, &cbCircBuf); /* cbCircBuf */
@@ -4072,8 +4073,8 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
             if (cbCircBufUsed)
             {
-                void  *pvBuf;
-                size_t cbBuf;
+                void  *pvBuf = NULL;
+                size_t cbBuf = 0;
                 RTCircBufAcquireWriteBlock(pStreamR3->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
 
                 AssertLogRelMsgReturn(cbBuf == cbCircBufUsed, ("cbBuf=%zu cbCircBufUsed=%zu\n", cbBuf, cbCircBufUsed),
@@ -4096,9 +4097,6 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         /** @todo (Re-)initialize active periods? */
 
     } /* for cStreams */
-
-    rc = hdaR3LoadExecTail(pDevIns, pThis, pThisCC, pSSM);
-    AssertRC(rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -4974,7 +4972,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
 # endif
 
-    rc = PDMDevHlpSSMRegister(pDevIns, HDA_SAVED_STATE_VERSION, sizeof(*pThis), hdaR3SaveExec, hdaR3LoadExec);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, HDA_SAVED_STATE_VERSION, sizeof(*pThis), NULL /*pszBefore*/,
+                                NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
+                                NULL /*pfnSavePrep*/, hdaR3SaveExec, NULL /*pfnSaveDone*/,
+                                NULL /*pfnLoadPrep*/, hdaR3LoadExec, hdaR3LoadDone);
     AssertRCReturn(rc, rc);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
