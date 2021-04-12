@@ -1897,11 +1897,11 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                          void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
+                                                          void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    /* puRead is optional. */
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
 
     PCOREAUDIOSTREAM  pCAStream = (PCOREAUDIOSTREAM)pStream;
     PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
@@ -1926,8 +1926,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
 
     if (ASMAtomicReadU32(&pCAStream->enmStatus) != COREAUDIOSTATUS_INIT)
     {
-        if (puRead)
-            *puRead = 0;
+        *pcbRead = 0;
         return VINF_SUCCESS;
     }
 
@@ -1940,7 +1939,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
 
     do
     {
-        size_t cbToWrite = RT_MIN(uBufSize, RTCircBufUsed(pCAStream->pCircBuf));
+        size_t cbToWrite = RT_MIN(cbBuf, RTCircBufUsed(pCAStream->pCircBuf));
 
         uint8_t *pvChunk;
         size_t   cbChunk;
@@ -1972,10 +1971,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
     AssertRC(rc2);
 
     if (RT_SUCCESS(rc))
-    {
-        if (puRead)
-            *puRead = cbReadTotal;
-    }
+        *pcbRead = cbReadTotal;
 
     return rc;
 }
