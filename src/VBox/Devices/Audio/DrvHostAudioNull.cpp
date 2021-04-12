@@ -118,13 +118,45 @@ static DECLCALLBACK(int) drvHostNullAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
 
 
 /**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
+ */
+static DECLCALLBACK(int) drvHostNullAudioHA_StreamControlStub(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
 static DECLCALLBACK(int) drvHostNullAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                          PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+                                                           PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    RT_NOREF(pInterface, pStream, enmStreamCmd);
-    return VINF_SUCCESS;
+    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
+     *        replacing it with individual StreamXxxx methods.  That would save us
+     *        potentally huge switches and more easily see which drivers implement
+     *        which operations (grep for pfnStreamXxxx). */
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+            return drvHostNullAudioHA_StreamControlStub(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_DISABLE:
+            return drvHostNullAudioHA_StreamControlStub(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_PAUSE:
+            return drvHostNullAudioHA_StreamControlStub(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_RESUME:
+            return drvHostNullAudioHA_StreamControlStub(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_DRAIN:
+            return drvHostNullAudioHA_StreamControlStub(pInterface, pStream);
+
+        case PDMAUDIOSTREAMCMD_END:
+        case PDMAUDIOSTREAMCMD_32BIT_HACK:
+        case PDMAUDIOSTREAMCMD_INVALID:
+            /* no default*/
+            break;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 
