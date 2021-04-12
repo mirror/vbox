@@ -641,7 +641,8 @@ void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
     {
         if (m_fOverlayMode)
         {
-            QSize size(0.8 * width(), 0.8 * height());
+            QSize size(qMin((int)(0.9 * width()), m_overlayPixmap.width()),
+                        qMin((int)(0.9 * height()), height()));
             m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
             int x = 0.5 * (width() - m_pOverlayLabel->width());
             int y = 0.5 * (height() - m_pOverlayLabel->height());
