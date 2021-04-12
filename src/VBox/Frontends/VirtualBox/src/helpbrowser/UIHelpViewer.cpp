@@ -641,11 +641,25 @@ void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
     {
         if (m_fOverlayMode)
         {
-            QSize size(qMin((int)(0.9 * width()), m_overlayPixmap.width()),
-                        qMin((int)(0.9 * height()), height()));
+            /* Scale the image to 1005 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
+            int vWidth = 0;
+            if (verticalScrollBar() && verticalScrollBar()->isVisible())
+                vWidth = verticalScrollBar()->width();
+            int hMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+                qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) + vWidth;
+
+            int hHeight = 0;
+            if (horizontalScrollBar() && horizontalScrollBar()->isVisible())
+                hHeight = horizontalScrollBar()->height();
+            int vMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
+                qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) + hHeight;
+
+            QSize size(qMin(width() - hMargin, m_overlayPixmap.width()),
+                        qMin(height() - vMargin, m_overlayPixmap.height()));
             m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            int x = 0.5 * (width() - m_pOverlayLabel->width());
-            int y = 0.5 * (height() - m_pOverlayLabel->height());
+            /* Center the label: */
+            int x = 0.5 * (width() - vWidth - m_pOverlayLabel->width());
+            int y = 0.5 * (height() - hHeight - m_pOverlayLabel->height());
             m_pOverlayLabel->move(x, y);
             m_pOverlayLabel->show();
         }
