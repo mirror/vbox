@@ -424,7 +424,8 @@ void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
 
     if (!fVisible)
     {
-        document()->undo();
+        /* Clear highlights: */
+        setExtraSelections(QList<QTextEdit::ExtraSelection>());
         m_pFindInPageWidget->clearSearchField();
         verticalScrollBar()->setValue(iPosition);
     }
@@ -528,7 +529,6 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
     connect(pCopyLink, &QAction::triggered,
             this, &UIHelpViewer::sltHandleCopyLink);
 
-
     QAction *pFindInPage = new QAction(UIHelpBrowserWidget::tr("Find in Page"));
     pFindInPage->setCheckable(true);
     if (m_pFindInPageWidget)
@@ -581,6 +581,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 
 void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
+    bool fOverlayMode = m_fOverlayMode;
     clearOverlay();
 
     QString strAnchor = anchorAt(pEvent->pos());
@@ -596,14 +597,13 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     }
     QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
 
-    loadImageAtPosition(pEvent->globalPos());
+    if (!fOverlayMode)
+        loadImageAtPosition(pEvent->globalPos());
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
 {
-    clearOverlay();
     QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
-    loadImageAtPosition(pEvent->globalPos());
 }
 
 
@@ -729,24 +729,23 @@ void UIHelpViewer::highlightFinds(int iSearchTermLength)
 {
     QTextDocument* pDocument = document();
     AssertReturnVoid(pDocument);
-    /* Clear previous highlight: */
-    pDocument->undo();
 
-    QTextCursor highlightCursor(pDocument);
-    QTextCursor cursor(pDocument);
-    cursor.beginEditBlock();
+    QList<QTextEdit::ExtraSelection> extraSelections;
+
     for (int i = 0; i < m_matchedCursorPosition.size(); ++i)
     {
-        highlightCursor.setPosition(m_matchedCursorPosition[i]);
+        QTextEdit::ExtraSelection selection;
+        QTextCursor cursor = textCursor();
+        cursor.setPosition(m_matchedCursorPosition[i]);
+        cursor.setPosition(m_matchedCursorPosition[i] + iSearchTermLength, QTextCursor::KeepAnchor);
+        QTextCharFormat format = cursor.charFormat();
+        format.setBackground(Qt::yellow);
 
-        QTextCharFormat colorFormat(highlightCursor.charFormat());
-        colorFormat.setBackground(Qt::yellow);
-
-        highlightCursor.setPosition(m_matchedCursorPosition[i] + iSearchTermLength, QTextCursor::KeepAnchor);
-        if (!highlightCursor.isNull())
-            highlightCursor.setCharFormat(colorFormat);
+        selection.cursor = cursor;
+        selection.format = format;
+        extraSelections.append(selection);
     }
-    cursor.endEditBlock();
+    setExtraSelections(extraSelections);
 }
 
 void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
@@ -846,10 +845,10 @@ void UIHelpViewer::iterateDocumentImages()
         if (cursor.charFormat().isImageFormat())
         {
             DocumentImage image;
-           QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
-           image.m_fInitialWidth = imageFormat.width();
-           image.m_iPosition = cursor.position();
-           m_imageMap[imageFormat.name()] = image;
+            QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
+            image.m_fInitialWidth = imageFormat.width();
+            image.m_iPosition = cursor.position();
+            m_imageMap[imageFormat.name()] = image;
         }
     }
 }
@@ -868,7 +867,7 @@ void UIHelpViewer::scaleImages()
     {
         QTextCursor cursor = textCursor();
         cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, (*iterator).m_iPosition - 1);
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, (*iterator).m_iPosition);
         if (cursor.isNull())
             continue;
         QTextCharFormat format = cursor.charFormat();
@@ -876,7 +875,7 @@ void UIHelpViewer::scaleImages()
             continue;
         QTextImageFormat imageFormat = format.toImageFormat();
         imageFormat.setWidth((*iterator).m_fInitialWidth * m_iZoomPercentage / 100.);
-        cursor.deleteChar();
+        cursor.deletePreviousChar();
         cursor.insertImage(imageFormat);
     }
 }

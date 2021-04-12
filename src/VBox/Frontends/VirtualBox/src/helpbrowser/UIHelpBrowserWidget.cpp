@@ -377,6 +377,7 @@ void UIZoomMenuAction::prepare()
     pMainLayout->addWidget(m_pMinusButton);
     pMainLayout->addWidget(m_pValueLabel, Qt::AlignCenter);
     pMainLayout->addWidget(m_pPlusButton);
+    setZoomPercentage(100);
 }
 
 void UIZoomMenuAction::sltZoomOperation()
