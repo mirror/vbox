@@ -1308,13 +1308,18 @@ typedef struct PDMIHOSTAUDIO
      * disable an output stream w/o cutting off the playback too early.  The backend
      * should have already received the PDMAUDIOSTREAMCMD_DRAIN command prior to
      * this.  It doesn't really matter whether the returned value is 100% correct,
-     * as long as it isn't reported as zero too early.
+     * as long as it isn't reported as zero too early (and that zero is reported).
      *
-     * Shoul return zero if called on an input stream.
+     * Is not valid on an input stream, implementions shall assert and return zero.
      *
      * @returns Number of pending bytes.
      * @param   pInterface          Pointer to this interface.
      * @param   pStream             Pointer to audio stream.
+     *
+     * @remarks This interface can be omitted if the backend properly implements the
+     *          drain operation, i.e. automatically disables the stream when done
+     *          draining and ignores any requests to disable the stream while doing
+     *          so (there will probably be one right after initiating draining).
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetPending, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
@@ -1347,13 +1352,11 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface  Pointer to the interface structure containing the called function pointer.
      * @param   pStream     Pointer to audio stream.
      * @param   pvBuf       Buffer where to store read audio data.
-     * @param   uBufSize    Size of the audio data buffer (see note below for unit).
-     * @param   puRead      Returns number of units read.
-     * @note    The @a uBufSize and @a puRead values are in bytes for non-raw
-     *          layout streams and in frames for raw layout ones.
+     * @param   cbBuf       Size of the audio data buffer in bytes.
+     * @param   pcbRead     Where to return the number of bytes actually captured.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                 void *pvBuf, uint32_t uBufSize, uint32_t *puRead));
+                                                 void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 
 } PDMIHOSTAUDIO;
 
