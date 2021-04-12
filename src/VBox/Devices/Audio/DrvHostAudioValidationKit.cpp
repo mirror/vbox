@@ -15,10 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <iprt/alloc.h>
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#include <iprt/env.h>
+#include <iprt/mem.h>
+#include <iprt/path.h>
+#include <iprt/stream.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
 
-#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
@@ -27,51 +34,57 @@
 #include "VBoxDD.h"
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
- * Structure for keeping a VAKIT input/output stream.
+ * Structure for keeping a validation kit input/output stream.
  */
 typedef struct VAKITAUDIOSTREAM
 {
     /** The stream's acquired configuration. */
-    PPDMAUDIOSTREAMCFG pCfg;
+    PPDMAUDIOSTREAMCFG  pCfg;
     /** Audio file to dump output to or read input from. */
-    PPDMAUDIOFILE      pFile;
+    PAUDIOHLPFILE       pFile;
     /** Text file to store timing of audio buffers submittions. */
-    RTFILE             hFileTiming;
+    PRTSTREAM           pFileTiming;
     /** Timestamp of the first play or record request. */
-    uint64_t           tsStarted;
+    uint64_t            tsStarted;
     /** Total number of frames played or recorded so far. */
-    uint32_t           cFramesSinceStarted;
+    uint32_t            cFramesSinceStarted;
     union
     {
         struct
         {
             /** Timestamp of last captured samples. */
-            uint64_t   tsLastCaptured;
+            uint64_t    tsLastCaptured;
         } In;
         struct
         {
             /** Timestamp of last played samples. */
-            uint64_t   tsLastPlayed;
-            uint8_t   *pu8PlayBuffer;
-            uint32_t   cbPlayBuffer;
+            uint64_t    tsLastPlayed;
+            uint8_t    *pbPlayBuffer;
+            uint32_t    cbPlayBuffer;
         } Out;
     };
-} VAKITAUDIOSTREAM, *PVAKITAUDIOSTREAM;
+} VAKITAUDIOSTREAM;
+/** Pointer to a validation kit stream. */
+typedef VAKITAUDIOSTREAM *PVAKITAUDIOSTREAM;
 
 /**
- * VAKIT audio driver instance data.
+ * Validation kit audio driver instance data.
  * @implements PDMIAUDIOCONNECTOR
  */
 typedef struct DRVHOSTVAKITAUDIO
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS    pDrvIns;
+    PPDMDRVINS          pDrvIns;
     /** Pointer to host audio interface. */
-    PDMIHOSTAUDIO IHostAudio;
-} DRVHOSTVAKITAUDIO, *PDRVHOSTVAKITAUDIO;
+    PDMIHOSTAUDIO       IHostAudio;
+} DRVHOSTVAKITAUDIO;
+/** Pointer to a validation kit host audio driver instance. */
+typedef DRVHOSTVAKITAUDIO *PDRVHOSTVAKITAUDIO;
 
-/*******************************************PDM_AUDIO_DRIVER******************************/
 
 
 /**
@@ -106,57 +119,72 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostValKitAudioHA_GetStatus(PPDMIHOST
 }
 
 
-static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
+static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVAKITAUDIO pThis, PVAKITAUDIOSTREAM pStreamDbg,
                                             PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
+    RT_NOREF(pThis, pStreamDbg, pCfgReq, pCfgAcq);
 
     return VINF_SUCCESS;
 }
 
 
-static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
+static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pThis, PVAKITAUDIOSTREAM pStreamDbg,
                                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pDrv, pCfgAcq);
+    RT_NOREF(pThis, pCfgAcq);
 
-    pStreamDbg->tsStarted = 0;
-    pStreamDbg->cFramesSinceStarted = 0;
-    pStreamDbg->Out.tsLastPlayed  = 0;
-    pStreamDbg->Out.cbPlayBuffer  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
-    pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
-    AssertReturn(pStreamDbg->Out.pu8PlayBuffer, VERR_NO_MEMORY);
-
+    /* Use the test box scratch dir if we're running in such an
+       environment, otherwise just dump the output in the temp
+       directory. */
     char szTemp[RTPATH_MAX];
-    int rc = RTPathTemp(szTemp, sizeof(szTemp));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szTemp, sizeof(szTemp), "VBoxTestTmp\\VBoxAudioValKit");
+    int rc = RTEnvGetEx(RTENV_DEFAULT, "TESTBOX_PATH_SCRATCH", szTemp, sizeof(szTemp), NULL);
+    if (RT_FAILURE(rc))
+    {
+        rc = RTPathTemp(szTemp, sizeof(szTemp));
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szTemp, sizeof(szTemp), "VBoxAudioValKit");
+        AssertRCReturn(rc, rc);
+    }
+
+    /* Get down to things that may fail and need cleanup. */
+    pStreamDbg->tsStarted           = 0;
+    pStreamDbg->cFramesSinceStarted = 0;
+    pStreamDbg->Out.tsLastPlayed    = 0;
+    pStreamDbg->Out.cbPlayBuffer    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+    pStreamDbg->Out.pbPlayBuffer    = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
+    AssertReturn(pStreamDbg->Out.pbPlayBuffer, VERR_NO_MEMORY);
+
+    rc = AudioHlpFileCreateAndOpenEx(&pStreamDbg->pFile, AUDIOHLPFILETYPE_WAV, szTemp, "ValKit",
+                                     pThis->pDrvIns->iInstance, AUDIOHLPFILENAME_FLAGS_NONE, AUDIOHLPFILE_FLAGS_NONE,
+                                     &pCfgReq->Props, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS);
     if (RT_SUCCESS(rc))
     {
-        char szFile[RTPATH_MAX];
-        rc = AudioHlpFileNameGet(szFile, sizeof(szFile), szTemp, "VaKit",
-                                 0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+        rc = RTPathAppend(szTemp, sizeof(szTemp), "ValKitTimings.txt");
         if (RT_SUCCESS(rc))
         {
-            rc = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
+            rc = RTStrmOpen(szTemp, "w", &pStreamDbg->pFileTiming);
             if (RT_SUCCESS(rc))
-                rc = AudioHlpFileOpen(pStreamDbg->pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pCfgReq->Props);
-        }
+            {
+                RTStrmPrintf(pStreamDbg->pFileTiming, "# %uHz %uch %ubit\n",
+                             PDMAudioPropsHz(&pCfgReq->Props),
+                             PDMAudioPropsChannels(&pCfgReq->Props),
+                             PDMAudioPropsSampleBits(&pCfgReq->Props));
+                return VINF_SUCCESS;
+            }
 
-        if (RT_FAILURE(rc))
-            LogRel(("VaKitAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+            LogRel(("ValKitAudio: Opening output file '%s' failed: %Rrc\n", szTemp, rc));
+        }
         else
-        {
-            size_t cch;
-            char szTimingInfo[128];
-            cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %uHz %uch %ubit\n",
-                              pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8);
+            LogRel(("ValKitAudio: Constructing timing file path: %Rrc\n", rc));
 
-            RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
-        }
+        AudioHlpFileDestroy(pStreamDbg->pFile);
+        pStreamDbg->pFile = NULL;
     }
     else
-        LogRel(("VaKitAudio: Unable to retrieve temp dir: %Rrc\n", rc));
+        LogRel(("ValKitAudio: Creating output file 'ValKit' in '%s' failed: %Rrc\n", szTemp, rc));
+
+    RTMemFree(pStreamDbg->Out.pbPlayBuffer);
+    pStreamDbg->Out.pbPlayBuffer = NULL;
     return rc;
 }
 
@@ -167,20 +195,17 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDI
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
-
-    PDRVHOSTVAKITAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+    PDRVHOSTVAKITAUDIO pThis       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
     PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = drvHostValKitAudioCreateStreamIn( pDrv, pStreamDbg, pCfgReq, pCfgAcq);
+        rc = drvHostValKitAudioCreateStreamIn( pThis, pStreamDbg, pCfgReq, pCfgAcq);
     else
-        rc = drvHostValKitAudioCreateStreamOut(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
-
+        rc = drvHostValKitAudioCreateStreamOut(pThis, pStreamDbg, pCfgReq, pCfgAcq);
     if (RT_SUCCESS(rc))
     {
         pStreamDbg->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
@@ -189,6 +214,96 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
     }
 
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
+ */
+static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface); //PDRVHOSTVAKITAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+
+    if (   pStreamDbg->pCfg->enmDir == PDMAUDIODIR_OUT
+        && pStreamDbg->Out.pbPlayBuffer)
+    {
+        RTMemFree(pStreamDbg->Out.pbPlayBuffer);
+        pStreamDbg->Out.pbPlayBuffer = NULL;
+    }
+
+    if (pStreamDbg->pFile)
+    {
+        size_t cbDataSize = AudioHlpFileGetDataSize(pStreamDbg->pFile);
+        if (cbDataSize)
+            LogRel(("ValKitAudio: Created output file '%s' (%zu bytes)\n", pStreamDbg->pFile->szName, cbDataSize));
+
+        AudioHlpFileDestroy(pStreamDbg->pFile);
+        pStreamDbg->pFile = NULL;
+    }
+
+    if (pStreamDbg->pFileTiming)
+    {
+        RTStrmClose(pStreamDbg->pFileTiming);
+        pStreamDbg->pFileTiming = NULL;
+    }
+
+    if (pStreamDbg->pCfg)
+    {
+        PDMAudioStrmCfgFree(pStreamDbg->pCfg);
+        pStreamDbg->pCfg = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
+ */
+static DECLCALLBACK(int) drvHostValKitAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
+                                                            PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+{
+    RT_NOREF(pInterface, enmStreamCmd);
+    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+
+    if (pStreamDbg->pFileTiming)
+        RTStrmFlush(pStreamDbg->pFileTiming);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return UINT32_MAX;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return UINT32_MAX;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ */
+static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostValKitAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface,
+                                                                            PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
 }
 
 
@@ -213,27 +328,25 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     // Microseconds are used everythere below
     uint32_t const cFrames = PDMAudioPropsBytesToFrames(&pStreamDbg->pCfg->Props, cbBuf);
-    char szTimingInfo[128];
-    size_t cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "%d %d %d %d\n",
-                             // Host time elapsed since Guest submitted the first buffer for playback:
-                             (uint32_t)(cNsSinceStart / 1000),
-                             // how long all the samples submitted previously were played:
-                             (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
-                             // how long a new uSamplesReady samples should/will be played:
-                             (uint32_t)(cFrames * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
-                             cFrames);
-    RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
+    RTStrmPrintf(pStreamDbg->pFileTiming, "%d %d %d %d\n",
+                 // Host time elapsed since Guest submitted the first buffer for playback:
+                 (uint32_t)(cNsSinceStart / 1000),
+                 // how long all the samples submitted previously were played:
+                 (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                 // how long a new uSamplesReady samples should/will be played:
+                 (uint32_t)(cFrames * 1.0E6 / pStreamDbg->pCfg->Props.uHz),
+                 cFrames);
+
     pStreamDbg->cFramesSinceStarted += cFrames;
 
     /* Remember when samples were consumed. */
-   // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pThis->pDrvIns);
+    // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pThis->pDrvIns);
 
     int rc2 = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
-        LogRel(("VaKitAudio: Writing output failed with %Rrc\n", rc2));
+        LogRel(("ValKitAudio: Writing output failed with %Rrc\n", rc2));
 
     *pcbWritten = cbBuf;
-
     return VINF_SUCCESS;
 }
 
@@ -242,112 +355,15 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                            void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
+                                                            void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, uBufSize);
+    RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
 
     /* Never capture anything. */
-    if (puRead)
-        *puRead = 0;
-
+    *pcbRead = 0;
     return VINF_SUCCESS;
 }
 
-
-static int vakitDestroyStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
-{
-    RT_NOREF(pDrv, pStreamDbg);
-    return VINF_SUCCESS;
-}
-
-
-static int vakitDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
-{
-    RT_NOREF(pDrv);
-
-    if (pStreamDbg->Out.pu8PlayBuffer)
-    {
-        RTMemFree(pStreamDbg->Out.pu8PlayBuffer);
-        pStreamDbg->Out.pu8PlayBuffer = NULL;
-    }
-
-    if (pStreamDbg->pFile)
-    {
-        size_t cbDataSize = AudioHlpFileGetDataSize(pStreamDbg->pFile);
-        if (cbDataSize)
-            LogRel(("VaKitAudio: Created output file '%s' (%zu bytes)\n", pStreamDbg->pFile->szName, cbDataSize));
-
-        AudioHlpFileDestroy(pStreamDbg->pFile);
-        pStreamDbg->pFile = NULL;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-
-    PDRVHOSTVAKITAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
-    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
-
-    if (!pStreamDbg->pCfg) /* Not (yet) configured? Skip. */
-        return VINF_SUCCESS;
-
-    int rc;
-    if (pStreamDbg->pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = vakitDestroyStreamIn (pDrv, pStreamDbg);
-    else
-        rc = vakitDestroyStreamOut(pDrv, pStreamDbg);
-
-    if (RT_SUCCESS(rc))
-    {
-        PDMAudioStrmCfgFree(pStreamDbg->pCfg);
-        pStreamDbg->pCfg = NULL;
-    }
-
-    return rc;
-}
-
-static DECLCALLBACK(int) drvHostValKitAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                            PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    RT_NOREF(enmStreamCmd);
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-
-    return UINT32_MAX;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-
-    return UINT32_MAX;
-}
-
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostValKitAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface,
-                                                                            PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-
-    return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
-}
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -373,7 +389,7 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVHOSTVAKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVAKITAUDIO);
-    LogRel(("Audio: Initializing VAKIT driver\n"));
+    LogRel(("Audio: Initializing VALKIT driver\n"));
 
     /*
      * Init the static parts.
@@ -383,17 +399,17 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pDrvIns->IBase.pfnQueryInterface = drvHostValKitAudioQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig          = drvHostValKitAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices         = NULL;
     pThis->IHostAudio.pfnGetStatus          = drvHostValKitAudioHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostValKitAudioHA_StreamCreate;
     pThis->IHostAudio.pfnStreamDestroy      = drvHostValKitAudioHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamControl      = drvHostValKitAudioHA_StreamControl;
     pThis->IHostAudio.pfnStreamGetReadable  = drvHostValKitAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable  = drvHostValKitAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending   = NULL;
     pThis->IHostAudio.pfnStreamGetStatus    = drvHostValKitAudioHA_StreamGetStatus;
     pThis->IHostAudio.pfnStreamPlay         = drvHostValKitAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture      = drvHostValKitAudioHA_StreamCapture;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
-    pThis->IHostAudio.pfnStreamGetPending   = NULL;
 
     return VINF_SUCCESS;
 }
