@@ -666,6 +666,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
                      m_pBackwardAction && m_pAddBookmarkAction &&
                      m_pFindInPageAction);
     m_pFindInPageAction->setCheckable(true);
+    m_pFindInPageAction->setShortcut(QKeySequence::Find);
 
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleHomeAction);
     connect(m_pAddBookmarkAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
@@ -1240,10 +1241,12 @@ void UIHelpBrowserWidget::prepareActions()
     m_pPrintAction = new QAction(this);
     connect(m_pPrintAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltShowPrintDialog);
+    m_pPrintAction->setShortcut(QString("Ctrl+P"));
 
-    m_pCloseDialogAction = new QAction(this);
-    connect(m_pCloseDialogAction, &QAction::triggered,
+    m_pQuitAction = new QAction(this);
+    connect(m_pQuitAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigCloseDialog);
+    m_pQuitAction->setShortcut(QString("Ctrl+Q"));
 
     m_pZoomMenuAction = new UIZoomMenuAction(this);
     connect(m_pZoomMenuAction, &UIZoomMenuAction::sigZoomChanged,
@@ -1382,16 +1385,16 @@ void UIHelpBrowserWidget::prepareToolBar()
 
 void UIHelpBrowserWidget::prepareMenu()
 {
-    m_pFileMenu = new QMenu(tr("File"), this);
-    m_pViewMenu = new QMenu(tr("View"), this);
-    m_pTabsMenu = new QMenu(tr("Tabs"), this);
+    m_pFileMenu = new QMenu(tr("&File"), this);
+    m_pViewMenu = new QMenu(tr("&View"), this);
+    m_pTabsMenu = new QMenu(tr("&Tabs"), this);
 
     AssertReturnVoid(m_pFileMenu && m_pViewMenu && m_pTabsMenu);
 
     if (m_pPrintAction)
         m_pFileMenu->addAction(m_pPrintAction);
-    if (m_pCloseDialogAction)
-        m_pFileMenu->addAction(m_pCloseDialogAction);
+    if (m_pQuitAction)
+        m_pFileMenu->addAction(m_pQuitAction);
 
     if (m_pZoomMenuAction)
         m_pViewMenu->addAction(m_pZoomMenuAction);
@@ -1518,16 +1521,16 @@ void UIHelpBrowserWidget::retranslateUi()
     }
 
     if (m_pShowHideSideBarAction)
-        m_pShowHideSideBarAction->setText(tr("Show Side Bar"));
+        m_pShowHideSideBarAction->setText(tr("Show &Side Bar"));
     if (m_pShowHideToolBarAction)
-        m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
+        m_pShowHideToolBarAction->setText(tr("Show &Tool Bar"));
     if (m_pShowHideStatusBarAction)
-        m_pShowHideStatusBarAction->setText(tr("Show Status Bar"));
+        m_pShowHideStatusBarAction->setText(tr("Show St&atus Bar"));
 
     if (m_pPrintAction)
-        m_pPrintAction->setText(tr("Print..."));
-    if (m_pCloseDialogAction)
-        m_pCloseDialogAction->setText(tr("Close"));
+        m_pPrintAction->setText(tr("&Print..."));
+    if (m_pQuitAction)
+        m_pQuitAction->setText(tr("&Quit"));
 }
 
 

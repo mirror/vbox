@@ -163,7 +163,7 @@ private:
     UIBookmarksListContainer *m_pBookmarksWidget;
     QWidget             *m_pSearchContainerWidget;
     QAction             *m_pPrintAction;
-    QAction             *m_pCloseDialogAction;
+    QAction             *m_pQuitAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
     QAction             *m_pShowHideStatusBarAction;
