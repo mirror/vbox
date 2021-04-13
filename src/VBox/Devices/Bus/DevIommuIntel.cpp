@@ -584,11 +584,12 @@ DECLINLINE(void) dmarRegReadRaw32(PDMAR pThis, uint16_t offReg, uint32_t *puReg,
  * Writes a 64-bit register as it would be when written by software.
  * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
+ * @returns The value that's actually written to the register.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 64-bit value to write.
  */
-static void dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
+static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 {
     /* Read current value from the 64-bit register. */
     uint64_t uCurReg;
@@ -603,6 +604,7 @@ static void dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 
     /* Write new value to the 64-bit register. */
     dmarRegWriteRaw64(pThis, offReg, uNewReg);
+    return uNewReg;
 }
 
 
@@ -610,11 +612,12 @@ static void dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
  * Writes a 32-bit register as it would be when written by software.
  * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
+ * @returns The value that's actually written to the register.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 32-bit value to write.
  */
-static void dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
+static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 {
     /* Read current value from the 32-bit register. */
     uint32_t uCurReg;
@@ -629,6 +632,7 @@ static void dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 
     /* Write new value to the 32-bit register. */
     dmarRegWriteRaw32(pThis, offReg, uNewReg);
+    return uNewReg;
 }
 
 
@@ -665,6 +669,40 @@ static uint32_t dmarRegRead32(PDMAR pThis, uint16_t offReg)
     dmarRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
     NOREF(fRwMask); NOREF(fRw1cMask);
     return uCurReg;
+}
+
+
+/**
+ * Handles writes to IQT_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   off         The MMIO register offset.
+ * @param   uIqtReg     The value written to IQT_REG.
+ */
+static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqtReg)
+{
+    /* We only care about the low dword of VTD_MMIO_OFF_IQT_REG. */
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    if (off == VTD_MMIO_OFF_IQT_REG)
+    {
+        /* Verify if the queue tail offset is aligned according to the descriptor width in IQA_REG. */
+        uint16_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
+        uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+        uint8_t const  uDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+        if (   uDw != VTD_IQA_REG_DW_256_BIT
+            || !(offQueueTail & 0x1f))
+        {
+            /** @todo IOMMU: Figure out what to do here, like waking up worker thread or
+             *        something. */
+        }
+        else
+        {
+            /* Raise invalidation queue error as queue tail not aligned to 256-bits. */
+            /** @todo IOMMU: Raise error. */
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -746,20 +784,21 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
     uint16_t const offLast = offReg + cb - 1;
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
+        uint64_t const uRegWritten = cb == 8 ? dmarRegWrite64(pThis, offReg, *(uint64_t *)pv)
+                                             : dmarRegWrite32(pThis, offReg, *(uint32_t *)pv);
+        VBOXSTRICTRC rcStrict = VINF_SUCCESS;
         switch (off)
         {
-            default:
+            case VTD_MMIO_OFF_IQT_REG:
+            case VTD_MMIO_OFF_IQT_REG + 4:
             {
-                if (cb == 8)
-                    dmarRegWrite64(pThis, offReg, *(uint64_t *)pv);
-                else
-                    dmarRegWrite32(pThis, offReg, *(uint32_t *)pv);
+                rcStrict = dmarIqtRegWrite(pDevIns, offReg, uRegWritten);
                 break;
             }
         }
 
-        LogFlowFunc(("offReg=%#x\n", offReg));
-        return VINF_SUCCESS;
+        LogFlowFunc(("offReg=%#x rc=%Rrc\n", offReg, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
 
     return VINF_IOM_MMIO_UNUSED_FF;

@@ -1351,6 +1351,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQT_REG_, UINT64_C(0), UINT64_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_IQT_REG_RW_MASK                                     VTD_BF_IQT_REG_QT_MASK
+
+/** IQT_REG.QT: Gets the queue tail. */
+#define VTD_IQT_REG_GET_QT(a)                                   ((a) & (VTD_BF_IQT_REG_QT_MASK | VTD_BF_IQT_REG_RSVD_3_0_MASK))
 /** @} */
 
 
@@ -1375,6 +1378,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQA_REG_, UINT64_C(0), UINT64_MAX,
 /** RW: Read/write mask. */
 #define VTD_IQA_REG_RW_MASK                                     (  VTD_BF_IQA_REG_QS_MASK | VTD_BF_IQA_REG_DW_MASK \
                                                                  | VTD_BF_IQA_REG_IQA_MASK)
+/** DW: 128-bit descriptor. */
+#define VTD_IQA_REG_DW_128_BIT                                  0
+/** DW: 256-bit descriptor. */
+#define VTD_IQA_REG_DW_256_BIT                                  1
 /** @} */
 
 
