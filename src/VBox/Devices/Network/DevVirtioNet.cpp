@@ -338,7 +338,6 @@ DECLINLINE(void) vnetR3CsLeave(PPDMDEVINS pDevIns, PVNETSTATE pThis)
     vpciCsLeave(pDevIns, &pThis->VPCI);
 }
 
-#endif /* IN_RING3 */
 
 DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pThis, int rcBusy)
 {
@@ -357,7 +356,6 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
     // PDMCritSectLeave(&pThis->csRx);
 }
 
-#ifdef IN_RING3
 /**
  * A helper function to detect the link state to the other side of "the wire".
  *
