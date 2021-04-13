@@ -865,7 +865,7 @@ typedef struct ACPITBLVTD
 {
     ACPIDMAR            Dmar;
     ACPIDRHD            Drhd;
-    /* ACPIDMARDEVSCOPE    DevScope; */
+    ACPIDMARDEVSCOPE    DevScopeIoApic;
 } ACPITBLVTD;
 #endif  /* VBOX_WITH_IOMMU_INTEL */
 
@@ -3384,9 +3384,26 @@ static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS
     VtdTable.Dmar.fFlags         = DMAR_ACPI_DMAR_FLAGS;
 
     /* DRHD. */
-    VtdTable.Drhd.cbLength     = sizeof(ACPIDRHD) /* + sizeof(VtdTable.DevScope) */;
+    VtdTable.Drhd.cbLength     = sizeof(ACPIDRHD);
     VtdTable.Drhd.fFlags       = ACPI_DRHD_F_INCLUDE_PCI_ALL;
     VtdTable.Drhd.uRegBaseAddr = DMAR_MMIO_BASE_PHYSADDR;
+
+    /* Device Scopes: I/O APIC. */
+    if (pThis->u8UseIOApic)
+    {
+        uint8_t const uIoApicBus = 0;
+        uint8_t const uIoApicDev = RT_HI_U16(pThis->u32SbIoApicPciAddress);
+        uint8_t const uIoApicFn  = RT_LO_U16(pThis->u32SbIoApicPciAddress);
+
+        VtdTable.DevScopeIoApic.uType          = ACPIDMARDEVSCOPE_TYPE_IOAPIC;
+        VtdTable.DevScopeIoApic.cbLength       = sizeof(ACPIDMARDEVSCOPE);
+        VtdTable.DevScopeIoApic.idEnum         = pThis->cCpus;   /* The I/O APIC ID, see u8IOApicId in acpiR3SetupMadt(). */
+        VtdTable.DevScopeIoApic.uStartBusNum   = uIoApicBus;
+        VtdTable.DevScopeIoApic.Path.uDevice   = uIoApicDev;
+        VtdTable.DevScopeIoApic.Path.uFunction = uIoApicFn;
+
+        VtdTable.Drhd.cbLength += sizeof(VtdTable.DevScopeIoApic);
+    }
 
     /* Finally, compute checksum. */
     VtdTable.Dmar.Hdr.u8Checksum = acpiR3Checksum(&VtdTable, sizeof(VtdTable));
@@ -3537,7 +3554,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
 
 #ifdef VBOX_WITH_IOMMU_INTEL
     if (pThis->fUseIommuIntel)
-        iIommu = cAddr++;      /* IOMMU (AMD) */
+        iIommu = cAddr++;      /* IOMMU (Intel) */
 #endif
 
     if (pThis->fUseMcfg)
@@ -3554,8 +3571,8 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     Assert(cAddr < RT_ELEMENTS(aGCPhysRsdt));
     Assert(cAddr < RT_ELEMENTS(aGCPhysXsdt));
 
-    cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
-    cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
+    cbRsdt += cAddr * sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
+    cbXsdt += cAddr * sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
 
     /*
      * Calculate the sizes for the low region and for the 64-bit prefetchable memory.
@@ -4242,12 +4259,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (pThis->fUseIommuAmd)
     {
         /* Query IOMMU AMD address (IOMA). */
-        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress, 0);
+        rc = pHlp->pfnCFGMQueryU32(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuPciAddress\""));
 
         /* Query southbridge I/O APIC address (required when an AMD IOMMU is configured). */
-        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress, 0);
+        rc = pHlp->pfnCFGMQueryU32(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SbIoApicAddress\""));
 
@@ -4257,12 +4274,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         if (!pThis->u32IommuPciAddress)
             LogRel(("ACPI: Warning! AMD IOMMU assigned the PCI host bridge address.\n"));
 
-        /* Warn if the SB IOAPIC is not at the required address if an AMD IOMMU is configured. */
+        /* Warn if the IOAPIC is not at the expected address. */
         if (pThis->u32SbIoApicPciAddress != RT_MAKE_U32(VBOX_PCI_FN_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC))
         {
-            /** @todo Maybe make this a VM startup failure later. */
-            LogRel(("ACPI: Warning! Southbridge I/O APIC not at %#x:%#x:%#x when an AMD IOMMU is present.\n",
+            LogRel(("ACPI: Southbridge I/O APIC not at %#x:%#x:%#x when an AMD IOMMU is present.\n",
                     VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC));
+            return PDMDEV_SET_ERROR(pDevIns, VERR_MISMATCH, N_("Configuration error: \"SbIoApicAddress\" mismatch"));
         }
     }
 #endif
@@ -4276,9 +4293,22 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (pThis->fUseIommuIntel)
     {
         /* Query IOMMU Intel address. */
-        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress, 0);
+        rc = pHlp->pfnCFGMQueryU32(pCfg, "IommuPciAddress", &pThis->u32IommuPciAddress);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuPciAddress\""));
+
+        /* Get the reserved I/O APIC PCI address (required when an Intel IOMMU is configured). */
+        rc = pHlp->pfnCFGMQueryU32(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SbIoApicAddress\""));
+
+        /* Warn if the IOAPIC is not at the expected address. */
+        if (pThis->u32SbIoApicPciAddress != RT_MAKE_U32(VBOX_PCI_FN_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC))
+        {
+            LogRel(("ACPI: Southbridge I/O APIC not at %#x:%#x:%#x when an Intel IOMMU is present.\n",
+                    VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC));
+            return PDMDEV_SET_ERROR(pDevIns, VERR_MISMATCH, N_("Configuration error: \"SbIoApicAddress\" mismatch"));
+        }
     }
 #endif
 

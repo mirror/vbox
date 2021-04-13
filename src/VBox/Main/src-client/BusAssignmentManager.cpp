@@ -254,16 +254,22 @@ static const DeviceAssignmentRule g_aIch9IommuAmdRules[] =
 /*
  * Intel IOMMU.
  * The VT-d misc, address remapping, system management device is
- * located at BDF 00:5:0 on real hardware so we mimick the same.
- * LSI logic remains at 0:20:0.
+ * located at BDF 0:5:0 on real hardware but we use 0:1:0 since that
+ * slot isn't used for anything else.
+ *
+ * While we could place the I/O APIC anywhere, we keep it consistent
+ * with the AMD IOMMU and we assign the LSI Logic controller to
+ * device number 23 (and I/O APIC at device 20).
  */
 static const DeviceAssignmentRule g_aIch9IommuIntelRules[] =
 {
     /* Intel IOMMU. */
-    {"iommu-intel",   0,  5,  0, 0},
+    {"iommu-intel",   0,  1,  0, 0},
+    /* Intel IOMMU: Reserved for I/O APIC. */
+    {"sb-ioapic",     0, 20,  0, 0},
 
     /* Storage controller */
-    {"lsilogic",      0, 20,  0, 1},
+    {"lsilogic",      0, 23,  0, 1},
     { NULL,          -1, -1, -1, 0}
 };
 #endif

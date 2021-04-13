@@ -30,9 +30,8 @@
 /** VirtualBox DMAR unit's device revision ID. */
 #define DMAR_PCI_REVISION_ID                        0x01
 
-/** Feature/capability flags exposed to the guest (x2APIC Opt Out until we get
- *  regular APIC setup working). */
-#define DMAR_ACPI_DMAR_FLAGS                        (ACPI_DMAR_F_INTR_REMAP | ACPI_DMAR_F_X2APIC_OPT_OUT)
+/** Feature/capability flags exposed to the guest. */
+#define DMAR_ACPI_DMAR_FLAGS                        ACPI_DMAR_F_INTR_REMAP
 
 /** The MMIO base address of the DMAR unit (taken from real hardware). */
 #define DMAR_MMIO_BASE_PHYSADDR                     UINT64_C(0xfed90000)

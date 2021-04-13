@@ -1830,6 +1830,20 @@ AssertCompileMemberOffset(ACPIDRHD, uRegBaseAddr, 8);
 
 
 /**
+ * ACPI Device Scope Structure - PCI device path.
+ * In accordance with the Intel spec.
+ */
+typedef struct ACPIDEVSCOPEPATH
+{
+    /** PCI device number. */
+    uint8_t     uDevice;
+    /** PCI function number.   */
+    uint8_t     uFunction;
+} ACPIDEVSCOPEPATH;
+AssertCompileSize(ACPIDEVSCOPEPATH, 2);
+
+
+/**
  * Device Scope Structure.
  * In accordance with the Intel spec.
  */
@@ -1837,23 +1851,23 @@ AssertCompileMemberOffset(ACPIDRHD, uRegBaseAddr, 8);
 typedef struct ACPIDMARDEVSCOPE
 {
     /** Type, see ACPIDMARDEVSCOPE_TYPE_XXX. */
-    uint8_t         uType;
+    uint8_t             uType;
     /** Length (must be 6 + size of auPath field).  */
-    uint8_t         cbLength;
+    uint8_t             cbLength;
     /** Reserved (MBZ). */
-    uint8_t         abRsvd[2];
+    uint8_t             abRsvd[2];
     /** Enumeration ID (for I/O APIC, HPET and ACPI namespace devices). */
-    uint8_t         idEnum;
+    uint8_t             idEnum;
     /** First bus number for this device. */
-    uint8_t         uStartBusNum;
+    uint8_t             uStartBusNum;
     /** Hierarchical path from the Host Bridge to the device. */
-    uint16_t        auPath[1];
+    ACPIDEVSCOPEPATH    Path;
 } ACPIDMARDEVSCOPE;
 #pragma pack()
 AssertCompileMemberOffset(ACPIDMARDEVSCOPE, cbLength,     1);
 AssertCompileMemberOffset(ACPIDMARDEVSCOPE, idEnum,       4);
 AssertCompileMemberOffset(ACPIDMARDEVSCOPE, uStartBusNum, 5);
-AssertCompileMemberOffset(ACPIDMARDEVSCOPE, auPath,       6);
+AssertCompileMemberOffset(ACPIDMARDEVSCOPE, Path,         6);
 
 /** ACPI DMAR revision (not the OEM revision field).
  *  In accordance with the Intel spec. */

@@ -830,6 +830,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     Bstr strParavirtDebug;
     hrc = pMachine->COMGETTER(ParavirtDebug)(strParavirtDebug.asOutParam());                H();
 
+    BOOL fIOAPIC;
+    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
+
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
     if (chipsetType == ChipsetType_ICH9)
@@ -869,6 +872,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         iommuType = IommuType_None;
 #endif
     }
+
     if (iommuType == IommuType_Intel)
     {
 #ifndef VBOX_WITH_IOMMU_INTEL
@@ -876,10 +880,17 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         iommuType = IommuType_None;
 #endif
     }
-    if (   (iommuType == IommuType_AMD || iommuType == IommuType_Intel)
-        && chipsetType != ChipsetType_ICH9)
+
+    if (   iommuType == IommuType_AMD
+        || iommuType == IommuType_Intel)
+    {
+        if (chipsetType != ChipsetType_ICH9)
             return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                 N_("IOMMU uses MSIs which requires the ICH9 chipset implementation."));
+        if (!fIOAPIC)
+            return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                            N_("IOMMU requires an I/O APIC for remapping interrupts."));
+    }
 #else
     IommuType_T const iommuType = IommuType_None;
 #endif
@@ -895,9 +906,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                             H();
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
-
-    BOOL fIOAPIC;
-    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
 
     APICMode_T apicMode;
     hrc = biosSettings->COMGETTER(APICMode)(&apicMode);                                     H();
@@ -1606,6 +1614,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 hrc = pBusMgr->assignPCIDevice("iommu-intel", pInst);                       H();
+
+                /*
+                 * Reserve a specific PCI address for the I/O APIC when using
+                 * an Intel IOMMU. For convenience we use the same address as
+                 * we do on AMD, see @bugref{9967#c13}.
+                 */
+                PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
+                hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
         }
 
@@ -3383,11 +3399,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "IommuPciAddress", u32IommuAddress);
                     if (pBusMgr->findPCIAddress("sb-ioapic", 0, Address))
                     {
-                        uint32_t u32SbIoapicAddress = (Address.miDevice << 16) | Address.miFn;
+                        uint32_t const u32SbIoapicAddress = (Address.miDevice << 16) | Address.miFn;
                         InsertConfigInteger(pCfg, "SbIoApicPciAddress", u32SbIoapicAddress);
                     }
                     else
-                        LogRel(("IOMMU: AMD IOMMU is enabled, but southbridge I/O APIC is not assigned a PCI address!\n"));
+                        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                            N_("AMD IOMMU is enabled, but the I/O APIC is not assigned a PCI address!"));
                 }
             }
             else if (iommuType == IommuType_Intel)
@@ -3398,6 +3415,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     uint32_t u32IommuAddress = (Address.miDevice << 16) | Address.miFn;
                     InsertConfigInteger(pCfg, "IommuIntelEnabled", true);
                     InsertConfigInteger(pCfg, "IommuPciAddress", u32IommuAddress);
+                    if (pBusMgr->findPCIAddress("sb-ioapic", 0, Address))
+                    {
+                        uint32_t const u32SbIoapicAddress = (Address.miDevice << 16) | Address.miFn;
+                        InsertConfigInteger(pCfg, "SbIoApicPciAddress", u32SbIoapicAddress);
+                    }
+                    else
+                        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                            N_("Intel IOMMU is enabled, but the I/O APIC is not assigned a PCI address!"));
                 }
             }
 
