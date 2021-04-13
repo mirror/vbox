@@ -572,11 +572,18 @@ void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 
 void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 {
-    if (m_fOverlayMode)
+    if (m_fOverlayMode && !pEvent)
         return;
-    /* QTextBrowser::wheelEvent scales font when some modifiers are pressed. We dont want: */
-    if (pEvent && pEvent->modifiers() == Qt::NoModifier)
+    /* QTextBrowser::wheelEvent scales font when some modifiers are pressed. We dont want that: */
+    if (pEvent->modifiers() == Qt::NoModifier)
         QTextBrowser::wheelEvent(pEvent);
+    else if (pEvent->modifiers() == Qt::ShiftModifier)
+    {
+        if (pEvent->angleDelta().y() < 0)
+            zoom(ZoomOperation_In);
+        else if (pEvent->angleDelta().y() > 0)
+            zoom(ZoomOperation_Out);
+    }
 }
 
 void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
