@@ -359,6 +359,25 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
 
 #ifdef IN_RING3
 /**
+ * A helper function to detect the link state to the other side of "the wire".
+ *
+ * When deciding to bring up the link we need to take into account both if the
+ * cable is connected and if our device is actually connected to the outside
+ * world. If no driver is attached we won't start the TX thread nor we will
+ * initialize the TX semaphore, which is a problem for the TX queue handler.
+ *
+ * @returns true if the device is connected to something.
+ *
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(bool) vnetR3IsConnected(PPDMDEVINS pDevIns)
+{
+    PVNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVNETSTATECC);
+    return pThis->fCableConnected && pThisCC->pDrv;
+}
+
+/**
  * Dump a packet to debug log.
  *
  * @param   pThis       The virtio-net shared instance data.
@@ -523,10 +542,13 @@ static DECLCALLBACK(int) vnetIoCb_SetConfig(PVPCISTATE pVPciState, uint32_t offC
  */
 static DECLCALLBACK(int) vnetIoCb_Reset(PPDMDEVINS pDevIns)
 {
+#ifndef IN_RING3
+    RT_NOREF(pDevIns);
+    return VINF_IOM_R3_IOPORT_WRITE;
+#else
     PVNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
-#ifdef IN_RING3
     PVNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVNETSTATECC);
-#endif
+
     Log(("%s Reset triggered\n", INSTANCE(pThis)));
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
@@ -539,11 +561,11 @@ static DECLCALLBACK(int) vnetIoCb_Reset(PPDMDEVINS pDevIns)
     vnetCsRxLeave(pThis);
 
     /// @todo Implement reset
-    if (pThis->fCableConnected)
+    if (vnetR3IsConnected(pDevIns))
         pThis->config.uStatus = VNET_S_LINK_UP;
     else
         pThis->config.uStatus = 0;
-    Log(("%s vnetIoCb_Reset: Link is %s\n", INSTANCE(pThis), pThis->fCableConnected ? "up" : "down"));
+    Log(("%s vnetIoCb_Reset: Link is %s\n", INSTANCE(pThis), vnetR3IsConnected(pDevIns) ? "up" : "down"));
 
     /*
      * By default we pass all packets up since the older guests cannot control
@@ -555,9 +577,6 @@ static DECLCALLBACK(int) vnetIoCb_Reset(PPDMDEVINS pDevIns)
     memset(pThis->aMacFilter,  0, VNET_MAC_FILTER_LEN * sizeof(RTMAC));
     memset(pThis->aVlanFilter, 0, sizeof(pThis->aVlanFilter));
     pThis->uIsTransmitting   = 0;
-#ifndef IN_RING3
-    return VINF_IOM_R3_IOPORT_WRITE;
-#else
     if (pThisCC->pDrv)
         pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
     return VINF_SUCCESS;
@@ -1130,10 +1149,14 @@ static DECLCALLBACK(int) vnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pIn
     {
         if (fNewUp)
         {
-            Log(("%s Link is up\n", INSTANCE(pThis)));
             pThis->fCableConnected = true;
-            pThis->config.uStatus |= VNET_S_LINK_UP;
-            vnetR3RaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+            /* The link state depends both on the cable connected and device attached. */
+            if (vnetR3IsConnected(pDevIns))
+            {
+                Log(("%s Link is up\n", INSTANCE(pThis)));
+                pThis->config.uStatus |= VNET_S_LINK_UP;
+                vnetR3RaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+            }
         }
         else
         {
@@ -1343,7 +1366,7 @@ static void vnetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVNETSTATE pThis, P
         return;
     }
 
-    if (!pThis->fCableConnected)
+    if (!vnetR3IsConnected(pDevIns))
     {
         Log(("%s Ignoring transmit requests while cable is disconnected.\n", INSTANCE(pThis)));
         return;

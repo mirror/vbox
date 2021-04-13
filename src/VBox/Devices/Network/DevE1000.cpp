@@ -2889,6 +2889,26 @@ static int e1kRegReadCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 #endif /* unused */
 
 /**
+ * A helper function to detect the link state to the other side of "the wire".
+ *
+ * When deciding to bring up the link we need to take into account both if the
+ * cable is connected and if our device is actually connected to the outside
+ * world. If no driver is attached we won't be able to allocate TX buffers,
+ * which will prevent us from TX descriptor processing, which will result in
+ * "TX unit hang" in the guest.
+ *
+ * @returns true if the device is connected to something.
+ *
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(bool) e1kIsConnected(PPDMDEVINS pDevIns)
+{
+    PE1KSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    return pThis->fCableConnected && pThisCC->CTX_SUFF(pDrv);
+}
+
+/**
  * A callback used by PHY to indicate that the link needs to be updated due to
  * reset of PHY.
  *
@@ -2900,7 +2920,7 @@ void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns)
     PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     /* Make sure we have cable connected and MAC can talk to PHY */
-    if (pThis->fCableConnected && (CTRL & CTRL_SLU))
+    if (e1kIsConnected(pDevIns) && (CTRL & CTRL_SLU))
         e1kArmTimer(pDevIns, pThis, pThis->hLUTimer, E1K_INIT_LINKUP_DELAY_US);
 }
 
@@ -2947,7 +2967,7 @@ static int e1kRegWriteCTRL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 #else /* !E1K_LSC_ON_SLU */
         if (   (value & CTRL_SLU)
             && !(CTRL & CTRL_SLU)
-            && pThis->fCableConnected
+            && e1kIsConnected(pDevIns)
             && !PDMDevHlpTimerIsActive(pDevIns, pThis->hLUTimer))
         {
             /* PXE does not use LSC interrupts, see @bugref{9113}. */
@@ -3653,7 +3673,7 @@ static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
      * and connect+disconnect the cable very quick. Moreover, 82543GC triggers LSC
      * on reset even if the cable is unplugged (see @bugref{8942}).
      */
-    if (pThis->fCableConnected)
+    if (e1kIsConnected(pDevIns))
     {
         /* 82543GC does not have an internal PHY */
         if (pThis->eChip == E1K_CHIP_82543GC || (CTRL & CTRL_SLU))

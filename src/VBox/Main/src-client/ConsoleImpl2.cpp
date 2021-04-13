@@ -5255,6 +5255,10 @@ int Console::i_configNetwork(const char *pszDevice,
             CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", uLun));
         }
 
+        Bstr networkName, trunkName, trunkType;
+        NetworkAttachmentType_T eAttachmentType;
+        hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
+
 #ifdef VBOX_WITH_NETSHAPER
         ComObjPtr<IBandwidthGroup> pBwGroup;
         Bstr strBwGroup;
@@ -5269,8 +5273,12 @@ int Console::i_configNetwork(const char *pszDevice,
         AssertMsg(uLun == 0, ("Network attachments with LUN > 0 are not supported yet\n"));
         InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uLun);
 
+        /*
+         * Do not insert neither a shaper nor a sniffer if we are not attached to anything.
+         * This way we can easily detect if we are attached to anything at the device level.
+         */
 #ifdef VBOX_WITH_NETSHAPER
-        if (!strBwGroup.isEmpty())
+        if (!strBwGroup.isEmpty()  && eAttachmentType != NetworkAttachmentType_Null)
         {
             InsertConfigString(pLunL0, "Driver", "NetShaper");
             InsertConfigNode(pLunL0, "Config", &pCfg);
@@ -5279,7 +5287,7 @@ int Console::i_configNetwork(const char *pszDevice,
         }
 #endif /* VBOX_WITH_NETSHAPER */
 
-        if (fSniffer)
+        if (fSniffer && eAttachmentType != NetworkAttachmentType_Null)
         {
             InsertConfigString(pLunL0, "Driver", "NetSniffer");
             InsertConfigNode(pLunL0, "Config", &pCfg);
@@ -5289,10 +5297,6 @@ int Console::i_configNetwork(const char *pszDevice,
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }
 
-
-        Bstr networkName, trunkName, trunkType;
-        NetworkAttachmentType_T eAttachmentType;
-        hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
         switch (eAttachmentType)
         {
             case NetworkAttachmentType_Null:

@@ -3291,7 +3291,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
                 | 0x0008    /* Able to do auto-negotiation. */
                 | 0x0004    /* Link up. */
                 | 0x0001;   /* Extended Capability, i.e. registers 4+ valid. */
-            if (!pThis->fLinkUp || pThis->fLinkTempDown || isolate) {
+            if (!pcnetIsLinkUp(pThis) || isolate) {
                 val &= ~(0x0020 | 0x0004);
                 pThis->cLinkDownReported++;
             }
@@ -3337,7 +3337,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 5:
             /* Link partner ability register. */
-            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
+            if (pcnetIsLinkUp(pThis) && !isolate)
                 val =   0x8000  /* Next page bit. */
                       | 0x4000  /* Link partner acked us. */
                       | 0x0400  /* Can do flow control. */
@@ -3352,7 +3352,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 6:
             /* Auto negotiation expansion register. */
-            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
+            if (pcnetIsLinkUp(pThis) && !isolate)
                 val =   0x0008  /* Link partner supports npage. */
                       | 0x0004  /* Enable npage words. */
                       | 0x0001; /* Can do N-way auto-negotiation. */
@@ -3365,7 +3365,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 18:
             /* Diagnostic Register (FreeBSD pcn/ac101 driver reads this). */
-            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
+            if (pcnetIsLinkUp(pThis) && !isolate)
             {
                 val =   0x0100  /* Receive PLL locked. */
                       | 0x0200; /* Signal detected. */
