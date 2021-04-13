@@ -926,7 +926,6 @@ void UIHelpBrowserTabManager::setSource(const QUrl &url, bool fNewTab /* = false
     }
     else
         addNewTab(url, false);
-
     updateTabUrlTitleList();
 }
 

@@ -488,6 +488,9 @@ void UIHelpViewer::setZoomPercentage(int iZoomPercentage)
 void UIHelpViewer::setHelpFileList(const QList<QUrl> &helpFileList)
 {
     m_helpFileList = helpFileList;
+    /* File list necessary to get the image data from the help engine: */
+    iterateDocumentImages();
+    scaleImages();
 }
 
 bool UIHelpViewer::isInOverlayMode() const
@@ -579,9 +582,9 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
         QTextBrowser::wheelEvent(pEvent);
     else if (pEvent->modifiers() & Qt::ControlModifier)
     {
-        if (pEvent->angleDelta().y() < 0)
+        if (pEvent->angleDelta().y() > 0)
             zoom(ZoomOperation_In);
-        else if (pEvent->angleDelta().y() > 0)
+        else if (pEvent->angleDelta().y() < 0)
             zoom(ZoomOperation_Out);
     }
 }
@@ -643,8 +646,20 @@ void UIHelpViewer::mouseDoubleClickEvent(QMouseEvent *pEvent)
 void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
 {
     QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
+    QPainter painter(viewport());
+    foreach(const DocumentImage &image, m_imageMap)
+    {
+        QRect rect = cursorRect(image.m_textCursor);
+        QPixmap newPixmap = image.m_pixmap.scaledToWidth(image.m_fScaledWidth, Qt::SmoothTransformation);
+        QRectF imageRect(rect.x() - newPixmap.width(), rect.y(), newPixmap.width(), newPixmap.height());
 
+        int iMargin = 3;
+        QRectF fillRect(imageRect.x() - iMargin, imageRect.y() - iMargin,
+                        imageRect.width() + 2 * iMargin, imageRect.height() + 2 * iMargin);
 
+        painter.fillRect(fillRect, Qt::white);
+        painter.drawPixmap(imageRect, newPixmap, newPixmap.rect());
+     }
     // if (m_pOverlayLabel)
     // {
     //     if (m_fOverlayMode)
@@ -874,7 +889,7 @@ void UIHelpViewer::iterateDocumentImages()
             QHash<QString, DocumentImage>::iterator iterator = m_imageMap.insert(imageFormat.name(), DocumentImage());
             DocumentImage &image = iterator.value();
             image.m_fInitialWidth = imageFormat.width();
-            //image.m_iPosition = cursor.position();
+            image.m_strName = imageFormat.name();
             image.m_textCursor = cursor;
             QUrl imageFileUrl;
             foreach (const QUrl &fileUrl, m_helpFileList)
@@ -904,22 +919,17 @@ void UIHelpViewer::scaleFont()
 
 void UIHelpViewer::scaleImages()
 {
-    // for (QHash<QString, DocumentImage>::iterator iterator = m_imageMap.begin();
-    //      iterator != m_imageMap.end(); ++iterator)
-    foreach(const DocumentImage &image, m_imageMap)
+    for (QHash<QString, DocumentImage>::iterator iterator = m_imageMap.begin();
+         iterator != m_imageMap.end(); ++iterator)
     {
-
-        // QTextCursor cursor = textCursor();
-        // cursor.movePosition(QTextCursor::Start);
-        // cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, image.m_iPosition);
-        // if (cursor.isNull())
-        //     continue;
+        DocumentImage &image = *iterator;
         QTextCursor cursor = image.m_textCursor;
         QTextCharFormat format = cursor.charFormat();
         if (!format.isImageFormat())
             continue;
         QTextImageFormat imageFormat = format.toImageFormat();
-        imageFormat.setWidth(image.m_fInitialWidth * m_iZoomPercentage / 100.);
+        image.m_fScaledWidth = image.m_fInitialWidth * m_iZoomPercentage / 100.;
+        imageFormat.setWidth(image.m_fScaledWidth);
         cursor.deletePreviousChar();
         cursor.deleteChar();
         cursor.insertImage(imageFormat);

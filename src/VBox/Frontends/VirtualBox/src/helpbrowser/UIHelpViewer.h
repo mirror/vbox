@@ -108,9 +108,11 @@ private:
     struct DocumentImage
     {
         qreal m_fInitialWidth;
+        qreal m_fScaledWidth;
         //int m_iPosition;
         QTextCursor m_textCursor;
         QPixmap m_pixmap;
+        QString m_strName;
     };
 
     void retranslateUi();
