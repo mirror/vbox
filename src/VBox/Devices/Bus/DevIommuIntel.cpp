@@ -212,7 +212,7 @@ typedef CTX_SUFF(PDMAR) PDMARCC;
 /**
  * Read-write masks for DMAR registers (group 0).
  */
-static const uint32_t g_au32RwMasks0[] =
+static uint32_t const g_au32RwMasks0[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0x000   VER_REG               */  VTD_VER_REG_RW_MASK,
@@ -302,7 +302,7 @@ AssertCompile(sizeof(g_au32RwMasks0) == DMAR_MMIO_GROUP_0_SIZE);
 /**
  * Read-only Status, Write-1-to-clear masks for DMAR registers (group 0).
  */
-static const uint32_t g_au32Rw1cMasks0[] =
+static uint32_t const g_au32Rw1cMasks0[] =
 {
     /* Offset  Register                  Low                        High */
     /* 0x000   VER_REG               */  0,
@@ -392,7 +392,7 @@ AssertCompile(sizeof(g_au32Rw1cMasks0) == DMAR_MMIO_GROUP_0_SIZE);
 /**
  * Read-write masks for DMAR registers (group 1).
  */
-static const uint32_t g_au32RwMasks1[] =
+static uint32_t const g_au32RwMasks1[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0xe00   VCCAP_REG             */  DMAR_LO_U32(VTD_VCCAP_REG_RW_MASK),        DMAR_HI_U32(VTD_VCCAP_REG_RW_MASK),
@@ -416,7 +416,7 @@ AssertCompile((DMAR_MMIO_OFF_FRCD_LO_REG - DMAR_MMIO_GROUP_1_OFF_FIRST) + DMAR_F
 /**
  * Read-only Status, Write-1-to-clear masks for DMAR registers (group 1).
  */
-static const uint32_t g_au32Rw1cMasks1[] =
+static uint32_t const g_au32Rw1cMasks1[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0xe00   VCCAP_REG             */  0,                                         0,
@@ -437,10 +437,10 @@ static const uint32_t g_au32Rw1cMasks1[] =
 AssertCompile(sizeof(g_au32Rw1cMasks1) == DMAR_MMIO_GROUP_1_SIZE);
 
 /** Array of RW masks for each register group. */
-static const uint8_t *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
+static uint8_t const *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
 
 /** Array of RW1C masks for each register group. */
-static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
+static uint8_t const *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
 
 /* Masks arrays must be identical in size (even bounds checking code assumes this). */
 AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
@@ -1170,7 +1170,7 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
 /**
  * The device registration structure.
  */
-const PDMDEVREG g_DeviceIommuIntel =
+PDMDEVREG const g_DeviceIommuIntel =
 {
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
