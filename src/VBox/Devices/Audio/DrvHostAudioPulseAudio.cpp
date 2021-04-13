@@ -51,7 +51,7 @@
 *********************************************************************************************************************************/
 /** Max number of errors reported by drvHostAudioPaError per instance.
  * @todo Make this configurable thru driver config. */
-#define VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS  64
+#define VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS  99
 
 
 /** @name PULSEAUDIOENUMCBFLAGS_XXX
@@ -142,7 +142,6 @@ typedef struct PULSEAUDIOSTREAM
     pa_sample_spec         SampleSpec;
     /** Pulse playback and buffer metrics. */
     pa_buffer_attr         BufAttr;
-    int                    fOpSuccess;
     /** Pointer to Pulse sample peeking buffer. */
     const uint8_t         *pu8PeekBuf;
     /** Current size (in bytes) of peeking data in
@@ -150,9 +149,18 @@ typedef struct PULSEAUDIOSTREAM
     size_t                 cbPeekBuf;
     /** Our offset (in bytes) in peeking buffer. */
     size_t                 offPeekBuf;
+    /** Asynchronous drain operation.  This is used as an indicator of whether
+     *  we're currently draining the stream (will be cleaned up before
+     *  resume/re-enable). */
     pa_operation          *pDrainOp;
-    /** Number of occurred audio data underflows. */
-    uint32_t               cUnderflows;
+    /** Asynchronous cork/uncork operation.
+     * (This solely for cancelling before destroying the stream, so the callback
+     * won't do any after-freed accesses.) */
+    pa_operation          *pCorkOp;
+    /** Asynchronous trigger operation.
+     * (This solely for cancelling before destroying the stream, so the callback
+     * won't do any after-freed accesses.) */
+    pa_operation          *pTriggerOp;
     /** Current latency (in us). */
     uint64_t               cUsLatency;
 #ifdef LOG_ENABLED
@@ -160,6 +168,10 @@ typedef struct PULSEAUDIOSTREAM
     pa_usec_t              tsStartUs;
     /** Time stamp (in us) when last read from / written to the stream. */
     pa_usec_t              tsLastReadWrittenUs;
+#endif
+#ifdef DEBUG
+    /** Number of occurred audio data underflows. */
+    uint32_t               cUnderflows;
 #endif
 } PULSEAUDIOSTREAM;
 /** Pointer to pulse audio stream data. */
@@ -222,23 +234,49 @@ DECLINLINE(bool) PA_STREAM_IS_GOOD(pa_stream_state_t enmState)
 #endif
 
 
+/**
+ * Converts a pulse audio error to a VBox status.
+ *
+ * @returns VBox status code.
+ * @param   rcPa    The error code to convert.
+ */
+static int drvHostAudioPaErrorToVBox(int rcPa)
+{
+    /** @todo Implement some PulseAudio -> VBox mapping here. */
+    RT_NOREF(rcPa);
+    return VERR_GENERAL_FAILURE;
+}
 
-/** @todo Implement va handling. */
-static int drvHostAudioPaError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
+
+/**
+ * Logs a pulse audio (from context) and converts it to VBox status.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Our instance data.
+ * @param   pszFormat   The format string for the release log (no newline) .
+ * @param   ...         Format string arguments.
+ */
+static int drvHostAudioPaError(PDRVHOSTPULSEAUDIO pThis, const char *pszFormat, ...)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(szMsg, VERR_INVALID_POINTER);
+    AssertPtr(pszFormat);
+
+    int const rcPa   = pa_context_errno(pThis->pContext);
+    int const rcVBox = drvHostAudioPaErrorToVBox(rcPa);
 
     if (   pThis->cLogErrors < VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS
         && LogRelIs2Enabled())
     {
-        pThis->cLogErrors++;
-        int rc2 = pa_context_errno(pThis->pContext);
-        LogRel2(("PulseAudio: %s: %s\n", szMsg, pa_strerror(rc2)));
+        va_list va;
+        va_start(va, pszFormat);
+        LogRel(("PulseAudio: %N: %s (%d, %Rrc)\n", pszFormat, &va, pa_strerror(rcPa), rcPa, rcVBox));
+        va_end(va);
+
+        if (++pThis->cLogErrors == VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS)
+            LogRel(("PulseAudio: muting errors (max %u)\n", VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS));
     }
 
-    /** @todo Implement some PulseAudio -> IPRT mapping here. */
-    return VERR_GENERAL_FAILURE;
+    return rcVBox;
 }
 
 
@@ -289,24 +327,6 @@ static void drvHostAudioPaCtxCallbackStateChanged(pa_context *pCtx, void *pvUser
         default:
             break;
     }
-}
-
-
-/**
- * Callback used with pa_stream_cork() in a number of places.
- */
-static void drvHostAudioPaStreamSuccessCallback(pa_stream *pStream, int fSuccess, void *pvUser)
-{
-    AssertPtrReturnVoid(pStream);
-    PPULSEAUDIOSTREAM pStrm = (PPULSEAUDIOSTREAM)pvUser;
-    AssertPtrReturnVoid(pStrm);
-
-    pStrm->fOpSuccess = fSuccess;
-
-    if (fSuccess)
-        drvHostAudioPaSignalWaiter(pStrm->pDrv);
-    else
-        drvHostAudioPaError(pStrm->pDrv, "Failed to finish stream operation");
 }
 
 
@@ -1097,6 +1117,38 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     return rc;
 }
 
+/**
+ * Cancel and release any pending stream requests (drain and cork/uncork).
+ *
+ * @note Caller has locked the mainloop.
+ */
+static void drvHostAudioPaStreamCancelAndReleaseOperations(PPULSEAUDIOSTREAM pStreamPA)
+{
+    if (pStreamPA->pDrainOp)
+    {
+        LogFlowFunc(("drain operation (%p) status: %d\n", pStreamPA->pDrainOp, pa_operation_get_state(pStreamPA->pDrainOp)));
+        pa_operation_cancel(pStreamPA->pDrainOp);
+        pa_operation_unref(pStreamPA->pDrainOp);
+        pStreamPA->pDrainOp = NULL;
+    }
+
+    if (pStreamPA->pCorkOp)
+    {
+        LogFlowFunc(("cork operation (%p) status: %d\n", pStreamPA->pCorkOp, pa_operation_get_state(pStreamPA->pCorkOp)));
+        pa_operation_cancel(pStreamPA->pCorkOp);
+        pa_operation_unref(pStreamPA->pCorkOp);
+        pStreamPA->pCorkOp = NULL;
+    }
+
+    if (pStreamPA->pTriggerOp)
+    {
+        LogFlowFunc(("trigger operation (%p) status: %d\n", pStreamPA->pTriggerOp, pa_operation_get_state(pStreamPA->pTriggerOp)));
+        pa_operation_cancel(pStreamPA->pTriggerOp);
+        pa_operation_unref(pStreamPA->pTriggerOp);
+        pStreamPA->pTriggerOp = NULL;
+    }
+}
+
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
@@ -1111,13 +1163,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
     {
         pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-        /* Make sure to cancel a pending draining operation, if any. */
-        if (pStreamPA->pDrainOp)
-        {
-            pa_operation_cancel(pStreamPA->pDrainOp);
-            pStreamPA->pDrainOp = NULL;
-        }
-
+        drvHostAudioPaStreamCancelAndReleaseOperations(pStreamPA);
         pa_stream_disconnect(pStreamPA->pStream);
 
         pa_stream_unref(pStreamPA->pStream);
@@ -1131,26 +1177,42 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
 
 
 /**
- * Pulse audio pa_stream_drain() completion callback.
+ * Common worker for the cork/uncork completion callbacks.
+ * @note This is fully async, so nobody is waiting for this.
  */
-static void drvHostAudioPaStreamDrainCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+static void drvHostAudioPaStreamCorkUncorkCommon(PPULSEAUDIOSTREAM pStreamPA, int fSuccess, const char *pszOperation)
 {
-    AssertPtrReturnVoid(pStream);
-    PPULSEAUDIOSTREAM pStreamPA = (PPULSEAUDIOSTREAM)pvUser;
     AssertPtrReturnVoid(pStreamPA);
-    LogFlowFunc(("fSuccess=%d\n", fSuccess));
+    LogFlowFunc(("%s '%s': fSuccess=%RTbool\n", pszOperation, pStreamPA->Cfg.szName, fSuccess));
 
-    pStreamPA->fOpSuccess = fSuccess;
-    if (fSuccess)
-        pa_operation_unref(pa_stream_cork(pStream, 1, drvHostAudioPaStreamSuccessCallback, pvUser));
-    else
-        drvHostAudioPaError(pStreamPA->pDrv, "Failed to drain stream");
+    if (!fSuccess)
+        drvHostAudioPaError(pStreamPA->pDrv, "%s stream '%s' failed", pszOperation, pStreamPA->Cfg.szName);
 
-    if (pStreamPA->pDrainOp)
+    if (pStreamPA->pCorkOp)
     {
-        pa_operation_unref(pStreamPA->pDrainOp);
-        pStreamPA->pDrainOp = NULL;
+        pa_operation_unref(pStreamPA->pCorkOp);
+        pStreamPA->pCorkOp = NULL;
     }
+}
+
+
+/**
+ * Completion callback used with pa_stream_cork(,false,).
+ */
+static void drvHostAudioPaStreamUncorkCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+{
+    RT_NOREF(pStream);
+    drvHostAudioPaStreamCorkUncorkCommon((PPULSEAUDIOSTREAM)pvUser, fSuccess, "Uncorking");
+}
+
+
+/**
+ * Completion callback used with pa_stream_cork(,true,).
+ */
+static void drvHostAudioPaStreamCorkCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+{
+    RT_NOREF(pStream);
+    drvHostAudioPaStreamCorkUncorkCommon((PPULSEAUDIOSTREAM)pvUser, fSuccess, "Corking");
 }
 
 
@@ -1163,31 +1225,21 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamEnable(PPDMIHOSTAUDIO pInterface
     PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
     LogFlowFunc(("\n"));
 
+    /*
+     * Uncork (start or resume playback/capture) the stream.
+     */
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    /* Cancel and dispose of pending drain.  We'll unconditionally uncork
-       the stream even if we cancelled a drain, I hope that will work...  */
-    if (pStreamPA->pDrainOp)
-    {
-        pa_operation_state_t const enmOpState = pa_operation_get_state(pStreamPA->pDrainOp);
-        if (enmOpState != PA_OPERATION_RUNNING)
-        {
-            pa_operation_cancel(pStreamPA->pDrainOp);
-            LogFlowFunc(("cancelled drain (%d)\n", pa_operation_get_state(pStreamPA->pDrainOp)));
-        }
-        pa_operation_unref(pStreamPA->pDrainOp);
-        pStreamPA->pDrainOp = NULL;
-    }
+    drvHostAudioPaStreamCancelAndReleaseOperations(pStreamPA);
+    pStreamPA->pCorkOp = pa_stream_cork(pStreamPA->pStream, 0 /*uncork it*/,
+                                        drvHostAudioPaStreamUncorkCompletionCallback, pStreamPA);
+    LogFlowFunc(("Uncorking '%s': %p (async)\n", pStreamPA->Cfg.szName, pStreamPA->pCorkOp));
+    int const rc = pStreamPA->pCorkOp ? VINF_SUCCESS
+                 : drvHostAudioPaError(pThis, "pa_stream_cork('%s', 0 /*uncork it*/,,) failed", pStreamPA->Cfg.szName);
 
-    /*
-     * Uncork (start or resume play/capture) the stream.
-     */
-/** @todo do this asynchronously as the caller is usually an EMT which cannot
- *        wait on a potentally missing-in-action audio daemon. */
-    int rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0 /* Uncork */,
-                                                         drvHostAudioPaStreamSuccessCallback, pStreamPA));
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1205,39 +1257,43 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDisable(PPDMIHOSTAUDIO pInterfac
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
     /*
-     * Do some direction specific cleanups before we cork the stream.
+     * For output streams, we will ignore the request if there is a pending drain
+     * as it will cork the stream in the end.
      */
-    bool fCorkIt = true;
-    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
     {
-        /* Input - drop the peek buffer. */
-        if (pStreamPA->pu8PeekBuf) /* Do we need to drop the peek buffer?*/
+        /* Output - Ignore request if we've got a drain running, it will cork it
+                     when it completes. */
+        if (pStreamPA->pDrainOp)
         {
-            pa_stream_drop(pStreamPA->pStream);
-            pStreamPA->pu8PeekBuf = NULL;
+            pa_operation_state_t const enmOpState = pa_operation_get_state(pStreamPA->pDrainOp);
+            if (enmOpState == PA_OPERATION_RUNNING)
+            {
+                LogFlowFunc(("Drain (%p) already running on '%s', skipping.\n", pStreamPA->pDrainOp, pStreamPA->Cfg.szName));
+                pa_threaded_mainloop_unlock(pThis->pMainLoop);
+                return VINF_SUCCESS;
+            }
+            LogFlowFunc(("Drain (%p) not running: %d\n", pStreamPA->pDrainOp, enmOpState));
         }
     }
-    else
+    /*
+     * For input stream we always cork it, but we clean up the peek buffer first.
+     */
+    else if (pStreamPA->pu8PeekBuf) /** @todo Do we need to drop the peek buffer?*/
     {
-        /* Output - Ignore request if we've got a running drain. */
-        fCorkIt = !pStreamPA->pDrainOp
-                || pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_RUNNING;
+        pa_stream_drop(pStreamPA->pStream);
+        pStreamPA->pu8PeekBuf = NULL;
     }
 
     /*
-     * Cork (pause) the stream.
+     * Cork (pause playback/capture) the stream.
      */
-    int rc = VINF_SUCCESS;
-    if (fCorkIt)
-    {
-        LogFlowFunc(("Corking '%s'...\n", pStreamPA->Cfg.szName));
-/** @todo do this asynchronously as the caller is usually an EMT which cannot
- *        wait on a potentally missing-in-action audio daemon. */
-        rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 1 /* cork it */,
-                                                         drvHostAudioPaStreamSuccessCallback, pStreamPA));
-    }
-    else
-        LogFlowFunc(("Stream '%s' is already draining, skipping corking.\n", pStreamPA->Cfg.szName));
+    drvHostAudioPaStreamCancelAndReleaseOperations(pStreamPA);
+    pStreamPA->pCorkOp = pa_stream_cork(pStreamPA->pStream, 1 /* cork it */,
+                                        drvHostAudioPaStreamCorkCompletionCallback, pStreamPA);
+    LogFlowFunc(("Corking '%s': %p (async)\n", pStreamPA->Cfg.szName, pStreamPA->pCorkOp));
+    int const rc = pStreamPA->pCorkOp ? VINF_SUCCESS
+                 : drvHostAudioPaError(pThis, "pa_stream_cork('%s', 1 /*cork*/,,) failed", pStreamPA->Cfg.szName);
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1266,6 +1322,58 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamResume(PPDMIHOSTAUDIO pInterface
 
 
 /**
+ * Pulse audio pa_stream_drain() completion callback.
+ * @note This is fully async, so nobody is waiting for this.
+ */
+static void drvHostAudioPaStreamDrainCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+{
+    PPULSEAUDIOSTREAM pStreamPA = (PPULSEAUDIOSTREAM)pvUser;
+    AssertPtrReturnVoid(pStreamPA);
+    Assert(pStreamPA->pStream == pStream);
+    LogFlowFunc(("'%s': fSuccess=%RTbool\n", pStreamPA->Cfg.szName, fSuccess));
+
+    if (!fSuccess)
+        drvHostAudioPaError(pStreamPA->pDrv, "Draining stream '%s' failed", pStreamPA->Cfg.szName);
+
+    /* Now cork the stream (doing it unconditionally atm). */
+    if (pStreamPA->pCorkOp)
+    {
+        LogFlowFunc(("Cancelling & releasing cork/uncork operation %p (state: %d)\n",
+                     pStreamPA->pCorkOp, pa_operation_get_state(pStreamPA->pCorkOp)));
+        pa_operation_cancel(pStreamPA->pCorkOp);
+        pa_operation_unref(pStreamPA->pCorkOp);
+    }
+
+    pStreamPA->pCorkOp = pa_stream_cork(pStream, 1 /* cork it*/, drvHostAudioPaStreamCorkCompletionCallback, pStreamPA);
+    if (pStreamPA->pCorkOp)
+        LogFlowFunc(("Started cork operation %p of %s (following drain)\n", pStreamPA->pCorkOp, pStreamPA->Cfg.szName));
+    else
+        drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_cork failed on '%s' (following drain)", pStreamPA->Cfg.szName);
+}
+
+
+/**
+ * Callback used with pa_stream_tigger(), starts draining.
+ */
+static void drvHostAudioPaStreamTriggerCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+{
+    PPULSEAUDIOSTREAM pStreamPA = (PPULSEAUDIOSTREAM)pvUser;
+    AssertPtrReturnVoid(pStreamPA);
+    RT_NOREF(pStream);
+    LogFlowFunc(("'%s': fSuccess=%RTbool\n", pStreamPA->Cfg.szName, fSuccess));
+
+    if (!fSuccess)
+        drvHostAudioPaError(pStreamPA->pDrv, "Forcing playback before drainig '%s' failed", pStreamPA->Cfg.szName);
+
+    if (pStreamPA->pTriggerOp)
+    {
+        pa_operation_unref(pStreamPA->pTriggerOp);
+        pStreamPA->pTriggerOp = NULL;
+    }
+}
+
+
+/**
  * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
  */
 static DECLCALLBACK(int) drvHostAudioPaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -1278,38 +1386,53 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDrain(PPDMIHOSTAUDIO pInterface,
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
     /*
-     * We must make sure any pre-buffered stuff is played before we drain
-     * the stream.  Also, there might already be a drain request around,
-     * in case we're called multiple times.  Re-issue the drain if the old
-     * one has completed just to be sure.
+     * If there is a drain running already, don't try issue another as pulse
+     * doesn't support more than one concurrent drain per stream.
      */
-    int rc = VINF_SUCCESS;
-    if (!pStreamPA->pDrainOp)
+    if (pStreamPA->pDrainOp)
     {
-        LogFlowFunc(("pa_stream_trigger...\n"));
-        rc = drvHostAudioPaWaitFor(pThis, pa_stream_trigger(pStreamPA->pStream,
-                                                            drvHostAudioPaStreamSuccessCallback, pStreamPA));
-    }
-    else if (   pStreamPA->pDrainOp
-             && pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_RUNNING)
-    {
+        if (pa_operation_get_state(pStreamPA->pDrainOp) == PA_OPERATION_RUNNING)
+        {
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            LogFlowFunc(("returns VINF_SUCCESS (drain already running)\n"));
+            return VINF_SUCCESS;
+        }
+        LogFlowFunc(("Releasing drain operation %p (state: %d)\n", pStreamPA->pDrainOp, pa_operation_get_state(pStreamPA->pDrainOp)));
         pa_operation_unref(pStreamPA->pDrainOp);
         pStreamPA->pDrainOp = NULL;
     }
 
-    if (!pStreamPA->pDrainOp && RT_SUCCESS(rc))
+    /*
+     * Make sure pre-buffered data is played before we drain it.
+     *
+     * ASSUMES that the async stream requests are executed in the order they're
+     * issued here, so that we avoid waiting for the trigger request to complete.
+     */
+    int rc = VINF_SUCCESS;
+    if (true /** @todo skip this if we're already playing or haven't written any data to the stream since xxxx. */)
     {
-        pStreamPA->pDrainOp = pa_stream_drain(pStreamPA->pStream, drvHostAudioPaStreamDrainCompletionCallback, pStreamPA);
-        if (pStreamPA->pDrainOp)
-            LogFlowFunc(("Started drain operation %p of %s\n", pStreamPA->pDrainOp, pStreamPA->Cfg.szName));
+        if (pStreamPA->pTriggerOp)
+        {
+            LogFlowFunc(("Cancelling & releasing trigger operation %p (state: %d)\n",
+                         pStreamPA->pTriggerOp, pa_operation_get_state(pStreamPA->pTriggerOp)));
+            pa_operation_cancel(pStreamPA->pTriggerOp);
+            pa_operation_unref(pStreamPA->pTriggerOp);
+        }
+        pStreamPA->pTriggerOp = pa_stream_trigger(pStreamPA->pStream, drvHostAudioPaStreamTriggerCompletionCallback, pStreamPA);
+        if (pStreamPA->pTriggerOp)
+            LogFlowFunc(("Started tigger operation %p on %s\n", pStreamPA->pTriggerOp, pStreamPA->Cfg.szName));
         else
-            LogFunc(("pa_stream_drain failed on '%s': %s (%d)\n", pStreamPA->Cfg.szName,
-                     pa_strerror(pa_context_errno(pThis->pContext)), pa_context_errno(pThis->pContext) ));
+            rc = drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_trigger failed on '%s'", pStreamPA->Cfg.szName);
     }
-    else if (RT_SUCCESS(rc))
-        LogFlowFunc(("Already draining (%p) ...\n", pStreamPA->pDrainOp));
+
+    /*
+     * Initiate the draining (async), will cork the stream when it completes.
+     */
+    pStreamPA->pDrainOp = pa_stream_drain(pStreamPA->pStream, drvHostAudioPaStreamDrainCompletionCallback, pStreamPA);
+    if (pStreamPA->pDrainOp)
+        LogFlowFunc(("Started drain operation %p of %s\n", pStreamPA->pDrainOp, pStreamPA->Cfg.szName));
     else
-        LogFunc(("pa_stream_trigger + wait failed: %Rrc\n", rc));
+        rc = drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_drain failed on '%s'", pStreamPA->Cfg.szName);
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
     LogFlowFunc(("returns %Rrc\n", rc));
