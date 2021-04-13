@@ -108,7 +108,9 @@ private:
     struct DocumentImage
     {
         qreal m_fInitialWidth;
-        int m_iPosition;
+        //int m_iPosition;
+        QTextCursor m_textCursor;
+        QPixmap m_pixmap;
     };
 
     void retranslateUi();
@@ -135,7 +137,7 @@ private:
     int m_iSearchTermLength;
     int m_iInitialFontPointSize;
     /** A container to store the original image sizes/positions in the document. key is image name value is DocumentImage. */
-    QMap<QString, DocumentImage> m_imageMap;
+    QHash<QString, DocumentImage> m_imageMap;
     /** As percentage. */
     int m_iZoomPercentage;
     QCursor m_defaultCursor;

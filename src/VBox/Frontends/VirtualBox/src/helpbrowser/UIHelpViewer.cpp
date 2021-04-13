@@ -396,7 +396,6 @@ void UIHelpViewer::setSource(const QUrl &url)
     clearOverlay();
     QTextBrowser::setSource(url);
     QTextDocument *pDocument = document();
-    iterateDocumentImages();
     if (!pDocument || pDocument->isEmpty())
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
     if (m_pFindInPageWidget && m_pFindInPageWidget->isVisible())
@@ -404,6 +403,7 @@ void UIHelpViewer::setSource(const QUrl &url)
         document()->undo();
         m_pFindInPageWidget->clearSearchField();
     }
+    iterateDocumentImages();
     scaleImages();
 }
 
@@ -581,7 +581,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 
 void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
-    bool fOverlayMode = m_fOverlayMode;
+    // bool fOverlayMode = m_fOverlayMode;
     clearOverlay();
 
     QString strAnchor = anchorAt(pEvent->pos());
@@ -597,8 +597,8 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     }
     QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
 
-    if (!fOverlayMode)
-        loadImageAtPosition(pEvent->globalPos());
+    // if (!fOverlayMode)
+    //     loadImageAtPosition(pEvent->globalPos());
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
@@ -637,35 +637,36 @@ void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
 {
     QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
 
-    if (m_pOverlayLabel)
-    {
-        if (m_fOverlayMode)
-        {
-            /* Scale the image to 1005 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
-            int vWidth = 0;
-            if (verticalScrollBar() && verticalScrollBar()->isVisible())
-                vWidth = verticalScrollBar()->width();
-            int hMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
-                qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) + vWidth;
 
-            int hHeight = 0;
-            if (horizontalScrollBar() && horizontalScrollBar()->isVisible())
-                hHeight = horizontalScrollBar()->height();
-            int vMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
-                qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) + hHeight;
+    // if (m_pOverlayLabel)
+    // {
+    //     if (m_fOverlayMode)
+    //     {
+    //         /* Scale the image to 1:1 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
+    //         int vWidth = 0;
+    //         if (verticalScrollBar() && verticalScrollBar()->isVisible())
+    //             vWidth = verticalScrollBar()->width();
+    //         int hMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+    //             qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) + vWidth;
 
-            QSize size(qMin(width() - hMargin, m_overlayPixmap.width()),
-                        qMin(height() - vMargin, m_overlayPixmap.height()));
-            m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            /* Center the label: */
-            int x = 0.5 * (width() - vWidth - m_pOverlayLabel->width());
-            int y = 0.5 * (height() - hHeight - m_pOverlayLabel->height());
-            m_pOverlayLabel->move(x, y);
-            m_pOverlayLabel->show();
-        }
-        else
-            m_pOverlayLabel->hide();
-    }
+    //         int hHeight = 0;
+    //         if (horizontalScrollBar() && horizontalScrollBar()->isVisible())
+    //             hHeight = horizontalScrollBar()->height();
+    //         int vMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
+    //             qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) + hHeight;
+
+    //         QSize size(qMin(width() - hMargin, m_overlayPixmap.width()),
+    //                     qMin(height() - vMargin, m_overlayPixmap.height()));
+    //         m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    //         /* Center the label: */
+    //         int x = 0.5 * (width() - vWidth - m_pOverlayLabel->width());
+    //         int y = 0.5 * (height() - hHeight - m_pOverlayLabel->height());
+    //         m_pOverlayLabel->move(x, y);
+    //         m_pOverlayLabel->show();
+    //     }
+    //     else
+    //         m_pOverlayLabel->hide();
+    // }
 }
 
 bool UIHelpViewer::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -859,11 +860,30 @@ void UIHelpViewer::iterateDocumentImages()
         cursor.movePosition(QTextCursor::NextCharacter);
         if (cursor.charFormat().isImageFormat())
         {
-            DocumentImage image;
             QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
+            /* There seems to be two cursors per image. Use the first one: */
+            if (m_imageMap.contains(imageFormat.name()))
+                continue;
+            QHash<QString, DocumentImage>::iterator iterator = m_imageMap.insert(imageFormat.name(), DocumentImage());
+            DocumentImage &image = iterator.value();
             image.m_fInitialWidth = imageFormat.width();
-            image.m_iPosition = cursor.position();
-            m_imageMap[imageFormat.name()] = image;
+            //image.m_iPosition = cursor.position();
+            image.m_textCursor = cursor;
+            QUrl imageFileUrl;
+            foreach (const QUrl &fileUrl, m_helpFileList)
+            {
+                if (fileUrl.toString().contains(imageFormat.name(), Qt::CaseInsensitive))
+                {
+                    imageFileUrl = fileUrl;
+                    break;
+                }
+            }
+            if (imageFileUrl.isValid())
+            {
+                QByteArray fileData = m_pHelpEngine->fileData(imageFileUrl);
+                if (!fileData.isEmpty())
+                    image.m_pixmap.loadFromData(fileData,"PNG");
+            }
         }
     }
 }
@@ -877,20 +897,24 @@ void UIHelpViewer::scaleFont()
 
 void UIHelpViewer::scaleImages()
 {
-    for (QMap<QString, DocumentImage>::iterator iterator = m_imageMap.begin();
-         iterator != m_imageMap.end(); ++iterator)
+    // for (QHash<QString, DocumentImage>::iterator iterator = m_imageMap.begin();
+    //      iterator != m_imageMap.end(); ++iterator)
+    foreach(const DocumentImage &image, m_imageMap)
     {
-        QTextCursor cursor = textCursor();
-        cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, (*iterator).m_iPosition);
-        if (cursor.isNull())
-            continue;
+
+        // QTextCursor cursor = textCursor();
+        // cursor.movePosition(QTextCursor::Start);
+        // cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, image.m_iPosition);
+        // if (cursor.isNull())
+        //     continue;
+        QTextCursor cursor = image.m_textCursor;
         QTextCharFormat format = cursor.charFormat();
         if (!format.isImageFormat())
             continue;
         QTextImageFormat imageFormat = format.toImageFormat();
-        imageFormat.setWidth((*iterator).m_fInitialWidth * m_iZoomPercentage / 100.);
+        imageFormat.setWidth(image.m_fInitialWidth * m_iZoomPercentage / 100.);
         cursor.deletePreviousChar();
+        cursor.deleteChar();
         cursor.insertImage(imageFormat);
     }
 }
