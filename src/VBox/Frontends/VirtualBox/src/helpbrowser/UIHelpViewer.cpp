@@ -577,7 +577,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
     /* QTextBrowser::wheelEvent scales font when some modifiers are pressed. We dont want that: */
     if (pEvent->modifiers() == Qt::NoModifier)
         QTextBrowser::wheelEvent(pEvent);
-    else if (pEvent->modifiers() == Qt::ShiftModifier)
+    else if (pEvent->modifiers() & Qt::ControlModifier)
     {
         if (pEvent->angleDelta().y() < 0)
             zoom(ZoomOperation_In);
