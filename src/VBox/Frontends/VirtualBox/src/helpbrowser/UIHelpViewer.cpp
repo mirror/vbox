@@ -591,7 +591,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 
 void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
-    // bool fOverlayMode = m_fOverlayMode;
+    bool fOverlayMode = m_fOverlayMode;
     clearOverlay();
 
     QString strAnchor = anchorAt(pEvent->pos());
@@ -607,8 +607,8 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     }
     QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
 
-    // if (!fOverlayMode)
-    //     loadImageAtPosition(pEvent->globalPos());
+    if (!fOverlayMode)
+        loadImageAtPosition(pEvent->globalPos());
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
@@ -659,36 +659,36 @@ void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
         /** @todo I need to find the default color somehow and replace hard coded Qt::white. */
         painter.fillRect(fillRect, Qt::white);
         painter.drawPixmap(imageRect, newPixmap, newPixmap.rect());
-     }
-    // if (m_pOverlayLabel)
-    // {
-    //     if (m_fOverlayMode)
-    //     {
-    //         /* Scale the image to 1:1 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
-    //         int vWidth = 0;
-    //         if (verticalScrollBar() && verticalScrollBar()->isVisible())
-    //             vWidth = verticalScrollBar()->width();
-    //         int hMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
-    //             qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) + vWidth;
+    }
+    if (m_pOverlayLabel)
+    {
+        if (m_fOverlayMode)
+        {
+            /* Scale the image to 1:1 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
+            int vWidth = 0;
+            if (verticalScrollBar() && verticalScrollBar()->isVisible())
+                vWidth = verticalScrollBar()->width();
+            int hMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+                qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) + vWidth;
 
-    //         int hHeight = 0;
-    //         if (horizontalScrollBar() && horizontalScrollBar()->isVisible())
-    //             hHeight = horizontalScrollBar()->height();
-    //         int vMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
-    //             qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) + hHeight;
+            int hHeight = 0;
+            if (horizontalScrollBar() && horizontalScrollBar()->isVisible())
+                hHeight = horizontalScrollBar()->height();
+            int vMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
+                qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) + hHeight;
 
-    //         QSize size(qMin(width() - hMargin, m_overlayPixmap.width()),
-    //                     qMin(height() - vMargin, m_overlayPixmap.height()));
-    //         m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    //         /* Center the label: */
-    //         int x = 0.5 * (width() - vWidth - m_pOverlayLabel->width());
-    //         int y = 0.5 * (height() - hHeight - m_pOverlayLabel->height());
-    //         m_pOverlayLabel->move(x, y);
-    //         m_pOverlayLabel->show();
-    //     }
-    //     else
-    //         m_pOverlayLabel->hide();
-    // }
+            QSize size(qMin(width() - hMargin, m_overlayPixmap.width()),
+                       qMin(height() - vMargin, m_overlayPixmap.height()));
+            m_pOverlayLabel->setPixmap(m_overlayPixmap.scaled(size,  Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            /* Center the label: */
+            int x = 0.5 * (width() - vWidth - m_pOverlayLabel->width());
+            int y = 0.5 * (height() - hHeight - m_pOverlayLabel->height());
+            m_pOverlayLabel->move(x, y);
+            m_pOverlayLabel->show();
+        }
+        else
+            m_pOverlayLabel->hide();
+    }
 }
 
 bool UIHelpViewer::eventFilter(QObject *pObject, QEvent *pEvent)
