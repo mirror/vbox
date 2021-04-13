@@ -76,9 +76,15 @@ PROXY_STUB     (pa_context_get_server_info, pa_operation*,
 PROXY_STUB     (pa_context_get_sink_info_by_name, pa_operation*,
                 (pa_context *c, const char *name, pa_sink_info_cb_t cb, void *userdata),
                 (c, name, cb, userdata))
+PROXY_STUB     (pa_context_get_sink_info_list, pa_operation *,
+                (pa_context *c, pa_sink_info_cb_t cb, void *userdata),
+                (c, cb, userdata))
 PROXY_STUB     (pa_context_get_source_info_by_name, pa_operation*,
                 (pa_context *c, const char *name, pa_source_info_cb_t cb, void *userdata),
                 (c, name, cb, userdata))
+PROXY_STUB     (pa_context_get_source_info_list, pa_operation *,
+                (pa_context *c, pa_source_info_cb_t cb, void *userdata),
+                (c, cb, userdata))
 PROXY_STUB     (pa_context_get_state, pa_context_state_t,
                 (pa_context *c),
                 (c))
@@ -256,7 +262,9 @@ static struct
     FUNC_ENTRY(pa_context_disconnect),
     FUNC_ENTRY(pa_context_get_server_info),
     FUNC_ENTRY(pa_context_get_sink_info_by_name),
+    FUNC_ENTRY(pa_context_get_sink_info_list),
     FUNC_ENTRY(pa_context_get_source_info_by_name),
+    FUNC_ENTRY(pa_context_get_source_info_list),
     FUNC_ENTRY(pa_context_get_state),
     FUNC_ENTRY(pa_context_unref),
     FUNC_ENTRY(pa_context_errno),

@@ -23,6 +23,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/vmm/pdmaudiohostenuminline.h>
 
 #include <stdio.h>
 
@@ -88,25 +89,40 @@ typedef PULSEAUDIOSTATECHGCTX *PPULSEAUDIOSTATECHGCTX;
  */
 typedef struct PULSEAUDIOENUMCBCTX
 {
-    /** Pointer to host backend driver. */
-    PDRVHOSTPULSEAUDIO      pDrv;
     /** Pointer to PulseAudio's threaded main loop. */
     pa_threaded_mainloop   *pMainLoop;
     /** Enumeration flags, PULSEAUDIOENUMCBFLAGS_XXX. */
     uint32_t                fFlags;
-    /** VBox status code for the operation. */
+    /** VBox status code for the operation.
+     * The caller sets this to VERR_AUDIO_ENUMERATION_FAILED, the callback never
+     * uses that status code. */
     int32_t                 rcEnum;
-    /** Number of found input devices. */
-    uint8_t                 cDevIn;
-    /** Number of found output devices. */
-    uint8_t                 cDevOut;
     /** Name of default sink being used. Must be free'd using RTStrFree(). */
     char                   *pszDefaultSink;
     /** Name of default source being used. Must be free'd using RTStrFree(). */
     char                   *pszDefaultSource;
+    /** The device enumeration to fill, NULL if pfnGetConfig context.   */
+    PPDMAUDIOHOSTENUM       pDeviceEnum;
 } PULSEAUDIOENUMCBCTX;
 /** Pointer to an enumeration callback context. */
 typedef PULSEAUDIOENUMCBCTX *PPULSEAUDIOENUMCBCTX;
+
+
+/**
+ * Pulse audio device enumeration entry.
+ */
+typedef struct PULSEAUDIODEVENTRY
+{
+    /** The part we share with others. */
+    PDMAUDIOHOSTDEV         Core;
+    /** The pulse audio name.
+     * @note Kind of must use fixed size field here as that allows
+     *       PDMAudioHostDevDup() and PDMAudioHostEnumCopy() to work. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    char                    szPulseName[RT_FLEXIBLE_ARRAY];
+} PULSEAUDIODEVENTRY;
+/** Pointer to a pulse audio device enumeration entry. */
+typedef PULSEAUDIODEVENTRY *PPULSEAUDIODEVENTRY;
 
 
 /**
@@ -337,6 +353,40 @@ static int drvHostAudioPaWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP)
 *********************************************************************************************************************************/
 
 /**
+ * Worker for drvHostAudioPaEnumSourceCallback() and
+ * drvHostAudioPaEnumSinkCallback() that adds an entry to the enumeration
+ * result.
+ */
+static void drvHostAudioPaEnumAddDevice(PPULSEAUDIOENUMCBCTX pCbCtx, PDMAUDIODIR enmDir, const char *pszName,
+                                        const char *pszDesc, uint8_t cChannelsInput, uint8_t cChannelsOutput,
+                                        const char *pszDefaultName)
+{
+    size_t const cchName = strlen(pszName);
+    PPULSEAUDIODEVENTRY pDev = (PPULSEAUDIODEVENTRY)PDMAudioHostDevAlloc(RT_UOFFSETOF(PULSEAUDIODEVENTRY, szPulseName)
+                                                                         + RT_ALIGN_Z(cchName + 1, 16));
+    if (pDev != NULL)
+    {
+        memcpy(pDev->szPulseName, pszName, cchName);
+        pDev->szPulseName[cchName] = '\0';
+
+        pDev->Core.enmUsage           = enmDir;
+        pDev->Core.enmType            = RTStrIStr(pszDesc, "built-in") != NULL
+                                      ? PDMAUDIODEVICETYPE_BUILTIN : PDMAUDIODEVICETYPE_UNKNOWN;
+        pDev->Core.fFlags             = RTStrCmp(pszName, pszDefaultName) == 0
+                                      ? PDMAUDIOHOSTDEV_F_DEFAULT  : PDMAUDIOHOSTDEV_F_NONE;
+        pDev->Core.cMaxInputChannels  = cChannelsInput;
+        pDev->Core.cMaxOutputChannels = cChannelsOutput;
+        RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName),
+                  pszDesc && *pszDesc ? pszDesc : pszName);
+
+        PDMAudioHostEnumAppend(pCbCtx->pDeviceEnum, &pDev->Core);
+    }
+    else
+        pCbCtx->rcEnum = VERR_NO_MEMORY;
+}
+
+
+/**
  * Enumeration callback - source info.
  *
  * @param   pCtx        The context (DRVHOSTPULSEAUDIO::pContext).
@@ -356,11 +406,17 @@ static void drvHostAudioPaEnumSourceCallback(pa_context *pCtx, const pa_source_i
 
     if (eol == 0 && pInfo != NULL)
     {
-        LogRel2(("PulseAudio: Using input source '%s'\n", pInfo->name));
-        /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
-        pCbCtx->cDevIn++;
-        pCbCtx->rcEnum = VINF_SUCCESS;
+        if (pCbCtx->pDeviceEnum)
+            drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_IN, pInfo->name, pInfo->description,
+                                        pInfo->sample_spec.channels, 0 /*cChannelsOutput*/, pCbCtx->pszDefaultSource);
+        else
+        {
+            LogRel2(("PulseAudio: Using input source '%s'\n", pInfo->name));
+            /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
+        }
     }
+    else if (eol == 1 && !pInfo && pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED)
+        pCbCtx->rcEnum = VINF_SUCCESS;
 
     /* Wake up the calling thread when done: */
     if (eol != 0)
@@ -388,11 +444,17 @@ static void drvHostAudioPaEnumSinkCallback(pa_context *pCtx, const pa_sink_info 
 
     if (eol == 0 && pInfo != NULL)
     {
-        LogRel2(("PulseAudio: Using output sink '%s'\n", pInfo->name));
-        /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
-        pCbCtx->cDevOut++;
-        pCbCtx->rcEnum = VINF_SUCCESS;
+        if (pCbCtx->pDeviceEnum)
+            drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_OUT, pInfo->name, pInfo->description,
+                                        0 /*cChannelsInput*/, pInfo->sample_spec.channels, pCbCtx->pszDefaultSink);
+        else
+        {
+            LogRel2(("PulseAudio: Using output sink '%s'\n", pInfo->name));
+            /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
+        }
     }
+    else if (eol == 1 && !pInfo && pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED)
+        pCbCtx->rcEnum = VINF_SUCCESS;
 
     /* Wake up the calling thread when done: */
     if (eol != 0)
@@ -419,6 +481,9 @@ static void drvHostAudioPaEnumServerCallback(pa_context *pCtx, const pa_server_i
                  pInfo->default_sink_name, pInfo->default_source_name,
                  pInfo->sample_spec.format, pInfo->sample_spec.rate, pInfo->sample_spec.channels));
 
+        Assert(!pCbCtx->pszDefaultSink);
+        Assert(!pCbCtx->pszDefaultSource);
+        Assert(pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED);
         pCbCtx->rcEnum = VINF_SUCCESS;
 
         if (pInfo->default_sink_name)
@@ -445,9 +510,10 @@ static void drvHostAudioPaEnumServerCallback(pa_context *pCtx, const pa_server_i
 /**
  * @note Called with the PA main loop locked.
  */
-static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum)
+static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg,
+                                   uint32_t fEnum, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
-    PULSEAUDIOENUMCBCTX CbCtx = { pThis, pThis->pMainLoop, fEnum, VERR_AUDIO_BACKEND_INIT_FAILED, 0, 0, NULL, NULL };
+    PULSEAUDIOENUMCBCTX CbCtx = { pThis->pMainLoop, fEnum, VERR_AUDIO_ENUMERATION_FAILED, NULL, NULL, pDeviceEnum };
     bool const          fLog  = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
     int                 rc;
 
@@ -456,7 +522,7 @@ static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG
      * This should give us a default (playback) sink and (recording) source.
      */
     LogRel(("PulseAudio: Retrieving server information ...\n"));
-    CbCtx.rcEnum = VERR_AUDIO_BACKEND_INIT_FAILED;
+    CbCtx.rcEnum = VERR_AUDIO_ENUMERATION_FAILED;
     pa_operation *paOpServerInfo = pa_context_get_server_info(pThis->pContext, drvHostAudioPaEnumServerCallback, &CbCtx);
     if (paOpServerInfo)
         rc = drvHostAudioPaWaitFor(pThis, paOpServerInfo);
@@ -477,56 +543,60 @@ static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG
     /*
      * Get info about the playback sink.
      */
-    if (CbCtx.pszDefaultSink)
-    {
-        if (fLog)
-            LogRel2(("PulseAudio: Default output sink is '%s'\n", CbCtx.pszDefaultSink));
-        CbCtx.rcEnum = VERR_AUDIO_BACKEND_INIT_FAILED;
-        rc = drvHostAudioPaWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, CbCtx.pszDefaultSink,
-                                                                           drvHostAudioPaEnumSinkCallback, &CbCtx));
-        if (RT_SUCCESS(rc))
-            rc = CbCtx.rcEnum;
-        if (fLog)
-        {
-            if (RT_SUCCESS(rc))
-                LogRel2(("PulseAudio: Found %RU8 host playback device(s)\n",  CbCtx.cDevOut));
-            else
-                LogRel(("PulseAudio: Error enumerating properties for default output sink '%s': %Rrc\n",
-                        CbCtx.pszDefaultSink, rc));
-        }
-    }
+    if (fLog && CbCtx.pszDefaultSink)
+        LogRel2(("PulseAudio: Default output sink is '%s'\n", CbCtx.pszDefaultSink));
     else if (fLog)
         LogRel2(("PulseAudio: No default output sink found\n"));
+
+    if (CbCtx.pszDefaultSink || pDeviceEnum)
+    {
+        CbCtx.rcEnum = VERR_AUDIO_ENUMERATION_FAILED;
+        if (pDeviceEnum)
+            rc = drvHostAudioPaWaitFor(pThis,
+                                       pa_context_get_sink_info_list(pThis->pContext, drvHostAudioPaEnumSinkCallback, &CbCtx));
+        else
+            rc = drvHostAudioPaWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, CbCtx.pszDefaultSink,
+                                                                               drvHostAudioPaEnumSinkCallback, &CbCtx));
+        if (RT_SUCCESS(rc))
+            rc = CbCtx.rcEnum;
+        if (fLog && RT_FAILURE(rc))
+            LogRel(("PulseAudio: Error enumerating properties for default output sink '%s': %Rrc\n",
+                    CbCtx.pszDefaultSink, rc));
+    }
 
     /*
      * Get info about the recording source.
      */
-    if (CbCtx.pszDefaultSource)
+    if (fLog && CbCtx.pszDefaultSource)
+        LogRel2(("PulseAudio: Default input source is '%s'\n", CbCtx.pszDefaultSource));
+    else if (fLog)
+        LogRel2(("PulseAudio: No default input source found\n"));
+    if (CbCtx.pszDefaultSource || pDeviceEnum)
     {
-        if (fLog)
-            LogRel2(("PulseAudio: Default input source is '%s'\n", CbCtx.pszDefaultSource));
-        CbCtx.rcEnum = VERR_AUDIO_BACKEND_INIT_FAILED;
-        int rc2 = drvHostAudioPaWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, CbCtx.pszDefaultSource,
+        CbCtx.rcEnum = VERR_AUDIO_ENUMERATION_FAILED;
+        int rc2;
+        if (pDeviceEnum)
+            rc2 = drvHostAudioPaWaitFor(pThis, pa_context_get_source_info_list(pThis->pContext,
+                                                                               drvHostAudioPaEnumSourceCallback, &CbCtx));
+        else
+            rc2 = drvHostAudioPaWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, CbCtx.pszDefaultSource,
                                                                                   drvHostAudioPaEnumSourceCallback, &CbCtx));
         if (RT_SUCCESS(rc2))
             rc2 = CbCtx.rcEnum;
-        if (fLog)
-        {
-            if (RT_SUCCESS(rc2))
-                LogRel2(("PulseAudio: Found %RU8 host capturing device(s)\n", CbCtx.cDevIn));
-            else
-                LogRel(("PulseAudio: Error enumerating properties for default input source '%s': %Rrc\n",
-                        CbCtx.pszDefaultSource, rc));
-        }
+        if (fLog && RT_FAILURE(rc2))
+            LogRel(("PulseAudio: Error enumerating properties for default input source '%s': %Rrc\n",
+                    CbCtx.pszDefaultSource, rc));
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
-    else if (fLog)
-        LogRel2(("PulseAudio: No default input source found\n"));
 
     /** @todo r=bird: WTF are we making all this effort here w/o actually
-     *        updating niether the backend configuration structure nor pThis?
-     *        Sigh^3! */
+     *        updating neither the backend configuration structure nor pThis?
+     *        Sigh^3!
+     *
+     * update: I've reused this code for actual device enumeration now, so
+     *         it's not 99.5% useless anymore, but I'm still puzzled at why it's
+     *         required for pfnGetConfig... */
     RT_NOREF(pCfg);
 
     /* clean up */
@@ -555,10 +625,28 @@ static DECLCALLBACK(int) drvHostAudioPaHA_GetConfig(PPDMIHOSTAUDIO pInterface, P
 
     /* Refine it or something (currently only some LogRel2 stuff): */
     pa_threaded_mainloop_lock(pThis->pMainLoop);
-    int rc = drvHostAudioPaEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG /* fEnum */);
+    int rc = drvHostAudioPaEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG, NULL /*pDeviceEnum*/);
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
     return rc;
 }
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetDevices}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
+{
+    PDRVHOSTPULSEAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    AssertPtrReturn(pDeviceEnum, VERR_INVALID_POINTER);
+    PDMAudioHostEnumInit(pDeviceEnum);
+
+    /* Refine it or something (currently only some LogRel2 stuff): */
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
+    int rc = drvHostAudioPaEnumerate(pThis, NULL /*pCfg*/, PULSEAUDIOENUMCBFLAGS_NONE, pDeviceEnum);
+    pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    return rc;
+}
+
 
 
 /**
@@ -566,9 +654,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_GetConfig(PPDMIHOSTAUDIO pInterface, P
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioPaHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
-    RT_NOREF(enmDir);
-    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
-
+    RT_NOREF(pInterface, enmDir);
     return PDMAUDIOBACKENDSTS_RUNNING;
 }
 
@@ -1519,7 +1605,7 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pDrvIns->IBase.pfnQueryInterface = drvHostAudioPaQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig          = drvHostAudioPaHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
+    pThis->IHostAudio.pfnGetDevices         = drvHostAudioPaHA_GetDevices;
     pThis->IHostAudio.pfnGetStatus          = drvHostAudioPaHA_GetStatus;
     pThis->IHostAudio.pfnStreamCreate       = drvHostAudioPaHA_StreamCreate;
     pThis->IHostAudio.pfnStreamDestroy      = drvHostAudioPaHA_StreamDestroy;

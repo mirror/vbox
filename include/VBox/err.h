@@ -2927,6 +2927,8 @@
  *  required hardware, or that the requested stream configuration
  *  is not supported by the host backend. */
 #define VERR_AUDIO_STREAM_COULD_NOT_CREATE          (-6606)
+/** Generic audio device enumeration error. */
+#define VERR_AUDIO_ENUMERATION_FAILED               (-6607)
 /** @} */
 
 
