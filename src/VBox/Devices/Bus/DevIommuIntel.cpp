@@ -454,7 +454,7 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
  * @returns Number of SAGAW bits.
  * @param   uSagaw  The CAP_REG.SAGAW value.
  */
-static uint8_t vtdGetSupGstAddrBits(uint8_t uSagaw)
+static uint8_t vtdCapRegGetSagawBits(uint8_t uSagaw)
 {
     if (RT_LIKELY(uSagaw > 0 && uSagaw < 4))
         return 30 + (uSagaw * 9);
@@ -466,10 +466,10 @@ static uint8_t vtdGetSupGstAddrBits(uint8_t uSagaw)
  * Gets the supported adjusted guest-address width (SAGAW) given the maximum guest
  * address width (MGAW).
  *
- * @returns The CAP.SAGAW value.
+ * @returns The CAP_REG.SAGAW value.
  * @param   uMgaw  The CAP_REG.MGAW value.
  */
-static uint8_t vtdGetSupGstAddrWidth(uint8_t uMgaw)
+static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 {
     switch (uMgaw + 1)
     {
@@ -782,11 +782,16 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
         if (cb == 8)
+        {
             *(uint64_t *)pv = dmarRegRead64(pThis, offReg);
+            LogFlowFunc(("offReg=%#x pv=%#RX64\n", offReg, *(uint64_t *)pv));
+        }
         else
+        {
             *(uint32_t *)pv = dmarRegRead32(pThis, offReg);
+            LogFlowFunc(("offReg=%#x pv=%#RX32\n", offReg, *(uint32_t *)pv));
+        }
 
-        LogFlowFunc(("offReg=%#x\n", offReg));
         return VINF_SUCCESS;
     }
 
@@ -824,23 +829,24 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
     /* CAP_REG */
     {
-        uint8_t const fFl1gp = 1;                               /* First-Level 1GB pages support. */
-        uint8_t const fFl5lp = 1;                               /* First-level 5-level paging support (PML5E). */
-        uint8_t const fSl2mp = fSlts & 1;                       /* Second-Level 2MB pages support. */
-        uint8_t const fSl2gp = fSlts & 1;                       /* Second-Level 1GB pages support. */
-        uint8_t const fSllps = fSl2mp                           /* Second-Level large page Support. */
-                             | ((fSl2mp & fFl1gp) & RT_BIT(1));
-        uint8_t const fMamv  = (fSl2gp ?                        /* Maximum address mask value (for second-level invalidations). */
-                                X86_PAGE_1G_SHIFT : X86_PAGE_2M_SHIFT) - X86_PAGE_4K_SHIFT;
-        uint8_t const fNd    = 2;                               /* Number of domains (0=16, 1=64, 2=256, 3=1K, 4=4K, 5=16K, 6=64K,
-                                                                   7=Reserved). */
-        uint8_t const fPsi   = 1;                               /* Page selective invalidation. */
         uint8_t cGstPhysAddrBits;
         uint8_t cGstLinearAddrBits;
         PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cGstPhysAddrBits, &cGstLinearAddrBits);
-        NOREF(cGstLinearAddrBits);
-        uint8_t const uMgaw  = cGstPhysAddrBits - 1;            /* Maximum guest address width. */
-        uint8_t const uSagaw = vtdGetSupGstAddrWidth(uMgaw);    /* Supported adjust guest address width. */
+
+        uint8_t const fFl1gp  = 1;                              /* First-Level 1GB pages support. */
+        uint8_t const fFl5lp  = 1;                              /* First-level 5-level paging support (PML5E). */
+        uint8_t const fSl2mp  = fSlts & 1;                      /* Second-Level 2MB pages support. */
+        uint8_t const fSl2gp  = fSlts & 1;                      /* Second-Level 1GB pages support. */
+        uint8_t const fSllps  = fSl2mp                          /* Second-Level large page Support. */
+                              | ((fSl2mp & fFl1gp) & RT_BIT(1));
+        uint8_t const fMamv   = (fSl2gp ?                       /* Maximum address mask value (for second-level invalidations). */
+                                X86_PAGE_1G_SHIFT : X86_PAGE_2M_SHIFT) - X86_PAGE_4K_SHIFT;
+        uint8_t const fNd     = 2;                              /* Number of domains (0=16, 1=64, 2=256, 3=1K, 4=4K, 5=16K, 6=64K,
+                                                                  7=Reserved). */
+        uint8_t const fPsi    = 1;                              /* Page selective invalidation. */
+        uint8_t const uMgaw   = cGstPhysAddrBits - 1;           /* Maximum guest address width. */
+        uint8_t const uSagaw  = vtdCapRegGetSagaw(uMgaw);       /* Supported adjust guest address width. */
+        uint16_t const offFro = DMAR_MMIO_OFF_FRCD_LO_REG >> 4; /* MMIO offset of FRCD registers. */
 
         pThis->fCap = RT_BF_MAKE(VTD_BF_CAP_REG_ND,     fNd)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,    0)      /* Advanced fault logging not supported. */
@@ -851,7 +857,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,  fSlts & uSagaw)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,   uMgaw)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,    1)      /** @todo Figure out if/how to support zero-length reads. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    DMAR_MMIO_OFF_FRCD_LO_REG >> 4)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,    offFro)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,  fSlts & fSllps)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,    fPsi)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,    DMAR_FRCD_REG_COUNT - 1)
@@ -865,16 +871,17 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
     /* ECAP_REG */
     {
-        uint8_t const  fIr     = 1;                             /* Interrupt remapping support. */
-        uint8_t const  fMhmv   = 0xf;                           /* Maximum handle mask value. */
-        uint16_t const offIro  = DMAR_MMIO_OFF_IVA_REG >> 4;    /* MMIO offset of IOTLB registers. */
-        uint8_t const  fSrs    = 1;                             /* Supervisor request support. */
-        uint8_t const  fEim    = 1;                             /* Extended interrupt mode.*/
+        uint8_t const  fQi    = 1;                              /* Queued invalidations. */
+        uint8_t const  fIr    = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);  /* Interrupt remapping support. */
+        uint8_t const  fMhmv  = 0xf;                            /* Maximum handle mask value. */
+        uint16_t const offIro = DMAR_MMIO_OFF_IVA_REG >> 4;     /* MMIO offset of IOTLB registers. */
+        uint8_t const  fSrs   = 1;                              /* Supervisor request support. */
+        uint8_t const  fEim   = 1;                              /* Extended interrupt mode.*/
 
         pThis->fExtCap = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     1)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fIr)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fQi & fIr)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    fIr & fEim)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_PT,     fPt)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_SC,     0)  /* Snoop control not supported. */
@@ -917,9 +924,8 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
     }
 
 #ifdef VBOX_STRICT
-    uint64_t const fExtCap = dmarRegRead64(pThis, VTD_MMIO_OFF_ECAP_REG);
-    Assert(!RT_BF_GET(fExtCap, VTD_BF_ECAP_REG_PRS));    /* PECTL_REG - Reserved if don't support PRS. */
-    Assert(!RT_BF_GET(fExtCap, VTD_BF_ECAP_REG_MTS));    /* MTRRCAP_REG - Reserved if we don't support MTS. */
+    Assert(!RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_PRS));    /* PECTL_REG - Reserved if don't support PRS. */
+    Assert(!RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_MTS));    /* MTRRCAP_REG - Reserved if we don't support MTS. */
 #endif
 }
 
@@ -1064,10 +1070,17 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
      */
     dmarR3RegsInit(pDevIns);
 
-    uint8_t const cMaxGstAddrBits = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_MGAW) + 1;
-    uint8_t const cSupGstAddrBits = vtdGetSupGstAddrBits(RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_SAGAW));
-    LogRel(("%s: CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits)\n", DMAR_LOG_PFX, pThis->fCap, pThis->fExtCap,
-            cMaxGstAddrBits, cSupGstAddrBits));
+    /*
+     * Log some of the features exposed to software.
+     */
+    uint32_t const uVerReg         = dmarRegRead32(pThis, VTD_MMIO_OFF_VER_REG);
+    uint8_t const  cMaxGstAddrBits = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const  cSupGstAddrBits = vtdCapRegGetSagawBits(RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_SAGAW));
+    uint16_t const offFrcd         = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_FRO);
+    uint16_t const offIva          = RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_IRO);
+    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits, FRO=%#x, IRO=%#x) mapped at %#RGp\n", DMAR_LOG_PFX,
+            RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
+            pThis->fCap, pThis->fExtCap, cMaxGstAddrBits, cSupGstAddrBits, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
     return VINF_SUCCESS;
 }
 
