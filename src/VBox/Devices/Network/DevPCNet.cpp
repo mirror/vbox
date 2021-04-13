@@ -2525,12 +2525,6 @@ static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATE
         if (!pcnetTdtePoll(pDevIns, pThis, &tmd))
             break;
 
-        /* Don't continue sending packets when the link is down. */
-        if (RT_UNLIKELY(   !pcnetIsLinkUp(pThis)
-                        &&  pThis->cLinkDownReported > PCNET_MAX_LINKDOWN_REPORTED)
-            )
-            break;
-
 #ifdef LOG_ENABLED
         Log10(("#%d TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
@@ -3417,6 +3411,9 @@ static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
                     pThis->cLinkDownReported++;
                 val &= ~0x40;
             }
+            /* AMD NDIS 5.0 driver programs BCR4 to indicate link state and polls
+             * the LED bit (bit 15) to determine current link status.
+             */
             val |= (val & 0x017f & pThis->u32Lnkst) ? 0x8000 : 0;
             break;
 
@@ -4053,6 +4050,14 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE 
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
+
+    /* 10 Mbps models (up to and including Am79C970A) have no MII and no way to get
+     * an MII management auto-poll interrupt (MAPINT) indicating link state changes.
+     * In some cases we want to make sure the guest really noticed the link going down;
+     * the cLinkDownReported counter is incremented every time the guest did something
+     * that might have made it notice the link loss, and we only bring the link back
+     * up once we're reasonably certain the guest knows it was down.
+     */
     if (pThis->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
     {
         rc = PDMDevHlpTimerSetMillies(pDevIns, hTimer, 1500);
