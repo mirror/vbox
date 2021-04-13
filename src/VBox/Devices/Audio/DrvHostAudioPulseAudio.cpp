@@ -1029,19 +1029,27 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     {
         /*
          * Set up buffer attributes according to the stream type.
+         *
+         * For output streams we configure pre-buffering as requested, since
+         * there is little point in using a different size than DrvAudio. This
+         * assumes that a 'drain' request will override the prebuf size.
          */
-        pStreamPA->BufAttr.maxlength = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
+        pStreamPA->BufAttr.maxlength = UINT32_MAX; /* Let the PulseAudio server choose the biggest size it can handle. */
         if (pCfgReq->enmDir == PDMAUDIODIR_IN)
         {
             pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
-            LogFunc(("Requesting: BufAttr: fragsize=%RU32 maxlength=-1\n", pStreamPA->BufAttr.fragsize));
+            LogFunc(("Requesting: BufAttr: fragsize=%RU32\n", pStreamPA->BufAttr.fragsize));
+            /* (rlength, minreq and prebuf are playback only) */
         }
         else
         {
             pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
             pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
-            pStreamPA->BufAttr.prebuf    = pStreamPA->BufAttr.tlength;
             pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
+            pStreamPA->BufAttr.prebuf    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgReq->Props,
+                                                                                       pCfgReq->Backend.cFramesPreBuffering),
+                                                            &pStreamPA->SampleSpec);
+            /* (fragsize is capture only) */
             LogRel2(("PulseAudio: Initial output latency is %RU64 us (%RU32 bytes)\n",
                      pStreamPA->cUsLatency, pStreamPA->BufAttr.tlength));
             LogFunc(("Requesting: BufAttr: tlength=%RU32 maxLength=%RU32 minReq=%RU32 maxlength=-1\n",
@@ -1072,7 +1080,9 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
             {
                 pCfgAcq->Backend.cFramesPeriod        = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
                 pCfgAcq->Backend.cFramesBufferSize    = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
-                pCfgAcq->Backend.cFramesPreBuffering  = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.prebuf);
+                pCfgAcq->Backend.cFramesPreBuffering  = pCfgReq->Backend.cFramesPreBuffering
+                                                      * pCfgAcq->Backend.cFramesBufferSize
+                                                      / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
             }
             PDMAudioStrmCfgCopy(&pStreamPA->Cfg, pCfgAcq);
         }
