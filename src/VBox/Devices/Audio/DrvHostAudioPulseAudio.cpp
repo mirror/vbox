@@ -60,6 +60,8 @@
 #define PULSEAUDIOENUMCBFLAGS_NONE          0
 /** (Release) log found devices. */
 #define PULSEAUDIOENUMCBFLAGS_LOG           RT_BIT(0)
+/** Only do default devices. */
+#define PULSEAUDIOENUMCBFLAGS_DEFAULT_ONLY  RT_BIT(1)
 /** @} */
 
 
@@ -406,14 +408,11 @@ static void drvHostAudioPaEnumSourceCallback(pa_context *pCtx, const pa_source_i
 
     if (eol == 0 && pInfo != NULL)
     {
-        if (pCbCtx->pDeviceEnum)
-            drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_IN, pInfo->name, pInfo->description,
-                                        pInfo->sample_spec.channels, 0 /*cChannelsOutput*/, pCbCtx->pszDefaultSource);
-        else
-        {
-            LogRel2(("PulseAudio: Using input source '%s'\n", pInfo->name));
-            /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
-        }
+        LogRel2(("Pulse Audio: Source #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
+                 pInfo->index, pInfo->sample_spec.rate, pInfo->sample_spec.channels, pInfo->sample_spec.format,
+                 pInfo->name, pInfo->description, pInfo->driver, pInfo->flags));
+        drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_IN, pInfo->name, pInfo->description,
+                                    pInfo->sample_spec.channels, 0 /*cChannelsOutput*/, pCbCtx->pszDefaultSource);
     }
     else if (eol == 1 && !pInfo && pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED)
         pCbCtx->rcEnum = VINF_SUCCESS;
@@ -444,14 +443,11 @@ static void drvHostAudioPaEnumSinkCallback(pa_context *pCtx, const pa_sink_info 
 
     if (eol == 0 && pInfo != NULL)
     {
-        if (pCbCtx->pDeviceEnum)
-            drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_OUT, pInfo->name, pInfo->description,
-                                        0 /*cChannelsInput*/, pInfo->sample_spec.channels, pCbCtx->pszDefaultSink);
-        else
-        {
-            LogRel2(("PulseAudio: Using output sink '%s'\n", pInfo->name));
-            /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
-        }
+        LogRel2(("Pulse Audio: Sink #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
+                 pInfo->index, pInfo->sample_spec.rate, pInfo->sample_spec.channels, pInfo->sample_spec.format,
+                 pInfo->name, pInfo->description, pInfo->driver, pInfo->flags));
+        drvHostAudioPaEnumAddDevice(pCbCtx, PDMAUDIODIR_OUT, pInfo->name, pInfo->description,
+                                    0 /*cChannelsInput*/, pInfo->sample_spec.channels, pCbCtx->pszDefaultSink);
     }
     else if (eol == 1 && !pInfo && pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED)
         pCbCtx->rcEnum = VINF_SUCCESS;
@@ -510,11 +506,11 @@ static void drvHostAudioPaEnumServerCallback(pa_context *pCtx, const pa_server_i
 /**
  * @note Called with the PA main loop locked.
  */
-static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg,
-                                   uint32_t fEnum, PPDMAUDIOHOSTENUM pDeviceEnum)
+static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, uint32_t fEnum, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
-    PULSEAUDIOENUMCBCTX CbCtx = { pThis->pMainLoop, fEnum, VERR_AUDIO_ENUMERATION_FAILED, NULL, NULL, pDeviceEnum };
-    bool const          fLog  = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
+    PULSEAUDIOENUMCBCTX CbCtx        = { pThis->pMainLoop, fEnum, VERR_AUDIO_ENUMERATION_FAILED, NULL, NULL, pDeviceEnum };
+    bool const          fLog         = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
+    bool const          fOnlyDefault = (fEnum & PULSEAUDIOENUMCBFLAGS_DEFAULT_ONLY);
     int                 rc;
 
     /*
@@ -548,10 +544,10 @@ static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG
     else if (fLog)
         LogRel2(("PulseAudio: No default output sink found\n"));
 
-    if (CbCtx.pszDefaultSink || pDeviceEnum)
+    if (CbCtx.pszDefaultSink || !fOnlyDefault)
     {
         CbCtx.rcEnum = VERR_AUDIO_ENUMERATION_FAILED;
-        if (pDeviceEnum)
+        if (!fOnlyDefault)
             rc = drvHostAudioPaWaitFor(pThis,
                                        pa_context_get_sink_info_list(pThis->pContext, drvHostAudioPaEnumSinkCallback, &CbCtx));
         else
@@ -571,11 +567,11 @@ static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG
         LogRel2(("PulseAudio: Default input source is '%s'\n", CbCtx.pszDefaultSource));
     else if (fLog)
         LogRel2(("PulseAudio: No default input source found\n"));
-    if (CbCtx.pszDefaultSource || pDeviceEnum)
+    if (CbCtx.pszDefaultSource || !fOnlyDefault)
     {
         CbCtx.rcEnum = VERR_AUDIO_ENUMERATION_FAILED;
         int rc2;
-        if (pDeviceEnum)
+        if (!fOnlyDefault)
             rc2 = drvHostAudioPaWaitFor(pThis, pa_context_get_source_info_list(pThis->pContext,
                                                                                drvHostAudioPaEnumSourceCallback, &CbCtx));
         else
@@ -589,15 +585,6 @@ static int drvHostAudioPaEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
-
-    /** @todo r=bird: WTF are we making all this effort here w/o actually
-     *        updating neither the backend configuration structure nor pThis?
-     *        Sigh^3!
-     *
-     * update: I've reused this code for actual device enumeration now, so
-     *         it's not 99.5% useless anymore, but I'm still puzzled at why it's
-     *         required for pfnGetConfig... */
-    RT_NOREF(pCfg);
 
     /* clean up */
     RTStrFree(CbCtx.pszDefaultSink);
@@ -616,18 +603,31 @@ static DECLCALLBACK(int) drvHostAudioPaHA_GetConfig(PPDMIHOSTAUDIO pInterface, P
     PDRVHOSTPULSEAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    /* Basic init: */
+    /*
+     * The configuration.
+     */
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "PulseAudio");
     pBackendCfg->cbStreamOut    = sizeof(PULSEAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(PULSEAUDIOSTREAM);
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
 
-    /* Refine it or something (currently only some LogRel2 stuff): */
+#if 0
+    /*
+     * In case we want to gather info about default devices, we can do this:
+     */
+    PDMAUDIOHOSTENUM DeviceEnum;
+    PDMAudioHostEnumInit(&DeviceEnum);
     pa_threaded_mainloop_lock(pThis->pMainLoop);
-    int rc = drvHostAudioPaEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG, NULL /*pDeviceEnum*/);
+    int rc = drvHostAudioPaEnumerate(pThis, PULSEAUDIOENUMCBFLAGS_DEFAULT_ONLY | PULSEAUDIOENUMCBFLAGS_LOG, &DeviceEnum);
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
-    return rc;
+    AssertRCReturn(rc, rc);
+    /** @todo do stuff with DeviceEnum. */
+    PDMAudioHostEnumDelete(&DeviceEnum);
+#else
+    RT_NOREF(pThis);
+#endif
+    return VINF_SUCCESS;
 }
 
 
@@ -642,11 +642,10 @@ static DECLCALLBACK(int) drvHostAudioPaHA_GetDevices(PPDMIHOSTAUDIO pInterface, 
 
     /* Refine it or something (currently only some LogRel2 stuff): */
     pa_threaded_mainloop_lock(pThis->pMainLoop);
-    int rc = drvHostAudioPaEnumerate(pThis, NULL /*pCfg*/, PULSEAUDIOENUMCBFLAGS_NONE, pDeviceEnum);
+    int rc = drvHostAudioPaEnumerate(pThis, PULSEAUDIOENUMCBFLAGS_NONE, pDeviceEnum);
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
     return rc;
 }
-
 
 
 /**
