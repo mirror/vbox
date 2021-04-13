@@ -1767,8 +1767,11 @@ void UIHelpBrowserWidget::updateTabsMenu(const QStringList &titles)
         return;
     m_pTabsMenu->clear();
 
-    QAction *pCloseTabAction = m_pTabsMenu->addAction(tr("Close Tab"));
-    QAction *pCloseOtherTabsAction = m_pTabsMenu->addAction(tr("Close Other Tabs"));
+    QAction *pCloseTabAction = m_pTabsMenu->addAction(tr("Close T&ab"));
+    QAction *pCloseOtherTabsAction = m_pTabsMenu->addAction(tr("Close &Other Tabs"));
+
+    pCloseTabAction->setShortcut(QString("Ctrl+W"));
+    pCloseOtherTabsAction->setShortcut(QString("Ctrl+Shift+W"));
 
     pCloseTabAction->setEnabled(titles.size() > 1);
     pCloseOtherTabsAction->setEnabled(titles.size() > 1);
