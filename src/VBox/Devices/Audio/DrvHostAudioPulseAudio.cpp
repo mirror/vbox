@@ -1119,8 +1119,8 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
         }
 
         pa_stream_disconnect(pStreamPA->pStream);
-        pa_stream_unref(pStreamPA->pStream);
 
+        pa_stream_unref(pStreamPA->pStream);
         pStreamPA->pStream = NULL;
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
@@ -1138,6 +1138,7 @@ static void drvHostAudioPaStreamDrainCompletionCallback(pa_stream *pStream, int 
     AssertPtrReturnVoid(pStream);
     PPULSEAUDIOSTREAM pStreamPA = (PPULSEAUDIOSTREAM)pvUser;
     AssertPtrReturnVoid(pStreamPA);
+    LogFlowFunc(("fSuccess=%d\n", fSuccess));
 
     pStreamPA->fOpSuccess = fSuccess;
     if (fSuccess)
@@ -1153,98 +1154,165 @@ static void drvHostAudioPaStreamDrainCompletionCallback(pa_stream *pStream, int 
 }
 
 
-static int drvHostAudioPaStreamControlOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, PDMAUDIOSTREAMCMD enmStreamCmd)
+/**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamEnable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    int rc = VINF_SUCCESS;
+    PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
+    LogFlowFunc(("\n"));
 
-    switch (enmStreamCmd)
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+    /* Cancel and dispose of pending drain.  We'll unconditionally uncork
+       the stream even if we cancelled a drain, I hope that will work...  */
+    if (pStreamPA->pDrainOp)
     {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
+        pa_operation_state_t const enmOpState = pa_operation_get_state(pStreamPA->pDrainOp);
+        if (enmOpState != PA_OPERATION_RUNNING)
         {
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-
-            if (   pStreamPA->pDrainOp
-                && pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_DONE)
-            {
-                pa_operation_cancel(pStreamPA->pDrainOp);
-                pa_operation_unref(pStreamPA->pDrainOp);
-
-                pStreamPA->pDrainOp = NULL;
-            }
-            else
-            {
-                /* Uncork (resume) stream. */
-                rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0 /* Uncork */, drvHostAudioPaStreamSuccessCallback, pStreamPA));
-            }
-
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            break;
+            pa_operation_cancel(pStreamPA->pDrainOp);
+            LogFlowFunc(("cancelled drain (%d)\n", pa_operation_get_state(pStreamPA->pDrainOp)));
         }
-
-        case PDMAUDIOSTREAMCMD_DISABLE:
-        case PDMAUDIOSTREAMCMD_PAUSE:
-        {
-            /* Pause audio output (the Pause bit of the AC97 x_CR register is set).
-             * Note that we must return immediately from here! */
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            if (!pStreamPA->pDrainOp)
-            {
-                rc = drvHostAudioPaWaitFor(pThis, pa_stream_trigger(pStreamPA->pStream, drvHostAudioPaStreamSuccessCallback, pStreamPA));
-                if (RT_SUCCESS(rc))
-                    pStreamPA->pDrainOp = pa_stream_drain(pStreamPA->pStream, drvHostAudioPaStreamDrainCompletionCallback, pStreamPA);
-            }
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            break;
-        }
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
+        pa_operation_unref(pStreamPA->pDrainOp);
+        pStreamPA->pDrainOp = NULL;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    /*
+     * Uncork (start or resume play/capture) the stream.
+     */
+/** @todo do this asynchronously as the caller is usually an EMT which cannot
+ *        wait on a potentally missing-in-action audio daemon. */
+    int rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0 /* Uncork */,
+                                                         drvHostAudioPaStreamSuccessCallback, pStreamPA));
+
+    pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 
-static int drvHostAudioPaStreamControlIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, PDMAUDIOSTREAMCMD enmStreamCmd)
+/**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDisable}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamDisable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    int rc = VINF_SUCCESS;
+    PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
+    LogFlowFunc(("\n"));
 
-    LogFlowFunc(("enmStreamCmd=%ld\n", enmStreamCmd));
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    switch (enmStreamCmd)
+    /*
+     * Do some direction specific cleanups before we cork the stream.
+     */
+    bool fCorkIt = true;
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
     {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
+        /* Input - drop the peek buffer. */
+        if (pStreamPA->pu8PeekBuf) /* Do we need to drop the peek buffer?*/
         {
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0 /* Play / resume */, drvHostAudioPaStreamSuccessCallback, pStreamPA));
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            break;
+            pa_stream_drop(pStreamPA->pStream);
+            pStreamPA->pu8PeekBuf = NULL;
         }
-
-        case PDMAUDIOSTREAMCMD_DISABLE:
-        case PDMAUDIOSTREAMCMD_PAUSE:
-        {
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            if (pStreamPA->pu8PeekBuf) /* Do we need to drop the peek buffer?*/
-            {
-                pa_stream_drop(pStreamPA->pStream);
-                pStreamPA->pu8PeekBuf = NULL;
-            }
-
-            rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 1 /* Stop / pause */, drvHostAudioPaStreamSuccessCallback, pStreamPA));
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            break;
-        }
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
+    }
+    else
+    {
+        /* Output - Ignore request if we've got a running drain. */
+        fCorkIt = !pStreamPA->pDrainOp
+                || pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_RUNNING;
     }
 
+    /*
+     * Cork (pause) the stream.
+     */
+    int rc = VINF_SUCCESS;
+    if (fCorkIt)
+    {
+        LogFlowFunc(("Corking '%s'...\n", pStreamPA->Cfg.szName));
+/** @todo do this asynchronously as the caller is usually an EMT which cannot
+ *        wait on a potentally missing-in-action audio daemon. */
+        rc = drvHostAudioPaWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 1 /* cork it */,
+                                                         drvHostAudioPaStreamSuccessCallback, pStreamPA));
+    }
+    else
+        LogFlowFunc(("Stream '%s' is already draining, skipping corking.\n", pStreamPA->Cfg.szName));
+
+    pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamPause}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamPause(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    /* Same as disable. */
+    return drvHostAudioPaHA_StreamDisable(pInterface, pStream);
+}
+
+
+/**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamResume}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamResume(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    /* Same as enable. */
+    return drvHostAudioPaHA_StreamEnable(pInterface, pStream);
+}
+
+
+/**
+ * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
+ */
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
+    AssertReturn(pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+    LogFlowFunc(("\n"));
+
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+    /*
+     * We must make sure any pre-buffered stuff is played before we drain
+     * the stream.  Also, there might already be a drain request around,
+     * in case we're called multiple times.  Re-issue the drain if the old
+     * one has completed just to be sure.
+     */
+    int rc = VINF_SUCCESS;
+    if (!pStreamPA->pDrainOp)
+    {
+        LogFlowFunc(("pa_stream_trigger...\n"));
+        rc = drvHostAudioPaWaitFor(pThis, pa_stream_trigger(pStreamPA->pStream,
+                                                            drvHostAudioPaStreamSuccessCallback, pStreamPA));
+    }
+    else if (   pStreamPA->pDrainOp
+             && pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_RUNNING)
+    {
+        pa_operation_unref(pStreamPA->pDrainOp);
+        pStreamPA->pDrainOp = NULL;
+    }
+
+    if (!pStreamPA->pDrainOp && RT_SUCCESS(rc))
+    {
+        pStreamPA->pDrainOp = pa_stream_drain(pStreamPA->pStream, drvHostAudioPaStreamDrainCompletionCallback, pStreamPA);
+        if (pStreamPA->pDrainOp)
+            LogFlowFunc(("Started drain operation %p of %s\n", pStreamPA->pDrainOp, pStreamPA->Cfg.szName));
+        else
+            LogFunc(("pa_stream_drain failed on '%s': %s (%d)\n", pStreamPA->Cfg.szName,
+                     pa_strerror(pa_context_errno(pThis->pContext)), pa_context_errno(pThis->pContext) ));
+    }
+    else if (RT_SUCCESS(rc))
+        LogFlowFunc(("Already draining (%p) ...\n", pStreamPA->pDrainOp));
+    else
+        LogFunc(("pa_stream_trigger + wait failed: %Rrc\n", rc));
+
+    pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1255,19 +1323,30 @@ static int drvHostAudioPaStreamControlIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOST
 static DECLCALLBACK(int) drvHostAudioPaHA_StreamControl(PPDMIHOSTAUDIO pInterface,
                                                         PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
-    PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
-    AssertPtrReturn(pStreamPA, VERR_INVALID_POINTER);
+    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
+     *        replacing it with individual StreamXxxx methods.  That would save us
+     *        potentally huge switches and more easily see which drivers implement
+     *        which operations (grep for pfnStreamXxxx). */
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+            return drvHostAudioPaHA_StreamEnable(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_DISABLE:
+            return drvHostAudioPaHA_StreamDisable(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_PAUSE:
+            return drvHostAudioPaHA_StreamPause(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_RESUME:
+            return drvHostAudioPaHA_StreamResume(pInterface, pStream);
+        case PDMAUDIOSTREAMCMD_DRAIN:
+            return drvHostAudioPaHA_StreamDrain(pInterface, pStream);
 
-    int rc;
-    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
-        rc = drvHostAudioPaStreamControlIn (pThis, pStreamPA, enmStreamCmd);
-    else if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
-        rc = drvHostAudioPaStreamControlOut(pThis, pStreamPA, enmStreamCmd);
-    else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-
-    return rc;
+        case PDMAUDIOSTREAMCMD_END:
+        case PDMAUDIOSTREAMCMD_32BIT_HACK:
+        case PDMAUDIOSTREAMCMD_INVALID:
+            /* no default*/
+            break;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 
