@@ -154,7 +154,7 @@ typedef struct PULSEAUDIOSTREAM
     /** Number of occurred audio data underflows. */
     uint32_t               cUnderflows;
     /** Current latency (in us). */
-    uint64_t               curLatencyUs;
+    uint64_t               cUsLatency;
 #ifdef LOG_ENABLED
     /** Start time stamp (in us) of stream playback / recording. */
     pa_usec_t              tsStartUs;
@@ -256,6 +256,17 @@ static void drvHostAudioPaSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 }
 
 
+/**
+ * Wrapper around pa_threaded_mainloop_wait().
+ */
+static void drvHostAudioPaMainloopWait(PDRVHOSTPULSEAUDIO pThis)
+{
+    /** @todo r=bird: explain this logic. */
+    if (!pThis->fAbortLoop)
+        pa_threaded_mainloop_wait(pThis->pMainLoop);
+    pThis->fAbortLoop = false;
+}
+
 
 /**
  * Pulse audio callback for context status changes, init variant.
@@ -301,16 +312,16 @@ static void drvHostAudioPaStreamSuccessCallback(pa_stream *pStream, int fSuccess
 
 /**
  * Synchronously wait until an operation completed.
+ *
+ * This will consume the pOperation reference.
  */
-static int drvHostAudioPaWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL cMsTimeout)
+static int drvHostAudioPaWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOperation, RTMSINTERVAL cMsTimeout)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pOP,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pOperation, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-
-    uint64_t u64StartMs = RTTimeMilliTS();
-    while (pa_operation_get_state(pOP) == PA_OPERATION_RUNNING)
+    uint64_t const       msStart = RTTimeMilliTS();
+    pa_operation_state_t enmOpState;
+    while ((enmOpState = pa_operation_get_state(pOperation)) == PA_OPERATION_RUNNING)
     {
         if (!pThis->fAbortLoop) /** @todo r=bird: I do _not_ get the logic behind this fAbortLoop mechanism, it looks more
                                  * than a little mixed up and too much generalized see drvHostAudioPaSignalWaiter. */
@@ -320,26 +331,32 @@ static int drvHostAudioPaWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, 
             if (   !pThis->pContext
                 || pa_context_get_state(pThis->pContext) != PA_CONTEXT_READY)
             {
-                pa_operation_cancel(pOP);
+                pa_operation_cancel(pOperation);
+                pa_operation_unref(pOperation);
                 LogRel(("PulseAudio: pa_context_get_state context not ready\n"));
-                rc = VERR_INVALID_STATE;
-                break;
+                return VERR_INVALID_STATE;
             }
         }
         pThis->fAbortLoop = false;
 
-        uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
-        if (u64ElapsedMs >= cMsTimeout)
+        /*
+         * Note! This timeout business is a bit bogus as pa_threaded_mainloop_wait is indefinite.
+         */
+        if (RTTimeMilliTS() - msStart >= cMsTimeout)
         {
-            pa_operation_cancel(pOP);
-            rc = VERR_TIMEOUT;
-            break;
+            enmOpState = pa_operation_get_state(pOperation);
+            if (enmOpState != PA_OPERATION_RUNNING)
+                break;
+            pa_operation_cancel(pOperation);
+            pa_operation_unref(pOperation);
+            return VERR_TIMEOUT;
         }
     }
 
-    pa_operation_unref(pOP);
-
-    return rc;
+    pa_operation_unref(pOperation);
+    if (enmOpState == PA_OPERATION_DONE)
+        return VINF_SUCCESS;
+    return VERR_CANCELLED;
 }
 
 
@@ -709,25 +726,25 @@ static void drvHostAudioPaStreamUnderflowDebugCallback(pa_stream *pStream, void 
 
     LogRel2(("PulseAudio: Warning: Hit underflow #%RU32\n", pStrm->cUnderflows));
 
-    if (   pStrm->cUnderflows  >= 6                /** @todo Make this check configurable. */
-        && pStrm->curLatencyUs < 2000000 /* 2s */)
+    if (   pStrm->cUnderflows >= 6                /** @todo Make this check configurable. */
+        && pStrm->cUsLatency  < 2000000 /* 2s */)
     {
-        pStrm->curLatencyUs = (pStrm->curLatencyUs * 3) / 2;
+        pStrm->cUsLatency = (pStrm->cUsLatency * 3) / 2;
 
-        LogRel2(("PulseAudio: Output latency increased to %RU64ms\n", pStrm->curLatencyUs / 1000 /* ms */));
+        LogRel2(("PulseAudio: Output latency increased to %RU64 us\n", pStrm->cUsLatency));
 
-        pStrm->BufAttr.maxlength = pa_usec_to_bytes(pStrm->curLatencyUs, &pStrm->SampleSpec);
-        pStrm->BufAttr.tlength   = pa_usec_to_bytes(pStrm->curLatencyUs, &pStrm->SampleSpec);
+        pStrm->BufAttr.maxlength = pa_usec_to_bytes(pStrm->cUsLatency, &pStrm->SampleSpec);
+        pStrm->BufAttr.tlength   = pa_usec_to_bytes(pStrm->cUsLatency, &pStrm->SampleSpec);
 
         pa_stream_set_buffer_attr(pStream, &pStrm->BufAttr, NULL, NULL);
 
         pStrm->cUnderflows = 0;
     }
 
-    pa_usec_t curLatencyUs = 0;
-    pa_stream_get_latency(pStream, &curLatencyUs, NULL /* Neg */);
+    pa_usec_t cUsLatency = 0;
+    pa_stream_get_latency(pStream, &cUsLatency, NULL /* Neg */);
 
-    LogRel2(("PulseAudio: Latency now is %RU64ms\n", curLatencyUs / 1000 /* ms */));
+    LogRel2(("PulseAudio: Latency now is %RU64 us\n", cUsLatency));
 
 # ifdef LOG_ENABLED
     const pa_timing_info *pTInfo = pa_stream_get_timing_info(pStream);
@@ -739,7 +756,7 @@ static void drvHostAudioPaStreamUnderflowDebugCallback(pa_stream *pStream, void 
 
     Log2Func(("curPosWrite=%RU64ms, curPosRead=%RU64ms, curTs=%RU64ms, curLatency=%RU64ms (%RU32Hz, %RU8 channels)\n",
               curPosWritesUs / RT_US_1MS_64, curPosReadsUs / RT_US_1MS_64,
-              curTsUs / RT_US_1MS_64, curLatencyUs / RT_US_1MS_64, pSpec->rate, pSpec->channels));
+              curTsUs / RT_US_1MS_64, cUsLatency / RT_US_1MS_64, pSpec->rate, pSpec->channels));
 # endif
 }
 
@@ -796,13 +813,16 @@ static pa_sample_format_t drvHostAudioPaPropsToPulse(PCPDMAUDIOPCMPROPS pProps)
  *
  * @returns VBox status code.
  * @param   pProps      The PDM audio source properties.
+ * @param   enmPulseFmt The PA format.
+ * @param   cChannels   The number of channels.
+ * @param   uHz         The frequency.
  */
-static int drvHostAudioPaToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format_t pulsefmt, uint8_t cChannels, uint32_t uHz)
+static int drvHostAudioPaToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format_t enmPulseFmt, uint8_t cChannels, uint32_t uHz)
 {
     AssertReturn(cChannels > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cChannels < 16, VERR_INVALID_PARAMETER);
 
-    switch (pulsefmt)
+    switch (enmPulseFmt)
     {
         case PA_SAMPLE_U8:
             PDMAudioPropsInit(pProps, 1 /*8-bit*/, false /*signed*/, cChannels, uHz);
@@ -829,7 +849,7 @@ static int drvHostAudioPaToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format
 #endif
 
         default:
-            AssertLogRelMsgFailed(("PulseAudio: Format (%d) not supported\n", pulsefmt));
+            AssertLogRelMsgFailed(("PulseAudio: Format (%d) not supported\n", enmPulseFmt));
             return VERR_NOT_SUPPORTED;
     }
 
@@ -843,193 +863,130 @@ static int drvHostAudioPaToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format
  * @returns VBox status code.
  * @param   pThis       Our driver instance data.
  * @param   pStreamPA   Our stream data.
- * @param   fIn         The direction indicator.
  * @param   pszName     How we name the stream.
- * @param   pCfgAcq     Where to return the actual stream properties.  (ASSUMES
- *                      same as pCfgAcq on input.)
+ * @param   pCfgAcq     The requested stream properties, the Props member is
+ *                      updated upon successful return.
+ *
+ * @note    Caller owns the mainloop lock.
  */
-static int drvHostAudioPaStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, bool fIn,
-                                    const char *pszName, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int drvHostAudioPaStreamCreateLocked(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA,
+                                            const char *pszName, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-    pa_stream *pStream = NULL;
-
-    pa_threaded_mainloop_lock(pThis->pMainLoop);
-
-    do /* goto avoidance non-loop */
+    /*
+     * Create the stream.
+     */
+    pa_stream *pStream = pa_stream_new(pThis->pContext, pszName, &pStreamPA->SampleSpec, NULL /* pa_channel_map */);
+    if (!pStream)
     {
-        pa_sample_spec *pSampleSpec = &pStreamPA->SampleSpec;
+        LogRel(("PulseAudio: Failed to create stream '%s': %s (%d)\n",
+                pszName, pa_strerror(pa_context_errno(pThis->pContext)), pa_context_errno(pThis->pContext)));
+        return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+    }
 
-        LogFunc(("Opening '%s', rate=%dHz, channels=%d, format=%s\n",
-                 pszName, pSampleSpec->rate, pSampleSpec->channels,
-                 pa_sample_format_to_string(pSampleSpec->format)));
-
-        if (!pa_sample_spec_valid(pSampleSpec))
-        {
-            LogRel(("PulseAudio: Unsupported sample specification for stream '%s'\n", pszName));
-            break;
-        }
-
-        pa_buffer_attr *pBufAttr = &pStreamPA->BufAttr;
-
-        /** @todo r=andy Use pa_stream_new_with_proplist instead. */
-        if (!(pStream = pa_stream_new(pThis->pContext, pszName, pSampleSpec, NULL /* pa_channel_map */)))
-        {
-            LogRel(("PulseAudio: Could not create stream '%s'\n", pszName));
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
+    /*
+     * Set the state callback, and in debug builds a few more...
+     */
 #ifdef DEBUG
-        pa_stream_set_write_callback(       pStream, drvHostAudioPaStreamReqWriteDebugCallback,  pStreamPA);
-        pa_stream_set_underflow_callback(   pStream, drvHostAudioPaStreamUnderflowDebugCallback, pStreamPA);
-        if (!fIn) /* Only for output streams. */
-            pa_stream_set_overflow_callback(pStream, drvHostAudioPaStreamOverflowDebugCallback,  pStreamPA);
+    pa_stream_set_write_callback(       pStream, drvHostAudioPaStreamReqWriteDebugCallback,  pStreamPA);
+    pa_stream_set_underflow_callback(   pStream, drvHostAudioPaStreamUnderflowDebugCallback, pStreamPA);
+    if (pCfgAcq->enmDir == PDMAUDIODIR_OUT)
+        pa_stream_set_overflow_callback(pStream, drvHostAudioPaStreamOverflowDebugCallback,  pStreamPA);
 #endif
-        pa_stream_set_state_callback(       pStream, drvHostAudioPaStreamStateChangedCallback,   pThis);
+    pa_stream_set_state_callback(       pStream, drvHostAudioPaStreamStateChangedCallback,   pThis);
 
-        uint32_t flags = PA_STREAM_NOFLAGS;
+    /*
+     * Connect the stream.
+     */
+    int             rc;
+    unsigned const  fFlags = PA_STREAM_START_CORKED /* Require explicit starting (uncorking). */
+                             /* For using pa_stream_get_latency() and pa_stream_get_time(). */
+                           | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE
 #if PA_API_VERSION >= 12
-        /* XXX */
-        flags |= PA_STREAM_ADJUST_LATENCY;
+                           | PA_STREAM_ADJUST_LATENCY
 #endif
-        /* For using pa_stream_get_latency() and pa_stream_get_time(). */
-        flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
-
-        /* No input/output right away after the stream was started. */
-        flags |= PA_STREAM_START_CORKED;
-
-        if (fIn)
+                           ;
+    if (pCfgAcq->enmDir == PDMAUDIODIR_IN)
+    {
+        LogFunc(("Input stream attributes: maxlength=%d fragsize=%d\n",
+                 pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.fragsize));
+        rc = pa_stream_connect_record(pStream, NULL /*dev*/, &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags);
+    }
+    else
+    {
+        LogFunc(("Output buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
+                 pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.prebuf, pStreamPA->BufAttr.minreq));
+        rc = pa_stream_connect_playback(pStream, NULL /*dev*/, &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags,
+                                        NULL /*volume*/, NULL /*sync_stream*/);
+    }
+    if (rc >= 0)
+    {
+        /*
+         * Wait for the stream to become ready.
+         */
+        uint64_t const nsStart = RTTimeNanoTS();
+        pa_stream_state_t enmStreamState;
+        while (   (enmStreamState = pa_stream_get_state(pStream)) != PA_STREAM_READY
+               && PA_STREAM_IS_GOOD(enmStreamState)
+               && RTTimeNanoTS() - nsStart < RT_NS_10SEC /* not really timed */ )
+            drvHostAudioPaMainloopWait(pThis);
+        if (enmStreamState == PA_STREAM_READY)
         {
-            LogFunc(("Input stream attributes: maxlength=%d fragsize=%d\n",
-                     pBufAttr->maxlength, pBufAttr->fragsize));
-
-            if (pa_stream_connect_record(pStream, /*dev=*/NULL, pBufAttr, (pa_stream_flags_t)flags) < 0)
+            LogFunc(("Connecting stream took %'RU64 ns\n", RTTimeNanoTS() - nsStart));
+#ifdef LOG_ENABLED
+            pStreamPA->tsStartUs = pa_rtclock_now();
+#endif
+            /*
+             * Update the buffer attributes.
+             */
+            const pa_buffer_attr *pBufAttribs = pa_stream_get_buffer_attr(pStream);
+            AssertPtr(pBufAttribs);
+            if (pBufAttribs)
             {
-                LogRel(("PulseAudio: Could not connect input stream '%s': %s\n",
-                        pszName, pa_strerror(pa_context_errno(pThis->pContext))));
-                break;
+                pStreamPA->BufAttr = *pBufAttribs;
+                LogFunc(("Obtained %s buffer attributes: maxlength=%RU32 tlength=%RU32 prebuf=%RU32 minreq=%RU32 fragsize=%RU32\n",
+                         pCfgAcq->enmDir == PDMAUDIODIR_IN ? "input" : "output", pBufAttribs->maxlength, pBufAttribs->tlength,
+                         pBufAttribs->prebuf, pBufAttribs->minreq, pBufAttribs->fragsize));
+
+                /*
+                 * Convert the sample spec back to PDM speak.
+                 * Note! This isn't strictly speaking needed as SampleSpec has *not* been
+                 *       modified since the caller converted it from pCfgReq.
+                 */
+                rc = drvHostAudioPaToAudioProps(&pCfgAcq->Props, pStreamPA->SampleSpec.format,
+                                                pStreamPA->SampleSpec.channels, pStreamPA->SampleSpec.rate);
+                if (RT_SUCCESS(rc))
+                {
+                    pStreamPA->pStream = pStream;
+                    LogFlowFunc(("returns VINF_SUCCESS\n"));
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+            {
+                LogRelMax(99, ("PulseAudio: Failed to get buffer attribs for stream '%s': %s (%d)\n",
+                               pszName, pa_strerror(pa_context_errno(pThis->pContext)), pa_context_errno(pThis->pContext)));
+                rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
             }
         }
         else
         {
-            LogFunc(("Output buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
-                     pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
-
-            if (pa_stream_connect_playback(pStream, /*dev=*/NULL, pBufAttr, (pa_stream_flags_t)flags,
-                                           /*cvolume=*/NULL, /*sync_stream=*/NULL) < 0)
-            {
-                LogRel(("PulseAudio: Could not connect playback stream '%s': %s\n",
-                        pszName, pa_strerror(pa_context_errno(pThis->pContext))));
-                break;
-            }
+            LogRelMax(99, ("PulseAudio: Failed to initialize stream '%s': state=%d, waited %'RU64 ns\n",
+                           pszName, enmStreamState, RTTimeNanoTS() - nsStart));
+            rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
         }
-
-        /* Wait until the stream is ready. */
-        pa_stream_state_t enmStreamState;
-        for (;;)
-        {
-            enmStreamState = pa_stream_get_state(pStream);
-            if (   enmStreamState == PA_STREAM_READY
-                || !PA_STREAM_IS_GOOD(enmStreamState))
-                break;
-
-            if (!pThis->fAbortLoop)
-                pa_threaded_mainloop_wait(pThis->pMainLoop);
-            pThis->fAbortLoop = false;
-        }
-        if (!PA_STREAM_IS_GOOD(enmStreamState))
-        {
-            LogRel(("PulseAudio: Failed to initialize stream '%s' (state %ld)\n", pszName, enmStreamState));
-            break;
-        }
-
-#ifdef LOG_ENABLED
-        pStreamPA->tsStartUs = pa_rtclock_now();
-#endif
-        const pa_buffer_attr *pBufAttrObtained = pa_stream_get_buffer_attr(pStream);
-        AssertPtrBreak(pBufAttrObtained);
-        memcpy(pBufAttr, pBufAttrObtained, sizeof(pa_buffer_attr));
-
-        LogFunc(("Obtained %s buffer attributes: tLength=%RU32, maxLength=%RU32, minReq=%RU32, fragSize=%RU32, preBuf=%RU32\n",
-                 fIn ? "capture" : "playback",
-                 pBufAttr->tlength, pBufAttr->maxlength, pBufAttr->minreq, pBufAttr->fragsize, pBufAttr->prebuf));
-
-        /*
-         * Convert it to PDM speak.
-         */
-        rc = drvHostAudioPaToAudioProps(&pCfgAcq->Props, pStreamPA->SampleSpec.format,
-                                        pStreamPA->SampleSpec.channels, pStreamPA->SampleSpec.rate);
-        if (RT_SUCCESS(rc))
-        {
-            pStreamPA->pStream = pStream;
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-            LogFlowFuncLeaveRC(VINF_SUCCESS);
-            return VINF_SUCCESS;
-        }
-        LogRel(("PulseAudio: Cannot find audio capture format %ld\n", pStreamPA->SampleSpec.format));
-    } while (0);
-
-    /* We failed. */
-    if (pStream)
         pa_stream_disconnect(pStream);
-
-    pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-    if (pStream)
-        pa_stream_unref(pStream);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-static int drvHostAudioPaCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA,
-                                         PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, const char *pszName)
-{
-    Assert(pCfgReq->enmDir == PDMAUDIODIR_OUT);
-
-    pStreamPA->curLatencyUs      = PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize) * RT_US_1MS;
-    uint32_t const cbLatency     = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
-    pStreamPA->BufAttr.tlength   = cbLatency;
-    pStreamPA->BufAttr.maxlength = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
-    pStreamPA->BufAttr.prebuf    = cbLatency;
-    pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
-    LogRel2(("PulseAudio: Initial output latency is %RU64 ms (%RU32 bytes)\n", pStreamPA->curLatencyUs / RT_US_1MS, cbLatency));
-    LogFunc(("Requested: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
-             pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
-
-    int rc = drvHostAudioPaStreamOpen(pThis, pStreamPA, false /* fIn */, pszName, pCfgReq);
-    if (RT_SUCCESS(rc))
-    {
-        /* Note! BuffAttr contains the acquired values now.*/
-        LogFunc(("Acquired: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
-                 pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
-        pCfgAcq->Backend.cFramesPeriod        = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
-        pCfgAcq->Backend.cFramesBufferSize    = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
-        pCfgAcq->Backend.cFramesPreBuffering  = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.prebuf);
     }
-    return rc;
-}
-
-
-static int drvHostAudioPaCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStreamPA,
-                                        PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, const char *pszName)
-{
-    Assert(pCfgReq->enmDir == PDMAUDIODIR_IN);
-
-    pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
-    pStreamPA->BufAttr.maxlength = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
-
-    int rc = drvHostAudioPaStreamOpen(pThis, pStreamPA, true /* fIn */, pszName, pCfgAcq);
-    if (RT_SUCCESS(rc))
+    else
     {
-        /* Note! BuffAttr contains the acquired values now.*/
-        pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.fragsize);
-        pCfgAcq->Backend.cFramesBufferSize   = pStreamPA->BufAttr.maxlength != UINT32_MAX /* paranoia */
-                                             ? PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.maxlength)
-                                             : pCfgAcq->Backend.cFramesPeriod * 2 /* whatever */;
-        pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod;
+        LogRelMax(99, ("PulseAudio: Could not connect %s stream '%s': %s (%d/%d)\n",
+                       pCfgAcq->enmDir == PDMAUDIODIR_IN ? "input" : "output",
+                       pszName, pa_strerror(pa_context_errno(pThis->pContext)), pa_context_errno(pThis->pContext), rc));
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     }
+
+    pa_stream_unref(pStream);
+    Assert(RT_FAILURE_NP(rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1046,10 +1003,11 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
     AssertReturn(pCfgReq->enmDir == PDMAUDIODIR_IN || pCfgReq->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+    Assert(PDMAudioStrmCfgEquals(pCfgReq, pCfgAcq));
     int rc;
 
     /*
-     * Common prep bits.
+     * Prepare name, sample spec and the stream instance data.
      */
     char szName[256];
     RTStrPrintf(szName, sizeof(szName), "VirtualBox %s [%s]",
@@ -1070,14 +1028,54 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     if (pa_sample_spec_valid(&pStreamPA->SampleSpec))
     {
         /*
-         * Do some direction specific buffer config and call drvHostAudioPaStreamOpen.
+         * Set up buffer attributes according to the stream type.
          */
+        pStreamPA->BufAttr.maxlength = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
         if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-            rc = drvHostAudioPaCreateStreamIn (pThis, pStreamPA, pCfgReq, pCfgAcq, szName);
+        {
+            pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
+            LogFunc(("Requesting: BufAttr: fragsize=%RU32 maxlength=-1\n", pStreamPA->BufAttr.fragsize));
+        }
         else
-            rc = drvHostAudioPaCreateStreamOut(pThis, pStreamPA, pCfgReq, pCfgAcq, szName);
+        {
+            pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+            pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
+            pStreamPA->BufAttr.prebuf    = pStreamPA->BufAttr.tlength;
+            pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
+            LogRel2(("PulseAudio: Initial output latency is %RU64 us (%RU32 bytes)\n",
+                     pStreamPA->cUsLatency, pStreamPA->BufAttr.tlength));
+            LogFunc(("Requesting: BufAttr: tlength=%RU32 maxLength=%RU32 minReq=%RU32 maxlength=-1\n",
+                     pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
+        }
 
-        PDMAudioStrmCfgCopy(&pStreamPA->Cfg, pCfgAcq);
+        /*
+         * Do the actual PA stream creation.
+         */
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+        rc = drvHostAudioPaStreamCreateLocked(pThis, pStreamPA, szName, pCfgAcq);
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Set the acquired stream config according to the actual buffer
+             * attributes we got and the stream type.
+             */
+            if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+            {
+                pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.fragsize);
+                pCfgAcq->Backend.cFramesBufferSize   = pStreamPA->BufAttr.maxlength != UINT32_MAX /* paranoia */
+                                                     ? PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.maxlength)
+                                                     : pCfgAcq->Backend.cFramesPeriod * 2 /* whatever */;
+                pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod;
+            }
+            else
+            {
+                pCfgAcq->Backend.cFramesPeriod        = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
+                pCfgAcq->Backend.cFramesBufferSize    = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
+                pCfgAcq->Backend.cFramesPreBuffering  = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.prebuf);
+            }
+            PDMAudioStrmCfgCopy(&pStreamPA->Cfg, pCfgAcq);
+        }
     }
     else
     {

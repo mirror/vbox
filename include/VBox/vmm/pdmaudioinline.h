@@ -278,6 +278,31 @@ DECLINLINE(bool) PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDI
 }
 
 /**
+ * Checks whether two stream configuration matches.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pCfg1   The first stream configuration.
+ * @param   pCfg2   The second stream configuration.
+ */
+DECLINLINE(bool) PDMAudioStrmCfgEquals(PCPDMAUDIOSTREAMCFG pCfg1, PCPDMAUDIOSTREAMCFG pCfg2)
+{
+    if (!pCfg1 || !pCfg2)
+        return false;
+    if (pCfg1 == pCfg2)
+        return pCfg1 != NULL;
+    if (PDMAudioPropsAreEqual(&pCfg1->Props, &pCfg2->Props))
+        return pCfg1->enmDir    == pCfg2->enmDir
+            && pCfg1->u.enmDst  == pCfg2->u.enmDst
+            && pCfg1->enmLayout == pCfg2->enmLayout
+            && pCfg1->Device.cMsSchedulingHint == pCfg2->Device.cMsSchedulingHint
+            && pCfg1->Backend.cFramesPeriod == pCfg2->Backend.cFramesPeriod
+            && pCfg1->Backend.cFramesBufferSize == pCfg2->Backend.cFramesBufferSize
+            && pCfg1->Backend.cFramesPreBuffering == pCfg2->Backend.cFramesPreBuffering
+            && strcmp(pCfg1->szName, pCfg2->szName) == 0;
+    return false;
+}
+
+/**
  * Frees an audio stream allocated by PDMAudioStrmCfgDup().
  *
  * @param   pCfg    The stream configuration to free.
@@ -813,6 +838,25 @@ DECLINLINE(uint64_t) PDMAudioPropsFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint3
     uint32_t const uHz = pProps->uHz;
     if (uHz)
         return ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, uHz);
+    return 0;
+}
+
+/**
+ * Converts frames to microseconds.
+ *
+ * @returns microseconds.
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
+ * @note    No rounding here, result is floored.
+ */
+DECLINLINE(uint64_t) PDMAudioPropsFramesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+{
+    AssertPtrReturn(pProps, 0);
+
+    /* Check input to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+        return ASMMultU32ByU32DivByU32(cFrames, RT_US_1SEC, uHz);
     return 0;
 }
 
