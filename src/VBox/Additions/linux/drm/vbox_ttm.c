@@ -223,6 +223,8 @@ static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
 	case TTM_PL_VRAM:
 # if RTLNX_VER_MIN(5,11,0)
 		mem->bus.caching = ttm_write_combined;
+# endif
+# if RTLNX_VER_MIN(5,10,0)
 		mem->bus.offset = (mem->start << PAGE_SHIFT) + pci_resource_start(vbox->dev->pdev, 0);
 # else
 		mem->bus.offset = mem->start << PAGE_SHIFT;
