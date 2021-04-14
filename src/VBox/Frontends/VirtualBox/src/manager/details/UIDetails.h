@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,7 @@
 
 /* Forward declartions: */
 class QString;
+class QVBoxLayout;
 class UIDetailsModel;
 class UIDetailsView;
 class UIVirtualMachineItem;
@@ -37,41 +38,65 @@ class UIDetails : public QWidget
 
 signals:
 
-    /** Notifies listeners about link click.
-      * @param  strCategory  Brings link category.
-      * @param  strControl   Brings control name.
-      * @param  uId        Brings machine ID. */
-    void sigLinkClicked(const QString &strCategory,
-                        const QString &strControl,
-                        const QUuid &uId);
-
-    /** Notifies listeners about toggling started. */
-    void sigToggleStarted();
-    /** Notifies listeners about toggling finished. */
-    void sigToggleFinished();
+    /** @name General stuff.
+      * @{ */
+        /** Notifies listeners about link click.
+          * @param  strCategory  Brings link category.
+          * @param  strControl   Brings control name.
+          * @param  uId        Brings machine ID. */
+        void sigLinkClicked(const QString &strCategory,
+                            const QString &strControl,
+                            const QUuid &uId);
+    
+        /** Notifies listeners about toggling started. */
+        void sigToggleStarted();
+        /** Notifies listeners about toggling finished. */
+        void sigToggleFinished();
+    /** @} */
 
 public:
 
     /** Constructs Details pane passing @a pParent to the base-class. */
     UIDetails(QWidget *pParent = 0);
-
-    /** Return the Details-model instance. */
-    UIDetailsModel *model() const { return m_pDetailsModel; }
-    /** Return the Details-view instance. */
-    UIDetailsView *view() const { return m_pDetailsView; }
-
-    /** Replaces current model @a items. */
-    void setItems(const QList<UIVirtualMachineItem*> &items);
+    
+    /** @name General stuff.
+      * @{ */
+        /** Return the Details-model instance. */
+        UIDetailsModel *model() const { return m_pDetailsModel; }
+        /** Return the Details-view instance. */
+        UIDetailsView *view() const { return m_pDetailsView; }
+    
+        /** Replaces current model @a items. */
+        void setItems(const QList<UIVirtualMachineItem*> &items);
+    /** @} */
 
 private:
 
-    /** Prepares all. */
-    void prepare();
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares contents. */
+        void prepareContents();
+        /** Prepares model. */
+        void prepareModel();
+        /** Prepares view. */
+        void prepareView();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Inits model. */
+        void initModel();
+    /** @} */
 
-    /** Holds the details model instance. */
-    UIDetailsModel *m_pDetailsModel;
-    /** Holds the details view instance. */
-    UIDetailsView  *m_pDetailsView;
+    /** @name General stuff.
+      * @{ */
+        /** Holds the main layout instance. */
+        QVBoxLayout    *m_pMainLayout;
+        /** Holds the details model instance. */
+        UIDetailsModel *m_pDetailsModel;
+        /** Holds the details view instance. */
+        UIDetailsView  *m_pDetailsView;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetails_h */

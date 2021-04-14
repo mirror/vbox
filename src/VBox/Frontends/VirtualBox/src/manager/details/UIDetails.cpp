@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,10 +28,10 @@
 
 UIDetails::UIDetails(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
+    , m_pMainLayout(0)
     , m_pDetailsModel(0)
     , m_pDetailsView(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -43,41 +43,66 @@ void UIDetails::setItems(const QList<UIVirtualMachineItem*> &items)
 
 void UIDetails::prepare()
 {
-    /* Create main-layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    if (pMainLayout)
+    /* Prepare everything: */
+    prepareContents();
+    prepareConnections();
+
+    /* Configure context-sensitive help: */
+    uiCommon().setHelpKeyword(this, "vm-details-tool");
+
+    /* Init model finally: */
+    initModel();
+}
+
+void UIDetails::prepareContents()
+{
+    /* Prepare main-layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    if (m_pMainLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        pMainLayout->setSpacing(0);
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(0);
 
-        /* Create details-model: */
-        m_pDetailsModel = new UIDetailsModel(this);
-        if (m_pDetailsModel)
-        {
-            /* Create details-view: */
-            m_pDetailsView = new UIDetailsView(this);
-            if (m_pDetailsView)
-            {
-                m_pDetailsView->setScene(m_pDetailsModel->scene());
-                m_pDetailsView->show();
-                setFocusProxy(m_pDetailsView);
-
-                /* Add into layout: */
-                pMainLayout->addWidget(m_pDetailsView);
-            }
-
-            /* Init model: */
-            m_pDetailsModel->init();
-        }
+        /* Prepare model: */
+        prepareModel();
     }
+}
 
+void UIDetails::prepareModel()
+{
+    /* Prepare model: */
+    m_pDetailsModel = new UIDetailsModel(this);
+    if (m_pDetailsModel)
+        prepareView();
+}
+
+void UIDetails::prepareView()
+{
+    AssertPtrReturnVoid(m_pDetailsModel);
+    AssertPtrReturnVoid(m_pMainLayout);
+
+    /* Prepare view: */
+    m_pDetailsView = new UIDetailsView(this);
+    if (m_pDetailsView)
+    {
+        m_pDetailsView->setScene(m_pDetailsModel->scene());
+        m_pDetailsView->show();
+        setFocusProxy(m_pDetailsView);
+
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pDetailsView);
+    }
+}
+
+void UIDetails::prepareConnections()
+{
     /* Extra-data events connections: */
     connect(gEDataManager, &UIExtraDataManager::sigDetailsCategoriesChange,
             m_pDetailsModel, &UIDetailsModel::sltHandleExtraDataCategoriesChange);
     connect(gEDataManager, &UIExtraDataManager::sigDetailsOptionsChange,
             m_pDetailsModel, &UIDetailsModel::sltHandleExtraDataOptionsChange);
 
-    /* Setup details-model connections: */
+    /* Model connections: */
     connect(m_pDetailsModel, &UIDetailsModel::sigRootItemMinimumWidthHintChanged,
             m_pDetailsView, &UIDetailsView::sltMinimumWidthHintChanged);
     connect(m_pDetailsModel, &UIDetailsModel::sigLinkClicked,
@@ -87,10 +112,12 @@ void UIDetails::prepare()
     connect(this, &UIDetails::sigToggleFinished,
             m_pDetailsModel, &UIDetailsModel::sltHandleToggleFinished);
 
-    /* Setup details-view connections: */
+    /* View connections: */
     connect(m_pDetailsView, &UIDetailsView::sigResized,
             m_pDetailsModel, &UIDetailsModel::sltHandleViewResize);
+}
 
-    /* For context sensitive help: */
-    uiCommon().setHelpKeyword(this, "vm-details-tool");
+void UIDetails::initModel()
+{
+    m_pDetailsModel->init();
 }
