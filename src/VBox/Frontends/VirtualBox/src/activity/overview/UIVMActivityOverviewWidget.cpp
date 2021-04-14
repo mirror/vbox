@@ -323,6 +323,7 @@ public:
 private slots:
 
     void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
+    void sltMachineRegistered(const QUuid &uId, bool fRegistered);
     void sltTimeout();
 
 private:
@@ -941,7 +942,8 @@ void UIActivityOverviewModel::initialize()
     initializeItems();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIActivityOverviewModel::sltMachineStateChanged);
-
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
+            this, &UIActivityOverviewModel::sltMachineRegistered);
     if (m_pTimer)
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltTimeout);
@@ -1058,27 +1060,19 @@ void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMa
         if (state == KMachineState_Running)
             m_itemList[iIndex].resetDebugger();
     }
-    //
-    // /* Remove the machine in case machine is no longer working. */
-    // if (iIndex != -1 && state != KMachineState_Running)
-    // {
-    //     emit layoutAboutToBeChanged();
-    //     removeItem(uId);
-    //     emit layoutChanged();
-    //     setupPerformanceCollector();
-    //     return;
-    // }
-    // /* Insert the machine if it is working. */
-    // if (iIndex == -1 && state == KMachineState_Running)
-    // {
-    //     emit layoutAboutToBeChanged();
-    //     CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-    //     if (!comMachine.isNull())
-    //         addItem(uId, comMachine.GetName());
-    //     emit layoutChanged();
-    //     setupPerformanceCollector();
-    //     return;
-    // }
+}
+
+void UIActivityOverviewModel::sltMachineRegistered(const QUuid &uId, bool fRegistered)
+{
+    if (fRegistered)
+    {
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
+        if (!comMachine.isNull())
+            addItem(uId, comMachine.GetName(), comMachine.GetState());
+    }
+    else
+        removeItem(uId);
+    emit sigDataUpdate();
 }
 
 void UIActivityOverviewModel::getHostRAMStats()
