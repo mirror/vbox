@@ -85,8 +85,6 @@ public:
       * @{ */
         /** Inits model. */
         void init();
-        /** Deinits model. */
-        void deinit();
 
         /** Returns the Tools reference. */
         UITools *tools() const;

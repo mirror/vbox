@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,28 +19,21 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UITools.h"
 #include "UIToolsModel.h"
 #include "UIToolsView.h"
 #include "UIVirtualBoxManagerWidget.h"
-#include "UICommon.h"
 
 
-UITools::UITools(UIVirtualBoxManagerWidget *pParent)
+UITools::UITools(UIVirtualBoxManagerWidget *pParent /* = 0 */)
     : QWidget(pParent, Qt::Popup)
     , m_pManagerWidget(pParent)
     , m_pMainLayout(0)
     , m_pToolsModel(0)
     , m_pToolsView(0)
 {
-    /* Prepare: */
     prepare();
-}
-
-UITools::~UITools()
-{
-    /* Cleanup: */
-    cleanup();
 }
 
 UIActionPool *UITools::actionPool() const
@@ -105,24 +98,17 @@ UIToolsItem *UITools::currentItem() const
 
 void UITools::prepare()
 {
-    /* Prepare palette: */
+    /* Prepare everything: */
     preparePalette();
-    /* Prepare layout: */
-    prepareLayout();
-    /* Prepare model: */
-    prepareModel();
-    /* Prepare view: */
-    prepareView();
-    /* Prepare connections: */
+    prepareContents();
     prepareConnections();
 
-    /* Load settings: */
-    loadSettings();
+    /* Init model finally: */
+    initModel();
 }
 
 void UITools::preparePalette()
 {
-    /* Setup palette: */
     setAutoFillBackground(true);
     QPalette pal = palette();
     QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
@@ -130,34 +116,40 @@ void UITools::preparePalette()
     setPalette(pal);
 }
 
-void UITools::prepareLayout()
+void UITools::prepareContents()
 {
     /* Setup own layout rules: */
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
 
-    /* Create main-layout: */
+    /* Prepare main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
     if (m_pMainLayout)
     {
-        /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(1, 1, 1, 1);
         m_pMainLayout->setSpacing(0);
+
+        /* Prepare model: */
+        prepareModel();
     }
 }
 
 void UITools::prepareModel()
 {
-    /* Create Tools-model: */
+    /* Prepare model: */
     m_pToolsModel = new UIToolsModel(this);
+    if (m_pToolsModel)
+        prepareView();
 }
 
 void UITools::prepareView()
 {
-    /* Setup Tools-view: */
+    AssertPtrReturnVoid(m_pToolsModel);
+    AssertPtrReturnVoid(m_pMainLayout);
+
+    /* Prepare view: */
     m_pToolsView = new UIToolsView(this);
     if (m_pToolsView)
     {
-        /* Configure Tools-view. */
         m_pToolsView->setScene(m_pToolsModel->scene());
         m_pToolsView->show();
         setFocusProxy(m_pToolsView);
@@ -169,7 +161,7 @@ void UITools::prepareView()
 
 void UITools::prepareConnections()
 {
-    /* Setup Tools-model connections: */
+    /* Model connections: */
     connect(m_pToolsModel, &UIToolsModel::sigItemMinimumWidthHintChanged,
             m_pToolsView, &UIToolsView::sltMinimumWidthHintChanged);
     connect(m_pToolsModel, &UIToolsModel::sigItemMinimumHeightHintChanged,
@@ -177,25 +169,12 @@ void UITools::prepareConnections()
     connect(m_pToolsModel, &UIToolsModel::sigFocusChanged,
             m_pToolsView, &UIToolsView::sltFocusChanged);
 
-    /* Setup Tools-view connections: */
+    /* View connections: */
     connect(m_pToolsView, &UIToolsView::sigResized,
             m_pToolsModel, &UIToolsModel::sltHandleViewResized);
 }
 
-void UITools::loadSettings()
+void UITools::initModel()
 {
-    /* Init model: */
     m_pToolsModel->init();
-}
-
-void UITools::saveSettings()
-{
-    /* Deinit model: */
-    m_pToolsModel->deinit();
-}
-
-void UITools::cleanup()
-{
-    /* Save settings: */
-    saveSettings();
 }

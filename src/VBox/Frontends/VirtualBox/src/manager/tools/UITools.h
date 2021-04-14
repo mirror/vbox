@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,9 +56,7 @@ signals:
 public:
 
     /** Constructs Tools-pane passing @a pParent to the base-class. */
-    UITools(UIVirtualBoxManagerWidget *pParent);
-    /** Destructs Tools-pane. */
-    virtual ~UITools() /* override */;
+    UITools(UIVirtualBoxManagerWidget *pParent = 0);
 
     /** @name General stuff.
       * @{ */
@@ -113,21 +111,16 @@ private:
         void prepare();
         /** Prepares palette. */
         void preparePalette();
-        /** Prepares layout. */
-        void prepareLayout();
+        /** Prepares contents. */
+        void prepareContents();
         /** Prepares model. */
         void prepareModel();
         /** Prepares view. */
         void prepareView();
         /** Prepares connections. */
         void prepareConnections();
-        /** Loads settings. */
-        void loadSettings();
-
-        /** Saves settings. */
-        void saveSettings();
-        /** Cleanups all. */
-        void cleanup();
+        /** Inits model. */
+        void initModel();
     /** @} */
 
     /** @name General stuff.

@@ -83,12 +83,6 @@ void UIToolsModel::init()
     sltItemMinimumHeightHintChanged();
 }
 
-void UIToolsModel::deinit()
-{
-    /* Save last selected item: */
-    saveLastSelectedItems();
-}
-
 UITools *UIToolsModel::tools() const
 {
     return m_pTools;
@@ -628,6 +622,8 @@ void UIToolsModel::cleanupScene()
 
 void UIToolsModel::cleanup()
 {
+    /* Save last selected item: */
+    saveLastSelectedItems();
     /* Cleanup connections: */
     cleanupConnections();
     /* Cleanup handlers: */
