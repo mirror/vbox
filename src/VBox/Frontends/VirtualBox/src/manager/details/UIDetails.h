@@ -47,7 +47,7 @@ signals:
         void sigLinkClicked(const QString &strCategory,
                             const QString &strControl,
                             const QUuid &uId);
-    
+
         /** Notifies listeners about toggling started. */
         void sigToggleStarted();
         /** Notifies listeners about toggling finished. */
@@ -58,14 +58,14 @@ public:
 
     /** Constructs Details pane passing @a pParent to the base-class. */
     UIDetails(QWidget *pParent = 0);
-    
+
     /** @name General stuff.
       * @{ */
         /** Return the Details-model instance. */
         UIDetailsModel *model() const { return m_pDetailsModel; }
         /** Return the Details-view instance. */
         UIDetailsView *view() const { return m_pDetailsView; }
-    
+
         /** Replaces current model @a items. */
         void setItems(const QList<UIVirtualMachineItem*> &items);
     /** @} */
