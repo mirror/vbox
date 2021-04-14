@@ -861,8 +861,10 @@ typedef struct HDACODEC
     uint8_t    au8VolKnobs[CODEC_NODES_MAX];
     uint8_t    au8Reserveds[CODEC_NODES_MAX];
 
-    STAMCOUNTER StatLookupsR0;
     STAMCOUNTER StatLookupsR3;
+#if 0 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
+    STAMCOUNTER StatLookupsR0;
+#endif
 } HDACODEC;
 
 /**

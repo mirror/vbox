@@ -666,6 +666,8 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
 
 #endif /* IN_RING3 */
 
+#ifdef IN_RING3 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
+
 /**
  * Synchronizes the CORB / RIRB buffers between internal <-> device state.
  *
@@ -678,7 +680,7 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
  *
  * @todo r=andy Break this up into two functions?
  */
-static int hdaCmdSync(PPDMDEVINS pDevIns, PHDASTATE pThis, bool fLocal)
+static int hdaR3CmdSync(PPDMDEVINS pDevIns, PHDASTATE pThis, bool fLocal)
 {
     int rc = VINF_SUCCESS;
     if (fLocal)
@@ -764,7 +766,7 @@ static int hdaCmdSync(PPDMDEVINS pDevIns, PHDASTATE pThis, bool fLocal)
  * @param   pThis               The shared HDA device state.
  * @param   pThisCC             The ring-0 HDA device state.
  */
-static int hdaCORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pThisCC)
+static int hdaR3CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pThisCC)
 {
     Log3Func(("ENTER CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
@@ -776,7 +778,7 @@ static int hdaCORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pT
 
     Assert(pThis->cbCorbBuf);
 
-    int rc = hdaCmdSync(pDevIns, pThis, true /* Sync from guest */);
+    int rc = hdaR3CmdSync(pDevIns, pThis, true /* Sync from guest */);
     AssertRCReturn(rc, rc);
 
     /*
@@ -790,12 +792,6 @@ static int hdaCORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pT
     uint8_t  const corbWp       = HDA_REG(pThis, CORBWP) % cCorbEntries;
     uint8_t        corbRp       = HDA_REG(pThis, CORBRP);
     uint8_t        rirbWp       = HDA_REG(pThis, RIRBWP);
-
-#ifndef IN_RING3
-    /*
-     * Check t
-     */
-#endif
 
     /*
      * The loop.
@@ -890,11 +886,13 @@ static int hdaCORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pT
     /*
      * Write out the response.
      */
-    rc = hdaCmdSync(pDevIns, pThis, false /* Sync to guest */);
+    rc = hdaR3CmdSync(pDevIns, pThis, false /* Sync to guest */);
     AssertRC(rc);
 
     return rc;
 }
+
+#endif /* IN_RING3 - @bugref{9890c64} */
 
 #ifdef IN_RING3
 /**
@@ -908,7 +906,7 @@ static DECLCALLBACK(void) hdaR3CorbDmaTaskWorker(PPDMDEVINS pDevIns, void *pvUse
     LogFlowFunc(("\n"));
 
     DEVHDA_LOCK(pDevIns, pThis);
-    hdaCORBCmdProcess(pDevIns, pThis, pThisCC);
+    hdaR3CORBCmdProcess(pDevIns, pThis, pThisCC);
     DEVHDA_UNLOCK(pDevIns, pThis);
 
 }
@@ -1143,7 +1141,15 @@ static VBOXSTRICTRC hdaRegWriteCORBCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* DMA engine started? */
-        rc = hdaCORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
+    {
+#ifdef IN_RING3 /** @todo do PDMDevHlpTaskTrigger everywhere? */
+        rc = hdaR3CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
+#else
+        rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCorbDmaTask);
+        if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
+            rc = VINF_SUCCESS;
+#endif
+    }
     else
         LogFunc(("CORB DMA not running, skipping\n"));
 
@@ -1210,7 +1216,12 @@ static VBOXSTRICTRC hdaRegWriteCORBWP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
     VBOXSTRICTRC rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
-    return hdaCORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
+#ifdef IN_RING3 /** @todo do PDMDevHlpTaskTrigger everywhere? */
+    return hdaR3CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
+#else
+    rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCorbDmaTask);
+    return RT_SUCCESS(rc) ? VINF_SUCCESS : rc;
+#endif
 }
 
 static VBOXSTRICTRC hdaRegWriteSDCBL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -5292,9 +5303,13 @@ static DECLCALLBACK(int) hdaRZConstruct(PPDMDEVINS pDevIns)
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, hdaMmioWrite, hdaMmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
+# if 0 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
     /* Construct the R0 codec part. */
     rc = hdaR0CodecConstruct(pDevIns, &pThis->Codec, &pThisCC->Codec);
     AssertRCReturn(rc, rc);
+# else
+    RT_NOREF(pThisCC);
+# endif
 
     return VINF_SUCCESS;
 }

@@ -1223,7 +1223,6 @@ endif
  VBoxDDR0_SOURCES += \
  	Audio/DevHda.cpp \
  	Audio/DevHdaCommon.cpp \
- 	Audio/DevHdaCodec.cpp \
  	Audio/DevHdaStream.cpp \
  	Audio/DevIchAc97.cpp
 
