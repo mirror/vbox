@@ -753,148 +753,20 @@ static int hdaCmdSync(PPDMDEVINS pDevIns, PHDASTATE pThis, bool fLocal)
     return rc;
 }
 
-#ifdef IN_RING3
 
 /**
- * Processes the next CORB buffer command in the queue (ring-3).
- *
- * Note: This function only will be called when the ring-0 version did not have an appropriate dispatcher.
+ * Processes the next CORB buffer command in the queue.
  *
  * This will invoke the HDA codec ring-3 verb dispatcher.
  *
- * @returns VBox status code suitable for MMIO write return.
+ * @returns VBox status code.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared HDA device state.
  * @param   pThisCC             The ring-0 HDA device state.
  */
-static int hdaR3CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC)
+static int hdaCORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC pThisCC)
 {
     Log3Func(("ENTER CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
-
-    if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
-    {
-        LogFunc(("CORB DMA not active, skipping\n"));
-        return VINF_SUCCESS;
-    }
-
-    /* Note: Command buffer syncing was already done in R0. */
-
-    Assert(pThis->cbCorbBuf);
-
-    int rc;
-
-    /*
-     * Prepare local copies of relevant registers.
-     */
-    uint16_t cIntCnt = HDA_REG(pThis, RINTCNT) & 0xff;
-    if (!cIntCnt) /* 0 means 256 interrupts. */
-        cIntCnt = HDA_MAX_RINTCNT;
-
-    uint32_t const cCorbEntries = RT_MIN(RT_MAX(pThis->cbCorbBuf, 1), sizeof(pThis->au32CorbBuf)) / HDA_CORB_ELEMENT_SIZE;
-    uint8_t  const corbWp       = HDA_REG(pThis, CORBWP) % cCorbEntries;
-    uint8_t        corbRp       = HDA_REG(pThis, CORBRP);
-    uint8_t        rirbWp       = HDA_REG(pThis, RIRBWP);
-
-    /*
-     * The loop.
-     */
-    Log3Func(("START CORB(RP:%x, WP:%x) RIRBWP:%x, RINTCNT:%RU8/%RU8\n", corbRp, corbWp, rirbWp, pThis->u16RespIntCnt, cIntCnt));
-    while (corbRp != corbWp)
-    {
-        /* Fetch the command from the CORB. */
-        corbRp = (corbRp + 1) /* Advance +1 as the first command(s) are at CORBWP + 1. */ % cCorbEntries;
-        uint32_t const uCmd = pThis->au32CorbBuf[corbRp];
-
-        /*
-         * Execute the command.
-         */
-        uint64_t uResp = 0;
-        rc = pThisCC->pCodec->pfnLookup(&pThis->Codec, pThisCC->pCodec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
-        if (RT_FAILURE(rc)) /* Can return VERR_NOT_FOUND. */
-            Log3Func(("Lookup for codec verb %08x failed: %Rrc\n", uCmd, rc));
-
-        /* Note: No return here (as we're doing for the ring-0 version);
-                 we still need to do the interrupt handling below. */
-
-        Log3Func(("Codec verb %08x -> response %016RX64\n", uCmd, uResp));
-
-        if (   (uResp & CODEC_RESPONSE_UNSOLICITED)
-            && !(HDA_REG(pThis, GCTL) & HDA_GCTL_UNSOL))
-        {
-            LogFunc(("Unexpected unsolicited response.\n"));
-            HDA_REG(pThis, CORBRP) = corbRp;
-            /** @todo r=andy No RIRB syncing to guest required in that case? */
-            /** @todo r=bird: Why isn't RIRBWP updated here.  The response might come
-             *        after already processing several commands, can't it?  (When you think
-             *        about it, it is bascially the same question as Andy is asking.) */
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Store the response in the RIRB.
-         */
-        AssertCompile(HDA_RIRB_SIZE == RT_ELEMENTS(pThis->au64RirbBuf));
-        rirbWp = (rirbWp + 1) % HDA_RIRB_SIZE;
-        pThis->au64RirbBuf[rirbWp] = uResp;
-
-        /*
-         * Send interrupt if needed.
-         */
-        bool fSendInterrupt = false;
-        pThis->u16RespIntCnt++;
-        if (pThis->u16RespIntCnt >= cIntCnt) /* Response interrupt count reached? */
-        {
-            pThis->u16RespIntCnt = 0; /* Reset internal interrupt response counter. */
-
-            Log3Func(("Response interrupt count reached (%RU16)\n", pThis->u16RespIntCnt));
-            fSendInterrupt = true;
-        }
-        else if (corbRp == corbWp) /* Did we reach the end of the current command buffer? */
-        {
-            Log3Func(("Command buffer empty\n"));
-            fSendInterrupt = true;
-        }
-        if (fSendInterrupt)
-        {
-            if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL) /* Response Interrupt Control (RINTCTL) enabled? */
-            {
-                HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
-                HDA_PROCESS_INTERRUPT(pDevIns, pThis);
-            }
-        }
-    }
-
-    /*
-     * Put register locals back.
-     */
-    Log3Func(("END CORB(RP:%x, WP:%x) RIRBWP:%x, RINTCNT:%RU8/%RU8\n", corbRp, corbWp, rirbWp, pThis->u16RespIntCnt, cIntCnt));
-    HDA_REG(pThis, CORBRP) = corbRp;
-    HDA_REG(pThis, RIRBWP) = rirbWp;
-
-    /*
-     * Write out the response.
-     */
-    rc = hdaCmdSync(pDevIns, pThis, false /* Sync to guest */);
-    AssertRC(rc);
-
-    return rc;
-}
-
-#else /* IN_RING0 */
-
-/**
- * Processes the next CORB buffer command in the queue (ring-0).
- *
- * This will invoke the HDA codec verb dispatcher.
- *
- * @returns VBox status code suitable for MMIO write return.
- * @param   pDevIns             The device instance.
- * @param   pThis               The shared HDA device state.
- * @param   pThisCC             The ring-0 HDA device state.
- */
-static int hdaR0CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER0 pThisCC)
-{
-    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
     if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
     {
@@ -919,6 +791,12 @@ static int hdaR0CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER0 
     uint8_t        corbRp       = HDA_REG(pThis, CORBRP);
     uint8_t        rirbWp       = HDA_REG(pThis, RIRBWP);
 
+#ifndef IN_RING3
+    /*
+     * Check t
+     */
+#endif
+
     /*
      * The loop.
      */
@@ -933,11 +811,26 @@ static int hdaR0CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER0 
          * Execute the command.
          */
         uint64_t uResp = 0;
+#ifndef IN_RING3
         rc = pThisCC->Codec.pfnLookup(&pThis->Codec, &pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
-        if (RT_FAILURE(rc)) /* Can return VERR_NOT_FOUND. */
+#else
+        rc = pThisCC->pCodec->pfnLookup(&pThis->Codec, pThisCC->pCodec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
+#endif
+        if (RT_SUCCESS(rc))
+            AssertRCSuccess(rc); /* no informational statuses */
+        else
         {
+#ifndef IN_RING3
+            if (rc == VERR_INVALID_CONTEXT)
+            {
+                corbRp = corbRp == 0 ? cCorbEntries - 1 : corbRp - 1;
+                LogFunc(("->R3 CORB - uCmd=%#x\n", uCmd));
+                rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCorbDmaTask);
+                AssertRCReturn(rc, rc);
+                break; /* take the normal way out. */
+            }
+#endif
             Log3Func(("Lookup for codec verb %08x failed: %Rrc\n", uCmd, rc));
-            return rc;
         }
         Log3Func(("Codec verb %08x -> response %016RX64\n", uCmd, uResp));
 
@@ -1003,6 +896,22 @@ static int hdaR0CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER0 
     return rc;
 }
 
+#ifdef IN_RING3
+/**
+ * @callback_method_impl{FNPDMTASKDEV, Continue CORB DMA in ring-3}
+ */
+static DECLCALLBACK(void) hdaR3CorbDmaTaskWorker(PPDMDEVINS pDevIns, void *pvUser)
+{
+    PHDASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATER3     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    RT_NOREF(pvUser);
+    LogFlowFunc(("\n"));
+
+    DEVHDA_LOCK(pDevIns, pThis);
+    hdaCORBCmdProcess(pDevIns, pThis, pThisCC);
+    DEVHDA_UNLOCK(pDevIns, pThis);
+
+}
 #endif /* IN_RING3 */
 
 /* Register access handlers. */
@@ -1234,19 +1143,11 @@ static VBOXSTRICTRC hdaRegWriteCORBCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* DMA engine started? */
-    {
-#ifdef IN_RING3
-        /* ignore rc */ hdaR3CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3));
-
-#else
-        if (hdaR0CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER0)) == VERR_NOT_FOUND)
-            return VINF_IOM_R3_MMIO_WRITE; /* Try ring-3. */
-#endif
-    }
+        rc = hdaCORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
     else
         LogFunc(("CORB DMA not running, skipping\n"));
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static VBOXSTRICTRC hdaRegWriteCORBSIZE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -1309,17 +1210,7 @@ static VBOXSTRICTRC hdaRegWriteCORBWP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
     VBOXSTRICTRC rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
-#ifdef IN_RING3
-    rc = hdaR3CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3));
-    if (rc == VERR_NOT_FOUND)
-        rc = VINF_SUCCESS;
-#else
-    rc = hdaR0CORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER0));
-    if (rc == VERR_NOT_FOUND) /* Try ring-3. */
-        rc = VINF_IOM_R3_MMIO_WRITE;
-#endif
-
-    return rc;
+    return hdaCORBCmdProcess(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATECC));
 }
 
 static VBOXSTRICTRC hdaRegWriteSDCBL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -4756,6 +4647,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     RTListInit(&pThisCC->lstDrv);
     pThis->cbCorbBuf            = HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE;
     pThis->cbRirbBuf            = HDA_RIRB_SIZE * HDA_RIRB_ELEMENT_SIZE;
+    pThis->hCorbDmaTask         = NIL_PDMTASKHANDLE;
 
     /** @todo r=bird: There are probably other things which should be
      *        initialized here before we start failing. */
@@ -4971,6 +4863,11 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMPciDevSetCapabilityList(pPciDev, 0x50);
     }
 # endif
+
+    /* Create task for continuing CORB DMA in ring-3. */
+    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "HDA CORB DMA",
+                             hdaR3CorbDmaTaskWorker, NULL /*pvUser*/, &pThis->hCorbDmaTask);
+    AssertRCReturn(rc,rc);
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, HDA_SAVED_STATE_VERSION, sizeof(*pThis), NULL /*pszBefore*/,
                                 NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,

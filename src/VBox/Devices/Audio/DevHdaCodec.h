@@ -29,12 +29,16 @@
 typedef struct HDASTATE *PHDASTATE;
 /** Pointer to a ring-3 HDA device state.  */
 typedef struct HDASTATER3 *PHDASTATER3;
+
 /** The ICH HDA (Intel) common codec state. */
 typedef struct HDACODEC *PHDACODEC;
-/** The ICH HDA (Intel) ring-0 state. */
+/** The ICH HDA (Intel) ring-0 codec state. */
 typedef struct HDACODECR0 *PHDACODECR0;
-/** The ICH HDA (Intel) ring-3 state. */
+/** The ICH HDA (Intel) ring-3 codec state. */
 typedef struct HDACODECR3 *PHDACODECR3;
+/** The ICH HDA (Intel) current context codec state. */
+typedef CTX_SUFF(PHDACODEC) PHDACODECCC;
+
 /** The HDA host driver backend. */
 typedef struct HDADRIVER *PHDADRIVER;
 
@@ -50,14 +54,6 @@ typedef enum CODEC_TYPE
     /** Hack to blow the type up to 32-bit. */
     CODEC_TYPE__32BIT_HACK = 0x7fffffff
 } CODEC_TYPE;
-
-/**
- * Verb processor method.
- */
-typedef DECLCALLBACKTYPE(int, FNHDACODECVERBPROCESSORR0,(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp));
-typedef FNHDACODECVERBPROCESSORR0 *PFNHDACODECVERBPROCESSORR0;
-typedef DECLCALLBACKTYPE(int, FNHDACODECVERBPROCESSORR3,(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *pResp));
-typedef FNHDACODECVERBPROCESSORR3 *PFNHDACODECVERBPROCESSORR3;
 
 /* PRM 5.3.1 */
 /** Codec address mask. */
@@ -567,38 +563,27 @@ typedef FNHDACODECVERBPROCESSORR3 *PFNHDACODECVERBPROCESSORR3;
 #define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
 
 /**
- * Structure for maintaining a codec verb implementation (ring-0).
+ * A codec verb descriptor.
  */
-typedef struct CODECVERBR0
+typedef struct CODECVERB
 {
     /** Verb. */
-    uint32_t                   verb;
+    uint32_t                   uVerb;
     /** Verb mask. */
-    uint32_t                   mask;
-    /** Function pointer for implementation callback. */
-    PFNHDACODECVERBPROCESSORR0 pfn;
+    uint32_t                   fMask;
+    /**
+     * Function pointer for implementation callback.
+     *
+     * This is always a valid  pointer in ring-3, while elsewhere a NULL indicates
+     * that we must return to ring-3 to process it.
+     */
+    DECLCALLBACKMEMBER(int,    pfn, (PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp));
     /** Friendly name, for debugging. */
     const char                *pszName;
-} CODECVERBR0;
-/** Ponter to a  codec verb implementation (ring-0). */
-typedef CODECVERBR0 *PCODECVERBR0;
+} CODECVERB;
+/** Pointer to a const codec verb descriptor. */
+typedef CODECVERB const *PCCODECVERB;
 
-/**
- * Structure for maintaining a codec verb implementation (ring-3).
- */
-typedef struct CODECVERBR3
-{
-    /** Verb. */
-    uint32_t                   verb;
-    /** Verb mask. */
-    uint32_t                   mask;
-    /** Function pointer for implementation callback. */
-    PFNHDACODECVERBPROCESSORR3 pfn;
-    /** Friendly name, for debugging. */
-    const char                *pszName;
-} CODECVERBR3;
-/** Ponter to a  codec verb implementation (ring-3). */
-typedef CODECVERBR3 *PCODECVERBR3;
 
 #define AMPLIFIER_SIZE 60
 
@@ -622,9 +607,10 @@ typedef struct CODECCOMMONNODE
     uint32_t        au32F00_param[CODECNODE_F00_PARAM_LENGTH];
     uint32_t        au32F02_param[CODECNODE_F02_PARAM_LENGTH];
 } CODECCOMMONNODE;
-typedef CODECCOMMONNODE *PCODECCOMMONNODE;
 AssertCompile(CODECNODE_F00_PARAM_LENGTH == 20);  /* saved state */
 AssertCompile(CODECNODE_F02_PARAM_LENGTH == 16); /* saved state */
+AssertCompileSize(CODECCOMMONNODE, (1 + 20 + 16) * sizeof(uint32_t));
+typedef CODECCOMMONNODE *PCODECCOMMONNODE;
 
 /**
  * Compile time assertion on the expected node size.
@@ -834,7 +820,6 @@ typedef union CODECNODE
 } CODECNODE, *PCODECNODE;
 AssertNodeSize(CODECNODE, 60 + 6);
 
-#define CODEC_VERBS_MAX     64
 #define CODEC_NODES_MAX     32
 
 /**
@@ -852,10 +837,10 @@ typedef struct HDACODEC
     uint8_t    u8AssemblyId;
 
     CODECNODE  aNodes[CODEC_NODES_MAX];
-    size_t     cNodes;
+    uint32_t   cNodes;
 
     bool       fInReset;
-    uint8_t    abPadding1[3];
+    uint8_t    abPadding1[3]; /**< @todo r=bird: Merge with bPadding2 and eliminate both */
 
     uint8_t    cTotalNodes;
     uint8_t    u8AdcVolsLineIn;
@@ -875,6 +860,9 @@ typedef struct HDACODEC
     uint8_t    au8Cds[CODEC_NODES_MAX];
     uint8_t    au8VolKnobs[CODEC_NODES_MAX];
     uint8_t    au8Reserveds[CODEC_NODES_MAX];
+
+    STAMCOUNTER StatLookupsR0;
+    STAMCOUNTER StatLookupsR3;
 } HDACODEC;
 
 /**
@@ -882,20 +870,14 @@ typedef struct HDACODEC
  */
 typedef struct HDACODECR0
 {
-    CODECVERBR0             aVerbs[CODEC_VERBS_MAX];
-    size_t                  cVerbs;
-
     /** @name Public codec functions.
      *  @{  */
+#if 0 /** @todo r=bird: why can I just disable these and not get compile errors?  Unfinished code?  No comments.  Not at all amused! */
     DECLR0CALLBACKMEMBER(void, pfnReset, (PHDACODEC pThis, PHDACODECR0 pThisCC));
     DECLR0CALLBACKMEMBER(int,  pfnNodeReset, (PHDACODEC pThis, uint8_t nID, PCODECNODE pNode));
+#endif
     DECLR0CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t uVerb, uint64_t *puResp));
     /** @} */
-
-#ifdef VBOX_WITH_STATISTICS
-    STAMCOUNTER StatLookupsR0;
-#endif
-
 } HDACODECR0;
 
 int hdaR0CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR0 pThisCC);
@@ -905,9 +887,6 @@ int hdaR0CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR0 pThisCC
  */
 typedef struct HDACODECR3
 {
-    CODECVERBR3             aVerbs[CODEC_VERBS_MAX];
-    size_t                  cVerbs;
-
     /** @name Public codec functions.
      *  @{  */
     DECLR3CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t uVerb, uint64_t *puResp));
@@ -964,12 +943,6 @@ typedef struct HDACODECR3
      */
     DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetVolume, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
     /** @} */
-
-#ifdef VBOX_WITH_STATISTICS
-    STAMCOUNTER StatLookupsR0;
-    STAMCOUNTER StatLookupsR3;
-#endif
-
 } HDACODECR3;
 
 int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg);
