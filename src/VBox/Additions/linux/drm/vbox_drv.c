@@ -376,6 +376,7 @@ static struct drm_driver driver = {
 
 static int __init vbox_init(void)
 {
+	printk("vboxvideo: loading version " VBOX_VERSION_STRING " r" __stringify(VBOX_SVN_REV) "\n");
 #if defined(CONFIG_VGA_CONSOLE) || RTLNX_VER_MIN(4,7,0)
 	if (vgacon_text_force() && vbox_modeset == -1)
 		return -EINVAL;
