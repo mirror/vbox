@@ -142,15 +142,14 @@ typedef struct PULSEAUDIOSTREAM
     pa_sample_spec         SampleSpec;
     /** Pulse playback and buffer metrics. */
     pa_buffer_attr         BufAttr;
-    /** Pointer to Pulse sample peeking buffer. */
-    const uint8_t         *pu8PeekBuf;
-    /** Current size (in bytes) of peeking data in
-     *  buffer. */
+    /** Input: Pointer to Pulse sample peek buffer. */
+    const uint8_t         *pbPeekBuf;
+    /** Input: Current size (in bytes) of peeked data in buffer. */
     size_t                 cbPeekBuf;
-    /** Our offset (in bytes) in peeking buffer. */
+    /** Input: Our offset (in bytes) in peek data buffer. */
     size_t                 offPeekBuf;
-    /** Asynchronous drain operation.  This is used as an indicator of whether
-     *  we're currently draining the stream (will be cleaned up before
+    /** Output: Asynchronous drain operation.  This is used as an indicator of
+     *  whether we're currently draining the stream (will be cleaned up before
      *  resume/re-enable). */
     pa_operation          *pDrainOp;
     /** Asynchronous cork/uncork operation.
@@ -161,12 +160,12 @@ typedef struct PULSEAUDIOSTREAM
      * (This solely for cancelling before destroying the stream, so the callback
      * won't do any after-freed accesses.) */
     pa_operation          *pTriggerOp;
-    /** Current latency (in us). */
+    /** Output: Current latency (in microsecs). */
     uint64_t               cUsLatency;
 #ifdef LOG_ENABLED
-    /** Start time stamp (in us) of stream playback / recording. */
+    /** Creation timestamp (in microsecs) of stream playback / recording. */
     pa_usec_t              tsStartUs;
-    /** Time stamp (in us) when last read from / written to the stream. */
+    /** Timestamp (in microsecs) when last read from / written to the stream. */
     pa_usec_t              tsLastReadWrittenUs;
 #endif
 #ifdef DEBUG
@@ -1037,7 +1036,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
 
     pStreamPA->pDrv                = pThis;
     pStreamPA->pDrainOp            = NULL;
-    pStreamPA->pu8PeekBuf          = NULL;
+    pStreamPA->pbPeekBuf          = NULL;
     pStreamPA->SampleSpec.rate     = PDMAudioPropsHz(&pCfgReq->Props);
     pStreamPA->SampleSpec.channels = PDMAudioPropsChannels(&pCfgReq->Props);
     pStreamPA->SampleSpec.format   = drvHostAudioPaPropsToPulse(&pCfgReq->Props);
@@ -1262,8 +1261,6 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDisable(PPDMIHOSTAUDIO pInterfac
      */
     if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
     {
-        /* Output - Ignore request if we've got a drain running, it will cork it
-                     when it completes. */
         if (pStreamPA->pDrainOp)
         {
             pa_operation_state_t const enmOpState = pa_operation_get_state(pStreamPA->pDrainOp);
@@ -1279,10 +1276,14 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDisable(PPDMIHOSTAUDIO pInterfac
     /*
      * For input stream we always cork it, but we clean up the peek buffer first.
      */
-    else if (pStreamPA->pu8PeekBuf) /** @todo Do we need to drop the peek buffer?*/
+    /** @todo r=bird: It is (probably) not technically be correct to drop the peek buffer
+     *        here when we're only pausing the stream (VM paused) as it means we'll
+     *        risk underruns when later resuming. */
+    else if (pStreamPA->pbPeekBuf) /** @todo Do we need to drop the peek buffer?*/
     {
+        pStreamPA->pbPeekBuf  = NULL;
+        pStreamPA->cbPeekBuf  = 0;
         pa_stream_drop(pStreamPA->pStream);
-        pStreamPA->pu8PeekBuf = NULL;
     }
 
     /*
@@ -1473,49 +1474,34 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamControl(PPDMIHOSTAUDIO pInterfac
 }
 
 
-static uint32_t drvHostAudioPaStreamGetAvailable(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA)
-{
-    pa_threaded_mainloop_lock(pThis->pMainLoop);
-
-    uint32_t cbAvail = 0;
-
-    if (PA_STREAM_IS_GOOD(pa_stream_get_state(pStreamPA->pStream)))
-    {
-        if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
-        {
-            cbAvail = (uint32_t)pa_stream_readable_size(pStreamPA->pStream);
-            Log3Func(("cbReadable=%RU32\n", cbAvail));
-        }
-        else if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
-        {
-            size_t cbWritable = pa_stream_writable_size(pStreamPA->pStream);
-
-            Log3Func(("cbWritable=%zu, maxLength=%RU32, minReq=%RU32\n",
-                      cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
-
-            /* Don't report more writable than the PA server can handle. */
-            if (cbWritable > pStreamPA->BufAttr.maxlength)
-                cbWritable = pStreamPA->BufAttr.maxlength;
-
-            cbAvail = (uint32_t)cbWritable;
-        }
-        else
-            AssertFailed();
-    }
-
-    pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-    return cbAvail;
-}
-
-
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
 static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    return drvHostAudioPaStreamGetAvailable(RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio),
-                                            (PPULSEAUDIOSTREAM)pStream);
+    PDRVHOSTPULSEAUDIO  pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    PPULSEAUDIOSTREAM   pStreamPA  = (PPULSEAUDIOSTREAM)pStream;
+    uint32_t            cbReadable = 0;
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
+        if (PA_STREAM_IS_GOOD(enmState))
+        {
+            size_t cbReadablePa = pa_stream_readable_size(pStreamPA->pStream);
+            if (cbReadablePa != (size_t)-1)
+                cbReadable = (uint32_t)cbReadablePa;
+            else
+                drvHostAudioPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
+        }
+        else
+            LogFunc(("non-good stream state: %d\n", enmState));
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    }
+    Log3Func(("returns %#x (%u)\n", cbReadable, cbReadable));
+    return cbReadable;
 }
 
 
@@ -1524,8 +1510,39 @@ static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetReadable(PPDMIHOSTAUDIO 
  */
 static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    return drvHostAudioPaStreamGetAvailable(RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio),
-                                            (PPULSEAUDIOSTREAM)pStream);
+    PDRVHOSTPULSEAUDIO  pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
+    PPULSEAUDIOSTREAM   pStreamPA  = (PPULSEAUDIOSTREAM)pStream;
+    uint32_t            cbWritable = 0;
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
+        if (PA_STREAM_IS_GOOD(enmState))
+        {
+            size_t cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
+            if (cbWritablePa != (size_t)-1)
+            {
+                /* Don't report more writable than the PA server can handle. */
+                if (cbWritablePa <= pStreamPA->BufAttr.maxlength)
+                    cbWritable = (uint32_t)cbWritablePa;
+                else
+                {
+                    Log3Func(("Clamping cbWritablePa=%#zx to maxLength=%#RX32\n", cbWritablePa, pStreamPA->BufAttr.maxlength));
+                    cbWritable = (uint32_t)pStreamPA->BufAttr.maxlength;
+                }
+            }
+            else
+                drvHostAudioPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
+        }
+        else
+            LogFunc(("non-good stream state: %d\n", enmState));
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    }
+    Log3Func(("returns %#x (%u) [max=%#RX32 min=%#RX32]\n",
+              cbWritable, cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
+    return cbWritable;
 }
 
 
@@ -1538,12 +1555,19 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAudioPaHA_StreamGetStatus(PPDMIHOS
     RT_NOREF(pStream);
 
     /* Check PulseAudio's general status. */
-    PDMAUDIOSTREAMSTS fStrmSts = PDMAUDIOSTREAMSTS_FLAGS_NONE;
-    if (   pThis->pContext
-        && PA_CONTEXT_IS_GOOD(pa_context_get_state(pThis->pContext)))
-       fStrmSts = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
-
-    return fStrmSts;
+    if (pThis->pContext)
+    {
+        pa_context_state_t const enmState = pa_context_get_state(pThis->pContext);
+        if (PA_CONTEXT_IS_GOOD(enmState))
+        {
+            /** @todo should we check the actual stream state? */
+            return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
+        }
+        LogFunc(("non-good context state: %d\n", enmState));
+    }
+    else
+        LogFunc(("No context!\n"));
+    return PDMAUDIOSTREAMSTS_FLAGS_NONE;
 }
 
 
@@ -1563,30 +1587,59 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
 #ifdef LOG_ENABLED
-    const pa_usec_t tsNowUs         = pa_rtclock_now();
-    const pa_usec_t tsDeltaPlayedUs = tsNowUs - pStreamPA->tsLastReadWrittenUs;
-    pStreamPA->tsLastReadWrittenUs  = tsNowUs;
-    Log3Func(("tsDeltaPlayedMs=%RU64\n", tsDeltaPlayedUs / RT_US_1MS));
+    const pa_usec_t tsNowUs = pa_rtclock_now();
+    Log3Func(("play delta: %RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
-    int          rc;
-    size_t const cbWriteable = pa_stream_writable_size(pStreamPA->pStream);
-    if (cbWriteable != (size_t)-1)
+    /*
+     * Using a loop here so we can take maxlength into account when writing.
+     */
+    int      rc             = VINF_SUCCESS;
+    uint32_t cbTotalWritten = 0;
+    uint32_t iLoop;
+    for (iLoop = 0; ; iLoop++)
     {
-        size_t cbLeft = RT_MIN(cbWriteable, cbBuf);
-        Assert(cbLeft > 0 /* At this point we better have *something* to write (DrvAudio checked before calling). */);
-        if (pa_stream_write(pStreamPA->pStream, pvBuf, cbLeft, NULL /*pfnFree*/, 0 /*offset*/, PA_SEEK_RELATIVE) >= 0)
+        size_t const cbWriteable = pa_stream_writable_size(pStreamPA->pStream);
+        if (   cbWriteable != (size_t)-1
+            && cbWriteable >= PDMAudioPropsFrameSize(&pStreamPA->Cfg.Props))
         {
-            *pcbWritten = (uint32_t)cbLeft;
-            rc = VINF_SUCCESS;
+            uint32_t cbToWrite = (uint32_t)RT_MIN(RT_MIN(cbWriteable, pStreamPA->BufAttr.maxlength), cbBuf);
+            cbToWrite = PDMAudioPropsFloorBytesToFrame(&pStreamPA->Cfg.Props, cbToWrite);
+            if (pa_stream_write(pStreamPA->pStream, pvBuf, cbToWrite, NULL /*pfnFree*/, 0 /*offset*/, PA_SEEK_RELATIVE) >= 0)
+            {
+                cbTotalWritten += cbToWrite;
+                cbBuf          -= cbToWrite;
+                if (!cbBuf)
+                    break;
+                pvBuf = (uint8_t const *)pvBuf + cbToWrite;
+                Log3Func(("%#x left to write\n", cbBuf));
+            }
+            else
+            {
+                rc = drvHostAudioPaError(pStreamPA->pDrv, "Failed to write to output stream");
+                break;
+            }
         }
         else
-            rc = drvHostAudioPaError(pStreamPA->pDrv, "Failed to write to output stream");
+        {
+            if (cbWriteable == (size_t)-1)
+                rc = drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
+            break;
+        }
     }
-    else
-        rc = drvHostAudioPaError(pStreamPA->pDrv, "Failed to determine output data size");
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
+
+    *pcbWritten = cbTotalWritten;
+    if (RT_SUCCESS(rc) || cbTotalWritten == 0)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Supressing %Rrc because we wrote %#x bytes\n", rc, cbTotalWritten));
+        rc = VINF_SUCCESS;
+    }
+    Log3Func(("returns %Rrc *pcbWritten=%#x iLoop=%u\n", rc, cbTotalWritten, iLoop));
     return rc;
 }
 
@@ -1604,99 +1657,142 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
 
-    /* We should only call pa_stream_readable_size() once and trust the first value. */
-    pa_threaded_mainloop_lock(pThis->pMainLoop);
-    size_t cbAvail = pa_stream_readable_size(pStreamPA->pStream);
-    pa_threaded_mainloop_unlock(pThis->pMainLoop);
+#ifdef LOG_ENABLED
+    const pa_usec_t tsNowUs = pa_rtclock_now();
+    Log3Func(("capture delta: %RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    pStreamPA->tsLastReadWrittenUs = tsNowUs;
+#endif
 
-    if (cbAvail == (size_t)-1)
-        return drvHostAudioPaError(pStreamPA->pDrv, "Failed to determine input data size");
-
-    /* If the buffer was not dropped last call, add what remains. */
-    if (pStreamPA->pu8PeekBuf)
+    /*
+     * If we have left over peek buffer space from the last call,
+     * copy out the data from there.
+     */
+    uint32_t cbTotalRead = 0;
+    if (   pStreamPA->pbPeekBuf
+        && pStreamPA->offPeekBuf < pStreamPA->cbPeekBuf)
     {
-        Assert(pStreamPA->cbPeekBuf >= pStreamPA->offPeekBuf);
-        cbAvail += (pStreamPA->cbPeekBuf - pStreamPA->offPeekBuf);
-    }
-
-    Log3Func(("cbAvail=%zu\n", cbAvail));
-
-    if (!cbAvail) /* No data? Bail out. */
-    {
-        *pcbRead = 0;
-        return VINF_SUCCESS;
-    }
-
-    int rc = VINF_SUCCESS;
-
-    size_t cbToRead = RT_MIN(cbAvail, cbBuf);
-
-    Log3Func(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
-              cbToRead, cbAvail, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
-
-    uint32_t cbReadTotal = 0;
-
-    while (cbToRead)
-    {
-        /* If there is no data, do another peek. */
-        if (!pStreamPA->pu8PeekBuf)
+        uint32_t cbToCopy = pStreamPA->cbPeekBuf - pStreamPA->offPeekBuf;
+        if (cbToCopy >= cbBuf)
         {
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            pa_stream_peek(pStreamPA->pStream,
-                           (const void**)&pStreamPA->pu8PeekBuf, &pStreamPA->cbPeekBuf);
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-            pStreamPA->offPeekBuf = 0;
-
-            /* No data anymore?
-             * Note: If there's a data hole (cbPeekBuf then contains the length of the hole)
-             *       we need to drop the stream lateron. */
-            if (   !pStreamPA->pu8PeekBuf
-                && !pStreamPA->cbPeekBuf)
+            memcpy(pvBuf, &pStreamPA->pbPeekBuf[pStreamPA->offPeekBuf], cbBuf);
+            pStreamPA->offPeekBuf += cbBuf;
+            *pcbRead               = cbBuf;
+            if (cbToCopy == cbBuf)
             {
+                pa_threaded_mainloop_lock(pThis->pMainLoop);
+                pStreamPA->pbPeekBuf  = NULL;
+                pStreamPA->cbPeekBuf  = 0;
+                pa_stream_drop(pStreamPA->pStream);
+                pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            }
+            Log3Func(("returns *pcbRead=%#x from prev peek buf (%#x/%#x)\n", cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
+            return VINF_SUCCESS;
+        }
+
+        memcpy(pvBuf, &pStreamPA->pbPeekBuf[pStreamPA->offPeekBuf], cbToCopy);
+        cbBuf       -= cbToCopy;
+        pvBuf        = (uint8_t *)pvBuf + cbToCopy;
+        cbTotalRead += cbToCopy;
+        pStreamPA->offPeekBuf = pStreamPA->cbPeekBuf;
+    }
+
+    /*
+     * Copy out what we can.
+     */
+    int rc = VINF_SUCCESS;
+    pa_threaded_mainloop_lock(pThis->pMainLoop);
+    while (cbBuf > 0)
+    {
+        /*
+         * Drop the old peek buffer first, if we have one.
+         */
+        if (pStreamPA->pbPeekBuf)
+        {
+            Assert(pStreamPA->offPeekBuf >= pStreamPA->cbPeekBuf);
+            pStreamPA->pbPeekBuf  = NULL;
+            pStreamPA->cbPeekBuf  = 0;
+            pa_stream_drop(pStreamPA->pStream);
+        }
+
+        /*
+         * Check if there is anything to read, the get the peek buffer for it.
+         */
+        size_t cbAvail = pa_stream_readable_size(pStreamPA->pStream);
+        if (cbAvail > 0 && cbAvail != (size_t)-1)
+        {
+            pStreamPA->pbPeekBuf  = NULL;
+            pStreamPA->cbPeekBuf  = 0;
+            int rcPa = pa_stream_peek(pStreamPA->pStream, (const void **)&pStreamPA->pbPeekBuf, &pStreamPA->cbPeekBuf);
+            if (rcPa == 0)
+            {
+                if (pStreamPA->cbPeekBuf)
+                {
+                    if (pStreamPA->pbPeekBuf)
+                    {
+                        /*
+                         * We got data back. Copy it into the return buffer, return if it's full.
+                         */
+                        if (cbBuf < pStreamPA->cbPeekBuf)
+                        {
+                            memcpy(pvBuf, pStreamPA->pbPeekBuf, cbBuf);
+                            cbTotalRead          += cbBuf;
+                            pStreamPA->offPeekBuf = cbBuf;
+                            cbBuf = 0;
+                            break;
+                        }
+                        memcpy(pvBuf, pStreamPA->pbPeekBuf, pStreamPA->cbPeekBuf);
+                        cbBuf       -= pStreamPA->cbPeekBuf;
+                        pvBuf        = (uint8_t *)pvBuf + pStreamPA->cbPeekBuf;
+                        cbTotalRead += pStreamPA->cbPeekBuf;
+
+                        pStreamPA->pbPeekBuf = NULL;
+                    }
+                    else
+                    {
+                        /*
+                         * We got a hole (drop needed). We will skip it as we leave it to
+                         * the device's DMA engine to fill in buffer gaps with silence.
+                         */
+                        LogFunc(("pa_stream_peek returned a %#zx (%zu) byte hole - skipping.\n",
+                                 pStreamPA->cbPeekBuf, pStreamPA->cbPeekBuf));
+                    }
+                    pStreamPA->cbPeekBuf = 0;
+                    pa_stream_drop(pStreamPA->pStream);
+                }
+                else
+                {
+                    Assert(!pStreamPA->pbPeekBuf);
+                    LogFunc(("pa_stream_peek returned empty buffer\n"));
+                    break;
+                }
+            }
+            else
+            {
+                rc = drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_peek failed on '%s' (%d)", pStreamPA->Cfg.szName, rcPa);
+                pStreamPA->pbPeekBuf  = NULL;
+                pStreamPA->cbPeekBuf  = 0;
                 break;
             }
         }
-
-        Assert(pStreamPA->cbPeekBuf >= pStreamPA->offPeekBuf);
-        size_t cbToWrite = RT_MIN(pStreamPA->cbPeekBuf - pStreamPA->offPeekBuf, cbToRead);
-
-        Log3Func(("cbToRead=%zu, cbToWrite=%zu, offPeekBuf=%zu, cbPeekBuf=%zu, pu8PeekBuf=%p\n",
-                  cbToRead, cbToWrite,
-                  pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf, pStreamPA->pu8PeekBuf));
-
-        if (   cbToWrite
-            /* Only copy data if it's not a data hole (see above). */
-            && pStreamPA->pu8PeekBuf
-            && pStreamPA->cbPeekBuf)
+        else
         {
-            memcpy((uint8_t *)pvBuf + cbReadTotal, pStreamPA->pu8PeekBuf + pStreamPA->offPeekBuf, cbToWrite);
-
-            Assert(cbToRead >= cbToWrite);
-            cbToRead          -= cbToWrite;
-            cbReadTotal       += cbToWrite;
-
-            pStreamPA->offPeekBuf += cbToWrite;
-            Assert(pStreamPA->offPeekBuf <= pStreamPA->cbPeekBuf);
-        }
-
-        if (/* Nothing to write anymore? Drop the buffer. */
-               !cbToWrite
-            /* Was there a hole in the peeking buffer? Drop it. */
-            || !pStreamPA->pu8PeekBuf
-            /* If the buffer is done, drop it. */
-            || pStreamPA->offPeekBuf == pStreamPA->cbPeekBuf)
-        {
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            pa_stream_drop(pStreamPA->pStream);
-            pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-            pStreamPA->pu8PeekBuf = NULL;
+            if (cbAvail != (size_t)-1)
+                rc = drvHostAudioPaError(pStreamPA->pDrv, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
+            break;
         }
     }
+    pa_threaded_mainloop_unlock(pThis->pMainLoop);
 
-    if (RT_SUCCESS(rc))
-        *pcbRead = cbReadTotal;
+    *pcbRead = cbTotalRead;
+    if (RT_SUCCESS(rc) || cbTotalRead == 0)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Supressing %Rrc because we're returning %#x bytes\n", rc, cbTotalRead));
+        rc = VINF_SUCCESS;
+    }
+    Log3Func(("returns %Rrc *pcbRead=%#x (%#x left, peek %#x/%#x)\n",
+              rc, cbTotalRead, cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
     return rc;
 }
 
