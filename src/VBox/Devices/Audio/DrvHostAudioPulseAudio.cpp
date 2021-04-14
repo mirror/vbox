@@ -1522,16 +1522,7 @@ static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetWritable(PPDMIHOSTAUDIO 
         {
             size_t cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
             if (cbWritablePa != (size_t)-1)
-            {
-                /* Don't report more writable than the PA server can handle. */
-                if (cbWritablePa <= pStreamPA->BufAttr.maxlength)
-                    cbWritable = (uint32_t)cbWritablePa;
-                else
-                {
-                    Log3Func(("Clamping cbWritablePa=%#zx to maxLength=%#RX32\n", cbWritablePa, pStreamPA->BufAttr.maxlength));
-                    cbWritable = (uint32_t)pStreamPA->BufAttr.maxlength;
-                }
-            }
+                cbWritable = cbWritablePa <= UINT32_MAX ? (uint32_t)cbWritablePa : UINT32_MAX;
             else
                 drvHostAudioPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
@@ -1588,7 +1579,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("play delta: %RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    Log3Func(("play delta: %'RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
@@ -1659,7 +1650,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("capture delta: %RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    Log3Func(("capture delta: %'RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
