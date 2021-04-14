@@ -150,7 +150,8 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    for (uint8_t i = 1; i < pThis->cTotalNodes; i++)
+    uint8_t const cTotalNodes = RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    for (uint8_t i = 1; i < cTotalNodes; i++)
     {
         PCODECNODE pNode = &pThis->aNodes[i];
         AMPLIFIER *pAmp = &pNode->dac.B_params;
@@ -753,7 +754,8 @@ static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
 
     pThis->fInReset = true;
 
-    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    for (uint8_t i = 0; i < cTotalNodes; i++)
         stac9220NodeReset(pThis, i, &pThis->aNodes[i]);
 
     pThis->fInReset = false;
@@ -791,8 +793,8 @@ static int stac9220Construct(PHDACODEC pThis)
     STAC9220WIDGET(Reserved);
 #undef STAC9220WIDGET
 
+    AssertCompile(STAC9221_NUM_NODES <= RT_ELEMENTS(pThis->aNodes));
     pThis->cTotalNodes = STAC9221_NUM_NODES;
-    Assert(pThis->cTotalNodes <= CODEC_NODES_MAX);
 
     pThis->u8AdcVolsLineIn = STAC9220_NID_AMP_ADC0;
     pThis->u8DacLineOut    = STAC9220_NID_DAC1;
@@ -804,7 +806,7 @@ static int stac9220Construct(PHDACODEC pThis)
      * Note: Do *not* call stac9220Reset() here, as this would not
      *       initialize the node default configuration values then!
      */
-    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+    for (uint8_t i = 0; i < STAC9221_NUM_NODES; i++)
         stac9220NodeReset(pThis, i, &pThis->aNodes[i]);
 
     /* Common root node initializers. */
@@ -812,7 +814,7 @@ static int stac9220Construct(PHDACODEC pThis)
     pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
 
     /* Common AFG node initializers. */
-    pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x4] = CODEC_MAKE_F00_04(0x2, pThis->cTotalNodes - 2);
+    pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x4] = CODEC_MAKE_F00_04(0x2, STAC9221_NUM_NODES - 2);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
     pThis->aNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
@@ -1298,10 +1300,12 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, u
 {
     RT_NOREF(pThisCC);
     Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_NID(cmd) < cTotalNodes);
+    if (CODEC_NID(cmd) >= cTotalNodes)
     {
         LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+        *pResp = 0;
         return VINF_SUCCESS;
     }
     if (CODEC_NID(cmd) == STAC9220_NID_AFG)
@@ -1314,8 +1318,9 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, u
 static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_NID(cmd) < cTotalNodes);
+    if (CODEC_NID(cmd) >= cTotalNodes)
     {
         LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -1519,9 +1524,11 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 {
     RT_NOREF(pThisCC);
     Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_NID(cmd) < cTotalNodes);
+    if (CODEC_NID(cmd) >= cTotalNodes)
     {
+        *pResp = 0;
         LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
@@ -2043,59 +2050,58 @@ static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThis
 /**
  * HDA codec verb descriptors.
  *
- * @todo Any reason not to use binary search here?
- *      bird: because you'd need to sort the entries first...
+ * @note This must be ordered by uVerb so we can do a binary lookup.
  */
 static const CODECVERB g_aCodecVerbs[] =
 {
     /* Verb        Verb mask            Callback                                   Name
        ---------- --------------------- ------------------------------------------------------------------- */
-    { 0x000F0000, CODEC_VERB_8BIT_CMD , vrbProcGetParameter                      , "GetParameter          " },
-    { 0x000F0100, CODEC_VERB_8BIT_CMD , vrbProcGetConSelectCtrl                  , "GetConSelectCtrl      " },
+    { 0x00020000, CODEC_VERB_16BIT_CMD, vrbProcSetConverterFormat                , "SetConverterFormat    " },
+    { 0x00030000, CODEC_VERB_16BIT_CMD, CTX_EXPR(vrbProcR3SetAmplifier,NULL,NULL), "SetAmplifier          " },
     { 0x00070100, CODEC_VERB_8BIT_CMD , vrbProcSetConSelectCtrl                  , "SetConSelectCtrl      " },
-    { 0x000F0600, CODEC_VERB_8BIT_CMD , vrbProcGetStreamId                       , "GetStreamId           " },
-    { 0x00070600, CODEC_VERB_8BIT_CMD , CTX_EXPR(vrbProcR3SetStreamId,NULL,NULL) , "SetStreamId           " },
-    { 0x000F0700, CODEC_VERB_8BIT_CMD , vrbProcGetPinCtrl                        , "GetPinCtrl            " },
-    { 0x00070700, CODEC_VERB_8BIT_CMD , vrbProcSetPinCtrl                        , "SetPinCtrl            " },
-    { 0x000F0800, CODEC_VERB_8BIT_CMD , vrbProcGetUnsolicitedEnabled             , "GetUnsolicitedEnabled " },
-    { 0x00070800, CODEC_VERB_8BIT_CMD , vrbProcSetUnsolicitedEnabled             , "SetUnsolicitedEnabled " },
-    { 0x000F0900, CODEC_VERB_8BIT_CMD , vrbProcGetPinSense                       , "GetPinSense           " },
-    { 0x00070900, CODEC_VERB_8BIT_CMD , vrbProcSetPinSense                       , "SetPinSense           " },
-    { 0x000F0200, CODEC_VERB_8BIT_CMD , vrbProcGetConnectionListEntry            , "GetConnectionListEntry" },
-    { 0x000F0300, CODEC_VERB_8BIT_CMD , vrbProcGetProcessingState                , "GetProcessingState    " },
     { 0x00070300, CODEC_VERB_8BIT_CMD , vrbProcSetProcessingState                , "SetProcessingState    " },
-    { 0x000F0D00, CODEC_VERB_8BIT_CMD , vrbProcGetDigitalConverter               , "GetDigitalConverter   " },
+    { 0x00070400, CODEC_VERB_8BIT_CMD , vrbProcSetSDISelect                      , "SetSDISelect          " },
+    { 0x00070500, CODEC_VERB_8BIT_CMD , vrbProcSetPowerState                     , "SetPowerState         " },
+    { 0x00070600, CODEC_VERB_8BIT_CMD , CTX_EXPR(vrbProcR3SetStreamId,NULL,NULL) , "SetStreamId           " },
+    { 0x00070700, CODEC_VERB_8BIT_CMD , vrbProcSetPinCtrl                        , "SetPinCtrl            " },
+    { 0x00070800, CODEC_VERB_8BIT_CMD , vrbProcSetUnsolicitedEnabled             , "SetUnsolicitedEnabled " },
+    { 0x00070900, CODEC_VERB_8BIT_CMD , vrbProcSetPinSense                       , "SetPinSense           " },
+    { 0x00070C00, CODEC_VERB_8BIT_CMD , vrbProcSetEAPD_BTLEnabled                , "SetEAPD_BTLEnabled    " },
     { 0x00070D00, CODEC_VERB_8BIT_CMD , vrbProcSetDigitalConverter1              , "SetDigitalConverter1  " },
     { 0x00070E00, CODEC_VERB_8BIT_CMD , vrbProcSetDigitalConverter2              , "SetDigitalConverter2  " },
-    { 0x000F2000, CODEC_VERB_8BIT_CMD , vrbProcGetSubId                          , "GetSubId              " },
+    { 0x00070F00, CODEC_VERB_8BIT_CMD , vrbProcSetVolumeKnobCtrl                 , "SetVolumeKnobCtrl     " },
+    { 0x00071500, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOData                       , "SetGPIOData           " },
+    { 0x00071600, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOEnableMask                 , "SetGPIOEnableMask     " },
+    { 0x00071700, CODEC_VERB_8BIT_CMD , vrbProcSetGPIODirection                  , "SetGPIODirection      " },
+    { 0x00071C00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig0                        , "SetConfig0            " },
+    { 0x00071D00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig1                        , "SetConfig1            " },
+    { 0x00071E00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig2                        , "SetConfig2            " },
+    { 0x00071F00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig3                        , "SetConfig3            " },
     { 0x00072000, CODEC_VERB_8BIT_CMD , vrbProcSetSubId0                         , "SetSubId0             " },
     { 0x00072100, CODEC_VERB_8BIT_CMD , vrbProcSetSubId1                         , "SetSubId1             " },
     { 0x00072200, CODEC_VERB_8BIT_CMD , vrbProcSetSubId2                         , "SetSubId2             " },
     { 0x00072300, CODEC_VERB_8BIT_CMD , vrbProcSetSubId3                         , "SetSubId3             " },
     { 0x0007FF00, CODEC_VERB_8BIT_CMD , vrbProcReset                             , "Reset                 " },
-    { 0x000F0500, CODEC_VERB_8BIT_CMD , vrbProcGetPowerState                     , "GetPowerState         " },
-    { 0x00070500, CODEC_VERB_8BIT_CMD , vrbProcSetPowerState                     , "SetPowerState         " },
-    { 0x000F0C00, CODEC_VERB_8BIT_CMD , vrbProcGetEAPD_BTLEnabled                , "GetEAPD_BTLEnabled    " },
-    { 0x00070C00, CODEC_VERB_8BIT_CMD , vrbProcSetEAPD_BTLEnabled                , "SetEAPD_BTLEnabled    " },
-    { 0x000F0F00, CODEC_VERB_8BIT_CMD , vrbProcGetVolumeKnobCtrl                 , "GetVolumeKnobCtrl     " },
-    { 0x00070F00, CODEC_VERB_8BIT_CMD , vrbProcSetVolumeKnobCtrl                 , "SetVolumeKnobCtrl     " },
-    { 0x000F1500, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOData                       , "GetGPIOData           " },
-    { 0x00071500, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOData                       , "SetGPIOData           " },
-    { 0x000F1600, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOEnableMask                 , "GetGPIOEnableMask     " },
-    { 0x00071600, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOEnableMask                 , "SetGPIOEnableMask     " },
-    { 0x000F1700, CODEC_VERB_8BIT_CMD , vrbProcGetGPIODirection                  , "GetGPIODirection      " },
-    { 0x00071700, CODEC_VERB_8BIT_CMD , vrbProcSetGPIODirection                  , "SetGPIODirection      " },
-    { 0x000F1C00, CODEC_VERB_8BIT_CMD , vrbProcGetConfig                         , "GetConfig             " },
-    { 0x00071C00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig0                        , "SetConfig0            " },
-    { 0x00071D00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig1                        , "SetConfig1            " },
-    { 0x00071E00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig2                        , "SetConfig2            " },
-    { 0x00071F00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig3                        , "SetConfig3            " },
     { 0x000A0000, CODEC_VERB_16BIT_CMD, vrbProcGetConverterFormat                , "GetConverterFormat    " },
-    { 0x00020000, CODEC_VERB_16BIT_CMD, vrbProcSetConverterFormat                , "SetConverterFormat    " },
     { 0x000B0000, CODEC_VERB_16BIT_CMD, vrbProcGetAmplifier                      , "GetAmplifier          " },
-    { 0x00030000, CODEC_VERB_16BIT_CMD, CTX_EXPR(vrbProcR3SetAmplifier,NULL,NULL), "SetAmplifier          " },
+    { 0x000F0000, CODEC_VERB_8BIT_CMD , vrbProcGetParameter                      , "GetParameter          " },
+    { 0x000F0100, CODEC_VERB_8BIT_CMD , vrbProcGetConSelectCtrl                  , "GetConSelectCtrl      " },
+    { 0x000F0200, CODEC_VERB_8BIT_CMD , vrbProcGetConnectionListEntry            , "GetConnectionListEntry" },
+    { 0x000F0300, CODEC_VERB_8BIT_CMD , vrbProcGetProcessingState                , "GetProcessingState    " },
     { 0x000F0400, CODEC_VERB_8BIT_CMD , vrbProcGetSDISelect                      , "GetSDISelect          " },
-    { 0x00070400, CODEC_VERB_8BIT_CMD , vrbProcSetSDISelect                      , "SetSDISelect          " },
+    { 0x000F0500, CODEC_VERB_8BIT_CMD , vrbProcGetPowerState                     , "GetPowerState         " },
+    { 0x000F0600, CODEC_VERB_8BIT_CMD , vrbProcGetStreamId                       , "GetStreamId           " },
+    { 0x000F0700, CODEC_VERB_8BIT_CMD , vrbProcGetPinCtrl                        , "GetPinCtrl            " },
+    { 0x000F0800, CODEC_VERB_8BIT_CMD , vrbProcGetUnsolicitedEnabled             , "GetUnsolicitedEnabled " },
+    { 0x000F0900, CODEC_VERB_8BIT_CMD , vrbProcGetPinSense                       , "GetPinSense           " },
+    { 0x000F0C00, CODEC_VERB_8BIT_CMD , vrbProcGetEAPD_BTLEnabled                , "GetEAPD_BTLEnabled    " },
+    { 0x000F0D00, CODEC_VERB_8BIT_CMD , vrbProcGetDigitalConverter               , "GetDigitalConverter   " },
+    { 0x000F0F00, CODEC_VERB_8BIT_CMD , vrbProcGetVolumeKnobCtrl                 , "GetVolumeKnobCtrl     " },
+    { 0x000F1500, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOData                       , "GetGPIOData           " },
+    { 0x000F1600, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOEnableMask                 , "GetGPIOEnableMask     " },
+    { 0x000F1700, CODEC_VERB_8BIT_CMD , vrbProcGetGPIODirection                  , "GetGPIODirection      " },
+    { 0x000F1C00, CODEC_VERB_8BIT_CMD , vrbProcGetConfig                         , "GetConfig             " },
+    { 0x000F2000, CODEC_VERB_8BIT_CMD , vrbProcGetSubId                          , "GetSubId              " },
     /** @todo Implement 0x7e7: IDT Set GPIO (STAC922x only). */
 };
 
@@ -2354,38 +2360,69 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint3
     AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
                     ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(   CODEC_VERBDATA(uCmd) != 0
-                    && CODEC_NID(uCmd) < pThis->cTotalNodes,
-                    ("[NID0x%02x] Unknown / invalid node or data (0x%x)\n", CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)),
+    uint32_t const uCmdData = CODEC_VERBDATA(uCmd);
+    AssertMsgReturn(   uCmdData != 0
+                    && CODEC_NID(uCmd) < RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes)),
+                    ("[NID0x%02x] Unknown / invalid node or data (0x%x)\n", CODEC_NID(uCmd), uCmdData),
                     VERR_INVALID_PARAMETER);
     STAM_COUNTER_INC(&pThis->CTX_SUFF(StatLookups));
 
     /*
-     * Lookup the verb.
+     * Do a binary lookup of the verb.
      * Note! if we want other verb tables, add a table selector before the loop.
      */
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCodecVerbs); i++)
+    size_t iFirst = 0;
+    size_t iEnd   = RT_ELEMENTS(g_aCodecVerbs);
+    for (;;)
     {
-        if ((CODEC_VERBDATA(uCmd) & g_aCodecVerbs[i].fMask) == g_aCodecVerbs[i].uVerb)
+        size_t const   iCur  = iFirst + (iEnd - iFirst) / 2;
+        uint32_t const uVerb = g_aCodecVerbs[iCur].uVerb;
+        if (uCmdData < uVerb)
         {
+            if (iCur > iFirst)
+                iEnd = iCur;
+            else
+                break;
+        }
+        else if ((uCmdData & g_aCodecVerbs[iCur].fMask) != uVerb)
+        {
+            if (iCur + 1 < iEnd)
+                iFirst = iCur + 1;
+            else
+                break;
+        }
+        else
+        {
+            /*
+             * Found it!  Run the callback and return.
+             */
 #ifndef IN_RING3
-            if (!g_aCodecVerbs[i].pfn)
+            if (!g_aCodecVerbs[iCur].pfn)
             {
                 Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> VERR_INVALID_CONTEXT\n", /* -> ring-3 */
-                          CODEC_NID(uCmd), g_aCodecVerbs[i].uVerb, g_aCodecVerbs[i].pszName, CODEC_VERB_PAYLOAD8(uCmd)));
+                          CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd)));
                 return VERR_INVALID_CONTEXT;
             }
 #endif
-            AssertPtrReturn(g_aCodecVerbs[i].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
+            AssertPtrReturn(g_aCodecVerbs[iCur].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
 
-            int rc = g_aCodecVerbs[i].pfn(pThis, pThisCC, uCmd, puResp);
+            int rc = g_aCodecVerbs[iCur].pfn(pThis, pThisCC, uCmd, puResp);
             AssertRC(rc);
             Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> 0x%x\n",
-                      CODEC_NID(uCmd), g_aCodecVerbs[i].uVerb, g_aCodecVerbs[i].pszName, CODEC_VERB_PAYLOAD8(uCmd), *puResp));
+                      CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd), *puResp));
             return rc;
         }
     }
 
+#ifdef VBOX_STRICT
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCodecVerbs); i++)
+    {
+        AssertMsg(i == 0 || g_aCodecVerbs[i - 1].uVerb < g_aCodecVerbs[i].uVerb,
+                  ("i=%#x uVerb[-1]=%#x uVerb=%#x - buggy table!\n", i, g_aCodecVerbs[i - 1].uVerb, g_aCodecVerbs[i].uVerb));
+        AssertMsg((uCmdData & g_aCodecVerbs[i].fMask) != g_aCodecVerbs[i].uVerb,
+                  ("i=%#x uVerb=%#x uCmd=%#x - buggy binary search or table!\n", i, g_aCodecVerbs[i].uVerb, uCmd));
+    }
+#endif
     LogFunc(("[NID0x%02x] Callback for %x not found\n", CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)));
     return VERR_NOT_FOUND;
 }
