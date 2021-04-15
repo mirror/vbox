@@ -210,16 +210,16 @@ public:
 
 public slots:
 
-    void sltHandleFindInPageAction(bool fToggled);
+    void sltFindInPageAction(bool fToggled);
 
 private slots:
 
-    void sltHandleHomeAction();
-    void sltHandleForwardAction();
-    void sltHandleBackwardAction();
-    void sltHandleHistoryChanged();
-    void sltHandleAddressBarIndexChanged(int index);
-    void sltHandleAddBookmarkAction();
+    void sltHomeAction();
+    void sltForwardAction();
+    void sltBackwardAction();
+    void sltHistoryChanged();
+    void sltAddressBarIndexChanged(int index);
+    void sltAddBookmarkAction();
     void sltAnchorClicked(const QUrl &link);
     void sltFindInPageWidgetVisibilityChanged(bool  fVisible);
 
@@ -293,19 +293,19 @@ public:
 
 public slots:
 
-    void sltHandleCloseCurrentTab();
-    void sltHandleCloseOtherTabs();
-    void sltHandleZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
+    void sltCloseCurrentTab();
+    void sltCloseOtherTabs();
+    void sltZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
 
 private slots:
 
-    void sltHandletabTitleChange(const QString &strTitle);
-    void sltHandleOpenLinkInNewTab(const QUrl &url, bool fBackground);
-    void sltHandleTabClose(int iTabIndex);
-    void sltHandleContextMenuTabClose();
-    void sltHandleCurrentChanged(int iTabIndex);
+    void slttabTitleChange(const QString &strTitle);
+    void sltOpenLinkInNewTab(const QUrl &url, bool fBackground);
+    void sltTabClose(int iTabIndex);
+    void sltContextMenuTabClose();
+    void sltCurrentChanged(int iTabIndex);
     void sltShowTabBarContextMenu(const QPoint &pos);
-    void sltHandleCloseOtherTabsContextMenuAction();
+    void sltCloseOtherTabsContextMenuAction();
     void sltCopyAvailableChanged(bool fAvailable);
 
 private:
@@ -661,19 +661,19 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
     connect(m_pContentViewer, &UIHelpViewer::sourceChanged,
         this, &UIHelpBrowserTab::sigSourceChanged);
     connect(m_pContentViewer, &UIHelpViewer::historyChanged,
-        this, &UIHelpBrowserTab::sltHandleHistoryChanged);
+        this, &UIHelpBrowserTab::sltHistoryChanged);
     connect(m_pContentViewer, &UIHelpViewer::anchorClicked,
         this, &UIHelpBrowserTab::sltAnchorClicked);
     connect(m_pContentViewer, &UIHelpViewer::sigOpenLinkInNewTab,
         this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
     connect(m_pContentViewer, &UIHelpViewer::sigGoBackward,
-            this, &UIHelpBrowserTab::sltHandleBackwardAction);
+            this, &UIHelpBrowserTab::sltBackwardAction);
     connect(m_pContentViewer, &UIHelpViewer::sigGoForward,
-            this, &UIHelpBrowserTab::sltHandleForwardAction);
+            this, &UIHelpBrowserTab::sltForwardAction);
     connect(m_pContentViewer, &UIHelpViewer::sigGoHome,
-            this, &UIHelpBrowserTab::sltHandleHomeAction);
+            this, &UIHelpBrowserTab::sltHomeAction);
     connect(m_pContentViewer, &UIHelpViewer::sigAddBookmark,
-            this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
+            this, &UIHelpBrowserTab::sltAddBookmarkAction);
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
     connect(m_pContentViewer, &UIHelpViewer::sigZoomPercentageChanged,
@@ -705,11 +705,11 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pFindInPageAction->setCheckable(true);
     m_pFindInPageAction->setShortcut(QKeySequence::Find);
 
-    connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleHomeAction);
-    connect(m_pAddBookmarkAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
-    connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleForwardAction);
-    connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleBackwardAction);
-    connect(m_pFindInPageAction, &QAction::toggled, this, &UIHelpBrowserTab::sltHandleFindInPageAction);
+    connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHomeAction);
+    connect(m_pAddBookmarkAction, &QAction::triggered, this, &UIHelpBrowserTab::sltAddBookmarkAction);
+    connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltForwardAction);
+    connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltBackwardAction);
+    connect(m_pFindInPageAction, &QAction::toggled, this, &UIHelpBrowserTab::sltFindInPageAction);
 
     m_pForwardAction->setEnabled(false);
     m_pBackwardAction->setEnabled(false);
@@ -725,7 +725,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pAddressBar = new QComboBox();
     m_pAddressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     connect(m_pAddressBar, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIHelpBrowserTab::sltHandleAddressBarIndexChanged);
+            this, &UIHelpBrowserTab::sltAddressBarIndexChanged);
 
 
     QHBoxLayout *pTopLayout = new QHBoxLayout;
@@ -751,32 +751,32 @@ void UIHelpBrowserTab::retranslateUi()
     setActionTextAndToolTip(m_pFindInPageAction, tr("Find in Page"), tr("Find a String in the Current Page"));
 }
 
-void UIHelpBrowserTab::sltHandleHomeAction()
+void UIHelpBrowserTab::sltHomeAction()
 {
     if (!m_pContentViewer)
         return;
     m_pContentViewer->setSource(m_homeUrl);
 }
 
-void UIHelpBrowserTab::sltHandleForwardAction()
+void UIHelpBrowserTab::sltForwardAction()
 {
     if (m_pContentViewer)
         m_pContentViewer->forward();
 }
 
-void UIHelpBrowserTab::sltHandleBackwardAction()
+void UIHelpBrowserTab::sltBackwardAction()
 {
     if (m_pContentViewer)
         m_pContentViewer->backward();
 }
 
-void UIHelpBrowserTab::sltHandleFindInPageAction(bool fToggled)
+void UIHelpBrowserTab::sltFindInPageAction(bool fToggled)
 {
     if (m_pContentViewer)
         m_pContentViewer->toggleFindInPageWidget(fToggled);
 }
 
-void UIHelpBrowserTab::sltHandleHistoryChanged()
+void UIHelpBrowserTab::sltHistoryChanged()
 {
     if (!m_pContentViewer)
         return;
@@ -805,7 +805,7 @@ void UIHelpBrowserTab::sltHandleHistoryChanged()
     emit sigTitleUpdate(m_pContentViewer->historyTitle(0));
 }
 
-void UIHelpBrowserTab::sltHandleAddressBarIndexChanged(int iIndex)
+void UIHelpBrowserTab::sltAddressBarIndexChanged(int iIndex)
 {
     if (!m_pAddressBar && iIndex >= m_pAddressBar->count())
         return;
@@ -821,7 +821,7 @@ void UIHelpBrowserTab::sltHandleAddressBarIndexChanged(int iIndex)
             m_pContentViewer->backward();
 }
 
-void UIHelpBrowserTab::sltHandleAddBookmarkAction()
+void UIHelpBrowserTab::sltAddBookmarkAction()
 {
     emit sigAddBookmark(source(), documentTitle());
 }
@@ -877,9 +877,9 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
     connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
             this, &UIHelpBrowserTabManager::sigSourceChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigTitleUpdate,
-            this, &UIHelpBrowserTabManager::sltHandletabTitleChange);
+            this, &UIHelpBrowserTabManager::slttabTitleChange);
     connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
-            this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
+            this, &UIHelpBrowserTabManager::sltOpenLinkInNewTab);
     connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
             this, &UIHelpBrowserTabManager::sigAddBookmark);
     connect(pTabWidget, &UIHelpBrowserTab::sigZoomPercentageChanged,
@@ -1081,10 +1081,10 @@ void UIHelpBrowserTabManager::toggleFindInPage(bool fTrigger)
 {
     UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
     if (pTab)
-        pTab->sltHandleFindInPageAction(fTrigger);
+        pTab->sltFindInPageAction(fTrigger);
 }
 
-void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
+void UIHelpBrowserTabManager::slttabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
     {
@@ -1098,7 +1098,7 @@ void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
     updateTabUrlTitleList();
 }
 
-void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url, bool fBackground)
+void UIHelpBrowserTabManager::sltOpenLinkInNewTab(const QUrl &url, bool fBackground)
 {
     if (url.isValid())
         addNewTab(url, fBackground);
@@ -1113,7 +1113,7 @@ void UIHelpBrowserTabManager::sltCopyAvailableChanged(bool fAvailable)
         emit sigCopyAvailableChanged(fAvailable);
 }
 
-void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
+void UIHelpBrowserTabManager::sltTabClose(int iTabIndex)
 {
     if (count() <= 1)
         return;
@@ -1125,7 +1125,7 @@ void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
     updateTabUrlTitleList();
 }
 
-void UIHelpBrowserTabManager::sltHandleContextMenuTabClose()
+void UIHelpBrowserTabManager::sltContextMenuTabClose()
 {
     QAction *pAction = qobject_cast<QAction*>(sender());
     if (!pAction)
@@ -1133,10 +1133,10 @@ void UIHelpBrowserTabManager::sltHandleContextMenuTabClose()
     int iTabIndex = pAction->data().toInt();
     if (iTabIndex < 0 || iTabIndex >= count())
         return;
-    sltHandleTabClose(iTabIndex);
+    sltTabClose(iTabIndex);
 }
 
-void UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction()
+void UIHelpBrowserTabManager::sltCloseOtherTabsContextMenuAction()
 {
     /* Find the index of the sender tab. we will close all tabs but sender tab: */
     QAction *pAction = qobject_cast<QAction*>(sender());
@@ -1148,23 +1148,23 @@ void UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction()
     closeAllTabsBut(iTabIndex);
 }
 
-void UIHelpBrowserTabManager::sltHandleCloseCurrentTab()
+void UIHelpBrowserTabManager::sltCloseCurrentTab()
 {
-    sltHandleTabClose(currentIndex());
+    sltTabClose(currentIndex());
 }
 
-void UIHelpBrowserTabManager::sltHandleCloseOtherTabs()
+void UIHelpBrowserTabManager::sltCloseOtherTabs()
 {
     closeAllTabsBut(currentIndex());
 }
 
-void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
+void UIHelpBrowserTabManager::sltCurrentChanged(int iTabIndex)
 {
     Q_UNUSED(iTabIndex);
     emit sigSourceChanged(currentSource());
 }
 
-void UIHelpBrowserTabManager::sltHandleZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation)
+void UIHelpBrowserTabManager::sltZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation)
 {
     for (int i = 0; i < count(); ++i)
     {
@@ -1180,11 +1180,11 @@ void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
         return;
     QMenu menu;
     QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close Other Tabs"));
-    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction);
+    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltCloseOtherTabsContextMenuAction);
     pCloseAll->setData(tabBar()->tabAt(pos));
 
     QAction *pClose = menu.addAction(UIHelpBrowserWidget::tr("Close Tab"));
-    connect(pClose, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleContextMenuTabClose);
+    connect(pClose, &QAction::triggered, this, &UIHelpBrowserTabManager::sltContextMenuTabClose);
     pClose->setData(tabBar()->tabAt(pos));
 
     menu.exec(tabBar()->mapToGlobal(pos));
@@ -1194,8 +1194,8 @@ void UIHelpBrowserTabManager::prepare()
 {
     setTabsClosable(true);
     setTabBarAutoHide(true);
-    connect(this, &UIHelpBrowserTabManager::tabCloseRequested, this, &UIHelpBrowserTabManager::sltHandleTabClose);
-    connect(this, &UIHelpBrowserTabManager::currentChanged, this, &UIHelpBrowserTabManager::sltHandleCurrentChanged);
+    connect(this, &UIHelpBrowserTabManager::tabCloseRequested, this, &UIHelpBrowserTabManager::sltTabClose);
+    connect(this, &UIHelpBrowserTabManager::currentChanged, this, &UIHelpBrowserTabManager::sltCurrentChanged);
     if (tabBar())
     {
         tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -1311,19 +1311,19 @@ void UIHelpBrowserWidget::prepareActions()
     m_pShowHideSideBarAction->setCheckable(true);
     m_pShowHideSideBarAction->setChecked(true);
     connect(m_pShowHideSideBarAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+            this, &UIHelpBrowserWidget::sltWidgetVisibilityToggle);
 
     m_pShowHideToolBarAction = new QAction(this);
     m_pShowHideToolBarAction->setCheckable(true);
     m_pShowHideToolBarAction->setChecked(true);
     connect(m_pShowHideToolBarAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+            this, &UIHelpBrowserWidget::sltWidgetVisibilityToggle);
 
     m_pShowHideStatusBarAction = new QAction(this);
     m_pShowHideStatusBarAction->setCheckable(true);
     m_pShowHideStatusBarAction->setChecked(true);
     connect(m_pShowHideStatusBarAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+            this, &UIHelpBrowserWidget::sltWidgetVisibilityToggle);
 
     m_pCopySelectedTextAction = new QAction(this);
     connect(m_pCopySelectedTextAction, &QAction::triggered,
@@ -1349,7 +1349,7 @@ void UIHelpBrowserWidget::prepareActions()
 
     m_pZoomMenuAction = new UIZoomMenuAction(this);
     connect(m_pZoomMenuAction, &UIZoomMenuAction::sigZoomChanged,
-            this, &UIHelpBrowserWidget::sltHandleZoomActions);
+            this, &UIHelpBrowserWidget::sltZoomActions);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -1392,9 +1392,9 @@ void UIHelpBrowserWidget::prepareWidgets()
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigAddBookmark,
             this, &UIHelpBrowserWidget::sltAddNewBookmark);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigTabsListChanged,
-            this, &UIHelpBrowserWidget::sltHandleTabListChanged);
+            this, &UIHelpBrowserWidget::sltTabListChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::currentChanged,
-            this, &UIHelpBrowserWidget::sltHandleCurrentTabChanged);
+            this, &UIHelpBrowserWidget::sltCurrentTabChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigLinkHighlighted,
             this, &UIHelpBrowserWidget::sigLinkHighlighted);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigZoomPercentageChanged,
@@ -1405,11 +1405,11 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged);
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
-            this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
+            this, &UIHelpBrowserWidget::sltHelpEngineSetupFinished);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
-            this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
+            this, &UIHelpBrowserWidget::sltContentWidgetItemClicked);
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
-            this, &UIHelpBrowserWidget::sltHandleContentsCreated);
+            this, &UIHelpBrowserWidget::sltContentsCreated);
     connect(m_pContentWidget, &QHelpContentWidget::customContextMenuRequested,
             this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
     connect(m_pBookmarksWidget, &UIBookmarksListContainer::sigBookmarkDoubleClick,
@@ -1445,17 +1445,17 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     m_pSearchQueryWidget->expandExtendedSearch();
 
     connect(m_pSearchQueryWidget, &QHelpSearchQueryWidget::search,
-            this, &UIHelpBrowserWidget::sltHandleSearchStart);
+            this, &UIHelpBrowserWidget::sltSearchStart);
     connect(m_pSearchResultWidget, &QHelpSearchResultWidget::requestShowLink,
             this, &UIHelpBrowserWidget::sltOpenLinkWithUrl);
     connect(m_pSearchResultWidget, &QHelpContentWidget::customContextMenuRequested,
             this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
     connect(m_pSearchEngine, &QHelpSearchEngine::indexingStarted,
-            this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
+            this, &UIHelpBrowserWidget::sltIndexingStarted);
     connect(m_pSearchEngine, &QHelpSearchEngine::indexingFinished,
-            this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
+            this, &UIHelpBrowserWidget::sltIndexingFinished);
     connect(m_pSearchEngine, &QHelpSearchEngine::searchingStarted,
-            this, &UIHelpBrowserWidget::sltHandleSearchingStarted);
+            this, &UIHelpBrowserWidget::sltSearchingStarted);
 
     m_pSearchEngine->reindexDocumentation();
 }
@@ -1672,7 +1672,7 @@ void UIHelpBrowserWidget::findAndShowUrlForKeyword(const QString &strKeyword)
     }
 }
 
-void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
+void UIHelpBrowserWidget::sltWidgetVisibilityToggle(bool fToggled)
 {
     if (sender() == m_pShowHideSideBarAction)
     {
@@ -1728,14 +1728,14 @@ void UIHelpBrowserWidget::sltShowPrintDialog()
 #endif
 }
 
-void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
+void UIHelpBrowserWidget::sltHelpEngineSetupFinished()
 {
     AssertReturnVoid(m_pTabManager);
     m_fIndexingFinished = true;
     m_pTabManager->initializeTabs();
 }
 
-void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & index)
+void UIHelpBrowserWidget::sltContentWidgetItemClicked(const QModelIndex & index)
 {
     AssertReturnVoid(m_pTabManager && m_pHelpEngine && m_pContentWidget);
     QUrl url = contentWidgetUrl(index);
@@ -1764,20 +1764,20 @@ void UIHelpBrowserWidget::sltViewerSourceChange(const QUrl &source)
     }
 }
 
-void UIHelpBrowserWidget::sltHandleContentsCreated()
+void UIHelpBrowserWidget::sltContentsCreated()
 {
     m_fModelContentCreated = true;
     if (m_pTabManager)
         sltViewerSourceChange(m_pTabManager->currentSource());
 }
 
-void UIHelpBrowserWidget::sltHandleIndexingStarted()
+void UIHelpBrowserWidget::sltIndexingStarted()
 {
     if (m_pSearchContainerWidget)
         m_pSearchContainerWidget->setEnabled(false);
 }
 
-void UIHelpBrowserWidget::sltHandleIndexingFinished()
+void UIHelpBrowserWidget::sltIndexingFinished()
 {
     AssertReturnVoid(m_pTabManager &&
                      m_pHelpEngine &&
@@ -1792,11 +1792,11 @@ void UIHelpBrowserWidget::sltHandleIndexingFinished()
 
 }
 
-void UIHelpBrowserWidget::sltHandleSearchingStarted()
+void UIHelpBrowserWidget::sltSearchingStarted()
 {
 }
 
-void UIHelpBrowserWidget::sltHandleSearchStart()
+void UIHelpBrowserWidget::sltSearchStart()
 {
     AssertReturnVoid(m_pSearchEngine && m_pSearchQueryWidget);
     m_pSearchEngine->search(m_pSearchQueryWidget->searchInput());
@@ -1918,8 +1918,8 @@ void UIHelpBrowserWidget::updateTabsMenu(const QStringList &titles)
     pCloseTabAction->setEnabled(titles.size() > 1);
     pCloseOtherTabsAction->setEnabled(titles.size() > 1);
 
-    connect(pCloseTabAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltHandleCloseCurrentTab);
-    connect(pCloseOtherTabsAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltHandleCloseOtherTabs);
+    connect(pCloseTabAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltCloseCurrentTab);
+    connect(pCloseOtherTabsAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltCloseOtherTabs);
 
     m_pTabsMenu->addSeparator();
 
@@ -1927,10 +1927,10 @@ void UIHelpBrowserWidget::updateTabsMenu(const QStringList &titles)
     {
         QAction *pAction = m_pTabsMenu->addAction(titles[i]);
         pAction->setData(i);
-        connect(pAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleTabChoose);
+        connect(pAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltTabChoose);
     }
     if (m_pTabManager)
-        sltHandleCurrentTabChanged(m_pTabManager->currentIndex());
+        sltCurrentTabChanged(m_pTabManager->currentIndex());
 }
 
 void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
@@ -1939,20 +1939,20 @@ void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
         m_pTabManager->setSource(url, false);
 }
 
-void UIHelpBrowserWidget::sltHandleZoomActions(int iZoomOperation)
+void UIHelpBrowserWidget::sltZoomActions(int iZoomOperation)
 {
     if (iZoomOperation >= (int) UIHelpViewer::ZoomOperation_Max)
         return;
     UIHelpViewer::ZoomOperation enmOperation = (UIHelpViewer::ZoomOperation)(iZoomOperation);
-    m_pTabManager->sltHandleZoomOperation(enmOperation);
+    m_pTabManager->sltZoomOperation(enmOperation);
 }
 
-void UIHelpBrowserWidget::sltHandleTabListChanged(const QStringList &titleList)
+void UIHelpBrowserWidget::sltTabListChanged(const QStringList &titleList)
 {
     updateTabsMenu(titleList);
 }
 
-void UIHelpBrowserWidget::sltHandleTabChoose()
+void UIHelpBrowserWidget::sltTabChoose()
 {
     QAction *pAction = qobject_cast<QAction*>(sender());
     if (!pAction)
@@ -1962,7 +1962,7 @@ void UIHelpBrowserWidget::sltHandleTabChoose()
         m_pTabManager->switchToTab(iIndex);
 }
 
-void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
+void UIHelpBrowserWidget::sltCurrentTabChanged(int iIndex)
 {
     Q_UNUSED(iIndex);
     if (!m_pTabsMenu)

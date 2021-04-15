@@ -75,15 +75,15 @@ protected:
 
 private slots:
 
-    void sltHandleHelpEngineSetupFinished();
-    void sltHandleContentWidgetItemClicked(const QModelIndex &index);
-    void sltHandleWidgetVisibilityToggle(bool togggled);
+    void sltHelpEngineSetupFinished();
+    void sltContentWidgetItemClicked(const QModelIndex &index);
+    void sltWidgetVisibilityToggle(bool togggled);
     void sltShowPrintDialog();
-    void sltHandleContentsCreated();
-    void sltHandleIndexingStarted();
-    void sltHandleIndexingFinished();
-    void sltHandleSearchingStarted();
-    void sltHandleSearchStart();
+    void sltContentsCreated();
+    void sltIndexingStarted();
+    void sltIndexingFinished();
+    void sltSearchingStarted();
+    void sltSearchStart();
     void sltViewerSourceChange(const QUrl &source);
     void sltOpenLinkWithUrl(const QUrl &url);
     void sltShowLinksContextMenu(const QPoint &pos);
@@ -91,10 +91,10 @@ private slots:
     void sltOpenLink();
     void sltCopyLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
-    void sltHandleZoomActions(int iZoomOperation);
-    void sltHandleTabListChanged(const QStringList &titleList);
-    void sltHandleTabChoose();
-    void sltHandleCurrentTabChanged(int iIndex);
+    void sltZoomActions(int iZoomOperation);
+    void sltTabListChanged(const QStringList &titleList);
+    void sltTabChoose();
+    void sltCurrentTabChanged(int iIndex);
     void sltZoomPercentageChanged(int iPercentage);
     void sltCopySelectedText();
     void sltCopyAvailableChanged(bool fAvailable);

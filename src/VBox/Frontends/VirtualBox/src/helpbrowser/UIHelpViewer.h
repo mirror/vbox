@@ -91,11 +91,11 @@ protected:
 
 private slots:
 
-    void sltHandleOpenLinkInNewTab();
-    void sltHandleOpenLink();
-    void sltHandleCopyLink();
-    void sltHandleFindWidgetDrag(const QPoint &delta);
-    void sltHandleFindInPageSearchTextChange(const QString &strSearchText);
+    void sltOpenLinkInNewTab();
+    void sltOpenLink();
+    void sltCopyLink();
+    void sltFindWidgetDrag(const QPoint &delta);
+    void sltFindInPageSearchTextChange(const QString &strSearchText);
     void sltSelectPreviousMatch();
     void sltSelectNextMatch();
     void sltToggleFindInPageWidget(bool fVisible);

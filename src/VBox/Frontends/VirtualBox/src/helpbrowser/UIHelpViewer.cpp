@@ -344,9 +344,9 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     m_iInitialFontPointSize = font().pointSize();
     setUndoRedoEnabled(true);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
-            this, &UIHelpViewer::sltHandleFindWidgetDrag);
+            this, &UIHelpViewer::sltFindWidgetDrag);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSearchTextChanged,
-            this, &UIHelpViewer::sltHandleFindInPageSearchTextChange);
+            this, &UIHelpViewer::sltFindInPageSearchTextChange);
 
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectPreviousMatch,
             this, &UIHelpViewer::sltSelectPreviousMatch);
@@ -544,15 +544,15 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *pOpenLinkAction = new QAction(UIHelpBrowserWidget::tr("Open Link"));
     connect(pOpenLinkAction, &QAction::triggered,
-            this, &UIHelpViewer::sltHandleOpenLink);
+            this, &UIHelpViewer::sltOpenLink);
 
     QAction *pOpenInNewTabAction = new QAction(UIHelpBrowserWidget::tr("Open Link in New Tab"));
     connect(pOpenInNewTabAction, &QAction::triggered,
-            this, &UIHelpViewer::sltHandleOpenLinkInNewTab);
+            this, &UIHelpViewer::sltOpenLinkInNewTab);
 
     QAction *pCopyLink = new QAction(UIHelpBrowserWidget::tr("Copy Link"));
     connect(pCopyLink, &QAction::triggered,
-            this, &UIHelpViewer::sltHandleCopyLink);
+            this, &UIHelpViewer::sltCopyLink);
 
     QAction *pFindInPage = new QAction(UIHelpBrowserWidget::tr("Find in Page"));
     pFindInPage->setCheckable(true);
@@ -820,7 +820,7 @@ void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
     setTextCursor(cursor);
 }
 
-void UIHelpViewer::sltHandleOpenLinkInNewTab()
+void UIHelpViewer::sltOpenLinkInNewTab()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -830,7 +830,7 @@ void UIHelpViewer::sltHandleOpenLinkInNewTab()
         emit sigOpenLinkInNewTab(url, false);
 }
 
-void UIHelpViewer::sltHandleOpenLink()
+void UIHelpViewer::sltOpenLink()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -840,7 +840,7 @@ void UIHelpViewer::sltHandleOpenLink()
         QTextBrowser::setSource(url);
 }
 
-void UIHelpViewer::sltHandleCopyLink()
+void UIHelpViewer::sltCopyLink()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -854,7 +854,7 @@ void UIHelpViewer::sltHandleCopyLink()
     }
 }
 
-void UIHelpViewer::sltHandleFindWidgetDrag(const QPoint &delta)
+void UIHelpViewer::sltFindWidgetDrag(const QPoint &delta)
 {
     if (!m_pFindInPageWidget)
         return;
@@ -868,12 +868,11 @@ void UIHelpViewer::sltHandleFindWidgetDrag(const QPoint &delta)
     update();
 }
 
-void UIHelpViewer::sltHandleFindInPageSearchTextChange(const QString &strSearchText)
+void UIHelpViewer::sltFindInPageSearchTextChange(const QString &strSearchText)
 {
     m_iSearchTermLength = strSearchText.length();
     findAllMatches(strSearchText);
     highlightFinds(m_iSearchTermLength);
-    //scrollToMatch(int iMatchIndex);
     selectMatch(0, m_iSearchTermLength);
     if (m_pFindInPageWidget)
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), 0);
