@@ -774,12 +774,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
 /** FL5LP: First Level 5-level Paging Support. */
 #define VTD_BF_CAP_REG_FL5LP_SHIFT                              60
 #define VTD_BF_CAP_REG_FL5LP_MASK                               UINT64_C(0x1000000000000000)
-/** R: Reserved (bits 63:61). */
-#define VTD_BF_CAP_REG_RSVD_63_61_SHIFT                         61
-#define VTD_BF_CAP_REG_RSVD_63_61_MASK                          UINT64_C(0xe000000000000000)
+/** R: Reserved (bit 61). */
+#define VTD_BF_CAP_REG_RSVD_61_SHIFT                            61
+#define VTD_BF_CAP_REG_RSVD_61_MASK                             UINT64_C(0x2000000000000000)
+/** ESIRTPS: Enhanced Set Interrupt Root Table Pointer Support. */
+#define VTD_BF_CAP_REG_ESIRTPS_SHIFT                            62
+#define VTD_BF_CAP_REG_ESIRTPS_MASK                             UINT64_C(0x4000000000000000)
+/** : Enhanced Set Root Table Pointer Support. */
+#define VTD_BF_CAP_REG_ESRTPS_SHIFT                             63
+#define VTD_BF_CAP_REG_ESRTPS_MASK                              UINT64_C(0x8000000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CAP_REG_, UINT64_C(0), UINT64_MAX,
                             (ND, AFL, RWBF, PLMR, PHMR, CM, SAGAW, RSVD_15_13, MGAW, ZLR, RSVD_23, FRO, SLLPS, RSVD_38, PSI, NFR,
-                             MAMV, DWD, DRD, FL1GP, RSVD_58_57, PI, FL5LP, RSVD_63_61));
+                             MAMV, DWD, DRD, FL1GP, RSVD_58_57, PI, FL5LP, RSVD_61, ESIRTPS, ESRTPS));
 
 /** RW: Read/write mask. */
 #define VTD_CAP_REG_RW_MASK                                     UINT64_C(0)
@@ -888,13 +894,22 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CAP_REG_, UINT64_C(0), UINT64_MAX,
 /** RPS: RID-PASID Support. */
 #define VTD_BF_ECAP_REG_RPS_SHIFT                               49
 #define VTD_BF_ECAP_REG_RPS_MASK                                UINT64_C(0x0002000000000000)
-/** R: Reserved (bits 63:50). */
-#define VTD_BF_ECAP_REG_RSVD_63_50_SHIFT                        50
-#define VTD_BF_ECAP_REG_RSVD_63_50_MASK                         UINT64_C(0xfffc000000000000)
+/** R: Reserved (bits 51:50). */
+#define VTD_BF_ECAP_REG_RSVD_51_50_SHIFT                        50
+#define VTD_BF_ECAP_REG_RSVD_51_50_MASK                         UINT64_C(0x000c000000000000)
+/** ADMS: Abort DMA Mode Support. */
+#define VTD_BF_ECAP_REG_ADMS_SHIFT                              52
+#define VTD_BF_ECAP_REG_ADMS_MASK                               UINT64_C(0x0010000000000000)
+/** RPRIVS: RID_PRIV Support. */
+#define VTD_BF_ECAP_REG_RPRIVS_SHIFT                            53
+#define VTD_BF_ECAP_REG_RPRIVS_MASK                             UINT64_C(0x0020000000000000)
+/** R: Reserved (bits 63:54). */
+#define VTD_BF_ECAP_REG_RSVD_63_54_SHIFT                        54
+#define VTD_BF_ECAP_REG_RSVD_63_54_MASK                         UINT64_C(0xffc0000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ECAP_REG_, UINT64_C(0), UINT64_MAX,
                             (C, QI, DT, IR, EIM, RSVD_5, PT, SC, IRO, RSVD_19_18, MHMV, RSVD_24, MTS, NEST, RSVD_27, RSVD_28,
                              PRS, ERS, SRS, RSVD_32, NWFS, EAFS, PSS, PASID, DIT, PDS, SMTS, VCS, SLADS, SLTS, FLTS, SMPWCS, RPS,
-                             RSVD_63_50));
+                             RSVD_51_50, ADMS, RPRIVS, RSVD_63_54));
 
 /** RW: Read/write mask. */
 #define VTD_ECAP_REG_RW_MASK                                    UINT64_C(0)
