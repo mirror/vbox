@@ -701,8 +701,8 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
         /* Verify if the queue tail offset is aligned according to the descriptor width in IQA_REG. */
         uint16_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
         uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
-        uint8_t const  uDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
-        if (   uDw != VTD_IQA_REG_DW_256_BIT
+        uint8_t const  fDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+        if (   fDw != VTD_IQA_REG_DW_256_BIT
             || !(offQueueTail & 0x1f))
         {
             /** @todo IOMMU: Figure out what to do here, like waking up worker thread or
