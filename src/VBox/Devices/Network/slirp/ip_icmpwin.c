@@ -45,7 +45,10 @@ struct pong {
 
     TAILQ_ENTRY(pong) queue_entry;
 
-    struct ip reqiph;
+    union {
+        struct ip ip;
+        uint8_t au[60];
+    } reqiph;
     struct icmp_echo reqicmph;
 
     size_t bufsize;
@@ -145,7 +148,8 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     ttl = ip->ip_ttl;
     AssertReturnVoid(ttl > 0);
 
-    reqsize = ip->ip_len - hlen - sizeof(struct icmp_echo);
+    size_t hdrsize = hlen + sizeof(struct icmp_echo);
+    reqsize = ip->ip_len - hdrsize;
 
     bufsize = sizeof(ICMP_ECHO_REPLY);
     if (reqsize < sizeof(IO_STATUS_BLOCK) + sizeof(struct icmp_echo))
@@ -171,14 +175,13 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     if (m->m_next == NULL)
     {
         /* already in single contiguous buffer */
-        reqdata = mtod(m, char *) + sizeof(struct ip) + sizeof(struct icmp_echo);
+        reqdata = mtod(m, char *) + hdrsize;
     }
     else
     {
         /* use reply buffer as temporary storage */
         reqdata = pong->buf;
-        m_copydata(m, sizeof(struct ip) + sizeof(struct icmp_echo),
-                   (int)reqsize, reqdata);
+        m_copydata(m, (int)hdrsize, (int)reqsize, reqdata);
     }
 
     dst = ip->ip_dst.s_addr;
@@ -397,7 +400,7 @@ icmpwin_pong(struct pong *pong)
         ip->ip_ttl = reply->Options.Ttl;
         ip->ip_p = IPPROTO_ICMP;
         ip->ip_src.s_addr = reply->Address;
-        ip->ip_dst = pong->reqiph.ip_src;
+        ip->ip_dst = pong->reqiph.ip.ip_src;
 
         icmp->icmp_type = ICMP_ECHOREPLY;
         icmp->icmp_code = 0;
@@ -478,7 +481,8 @@ icmpwin_get_error(struct pong *pong, int type, int code)
 
     Log2(("NAT: ping error type %d/code %d\n", type, code));
 
-    reqsize = sizeof(pong->reqiph) + sizeof(pong->reqicmph);
+    size_t reqhlen = pong->reqiph.ip.ip_hl << 2;
+    reqsize = reqhlen + sizeof(pong->reqicmph);
 
     m = icmpwin_get_mbuf(pData, reqsize);
     if (m == NULL)
@@ -493,7 +497,7 @@ icmpwin_get_error(struct pong *pong, int type, int code)
     ip->ip_ttl = IPDEFTTL;
     ip->ip_p = IPPROTO_ICMP;
     ip->ip_src.s_addr = 0;      /* NB */
-    ip->ip_dst = pong->reqiph.ip_src;
+    ip->ip_dst = pong->reqiph.ip.ip_src;
 
     icmp->icmp_type = type;
     icmp->icmp_code = code;
@@ -501,7 +505,8 @@ icmpwin_get_error(struct pong *pong, int type, int code)
     icmp->icmp_echo_id = 0;
     icmp->icmp_echo_seq = 0;
 
-    m_append(pData, m, sizeof(pong->reqiph), (caddr_t)&pong->reqiph);
+    /* payload: the IP and ICMP headers of the original request */
+    m_append(pData, m, (int)reqhlen, (caddr_t)&pong->reqiph);
     m_append(pData, m, sizeof(pong->reqicmph), (caddr_t)&pong->reqicmph);
 
     icmp->icmp_cksum = in_cksum_skip(m, ip->ip_len, sizeof(*ip));
