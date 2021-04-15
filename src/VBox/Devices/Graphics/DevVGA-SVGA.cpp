@@ -6408,6 +6408,10 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
             /* Initialize FIFO 3D capabilities. */
             vmsvgaR3InitFifo3DCaps(pThis, pThisCC);
         }
+        else {
+            LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dPowerOn -> %Rrc)\n", rc));
+            pThis->svga.f3DEnabled = false;
+        }
     }
 # else  /* !VBOX_WITH_VMSVGA3D */
     RT_NOREF(pDevIns);
