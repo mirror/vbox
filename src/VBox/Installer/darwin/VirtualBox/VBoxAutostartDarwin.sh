@@ -23,8 +23,8 @@ function vboxStartStopAllUserVms()
     # non existing home.
     for user in `dscl . -list /Users`
     do
-        HOMEDIR=`dscl . -read /Users/${user} | grep NFSHomeDirectory | sed 's/NFSHomeDirectory: //g'`
-        USERSHELL=`dscl . -read /Users/${user} | grep UserShell | sed 's/UserShell: //g'`
+        HOMEDIR=`dscl . -read /Users/"${user}" NFSHomeDirectory | sed 's/NFSHomeDirectory: //g'`
+        USERSHELL=`dscl . -read /Users/"${user}" UserShell | sed 's/UserShell: //g'`
 
         # Check for known home directories and shells for daemons
         if [[   "${HOMEDIR}" == "/var/empty" || "${HOMEDIR}" == "/dev/null" || "${HOMEDIR}" == "/var/root"
@@ -36,11 +36,11 @@ function vboxStartStopAllUserVms()
         case "${1}" in
             start)
                 # Start the daemon
-                su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --start --background --config ${CONFIG}"
+                su "${user}" -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --start --background --config ${CONFIG}"
                 ;;
             stop)
-                # Start the daemon
-                su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --stop --config ${CONFIG}"
+                # Stop the daemon
+                su "${user}" -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --stop --config ${CONFIG}"
                 ;;
                *)
                 echo "Usage: start|stop"
