@@ -494,6 +494,23 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 
 
 /**
+ * Gets the index of the group the register belongs to given its MMIO offset.
+ *
+ * @returns The group index.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   cbReg       The size of the access being made (for bounds checking on
+ *                      debug builds).
+ */
+DECLINLINE(uint8_t) dmarRegGetGroupIndex(uint16_t offReg, uint8_t cbReg)
+{
+    uint16_t const offLast = offReg + cbReg - 1;
+    AssertCompile(DMAR_MMIO_GROUP_0_OFF_FIRST == 0);
+    AssertMsg(DMAR_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
+    return !(offLast < DMAR_MMIO_GROUP_0_OFF_END);
+}
+
+
+/**
  * Gets the group the register belongs to given its MMIO offset.
  *
  * @returns Pointer to the first element of the register group.
@@ -506,12 +523,21 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
  */
 DECLINLINE(uint8_t *) dmarRegGetGroup(PDMAR pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
-    uint16_t const offLast = offReg + cbReg - 1;
-    AssertCompile(DMAR_MMIO_GROUP_0_OFF_FIRST == 0);
-    AssertMsg(DMAR_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
+    *pIdxGroup = dmarRegGetGroupIndex(offReg, cbReg);
+    uint8_t *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
+    return apbRegs[*pIdxGroup];
+}
 
-    uint8_t *const apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
-    *pIdxGroup = !(offLast < DMAR_MMIO_GROUP_0_OFF_END);
+
+/**
+ * Const/read-only version of dmarRegGetGroup.
+ *
+ * @copydoc dmarRegGetGroup
+ */
+DECLINLINE(uint8_t const*) dmarRegGetGroupRo(PCDMAR pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
+{
+    *pIdxGroup = dmarRegGetGroupIndex(offReg, cbReg);
+    uint8_t const *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
     return apbRegs[*pIdxGroup];
 }
 
@@ -557,10 +583,10 @@ DECLINLINE(void) dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) dmarRegReadRaw64(PDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+DECLINLINE(void) dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
 {
     uint8_t idxGroup;
-    uint8_t const *pabRegs      = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
     Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
@@ -579,10 +605,10 @@ DECLINLINE(void) dmarRegReadRaw64(PDMAR pThis, uint16_t offReg, uint64_t *puReg,
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) dmarRegReadRaw32(PDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
+DECLINLINE(void) dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
 {
     uint8_t idxGroup;
-    uint8_t const *pabRegs      = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint32_t), &idxGroup);
     Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
     uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
     uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
@@ -655,7 +681,7 @@ static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
-static uint64_t dmarRegRead64(PDMAR pThis, uint16_t offReg)
+static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
 {
     uint64_t uCurReg;
     uint64_t fRwMask;
@@ -673,7 +699,7 @@ static uint64_t dmarRegRead64(PDMAR pThis, uint16_t offReg)
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
-static uint32_t dmarRegRead32(PDMAR pThis, uint16_t offReg)
+static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
 {
     uint32_t uCurReg;
     uint32_t fRwMask;
@@ -694,11 +720,11 @@ static uint32_t dmarRegRead32(PDMAR pThis, uint16_t offReg)
  */
 static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqtReg)
 {
-    /* We only care about the low dword of VTD_MMIO_OFF_IQT_REG. */
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    /* We only care about the low 32-bits. */
     if (off == VTD_MMIO_OFF_IQT_REG)
     {
         /* Verify if the queue tail offset is aligned according to the descriptor width in IQA_REG. */
+        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
         uint16_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
         uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
         uint8_t const  fDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
