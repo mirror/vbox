@@ -954,6 +954,9 @@ void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
     QTextCursor cursor = cursorForPosition(viewportCoordinates);
     if (!cursor.charFormat().isImageFormat())
         return;
+    /* Dont zoom into image if mouse button released after a mouse drag: */
+    if (textCursor().hasSelection())
+        return;
 
     QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
     QUrl imageFileUrl;
