@@ -314,20 +314,25 @@ static void uartIrqUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThis
 
     LogFlowFunc(("    uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
 
-    /* Change interrupt only if the interrupt status really changed from the previous value. */
     if (uRegIirNew != (pThis->uRegIir & UART_REG_IIR_CHANGED_MASK))
-    {
         LogFlow(("    Interrupt source changed from %#x -> %#x (IRQ %d -> %d)\n",
                  pThis->uRegIir, uRegIirNew,
                  pThis->uRegIir == UART_REG_IIR_IP_NO_INT ? 0 : 1,
                  uRegIirNew == UART_REG_IIR_IP_NO_INT ? 0 : 1));
-        if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
-            pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 0);
-        else
-            pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 1);
-    }
     else
         LogFlow(("    No change in interrupt source\n"));
+
+    /*
+     * Set interrupt value accordingly. As this is an ISA device most guests
+     * configure the IRQ as edge triggered instead of level triggered.
+     * So this needs to be done everytime, even if the internal interrupt state
+     * doesn't change in order to avoid the guest losing interrupts (reading one byte at
+     * a time from the FIFO for instance which doesn't change the interrupt source).
+     */
+    if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
+        pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 0);
+    else
+        pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 1);
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uRegIirNew |= UART_REG_IIR_FIFOS_EN;
