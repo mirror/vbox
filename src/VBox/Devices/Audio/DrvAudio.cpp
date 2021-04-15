@@ -2999,7 +2999,6 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
      * size of the backend specific stream data.
      */
     uint32_t *pcFreeStreams;
-    size_t    cbHstStrm;
     if (pCfgHost->enmDir == PDMAUDIODIR_IN)
     {
         if (!pThis->In.cStreamsFree)
@@ -3008,7 +3007,6 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
             rc = VERR_AUDIO_NO_FREE_INPUT_STREAMS;
         }
         pcFreeStreams = &pThis->In.cStreamsFree;
-        cbHstStrm     = pThis->BackendCfg.cbStreamIn;
     }
     else /* Out */
     {
@@ -3018,8 +3016,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
             rc = VERR_AUDIO_NO_FREE_OUTPUT_STREAMS;
         }
         pcFreeStreams = &pThis->Out.cStreamsFree;
-        cbHstStrm     = pThis->BackendCfg.cbStreamOut;
     }
+    size_t const cbHstStrm = pThis->BackendCfg.cbStream;
     AssertStmt(cbHstStrm < _16M, rc = VERR_OUT_OF_RANGE);
     if (RT_SUCCESS(rc))
     {

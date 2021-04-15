@@ -684,13 +684,13 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetConfig(PPDMIHOSTAUDIO pInterface, PP
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RT_BZERO(pBackendCfg, sizeof(PPDMAUDIOBACKENDCFG));
 
-    pBackendCfg->cbStreamOut = sizeof(DSOUNDSTREAM);
-    pBackendCfg->cbStreamIn  = sizeof(DSOUNDSTREAM);
-
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "DirectSound");
-
+    /*
+     * Fill in the config structure.
+     */
+    RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "DirectSound");
+    pBackendCfg->cbStream       = sizeof(DSOUNDSTREAM);
+    pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
 

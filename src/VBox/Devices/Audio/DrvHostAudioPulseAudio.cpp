@@ -645,8 +645,8 @@ static DECLCALLBACK(int) drvHostAudioPaHA_GetConfig(PPDMIHOSTAUDIO pInterface, P
      * The configuration.
      */
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "PulseAudio");
-    pBackendCfg->cbStreamOut    = sizeof(PULSEAUDIOSTREAM);
-    pBackendCfg->cbStreamIn     = sizeof(PULSEAUDIOSTREAM);
+    pBackendCfg->cbStream       = sizeof(PULSEAUDIOSTREAM);
+    pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
 

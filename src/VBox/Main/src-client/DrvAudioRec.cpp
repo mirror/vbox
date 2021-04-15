@@ -364,10 +364,12 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_GetConfig(PPDMIHOSTAUDIO pInterface,
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VideoRec");
-
-    pBackendCfg->cbStreamOut    = sizeof(AVRECSTREAM);
-    pBackendCfg->cbStreamIn     = 0;
+    /*
+     * Fill in the config structure.
+     */
+    RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VideoRec");
+    pBackendCfg->cbStream       = sizeof(AVRECSTREAM);
+    pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsIn  = 0;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
 

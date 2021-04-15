@@ -231,8 +231,8 @@ static DECLCALLBACK(int) drvAudioVrdeHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPD
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VRDE");
-    pBackendCfg->cbStreamOut    = sizeof(VRDESTREAM);
-    pBackendCfg->cbStreamIn     = sizeof(VRDESTREAM);
+    pBackendCfg->cbStream       = sizeof(VRDESTREAM);
+    pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
 

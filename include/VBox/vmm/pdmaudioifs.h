@@ -436,10 +436,10 @@ typedef struct PDMAUDIOBACKENDCFG
 {
     /** The backend's friendly name. */
     char            szName[32];
-    /** Size (in bytes) of the host backend's audio output stream structure. */
-    size_t          cbStreamOut;
-    /** Size (in bytes) of the host backend's audio input stream structure. */
-    size_t          cbStreamIn;
+    /** The size of the backend specific stream data (in bytes). */
+    uint32_t        cbStream;
+    /** Flags, MBZ. */
+    uint32_t        fFlags;
     /** Number of concurrent output (playback) streams supported on the host.
      *  UINT32_MAX for unlimited concurrent streams, 0 if no concurrent input streams are supported. */
     uint32_t        cMaxStreamsOut;
@@ -1201,7 +1201,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "122511ca-deb3-4630-ad31-ade9f3177df4"
+#define PDMIAUDIOCONNECTOR_IID                  "473a3a3c-cda9-454c-90f9-63751320e62a"
 
 
 /** Opque pointer host audio specific stream data.
@@ -1361,7 +1361,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "cf04d235-2af6-4921-8323-a0f85c5cf96b"
+#define PDMIHOSTAUDIO_IID                           "71b1dcc3-46d7-4c27-a76a-63cd229adb74"
 
 
 /** Pointer to a audio notify from host interface. */

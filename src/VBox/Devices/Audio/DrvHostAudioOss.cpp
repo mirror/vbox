@@ -180,10 +180,14 @@ static DECLCALLBACK(int) drvHostOssAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, 
 {
     RT_NOREF(pInterface);
 
+    /*
+     * Fill in the config structure.
+     */
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "OSS");
-
-    pBackendCfg->cbStreamIn  = sizeof(OSSAUDIOSTREAM);
-    pBackendCfg->cbStreamOut = sizeof(OSSAUDIOSTREAM);
+    pBackendCfg->cbStream       = sizeof(OSSAUDIOSTREAM);
+    pBackendCfg->fFlags         = 0;
+    pBackendCfg->cMaxStreamsIn  = 0;
+    pBackendCfg->cMaxStreamsOut = 0;
 
     int hFile = open("/dev/dsp", O_WRONLY | O_NONBLOCK, 0);
     if (hFile == -1)

@@ -95,11 +95,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_GetConfig(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit");
-
-    pBackendCfg->cbStreamOut    = sizeof(VAKITAUDIOSTREAM);
-    pBackendCfg->cbStreamIn     = sizeof(VAKITAUDIOSTREAM);
-
+    /*
+     * Fill in the config structure.
+     */
+    RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit");
+    pBackendCfg->cbStream       = sizeof(VAKITAUDIOSTREAM);
+    pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsOut = 1; /* Output */
     pBackendCfg->cMaxStreamsIn  = 0; /* No input supported yet. */
 
