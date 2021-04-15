@@ -1122,6 +1122,8 @@ typedef struct E1KSTATE
 #ifdef E1K_WITH_TXD_CACHE
     /** TX: Fetched TX descriptors. */
     E1KTXDESC   aTxDescriptors[E1K_TXD_CACHE_SIZE];
+    /** TX: Validity of TX descriptors. Set by e1kLocateTxPacket, used by e1kXmitPacket. */
+    bool        afTxDValid[E1K_TXD_CACHE_SIZE];
     /** TX: Actual number of fetched TX descriptors. */
     uint8_t     nTxDFetched;
     /** TX: Index in cache of TX descriptor being processed. */
@@ -5147,13 +5149,6 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
 
     e1kPrintTDesc(pThis, pDesc, "vvv");
 
-    if (pDesc->legacy.dw3.fDD)
-    {
-        E1kLog(("%s e1kXmitDesc: skipping bad descriptor ^^^\n", pThis->szPrf));
-        e1kDescReport(pDevIns, pThis, pDesc, addr);
-        return VINF_SUCCESS;
-    }
-
 //#ifdef E1K_USE_TX_TIMERS
     if (pThis->fTidEnabled)
         PDMDevHlpTimerStop(pDevIns, pThis->hTIDTimer);
@@ -5176,7 +5171,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
             STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTransmit), a);
             if (pDesc->data.cmd.u20DTALEN == 0 || pDesc->data.u64BufAddr == 0)
             {
-                E1kLog2(("% Empty data descriptor, skipped.\n", pThis->szPrf));
+                E1kLog2(("%s Empty data descriptor, skipped.\n", pThis->szPrf));
                 if (pDesc->data.cmd.fEOP)
                 {
                     e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
@@ -5302,7 +5297,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
     return rc;
 }
 
-DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
+DECLINLINE(bool) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
 {
     if (pDesc->context.dw2.fTSE)
     {
@@ -5333,6 +5328,7 @@ DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
              pDesc->context.tu.u8CSS,
              pDesc->context.tu.u8CSO,
              pDesc->context.tu.u16CSE));
+    return true; /* TODO: Consider returning false for invalid descriptors */
 }
 
 static bool e1kLocateTxPacket(PE1KSTATE pThis)
@@ -5350,14 +5346,18 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
     bool fTSE = false;
     uint32_t cbPacket = 0;
 
+    /* Since we process one packet at a time we will only mark current packet's descriptors as valid */
+    memset(pThis->afTxDValid, 0, sizeof(pThis->afTxDValid));
     for (int i = pThis->iTxDCurrent; i < pThis->nTxDFetched; ++i)
     {
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[i];
+        /* Assume the descriptor valid until proven otherwise. */
+        pThis->afTxDValid[i] = true;
         switch (e1kGetDescType(pDesc))
         {
             case E1K_DTYP_CONTEXT:
                 if (cbPacket == 0)
-                    e1kUpdateTxContext(pThis, pDesc);
+                    pThis->afTxDValid[i] = e1kUpdateTxContext(pThis, pDesc);
                 else
                     E1kLog(("%s e1kLocateTxPacket: ignoring a context descriptor in the middle of a packet, cbPacket=%d\n",
                             pThis->szPrf, cbPacket));
@@ -5368,7 +5368,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 {
                     E1kLog(("%s e1kLocateTxPacket: ignoring a legacy descriptor in the segmentation context, cbPacket=%d\n",
                             pThis->szPrf, cbPacket));
-                    pDesc->legacy.dw3.fDD = true; /* Make sure it is skipped by processing */
+                    pThis->afTxDValid[i] = false; /* Make sure it is skipped by processing */
                     continue;
                 }
                 /* Skip empty descriptors. */
@@ -5383,7 +5383,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 {
                     E1kLog(("%s e1kLocateTxPacket: ignoring %sTSE descriptor in the %ssegmentation context, cbPacket=%d\n",
                             pThis->szPrf, pDesc->data.cmd.fTSE ? "" : "non-", fTSE ? "" : "non-", cbPacket));
-                    pDesc->data.dw3.fDD = true; /* Make sure it is skipped by processing */
+                    pThis->afTxDValid[i] = false; /* Make sure it is skipped by processing */
                     continue;
                 }
                 /* Skip empty descriptors. */
@@ -5468,7 +5468,15 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[pThis->iTxDCurrent];
         E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
                  pThis->szPrf, TDBAH, TDBAL + pTxdc->tdh * sizeof(E1KTXDESC), pTxdc->tdlen, pTxdc->tdh, pTxdc->tdt));
-        rc = e1kXmitDesc(pDevIns, pThis, pThisCC, pDesc, e1kDescAddr(TDBAH, TDBAL, pTxdc->tdh), fOnWorkerThread);
+        if (!pThis->afTxDValid[pThis->iTxDCurrent])
+        {
+            e1kPrintTDesc(pThis, pDesc, "vvv");
+            E1kLog(("%s e1kXmitDesc: skipping bad descriptor ^^^\n", pThis->szPrf));
+            e1kDescReport(pDevIns, pThis, pDesc, e1kDescAddr(TDBAH, TDBAL, pTxdc->tdh));
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = e1kXmitDesc(pDevIns, pThis, pThisCC, pDesc, e1kDescAddr(TDBAH, TDBAL, pTxdc->tdh), fOnWorkerThread);
         if (RT_FAILURE(rc))
             break;
         if (++pTxdc->tdh * sizeof(E1KTXDESC) >= pTxdc->tdlen)
