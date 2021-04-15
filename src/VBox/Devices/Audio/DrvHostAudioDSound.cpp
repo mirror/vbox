@@ -219,10 +219,6 @@ typedef struct DRVHOSTDSOUND
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
     DrvHostAudioDSoundMMNotifClient *m_pNotificationClient;
 #endif
-    /** Pointer to the input stream. */
-    PDSOUNDSTREAM               pDSStrmIn;
-    /** Pointer to the output stream. */
-    PDSOUNDSTREAM               pDSStrmOut;
 } DRVHOSTDSOUND, *PDRVHOSTDSOUND;
 
 
@@ -1362,9 +1358,6 @@ static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTR
             pStreamDS->cbBufSize     = BufferCaps.dwBufferBytes;
             pCfgAcq->Backend.cFramesBufferSize = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, BufferCaps.dwBufferBytes);
 
-            /** @todo r=bird: WTF is this for? */
-            pThis->pDSStrmIn = pStreamDS;
-
 #if 0 /** @todo r=bird: uAlign isn't set anywhere, so this hasn't been checking anything for a while... */
             if (bc.dwBufferBytes & pStreamDS->uAlign)
                 DSLOGREL(("DSound: Capture GetCaps returned misaligned buffer: size %RU32, alignment %RU32\n",
@@ -1488,9 +1481,6 @@ static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDST
             pCfgAcq->Backend.cFramesPreBuffering  = pCfgReq->Backend.cFramesPreBuffering * pCfgAcq->Backend.cFramesBufferSize
                                                   / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
 
-            /** @todo r=bird: WTF is this for? */
-            pThis->pDSStrmOut = pStreamDS;
-
 #if 0 /** @todo r=bird: uAlign isn't set anywhere, so this hasn't been checking anything for a while... */
             if (bc.dwBufferBytes & pStreamDS->uAlign)
                 DSLOGREL(("DSound: Playback capabilities returned misaligned buffer: size %RU32, alignment %RU32\n",
@@ -1591,88 +1581,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
 }
 
 
-static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
-{
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
-
-    LogFlowFuncEnter();
-
-    HRESULT hr = directSoundPlayStop(pThis, pStreamDS, true /* fFlush */);
-    if (SUCCEEDED(hr))
-    {
-        DSLOG(("DSound: Closing playback stream\n"));
-        RTCritSectEnter(&pThis->CritSect);
-
-        if (pStreamDS->Out.pDSB)
-        {
-            IDirectSoundBuffer8_Release(pStreamDS->Out.pDSB);
-            pStreamDS->Out.pDSB = NULL;
-        }
-
-        pThis->pDSStrmOut = NULL;
-
-        RTCritSectLeave(&pThis->CritSect);
-    }
-
-    if (FAILED(hr))
-        DSLOGREL(("DSound: Stopping playback stream %p failed with %Rhrc\n", pStreamDS, hr));
-
-    return hr;
-}
-
-
-static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
-{
-    LogFlowFuncEnter();
-
-    HRESULT hr = directSoundPlayStop(pThis, pStreamDS, true /* fFlush */);
-    if (SUCCEEDED(hr))
-    {
-        hr = directSoundPlayClose(pThis, pStreamDS);
-        if (FAILED(hr))
-            return VERR_GENERAL_FAILURE; /** @todo Fix. */
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-static HRESULT directSoundCaptureClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
-{
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
-
-    LogFlowFuncEnter();
-
-    HRESULT hr = directSoundCaptureStop(pThis, pStreamDS, true /* fFlush */);
-    if (FAILED(hr))
-        return hr;
-
-    if (   pStreamDS
-        && pStreamDS->In.pDSCB)
-    {
-        DSLOG(("DSound: Closing capturing stream\n"));
-
-        IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
-        pStreamDS->In.pDSCB = NULL;
-    }
-
-    LogFlowFunc(("Returning %Rhrc\n", hr));
-    return hr;
-}
-
-
-static int dsoundDestroyStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
-{
-    LogFlowFuncEnter();
-
-    directSoundCaptureClose(pThis, pStreamDS);
-
-    return VINF_SUCCESS;
-}
-
-
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
@@ -1682,19 +1590,37 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamDestroy(PPDMIHOSTAUDIO pInterface
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
     AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
 
-    int rc;
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
-        rc = dsoundDestroyStreamIn(pThis, pStreamDS);
-    else
-        rc = dsoundDestroyStreamOut(pThis, pStreamDS);
-
-    if (RT_SUCCESS(rc))
     {
-        if (RTCritSectIsInitialized(&pStreamDS->CritSect))
-            rc = RTCritSectDelete(&pStreamDS->CritSect);
+        /*
+         * Input.
+         */
+        if (pStreamDS->In.pDSCB)
+        {
+            directSoundCaptureStop(pThis, pStreamDS, true /* fFlush */);
+
+            IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
+            pStreamDS->In.pDSCB = NULL;
+        }
+    }
+    else
+    {
+        /*
+         * Output.
+         */
+        if (pStreamDS->Out.pDSB)
+        {
+            directSoundPlayStop(pThis, pStreamDS, true /* fFlush */);
+
+            IDirectSoundBuffer8_Release(pStreamDS->Out.pDSB);
+            pStreamDS->Out.pDSB = NULL;
+        }
     }
 
-    return rc;
+    if (RTCritSectIsInitialized(&pStreamDS->CritSect))
+        RTCritSectDelete(&pStreamDS->CritSect);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1753,33 +1679,25 @@ static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
 
 static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fFlush)
 {
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
+    if (!pStreamDS->Out.pDSB)
+        return S_OK;
 
-    HRESULT hr = S_OK;
-
-    if (pStreamDS->Out.pDSB)
+    LogRel2(("DSound: Stopping playback of '%s'...\n", pStreamDS->Cfg.szName));
+    HRESULT hrc = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
+    if (FAILED(hrc))
     {
-        DSLOG(("DSound: Stopping playback\n"));
-        hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
-        if (FAILED(hr))
-        {
-            hr = directSoundPlayRestore(pThis, pStreamDS->Out.pDSB);
-            if (FAILED(hr)) /** @todo shouldn't this be a SUCCEEDED? */
-                hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
-        }
+        LogFunc(("IDirectSoundBuffer8_Stop -> %Rhrc; will attempt restoring the stream...\n", hrc));
+        directSoundPlayRestore(pThis, pStreamDS->Out.pDSB);
+        hrc = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
+        if (FAILED(hrc))
+            LogRelMax(64, ("DSound: %s playback of '%s' failed: %Rhrc\n", fFlush ? "Stopping" : "Pausing",
+                           pStreamDS->Cfg.szName, hrc));
     }
+    LogRel2(("DSound: Stopped playback of '%s': %Rhrc\n", pStreamDS->Cfg.szName, hrc));
 
-    if (SUCCEEDED(hr))
-    {
-        if (fFlush)
-            drvHostDSoundStreamReset(pThis, pStreamDS);
-    }
-
-    if (FAILED(hr))
-        DSLOGREL(("DSound: %s playback failed with %Rhrc\n", fFlush ? "Stopping" : "Pausing", hr));
-
-    return hr;
+    if (fFlush)
+        drvHostDSoundStreamReset(pThis, pStreamDS);
+    return hrc;
 }
 
 
@@ -1918,28 +1836,41 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
 
 static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fFlush)
 {
+    if (!pStreamDS->In.pDSCB)
+        return S_OK;
+
+    LogRel2(("DSound: Stopping capture (%s)\n", pStreamDS->Cfg.szName));
+    HRESULT hrc = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
+    if (FAILED(hrc))
+        LogRelMax(64, ("DSound: Stopping capture of stream '%s' failed: %Rhrc\n", pStreamDS->Cfg.szName, hrc));
+
+    if (fFlush)
+         drvHostDSoundStreamReset(pThis, pStreamDS);
+    return hrc;
+}
+
+
+static HRESULT directSoundCaptureClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+{
     AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
 
-    RT_NOREF(pThis);
+    LogFlowFuncEnter();
 
-    HRESULT hr = S_OK;
-
-    if (pStreamDS->In.pDSCB)
-    {
-        DSLOG(("DSound: Stopping capture\n"));
-        hr = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        if (fFlush)
-             drvHostDSoundStreamReset(pThis, pStreamDS);
-    }
-
+    HRESULT hr = directSoundCaptureStop(pThis, pStreamDS, true /* fFlush */);
     if (FAILED(hr))
-        DSLOGREL(("DSound: Stopping capture buffer failed with %Rhrc\n", hr));
+        return hr;
 
+    if (   pStreamDS
+        && pStreamDS->In.pDSCB)
+    {
+        DSLOG(("DSound: Closing capturing stream\n"));
+
+        IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
+        pStreamDS->In.pDSCB = NULL;
+    }
+
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
@@ -1991,8 +1922,7 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
             RT_FALL_THROUGH();
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            directSoundCaptureStop(pThis, pStreamDS,
-                                   enmStreamCmd == PDMAUDIOSTREAMCMD_DISABLE /* fFlush */);
+            directSoundCaptureStop(pThis, pStreamDS, enmStreamCmd == PDMAUDIOSTREAMCMD_DISABLE /* fFlush */);
 
             /* Return success in any case, as stopping the capture can fail if
              * the capture buffer is not around anymore.
