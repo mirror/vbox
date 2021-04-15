@@ -407,10 +407,10 @@ void UIFilePathSelector::selectPath()
     switch (m_enmMode)
     {
         case Mode_File_Open:
-            strSelPath = QIFileDialog::getOpenFileName(strInitPath, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle); break;
+            strSelPath = QIFileDialog::getOpenFileName(strInitPath, m_strFileDialogFilters, window(), m_strFileDialogTitle); break;
         case Mode_File_Save:
         {
-            strSelPath = QIFileDialog::getSaveFileName(strInitPath, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle);
+            strSelPath = QIFileDialog::getSaveFileName(strInitPath, m_strFileDialogFilters, window(), m_strFileDialogTitle);
             if (!strSelPath.isEmpty() && QFileInfo(strSelPath).suffix().isEmpty())
             {
                 if (m_strFileDialogDefaultSaveExtension.isEmpty())
@@ -421,7 +421,7 @@ void UIFilePathSelector::selectPath()
             break;
         }
         case Mode_Folder:
-            strSelPath = QIFileDialog::getExistingDirectory(strInitPath, parentWidget(), m_strFileDialogTitle); break;
+            strSelPath = QIFileDialog::getExistingDirectory(strInitPath, window(), m_strFileDialogTitle); break;
     }
 
     /* Do nothing if nothing chosen: */
