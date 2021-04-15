@@ -438,30 +438,34 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
 #endif
             uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
             PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
-            uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
-            for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+            /* Do not attempt to segment frames with invalid GSO parameters. */
+            if (PDMNetGsoIsValid(pGso, sizeof(*pGso), pSgBuf->cbUsed))
             {
-                size_t cbSeg;
-                void  *pvSeg;
-                m = slirp_ext_m_get(pThis->pNATState, pGso->cbHdrsTotal + pGso->cbMaxSeg, &pvSeg, &cbSeg);
-                if (!m)
-                    break;
+                uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
+                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                {
+                    size_t cbSeg;
+                    void  *pvSeg;
+                    m = slirp_ext_m_get(pThis->pNATState, pGso->cbHdrsTotal + pGso->cbMaxSeg, &pvSeg, &cbSeg);
+                    if (!m)
+                        break;
 
 #if 1
-                uint32_t cbPayload, cbHdrs;
-                uint32_t offPayload = PDMNetGsoCarveSegment(pGso, pbFrame, pSgBuf->cbUsed,
-                                                            iSeg, cSegs, (uint8_t *)pvSeg, &cbHdrs, &cbPayload);
-                memcpy((uint8_t *)pvSeg + cbHdrs, pbFrame + offPayload, cbPayload);
+                    uint32_t cbPayload, cbHdrs;
+                    uint32_t offPayload = PDMNetGsoCarveSegment(pGso, pbFrame, pSgBuf->cbUsed,
+                                                                iSeg, cSegs, (uint8_t *)pvSeg, &cbHdrs, &cbPayload);
+                    memcpy((uint8_t *)pvSeg + cbHdrs, pbFrame + offPayload, cbPayload);
 
-                slirp_input(pThis->pNATState, m, cbPayload + cbHdrs);
+                    slirp_input(pThis->pNATState, m, cbPayload + cbHdrs);
 #else
-                uint32_t cbSegFrame;
-                void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
-                                                           iSeg, cSegs, &cbSegFrame);
-                memcpy((uint8_t *)pvSeg, pvSegFrame, cbSegFrame);
+                    uint32_t cbSegFrame;
+                    void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
+                                                            iSeg, cSegs, &cbSegFrame);
+                    memcpy((uint8_t *)pvSeg, pvSegFrame, cbSegFrame);
 
-                slirp_input(pThis->pNATState, m, cbSegFrame);
+                    slirp_input(pThis->pNATState, m, cbSegFrame);
 #endif
+                }
             }
         }
     }
