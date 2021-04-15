@@ -344,6 +344,8 @@ typedef struct LSILOGICSCSIR3
     uint32_t                    cbMemRegns;
     uint32_t                    u32Padding3;
 
+    /** Critical section protecting the memory regions. */
+    RTCRITSECT                  CritSectMemRegns;
     /** List of memory regions - PLSILOGICMEMREGN. */
     RTLISTANCHORR3              ListMemRegns;
 
@@ -600,11 +602,78 @@ static int lsilogicR3HardReset(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, PLSILOGI
     pThis->u16NextHandle  = 1;
     pThis->u32DiagMemAddr = 0;
 
-    lsilogicR3ConfigurationPagesFree(pThis, pThisCC);
     lsilogicR3InitializeConfigurationPages(pDevIns, pThis, pThisCC);
 
     /* Mark that we finished performing the reset. */
     pThis->enmState = LSILOGICSTATE_READY;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Allocates the configuration pages based on the device.
+ *
+ * @returns nothing.
+ * @param   pThis    Pointer to the shared LsiLogic device state.
+ * @param   pThisCC  Pointer to the ring-3 LsiLogic device state.
+ */
+static int lsilogicR3ConfigurationPagesAlloc(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThisCC)
+{
+    pThisCC->pConfigurationPages = (PMptConfigurationPagesSupported)RTMemAllocZ(sizeof(MptConfigurationPagesSupported));
+    if (!pThisCC->pConfigurationPages)
+        return VERR_NO_MEMORY;
+
+    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        PMptConfigurationPagesSas pPages = &pThisCC->pConfigurationPages->u.SasPages;
+
+        pPages->cbManufacturingPage7 = LSILOGICSCSI_MANUFACTURING7_GET_SIZE(pThis->cPorts);
+        PMptConfigurationPageManufacturing7 pManufacturingPage7 = (PMptConfigurationPageManufacturing7)RTMemAllocZ(pPages->cbManufacturingPage7);
+        AssertPtrReturn(pManufacturingPage7, VERR_NO_MEMORY);
+        pPages->pManufacturingPage7 = pManufacturingPage7;
+
+        /* SAS I/O unit page 0 - Port specific information. */
+        pPages->cbSASIOUnitPage0 = LSILOGICSCSI_SASIOUNIT0_GET_SIZE(pThis->cPorts);
+        PMptConfigurationPageSASIOUnit0 pSASPage0 = (PMptConfigurationPageSASIOUnit0)RTMemAllocZ(pPages->cbSASIOUnitPage0);
+        AssertPtrReturn(pSASPage0, VERR_NO_MEMORY);
+        pPages->pSASIOUnitPage0 = pSASPage0;
+
+        /* SAS I/O unit page 1 - Port specific settings. */
+        pPages->cbSASIOUnitPage1 = LSILOGICSCSI_SASIOUNIT1_GET_SIZE(pThis->cPorts);
+        PMptConfigurationPageSASIOUnit1 pSASPage1 = (PMptConfigurationPageSASIOUnit1)RTMemAllocZ(pPages->cbSASIOUnitPage1);
+        AssertPtrReturn(pSASPage1, VERR_NO_MEMORY);
+        pPages->pSASIOUnitPage1 = pSASPage1;
+
+        pPages->cPHYs  = pThis->cPorts;
+        pPages->paPHYs = (PMptPHY)RTMemAllocZ(pPages->cPHYs * sizeof(MptPHY));
+        AssertPtrReturn(pPages->paPHYs, VERR_NO_MEMORY);
+
+        /* Initialize the PHY configuration */
+        for (unsigned i = 0; i < pThis->cPorts; i++)
+        {
+            /* Settings for present devices. */
+            if (pThisCC->paDeviceStates[i].pDrvBase)
+            {
+                PMptSASDevice pSASDevice = (PMptSASDevice)RTMemAllocZ(sizeof(MptSASDevice));
+                AssertPtrReturn(pSASDevice, VERR_NO_MEMORY);
+
+                /* Link into device list. */
+                if (!pPages->cDevices)
+                {
+                    pPages->pSASDeviceHead = pSASDevice;
+                    pPages->pSASDeviceTail = pSASDevice;
+                    pPages->cDevices = 1;
+                }
+                else
+                {
+                    pSASDevice->pPrev = pPages->pSASDeviceTail;
+                    pPages->pSASDeviceTail->pNext = pSASDevice;
+                    pPages->pSASDeviceTail = pSASDevice;
+                    pPages->cDevices++;
+                }
+            }
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -641,9 +710,16 @@ static void lsilogicR3ConfigurationPagesFree(PLSILOGICSCSI pThis, PLSILOGICSCSIC
                 RTMemFree(pSasPages->pSASIOUnitPage0);
             if (pSasPages->pSASIOUnitPage1)
                 RTMemFree(pSasPages->pSASIOUnitPage1);
+
+            pSasPages->pSASDeviceHead      = NULL;
+            pSasPages->paPHYs              = NULL;
+            pSasPages->pManufacturingPage7 = NULL;
+            pSasPages->pSASIOUnitPage0     = NULL;
+            pSasPages->pSASIOUnitPage1     = NULL;
         }
 
         RTMemFree(pThisCC->pConfigurationPages);
+        pThisCC->pConfigurationPages = NULL;
     }
 }
 
@@ -883,8 +959,9 @@ static uint32_t lsilogicR3MemRegionsCount(PLSILOGICSCSICC pThisCC)
  */
 static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThisCC, uint32_t u32Data)
 {
-    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThisCC, pThis->u32DiagMemAddr);
+    RTCritSectEnter(&pThisCC->CritSectMemRegns);
 
+    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThisCC, pThis->u32DiagMemAddr);
     if (pRegion)
     {
         uint32_t offRegion = pThis->u32DiagMemAddr - pRegion->u32AddrStart;
@@ -959,6 +1036,7 @@ static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThi
 
     /* Memory access is always 32bit big. */
     pThis->u32DiagMemAddr += sizeof(uint32_t);
+    RTCritSectLeave(&pThisCC->CritSectMemRegns);
 }
 
 /**
@@ -971,8 +1049,9 @@ static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThi
  */
 static void lsilogicR3DiagRegDataRead(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThisCC, uint32_t *pu32Data)
 {
-    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThisCC, pThis->u32DiagMemAddr);
+    RTCritSectEnter(&pThisCC->CritSectMemRegns);
 
+    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThisCC, pThis->u32DiagMemAddr);
     if (pRegion)
     {
         uint32_t offRegion = pThis->u32DiagMemAddr - pRegion->u32AddrStart;
@@ -989,6 +1068,7 @@ static void lsilogicR3DiagRegDataRead(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThis
 
     /* Memory access is always 32bit big. */
     pThis->u32DiagMemAddr += sizeof(uint32_t);
+    RTCritSectLeave(&pThisCC->CritSectMemRegns);
 }
 
 /**
@@ -1122,6 +1202,7 @@ static int lsilogicR3ProcessMessageRequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pTh
             pReply->IOCFacts.u32FWVersion         = 0;
 
             /* Check for a valid firmware image in the IOC memory which was downloaded by the guest earlier and use that. */
+            RTCritSectEnter(&pThisCC->CritSectMemRegns);
             PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThisCC, LSILOGIC_FWIMGHDR_LOAD_ADDRESS);
             if (pRegion)
             {
@@ -1145,6 +1226,7 @@ static int lsilogicR3ProcessMessageRequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pTh
                     }
                 }
             }
+            RTCritSectLeave(&pThisCC->CritSectMemRegns);
             break;
         }
         case MPT_MESSAGE_HDR_FUNCTION_PORT_FACTS:
@@ -3418,9 +3500,9 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
     LogFlowFunc(("pThis=%#p\n", pThis));
 
     /* Manufacturing Page 7 - Connector settings. */
-    pPages->cbManufacturingPage7 = LSILOGICSCSI_MANUFACTURING7_GET_SIZE(pThis->cPorts);
-    PMptConfigurationPageManufacturing7 pManufacturingPage7 = (PMptConfigurationPageManufacturing7)RTMemAllocZ(pPages->cbManufacturingPage7);
+    PMptConfigurationPageManufacturing7 pManufacturingPage7 = pPages->pManufacturingPage7;
     AssertPtr(pManufacturingPage7);
+
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(pManufacturingPage7,
                                               0, 7,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY);
@@ -3430,11 +3512,9 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
     else
         pManufacturingPage7->u.fields.Header.u8PageLength = pPages->cbManufacturingPage7 / 4;
     pManufacturingPage7->u.fields.u8NumPhys = pThis->cPorts;
-    pPages->pManufacturingPage7 = pManufacturingPage7;
 
     /* SAS I/O unit page 0 - Port specific information. */
-    pPages->cbSASIOUnitPage0 = LSILOGICSCSI_SASIOUNIT0_GET_SIZE(pThis->cPorts);
-    PMptConfigurationPageSASIOUnit0 pSASPage0 = (PMptConfigurationPageSASIOUnit0)RTMemAllocZ(pPages->cbSASIOUnitPage0);
+    PMptConfigurationPageSASIOUnit0 pSASPage0 = pPages->pSASIOUnitPage0;
     AssertPtr(pSASPage0);
 
     MPT_CONFIG_EXTENDED_PAGE_HEADER_INIT(pSASPage0, pPages->cbSASIOUnitPage0,
@@ -3444,8 +3524,7 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
     pPages->pSASIOUnitPage0 = pSASPage0;
 
     /* SAS I/O unit page 1 - Port specific settings. */
-    pPages->cbSASIOUnitPage1 = LSILOGICSCSI_SASIOUNIT1_GET_SIZE(pThis->cPorts);
-    PMptConfigurationPageSASIOUnit1 pSASPage1 = (PMptConfigurationPageSASIOUnit1)RTMemAllocZ(pPages->cbSASIOUnitPage1);
+    PMptConfigurationPageSASIOUnit1 pSASPage1 = pPages->pSASIOUnitPage1;
     AssertPtr(pSASPage1);
 
     MPT_CONFIG_EXTENDED_PAGE_HEADER_INIT(pSASPage1, pPages->cbSASIOUnitPage1,
@@ -3454,7 +3533,6 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
     pSASPage1->u.fields.u8NumPhys = pSASPage0->u.fields.u8NumPhys;
     pSASPage1->u.fields.u16ControlFlags = 0;
     pSASPage1->u.fields.u16AdditionalControlFlags = 0;
-    pPages->pSASIOUnitPage1 = pSASPage1;
 
     /* SAS I/O unit page 2 - Port specific information. */
     pPages->SASIOUnitPage2.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
@@ -3470,11 +3548,11 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
     pPages->SASIOUnitPage3.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
     pPages->SASIOUnitPage3.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit3) / 4;
 
-    pPages->cPHYs  = pThis->cPorts;
-    pPages->paPHYs = (PMptPHY)RTMemAllocZ(pPages->cPHYs * sizeof(MptPHY));
+    Assert(pPages->cPHYs == pThis->cPorts);
     AssertPtr(pPages->paPHYs);
 
     /* Initialize the PHY configuration */
+    PMptSASDevice pSASDevice = pPages->pSASDeviceHead;
     for (unsigned i = 0; i < pThis->cPorts; i++)
     {
         PMptPHY pPHYPages = &pPages->paPHYs[i];
@@ -3523,7 +3601,6 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
         {
             uint16_t u16DeviceHandle = lsilogicGetHandle(pThis);
             SASADDRESS SASAddress;
-            PMptSASDevice pSASDevice = (PMptSASDevice)RTMemAllocZ(sizeof(MptSASDevice));
             AssertPtr(pSASDevice);
 
             memset(&SASAddress, 0, sizeof(SASADDRESS));
@@ -3581,20 +3658,7 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
             pSASDevice->SASDevicePage2.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASDevice2) / 4;
             pSASDevice->SASDevicePage2.u.fields.SASAddress                 = SASAddress;
 
-            /* Link into device list. */
-            if (!pPages->cDevices)
-            {
-                pPages->pSASDeviceHead = pSASDevice;
-                pPages->pSASDeviceTail = pSASDevice;
-                pPages->cDevices = 1;
-            }
-            else
-            {
-                pSASDevice->pPrev = pPages->pSASDeviceTail;
-                pPages->pSASDeviceTail->pNext = pSASDevice;
-                pPages->pSASDeviceTail = pSASDevice;
-                pPages->cDevices++;
-            }
+            pSASDevice = pSASDevice->pNext;
         }
     }
 }
@@ -3610,15 +3674,12 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
 static void lsilogicR3InitializeConfigurationPages(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, PLSILOGICSCSICC pThisCC)
 {
     /* Initialize the common pages. */
-    PMptConfigurationPagesSupported pPages = (PMptConfigurationPagesSupported)RTMemAllocZ(sizeof(MptConfigurationPagesSupported));
-    /** @todo r=bird: Missing alloc failure check.   Why do we allocate this
-     *        structure? It's fixed size... */
-
-    pThisCC->pConfigurationPages = pPages;
 
     LogFlowFunc(("pThis=%#p\n", pThis));
 
     /* Clear everything first. */
+    AssertPtrReturnVoid(pThisCC->pConfigurationPages);
+    PMptConfigurationPagesSupported pPages = pThisCC->pConfigurationPages;
     memset(pPages, 0, sizeof(MptConfigurationPagesSupported));
 
     /* Manufacturing Page 0. */
@@ -5147,6 +5208,9 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
     PDMDevHlpCritSectDelete(pDevIns, &pThis->RequestQueueCritSect);
     PDMDevHlpCritSectDelete(pDevIns, &pThis->ReplyFreeQueueWriteCritSect);
 
+    if (RTCritSectIsInitialized(&pThisCC->CritSectMemRegns))
+        RTCritSectDelete(&pThisCC->CritSectMemRegns);
+
     RTMemFree(pThisCC->paDeviceStates);
     pThisCC->paDeviceStates = NULL;
 
@@ -5309,6 +5373,13 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueWriteCritSect, RT_SRC_POS, "%sRFQW", szDevTag);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for reply free queue write access"));
+
+    /*
+     * Critical section protecting the memory regions.
+     */
+    rc = RTCritSectInit(&pThisCC->CritSectMemRegns);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: Failed to initialize critical section protecting the memory regions"));
 
     /*
      * Register the PCI device, it's I/O regions.
@@ -5533,6 +5604,11 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                               ? "LsiLogic SPI info."
                               : "LsiLogic SAS info.", lsilogicR3Info);
+
+    /* Allocate configuration pages. */
+    rc = lsilogicR3ConfigurationPagesAlloc(pThis, pThisCC);
+    if (RT_FAILURE(rc))
+        PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: Failed to allocate memory for configuration pages"));
 
     /* Perform hard reset. */
     rc = lsilogicR3HardReset(pDevIns, pThis, pThisCC);
