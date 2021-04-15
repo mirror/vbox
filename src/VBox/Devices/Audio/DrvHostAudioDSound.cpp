@@ -1150,7 +1150,7 @@ static int drvHostDSoundEnumerateDevices(PPDMAUDIOHOSTENUM pDevEnm)
     PDSOUNDDEV pDev;
     RTListForEach(&pDevEnm->LstDevices, pDev, DSOUNDDEV, Core.ListEntry)
     {
-        drvHostDSoundEnumOldStylQueryDeviceInfo(pDev); /* ignore rc */
+        drvHostDSoundEnumOldStyleQueryDeviceInfo(pDev); /* ignore rc */
     }
 
     DSLOG(("DSound: Enumerating devices done\n"));
