@@ -207,6 +207,8 @@ public:
     void copySelectedText() const;
     bool hasSelectedText() const;
     bool isFindInPageWidgetVisible() const;
+    void findNext();
+    void findPrevious();
 
 public slots:
 
@@ -290,6 +292,8 @@ public:
     bool hasCurrentTabSelectedText() const;
     bool isFindInPageWidgetVisible() const;
     void toggleFindInPage(bool fTrigger);
+    void findNext();
+    void findPrevious();
 
 public slots:
 
@@ -633,6 +637,18 @@ bool UIHelpBrowserTab::isFindInPageWidgetVisible() const
     return false;
 }
 
+void UIHelpBrowserTab::findNext()
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->sltSelectNextMatch();
+}
+
+void UIHelpBrowserTab::findPrevious()
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->sltSelectPreviousMatch();
+}
+
 int UIHelpBrowserTab::zoomPercentage() const
 {
     if (m_pContentViewer)
@@ -703,7 +719,6 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
                      m_pBackwardAction && m_pAddBookmarkAction &&
                      m_pFindInPageAction);
     m_pFindInPageAction->setCheckable(true);
-    m_pFindInPageAction->setShortcut(QKeySequence::Find);
 
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHomeAction);
     connect(m_pAddBookmarkAction, &QAction::triggered, this, &UIHelpBrowserTab::sltAddBookmarkAction);
@@ -1084,6 +1099,20 @@ void UIHelpBrowserTabManager::toggleFindInPage(bool fTrigger)
         pTab->sltFindInPageAction(fTrigger);
 }
 
+void UIHelpBrowserTabManager::findNext()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->findNext();
+}
+
+void UIHelpBrowserTabManager::findPrevious()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->findPrevious();
+}
+
 void UIHelpBrowserTabManager::slttabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1249,6 +1278,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pShowHideStatusBarAction(0)
     , m_pCopySelectedTextAction(0)
     , m_pFindInPageAction(0)
+    , m_pFindNextInPageAction(0)
+    , m_pFindPreviousInPageAction(0)
     , m_pZoomMenuAction(0)
     , m_fModelContentCreated(false)
     , m_fIndexingFinished(false)
@@ -1335,7 +1366,19 @@ void UIHelpBrowserWidget::prepareActions()
     m_pFindInPageAction->setChecked(false);
     connect(m_pFindInPageAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltFindInPage);
-    m_pFindInPageAction->setShortcut(QString("Ctrl+F"));
+    m_pFindInPageAction->setShortcut(QKeySequence::Find);
+
+    m_pFindNextInPageAction = new QAction(this);
+    m_pFindNextInPageAction->setEnabled(false);
+    connect(m_pFindNextInPageAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltFindNextInPage);
+    m_pFindNextInPageAction->setShortcut(QKeySequence::FindNext);
+
+    m_pFindPreviousInPageAction = new QAction(this);
+    m_pFindPreviousInPageAction->setEnabled(false);
+    connect(m_pFindPreviousInPageAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltFindPreviousInPage);
+    m_pFindPreviousInPageAction->setShortcut(QKeySequence::FindPrevious);
 
     m_pPrintAction = new QAction(this);
     connect(m_pPrintAction, &QAction::triggered,
@@ -1504,6 +1547,10 @@ void UIHelpBrowserWidget::prepareMenu()
         m_pEditMenu->addAction(m_pCopySelectedTextAction);
     if(m_pFindInPageAction)
         m_pEditMenu->addAction(m_pFindInPageAction);
+    if(m_pFindNextInPageAction)
+        m_pEditMenu->addAction(m_pFindNextInPageAction);
+    if(m_pFindPreviousInPageAction)
+        m_pEditMenu->addAction(m_pFindPreviousInPageAction);
 
     if (m_pZoomMenuAction)
         m_pViewMenu->addAction(m_pZoomMenuAction);
@@ -1645,6 +1692,10 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pCopySelectedTextAction->setText(tr("&Copy Selected Text"));
     if (m_pFindInPageAction)
         m_pFindInPageAction->setText(tr("&Find in Page"));
+    if (m_pFindNextInPageAction)
+        m_pFindNextInPageAction->setText(tr("&Find Next"));
+    if (m_pFindPreviousInPageAction)
+        m_pFindPreviousInPageAction->setText(tr("&Find Previous"));
 }
 
 
@@ -1700,6 +1751,18 @@ void UIHelpBrowserWidget::sltFindInPage(bool fChecked)
         m_pTabManager->toggleFindInPage(fChecked);
 }
 
+void UIHelpBrowserWidget::sltFindNextInPage()
+{
+    if (m_pTabManager)
+        m_pTabManager->findNext();
+}
+
+void UIHelpBrowserWidget::sltFindPreviousInPage()
+{
+    if (m_pTabManager)
+        m_pTabManager->findPrevious();
+}
+
 void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)
 {
     if (m_pCopySelectedTextAction)
@@ -1714,6 +1777,11 @@ void UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged(bool fVisible)
         m_pFindInPageAction->setChecked(fVisible);
         m_pFindInPageAction->blockSignals(false);
     }
+    if (m_pFindNextInPageAction)
+        m_pFindNextInPageAction->setEnabled(fVisible);
+
+    if (m_pFindPreviousInPageAction)
+        m_pFindPreviousInPageAction->setEnabled(fVisible);
 }
 
 void UIHelpBrowserWidget::sltShowPrintDialog()
@@ -1983,6 +2051,10 @@ void UIHelpBrowserWidget::sltCurrentTabChanged(int iIndex)
             m_pCopySelectedTextAction->setEnabled(m_pTabManager->hasCurrentTabSelectedText());
         if (m_pFindInPageAction)
             m_pFindInPageAction->setChecked(m_pTabManager->isFindInPageWidgetVisible());
+        if (m_pFindNextInPageAction)
+            m_pFindNextInPageAction->setEnabled(m_pTabManager->isFindInPageWidgetVisible());
+        if (m_pFindPreviousInPageAction)
+            m_pFindPreviousInPageAction->setEnabled(m_pTabManager->isFindInPageWidgetVisible());
     }
 }
 
