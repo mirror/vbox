@@ -205,12 +205,6 @@ private:
           * @note enmType equal to DetailsElementType_Invalid means load everything. */
         void loadDetailsOptions(DetailsElementType enmType = DetailsElementType_Invalid);
 
-        /** Saves details options. */
-        void saveDetailsOptions();
-        /** Saves details categories. */
-        void saveDetailsCategories();
-        /** Saves settings. */
-        void saveSettings();
         /** Cleanups context-menu. */
         void cleanupContextMenu();
         /** Cleanups root. */
