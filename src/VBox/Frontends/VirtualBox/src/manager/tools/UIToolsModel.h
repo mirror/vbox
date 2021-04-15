@@ -222,11 +222,9 @@ private:
         void prepareHandlers();
         /** Prepares connections. */
         void prepareConnections();
-        /** Loads last selected items. */
-        void loadLastSelectedItems();
+        /** Loads settings. */
+        void loadSettings();
 
-        /** Saves last selected items. */
-        void saveLastSelectedItems();
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups connections. */

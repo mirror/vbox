@@ -73,8 +73,8 @@ UIToolsModel::~UIToolsModel()
 
 void UIToolsModel::init()
 {
-    /* Load last selected item: */
-    loadLastSelectedItems();
+    /* Load settings: */
+    loadSettings();
 
     /* Update linked values: */
     updateLayout();
@@ -217,6 +217,12 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
             case UIToolClass_Machine: m_pLastItemMachine = pItem; break;
             default: break;
         }
+
+        /* Save selected items data: */
+        const QList<UIToolType> set = QList<UIToolType>() << m_pLastItemGlobal->itemType() << m_pLastItemMachine->itemType();
+        LogRel2(("GUI: UIToolsModel: Saving tool items as: Global=%d, Machine=%d\n",
+                 (int)m_pLastItemGlobal->itemType(), (int)m_pLastItemMachine->itemType()));
+        gEDataManager->setToolsPaneLastItemsChosen(set);
     }
     /* Otherwise reset current item: */
     else
@@ -555,15 +561,20 @@ void UIToolsModel::prepareConnections()
     }
 }
 
-void UIToolsModel::loadLastSelectedItems()
+void UIToolsModel::loadSettings()
 {
     /* Load selected items data: */
     const QList<UIToolType> data = gEDataManager->toolsPaneLastItemsChosen();
-
-    /* First of them is current global class item definition: */
     UIToolType enmTypeGlobal = data.value(0);
     if (!UIToolStuff::isTypeOfClass(enmTypeGlobal, UIToolClass_Global))
         enmTypeGlobal = UIToolType_Welcome;
+    UIToolType enmTypeMachine = data.value(1);
+    if (!UIToolStuff::isTypeOfClass(enmTypeMachine, UIToolClass_Machine))
+        enmTypeMachine = UIToolType_Details;
+    LogRel2(("GUI: UIToolsModel: Restoring tool items as: Global=%d, Machine=%d\n",
+             (int)enmTypeGlobal, (int)enmTypeMachine));
+
+    /* First of them is current global class item definition: */
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeGlobal)
             m_pLastItemGlobal = pItem;
@@ -571,23 +582,11 @@ void UIToolsModel::loadLastSelectedItems()
         m_pLastItemGlobal = item(UIToolType_Welcome);
 
     /* Second of them is current machine class item definition: */
-    UIToolType enmTypeMachine = data.value(1);
-    if (!UIToolStuff::isTypeOfClass(enmTypeMachine, UIToolClass_Machine))
-        enmTypeMachine = UIToolType_Details;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeMachine)
             m_pLastItemMachine = pItem;
     if (m_pLastItemMachine.isNull())
         m_pLastItemMachine = item(UIToolType_Details);
-}
-
-void UIToolsModel::saveLastSelectedItems()
-{
-    /* Prepare selected items data: */
-    const QList<UIToolType> set = QList<UIToolType>() << m_pLastItemGlobal->itemType() << m_pLastItemMachine->itemType();
-
-    /* Save selected items data: */
-    gEDataManager->setToolsPaneLastItemsChosen(set);
 }
 
 void UIToolsModel::cleanupConnections()
@@ -622,8 +621,6 @@ void UIToolsModel::cleanupScene()
 
 void UIToolsModel::cleanup()
 {
-    /* Save last selected item: */
-    saveLastSelectedItems();
     /* Cleanup connections: */
     cleanupConnections();
     /* Cleanup handlers: */
