@@ -394,6 +394,7 @@ maybe_run_python_bindings_installer() {
 
     # Check for python2 only, because the generic package does not provide
     # any XPCOM bindings support for python3 since there is no standard ABI.
+    PYTHON=""
     for p in python python2 python2.6 python2.7; do
         if [ "`$p -c 'import sys
 if sys.version_info >= (2, 6) and sys.version_info < (3, 0):
