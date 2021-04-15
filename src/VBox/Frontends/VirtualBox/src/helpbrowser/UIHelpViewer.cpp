@@ -353,7 +353,7 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectNextMatch,
             this, &UIHelpViewer::sltSelectNextMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigClose,
-            this, &UIHelpViewer::sigCloseFindInPageWidget);
+            this, &UIHelpViewer::sltCloseFindInPageWidget);
 
     m_defaultCursor = cursor();
     m_handCursor = QCursor(Qt::PointingHandCursor);
@@ -407,10 +407,11 @@ void UIHelpViewer::setSource(const QUrl &url)
     scaleImages();
 }
 
-void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
+void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
 {
     if (!m_pFindInPageWidget)
         return;
+
     /* Closing the find in page widget causes QTextBrowser to jump to the top of the document. This hack puts it back into position: */
     int iPosition = verticalScrollBar()->value();
     m_iMarginForFindWidget = verticalScrollBar()->width() +
@@ -431,6 +432,18 @@ void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
     }
     else
         m_pFindInPageWidget->setFocus();
+    emit sigFindInPageWidgetToogle(fVisible);
+}
+
+void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
+{
+    clearOverlay();
+    toggleFindInPageWidget(fVisible);
+}
+
+void UIHelpViewer::sltCloseFindInPageWidget()
+{
+    sltToggleFindInPageWidget(false);
 }
 
 void UIHelpViewer::setFont(const QFont &font)
@@ -493,9 +506,9 @@ void UIHelpViewer::setHelpFileList(const QList<QUrl> &helpFileList)
     scaleImages();
 }
 
-bool UIHelpViewer::isInOverlayMode() const
+bool UIHelpViewer::hasSelectedText() const
 {
-    return m_fOverlayMode;
+    return textCursor().hasSelection();
 }
 
 int UIHelpViewer::zoomPercentage() const
@@ -992,9 +1005,11 @@ void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
                 m_pOverlayBlurEffect->setEnabled(true);
             viewport()->setCursor(m_defaultCursor);
             emit sigOverlayModeChanged(true);
+            toggleFindInPageWidget(false);
         }
     }
 }
+
 
 #include "UIHelpViewer.moc"
 

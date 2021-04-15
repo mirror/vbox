@@ -182,11 +182,13 @@ class UIHelpBrowserTab : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigSourceChanged(const QUrl &url);
+    void sigCopyAvailableChanged(bool fAvailable);
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     void sigLinkHighlighted(const QString &strLink);
     void sigZoomPercentageChanged(int iPercentage);
+    void sigFindInPageWidgetVisibilityChanged(bool fVisible);
 
 public:
 
@@ -202,18 +204,24 @@ public:
     int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
+    void copySelectedText() const;
+    bool hasSelectedText() const;
+    bool isFindInPageWidgetVisible() const;
+
+public slots:
+
+    void sltHandleFindInPageAction(bool fToggled);
 
 private slots:
 
     void sltHandleHomeAction();
     void sltHandleForwardAction();
     void sltHandleBackwardAction();
-    void sltHandleFindInPageAction(bool fToggled);
     void sltHandleHistoryChanged();
     void sltHandleAddressBarIndexChanged(int index);
     void sltHandleAddBookmarkAction();
     void sltAnchorClicked(const QUrl &link);
-    void sltCloseFindInPageWidget();
+    void sltFindInPageWidgetVisibilityChanged(bool  fVisible);
 
 private:
 
@@ -254,6 +262,8 @@ signals:
     void sigTabsListChanged(const QStringList &titleList);
     void sigLinkHighlighted(const QString &strLink);
     void sigZoomPercentageChanged(int iPercentage);
+    void sigCopyAvailableChanged(bool fAvailable);
+    void sigFindInPageWidgetVisibilityChanged(bool fVisible);
 
 public:
 
@@ -276,6 +286,10 @@ public:
     /** Sets the zoom percentage of all tabs. */
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
+    void copySelectedText() const;
+    bool hasCurrentTabSelectedText() const;
+    bool isFindInPageWidgetVisible() const;
+    void toggleFindInPage(bool fTrigger);
 
 public slots:
 
@@ -292,6 +306,7 @@ private slots:
     void sltHandleCurrentChanged(int iTabIndex);
     void sltShowTabBarContextMenu(const QPoint &pos);
     void sltHandleCloseOtherTabsContextMenuAction();
+    void sltCopyAvailableChanged(bool fAvailable);
 
 private:
 
@@ -598,6 +613,26 @@ void UIHelpBrowserTab::setHelpFileList(const QList<QUrl> &helpFileList)
         m_pContentViewer->setHelpFileList(helpFileList);
 }
 
+void UIHelpBrowserTab::copySelectedText() const
+{
+    if (m_pContentViewer && m_pContentViewer->hasSelectedText())
+        m_pContentViewer->copy();
+}
+
+bool UIHelpBrowserTab::hasSelectedText() const
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->textCursor().hasSelection();
+    return false;
+}
+
+bool UIHelpBrowserTab::isFindInPageWidgetVisible() const
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->isFindInPageWidgetVisible();
+    return false;
+}
+
 int UIHelpBrowserTab::zoomPercentage() const
 {
     if (m_pContentViewer)
@@ -631,8 +666,6 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
         this, &UIHelpBrowserTab::sltAnchorClicked);
     connect(m_pContentViewer, &UIHelpViewer::sigOpenLinkInNewTab,
         this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
-    connect(m_pContentViewer, &UIHelpViewer::sigCloseFindInPageWidget,
-            this, &UIHelpBrowserTab::sltCloseFindInPageWidget);
     connect(m_pContentViewer, &UIHelpViewer::sigGoBackward,
             this, &UIHelpBrowserTab::sltHandleBackwardAction);
     connect(m_pContentViewer, &UIHelpViewer::sigGoForward,
@@ -645,6 +678,10 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sigLinkHighlighted);
     connect(m_pContentViewer, &UIHelpViewer::sigZoomPercentageChanged,
             this, &UIHelpBrowserTab::sigZoomPercentageChanged);
+    connect(m_pContentViewer, &UIHelpViewer::copyAvailable,
+            this, &UIHelpBrowserTab::sigCopyAvailableChanged);
+    connect(m_pContentViewer, &UIHelpViewer::sigFindInPageWidgetToogle,
+            this, &UIHelpBrowserTab::sltFindInPageWidgetVisibilityChanged);
 
     m_pContentViewer->setSource(initialUrl);
 }
@@ -736,7 +773,7 @@ void UIHelpBrowserTab::sltHandleBackwardAction()
 void UIHelpBrowserTab::sltHandleFindInPageAction(bool fToggled)
 {
     if (m_pContentViewer)
-        m_pContentViewer->sltToggleFindInPageWidget(fToggled);
+        m_pContentViewer->toggleFindInPageWidget(fToggled);
 }
 
 void UIHelpBrowserTab::sltHandleHistoryChanged()
@@ -794,12 +831,16 @@ void UIHelpBrowserTab::sltAnchorClicked(const QUrl &link)
     Q_UNUSED(link);
 }
 
-void UIHelpBrowserTab::sltCloseFindInPageWidget()
+void UIHelpBrowserTab::sltFindInPageWidgetVisibilityChanged(bool fVisible)
 {
     if (m_pFindInPageAction)
-        m_pFindInPageAction->setChecked(false);
+    {
+        m_pFindInPageAction->blockSignals(true);
+        m_pFindInPageAction->setChecked(fVisible);
+        m_pFindInPageAction->blockSignals(false);
+    }
+    emit sigFindInPageWidgetVisibilityChanged(fVisible);
 }
-
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
@@ -844,6 +885,10 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sigZoomPercentageChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
+    connect(pTabWidget, &UIHelpBrowserTab::sigCopyAvailableChanged,
+            this, &UIHelpBrowserTabManager::sltCopyAvailableChanged);
+    connect(pTabWidget, &UIHelpBrowserTab::sigFindInPageWidgetVisibilityChanged,
+            this, &UIHelpBrowserTabManager::sigFindInPageWidgetVisibilityChanged);
 
     pTabWidget->setZoomPercentage(zoomPercentage());
     pTabWidget->setHelpFileList(m_helpFileList);
@@ -1007,6 +1052,37 @@ void UIHelpBrowserTabManager::setHelpFileList(const QList<QUrl> &helpFileList)
     m_helpFileList = helpFileList;
 }
 
+void UIHelpBrowserTabManager::copySelectedText() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return;
+    return pTab->copySelectedText();
+}
+
+bool UIHelpBrowserTabManager::hasCurrentTabSelectedText() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return false;
+    return pTab->hasSelectedText();
+}
+
+bool UIHelpBrowserTabManager::isFindInPageWidgetVisible() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return false;
+    return pTab->isFindInPageWidgetVisible();
+}
+
+void UIHelpBrowserTabManager::toggleFindInPage(bool fTrigger)
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltHandleFindInPageAction(fTrigger);
+}
+
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1026,6 +1102,14 @@ void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url, bool fB
     if (url.isValid())
         addNewTab(url, fBackground);
     updateTabUrlTitleList();
+}
+
+void UIHelpBrowserTabManager::sltCopyAvailableChanged(bool fAvailable)
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    /* Emit coresponding signal only if sender is the current tab: */
+    if (pTab && sender() == pTab)
+        emit sigCopyAvailableChanged(fAvailable);
 }
 
 void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
@@ -1146,6 +1230,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pHelpEngine(0)
     , m_pSplitter(0)
     , m_pFileMenu(0)
+    , m_pEditMenu(0)
     , m_pViewMenu(0)
     , m_pTabsMenu(0)
     , m_pContentWidget(0)
@@ -1161,6 +1246,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
     , m_pShowHideStatusBarAction(0)
+    , m_pCopySelectedTextAction(0)
+    , m_pFindInPageAction(0)
     , m_pZoomMenuAction(0)
     , m_fModelContentCreated(false)
     , m_fIndexingFinished(false)
@@ -1180,6 +1267,7 @@ QList<QMenu*> UIHelpBrowserWidget::menus() const
     QList<QMenu*> menuList;
     menuList
         << m_pFileMenu
+        << m_pEditMenu
         << m_pViewMenu
         << m_pTabsMenu;
     return menuList;
@@ -1236,6 +1324,17 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pShowHideStatusBarAction, &QAction::toggled,
             this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
+    m_pCopySelectedTextAction = new QAction(this);
+    connect(m_pCopySelectedTextAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltCopySelectedText);
+    m_pCopySelectedTextAction->setShortcut(QString("Ctrl+C"));
+
+    m_pFindInPageAction = new QAction(this);
+    m_pFindInPageAction->setCheckable(true);
+    m_pFindInPageAction->setChecked(false);
+    connect(m_pFindInPageAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltFindInPage);
+    m_pFindInPageAction->setShortcut(QString("Ctrl+F"));
 
     m_pPrintAction = new QAction(this);
     connect(m_pPrintAction, &QAction::triggered,
@@ -1288,7 +1387,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pSplitter->setChildrenCollapsible(false);
 
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigSourceChanged,
-            this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
+            this, &UIHelpBrowserWidget::sltViewerSourceChange);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigAddBookmark,
             this, &UIHelpBrowserWidget::sltAddNewBookmark);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigTabsListChanged,
@@ -1299,6 +1398,10 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sigLinkHighlighted);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigZoomPercentageChanged,
             this, &UIHelpBrowserWidget::sltZoomPercentageChanged);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigCopyAvailableChanged,
+            this, &UIHelpBrowserWidget::sltCopyAvailableChanged);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigFindInPageWidgetVisibilityChanged,
+            this, &UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged);
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
@@ -1385,6 +1488,7 @@ void UIHelpBrowserWidget::prepareToolBar()
 void UIHelpBrowserWidget::prepareMenu()
 {
     m_pFileMenu = new QMenu(tr("&File"), this);
+    m_pEditMenu = new QMenu(tr("&Edit"), this);
     m_pViewMenu = new QMenu(tr("&View"), this);
     m_pTabsMenu = new QMenu(tr("&Tabs"), this);
 
@@ -1394,6 +1498,11 @@ void UIHelpBrowserWidget::prepareMenu()
         m_pFileMenu->addAction(m_pPrintAction);
     if (m_pQuitAction)
         m_pFileMenu->addAction(m_pQuitAction);
+
+    if (m_pCopySelectedTextAction)
+        m_pEditMenu->addAction(m_pCopySelectedTextAction);
+    if(m_pFindInPageAction)
+        m_pEditMenu->addAction(m_pFindInPageAction);
 
     if (m_pZoomMenuAction)
         m_pViewMenu->addAction(m_pZoomMenuAction);
@@ -1530,6 +1639,11 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pPrintAction->setText(tr("&Print..."));
     if (m_pQuitAction)
         m_pQuitAction->setText(tr("&Quit"));
+
+    if (m_pCopySelectedTextAction)
+        m_pCopySelectedTextAction->setText(tr("&Copy Selected Text"));
+    if (m_pFindInPageAction)
+        m_pFindInPageAction->setText(tr("&Find in Page"));
 }
 
 
@@ -1573,6 +1687,34 @@ void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
         emit sigStatusBarVisible(fToggled);
 }
 
+void UIHelpBrowserWidget::sltCopySelectedText()
+{
+    if (m_pTabManager)
+        m_pTabManager->copySelectedText();
+}
+
+void UIHelpBrowserWidget::sltFindInPage(bool fChecked)
+{
+    if (m_pTabManager)
+        m_pTabManager->toggleFindInPage(fChecked);
+}
+
+void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)
+{
+    if (m_pCopySelectedTextAction)
+        m_pCopySelectedTextAction->setEnabled(fAvailable);
+}
+
+void UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged(bool fVisible)
+{
+    if (m_pFindInPageAction)
+    {
+        m_pFindInPageAction->blockSignals(true);
+        m_pFindInPageAction->setChecked(fVisible);
+        m_pFindInPageAction->blockSignals(false);
+    }
+}
+
 void UIHelpBrowserWidget::sltShowPrintDialog()
 {
 #ifdef VBOX_WS_X11
@@ -1604,7 +1746,7 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & 
     m_pContentWidget->expand(index);
 }
 
-void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
+void UIHelpBrowserWidget::sltViewerSourceChange(const QUrl &source)
 {
     if (m_fModelContentCreated && m_pContentWidget && source.isValid() && m_pContentModel)
     {
@@ -1625,7 +1767,7 @@ void UIHelpBrowserWidget::sltHandleContentsCreated()
 {
     m_fModelContentCreated = true;
     if (m_pTabManager)
-        sltHandleHelpBrowserViewerSourceChange(m_pTabManager->currentSource());
+        sltViewerSourceChange(m_pTabManager->currentSource());
 }
 
 void UIHelpBrowserWidget::sltHandleIndexingStarted()
@@ -1833,6 +1975,14 @@ void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
     if (iIndex+3 >= list.size())
         return;
     list[iIndex+3]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
+
+    if (m_pTabManager)
+    {
+        if (m_pCopySelectedTextAction)
+            m_pCopySelectedTextAction->setEnabled(m_pTabManager->hasCurrentTabSelectedText());
+        if (m_pFindInPageAction)
+            m_pFindInPageAction->setChecked(m_pTabManager->isFindInPageWidgetVisible());
+    }
 }
 
 void UIHelpBrowserWidget::sltZoomPercentageChanged(int iPercentage)

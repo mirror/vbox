@@ -84,7 +84,7 @@ private slots:
     void sltHandleIndexingFinished();
     void sltHandleSearchingStarted();
     void sltHandleSearchStart();
-    void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
+    void sltViewerSourceChange(const QUrl &source);
     void sltOpenLinkWithUrl(const QUrl &url);
     void sltShowLinksContextMenu(const QPoint &pos);
     void sltOpenLinkInNewTab();
@@ -96,6 +96,10 @@ private slots:
     void sltHandleTabChoose();
     void sltHandleCurrentTabChanged(int iIndex);
     void sltZoomPercentageChanged(int iPercentage);
+    void sltCopySelectedText();
+    void sltCopyAvailableChanged(bool fAvailable);
+    void sltFindInPage(bool fChecked);
+    void sltFindInPageWidgetVisibilityChanged(bool fVisible);
 
 private:
 
@@ -151,6 +155,7 @@ private:
     QHelpEngine  *m_pHelpEngine;
     QSplitter           *m_pSplitter;
     QMenu               *m_pFileMenu;
+    QMenu               *m_pEditMenu;
     QMenu               *m_pViewMenu;
     QMenu               *m_pTabsMenu;
     QHelpContentWidget  *m_pContentWidget;
@@ -167,6 +172,8 @@ private:
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
     QAction             *m_pShowHideStatusBarAction;
+    QAction             *m_pCopySelectedTextAction;
+    QAction             *m_pFindInPageAction;
     UIZoomMenuAction    *m_pZoomMenuAction;
 
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
