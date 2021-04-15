@@ -1697,7 +1697,7 @@ DECLINLINE(void) vmsvgaHCUpdatePitch(PVGASTATE pThis, PVGASTATECC pThisCC)
     else if (uFifoPitchLock)
         pThis->svga.cbScanline = uFifoPitchLock;
     else
-        pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+        pThis->svga.cbScanline = (uint32_t)pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
 
     if ((uFifoMin / sizeof(uint32_t)) <= SVGA_FIFO_PITCHLOCK)
         pThis->svga.u32PitchLock = pThis->svga.cbScanline;
@@ -1920,7 +1920,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
         case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelWr);
-            if (pThis->svga.uBpp != u32)
+            if (u32 <= 32 && pThis->svga.uBpp != u32)
             {
 #if defined(IN_RING3) || defined(IN_RING0)
                 pThis->svga.uBpp = u32;
