@@ -707,12 +707,13 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetConfig(PPDMIHOSTAUDIO pInterface, PP
  * @param   pwszModule          Pointer to module name of enumerated device.
  * @param   lpContext           Pointer to PDSOUNDENUMCBCTX context for storing the enumerated information.
  *
- * @note    Carbon copy of dsoundDevicesEnumCbCapture with OUT direction.
+ * @note    Carbon copy of drvHostDSoundEnumOldStyleCaptureCallback with OUT direction.
  */
-static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
+static BOOL CALLBACK drvHostDSoundEnumOldStylePlaybackCallback(LPGUID pGUID, LPCWSTR pwszDescription,
+                                                               LPCWSTR pwszModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pEnumCtx = (PDSOUNDENUMCBCTX)lpContext;
-    AssertPtrReturn(pEnumCtx , FALSE);
+    AssertPtrReturn(pEnumCtx, FALSE);
 
     PPDMAUDIOHOSTENUM pDevEnm = pEnumCtx->pDevEnm;
     AssertPtrReturn(pDevEnm, FALSE);
@@ -767,12 +768,13 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
  * @param   pwszModule          Pointer to module name of enumerated device.
  * @param   lpContext           Pointer to PDSOUNDENUMCBCTX context for storing the enumerated information.
  *
- * @note    Carbon copy of dsoundDevicesEnumCbPlayback with IN direction.
+ * @note    Carbon copy of drvHostDSoundEnumOldStylePlaybackCallback with IN direction.
  */
-static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
+static BOOL CALLBACK drvHostDSoundEnumOldStyleCaptureCallback(LPGUID pGUID, LPCWSTR pwszDescription,
+                                                              LPCWSTR pwszModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pEnumCtx = (PDSOUNDENUMCBCTX )lpContext;
-    AssertPtrReturn(pEnumCtx , FALSE);
+    AssertPtrReturn(pEnumCtx, FALSE);
 
     PPDMAUDIOHOSTENUM pDevEnm = pEnumCtx->pDevEnm;
     AssertPtrReturn(pDevEnm, FALSE);
@@ -819,13 +821,11 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
  * Queries information for a given (DirectSound) device.
  *
  * @returns VBox status code.
- * @param   pThis               Host audio driver instance.
  * @param   pDev                Audio device to query information for.
  */
-static int dsoundDeviceQueryInfo(PDRVHOSTDSOUND pThis, PDSOUNDDEV pDev)
+static int drvHostDSoundEnumOldStyleQueryDeviceInfo(PDSOUNDDEV pDev)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pDev,  VERR_INVALID_POINTER);
+    AssertPtr(pDev);
     int rc;
 
     if (pDev->Core.enmUsage == PDMAUDIODIR_OUT)
@@ -925,7 +925,7 @@ static int dsoundDeviceQueryInfo(PDRVHOSTDSOUND pThis, PDSOUNDDEV pDev)
  * @param   enmType     The type of device.
  * @param   fDefault    Whether it's the default device.
  */
-static int dsoundDeviceNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pDevice, EDataFlow enmType, bool fDefault)
+static int drvHostDSoundEnumNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pDevice, EDataFlow enmType, bool fDefault)
 {
     int rc = VINF_SUCCESS; /* ignore most errors */
 
@@ -1022,14 +1022,10 @@ static int dsoundDeviceNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pDevice
  * Does a (Re-)enumeration of the host's playback + capturing devices.
  *
  * @return  VBox status code.
- * @param   pThis               Host audio driver instance.
  * @param   pDevEnm             Where to store the enumerated devices.
  */
-static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEnm)
+static int drvHostDSoundEnumerateDevices(PPDMAUDIOHOSTENUM pDevEnm)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
     DSLOG(("DSound: Enumerating devices ...\n"));
 
     /*
@@ -1049,7 +1045,7 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
             IMMDevice *pDefaultDevice = NULL;
             hrc = pEnumerator->GetDefaultAudioEndpoint(enmType, eMultimedia, &pDefaultDevice);
             if (SUCCEEDED(hrc))
-                rc = dsoundDeviceNewStyleAdd(pDevEnm, pDefaultDevice, enmType, true);
+                rc = drvHostDSoundEnumNewStyleAdd(pDevEnm, pDefaultDevice, enmType, true);
             else
                 pDefaultDevice = NULL;
 
@@ -1069,7 +1065,7 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
                         if (SUCCEEDED(hrc) && pDevice)
                         {
                             if (pDevice != pDefaultDevice)
-                                rc = dsoundDeviceNewStyleAdd(pDevEnm, pDevice, enmType, false);
+                                rc = drvHostDSoundEnumNewStyleAdd(pDevEnm, pDevice, enmType, false);
                             pDevice->Release();
                         }
                     }
@@ -1091,68 +1087,77 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
     }
 
     /*
-     * Fall back on dsound.
+     * Fall back to dsound.
      */
-    RTLDRMOD hDSound = NULL;
-    int rc = RTLdrLoadSystem("dsound.dll", true /*fNoUnload*/, &hDSound);
-    if (RT_SUCCESS(rc))
+    /* Resolve symbols once. */
+    static PFNDIRECTSOUNDENUMERATEW        volatile s_pfnDirectSoundEnumerateW        = NULL;
+    static PFNDIRECTSOUNDCAPTUREENUMERATEW volatile s_pfnDirectSoundCaptureEnumerateW = NULL;
+
+    PFNDIRECTSOUNDENUMERATEW        pfnDirectSoundEnumerateW          = s_pfnDirectSoundEnumerateW;
+    PFNDIRECTSOUNDCAPTUREENUMERATEW pfnDirectSoundCaptureEnumerateW   = s_pfnDirectSoundCaptureEnumerateW;
+    if (!pfnDirectSoundEnumerateW || !pfnDirectSoundCaptureEnumerateW)
     {
-        DSOUNDENUMCBCTX EnumCtx;
-        EnumCtx.fFlags  = 0;
-        EnumCtx.pDevEnm = pDevEnm;
-
-        /*
-         * Enumerate playback devices.
-         */
-        PFNDIRECTSOUNDENUMERATEW pfnDirectSoundEnumerateW = NULL;
-        rc = RTLdrGetSymbol(hDSound, "DirectSoundEnumerateW", (void**)&pfnDirectSoundEnumerateW);
+        RTLDRMOD hModDSound = NIL_RTLDRMOD;
+        int rc = RTLdrLoadSystem("dsound.dll", true /*fNoUnload*/, &hModDSound);
         if (RT_SUCCESS(rc))
         {
-            DSLOG(("DSound: Enumerating playback devices ...\n"));
+            rc = RTLdrGetSymbol(hModDSound, "DirectSoundEnumerateW", (void **)&pfnDirectSoundEnumerateW);
+            if (RT_SUCCESS(rc))
+                s_pfnDirectSoundEnumerateW = pfnDirectSoundEnumerateW;
+            else
+                LogRel(("DSound: Failed to get dsound.dll export DirectSoundEnumerateW: %Rrc\n", rc));
 
-            HRESULT hr = pfnDirectSoundEnumerateW(&dsoundDevicesEnumCbPlayback, &EnumCtx);
-            if (FAILED(hr))
-                LogRel(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
+            rc = RTLdrGetSymbol(hModDSound, "DirectSoundCaptureEnumerateW", (void **)&pfnDirectSoundCaptureEnumerateW);
+            if (RT_SUCCESS(rc))
+                s_pfnDirectSoundCaptureEnumerateW = pfnDirectSoundCaptureEnumerateW;
+            else
+                LogRel(("DSound: Failed to get dsound.dll export DirectSoundCaptureEnumerateW: %Rrc\n", rc));
+            RTLdrClose(hModDSound);
         }
         else
-            LogRel(("DSound: Error starting to enumerate host playback devices: %Rrc\n", rc));
+            LogRel(("DSound: Unable to load dsound.dll for enumerating devices: %Rrc\n", rc));
+        if (!pfnDirectSoundEnumerateW && !pfnDirectSoundCaptureEnumerateW)
+            return rc;
+    }
 
-        /*
-         * Enumerate capture devices.
-         */
-        PFNDIRECTSOUNDCAPTUREENUMERATEW pfnDirectSoundCaptureEnumerateW = NULL;
-        rc = RTLdrGetSymbol(hDSound, "DirectSoundCaptureEnumerateW", (void**)&pfnDirectSoundCaptureEnumerateW);
-        if (RT_SUCCESS(rc))
-        {
-            DSLOG(("DSound: Enumerating capture devices ...\n"));
+    /* Common callback context for both playback and capture enumerations: */
+    DSOUNDENUMCBCTX EnumCtx;
+    EnumCtx.fFlags  = 0;
+    EnumCtx.pDevEnm = pDevEnm;
 
-            HRESULT hr = pfnDirectSoundCaptureEnumerateW(&dsoundDevicesEnumCbCapture, &EnumCtx);
-            if (FAILED(hr))
-                LogRel(("DSound: Error enumerating host capture devices: %Rhrc\n", hr));
-        }
-        else
-            LogRel(("DSound: Error starting to enumerate host capture devices: %Rrc\n", rc));
+    /* Enumerate playback devices. */
+    if (pfnDirectSoundEnumerateW)
+    {
+        DSLOG(("DSound: Enumerating playback devices ...\n"));
+        HRESULT hr = pfnDirectSoundEnumerateW(&drvHostDSoundEnumOldStylePlaybackCallback, &EnumCtx);
+        if (FAILED(hr))
+            LogRel(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
+    }
 
-        /*
-         * Query Information from all enumerated devices.
-         */
-        PDSOUNDDEV pDev;
-        RTListForEach(&pDevEnm->LstDevices, pDev, DSOUNDDEV, Core.ListEntry)
-        {
-            dsoundDeviceQueryInfo(pThis, pDev); /* ignore rc */
-        }
-
-        RTLdrClose(hDSound);
+    /* Enumerate capture devices. */
+    if (pfnDirectSoundCaptureEnumerateW)
+    {
+        DSLOG(("DSound: Enumerating capture devices ...\n"));
+        HRESULT hr = pfnDirectSoundCaptureEnumerateW(&drvHostDSoundEnumOldStyleCaptureCallback, &EnumCtx);
+        if (FAILED(hr))
+            LogRel(("DSound: Error enumerating host capture devices: %Rhrc\n", hr));
     }
     else
+        LogRel(("DSound: Error starting to enumerate host capture devices: %Rrc\n", rc));
+
+    /*
+     * Query Information for all enumerated devices.
+     * Note! This is problematic to do from the enumeration callbacks.
+     */
+    PDSOUNDDEV pDev;
+    RTListForEach(&pDevEnm->LstDevices, pDev, DSOUNDDEV, Core.ListEntry)
     {
-        /* No dsound.dll on this system. */
-        LogRel(("DSound: Could not load dsound.dll for enumerating devices: %Rrc\n", rc));
+        drvHostDSoundEnumOldStylQueryDeviceInfo(pDev); /* ignore rc */
     }
 
     DSLOG(("DSound: Enumerating devices done\n"));
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1161,22 +1166,13 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
  */
 static DECLCALLBACK(int) drvHostDSoundHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
-    AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
+    RT_NOREF(pInterface);
     AssertPtrReturn(pDeviceEnum, VERR_INVALID_POINTER);
 
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        PDMAudioHostEnumInit(pDeviceEnum);
-        rc = dsoundDevicesEnumerate(pThis, pDeviceEnum);
-        if (RT_FAILURE(rc))
-            PDMAudioHostEnumDelete(pDeviceEnum);
-
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-    }
+    PDMAudioHostEnumInit(pDeviceEnum);
+    int rc = drvHostDSoundEnumerateDevices(pDeviceEnum);
+    if (RT_FAILURE(rc))
+        PDMAudioHostEnumDelete(pDeviceEnum);
 
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
@@ -1495,9 +1491,6 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     AssertPtrReturn(pStreamDS, E_POINTER);
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
-
-/** @todo r=bird: I cannot see any code populating pCfgAcq... */
-
     LogFlowFuncEnter();
 
     Assert(pStreamDS->Out.pDSB == NULL);
@@ -1526,10 +1519,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
            wfx.wBitsPerSample,
            wfx.cbSize));
 
-    /** @todo r=bird: Why is this called every time?  It triggers a device
-     * enumeration. Andy claimed on IRC that enumeration was only done once...
-     * It's generally a 'ing waste of time here too, as we dont really use any of
-     * the information we gather there. */
+    /* Waste some time: */
     dsoundUpdateStatusInternal(pThis);
 
     HRESULT hr = directSoundPlayInterfaceCreate(pThis->Cfg.pGuidPlay, &pThis->pDS);
