@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,11 +32,12 @@
 
 /* Forward declarations: */
 class QStackedWidget;
+class QTimer;
 class QISplitter;
+class QIToolBar;
 class UIActionPool;
 class UIChooser;
 class UITabBar;
-class QIToolBar;
 class UITools;
 class UIVirtualBoxManager;
 class UIVirtualMachineItem;
@@ -240,6 +241,14 @@ private slots:
         void sltHandleStateChange(const QUuid &uId);
     /** @} */
 
+    /** @name Splitter stuff.
+      * @{ */
+        /** Handles signal about splitter move. */
+        void sltHandleSplitterMove();
+        /** Handles request to save splitter settings. */
+        void sltSaveSplitterSettings();
+    /** @} */
+
     /** @name Tool-bar stuff.
       * @{ */
         /** Handles signal about tool-bar resize to @a newSize. */
@@ -294,8 +303,6 @@ private:
         /** Updates toolbar. */
         void updateToolbar();
 
-        /** Saves settings. */
-        void saveSettings();
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups all. */
@@ -335,6 +342,9 @@ private:
     SelectionType  m_enmSelectionType;
     /** Holds whether the last selected item was accessible. */
     bool           m_fSelectedMachineItemAccessible;
+
+    /** Holds the splitter settings save timer. */
+    QTimer *m_pSplitterSettingsSaveTimer;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h */

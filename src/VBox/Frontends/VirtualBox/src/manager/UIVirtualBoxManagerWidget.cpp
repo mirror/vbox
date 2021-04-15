@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 #include <QHBoxLayout>
 #include <QStackedWidget>
 #include <QStyle>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -53,6 +54,7 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pPaneTools(0)
     , m_enmSelectionType(SelectionType_Invalid)
     , m_fSelectedMachineItemAccessible(false)
+    , m_pSplitterSettingsSaveTimer(0)
 {
     prepare();
 }
@@ -281,19 +283,16 @@ void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint 
     QList<QAction*> actions;
     /* Add 'Show Toolbar Text' action: */
     QAction *pShowToolBarText = new QAction(UIVirtualBoxManager::tr("Show Toolbar Text"), 0);
-    AssertPtrReturnVoid(pShowToolBarText);
+    if (pShowToolBarText)
     {
-        /* Configure action: */
         pShowToolBarText->setCheckable(true);
         pShowToolBarText->setChecked(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
-
-        /* Add into action list: */
         actions << pShowToolBarText;
     }
 
     /* Prepare the menu position: */
     QPoint globalPosition = position;
-    QWidget *pSender = static_cast<QWidget*>(sender());
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
     if (pSender)
         globalPosition = pSender->mapToGlobal(position);
 
@@ -306,6 +305,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint 
         m_pToolBar->setToolButtonStyle(  pResult->isChecked()
                                        ? Qt::ToolButtonTextUnderIcon
                                        : Qt::ToolButtonIconOnly);
+        gEDataManager->setSelectorWindowToolBarTextVisible(pResult->isChecked());
     }
 }
 
@@ -329,6 +329,32 @@ void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &)
     /* Recache current item info if machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
         recacheCurrentItemInformation();
+}
+
+void UIVirtualBoxManagerWidget::sltHandleSplitterMove()
+{
+    /* Create timer if isn't exist already: */
+    if (!m_pSplitterSettingsSaveTimer)
+    {
+        m_pSplitterSettingsSaveTimer = new QTimer(this);
+        if (m_pSplitterSettingsSaveTimer)
+        {
+            m_pSplitterSettingsSaveTimer->setInterval(300);
+            m_pSplitterSettingsSaveTimer->setSingleShot(true);
+            connect(m_pSplitterSettingsSaveTimer, &QTimer::timeout,
+                    this, &UIVirtualBoxManagerWidget::sltSaveSplitterSettings);
+        }
+    }
+    /* [Re]start timer finally: */
+    m_pSplitterSettingsSaveTimer->start();
+}
+
+void UIVirtualBoxManagerWidget::sltSaveSplitterSettings()
+{
+    const QList<int> splitterSizes = m_pSplitter->sizes();
+    LogRel2(("GUI: UIVirtualBoxManagerWidget: Saving splitter as: Size=%d,%d\n",
+             splitterSizes.at(0), splitterSizes.at(1)));
+    gEDataManager->setSelectorWindowSplitterHints(splitterSizes);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolBarResize(const QSize &newSize)
@@ -602,7 +628,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pToolBar->emulateMacToolbar();
 #endif
 
-                        /* Add tool-bar into layout: */
+                        /* Add toolbar into layout: */
                         pLayoutRight->addWidget(m_pToolBar);
                     }
 
@@ -703,6 +729,10 @@ void UIVirtualBoxManagerWidget::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIVirtualBoxManagerWidget::sltHandleStateChange);
 
+    /* Splitter connections: */
+    connect(m_pSplitter, &QISplitter::splitterMoved,
+            this, &UIVirtualBoxManagerWidget::sltHandleSplitterMove);
+
     /* Tool-bar connections: */
     connect(m_pToolBar, &QIToolBar::customContextMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
@@ -746,16 +776,15 @@ void UIVirtualBoxManagerWidget::loadSettings()
 {
     /* Restore splitter handle position: */
     {
-        /* Read splitter hints: */
         QList<int> sizes = gEDataManager->selectorWindowSplitterHints();
         /* If both hints are zero, we have the 'default' case: */
-        if (sizes[0] == 0 && sizes[1] == 0)
+        if (sizes.at(0) == 0 && sizes.at(1) == 0)
         {
-            /* Propose some 'default' based on current dialog width: */
             sizes[0] = (int)(width() * .9 * (1.0 / 3));
             sizes[1] = (int)(width() * .9 * (2.0 / 3));
         }
-        /* Pass hints to the splitter: */
+        LogRel2(("GUI: UIVirtualBoxManagerWidget: Restoring splitter to: Size=%d,%d\n",
+                 sizes.at(0), sizes.at(1)));
         m_pSplitter->setSizes(sizes);
     }
 
@@ -968,20 +997,6 @@ void UIVirtualBoxManagerWidget::updateToolbar()
 #endif /* VBOX_WS_MAC */
 }
 
-void UIVirtualBoxManagerWidget::saveSettings()
-{
-    /* Save toolbar visibility: */
-    {
-        gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());
-        gEDataManager->setSelectorWindowToolBarTextVisible(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
-    }
-
-    /* Save splitter handle position: */
-    {
-        gEDataManager->setSelectorWindowSplitterHints(m_pSplitter->sizes());
-    }
-}
-
 void UIVirtualBoxManagerWidget::cleanupConnections()
 {
     /* Tool-bar connections: */
@@ -1025,9 +1040,6 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
 
 void UIVirtualBoxManagerWidget::cleanup()
 {
-    /* Save settings: */
-    saveSettings();
-
     /* Cleanup everything: */
     cleanupConnections();
 }
