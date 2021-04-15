@@ -505,7 +505,16 @@ int UIHelpViewer::zoomPercentage() const
 
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu pMenu;
+    QMenu menu;
+
+    if (textCursor().hasSelection())
+    {
+        QAction *pCopySelectedTextAction = new QAction(UIHelpBrowserWidget::tr("Copy Selected Text"));
+        connect(pCopySelectedTextAction, &QAction::triggered,
+                this, &UIHelpViewer::copy);
+        menu.addAction(pCopySelectedTextAction);
+        menu.addSeparator();
+    }
 
     UIContextMenuNavigationAction *pNavigationActions = new UIContextMenuNavigationAction;
     pNavigationActions->setBackwardAvailable(isBackwardAvailable());
@@ -538,11 +547,11 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
         pFindInPage->setChecked(m_pFindInPageWidget->isVisible());
     connect(pFindInPage, &QAction::toggled, this, &UIHelpViewer::sltToggleFindInPageWidget);
 
-    pMenu.addAction(pNavigationActions);
-    pMenu.addAction(pOpenLinkAction);
-    pMenu.addAction(pOpenInNewTabAction);
-    pMenu.addAction(pCopyLink);
-    pMenu.addAction(pFindInPage);
+    menu.addAction(pNavigationActions);
+    menu.addAction(pOpenLinkAction);
+    menu.addAction(pOpenInNewTabAction);
+    menu.addAction(pCopyLink);
+    menu.addAction(pFindInPage);
 
     QString strAnchor = anchorAt(event->pos());
     if (!strAnchor.isEmpty())
@@ -558,7 +567,8 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
         pOpenInNewTabAction->setEnabled(false);
         pCopyLink->setEnabled(false);
     }
-    pMenu.exec(event->globalPos());
+
+    menu.exec(event->globalPos());
 }
 
 void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
