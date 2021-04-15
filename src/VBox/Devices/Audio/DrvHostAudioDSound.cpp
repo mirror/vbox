@@ -46,20 +46,12 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /*
- * IDirectSound* interface uses HRESULT status codes and the driver callbacks use
- * the VBox status codes.  To minimize HRESULT->VBox conversion most internal functions
- * in the driver return HRESULT and conversion is done in the driver callbacks.
- *
- * Naming convention:
- * 'dsound*' functions return VBox status code;
- * 'directSound*' - return HRESULT.
- */
-
-/*
  * Optional release logging, which a user can turn on with the
  * 'VBoxManage debugvm' command.
  * Debug logging still uses the common Log* macros from VBox.
  * Messages which always should go to the release log use LogRel.
+ *
+ * @deprecated Use LogRelMax, LogRel2 and LogRel3 directly.
  */
 /** General code behavior. */
 #define DSLOG(a)    do { LogRel2(a); } while(0)
@@ -77,14 +69,12 @@
 
 /** Maximum number of attempts to restore the sound buffer before giving up. */
 #define DRV_DSOUND_RESTORE_ATTEMPTS_MAX         3
+#if 0 /** @todo r=bird: What are these for? Nobody is using them... */
 /** Default input latency (in ms). */
 #define DRV_DSOUND_DEFAULT_LATENCY_MS_IN        50
 /** Default output latency (in ms). */
 #define DRV_DSOUND_DEFAULT_LATENCY_MS_OUT       50
-
-/** Makes DRVHOSTDSOUND out of PDMIHOSTAUDIO. */
-#define PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface) \
-    ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_UOFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
+#endif
 
 
 /*********************************************************************************************************************************
@@ -247,7 +237,6 @@ static HRESULT  directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
 static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDMAUDIOHOSTENUM pDevEnm, uint32_t fEnum);
 
 static int      dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fEnable);
-static void     dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS);
 static void     dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis);
 
 
@@ -406,74 +395,50 @@ static HRESULT directSoundCaptureLock(PDSOUNDSTREAM pStreamDS,
  */
 
 /**
- * Destroys a DirectSound playback interface.
- *
- * @param   pDS                 Playback interface to destroy.
- */
-static void directSoundPlayInterfaceDestroy(LPDIRECTSOUND8 pDS)
-{
-    if (pDS)
-    {
-        LogFlowFuncEnter();
-
-        IDirectSound8_Release(pDS);
-        pDS = NULL;
-    }
-}
-
-
-/**
- * Creates a DirectSound playback interface.
+ * Creates a DirectSound playback instance.
  *
  * @return  HRESULT
- * @param   pGUID               GUID of device to create the playback interface for.
- * @param   ppDS                Where to store the created interface. Optional.
+ * @param   pGUID   GUID of device to create the playback interface for. NULL
+ *                  for the default device.
+ * @param   ppDS    Where to return the interface to the created instance.
  */
-static HRESULT directSoundPlayInterfaceCreate(LPCGUID pGUID, LPDIRECTSOUND8 *ppDS)
+static HRESULT drvHostDSoundCreateDSPlaybackInstance(LPCGUID pGUID, LPDIRECTSOUND8 *ppDS)
 {
-    /* pGUID can be NULL, if this is the default device. */
-    /* ppDS is optional. */
-
     LogFlowFuncEnter();
 
-    LPDIRECTSOUND8 pDS;
-    HRESULT hr = CoCreateInstance(CLSID_DirectSound8, NULL, CLSCTX_ALL,
-                                  IID_IDirectSound8, (void **)&pDS);
-    if (FAILED(hr))
+    LPDIRECTSOUND8 pDS = NULL;
+    HRESULT        hrc = CoCreateInstance(CLSID_DirectSound8, NULL, CLSCTX_ALL, IID_IDirectSound8, (void **)&pDS);
+    if (SUCCEEDED(hrc))
     {
-        DSLOGREL(("DSound: Creating playback instance failed with %Rhrc\n", hr));
-    }
-    else
-    {
-        hr = IDirectSound8_Initialize(pDS, pGUID);
-        if (SUCCEEDED(hr))
+        hrc = IDirectSound8_Initialize(pDS, pGUID);
+        if (SUCCEEDED(hrc))
         {
             HWND hWnd = GetDesktopWindow();
-            hr = IDirectSound8_SetCooperativeLevel(pDS, hWnd, DSSCL_PRIORITY);
-            if (FAILED(hr))
-                DSLOGREL(("DSound: Setting cooperative level for window %p failed with %Rhrc\n", hWnd, hr));
+            hrc = IDirectSound8_SetCooperativeLevel(pDS, hWnd, DSSCL_PRIORITY);
+            if (SUCCEEDED(hrc))
+            {
+                *ppDS = pDS;
+                LogFlowFunc(("LEAVE S_OK\n"));
+                return S_OK;
+            }
+            LogRelMax(64, ("DSound: Setting cooperative level for (hWnd=%p) failed: %Rhrc\n", hWnd, hrc));
         }
+        else if (hrc == DSERR_NODRIVER) /* Usually means that no playback devices are attached. */
+            LogRelMax(64, ("DSound: DirectSound playback is currently unavailable\n"));
+        else
+            LogRelMax(64, ("DSound: DirectSound playback initialization failed: %Rhrc\n", hrc));
 
-        if (FAILED(hr))
-        {
-            if (hr == DSERR_NODRIVER) /* Usually means that no playback devices are attached. */
-                DSLOGREL(("DSound: DirectSound playback is currently unavailable\n"));
-            else
-                DSLOGREL(("DSound: DirectSound playback initialization failed with %Rhrc\n", hr));
-
-            directSoundPlayInterfaceDestroy(pDS);
-        }
-        else if (ppDS)
-        {
-            *ppDS = pDS;
-        }
+        IDirectSound8_Release(pDS);
     }
+    else
+        LogRelMax(64, ("DSound: Creating playback instance failed: %Rhrc\n", hrc));
 
-    LogFlowFunc(("Returning %Rhrc\n", hr));
-    return hr;
+    LogFlowFunc(("LEAVE %Rhrc\n", hrc));
+    return hrc;
 }
 
 
+#if 0 /* not used */
 static HRESULT directSoundPlayGetStatus(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB, DWORD *pdwStatus)
 {
     AssertPtrReturn(pThis, E_POINTER);
@@ -507,6 +472,7 @@ static HRESULT directSoundPlayGetStatus(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFE
 
     return hr;
 }
+#endif
 
 
 /*
@@ -570,63 +536,39 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
 
 
 /**
- * Destroys a DirectSound capture interface.
+ * Creates a DirectSound capture instance.
  *
- * @param   pDSC                Capture interface to destroy.
+ * @returns HRESULT
+ * @param   pGUID   GUID of device to create the capture interface for.  NULL
+ *                  for default.
+ * @param   ppDSC   Where to return the interface to the created instance.
  */
-static void directSoundCaptureInterfaceDestroy(LPDIRECTSOUNDCAPTURE8 pDSC)
+static HRESULT drvHostDSoundCreateDSCaptureInstance(LPCGUID pGUID, LPDIRECTSOUNDCAPTURE8 *ppDSC)
 {
-    if (pDSC)
-    {
-        LogFlowFuncEnter();
-
-        IDirectSoundCapture_Release(pDSC);
-        pDSC = NULL;
-    }
-}
-
-
-/**
- * Creates a DirectSound capture interface.
- *
- * @return  HRESULT
- * @param   pGUID               GUID of device to create the capture interface for.
- * @param   ppDSC               Where to store the created interface. Optional.
- */
-static HRESULT directSoundCaptureInterfaceCreate(LPCGUID pGUID, LPDIRECTSOUNDCAPTURE8 *ppDSC)
-{
-    /* pGUID can be NULL, if this is the default device. */
-    /* ppDSC is optional. */
-
     LogFlowFuncEnter();
 
-    LPDIRECTSOUNDCAPTURE8 pDSC;
-    HRESULT hr = CoCreateInstance(CLSID_DirectSoundCapture8, NULL, CLSCTX_ALL,
-                                  IID_IDirectSoundCapture8, (void **)&pDSC);
-    if (FAILED(hr))
+    LPDIRECTSOUNDCAPTURE8 pDSC = NULL;
+    HRESULT hrc = CoCreateInstance(CLSID_DirectSoundCapture8, NULL, CLSCTX_ALL, IID_IDirectSoundCapture8, (void **)&pDSC);
+    if (SUCCEEDED(hrc))
     {
-        DSLOGREL(("DSound: Creating capture instance failed with %Rhrc\n", hr));
-    }
-    else
-    {
-        hr = IDirectSoundCapture_Initialize(pDSC, pGUID);
-        if (FAILED(hr))
-        {
-            if (hr == DSERR_NODRIVER) /* Usually means that no capture devices are attached. */
-                DSLOGREL(("DSound: Capture device currently is unavailable\n"));
-            else
-                DSLOGREL(("DSound: Initializing capturing device failed with %Rhrc\n", hr));
-
-            directSoundCaptureInterfaceDestroy(pDSC);
-        }
-        else if (ppDSC)
+        hrc = IDirectSoundCapture_Initialize(pDSC, pGUID);
+        if (SUCCEEDED(hrc))
         {
             *ppDSC = pDSC;
+            LogFlowFunc(("LEAVE S_OK\n"));
+            return S_OK;
         }
+        if (hrc == DSERR_NODRIVER) /* Usually means that no capture devices are attached. */
+            LogRelMax(64, ("DSound: Capture device currently is unavailable\n"));
+        else
+            LogRelMax(64, ("DSound: Initializing capturing device failed: %Rhrc\n", hrc));
+        IDirectSoundCapture_Release(pDSC);
     }
+    else
+        LogRelMax(64, ("DSound: Creating capture instance failed: %Rhrc\n", hrc));
 
-    LogFlowFunc(("Returning %Rhrc\n", hr));
-    return hr;
+    LogFlowFunc(("LEAVE %Rhrc\n", hrc));
+    return hrc;
 }
 
 
@@ -831,7 +773,7 @@ static int drvHostDSoundEnumOldStyleQueryDeviceInfo(PDSOUNDDEV pDev)
     if (pDev->Core.enmUsage == PDMAUDIODIR_OUT)
     {
         LPDIRECTSOUND8 pDS;
-        HRESULT hr = directSoundPlayInterfaceCreate(&pDev->Guid, &pDS);
+        HRESULT hr = drvHostDSoundCreateDSPlaybackInstance(&pDev->Guid, &pDS);
         if (SUCCEEDED(hr))
         {
             DSCAPS DSCaps;
@@ -878,7 +820,7 @@ static int drvHostDSoundEnumOldStyleQueryDeviceInfo(PDSOUNDDEV pDev)
                 rc = VERR_ACCESS_DENIED; /** @todo Fudge! */
             }
 
-            directSoundPlayInterfaceDestroy(pDS);
+            IDirectSound8_Release(pDS);
         }
         else
             rc = VERR_GENERAL_FAILURE;
@@ -886,7 +828,7 @@ static int drvHostDSoundEnumOldStyleQueryDeviceInfo(PDSOUNDDEV pDev)
     else if (pDev->Core.enmUsage == PDMAUDIODIR_IN)
     {
         LPDIRECTSOUNDCAPTURE8 pDSC;
-        HRESULT hr = directSoundCaptureInterfaceCreate(&pDev->Guid, &pDSC);
+        HRESULT hr = drvHostDSoundCreateDSCaptureInstance(&pDev->Guid, &pDSC);
         if (SUCCEEDED(hr))
         {
             DSCCAPS DSCCaps;
@@ -904,7 +846,7 @@ static int drvHostDSoundEnumOldStyleQueryDeviceInfo(PDSOUNDDEV pDev)
                 rc = VERR_ACCESS_DENIED; /** @todo Fudge! */
             }
 
-            directSoundCaptureInterfaceDestroy(pDSC);
+            IDirectSoundCapture_Release(pDSC);
         }
         else
             rc = VERR_GENERAL_FAILURE;
@@ -1182,20 +1124,20 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetDevices(PPDMIHOSTAUDIO pInterface, P
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDSoundHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
-    RT_NOREF(enmDir);
-    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
-
+    RT_NOREF(pInterface, enmDir);
     return PDMAUDIOBACKENDSTS_RUNNING;
 }
 
 
-static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
+/**
+ * Converts from PDM stream config to windows WAVEFORMATEX struct.
+ *
+ * @param   pCfg    The PDM audio stream config to convert from.
+ * @param   pFmt    The windows structure to initialize.
+ */
+static void dsoundWaveFmtFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 {
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
-    AssertPtrReturn(pFmt, VERR_INVALID_POINTER);
-
-    RT_BZERO(pFmt, sizeof(WAVEFORMATEX));
-
+    RT_ZERO(*pFmt);
     pFmt->wFormatTag      = WAVE_FORMAT_PCM;
     pFmt->nChannels       = PDMAudioPropsChannels(&pCfg->Props);
     pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
@@ -1203,83 +1145,114 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
     pFmt->nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
     pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
     pFmt->cbSize          = 0; /* No extra data specified. */
-
-    return VINF_SUCCESS;
 }
 
 
 /**
- * Resets the state of a DirectSound stream.
+ * Resets the state of a DirectSound stream, clearing the buffer content.
  *
  * @param   pThis               Host audio driver instance.
  * @param   pStreamDS           Stream to reset state for.
  */
-static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static void drvHostDSoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
     RT_NOREF(pThis);
-
-    LogFunc(("Resetting %s\n",
-             pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
+    LogFunc(("Resetting %s\n", pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
 
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
     {
+        /*
+         * Input streams.
+         */
+        LogFunc(("Resetting capture stream '%s'\n", pStreamDS->Cfg.szName));
+
+        /* Reset the state: */
+/** @todo r=bird: We set the read position to zero here, but shouldn't we query it
+ * from the buffer instead given that there isn't any interface for repositioning
+ * to the start of the buffer as with playback buffers? */
         pStreamDS->In.offReadPos = 0;
         pStreamDS->In.cOverruns  = 0;
 
-        /* Also reset the DirectSound Capture Buffer (DSCB) by clearing all data to make sure
-         * not stale audio data is left. */
+        /* Clear the buffer content: */
+        AssertPtr(pStreamDS->In.pDSCB);
         if (pStreamDS->In.pDSCB)
         {
-            PVOID pv1; PVOID pv2; DWORD cb1; DWORD cb2;
-            HRESULT hr = directSoundCaptureLock(pStreamDS, 0 /* Offset */, pStreamDS->cbBufSize, &pv1, &pv2, &cb1, &cb2,
-                                                0 /* Flags */);
-            if (SUCCEEDED(hr))
+            PVOID   pv1 = NULL;
+            DWORD   cb1 = 0;
+            PVOID   pv2 = NULL;
+            DWORD   cb2 = 0;
+            HRESULT hrc = IDirectSoundCaptureBuffer8_Lock(pStreamDS->In.pDSCB, 0, pStreamDS->cbBufSize,
+                                                          &pv1, &cb1, &pv2, &cb2, 0 /*fFlags*/);
+            if (SUCCEEDED(hrc))
             {
                 PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
                 if (pv2 && cb2)
                     PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
-                directSoundCaptureUnlock(pStreamDS->In.pDSCB, pv1, pv2, cb1, cb2);
+                hrc = IDirectSoundCaptureBuffer8_Unlock(pStreamDS->In.pDSCB, pv1, cb1, pv2, cb2);
+                if (FAILED(hrc))
+                    LogRelMaxFunc(64, ("DSound: Unlocking capture buffer '%s' after reset failed: %Rhrc\n",
+                                       pStreamDS->Cfg.szName, hrc));
             }
+            else
+                LogRelMaxFunc(64, ("DSound: Locking capture buffer '%s' for reset failed: %Rhrc\n",
+                                   pStreamDS->Cfg.szName, hrc));
         }
     }
-    else if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT)
+    else
     {
-        /* If draining was enagaged, make sure dsound has stopped playing. */
+        /*
+         * Output streams.
+         */
+        Assert(pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT);
+        LogFunc(("Resetting playback stream '%s'\n", pStreamDS->Cfg.szName));
+
+        /* If draining was enagaged, make sure dsound has stopped playing: */
         if (pStreamDS->Out.fDrain && pStreamDS->Out.pDSB)
             pStreamDS->Out.pDSB->Stop();
 
-        pStreamDS->Out.fFirstTransfer = true;
-        pStreamDS->Out.fDrain         = false;
-        pStreamDS->Out.cUnderruns     = 0;
-
-        pStreamDS->Out.cbLastTransferred   = 0;
-        pStreamDS->Out.tsLastTransferredMs = 0;
-
-        pStreamDS->Out.cbTransferred = 0;
-        pStreamDS->Out.cbWritten = 0;
-
-        pStreamDS->Out.offWritePos = 0;
+        /* Reset the internal state: */
+        pStreamDS->Out.fFirstTransfer           = true;
+        pStreamDS->Out.fDrain                   = false;
+        pStreamDS->Out.cUnderruns               = 0;
+        pStreamDS->Out.cbLastTransferred        = 0;
+        pStreamDS->Out.tsLastTransferredMs      = 0;
+        pStreamDS->Out.cbTransferred            = 0;
+        pStreamDS->Out.cbWritten                = 0;
+        pStreamDS->Out.offWritePos              = 0;
         pStreamDS->Out.offPlayCursorLastPending = 0;
-        pStreamDS->Out.offPlayCursorLastPlayed = 0;
+        pStreamDS->Out.offPlayCursorLastPlayed  = 0;
 
-        /* Also reset the DirectSound Buffer (DSB) by setting the position to 0 and clear all data to make sure
-         * not stale audio data is left. */
+        /* Reset the buffer content and repositioning the buffer to the start of the buffer. */
+        AssertPtr(pStreamDS->Out.pDSB);
         if (pStreamDS->Out.pDSB)
         {
-            HRESULT hr = IDirectSoundBuffer8_SetCurrentPosition(pStreamDS->Out.pDSB, 0);
-            if (SUCCEEDED(hr))
+            HRESULT hrc = IDirectSoundBuffer8_SetCurrentPosition(pStreamDS->Out.pDSB, 0);
+            if (FAILED(hrc))
+                LogRelMaxFunc(64, ("DSound: Failed to set buffer position for '%s': %Rhrc\n", pStreamDS->Cfg.szName, hrc));
+
+            PVOID   pv1 = NULL;
+            DWORD   cb1 = 0;
+            PVOID   pv2 = NULL;
+            DWORD   cb2 = 0;
+            hrc = IDirectSoundBuffer8_Lock(pStreamDS->Out.pDSB, 0, pStreamDS->cbBufSize, &pv1, &cb1, &pv2, &cb2, 0 /*fFlags*/);
+            if (hrc == DSERR_BUFFERLOST)
             {
-                PVOID pv1; PVOID pv2; DWORD cb1; DWORD cb2;
-                hr = directSoundPlayLock(pThis, pStreamDS, 0 /* Offset */, pStreamDS->cbBufSize, &pv1, &pv2, &cb1, &cb2,
-                                         0 /* Flags */);
-                if (SUCCEEDED(hr))
-                {
-                    PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
-                    if (pv2 && cb2)
-                        PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
-                    directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, pv2, cb1, cb2);
-                }
+                directSoundPlayRestore(pThis, pStreamDS->Out.pDSB);
+                hrc = IDirectSoundBuffer8_Lock(pStreamDS->Out.pDSB, 0, pStreamDS->cbBufSize, &pv1, &cb1, &pv2, &cb2, 0 /*fFlags*/);
             }
+            if (SUCCEEDED(hrc))
+            {
+                PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
+                if (pv2 && cb2)
+                    PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
+
+                hrc = IDirectSoundBuffer8_Unlock(pStreamDS->Out.pDSB, pv1, cb1, pv2, cb2);
+                if (FAILED(hrc))
+                    LogRelMaxFunc(64, ("DSound: Unlocking playback buffer '%s' after reset failed: %Rhrc\n",
+                                       pStreamDS->Cfg.szName, hrc));
+            }
+            else
+                LogRelMaxFunc(64, ("DSound: Locking playback buffer '%s' for reset failed: %Rhrc\n", pStreamDS->Cfg.szName, hrc));
         }
     }
 
@@ -1289,165 +1262,332 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 }
 
 
-static HRESULT directSoundCaptureClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+/**
+ * Worker for drvHostDSoundHA_StreamCreate that creates caputre stream.
+ *
+ * @returns Windows COM status code.
+ * @param   pThis       The DSound instance data.
+ * @param   pStreamDS   The stream instance data.
+ * @param   pCfgReq     The requested stream config (input).
+ * @param   pCfgAcq     Where to return the actual stream config.  This is a
+ *                      copy of @a *pCfgReq when called.
+ * @param   pWaveFmtX   On input the requested stream format.
+ *                      Updated to the actual stream format on successful
+ *                      return.
+ */
+static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
+                                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEX *pWaveFmtX)
 {
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
+    Assert(pStreamDS->In.pDSCB == NULL);
+    HRESULT hrc;
 
-    LogFlowFuncEnter();
-
-    HRESULT hr = directSoundCaptureStop(pThis, pStreamDS, true /* fFlush */);
-    if (FAILED(hr))
-        return hr;
-
-    if (   pStreamDS
-        && pStreamDS->In.pDSCB)
+    /*
+     * Create, initialize and set up a IDirectSoundCapture instance the first time
+     * we go thru here.
+     */
+    /** @todo bird: Or should we rather just throw this away after we've gotten the
+     *        capture buffer?  Old code would just leak it... */
+    if (pThis->pDSC == NULL)
     {
-        DSLOG(("DSound: Closing capturing stream\n"));
-
-        IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
-        pStreamDS->In.pDSCB = NULL;
+        hrc = drvHostDSoundCreateDSCaptureInstance(pThis->Cfg.pGuidCapture, &pThis->pDSC);
+        if (FAILED(hrc))
+            return hrc; /* The worker has complained to the release log already. */
     }
 
-    LogFlowFunc(("Returning %Rhrc\n", hr));
-    return hr;
+    /*
+     * Create the capture buffer.
+     */
+    DSCBUFFERDESC BufferDesc =
+    {
+        /*.dwSize = */          sizeof(BufferDesc),
+        /*.dwFlags = */         0,
+        /*.dwBufferBytes =*/    PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
+        /*.dwReserved = */      0,
+        /*.lpwfxFormat = */     pWaveFmtX,
+        /*.dwFXCount = */       0,
+        /*.lpDSCFXDesc = */     NULL
+    };
+
+    LogRel2(("DSound: Requested capture buffer is %#x B / %u B / %RU64 ms\n", BufferDesc.dwBufferBytes, BufferDesc.dwBufferBytes,
+             PDMAudioPropsBytesToMilli(&pCfgReq->Props, BufferDesc.dwBufferBytes)));
+
+    LPDIRECTSOUNDCAPTUREBUFFER pLegacyDSCB = NULL;
+    hrc = IDirectSoundCapture_CreateCaptureBuffer(pThis->pDSC, &BufferDesc, &pLegacyDSCB, NULL);
+    if (FAILED(hrc))
+    {
+        LogRelMax(64, ("DSound: Creating capture buffer for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+        return hrc;
+    }
+
+    /* Get the IDirectSoundCaptureBuffer8 version of the interface. */
+    hrc = IDirectSoundCaptureBuffer_QueryInterface(pLegacyDSCB, IID_IDirectSoundCaptureBuffer8, (void **)&pStreamDS->In.pDSCB);
+    IDirectSoundCaptureBuffer_Release(pLegacyDSCB);
+    if (FAILED(hrc))
+    {
+        LogRelMax(64, ("DSound: Querying IID_IDirectSoundCaptureBuffer8 for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+        return hrc;
+    }
+
+    /*
+     * Query the actual stream configuration.
+     */
+#if 0 /** @todo r=bird: WTF was this for? */
+    DWORD offByteReadPos = 0;
+    hrc = IDirectSoundCaptureBuffer8_GetCurrentPosition(pStreamDS->In.pDSCB, NULL, &offByteReadPos);
+    if (FAILED(hrc))
+    {
+        offByteReadPos = 0;
+        DSLOGREL(("DSound: Getting capture position failed with %Rhrc\n", hr));
+    }
+#endif
+    RT_ZERO(*pWaveFmtX);
+    hrc = IDirectSoundCaptureBuffer8_GetFormat(pStreamDS->In.pDSCB, pWaveFmtX, sizeof(*pWaveFmtX), NULL);
+    if (SUCCEEDED(hrc))
+    {
+        /** @todo r=bird: We aren't converting/checking the pWaveFmtX content...   */
+
+        DSCBCAPS BufferCaps = { /*.dwSize = */ sizeof(BufferCaps), 0, 0, 0 };
+        hrc = IDirectSoundCaptureBuffer8_GetCaps(pStreamDS->In.pDSCB, &BufferCaps);
+        if (SUCCEEDED(hrc))
+        {
+            LogRel2(("DSound: Acquired capture buffer capabilities for '%s':\n"
+                     "DSound:   dwFlags       = %#RX32\n"
+                     "DSound:   dwBufferBytes = %#RX32 B / %RU32 B / %RU64 ms\n"
+                     "DSound:   dwReserved    = %#RX32\n",
+                     pCfgReq->szName, BufferCaps.dwFlags, BufferCaps.dwBufferBytes, BufferCaps.dwBufferBytes,
+                     PDMAudioPropsBytesToMilli(&pCfgReq->Props, BufferCaps.dwBufferBytes), BufferCaps.dwReserved ));
+
+            /* Update buffer related stuff: */
+            pStreamDS->In.offReadPos = 0; /** @todo shouldn't we use offBytReadPos here to "read at the initial capture position"? */
+            pStreamDS->cbBufSize     = BufferCaps.dwBufferBytes;
+            pCfgAcq->Backend.cFramesBufferSize = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, BufferCaps.dwBufferBytes);
+
+            /** @todo r=bird: WTF is this for? */
+            pThis->pDSStrmIn = pStreamDS;
+
+#if 0 /** @todo r=bird: uAlign isn't set anywhere, so this hasn't been checking anything for a while... */
+            if (bc.dwBufferBytes & pStreamDS->uAlign)
+                DSLOGREL(("DSound: Capture GetCaps returned misaligned buffer: size %RU32, alignment %RU32\n",
+                          bc.dwBufferBytes, pStreamDS->uAlign + 1));
+#endif
+            LogFlow(("returns S_OK\n"));
+            return S_OK;
+        }
+        LogRelMax(64, ("DSound: Getting capture buffer capabilities for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+    }
+    else
+        LogRelMax(64, ("DSound: Getting capture format for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+
+    IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
+    pStreamDS->In.pDSCB = NULL;
+    LogFlowFunc(("returns %Rhrc\n", hrc));
+    return hrc;
 }
 
 
-static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+/**
+ * Worker for drvHostDSoundHA_StreamCreate that creates playback stream.
+ *
+ * @returns Windows COM status code.
+ * @param   pThis       The DSound instance data.
+ * @param   pStreamDS   The stream instance data.
+ * @param   pCfgReq     The requested stream config (input).
+ * @param   pCfgAcq     Where to return the actual stream config.  This is a
+ *                      copy of @a *pCfgReq when called.
+ * @param   pWaveFmtX   On input the requested stream format.
+ *                      Updated to the actual stream format on successful
+ *                      return.
+ */
+static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
+                                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEX *pWaveFmtX)
 {
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
-    AssertPtrReturn(pCfgReq,   E_POINTER);
-    AssertPtrReturn(pCfgAcq,   E_POINTER);
+    Assert(pStreamDS->Out.pDSB == NULL);
+    HRESULT hrc;
 
-    /** @todo r=bird: I cannot see any code populating pCfgAcq... */
+    /*
+     * Create, initialize and set up a DirectSound8 instance the first time
+     * we go thru here.
+     */
+    /** @todo bird: Or should we rather just throw this away after we've gotten the
+     *        sound buffer?  Old code would just leak it... */
+    if (pThis->pDS == NULL)
+    {
+        hrc = drvHostDSoundCreateDSPlaybackInstance(pThis->Cfg.pGuidPlay, &pThis->pDS);
+        if (FAILED(hrc))
+            return hrc; /* The worker has complained to the release log already. */
+    }
 
-    LogFlowFuncEnter();
+    /*
+     * As we reuse our (secondary) buffer for playing out data as it comes in,
+     * we're using this buffer as a so-called streaming buffer.
+     *
+     * See https://msdn.microsoft.com/en-us/library/windows/desktop/ee419014(v=vs.85).aspx
+     *
+     * However, as we do not want to use memory on the sound device directly
+     * (as most modern audio hardware on the host doesn't have this anyway),
+     * we're *not* going to use DSBCAPS_STATIC for that.
+     *
+     * Instead we're specifying DSBCAPS_LOCSOFTWARE, as this fits the bill
+     * of copying own buffer data to our secondary's Direct Sound buffer.
+     */
+    DSBUFFERDESC BufferDesc =
+    {
+        /*.dwSize = */          sizeof(BufferDesc),
+        /*.dwFlags = */         DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE,
+        /*.dwBufferBytes = */   PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
+        /*.dwReserved = */      0,
+        /*.lpwfxFormat = */     pWaveFmtX
+        /*.guid3DAlgorithm =    {0, 0, 0, {0,0,0,0, 0,0,0,0}} */
+    };
+    LogRel2(("DSound: Requested playback buffer is %#x B / %u B / %RU64 ms\n", BufferDesc.dwBufferBytes, BufferDesc.dwBufferBytes,
+             PDMAudioPropsBytesToMilli(&pCfgReq->Props, BufferDesc.dwBufferBytes)));
 
-    Assert(pStreamDS->In.pDSCB == NULL);
+    LPDIRECTSOUNDBUFFER pLegacyDSB = NULL;
+    hrc = IDirectSound8_CreateSoundBuffer(pThis->pDS, &BufferDesc, &pLegacyDSB, NULL);
+    if (FAILED(hrc))
+    {
+        LogRelMax(64, ("DSound: Creating playback sound buffer for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+        return hrc;
+    }
 
-    DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n", pCfgReq->Props.uHz,
-           PDMAudioPropsChannels(&pCfgReq->Props), PDMAudioPropsSampleBits(&pCfgReq->Props), pCfgReq->Props.fSigned));
+    /* Get the IDirectSoundBuffer8 version of the interface. */
+    hrc = IDirectSoundBuffer_QueryInterface(pLegacyDSB, IID_IDirectSoundBuffer8, (PVOID *)&pStreamDS->Out.pDSB);
+    IDirectSoundBuffer_Release(pLegacyDSB);
+    if (FAILED(hrc))
+    {
+        LogRelMax(64, ("DSound: Querying IID_IDirectSoundBuffer8 for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+        return hrc;
+    }
 
-    WAVEFORMATEX wfx;
-    int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
-    if (RT_FAILURE(rc))
-        return E_INVALIDARG;
+    /*
+     * Query the actual stream parameters, they may differ from what we requested.
+     */
+    RT_ZERO(*pWaveFmtX);
+    hrc = IDirectSoundBuffer8_GetFormat(pStreamDS->Out.pDSB, pWaveFmtX, sizeof(*pWaveFmtX), NULL);
+    if (SUCCEEDED(hrc))
+    {
+        /** @todo r=bird: We aren't converting/checking the pWaveFmtX content...   */
 
-    /** @todo r=bird: Why is this called every time?  It triggers a device
-     * enumeration. Andy claimed on IRC that enumeration was only done once... */
+        DSBCAPS BufferCaps = { /*.dwSize = */ sizeof(BufferCaps), 0, 0, 0, 0 };
+        hrc = IDirectSoundBuffer8_GetCaps(pStreamDS->Out.pDSB, &BufferCaps);
+        if (SUCCEEDED(hrc))
+        {
+            LogRel2(("DSound: Acquired playback buffer capabilities for '%s':\n"
+                     "DSound:   dwFlags              = %#RX32\n"
+                     "DSound:   dwBufferBytes        = %#RX32 B / %RU32 B / %RU64 ms\n"
+                     "DSound:   dwUnlockTransferRate = %RU32 KB/s\n"
+                     "DSound:   dwPlayCpuOverhead    = %RU32%%\n",
+                     pCfgReq->szName, BufferCaps.dwFlags, BufferCaps.dwBufferBytes, BufferCaps.dwBufferBytes,
+                     PDMAudioPropsBytesToMilli(&pCfgReq->Props, BufferCaps.dwBufferBytes),
+                     BufferCaps.dwUnlockTransferRate, BufferCaps.dwPlayCpuOverhead));
+
+            /* Update buffer related stuff: */
+            pStreamDS->cbBufSize = BufferCaps.dwBufferBytes;
+            pCfgAcq->Backend.cFramesBufferSize    = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, BufferCaps.dwBufferBytes);
+            pCfgAcq->Backend.cFramesPeriod        = pCfgAcq->Backend.cFramesBufferSize / 4; /* total fiction */
+            pCfgAcq->Backend.cFramesPreBuffering  = pCfgReq->Backend.cFramesPreBuffering * pCfgAcq->Backend.cFramesBufferSize
+                                                  / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
+
+            /** @todo r=bird: WTF is this for? */
+            pThis->pDSStrmOut = pStreamDS;
+
+#if 0 /** @todo r=bird: uAlign isn't set anywhere, so this hasn't been checking anything for a while... */
+            if (bc.dwBufferBytes & pStreamDS->uAlign)
+                DSLOGREL(("DSound: Playback capabilities returned misaligned buffer: size %RU32, alignment %RU32\n",
+                          bc.dwBufferBytes, pStreamDS->uAlign + 1));
+#endif
+            LogFlow(("returns S_OK\n"));
+            return S_OK;
+        }
+        LogRelMax(64, ("DSound: Getting playback buffer capabilities for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+    }
+    else
+        LogRelMax(64, ("DSound: Getting playback format for '%s' failed: %Rhrc\n", pCfgReq->szName, hrc));
+
+    IDirectSoundBuffer8_Release(pStreamDS->Out.pDSB);
+    pStreamDS->Out.pDSB = NULL;
+    LogFlowFunc(("returns %Rhrc\n", hrc));
+    return hrc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
+ */
+static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    PDRVHOSTDSOUND pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
+    PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
+    AssertReturn(pCfgReq->enmDir == PDMAUDIODIR_IN || pCfgReq->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+    Assert(PDMAudioStrmCfgEquals(pCfgReq, pCfgAcq));
+
+    const char * const pszStreamType = pCfgReq->enmDir == PDMAUDIODIR_IN ? "capture" : "playback"; RT_NOREF(pszStreamType);
+    LogFlowFunc(("enmSrc/Dst=%s '%s'\n",
+                 pCfgReq->enmDir == PDMAUDIODIR_IN ? PDMAudioRecSrcGetName(pCfgReq->u.enmSrc)
+                 : PDMAudioPlaybackDstGetName(pCfgReq->u.enmDst), pCfgReq->szName));
+
+    /* For whatever reason: */
     dsoundUpdateStatusInternal(pThis);
 
-    HRESULT hr = directSoundCaptureInterfaceCreate(pThis->Cfg.pGuidCapture, &pThis->pDSC);
-    if (FAILED(hr))
-        return hr;
+    /*
+     * DSound has different COM interfaces for working with input and output
+     * streams, so we'll quickly part ways here after some common format
+     * specification setup and logging.
+     */
+#if defined(RTLOG_REL_ENABLED) || defined(LOG_ENABLED)
+    char szTmp[64];
+#endif
+    LogRel2(("DSound: Opening %s stream '%s' (%s)\n", pCfgReq->szName, pszStreamType,
+             PDMAudioPropsToString(&pCfgReq->Props, szTmp, sizeof(szTmp))));
 
-    do /* For readability breaks... */
+    WAVEFORMATEX WaveFmtX;
+    dsoundWaveFmtFromCfg(pCfgReq, &WaveFmtX);
+    LogRel2(("DSound: Requested %s format for '%s':\n"
+             "DSound:   wFormatTag      = %RU16\n"
+             "DSound:   nChannels       = %RU16\n"
+             "DSound:   nSamplesPerSec  = %RU32\n"
+             "DSound:   nAvgBytesPerSec = %RU32\n"
+             "DSound:   nBlockAlign     = %RU16\n"
+             "DSound:   wBitsPerSample  = %RU16\n"
+             "DSound:   cbSize          = %RU16\n",
+             pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
+             WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize));
+
+    HRESULT hrc;
+    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+        hrc = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtX);
+    else
+        hrc = drvHostDSoundStreamCreatePlayback(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtX);
+    int rc;
+    if (SUCCEEDED(hrc))
     {
-        DSCBUFFERDESC bd;
-        RT_ZERO(bd);
-
-        bd.dwSize        = sizeof(bd);
-        bd.lpwfxFormat   = &wfx;
-        bd.dwBufferBytes = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
-
-        DSLOG(("DSound: Requested capture buffer is %RU64ms (%ld bytes)\n",
-               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
-
-        LPDIRECTSOUNDCAPTUREBUFFER pDSCB;
-        hr = IDirectSoundCapture_CreateCaptureBuffer(pThis->pDSC, &bd, &pDSCB, NULL);
-        if (FAILED(hr))
-        {
-            if (hr == E_ACCESSDENIED)
-            {
-                DSLOGREL(("DSound: Capturing input from host not possible, access denied\n"));
-            }
-            else
-                DSLOGREL(("DSound: Creating capture buffer failed with %Rhrc\n", hr));
-            break;
-        }
-
-        hr = IDirectSoundCaptureBuffer_QueryInterface(pDSCB, IID_IDirectSoundCaptureBuffer8, (void **)&pStreamDS->In.pDSCB);
-        IDirectSoundCaptureBuffer_Release(pDSCB);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Querying interface for capture buffer failed with %Rhrc\n", hr));
-            break;
-        }
+        LogRel2(("DSound: Acquired %s format for '%s':\n"
+                 "DSound:   wFormatTag      = %RU16\n"
+                 "DSound:   nChannels       = %RU16\n"
+                 "DSound:   nSamplesPerSec  = %RU32\n"
+                 "DSound:   nAvgBytesPerSec = %RU32\n"
+                 "DSound:   nBlockAlign     = %RU16\n"
+                 "DSound:   wBitsPerSample  = %RU16\n"
+                 "DSound:   cbSize          = %RU16\n",
+                 pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
+                 WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize));
 
         /*
-         * Query the actual parameters.
+         * Copy the acquired config and reset the stream (clears the buffer).
          */
-        DWORD offByteReadPos = 0;
-        hr = IDirectSoundCaptureBuffer8_GetCurrentPosition(pStreamDS->In.pDSCB, NULL, &offByteReadPos);
-        if (FAILED(hr))
-        {
-            offByteReadPos = 0;
-            DSLOGREL(("DSound: Getting capture position failed with %Rhrc\n", hr));
-        }
+        PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        drvHostDSoundStreamReset(pThis, pStreamDS);
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
-        RT_ZERO(wfx);
-        hr = IDirectSoundCaptureBuffer8_GetFormat(pStreamDS->In.pDSCB, &wfx, sizeof(wfx), NULL);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Getting capture format failed with %Rhrc\n", hr));
-            break;
-        }
-
-        DSCBCAPS bc;
-        RT_ZERO(bc);
-        bc.dwSize = sizeof(bc);
-        hr = IDirectSoundCaptureBuffer8_GetCaps(pStreamDS->In.pDSCB, &bc);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Getting capture capabilities failed with %Rhrc\n", hr));
-            break;
-        }
-
-        DSLOG(("DSound: Acquired capture buffer is %RU64ms (%ld bytes)\n",
-               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
-
-        DSLOG(("DSound: Capture format:\n"
-               "  dwBufferBytes   = %RI32\n"
-               "  dwFlags         = 0x%x\n"
-               "  wFormatTag      = %RI16\n"
-               "  nChannels       = %RI16\n"
-               "  nSamplesPerSec  = %RU32\n"
-               "  nAvgBytesPerSec = %RU32\n"
-               "  nBlockAlign     = %RI16\n"
-               "  wBitsPerSample  = %RI16\n"
-               "  cbSize          = %RI16\n",
-               bc.dwBufferBytes,
-               bc.dwFlags,
-               wfx.wFormatTag,
-               wfx.nChannels,
-               wfx.nSamplesPerSec,
-               wfx.nAvgBytesPerSec,
-               wfx.nBlockAlign,
-               wfx.wBitsPerSample,
-               wfx.cbSize));
-
-        if (bc.dwBufferBytes & pStreamDS->uAlign)
-            DSLOGREL(("DSound: Capture GetCaps returned misaligned buffer: size %RU32, alignment %RU32\n",
-                      bc.dwBufferBytes, pStreamDS->uAlign + 1));
-
-        /* Initial state: reading at the initial capture position, no error. */
-        pStreamDS->In.offReadPos = 0;
-        pStreamDS->cbBufSize     = bc.dwBufferBytes;
-
-        pThis->pDSStrmIn = pStreamDS;
-
-        pCfgAcq->Backend.cFramesBufferSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
-
-    } while (0);
-
-    if (FAILED(hr))
-        directSoundCaptureClose(pThis, pStreamDS);
-
-    LogFlowFunc(("Returning %Rhrc\n", hr));
-    return hr;
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -1482,280 +1622,6 @@ static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
 }
 
 
-static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                   PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
-    AssertPtrReturn(pCfgReq,   E_POINTER);
-    AssertPtrReturn(pCfgAcq,   E_POINTER);
-    LogFlowFuncEnter();
-
-    Assert(pStreamDS->Out.pDSB == NULL);
-
-    DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n", pCfgReq->Props.uHz,
-           PDMAudioPropsChannels(&pCfgReq->Props), PDMAudioPropsSampleBits(&pCfgReq->Props), pCfgReq->Props.fSigned));
-
-    WAVEFORMATEX wfx;
-    int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
-    if (RT_FAILURE(rc))
-        return E_INVALIDARG;
-
-    DSLOG(("DSound: Requested playback format:\n"
-           "  wFormatTag      = %RI16\n"
-           "  nChannels       = %RI16\n"
-           "  nSamplesPerSec  = %RU32\n"
-           "  nAvgBytesPerSec = %RU32\n"
-           "  nBlockAlign     = %RI16\n"
-           "  wBitsPerSample  = %RI16\n"
-           "  cbSize          = %RI16\n",
-           wfx.wFormatTag,
-           wfx.nChannels,
-           wfx.nSamplesPerSec,
-           wfx.nAvgBytesPerSec,
-           wfx.nBlockAlign,
-           wfx.wBitsPerSample,
-           wfx.cbSize));
-
-    /* Waste some time: */
-    dsoundUpdateStatusInternal(pThis);
-
-    HRESULT hr = directSoundPlayInterfaceCreate(pThis->Cfg.pGuidPlay, &pThis->pDS);
-    if (FAILED(hr))
-        return hr;
-
-    do /* To use breaks. */
-    {
-        LPDIRECTSOUNDBUFFER pDSB = NULL;
-
-        DSBUFFERDESC bd;
-        RT_ZERO(bd);
-        bd.dwSize      = sizeof(bd);
-        bd.lpwfxFormat = &wfx;
-
-        /*
-         * As we reuse our (secondary) buffer for playing out data as it comes in,
-         * we're using this buffer as a so-called streaming buffer.
-         *
-         * See https://msdn.microsoft.com/en-us/library/windows/desktop/ee419014(v=vs.85).aspx
-         *
-         * However, as we do not want to use memory on the sound device directly
-         * (as most modern audio hardware on the host doesn't have this anyway),
-         * we're *not* going to use DSBCAPS_STATIC for that.
-         *
-         * Instead we're specifying DSBCAPS_LOCSOFTWARE, as this fits the bill
-         * of copying own buffer data to our secondary's Direct Sound buffer.
-         */
-        bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
-        bd.dwBufferBytes = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
-
-        DSLOG(("DSound: Requested playback buffer is %RU64ms (%ld bytes)\n",
-               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
-
-        hr = IDirectSound8_CreateSoundBuffer(pThis->pDS, &bd, &pDSB, NULL);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Creating playback sound buffer failed with %Rhrc\n", hr));
-            break;
-        }
-
-        /* "Upgrade" to IDirectSoundBuffer8 interface. */
-        hr = IDirectSoundBuffer_QueryInterface(pDSB, IID_IDirectSoundBuffer8, (PVOID *)&pStreamDS->Out.pDSB);
-        IDirectSoundBuffer_Release(pDSB);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Querying playback sound buffer interface failed with %Rhrc\n", hr));
-            break;
-        }
-
-        /*
-         * Query the actual parameters set for this stream.
-         * Those might be different than the initially requested parameters.
-         */
-        RT_ZERO(wfx);
-        hr = IDirectSoundBuffer8_GetFormat(pStreamDS->Out.pDSB, &wfx, sizeof(wfx), NULL);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Getting playback format failed with %Rhrc\n", hr));
-            break;
-        }
-
-        DSBCAPS bc;
-        RT_ZERO(bc);
-        bc.dwSize = sizeof(bc);
-
-        hr = IDirectSoundBuffer8_GetCaps(pStreamDS->Out.pDSB, &bc);
-        if (FAILED(hr))
-        {
-            DSLOGREL(("DSound: Getting playback capabilities failed with %Rhrc\n", hr));
-            break;
-        }
-
-        DSLOG(("DSound: Acquired playback buffer is %RU64ms (%ld bytes)\n",
-               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
-
-        DSLOG(("DSound: Acquired playback format:\n"
-               "  dwBufferBytes   = %RI32\n"
-               "  dwFlags         = 0x%x\n"
-               "  wFormatTag      = %RI16\n"
-               "  nChannels       = %RI16\n"
-               "  nSamplesPerSec  = %RU32\n"
-               "  nAvgBytesPerSec = %RU32\n"
-               "  nBlockAlign     = %RI16\n"
-               "  wBitsPerSample  = %RI16\n"
-               "  cbSize          = %RI16\n",
-               bc.dwBufferBytes,
-               bc.dwFlags,
-               wfx.wFormatTag,
-               wfx.nChannels,
-               wfx.nSamplesPerSec,
-               wfx.nAvgBytesPerSec,
-               wfx.nBlockAlign,
-               wfx.wBitsPerSample,
-               wfx.cbSize));
-
-        if (bc.dwBufferBytes & pStreamDS->uAlign)
-            DSLOGREL(("DSound: Playback capabilities returned misaligned buffer: size %RU32, alignment %RU32\n",
-                      bc.dwBufferBytes, pStreamDS->uAlign + 1));
-
-        /*
-         * Initial state.
-         * dsoundPlayStart initializes part of it to make sure that Stop/Start continues with a correct
-         * playback buffer position.
-         */
-        pStreamDS->cbBufSize = bc.dwBufferBytes;
-
-        pThis->pDSStrmOut = pStreamDS;
-
-        const uint32_t cfBufSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
-
-        pCfgAcq->Backend.cFramesBufferSize    = cfBufSize;
-        pCfgAcq->Backend.cFramesPeriod        = cfBufSize / 4;
-        pCfgAcq->Backend.cFramesPreBuffering  = pCfgAcq->Backend.cFramesPeriod * 2;
-
-    } while (0);
-
-    if (FAILED(hr))
-        directSoundPlayClose(pThis, pStreamDS);
-
-    return hr;
-}
-
-
-static void dsoundPlayClearBuffer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
-{
-    AssertPtrReturnVoid(pStreamDS);
-
-    PPDMAUDIOPCMPROPS pProps = &pStreamDS->Cfg.Props;
-
-    HRESULT hr = IDirectSoundBuffer_SetCurrentPosition(pStreamDS->Out.pDSB, 0 /* Position */);
-    if (FAILED(hr))
-        DSLOGREL(("DSound: Setting current position to 0 when clearing buffer failed with %Rhrc\n", hr));
-
-    PVOID pv1;
-    hr = directSoundPlayLock(pThis, pStreamDS,
-                             0 /* dwOffset */, pStreamDS->cbBufSize,
-                             &pv1, NULL, 0, 0, DSBLOCK_ENTIREBUFFER);
-    if (SUCCEEDED(hr))
-    {
-        PDMAudioPropsClearBuffer(pProps, pv1, pStreamDS->cbBufSize, PDMAUDIOPCMPROPS_B2F(pProps, pStreamDS->cbBufSize));
-
-        directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, NULL, 0, 0);
-
-        /* Make sure to get the last playback position and current write position from DirectSound again.
-         * Those positions in theory could have changed, re-fetch them to be sure. */
-        DWORD offPlay  = 0;
-        DWORD offWrite = 0;
-        hr = IDirectSoundBuffer_GetCurrentPosition(pStreamDS->Out.pDSB, &offPlay, &offWrite);
-        if (SUCCEEDED(hr))
-        {
-            pStreamDS->Out.offPlayCursorLastPlayed = offPlay;
-            pStreamDS->Out.offWritePos             = offWrite;
-        }
-        else
-            DSLOGREL(("DSound: Re-fetching current position when clearing buffer failed with %Rhrc\n", hr));
-    }
-}
-
-
-static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    LogFlowFunc(("pStreamDS=%p, pCfgReq=%p\n", pStreamDS, pCfgReq));
-
-    int rc;
-
-    /* Try to open playback in case the device is already there. */
-    HRESULT hr = directSoundPlayOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
-    if (SUCCEEDED(hr))
-    {
-        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
-        if (RT_SUCCESS(rc))
-            dsoundStreamReset(pThis, pStreamDS);
-    }
-    else
-        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    LogFunc(("pStreamDS=%p, pCfgReq=%p, enmRecSource=%s\n",
-             pStreamDS, pCfgReq, PDMAudioRecSrcGetName(pCfgReq->u.enmSrc)));
-
-
-    /* Try to open capture in case the device is already there. */
-    int rc;
-    HRESULT hr = directSoundCaptureOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
-    if (SUCCEEDED(hr))
-    {
-        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
-        if (RT_SUCCESS(rc))
-            dsoundStreamReset(pThis, pStreamDS);
-    }
-    else
-        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
- */
-static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
-
-    PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
-    PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
-
-    int rc;
-    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = dsoundCreateStreamIn(pThis,  pStreamDS, pCfgReq, pCfgAcq);
-    else
-        rc = dsoundCreateStreamOut(pThis, pStreamDS, pCfgReq, pCfgAcq);
-
-    if (RT_SUCCESS(rc))
-    {
-        /** @todo already copied   */
-        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&pStreamDS->CritSect);
-    }
-
-    return rc;
-}
-
-
 static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
     LogFlowFuncEnter();
@@ -1769,6 +1635,31 @@ static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     }
 
     return VINF_SUCCESS;
+}
+
+
+static HRESULT directSoundCaptureClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+{
+    AssertPtrReturn(pThis,     E_POINTER);
+    AssertPtrReturn(pStreamDS, E_POINTER);
+
+    LogFlowFuncEnter();
+
+    HRESULT hr = directSoundCaptureStop(pThis, pStreamDS, true /* fFlush */);
+    if (FAILED(hr))
+        return hr;
+
+    if (   pStreamDS
+        && pStreamDS->In.pDSCB)
+    {
+        DSLOG(("DSound: Closing capturing stream\n"));
+
+        IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
+        pStreamDS->In.pDSCB = NULL;
+    }
+
+    LogFlowFunc(("Returning %Rhrc\n", hr));
+    return hr;
 }
 
 
@@ -1787,11 +1678,9 @@ static int dsoundDestroyStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
  */
 static DECLCALLBACK(int) drvHostDSoundHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDRVHOSTDSOUND pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
 
     int rc;
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
@@ -1826,7 +1715,7 @@ static int dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, boo
              pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
 
     if (fEnable)
-        dsoundStreamReset(pThis, pStreamDS);
+        drvHostDSoundStreamReset(pThis, pStreamDS);
 
     pStreamDS->fEnabled = fEnable;
 
@@ -1884,7 +1773,7 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     if (SUCCEEDED(hr))
     {
         if (fFlush)
-            dsoundStreamReset(pThis, pStreamDS);
+            drvHostDSoundStreamReset(pThis, pStreamDS);
     }
 
     if (FAILED(hr))
@@ -2045,7 +1934,7 @@ static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     if (SUCCEEDED(hr))
     {
         if (fFlush)
-             dsoundStreamReset(pThis, pStreamDS);
+             drvHostDSoundStreamReset(pThis, pStreamDS);
     }
 
     if (FAILED(hr))
@@ -2076,13 +1965,14 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
                 hr = directSoundCaptureClose(pThis, pStreamDS);
                 if (SUCCEEDED(hr))
                 {
+/** @todo r=bird: This isn't working. CfgAcq isn't initialized! */
                     PDMAUDIOSTREAMCFG CfgAcq;
-                    hr = directSoundCaptureOpen(pThis, pStreamDS, &pStreamDS->Cfg /* pCfgReq */, &CfgAcq);
+                    WAVEFORMATEX WaveFmtX;
+                    dsoundWaveFmtFromCfg(&pStreamDS->Cfg, &WaveFmtX);
+                    hr = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, &pStreamDS->Cfg, &CfgAcq, &WaveFmtX);
                     if (SUCCEEDED(hr))
                     {
-                        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, &CfgAcq);
-                        if (RT_FAILURE(rc))
-                            break;
+                        PDMAudioStrmCfgCopy(&pStreamDS->Cfg, &CfgAcq);
 
                         /** @todo What to do if the format has changed? */
 
@@ -2127,11 +2017,9 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
 static DECLCALLBACK(int) drvHostDSoundHA_StreamControl(PPDMIHOSTAUDIO pInterface,
                                                        PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDRVHOSTDSOUND pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
 
     int rc;
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
