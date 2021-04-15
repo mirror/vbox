@@ -8323,6 +8323,12 @@ VBOXDDU_DECL(int) VDRead(PVDISK pDisk, uint64_t uOffset, void *pvBuf,
         AssertRC(rc2);
         fLockRead = true;
 
+        AssertMsgBreakStmt(   uOffset < pDisk->cbSize
+                           && cbRead <= pDisk->cbSize - uOffset,
+                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
+                            uOffset, cbRead, pDisk->cbSize),
+                           rc = VERR_INVALID_PARAMETER);
+
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
@@ -8382,7 +8388,8 @@ VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
         AssertRC(rc2);
         fLockWrite = true;
 
-        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
+        AssertMsgBreakStmt(   uOffset < pDisk->cbSize
+                           && cbWrite <= pDisk->cbSize - uOffset,
                            ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
                             uOffset, cbWrite, pDisk->cbSize),
                            rc = VERR_INVALID_PARAMETER);
@@ -9737,7 +9744,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
         AssertRC(rc2);
         fLockRead = true;
 
-        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
+        AssertMsgBreakStmt(   uOffset < pDisk->cbSize
+                           && cbRead <= pDisk->cbSize - uOffset,
                            ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
                             uOffset, cbRead, pDisk->cbSize),
                            rc = VERR_INVALID_PARAMETER);
@@ -9808,7 +9816,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
         AssertRC(rc2);
         fLockWrite = true;
 
-        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
+        AssertMsgBreakStmt(   uOffset < pDisk->cbSize
+                           && cbWrite <= pDisk->cbSize - uOffset,
                            ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
                             uOffset, cbWrite, pDisk->cbSize),
                            rc = VERR_INVALID_PARAMETER);
