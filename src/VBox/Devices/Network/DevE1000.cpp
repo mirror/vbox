@@ -5328,7 +5328,7 @@ DECLINLINE(bool) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
              pDesc->context.tu.u8CSS,
              pDesc->context.tu.u8CSO,
              pDesc->context.tu.u16CSE));
-    return true; /* TODO: Consider returning false for invalid descriptors */
+    return true; /* Consider returning false for invalid descriptors */
 }
 
 static bool e1kLocateTxPacket(PE1KSTATE pThis)
