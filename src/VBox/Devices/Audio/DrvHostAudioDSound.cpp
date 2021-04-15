@@ -1142,8 +1142,6 @@ static int drvHostDSoundEnumerateDevices(PPDMAUDIOHOSTENUM pDevEnm)
         if (FAILED(hr))
             LogRel(("DSound: Error enumerating host capture devices: %Rhrc\n", hr));
     }
-    else
-        LogRel(("DSound: Error starting to enumerate host capture devices: %Rrc\n", rc));
 
     /*
      * Query Information for all enumerated devices.
