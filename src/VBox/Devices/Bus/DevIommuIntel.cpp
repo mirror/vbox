@@ -59,7 +59,7 @@
  *  Normal guest operation shouldn't trigger faults anyway, so we only support the
  *  minimum number of registers (which is 1).
  *
- *  See Intel VT-d spec. 10.4.2 "Capability Register" (CAP_REG::NFR). */
+ *  See Intel VT-d spec. 10.4.2 "Capability Register" (CAP_REG.NFR). */
 #define DMAR_FRCD_REG_COUNT                         UINT32_C(1)
 
 /** Offset of first register in group 0. */
@@ -89,10 +89,14 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** Size of the group 1 (in bytes). */
 #define DMAR_MMIO_GROUP_1_SIZE                      (DMAR_MMIO_GROUP_1_OFF_END - DMAR_MMIO_GROUP_1_OFF_FIRST)
 
+/** DMAR implementation's major version number (exposed to software).
+ *  We report 6 as the major version since we support queued invalidations as
+ *  software may make assumptions based on that.
+ *
+ *  See Intel VT-d spec. 10.4.7 "Context Command Register" (CCMD_REG.CAIG). */
+#define DMAR_VER_MAJOR                              6
 /** DMAR implementation's minor version number (exposed to software). */
 #define DMAR_VER_MINOR                              0
-/** DMAR implementation's major version number (exposed to software). */
-#define DMAR_VER_MAJOR                              1
 /** @} */
 
 /** Release log prefix string. */
@@ -124,6 +128,10 @@ typedef struct DMAR
 
     /** @name Register copies for a tiny bit faster and more convenient access.
      *  @{ */
+    /** Copy of VER_REG. */
+    uint8_t                     uVerReg;
+    /** Alignment. */
+    uint8_t                     abPadding[7];
     /** Copy of CAP_REG. */
     uint64_t                    fCap;
     /** Copy of ECAP_REG. */
@@ -859,9 +867,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
      */
     /* VER_REG */
     {
-        uint8_t const uVer = RT_BF_MAKE(VTD_BF_VER_REG_MIN, DMAR_VER_MINOR)
-                           | RT_BF_MAKE(VTD_BF_VER_REG_MAX, DMAR_VER_MAJOR);
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, uVer);
+        pThis->uVerReg = RT_BF_MAKE(VTD_BF_VER_REG_MIN, DMAR_VER_MINOR)
+                       | RT_BF_MAKE(VTD_BF_VER_REG_MAX, DMAR_VER_MAJOR);
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, pThis->uVerReg);
     }
 
     uint8_t const fFlts  = 1;                    /* First-Level translation support. */
@@ -906,6 +914,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,     DMAR_FRCD_REG_COUNT - 1)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,    fPsi & fMamv)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,     1)
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_DRD,     1)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,   fFlts & fFl1gp)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_PI,      0)     /* Posted Interrupts not supported. */
                     | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,   fFlts & fFl5lp)
@@ -1121,7 +1130,7 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Log some of the features exposed to software.
      */
-    uint32_t const uVerReg         = dmarRegRead32(pThis, VTD_MMIO_OFF_VER_REG);
+    uint32_t const uVerReg         = pThis->uVerReg;
     uint8_t const  cMaxGstAddrBits = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_MGAW) + 1;
     uint8_t const  cSupGstAddrBits = vtdCapRegGetSagawBits(RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_SAGAW));
     uint16_t const offFrcd         = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_FRO);
