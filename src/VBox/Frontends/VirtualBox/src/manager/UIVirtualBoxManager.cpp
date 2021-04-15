@@ -466,6 +466,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
+    , m_iGeometrySaveTimerId(-1)
 {
     s_pInstance = this;
 }
@@ -536,6 +537,29 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
         {
             emit sigWindowRemapped();
             break;
+        }
+        /* Handle move/resize geometry changes: */
+        case QEvent::Move:
+        case QEvent::Resize:
+        {
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+            break;
+        }
+        /* Handle timer event started above: */
+        case QEvent::Timer:
+        {
+            QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+            if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+            {
+                killTimer(m_iGeometrySaveTimerId);
+                m_iGeometrySaveTimerId = -1;
+                const QRect geo = currentGeometry();
+                LogRel2(("GUI: UIVirtualBoxManager: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+                         geo.x(), geo.y(), geo.width(), geo.height()));
+                gEDataManager->setSelectorWindowGeometry(geo, isCurrentlyMaximized());
+            }
         }
         default:
             break;
@@ -2253,7 +2277,7 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange);
 #endif
 
-    /* Medium enumeration connections: */
+    /* UICommon connections: */
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
 
@@ -2469,17 +2493,6 @@ void UIVirtualBoxManager::loadSettings()
     }
 }
 
-void UIVirtualBoxManager::saveSettings()
-{
-    /* Save window geometry: */
-    {
-        const QRect geo = currentGeometry();
-        LogRel2(("GUI: UIVirtualBoxManager: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
-                 geo.x(), geo.y(), geo.width(), geo.height()));
-        gEDataManager->setSelectorWindowGeometry(geo, isCurrentlyMaximized());
-    }
-}
-
 void UIVirtualBoxManager::cleanupConnections()
 {
     /* Honestly we should disconnect everything here,
@@ -2516,9 +2529,6 @@ void UIVirtualBoxManager::cleanup()
     sltCloseManagerWindow(UIToolType_Network);
     sltCloseManagerWindow(UIToolType_Cloud);
     sltCloseManagerWindow(UIToolType_CloudConsole);
-
-    /* Save settings: */
-    saveSettings();
 
     /* Cleanup: */
     cleanupConnections();

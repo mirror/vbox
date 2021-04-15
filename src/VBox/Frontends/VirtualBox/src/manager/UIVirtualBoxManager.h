@@ -320,8 +320,6 @@ private:
         /** Loads settings. */
         void loadSettings();
 
-        /** Saves settings. */
-        void saveSettings();
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups widgets. */
@@ -457,6 +455,9 @@ private:
 
     /** Holds the central-widget instance. */
     UIVirtualBoxManagerWidget *m_pWidget;
+
+    /** Holds the geometry save timer ID. */
+    int  m_iGeometrySaveTimerId;
 };
 
 #define gpManager UIVirtualBoxManager::instance()
