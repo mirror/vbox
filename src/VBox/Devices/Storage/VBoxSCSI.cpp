@@ -428,7 +428,7 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
         Assert(cbTransfer <= pVBoxSCSI->cbBufLeft);
         if (cbTransfer > pVBoxSCSI->cbBufLeft)
         {
-            memset(pbDst + pVBoxSCSI->cbBuf, 0xff, cbTransfer - pVBoxSCSI->cbBufLeft);
+            memset(pbDst + pVBoxSCSI->cbBufLeft, 0xff, cbTransfer - pVBoxSCSI->cbBufLeft);
             cbTransfer = pVBoxSCSI->cbBufLeft;  /* Ignore excess data (not supposed to happen). */
         }
 
