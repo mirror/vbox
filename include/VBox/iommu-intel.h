@@ -1177,14 +1177,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FECTL_REG_, UINT32_C(0), UINT32_MAX,
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_FEDATA_REG_IMD_SHIFT                             0
 #define VTD_BF_FEDATA_REG_IMD_MASK                              UINT32_C(0x0000ffff)
-/** EIMD: Extended Interrupt Message Data. */
-#define VTD_BF_FEDATA_REG_EIMD_SHIFT                            16
-#define VTD_BF_FEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
+/** R: Reserved (bits 31:16). VT-d specs. prior to 2021 had EIMD here. */
+#define VTD_BF_FEDATA_REG_RSVD_31_16_SHIFT                      16
+#define VTD_BF_FEDATA_REG_RSVD_31_16_MASK                       UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEDATA_REG_, UINT32_C(0), UINT32_MAX,
-                            (IMD, EIMD));
+                            (IMD, RSVD_31_16));
 
 /** RW: Read/write mask. */
-#define VTD_FEDATA_REG_RW_MASK                                  (VTD_BF_FEDATA_REG_IMD_MASK | VTD_BF_FEDATA_REG_EIMD_MASK)
+#define VTD_FEDATA_REG_RW_MASK                                  VTD_BF_FEDATA_REG_IMD_MASK
 /** @} */
 
 
@@ -1430,14 +1430,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IECTL_REG_, UINT32_C(0), UINT32_MAX,
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_IEDATA_REG_IMD_SHIFT                             0
 #define VTD_BF_IEDATA_REG_IMD_MASK                              UINT32_C(0x0000ffff)
-/** EIMD: Extended Interrupt Message Data. */
-#define VTD_BF_IEDATA_REG_EIMD_SHIFT                            16
-#define VTD_BF_IEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
+/** R: Reserved (bits 31:16). VT-d specs. prior to 2021 had EIMD here. */
+#define VTD_BF_IEDATA_REG_RSVD_31_16_SHIFT                      16
+#define VTD_BF_IEDATA_REG_RSVD_31_16_MASK                       UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEDATA_REG_, UINT32_C(0), UINT32_MAX,
-                            (IMD, EIMD));
+                            (IMD, RSVD_31_16));
 
 /** RW: Read/write mask. */
-#define VTD_IEDATA_REG_RW_MASK                                  (VTD_BF_IEDATA_REG_IMD_MASK | VTD_BF_IEDATA_REG_EIMD_MASK)
+#define VTD_IEDATA_REG_RW_MASK                                  VTD_BF_IEDATA_REG_IMD_MASK
 /** @} */
 
 
@@ -1624,14 +1624,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PECTL_REG_, UINT32_C(0), UINT32_MAX,
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_PEDATA_REG_IMD_SHIFT                             0
 #define VTD_BF_PEDATA_REG_IMD_MASK                              UINT32_C(0x0000ffff)
-/** EIMD: Extended Interrupt Message Data. */
-#define VTD_BF_PEDATA_REG_EIMD_SHIFT                            16
-#define VTD_BF_PEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
+/** R: Reserved (bits 31:16). VT-d specs. prior to 2021 had EIMD here. */
+#define VTD_BF_PEDATA_REG_RSVD_31_16_SHIFT                      16
+#define VTD_BF_PEDATA_REG_RSVD_31_16_MASK                       UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEDATA_REG_, UINT32_C(0), UINT32_MAX,
-                            (IMD, EIMD));
+                            (IMD, RSVD_31_16));
 
 /** RW: Read/write mask. */
-#define VTD_PEDATA_REG_RW_MASK                                  (VTD_BF_PEDATA_REG_IMD_MASK | VTD_BF_PEDATA_REG_EIMD_MASK)
+#define VTD_PEDATA_REG_RW_MASK                                  VTD_BF_PEDATA_REG_IMD_MASK
 /** @} */
 
 
