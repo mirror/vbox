@@ -499,6 +499,9 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
     int size = MCLBYTES;
     LogFlowFunc(("ENTER: cbMin:%d, ppvBuf:%p, pcbBuf:%p\n", cbMin, ppvBuf, pcbBuf));
 
+    *ppvBuf = NULL;
+    *pcbBuf = 0;
+
     if (cbMin < MCLBYTES)
         size = MCLBYTES;
     else if (cbMin < MJUM9BYTES)
@@ -506,13 +509,15 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
     else if (cbMin < MJUM16BYTES)
         size = MJUM16BYTES;
     else
-        AssertMsgFailed(("Unsupported size"));
+    {
+        AssertMsgFailed(("Unsupported size %zu", cbMin));
+        LogFlowFunc(("LEAVE: NULL (bad size %zu)\n", cbMin));
+        return NULL;
+    }
 
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
     if (m == NULL)
     {
-        *ppvBuf = NULL;
-        *pcbBuf = 0;
         LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
     }
