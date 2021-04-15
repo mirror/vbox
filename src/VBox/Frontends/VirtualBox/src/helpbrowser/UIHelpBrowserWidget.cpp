@@ -842,6 +842,7 @@ void UIHelpBrowserTab::sltFindInPageWidgetVisibilityChanged(bool fVisible)
     emit sigFindInPageWidgetVisibilityChanged(fVisible);
 }
 
+
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
 *********************************************************************************************************************************/
