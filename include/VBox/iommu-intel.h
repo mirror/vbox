@@ -1735,6 +1735,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCCAP_REG_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
+/** @name Virtual Command Extended Operand Register (VCMD_EO_REG).
+ * In accordance with the Intel spec.
+ * @{ */
+/** OB: Operand B. */
+#define VTD_BF_VCMD_EO_REG_OB_SHIFT                             0
+#define VTD_BF_VCMD_EO_REG_OB_MASK                              UINT32_C(0xffffffffffffffff)
+
+/** RW: Read/write mask. */
+#define VTD_VCMD_EO_REG_RW_MASK                                 VTD_BF_VCMD_EO_REG_OB_MASK
+/** @} */
+
+
 /** @name Virtual Command Register (VCMD_REG).
  * In accordance with the Intel spec.
  * @{ */

@@ -71,13 +71,13 @@
 /** Size of the group 0 (in bytes). */
 #define DMAR_MMIO_GROUP_0_SIZE                      (DMAR_MMIO_GROUP_0_OFF_END - DMAR_MMIO_GROUP_0_OFF_FIRST)
 /**< Implementation-specific MMIO offset of IVA_REG. */
-#define DMAR_MMIO_OFF_IVA_REG                       0xe40
+#define DMAR_MMIO_OFF_IVA_REG                       0xe50
 /**< Implementation-specific MMIO offset of IOTLB_REG. */
-#define DMAR_MMIO_OFF_IOTLB_REG                     0xe48
+#define DMAR_MMIO_OFF_IOTLB_REG                     0xe58
    /**< Implementation-specific MMIO offset of FRCD_LO_REG. */
-#define DMAR_MMIO_OFF_FRCD_LO_REG                   0xe60
+#define DMAR_MMIO_OFF_FRCD_LO_REG                   0xe70
 /**< Implementation-specific MMIO offset of FRCD_HI_REG. */
-#define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe68
+#define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe78
 AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 
 /** Offset of first register in group 1. */
@@ -396,19 +396,21 @@ static uint32_t const g_au32RwMasks1[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0xe00   VCCAP_REG             */  DMAR_LO_U32(VTD_VCCAP_REG_RW_MASK),        DMAR_HI_U32(VTD_VCCAP_REG_RW_MASK),
-    /* 0xe08   Reserved              */  0,                                         0,
+    /* 0xe08   VCMD_EO_REG           */  DMAR_LO_U32(VTD_VCMD_EO_REG_RW_MASK),      DMAR_HI_U32(VTD_VCMD_EO_REG_RW_MASK),
     /* 0xe10   VCMD_REG              */  0,                                         0, /* RO: VCS not supported. */
     /* 0xe18   VCMDRSVD_REG          */  0,                                         0,
     /* 0xe20   VCRSP_REG             */  0,                                         0, /* RO: VCS not supported. */
     /* 0xe28   VCRSPRSVD_REG         */  0,                                         0,
     /* 0xe30   Reserved              */  0,                                         0,
     /* 0xe38   Reserved              */  0,                                         0,
-    /* 0xe40   IVA_REG               */  DMAR_LO_U32(VTD_IVA_REG_RW_MASK),          DMAR_HI_U32(VTD_IVA_REG_RW_MASK),
-    /* 0xe48   IOTLB_REG             */  DMAR_LO_U32(VTD_IOTLB_REG_RW_MASK),        DMAR_HI_U32(VTD_IOTLB_REG_RW_MASK),
-    /* 0xe50   Reserved              */  0,                                         0,
-    /* 0xe58   Reserved              */  0,                                         0,
-    /* 0xe60   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_LO_RW_MASK),
-    /* 0xe68   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_HI_RW_MASK),
+    /* 0xe40   Reserved              */  0,                                         0,
+    /* 0xe48   Reserved              */  0,                                         0,
+    /* 0xe50   IVA_REG               */  DMAR_LO_U32(VTD_IVA_REG_RW_MASK),          DMAR_HI_U32(VTD_IVA_REG_RW_MASK),
+    /* 0xe58   IOTLB_REG             */  DMAR_LO_U32(VTD_IOTLB_REG_RW_MASK),        DMAR_HI_U32(VTD_IOTLB_REG_RW_MASK),
+    /* 0xe60   Reserved              */  0,                                         0,
+    /* 0xe68   Reserved              */  0,                                         0,
+    /* 0xe70   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_LO_RW_MASK),
+    /* 0xe78   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW_MASK),      DMAR_HI_U32(VTD_FRCD_REG_HI_RW_MASK),
 };
 AssertCompile(sizeof(g_au32RwMasks1) == DMAR_MMIO_GROUP_1_SIZE);
 AssertCompile((DMAR_MMIO_OFF_FRCD_LO_REG - DMAR_MMIO_GROUP_1_OFF_FIRST) + DMAR_FRCD_REG_COUNT * 2 * sizeof(uint64_t) );
@@ -420,19 +422,21 @@ static uint32_t const g_au32Rw1cMasks1[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0xe00   VCCAP_REG             */  0,                                         0,
-    /* 0xe08   Reserved              */  0,                                         0,
+    /* 0xe08   VCMD_EO_REG           */  0,                                         0,
     /* 0xe10   VCMD_REG              */  0,                                         0,
     /* 0xe18   VCMDRSVD_REG          */  0,                                         0,
     /* 0xe20   VCRSP_REG             */  0,                                         0,
     /* 0xe28   VCRSPRSVD_REG         */  0,                                         0,
     /* 0xe30   Reserved              */  0,                                         0,
     /* 0xe38   Reserved              */  0,                                         0,
-    /* 0xe40   IVA_REG               */  0,                                         0,
-    /* 0xe48   IOTLB_REG             */  0,                                         0,
-    /* 0xe50   Reserved              */  0,                                         0,
-    /* 0xe58   Reserved              */  0,                                         0,
-    /* 0xe60   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_LO_RW1C_MASK),
-    /* 0xe68   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_HI_RW1C_MASK),
+    /* 0xe40   Reserved              */  0,                                         0,
+    /* 0xe48   Reserved              */  0,                                         0,
+    /* 0xe50   IVA_REG               */  0,                                         0,
+    /* 0xe58   IOTLB_REG             */  0,                                         0,
+    /* 0xe60   Reserved              */  0,                                         0,
+    /* 0xe68   Reserved              */  0,                                         0,
+    /* 0xe70   FRCD_REG_LO           */  DMAR_LO_U32(VTD_FRCD_REG_LO_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_LO_RW1C_MASK),
+    /* 0xe78   FRCD_REG_HI           */  DMAR_LO_U32(VTD_FRCD_REG_HI_RW1C_MASK),    DMAR_HI_U32(VTD_FRCD_REG_HI_RW1C_MASK),
 };
 AssertCompile(sizeof(g_au32Rw1cMasks1) == DMAR_MMIO_GROUP_1_SIZE);
 
