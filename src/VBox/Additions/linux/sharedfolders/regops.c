@@ -1467,6 +1467,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
 }
 
 
+#if RTLNX_VER_MAX(5,10,0)
 /**
  * Read function used when accessing files that are memory mapped.
  *
@@ -1475,7 +1476,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
  */
 static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off)
 {
-#if RTLNX_VER_MIN(3,16,0)
+# if RTLNX_VER_MIN(3,16,0)
     struct iovec    iov = { .iov_base = buf, .iov_len = size };
     struct iov_iter iter;
     struct kiocb    kiocb;
@@ -1490,7 +1491,7 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
     *off = kiocb.ki_pos;
     return cbRet;
 
-#elif RTLNX_VER_MIN(2,6,19)
+# elif RTLNX_VER_MIN(2,6,19)
     struct iovec    iov = { .iov_base = buf, .iov_len = size };
     struct kiocb    kiocb;
     ssize_t         cbRet;
@@ -1505,9 +1506,9 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
     *off = kiocb.ki_pos;
     return cbRet;
 
-#else /* 2.6.18 or earlier: */
+# else /* 2.6.18 or earlier: */
     return generic_file_read(file, buf, size, off);
-#endif
+# endif
 }
 
 
@@ -1625,7 +1626,6 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
     return cbRet;
 }
 
-
 /**
  * Read from a regular file.
  *
@@ -1691,7 +1691,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
         }
     }
 
-#if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
     /*
      * For medium sized requests try use a bounce buffer.
      */
@@ -1720,10 +1720,11 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
             kfree(pvBounce);
         }
     }
-#endif
+# endif
 
     return vbsf_reg_read_locking(file, buf, size, off, pSuperInfo, sf_r);
 }
+#endif /* < 5.10.0 */
 
 
 /**
@@ -1813,6 +1814,7 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
 }
 
 
+#if RTLNX_VER_MAX(5,10,0)
 /**
  * Fallback case of vbsf_reg_write() that locks the user buffers and let the host
  * write directly to them.
@@ -1940,7 +1942,6 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
     return cbRet;
 }
 
-
 /**
  * Write to a regular file.
  *
@@ -1986,13 +1987,13 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     if (   mapping
         && mapping->nrpages > 0
         && mapping_writably_mapped(mapping)) {
-#if RTLNX_VER_MIN(2,6,32)
+# if RTLNX_VER_MIN(2,6,32)
         int err = filemap_fdatawait_range(mapping, pos, pos + size - 1);
         if (err)
             return err;
-#else
+# else
         /** @todo ...   */
-#endif
+# endif
     }
 
     /*
@@ -2034,7 +2035,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
             VbglR0PhysHeapFree(pReq);
     }
 
-#if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
     /*
      * For medium sized requests try use a bounce buffer.
      */
@@ -2073,10 +2074,11 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
             }
         }
     }
-#endif
+# endif
 
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, pSuperInfo, sf_r);
 }
+#endif /* < 5.10.0 */
 
 #if RTLNX_VER_MIN(2,6,19)
 
@@ -3505,8 +3507,10 @@ extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
  */
 struct file_operations vbsf_reg_fops = {
     .open            = vbsf_reg_open,
+#if RTLNX_VER_MAX(5,10,0)
     .read            = vbsf_reg_read,
     .write           = vbsf_reg_write,
+#endif
 #if RTLNX_VER_MIN(3,16,0)
     .read_iter       = vbsf_reg_read_iter,
     .write_iter      = vbsf_reg_write_iter,
