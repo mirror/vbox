@@ -1509,6 +1509,14 @@ typedef struct PDMIOMMUHLPR0
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Check whether the threads owns the PDM lock.
+     *
+     * @returns @c true if the PDM lock is owned, @c false otherwise.
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLR0CALLBACKMEMBER(bool,  pfnLockIsOwner,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPR0;
@@ -1518,7 +1526,7 @@ typedef PDMIOMMUHLPR0 *PPDMIOMMUHLPR0;
 typedef const PDMIOMMUHLPR0 *PCPDMIOMMUHLPR0;
 
 /** Current PDMIOMMUHLPR0 version number. */
-#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 2, 0)
+#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 3, 0)
 
 
 /**
@@ -1546,6 +1554,14 @@ typedef struct PDMIOMMUHLPRC
      */
     DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Check whether the threads owns the PDM lock.
+     *
+     * @returns @c true if the PDM lock is owned, @c false otherwise.
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLRCCALLBACKMEMBER(bool,  pfnLockIsOwner,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPRC;
@@ -1555,7 +1571,7 @@ typedef PDMIOMMUHLPRC *PPDMIOMMUHLPRC;
 typedef const PDMIOMMUHLPRC *PCPDMIOMMUHLPRC;
 
 /** Current PDMIOMMUHLPRC version number. */
-#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 2, 0)
+#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 3, 0)
 
 
 /**
@@ -1583,6 +1599,14 @@ typedef struct PDMIOMMUHLPR3
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Check whether the threads owns the PDM lock.
+     *
+     * @returns @c true if the PDM lock is owned, @c false otherwise.
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLR3CALLBACKMEMBER(bool,  pfnLockIsOwner,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPR3;
@@ -1592,7 +1616,7 @@ typedef PDMIOMMUHLPR3 *PPDMIOMMUHLPR3;
 typedef const PDMIOMMUHLPR3 *PCPDMIOMMUHLPR3;
 
 /** Current PDMIOMMUHLPR3 version number. */
-#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 2, 0)
+#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 3, 0)
 
 
 /**

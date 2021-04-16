@@ -281,6 +281,15 @@ static DECLCALLBACK(void) pdmR3IommuHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMIOMMUHLPR3,pfnLockIsOwner} */
+static DECLCALLBACK(bool) pdmR3IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlowFunc(("caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return pdmLockIsOwner(pDevIns->Internal.s.pVMR3);
+}
+
+
 /**
  * IOMMU Device Helpers.
  */
@@ -289,6 +298,7 @@ const PDMIOMMUHLPR3 g_pdmR3DevIommuHlp =
     PDM_IOMMUHLPR3_VERSION,
     pdmR3IommuHlp_Lock,
     pdmR3IommuHlp_Unlock,
+    pdmR3IommuHlp_LockIsOwner,
     PDM_IOMMUHLPR3_VERSION /* the end */
 };
 
