@@ -1503,7 +1503,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                              rc, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             rc);
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
         /** @todo IOMMU: Restrict this to the AMD flavor of IOMMU only at runtime. */
         PPDMIOMMUR3 pIommu       = &pVM->pdm.s.aIommus[0];
         PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
@@ -1513,6 +1513,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
              * If the PCI device/function number has been explicitly specified via CFGM,
              * ensure it's not the BDF reserved for the southbridge I/O APIC expected
              * by linux guests when using an AMD IOMMU, see @bugref{9654#c23}.
+             *
+             * In the Intel IOMMU case, we similarly re-use the same I/O APIC address
+             * to reserve a PCI slot, see @bugref{9967#c13}.
              */
             uint16_t const uDevFn    = VBOX_PCI_DEVFN_MAKE(uPciDevNo, uPciFunNo);
             uint16_t const uBusDevFn = PCIBDF_MAKE(u8Bus, uDevFn);
