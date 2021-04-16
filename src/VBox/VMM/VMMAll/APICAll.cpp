@@ -1332,6 +1332,7 @@ static VBOXSTRICTRC apicSetLdr(PVMCPUCC pVCpu, uint32_t uLdr)
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_LDR, uLdr & XAPIC_LDR_VALID);
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatLdrWrite);
     return VINF_SUCCESS;
 }
 
@@ -1357,6 +1358,7 @@ static VBOXSTRICTRC apicSetDfr(PVMCPUCC pVCpu, uint32_t uDfr)
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_DFR, uDfr);
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatDfrWrite);
     return VINF_SUCCESS;
 }
 
@@ -1379,6 +1381,7 @@ static VBOXSTRICTRC apicSetTimerDcr(PVMCPUCC pVCpu, uint32_t uTimerDcr)
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_TIMER_DCR, uTimerDcr);
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatDcrWrite);
     return VINF_SUCCESS;
 }
 
@@ -1513,6 +1516,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPUCC pVCpu, uint16_t offLvt, uint32_t uL
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (offLvt == XAPIC_OFF_LVT_TIMER)
     {
+        STAM_COUNTER_INC(&pVCpu->apic.s.StatLvtTimerWrite);
         if (   !pApic->fSupportsTscDeadline
             && (uLvt & XAPIC_LVT_TIMER_TSCDEADLINE))
         {
