@@ -1669,6 +1669,7 @@ int         pdmR3BlkCacheResume(PVM pVM);
 void        pdmLock(PVMCC pVM);
 int         pdmLockEx(PVMCC pVM, int rc);
 void        pdmUnlock(PVMCC pVM);
+bool        pdmLockIsOwned(PCVMCC pVM);
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
 int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);

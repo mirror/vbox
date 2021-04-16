@@ -307,6 +307,18 @@ void pdmUnlock(PVMCC pVM)
 
 
 /**
+ * Checks if this thread is owning the PDM lock.
+ *
+ * @returns @c true if the lock is taken, @c false otherwise.
+ * @param   pVM     The cross context VM structure.
+ */
+bool pdmLockIsOwner(PCVMCC pVM)
+{
+    return PDMCritSectIsOwner(&pVM->pdm.s.CritSect);
+}
+
+
+/**
  * Converts ring 3 VMM heap pointer to a guest physical address
  *
  * @returns VBox status code.
