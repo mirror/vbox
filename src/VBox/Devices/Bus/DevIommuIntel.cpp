@@ -109,6 +109,34 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
+ * DMAR error diagnostics.
+ *
+ * @note Members of this enum are used as array indices, so no gaps are allowed.
+ *       Please update g_apsz when you add new fields to this enum.
+ */
+typedef enum
+{
+    kDmarDiag_None = 0,
+    kDmarDiag_IqtReg_Qt_NotAligned,
+    /* Last member for determining array index limit. */
+    kDmarDiag_End
+} DMARDIAG;
+AssertCompileSize(DMARDIAG, 4);
+
+/** DMAR diagnostic enum description expansion. */
+#define DMARDIAG_DESC(a_Def, a_Desc)                #a_Def " - " #a_Desc
+
+/** DMAR diagnostics description. */
+static const char *const g_apszDmarDiagDesc[] =
+{
+    DMARDIAG_DESC(kNone,                            "None"                ),
+    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned,   "IqtReg_Qt_NotAligned")
+    /* kDmarDiag_End */
+};
+AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
+#undef DMARDIAG_DESC
+
+/**
  * The shared DMAR device state.
  */
 typedef struct DMAR
@@ -131,7 +159,9 @@ typedef struct DMAR
     /** Copy of VER_REG. */
     uint8_t                     uVerReg;
     /** Alignment. */
-    uint8_t                     abPadding[7];
+    uint8_t                     abPadding[3];
+    /** Error diagnostic. */
+    DMARDIAG                    enmDiag;
     /** Copy of CAP_REG. */
     uint64_t                    fCap;
     /** Copy of ECAP_REG. */
@@ -549,7 +579,7 @@ DECLINLINE(uint8_t const*) dmarRegGetGroupRo(PCDMAR pThis, uint16_t offReg, uint
  * @param   offReg      The MMIO offset of the register.
  * @param   uReg        The 64-bit value to write.
  */
-DECLINLINE(void) dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
+static void dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 {
     uint8_t idxGroup;
     uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
@@ -565,7 +595,7 @@ DECLINLINE(void) dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
  * @param   offReg      The MMIO offset of the register.
  * @param   uReg        The 32-bit value to write.
  */
-DECLINLINE(void) dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
+static void dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 {
     uint8_t idxGroup;
     uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
@@ -583,7 +613,7 @@ DECLINLINE(void) dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+static void dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
@@ -605,7 +635,7 @@ DECLINLINE(void) dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-DECLINLINE(void) dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
+static void dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint32_t), &idxGroup);
@@ -711,6 +741,60 @@ static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
 
 
 /**
+ * Gets the table translation mode from the RTADDR_REG.
+ *
+ * @returns The table translation mode.
+ * @param   pThis   The shared DMAR device state.
+ */
+static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
+{
+    uint64_t const uRtAddrReg = dmarRegRead64(pThis, VTD_MMIO_OFF_RTADDR_REG);
+    return RT_BF_GET(uRtAddrReg, VTD_BF_RTADDR_REG_TTM);
+}
+
+
+/**
+ * Handles writes to CCMD_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   off         The MMIO register offset.
+ * @param   cb          The size of the MMIO access (in bytes).
+ * @param   uCcmdReg    The value written to CCMD_REG.
+ */
+static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t cb, uint64_t uCcmdReg)
+{
+    /* We only care about responding to high 32-bits writes, low 32-bits are data. */
+    if (off + cb > VTD_MMIO_OFF_CCMD_REG + 4)
+    {
+        /* Check if we need to invalidate the context-context. */
+        bool const fIcc = RT_BF_GET(uCcmdReg, VTD_BF_CCMD_REG_ICC);
+        if (fIcc)
+        {
+            PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+            uint8_t const uMajorVersion = RT_BF_GET(pThis->uVerReg, VTD_BF_VER_REG_MAX);
+            if (uMajorVersion < 6)
+            {
+                /** @todo Verify queued-invalidation is not enabled.
+                 *  See Intel spec. 6.5.1 "Register-based Invalidation Interface" */
+
+                /* Verify table translation mode is legacy. */
+                uint8_t const fTtm = dmarRtAddrRegGetTtm(pThis);
+                if (fTtm == VTD_TTM_LEGACY_MODE)
+                {
+                    /** @todo Invalidate. */
+                    return VINF_SUCCESS;
+                }
+            }
+
+            /** @todo Raise error. */
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Handles writes to IQT_REG.
  *
  * @returns Strict VBox status code.
@@ -720,7 +804,7 @@ static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
  */
 static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqtReg)
 {
-    /* We only care about the low 32-bits. */
+    /* We only care about the low 32-bits, high 32-bits are reserved. */
     if (off == VTD_MMIO_OFF_IQT_REG)
     {
         /* Verify if the queue tail offset is aligned according to the descriptor width in IQA_REG. */
@@ -731,13 +815,13 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
         if (   fDw != VTD_IQA_REG_DW_256_BIT
             || !(offQueueTail & 0x1f))
         {
-            /** @todo IOMMU: Figure out what to do here, like waking up worker thread or
+            /** @todo Figure out what to do here, like waking up worker thread or
              *        something. */
         }
         else
         {
             /* Raise invalidation queue error as queue tail not aligned to 256-bits. */
-            /** @todo IOMMU: Raise error. */
+            /** @todo Raise error. */
         }
     }
     return VINF_SUCCESS;
@@ -831,6 +915,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             case VTD_MMIO_OFF_IQT_REG + 4:
             {
                 rcStrict = dmarIqtRegWrite(pDevIns, offReg, uRegWritten);
+                break;
+            }
+
+            case VTD_MMIO_OFF_CCMD_REG:
+            case VTD_MMIO_OFF_CCMD_REG + 4:
+            {
+                rcStrict = dmarCcmdRegWrite(pDevIns, offReg, cb, uRegWritten);
                 break;
             }
         }
@@ -1093,11 +1184,11 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     PDMPciDevSetSubSystemId(pPciDev,       DMAR_PCI_DEVICE_ID);         /* VirtualBox DMAR device */
     PDMPciDevSetSubSystemVendorId(pPciDev, DMAR_PCI_VENDOR_ID);         /* Intel */
 
-    /** @todo VTD: Chipset spec says PCI Express Capability Id. Relevant for us? */
+    /** @todo Chipset spec says PCI Express Capability Id. Relevant for us? */
     PDMPciDevSetStatus(pPciDev,            0);
     PDMPciDevSetCapabilityList(pPciDev,    0);
 
-    /** @todo VTD: VTBAR at 0x180? */
+    /** @todo VTBAR at 0x180? */
 
     /*
      * Register the PCI function with PDM.
@@ -1105,7 +1196,7 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @todo VTD: Register MSI but what's the MSI capability offset? */
+    /** @todo Register MSI but what's the MSI capability offset? */
 #if 0
     /*
      * Register MSI support for the PCI device.

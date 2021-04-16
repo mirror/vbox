@@ -1015,6 +1015,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_RTADDR_REG_, UINT64_C(0), UINT64_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_RTADDR_REG_RW_MASK                                  UINT64_C(0xfffffffffffffc00)
+
+/** RTADDR_REG.TTM: Legacy mode. */
+#define VTD_TTM_LEGACY_MODE                                     0
+/** RTADDR_REG.TTM: Scalable mode. */
+#define VTD_TTM_SCALABLE_MODE                                   1
+/** RTADDR_REG.TTM: Reserved. */
+#define VTD_TTM_RSVD                                            2
+/** RTADDR_REG.TTM: Abort DMA mode. */
+#define VTD_TTM_ABORT_DMA_MODE                                  3
 /** @} */
 
 
