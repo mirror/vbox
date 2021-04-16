@@ -1300,7 +1300,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         /* Deal with reset while running. */
         if (pStreamShared->State.fRunning)
         {
-            int rc2 = hdaR3StreamEnable(pStreamShared, pStreamR3, false /* fEnable */);
+            int rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, false /* fEnable */);
             AssertRC(rc2); Assert(!pStreamShared->State.fRunning);
             pStreamShared->State.fRunning = false;
         }
@@ -1379,7 +1379,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             if (RT_SUCCESS(rc2))
             {
                 /* Enable/disable the stream. */
-                rc2 = hdaR3StreamEnable(pStreamShared, pStreamR3, fRun /* fEnable */);
+                rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, fRun /* fEnable */);
                 AssertRC(rc2);
 
                 if (fRun)
@@ -2517,7 +2517,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
             /* Only disable the stream if the stream descriptor # has changed. */
             if (pSink->pStreamShared->u8SD != uSD)
-                hdaR3StreamEnable(pSink->pStreamShared, pSink->pStreamR3, false /*fEnable*/);
+                hdaR3StreamEnable(pThis, pSink->pStreamShared, pSink->pStreamR3, false /*fEnable*/);
 
             pSink->pStreamR3->pMixSink = NULL;
 
@@ -2765,7 +2765,7 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 # endif
 
         /* We're doing this unconditionally, hope that's not problematic in any way... */
-        int rc = hdaR3StreamEnable(pStreamShared, &pThisCC->aStreams[idxStream], false /* fEnable */);
+        int rc = hdaR3StreamEnable(pThis, pStreamShared, &pThisCC->aStreams[idxStream], false /* fEnable */);
         AssertLogRelMsg(RT_SUCCESS(rc) && !pStreamShared->State.fRunning,
                         ("Disabling stream #%u failed: %Rrc, fRunning=%d\n", idxStream, rc, pStreamShared->State.fRunning));
         pStreamShared->State.fRunning = false;
@@ -3473,7 +3473,7 @@ static DECLCALLBACK(int) hdaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             hdaR3StreamAsyncIOEnable(pStreamR3, true /* fEnable */);
 #endif
             /* (Re-)enable the stream. */
-            rc2 = hdaR3StreamEnable(pStreamShared, pStreamR3, true /* fEnable */);
+            rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, true /* fEnable */);
             AssertRC(rc2);
 
             /* Add the stream to the device setup. */

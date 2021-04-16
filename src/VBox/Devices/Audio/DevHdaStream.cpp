@@ -884,11 +884,12 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
  * Enables or disables an HDA audio stream.
  *
  * @returns VBox status code.
+ * @param   pThis               The shared HDA device state.
  * @param   pStreamShared       HDA stream to enable or disable - shared bits.
  * @param   pStreamR3           HDA stream to enable or disable - ring-3 bits.
  * @param   fEnable             Whether to enable or disble the stream.
  */
-int hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable)
+int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable)
 {
     AssertPtr(pStreamR3);
     AssertPtr(pStreamShared);
@@ -941,6 +942,18 @@ int hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEn
         if (fEnable)
             pStreamShared->State.tsTransferLast = 0; /* Make sure it's not stale and messes up WALCLK calculations. */
         pStreamShared->State.fRunning = fEnable;
+
+        /*
+         * Set the FIFORDY bit when we start running and clear it when stopping.
+         *
+         * This prevents Linux from timing out in snd_hdac_stream_sync when starting
+         * a stream.  Technically, Linux also uses the SSYNC feature there, but we
+         * can get away with just setting the FIFORDY bit for now.
+         */
+        if (fEnable)
+            HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) |= HDA_SDSTS_FIFORDY;
+        else
+            HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) &= ~HDA_SDSTS_FIFORDY;
     }
 
     LogFunc(("[SD%RU8] rc=%Rrc\n", pStreamShared->u8SD, rc));
@@ -1203,16 +1216,6 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
     Log3(("%s: [SD%RU8] tsDeltaNs=%'RU64 ns\n", pszFunction, uSD, tsNowNs - pStreamShared->State.tsLastTransferNs));
     pStreamShared->State.tsLastTransferNs = tsNowNs;
 
-    /*
-     * Set the FIFORDY bit on the stream while doing the transfer.
-     */
-    /** @todo r=bird: I don't get the HDA_SDSTS_FIFORDY logic.  Unless we're
-     *        assuming SMP guest and that it can get stream registers while we're
-     *        here.  Only it cannot do the later because we're sitting on the big
-     *        HDA device lock, see assertions in hdaR3Timer().  So, this is an
-     *        pointless guesture given that we clear it again after the loop. */
-    HDA_STREAM_REG(pThis, STS, uSD) |= HDA_SDSTS_FIFORDY;
-
     return true;
 }
 
@@ -1220,17 +1223,11 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
  * Common do-DMA epilogue.
  *
  * @param   pDevIns         The device instance.
- * @param   pThis           The shared HDA device state.
  * @param   pStreamShared   The HDA stream (shared).
  * @param   pStreamR3       The HDA stream (ring-3).
  */
-DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
+DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 {
-    /*
-     * Clear the (pointless) FIFORDY bit again.
-     */
-    HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) &= ~HDA_SDSTS_FIFORDY;
-
     /*
      * We must update this in the epilogue rather than in the prologue
      * as it is used for WALCLK calculation and we must make sure the
@@ -1524,7 +1521,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared, pStreamR3);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pStreamShared, pStreamR3);
 
     /*
      * Log and leave.
@@ -1811,7 +1808,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared, pStreamR3);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pStreamShared, pStreamR3);
 
     /*
      * Log and leave.
