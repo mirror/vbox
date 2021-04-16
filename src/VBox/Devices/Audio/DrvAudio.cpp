@@ -2250,12 +2250,6 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 
 /**
  * Initializes the host backend and queries its initial configuration.
- * If the host backend fails, VERR_AUDIO_BACKEND_INIT_FAILED will be returned.
- *
- * Note: As this routine is called when attaching to the device LUN in the
- *       device emulation, we either check for success or VERR_AUDIO_BACKEND_INIT_FAILED.
- *       Everything else is considered as fatal and must be handled separately in
- *       the device emulation!
  *
  * @returns VBox status code.
  * @param   pThis               Driver instance to be called.
@@ -3029,11 +3023,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
         {
             /* Retrieve host driver name for easier identification. */
             AssertPtr(pThis->pHostDrvAudio);
-            PPDMDRVINS pDrvAudioInst = PDMIBASE_2_PDMDRV(pThis->pDrvIns->pDownBase);
             RTStrPrintf(pStreamEx->Core.szName, RT_ELEMENTS(pStreamEx->Core.szName), "[%s] %s",
-                        pDrvAudioInst && pDrvAudioInst->pReg && pDrvAudioInst->pReg->szName[0]
-                        ? pDrvAudioInst->pReg->szName : "none",
-                        pCfgHost->szName[0] != '\0' ? pCfgHost->szName : "<Untitled>");
+                        pThis->BackendCfg.szName, pCfgHost->szName[0] != '\0' ? pCfgHost->szName : "<Untitled>");
 
             pStreamEx->Core.enmDir    = pCfgHost->enmDir;
             pStreamEx->Core.cbBackend = (uint32_t)cbHstStrm;
@@ -3755,10 +3746,11 @@ static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  * This is a worker for both drvAudioAttach and drvAudioConstruct.
  *
  * @returns VBox status code.
+ * @param   pDrvIns     The driver instance.
  * @param   pThis       Pointer to driver instance.
  * @param   fFlags      Attach flags; see PDMDrvHlpAttach().
  */
-static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
+static int drvAudioDoAttachInternal(PPDMDRVINS pDrvIns, PDRVAUDIO pThis, uint32_t fFlags)
 {
     Assert(pThis->pHostDrvAudio == NULL); /* No nested attaching. */
 
@@ -3766,7 +3758,7 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
      * Attach driver below and query its connector interface.
      */
     PPDMIBASE pDownBase;
-    int rc = PDMDrvHlpAttach(pThis->pDrvIns, fFlags, &pDownBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pDownBase);
     if (RT_SUCCESS(rc))
     {
         pThis->pHostDrvAudio = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIHOSTAUDIO);
@@ -3786,20 +3778,31 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
                                   N_("The host audio driver does not implement PDMIHOSTAUDIO!"));
         }
     }
-
     /*
-     * Do some status code simplification for beningn host driver init failures.
-     * The device above us will then replace it will the Null driver.
+     * If the host driver below us failed to construct for some beningn reason,
+     * we'll report it as a runtime error and replace it with the Null driver.
+     *
+     * Note! We do NOT change anything in PDM (or CFGM), so pDrvIns->pDownBase
+     *       will remain NULL in this case.
      */
-    /** @todo Do the Null driver replacment here, then we don't have to duplicate
-     *        it in 3+ devices! */
-    if (   rc == VERR_MODULE_NOT_FOUND
-        || rc == VERR_SYMBOL_NOT_FOUND
-        || rc == VERR_FILE_NOT_FOUND
-        || rc == VERR_PATH_NOT_FOUND)
+    else if (   rc == VERR_AUDIO_BACKEND_INIT_FAILED
+             || rc == VERR_MODULE_NOT_FOUND
+             || rc == VERR_SYMBOL_NOT_FOUND
+             || rc == VERR_FILE_NOT_FOUND
+             || rc == VERR_PATH_NOT_FOUND)
     {
-        LogRel(("Audio: %Rrc -> VERR_AUDIO_BACKEND_INIT_FAILED\n", rc));
-        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+        /* Complain: */
+        LogRel(("DrvAudio: Host audio driver '%s' init failed with %Rrc. Switching to the NULL driver for now.\n",
+                pThis->szName, rc));
+        PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                   N_("Host audio backend (%s) initialization has failed. Selecting the NULL audio backend with the consequence that no sound is audible"),
+                                   pThis->szName);
+
+        /* Replace with null audio: */
+        pThis->pHostDrvAudio = (PPDMIHOSTAUDIO)&g_DrvHostAudioNull;
+        RTStrCopy(pThis->szName, sizeof(pThis->szName), "NULL");
+        rc = drvAudioHostInit(pThis);
+        AssertRC(rc);
     }
 
     LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
@@ -3822,7 +3825,7 @@ static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    rc = drvAudioDoAttachInternal(pThis, fFlags);
+    rc = drvAudioDoAttachInternal(pDrvIns, pThis, fFlags);
 
     RTCritSectLeave(&pThis->CritSect);
     return rc;
@@ -4177,7 +4180,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /*
      * Attach the host driver, if present.
      */
-    rc = drvAudioDoAttachInternal(pThis, fFlags);
+    rc = drvAudioDoAttachInternal(pDrvIns, pThis, fFlags);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         rc = VINF_SUCCESS;
 

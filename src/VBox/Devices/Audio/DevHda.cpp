@@ -4471,6 +4471,7 @@ static int hdaR3DetachInternal(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIV
     return VINF_SUCCESS;
 }
 
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnAttach}
  */
@@ -4495,6 +4496,7 @@ static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDetach}
@@ -4525,6 +4527,7 @@ static DECLCALLBACK(void) hdaR3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_
 
     DEVHDA_UNLOCK(pDevIns, pThis);
 }
+
 
 /**
  * Powers off the device.
@@ -4557,6 +4560,8 @@ static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
     DEVHDA_UNLOCK(pDevIns, pThis);
 }
 
+
+# ifdef VBOX_WITH_AUDIO_HDA_ONETIME_INIT
 /**
  * Replaces a driver with a the NullAudio drivers.
  *
@@ -4574,6 +4579,7 @@ static int hdaR3ReconfigLunWithNullAudio(PPDMDEVINS pDevIns, PHDASTATE pThis, PH
     LogFunc(("pThis=%p, iLun=%u, rc=%Rrc\n", pThis, iLun, rc));
     return rc;
 }
+# endif
 
 
 /**
@@ -4904,14 +4910,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             LogFunc(("cLUNs=%u\n", iLun));
             break;
         }
-        if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
-        {
-            hdaR3ReconfigLunWithNullAudio(pDevIns, pThis, pThisCC, iLun); /* Pretend attaching to the NULL audio backend will never fail. */
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                       N_("Host audio backend initialization has failed. Selecting the NULL audio backend with the consequence that no sound is audible"));
-        }
-        else
-            AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
+        AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
 
     /*

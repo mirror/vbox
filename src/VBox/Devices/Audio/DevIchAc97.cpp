@@ -4112,6 +4112,8 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
     DEVAC97_UNLOCK(pDevIns, pThis);
 }
 
+
+# ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
 /**
  * Replaces a driver with a the NullAudio drivers.
  *
@@ -4128,6 +4130,8 @@ static int ichac97R3ReconfigLunWithNullAudio(PPDMDEVINS pDevIns, PAC97STATER3 pT
     LogFunc(("pThisCC=%p, iLun=%u, rc=%Rrc\n", pThisCC, iLun, rc));
     return rc;
 }
+# endif
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
@@ -4310,15 +4314,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
             LogFunc(("cLUNs=%u\n", iLun));
             break;
         }
-        if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
-        {
-            ichac97R3ReconfigLunWithNullAudio(pDevIns, pThisCC, iLun); /* Pretend attaching to the NULL audio backend will never fail. */
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                       N_("Host audio backend initialization has failed. "
-                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
-        }
-        else
-            AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
+        AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
 
     uint32_t fMixer = AUDMIXER_FLAGS_NONE;
