@@ -240,7 +240,7 @@ static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDMAUDIOHOSTENUM pD
 static void     dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis);
 
 
-#if defined(LOG_ENABLED) // || defined(RTLOG_REL_ENABLED)
+#if defined(LOG_ENABLED) || defined(RTLOG_REL_ENABLED)
 /**
  * Gets the stream status as a string for logging purposes.
  *
