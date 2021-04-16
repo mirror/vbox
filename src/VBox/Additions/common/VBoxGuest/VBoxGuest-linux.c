@@ -667,11 +667,11 @@ static int __init vgdrvLinuxModInit(void)
                         if (rc >= 0)
                         {
                             /* some useful information for the user but don't show this on the console */
-                            LogRel((DEVICE_NAME ": Successfully loaded version " VBOX_VERSION_STRING "\n"));
+                            LogRel((DEVICE_NAME ": Successfully loaded version " VBOX_VERSION_STRING " r" __stringify(VBOX_SVN_REV) "\n"));
                             LogRel((DEVICE_NAME ": misc device minor %d, IRQ %d, I/O port %RTiop, MMIO at %RHp (size 0x%x)\n",
                                     g_MiscDevice.minor, g_pPciDev->irq, g_IOPortBase, g_MMIOPhysAddr, g_cbMMIO));
                             printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                                   VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
+                                   VBOX_VERSION_STRING " r" __stringify(VBOX_SVN_REV) " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
                             return rc;
                         }
 
