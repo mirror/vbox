@@ -61,6 +61,7 @@ UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
+    , m_fSelectionSaveAllowed(false)
     , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
@@ -81,14 +82,14 @@ void UIChooserModel::init()
 
     /* Build tree for main root: */
     buildTreeForMainRoot();
-    /* Load last selected-item: */
-    loadLastSelectedItem();
+    /* Load settings: */
+    loadSettings();
 }
 
 void UIChooserModel::deinit()
 {
-    /* Save last selected-item: */
-    saveLastSelectedItem();
+    /* Clean tree for main root: */
+    clearTreeForMainRoot();
 
     /* Call to base-class: */
     UIChooserAbstractModel::deinit();
@@ -187,6 +188,28 @@ void UIChooserModel::setSelectedItems(const QList<UIChooserItem*> &items)
     {
         pItem->setSelected(true);
         pItem->update();
+    }
+
+    /* Should the selection changes be saved? */
+    if (m_fSelectionSaveAllowed)
+    {
+        /* Acquire first selected item: */
+        UIChooserItem *pFirstSelectedItem = m_selectedItems.value(0);
+        /* If this item is of machine type: */
+        if (   pFirstSelectedItem
+            && pFirstSelectedItem->type() == UIChooserNodeType_Machine)
+        {
+            /* Cast to machine item: */
+            UIChooserItemMachine *pMachineItem = pFirstSelectedItem->toMachineItem();
+            /* If this machine item is of cloud type =>
+             * Choose the parent (profile) group item as the last one selected: */
+            if (   pMachineItem
+                && (   pMachineItem->cacheType() == UIVirtualMachineItemType_CloudFake
+                    || pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal))
+                pFirstSelectedItem = pMachineItem->parentItem();
+        }
+        /* Save last selected-item: */
+        gEDataManager->setSelectorWindowLastItemChosen(pFirstSelectedItem ? pFirstSelectedItem->definition() : QString());
     }
 
     /* Notify about selection changes: */
@@ -1545,34 +1568,11 @@ void UIChooserModel::prepareConnections()
             this, &UIChooserModel::sltUpdateSelectedCloudProfiles);
 }
 
-void UIChooserModel::loadLastSelectedItem()
+void UIChooserModel::loadSettings()
 {
     /* Load last selected-item (choose first if unable to load): */
     setSelectedItem(gEDataManager->selectorWindowLastItemChosen());
     makeSureAtLeastOneItemSelected();
-}
-
-void UIChooserModel::saveLastSelectedItem()
-{
-    /* Acquire first selected item: */
-    UIChooserItem *pFirstSelectedItem = firstSelectedItem();
-    /* If this item is of machine type: */
-    if (   pFirstSelectedItem
-        && pFirstSelectedItem->type() == UIChooserNodeType_Machine)
-    {
-        /* Cast to machine item: */
-        UIChooserItemMachine *pMachineItem = pFirstSelectedItem->toMachineItem();
-        AssertPtrReturnVoid(pMachineItem);
-        /* If this machine item is of cloud type: */
-        if (   pMachineItem->cacheType() == UIVirtualMachineItemType_CloudFake
-            || pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
-        {
-            /* Choose the parent (profile) group item as the last one selected: */
-            pFirstSelectedItem = pMachineItem->parentItem();
-        }
-    }
-    /* Save last selected-item: */
-    gEDataManager->setSelectorWindowLastItemChosen(pFirstSelectedItem ? pFirstSelectedItem->definition() : QString());
 }
 
 void UIChooserModel::cleanupConnections()
@@ -1760,6 +1760,16 @@ QList<UIChooserItem*> UIChooserModel::createNavigationItemList(UIChooserItem *pI
     return navigationItems;
 }
 
+void UIChooserModel::clearTreeForMainRoot()
+{
+    /* Forbid to save selection changes: */
+    m_fSelectionSaveAllowed = false;
+
+    /* Cleanup tree if exists: */
+    delete m_pRoot;
+    m_pRoot = 0;
+}
+
 void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
 {
     /* This isn't safe if dragging is started and needs to be fixed properly,
@@ -1777,9 +1787,8 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
         foreach (UIChooserItem *pSelectedItem, selectedItems())
             selectedItemDefinitions << pSelectedItem->definition();
 
-    /* Cleanup previous tree if exists: */
-    delete m_pRoot;
-    m_pRoot = 0;
+    /* Clean tree for main root: */
+    clearTreeForMainRoot();
 
     /* Build whole tree for invisible root item: */
     m_pRoot = new UIChooserItemGroup(scene(), invisibleRoot()->toGroupNode());
@@ -1812,6 +1821,9 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
     /* Repeat search if search widget is visible: */
     if (view() && view()->isSearchWidgetVisible())
         view()->redoSearch();
+
+    /* Allow to save selection changes: */
+    m_fSelectionSaveAllowed = true;
 }
 
 void UIChooserModel::updateTreeForMainRoot()
