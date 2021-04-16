@@ -3787,6 +3787,21 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
         }
     }
 
+    /*
+     * Do some status code simplification for beningn host driver init failures.
+     * The device above us will then replace it will the Null driver.
+     */
+    /** @todo Do the Null driver replacment here, then we don't have to duplicate
+     *        it in 3+ devices! */
+    if (   rc == VERR_MODULE_NOT_FOUND
+        || rc == VERR_SYMBOL_NOT_FOUND
+        || rc == VERR_FILE_NOT_FOUND
+        || rc == VERR_PATH_NOT_FOUND)
+    {
+        LogRel(("Audio: %Rrc -> VERR_AUDIO_BACKEND_INIT_FAILED\n", rc));
+        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
     LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
     return rc;
 }
