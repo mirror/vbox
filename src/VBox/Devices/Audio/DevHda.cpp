@@ -298,6 +298,7 @@ static FNHDAREGWRITE hdaRegWriteUnimpl;
 static FNHDAREGWRITE hdaRegWriteGCTL;
 static FNHDAREGREAD  hdaRegReadLPIB;
 static FNHDAREGREAD  hdaRegReadWALCLK;
+static FNHDAREGWRITE hdaRegWriteSSYNC;
 static FNHDAREGWRITE hdaRegWriteCORBWP;
 static FNHDAREGWRITE hdaRegWriteCORBRP;
 static FNHDAREGWRITE hdaRegWriteCORBCTL;
@@ -427,7 +428,7 @@ const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
     { 0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
     { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_NOMEM(WALCLK) }, /* Wall Clock Counter */
-    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
+    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteSSYNC   , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBLBASE)    }, /* CORB Lower Base Address */
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBUBASE)    }, /* CORB Upper Base Address */
     { 0x00048, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteCORBWP  , HDA_REG_IDX(CORBWP)       }, /* CORB Write Pointer */
@@ -1114,6 +1115,51 @@ static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 {
     RT_NOREF(pDevIns, iReg);
     *pu32Value = (uint32_t)hdaGetWallClock(pDevIns, pThis);
+    return VINF_SUCCESS;
+}
+
+static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+{
+    /*
+     * The SSYNC register is a DMA pause mask where each bit represents a stream.
+     * There should be no DMA transfers going down the driver chains when the a
+     * stream has its bit set here.  There are two scenarios described in the
+     * specification, starting and stopping, though it can probably be used for
+     * other purposes if the guest gets creative...
+     *
+     * Anyway, if we ever want to implement this, we'd be manipulating the DMA
+     * timers of the affected streams here, I think.  At least in the start
+     * scenario, we would run the first DMA transfers from here.
+     */
+    uint32_t const fOld     = HDA_REG(pThis, SSYNC);
+    uint32_t const fNew     = (u32Value &  g_aHdaRegMap[iReg].writable)
+                            | (fOld     & ~g_aHdaRegMap[iReg].writable);
+    uint32_t const fChanged = (fNew ^ fOld) & (RT_BIT_32(HDA_MAX_STREAMS) - 1);
+    if (fChanged)
+    {
+#if 0 /** @todo implement SSYNC: ndef IN_RING3 */
+        RT_NOREF(pDevIns);
+        Log3Func(("Going to ring-3 to handle SSYNC change: %#x\n", fChanged));
+        return VINF_IOM_R3_MMIO_WRITE;
+#else
+        for (uint32_t fMask = 1, i = 0; fMask < RT_BIT_32(HDA_MAX_STREAMS); i++, fMask <<= 1)
+            if (!(fChanged & fMask))
+            { /* nothing */ }
+            else if (fNew & fMask)
+            {
+                Log3Func(("SSYNC bit %u set\n", i));
+                /* See code in SDCTL around hdaR3StreamTimerMain call. */
+            }
+            else
+            {
+                Log3Func(("SSYNC bit %u cleared\n", i));
+                /* The next DMA timer callout will not do anything. */
+            }
+        RT_NOREF(pDevIns);
+#endif
+    }
+
+    HDA_REG(pThis, SSYNC) = fNew;
     return VINF_SUCCESS;
 }
 
