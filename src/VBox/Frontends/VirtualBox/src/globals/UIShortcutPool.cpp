@@ -399,7 +399,8 @@ void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
         const UIShortcut &shortcut = m_shortcuts[strShortcutKey];
         /* Check if the sequence for that shortcut differs from default or standard: */
         if (   shortcut.sequences().contains(shortcut.defaultSequence())
-            || shortcut.sequences().contains(shortcut.standardSequence()))
+            || (   !shortcut.standardSequence().isEmpty()
+                && shortcut.sequences().contains(shortcut.standardSequence())))
             continue;
         /* Add the shortcut sequence into overrides list: */
         overrides << QString("%1=%2").arg(QString(strShortcutKey).remove(strShortcutPrefix),
