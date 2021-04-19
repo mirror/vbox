@@ -333,11 +333,20 @@ void UIThreadGroupDefinitionsSave::run()
     /* COM prepare: */
     COMBase::InitializeCOM(false);
 
-    /* Clear all the extra-data records related to group definitions: */
-    gEDataManager->clearSelectorWindowGroupsDefinitions();
-    /* For every particular group definition: */
+    /* Acquire a list of known group definition keys: */
+    QStringList knownKeys = gEDataManager->knownMachineGroupDefinitionKeys();
+    /* For every group definition to be saved: */
     foreach (const QString &strId, m_lists.keys())
-        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists.value(strId));
+    {
+        /* Save definition only if there is a change: */
+        if (gEDataManager->machineGroupDefinitions(strId) != m_lists.value(strId))
+            gEDataManager->setMachineGroupDefinitions(strId, m_lists.value(strId));
+        /* Remove it from known keys: */
+        knownKeys.removeAll(strId);
+    }
+    /* Wipe out rest of known group definitions: */
+    foreach (const QString strId, knownKeys)
+        gEDataManager->setMachineGroupDefinitions(strId, QStringList());
 
     /* Notify listeners about completeness: */
     emit sigComplete();
@@ -1396,7 +1405,7 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
                                                      const QString &strName) const
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
+    const QStringList definitions = gEDataManager->machineGroupDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return false;
@@ -1426,7 +1435,7 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
 bool UIChooserAbstractModel::shouldGlobalNodeBeFavorite(UIChooserNode *pParentNode) const
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
+    const QStringList definitions = gEDataManager->machineGroupDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return false;
@@ -1547,7 +1556,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode,
 int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserNodeDataPrefixType enmDataType, const QString &strName)
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
+    const QStringList definitions = gEDataManager->machineGroupDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return -1;

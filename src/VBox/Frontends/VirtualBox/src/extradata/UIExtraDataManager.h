@@ -343,12 +343,12 @@ public:
         /** Defines whether selector-window status-bar @a fVisible. */
         void setSelectorWindowStatusBarVisible(bool fVisible);
 
-        /** Clears all the existing selector-window chooser-pane' group definitions. */
-        void clearSelectorWindowGroupsDefinitions();
-        /** Returns selector-window chooser-pane' groups definitions for passed @a strGroupID. */
-        QStringList selectorWindowGroupsDefinitions(const QString &strGroupID);
-        /** Defines selector-window chooser-pane' groups @a definitions for passed @a strGroupID. */
-        void setSelectorWindowGroupsDefinitions(const QString &strGroupID, const QStringList &definitions);
+        /** Returns all the existing selector-window chooser-pane' group definition keys. */
+        QStringList knownMachineGroupDefinitionKeys();
+        /** Returns selector-window chooser-pane' group definitions for passed @a strGroupID. */
+        QStringList machineGroupDefinitions(const QString &strGroupID);
+        /** Defines selector-window chooser-pane' group @a definitions for passed @a strGroupID. */
+        void setMachineGroupDefinitions(const QString &strGroupID, const QStringList &definitions);
 
         /** Returns last-item ID of the item chosen in selector-window chooser-pane. */
         QString selectorWindowLastItemChosen();

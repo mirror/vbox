@@ -2787,20 +2787,28 @@ void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
     setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
 }
 
-void UIExtraDataManager::clearSelectorWindowGroupsDefinitions()
+QStringList UIExtraDataManager::knownMachineGroupDefinitionKeys()
 {
-    /* Wipe-out each the group definition record: */
+    /* Acquire a list of known group definition keys: */
+    QStringList result;
     foreach (const QString &strKey, m_data.value(GlobalID).keys())
         if (strKey.startsWith(GUI_GroupDefinitions))
-            setExtraDataString(strKey, QString());
+        {
+            QString strGroupID = strKey;
+            strGroupID.remove(GUI_GroupDefinitions);
+            result << strGroupID;
+        }
+
+    /* Return result: */
+    return result;
 }
 
-QStringList UIExtraDataManager::selectorWindowGroupsDefinitions(const QString &strGroupID)
+QStringList UIExtraDataManager::machineGroupDefinitions(const QString &strGroupID)
 {
     return extraDataStringList(GUI_GroupDefinitions + strGroupID);
 }
 
-void UIExtraDataManager::setSelectorWindowGroupsDefinitions(const QString &strGroupID, const QStringList &definitions)
+void UIExtraDataManager::setMachineGroupDefinitions(const QString &strGroupID, const QStringList &definitions)
 {
     setExtraDataStringList(GUI_GroupDefinitions + strGroupID, definitions);
 }
