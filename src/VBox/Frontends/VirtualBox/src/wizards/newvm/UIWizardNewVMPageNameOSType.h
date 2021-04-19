@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageNameOSType class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageNameOSType_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageNameOSType_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -37,12 +37,12 @@ class UIFilePathSelector;
 class UINameAndSystemEditor;
 
 /** 1st page of the New Virtual Machine wizard (base part): */
-class UIWizardNewVMPage1 : public UIWizardPageBase
+class UIWizardNewVMPageBaseNameOSType : public UIWizardPageBase
 {
 protected:
 
     /** Constructor. */
-    UIWizardNewVMPage1(const QString &strGroup);
+    UIWizardNewVMPageBaseNameOSType(const QString &strGroup);
 
     /** Handlers. */
     void onNameChanged(QString strNewName);
@@ -115,7 +115,7 @@ private:
 };
 
 /** 1st page of the New Virtual Machine wizard (basic extension). */
-class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
+class UIWizardNewVMPageNameOSType : public UIWizardPage, public UIWizardNewVMPageBaseNameOSType
 {
 
     Q_OBJECT;
@@ -130,7 +130,7 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 public:
 
     /** Constructor. */
-    UIWizardNewVMPageBasic1(const QString &strGroup);
+    UIWizardNewVMPageNameOSType(const QString &strGroup);
     virtual bool isComplete() const; /* override */
     virtual int nextId() const /* override */;
 
@@ -168,4 +168,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageNameOSType_h */

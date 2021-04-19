@@ -47,7 +47,7 @@
 #include "CSystemProperties.h"
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
-    : UIWizardNewVMPage1(strGroup)
+    : UIWizardNewVMPageBaseNameOSType(strGroup)
     , m_pToolBox(0)
     , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
@@ -153,8 +153,8 @@ void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
 
 void UIWizardNewVMPageExpert::retranslateUi()
 {
-    UIWizardNewVMPage1::retranslateWidgets();
-    UIWizardNewVMPage2::retranslateWidgets();
+    UIWizardNewVMPageBaseNameOSType::retranslateWidgets();
+    UIWizardNewVMPageBaseUnattended::retranslateWidgets();
     UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage4::retranslateWidgets();
     UIWizardNewVDPage1::retranslateWidgets();
@@ -337,8 +337,8 @@ void UIWizardNewVMPageExpert::cleanupPage()
 
 void UIWizardNewVMPageExpert::markWidgets() const
 {
-    UIWizardNewVMPage1::markWidgets();
-    UIWizardNewVMPage2::markWidgets();
+    UIWizardNewVMPageBaseNameOSType::markWidgets();
+    UIWizardNewVMPageBaseUnattended::markWidgets();
 }
 
 QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()

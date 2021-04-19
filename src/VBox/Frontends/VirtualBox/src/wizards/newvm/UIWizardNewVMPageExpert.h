@@ -25,8 +25,8 @@
 #include <QSet>
 
 /* Local includes: */
-#include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVMPageBasic2.h"
+#include "UIWizardNewVMPageNameOSType.h"
+#include "UIWizardNewVMPageUnattended.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVDPageBasic3.h"
@@ -37,8 +37,8 @@ class UIToolBox;
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UIWizardPage,
-                                public UIWizardNewVMPage1,
-                                public UIWizardNewVMPage2,
+                                public UIWizardNewVMPageBaseNameOSType,
+                                public UIWizardNewVMPageBaseUnattended,
                                 public UIWizardNewVMPage3,
                                 public UIWizardNewVMPage4,
                                 public UIWizardNewVDPage1,

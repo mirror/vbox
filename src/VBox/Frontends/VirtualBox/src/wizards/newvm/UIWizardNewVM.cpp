@@ -22,8 +22,8 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVMPageBasic2.h"
+#include "UIWizardNewVMPageNameOSType.h"
+#include "UIWizardNewVMPageUnattended.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVMPageExpert.h"
@@ -81,8 +81,8 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
-            setPage(Page2, new UIWizardNewVMPageBasic2);
+            setPage(Page1, new UIWizardNewVMPageNameOSType(m_strGroup));
+            setPage(Page2, new UIWizardNewVMPageUnattended);
             setPage(Page3, new UIWizardNewVMPageBasic3);
             setPage(Page4, new UIWizardNewVMPageBasic4);
 
@@ -509,7 +509,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*> (page(Page1));
+            UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*> (page(Page1));
             /* Make sure that we were able to find the page that created the folder. */
             Assert(pPage);
             if (pPage)
@@ -530,7 +530,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
 
 void UIWizardNewVM::sltHandleDetectedOSTypeChange()
 {
-    UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*>(page(Page1));
+    UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*>(page(Page1));
     if (!pPage)
         return;
     pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageUnattended class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageUnattended_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageUnattended_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,11 +38,11 @@ class UIUserNamePasswordEditor;
 struct UIUnattendedInstallData;
 
 
-class UIWizardNewVMPage2 : public UIWizardPageBase
+class UIWizardNewVMPageBaseUnattended : public UIWizardPageBase
 {
 public:
 
-    UIWizardNewVMPage2();
+    UIWizardNewVMPageBaseUnattended();
 
     /** @name Property getters/setters
       * @{ */
@@ -103,7 +103,7 @@ private:
     friend class UIWizardNewVM;
 };
 
-class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
+class UIWizardNewVMPageUnattended : public UIWizardPage, public UIWizardNewVMPageBaseUnattended
 {
     Q_OBJECT;
     Q_PROPERTY(QString userName READ userName WRITE setUserName);
@@ -116,7 +116,7 @@ class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 
 public:
 
-    UIWizardNewVMPageBasic2();
+    UIWizardNewVMPageUnattended();
 
 protected:
 
@@ -142,4 +142,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageUnattended_h */
