@@ -3060,28 +3060,30 @@
 #define VERR_IOMMU_IPE_3                            (-7203)
 /** Internal processing error \#4 in the IOMMU device code. */
 #define VERR_IOMMU_IPE_4                            (-7204)
+/** Internal processing error \#5 in the IOMMU device code. */
+#define VERR_IOMMU_IPE_5                            (-7205)
 /** Failed to read the device table entry from guest memory. */
-#define VERR_IOMMU_DTE_READ_FAILED                  (-7205)
+#define VERR_IOMMU_DTE_READ_FAILED                  (-7206)
 /** Failed to read the device table entry due to an invalid offset. */
-#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7206)
+#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7207)
 /** Address translation failed. */
-#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7207)
+#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7208)
 /** Address translation disabled (but permission bits apply). */
-#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7208
+#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7209
 /** Access denied for the address. */
-#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7209)
+#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7210)
 /** Remapping failed for the interrupt. */
-#define VERR_IOMMU_INTR_REMAP_FAILED                (-7210)
+#define VERR_IOMMU_INTR_REMAP_FAILED                (-7211)
 /** Remapping denied for the interrupt (might have caused a PCI target abort). */
-#define VERR_IOMMU_INTR_REMAP_DENIED                (-7211)
+#define VERR_IOMMU_INTR_REMAP_DENIED                (-7212)
 /** Command not supported. */
-#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7212)
+#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7213)
 /** Command format (or reserved bits) invalid. */
-#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7213)
+#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7214)
 /** Command hardware failure. */
-#define VERR_IOMMU_CMD_HW_ERROR                     (-7214)
+#define VERR_IOMMU_CMD_HW_ERROR                     (-7215)
 /** IOMMU device is not present. */
-#define VERR_IOMMU_NOT_PRESENT                      (-7215)
+#define VERR_IOMMU_NOT_PRESENT                      (-7216)
 /** @} */
 
 /* SED-END */
