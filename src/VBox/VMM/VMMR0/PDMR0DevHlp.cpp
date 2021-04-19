@@ -1695,6 +1695,22 @@ static DECLCALLBACK(bool) pdmR0IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
     return pdmLockIsOwner(pDevIns->Internal.s.pGVM);
 }
 
+/** @interface_method_impl{PDMIOMMUHLPR0,pfnSendMsi} */
+static DECLCALLBACK(int) pdmR0IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+    if (pGVM->pdm.s.IoApic.pDevInsR0)
+    {
+        Assert(pGVM->pdm.s.IoApic.pfnSendMsiR0);
+        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, NIL_PCIBDF, pMsi, uTagSrc);
+        return VINF_SUCCESS;
+    }
+
+    /** @todo Implement this. */
+    AssertMsgFailedReturn(("Queue PDM task for sending the MSI in ring-3"), VERR_IOMMU_IPE_5);
+}
+
 
 /**
  * The Ring-0 IOMMU Helper Callbacks.
@@ -1705,6 +1721,7 @@ extern DECLEXPORT(const PDMIOMMUHLPR0) g_pdmR0IommuHlp =
     pdmR0IommuHlp_Lock,
     pdmR0IommuHlp_Unlock,
     pdmR0IommuHlp_LockIsOwner,
+    pdmR0IommuHlp_SendMsi,
     PDM_IOMMUHLPR0_VERSION, /* the end */
 };
 
