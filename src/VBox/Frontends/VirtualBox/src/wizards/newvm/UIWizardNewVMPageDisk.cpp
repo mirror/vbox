@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic4 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageDisk class implementation.
  */
 
 /*
@@ -35,13 +35,13 @@
 #include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewVD.h"
-#include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVMPageDisk.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
 #include "CSystemProperties.h"
 
-UIWizardNewVMPage4::UIWizardNewVMPage4()
+UIWizardNewVMPageDiskBase::UIWizardNewVMPageDiskBase()
     : m_fRecommendedNoDisk(false)
     , m_pDiskEmpty(0)
     , m_pDiskNew(0)
@@ -52,17 +52,17 @@ UIWizardNewVMPage4::UIWizardNewVMPage4()
 {
 }
 
-SelectedDiskSource UIWizardNewVMPage4::selectedDiskSource() const
+SelectedDiskSource UIWizardNewVMPageDiskBase::selectedDiskSource() const
 {
     return m_enmSelectedDiskSource;
 }
 
-void UIWizardNewVMPage4::setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource)
+void UIWizardNewVMPageDiskBase::setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource)
 {
     m_enmSelectedDiskSource = enmSelectedDiskSource;
 }
 
-void UIWizardNewVMPage4::getWithFileOpenDialog()
+void UIWizardNewVMPageDiskBase::getWithFileOpenDialog()
 {
     QUuid uMediumId;
     int returnCode = uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
@@ -78,7 +78,7 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
     }
 }
 
-void UIWizardNewVMPage4::retranslateWidgets()
+void UIWizardNewVMPageDiskBase::retranslateWidgets()
 {
     if (m_pDiskEmpty)
         m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do Not Add a Virtual Hard Disk"));
@@ -90,7 +90,7 @@ void UIWizardNewVMPage4::retranslateWidgets()
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
 }
 
-void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
+void UIWizardNewVMPageDiskBase::setEnableDiskSelectionWidgets(bool fEnabled)
 {
     if (!m_pDiskSelector || !m_pDiskSelectionButton)
         return;
@@ -99,12 +99,12 @@ void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
     m_pDiskSelectionButton->setEnabled(fEnabled);
 }
 
-QWidget *UIWizardNewVMPage4::createNewDiskWidgets()
+QWidget *UIWizardNewVMPageDiskBase::createNewDiskWidgets()
 {
     return new QWidget();
 }
 
-QWidget *UIWizardNewVMPage4::createDiskWidgets()
+QWidget *UIWizardNewVMPageDiskBase::createDiskWidgets()
 {
     QWidget *pDiskContainer = new QWidget;
     QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
@@ -139,7 +139,7 @@ QWidget *UIWizardNewVMPage4::createDiskWidgets()
     return pDiskContainer;
 }
 
-UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
+UIWizardNewVMPageDisk::UIWizardNewVMPageDisk()
     : m_pLabel(0)
     , m_fUserSetSize(false)
 
@@ -175,17 +175,17 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     setWidgetVisibility(m_mediumFormat);
 }
 
-CMediumFormat UIWizardNewVMPageBasic4::mediumFormat() const
+CMediumFormat UIWizardNewVMPageDisk::mediumFormat() const
 {
     return m_mediumFormat;
 }
 
-QString UIWizardNewVMPageBasic4::mediumPath() const
+QString UIWizardNewVMPageDisk::mediumPath() const
 {
     return absoluteFilePath(toFileName(m_strDefaultName, m_strDefaultExtension), m_strDefaultPath);
 }
 
-void UIWizardNewVMPageBasic4::prepare()
+void UIWizardNewVMPageDisk::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -200,7 +200,7 @@ void UIWizardNewVMPageBasic4::prepare()
     createConnections();
 }
 
-QWidget *UIWizardNewVMPageBasic4::createNewDiskWidgets()
+QWidget *UIWizardNewVMPageDisk::createNewDiskWidgets()
 {
     QWidget *pWidget = new QWidget;
     if (pWidget)
@@ -243,27 +243,27 @@ QWidget *UIWizardNewVMPageBasic4::createNewDiskWidgets()
     return pWidget;
 }
 
-void UIWizardNewVMPageBasic4::createConnections()
+void UIWizardNewVMPageDisk::createConnections()
 {
     if (m_pDiskSourceButtonGroup)
         connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-                this, &UIWizardNewVMPageBasic4::sltSelectedDiskSourceChanged);
+                this, &UIWizardNewVMPageDisk::sltSelectedDiskSourceChanged);
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-                this, &UIWizardNewVMPageBasic4::sltMediaComboBoxIndexChanged);
+                this, &UIWizardNewVMPageDisk::sltMediaComboBoxIndexChanged);
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-                this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
+                this, &UIWizardNewVMPageDisk::sltGetWithFileOpenDialog);
     if (m_pMediumSizeEditor)
     {
         connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-                this, &UIWizardNewVMPageBasic4::completeChanged);
+                this, &UIWizardNewVMPageDisk::completeChanged);
         connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-                this, &UIWizardNewVMPageBasic4::sltHandleSizeEditorChange);
+                this, &UIWizardNewVMPageDisk::sltHandleSizeEditorChange);
     }
 }
 
-void UIWizardNewVMPageBasic4::sltSelectedDiskSourceChanged()
+void UIWizardNewVMPageDisk::sltSelectedDiskSourceChanged()
 {
     if (!m_pDiskSourceButtonGroup)
         return;
@@ -284,19 +284,19 @@ void UIWizardNewVMPageBasic4::sltSelectedDiskSourceChanged()
     completeChanged();
 }
 
-void UIWizardNewVMPageBasic4::sltMediaComboBoxIndexChanged()
+void UIWizardNewVMPageDisk::sltMediaComboBoxIndexChanged()
 {
     /* Make sure to set m_virtualDisk: */
     setVirtualDiskFromDiskCombo();
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog()
+void UIWizardNewVMPageDisk::sltGetWithFileOpenDialog()
 {
     getWithFileOpenDialog();
 }
 
-void UIWizardNewVMPageBasic4::retranslateUi()
+void UIWizardNewVMPageDisk::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Virtual Hard disk"));
 
@@ -307,13 +307,13 @@ void UIWizardNewVMPageBasic4::retranslateUi()
                                             "You can either create a new hard disk file or select an existing one. "
                                             "Alternatively you can create a virtual machine without a virtual hard disk.</p>"));
 
-    UIWizardNewVMPage4::retranslateWidgets();
+    UIWizardNewVMPageDiskBase::retranslateWidgets();
     UIWizardNewVDPage1::retranslateWidgets();
     UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 }
 
-void UIWizardNewVMPageBasic4::initializePage()
+void UIWizardNewVMPageDisk::initializePage()
 {
     retranslateUi();
 
@@ -356,12 +356,12 @@ void UIWizardNewVMPageBasic4::initializePage()
     }
 }
 
-void UIWizardNewVMPageBasic4::cleanupPage()
+void UIWizardNewVMPageDisk::cleanupPage()
 {
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic4::isComplete() const
+bool UIWizardNewVMPageDisk::isComplete() const
 {
     if (selectedDiskSource() == SelectedDiskSource_New)
         return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
@@ -373,7 +373,7 @@ bool UIWizardNewVMPageBasic4::isComplete() const
     return true;
 }
 
-bool UIWizardNewVMPageBasic4::validatePage()
+bool UIWizardNewVMPageDisk::validatePage()
 {
     bool fResult = true;
 
@@ -431,12 +431,12 @@ bool UIWizardNewVMPageBasic4::validatePage()
     return fResult;
 }
 
-void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
+void UIWizardNewVMPageDisk::sltHandleSizeEditorChange()
 {
     m_fUserSetSize = true;
 }
 
-void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
+void UIWizardNewVMPageDisk::setEnableNewDiskWidgets(bool fEnable)
 {
     if (m_pMediumSizeEditor)
         m_pMediumSizeEditor->setEnabled(fEnable);
@@ -446,7 +446,7 @@ void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
         m_pFixedCheckBox->setEnabled(fEnable);
 }
 
-void UIWizardNewVMPageBasic4::setVirtualDiskFromDiskCombo()
+void UIWizardNewVMPageDisk::setVirtualDiskFromDiskCombo()
 {
     AssertReturnVoid(m_pDiskSelector);
     UIWizardNewVM *pWizard = wizardImp();

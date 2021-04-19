@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic4 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageDisk class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageDisk_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageDisk_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -43,7 +43,7 @@ class QIToolButton;
 class UIMediaComboBox;
 
 
-class UIWizardNewVMPage4 : public UIWizardPageBase
+class UIWizardNewVMPageDiskBase : public UIWizardPageBase
 {
 
 public:
@@ -51,7 +51,7 @@ public:
 
 protected:
 
-    UIWizardNewVMPage4();
+    UIWizardNewVMPageDiskBase();
 
     SelectedDiskSource selectedDiskSource() const;
     void setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource);
@@ -77,8 +77,8 @@ protected:
     SelectedDiskSource m_enmSelectedDiskSource;
 };
 
-class UIWizardNewVMPageBasic4 : public UIWizardPage,
-                                public UIWizardNewVMPage4,
+class UIWizardNewVMPageDisk : public UIWizardPage,
+                                public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPage1,
                                 public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
@@ -92,7 +92,7 @@ class UIWizardNewVMPageBasic4 : public UIWizardPage,
 
 public:
 
-    UIWizardNewVMPageBasic4();
+    UIWizardNewVMPageDisk();
     /** For the guide wizard mode medium path, name and extention is static and we have
       * no UI element for this. thus override. */
     virtual QString mediumPath() const /*override */;
@@ -136,4 +136,4 @@ private:
     CMediumFormat m_mediumFormat;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageDisk_h */

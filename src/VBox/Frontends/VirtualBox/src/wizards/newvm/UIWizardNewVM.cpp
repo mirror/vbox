@@ -24,8 +24,8 @@
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageNameOSType.h"
 #include "UIWizardNewVMPageUnattended.h"
-#include "UIWizardNewVMPageBasic3.h"
-#include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVMPageHardware.h"
+#include "UIWizardNewVMPageDisk.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
@@ -83,8 +83,8 @@ void UIWizardNewVM::prepare()
         {
             setPage(Page1, new UIWizardNewVMPageNameOSType(m_strGroup));
             setPage(Page2, new UIWizardNewVMPageUnattended);
-            setPage(Page3, new UIWizardNewVMPageBasic3);
-            setPage(Page4, new UIWizardNewVMPageBasic4);
+            setPage(Page3, new UIWizardNewVMPageHardware);
+            setPage(Page4, new UIWizardNewVMPageDisk);
 
             setStartId(Page1);
             break;

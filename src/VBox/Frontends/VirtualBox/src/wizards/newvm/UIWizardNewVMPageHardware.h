@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic3 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageHardware class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageHardware_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageHardware_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -39,13 +39,13 @@ class UIBaseMemoryEditor;
 class UIVirtualCPUEditor;
 
 /** 3rd page of the New Virtual Machine wizard (base part). */
-class UIWizardNewVMPage3 : public UIWizardPageBase
+class UIWizardNewVMPageHardwareBase : public UIWizardPageBase
 {
 
 protected:
 
     /** Constructor. */
-    UIWizardNewVMPage3();
+    UIWizardNewVMPageHardwareBase();
 
 
     /** @name Property getters/setters
@@ -70,7 +70,7 @@ protected:
 };
 
 /** 3rd page of the New Virtual Machine wizard (basic extension). */
-class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
+class UIWizardNewVMPageHardware : public UIWizardPage, public UIWizardNewVMPageHardwareBase
 {
     Q_OBJECT;
     Q_PROPERTY(int baseMemory READ baseMemory);
@@ -80,7 +80,7 @@ class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
 public:
 
     /** Constructor. */
-    UIWizardNewVMPageBasic3();
+    UIWizardNewVMPageHardware();
 
 protected:
 
@@ -110,4 +110,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageHardware_h */

@@ -27,8 +27,8 @@
 /* Local includes: */
 #include "UIWizardNewVMPageNameOSType.h"
 #include "UIWizardNewVMPageUnattended.h"
-#include "UIWizardNewVMPageBasic3.h"
-#include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVMPageHardware.h"
+#include "UIWizardNewVMPageDisk.h"
 #include "UIWizardNewVDPageBasic3.h"
 
 /* Forward declarations: */
@@ -39,8 +39,8 @@ class UIToolBox;
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPageBaseNameOSType,
                                 public UIWizardNewVMPageBaseUnattended,
-                                public UIWizardNewVMPage3,
-                                public UIWizardNewVMPage4,
+                                public UIWizardNewVMPageHardwareBase,
+                                public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPage1,
                                 public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
