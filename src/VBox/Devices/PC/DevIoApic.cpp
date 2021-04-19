@@ -913,25 +913,32 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     /*
      * The MSI may need to be remapped (or discarded) if an IOMMU is present.
+     *
+     * If the Bus:Dev:Fn isn't valid, it is ASSUMED the device generating the
+     * MSI is the IOMMU itself and hence is not subject to remapping.
      */
-    MSIMSG MsiOut;
-    RT_ZERO(MsiOut);
-    Assert(PCIBDF_IS_VALID(uBusDevFn));
-    int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
-    if (RT_SUCCESS(rcRemap))
+    if (PCIBDF_IS_VALID(uBusDevFn))
     {
-        STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
-        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+        MSIMSG MsiOut;
+        RT_ZERO(MsiOut);
+        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
+        if (RT_SUCCESS(rcRemap))
+        {
+            STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
+            ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+        }
+        else
+        {
+            STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
+            Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
+            return;
+        }
     }
     else
-    {
-        STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
-        Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
-        return;
-    }
+        ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
 #else
     NOREF(uBusDevFn);
     ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
