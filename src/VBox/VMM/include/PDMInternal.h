@@ -791,7 +791,7 @@ typedef struct PDMAPIC
  */
 typedef struct PDMIOAPIC
 {
-    /** Pointer to the APIC device instance - R3 Ptr. */
+    /** Pointer to the I/O APIC device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
     /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
@@ -800,7 +800,7 @@ typedef struct PDMIOAPIC
     /** @copydoc PDMIOAPICREG::pfnSetEoi */
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
-    /** Pointer to the PIC device instance - R0. */
+    /** Pointer to the I/O  APIC device instance - R0. */
     PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
@@ -809,7 +809,7 @@ typedef struct PDMIOAPIC
     /** @copydoc PDMIOAPICREG::pfnSetEoi */
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR0,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
-    /** Pointer to the APIC device instance - RC Ptr. */
+    /** Pointer to the I/O APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
