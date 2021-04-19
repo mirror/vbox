@@ -1406,6 +1406,7 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,        VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock,      VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLockIsOwner, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi,     VERR_INVALID_POINTER);
 
     return VINF_SUCCESS;
 }
