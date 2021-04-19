@@ -56,8 +56,8 @@ signals:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Commands to start group saving. */
-        void sigStartGroupSaving();
+        /** Issues request to save settings. */
+        void sigSaveSettings();
         /** Notifies listeners about group saving state changed. */
         void sigGroupSavingStateChanged();
     /** @} */
@@ -235,8 +235,8 @@ private slots:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Handles request to start group saving. */
-        void sltStartGroupSaving();
+        /** Handles request to save settings. */
+        void sltSaveSettings();
     /** @} */
 
 private:

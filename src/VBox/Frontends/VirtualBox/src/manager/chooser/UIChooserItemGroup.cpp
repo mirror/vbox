@@ -1031,6 +1031,8 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     updateToggleButtonToolTip();
     /* Repaint finally: */
     update();
+    /* Save changes: */
+    model()->saveGroups();
 
     /* Toggle finished: */
     emit sigToggleFinished();

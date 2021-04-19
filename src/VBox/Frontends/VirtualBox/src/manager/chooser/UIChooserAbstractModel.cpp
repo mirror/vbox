@@ -402,13 +402,6 @@ void UIChooserAbstractModel::init()
 
 void UIChooserAbstractModel::deinit()
 {
-    // WORKAROUND:
-    // Currently we are not saving group descriptors
-    // (which reflecting group toggle-state) on-the-fly,
-    // so for now we are additionally save group definitions
-    // when exiting application:
-    saveGroupDefinitions();
-
     /* Make sure all saving steps complete: */
     makeSureGroupSettingsSaveIsFinished();
     makeSureGroupDefinitionsSaveIsFinished();
@@ -539,7 +532,7 @@ QList<UIChooserNode*> UIChooserAbstractModel::searchResult() const
 
 void UIChooserAbstractModel::saveGroups()
 {
-    emit sigStartGroupSaving();
+    emit sigSaveSettings();
 }
 
 bool UIChooserAbstractModel::isGroupSavingInProgress() const
@@ -986,7 +979,7 @@ void UIChooserAbstractModel::createReadCloudMachineListTask(const UICloudEntityK
     }
 }
 
-void UIChooserAbstractModel::sltStartGroupSaving()
+void UIChooserAbstractModel::sltSaveSettings()
 {
     saveGroupSettings();
     saveGroupDefinitions();
@@ -999,7 +992,7 @@ void UIChooserAbstractModel::prepare()
 
 void UIChooserAbstractModel::prepareConnections()
 {
-    /* Cloud VM registration connections: */
+    /* UICommon connections: */
     connect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
             this, &UIChooserAbstractModel::sltCloudMachineUnregistered);
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
@@ -1031,9 +1024,9 @@ void UIChooserAbstractModel::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
             this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
 
-    /* Group saving connections: */
-    connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
-            this, &UIChooserAbstractModel::sltStartGroupSaving,
+    /* Settings saving connections: */
+    connect(this, &UIChooserAbstractModel::sigSaveSettings,
+            this, &UIChooserAbstractModel::sltSaveSettings,
             Qt::QueuedConnection);
 
     /* Extra-data connections: */
@@ -1075,9 +1068,9 @@ void UIChooserAbstractModel::cleanupConnections()
     disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
                this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
 
-    /* Group saving connections: */
-    disconnect(this, &UIChooserAbstractModel::sigStartGroupSaving,
-               this, &UIChooserAbstractModel::sltStartGroupSaving);
+    /* Settings saving connections: */
+    disconnect(this, &UIChooserAbstractModel::sigSaveSettings,
+               this, &UIChooserAbstractModel::sltSaveSettings);
 
     /* Extra-data connections: */
     disconnect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
