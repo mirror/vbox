@@ -94,6 +94,12 @@ VBOX_SUP_WIN_CERTS := \
        TrustedCertVBox0=Trusted-OracleCorporationVirtualBox-05308b76ac2e15b29720fb4395f65f38.taf \
        AppleRoot0=AppleRoot-2bd06947947609fef46b8d2e40a6f7474d7f085e.taf \
        AppleRoot1=AppleRoot-G2-c499136c1803c27bc0a3a00d7f72807a1c77268d.taf
+# Hack Alert! Because the DigiCert cross signing certificate we use expired 2020-04-15, we add it as a trusted NT kernel
+#             signing root instead, so we can bypass the expiry check in IPRT.  NtRootMicrosoft8 is the one found in the
+#             6.1.20 extpack, NtRootMicrosoft9 is the one bird uses at home.
+VBOX_SUP_WIN_CERTS += NtRootDigiCert8=NtRoot-CrossSign-DigiCertAssuredIDRootCA-589567a6c1944d68f11ff3d86576092b.taf
+VBOX_SUP_WIN_CERTS += NtRootDigiCert9=NtRoot-CrossSign-DigiCertHighAssuranceEVRootCA-f4a38dbe86386c554d25f1ce2557a4fe.taf
+
 VBOX_SUP_WIN_CERT_NAMES := $(foreach cert,$(VBOX_SUP_WIN_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
 VBOX_PATH_SUPR3_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
 
