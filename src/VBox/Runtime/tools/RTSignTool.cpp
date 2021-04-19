@@ -1471,12 +1471,13 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINF
                                                    VerifyExecCertVerifyCallback, pState, pErrInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(rc == VINF_SUCCESS);
+                    Assert(rc == VINF_SUCCESS || rc == VINF_CR_DIGEST_DEPRECATED);
+                    const char *pszNote = rc == VINF_CR_DIGEST_DEPRECATED ? " (deprecated digest)" : "";
                     if (pInfo->cSignatures == 1)
-                        RTMsgInfo("'%s' is valid %s.\n", pState->pszFilename, aTimes[iTime].pszDesc);
+                        RTMsgInfo("'%s' is valid %s%s.\n", pState->pszFilename, aTimes[iTime].pszDesc, pszNote);
                     else
-                        RTMsgInfo("'%s' signature #%u is valid %s.\n",
-                                  pState->pszFilename, pInfo->iSignature + 1, aTimes[iTime].pszDesc);
+                        RTMsgInfo("'%s' signature #%u is valid %s%s.\n",
+                                  pState->pszFilename, pInfo->iSignature + 1, aTimes[iTime].pszDesc, pszNote);
                     pState->cOkay++;
                     return VINF_SUCCESS;
                 }
