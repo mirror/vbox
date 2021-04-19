@@ -53,8 +53,28 @@
 #define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
                                                      || (a_off) - DMAR_MMIO_GROUP_1_OFF_FIRST < DMAR_MMIO_GROUP_1_SIZE)
 
-/** @name DMAR implementation specifics.
- * @{ */
+/** Acquires the DMAR lock but returns with the given error code on failure. */
+#define DMAR_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy) \
+    do { \
+        if ((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)) == VINF_SUCCESS) \
+        { /* likely */ } \
+        else \
+            return (a_rcBusy); \
+    } while (0)
+
+/** Release the DMAR lock. */
+#define DMAR_UNLOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnUnlock(a_pDevIns)
+
+/** Checks whether the calling thread is the owner of the DMAR lock. */
+#define DMAR_LOCK_IS_OWNER(a_pDevIns, a_pThisCC)    (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLockIsOwner(a_pDevIns)
+
+/** Asserts that the calling thread owns the DMAR lock. */
+#define DMAR_ASSERT_LOCK_IS_OWNER(a_pDevIns, a_pThisCC) \
+    do { \
+        Assert((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLockIsOwner(a_pDevIns)); \
+        RT_NOREF1(a_pThisCC); \
+    } while (0)
+
 /** The number of fault recording registers our implementation supports.
  *  Normal guest operation shouldn't trigger faults anyway, so we only support the
  *  minimum number of registers (which is 1).
@@ -97,7 +117,6 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 #define DMAR_VER_MAJOR                              6
 /** DMAR implementation's minor version number (exposed to software). */
 #define DMAR_VER_MINOR                              0
-/** @} */
 
 /** Release log prefix string. */
 #define DMAR_LOG_PFX                                "Intel-IOMMU"
@@ -242,6 +261,8 @@ typedef const DMARRC *PCIDMARRC;
 typedef CTX_SUFF(DMAR)  DMARCC;
 /** Pointer to the DMAR device state for the current context. */
 typedef CTX_SUFF(PDMAR) PDMARCC;
+/** Pointer to the const DMAR device state for the current context. */
+typedef const CTX_SUFF(PDMAR) PCDMARCC;
 
 
 /*********************************************************************************************************************************
@@ -605,6 +626,44 @@ static void dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 
 
 /**
+ * Modifies a 32-bit register.
+ *
+ * @param   pThis       The shared DMAR device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   fAndMask    The AND mask (applied first).
+ * @param   fOrMask     The OR mask.
+ */
+static void dmarRegChange32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uint32_t fOrMask)
+{
+    uint8_t idxGroup;
+    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    NOREF(idxGroup);
+    uint32_t uReg = *(uint32_t *)(pabRegs + offReg);
+    uReg = (uReg & fAndMask) | fOrMask;
+    *(uint32_t *)(pabRegs + offReg) = uReg;
+}
+
+
+/**
+ * Modifies a 64-bit register.
+ *
+ * @param   pThis       The shared DMAR device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   fAndMask    The AND mask (applied first).
+ * @param   fOrMask     The OR mask.
+ */
+static void dmarRegChange64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uint64_t fOrMask)
+{
+    uint8_t idxGroup;
+    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    NOREF(idxGroup);
+    uint64_t uReg = *(uint64_t *)(pabRegs + offReg);
+    uReg = (uReg & fAndMask) | fOrMask;
+    *(uint64_t *)(pabRegs + offReg) = uReg;
+}
+
+
+/**
  * Reads a 64-bit register with exactly the value it contains.
  *
  * @param   pThis       The shared DMAR device state.
@@ -754,6 +813,35 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 
 
 /**
+ * Raises an IQE (invalidation queue error) fault.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThis       The shared DMAR device state.
+ * @param   enmIqei     The IQE information.
+ * @param   enmDiag     The diagnostic reason.
+ */
+static void dmarFaultRaiseIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
+{
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    /* Set the error bit. */
+    uint32_t const fIqe = RT_BF_MAKE(VTD_BF_FSTS_REG_IQE, 1);
+    dmarRegChange32(pThis, VTD_MMIO_OFF_FSTS_REG, UINT32_MAX, fIqe);
+
+    /* Set the error information. */
+    uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
+    dmarRegChange64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
+
+    /* Update diagnostic reason. */
+    pThis->enmDiag = enmDiag;
+
+    /** @todo Raise interrupt based on FECTL_REG. */
+}
+
+
+/**
  * Handles writes to CCMD_REG.
  *
  * @returns Strict VBox status code.
@@ -819,10 +907,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
              *        something. */
         }
         else
-        {
-            /* Raise invalidation queue error as queue tail not aligned to 256-bits. */
-            /** @todo Raise error. */
-        }
+            dmarFaultRaiseIqe(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
     return VINF_SUCCESS;
 }
@@ -968,6 +1053,26 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 
 
 #ifdef IN_RING3
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PCDMAR      pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    bool const fVerbose = RTStrCmp(pszArgs, "verbose") == 0;
+
+    DMARDIAG const enmDiag = pThis->enmDiag;
+    const char *pszDiag    = enmDiag < RT_ELEMENTS(g_apszDmarDiagDesc) ? g_apszDmarDiagDesc[enmDiag] : "(Unknown)";
+
+    pHlp->pfnPrintf(pHlp, "Intel-IOMMU:\n");
+    pHlp->pfnPrintf(pHlp, " Diag = %u (%s)\n", enmDiag, pszDiag);
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+
 /**
  * Initializes all registers in the DMAR unit.
  *
@@ -1213,6 +1318,11 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
                                    "Intel-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Register debugger info items.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommu", "Display IOMMU state.", dmarR3DbgInfo);
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
@@ -1293,8 +1403,9 @@ static DECLCALLBACK(int) iommuIntelRZConstruct(PPDMDEVINS pDevIns)
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp), VERR_IOMMU_IPE_1);
     AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32Version == CTX_SUFF(PDM_IOMMUHLP)_VERSION, VERR_VERSION_MISMATCH);
     AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd  == CTX_SUFF(PDM_IOMMUHLP)_VERSION, VERR_VERSION_MISMATCH);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLockIsOwner, VERR_INVALID_POINTER);
 
     return VINF_SUCCESS;
 }

@@ -1513,6 +1513,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQERCD_REG_, UINT64_C(0), UINT64_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_IQERCD_REG_RW_MASK                                  UINT64_C(0)
+
+/** Invalidation Queue Error Information. */
+typedef enum VTD_IQERCD_IQEI_T
+{
+    kInfoNotAvailable = 0,
+    kInvalidTailPointer,
+    kFetchDescriptorFailed,
+    kInvalidDescriptorType,
+    kRsvdFieldViolation,
+    kInvalidDescriptorWidth,
+    kQueueTailNotAligned,
+    kInvalidTtm
+} VTD_IQERCD_IQEI_T;
 /** @} */
 
 
