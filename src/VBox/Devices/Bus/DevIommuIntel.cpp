@@ -816,7 +816,6 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
  * Raises an IQE (invalidation queue error) fault.
  *
  * @param   pDevIns     The IOMMU device instance.
- * @param   pThis       The shared DMAR device state.
  * @param   enmIqei     The IQE information.
  * @param   enmDiag     The diagnostic reason.
  */
