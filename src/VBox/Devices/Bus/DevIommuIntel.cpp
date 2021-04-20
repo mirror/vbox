@@ -150,9 +150,9 @@ AssertCompileSize(DMARDIAG, 4);
 /** DMAR diagnostics description. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(kNone                         , "None"                ),
-    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned, "IqtReg_Qt_NotAligned"),
-    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   , "IqaReg_Dw_Invalid"   )
+    DMARDIAG_DESC(kNone                         ,   "None"                ),
+    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned,   "IqtReg_Qt_NotAligned"),
+    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   ,   "IqaReg_Dw_Invalid"   )
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -839,8 +839,6 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
  * Raises an interrupt in response to an event.
  *
  * @param   pDevIns     The IOMMU device instance.
- * @param   pThis       The shared DMAR device state.
- * @param   pThisCC     The current-context DMAR device state.
  */
 static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
 {
@@ -1026,7 +1024,6 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   off         The MMIO register offset.
- * @param   cb          The size of the MMIO access (in bytes).
  * @param   uIqaReg     The value written to IQA_REG.
  */
 static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqaReg)
