@@ -1695,6 +1695,7 @@ static DECLCALLBACK(bool) pdmR0IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
     return pdmLockIsOwner(pDevIns->Internal.s.pGVM);
 }
 
+
 /** @interface_method_impl{PDMIOMMUHLPR0,pfnSendMsi} */
 static DECLCALLBACK(int) pdmR0IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
