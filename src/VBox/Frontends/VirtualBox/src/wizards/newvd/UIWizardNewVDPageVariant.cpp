@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardNewVDPageVariant class implementation.
  */
 
 /*
@@ -22,14 +22,14 @@
 #include <QCheckBox>
 
 /* GUI includes: */
-#include "UIWizardNewVDPageBasic2.h"
+#include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVD.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
 
-UIWizardNewVDPage2::UIWizardNewVDPage2()
+UIWizardNewVDPageBaseVariant::UIWizardNewVDPageBaseVariant()
     : m_pFixedCheckBox(0)
     , m_pSplitBox(0)
     , m_pDescriptionLabel(0)
@@ -39,7 +39,7 @@ UIWizardNewVDPage2::UIWizardNewVDPage2()
 {
 }
 
-QWidget *UIWizardNewVDPage2::createMediumVariantWidgets(bool fWithLabels)
+QWidget *UIWizardNewVDPageBaseVariant::createMediumVariantWidgets(bool fWithLabels)
 {
     QWidget *pContainerWidget = new QWidget;
     QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
@@ -74,7 +74,7 @@ QWidget *UIWizardNewVDPage2::createMediumVariantWidgets(bool fWithLabels)
     return pContainerWidget;
 }
 
-qulonglong UIWizardNewVDPage2::mediumVariant() const
+qulonglong UIWizardNewVDPageBaseVariant::mediumVariant() const
 {
     /* Initial value: */
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
@@ -93,7 +93,7 @@ qulonglong UIWizardNewVDPage2::mediumVariant() const
     return uMediumVariant;
 }
 
-void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
+void UIWizardNewVDPageBaseVariant::setMediumVariant(qulonglong uMediumVariant)
 {
     /* Exclusive options: */
     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
@@ -106,7 +106,7 @@ void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
-void UIWizardNewVDPage2::retranslateWidgets()
+void UIWizardNewVDPageBaseVariant::retranslateWidgets()
 {
     if (m_pFixedCheckBox)
     {
@@ -137,7 +137,7 @@ void UIWizardNewVDPage2::retranslateWidgets()
                                                  "handle very large files."));
 }
 
-void UIWizardNewVDPage2::setWidgetVisibility(CMediumFormat &mediumFormat)
+void UIWizardNewVDPageBaseVariant::setWidgetVisibility(CMediumFormat &mediumFormat)
 {
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
@@ -173,7 +173,7 @@ void UIWizardNewVDPage2::setWidgetVisibility(CMediumFormat &mediumFormat)
         m_pSplitBox->setHidden(!fIsCreateSplitPossible);
 }
 
-void UIWizardNewVDPage2::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
+void UIWizardNewVDPageBaseVariant::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
 {
     /* Enable/disable widgets: */
     ULONG uCapabilities = 0;
@@ -197,7 +197,7 @@ void UIWizardNewVDPage2::updateMediumVariantWidgetsAfterFormatChange(const CMedi
     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
 }
 
-UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
+UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -206,22 +206,22 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
 
     /* Setup connections: */
     connect(m_pFixedCheckBox, &QAbstractButton::toggled,
-            this, &UIWizardNewVDPageBasic2::completeChanged);
+            this, &UIWizardNewVDPageVariant::completeChanged);
     connect(m_pSplitBox, &QCheckBox::stateChanged,
-            this, &UIWizardNewVDPageBasic2::completeChanged);
+            this, &UIWizardNewVDPageVariant::completeChanged);
 
     /* Register fields: */
     registerField("mediumVariant", this, "mediumVariant");
 }
 
-void UIWizardNewVDPageBasic2::retranslateUi()
+void UIWizardNewVDPageVariant::retranslateUi()
 {
     retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
 }
 
-void UIWizardNewVDPageBasic2::initializePage()
+void UIWizardNewVDPageVariant::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -229,7 +229,7 @@ void UIWizardNewVDPageBasic2::initializePage()
     setWidgetVisibility(mediumFormat);
 }
 
-bool UIWizardNewVDPageBasic2::isComplete() const
+bool UIWizardNewVDPageVariant::isComplete() const
 {
     /* Make sure medium variant is correct: */
     return mediumVariant() != (qulonglong)KMediumVariant_Max;

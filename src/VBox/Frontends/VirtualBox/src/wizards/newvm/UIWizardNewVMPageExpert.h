@@ -42,7 +42,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPageHardwareBase,
                                 public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPageBaseFileType,
-                                public UIWizardNewVDPage2,
+                                public UIWizardNewVDPageBaseVariant,
                                 public UIWizardNewVDPage3
 {
 

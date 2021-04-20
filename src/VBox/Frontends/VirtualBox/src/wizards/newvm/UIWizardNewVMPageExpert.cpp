@@ -158,7 +158,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPageHardwareBase::retranslateWidgets();
     UIWizardNewVMPageDiskBase::retranslateWidgets();
     UIWizardNewVDPageBaseFileType::retranslateWidgets();
-    UIWizardNewVDPage2::retranslateWidgets();
+    UIWizardNewVDPageBaseVariant::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 
     if (m_pToolBox)

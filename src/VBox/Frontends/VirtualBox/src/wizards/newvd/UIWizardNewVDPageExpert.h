@@ -23,7 +23,7 @@
 
 /* GUI includes: */
 #include "UIWizardNewVDPageFileType.h"
-#include "UIWizardNewVDPageBasic2.h"
+#include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVDPageBasic3.h"
 
 /* Forward declarations: */
@@ -32,7 +32,7 @@ class QGroupBox;
 /* Expert page of the New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UIWizardPage,
                                                      public UIWizardNewVDPageBaseFileType,
-                                                     public UIWizardNewVDPage2,
+                                                     public UIWizardNewVDPageBaseVariant,
                                                      public UIWizardNewVDPage3
 {
     Q_OBJECT;

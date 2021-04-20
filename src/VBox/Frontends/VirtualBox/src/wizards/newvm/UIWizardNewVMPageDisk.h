@@ -27,7 +27,7 @@
 /* GUI includes: */
 #include "UIWizardPage.h"
 #include "UIWizardNewVDPageFileType.h"
-#include "UIWizardNewVDPageBasic2.h"
+#include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVM.h"
 
@@ -80,7 +80,7 @@ protected:
 class UIWizardNewVMPageDisk : public UIWizardPage,
                                 public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPageBaseFileType,
-                                public UIWizardNewVDPage2,
+                                public UIWizardNewVDPageBaseVariant,
                                 public UIWizardNewVDPage3
 {
     Q_OBJECT;

@@ -309,7 +309,7 @@ void UIWizardNewVMPageDisk::retranslateUi()
 
     UIWizardNewVMPageDiskBase::retranslateWidgets();
     UIWizardNewVDPageBaseFileType::retranslateWidgets();
-    UIWizardNewVDPage2::retranslateWidgets();
+    UIWizardNewVDPageBaseVariant::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 }
 

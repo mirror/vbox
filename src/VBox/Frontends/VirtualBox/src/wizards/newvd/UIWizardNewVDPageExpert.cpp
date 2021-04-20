@@ -153,7 +153,7 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 void UIWizardNewVDPageExpert::retranslateUi()
 {
     UIWizardNewVDPageBaseFileType::retranslateWidgets();
-    UIWizardNewVDPage2::retranslateWidgets();
+    UIWizardNewVDPageBaseVariant::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
     /* Translate widgets: */
     if (m_pLocationGroupBox)

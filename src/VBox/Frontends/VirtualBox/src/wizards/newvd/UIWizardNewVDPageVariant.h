@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardNewVDPageVariant class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,12 +32,12 @@ class QIRichTextLabel;
 
 
 /* 2nd page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPage2 : public UIWizardPageBase
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseVariant : public UIWizardPageBase
 {
 protected:
 
     /** Constructor: */
-    UIWizardNewVDPage2();
+    UIWizardNewVDPageBaseVariant();
 
     QWidget *createMediumVariantWidgets(bool fWithLabels);
     qulonglong mediumVariant() const;
@@ -62,14 +62,14 @@ protected:
 };
 
 /* 2nd page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic2 : public UIWizardPage, public UIWizardNewVDPage2
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UIWizardPage, public UIWizardNewVDPageBaseVariant
 {
     Q_OBJECT;
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
 
 public:
 
-    UIWizardNewVDPageBasic2();
+    UIWizardNewVDPageVariant();
 
 private:
 
@@ -79,4 +79,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h */
