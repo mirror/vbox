@@ -130,8 +130,9 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /**
  * DMAR error diagnostics.
  *
- * @note Members of this enum are used as array indices, so no gaps are allowed.
- *       Please update g_apsz when you add new fields to this enum.
+ * @note Members of this enum are used as array indices, so no gaps in enum
+ *       values are not allowed. Update g_apszDmarDiagDesc when you modify
+ *       fields in this enum.
  */
 typedef enum
 {
@@ -210,7 +211,7 @@ typedef struct DMAR
 /** Pointer to the DMAR device state. */
 typedef DMAR *PDMAR;
 /** Pointer to the const DMAR device state. */
-typedef const DMAR *PCDMAR;
+typedef DMAR const *PCDMAR;
 
 /**
  * The ring-3 DMAR device state.
@@ -225,7 +226,7 @@ typedef struct DMARR3
 /** Pointer to the ring-3 DMAR device state. */
 typedef DMARR3 *PDMARR3;
 /** Pointer to the const ring-3 DMAR device state. */
-typedef const DMARR3 *PCDMARR3;
+typedef DMARR3 const *PCDMARR3;
 
 /**
  * The ring-0 DMAR device state.
@@ -240,7 +241,7 @@ typedef struct DMARR0
 /** Pointer to the ring-0 IOMMU device state. */
 typedef DMARR0 *PDMARR0;
 /** Pointer to the const ring-0 IOMMU device state. */
-typedef const DMARR0 *PCDMARR0;
+typedef DMARR0 const *PCDMARR0;
 
 /**
  * The raw-mode DMAR device state.
@@ -255,14 +256,14 @@ typedef struct DMARRC
 /** Pointer to the raw-mode DMAR device state. */
 typedef DMARRC *PDMARRC;
 /** Pointer to the const raw-mode DMAR device state. */
-typedef const DMARRC *PCIDMARRC;
+typedef DMARRC const *PCIDMARRC;
 
 /** The DMAR device state for the current context. */
 typedef CTX_SUFF(DMAR)  DMARCC;
 /** Pointer to the DMAR device state for the current context. */
 typedef CTX_SUFF(PDMAR) PDMARCC;
 /** Pointer to the const DMAR device state for the current context. */
-typedef const CTX_SUFF(PDMAR) PCDMARCC;
+typedef CTX_SUFF(PDMAR) const PCDMARCC;
 
 
 /*********************************************************************************************************************************
@@ -626,40 +627,19 @@ static void dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 
 
 /**
- * Modifies a 32-bit register.
+ * Reads a 32-bit register with exactly the value it contains.
  *
  * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
  * @param   fAndMask    The AND mask (applied first).
  * @param   fOrMask     The OR mask.
  */
-static void dmarRegChange32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uint32_t fOrMask)
+static uint32_t dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg)
 {
     uint8_t idxGroup;
-    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    uint8_t const *pabRegs = dmarRegGetGroupRo(pThis, offReg, sizeof(uint32_t), &idxGroup);
     NOREF(idxGroup);
-    uint32_t uReg = *(uint32_t *)(pabRegs + offReg);
-    uReg = (uReg & fAndMask) | fOrMask;
-    *(uint32_t *)(pabRegs + offReg) = uReg;
-}
-
-
-/**
- * Modifies a 64-bit register.
- *
- * @param   pThis       The shared DMAR device state.
- * @param   offReg      The MMIO offset of the register.
- * @param   fAndMask    The AND mask (applied first).
- * @param   fOrMask     The OR mask.
- */
-static void dmarRegChange64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uint64_t fOrMask)
-{
-    uint8_t idxGroup;
-    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
-    NOREF(idxGroup);
-    uint64_t uReg = *(uint64_t *)(pabRegs + offReg);
-    uReg = (uReg & fAndMask) | fOrMask;
-    *(uint64_t *)(pabRegs + offReg) = uReg;
+    return *(uint32_t *)(pabRegs + offReg);
 }
 
 
@@ -668,25 +648,19 @@ static void dmarRegChange64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uin
  *
  * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
- * @param   puReg       Where to store the raw 64-bit register value.
- * @param   pfRwMask    Where to store the RW mask corresponding to this register.
- * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-static void dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+static uint32_t dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg)
 {
     uint8_t idxGroup;
-    uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
-    Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
-    uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
-    uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
-    *puReg      = *(uint64_t *)(pabRegs      + offReg);
-    *pfRwMask   = *(uint64_t *)(pabRwMasks   + offReg);
-    *pfRw1cMask = *(uint64_t *)(pabRw1cMasks + offReg);
+    uint8_t const *pabRegs = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    NOREF(idxGroup);
+    return *(uint64_t *)(pabRegs + offReg);
 }
 
 
 /**
- * Reads a 32-bit register with exactly the value it contains.
+ * Reads a 32-bit register with exactly the value it contains along with their
+ * corresponding masks
  *
  * @param   pThis       The shared DMAR device state.
  * @param   offReg      The MMIO offset of the register.
@@ -694,7 +668,7 @@ static void dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uin
  * @param   pfRwMask    Where to store the RW mask corresponding to this register.
  * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
  */
-static void dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
+static void dmarRegReadRaw32Ex(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint32_t), &idxGroup);
@@ -704,6 +678,29 @@ static void dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg, uint32_t *puReg, uin
     *puReg      = *(uint32_t *)(pabRegs      + offReg);
     *pfRwMask   = *(uint32_t *)(pabRwMasks   + offReg);
     *pfRw1cMask = *(uint32_t *)(pabRw1cMasks + offReg);
+}
+
+
+/**
+ * Reads a 64-bit register with exactly the value it contains along with their
+ * corresponding masks.
+ *
+ * @param   pThis       The shared DMAR device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   puReg       Where to store the raw 64-bit register value.
+ * @param   pfRwMask    Where to store the RW mask corresponding to this register.
+ * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
+ */
+static void dmarRegReadRaw64Ex(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+{
+    uint8_t idxGroup;
+    uint8_t const *pabRegs      = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    Assert(idxGroup < RT_ELEMENTS(g_apbRwMasks));
+    uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
+    uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
+    *puReg      = *(uint64_t *)(pabRegs      + offReg);
+    *pfRwMask   = *(uint64_t *)(pabRwMasks   + offReg);
+    *pfRw1cMask = *(uint64_t *)(pabRw1cMasks + offReg);
 }
 
 
@@ -722,7 +719,7 @@ static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
     uint64_t uCurReg;
     uint64_t fRwMask;
     uint64_t fRw1cMask;
-    dmarRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw64Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
 
     uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -750,7 +747,7 @@ static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
     uint32_t uCurReg;
     uint32_t fRwMask;
     uint32_t fRw1cMask;
-    dmarRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    dmarRegReadRaw32Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
 
     uint32_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint32_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -772,12 +769,7 @@ static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
  */
 static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
 {
-    uint64_t uCurReg;
-    uint64_t fRwMask;
-    uint64_t fRw1cMask;
-    dmarRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
-    NOREF(fRwMask); NOREF(fRw1cMask);
-    return uCurReg;
+    return dmarRegReadRaw64(pThis, offReg);
 }
 
 
@@ -790,12 +782,43 @@ static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
  */
 static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
 {
-    uint32_t uCurReg;
-    uint32_t fRwMask;
-    uint32_t fRw1cMask;
-    dmarRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
-    NOREF(fRwMask); NOREF(fRw1cMask);
-    return uCurReg;
+    return dmarRegReadRaw32(pThis, offReg);
+}
+
+
+/**
+ * Modifies a 32-bit register.
+ *
+ * @param   pThis       The shared DMAR device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   fAndMask    The AND mask (applied first).
+ * @param   fOrMask     The OR mask.
+ * @remarks This does NOT apply RO or RW1C masks while modifying the
+ *          register.
+ */
+static void dmarRegChange32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uint32_t fOrMask)
+{
+    uint32_t uReg = dmarRegRead32(pThis, offReg);
+    uReg = (uReg & fAndMask) | fOrMask;
+    dmarRegWriteRaw32(pThis, offReg, uReg);
+}
+
+
+/**
+ * Modifies a 64-bit register.
+ *
+ * @param   pThis       The shared DMAR device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   fAndMask    The AND mask (applied first).
+ * @param   fOrMask     The OR mask.
+ * @remarks This does NOT apply RO or RW1C masks while modifying the
+ *          register.
+ */
+static void dmarRegChange64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uint64_t fOrMask)
+{
+    uint64_t uReg = dmarRegRead64(pThis, offReg);
+    uReg = (uReg & fAndMask) | fOrMask;
+    dmarRegWriteRaw64(pThis, offReg, uReg);
 }
 
 
