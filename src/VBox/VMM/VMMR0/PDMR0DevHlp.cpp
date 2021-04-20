@@ -1688,7 +1688,7 @@ static DECLCALLBACK(void) pdmR0IommuHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMIOMMUHLPR0,pfnLock} */
+/** @interface_method_impl{PDMIOMMUHLPR0,pfnLockIsOwner} */
 static DECLCALLBACK(bool) pdmR0IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
