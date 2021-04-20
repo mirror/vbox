@@ -138,6 +138,7 @@ typedef enum
 {
     kDmarDiag_None = 0,
     kDmarDiag_IqtReg_Qt_NotAligned,
+    kDmarDiag_IqaReg_Dw_Invalid,
     /* Last member for determining array index limit. */
     kDmarDiag_End
 } DMARDIAG;
@@ -149,8 +150,9 @@ AssertCompileSize(DMARDIAG, 4);
 /** DMAR diagnostics description. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(kNone,                            "None"                ),
-    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned,   "IqtReg_Qt_NotAligned")
+    DMARDIAG_DESC(kNone                         , "None"                ),
+    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned, "IqtReg_Qt_NotAligned"),
+    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   , "IqaReg_Dw_Invalid"   )
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -840,8 +842,10 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
  * @param   pThis       The shared DMAR device state.
  * @param   pThisCC     The current-context DMAR device state.
  */
-static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns, PDMAR pThis, PCDMARCC pThisCC)
+static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
 {
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
 #ifdef RT_STRICT
     {
         uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
@@ -917,7 +921,7 @@ static bool dmarPrimaryFaultCanRecord(PDMAR pThis)
 
 
 /**
- * Records an IQE (invalidation queue error) fault.
+ * Records an IQE fault.
  *
  * @param   pDevIns     The IOMMU device instance.
  * @param   enmIqei     The IQE information.
@@ -940,7 +944,7 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
     uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
     dmarRegChange64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
 
-    dmarFaultRaiseInterrupt(pDevIns, pThis, pThisCC);
+    dmarFaultRaiseInterrupt(pDevIns);
 }
 
 
@@ -955,7 +959,7 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
  */
 static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t cb, uint64_t uCcmdReg)
 {
-    /* We only care about responding to high 32-bits writes, low 32-bits are data. */
+    /* At present, we only care about responding to high 32-bits writes, low 32-bits are data. */
     if (off + cb > VTD_MMIO_OFF_CCMD_REG + 4)
     {
         /* Check if we need to invalidate the context-context. */
@@ -1011,6 +1015,38 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
         }
         else
             dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to IQA_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   off         The MMIO register offset.
+ * @param   cb          The size of the MMIO access (in bytes).
+ * @param   uIqaReg     The value written to IQA_REG.
+ */
+static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqaReg)
+{
+    /** @todo Don't allow writing this when GSTS.QIES is set? */
+
+    /* At present, we only care about the low 32-bits, high 32-bits are data. */
+    if (off == VTD_MMIO_OFF_IQA_REG)
+    {
+        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+        uint8_t const fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+        if (fDw == VTD_IQA_REG_DW_256_BIT)
+        {
+            uint64_t const fDwMask           = VTD_BF_ECAP_REG_SMTS_MASK | VTD_BF_ECAP_REG_ADMS_MASK;
+            bool const     fSupports256BitDw = RT_BOOL(pThis->fExtCap & fDwMask);
+            if (fSupports256BitDw)
+            { /* likely */ }
+            else
+                dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kInvalidDescriptorWidth);
+        }
     }
     return VINF_SUCCESS;
 }
@@ -1110,6 +1146,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             case VTD_MMIO_OFF_CCMD_REG + 4:
             {
                 rcStrict = dmarCcmdRegWrite(pDevIns, offReg, cb, uRegWritten);
+                break;
+            }
+
+            case VTD_MMIO_OFF_IQA_REG:
+            case VTD_MMIO_OFF_IQA_REG + 4:
+            {
+                rcStrict = dmarIqaRegWrite(pDevIns, offReg, uRegWritten);
                 break;
             }
         }
