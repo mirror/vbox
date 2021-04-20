@@ -862,6 +862,7 @@ static bool dmarFaultCanRecord(PDMAR pThis)
     }
 
     uFstsReg |= VTD_BF_FSTS_REG_PPF_MASK;
+    dmarRegWrite32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
     return true;
 }
 
