@@ -94,7 +94,7 @@
 #define DMAR_MMIO_OFF_IVA_REG                       0xe50
 /**< Implementation-specific MMIO offset of IOTLB_REG. */
 #define DMAR_MMIO_OFF_IOTLB_REG                     0xe58
-   /**< Implementation-specific MMIO offset of FRCD_LO_REG. */
+/**< Implementation-specific MMIO offset of FRCD_LO_REG. */
 #define DMAR_MMIO_OFF_FRCD_LO_REG                   0xe70
 /**< Implementation-specific MMIO offset of FRCD_HI_REG. */
 #define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe78
@@ -834,17 +834,56 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 
 
 /**
- * Raises an IQE (invalidation queue error) fault.
+ * Checks whether a primary fault can be recorded.
+ *
+ * @returns @c true if the fault can be recorded, @c false otherwise.
+ * @param   pThis   The shared DMAR device state.
+ */
+static bool dmarFaultCanRecord(PDMAR pThis)
+{
+    uint32_t uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+    if (uFstsReg & VTD_BF_FSTS_REG_PFO_MASK)
+        return false;
+
+    /*
+     * If we add more FRCD registers, we'll have to loop through them here.
+     * Since we support only one FRCD_REG, we don't support "compression of multiple faults",
+     * nor do we need to increment FRI.
+     *
+     * See Intel VT-d spec. 7.2.1 "Primary Fault Logging".
+     */
+    AssertCompile(DMAR_FRCD_REG_COUNT == 1);
+    uint64_t const uFrcdRegHi = dmarRegRead64(pThis, DMAR_MMIO_OFF_FRCD_HI_REG);
+    if (uFrcdRegHi & VTD_BF_1_FRCD_REG_F_MASK)
+    {
+        uFstsReg |= VTD_BF_FSTS_REG_PFO_MASK;
+        dmarRegWrite32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
+        return false;
+    }
+
+    uFstsReg |= VTD_BF_FSTS_REG_PPF_MASK;
+    return true;
+}
+
+
+/**
+ * Records an IQE (invalidation queue error) fault.
  *
  * @param   pDevIns     The IOMMU device instance.
  * @param   enmIqei     The IQE information.
  * @param   enmDiag     The diagnostic reason.
  */
-static void dmarFaultRaiseIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
+static void dmarFaultRecordIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    /* Always update the latest diagnostic reason. */
+    pThis->enmDiag = enmDiag;
+
+    if (!dmarFaultCanRecord(pThis))
+        return;
 
     /* Set the error bit. */
     uint32_t const fIqe = RT_BF_MAKE(VTD_BF_FSTS_REG_IQE, 1);
@@ -853,9 +892,6 @@ static void dmarFaultRaiseIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_I
     /* Set the error information. */
     uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
     dmarRegChange64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
-
-    /* Update diagnostic reason. */
-    pThis->enmDiag = enmDiag;
 
     /** @todo Raise interrupt based on FECTL_REG. */
 }
@@ -884,7 +920,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t c
             if (uMajorVersion < 6)
             {
                 /** @todo Verify queued-invalidation is not enabled.
-                 *  See Intel spec. 6.5.1 "Register-based Invalidation Interface" */
+                 *  See Intel VT-d spec. 6.5.1 "Register-based Invalidation Interface" */
 
                 /* Verify table translation mode is legacy. */
                 uint8_t const fTtm = dmarRtAddrRegGetTtm(pThis);
@@ -895,7 +931,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t c
                 }
             }
 
-            /** @todo Raise error. */
+            /** @todo Record error. */
         }
     }
     return VINF_SUCCESS;
@@ -927,7 +963,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
              *        something. */
         }
         else
-            dmarFaultRaiseIqe(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
+            dmarFaultRecordIqe(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
     return VINF_SUCCESS;
 }
