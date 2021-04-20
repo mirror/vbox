@@ -308,7 +308,7 @@ void UIWizardNewVMPageDisk::retranslateUi()
                                             "Alternatively you can create a virtual machine without a virtual hard disk.</p>"));
 
     UIWizardNewVMPageDiskBase::retranslateWidgets();
-    UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPageBaseFileType::retranslateWidgets();
     UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 }

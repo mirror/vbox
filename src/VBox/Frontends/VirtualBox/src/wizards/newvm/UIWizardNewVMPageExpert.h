@@ -41,7 +41,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPageBaseUnattended,
                                 public UIWizardNewVMPageHardwareBase,
                                 public UIWizardNewVMPageDiskBase,
-                                public UIWizardNewVDPage1,
+                                public UIWizardNewVDPageBaseFileType,
                                 public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
 {

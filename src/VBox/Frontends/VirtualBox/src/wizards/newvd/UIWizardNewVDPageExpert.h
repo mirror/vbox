@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardNewVDPageBasic1.h"
+#include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
 
@@ -31,7 +31,7 @@ class QGroupBox;
 
 /* Expert page of the New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UIWizardPage,
-                                                     public UIWizardNewVDPage1,
+                                                     public UIWizardNewVDPageBaseFileType,
                                                      public UIWizardNewVDPage2,
                                                      public UIWizardNewVDPage3
 {

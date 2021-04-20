@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardNewVDPageFileType class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageFileType_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageFileType_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -36,12 +36,12 @@ class QIRichTextLabel;
 
 
 /* 1st page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPage1 : public UIWizardPageBase
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseFileType : public UIWizardPageBase
 {
 protected:
 
     /* Constructor: */
-    UIWizardNewVDPage1();
+    UIWizardNewVDPageBaseFileType();
 
     /* Helping stuff: */
     void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
@@ -62,7 +62,7 @@ protected:
 
 
 /* 1st page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic1 : public UIWizardPage, public UIWizardNewVDPage1
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageFileType : public UIWizardPage, public UIWizardNewVDPageBaseFileType
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
@@ -70,7 +70,7 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic1 : public UIWizardPage, public
 public:
 
     /* Constructor: */
-    UIWizardNewVDPageBasic1();
+    UIWizardNewVDPageFileType();
 
 private:
 
@@ -91,4 +91,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageFileType_h */

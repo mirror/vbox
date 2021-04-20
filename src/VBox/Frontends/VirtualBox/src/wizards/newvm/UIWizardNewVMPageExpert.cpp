@@ -157,7 +157,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPageBaseUnattended::retranslateWidgets();
     UIWizardNewVMPageHardwareBase::retranslateWidgets();
     UIWizardNewVMPageDiskBase::retranslateWidgets();
-    UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPageBaseFileType::retranslateWidgets();
     UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 

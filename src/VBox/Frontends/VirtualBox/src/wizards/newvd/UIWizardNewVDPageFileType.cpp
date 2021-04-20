@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardNewVDPageFileType class implementation.
  */
 
 /*
@@ -22,7 +22,7 @@
 
 /* GUI includes: */
 #include "UIConverter.h"
-#include "UIWizardNewVDPageBasic1.h"
+#include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
@@ -32,12 +32,12 @@
 #include "CSystemProperties.h"
 
 
-UIWizardNewVDPage1::UIWizardNewVDPage1()
+UIWizardNewVDPageBaseFileType::UIWizardNewVDPageBaseFileType()
     : m_pFormatButtonGroup(0)
 {
 }
 
-void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
+void UIWizardNewVDPageBaseFileType::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = 0;
@@ -76,7 +76,7 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatL
     }
 }
 
-QWidget *UIWizardNewVDPage1::createFormatButtonGroup(bool fExpertMode)
+QWidget *UIWizardNewVDPageBaseFileType::createFormatButtonGroup(bool fExpertMode)
 {
     QWidget *pContainerWidget = new QWidget;
     QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
@@ -129,12 +129,12 @@ QWidget *UIWizardNewVDPage1::createFormatButtonGroup(bool fExpertMode)
     return pContainerWidget;
 }
 
-CMediumFormat UIWizardNewVDPage1::mediumFormat() const
+CMediumFormat UIWizardNewVDPageBaseFileType::mediumFormat() const
 {
     return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
 }
 
-void UIWizardNewVDPage1::setMediumFormat(const CMediumFormat &mediumFormat)
+void UIWizardNewVDPageBaseFileType::setMediumFormat(const CMediumFormat &mediumFormat)
 {
     int iPosition = m_formats.indexOf(mediumFormat);
     if (iPosition >= 0)
@@ -144,7 +144,7 @@ void UIWizardNewVDPage1::setMediumFormat(const CMediumFormat &mediumFormat)
     }
 }
 
-void UIWizardNewVDPage1::retranslateWidgets()
+void UIWizardNewVDPageBaseFileType::retranslateWidgets()
 {
     if (m_pFormatButtonGroup)
     {
@@ -158,7 +158,7 @@ void UIWizardNewVDPage1::retranslateWidgets()
     }
 }
 
-UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
+UIWizardNewVDPageFileType::UIWizardNewVDPageFileType()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -172,7 +172,7 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 
     /* Setup connections: */
     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-            this, &UIWizardNewVDPageBasic1::completeChanged);
+            this, &UIWizardNewVDPageFileType::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<CMediumFormat>();
@@ -180,7 +180,7 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
     registerField("mediumFormat", this, "mediumFormat");
 }
 
-void UIWizardNewVDPageBasic1::retranslateUi()
+void UIWizardNewVDPageFileType::retranslateUi()
 {
     retranslateWidgets();
     /* Translate page: */
@@ -192,19 +192,19 @@ void UIWizardNewVDPageBasic1::retranslateUi()
                                         "with other virtualization software you can leave this setting unchanged."));
 }
 
-void UIWizardNewVDPageBasic1::initializePage()
+void UIWizardNewVDPageFileType::initializePage()
 {
     /* Translate page: */
     retranslateUi();
 }
 
-bool UIWizardNewVDPageBasic1::isComplete() const
+bool UIWizardNewVDPageFileType::isComplete() const
 {
     /* Make sure medium format is correct: */
     return !mediumFormat().isNull();
 }
 
-int UIWizardNewVDPageBasic1::nextId() const
+int UIWizardNewVDPageFileType::nextId() const
 {
     /* Show variant page only if there is something to show: */
     CMediumFormat mf = mediumFormat();
