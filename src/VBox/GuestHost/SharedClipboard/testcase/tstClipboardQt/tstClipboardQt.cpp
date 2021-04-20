@@ -17,7 +17,7 @@
 
 #include <QApplication>
 #include <QMainWindow>
-#include <QLabel>
+#include <QTextEdit>
 #include <QHBoxLayout>
 int main(int argc, char *argv[])
 {
@@ -27,9 +27,8 @@ int main(int argc, char *argv[])
     window.setCentralWidget(pWidget);
     QHBoxLayout *pLayout = new QHBoxLayout(pWidget);
 
-    QLabel *pLabel = new QLabel;
-    pLabel->setText("Label is here");
-    pLayout->addWidget(pLabel);
+    QTextEdit *pTextEdit = new QTextEdit;
+    pLayout->addWidget(pTextEdit);
 
 
     window.show();
