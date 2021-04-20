@@ -28,7 +28,7 @@
 #include "UIWizardPage.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageVariant.h"
-#include "UIWizardNewVDPageBasic3.h"
+#include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -81,7 +81,7 @@ class UIWizardNewVMPageDisk : public UIWizardPage,
                                 public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPageBaseFileType,
                                 public UIWizardNewVDPageBaseVariant,
-                                public UIWizardNewVDPage3
+                                public UIWizardNewVDPageBaseSizeLocation
 {
     Q_OBJECT;
     Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);

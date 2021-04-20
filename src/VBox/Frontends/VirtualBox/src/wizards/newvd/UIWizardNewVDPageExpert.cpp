@@ -45,7 +45,7 @@
 
 
 UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
-    : UIWizardNewVDPage3(strDefaultName, strDefaultPath)
+    : UIWizardNewVDPageBaseSizeLocation(strDefaultName, strDefaultPath)
     , m_pFormatGroupBox(0)
     , m_pVariantGroupBox(0)
     , m_pLocationGroupBox(0)
@@ -154,7 +154,7 @@ void UIWizardNewVDPageExpert::retranslateUi()
 {
     UIWizardNewVDPageBaseFileType::retranslateWidgets();
     UIWizardNewVDPageBaseVariant::retranslateWidgets();
-    UIWizardNewVDPage3::retranslateWidgets();
+    UIWizardNewVDPageBaseSizeLocation::retranslateWidgets();
     /* Translate widgets: */
     if (m_pLocationGroupBox)
         m_pLocationGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &location"));
@@ -216,7 +216,7 @@ bool UIWizardNewVDPageExpert::validatePage()
     }
 
     /* Make sure we are passing FAT size limitation: */
-    fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+    fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
                                                          fieldImp("mediumPath").toString(),
                                                          fieldImp("mediumSize").toULongLong());
     if (!fResult)

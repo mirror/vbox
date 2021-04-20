@@ -23,7 +23,7 @@
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageVariant.h"
-#include "UIWizardNewVDPageBasic3.h"
+#include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVDPageExpert.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
@@ -127,7 +127,7 @@ void UIWizardNewVD::prepare()
         {
             setPage(Page1, new UIWizardNewVDPageFileType);
             setPage(Page2, new UIWizardNewVDPageVariant);
-            setPage(Page3, new UIWizardNewVDPageBasic3(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            setPage(Page3, new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
         case WizardMode_Expert:

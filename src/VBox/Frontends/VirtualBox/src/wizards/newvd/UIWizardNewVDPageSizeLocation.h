@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic3 class declaration.
+ * VBox Qt GUI - UIWizardNewVDPageSizeLocation class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic3_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic3_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,7 +34,7 @@ class UIMediumSizeEditor;
 
 
 /* 3rd page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPage3 : public UIWizardPageBase
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseSizeLocation : public UIWizardPageBase
 {
 
 public:
@@ -45,8 +45,8 @@ public:
 
 protected:
 
-    UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath);
-    UIWizardNewVDPage3();
+    UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath);
+    UIWizardNewVDPageBaseSizeLocation();
 
     void onSelectLocationButtonClicked();
 
@@ -88,7 +88,7 @@ protected:
 
 
 /* 3rd page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic3 : public UIWizardPage, public UIWizardNewVDPage3
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UIWizardPage, public UIWizardNewVDPageBaseSizeLocation
 {
     Q_OBJECT;
     Q_PROPERTY(QString mediumPath READ mediumPath);
@@ -96,7 +96,7 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic3 : public UIWizardPage, public
 
 public:
 
-    UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVDPageSizeLocation(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
 
 protected:
 
@@ -119,4 +119,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageBasic3_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardNewVDPageSizeLocation class implementation.
  */
 
 /*
@@ -26,7 +26,7 @@
 #include <QSpacerItem>
 
 /* GUI includes: */
-#include "UIWizardNewVDPageBasic3.h"
+#include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
@@ -46,7 +46,7 @@
 #include <iprt/path.h>
 
 
-UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
+UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uMediumSizeMin(_4M)
@@ -60,7 +60,7 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
 {
 }
 
-UIWizardNewVDPage3::UIWizardNewVDPage3()
+UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation()
     : m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pLocationEditor(0)
@@ -72,7 +72,7 @@ UIWizardNewVDPage3::UIWizardNewVDPage3()
 {
 }
 
-void UIWizardNewVDPage3::onSelectLocationButtonClicked()
+void UIWizardNewVDPageBaseSizeLocation::onSelectLocationButtonClicked()
 {
     /* Get current folder and filename: */
     QFileInfo fullFilePath(mediumPath());
@@ -129,7 +129,7 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
 }
 
 /* static */
-QString UIWizardNewVDPage3::toFileName(const QString &strName, const QString &strExtension)
+QString UIWizardNewVDPageBaseSizeLocation::toFileName(const QString &strName, const QString &strExtension)
 {
     /* Convert passed name to native separators (it can be full, actually): */
     QString strFileName = QDir::toNativeSeparators(strName);
@@ -148,7 +148,7 @@ QString UIWizardNewVDPage3::toFileName(const QString &strName, const QString &st
 }
 
 /* static */
-QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strPath)
+QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath)
 {
     /* Wrap file-info around received file name: */
     QFileInfo fileInfo(strFileName);
@@ -163,7 +163,7 @@ QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const Q
 }
 
 /*static */
-QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension)
+QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension)
 {
     QString strFilePath = absoluteFilePath(strFileName, strPath);
     if (QFileInfo(strFilePath).suffix().isEmpty())
@@ -172,7 +172,7 @@ QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const Q
 }
 
 /* static */
-QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRef)
+QString UIWizardNewVDPageBaseSizeLocation::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
     if (!mediumFormatRef.isNull())
     {
@@ -190,7 +190,7 @@ QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRe
 }
 
 /* static */
-bool UIWizardNewVDPage3::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
+bool UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
 {
     /* If the hard disk is split into 2GB parts then no need to make further checks: */
     if (uVariant & KMediumVariant_VmdkSplit2G)
@@ -212,26 +212,26 @@ bool UIWizardNewVDPage3::checkFATSizeLimitation(const qulonglong uVariant, const
     return true;
 }
 
-QString UIWizardNewVDPage3::mediumPath() const
+QString UIWizardNewVDPageBaseSizeLocation::mediumPath() const
 {
     if (!m_pLocationEditor)
         return QString();
     return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
 }
 
-qulonglong UIWizardNewVDPage3::mediumSize() const
+qulonglong UIWizardNewVDPageBaseSizeLocation::mediumSize() const
 {
     return m_pMediumSizeEditor ? m_pMediumSizeEditor->mediumSize() : 0;
 }
 
-void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
+void UIWizardNewVDPageBaseSizeLocation::setMediumSize(qulonglong uMediumSize)
 {
     if (m_pMediumSizeEditor)
         m_pMediumSizeEditor->setMediumSize(uMediumSize);
 }
 
 /* static */
-QString UIWizardNewVDPage3::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
+QString UIWizardNewVDPageBaseSizeLocation::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
 {
     QString result(strFileName);
     foreach (const QString &strExtension, formatExtensions)
@@ -248,7 +248,7 @@ QString UIWizardNewVDPage3::stripFormatExtension(const QString &strFileName, con
     return result;
 }
 
-void UIWizardNewVDPage3::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
+void UIWizardNewVDPageBaseSizeLocation::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
 {
     /* Compose virtual-disk extension: */
     m_strDefaultExtension = defaultExtension(mediumFormat);
@@ -267,7 +267,7 @@ void UIWizardNewVDPage3::updateLocationEditorAfterFormatChange(const CMediumForm
     }
 }
 
-void UIWizardNewVDPage3::retranslateWidgets()
+void UIWizardNewVDPageBaseSizeLocation::retranslateWidgets()
 {
     if (m_pLocationOpenButton)
         m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
@@ -283,8 +283,8 @@ void UIWizardNewVDPage3::retranslateWidgets()
         m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
 }
 
-UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
-    : UIWizardNewVDPage3(strDefaultName, strDefaultPath)
+UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
+    : UIWizardNewVDPageBaseSizeLocation(strDefaultName, strDefaultPath)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -312,29 +312,29 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
     }
 
     /* Setup connections: */
-    connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageBasic3::completeChanged);
-    connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked);
-    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
+    connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageSizeLocation::completeChanged);
+    connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
+    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageSizeLocation::completeChanged);
 
     /* Register fields: */
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumSize", this, "mediumSize");
 }
 
-void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
+void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 {
     /* Call to base-class: */
     onSelectLocationButtonClicked();
 }
 
-void UIWizardNewVDPageBasic3::retranslateUi()
+void UIWizardNewVDPageSizeLocation::retranslateUi()
 {
     retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("File location and size"));
 }
 
-void UIWizardNewVDPageBasic3::initializePage()
+void UIWizardNewVDPageSizeLocation::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -346,7 +346,7 @@ void UIWizardNewVDPageBasic3::initializePage()
         m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
-bool UIWizardNewVDPageBasic3::isComplete() const
+bool UIWizardNewVDPageSizeLocation::isComplete() const
 {
     if (!m_pLocationEditor)
         return false;
@@ -355,7 +355,7 @@ bool UIWizardNewVDPageBasic3::isComplete() const
            mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
 }
 
-bool UIWizardNewVDPageBasic3::validatePage()
+bool UIWizardNewVDPageSizeLocation::validatePage()
 {
     /* Initial result: */
     bool fResult = true;

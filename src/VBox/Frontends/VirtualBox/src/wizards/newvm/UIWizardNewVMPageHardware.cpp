@@ -28,7 +28,7 @@
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageHardware.h"
-#include "UIWizardNewVDPageBasic3.h"
+#include "UIWizardNewVDPageSizeLocation.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"

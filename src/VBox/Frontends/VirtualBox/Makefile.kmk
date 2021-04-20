@@ -910,7 +910,7 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDPageFileType.h \
 	src/wizards/newvd/UIWizardNewVDPageVariant.h \
-	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
+	src/wizards/newvd/UIWizardNewVDPageSizeLocation.h \
 	src/wizards/newvd/UIWizardNewVDPageExpert.h
 
 ifdef VBOX_WITH_QHELP_VIEWER
@@ -1448,7 +1448,7 @@ UICommon_SOURCES = \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDPageFileType.cpp \
 	src/wizards/newvd/UIWizardNewVDPageVariant.cpp \
-	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
+	src/wizards/newvd/UIWizardNewVDPageSizeLocation.cpp \
 	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
 
 ifdef VBOX_WITH_QHELP_VIEWER

@@ -67,7 +67,7 @@ protected:
     bool createVirtualDisk();
 
     /* Who will be able to create virtual-disk: */
-    friend class UIWizardNewVDPageBasic3;
+    friend class UIWizardNewVDPageSizeLocation;
     friend class UIWizardNewVDPageExpert;
 
 private:

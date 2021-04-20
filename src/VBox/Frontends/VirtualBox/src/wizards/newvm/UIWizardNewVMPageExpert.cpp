@@ -159,7 +159,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPageDiskBase::retranslateWidgets();
     UIWizardNewVDPageBaseFileType::retranslateWidgets();
     UIWizardNewVDPageBaseVariant::retranslateWidgets();
-    UIWizardNewVDPage3::retranslateWidgets();
+    UIWizardNewVDPageBaseSizeLocation::retranslateWidgets();
 
     if (m_pToolBox)
     {
@@ -488,7 +488,7 @@ bool UIWizardNewVMPageExpert::validatePage()
             return fResult;
         }
         /* Check FAT size limitation of the host hard drive: */
-        fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+        fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
                                                              fieldImp("mediumPath").toString(),
                                                              fieldImp("mediumSize").toULongLong());
         if (!fResult)
