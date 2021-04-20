@@ -53,6 +53,10 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 	export VBOX_LOG_DEST=nofile; $(tstClipboardGH-X11Smoke_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+  include $(PATH_SUB_CURRENT)/tstClipboardQt/Makefile.kmk
+
+
+
  endif
 endif
 
