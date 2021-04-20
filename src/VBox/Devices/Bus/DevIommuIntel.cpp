@@ -834,12 +834,60 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 
 
 /**
+ * Raises an interrupt in response to an event.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThis       The shared DMAR device state.
+ * @param   pThisCC     The current-context DMAR device state.
+ */
+static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns, PDMAR pThis, PCDMARCC pThisCC)
+{
+#ifdef RT_STRICT
+    {
+        uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+        uint32_t const fFaultMask = VTD_BF_FSTS_REG_PPF_MASK | VTD_BF_FSTS_REG_PFO_MASK
+                               /* | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_AFO_MASK */    /* AFL not supported */
+                               /* | VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK */    /* Device-TLBs not supported */
+                                  | VTD_BF_FSTS_REG_IQE_MASK;
+        Assert(uFstsReg & fFaultMask);
+    }
+#endif
+
+    uint32_t uFectlReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FECTL_REG);
+    if (!(uFectlReg & VTD_BF_FECTL_REG_IM_MASK))
+    {
+        MSIMSG Msi;
+        Msi.Addr.u64 = RT_MAKE_U64(dmarRegRead32(pThis, VTD_MMIO_OFF_FEADDR_REG),
+                                   dmarRegRead32(pThis, VTD_MMIO_OFF_FEUADDR_REG));
+        Msi.Data.u32 = dmarRegRead32(pThis, VTD_MMIO_OFF_FEDATA_REG);
+
+        /** @todo Assert Msi.Addr is in the MSR_IA32_APICBASE_ADDR range and ensure on
+         *        FEADD_REG write it can't be anything else. */
+
+        /* Software has unmasked the interrupt, raise it. */
+        pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
+
+        /* Clear interrupt pending bit. */
+        uFectlReg &= ~VTD_BF_FECTL_REG_IP_MASK;
+        dmarRegWrite32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
+    }
+    else
+    {
+        /* Interrupt is masked, set the interrupt pending bit. */
+        uFectlReg |= VTD_BF_FECTL_REG_IP_MASK;
+        dmarRegWrite32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
+    }
+}
+
+
+#if 0
+/**
  * Checks whether a primary fault can be recorded.
  *
  * @returns @c true if the fault can be recorded, @c false otherwise.
  * @param   pThis   The shared DMAR device state.
  */
-static bool dmarFaultCanRecord(PDMAR pThis)
+static bool dmarPrimaryFaultCanRecord(PDMAR pThis)
 {
     uint32_t uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
     if (uFstsReg & VTD_BF_FSTS_REG_PFO_MASK)
@@ -865,6 +913,7 @@ static bool dmarFaultCanRecord(PDMAR pThis)
     dmarRegWrite32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
     return true;
 }
+#endif
 
 
 /**
@@ -874,7 +923,7 @@ static bool dmarFaultCanRecord(PDMAR pThis)
  * @param   enmIqei     The IQE information.
  * @param   enmDiag     The diagnostic reason.
  */
-static void dmarFaultRecordIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
+static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
@@ -882,9 +931,6 @@ static void dmarFaultRecordIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
 
     /* Always update the latest diagnostic reason. */
     pThis->enmDiag = enmDiag;
-
-    if (!dmarFaultCanRecord(pThis))
-        return;
 
     /* Set the error bit. */
     uint32_t const fIqe = RT_BF_MAKE(VTD_BF_FSTS_REG_IQE, 1);
@@ -894,7 +940,7 @@ static void dmarFaultRecordIqe(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
     uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
     dmarRegChange64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
 
-    /** @todo Raise interrupt based on FECTL_REG. */
+    dmarFaultRaiseInterrupt(pDevIns, pThis, pThisCC);
 }
 
 
@@ -964,7 +1010,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
              *        something. */
         }
         else
-            dmarFaultRecordIqe(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
+            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
     return VINF_SUCCESS;
 }
