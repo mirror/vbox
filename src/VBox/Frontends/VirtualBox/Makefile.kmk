@@ -303,7 +303,8 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/clonevd \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
-	./src/wizards/firstrun
+	./src/wizards/firstrun \
+	./src/wizards/editors
 
 VBOX_GUI_INC_DIRS += \
 	./src/manager \
