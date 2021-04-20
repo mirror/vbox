@@ -595,27 +595,11 @@ DECLINLINE(uint8_t const*) dmarRegGetGroupRo(PCDMAR pThis, uint16_t offReg, uint
 
 
 /**
- * Writes a 64-bit register with the exactly the supplied value.
- *
- * @param   pThis       The shared DMAR device state.
- * @param   offReg      The MMIO offset of the register.
- * @param   uReg        The 64-bit value to write.
- */
-static void dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
-{
-    uint8_t idxGroup;
-    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
-    NOREF(idxGroup);
-    *(uint64_t *)(pabRegs + offReg) = uReg;
-}
-
-
-/**
  * Writes a 32-bit register with the exactly the supplied value.
  *
- * @param   pThis       The shared DMAR device state.
- * @param   offReg      The MMIO offset of the register.
- * @param   uReg        The 32-bit value to write.
+ * @param   pThis   The shared DMAR device state.
+ * @param   offReg  The MMIO offset of the register.
+ * @param   uReg    The 32-bit value to write.
  */
 static void dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 {
@@ -627,12 +611,26 @@ static void dmarRegWriteRaw32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 
 
 /**
+ * Writes a 64-bit register with the exactly the supplied value.
+ *
+ * @param   pThis   The shared DMAR device state.
+ * @param   offReg  The MMIO offset of the register.
+ * @param   uReg    The 64-bit value to write.
+ */
+static void dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
+{
+    uint8_t idxGroup;
+    uint8_t *pabRegs = dmarRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    NOREF(idxGroup);
+    *(uint64_t *)(pabRegs + offReg) = uReg;
+}
+
+
+/**
  * Reads a 32-bit register with exactly the value it contains.
  *
- * @param   pThis       The shared DMAR device state.
- * @param   offReg      The MMIO offset of the register.
- * @param   fAndMask    The AND mask (applied first).
- * @param   fOrMask     The OR mask.
+ * @param   pThis   The shared DMAR device state.
+ * @param   offReg  The MMIO offset of the register.
  */
 static uint32_t dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg)
 {
@@ -646,8 +644,8 @@ static uint32_t dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg)
 /**
  * Reads a 64-bit register with exactly the value it contains.
  *
- * @param   pThis       The shared DMAR device state.
- * @param   offReg      The MMIO offset of the register.
+ * @param   pThis   The shared DMAR device state.
+ * @param   offReg  The MMIO offset of the register.
  */
 static uint32_t dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg)
 {
@@ -705,34 +703,6 @@ static void dmarRegReadRaw64Ex(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, u
 
 
 /**
- * Writes a 64-bit register as it would be when written by software.
- * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
- *
- * @returns The value that's actually written to the register.
- * @param   pThis   The shared DMAR device state.
- * @param   offReg  The MMIO offset of the register.
- * @param   uReg    The 64-bit value to write.
- */
-static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
-{
-    /* Read current value from the 64-bit register. */
-    uint64_t uCurReg;
-    uint64_t fRwMask;
-    uint64_t fRw1cMask;
-    dmarRegReadRaw64Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
-
-    uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
-    uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
-    uint64_t const fRw1cBits = uReg & fRw1cMask;        /* Clear 1s written to RW1C bits. */
-    uint64_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
-
-    /* Write new value to the 64-bit register. */
-    dmarRegWriteRaw64(pThis, offReg, uNewReg);
-    return uNewReg;
-}
-
-
-/**
  * Writes a 32-bit register as it would be when written by software.
  * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
@@ -761,15 +731,30 @@ static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
 
 
 /**
- * Reads a 64-bit register as it would be when read by software.
+ * Writes a 64-bit register as it would be when written by software.
+ * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
  *
- * @returns The 64-bit register value.
+ * @returns The value that's actually written to the register.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
+ * @param   uReg    The 64-bit value to write.
  */
-static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
+static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 {
-    return dmarRegReadRaw64(pThis, offReg);
+    /* Read current value from the 64-bit register. */
+    uint64_t uCurReg;
+    uint64_t fRwMask;
+    uint64_t fRw1cMask;
+    dmarRegReadRaw64Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+
+    uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
+    uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
+    uint64_t const fRw1cBits = uReg & fRw1cMask;        /* Clear 1s written to RW1C bits. */
+    uint64_t const uNewReg   = (fRoBits | fRwBits) & ~fRw1cBits;
+
+    /* Write new value to the 64-bit register. */
+    dmarRegWriteRaw64(pThis, offReg, uNewReg);
+    return uNewReg;
 }
 
 
@@ -783,6 +768,19 @@ static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
 static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
 {
     return dmarRegReadRaw32(pThis, offReg);
+}
+
+
+/**
+ * Reads a 64-bit register as it would be when read by software.
+ *
+ * @returns The 64-bit register value.
+ * @param   pThis   The shared DMAR device state.
+ * @param   offReg  The MMIO offset of the register.
+ */
+static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
+{
+    return dmarRegReadRaw64(pThis, offReg);
 }
 
 
