@@ -624,7 +624,7 @@ VBOX_WITH_NVME_IMPL = 1
 # Storage related debug drivers
 VBOX_WITH_DRV_DISK_INTEGRITY = 1
 # Enables the AMD IOMMU
-#VBOX_WITH_IOMMU_AMD = 1
+VBOX_WITH_IOMMU_AMD = 1
 # Enables the Intel IOMMU
 #VBOX_WITH_IOMMU_INTEL = 1
 # Enables the new DBGF tracing framework
