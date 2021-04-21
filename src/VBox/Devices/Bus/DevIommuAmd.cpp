@@ -7134,8 +7134,8 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp), VERR_IOMMU_IPE_1);
-    AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32Version == CTX_SUFF(PDM_IOMMUHLP)_VERSION, VERR_VERSION_MISMATCH);
-    AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd  == CTX_SUFF(PDM_IOMMUHLP)_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32Version == CTX_MID(PDM_IOMMUHLP,_VERSION), VERR_VERSION_MISMATCH);
+    AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd  == CTX_MID(PDM_IOMMUHLP,_VERSION), VERR_VERSION_MISMATCH);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,        VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock,      VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLockIsOwner, VERR_INVALID_POINTER);
