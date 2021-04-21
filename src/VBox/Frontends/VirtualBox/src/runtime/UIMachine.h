@@ -72,6 +72,11 @@ public:
     /** Requests async visual-state change. */
     void asyncChangeVisualState(UIVisualStateType visualStateType);
 
+    /** Requests visual-state to be entered when possible. */
+    void setRequestedVisualState(UIVisualStateType visualStateType);
+    /** Returns requested visual-state to be entered when possible. */
+    UIVisualStateType requestedVisualState() const;
+
     /** Close Runtime UI. */
     void closeRuntimeUI();
 
@@ -116,6 +121,8 @@ private:
     UIVisualStateType m_initialVisualState;
     /** Holds current visual state. */
     UIVisualStateType m_visualState;
+    /** Holds visual state which should be entered when possible. */
+    UIVisualStateType m_enmRequestedVisualState;
     /** Holds current machine-logic. */
     UIMachineLogic *m_pMachineLogic;
 };

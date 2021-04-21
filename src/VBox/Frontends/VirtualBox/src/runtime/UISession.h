@@ -178,9 +178,9 @@ public:
     /** Requests visual-state change. */
     void changeVisualState(UIVisualStateType visualStateType);
     /** Requests visual-state to be entered when possible. */
-    void setRequestedVisualState(UIVisualStateType visualStateType) { m_requestedVisualStateType = visualStateType; }
+    void setRequestedVisualState(UIVisualStateType visualStateType);
     /** Returns requested visual-state to be entered when possible. */
-    UIVisualStateType requestedVisualState() const { return m_requestedVisualStateType; }
+    UIVisualStateType requestedVisualState() const;
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
@@ -526,12 +526,6 @@ private:
     /** Holds redefined machine-window name postfix. */
     QString m_strMachineWindowNamePostfix;
 #endif
-    /** @} */
-
-    /** @name Visual-state configuration variables.
-     ** @{ */
-    /** Determines which visual-state should be entered when possible. */
-    UIVisualStateType m_requestedVisualStateType;
     /** @} */
 
 #if defined(VBOX_WS_WIN)
