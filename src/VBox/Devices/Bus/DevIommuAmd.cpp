@@ -5211,7 +5211,7 @@ static int iommuAmdR3MmioSetup(PPDMDEVINS pDevIns)
     int rc = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
     if (RT_FAILURE(rc))
     {
-        LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", rc));
+        LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rc));
         return rc;
     }
 
