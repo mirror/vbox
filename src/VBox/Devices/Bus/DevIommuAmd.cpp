@@ -696,11 +696,18 @@ typedef FNIOPAGELOOKUP      *PFNIOPAGELOOKUP;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if defined(IN_RING3) || defined(LOG_ENABLED)
+/**
+ * The IOMMU I/O permission names.
+ */
+static const char * const g_aszPerm[] = { "none", "read", "write", "read+write" };
+
 /**
  * An array of the number of device table segments supported.
  * Indexed by u2DevTabSegSup.
  */
 static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
+#endif
 
 /**
  * An array of the masks to select the device table segment index from a device ID.
@@ -718,11 +725,6 @@ static uint8_t const g_auDevTabSegShifts[] = { 0, 15, 14, 13 };
  * Indexed by the device table segment index.
  */
 static uint16_t const g_auDevTabSegMaxSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
-
-/**
- * The IOMMU I/O permission names.
- */
-static const char * const g_aszPerm[] = { "none", "read", "write", "read+write" };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
