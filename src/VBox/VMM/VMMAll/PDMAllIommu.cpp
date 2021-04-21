@@ -74,8 +74,12 @@ DECL_FORCE_INLINE(uint16_t) pdmIommuGetPciDeviceId(PPDMDEVINS pDevIns, PPDMPCIDE
  */
 bool pdmIommuIsPresent(PPDMDEVINS pDevIns)
 {
-    PPDMIOMMU pIommu = PDMDEVINS_TO_IOMMU(pDevIns);
-    return pIommu != 0;
+#ifdef IN_RING0
+    PCPDMIOMMUR3 pIommuR3 = &pDevIns->Internal.s.pGVM->pdm.s.aIommus[0];
+#else
+    PCPDMIOMMUR3 pIommuR3 = &pDevIns->Internal.s.pVMR3->pdm.s.aIommus[0];
+#endif
+    return pIommuR3->pDevInsR3 != NULL;
 }
 
 
@@ -95,6 +99,8 @@ int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMS
         }
         return rc;
     }
+    /** @todo Should we return an rc such that we can reschedule to R3 if R0 isn't
+     *        enabled?  Is that even viable with the state the I/O APIC would be in? */
     return VERR_IOMMU_NOT_PRESENT;
 }
 
