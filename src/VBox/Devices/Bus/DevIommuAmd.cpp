@@ -987,6 +987,7 @@ static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint
 }
 
 
+# ifdef IN_RING3
 /**
  * Removes a DTE cache entry.
  *
@@ -1010,7 +1011,6 @@ static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 }
 
 
-# ifdef IN_RING3
 /**
  * Removes all entries in the device table entry cache.
  *
