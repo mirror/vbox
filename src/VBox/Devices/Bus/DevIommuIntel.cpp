@@ -110,7 +110,7 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 #define DMAR_MMIO_GROUP_1_SIZE                      (DMAR_MMIO_GROUP_1_OFF_END - DMAR_MMIO_GROUP_1_OFF_FIRST)
 
 /** DMAR implementation's major version number (exposed to software).
- *  We report 6 as the major version since we support queued invalidations as
+ *  We report 6 as the major version since we support queued-invalidations as
  *  software may make assumptions based on that.
  *
  *  See Intel VT-d spec. 10.4.7 "Context Command Register" (CCMD_REG.CAIG). */
@@ -170,10 +170,10 @@ typedef struct DMAR
 
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
-    /** The event semaphore the queued-invalidation thread waits on. */
-    SUPSEMEVENT                 hEvtQueuedInvThread;
-    /** Whether the queued-invalidation thread has been signaled. */
-    bool volatile               fQueuedInvThreadSignaled;
+    /** The event semaphore the invalidation-queue thread waits on. */
+    SUPSEMEVENT                 hEvtInvQueue;
+    /** Whether the invalidation-queue thread has been signaled. */
+    bool volatile               fInvQueueThreadSignaled;
     /** Padding. */
     bool                        afPadding0[3];
     /** Error diagnostic. */
@@ -232,8 +232,8 @@ typedef struct DMARR3
     PPDMDEVINSR3                pDevInsR3;
     /** The IOMMU helper. */
     R3PTRTYPE(PCPDMIOMMUHLPR3)  pIommuHlpR3;
-    /** The queued-invalidation thread. */
-    R3PTRTYPE(PPDMTHREAD)       pQueuedInvThread;
+    /** The invalidation-queue thread. */
+    R3PTRTYPE(PPDMTHREAD)       pInvQueueThread;
 } DMARR3;
 /** Pointer to the ring-3 DMAR device state. */
 typedef DMARR3 *PDMARR3;
@@ -850,6 +850,68 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 
 
 /**
+ * Checks whether the invalidation-queue is empty.
+ *
+ * @returns @c true if empty, @c false otherwise.
+ * @param   pThis   The shared DMAR device state.
+ */
+static bool dmarInvQueueIsEmpty(PCDMAR pThis)
+{
+    uint64_t const uIqtReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQT_REG);
+    uint32_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
+
+    uint64_t const uIqhReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQH_REG);
+    uint32_t const offQueueHead = VTD_IQT_REG_GET_QH(uIqhReg);
+
+    return offQueueTail == offQueueHead;
+}
+
+
+/**
+ * Checks whether the invalidation-queue is capable of processing requests.
+ *
+ * @returns @c true if the invalidation-queue can be processed, @c false otherwise.
+ * @param   pThis   The shared DMAR device state.
+ */
+static bool dmarInvQueueCanProcessRequests(PCDMAR pThis)
+{
+    /* Check if queued-invalidation is enabled. */
+    uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    if (uGstsReg & VTD_BF_GSTS_REG_QIES_MASK)
+    {
+        /* Check if there are no IQ errors and that the queue isn't empty. */
+        uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+        if (   !(uFstsReg & VTD_BF_FSTS_REG_IQE_MASK)
+            && !dmarInvQueueIsEmpty(pThis))
+            return true;
+    }
+    return false;
+}
+
+
+/**
+ * Wakes up the invalidation-queue thread if there are requests to be processed.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
+{
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    Log4Func(("\n"));
+
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    if (   dmarInvQueueCanProcessRequests(pThis)
+        && !ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, true))
+    {
+        Log4Func(("Signaling the invalidation-queue thread\n"));
+        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtInvQueue);
+    }
+}
+
+
+/**
  * Raises an interrupt in response to an event.
  *
  * @param   pDevIns     The IOMMU device instance.
@@ -1022,15 +1084,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
         uint8_t const  fDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
         if (   fDw != VTD_IQA_REG_DW_256_BIT
             || !(offQueueTail & 0x1f))
-        {
-            /* Don't bother waking the thread if an invalidation-queue error is pending. */
-            uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
-            if (!(uFstsReg & VTD_BF_FSTS_REG_IQE_MASK))
-            {
-                /** @todo Figure out what to do here, like waking up worker thread or
-                 *        something. */
-            }
-        }
+            dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
         else
             dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
@@ -1216,13 +1270,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef IN_RING3
 /**
- * The queued-invalidation thread function.
+ * The invalidation-queue thread.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   pThread     The command thread.
  */
-static DECLCALLBACK(int) dmarR3QueuedInvThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     NOREF(pThread);
     LogFlowFunc(("\n"));
@@ -1238,18 +1292,18 @@ static DECLCALLBACK(int) dmarR3QueuedInvThread(PPDMDEVINS pDevIns, PPDMTHREAD pT
         /*
          * Sleep until we are woken up.
          */
-        bool const fSignaled = ASMAtomicXchgBool(&pThis->fQueuedInvThreadSignaled, false);
+        bool const fSignaled = ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, false);
         if (!fSignaled)
         {
-            int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtQueuedInvThread, RT_INDEFINITE_WAIT);
+            int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtInvQueue, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
-            ASMAtomicWriteBool(&pThis->fQueuedInvThreadSignaled, false);
+            ASMAtomicWriteBool(&pThis->fInvQueueThreadSignaled, false);
         }
 
         /*
-         * Fetch and process queued-invalidation requests.
+         * Fetch and process invalidation requests.
          */
         DMAR_LOCK_RET(pDevIns, pThisR3, VERR_IGNORED);
         uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
@@ -1261,26 +1315,27 @@ static DECLCALLBACK(int) dmarR3QueuedInvThread(PPDMDEVINS pDevIns, PPDMTHREAD pT
         }
     }
 
-    LogFlowFunc(("Queued-invalidation thread terminating\n"));
+    LogFlowFunc(("Invalidation-queue thread terminating\n"));
     return VINF_SUCCESS;
 }
 
 
 /**
- * Wakes up the queued-invalidation thread so it can respond to a state change.
+ * Wakes up the invalidation-queue thread so it can respond to a state
+ * change.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   pThread     The queued-invalidation thread.
+ * @param   pThread     The invalidation-queue thread.
  *
  * @thread EMT.
  */
-static DECLCALLBACK(int) dmarR3QueuedInvThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) dmarR3InvQueueThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pThread);
     LogFlowFunc(("\n"));
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtQueuedInvThread);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtInvQueue);
 }
 
 
@@ -1378,7 +1433,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
     /* ECAP_REG */
     {
-        uint8_t const  fQi    = 1;                              /* Queued invalidations. */
+        uint8_t const  fQi    = 1;                              /* Queued-invalidations. */
         uint8_t const  fIr    = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);  /* Interrupt remapping support. */
         uint8_t const  fMhmv  = 0xf;                            /* Maximum handle mask value. */
         uint16_t const offIro = DMAR_MMIO_OFF_IVA_REG >> 4;     /* MMIO offset of IOTLB registers. */
@@ -1460,10 +1515,10 @@ static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     LogFlowFunc(("\n"));
 
-    if (pThis->hEvtQueuedInvThread != NIL_SUPSEMEVENT)
+    if (pThis->hEvtInvQueue != NIL_SUPSEMEVENT)
     {
-        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtQueuedInvThread);
-        pThis->hEvtQueuedInvThread = NIL_SUPSEMEVENT;
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtInvQueue);
+        pThis->hEvtInvQueue = NIL_SUPSEMEVENT;
     }
 
     return VINF_SUCCESS;
@@ -1594,16 +1649,16 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     dmarR3RegsInit(pDevIns);
 
     /*
-     * Create queued-invalidation thread and semaphore.
+     * Create invalidation-queue thread and semaphore.
      */
-    char szQueuedInvThread[32];
-    RT_ZERO(szQueuedInvThread);
-    RTStrPrintf(szQueuedInvThread, sizeof(szQueuedInvThread), "IOMMU-QI-%u", iInstance);
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThisR3->pQueuedInvThread, pThis, dmarR3QueuedInvThread, dmarR3QueuedInvThreadWakeUp,
-                               0 /* cbStack */, RTTHREADTYPE_IO, szQueuedInvThread);
+    char szInvQueueThread[32];
+    RT_ZERO(szInvQueueThread);
+    RTStrPrintf(szInvQueueThread, sizeof(szInvQueueThread), "IOMMU-QI-%u", iInstance);
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThisR3->pInvQueueThread, pThis, dmarR3InvQueueThread, dmarR3InvQueueThreadWakeUp,
+                               0 /* cbStack */, RTTHREADTYPE_IO, szInvQueueThread);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtQueuedInvThread);
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtInvQueue);
     AssertLogRelRCReturn(rc, rc);
 
     /*
