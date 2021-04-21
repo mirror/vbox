@@ -1010,6 +1010,7 @@ static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 }
 
 
+# ifdef IN_RING3
 /**
  * Removes all entries in the device table entry cache.
  *
@@ -1023,6 +1024,7 @@ static void iommuAmdDteCacheRemoveAll(PPDMDEVINS pDevIns)
     RT_ZERO(pThis->aDteCache);
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
 }
+# endif  /* IN_RING3 */
 #endif  /* IOMMU_WITH_DTE_CACHE */
 
 
