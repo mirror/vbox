@@ -4777,10 +4777,13 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 
     uint64_t uResult;
     VBOXSTRICTRC rcStrict = iommuAmdRegisterRead(pDevIns, off, &uResult);
-    if (cb == 8)
-        *(uint64_t *)pv = uResult;
-    else
-        *(uint32_t *)pv = (uint32_t)uResult;
+    if (rcStrict == VINF_SUCCESS)
+    {
+        if (cb == 8)
+            *(uint64_t *)pv = uResult;
+        else
+            *(uint32_t *)pv = (uint32_t)uResult;
+    }
 
     return rcStrict;
 }
