@@ -696,17 +696,19 @@ typedef FNIOPAGELOOKUP      *PFNIOPAGELOOKUP;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if defined(IN_RING3) || defined(LOG_ENABLED)
-/**
- * The IOMMU I/O permission names.
- */
-static const char * const g_aszPerm[] = { "none", "read", "write", "read+write" };
-
+#ifdef IN_RING3
 /**
  * An array of the number of device table segments supported.
  * Indexed by u2DevTabSegSup.
  */
 static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
+#endif
+
+#if defined(IN_RING3) || defined(LOG_ENABLED)
+/**
+ * The IOMMU I/O permission names.
+ */
+static const char * const g_aszPerm[] = { "none", "read", "write", "read+write" };
 #endif
 
 /**
