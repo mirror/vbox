@@ -42,6 +42,7 @@ class QVBoxLayout;
 class UIActionPool;
 class UIDialogPanel;
 class QIToolBar;
+class QIToolButton;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
@@ -235,6 +236,8 @@ private:
         bool  m_bWrapLines;
         QFont m_font;
     /** @} */
+    QIToolButton *m_pCornerButton;
+    QMenu *m_pMachineSelectionMenu;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
