@@ -38,7 +38,7 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 
-class DrvHostAudioDSoundMMNotifClient : IMMNotificationClient
+class DrvHostAudioDSoundMMNotifClient : public IMMNotificationClient
 {
 public:
 
@@ -77,9 +77,6 @@ private:
     IFACEMETHODIMP OnDeviceRemoved(LPCWSTR pwstrDeviceId);
     IFACEMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId);
     IFACEMETHODIMP OnPropertyValueChanged(LPCWSTR /*pwstrDeviceId*/, const PROPERTYKEY /*key*/) { return S_OK; }
-    IFACEMETHODIMP OnDeviceQueryRemove() { return S_OK; }
-    IFACEMETHODIMP OnDeviceQueryRemoveFailed() { return S_OK; }
-    IFACEMETHODIMP OnDeviceRemovePending() { return S_OK; }
     /** @} */
 
     /** @name IUnknown interface
