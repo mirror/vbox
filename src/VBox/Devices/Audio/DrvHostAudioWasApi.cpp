@@ -146,8 +146,6 @@ typedef struct DRVHOSTAUDIOWAS
 
     /** Pointer to the MM notification client instance. */
     DrvHostAudioWasMmNotifyClient  *pNotifyClient;
-    /** Serializing notifications and pre-activation. */
-    RTCRITSECT                      CritSectNotify;
 } DRVHOSTAUDIOWAS;
 /** Pointer to the data for a WASAPI host audio driver instance. */
 typedef DRVHOSTAUDIOWAS *PDRVHOSTAUDIOWAS;
@@ -1705,15 +1703,8 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pNotifyClient)
     {
-        Assert(RTCritSectIsInitialized(&pThis->CritSectNotify));
-        Assert(pThis->pIEnumerator);
-
-        RTCritSectEnter(&pThis->CritSectNotify);
         pThis->pNotifyClient->notifyDriverDestroyed();
-        RTCritSectLeave(&pThis->CritSectNotify);
-
         pThis->pIEnumerator->UnregisterEndpointNotificationCallback(pThis->pNotifyClient);
-
         pThis->pNotifyClient->Release();
     }
 
@@ -1723,9 +1714,6 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
         LogFlowFunc(("cRefs=%d\n", cRefs));
         CoUninitialize();
     }
-
-    if (RTCritSectIsInitialized(&pThis->CritSectNotify))
-        RTCritSectDelete(&pThis->CritSectNotify);
 
     if (RTCritSectRwIsInitialized(&pThis->CritSectList))
         RTCritSectRwDelete(&pThis->CritSectList);
@@ -1776,13 +1764,9 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /** @todo make it possible to override the default device selection. */
 
     /*
-     * Initialize the critical sections early as we use one of them for serializing
-     * the notification client de-registration.
+     * Initialize the critical section early.
      */
     int rc = RTCritSectRwInit(&pThis->CritSectList);
-    AssertRCReturn(rc, rc);
-
-    rc = RTCritSectInit(&pThis->CritSectNotify);
     AssertRCReturn(rc, rc);
 
     /*
