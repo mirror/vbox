@@ -66,6 +66,19 @@ DECL_FORCE_INLINE(uint16_t) pdmIommuGetPciDeviceId(PPDMDEVINS pDevIns, PPDMPCIDE
 }
 
 
+/**
+ * Returns whether an IOMMU instance is present.
+ *
+ * @returns @c true if an IOMMU is present, @c false otherwise.
+ * @param   pDevIns     The device instance.
+ */
+bool pdmIommuIsPresent(PPDMDEVINS pDevIns)
+{
+    PPDMIOMMU pIommu = PDMDEVINS_TO_IOMMU(pDevIns);
+    return pIommu != 0;
+}
+
+
 /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
 int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {

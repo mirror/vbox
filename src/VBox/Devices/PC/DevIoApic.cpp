@@ -535,21 +535,26 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         RT_ZERO(MsiOut);
         RT_ZERO(MsiIn);
         ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
-        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
+        int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
         if (RT_SUCCESS(rcRemap))
-        {
             STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
-            LogFlow(("IOAPIC: IOMMU remapped interrupt %#x to %#x\n", MsiIn.Data.n.u8Vector, MsiOut.Data.n.u8Vector));
-            ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
-            Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
-            Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
-        }
+        else if (rcRemap == VERR_IOMMU_NOT_PRESENT)
+            MsiOut = MsiIn;
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
-            Log(("IOAPIC: IOMMU discarded interrupt %#x. rc=%Rrc\n", ApicIntr.u8Vector, rcRemap));
             return;
         }
+
+        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+
+# ifdef RT_STRICT
+        if (RT_SUCCESS(rcRemap))
+        {
+            Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
+            Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
+        }
+# endif
 #endif
 
         uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
@@ -924,18 +929,17 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     {
         MSIMSG MsiOut;
         RT_ZERO(MsiOut);
-        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
+        int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
         if (RT_SUCCESS(rcRemap))
-        {
             STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
-            ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
-        }
+        else if (rcRemap == VERR_IOMMU_NOT_PRESENT)
+            MsiOut = *pMsi;
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
-            Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
             return;
         }
+        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
     }
     else
         ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);

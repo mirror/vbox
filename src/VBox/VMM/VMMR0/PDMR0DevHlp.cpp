@@ -1530,15 +1530,12 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
              pDevIns->iInstance, pMsiIn->Addr.u64, pMsiIn->Data.u32));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
-        return rc;
+    if (pdmIommuIsPresent(pDevIns))
+        return pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
 #else
     RT_NOREF(pDevIns, idDevice);
 #endif
-
-    *pMsiOut = *pMsiIn;
-    return VINF_SUCCESS;
+    return VERR_IOMMU_NOT_PRESENT;
 }
 
 

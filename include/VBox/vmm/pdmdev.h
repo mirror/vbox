@@ -1940,7 +1940,8 @@ typedef struct PDMIOAPICHLP
      * @param   pDevIns     Device instance of the IOAPIC.
      * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
-     * @param   pMsiOut     Where to store the remapped MSI.
+     * @param   pMsiOut     Where to store the remapped MSI (only updated when
+     *                      VINF_SUCCESS is returned).
      */
     DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
