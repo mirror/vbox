@@ -880,6 +880,25 @@ DECLINLINE(uint64_t) PDMAudioPropsFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32
 }
 
 /**
+ * Converts frames to NT ticks (100 ns units).
+ *
+ * @returns NT ticks.
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
+ * @note    No rounding here, result is floored.
+ */
+DECLINLINE(uint64_t) PDMAudioPropsFramesToNtTicks(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+{
+    AssertPtrReturn(pProps, 0);
+
+    /* Check input to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+        return ASMMultU32ByU32DivByU32(cFrames, RT_NS_1SEC / 100, uHz);
+    return 0;
+}
+
+/**
  * Converts milliseconds to frames.
  *
  * @returns Number of frames

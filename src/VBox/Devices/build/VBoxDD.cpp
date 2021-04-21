@@ -319,6 +319,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostDSound);
     if (RT_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostAudioWas);
+    if (RT_FAILURE(rc))
+        return rc;
 #endif
 #if defined(RT_OS_DARWIN)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostCoreAudio);
