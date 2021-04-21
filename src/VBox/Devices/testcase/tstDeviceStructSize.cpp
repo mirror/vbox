@@ -130,6 +130,11 @@
 # include "../Bus/DevPciRaw.cpp"
 #endif
 
+#ifdef VBOX_WITH_IOMMU_AMD
+# undef LOG_GROUP
+# include "../Bus/DevIommuAmd.cpp"
+#endif
+
 #include <VBox/vmm/pdmaudioifs.h>
 
 #undef LOG_GROUP
@@ -405,6 +410,15 @@ int main()
 #endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     CHECK_MEMBER_ALIGNMENT(PCIRAWSENDREQ, u.aGetRegionInfo.u64RegionSize, 8);
+#endif
+#ifdef VBOX_WITH_IOMMU_AMD
+    CHECK_MEMBER_ALIGNMENT(IOMMU, IommuBar, 8);
+    CHECK_MEMBER_ALIGNMENT(IOMMU, aDevTabBaseAddrs, 8);
+    CHECK_MEMBER_ALIGNMENT(IOMMU, CmdBufHeadPtr, 8);
+    CHECK_MEMBER_ALIGNMENT(IOMMU, Status, 8);
+# ifdef VBOX_WITH_STATISTICS
+    CHECK_MEMBER_ALIGNMENT(IOMMU, StatMmioReadR3, 8);
+# endif
 #endif
 
 #ifdef VBOX_WITH_RAW_MODE

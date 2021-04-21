@@ -143,6 +143,10 @@
 # undef LOG_GROUP
 # include "../Storage/DevNVMe.cpp"
 #endif
+#ifdef VBOX_WITH_IOMMU_AMD
+# undef LOG_GROUP
+# include "../Bus/DevIommuAmd.cpp"
+#endif
 
 /* Check that important preprocessor macros didn't get redefined: */
 #if defined(DEBUG)       != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_DEBUG)
@@ -2126,5 +2130,109 @@ int main()
 # endif
 #endif
 
+#ifdef VBOX_WITH_IOMMU_AMD
+# ifdef IOMMU_WITH_DTE_CACHE
+    GEN_CHECK_SIZE(DTECACHE);
+# endif
+# ifdef IOMMU_WITH_DTE_CACHE
+    GEN_CHECK_SIZE(IRTECACHE);
+# endif
+    GEN_CHECK_SIZE(IOMMU);
+    GEN_CHECK_OFF(IOMMU, idxIommu);
+    GEN_CHECK_OFF(IOMMU, u32Magic);
+    GEN_CHECK_OFF(IOMMU, hMmio);
+    GEN_CHECK_OFF(IOMMU, hEvtCmdThread);
+    GEN_CHECK_OFF(IOMMU, fCmdThreadSignaled);
+# ifdef IOMMU_WITH_DTE_CACHE
+    GEN_CHECK_OFF(IOMMU, CritSectCache);
+    GEN_CHECK_OFF(IOMMU, aDeviceIds);
+    GEN_CHECK_OFF(IOMMU, aDteCache);
+# endif
+# ifdef IOMMU_WITH_IRTE_CACHE
+    GEN_CHECK_OFF(IOMMU, aIrteCache);
+# endif
+    GEN_CHECK_OFF(IOMMU, IommuBar);
+    GEN_CHECK_OFF(IOMMU, aDevTabBaseAddrs);
+    GEN_CHECK_OFF(IOMMU, CmdBufBaseAddr);
+    GEN_CHECK_OFF(IOMMU, EvtLogBaseAddr);
+    GEN_CHECK_OFF(IOMMU, Ctrl);
+    GEN_CHECK_OFF(IOMMU, ExclRangeBaseAddr);
+    GEN_CHECK_OFF(IOMMU, ExclRangeLimit);
+    GEN_CHECK_OFF(IOMMU, ExtFeat);
+    GEN_CHECK_OFF(IOMMU, PprLogBaseAddr);
+    GEN_CHECK_OFF(IOMMU, HwEvtHi);
+    GEN_CHECK_OFF(IOMMU, HwEvtLo);
+    GEN_CHECK_OFF(IOMMU, HwEvtStatus);
+    GEN_CHECK_OFF(IOMMU, GALogBaseAddr);
+    GEN_CHECK_OFF(IOMMU, GALogTailAddr);
+    GEN_CHECK_OFF(IOMMU, PprLogBBaseAddr);
+    GEN_CHECK_OFF(IOMMU, EvtLogBBaseAddr);
+    GEN_CHECK_OFF(IOMMU, DevSpecificFeat);
+    GEN_CHECK_OFF(IOMMU, DevSpecificCtrl);
+    GEN_CHECK_OFF(IOMMU, DevSpecificStatus);
+    GEN_CHECK_OFF(IOMMU, MiscInfo);
+    GEN_CHECK_OFF(IOMMU, PerfOptCtrl);
+    GEN_CHECK_OFF(IOMMU, XtGenIntrCtrl);
+    GEN_CHECK_OFF(IOMMU, XtPprIntrCtrl);
+    GEN_CHECK_OFF(IOMMU, XtGALogIntrCtrl);
+    GEN_CHECK_OFF(IOMMU, aMarcApers);
+    GEN_CHECK_OFF(IOMMU, RsvdReg);
+    GEN_CHECK_OFF(IOMMU, CmdBufHeadPtr);
+    GEN_CHECK_OFF(IOMMU, CmdBufTailPtr);
+    GEN_CHECK_OFF(IOMMU, EvtLogHeadPtr);
+    GEN_CHECK_OFF(IOMMU, EvtLogTailPtr);
+    GEN_CHECK_OFF(IOMMU, Status);
+    GEN_CHECK_OFF(IOMMU, PprLogHeadPtr);
+    GEN_CHECK_OFF(IOMMU, PprLogTailPtr);
+    GEN_CHECK_OFF(IOMMU, GALogHeadPtr);
+    GEN_CHECK_OFF(IOMMU, GALogTailPtr);
+    GEN_CHECK_OFF(IOMMU, PprLogBHeadPtr);
+    GEN_CHECK_OFF(IOMMU, PprLogBTailPtr);
+    GEN_CHECK_OFF(IOMMU, EvtLogBHeadPtr);
+    GEN_CHECK_OFF(IOMMU, EvtLogBTailPtr);
+    GEN_CHECK_OFF(IOMMU, PprLogAutoResp);
+    GEN_CHECK_OFF(IOMMU, PprLogOverflowEarly);
+    GEN_CHECK_OFF(IOMMU, PprLogBOverflowEarly);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(IOMMU, StatMmioReadR3);
+    GEN_CHECK_OFF(IOMMU, StatMmioReadRZ);
+    GEN_CHECK_OFF(IOMMU, StatMmioWriteR3);
+    GEN_CHECK_OFF(IOMMU, StatMmioWriteRZ);
+    GEN_CHECK_OFF(IOMMU, StatMsiRemapR3);
+    GEN_CHECK_OFF(IOMMU, StatMsiRemapRZ);
+    GEN_CHECK_OFF(IOMMU, StatMemReadR3);
+    GEN_CHECK_OFF(IOMMU, StatMemReadRZ);
+    GEN_CHECK_OFF(IOMMU, StatMemWriteR3);
+    GEN_CHECK_OFF(IOMMU, StatMemWriteRZ);
+    GEN_CHECK_OFF(IOMMU, StatMemBulkReadR3);
+    GEN_CHECK_OFF(IOMMU, StatMemBulkReadRZ);
+    GEN_CHECK_OFF(IOMMU, StatMemBulkWriteR3);
+    GEN_CHECK_OFF(IOMMU, StatMemBulkWriteRZ);
+    GEN_CHECK_OFF(IOMMU, StatCmd);
+    GEN_CHECK_OFF(IOMMU, StatCmdCompWait);
+    GEN_CHECK_OFF(IOMMU, StatCmdInvDte);
+    GEN_CHECK_OFF(IOMMU, StatCmdInvIommuPages);
+    GEN_CHECK_OFF(IOMMU, StatCmdInvIotlbPages);
+    GEN_CHECK_OFF(IOMMU, StatCmdInvIntrTable);
+    GEN_CHECK_OFF(IOMMU, StatCmdPrefIommuPages);
+    GEN_CHECK_OFF(IOMMU, StatCmdCompletePprReq);
+    GEN_CHECK_OFF(IOMMU, StatCmdInvIommuAll);
+    GEN_CHECK_OFF(IOMMU, StatIotlbeCached);
+    GEN_CHECK_OFF(IOMMU, StatIotlbeLazyEvictReuse);
+    GEN_CHECK_OFF(IOMMU, StatProfDteLookup);
+    GEN_CHECK_OFF(IOMMU, StatProfIotlbeLookup);
+    GEN_CHECK_OFF(IOMMU, StatProfIrteLookup);
+    GEN_CHECK_OFF(IOMMU, StatProfIrteCacheLookup);
+    GEN_CHECK_OFF(IOMMU, StatAccessCacheHit);
+    GEN_CHECK_OFF(IOMMU, StatAccessCacheHitFull);
+    GEN_CHECK_OFF(IOMMU, StatAccessCacheMiss);
+    GEN_CHECK_OFF(IOMMU, StatAccessCacheNonContig);
+    GEN_CHECK_OFF(IOMMU, StatAccessCachePermDenied);
+    GEN_CHECK_OFF(IOMMU, StatAccessDteNonContig);
+    GEN_CHECK_OFF(IOMMU, StatAccessDtePermDenied);
+    GEN_CHECK_OFF(IOMMU, StatIntrCacheHit);
+    GEN_CHECK_OFF(IOMMU, StatIntrCacheMiss);
+# endif
+#endif
     return (0);
 }
