@@ -69,6 +69,10 @@ private slots:
 
     /** Revokes window activation. */
     void sltRevokeWindowActivation();
+
+    /** Handles signal about mini-toolbar auto-hide toggled.
+      * @param  fEnabled  Brings whether auto-hide is enabled. */
+    void sltHandleMiniToolBarAutoHideToggled(bool fEnabled);
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
 #ifdef RT_OS_DARWIN

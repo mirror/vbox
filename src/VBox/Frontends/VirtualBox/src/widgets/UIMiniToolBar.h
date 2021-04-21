@@ -65,6 +65,10 @@ signals:
     /** Notifies listeners about we stole window activation. */
     void sigNotifyAboutWindowActivationStolen();
 
+    /** Notifies listeners about auto-hide toggled.
+      * @param  fEnabled  Brings whether auto-hide is enabled. */
+    void sigAutoHideToggled(bool fEnabled);
+
 public:
 
     /** Proposes default set of window flags for particular platform. */

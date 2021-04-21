@@ -560,6 +560,7 @@ void UIMiniToolBar::sltAutoHideToggled()
 {
     /* Propagate from child: */
     setAutoHide(m_pToolbar->autoHide(), false);
+    emit sigAutoHideToggled(m_pToolbar->autoHide());
 }
 
 void UIMiniToolBar::sltHoverEnter()

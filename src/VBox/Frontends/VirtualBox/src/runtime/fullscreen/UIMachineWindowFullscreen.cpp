@@ -148,6 +148,13 @@ void UIMachineWindowFullscreen::sltRevokeWindowActivation()
 #endif /* VBOX_WS_X11 */
     activateWindow();
 }
+
+void UIMachineWindowFullscreen::sltHandleMiniToolBarAutoHideToggled(bool fEnabled)
+{
+    /* Save mini-toolbar settings: */
+    printf("save mini-toolbar auto-hide feature status as: %d\n", (int)fEnabled);
+    gEDataManager->setAutoHideMiniToolbar(fEnabled, uiCommon().managedVMUuid());
+}
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
 #ifdef VBOX_WS_MAC
@@ -281,6 +288,8 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                 actionPool()->action(UIActionIndex_M_Application_S_Close), &UIAction::trigger);
         connect(m_pMiniToolBar, &UIMiniToolBar::sigNotifyAboutWindowActivationStolen,
                 this, &UIMachineWindowFullscreen::sltRevokeWindowActivation, Qt::QueuedConnection);
+        connect(m_pMiniToolBar, &UIMiniToolBar::sigAutoHideToggled,
+                this, &UIMachineWindowFullscreen::sltHandleMiniToolBarAutoHideToggled);
     }
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
@@ -288,12 +297,6 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 void UIMachineWindowFullscreen::cleanupMiniToolbar()
 {
-    /* Make sure mini-toolbar was created: */
-    if (!m_pMiniToolBar)
-        return;
-
-    /* Save mini-toolbar settings: */
-    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), uiCommon().managedVMUuid());
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
