@@ -27,6 +27,12 @@
 #include <iprt/win/audioclient.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <AudioSessionTypes.h>
+#ifndef AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY
+# define AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY UINT32_C(0x08000000)
+#endif
+#ifndef AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
+# define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM UINT32_C(0x80000000)
+#endif
 
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
@@ -51,51 +57,110 @@
 *********************************************************************************************************************************/
 class DrvHostAudioWasMmNotifyClient;
 
+/** Pointer to the cache entry for a host audio device (+dir). */
+typedef struct DRVHOSTAUDIOWASCACHEDEV *PDRVHOSTAUDIOWASCACHEDEV;
+
+/**
+ * Cached pre-initialized audio client for a device.
+ *
+ * The activation and initialization of an IAudioClient has been observed to be
+ * very very slow (> 100 ms) and not suitable to be done on an EMT.  So, we'll
+ * pre-initialize the device clients at construction time and when the default
+ * device changes to try avoid this problem.
+ *
+ * A client is returned to the cache after we're done with it, provided it still
+ * works fine.
+ */
+typedef struct DRVHOSTAUDIOWASCACHEDEVCFG
+{
+    /** Entry in DRVHOSTAUDIOWASCACHEDEV::ConfigList. */
+    RTLISTNODE                  ListEntry;
+    /** The device.   */
+    PDRVHOSTAUDIOWASCACHEDEV    pDevEntry;
+    /** The cached audio client. */
+    IAudioClient               *pIAudioClient;
+    /** Output streams: The render client interface. */
+    IAudioRenderClient         *pIAudioRenderClient;
+    /** Input streams: The capture client interface. */
+    IAudioCaptureClient        *pIAudioCaptureClient;
+    /** The configuration. */
+    PDMAUDIOPCMPROPS            Props;
+    /** The buffer size in frames. */
+    uint32_t                    cFramesBufferSize;
+    /** The device/whatever period in frames. */
+    uint32_t                    cFramesPeriod;
+    /** The stringified properties. */
+    char                        szProps[32];
+} DRVHOSTAUDIOWASCACHEDEVCFG;
+/** Pointer to a pre-initialized audio client. */
+typedef DRVHOSTAUDIOWASCACHEDEVCFG *PDRVHOSTAUDIOWASCACHEDEVCFG;
+
+/**
+ * Per audio device (+ direction) cache entry.
+ */
+typedef struct DRVHOSTAUDIOWASCACHEDEV
+{
+    /** Entry in DRVHOSTAUDIOWAS::CacheHead. */
+    RTLISTNODE                  ListEntry;
+    /** The MM device associated with the stream. */
+    IMMDevice                  *pIDevice;
+    /** The direction of the device. */
+    PDMAUDIODIR                 enmDir;
+#if 0 /* According to https://social.msdn.microsoft.com/Forums/en-US/1d974d90-6636-4121-bba3-a8861d9ab92a,
+         these were always support just missing from the SDK. */
+    /** Support for AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM: -1=unknown, 0=no, 1=yes. */
+    int8_t                      fSupportsAutoConvertPcm;
+    /** Support for AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY: -1=unknown, 0=no, 1=yes. */
+    int8_t                      fSupportsSrcDefaultQuality;
+#endif
+    /** List of cached configurations (DRVHOSTAUDIOWASCACHEDEVCFG). */
+    RTLISTANCHOR                ConfigList;
+    /** The device ID length in RTUTF16 units. */
+    size_t                      cwcDevId;
+    /** The device ID. */
+    RTUTF16                     wszDevId[RT_FLEXIBLE_ARRAY];
+} DRVHOSTAUDIOWASCACHEDEV;
+
+
 /**
  * Data for a WASABI stream.
  */
 typedef struct DRVHOSTAUDIOWASSTREAM
 {
-    /** Entry in DRVHOSTAUDIOWAS::HeadStreams. */
-    RTLISTNODE              ListEntry;
+    /** Entry in DRVHOSTAUDIOWAS::StreamHead. */
+    RTLISTNODE                  ListEntry;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG       Cfg;
-    /** The MM device associated with the stream. */
-    IMMDevice              *pIDevice;
-    /** The audio client assoicated with the stream. */
-    IAudioClient           *pIAudioClient;
-    /** Output streams: The render client interface. */
-    IAudioRenderClient     *pIAudioRenderClient;
-    /** Input streams: The capture client interface. */
-    IAudioCaptureClient    *pIAudioCaptureClient;
+    PDMAUDIOSTREAMCFG           Cfg;
+    /** Cache entry to be relased when destroying the stream. */
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg;
 
     /** Set if the stream is enabled. */
-    bool                    fEnabled;
+    bool                        fEnabled;
     /** Set if the stream is started (playing/capturing). */
-    bool                    fStarted;
+    bool                        fStarted;
     /** Set if the stream is draining (output only). */
-    bool                    fDraining;
+    bool                        fDraining;
     /** Set if we should restart the stream on resume (saved pause state). */
-    bool                    fRestartOnResume;
+    bool                        fRestartOnResume;
 
     /** The RTTimeMilliTS() deadline for the draining of this stream (output). */
-    uint64_t                msDrainDeadline;
+    uint64_t                    msDrainDeadline;
     /** Internal stream offset (bytes). */
-    uint64_t                offInternal;
+    uint64_t                    offInternal;
     /** The RTTimeMilliTS() at the end of the last transfer. */
-    uint64_t                msLastTransfer;
+    uint64_t                    msLastTransfer;
 
     /** Input: Current capture buffer (advanced as we read). */
-    uint8_t                *pbCapture;
+    uint8_t                    *pbCapture;
     /** Input: The number of bytes left in the current capture buffer. */
-    uint32_t                cbCapture;
+    uint32_t                    cbCapture;
     /** Input: The full size of what pbCapture is part of (for ReleaseBuffer). */
-    uint32_t                cFramesCaptureToRelease;
+    uint32_t                    cFramesCaptureToRelease;
 
     /** Critical section protecting: . */
-    RTCRITSECT              CritSect;
+    RTCRITSECT                  CritSect;
     /** Buffer that drvHostWasStreamStatusString uses. */
-    char                    szStatus[128];
+    char                        szStatus[128];
 } DRVHOSTAUDIOWASSTREAM;
 /** Pointer to a WASABI stream. */
 typedef DRVHOSTAUDIOWASSTREAM *PDRVHOSTAUDIOWASSTREAM;
@@ -140,12 +205,18 @@ typedef struct DRVHOSTAUDIOWAS
     TMTIMERHANDLE                   hDrainTimer;
     /** List of streams (DRVHOSTAUDIOWASSTREAM).
      * Requires CritSect ownership.  */
-    RTLISTANCHOR                    HeadStreams;
-    /** Serializing access to HeadStreams. */
-    RTCRITSECTRW                    CritSectList;
+    RTLISTANCHOR                    StreamHead;
+    /** Serializing access to StreamHead. */
+    RTCRITSECTRW                    CritSectStreamList;
 
     /** Pointer to the MM notification client instance. */
     DrvHostAudioWasMmNotifyClient  *pNotifyClient;
+    /** List of cached devices (DRVHOSTAUDIOWASCACHEDEV).
+     * Protected by CritSectCache  */
+    RTLISTANCHOR                    CacheHead;
+    /** Serializing access to CacheHead. */
+    RTCRITSECT                      CritSectCache;
+
 } DRVHOSTAUDIOWAS;
 /** Pointer to the data for a WASAPI host audio driver instance. */
 typedef DRVHOSTAUDIOWAS *PDRVHOSTAUDIOWAS;
@@ -190,6 +261,553 @@ static const char *drvHostWasStreamStatusString(PDRVHOSTAUDIOWASSTREAM pStreamWa
 
     pStreamWas->szStatus[off] = '\0';
     return pStreamWas->szStatus;
+}
+
+
+/*********************************************************************************************************************************
+*   Pre-activated audio device client cache.                                                                                     *
+*********************************************************************************************************************************/
+#define WAS_CACHE_MAX_ENTRIES_SAME_DEVICE   2
+
+/**
+ * Converts from PDM stream config to windows WAVEFORMATEX struct.
+ *
+ * @param   pCfg    The PDM audio stream config to convert from.
+ * @param   pFmt    The windows structure to initialize.
+ */
+static void drvHostAudioWasWaveFmtExFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
+{
+    RT_ZERO(*pFmt);
+    pFmt->wFormatTag      = WAVE_FORMAT_PCM;
+    pFmt->nChannels       = PDMAudioPropsChannels(&pCfg->Props);
+    pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
+    pFmt->nSamplesPerSec  = PDMAudioPropsHz(&pCfg->Props);
+    pFmt->nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
+    pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
+    pFmt->cbSize          = 0; /* No extra data specified. */
+}
+
+
+/**
+ * Converts from windows WAVEFORMATEX and stream props to PDM audio properties.
+ *
+ * @returns VINF_SUCCESS on success, VERR_AUDIO_STREAM_COULD_NOT_CREATE if not
+ *          supported.
+ * @param   pCfg        The stream configuration to update (input:
+ *                      requested config; output: acquired).
+ * @param   pFmt        The windows wave format structure.
+ * @param   pszStream   The stream name for error logging.
+ * @param   pwszDevId   The device ID for error logging.
+ */
+static int drvHostAudioWasCacheWaveFmtExToProps(PPDMAUDIOPCMPROPS pProps, WAVEFORMATEX const *pFmt,
+                                                const char *pszStream, PCRTUTF16 pwszDevId)
+{
+    if (pFmt->wFormatTag == WAVE_FORMAT_PCM)
+    {
+        if (   pFmt->wBitsPerSample == 8
+            || pFmt->wBitsPerSample == 16
+            || pFmt->wBitsPerSample == 32)
+        {
+            if (pFmt->nChannels > 0 && pFmt->nChannels < 16)
+            {
+                if (pFmt->nSamplesPerSec >= 4096 && pFmt->nSamplesPerSec <= 768000)
+                {
+                    PDMAudioPropsInit(pProps, pFmt->wBitsPerSample / 8, true /*fSigned*/, pFmt->nChannels, pFmt->nSamplesPerSec);
+                    if (PDMAudioPropsFrameSize(pProps) == pFmt->nBlockAlign)
+                        return VINF_SUCCESS;
+                }
+            }
+        }
+    }
+    LogRelMax(64, ("WasAPI: Error! Unsupported stream format for '%s' suggested by '%ls':\n"
+                   "WasAPI:   wFormatTag      = %RU16 (expected %d)\n"
+                   "WasAPI:   nChannels       = %RU16 (expected 1..15)\n"
+                   "WasAPI:   nSamplesPerSec  = %RU32 (expected 4096..768000)\n"
+                   "WasAPI:   nAvgBytesPerSec = %RU32\n"
+                   "WasAPI:   nBlockAlign     = %RU16\n"
+                   "WasAPI:   wBitsPerSample  = %RU16 (expected 8, 16, or 32)\n"
+                   "WasAPI:   cbSize          = %RU16\n",
+                   pszStream, pwszDevId, pFmt->wFormatTag, WAVE_FORMAT_PCM, pFmt->nChannels, pFmt->nSamplesPerSec, pFmt->nAvgBytesPerSec,
+                   pFmt->nBlockAlign, pFmt->wBitsPerSample, pFmt->cbSize));
+    return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+}
+
+
+/**
+ * Destroys a devie config cache entry.
+ *
+ * @param   pDevCfg     Device config entry.  Must not be in the list.
+ */
+static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
+{
+    uint32_t cTypeClientRefs = 0;
+    if (pDevCfg->pIAudioCaptureClient)
+    {
+        cTypeClientRefs = pDevCfg->pIAudioCaptureClient->Release();
+        pDevCfg->pIAudioCaptureClient = NULL;
+    }
+
+    if (pDevCfg->pIAudioRenderClient)
+    {
+        cTypeClientRefs = pDevCfg->pIAudioRenderClient->Release();
+        pDevCfg->pIAudioRenderClient = NULL;
+    }
+
+    uint32_t cClientRefs = 0;
+    if (pDevCfg->pIAudioClient /* paranoia */)
+    {
+        cClientRefs = pDevCfg->pIAudioClient->Release();
+        pDevCfg->pIAudioClient = NULL;
+    }
+
+    Log8Func(("Destroying cache config entry: '%ls: %s' - cClientRefs=%u cTypeClientRefs=%u\n",
+              pDevCfg->pDevEntry->wszDevId, pDevCfg->szProps, cClientRefs, cTypeClientRefs));
+    RT_NOREF(cClientRefs, cTypeClientRefs);
+
+    pDevCfg->pDevEntry = NULL;
+    RTMemFree(pDevCfg);
+}
+
+
+/**
+ * Destroys a device cache entry.
+ *
+ * @param   pDevEntry   The device entry. Must not be in the cache!
+ */
+static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
+{
+    Log8Func(("Destroying cache entry: %p - '%ls'\n", pDevEntry, pDevEntry->wszDevId));
+
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg, pDevCfgNext;
+    RTListForEachSafe(&pDevEntry->ConfigList, pDevCfg, pDevCfgNext, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
+    {
+        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+    }
+
+    uint32_t cDevRefs = 0;
+    if (pDevEntry->pIDevice /* paranoia */)
+    {
+        cDevRefs = pDevEntry->pIDevice->Release();
+        pDevEntry->pIDevice = NULL;
+    }
+
+    pDevEntry->cwcDevId = 0;
+    pDevEntry->wszDevId[0] = '\0';
+    RTMemFree(pDevEntry);
+    Log8Func(("Destroyed cache entry: %p cDevRefs=%u\n", pDevEntry, cDevRefs));
+}
+
+
+/**
+ * Purges all the entries in the cache.
+ */
+static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis)
+{
+    for (;;)
+    {
+        RTCritSectEnter(&pThis->CritSectCache);
+        PDRVHOSTAUDIOWASCACHEDEV pDevEntry = RTListRemoveFirst(&pThis->CacheHead, DRVHOSTAUDIOWASCACHEDEV, ListEntry);
+        RTCritSectLeave(&pThis->CritSectCache);
+        if (!pDevEntry)
+            break;
+        drvHostAudioWasCacheDestroyDevEntry(pDevEntry);
+    }
+}
+
+
+/**
+ * Looks up a specific configuration.
+ *
+ * @returns Pointer to the device config (removed from cache) on success.  NULL
+ *          if no matching config found.
+ * @param   pDevEntry       Where to perform the lookup.
+ * @param   pProp           The config properties to match.
+ */
+static PDRVHOSTAUDIOWASCACHEDEVCFG
+drvHostAudioWasCacheLookupLocked(PDRVHOSTAUDIOWASCACHEDEV pDevEntry, PCPDMAUDIOPCMPROPS pProps)
+{
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg;
+    RTListForEach(&pDevEntry->ConfigList, pDevCfg, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
+    {
+        if (PDMAudioPropsAreEqual(&pDevCfg->Props, pProps))
+        {
+            RTListNodeRemove(&pDevCfg->ListEntry);
+            return pDevCfg;
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Creates a device config entry using the given parameters.
+ *
+ * The entry is not added to the cache but returned.
+ *
+ * @returns Pointer to the new device config entry. NULL on failure.
+ * @param   pDevEntry       The device entry it belongs to.
+ * @param   pCfgReq         The requested configuration.
+ * @param   pWaveFmtEx      The actual configuration.
+ * @param   pIAudioClient   The audio client, reference consumed.
+ */
+static PDRVHOSTAUDIOWASCACHEDEVCFG
+drvHostAudioWasCacheCreateConfig(PDRVHOSTAUDIOWASCACHEDEV pDevEntry, PCPDMAUDIOSTREAMCFG pCfgReq,
+                                 WAVEFORMATEX const *pWaveFmtEx, IAudioClient *pIAudioClient)
+{
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = (PDRVHOSTAUDIOWASCACHEDEVCFG)RTMemAllocZ(sizeof(*pDevCfg));
+    if (pDevCfg)
+    {
+        RTListInit(&pDevCfg->ListEntry);
+        pDevCfg->pDevEntry          = pDevEntry;
+        pDevCfg->pIAudioClient      = pIAudioClient;
+        HRESULT hrc;
+        if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+            hrc = pIAudioClient->GetService(__uuidof(IAudioCaptureClient), (void **)&pDevCfg->pIAudioCaptureClient);
+        else
+            hrc = pIAudioClient->GetService(__uuidof(IAudioRenderClient), (void **)&pDevCfg->pIAudioRenderClient);
+        Log8Func(("GetService -> %Rhrc + %p\n", hrc, pCfgReq->enmDir == PDMAUDIODIR_IN
+                  ? (void *)pDevCfg->pIAudioCaptureClient : (void *)pDevCfg->pIAudioRenderClient));
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Obtain the actual stream format and buffer config.
+             * (A bit ugly structure here to keep it from hitting the right margin. Sorry.)
+             */
+            UINT32          cFramesBufferSize       = 0;
+            REFERENCE_TIME  cDefaultPeriodInNtTicks = 0;
+            REFERENCE_TIME  cMinimumPeriodInNtTicks = 0;
+            REFERENCE_TIME  cLatencyinNtTicks       = 0;
+            hrc = pIAudioClient->GetBufferSize(&cFramesBufferSize);
+            if (SUCCEEDED(hrc))
+                hrc = pIAudioClient->GetDevicePeriod(&cDefaultPeriodInNtTicks, &cMinimumPeriodInNtTicks);
+            else
+                LogRelMax(64, ("WasAPI: GetBufferSize failed: %Rhrc\n", hrc));
+            if (SUCCEEDED(hrc))
+                hrc = pIAudioClient->GetStreamLatency(&cLatencyinNtTicks);
+            else
+                LogRelMax(64, ("WasAPI: GetDevicePeriod failed: %Rhrc\n", hrc));
+            if (SUCCEEDED(hrc))
+            {
+                LogRel2(("WasAPI: Aquired buffer parameters for %s:\n"
+                         "WasAPI:   cFramesBufferSize       = %RU32\n"
+                         "WasAPI:   cDefaultPeriodInNtTicks = %RI64\n"
+                         "WasAPI:   cMinimumPeriodInNtTicks = %RI64\n"
+                         "WasAPI:   cLatencyinNtTicks       = %RI64\n",
+                         pCfgReq->szName, cFramesBufferSize, cDefaultPeriodInNtTicks, cMinimumPeriodInNtTicks, cLatencyinNtTicks));
+
+                int rc = drvHostAudioWasCacheWaveFmtExToProps(&pDevCfg->Props, pWaveFmtEx, pCfgReq->szName, pDevEntry->wszDevId);
+                if (RT_SUCCESS(rc))
+                {
+                    pDevCfg->cFramesBufferSize = cFramesBufferSize;
+                    pDevCfg->cFramesPeriod     = PDMAudioPropsNanoToFrames(&pDevCfg->Props, cDefaultPeriodInNtTicks * 100);
+
+                    PDMAudioPropsToString(&pDevCfg->Props, pDevCfg->szProps, sizeof(pDevCfg->szProps));
+                    return pDevCfg;
+                }
+            }
+            else
+                LogRelMax(64, ("WasAPI: GetStreamLatency failed: %Rhrc\n", hrc));
+
+            if (pDevCfg->pIAudioCaptureClient)
+            {
+                pDevCfg->pIAudioCaptureClient->Release();
+                pDevCfg->pIAudioCaptureClient = NULL;
+            }
+
+            if (pDevCfg->pIAudioRenderClient)
+            {
+                pDevCfg->pIAudioRenderClient->Release();
+                pDevCfg->pIAudioRenderClient = NULL;
+            }
+        }
+        RTMemFree(pDevCfg);
+    }
+    pIAudioClient->Release();
+    return NULL;
+}
+
+
+/**
+ * Worker for drvHostAudioWasCacheLookupOrCreate.
+ *
+ * If lookup fails, a new entry will be created.
+ *
+ * @note    Called holding the lock, returning without holding it!
+ */
+static PDRVHOSTAUDIOWASCACHEDEVCFG
+drvHostAudioWasCacheLookupOrCreateConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEV pDevEntry, PCPDMAUDIOSTREAMCFG pCfgReq)
+{
+    char szProps[64];
+    PDMAudioPropsToString(&pCfgReq->Props, szProps, sizeof(szProps));
+
+    /*
+     * Check if we've got a matching config.
+     */
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = drvHostAudioWasCacheLookupLocked(pDevEntry, &pCfgReq->Props);
+    if (pDevCfg)
+    {
+        RTCritSectLeave(&pThis->CritSectCache);
+        Log8Func(("Config cache hit '%s' (for '%s') on '%ls': %p\n", pDevCfg->szProps, szProps, pDevEntry->wszDevId, pDevCfg));
+        return pDevCfg;
+    }
+
+    /*
+     * We now need an IAudioClient interface for calling IsFormatSupported
+     * on so we can get guidance as to what to do next.
+     *
+     * Initially, I thought the AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM was not
+     * supported all the way back to Vista and that we'd had to try different
+     * things here to get the most optimal format.  However, according to
+     * https://social.msdn.microsoft.com/Forums/en-US/1d974d90-6636-4121-bba3-a8861d9ab92a
+     * it is supported, just maybe missing from the SDK or something...
+     */
+    RTCritSectLeave(&pThis->CritSectCache);
+
+    REFERENCE_TIME const cBufferSizeInNtTicks = PDMAudioPropsFramesToNtTicks(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+
+    Log8Func(("Activating an IAudioClient for '%ls' ...\n", pDevEntry->wszDevId));
+    IAudioClient *pIAudioClient = NULL;
+    HRESULT hrc = pDevEntry->pIDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL,
+                                                NULL /*pActivationParams*/, (void **)&pIAudioClient);
+    Log8Func(("Activate('%ls', IAudioClient) -> %Rhrc\n", pDevEntry->wszDevId, hrc));
+    if (FAILED(hrc))
+    {
+        LogRelMax(64, ("WasAPI: Activate(%ls, IAudioClient) failed: %Rhrc\n", pDevEntry->wszDevId, hrc));
+        return NULL;
+    }
+
+    WAVEFORMATEX  WaveFmtEx;
+    drvHostAudioWasWaveFmtExFromCfg(pCfgReq, &WaveFmtEx);
+
+    PWAVEFORMATEX pClosestMatch = NULL;
+    hrc = pIAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &WaveFmtEx, &pClosestMatch);
+
+    /*
+     * If the format is supported, create a cache entry for it.
+     */
+    if (SUCCEEDED(hrc))
+    {
+        if (hrc == S_OK)
+            Log8Func(("IsFormatSupport(,%s,) -> S_OK + %p: requested format is supported\n", szProps, pClosestMatch));
+        else
+            Log8Func(("IsFormatSupport(,%s,) -> %Rhrc + %p: %uch S%u %uHz\n", szProps, hrc, pClosestMatch,
+                      pClosestMatch ? pClosestMatch->nChannels : 0, pClosestMatch ? pClosestMatch->wBitsPerSample : 0,
+                      pClosestMatch ? pClosestMatch->nSamplesPerSec : 0));
+
+        uint32_t fInitFlags = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
+                            | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+        hrc = pIAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, fInitFlags, cBufferSizeInNtTicks,
+                                        0 /*cPeriodicityInNtTicks*/, &WaveFmtEx, NULL /*pAudioSessionGuid*/);
+        Log8Func(("Initialize(,%x, %RI64, %s,) -> %Rhrc\n", fInitFlags, cBufferSizeInNtTicks, szProps, hrc));
+        if (SUCCEEDED(hrc))
+        {
+            if (pClosestMatch)
+                CoTaskMemFree(pClosestMatch);
+            Log8Func(("Creating new config for '%s' on '%ls': %p\n", szProps, pDevEntry->wszDevId, pDevCfg));
+            return drvHostAudioWasCacheCreateConfig(pDevEntry, pCfgReq, &WaveFmtEx, pIAudioClient);
+        }
+
+        LogRelMax(64, ("WasAPI: IAudioClient::Initialize(%s: %s) failed: %Rhrc\n", pCfgReq->szName, szProps, hrc));
+
+#if 0 /* later if needed */
+        /*
+         * Try lookup or instantiate the closest config.
+         */
+        PDMAUDIOSTREAMCFG ClosestCfg = *pCfgReq;
+        int rc = drvHostAudioWasCacheWaveFmtExToProps(&ClosestCfg.Props, pClosestMatch, pDevEntry->wszDevId);
+        if (RT_SUCCESS(rc))
+        {
+            RTCritSectEnter(&pThis->CritSectCache);
+            pDevCfg = drvHostAudioWasCacheLookupLocked(pDevEntry, &pCfgReq->Props);
+            if (pDevCfg)
+            {
+                CoTaskMemFree(pClosestMatch);
+                Log8Func(("Config cache hit '%s' (for '%s') on '%ls': %p\n", pDevCfg->szProps, szProps, pDevEntry->wszDevId, pDevCfg));
+                return pDevCfg;
+            }
+            RTCritSectLeave(&pThis->CritSectCache);
+        }
+#endif
+    }
+    else
+        LogRelMax(64,("WasAPI: IAudioClient::IsFormatSupport(,%s: %s,) failed: %Rhrc\n", pCfgReq->szName, szProps, hrc));
+
+    pIAudioClient->Release();
+    if (pClosestMatch)
+        CoTaskMemFree(pClosestMatch);
+    Log8Func(("returns NULL\n"));
+    return NULL;
+}
+
+
+/**
+ * Looks up the given device + config combo in the cache, creating a new entry
+ * if missing.
+ *
+ * @returns Pointer to the requested device config (or closest alternative).
+ *          NULL on failure (TODO: need to return why).
+ * @param   pThis       The WASAPI host audio driver instance data.
+ * @param   pIDevice    The device to look up.
+ * @param   pCfgReq     The configuration to look up.
+ */
+static PDRVHOSTAUDIOWASCACHEDEVCFG
+drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice *pIDevice, PCPDMAUDIOSTREAMCFG pCfgReq)
+{
+    /*
+     * Get the device ID so we can perform the lookup.
+     */
+    LPWSTR  pwszDevId = NULL;
+    HRESULT hrc = pIDevice->GetId(&pwszDevId);
+    if (SUCCEEDED(hrc))
+    {
+        size_t cwcDevId = RTUtf16Len(pwszDevId);
+
+        /*
+         * The cache has two levels, so first the device entry.
+         */
+        PDRVHOSTAUDIOWASCACHEDEV pDevEntry;
+        RTCritSectEnter(&pThis->CritSectCache);
+        RTListForEach(&pThis->CacheHead, pDevEntry, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
+        {
+            if (   pDevEntry->cwcDevId == cwcDevId
+                && pDevEntry->enmDir   == pCfgReq->enmDir
+                && RTUtf16Cmp(pDevEntry->wszDevId, pwszDevId) == 0)
+            {
+                CoTaskMemFree(pwszDevId);
+                Log8Func(("Cache hit for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
+                return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry, pCfgReq);
+            }
+        }
+        RTCritSectLeave(&pThis->CritSectCache);
+
+        /*
+         * Device not in the cache, add it.
+         */
+        pDevEntry = (PDRVHOSTAUDIOWASCACHEDEV)RTMemAllocZVar(RT_UOFFSETOF_DYN(DRVHOSTAUDIOWASCACHEDEV, wszDevId[cwcDevId + 1]));
+        if (pDevEntry)
+        {
+            pIDevice->AddRef();
+            pDevEntry->pIDevice                   = pIDevice;
+            pDevEntry->enmDir                     = pCfgReq->enmDir;
+            pDevEntry->cwcDevId                   = cwcDevId;
+#if 0
+            pDevEntry->fSupportsAutoConvertPcm    = -1;
+            pDevEntry->fSupportsSrcDefaultQuality = -1;
+#endif
+            RTListInit(&pDevEntry->ConfigList);
+            memcpy(pDevEntry->wszDevId, pwszDevId, cwcDevId * sizeof(RTUTF16));
+            pDevEntry->wszDevId[cwcDevId] = '\0';
+
+            CoTaskMemFree(pwszDevId);
+            pwszDevId = NULL;
+
+            /*
+             * Before adding the device, check that someone didn't race us adding it.
+             */
+            RTCritSectEnter(&pThis->CritSectCache);
+            PDRVHOSTAUDIOWASCACHEDEV pDevEntry2;
+            RTListForEach(&pThis->CacheHead, pDevEntry2, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
+            {
+                if (   pDevEntry2->cwcDevId == cwcDevId
+                    && pDevEntry2->enmDir   == pCfgReq->enmDir
+                    && RTUtf16Cmp(pDevEntry2->wszDevId, pDevEntry->wszDevId) == 0)
+                {
+                    pIDevice->Release();
+                    RTMemFree(pDevEntry);
+                    pDevEntry = NULL;
+
+                    Log8Func(("Lost race adding device '%ls': %p\n", pDevEntry2->wszDevId, pDevEntry2));
+                    return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry2, pCfgReq);
+                }
+            }
+            RTListPrepend(&pThis->CacheHead, &pDevEntry->ListEntry);
+
+            Log8Func(("Added device '%ls' to cache: %p\n", pDevEntry->wszDevId, pDevEntry));
+            return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry, pCfgReq);
+        }
+        CoTaskMemFree(pwszDevId);
+    }
+    else
+        LogRelMax(64, ("WasAPI: GetId failed (lookup): %Rhrc\n", hrc));
+    return NULL;
+}
+
+
+/**
+ * Return the given config to the cache.
+ *
+ * @param   pThis       The WASAPI host audio driver instance data.
+ * @param   pDevCfg     The device config to put back.
+ */
+static void drvHostAudioWasCachePutBack(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
+{
+    /*
+     * Reset the audio client to see that it works and to make sure it's in a sensible state.
+     */
+    HRESULT hrc = pDevCfg->pIAudioClient->Reset();
+    if (SUCCEEDED(hrc))
+    {
+        Log8Func(("Putting %p/'%s' back\n", pDevCfg, pDevCfg->szProps));
+        RTCritSectEnter(&pThis->CritSectCache);
+        RTListAppend(&pDevCfg->pDevEntry->ConfigList, &pDevCfg->ListEntry);
+        RTCritSectLeave(&pThis->CritSectCache);
+    }
+    else
+    {
+        Log8Func(("IAudioClient::Reset failed (%Rhrc) on %p/'%s', destroying it.\n", hrc, pDevCfg, pDevCfg->szProps));
+        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+    }
+}
+
+
+/**
+ * Prefills the cache.
+ *
+ * @param   pThis       The WASAPI host audio driver instance data.
+ */
+static void drvHostAudioWasCacheFill(PDRVHOSTAUDIOWAS pThis)
+{
+#if 0 /* we don't have the buffer config nor do we really know which frequences to expect */
+    Log8Func(("enter\n"));
+    struct
+    {
+        PCRTUTF16       pwszDevId;
+        PDMAUDIODIR     enmDir;
+    } aToCache[] =
+    {
+        { pThis->pwszInputDevId, PDMAUDIODIR_IN },
+        { pThis->pwszOutputDevId, PDMAUDIODIR_OUT }
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(aToCache); i++)
+    {
+        PCRTUTF16       pwszDevId = aToCache[i].pwszDevId;
+        IMMDevice      *pIDevice  = NULL;
+        HRESULT         hrc;
+        if (pwszDevId)
+            hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
+        else
+        {
+            hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(aToCache[i].enmDir == PDMAUDIODIR_IN ? eCapture : eRender,
+                                                               eMultimedia, &pIDevice);
+            pwszDevId = aToCache[i].enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
+        }
+        if (SUCCEEDED(hrc))
+        {
+            PDMAUDIOSTREAMCFG Cfg = { aToCache[i].enmDir, { PDMAUDIOPLAYBACKDST_INVALID },
+                                      PDMAUDIOPCMPROPS_INITIALIZER(2, true, 2, 44100, false) };
+            Cfg.Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&Cfg.Props, 300);
+            PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, &Cfg);
+            if (pDevCfg)
+                drvHostAudioWasCachePutBack(pThis, pDevCfg);
+
+            pIDevice->Release();
+        }
+        else
+            LogRelMax(64, ("WasAPI: Failed to open audio device '%ls' (pre-caching): %Rhrc\n", pwszDevId, hrc));
+    }
+    Log8Func(("leave\n"));
+#else
+    RT_NOREF(pThis);
+#endif
 }
 
 
@@ -532,87 +1150,6 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioWasHA_GetStatus(PPDMIHOSTAUD
 
 
 /**
- * Converts from PDM stream config to windows WAVEFORMATEX struct.
- *
- * @param   pCfg    The PDM audio stream config to convert from.
- * @param   pFmt    The windows structure to initialize.
- */
-static void drvHostAudioWasWaveFmtExFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
-{
-    RT_ZERO(*pFmt);
-    pFmt->wFormatTag      = WAVE_FORMAT_PCM;
-    pFmt->nChannels       = PDMAudioPropsChannels(&pCfg->Props);
-    pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
-    pFmt->nSamplesPerSec  = PDMAudioPropsHz(&pCfg->Props);
-    pFmt->nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
-    pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
-    pFmt->cbSize          = 0; /* No extra data specified. */
-}
-
-
-/**
- * Converts from windows WAVEFORMATEX and stream props to PDM stream config.
- *
- * @returns VINF_SUCCESS on success, VERR_AUDIO_STREAM_COULD_NOT_CREATE if not
- *          supported.
- * @param   pCfg                    The stream configuration to update (input:
- *                                  requested config; output: acquired).
- * @param   pFmt                    The windows wave format structure.
- * @param   cFramesBufferSize       The actual buffer size in frames.
- * @param   cDefaultPeriodInNtTicks The default device period in 100ns NT ticks.
- */
-static int drvHostAudioWasWaveFmtExToCfgAck(PPDMAUDIOSTREAMCFG pCfg, WAVEFORMATEX const *pFmt,
-                                            uint32_t cFramesBufferSize, int64_t cDefaultPeriodInNtTicks)
-{
-#if 0 /* pFmt is the mixer format, not the stream format. duh. */
-    if (pFmt->wFormatTag == WAVE_FORMAT_PCM)
-    {
-        if (   pFmt->wBitsPerSample == 8
-            || pFmt->wBitsPerSample == 16
-            || pFmt->wBitsPerSample == 32)
-        {
-            if (pFmt->nChannels > 0 && pFmt->nChannels < 16)
-            {
-                if (pFmt->nSamplesPerSec >= 4096 && pFmt->nSamplesPerSec <= 768000)
-                {
-                    PDMAudioPropsInit(&pCfg->Props, pFmt->wBitsPerSample / 8, true /*fSigned*/,
-                                      pFmt->nChannels, pFmt->nSamplesPerSec);
-                    if (PDMAudioPropsFrameSize(&pCfg->Props) == pFmt->nBlockAlign)
-                    {
-#endif
-                        if (PDMAudioPropsAreValid(&pCfg->Props))
-                        {
-                            pCfg->Backend.cFramesPreBuffering = pCfg->Backend.cFramesPreBuffering * cFramesBufferSize
-                                                              / RT_MAX(pCfg->Backend.cFramesBufferSize, 1);
-                            pCfg->Backend.cFramesBufferSize   = cFramesBufferSize;
-                            pCfg->Backend.cFramesPeriod       = PDMAudioPropsNanoToFrames(&pCfg->Props,
-                                                                                          cDefaultPeriodInNtTicks * 100);
-                            return VINF_SUCCESS;
-                        }
-#if 0
-                    }
-                }
-            }
-        }
-    }
-#endif
-    LogRelMax(64, ("WasAPI: Error! Unsupported stream format for '%s' acquired:\n"
-                   "WasAPI:   wFormatTag      = %RU16 (expected %d)\n"
-                   "WasAPI:   nChannels       = %RU16 (expected 1..15)\n"
-                   "WasAPI:   nSamplesPerSec  = %RU32 (expected 4096..768000)\n"
-                   "WasAPI:   nAvgBytesPerSec = %RU32\n"
-                   "WasAPI:   nBlockAlign     = %RU16\n"
-                   "WasAPI:   wBitsPerSample  = %RU16 (expected 8, 16, or 32)\n"
-                   "WasAPI:   cbSize          = %RU16\n",
-                   "WasAPI:   cFramesBufferSize       = %RU32\n"
-                   "WasAPI:   cDefaultPeriodInNtTicks = %RI64\n",
-                   pCfg->szName, pFmt->wFormatTag, WAVE_FORMAT_PCM, pFmt->nChannels, pFmt->nSamplesPerSec, pFmt->nAvgBytesPerSec,
-                   pFmt->nBlockAlign, pFmt->wBitsPerSample, pFmt->cbSize, cFramesBufferSize, cDefaultPeriodInNtTicks));
-    return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -641,7 +1178,6 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     /*
      * Do configuration conversion.
      */
-    REFERENCE_TIME const cBufferSizeInNtTicks = PDMAudioPropsFramesToNtTicks(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
     WAVEFORMATEX WaveFmtX;
     drvHostAudioWasWaveFmtExFromCfg(pCfgReq, &WaveFmtX);
     LogRel2(("WasAPI: Requested %s format for '%s':\n"
@@ -654,7 +1190,8 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
              "WasAPI:   cbSize          = %RU16\n"
              "WasAPI:   cBufferSizeInNtTicks = %RU64\n",
              pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
-             WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize, cBufferSizeInNtTicks));
+             WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize,
+             PDMAudioPropsFramesToNtTicks(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize) ));
 
     /*
      * Get the device we're supposed to use.
@@ -666,141 +1203,60 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
         hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
     else
     {
+        /** @todo this takes about 2ms. Cache it and update it using the
+         *        notification client. */
         hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(pCfgReq->enmDir == PDMAUDIODIR_IN ? eCapture : eRender,
                                                            eMultimedia, &pIDevice);
         pwszDevId = pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
     }
     LogFlowFunc(("Got device %p (%Rhrc)\n", pIDevice, hrc));
-    if (SUCCEEDED(hrc))
-        pStreamWas->pIDevice = pIDevice;
-    else
+    if (FAILED(hrc))
     {
-        LogRelMax(64, ("WasAPI: Failed to open audio device '%ls': %Rhrc\n", pszStreamType, pwszDevId, hrc));
+        LogRelMax(64, ("WasAPI: Failed to open audio %s device '%ls': %Rhrc\n", pszStreamType, pwszDevId, hrc));
         return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     }
 
     /*
-     * Activate the desired interface.
-     *
-     * Note! This is _very_ expensive here on my system.  We will have to
-     *       pre-init or offload this onto a thread and hope it will finishe
-     *       before the prebuffering is done...
+     * Ask the cache to retrieve or instantiate the requested configuration.
      */
-    /** @todo this is too slow!   */
+    /** @todo make it return a status code too and retry if the default device
+     *        was invalidated/changed while we where working on it here. */
     int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-    IAudioClient *pIAudioClient = NULL;
-    hrc = pIDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL /*pActivationParams*/, (void **)&pIAudioClient);
-    LogFlowFunc(("Activate -> %Rhrc\n", hrc));
-    if (SUCCEEDED(hrc))
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, pCfgReq);
+
+    pIDevice->Release();
+    pIDevice = NULL;
+
+    if (pDevCfg)
     {
-        pStreamWas->pIAudioClient = pIAudioClient;
+        pStreamWas->pDevCfg = pDevCfg;
 
-        /*
-         * Initialize the client.
-         */
-        uint32_t fInitFlags = 0x80000000;//AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
-        hrc = pIAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                        fInitFlags,
-                                        cBufferSizeInNtTicks,
-                                        0 /*cPeriodicityInNtTicks*/,
-                                        &WaveFmtX,
-                                        NULL /*pAudioSessionGuid*/);
-        LogFlowFunc(("Initialize -> %Rhrc\n", hrc));
-        if (SUCCEEDED(hrc))
+        pCfgAcq->Props = pDevCfg->Props;
+        pCfgAcq->Backend.cFramesBufferSize   = pDevCfg->cFramesBufferSize;
+        pCfgAcq->Backend.cFramesPeriod       = pDevCfg->cFramesPeriod;
+        pCfgAcq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesPreBuffering * pDevCfg->cFramesBufferSize
+                                             / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
+
+        PDMAudioStrmCfgCopy(&pStreamWas->Cfg, pCfgAcq);
+
+        /* Finally, the critical section. */
+        int rc2 = RTCritSectInit(&pStreamWas->CritSect);
+        if (RT_SUCCESS(rc2))
         {
-            /*
-             * Get the interface specific to the stream direction.
-             */
-            if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-                hrc = pIAudioClient->GetService(__uuidof(IAudioCaptureClient), (void **)&pStreamWas->pIAudioCaptureClient);
-            else
-                hrc = pIAudioClient->GetService(__uuidof(IAudioRenderClient), (void **)&pStreamWas->pIAudioRenderClient);
-            LogFlowFunc(("GetService -> %Rhrc + %p\n", hrc, pCfgReq->enmDir == PDMAUDIODIR_IN
-                         ? (void *)pStreamWas->pIAudioCaptureClient : (void *)pStreamWas->pIAudioRenderClient));
-            if (SUCCEEDED(hrc))
-            {
-                /*
-                 * Obtain the actual stream format and buffer config.
-                 * (A bit ugly structure here to keep it from hitting the right margin. Sorry.)
-                 */
-                WAVEFORMATEX   *pActualWaveFmtX         = NULL;
-                UINT32          cFramesBufferSize       = 0;
-                REFERENCE_TIME  cDefaultPeriodInNtTicks = 0;
-                REFERENCE_TIME  cMinimumPeriodInNtTicks = 0;
-                REFERENCE_TIME  cLatencyinNtTicks       = 0;
-                hrc = pIAudioClient->GetMixFormat(&pActualWaveFmtX); /** @todo this is of little iterest.*/
-                if (SUCCEEDED(hrc))
-                    hrc = pIAudioClient->GetBufferSize(&cFramesBufferSize);
-                else
-                {
-                    LogRelMax(64, ("WasAPI: GetMixFormat failed: %Rhrc\n", hrc));
-                    pActualWaveFmtX = NULL;
-                }
-                if (SUCCEEDED(hrc))
-                    hrc = pIAudioClient->GetDevicePeriod(&cDefaultPeriodInNtTicks, &cMinimumPeriodInNtTicks);
-                else
-                    LogRelMax(64, ("WasAPI: GetBufferSize failed: %Rhrc\n", hrc));
-                if (SUCCEEDED(hrc))
-                    hrc = pIAudioClient->GetStreamLatency(&cLatencyinNtTicks);
-                else
-                    LogRelMax(64, ("WasAPI: GetDevicePeriod failed: %Rhrc\n", hrc));
-                if (SUCCEEDED(hrc))
-                {
-                    LogRel2(("WasAPI: Mixer %s format for '%s':\n"
-                             "WasAPI:   wFormatTag      = %RU16\n"
-                             "WasAPI:   nChannels       = %RU16\n"
-                             "WasAPI:   nSamplesPerSec  = %RU32\n"
-                             "WasAPI:   nAvgBytesPerSec = %RU32\n"
-                             "WasAPI:   nBlockAlign     = %RU16\n"
-                             "WasAPI:   wBitsPerSample  = %RU16\n"
-                             "WasAPI:   cbSize          = %RU16\n"
-                             "WasAPI: Aquired buffer parameters:\n"
-                             "WasAPI:   cFramesBufferSize       = %RU32\n"
-                             "WasAPI:   cDefaultPeriodInNtTicks = %RI64\n"
-                             "WasAPI:   cMinimumPeriodInNtTicks = %RI64\n"
-                             "WasAPI:   cLatencyinNtTicks       = %RI64\n",
-                             pszStreamType, pCfgReq->szName, pActualWaveFmtX->wFormatTag, pActualWaveFmtX->nChannels,
-                             pActualWaveFmtX->nSamplesPerSec, pActualWaveFmtX->nAvgBytesPerSec, pActualWaveFmtX->nBlockAlign,
-                             pActualWaveFmtX->wBitsPerSample, pActualWaveFmtX->cbSize, cFramesBufferSize, cDefaultPeriodInNtTicks,
-                             cMinimumPeriodInNtTicks, cLatencyinNtTicks));
-                    rc = drvHostAudioWasWaveFmtExToCfgAck(pCfgAcq, pActualWaveFmtX, cFramesBufferSize, cDefaultPeriodInNtTicks);
-                    if (RT_SUCCESS(rc))
-                    {
-                        PDMAudioStrmCfgCopy(&pStreamWas->Cfg, pCfgAcq);
+            RTCritSectRwEnterExcl(&pThis->CritSectStreamList);
+            RTListAppend(&pThis->StreamHead, &pStreamWas->ListEntry);
+            RTCritSectRwLeaveExcl(&pThis->CritSectStreamList);
 
-                        /* Finally, the critical section. */
-                        int rc2 = RTCritSectInit(&pStreamWas->CritSect);
-                        if (RT_SUCCESS(rc2))
-                        {
-                            RTCritSectRwEnterExcl(&pThis->CritSectList);
-                            RTListAppend(&pThis->HeadStreams, &pStreamWas->ListEntry);
-                            RTCritSectRwLeaveExcl(&pThis->CritSectList);
-
-                            rc = VINF_SUCCESS;
-                        }
-                        else
-                            LogRelMax(64, ("WasAPI: Failed to create critical section for stream.\n", hrc));
-                    }
-                }
-                else
-                    LogRelMax(64, ("WasAPI: GetStreamLatency failed: %Rhrc\n", hrc));
-
-                if (pActualWaveFmtX)
-                    CoTaskMemFree(pActualWaveFmtX);
-            }
-            else
-                LogRelMax(64, ("WasAPI: Failed to obtain %s servier for %s audio client (%ls): %Rhrc\n",
-                               pCfgReq->enmDir == PDMAUDIODIR_IN ? "IAudioCaptureClient" : "IAudioRenderClient",
-                               pszStreamType, pwszDevId, hrc));
+            LogFlowFunc(("returns VINF_SUCCESS\n", rc));
+            return VINF_SUCCESS;
         }
-        else
-            LogRelMax(64, ("WasAPI: Failed to initialize %s audio client (%ls): %Rhrc\n", pszStreamType, pwszDevId, hrc));
+
+        LogRelMax(64, ("WasAPI: Failed to create critical section for stream.\n", hrc));
+        drvHostAudioWasCachePutBack(pThis, pDevCfg);
+        pStreamWas->pDevCfg = NULL;
     }
     else
         LogRelMax(64, ("WasAPI: Failed to activate %s audio device '%ls': %Rhrc\n", pszStreamType, pwszDevId, hrc));
-
-    if (RT_FAILURE(rc))
-        pThis->IHostAudio.pfnStreamDestroy(pInterface, pStream);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -820,59 +1276,36 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDestroy(PPDMIHOSTAUDIO pInterfa
 
     if (RTCritSectIsInitialized(&pStreamWas->CritSect))
     {
-        RTCritSectRwEnterExcl(&pThis->CritSectList);
+        RTCritSectRwEnterExcl(&pThis->CritSectStreamList);
         RTListNodeRemove(&pStreamWas->ListEntry);
-        RTCritSectRwLeaveExcl(&pThis->CritSectList);
+        RTCritSectRwLeaveExcl(&pThis->CritSectStreamList);
 
         RTCritSectDelete(&pStreamWas->CritSect);
     }
 
-    if (pStreamWas->fStarted && pStreamWas->pIAudioClient)
+    if (pStreamWas->fStarted && pStreamWas->pDevCfg && pStreamWas->pDevCfg->pIAudioClient)
     {
-        hrc = pStreamWas->pIAudioClient->Stop();
+        hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
         LogFunc(("Stop('%s') -> %Rhrc\n", pStreamWas->Cfg.szName, hrc));
         pStreamWas->fStarted = false;
     }
 
     if (pStreamWas->cFramesCaptureToRelease)
     {
-        hrc = pStreamWas->pIAudioCaptureClient->ReleaseBuffer(0);
+        hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->ReleaseBuffer(0);
         Log4Func(("Releasing capture buffer (%#x frames): %Rhrc\n", pStreamWas->cFramesCaptureToRelease, hrc));
         pStreamWas->cFramesCaptureToRelease = 0;
         pStreamWas->pbCapture               = NULL;
         pStreamWas->cbCapture               = 0;
     }
 
-    /* Do IAudioClient first, as it hold references to the capture/render clients. */
-    uint32_t cClientRefs = 0;
-    if (pStreamWas->pIAudioClient)
+    if (pStreamWas->pDevCfg)
     {
-        cClientRefs = pStreamWas->pIAudioClient->Release();
-        pStreamWas->pIAudioClient = NULL;
+        drvHostAudioWasCachePutBack(pThis, pStreamWas->pDevCfg);
+        pStreamWas->pDevCfg = NULL;
     }
 
-    uint32_t cTypeClientRefs = 0;
-    if (pStreamWas->pIAudioCaptureClient)
-    {
-        cTypeClientRefs = pStreamWas->pIAudioCaptureClient->Release();
-        pStreamWas->pIAudioCaptureClient = NULL;
-    }
-
-    if (pStreamWas->pIAudioRenderClient)
-    {
-        cTypeClientRefs = pStreamWas->pIAudioRenderClient->Release();
-        pStreamWas->pIAudioRenderClient = NULL;
-    }
-
-    uint32_t cDevRefs = 0;
-    if (pStreamWas->pIDevice)
-    {
-        cDevRefs = pStreamWas->pIDevice->Release();
-        pStreamWas->pIDevice = NULL;
-    }
-
-    RT_NOREF(cDevRefs, cClientRefs, cTypeClientRefs, hrc);
-    LogFlowFunc(("cDevRefs=%d cClientRefs=%d cTypeClientRefs=%d\n", cDevRefs, cClientRefs, cTypeClientRefs));
+    LogFlowFunc(("returns\n"));
     return VINF_SUCCESS;
 }
 
@@ -887,7 +1320,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDestroy(PPDMIHOSTAUDIO pInterfa
  */
 static int drvHostAudioWasStreamStartWorker(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASSTREAM pStreamWas, const char *pszOperation)
 {
-    HRESULT hrc = pStreamWas->pIAudioClient->Start();
+    HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Start();
     LogFlow(("%s: Start(%s) returns %Rhrc\n", pszOperation, pStreamWas->Cfg.szName, hrc));
     AssertStmt(hrc != AUDCLNT_E_NOT_STOPPED, hrc = S_OK);
     if (SUCCEEDED(hrc))
@@ -926,14 +1359,14 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamEnable(PPDMIHOSTAUDIO pInterfac
      */
     if (pStreamWas->cFramesCaptureToRelease)
     {
-        hrc = pStreamWas->pIAudioCaptureClient->ReleaseBuffer(pStreamWas->cFramesCaptureToRelease);
+        hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->ReleaseBuffer(pStreamWas->cFramesCaptureToRelease);
         Log4Func(("Releasing capture buffer (%#x frames): %Rhrc\n", pStreamWas->cFramesCaptureToRelease, hrc));
         pStreamWas->cFramesCaptureToRelease = 0;
         pStreamWas->pbCapture               = NULL;
         pStreamWas->cbCapture               = 0;
     }
 
-    hrc = pStreamWas->pIAudioClient->Reset();
+    hrc = pStreamWas->pDevCfg->pIAudioClient->Reset();
     if (FAILED(hrc))
         LogRelMax(64, ("WasAPI: Stream reset failed when enabling '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
     pStreamWas->offInternal      = 0;
@@ -981,7 +1414,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
     {
         if (pStreamWas->fStarted)
         {
-            HRESULT hrc = pStreamWas->pIAudioClient->Stop();
+            HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
             LogFlowFunc(("Stop(%s) returns %Rhrc\n", pStreamWas->Cfg.szName, hrc));
             if (FAILED(hrc))
             {
@@ -1026,7 +1459,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPause(PPDMIHOSTAUDIO pInterface
     {
         pStreamWas->fRestartOnResume = true;
 
-        HRESULT hrc = pStreamWas->pIAudioClient->Stop();
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
         LogFlowFunc(("Stop(%s) returns %Rhrc\n", pStreamWas->Cfg.szName, hrc));
         if (FAILED(hrc))
         {
@@ -1089,9 +1522,9 @@ static void drvHostWasDrainTimerWorker(PDRVHOSTAUDIOWAS pThis, uint64_t msNow)
      * Go thru the stream list and look at draining streams.
      */
     uint64_t        msNext = UINT64_MAX;
-    RTCritSectRwEnterShared(&pThis->CritSectList);
+    RTCritSectRwEnterShared(&pThis->CritSectStreamList);
     PDRVHOSTAUDIOWASSTREAM   pCur;
-    RTListForEach(&pThis->HeadStreams, pCur, DRVHOSTAUDIOWASSTREAM, ListEntry)
+    RTListForEach(&pThis->StreamHead, pCur, DRVHOSTAUDIOWASSTREAM, ListEntry)
     {
         if (   pCur->fDraining
             && pCur->Cfg.enmDir == PDMAUDIODIR_OUT)
@@ -1113,7 +1546,7 @@ static void drvHostWasDrainTimerWorker(PDRVHOSTAUDIOWAS pThis, uint64_t msNow)
                     {
                         LogRel2(("WasAPI: Stopping draining of '%s' {%s} ...\n",
                                  pCur->Cfg.szName, drvHostWasStreamStatusString(pCur)));
-                        HRESULT hrc = pCur->pIAudioClient->Stop();
+                        HRESULT hrc = pCur->pDevCfg->pIAudioClient->Stop();
                         if (FAILED(hrc))
                             LogRelMax(64, ("WasAPI: Failed to stop draining stream '%s': %Rhrc\n", pCur->Cfg.szName, hrc));
                         pCur->fDraining = false;
@@ -1130,7 +1563,7 @@ static void drvHostWasDrainTimerWorker(PDRVHOSTAUDIOWAS pThis, uint64_t msNow)
      */
     if (msNext != UINT64_MAX)
         PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hDrainTimer, msNext - msNow);
-    RTCritSectRwLeaveShared(&pThis->CritSectList);
+    RTCritSectRwLeaveShared(&pThis->CritSectStreamList);
 }
 
 
@@ -1174,7 +1607,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface
                 uint64_t const msNow           = RTTimeMilliTS();
                 uint64_t       msDrainDeadline = 0;
                 UINT32         cFramesPending  = 0;
-                HRESULT hrc = pStreamWas->pIAudioClient->GetCurrentPadding(&cFramesPending);
+                HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
                 if (SUCCEEDED(hrc))
                     msDrainDeadline = msNow
                                     + PDMAudioPropsFramesToMilli(&pStreamWas->Cfg.Props,
@@ -1257,10 +1690,10 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetReadable(PPDMIHOSTAUDIO
     uint32_t cbReadable = 0;
     RTCritSectEnter(&pStreamWas->CritSect);
 
-    if (pStreamWas->pIAudioCaptureClient /* paranoia */)
+    if (pStreamWas->pDevCfg->pIAudioCaptureClient /* paranoia */)
     {
         UINT32  cFramesInNextPacket = 0;
-        HRESULT hrc = pStreamWas->pIAudioCaptureClient->GetNextPacketSize(&cFramesInNextPacket);
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->GetNextPacketSize(&cFramesInNextPacket);
         if (SUCCEEDED(hrc))
             cbReadable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props,
                                                     RT_MIN(cFramesInNextPacket,
@@ -1291,10 +1724,10 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetWritable(PPDMIHOSTAUDIO
     RTCritSectEnter(&pStreamWas->CritSect);
 
     if (   pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT
-        && pStreamWas->pIAudioClient /* paranoia */)
+        && pStreamWas->pDevCfg->pIAudioClient /* paranoia */)
     {
         UINT32  cFramesPending = 0;
-        HRESULT hrc = pStreamWas->pIAudioClient->GetCurrentPadding(&cFramesPending);
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
         if (SUCCEEDED(hrc))
         {
             if (cFramesPending < pStreamWas->Cfg.Backend.cFramesBufferSize)
@@ -1334,12 +1767,12 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetPending(PPDMIHOSTAUDIO 
     RTCritSectEnter(&pStreamWas->CritSect);
 
     if (   pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT
-        && pStreamWas->pIAudioClient /* paranoia */)
+        && pStreamWas->pDevCfg->pIAudioClient /* paranoia */)
     {
         if (pStreamWas->fStarted)
         {
             UINT32  cFramesPending = 0;
-            HRESULT hrc = pStreamWas->pIAudioClient->GetCurrentPadding(&cFramesPending);
+            HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
             if (SUCCEEDED(hrc))
             {
                 AssertMsg(cFramesPending <= pStreamWas->Cfg.Backend.cFramesBufferSize,
@@ -1415,14 +1848,15 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     uint32_t cbWritten = 0;
     while (cbBuf > 0)
     {
-        AssertBreakStmt(pStreamWas->pIAudioRenderClient && pStreamWas->pIAudioClient, rc = VERR_AUDIO_STREAM_NOT_READY);
+        AssertBreakStmt(pStreamWas->pDevCfg && pStreamWas->pDevCfg->pIAudioRenderClient && pStreamWas->pDevCfg->pIAudioClient,
+                        rc = VERR_AUDIO_STREAM_NOT_READY);
 
         /*
          * Figure out how much we can possibly write.
          */
         UINT32   cFramesPending = 0;
         uint32_t cbWritable = 0;
-        HRESULT hrc = pStreamWas->pIAudioClient->GetCurrentPadding(&cFramesPending);
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
         if (SUCCEEDED(hrc))
             cbWritable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props,
                                                       pStreamWas->Cfg.Backend.cFramesBufferSize
@@ -1449,11 +1883,11 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
          * Get the buffer, copy the data into it, and relase it back to the WAS machinery.
          */
         BYTE *pbData = NULL;
-        hrc = pStreamWas->pIAudioRenderClient->GetBuffer(cFramesToWrite, &pbData);
+        hrc = pStreamWas->pDevCfg->pIAudioRenderClient->GetBuffer(cFramesToWrite, &pbData);
         if (SUCCEEDED(hrc))
         {
             memcpy(pbData, pvBuf, cbToWrite);
-            hrc = pStreamWas->pIAudioRenderClient->ReleaseBuffer(cFramesToWrite, 0 /*fFlags*/);
+            hrc = pStreamWas->pDevCfg->pIAudioRenderClient->ReleaseBuffer(cFramesToWrite, 0 /*fFlags*/);
             if (SUCCEEDED(hrc))
             {
                 /*
@@ -1558,7 +1992,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
     uint32_t const cbFrame     = PDMAudioPropsFrameSize(&pStreamWas->Cfg.Props);
     while (cbBuf > cbFrame)
     {
-        AssertBreakStmt(pStreamWas->pIAudioCaptureClient && pStreamWas->pIAudioClient, rc = VERR_AUDIO_STREAM_NOT_READY);
+        AssertBreakStmt(pStreamWas->pDevCfg->pIAudioCaptureClient && pStreamWas->pDevCfg->pIAudioClient, rc = VERR_AUDIO_STREAM_NOT_READY);
 
         /*
          * Anything pending from last call?
@@ -1576,7 +2010,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
             pStreamWas->cbCapture   -= cbToCopy;
             if (!pStreamWas->cbCapture)
             {
-                HRESULT hrc = pStreamWas->pIAudioCaptureClient->ReleaseBuffer(pStreamWas->cFramesCaptureToRelease);
+                HRESULT hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->ReleaseBuffer(pStreamWas->cFramesCaptureToRelease);
                 Log4Func(("@%#RX64: Releasing capture buffer (%#x frames): %Rhrc\n",
                           pStreamWas->offInternal, pStreamWas->cFramesCaptureToRelease, hrc));
                 if (SUCCEEDED(hrc))
@@ -1602,7 +2036,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
          * skip this and go straight for GetBuffer or we risk getting unwritten buffer space back).
          */
         UINT32 cFramesCaptured = 0;
-        HRESULT hrc = pStreamWas->pIAudioCaptureClient->GetNextPacketSize(&cFramesCaptured);
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->GetNextPacketSize(&cFramesCaptured);
         if (SUCCEEDED(hrc))
         {
             if (!cFramesCaptured)
@@ -1625,7 +2059,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
         UINT64  offDevice   = 0;
         DWORD   fBufFlags   = 0;
         BYTE   *pbData      = NULL;
-        hrc = pStreamWas->pIAudioCaptureClient->GetBuffer(&pbData, &cFramesCaptured, &fBufFlags, &offDevice, &uQpsNtTicks);
+        hrc = pStreamWas->pDevCfg->pIAudioCaptureClient->GetBuffer(&pbData, &cFramesCaptured, &fBufFlags, &offDevice, &uQpsNtTicks);
         Log4Func(("@%#RX64: GetBuffer -> %Rhrc pbData=%p cFramesCaptured=%#x fBufFlags=%#x offDevice=%#RX64 uQpcNtTicks=%#RX64\n",
                   pStreamWas->offInternal, hrc, pbData, cFramesCaptured, fBufFlags, offDevice, uQpsNtTicks));
         if (SUCCEEDED(hrc))
@@ -1708,6 +2142,12 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
         pThis->pNotifyClient->Release();
     }
 
+    if (RTCritSectIsInitialized(&pThis->CritSectCache))
+    {
+        drvHostAudioWasCachePurge(pThis);
+        RTCritSectDelete(&pThis->CritSectCache);
+    }
+
     if (pThis->pIEnumerator)
     {
         uint32_t cRefs = pThis->pIEnumerator->Release(); RT_NOREF(cRefs);
@@ -1715,8 +2155,8 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
         CoUninitialize();
     }
 
-    if (RTCritSectRwIsInitialized(&pThis->CritSectList))
-        RTCritSectRwDelete(&pThis->CritSectList);
+    if (RTCritSectRwIsInitialized(&pThis->CritSectStreamList))
+        RTCritSectRwDelete(&pThis->CritSectStreamList);
 
     LogFlowFuncLeave();
 }
@@ -1736,7 +2176,8 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      */
     pThis->pDrvIns                          = pDrvIns;
     pThis->hDrainTimer                      = NIL_TMTIMERHANDLE;
-    RTListInit(&pThis->HeadStreams);
+    RTListInit(&pThis->StreamHead);
+    RTListInit(&pThis->CacheHead);
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface        = drvHostAudioWasQueryInterface;
     /* IHostAudio */
@@ -1764,9 +2205,12 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /** @todo make it possible to override the default device selection. */
 
     /*
-     * Initialize the critical section early.
+     * Initialize the critical sections early.
      */
-    int rc = RTCritSectRwInit(&pThis->CritSectList);
+    int rc = RTCritSectRwInit(&pThis->CritSectStreamList);
+    AssertRCReturn(rc, rc);
+
+    rc = RTCritSectInit(&pThis->CritSectCache);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1830,6 +2274,11 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvHostWasDrainStopTimer, NULL /*pvUser*/, 0 /*fFlags*/,
                                 "WasAPI drain", &pThis->hDrainTimer);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Prime the cache.
+     */
+    drvHostAudioWasCacheFill(pThis);
 
     return VINF_SUCCESS;
 }
