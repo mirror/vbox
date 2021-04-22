@@ -80,6 +80,8 @@ signals:
      * @{ */
         /** Asks #UIStarter listener to restart UI. */
         void sigAskToRestartUI();
+        /** Asks #UIStarter listener to close UI. */
+        void sigAskToCloseUI();
 
         /** Notifies listeners about the VBoxSVC availability change. */
         void sigVBoxSVCAvailabilityChange();
@@ -837,6 +839,11 @@ private:
 
         /** Holds whether UICommon instance is properly initialized. */
         bool  m_fValid;
+
+#ifdef VBOX_WS_WIN
+        /** Holds whether overall GUI data is committed. */
+        bool  m_fDataCommitted;
+#endif
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Holds the #MacOSXRelease determined using <i>uname</i> call. */

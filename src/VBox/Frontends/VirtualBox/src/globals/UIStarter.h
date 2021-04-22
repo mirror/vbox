@@ -52,16 +52,12 @@ public:
 
 private slots:
 
-    /** Prepares everything. */
-    void prepare();
-
     /** Starts corresponding part of the UI. */
     void sltStartUI();
     /** Restarts corresponding part of the UI. */
     void sltRestartUI();
-
-    /** Cleanups everything. */
-    void cleanup();
+    /** Closes corresponding part of the UI. */
+    void sltCloseUI();
 
     /** Handles commit data request. */
     void sltHandleCommitDataRequest();

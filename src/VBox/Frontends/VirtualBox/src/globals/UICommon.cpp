@@ -282,6 +282,9 @@ void UICommon::destroy()
 UICommon::UICommon(UIType enmType)
     : m_enmType(enmType)
     , m_fValid(false)
+#ifdef VBOX_WS_WIN
+    , m_fDataCommitted(false)
+#endif
 #ifdef VBOX_WS_MAC
     , m_enmMacOSVersion(MacOSXRelease_Old)
 #endif
@@ -4077,7 +4080,8 @@ void UICommon::retranslateUi()
 void UICommon::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
-    connect(qApp, &QGuiApplication::aboutToQuit, this, &UICommon::cleanup);
+    connect(qApp, &QGuiApplication::aboutToQuit,
+            this, &UICommon::cleanup);
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     /* Make sure we handle host OS session shutdown as well: */
     connect(qApp, &QGuiApplication::commitDataRequest,
@@ -4569,6 +4573,20 @@ void UICommon::prepare()
 
 void UICommon::cleanup()
 {
+    LogRel(("GUI: UICommon: Handling aboutToQuit request..\n"));
+
+#ifdef VBOX_WS_WIN
+    /* Ask listeners to commit data if haven't yet: */
+    if (!m_fDataCommitted)
+    {
+        emit sigAskToCommitData();
+        m_fDataCommitted = true;
+    }
+#else
+    /* Ask listeners to commit data: */
+    emit sigAskToCommitData();
+#endif
+
     /// @todo Shouldn't that be protected with a mutex or something?
     /* Remember that the cleanup is in progress preventing any unwanted
      * stuff which could be called from the other threads: */
@@ -4653,6 +4671,9 @@ void UICommon::cleanup()
     /* Finishing COM cleanup: */
     m_comCleanupProtectionToken.unlock();
 
+    /* Notify listener it can close UI now: */
+    emit sigAskToCloseUI();
+
     /* Destroy popup-center: */
     UIPopupCenter::destroy();
     /* Destroy message-center: */
@@ -4662,6 +4683,8 @@ void UICommon::cleanup()
     UIDesktopWidgetWatchdog::destroy();
 
     m_fValid = false;
+
+    LogRel(("GUI: UICommon: aboutToQuit request handled!\n"));
 }
 
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
@@ -4671,6 +4694,9 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
 
     /* Ask listener to commit data: */
     emit sigAskToCommitData();
+#ifdef VBOX_WS_WIN
+    m_fDataCommitted = true;
+#endif
 
     /* Ask session manager to postpone shutdown until we done: */
     manager.cancel();
