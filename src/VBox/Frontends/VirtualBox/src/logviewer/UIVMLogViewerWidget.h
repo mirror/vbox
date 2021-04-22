@@ -92,7 +92,6 @@ protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const /* override */;
-    void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private slots:
 
@@ -139,7 +138,7 @@ private slots:
         void sltChangeFont(QFont font);
         void sltResetOptionsToDefault();
     /** @} */
-    void sltCornerButtonToggled(bool fToggle);
+    void sltCornerButtonClicked();
 private:
         struct Machine
         {
