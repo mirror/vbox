@@ -499,7 +499,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             if (m_iGeometrySaveTimerId != -1)
                 killTimer(m_iGeometrySaveTimerId);
             m_iGeometrySaveTimerId = startTimer(300);
-            
+
             /* Let listeners know about geometry changes: */
             emit sigGeometryChange(geometry());
             break;
