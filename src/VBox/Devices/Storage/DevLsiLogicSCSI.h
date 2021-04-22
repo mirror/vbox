@@ -3326,21 +3326,26 @@ typedef struct MptConfigurationPagesSupported
     (pg)->u.fields.Header.u8PageLength = sizeof(type) / 4
 
 #define MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(pg, type, nr, flags) \
+    RT_ZERO(*pg); \
     MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING)
 
 #define MPT_CONFIG_PAGE_HEADER_INIT_IO_UNIT(pg, type, nr, flags) \
+    RT_ZERO(*pg); \
     MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT)
 
 #define MPT_CONFIG_PAGE_HEADER_INIT_IOC(pg, type, nr, flags) \
+    RT_ZERO(*pg); \
     MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_IOC)
 
 #define MPT_CONFIG_PAGE_HEADER_INIT_BIOS(pg, type, nr, flags) \
+    RT_ZERO(*pg); \
     MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_BIOS)
 
 /**
  * Initializes a extended page header.
  */
 #define MPT_CONFIG_EXTENDED_PAGE_HEADER_INIT(pg, cb, nr, flags, exttype) \
+    RT_BZERO(pg, cb); \
     (pg)->u.fields.ExtHeader.u8PageType   = (flags) | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED; \
     (pg)->u.fields.ExtHeader.u8PageNumber = (nr); \
     (pg)->u.fields.ExtHeader.u8ExtPageType = (exttype); \

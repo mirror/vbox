@@ -3677,10 +3677,8 @@ static void lsilogicR3InitializeConfigurationPages(PPDMDEVINS pDevIns, PLSILOGIC
 
     LogFlowFunc(("pThis=%#p\n", pThis));
 
-    /* Clear everything first. */
     AssertPtrReturnVoid(pThisCC->pConfigurationPages);
     PMptConfigurationPagesSupported pPages = pThisCC->pConfigurationPages;
-    memset(pPages, 0, sizeof(MptConfigurationPagesSupported));
 
     /* Manufacturing Page 0. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage0,
