@@ -311,7 +311,7 @@ pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
     }
 #endif
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
     if (   rc == VERR_IOMMU_NOT_PRESENT
         || rc == VERR_IOMMU_CANNOT_CALL_SELF)
@@ -348,7 +348,7 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
     }
 #endif
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
     if (   rc == VERR_IOMMU_NOT_PRESENT
         || rc == VERR_IOMMU_CANNOT_CALL_SELF)
