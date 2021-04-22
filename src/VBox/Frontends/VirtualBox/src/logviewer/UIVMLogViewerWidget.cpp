@@ -183,12 +183,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     restorePanelVisibility();
 }
 
-UIVMLogViewerWidget::~UIVMLogViewerWidget()
-{
-    /* Cleanup VM Log-Viewer: */
-    cleanup();
-}
-
 int UIVMLogViewerWidget::defaultLogPageWidth() const
 {
     if (!m_pTabWidget)
@@ -252,6 +246,16 @@ void UIVMLogViewerWidget::resizeEvent(QResizeEvent *pEvent)
     QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
     if (m_pMachineSelectionMenu)
         m_pMachineSelectionMenu->move(0, 40);
+}
+
+void UIVMLogViewerWidget::sltSaveOptions()
+{
+    /* Save a list of currently visible panels: */
+    QStringList strNameList;
+    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
+        strNameList.append(pPanel->panelName());
+    gEDataManager->setLogViewerVisiblePanels(strNameList);
+    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 
 void UIVMLogViewerWidget::sltRefresh()
@@ -765,6 +769,8 @@ void UIVMLogViewerWidget::loadOptions()
     QFont loadedFont = gEDataManager->logViewerFont();
     if (loadedFont != QFont())
         m_font = loadedFont;
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVMLogViewerWidget::sltSaveOptions);
 }
 
 void UIVMLogViewerWidget::restorePanelVisibility()
@@ -790,22 +796,6 @@ void UIVMLogViewerWidget::restorePanelVisibility()
             }
         }
     }
-}
-
-void UIVMLogViewerWidget::saveOptions()
-{
-    /* Save a list of currently visible panels: */
-    QStringList strNameList;
-    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
-        strNameList.append(pPanel->panelName());
-    gEDataManager->setLogViewerVisiblePanels(strNameList);
-    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
-}
-
-void UIVMLogViewerWidget::cleanup()
-{
-    /* Save options: */
-    saveOptions();
 }
 
 void UIVMLogViewerWidget::retranslateUi()
