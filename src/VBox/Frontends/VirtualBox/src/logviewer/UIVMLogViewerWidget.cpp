@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QDateTime>
 #include <QDir>
 #include <QFont>
@@ -54,6 +55,35 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+class UIMachineListCheckBox : public QCheckBox
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIMachineListCheckBox(const QString &strText, QWidget *pParent = 0);
+    void setId(const QUuid &id);
+    const QUuid &id() const;
+private:
+    QUuid m_id;
+};
+
+UIMachineListCheckBox::UIMachineListCheckBox(const QString &strText, QWidget *pParent /* = 0 */)
+    :QCheckBox(strText, pParent)
+{
+}
+
+void UIMachineListCheckBox::setId(const QUuid &id)
+{
+    m_id = id;
+}
+
+const QUuid &UIMachineListCheckBox::id() const
+{
+    return m_id;
+}
+
 class UIMachineListMenu : public QWidget
 {
 
@@ -64,30 +94,56 @@ public:
     UIMachineListMenu(QWidget *pParent = 0);
     /** Removes the actions and deletes them. */
     void clear();
-    QAction *addAction(const QString &strText);
+    void addListItem(const QString &strText, const QUuid &id);
+
+private:
+
+    void computeMinimumSize();
+    QVector<UIMachineListCheckBox*> m_checkboxes;
+    QVBoxLayout *m_pLayout;
 };
 
 UIMachineListMenu::UIMachineListMenu(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
+    , m_pLayout(0)
 {
+    m_pLayout = new QVBoxLayout(this);
 }
 
 void UIMachineListMenu::clear()
 {
-    QList<QAction*> actionList = actions();
-    for (int i = 0; i < actionList.size(); ++i)
-    {
-        removeAction(actionList[i]);
-        delete actionList[i];
-    }
+    qDeleteAll(m_checkboxes.begin(), m_checkboxes.end());
+    m_checkboxes.clear();
 }
 
-QAction *UIMachineListMenu::addAction(const QString &strText)
+void UIMachineListMenu::addListItem(const QString &strText, const QUuid &id)
 {
-    QAction *pAction = new QAction(strText, this);
-    QWidget::addAction(pAction);
-    return pAction;
+    UIMachineListCheckBox *pCheckBox = new UIMachineListCheckBox(strText, this);
+    m_checkboxes << pCheckBox;
+    pCheckBox->setId(id);
+    m_pLayout->addWidget(pCheckBox);
+    computeMinimumSize();
 }
+
+void UIMachineListMenu::computeMinimumSize()
+{
+    int iMaxTextLen = 0;
+    foreach(const UIMachineListCheckBox *pCheckBox, m_checkboxes)
+    {
+        if (!pCheckBox)
+            continue;
+        //iMaxTextLen = qMax(iMaxTextLen, fontMetrics().horizontalAdvance(pCheckBox->text()));
+        iMaxTextLen = qMax(iMaxTextLen, pCheckBox->width());
+    }
+    int iWidth = iMaxTextLen + 2 * qApp->style()->pixelMetric(QStyle::PM_ButtonIconSize);
+    int iHeight = m_checkboxes.size() * fontMetrics().height() +
+        qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) +
+        qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    //printf("%d %d\n", iWidth, iHeight);
+    setMinimumSize(iWidth, iHeight);
+    update();
+}
+
 
 UIVMLogViewerWidget::Machine::Machine(const QUuid &id, const QString &strName)
     : m_id(id)
@@ -189,6 +245,13 @@ QFont UIVMLogViewerWidget::currentFont() const
 bool UIVMLogViewerWidget::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
+}
+
+void UIVMLogViewerWidget::resizeEvent(QResizeEvent *pEvent)
+{
+    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+    if (m_pMachineSelectionMenu)
+        m_pMachineSelectionMenu->move(0, 40);
 }
 
 void UIVMLogViewerWidget::sltRefresh()
@@ -485,7 +548,8 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
 
 void UIVMLogViewerWidget::sltCornerButtonToggled(bool fToggle)
 {
-    printf("%d\n", fToggle);
+    if (m_pMachineSelectionMenu)
+        m_pMachineSelectionMenu->setVisible(fToggle);
 }
 
 void UIVMLogViewerWidget::prepare()
@@ -560,10 +624,13 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pCornerButton = new QIToolButton(m_pTabWidget);
             if (m_pCornerButton)
             {
-                m_pTabWidget->setCornerWidget(m_pCornerButton, Qt::TopLeftCorner);
+                m_pTabWidget->setCornerWidget(m_pCornerButton);//, Qt::TopLeftCorner);
+                m_pCornerButton->setCheckable(true);
                 m_pCornerButton->setIcon(UIIconPool::iconSet(":/machine_16px.png"));
                 m_pCornerButton->setCheckable(true);
                 m_pMachineSelectionMenu = new UIMachineListMenu(this);
+                m_pMachineSelectionMenu->setAutoFillBackground(true);
+                m_pMachineSelectionMenu->setVisible(false);
                 connect(m_pCornerButton, &QIToolButton::toggled, this, &UIVMLogViewerWidget::sltCornerButtonToggled);
                 //m_pCornerButton->setMenu(m_pMachineSelectionMenu);
                 //m_pCornerButton->setPopupMode(QToolButton::InstantPopup);
@@ -1007,9 +1074,8 @@ void UIVMLogViewerWidget::updateMachineSelectionMenu()
 
     foreach (const Machine &machine, m_machines)
     {
-        QAction *pAction = m_pMachineSelectionMenu->addAction(machine.m_strName);
-        pAction->setCheckable(true);
-        pAction->setData(machine.m_id);
+
+        m_pMachineSelectionMenu->addListItem(machine.m_strName, machine.m_id);
     }
 }
 

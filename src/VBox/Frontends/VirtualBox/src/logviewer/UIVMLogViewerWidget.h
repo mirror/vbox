@@ -94,6 +94,7 @@ protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const /* override */;
+    void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private slots:
 
