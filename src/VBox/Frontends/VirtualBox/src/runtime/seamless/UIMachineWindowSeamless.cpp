@@ -87,7 +87,6 @@ void UIMachineWindowSeamless::sltRevokeWindowActivation()
 void UIMachineWindowSeamless::sltHandleMiniToolBarAutoHideToggled(bool fEnabled)
 {
     /* Save mini-toolbar settings: */
-    printf("save mini-toolbar auto-hide feature status as: %d\n", (int)fEnabled);
     gEDataManager->setAutoHideMiniToolbar(fEnabled, uiCommon().managedVMUuid());
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
