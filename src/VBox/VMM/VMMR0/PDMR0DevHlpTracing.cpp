@@ -412,10 +412,10 @@ DECL_HIDDEN_CALLBACK(void) pdmR0DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDM
 
         pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
         pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
-        pTask->u.PciSetIRQ.iIrq = iIrq;
-        pTask->u.PciSetIRQ.iLevel = iLevel;
-        pTask->u.PciSetIRQ.uTagSrc = uTagSrc;
-        pTask->u.PciSetIRQ.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
+        pTask->u.PciSetIrq.iIrq = iIrq;
+        pTask->u.PciSetIrq.iLevel = iLevel;
+        pTask->u.PciSetIrq.uTagSrc = uTagSrc;
+        pTask->u.PciSetIrq.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
 
         PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
     }

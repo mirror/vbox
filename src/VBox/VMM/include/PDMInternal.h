@@ -1202,11 +1202,11 @@ typedef enum PDMDEVHLPTASKOP
 {
     /** The usual invalid 0 entry. */
     PDMDEVHLPTASKOP_INVALID = 0,
-    /** ISASetIrq */
+    /** IsaSetIrq, IoApicSetIrq */
     PDMDEVHLPTASKOP_ISA_SET_IRQ,
-    /** PCISetIrq */
+    /** PciSetIrq */
     PDMDEVHLPTASKOP_PCI_SET_IRQ,
-    /** PCISetIrq */
+    /** PciSetIrq */
     PDMDEVHLPTASKOP_IOAPIC_SET_IRQ,
     /** IoApicSendMsi */
     PDMDEVHLPTASKOP_IOAPIC_SEND_MSI,
@@ -1244,7 +1244,7 @@ typedef struct PDMDEVHLPTASK
             int                     iLevel;
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
-        } IsaSetIRQ, IoApicSetIRQ;
+        } IsaSetIrq, IoApicSetIrq;
 
         /**
          * PDMDEVHLPTASKOP_PCI_SET_IRQ
@@ -1259,7 +1259,7 @@ typedef struct PDMDEVHLPTASK
             int                     iLevel;
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
-        } PciSetIRQ;
+        } PciSetIrq;
 
         /**
          * PDMDEVHLPTASKOP_IOAPIC_SEND_MSI

@@ -5361,13 +5361,13 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
     switch (pTask->enmOp)
     {
         case PDMDEVHLPTASKOP_ISA_SET_IRQ:
-            PDMIsaSetIrq(pVM, pTask->u.IsaSetIRQ.iIrq, pTask->u.IsaSetIRQ.iLevel, pTask->u.IsaSetIRQ.uTagSrc);
+            PDMIsaSetIrq(pVM, pTask->u.IsaSetIrq.iIrq, pTask->u.IsaSetIrq.iLevel, pTask->u.IsaSetIrq.uTagSrc);
             break;
 
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
         {
             /* Same as pdmR3DevHlp_PCISetIrq, except we've got a tag already. */
-            PPDMPCIDEV pPciDev = pTask->u.PciSetIRQ.pPciDevR3;
+            PPDMPCIDEV pPciDev = pTask->u.PciSetIrq.pPciDevR3;
             if (pPciDev)
             {
                 size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
@@ -5375,8 +5375,8 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
                 PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
                 pdmLock(pVM);
-                pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, pTask->u.PciSetIRQ.iIrq,
-                                  pTask->u.PciSetIRQ.iLevel, pTask->u.PciSetIRQ.uTagSrc);
+                pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, pTask->u.PciSetIrq.iIrq,
+                                  pTask->u.PciSetIrq.iLevel, pTask->u.PciSetIrq.uTagSrc);
                 pdmUnlock(pVM);
             }
             else
@@ -5386,8 +5386,8 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 
         case PDMDEVHLPTASKOP_IOAPIC_SET_IRQ:
         {
-            PDMIoApicSetIrq(pVM, pTask->u.IoApicSetIRQ.uBusDevFn, pTask->u.IoApicSetIRQ.iIrq, pTask->u.IoApicSetIRQ.iLevel,
-                            pTask->u.IoApicSetIRQ.uTagSrc);
+            PDMIoApicSetIrq(pVM, pTask->u.IoApicSetIrq.uBusDevFn, pTask->u.IoApicSetIrq.iIrq, pTask->u.IoApicSetIrq.iLevel,
+                            pTask->u.IoApicSetIrq.uTagSrc);
             break;
         }
 

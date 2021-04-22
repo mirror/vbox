@@ -249,10 +249,10 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
 
         pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
         pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
-        pTask->u.PciSetIRQ.iIrq = iIrq;
-        pTask->u.PciSetIRQ.iLevel = iLevel;
-        pTask->u.PciSetIRQ.uTagSrc = uTagSrc;
-        pTask->u.PciSetIRQ.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
+        pTask->u.PciSetIrq.iIrq = iIrq;
+        pTask->u.PciSetIrq.iLevel = iLevel;
+        pTask->u.PciSetIrq.uTagSrc = uTagSrc;
+        pTask->u.PciSetIrq.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
 
         PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
     }
@@ -1603,10 +1603,10 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, PCIBDF uB
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
             pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
-            pTask->u.IoApicSetIRQ.uBusDevFn = uBusDevFn;
-            pTask->u.IoApicSetIRQ.iIrq = iIrq;
-            pTask->u.IoApicSetIRQ.iLevel = iLevel;
-            pTask->u.IoApicSetIRQ.uTagSrc = uTagSrc;
+            pTask->u.IoApicSetIrq.uBusDevFn = uBusDevFn;
+            pTask->u.IoApicSetIrq.iIrq = iIrq;
+            pTask->u.IoApicSetIrq.iLevel = iLevel;
+            pTask->u.IoApicSetIrq.uTagSrc = uTagSrc;
 
             PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
         }
@@ -1820,10 +1820,10 @@ DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSr
 
     pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
     pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
-    pTask->u.IsaSetIRQ.uBusDevFn = NIL_PCIBDF;
-    pTask->u.IsaSetIRQ.iIrq = iIrq;
-    pTask->u.IsaSetIRQ.iLevel = iLevel;
-    pTask->u.IsaSetIRQ.uTagSrc = uTagSrc;
+    pTask->u.IsaSetIrq.uBusDevFn = NIL_PCIBDF;
+    pTask->u.IsaSetIrq.iIrq = iIrq;
+    pTask->u.IsaSetIrq.iLevel = iLevel;
+    pTask->u.IsaSetIrq.uTagSrc = uTagSrc;
 
     PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
     return false;
