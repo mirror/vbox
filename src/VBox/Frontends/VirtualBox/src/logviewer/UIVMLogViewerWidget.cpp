@@ -54,11 +54,49 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+class UIMachineListMenu : public QWidget
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIMachineListMenu(QWidget *pParent = 0);
+    /** Removes the actions and deletes them. */
+    void clear();
+    QAction *addAction(const QString &strText);
+};
+
+UIMachineListMenu::UIMachineListMenu(QWidget *pParent /* = 0 */)
+    :QWidget(pParent)
+{
+}
+
+void UIMachineListMenu::clear()
+{
+    QList<QAction*> actionList = actions();
+    for (int i = 0; i < actionList.size(); ++i)
+    {
+        removeAction(actionList[i]);
+        delete actionList[i];
+    }
+}
+
+QAction *UIMachineListMenu::addAction(const QString &strText)
+{
+    QAction *pAction = new QAction(strText, this);
+    QWidget::addAction(pAction);
+    return pAction;
+}
+
 UIVMLogViewerWidget::Machine::Machine(const QUuid &id, const QString &strName)
     : m_id(id)
     , m_strName(strName)
 {
 }
+
+UIVMLogViewerWidget::Machine::Machine()
+{}
 
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
@@ -445,6 +483,11 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     }
 }
 
+void UIVMLogViewerWidget::sltCornerButtonToggled(bool fToggle)
+{
+    printf("%d\n", fToggle);
+}
+
 void UIVMLogViewerWidget::prepare()
 {
     /* Load options: */
@@ -519,9 +562,11 @@ void UIVMLogViewerWidget::prepareWidgets()
             {
                 m_pTabWidget->setCornerWidget(m_pCornerButton, Qt::TopLeftCorner);
                 m_pCornerButton->setIcon(UIIconPool::iconSet(":/machine_16px.png"));
-                m_pMachineSelectionMenu = new QMenu(this);
-                m_pCornerButton->setMenu(m_pMachineSelectionMenu);
-                m_pCornerButton->setPopupMode(QToolButton::InstantPopup);
+                m_pCornerButton->setCheckable(true);
+                m_pMachineSelectionMenu = new UIMachineListMenu(this);
+                connect(m_pCornerButton, &QIToolButton::toggled, this, &UIVMLogViewerWidget::sltCornerButtonToggled);
+                //m_pCornerButton->setMenu(m_pMachineSelectionMenu);
+                //m_pCornerButton->setPopupMode(QToolButton::InstantPopup);
             }
         }
 
@@ -957,11 +1002,7 @@ void UIVMLogViewerWidget::manageEscapeShortCut()
 void UIVMLogViewerWidget::updateMachineSelectionMenu()
 {
     if (!m_pMachineSelectionMenu)
-    {
-        m_pMachineSelectionMenu = new QMenu(this);
-        if (m_pCornerButton)
-            m_pCornerButton->setMenu(m_pMachineSelectionMenu);
-    }
+        return;
     m_pMachineSelectionMenu->clear();
 
     foreach (const Machine &machine, m_machines)
@@ -971,3 +1012,5 @@ void UIVMLogViewerWidget::updateMachineSelectionMenu()
         pAction->setData(machine.m_id);
     }
 }
+
+#include "UIVMLogViewerWidget.moc"

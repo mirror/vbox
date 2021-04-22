@@ -43,6 +43,7 @@ class UIActionPool;
 class UIDialogPanel;
 class QIToolBar;
 class QIToolButton;
+class UIMachineListMenu;
 class UIVirtualMachineItem;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
@@ -136,11 +137,12 @@ private slots:
         void sltChangeFont(QFont font);
         void sltResetOptionsToDefault();
     /** @} */
-
+    void sltCornerButtonToggled(bool fToggle);
 private:
         struct Machine
         {
             Machine(const QUuid &id, const QString &strName);
+            Machine();
             QUuid   m_id;
             QString m_strName;
         };
@@ -244,7 +246,7 @@ private:
         QFont m_font;
     /** @} */
     QIToolButton *m_pCornerButton;
-    QMenu *m_pMachineSelectionMenu;
+    UIMachineListMenu *m_pMachineSelectionMenu;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
