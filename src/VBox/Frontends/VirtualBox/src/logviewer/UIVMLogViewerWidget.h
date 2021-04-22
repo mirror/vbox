@@ -43,6 +43,7 @@ class UIActionPool;
 class UIDialogPanel;
 class QIToolBar;
 class QIToolButton;
+class UIVirtualMachineItem;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
@@ -85,6 +86,7 @@ public:
 
     /** Defines the @a comMachine whose logs to show. */
     void setMachine(const CMachine &comMachine);
+    void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
 protected:
@@ -136,7 +138,12 @@ private slots:
     /** @} */
 
 private:
-
+        struct Machine
+        {
+            Machine(const QUuid &id, const QString &strName);
+            QUuid   m_id;
+            QString m_strName;
+        };
     /** @name Prepare/Cleanup
       * @{ */
         /** Prepares VM Log-Viewer. */
@@ -183,16 +190,15 @@ private:
 
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();
-
     void hidePanel(UIDialogPanel* panel);
     void showPanel(UIDialogPanel* panel);
-
     /** Make sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
         - grab it from the dialog as soon as a panel becomes visible again
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
+    void updateMachineSelectionMenu();
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
@@ -202,6 +208,7 @@ private:
     const bool    m_fShowToolbar;
     /** Holds the machine instance. */
     CMachine      m_comMachine;
+    QVector<Machine> m_machines;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;

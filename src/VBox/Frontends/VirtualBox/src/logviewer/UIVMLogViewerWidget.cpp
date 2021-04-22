@@ -37,6 +37,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualMachineItem.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerWidget.h"
 #include "UIVMLogViewerBookmarksPanel.h"
@@ -52,6 +53,13 @@
 
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
+
+UIVMLogViewerWidget::Machine::Machine(const QUuid &id, const QString &strName)
+    : m_id(id)
+    , m_strName(strName)
+{
+}
+
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
                                          bool fShowToolbar /* = true */,
@@ -118,6 +126,18 @@ void UIVMLogViewerWidget::setMachine(const CMachine &comMachine)
         return;
     m_comMachine = comMachine;
     sltRefresh();
+}
+
+void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
+{
+    m_machines.clear();
+    foreach (const UIVirtualMachineItem *item, items)
+    {
+        if (!item)
+            continue;
+        m_machines << Machine(item->id(), item->name());
+    }
+    updateMachineSelectionMenu();
 }
 
 QFont UIVMLogViewerWidget::currentFont() const
@@ -501,6 +521,7 @@ void UIVMLogViewerWidget::prepareWidgets()
                 m_pCornerButton->setIcon(UIIconPool::iconSet(":/machine_16px.png"));
                 m_pMachineSelectionMenu = new QMenu(this);
                 m_pCornerButton->setMenu(m_pMachineSelectionMenu);
+                m_pCornerButton->setPopupMode(QToolButton::InstantPopup);
             }
         }
 
@@ -687,6 +708,7 @@ void UIVMLogViewerWidget::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
+    m_pCornerButton->setToolTip(tr("Select machines to show their log"));
 }
 
 void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
@@ -930,4 +952,22 @@ void UIVMLogViewerWidget::manageEscapeShortCut()
         m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
     }
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+}
+
+void UIVMLogViewerWidget::updateMachineSelectionMenu()
+{
+    if (!m_pMachineSelectionMenu)
+    {
+        m_pMachineSelectionMenu = new QMenu(this);
+        if (m_pCornerButton)
+            m_pCornerButton->setMenu(m_pMachineSelectionMenu);
+    }
+    m_pMachineSelectionMenu->clear();
+
+    foreach (const Machine &machine, m_machines)
+    {
+        QAction *pAction = m_pMachineSelectionMenu->addAction(machine.m_strName);
+        pAction->setCheckable(true);
+        pAction->setData(machine.m_id);
+    }
 }

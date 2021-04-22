@@ -278,6 +278,12 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
         AssertPtrReturnVoid(m_pPaneDetails);
         m_pPaneDetails->setItems(m_items);
     }
+    /* Update logs pane is it is open: */
+    if (isToolOpened(UIToolType_Logs))
+    {
+        AssertPtrReturnVoid(m_pPaneLogViewer);
+        m_pPaneLogViewer->setSelectedVMListItems(m_items);
+    }
 }
 
 void UIToolPaneMachine::setMachine(const CMachine &comMachine)
