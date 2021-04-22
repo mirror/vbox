@@ -800,6 +800,61 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
 #endif
 
 
+/** @def STAM_REL_PROFILE_START_NS
+ * Samples the start time of a profiling period, using RTTimeNanoTS().
+ *
+ * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ *
+ * @remarks Declears a stack variable that will be used by related macros.
+ */
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+# define STAM_REL_PROFILE_START_NS(pProfile, Prefix) \
+    uint64_t const Prefix##_tsStart = RTTimeNanoTS()
+#else
+# define STAM_REL_PROFILE_START_NS(pProfile, Prefix) do { } while (0)
+#endif
+/** @def STAM_PROFILE_START_NS
+ * Samples the start time of a profiling period, using RTTimeNanoTS().
+ *
+ * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ *
+ * @remarks Declears a stack variable that will be used by related macros.
+ */
+#ifdef VBOX_WITH_STATISTICS
+# define STAM_PROFILE_START_NS(pProfile, Prefix) STAM_REL_PROFILE_START_NS(pProfile, Prefix)
+#else
+# define STAM_PROFILE_START_NS(pProfile, Prefix) do { } while (0)
+#endif
+
+/** @def STAM_REL_PROFILE_STOP_NS
+ * Samples the stop time of a profiling period and updates the sample, using
+ * RTTimeNanoTS().
+ *
+ * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ */
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+# define STAM_REL_PROFILE_STOP_NS(pProfile, Prefix) \
+    STAM_REL_PROFILE_ADD_PERIOD(pProfile, RTTimeNanoTS() - Prefix##_tsStart)
+#else
+# define STAM_REL_PROFILE_STOP_NS(pProfile, Prefix) do { } while (0)
+#endif
+/** @def STAM_PROFILE_STOP_NS
+ * Samples the stop time of a profiling period and updates the sample, using
+ * RTTimeNanoTS().
+ *
+ * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ */
+#ifdef VBOX_WITH_STATISTICS
+# define STAM_PROFILE_STOP_NS(pProfile, Prefix) STAM_REL_PROFILE_STOP_NS(pProfile, Prefix)
+#else
+# define STAM_PROFILE_STOP_NS(pProfile, Prefix) do { } while (0)
+#endif
+
+
 /**
  * Advanced profiling sample - STAMTYPE_PROFILE_ADV.
  *
