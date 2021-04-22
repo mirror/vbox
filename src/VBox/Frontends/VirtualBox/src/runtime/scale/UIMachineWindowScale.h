@@ -46,8 +46,6 @@ private:
     /** Load settings routine. */
     void loadSettings();
 
-    /** Save settings routine. */
-    void saveSettings();
 #ifdef VBOX_WS_MAC
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
@@ -71,7 +69,9 @@ private:
     bool isMaximizedChecked();
 
     /** Holds the current window geometry. */
-    QRect m_normalGeometry;
+    QRect  m_geometry;
+    /** Holds the geometry save timer ID. */
+    int  m_iGeometrySaveTimerId;
 
     /** Factory support. */
     friend class UIMachineWindow;

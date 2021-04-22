@@ -102,8 +102,6 @@ private:
     /** Load settings routine. */
     void loadSettings();
 
-    /** Save settings routine. */
-    void saveSettings();
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
     /** Cleanup session connections routine. */
@@ -138,7 +136,9 @@ private:
     UIIndicatorsPool *m_pIndicatorsPool;
 
     /** Holds the current window geometry. */
-    QRect m_normalGeometry;
+    QRect  m_geometry;
+    /** Holds the geometry save timer ID. */
+    int  m_iGeometrySaveTimerId;
 
     /** Factory support. */
     friend class UIMachineWindow;

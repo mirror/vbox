@@ -17,10 +17,13 @@
 
 /* Qt includes: */
 #include <QMenuBar>
-#include <QTimer>
+#include <QTimerEvent>
 #include <QContextMenuEvent>
 #include <QResizeEvent>
 #include <QScrollBar>
+#ifdef VBOX_WS_X11
+# include <QTimer>
+#endif
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -55,6 +58,7 @@
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pIndicatorsPool(0)
+    , m_iGeometrySaveTimerId(-1)
 {
 }
 
@@ -376,8 +380,8 @@ void UIMachineWindowNormal::loadSettings()
         if (!geo.isNull())
         {
             /* Restore window geometry: */
-            m_normalGeometry = geo;
-            UICommon::setTopLevelGeometry(this, m_normalGeometry);
+            m_geometry = geo;
+            UICommon::setTopLevelGeometry(this, m_geometry);
 
             /* If previous machine-state was NOT SAVED => normalize window to the optimal-size: */
             if (machine().GetState() != KMachineState_Saved)
@@ -395,9 +399,9 @@ void UIMachineWindowNormal::loadSettings()
             normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay());
 
             /* Move it to the screen-center: */
-            m_normalGeometry = geometry();
-            m_normalGeometry.moveCenter(gpDesktop->availableGeometry(this).center());
-            UICommon::setTopLevelGeometry(this, m_normalGeometry);
+            m_geometry = geometry();
+            m_geometry.moveCenter(gpDesktop->availableGeometry(this).center());
+            UICommon::setTopLevelGeometry(this, m_geometry);
         }
 
         /* Normalize to the optimal size: */
@@ -408,19 +412,6 @@ void UIMachineWindowNormal::loadSettings()
 #endif /* !VBOX_WS_X11 */
     }
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
-}
-
-void UIMachineWindowNormal::saveSettings()
-{
-    /* Save window geometry: */
-    {
-        gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
-                                                m_uScreenId, m_normalGeometry,
-                                                isMaximizedChecked(), uiCommon().managedVMUuid());
-    }
-
-    /* Call to base-class: */
-    UIMachineWindow::saveSettings();
 }
 
 void UIMachineWindowNormal::cleanupVisualState()
@@ -471,12 +462,19 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
             if (!isMaximizedChecked())
             {
-                m_normalGeometry.setSize(pResizeEvent->size());
+                m_geometry.setSize(pResizeEvent->size());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 /* Update debugger window position: */
                 updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
             }
+
+            /* Restart geometry save timer: */
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+
+            /* Let listeners know about geometry changes: */
             emit sigGeometryChange(geometry());
             break;
         }
@@ -490,18 +488,44 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
 
             if (!isMaximizedChecked())
             {
-                m_normalGeometry.moveTo(geometry().x(), geometry().y());
+                m_geometry.moveTo(geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 /* Update debugger window position: */
                 updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
             }
+
+            /* Restart geometry save timer: */
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+            
+            /* Let listeners know about geometry changes: */
             emit sigGeometryChange(geometry());
             break;
         }
         case QEvent::WindowActivate:
+        {
+            /* Let listeners know about geometry changes: */
             emit sigGeometryChange(geometry());
             break;
+        }
+        /* Handle timer event started above: */
+        case QEvent::Timer:
+        {
+            QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+            if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+            {
+                killTimer(m_iGeometrySaveTimerId);
+                m_iGeometrySaveTimerId = -1;
+                LogRel2(("GUI: UIMachineWindowNormal: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+                         m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+                gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
+                                                        m_uScreenId, m_geometry,
+                                                        isMaximizedChecked(), uiCommon().managedVMUuid());
+            }
+            break;
+        }
         default:
             break;
     }
@@ -531,8 +555,8 @@ void UIMachineWindowNormal::showInNecessaryMode()
 void UIMachineWindowNormal::restoreCachedGeometry()
 {
     /* Restore the geometry cached by the window: */
-    resize(m_normalGeometry.size());
-    move(m_normalGeometry.topLeft());
+    resize(m_geometry.size());
+    move(m_geometry.topLeft());
 
     /* Adjust machine-view accordingly: */
     adjustMachineViewSize();
