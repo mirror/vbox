@@ -1313,8 +1313,11 @@ void UISession::loadSessionSettings()
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
 #endif
 
-        /* Is there should be First RUN Wizard? */
+        /* Should the First RUN wizard be here? */
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(uMachineID);
+        /* Disable First RUN wizard for subsequent start anyway: */
+        if (m_fIsFirstTimeStarted)
+            gEDataManager->setMachineFirstTimeStarted(false, uMachineID);
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
@@ -1385,16 +1388,6 @@ void UISession::saveSessionSettings()
 {
     /* Save extra-data settings: */
     {
-        /* Disable First RUN Wizard: */
-        gEDataManager->setMachineFirstTimeStarted(false, uiCommon().managedVMUuid());
-
-        /* Remember if guest should autoresize: */
-        if (actionPool())
-        {
-            const QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
-            gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), uiCommon().managedVMUuid());
-        }
-
         /* Cleanup machine-window icon: */
         delete m_pMachineWindowIcon;
         m_pMachineWindowIcon = 0;

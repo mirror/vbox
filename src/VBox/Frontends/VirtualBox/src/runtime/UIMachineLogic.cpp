@@ -2007,6 +2007,9 @@ void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
             pMachineWindow->normalizeGeometry(true /* adjust position */, true /* resize window to guest display size */);
         }
     }
+
+    /* Save value to extra-data finally: */
+    gEDataManager->setGuestScreenAutoResizeEnabled(fEnabled, uiCommon().managedVMUuid());
 }
 
 void UIMachineLogic::sltTakeScreenshot()
