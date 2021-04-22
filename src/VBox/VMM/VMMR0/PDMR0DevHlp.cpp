@@ -152,7 +152,10 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
 
 #ifdef VBOX_WITH_IOMMU_AMD
     int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -186,7 +189,10 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
 
 #ifdef VBOX_WITH_IOMMU_AMD
     int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -1531,7 +1537,13 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
 
 #ifdef VBOX_WITH_IOMMU_AMD
     if (pdmIommuIsPresent(pDevIns))
-        return pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
+    {
+        PGVM pGVM = pDevIns->Internal.s.pGVM;
+        PPDMIOMMUR0 pIommu = &pGVM->pdmr0.s.aIommus[0];
+        if (pIommu->pDevInsR0)
+            return pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
+        AssertMsgFailedReturn(("Implement queueing PDM task for remapping MSI via IOMMU in ring-3"), VERR_IOMMU_IPE_0);
+    }
 #else
     RT_NOREF(pDevIns, idDevice);
 #endif

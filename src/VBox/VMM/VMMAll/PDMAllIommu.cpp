@@ -88,20 +88,10 @@ int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMS
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, idDevice, pMsiIn, pMsiOut);
-        if (RT_FAILURE(rc))
-        {
-            LogFunc(("MSI remap failed. idDevice=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", idDevice, pMsiIn->Addr.u64,
-                     pMsiIn->Data.u32, rc));
-        }
-        return rc;
-    }
-    /** @todo Should we return an rc such that we can reschedule to R3 if R0 isn't
-     *        enabled?  Is that even viable with the state the I/O APIC would be in? */
-    return VERR_IOMMU_NOT_PRESENT;
+    Assert(pDevInsIommu);
+    if (pDevInsIommu != pDevIns)
+        return pIommu->pfnMsiRemap(pDevInsIommu, idDevice, pMsiIn, pMsiOut);
+    return VERR_IOMMU_CANNOT_CALL_SELF;
 }
 
 
@@ -125,9 +115,13 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         int rc = VINF_SUCCESS;
         while (cbRead > 0)
@@ -189,9 +183,13 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         int rc = VINF_SUCCESS;
         while (cbWrite > 0)
@@ -250,9 +248,13 @@ int pdmR3IommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHY
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         size_t   cbContig  = 0;
         RTGCPHYS GCPhysOut = NIL_RTGCPHYS;
@@ -295,9 +297,13 @@ int pdmR3IommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPH
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         size_t   cbContig  = 0;
         RTGCPHYS GCPhysOut = NIL_RTGCPHYS;
@@ -343,9 +349,13 @@ int pdmR3IommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         /* Allocate space for translated addresses. */
         size_t const cbIovas  = cPages * sizeof(uint64_t);
         PRTGCPHYS paGCPhysOut = (PRTGCPHYS)RTMemAllocZ(cbIovas);
@@ -406,9 +416,13 @@ int pdmR3IommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
+    if (pDevInsIommu)
     {
+        if (pDevInsIommu != pDevIns)
+        { /* likely */ }
+        else
+            return VERR_IOMMU_CANNOT_CALL_SELF;
+
         /* Allocate space for translated addresses. */
         size_t const cbIovas  = cPages * sizeof(uint64_t);
         PRTGCPHYS paGCPhysOut = (PRTGCPHYS)RTMemAllocZ(cbIovas);

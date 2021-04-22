@@ -1869,7 +1869,10 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -1903,7 +1906,10 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -1934,7 +1940,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPD
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmR3IommuMemAccessWriteCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -1965,7 +1974,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDev
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmR3IommuMemAccessReadCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -1997,7 +2009,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr(PPDMDEVINS pDevIns,
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmR3IommuMemAccessBulkWriteCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -2029,7 +2044,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS 
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     int rc = pdmR3IommuMemAccessBulkReadCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 

@@ -536,10 +536,11 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         RT_ZERO(MsiIn);
         ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
         int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
-        if (RT_SUCCESS(rcRemap))
-            STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
-        else if (rcRemap == VERR_IOMMU_NOT_PRESENT)
+        if (   rcRemap == VERR_IOMMU_NOT_PRESENT
+            || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
             MsiOut = MsiIn;
+        else if (RT_SUCCESS(rcRemap))
+            STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
@@ -923,17 +924,21 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
      * The MSI may need to be remapped (or discarded) if an IOMMU is present.
      *
      * If the Bus:Dev:Fn isn't valid, it is ASSUMED the device generating the
-     * MSI is the IOMMU itself and hence is not subject to remapping.
+     * MSI may be the IOMMU itself and hence is not subject to remapping.
+     *
+     * For AMD IOMMUs, since it's a full fledged PCI device, the BDF will be
+     * valid but will be handled by VERR_IOMMU_CANNOT_CALL_SELF case.
      */
     if (PCIBDF_IS_VALID(uBusDevFn))
     {
         MSIMSG MsiOut;
         RT_ZERO(MsiOut);
         int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
-        if (RT_SUCCESS(rcRemap))
-            STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
-        else if (rcRemap == VERR_IOMMU_NOT_PRESENT)
+        if (   rcRemap == VERR_IOMMU_NOT_PRESENT
+            || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
             MsiOut = *pMsi;
+        else if (RT_SUCCESS(rcRemap))
+            STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);

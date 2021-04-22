@@ -3052,38 +3052,52 @@
 /** @name Virtual IOMMU Status Codes
  * @{
  */
-/** Internal processing error \#1 in the IOMMU device code. */
-#define VERR_IOMMU_IPE_1                            (-7201)
-/** Internal processing error \#2 in the IOMMU device code. */
-#define VERR_IOMMU_IPE_2                            (-7202)
-/** Internal processing error \#3 in the IOMMU device code. */
-#define VERR_IOMMU_IPE_3                            (-7203)
-/** Internal processing error \#4 in the IOMMU device code. */
-#define VERR_IOMMU_IPE_4                            (-7204)
-/** Internal processing error \#5 in the IOMMU device code. */
-#define VERR_IOMMU_IPE_5                            (-7205)
 /** Failed to read the device table entry from guest memory. */
-#define VERR_IOMMU_DTE_READ_FAILED                  (-7206)
+#define VERR_IOMMU_DTE_READ_FAILED                  (-7200)
 /** Failed to read the device table entry due to an invalid offset. */
-#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7207)
+#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7201)
 /** Address translation failed. */
-#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7208)
-/** Address translation disabled (but permission bits apply). */
-#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7209
+#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7202)
 /** Access denied for the address. */
-#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7210)
+#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7203)
 /** Remapping failed for the interrupt. */
-#define VERR_IOMMU_INTR_REMAP_FAILED                (-7211)
+#define VERR_IOMMU_INTR_REMAP_FAILED                (-7204)
 /** Remapping denied for the interrupt (might have caused a PCI target abort). */
-#define VERR_IOMMU_INTR_REMAP_DENIED                (-7212)
+#define VERR_IOMMU_INTR_REMAP_DENIED                (-7205)
 /** Command not supported. */
-#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7213)
+#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7206)
 /** Command format (or reserved bits) invalid. */
-#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7214)
+#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7207)
 /** Command hardware failure. */
-#define VERR_IOMMU_CMD_HW_ERROR                     (-7215)
+#define VERR_IOMMU_CMD_HW_ERROR                     (-7208)
 /** IOMMU device is not present. */
-#define VERR_IOMMU_NOT_PRESENT                      (-7216)
+#define VERR_IOMMU_NOT_PRESENT                      (-7209)
+/** IOMMU instance cannot call itself (for remapping interrupts or translating
+ *  addresses). */
+#define VERR_IOMMU_CANNOT_CALL_SELF                 (-7210)
+/** Address translation disabled (but permission bits apply). */
+#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7211
+
+/** IOMMU Internal processing error \#0. */
+#define VERR_IOMMU_IPE_0                            (-7290)
+/** IOMMU Internal processing error \#1. */
+#define VERR_IOMMU_IPE_1                            (-7291)
+/** IOMMU Internal processing error \#2. */
+#define VERR_IOMMU_IPE_2                            (-7292)
+/** IOMMU Internal processing error \#3. */
+#define VERR_IOMMU_IPE_3                            (-7293)
+/** IOMMU Internal processing error \#4. */
+#define VERR_IOMMU_IPE_4                            (-7294)
+/** IOMMU Internal processing error \#5. */
+#define VERR_IOMMU_IPE_5                            (-7295)
+/** IOMMU Internal processing error \#6. */
+#define VERR_IOMMU_IPE_6                            (-7296)
+/** IOMMU Internal processing error \#7. */
+#define VERR_IOMMU_IPE_7                            (-7297)
+/** IOMMU Internal processing error \#8. */
+#define VERR_IOMMU_IPE_8                            (-7298)
+/** IOMMU Internal processing error \#9. */
+#define VERR_IOMMU_IPE_9                            (-7299)
 /** @} */
 
 /* SED-END */

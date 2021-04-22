@@ -313,7 +313,10 @@ pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
 
 #ifdef VBOX_WITH_IOMMU_AMD
     int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
@@ -347,7 +350,10 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
 
 #ifdef VBOX_WITH_IOMMU_AMD
     int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
-    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+    if (   rc == VERR_IOMMU_NOT_PRESENT
+        || rc == VERR_IOMMU_CANNOT_CALL_SELF)
+    { /* likely - ASSUMING most VMs won't be configured with an IOMMU. */ }
+    else
         return rc;
 #endif
 
