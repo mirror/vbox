@@ -166,6 +166,9 @@ void UIStarter::sltHandleCommitDataRequest()
         return;
 
 #ifdef VBOX_RUNTIME_UI
-    gpMachine->uisession()->saveState();
+    /* Only for the case when we have this request
+     * earlier than the usual cleanup started: */
+    if (!UICommon::isCleaningUp())
+        gpMachine->uisession()->saveState();
 #endif
 }

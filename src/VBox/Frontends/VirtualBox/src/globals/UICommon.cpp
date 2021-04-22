@@ -4576,6 +4576,11 @@ void UICommon::cleanup()
 {
     LogRel(("GUI: UICommon: Handling aboutToQuit request..\n"));
 
+    /// @todo Shouldn't that be protected with a mutex or something?
+    /* Remember that the cleanup is in progress preventing any unwanted
+     * stuff which could be called from the other threads: */
+    s_fCleaningUp = true;
+
 #ifdef VBOX_WS_WIN
     /* Ask listeners to commit data if haven't yet: */
     if (!m_fDataCommitted)
@@ -4587,11 +4592,6 @@ void UICommon::cleanup()
     /* Ask listeners to commit data: */
     emit sigAskToCommitData();
 #endif
-
-    /// @todo Shouldn't that be protected with a mutex or something?
-    /* Remember that the cleanup is in progress preventing any unwanted
-     * stuff which could be called from the other threads: */
-    s_fCleaningUp = true;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* For Runtime UI: */
