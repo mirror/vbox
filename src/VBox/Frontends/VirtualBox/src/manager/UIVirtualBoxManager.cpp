@@ -560,6 +560,7 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
                          geo.x(), geo.y(), geo.width(), geo.height()));
                 gEDataManager->setSelectorWindowGeometry(geo, isCurrentlyMaximized());
             }
+            break;
         }
         default:
             break;
