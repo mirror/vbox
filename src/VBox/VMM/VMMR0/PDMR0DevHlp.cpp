@@ -1626,8 +1626,23 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF u
     PGVM pGVM = pDevIns->Internal.s.pGVM;
     if (pGVM->pdm.s.IoApic.pDevInsR0)
         pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, uBusDevFn, pMsi, uTagSrc);
-    else
-        AssertFatalMsgFailed(("Lazy bastards!"));
+    else if (pGVM->pdm.s.IoApic.pDevInsR3)
+    {
+        /* queue for ring-3 execution. */
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+        if (pTask)
+        {
+            pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SEND_MSI;
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+            pTask->u.IoApicSendMsi.uBusDevFn = uBusDevFn;
+            pTask->u.IoApicSendMsi.Msi       = *pMsi;
+            pTask->u.IoApicSendMsi.uTagSrc   = uTagSrc;
+
+            PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+        }
+        else
+            AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
+    }
 }
 
 

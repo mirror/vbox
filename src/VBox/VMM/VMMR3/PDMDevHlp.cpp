@@ -5391,6 +5391,12 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
             break;
         }
 
+        case PDMDEVHLPTASKOP_IOAPIC_SEND_MSI:
+        {
+            PDMIoApicSendMsi(pVM, pTask->u.IoApicSendMsi.uBusDevFn, &pTask->u.IoApicSendMsi.Msi, pTask->u.IoApicSendMsi.uTagSrc);
+            break;
+        }
+
         default:
             AssertReleaseMsgFailed(("Invalid operation %d\n", pTask->enmOp));
             break;

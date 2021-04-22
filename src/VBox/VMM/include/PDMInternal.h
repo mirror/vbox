@@ -1208,6 +1208,8 @@ typedef enum PDMDEVHLPTASKOP
     PDMDEVHLPTASKOP_PCI_SET_IRQ,
     /** PCISetIrq */
     PDMDEVHLPTASKOP_IOAPIC_SET_IRQ,
+    /** IoApicSendMsi */
+    PDMDEVHLPTASKOP_IOAPIC_SEND_MSI,
     /** The usual 32-bit hack. */
     PDMDEVHLPTASKOP_32BIT_HACK = 0x7fffffff
 } PDMDEVHLPTASKOP;
@@ -1258,6 +1260,19 @@ typedef struct PDMDEVHLPTASK
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
         } PciSetIRQ;
+
+        /**
+         * PDMDEVHLPTASKOP_IOAPIC_SEND_MSI
+         */
+        struct PDMDEVHLPTASKIOAPICSENDMSI
+        {
+            /** The bus:device:function of the device sending the MSI. */
+            PCIBDF                  uBusDevFn;
+            /** The MSI. */
+            MSIMSG                  Msi;
+            /** The IRQ tag and source. */
+            uint32_t                uTagSrc;
+        } IoApicSendMsi;
 
         /** Expanding the structure. */
         uint64_t    au64[3];
