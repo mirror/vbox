@@ -166,8 +166,6 @@ void UIStarter::sltHandleCommitDataRequest()
         return;
 
 #ifdef VBOX_RUNTIME_UI
-    /* Temporary override the default close action to 'SaveState' if necessary: */
-    if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
-        gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
+    gpMachine->uisession()->saveState();
 #endif
 }

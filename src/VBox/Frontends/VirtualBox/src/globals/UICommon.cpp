@@ -4080,6 +4080,7 @@ void UICommon::retranslateUi()
 void UICommon::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
+    qApp->setFallbackSessionManagementEnabled(false);
     connect(qApp, &QGuiApplication::aboutToQuit,
             this, &UICommon::cleanup);
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
@@ -4698,17 +4699,30 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
     m_fDataCommitted = true;
 #endif
 
-    /* Ask session manager to postpone shutdown until we done: */
-    manager.cancel();
+    /* Depending on UI type: */
+    switch (uiType())
+    {
+        /* For Runtime UI: */
+        case UIType_RuntimeUI:
+        {
+            // WORKAROUND:
+            // We can't save VM state in one go, so we have to ask session manager to postpone shutdown until we done..
+            manager.cancel();
 
 #ifdef VBOX_WS_WIN
-    // WORKAROUND:
-    // In theory that's Qt5 who should allow us to provide postponing reason as well,
-    // but that functionality seems missed in Windows platform plugin, so we are making that ourselves.
-    // That also implies that since we had postponed a shutdown process, host will send us WM_QUIT to
-    // allow to properly do an application cleanup first. That signal will cause QApplication to quit().
-    ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"Shutdown in progress...");
+            // WORKAROUND:
+            // In theory that's Qt5 who should allow us to provide postponing reason as well, but that functionality
+            // seems missed in Windows platform plugin, so we are making that ourselves.  That also implies that since
+            // we had postponed a shutdown process, host will send us WM_QUIT to allow to properly do an application
+            // cleanup first. That signal will cause QApplication to quit().
+            ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"Shutdown in progress...");
 #endif
+
+            break;
+        }
+        default:
+            break;
+    }
 }
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
