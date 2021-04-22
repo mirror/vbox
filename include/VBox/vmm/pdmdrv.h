@@ -1322,7 +1322,18 @@ typedef struct PDMDRVHLPR3
     /** @name Space reserved for minor interface changes.
      * @{ */
     DECLR3CALLBACKMEMBER(int,  pfnTimerSetMillies,(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext));
-    DECLR3CALLBACKMEMBER(void, pfnReserved1,(PPDMDRVINS pDrvIns));
+
+    /**
+     * Deregister zero or more samples given their name prefix.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns     The driver instance.
+     * @param   pszPrefix   The name prefix of the samples to remove.  If this does
+     *                      not start with a '/', the default prefix will be
+     *                      prepended, otherwise it will be used as-is.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSTAMDeregisterByPrefix,(PPDMDRVINS pDrvIns, const char *pszPrefix));
+
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(PPDMDRVINS pDrvIns));
@@ -1337,7 +1348,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 1)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 2)
 
 #endif /* IN_RING3 */
 
@@ -1728,6 +1739,14 @@ DECLINLINE(void) PDMDrvHlpSTAMRegProfileAdv(PPDMDRVINS pDrvIns, PSTAMPROFILEADV 
 DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
 {
     return pDrvIns->pHlpR3->pfnSTAMDeregister(pDrvIns, pvSample);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSTAMDeregisterByPrefix
+ */
+DECLINLINE(int) PDMDrvHlpSTAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
+{
+    return pDrvIns->pHlpR3->pfnSTAMDeregisterByPrefix(pDrvIns, pszPrefix);
 }
 
 /**

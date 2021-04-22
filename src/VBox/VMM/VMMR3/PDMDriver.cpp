@@ -1514,6 +1514,22 @@ static DECLCALLBACK(int) pdmR3DrvHlp_STAMDeregister(PPDMDRVINS pDrvIns, void *pv
 }
 
 
+/** @interface_method_impl{PDMDRVHLPR3,pfnSTAMDeregisterByPrefix} */
+static DECLCALLBACK(int) pdmR3DrvHlp_STAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
+
+    if (*pszPrefix == '/')
+        return STAMR3DeregisterByPrefix(pDrvIns->Internal.s.pVMR3->pUVM, pszPrefix);
+
+    char szTmp[2048];
+    ssize_t cch = RTStrPrintf2(szTmp, sizeof(szTmp), "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszPrefix);
+    AssertReturn(cch > 0, VERR_BUFFER_OVERFLOW);
+    return STAMR3DeregisterByPrefix(pDrvIns->Internal.s.pVMR3->pUVM, szTmp);
+}
+
+
 /** @interface_method_impl{PDMDRVHLPR3,pfnSUPCallVMMR0Ex} */
 static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned uOperation, void *pvArg, unsigned cbArg)
 {
@@ -1910,7 +1926,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_VMGetSuspendReason,
     pdmR3DrvHlp_VMGetResumeReason,
     pdmR3DrvHlp_TimerSetMillies,
-    NULL,
+    pdmR3DrvHlp_STAMDeregisterByPrefix,
     NULL,
     NULL,
     NULL,
