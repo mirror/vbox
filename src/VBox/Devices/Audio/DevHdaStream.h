@@ -325,6 +325,11 @@ typedef struct HDASTREAMR3
         STAMCOUNTER             StatDmaFlowErrors;
         /** Number of bytes involved in unresolved flow errors. */
         STAMCOUNTER             StatDmaFlowErrorBytes;
+
+        STAMPROFILE             StatStart;
+        STAMPROFILE             StatReset;
+        STAMPROFILE             StatStop;
+        STAMPROFILE             StatUnusedPadding;
     } State;
     /** Debug bits. */
     HDASTREAMDEBUG              Dbg;

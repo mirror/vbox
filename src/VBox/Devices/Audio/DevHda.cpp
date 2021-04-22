@@ -1338,6 +1338,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         LogFunc(("[SD%RU8] Reset enter\n", uSD));
 
+        STAM_REL_PROFILE_START_NS(&pStreamR3->State.StatReset, a);
         hdaStreamLock(pStreamShared);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1357,6 +1358,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         hdaR3StreamAsyncIOUnlock(pStreamR3);
 # endif
         hdaStreamUnlock(pStreamShared);
+        STAM_REL_PROFILE_STOP_NS(&pStreamR3->State.StatReset, a);
     }
     else
     {
@@ -1365,6 +1367,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
          */
         if (fInRun != fRun)
         {
+            STAM_REL_PROFILE_START_NS((fRun ? &pStreamR3->State.StatStart : &pStreamR3->State.StatStop), r);
             Assert(!fReset && !fInReset); /* (code change paranoia, currently impossible ) */
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
@@ -1467,6 +1470,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 # endif
             /* Make sure to leave the lock before (eventually) starting the timer. */
             hdaStreamUnlock(pStreamShared);
+            STAM_REL_PROFILE_STOP_NS((fRun ? &pStreamR3->State.StatStart : &pStreamR3->State.StatStop), r);
         }
     }
 
@@ -5326,6 +5330,13 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
+
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStart, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Starting the stream.",  "Stream%u/Start", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStop, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Stopping the stream.",  "Stream%u/Stop", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatReset, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Resetting the stream.",  "Stream%u/Reset", idxStream);
     }
 
     return VINF_SUCCESS;
