@@ -2877,14 +2877,11 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
             continue;
 
-        /** @todo No input streams available for SB16 yet. */
-        if (!pDrv->Out.pStream)
-            continue;
-
         PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
         AssertPtr(pCon);
-        if (   pCon == NULL /* paranoia */
-            || !(pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED))
+
+        /** @todo No input streams available for SB16 yet. */
+        if (!AudioMixerStreamIsValid(pDrv->Out.pMixStrm))
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 
@@ -2897,7 +2894,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                           "Selecting the NULL audio backend with the consequence that no sound is audible"));
         }
     }
-#endif
+#endif /* VBOX_WITH_AUDIO_SB16_ONETIME_INIT */
 
     /*
      * Register statistics.
