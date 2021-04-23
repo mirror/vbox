@@ -61,31 +61,6 @@ class QMenuBar;
 class QIcon;
 #endif /* !VBOX_WS_MAC */
 
-/* CConsole callback event types: */
-enum UIConsoleEventType
-{
-    UIConsoleEventType_MousePointerShapeChange = QEvent::User + 1,
-    UIConsoleEventType_MouseCapabilityChange,
-    UIConsoleEventType_KeyboardLedsChange,
-    UIConsoleEventType_StateChange,
-    UIConsoleEventType_AdditionsStateChange,
-    UIConsoleEventType_NetworkAdapterChange,
-    /* Not used: UIConsoleEventType_SerialPortChange, */
-    /* Not used: UIConsoleEventType_ParallelPortChange, */
-    /* Not used: UIConsoleEventType_StorageControllerChange, */
-    UIConsoleEventType_MediumChange,
-    /* Not used: UIConsoleEventType_CPUChange, */
-    UIConsoleEventType_VRDEServerChange,
-    UIConsoleEventType_VRDEServerInfoChange,
-    UIConsoleEventType_USBControllerChange,
-    UIConsoleEventType_USBDeviceStateChange,
-    UIConsoleEventType_SharedFolderChange,
-    UIConsoleEventType_RuntimeError,
-    UIConsoleEventType_CanShowWindow,
-    UIConsoleEventType_ShowWindow,
-    UIConsoleEventType_MAX
-};
-
 class UISession : public QObject
 {
     Q_OBJECT;
