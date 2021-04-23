@@ -186,6 +186,9 @@ protected slots:
       * @{ */
         /** Handles reload machine with certain @a uMachineId request. */
         virtual void sltReloadMachine(const QUuid &uMachineId);
+
+        /** Handles command to detach COM. */
+        virtual void sltDetachCOM();
     /** @} */
 
     /** @name Cloud stuff.

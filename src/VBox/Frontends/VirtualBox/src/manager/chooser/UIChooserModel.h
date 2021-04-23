@@ -96,8 +96,6 @@ public:
       * @{ */
         /** Inits model. */
         virtual void init() /* override */;
-        /** Deinits model. */
-        virtual void deinit() /* override */;
 
         /** Returns the action-pool reference. */
         UIActionPool *actionPool() const;
@@ -282,6 +280,9 @@ protected slots:
       * @{ */
         /** Handles reload machine with certain @a uMachineId request. */
         virtual void sltReloadMachine(const QUuid &uMachineId) /* override */;
+
+        /** Handles command to detach COM. */
+        virtual void sltDetachCOM() /* override */;
     /** @} */
 
     /** @name Cloud stuff.

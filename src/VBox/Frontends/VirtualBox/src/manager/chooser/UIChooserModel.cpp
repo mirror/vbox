@@ -86,15 +86,6 @@ void UIChooserModel::init()
     loadSettings();
 }
 
-void UIChooserModel::deinit()
-{
-    /* Clean tree for main root: */
-    clearTreeForMainRoot();
-
-    /* Call to base-class: */
-    UIChooserAbstractModel::deinit();
-}
-
 UIActionPool *UIChooserModel::actionPool() const
 {
     return m_pActionPool;
@@ -1205,6 +1196,15 @@ void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
 
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
+}
+
+void UIChooserModel::sltDetachCOM()
+{
+    /* Clean tree for main root: */
+    clearTreeForMainRoot();
+
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltDetachCOM();
 }
 
 void UIChooserModel::sltCloudMachineUnregistered(const QString &strProviderShortName,
