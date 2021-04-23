@@ -172,13 +172,20 @@ private:
     /** Returns the log-page from the tab with index @a pIndex. */
     QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
-    void createLogPage(const QString &strFileName, const QString &strLogContent, bool noLogsToShow = false);
+    void createLogPage(const QString &strFileName, const QString &strMachineName,
+                       const QUuid &machineId,
+                       const QString &strLogContent, bool noLogsToShow = false);
 
     const UIVMLogPage *currentLogPage() const;
     UIVMLogPage *currentLogPage();
+    /** Returns the log page at tab with iIndex if it contains a log page. Return 0 otherwise. */
+    UIVMLogPage *logPage(int iIndex);
 
-    /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
-    bool createLogViewerPages();
+    /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise.
+     *  @p machineList is the list of machine whose log should be read. */
+    bool createLogViewerPages(const QVector<QUuid> &machineList);
+    /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */
+    void removeLogViewerPages(const QVector<QUuid> &machineList);
 
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();
@@ -200,16 +207,13 @@ private:
     const bool    m_fShowToolbar;
     /** Holds the machine instance. */
     CMachine      m_comMachine;
-    QMap<QUuid, CMachine> m_machines;
+    QVector<QUuid> m_machines;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
     /** Holds container for log-pages. */
     QITabWidget        *m_pTabWidget;
-    /** Stores the UIVMLogPage instances. This is modified as we add and remove new tabs
-     *  to the m_pTabWidget. Index is the index of the tab widget. */
-    QVector<QWidget*>  m_logPageList;
 
     /** @name Panel instances and a QMap for mapping panel instances to related actions.
       * @{ */

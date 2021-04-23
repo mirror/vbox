@@ -113,6 +113,9 @@ public:
     QFont currentFont() const;
     void setCurrentFont(QFont font);
 
+    const QUuid &machineId() const;
+    void setMachineId(const QUuid &machineId);
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);
@@ -156,7 +159,8 @@ private:
         int            m_iFilteredLineCount;
         int            m_iUnfilteredLineCount;
     /** @} */
-
+    /** Id of the machine the log shown in this page belongs to. */
+    QUuid m_machineId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogPage_h */

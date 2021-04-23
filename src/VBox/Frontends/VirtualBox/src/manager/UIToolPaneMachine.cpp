@@ -182,7 +182,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(UIToolType_Logs));
-                    m_pPaneLogViewer->setMachine(m_comMachine);
+                    m_pPaneLogViewer->setSelectedVMListItems(m_items);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneLogViewer);
@@ -296,12 +296,6 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
     {
         AssertPtrReturnVoid(m_pPaneSnapshots);
         m_pPaneSnapshots->setMachine(m_comMachine);
-    }
-    /* Update logviewer pane is it is open: */
-    if (isToolOpened(UIToolType_Logs))
-    {
-        AssertPtrReturnVoid(m_pPaneLogViewer);
-        m_pPaneLogViewer->setMachine(m_comMachine);
     }
     /* Update performance monitor pane is it is open: */
     if (isToolOpened(UIToolType_VMActivity))

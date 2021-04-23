@@ -330,3 +330,13 @@ void UIVMLogPage::setCurrentFont(QFont font)
     if (m_pTextEdit)
         m_pTextEdit->setCurrentFont(font);
 }
+
+const QUuid &UIVMLogPage::machineId() const
+{
+    return m_machineId;
+}
+
+void UIVMLogPage::setMachineId(const QUuid &machineId)
+{
+    m_machineId = machineId;
+}
