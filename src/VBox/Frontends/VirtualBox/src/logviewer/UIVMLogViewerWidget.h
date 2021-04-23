@@ -140,13 +140,7 @@ private slots:
     /** @} */
     void sltCornerButtonClicked();
 private:
-        struct Machine
-        {
-            Machine(const QUuid &id, const QString &strName);
-            Machine();
-            QUuid   m_id;
-            QString m_strName;
-        };
+
     /** @name Prepare/Cleanup
       * @{ */
         /** Prepares VM Log-Viewer. */
@@ -206,7 +200,7 @@ private:
     const bool    m_fShowToolbar;
     /** Holds the machine instance. */
     CMachine      m_comMachine;
-    QVector<Machine> m_machines;
+    QMap<QUuid, CMachine> m_machines;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;

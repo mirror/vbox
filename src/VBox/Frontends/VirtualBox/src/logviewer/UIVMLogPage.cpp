@@ -31,11 +31,10 @@
 #include "UIVMLogViewerTextEdit.h"
 
 
-UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
+UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pTextEdit(0)
-    , m_tabIndex(tabIndex)
     , m_iSelectedBookmarkIndex(-1)
     , m_bFiltered(false)
     , m_iFilteredLineCount(-1)
@@ -95,16 +94,6 @@ QTextDocument* UIVMLogPage::document()
     if (!m_pTextEdit)
         return 0;
     return m_pTextEdit->document();
-}
-
-void UIVMLogPage::setTabIndex(int index)
-{
-    m_tabIndex = index;
-}
-
-int UIVMLogPage::tabIndex()  const
-{
-    return m_tabIndex;
 }
 
 void UIVMLogPage::retranslateUi()

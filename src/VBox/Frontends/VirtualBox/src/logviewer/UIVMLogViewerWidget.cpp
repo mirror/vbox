@@ -133,16 +133,6 @@ void UIMachineListMenu::addListItem(const QString &strText, const QUuid &id)
     m_pLayout->addWidget(pCheckBox);
 }
 
-
-UIVMLogViewerWidget::Machine::Machine(const QUuid &id, const QString &strName)
-    : m_id(id)
-    , m_strName(strName)
-{
-}
-
-UIVMLogViewerWidget::Machine::Machine()
-{}
-
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
                                          bool fShowToolbar /* = true */,
@@ -212,9 +202,9 @@ void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineIte
     {
         if (!item)
             continue;
-        m_machines << Machine(item->id(), item->name());
+        //m_machines << Machine(item->id(), item->name());
     }
-    updateMachineSelectionMenu();
+    //updateMachineSelectionMenu();
 }
 
 QFont UIVMLogViewerWidget::currentFont() const
@@ -874,7 +864,6 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         /* Add page-container to viewer-container: */
         int tabIndex = m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, QFileInfo(strFileName).fileName());
 
-        pLogPage->setTabIndex(tabIndex);
         m_logPageList.resize(m_pTabWidget->count());
         m_logPageList[tabIndex] = pLogPage;
 
@@ -947,7 +936,7 @@ bool UIVMLogViewerWidget::createLogViewerPages()
                 /* Don't read futher if we have reached the allowed size limit: */
                 if (uOffset >= uAllowedLogSize)
                 {
-                    strText.append("\n=========Log file has been truncate as it is too large.======");
+                    strText.append("\n=========Log file has been truncated as it is too large.======");
                     break;
                 }
             }
@@ -1042,11 +1031,11 @@ void UIVMLogViewerWidget::updateMachineSelectionMenu()
         return;
     m_pMachineSelectionMenu->clear();
 
-    foreach (const Machine &machine, m_machines)
-    {
+    // foreach (const Machine &machine, m_machines)
+    // {
 
-        m_pMachineSelectionMenu->addListItem(machine.m_strName, machine.m_id);
-    }
+    //     m_pMachineSelectionMenu->addListItem(machine.m_strName, machine.m_id);
+    // }
 }
 
 #include "UIVMLogViewerWidget.moc"
