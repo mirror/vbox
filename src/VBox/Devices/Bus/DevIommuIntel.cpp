@@ -814,9 +814,9 @@ static uint64_t dmarRegRead64(PCDMAR pThis, uint16_t offReg)
  * @remarks This does NOT apply RO or RW1C masks while modifying the
  *          register.
  */
-static void dmarRegChange32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uint32_t fOrMask)
+static void dmarRegChangeRaw32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uint32_t fOrMask)
 {
-    uint32_t uReg = dmarRegRead32(pThis, offReg);
+    uint32_t uReg = dmarRegReadRaw32(pThis, offReg);
     uReg = (uReg & fAndMask) | fOrMask;
     dmarRegWriteRaw32(pThis, offReg, uReg);
 }
@@ -832,9 +832,9 @@ static void dmarRegChange32(PDMAR pThis, uint16_t offReg, uint32_t fAndMask, uin
  * @remarks This does NOT apply RO or RW1C masks while modifying the
  *          register.
  */
-static void dmarRegChange64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uint64_t fOrMask)
+static void dmarRegChangeRaw64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, uint64_t fOrMask)
 {
-    uint64_t uReg = dmarRegRead64(pThis, offReg);
+    uint64_t uReg = dmarRegReadRaw64(pThis, offReg);
     uReg = (uReg & fAndMask) | fOrMask;
     dmarRegWriteRaw64(pThis, offReg, uReg);
 }
@@ -874,7 +874,8 @@ static bool dmarInvQueueIsEmpty(PCDMAR pThis)
 /**
  * Checks whether the invalidation-queue is capable of processing requests.
  *
- * @returns @c true if the invalidation-queue can be processed, @c false otherwise.
+ * @returns @c true if the invalidation-queue can process requests, @c false
+ *          otherwise.
  * @param   pThis   The shared DMAR device state.
  */
 static bool dmarInvQueueCanProcessRequests(PCDMAR pThis)
@@ -883,10 +884,9 @@ static bool dmarInvQueueCanProcessRequests(PCDMAR pThis)
     uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
     if (uGstsReg & VTD_BF_GSTS_REG_QIES_MASK)
     {
-        /* Check if there are no IQ errors and that the queue isn't empty. */
+        /* Check if there are no invalidation-queue or timeout errors. */
         uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
-        if (   !(uFstsReg & VTD_BF_FSTS_REG_IQE_MASK)
-            && !dmarInvQueueIsEmpty(pThis))
+        if (!(uFstsReg & (VTD_BF_FSTS_REG_IQE_MASK | VTD_BF_FSTS_REG_ITE_MASK)))
             return true;
     }
     return false;
@@ -907,6 +907,7 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
     if (   dmarInvQueueCanProcessRequests(pThis)
+        && !dmarInvQueueIsEmpty(pThis)
         && !ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, true))
     {
         Log4Func(("Signaling the invalidation-queue thread\n"));
@@ -938,6 +939,7 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
     uint32_t uFectlReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FECTL_REG);
     if (!(uFectlReg & VTD_BF_FECTL_REG_IM_MASK))
     {
+        /* Software has unmasked the interrupt, raise it. */
         MSIMSG Msi;
         Msi.Addr.u64 = RT_MAKE_U64(dmarRegRead32(pThis, VTD_MMIO_OFF_FEADDR_REG),
                                    dmarRegRead32(pThis, VTD_MMIO_OFF_FEUADDR_REG));
@@ -946,7 +948,6 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
         /** @todo Assert Msi.Addr is in the MSR_IA32_APICBASE_ADDR range and ensure on
          *        FEADD_REG write it can't be anything else. */
 
-        /* Software has unmasked the interrupt, raise it. */
         pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
         /* Clear interrupt pending bit. */
@@ -1016,13 +1017,51 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
 
     /* Set the error bit. */
     uint32_t const fIqe = RT_BF_MAKE(VTD_BF_FSTS_REG_IQE, 1);
-    dmarRegChange32(pThis, VTD_MMIO_OFF_FSTS_REG, UINT32_MAX, fIqe);
+    dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_FSTS_REG, UINT32_MAX, fIqe);
 
     /* Set the error information. */
     uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
-    dmarRegChange64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
+    dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
 
     dmarFaultRaiseInterrupt(pDevIns);
+}
+
+
+/**
+ * Handles writes to GCMD_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uGcmdReg    The value written to GCMD_REG.
+ */
+static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
+{
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint32_t const fChanged = uGstsReg ^ uGcmdReg;
+    if (pThis->fExtCap & VTD_BF_ECAP_REG_QI_MASK)
+    {
+        if (fChanged & VTD_BF_GCMD_REG_QIE_MASK)
+        {
+            if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
+            {
+                /* Enable the invalidation-queue. */
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */,
+                                   VTD_BF_GSTS_REG_QIES_MASK /* fOrMask */);
+                dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
+            }
+            else
+            {
+                /* Disable the invalidation-queue and reset the queue head offset. */
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK /* fAndMask */, 0 /* fOrMask */);
+                dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
+            }
+        }
+    }
+
+    /** @todo Rest of the bits? */
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1091,8 +1130,8 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
         dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
     else
     {
-        /* Hardware treats bit 4 as RsvdZ here, so clear it. */
-        dmarRegChange32(pThis, offReg, ~RT_BIT(4) /* fAndMask*/ , 0 /* fOrMask */);
+        /* Hardware treats bit 4 as RsvdZ in this situation, so clear it. */
+        dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4) /* fAndMask*/ , 0 /* fOrMask */);
         dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
     return VINF_SUCCESS;
@@ -1216,6 +1255,12 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
         VBOXSTRICTRC rcStrict = VINF_SUCCESS;
         switch (off)
         {
+            case VTD_MMIO_OFF_GCMD_REG:
+            {
+                rcStrict = dmarGcmdRegWrite(pDevIns, uRegWritten);
+                break;
+            }
+
             case VTD_MMIO_OFF_CCMD_REG:
             case VTD_MMIO_OFF_CCMD_REG + 4:
             {
@@ -1300,11 +1345,11 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
-
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
+        PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+        PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
+
         /*
          * Sleep until we are woken up.
          */
@@ -1318,18 +1363,12 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             ASMAtomicWriteBool(&pThis->fInvQueueThreadSignaled, false);
         }
 
-        /*
-         * Fetch and process invalidation requests.
-         */
-        DMAR_LOCK_RET(pDevIns, pThisR3, VERR_IGNORED);
-        /** @todo use dmarInvQueueCanProcessRequests instead? */
-        uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
-        DMAR_UNLOCK(pDevIns, pThisR3);
-
-        if (uGstsReg & VTD_BF_GSTS_REG_QIES_MASK)
+        DMAR_LOCK(pDevIns, pThisR3);
+        if (dmarInvQueueCanProcessRequests(pThis))
         {
-            /** @todo Read invalidation descriptors and perform invalidation. */
+            /** @todo Read IQH and IQT, descriptors from memory and perform invalidation. */
         }
+        DMAR_UNLOCK(pDevIns, pThisR3);
     }
 
     LogFlowFunc(("Invalidation-queue thread terminating\n"));
@@ -1384,6 +1423,10 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
 static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 {
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+
+    /*
+     * Wipe all registers (required on reset).
+     */
     RT_ZERO(pThis->abRegs0);
     RT_ZERO(pThis->abRegs1);
 
@@ -1459,7 +1502,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t const  fAdms  = 1;                              /* Abort DMA mode support. */
 
         pThis->fExtCap = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     1)
+                       | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     fQi)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fQi & fIr)
                        | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    fIr & fEim)
@@ -1538,7 +1581,7 @@ static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
     PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
     LogFlowFunc(("\n"));
 
-    DMAR_LOCK_RET(pDevIns, pThisR3, VERR_IGNORED);
+    DMAR_LOCK(pDevIns, pThisR3);
 
     if (pThis->hEvtInvQueue != NIL_SUPSEMEVENT)
     {
