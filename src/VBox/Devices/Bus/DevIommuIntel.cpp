@@ -47,7 +47,7 @@
     do { \
          AssertReturn((a_cb) == 4 || (a_cb) == 8, VINF_IOM_MMIO_UNUSED_FF); \
          AssertReturn(!((a_off) & ((a_cb) - 1)), VINF_IOM_MMIO_UNUSED_FF); \
-    } while (0);
+    } while (0)
 
 /** Checks whether the MMIO offset is valid. */
 #define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
@@ -62,11 +62,15 @@
             return (a_rcBusy); \
     } while (0)
 
+/** Acquires the DMAR lock and is not expected to fail. */
+#define DMAR_LOCK(a_pDevIns, a_pThisCC) \
+    do { \
+        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED); \
+        Assert(rcLock == VINF_SUCCESS); \
+    } while (0)
+
 /** Release the DMAR lock. */
 #define DMAR_UNLOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnUnlock(a_pDevIns)
-
-/** Checks whether the calling thread is the owner of the DMAR lock. */
-#define DMAR_LOCK_IS_OWNER(a_pDevIns, a_pThisCC)    (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLockIsOwner(a_pDevIns)
 
 /** Asserts that the calling thread owns the DMAR lock. */
 #define DMAR_ASSERT_LOCK_IS_OWNER(a_pDevIns, a_pThisCC) \
@@ -1027,14 +1031,14 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   off         The MMIO register offset.
- * @param   cb          The size of the MMIO access (in bytes).
+ * @param   offReg      The MMIO register offset.
+ * @param   cbReg       The size of the MMIO access (in bytes).
  * @param   uCcmdReg    The value written to CCMD_REG.
  */
-static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t cb, uint64_t uCcmdReg)
+static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_t cbReg, uint64_t uCcmdReg)
 {
     /* At present, we only care about responding to high 32-bits writes, low 32-bits are data. */
-    if (off + cb > VTD_MMIO_OFF_CCMD_REG + 4)
+    if (offReg + cbReg > VTD_MMIO_OFF_CCMD_REG + 4)
     {
         /* Check if we need to invalidate the context-context. */
         bool const fIcc = RT_BF_GET(uCcmdReg, VTD_BF_CCMD_REG_ICC);
@@ -1068,25 +1072,28 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint8_t c
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   off         The MMIO register offset.
+ * @param   offReg      The MMIO register offset.
  * @param   uIqtReg     The value written to IQT_REG.
  */
-static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqtReg)
+static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_t uIqtReg)
 {
     /* We only care about the low 32-bits, high 32-bits are reserved. */
-    if (off == VTD_MMIO_OFF_IQT_REG)
-    {
-        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    Assert(offReg == VTD_MMIO_OFF_IQT_REG);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
 
-        /* Verify if the queue tail offset is aligned according to the descriptor width. */
-        uint32_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
-        uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
-        uint8_t const  fDw          = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
-        if (   fDw != VTD_IQA_REG_DW_256_BIT
-            || !(offQueueTail & 0x1f))
-            dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
-        else
-            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
+    uint32_t const offQt   = VTD_IQT_REG_GET_QT(uIqtReg);
+    uint64_t const uIqaReg = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+    uint8_t const  fDw     = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+
+    /* If the descriptor width is 256-bits, the queue tail offset must be aligned accordingly. */
+    if (   fDw != VTD_IQA_REG_DW_256_BIT
+        || !(offQt & RT_BIT(4)))
+        dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
+    else
+    {
+        /* Hardware treats bit 4 as RsvdZ here, so clear it. */
+        dmarRegChange32(pThis, offReg, ~RT_BIT(4) /* fAndMask*/ , 0 /* fOrMask */);
+        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
     }
     return VINF_SUCCESS;
 }
@@ -1097,26 +1104,27 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t u
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   off         The MMIO register offset.
+ * @param   offReg      The MMIO register offset.
  * @param   uIqaReg     The value written to IQA_REG.
  */
-static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t off, uint64_t uIqaReg)
+static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_t uIqaReg)
 {
-    /** @todo Don't allow writing this when GSTS.QIES is set? */
-
     /* At present, we only care about the low 32-bits, high 32-bits are data. */
-    if (off == VTD_MMIO_OFF_IQA_REG)
+    Assert(offReg == VTD_MMIO_OFF_IQA_REG);
+
+    /** @todo What happens if IQA_REG is written when dmarInvQueueCanProcessRequests
+     *        returns true? The Intel VT-d spec. doesn't state anywhere that it
+     *        cannot happen or that it's ignored when it does happen. */
+
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    uint8_t const fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+    if (fDw == VTD_IQA_REG_DW_256_BIT)
     {
-        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-        uint8_t const fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
-        if (fDw == VTD_IQA_REG_DW_256_BIT)
-        {
-            bool const fSupports256BitDw = RT_BOOL(pThis->fExtCap & (VTD_BF_ECAP_REG_SMTS_MASK | VTD_BF_ECAP_REG_ADMS_MASK));
-            if (fSupports256BitDw)
-            { /* likely */ }
-            else
-                dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kInvalidDescriptorWidth);
-        }
+        bool const fSupports256BitDw = (pThis->fExtCap & (VTD_BF_ECAP_REG_SMTS_MASK | VTD_BF_ECAP_REG_ADMS_MASK));
+        if (fSupports256BitDw)
+        { /* likely */ }
+        else
+            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kInvalidDescriptorWidth);
     }
     return VINF_SUCCESS;
 }
@@ -1200,6 +1208,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
     uint16_t const offLast = offReg + cb - 1;
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
+        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+        DMAR_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+
         uint64_t const uRegWritten = cb == 8 ? dmarRegWrite64(pThis, offReg, *(uint64_t *)pv)
                                              : dmarRegWrite32(pThis, offReg, *(uint32_t *)pv);
         VBOXSTRICTRC rcStrict = VINF_SUCCESS;
@@ -1213,20 +1224,21 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             }
 
             case VTD_MMIO_OFF_IQT_REG:
-            case VTD_MMIO_OFF_IQT_REG + 4:
+            /*   VTD_MMIO_OFF_IQT_REG + 4: (RsvdZ) */
             {
                 rcStrict = dmarIqtRegWrite(pDevIns, offReg, uRegWritten);
                 break;
             }
 
             case VTD_MMIO_OFF_IQA_REG:
-            case VTD_MMIO_OFF_IQA_REG + 4:
+            /*   VTD_MMIO_OFF_IQA_REG + 4: (Data) */
             {
                 rcStrict = dmarIqaRegWrite(pDevIns, offReg, uRegWritten);
                 break;
             }
         }
 
+        DMAR_UNLOCK(pDevIns, pThisCC);
         LogFlowFunc(("offReg=%#x rc=%Rrc\n", offReg, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
@@ -1250,6 +1262,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
     uint16_t const offLast = offReg + cb - 1;
     if (DMAR_IS_MMIO_OFF_VALID(offLast))
     {
+        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+        DMAR_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
+
         if (cb == 8)
         {
             *(uint64_t *)pv = dmarRegRead64(pThis, offReg);
@@ -1261,6 +1276,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
             LogFlowFunc(("offReg=%#x pv=%#RX32\n", offReg, *(uint32_t *)pv));
         }
 
+        DMAR_UNLOCK(pDevIns, pThisCC);
         return VINF_SUCCESS;
     }
 
@@ -1306,6 +1322,7 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
          * Fetch and process invalidation requests.
          */
         DMAR_LOCK_RET(pDevIns, pThisR3, VERR_IGNORED);
+        /** @todo use dmarInvQueueCanProcessRequests instead? */
         uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
         DMAR_UNLOCK(pDevIns, pThisR3);
 
@@ -1503,7 +1520,12 @@ static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
     RT_NOREF1(pDevIns);
     LogFlowFunc(("\n"));
 
+    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
+    DMAR_LOCK(pDevIns, pThisR3);
+
     dmarR3RegsInit(pDevIns);
+
+    DMAR_UNLOCK(pDevIns, pThisR3);
 }
 
 
@@ -1512,8 +1534,11 @@ static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
 {
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
     LogFlowFunc(("\n"));
+
+    DMAR_LOCK_RET(pDevIns, pThisR3, VERR_IGNORED);
 
     if (pThis->hEvtInvQueue != NIL_SUPSEMEVENT)
     {
@@ -1521,6 +1546,7 @@ static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
         pThis->hEvtInvQueue = NIL_SUPSEMEVENT;
     }
 
+    DMAR_UNLOCK(pDevIns, pThisR3);
     return VINF_SUCCESS;
 }
 
