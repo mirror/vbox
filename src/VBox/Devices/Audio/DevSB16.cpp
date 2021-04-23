@@ -1647,7 +1647,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *pvUser, unsi
         }
     }
 
-    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, copy);
+    STAM_COUNTER_ADD(&pThis->StatBytesRead, copy);
 
     uint32_t cbWritten;
     int rc = sb16WriteAudio(pThis, pStream, uChannel, off, cb, copy, &cbWritten);
