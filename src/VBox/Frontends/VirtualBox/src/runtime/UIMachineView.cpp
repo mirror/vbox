@@ -1006,8 +1006,11 @@ void UIMachineView::prepareConsoleConnections()
 
 void UIMachineView::cleanupFrameBuffer()
 {
+    /* Make sure framebuffer assigned at all: */
+    if (!m_pFrameBuffer)
+        return;
+
     /* Make sure proper framebuffer assigned: */
-    AssertReturnVoid(m_pFrameBuffer);
     AssertReturnVoid(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
 
     /* Mark framebuffer as unused: */

@@ -364,6 +364,8 @@ private slots:
     /** Marks machine started. */
     void sltMarkInitialized() { m_fInitialized = true; }
 
+    /** Detaches COM. */
+    void sltDetachCOM();
     /** Close Runtime UI. */
     void sltCloseRuntimeUI();
 

@@ -24,9 +24,11 @@
 /* Qt includes: */
 #include <QAbstractScrollArea>
 #include <QEventLoop>
+#include <QPointer>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
+#include "UIFrameBuffer.h"
 #include "UIMachineDefs.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "UIDnDHandler.h"
@@ -51,7 +53,6 @@ class UIActionPool;
 class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
-class UIFrameBuffer;
 class UINativeEventFilter;
 class CConsole;
 class CDisplay;
@@ -355,7 +356,7 @@ protected:
     /* Protected members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
-    UIFrameBuffer *m_pFrameBuffer;
+    QPointer<UIFrameBuffer> m_pFrameBuffer;
     KMachineState m_previousState;
     /** HACK: when switching out of fullscreen or seamless we wish to override
      * the default size hint to avoid short resizes back to fullscreen size.

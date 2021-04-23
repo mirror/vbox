@@ -590,6 +590,14 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, strSource);
 }
 
+void UISession::sltDetachCOM()
+{
+    /* Cleanup everything COM related: */
+    cleanupConsoleEventHandlers();
+    cleanupFramebuffers();
+    cleanupSession();
+}
+
 void UISession::sltCloseRuntimeUI()
 {
     /* Ask UIMachine to close Runtime UI: */
@@ -1115,6 +1123,7 @@ void UISession::prepareActions()
 void UISession::prepareConnections()
 {
     connect(this, &UISession::sigInitialized, this, &UISession::sltMarkInitialized);
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UISession::sltDetachCOM);
 
 #ifdef VBOX_WS_MAC
     /* Install native display reconfiguration callback: */
@@ -1494,20 +1503,11 @@ void UISession::cleanup()
     /* Save settings: */
     saveSessionSettings();
 
-    /* Cleanup framebuffers: */
-    cleanupFramebuffers();
-
-    /* Cleanup console event-handlers: */
-    cleanupConsoleEventHandlers();
-
     /* Cleanup connections: */
     cleanupConnections();
 
     /* Cleanup actions: */
     cleanupActions();
-
-    /* Cleanup session: */
-    cleanupSession();
 }
 
 #ifdef VBOX_WS_MAC

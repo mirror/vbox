@@ -4657,6 +4657,7 @@ void UICommon::cleanup()
     m_comCleanupProtectionToken.lockForWrite();
     {
         /* First, make sure we don't use COM any more: */
+        emit sigAskToDetachCOM();
         m_comHost.detach();
         m_comVBox.detach();
         m_comVBoxClient.detach();
