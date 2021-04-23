@@ -2289,7 +2289,6 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
     {
         uint32_t cRefs = pThis->pIEnumerator->Release(); RT_NOREF(cRefs);
         LogFlowFunc(("cRefs=%d\n", cRefs));
-        CoUninitialize();
     }
 
     if (pThis->pIDeviceOutput)
@@ -2366,15 +2365,11 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      * Create an enumerator instance that we can get the default devices from
      * as well as do enumeration thru.
      */
-    HRESULT hrc = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    AssertLogRelMsgReturn(SUCCEEDED(hrc), ("CoInitializeEx -> %Rhrc\n", hrc), VERR_AUDIO_BACKEND_INIT_FAILED);
-
-    hrc = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
-                           (void **)&pThis->pIEnumerator);
+    HRESULT hrc = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
+                                   (void **)&pThis->pIEnumerator);
     if (FAILED(hrc))
     {
         pThis->pIEnumerator = NULL;
-        CoUninitialize(); /* uninitialize here so destructor can use pEnumeration as indicator. */
         LogRel(("WasAPI: Failed to create an MMDeviceEnumerator object: %Rhrc\n", hrc));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
