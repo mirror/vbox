@@ -255,6 +255,7 @@ bool UISession::initialize()
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
     /* Warn listeners about we are initialized: */
+    m_fInitialized = true;
     emit sigInitialized();
 
     /* True by default: */
@@ -593,8 +594,8 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 void UISession::sltDetachCOM()
 {
     /* Cleanup everything COM related: */
-    cleanupConsoleEventHandlers();
     cleanupFramebuffers();
+    cleanupConsoleEventHandlers();
     cleanupSession();
 }
 
@@ -959,9 +960,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
     , m_pMachineWindowIcon(0)
-#ifdef VBOX_WS_WIN
-    , m_alphaCursor(0)
-#endif /* VBOX_WS_WIN */
 #ifdef VBOX_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif /* VBOX_WS_MAC */
@@ -1008,35 +1006,21 @@ UISession::~UISession()
 
 bool UISession::prepare()
 {
-    /* Prepare session: */
+    /* Prepare COM stuff: */
     if (!prepareSession())
         return false;
-
-    /* Prepare actions: */
-    prepareActions();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Prepare console event-handlers: */
     prepareConsoleEventHandlers();
-
-    /* Prepare screens: */
-    prepareScreens();
-
-    /* Prepare framebuffers: */
     prepareFramebuffers();
+
+    /* Prepare GUI stuff: */
+    prepareActions();
+    prepareConnections();
+    prepareMachineWindowIcon();
+    prepareScreens();
+    prepareSignalHandling();
 
     /* Load settings: */
     loadSessionSettings();
-
-#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
-    struct sigaction sa;
-    sa.sa_sigaction = &signalHandlerSIGUSR1;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGUSR1, &sa, NULL);
-#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
     /* True by default: */
     return true;
@@ -1047,7 +1031,8 @@ bool UISession::prepareSession()
     /* Open session: */
     m_session = uiCommon().openSession(uiCommon().managedVMUuid(),
                                          uiCommon().isSeparateProcess()
-                                         ? KLockType_Shared : KLockType_VM);
+                                       ? KLockType_Shared
+                                       : KLockType_VM);
     if (m_session.isNull())
         return false;
 
@@ -1096,19 +1081,79 @@ bool UISession::prepareSession()
     return true;
 }
 
+void UISession::prepareConsoleEventHandlers()
+{
+    /* Create console event-handler: */
+    UIConsoleEventHandler::create(this);
+
+    /* Add console event connections: */
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMousePointerShapeChange,
+            this, &UISession::sltMousePointerShapeChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMouseCapabilityChange,
+            this, &UISession::sltMouseCapabilityChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+            this, &UISession::sltCursorPositionChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
+            this, &UISession::sltKeyboardLedsChangeEvent);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigStateChange,
+            this, &UISession::sltStateChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigAdditionsChange,
+            this, &UISession::sltAdditionsChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigVRDEChange,
+            this, &UISession::sltVRDEChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigRecordingChange,
+            this, &UISession::sltRecordingChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigNetworkAdapterChange,
+            this, &UISession::sigNetworkAdapterChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigStorageDeviceChange,
+            this, &UISession::sltHandleStorageDeviceChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMediumChange,
+            this, &UISession::sigMediumChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBControllerChange,
+            this, &UISession::sigUSBControllerChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBDeviceStateChange,
+            this, &UISession::sigUSBDeviceStateChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigSharedFolderChange,
+            this, &UISession::sigSharedFolderChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigRuntimeError,
+            this, &UISession::sigRuntimeError);
+#ifdef VBOX_WS_MAC
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigShowWindow,
+            this, &UISession::sigShowWindows, Qt::QueuedConnection);
+#endif /* VBOX_WS_MAC */
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigCPUExecutionCapChange,
+            this, &UISession::sigCPUExecutionCapChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigGuestMonitorChange,
+            this, &UISession::sltGuestMonitorChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigAudioAdapterChange,
+            this, &UISession::sltAudioAdapterChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigClipboardModeChange,
+            this, &UISession::sltClipboardModeChange);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigDnDModeChange,
+            this, &UISession::sltDnDModeChange);
+}
+
+void UISession::prepareFramebuffers()
+{
+    /* Each framebuffer will be really prepared on first UIMachineView creation: */
+    m_frameBufferVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
+}
+
 void UISession::prepareActions()
 {
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-    AssertPtrReturnVoid(actionPool());
+    if (actionPool())
     {
+        /* Make sure action-pool knows guest-screen count: */
+        actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
         /* Update action restrictions: */
         updateActionRestrictions();
 
 #ifdef VBOX_WS_MAC
         /* Create Mac OS X menu-bar: */
         m_pMenuBar = new QMenuBar;
-        AssertPtrReturnVoid(m_pMenuBar);
+        if (m_pMenuBar)
         {
             /* Configure Mac OS X menu-bar: */
             connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
@@ -1122,7 +1167,7 @@ void UISession::prepareActions()
 
 void UISession::prepareConnections()
 {
-    connect(this, &UISession::sigInitialized, this, &UISession::sltMarkInitialized);
+    /* UICommon connections: */
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UISession::sltDetachCOM);
 
 #ifdef VBOX_WS_MAC
@@ -1144,76 +1189,18 @@ void UISession::prepareConnections()
 #endif /* !VBOX_WS_MAC */
 }
 
-void UISession::prepareConsoleEventHandlers()
+void UISession::prepareMachineWindowIcon()
 {
-    /* Create console event-handler: */
-    UIConsoleEventHandler::create(this);
-
-    /* Add console event connections: */
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMousePointerShapeChange,
-        this, &UISession::sltMousePointerShapeChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMouseCapabilityChange,
-            this, &UISession::sltMouseCapabilityChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
-            this, &UISession::sltCursorPositionChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
-            this, &UISession::sltKeyboardLedsChangeEvent);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigStateChange,
-            this, &UISession::sltStateChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigAdditionsChange,
-            this, &UISession::sltAdditionsChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigVRDEChange,
-            this, &UISession::sltVRDEChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigRecordingChange,
-            this, &UISession::sltRecordingChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigNetworkAdapterChange,
-            this, &UISession::sigNetworkAdapterChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigStorageDeviceChange,
-            this, &UISession::sltHandleStorageDeviceChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMediumChange,
-            this, &UISession::sigMediumChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBControllerChange,
-            this, &UISession::sigUSBControllerChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBDeviceStateChange,
-            this, &UISession::sigUSBDeviceStateChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigSharedFolderChange,
-            this, &UISession::sigSharedFolderChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigRuntimeError,
-            this, &UISession::sigRuntimeError);
-
-#ifdef VBOX_WS_MAC
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigShowWindow,
-            this, &UISession::sigShowWindows, Qt::QueuedConnection);
-#endif /* VBOX_WS_MAC */
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigCPUExecutionCapChange,
-            this, &UISession::sigCPUExecutionCapChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigGuestMonitorChange,
-            this, &UISession::sltGuestMonitorChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigAudioAdapterChange,
-            this, &UISession::sltAudioAdapterChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigClipboardModeChange,
-        this, &UISession::sltClipboardModeChange);
-
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigDnDModeChange,
-            this, &UISession::sltDnDModeChange);
+    /* Acquire user machine-window icon: */
+    QIcon icon = uiCommon().vmUserIcon(machine());
+    /* Use the OS type icon if user one was not set: */
+    if (icon.isNull())
+        icon = uiCommon().vmGuestOSTypeIcon(machine().GetOSTypeId());
+    /* Use the default icon if nothing else works: */
+    if (icon.isNull())
+        icon = QIcon(":/VirtualBox_48px.png");
+    /* Store the icon dynamically: */
+    m_pMachineWindowIcon = new QIcon(icon);
 }
 
 void UISession::prepareScreens()
@@ -1287,13 +1274,15 @@ void UISession::prepareScreens()
         actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
-void UISession::prepareFramebuffers()
+void UISession::prepareSignalHandling()
 {
-    /* Each framebuffer will be really prepared on first UIMachineView creation: */
-    m_frameBufferVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
-
-    /* Make sure action-pool knows guest-screen count: */
-    actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+    struct sigaction sa;
+    sa.sa_sigaction = &signalHandlerSIGUSR1;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGUSR1, &sa, NULL);
+#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 }
 
 void UISession::loadSessionSettings()
@@ -1302,20 +1291,6 @@ void UISession::loadSessionSettings()
     {
         /* Get machine ID: */
         const QUuid uMachineID = uiCommon().managedVMUuid();
-
-        /* Prepare machine-window icon: */
-        {
-            /* Acquire user machine-window icon: */
-            QIcon icon = uiCommon().vmUserIcon(machine());
-            /* Use the OS type icon if user one was not set: */
-            if (icon.isNull())
-                icon = uiCommon().vmGuestOSTypeIcon(machine().GetOSTypeId());
-            /* Use the default icon if nothing else works: */
-            if (icon.isNull())
-                icon = QIcon(":/VirtualBox_48px.png");
-            /* Store the icon dynamically: */
-            m_pMachineWindowIcon = new QIcon(icon);
-        }
 
 #ifndef VBOX_WS_MAC
         /* Load user's machine-window name postfix: */
@@ -1393,14 +1368,32 @@ void UISession::loadSessionSettings()
     }
 }
 
-void UISession::saveSessionSettings()
+void UISession::cleanupMachineWindowIcon()
 {
-    /* Save extra-data settings: */
-    {
-        /* Cleanup machine-window icon: */
-        delete m_pMachineWindowIcon;
-        m_pMachineWindowIcon = 0;
-    }
+    /* Cleanup machine-window icon: */
+    delete m_pMachineWindowIcon;
+    m_pMachineWindowIcon = 0;
+}
+
+void UISession::cleanupConnections()
+{
+#ifdef VBOX_WS_MAC
+    /* Remove display reconfiguration callback: */
+    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#endif /* VBOX_WS_MAC */
+}
+
+void UISession::cleanupActions()
+{
+#ifdef VBOX_WS_MAC
+    /* Destroy Mac OS X menu-bar: */
+    delete m_pMenuBar;
+    m_pMenuBar = 0;
+#endif /* VBOX_WS_MAC */
+
+    /* Destroy action-pool if necessary: */
+    if (actionPool())
+        UIActionPool::destroy(actionPool());
 }
 
 void UISession::cleanupFramebuffers()
@@ -1431,27 +1424,6 @@ void UISession::cleanupConsoleEventHandlers()
     /* Destroy console event-handler if necessary: */
     if (gConsoleEvents)
         UIConsoleEventHandler::destroy();
-}
-
-void UISession::cleanupConnections()
-{
-#ifdef VBOX_WS_MAC
-    /* Remove display reconfiguration callback: */
-    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
-#endif /* VBOX_WS_MAC */
-}
-
-void UISession::cleanupActions()
-{
-#ifdef VBOX_WS_MAC
-    /* Destroy Mac OS X menu-bar: */
-    delete m_pMenuBar;
-    m_pMenuBar = 0;
-#endif /* VBOX_WS_MAC */
-
-    /* Destroy action-pool if necessary: */
-    if (actionPool())
-        UIActionPool::destroy(actionPool());
 }
 
 void UISession::cleanupSession()
@@ -1494,19 +1466,11 @@ void UISession::cleanupSession()
 
 void UISession::cleanup()
 {
-#ifdef VBOX_WS_WIN
-    /* Destroy alpha cursor: */
-    if (m_alphaCursor)
-        DestroyIcon(m_alphaCursor);
-#endif /* VBOX_WS_WIN */
-
-    /* Save settings: */
-    saveSessionSettings();
-
-    /* Cleanup connections: */
+    /* Cleanup GUI stuff: */
+    //cleanupSignalHandling();
+    //cleanupScreens();
+    cleanupMachineWindowIcon();
     cleanupConnections();
-
-    /* Cleanup actions: */
     cleanupActions();
 }
 

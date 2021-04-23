@@ -361,9 +361,6 @@ public slots:
 
 private slots:
 
-    /** Marks machine started. */
-    void sltMarkInitialized() { m_fInitialized = true; }
-
     /** Detaches COM. */
     void sltDetachCOM();
     /** Close Runtime UI. */
@@ -423,20 +420,25 @@ private:
     /* Prepare helpers: */
     bool prepare();
     bool prepareSession();
+    void prepareConsoleEventHandlers();
+    void prepareFramebuffers();
     void prepareActions();
     void prepareConnections();
-    void prepareConsoleEventHandlers();
+    void prepareMachineWindowIcon();
     void prepareScreens();
-    void prepareFramebuffers();
+    void prepareSignalHandling();
+
+    /* Settings stuff: */
     void loadSessionSettings();
 
     /* Cleanup helpers: */
-    void saveSessionSettings();
-    void cleanupFramebuffers();
+    //void cleanupSignalHandling();
     //void cleanupScreens() {}
-    void cleanupConsoleEventHandlers();
+    void cleanupMachineWindowIcon();
     void cleanupConnections();
     void cleanupActions();
+    void cleanupFramebuffers();
+    void cleanupConsoleEventHandlers();
     void cleanupSession();
     void cleanup();
 
@@ -529,10 +531,6 @@ private:
     QString m_strMachineWindowNamePostfix;
 #endif
     /** @} */
-
-#if defined(VBOX_WS_WIN)
-    HCURSOR m_alphaCursor;
-#endif
 
     /** @name Host-screen configuration variables.
      * @{ */
