@@ -254,8 +254,15 @@ typedef enum RTTHREADFLAGS
     /** The bit number corresponding to the RTTHREADFLAGS_WAITABLE mask. */
     RTTHREADFLAGS_WAITABLE_BIT = 0,
 
+    /** Call CoInitializeEx w/ COINIT_MULTITHREADED, COINIT_DISABLE_OLE1DDE and
+     * COINIT_SPEED_OVER_MEMORY.  Ignored on non-windows platforms. */
+    RTTHREADFLAGS_COM_MTA = RT_BIT(1),
+    /** Call CoInitializeEx w/ COINIT_APARTMENTTHREADED and
+     *  COINIT_SPEED_OVER_MEMORY.   Ignored on non-windows platforms.  */
+    RTTHREADFLAGS_COM_STA = RT_BIT(2),
+
     /** Mask of valid flags, use for validation. */
-    RTTHREADFLAGS_MASK = RT_BIT(0)
+    RTTHREADFLAGS_MASK = UINT32_C(0x7)
 } RTTHREADFLAGS;
 
 
