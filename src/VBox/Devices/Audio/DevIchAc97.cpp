@@ -1445,8 +1445,8 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, 
                     pCtx->pThis     = pThis;
                     pCtx->pThisCC   = pThisCC;
 
-                    rc = RTThreadCreateF(&pAIO->Thread, ichac97R3StreamAsyncIOThread, pCtx,
-                                         0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ac97AIO%RU8", pStreamCC->u8SD);
+                    rc = RTThreadCreateF(&pAIO->Thread, ichac97R3StreamAsyncIOThread, pCtx, 0 /*cbStack*/, RTTHREADTYPE_IO,
+                                         RTTHREADFLAGS_WAITABLE | RTTHREADFLAGS_COM_MTA, "ac97AIO%RU8", pStreamCC->u8SD);
                     if (RT_SUCCESS(rc))
                         rc = RTThreadUserWait(pAIO->Thread, 30 * 1000 /* 30s timeout */);
                 }
