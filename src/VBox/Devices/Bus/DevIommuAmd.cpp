@@ -172,7 +172,7 @@
 # define IOMMU_DTE_CACHE_F_IGNORE_UNMAPPED_INTR_SHIFT    10
 
 /** Acquires the cache lock. */
-# define IOMMU_LOCK_CACHE(a_pDevIns, a_pThis) \
+#define IOMMU_LOCK_CACHE(a_pDevIns, a_pThis) \
     do { \
         int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_SEM_BUSY); \
         if (rcLock == VINF_SUCCESS) \
@@ -199,9 +199,9 @@
 #define IOMMU_GET_PAGE_OFF_MASK(a_cShift)           (~(UINT64_C(0xffffffffffffffff) << (a_cShift)))
 
 /** Acquires the PDM lock. */
-#define IOMMU_LOCK(a_pDevIns, a_pThisCC)  \
+#define IOMMU_LOCK(a_pDevIns, a_pThisCC, a_rcBusy)  \
     do { \
-        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_SEM_BUSY); \
+        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         { /* likely */ } \
         else \
@@ -2715,8 +2715,9 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
 
     Log4Func(("off=%#x cb=%u uValue=%#RX64\n", off, cb, uValue));
 
-    PIOMMU        pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PCIOMMUREGACC pReg  = iommuAmdGetRegAccess(off);
+    PIOMMU        pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC      pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PCIOMMUREGACC pReg    = iommuAmdGetRegAccess(off);
     if (pReg)
     { /* likely */ }
     else
@@ -2742,7 +2743,12 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
     if (cb == 8)
     {
         if (!(off & 7))
-            return pReg->pfnWrite(pDevIns, pThis, off, uValue);
+        {
+            IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+            VBOXSTRICTRC rcStrict = pReg->pfnWrite(pDevIns, pThis, off, uValue);
+            IOMMU_UNLOCK(pDevIns, pThisCC);
+            return rcStrict;
+        }
 
         LogFunc(("Misaligned access while writing register at off=%#x (cb=%u) with %#RX64 -> Ignored\n", off, cb, uValue));
         return VINF_SUCCESS;
@@ -2752,49 +2758,61 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
     Assert(cb == 4);
     if (!(off & 7))
     {
+        VBOXSTRICTRC rcStrict;
+        IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+
         /*
          * Lower 32 bits of a 64-bit register or a 32-bit register is being written.
          * Merge with higher 32 bits (after reading the full 64-bits) and perform a 64-bit write.
          */
         uint64_t u64Read;
         if (pReg->pfnRead)
+            rcStrict = pReg->pfnRead(pDevIns, pThis, off, &u64Read);
+        else
         {
-            VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, &u64Read);
-            if (RT_FAILURE(rcStrict))
-            {
-                LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
-                return rcStrict;
-            }
+            rcStrict = VINF_SUCCESS;
+            u64Read = 0;
+        }
+
+        if (RT_SUCCESS(rcStrict))
+        {
+            uValue = (u64Read & UINT64_C(0xffffffff00000000)) | uValue;
+            rcStrict = pReg->pfnWrite(pDevIns, pThis, off, uValue);
         }
         else
-            u64Read = 0;
+            LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
 
-        uValue = (u64Read & UINT64_C(0xffffffff00000000)) | uValue;
-        return pReg->pfnWrite(pDevIns, pThis, off, uValue);
+        IOMMU_UNLOCK(pDevIns, pThisCC);
+        return rcStrict;
     }
 
     /*
      * Higher 32 bits of a 64-bit register or a 32-bit register at a 32-bit boundary is being written.
      * Merge with lower 32 bits (after reading the full 64-bits) and perform a 64-bit write.
      */
+    VBOXSTRICTRC rcStrict;
     Assert(!(off & 3));
     Assert(off & 7);
     Assert(off >= 4);
     uint64_t u64Read;
     if (pReg->pfnRead)
+        rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
+    else
     {
-        VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
-        if (RT_FAILURE(rcStrict))
-        {
-            LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
-            return rcStrict;
-        }
+        rcStrict = VINF_SUCCESS;
+        u64Read = 0;
+    }
+
+    if (RT_SUCCESS(rcStrict))
+    {
+        uValue = (uValue << 32) | (u64Read & UINT64_C(0xffffffff));
+        rcStrict = pReg->pfnWrite(pDevIns, pThis, off - 4, uValue);
     }
     else
-        u64Read = 0;
+        LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
 
-    uValue = (uValue << 32) | (u64Read & UINT64_C(0xffffffff));
-    return pReg->pfnWrite(pDevIns, pThis, off - 4, uValue);
+    IOMMU_UNLOCK(pDevIns, pThisCC);
+    return rcStrict;
 }
 
 
@@ -2823,7 +2841,8 @@ static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     Log4Func(("off=%#x\n", off));
 
-    PIOMMU      pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMU      pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev); NOREF(pPciDev);
 
@@ -2850,7 +2869,12 @@ static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint6
      * The caller takes care of truncating upper 32 bits for 32-bit reads.
      */
     if (!(off & 7))
-        return pReg->pfnRead(pDevIns, pThis, off, puResult);
+    {
+        IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
+        VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, puResult);
+        IOMMU_UNLOCK(pDevIns, pThisCC);
+        return rcStrict;
+    }
 
     /*
      * High 32 bits of a 64-bit register or a 32-bit register at a non 64-bit boundary is being read.
@@ -2859,7 +2883,9 @@ static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint6
     Assert(!(off & 3));
     Assert(off & 7);
     Assert(off >= 4);
+    IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
     VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, puResult);
+    IOMMU_UNLOCK(pDevIns, pThisCC);
     if (RT_SUCCESS(rcStrict))
         *puResult >>= 32;
     else
@@ -3457,7 +3483,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp,
     PCIOMMU  pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
 
-    IOMMU_LOCK(pDevIns, pThisCC);
+    IOMMU_LOCK(pDevIns, pThisCC, VERR_SEM_BUSY);
 
     /* Figure out which device table segment is being accessed. */
     uint8_t const idxSegsEn = pThis->Ctrl.n.u3DevTabSegEn;
@@ -4851,11 +4877,10 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /* If the command requests an interrupt and completion wait interrupts are enabled, raise it. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
-                    IOMMU_LOCK(pDevIns, pThisR3);
+                    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
                     ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
                     bool const fRaiseInt = pThis->Ctrl.n.u1CompWaitIntrEn;
                     IOMMU_UNLOCK(pDevIns, pThisR3);
-
                     if (fRaiseInt)
                         iommuAmdMsiInterruptRaise(pDevIns);
                 }
@@ -5082,7 +5107,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        temporary host buffer before processing them as a batch. If we want to
          *        save on host memory a bit, we could (once PGM has the necessary APIs)
          *        lock the page mappings page mappings and access them directly. */
-        IOMMU_LOCK(pDevIns, pThisR3);
+        IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
 
         if (pThis->Status.n.u1CmdBufRunning)
         {
@@ -5103,7 +5128,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
 
                 IOMMU_UNLOCK(pDevIns, pThisR3);
                 int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
-                IOMMU_LOCK(pDevIns, pThisR3);
+                IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
 
                 if (RT_SUCCESS(rc))
                 {
@@ -5266,7 +5291,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
     }
 
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
-    IOMMU_LOCK(pDevIns, pThisR3);
+    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
 
     VBOXSTRICTRC rcStrict;
     switch (uAddress)
@@ -6610,7 +6635,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertPtrReturn(pThisR3, VERR_INVALID_POINTER);
 
     int rc;
-    IOMMU_LOCK(pDevIns, pThisR3);
+    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
 
     /* Map MMIO regions if the IOMMU BAR is enabled. */
     if (pThis->IommuBar.n.u1Enable)
