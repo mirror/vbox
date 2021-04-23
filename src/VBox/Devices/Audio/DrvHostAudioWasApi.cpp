@@ -200,6 +200,17 @@ typedef struct DRVHOSTAUDIOWAS
     /** The input device ID, NULL for default. */
     PRTUTF16                        pwszInputDevId;
 
+    /** Pointer to the MM notification client instance. */
+    DrvHostAudioWasMmNotifyClient  *pNotifyClient;
+    /** The input device to use.  This can be NULL if there wasn't a suitable one
+     * around when we last looked or if it got removed/disabled/whatever.
+    * All access must be done inside the pNotifyClient critsect. */
+    IMMDevice                      *pIDeviceInput;
+    /** The output device to use.  This can be NULL if there wasn't a suitable one
+     * around when we last looked or if it got removed/disabled/whatever.
+     * All access must be done inside the pNotifyClient critsect. */
+    IMMDevice                      *pIDeviceOutput;
+
     /** A drain stop timer that makes sure a draining stream will be properly
      * stopped (mainly for clean state and to reduce resource usage). */
     TMTIMERHANDLE                   hDrainTimer;
@@ -209,8 +220,6 @@ typedef struct DRVHOSTAUDIOWAS
     /** Serializing access to StreamHead. */
     RTCRITSECTRW                    CritSectStreamList;
 
-    /** Pointer to the MM notification client instance. */
-    DrvHostAudioWasMmNotifyClient  *pNotifyClient;
     /** List of cached devices (DRVHOSTAUDIOWASCACHEDEV).
      * Protected by CritSectCache  */
     RTLISTANCHOR                    CacheHead;
@@ -859,6 +868,23 @@ public:
         RTCritSectLeave(&m_CritSect);
     }
 
+    /**
+     * Enters the notification critsect for getting at the IMMDevice members in
+     * PDMHOSTAUDIOWAS.
+     */
+    void lockEnter() RT_NOEXCEPT
+    {
+        RTCritSectEnter(&m_CritSect);
+    }
+
+    /**
+     * Leaves the notification critsect.
+     */
+    void lockLeave() RT_NOEXCEPT
+    {
+        RTCritSectLeave(&m_CritSect);
+    }
+
     /** @name IUnknown interface
      * @{ */
     IFACEMETHODIMP_(ULONG)  AddRef()
@@ -909,6 +935,36 @@ public:
     {
         RT_NOREF(pwszDeviceId);
         Log7Func(("pwszDeviceId=%ls\n", pwszDeviceId));
+
+        /*
+         * Is this a device we're interested in?  Grab the enumerator if it is.
+         */
+        bool                 fOutput      = false;
+        IMMDeviceEnumerator *pIEnumerator = NULL;
+        RTCritSectEnter(&m_CritSect);
+        if (   m_pDrvWas != NULL
+            && (   (fOutput = RTUtf16ICmp(m_pDrvWas->pwszOutputDevId, pwszDeviceId) == 0)
+                || RTUtf16ICmp(m_pDrvWas->pwszInputDevId, pwszDeviceId) == 0))
+        {
+            pIEnumerator = m_pDrvWas->pIEnumerator;
+            if (pIEnumerator /* paranoia */)
+                pIEnumerator->AddRef();
+        }
+        RTCritSectLeave(&m_CritSect);
+        if (pIEnumerator)
+        {
+            /*
+             * Get the device and update it.
+             */
+            IMMDevice *pIDevice = NULL;
+            HRESULT hrc = pIEnumerator->GetDevice(pwszDeviceId, &pIDevice);
+            if (SUCCEEDED(hrc))
+                setDevice(fOutput, pIDevice, pwszDeviceId, __PRETTY_FUNCTION__);
+            else
+                LogRelMax(64, ("WasAPI: Failed to get %s device '%ls' (OnDeviceAdded): %Rhrc\n",
+                               fOutput ? "output" : "input", pwszDeviceId, hrc));
+            pIEnumerator->Release();
+        }
         return S_OK;
     }
 
@@ -916,11 +972,51 @@ public:
     {
         RT_NOREF(pwszDeviceId);
         Log7Func(("pwszDeviceId=%ls\n", pwszDeviceId));
+
+        /*
+         * Is this a device we're interested in?  Then set it to NULL.
+         */
+        bool fOutput = false;
+        RTCritSectEnter(&m_CritSect);
+        if (   m_pDrvWas != NULL
+            && (   (fOutput = RTUtf16ICmp(m_pDrvWas->pwszOutputDevId, pwszDeviceId) == 0)
+                || RTUtf16ICmp(m_pDrvWas->pwszInputDevId, pwszDeviceId) == 0))
+            setDevice(fOutput, NULL, pwszDeviceId, __PRETTY_FUNCTION__);
+        RTCritSectLeave(&m_CritSect);
         return S_OK;
     }
 
     IFACEMETHODIMP OnDefaultDeviceChanged(EDataFlow enmFlow, ERole enmRole, LPCWSTR pwszDefaultDeviceId)
     {
+        /*
+         * Are we interested in this device?  If so grab the enumerator.
+         */
+        IMMDeviceEnumerator *pIEnumerator = NULL;
+        RTCritSectEnter(&m_CritSect);
+        if (    m_pDrvWas != NULL
+            && (   (enmFlow == eRender  && enmRole == eMultimedia && !m_pDrvWas->pwszOutputDevId)
+                || (enmFlow == eCapture && enmRole == eMultimedia && !m_pDrvWas->pwszInputDevId)))
+        {
+            pIEnumerator = m_pDrvWas->pIEnumerator;
+            if (pIEnumerator /* paranoia */)
+                pIEnumerator->AddRef();
+        }
+        RTCritSectLeave(&m_CritSect);
+        if (pIEnumerator)
+        {
+            /*
+             * Get the device and update it.
+             */
+            IMMDevice *pIDevice = NULL;
+            HRESULT hrc = pIEnumerator->GetDefaultAudioEndpoint(enmFlow, enmRole, &pIDevice);
+            if (SUCCEEDED(hrc))
+                setDevice(enmFlow == eRender, pIDevice, pwszDefaultDeviceId, __PRETTY_FUNCTION__);
+            else
+                LogRelMax(64, ("WasAPI: Failed to get default %s device (OnDefaultDeviceChange): %Rhrc\n",
+                               enmFlow == eRender ? "output" : "input", hrc));
+            pIEnumerator->Release();
+        }
+
         RT_NOREF(enmFlow, enmRole, pwszDefaultDeviceId);
         Log7Func(("enmFlow=%d enmRole=%d pwszDefaultDeviceId=%ls\n", enmFlow, enmRole, pwszDefaultDeviceId));
         return S_OK;
@@ -933,6 +1029,41 @@ public:
         return S_OK;
     }
     /** @} */
+
+private:
+    /**
+     * Sets DRVHOSTAUDIOWAS::pIDeviceOutput or DRVHOSTAUDIOWAS::pIDeviceInput to @a pIDevice.
+     */
+    void setDevice(bool fOutput, IMMDevice *pIDevice, LPCWSTR pwszDeviceId, const char *pszCaller)
+    {
+        RT_NOREF(pszCaller, pwszDeviceId);
+
+        RTCritSectEnter(&m_CritSect);
+        if (m_pDrvWas)
+        {
+            if (fOutput)
+            {
+                Log7((LOG_FN_FMT ": Changing output device from %p to %p (%ls)\n",
+                      pszCaller, m_pDrvWas->pIDeviceOutput, pIDevice, pwszDeviceId));
+                if (m_pDrvWas->pIDeviceOutput)
+                    m_pDrvWas->pIDeviceOutput->Release();
+                m_pDrvWas->pIDeviceOutput = pIDevice;
+            }
+            else
+            {
+                Log7((LOG_FN_FMT ": Changing input device from %p to %p (%ls)\n",
+                      pszCaller, m_pDrvWas->pIDeviceInput, pIDevice, pwszDeviceId));
+                if (m_pDrvWas->pIDeviceInput)
+                    m_pDrvWas->pIDeviceInput->Release();
+                m_pDrvWas->pIDeviceInput = pIDevice;
+            }
+
+            /** @todo Invalid/update in-use streams. */
+        }
+        else if (pIDevice)
+            pIDevice->Release();
+        RTCritSectLeave(&m_CritSect);
+    }
 };
 
 
@@ -1195,25 +1326,31 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
 
     /*
      * Get the device we're supposed to use.
+     * (We cache this as it takes ~2ms to get the default device on a random W10 19042 system.)
      */
-    PRTUTF16        pwszDevId = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pwszInputDevId : pThis->pwszOutputDevId;
-    IMMDevice      *pIDevice  = NULL;
-    HRESULT         hrc;
-    if (pwszDevId)
-        hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
-    else
+    pThis->pNotifyClient->lockEnter();
+    IMMDevice *pIDevice = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pIDeviceInput : pThis->pIDeviceOutput;
+    if (pIDevice)
+        pIDevice->AddRef();
+    pThis->pNotifyClient->lockLeave();
+
+    PRTUTF16       pwszDevId     = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pwszInputDevId : pThis->pwszOutputDevId;
+    PRTUTF16 const pwszDevIdDesc = pwszDevId ? pwszDevId : pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
+    if (!pIDevice)
     {
-        /** @todo this takes about 2ms. Cache it and update it using the
-         *        notification client. */
-        hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(pCfgReq->enmDir == PDMAUDIODIR_IN ? eCapture : eRender,
-                                                           eMultimedia, &pIDevice);
-        pwszDevId = pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
-    }
-    LogFlowFunc(("Got device %p (%Rhrc)\n", pIDevice, hrc));
-    if (FAILED(hrc))
-    {
-        LogRelMax(64, ("WasAPI: Failed to open audio %s device '%ls': %Rhrc\n", pszStreamType, pwszDevId, hrc));
-        return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+        /** @todo we can eliminate this too...   */
+        HRESULT hrc;
+        if (pwszDevId)
+            hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
+        else
+            hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(pCfgReq->enmDir == PDMAUDIODIR_IN ? eCapture : eRender,
+                                                               eMultimedia, &pIDevice);
+        LogFlowFunc(("Got device %p (%Rhrc)\n", pIDevice, hrc));
+        if (FAILED(hrc))
+        {
+            LogRelMax(64, ("WasAPI: Failed to open audio %s device '%ls': %Rhrc\n", pszStreamType, pwszDevIdDesc, hrc));
+            return VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+        }
     }
 
     /*
@@ -1251,12 +1388,12 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
             return VINF_SUCCESS;
         }
 
-        LogRelMax(64, ("WasAPI: Failed to create critical section for stream.\n", hrc));
+        LogRelMax(64, ("WasAPI: Failed to create critical section for stream.\n"));
         drvHostAudioWasCachePutBack(pThis, pDevCfg);
         pStreamWas->pDevCfg = NULL;
     }
     else
-        LogRelMax(64, ("WasAPI: Failed to activate %s audio device '%ls': %Rhrc\n", pszStreamType, pwszDevId, hrc));
+        LogRelMax(64, ("WasAPI: Failed to setup %s on audio device '%ls'.\n", pszStreamType, pwszDevIdDesc));
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2155,6 +2292,18 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
         CoUninitialize();
     }
 
+    if (pThis->pIDeviceOutput)
+    {
+        pThis->pIDeviceOutput->Release();
+        pThis->pIDeviceOutput = NULL;
+    }
+
+    if (pThis->pIDeviceInput)
+    {
+        pThis->pIDeviceInput->Release();
+        pThis->pIDeviceInput = NULL;
+    }
+
     if (RTCritSectRwIsInitialized(&pThis->CritSectStreamList))
         RTCritSectRwDelete(&pThis->CritSectStreamList);
 
@@ -2267,6 +2416,50 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         pThis->pNotifyClient->Release();
         pThis->pNotifyClient = NULL;
     }
+
+    /*
+     * Retrieve the input and output device.
+     */
+    IMMDevice *pIDeviceInput = NULL;
+    if (pThis->pwszInputDevId)
+        hrc = pThis->pIEnumerator->GetDevice(pThis->pwszInputDevId, &pIDeviceInput);
+    else
+        hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(eCapture, eMultimedia, &pIDeviceInput);
+    if (SUCCEEDED(hrc))
+        LogFlowFunc(("pIDeviceInput=%p\n", pIDeviceInput));
+    else
+    {
+        LogRel(("WasAPI: Failed to get audio input device '%ls': %Rhrc\n",
+                pThis->pwszInputDevId ? pThis->pwszInputDevId : L"{Default}", hrc));
+        pIDeviceInput = NULL;
+    }
+
+    IMMDevice *pIDeviceOutput = NULL;
+    if (pThis->pwszOutputDevId)
+        hrc = pThis->pIEnumerator->GetDevice(pThis->pwszOutputDevId, &pIDeviceOutput);
+    else
+        hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &pIDeviceOutput);
+    if (SUCCEEDED(hrc))
+        LogFlowFunc(("pIDeviceOutput=%p\n", pIDeviceOutput));
+    else
+    {
+        LogRel(("WasAPI: Failed to get audio output device '%ls': %Rhrc\n",
+                pThis->pwszOutputDevId ? pThis->pwszOutputDevId : L"{Default}", hrc));
+        pIDeviceOutput = NULL;
+    }
+
+    /* Carefully place them in the instance data:  */
+    pThis->pNotifyClient->lockEnter();
+
+    if (pThis->pIDeviceInput)
+        pThis->pIDeviceInput->Release();
+    pThis->pIDeviceInput = pIDeviceInput;
+
+    if (pThis->pIDeviceOutput)
+        pThis->pIDeviceOutput->Release();
+    pThis->pIDeviceOutput = pIDeviceOutput;
+
+    pThis->pNotifyClient->lockLeave();
 
     /*
      * We need a timer and a R/W critical section for draining streams.
