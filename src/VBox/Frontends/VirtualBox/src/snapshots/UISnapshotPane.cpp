@@ -914,10 +914,18 @@ void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
         AssertPtrReturnVoid(pSnapshotItem);
         /* Update details-widget: */
         if (pSnapshotItem->isCurrentStateItem())
-            m_pDetailsWidget->setData(m_comMachine);
+        {
+            if (m_comMachine.isNull())
+                m_pDetailsWidget->clearData();
+            else
+                m_pDetailsWidget->setData(m_comMachine);
+        }
         else
             m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
     }
+    /* Cleanup invisible details-widget: */
+    else
+        m_pDetailsWidget->clearData();
 }
 
 void UISnapshotPane::sltApplySnapshotDetailsChanges()
@@ -1058,10 +1066,18 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     if (pSnapshotItem && !m_pDetailsWidget->isHidden())
     {
         if (pSnapshotItem->isCurrentStateItem())
-            m_pDetailsWidget->setData(m_comMachine);
+        {
+            if (m_comMachine.isNull())
+                m_pDetailsWidget->clearData();
+            else
+                m_pDetailsWidget->setData(m_comMachine);
+        }
         else
             m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
     }
+    /* Cleanup invisible details-widget: */
+    else
+        m_pDetailsWidget->clearData();
 
     /* Notify listeners: */
     emit sigCurrentItemChange();
@@ -1354,7 +1370,8 @@ void UISnapshotPane::refreshAll()
     /* If VM is null, just updated the current item: */
     if (m_comMachine.isNull())
     {
-        sltHandleCurrentItemChange();
+        /* Clear the tree: */
+        m_pSnapshotTree->clear();
         return;
     }
 
