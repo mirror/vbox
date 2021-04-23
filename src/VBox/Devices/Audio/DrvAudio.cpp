@@ -2267,6 +2267,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamConfigHint, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
@@ -2449,6 +2450,158 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 }
 
 /**
+ * Adjusts the request stream configuration, applying our settings.
+ *
+ * This also does some basic validations.
+ *
+ * Used by both the stream creation and stream configuration hinting code.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Pointer to the DrvAudio instance data.
+ * @param   pCfgReq     The request configuration that should be adjusted.
+ * @param   pszName     Stream name to use when logging warnings and errors.
+ */
+static int drvAudioStreamAdjustConfig(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfgReq, const char *pszName)
+{
+    /* Get the right configuration for the stream to be created. */
+    PDRVAUDIOCFG pDrvCfg = pCfgReq->enmDir == PDMAUDIODIR_IN ? &pThis->In.Cfg : &pThis->Out.Cfg;
+
+    /* Fill in the tweakable parameters into the requested host configuration.
+     * All parameters in principle can be changed and returned by the backend via the acquired configuration. */
+
+    /*
+     * PCM
+     */
+    if (PDMAudioPropsSampleSize(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+    {
+        PDMAudioPropsSetSampleSize(&pCfgReq->Props, PDMAudioPropsSampleSize(&pDrvCfg->Props));
+        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
+                 PDMAudioPropsSampleSize(&pCfgReq->Props), pszName));
+    }
+
+    if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.uHz = pDrvCfg->Props.uHz;
+        LogRel2(("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfgReq->Props.uHz, pszName));
+    }
+
+    if (pDrvCfg->uSigned != UINT8_MAX) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.fSigned = RT_BOOL(pDrvCfg->uSigned);
+        LogRel2(("Audio: Using custom %s sample format for stream '%s'\n",
+                 pCfgReq->Props.fSigned ? "signed" : "unsigned", pszName));
+    }
+
+    if (pDrvCfg->uSwapEndian != UINT8_MAX) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.fSwapEndian = RT_BOOL(pDrvCfg->uSwapEndian);
+        LogRel2(("Audio: Using custom %s endianess for samples of stream '%s'\n",
+                 pCfgReq->Props.fSwapEndian ? "swapped" : "original", pszName));
+    }
+
+    if (PDMAudioPropsChannels(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+    {
+        PDMAudioPropsSetChannels(&pCfgReq->Props, PDMAudioPropsChannels(&pDrvCfg->Props));
+        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pszName));
+    }
+
+    /* Validate PCM properties. */
+    if (!AudioHlpPcmPropsAreValid(&pCfgReq->Props))
+    {
+        LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pszName));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Period size
+     */
+    const char *pszWhat = "device-specific";
+    if (pDrvCfg->uPeriodSizeMs)
+    {
+        pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPeriodSizeMs);
+        pszWhat = "custom";
+    }
+
+    if (!pCfgReq->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
+    {
+        pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 150 /*ms*/);
+        pszWhat = "default";
+    }
+
+    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod),
+             pCfgReq->Backend.cFramesPeriod, pszName));
+
+    /*
+     * Buffer size
+     */
+    pszWhat = "device-specific";
+    if (pDrvCfg->uBufferSizeMs)
+    {
+        pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uBufferSizeMs);
+        pszWhat = "custom";
+    }
+
+    if (!pCfgReq->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
+    {
+        pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 300 /*ms*/);
+        pszWhat = "default";
+    }
+
+    LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
+             pCfgReq->Backend.cFramesBufferSize, pszName));
+
+    /*
+     * Pre-buffering size
+     */
+    pszWhat = "device-specific";
+    if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
+    {
+        pCfgReq->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPreBufSizeMs);
+        pszWhat = "custom";
+    }
+    else /* No, then either use the default or device-specific settings (if any). */
+    {
+        if (pCfgReq->Backend.cFramesPreBuffering == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
+        {
+            /* Pre-buffer 66% of the buffer. */
+            pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize * 2 / 3;
+            pszWhat = "default";
+        }
+    }
+
+    LogRel2(("Audio: Using %s pre-buffering size %RU64 ms / %RU32 frames for stream '%s'\n",
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
+             pCfgReq->Backend.cFramesPreBuffering, pszName));
+
+    /*
+     * Validate input.
+     */
+    if (pCfgReq->Backend.cFramesBufferSize < pCfgReq->Backend.cFramesPeriod)
+    {
+        LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the period size (%RU64ms)\n",
+                pszName, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
+                PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod)));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (   pCfgReq->Backend.cFramesPreBuffering != UINT32_MAX /* Custom pre-buffering set? */
+        && pCfgReq->Backend.cFramesPreBuffering)
+    {
+        if (pCfgReq->Backend.cFramesBufferSize < pCfgReq->Backend.cFramesPreBuffering)
+        {
+            LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the pre-buffering size (%RU64ms)\n",
+                    pszName, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
+                    PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize)));
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Worker for drvAudioStreamInitInternal and drvAudioStreamReInitInternal that
  * creates the backend (host driver) side of an audio stream.
  *
@@ -2472,147 +2625,19 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
     AssertMsg((pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED) == 0,
               ("Stream '%s' already initialized in backend\n", pStreamEx->Core.szName));
 
-    /* Get the right configuration for the stream to be created. */
-    PDRVAUDIOCFG pDrvCfg = pCfgReq->enmDir == PDMAUDIODIR_IN ? &pThis->In.Cfg : &pThis->Out.Cfg;
-
-    /* Fill in the tweakable parameters into the requested host configuration.
-     * All parameters in principle can be changed and returned by the backend via the acquired configuration. */
-
     /*
-     * PCM
+     * Adjust the requested stream config, applying our settings.
      */
-    if (PDMAudioPropsSampleSize(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
-    {
-        PDMAudioPropsSetSampleSize(&pCfgReq->Props, PDMAudioPropsSampleSize(&pDrvCfg->Props));
-        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
-                 PDMAudioPropsSampleSize(&pCfgReq->Props), pStreamEx->Core.szName));
-    }
-
-    if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
-    {
-        pCfgReq->Props.uHz = pDrvCfg->Props.uHz;
-        LogRel2(("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfgReq->Props.uHz, pStreamEx->Core.szName));
-    }
-
-    if (pDrvCfg->uSigned != UINT8_MAX) /* Anything set via custom extra-data? */
-    {
-        pCfgReq->Props.fSigned = RT_BOOL(pDrvCfg->uSigned);
-        LogRel2(("Audio: Using custom %s sample format for stream '%s'\n",
-                 pCfgReq->Props.fSigned ? "signed" : "unsigned", pStreamEx->Core.szName));
-    }
-
-    if (pDrvCfg->uSwapEndian != UINT8_MAX) /* Anything set via custom extra-data? */
-    {
-        pCfgReq->Props.fSwapEndian = RT_BOOL(pDrvCfg->uSwapEndian);
-        LogRel2(("Audio: Using custom %s endianess for samples of stream '%s'\n",
-                 pCfgReq->Props.fSwapEndian ? "swapped" : "original", pStreamEx->Core.szName));
-    }
-
-    if (PDMAudioPropsChannels(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
-    {
-        PDMAudioPropsSetChannels(&pCfgReq->Props, PDMAudioPropsChannels(&pDrvCfg->Props));
-        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pStreamEx->Core.szName));
-    }
-
-    /* Validate PCM properties. */
-    if (!AudioHlpPcmPropsAreValid(&pCfgReq->Props))
-    {
-        LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pStreamEx->Core.szName));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Period size
-     */
-    const char *pszWhat = "device-specific";
-    if (pDrvCfg->uPeriodSizeMs)
-    {
-        pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPeriodSizeMs);
-        pszWhat = "custom";
-    }
-
-    if (!pCfgReq->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
-    {
-        pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 150 /*ms*/);
-        pszWhat = "default";
-    }
-
-    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
-             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod),
-             pCfgReq->Backend.cFramesPeriod, pStreamEx->Core.szName));
-
-    /*
-     * Buffer size
-     */
-    pszWhat = "device-specific";
-    if (pDrvCfg->uBufferSizeMs)
-    {
-        pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uBufferSizeMs);
-        pszWhat = "custom";
-    }
-
-    if (!pCfgReq->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
-    {
-        pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 300 /*ms*/);
-        pszWhat = "default";
-    }
-
-    LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
-             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
-             pCfgReq->Backend.cFramesBufferSize, pStreamEx->Core.szName));
-
-    /*
-     * Pre-buffering size
-     */
-    pszWhat = "device-specific";
-    if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
-    {
-        pCfgReq->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPreBufSizeMs);
-        pszWhat = "custom";
-    }
-    else /* No, then either use the default or device-specific settings (if any). */
-    {
-        if (pCfgReq->Backend.cFramesPreBuffering == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
-        {
-            /* Pre-buffer 66% of the buffer. */
-            pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize * 2 / 3;
-            pszWhat = "default";
-        }
-    }
-
-    LogRel2(("Audio: Using %s pre-buffering size %RU64 ms / %RU32 frames for stream '%s'\n",
-             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
-             pCfgReq->Backend.cFramesPreBuffering, pStreamEx->Core.szName));
-
-    /*
-     * Validate input.
-     */
-    if (pCfgReq->Backend.cFramesBufferSize < pCfgReq->Backend.cFramesPeriod)
-    {
-        LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the period size (%RU64ms)\n",
-                pStreamEx->Core.szName, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
-                PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod)));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (   pCfgReq->Backend.cFramesPreBuffering != UINT32_MAX /* Custom pre-buffering set? */
-        && pCfgReq->Backend.cFramesPreBuffering)
-    {
-        if (pCfgReq->Backend.cFramesBufferSize < pCfgReq->Backend.cFramesPreBuffering)
-        {
-            LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the pre-buffering size (%RU64ms)\n",
-                    pStreamEx->Core.szName, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
-                    PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize)));
-            return VERR_INVALID_PARAMETER;
-        }
-    }
+    int rc = drvAudioStreamAdjustConfig(pThis, pCfgReq, pStreamEx->Core.szName);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Make the acquired host configuration the requested host configuration initially,
      * in case the backend does not report back an acquired configuration.
      */
     /** @todo r=bird: This is conveniently not documented in the interface... */
-    int rc = PDMAudioStrmCfgCopy(pCfgAcq, pCfgReq);
+    rc = PDMAudioStrmCfgCopy(pCfgAcq, pCfgReq);
     if (RT_FAILURE(rc))
     {
         LogRel(("Audio: Creating stream '%s' with an invalid backend configuration not possible, skipping\n",
@@ -3227,6 +3252,43 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
     RTCritSectLeave(&pThis->CritSect);
     LogFlowFunc(("LEAVE - %#x\n", fBackendStatus));
     return fBackendStatus;
+}
+
+/**
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamConfigHint}
+ */
+static DECLCALLBACK(void) drvAudioStreamConfigHint(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfg)
+{
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertReturnVoid(pCfg->enmDir == PDMAUDIODIR_IN || pCfg->enmDir == PDMAUDIODIR_OUT);
+
+    int rc = RTCritSectEnter(&pThis->CritSect); /** @todo Reconsider the locking for DrvAudio */
+    AssertRCReturnVoid(rc);
+
+    /*
+     * Don't do anything unless the backend has a pfnStreamConfigHint method
+     * and the direction is currently enabled.
+     */
+    if (   pThis->pHostDrvAudio
+        && pThis->pHostDrvAudio->pfnStreamConfigHint)
+    {
+        if (pCfg->enmDir == PDMAUDIODIR_OUT ? pThis->Out.fEnabled : pThis->In.fEnabled)
+        {
+            /*
+             * Adjust the configuration (applying out settings) then call the backend driver.
+             */
+            rc = drvAudioStreamAdjustConfig(pThis, pCfg, pCfg->szName);
+            AssertLogRelRC(rc);
+            if (RT_SUCCESS(rc))
+                pThis->pHostDrvAudio->pfnStreamConfigHint(pThis->pHostDrvAudio, pCfg);
+        }
+        else
+            LogFunc(("Ignoring hint because direction is not currently enabled\n"));
+    }
+    else
+        LogFlowFunc(("Ignoring hint because backend has no pfnStreamConfigHint method.\n"));
+
+    RTCritSectLeave(&pThis->CritSect);
 }
 
 /**
@@ -4068,6 +4130,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnIsEnabled         = drvAudioIsEnabled;
     pThis->IAudioConnector.pfnGetConfig         = drvAudioGetConfig;
     pThis->IAudioConnector.pfnGetStatus         = drvAudioGetStatus;
+    pThis->IAudioConnector.pfnStreamConfigHint  = drvAudioStreamConfigHint;
     pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;
     pThis->IAudioConnector.pfnStreamDestroy     = drvAudioStreamDestroy;
     pThis->IAudioConnector.pfnStreamRetain      = drvAudioStreamRetain;

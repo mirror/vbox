@@ -229,6 +229,7 @@ DECL_HIDDEN_CONST(PDMIHOSTAUDIO) const g_DrvHostAudioNull =
     /* .pfnGetConfig          =*/ drvHostNullAudioHA_GetConfig,
     /* .pfnGetDevices         =*/ NULL,
     /* .pfnGetStatus          =*/ drvHostNullAudioHA_GetStatus,
+    /* .pfnStreamConfigHint   =*/ NULL,
     /* .pfnStreamCreate       =*/ drvHostNullAudioHA_StreamCreate,
     /* .pfnStreamDestroy      =*/ drvHostNullAudioHA_StreamDestroy,
     /* .pfnStreamControl      =*/ drvHostNullAudioHA_StreamControl,

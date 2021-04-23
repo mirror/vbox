@@ -1051,6 +1051,21 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir));
 
     /**
+     * Gives the audio drivers a hint about a typical configuration.
+     *
+     * This is a little hack for windows (and maybe other hosts) where stream
+     * creation can take a relatively long time, making it very unsuitable for EMT.
+     * The audio backend can use this hint to cache pre-configured stream setups,
+     * so that when the guest actually wants to play something EMT won't be blocked
+     * configuring host audio.
+     *
+     * @param   pInterface      Pointer to this interface.
+     * @param   pCfg            The typical configuration.  Can be modified by the
+     *                          drivers in unspecified ways.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamConfigHint, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfg));
+
+    /**
      * Creates an audio stream.
      *
      * @returns VBox status code.
@@ -1201,7 +1216,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "473a3a3c-cda9-454c-90f9-63751320e62a"
+#define PDMIAUDIOCONNECTOR_IID                  "9e7d9efb-45ac-4364-9e9d-67b6990df94c"
 
 
 /** Opque pointer host audio specific stream data.
@@ -1227,7 +1242,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg));
 
     /**
-     * Returns (enumerates) host audio device information.
+     * Returns (enumerates) host audio device information (optional).
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
@@ -1236,13 +1251,29 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnGetDevices, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum));
 
     /**
-     * Returns the current status from the audio backend.
+     * Returns the current status from the audio backend (optional).
      *
      * @returns PDMAUDIOBACKENDSTS enum.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   enmDir              Audio direction to get status for. Pass PDMAUDIODIR_DUPLEX for overall status.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
+
+    /**
+     * Gives the audio backend a hint about a typical configuration (optional).
+     *
+     * This is a little hack for windows (and maybe other hosts) where stream
+     * creation can take a relatively long time, making it very unsuitable for EMT.
+     * The audio backend can use this hint to cache pre-configured stream setups,
+     * so that when the guest actually wants to play something EMT won't be blocked
+     * configuring host audio.
+     *
+     * @param   pInterface      Pointer to this interface.
+     * @param   pCfg            The typical configuration.  (Feel free to change it
+     *                          to the actual stream config that would be used,
+     *                          however caller will probably ignore this.)
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamConfigHint, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAMCFG pCfg));
 
     /**
      * Creates an audio stream using the requested stream configuration.
@@ -1302,7 +1333,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns the number of buffered bytes that hasn't been played yet.
+     * Returns the number of buffered bytes that hasn't been played yet (optional).
      *
      * This function is used by DrvAudio to detect when it is appropriate to fully
      * disable an output stream w/o cutting off the playback too early.  The backend
@@ -1361,7 +1392,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "71b1dcc3-46d7-4c27-a76a-63cd229adb74"
+#define PDMIHOSTAUDIO_IID                           "ccfd4020-1a41-4158-8c42-6f7c98f0aaa8"
 
 
 /** Pointer to a audio notify from host interface. */

@@ -1281,6 +1281,36 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioWasHA_GetStatus(PPDMIHOSTAUD
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamConfigHint}
+ */
+static DECLCALLBACK(void) drvHostAudioWasHA_StreamConfigHint(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAMCFG pCfg)
+{
+    PDRVHOSTAUDIOWAS pThis = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
+    LogFlowFunc(("pCfg=%p\n", pCfg));
+
+    /*
+     * Get the device.
+     */
+    pThis->pNotifyClient->lockEnter();
+    IMMDevice *pIDevice = pCfg->enmDir == PDMAUDIODIR_IN ? pThis->pIDeviceInput : pThis->pIDeviceOutput;
+    if (pIDevice)
+        pIDevice->AddRef();
+    pThis->pNotifyClient->lockLeave();
+    if (pIDevice)
+    {
+        /*
+         * Look up the config and put it back.
+         */
+        PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, pCfg);
+        LogFlowFunc(("pDevCfg=%p\n"));
+        if (pDevCfg)
+            drvHostAudioWasCachePutBack(pThis, pDevCfg);
+        pIDevice->Release();
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -2332,6 +2362,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->IHostAudio.pfnGetConfig          = drvHostAudioWasHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices         = drvHostAudioWasHA_GetDevices;
     pThis->IHostAudio.pfnGetStatus          = drvHostAudioWasHA_GetStatus;
+    pThis->IHostAudio.pfnStreamConfigHint   = drvHostAudioWasHA_StreamConfigHint;
     pThis->IHostAudio.pfnStreamCreate       = drvHostAudioWasHA_StreamCreate;
     pThis->IHostAudio.pfnStreamDestroy      = drvHostAudioWasHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamControl      = drvHostAudioWasHA_StreamControl;

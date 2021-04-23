@@ -4445,6 +4445,27 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
             if (ppDrv)
                 *ppDrv = pDrv;
+
+            /*
+             * While we're here, give the windows backends a hint about our typical playback
+             * configuration.
+             * Note! If 48000Hz is advertised to the guest, add it here.
+             */
+            if (   pDrv->pConnector
+                && pDrv->pConnector->pfnStreamConfigHint)
+            {
+                PDMAUDIOSTREAMCFG Cfg;
+                RT_ZERO(Cfg);
+                Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                Cfg.u.enmDst                      = PDMAUDIOPLAYBACKDST_FRONT;
+                Cfg.enmLayout                     = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+                Cfg.Device.cMsSchedulingHint      = 10;
+                Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
+                RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
+
+                pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+            }
         }
         else
             rc = VERR_NO_MEMORY;
