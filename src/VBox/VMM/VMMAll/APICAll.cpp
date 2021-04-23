@@ -522,17 +522,23 @@ static void apicSignalNextPendingIntr(PVMCPUCC pVCpu)
         {
             Assert(irrv <= (int)UINT8_MAX);
             uint8_t const uVector = irrv;
-            uint8_t const uPpr    = pXApicPage->ppr.u8Ppr;
-            if (   !uPpr
-                ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
+            int const isrv        = apicGetHighestSetBitInReg(&pXApicPage->isr, 0 /* rcNotFound */);
+            Assert(isrv <= (int)UINT8_MAX);
+            uint8_t const uIsrVec = isrv;
+
+            /* uIsrVect reflects the highest interrupt vector currently serviced (i.e. in ISR),
+             * or zero if there's none. We want to report a pending interrupt only if IRR > ISR but
+             * regardless of TPR. Hence we can't look at the PPR value, since that also reflects TPR.
+             * NB: The APIC emulation will know when ISR changes, but not necessarily when TPR does.
+             */
+            if (XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uIsrVec))
             {
                 Log2(("APIC%u: apicSignalNextPendingIntr: Signalling pending interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 apicSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
             else
             {
-                Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal. uVector=%#x uPpr=%#x uTpr=%#x\n", pVCpu->idCpu,
-                      uVector, uPpr, pXApicPage->tpr.u8Tpr));
+                Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal yet. uVector=%#x uIsrVec=%#x\n", pVCpu->idCpu, uVector, uIsrVec));
             }
         }
     }
