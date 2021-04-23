@@ -1202,6 +1202,7 @@ void UIChooserModel::sltDetachCOM()
 {
     /* Clean tree for main root: */
     clearTreeForMainRoot();
+    emit sigSelectionInvalidated();
 
     /* Call to base-class: */
     UIChooserAbstractModel::sltDetachCOM();
