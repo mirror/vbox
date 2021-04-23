@@ -3134,13 +3134,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     pszAudioDriver = "NullAudio";
                     break;
 #ifdef RT_OS_WINDOWS
-# ifdef VBOX_WITH_WINMM
+#ifdef VBOX_WITH_WINMM
                 case AudioDriverType_WinMM:
 #  error "Port WinMM audio backend!" /** @todo Still needed? */
                     break;
 # endif
                 case AudioDriverType_DirectSound:
+                    /* Use the windows audio session (WAS) API rather than Direct Sound on windows
+                       versions we've tested it on (currently W10+).  Since Vista, Direct Sound has
+                       been emulated on top of WAS according to the docs, so better use WAS directly. */
                     pszAudioDriver = "DSoundAudio";
+                    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(10,0,0))
+                        pszAudioDriver = "HostAudioWas";
                     break;
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_SOLARIS
@@ -3727,11 +3732,27 @@ void Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVi
 
     PCFGMNODE pLunL1;
     InsertConfigNode(pLUN, "AttachedDriver", &pLunL1);
-    InsertConfigNode(pLunL1, "Config", &pCfg);
-    Bstr bstrTmp;
-    hrc = pMachine->COMGETTER(Name)(bstrTmp.asOutParam());                                  H();
-    InsertConfigString(pCfg, "StreamName", bstrTmp);
     InsertConfigString(pLunL1, "Driver", pszDrvName);
+    InsertConfigNode(pLunL1, "Config", &pCfg);
+
+#ifdef RT_OS_WINDOWS
+    if (strcmp(pszDrvName, "HostAudioWas") == 0)
+    {
+        Bstr bstrTmp;
+        hrc = pMachine->COMGETTER(Id)(bstrTmp.asOutParam());                                    H();
+        InsertConfigString(pCfg, "VmUuid", bstrTmp);
+    }
+#endif
+
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
+    if (   strcmp(pszDrvName, "HostAudioWas") == 0
+        || strcmp(pszDrvName, "PulseAudio") == 0)
+    {
+        Bstr bstrTmp;
+        hrc = pMachine->COMGETTER(Name)(bstrTmp.asOutParam());                                  H();
+        InsertConfigString(pCfg, "VmName", bstrTmp);
+    }
+#endif
 
     LogFlowFunc(("szDrivName=%s\n", pszDrvName));
 

@@ -1417,7 +1417,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /*
      * Read configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "StreamName|DefaultOutput|DefaultInput", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "DefaultOutput|DefaultInput", "");
 
     int rc = CFGMR3QueryStringDef(pCfg, "DefaultInput", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
     AssertRCReturn(rc, rc);
