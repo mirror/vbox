@@ -275,6 +275,11 @@ typedef struct SB16STATE
     /* mixer state */
     uint8_t mixer_nreg;
     uint8_t mixer_regs[256];
+
+#ifdef VBOX_WITH_STATISTICS
+    STAMPROFILE             StatTimerIO;
+    STAMCOUNTER             StatBytesRead;
+#endif
 } SB16STATE;
 
 
@@ -1642,6 +1647,8 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *pvUser, unsi
         }
     }
 
+    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, copy);
+
     uint32_t cbWritten;
     int rc = sb16WriteAudio(pThis, pStream, uChannel, off, cb, copy, &cbWritten);
     AssertRC(rc);
@@ -1711,8 +1718,11 @@ static void sb16TimerMaybeStop(PSB16STATE pThis)
  */
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
+    RT_NOREF(pvUser);
+
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
-    Assert(hTimer == pThis->hTimerIO); RT_NOREF(pvUser);
+    STAM_PROFILE_START(&pThis->StatTimerIO, a);
+    Assert(hTimer == pThis->hTimerIO);
 
     uint64_t cTicksNow     = PDMDevHlpTimerGet(pDevIns, hTimer);
 
@@ -1742,6 +1752,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
         /** @todo adjust cTicks down by now much cbOutMin represents. */
         PDMDevHlpTimerSet(pDevIns, hTimer, cTicksNow + cTicks);
     }
+
+    STAM_PROFILE_STOP(&pThis->StatTimerIO, a);
 }
 
 
@@ -2886,6 +2898,14 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 #endif
+
+    /*
+     * Register statistics.
+     */
+# ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimerIO,   STAMTYPE_PROFILE, "Timer",     STAMUNIT_TICKS_PER_CALL, "Profiling sb16TimerIO.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, "BytesRead", STAMUNIT_BYTES,          "Bytes read from SB16 emulation.");
+# endif
 
     return VINF_SUCCESS;
 }
