@@ -23,7 +23,7 @@
 
 /* Qt includes: */
 #include <QWidget>
-/* #include <QMap> */
+#include <QUuid>
 #include <QPair>
 
 /* GUI includes: */
