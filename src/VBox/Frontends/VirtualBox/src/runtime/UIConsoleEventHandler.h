@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,10 +27,10 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CVirtualBoxErrorInfo.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBDevice.h"
+#include "CVirtualBoxErrorInfo.h"
 
 /* Forward declarations: */
 class UIConsoleEventHandlerProxy;
@@ -95,7 +95,7 @@ signals:
 public:
 
     /** Returns singleton instance created by the factory. */
-    static UIConsoleEventHandler* instance() { return m_spInstance; }
+    static UIConsoleEventHandler *instance() { return s_pInstance; }
     /** Creates singleton instance created by the factory. */
     static void create(UISession *pSession);
     /** Destroys singleton instance created by the factory. */
@@ -106,18 +106,15 @@ protected:
     /** Constructs console event handler for passed @a pSession. */
     UIConsoleEventHandler(UISession *pSession);
 
-    /** @name Prepare cascade.
-      * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares connections. */
-        void prepareConnections();
-    /** @} */
+    /** Prepares all. */
+    void prepare();
+    /** Prepares connections. */
+    void prepareConnections();
 
 private:
 
     /** Holds the singleton static console event handler instance. */
-    static UIConsoleEventHandler *m_spInstance;
+    static UIConsoleEventHandler *s_pInstance;
 
     /** Holds the console event proxy instance. */
     UIConsoleEventHandlerProxy *m_pProxy;

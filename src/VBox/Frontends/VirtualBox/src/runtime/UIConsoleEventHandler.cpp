@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,11 +16,11 @@
  */
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIConsoleEventHandler.h"
+#include "UIExtraDataManager.h"
 #include "UIMainEventListener.h"
 #include "UIMousePointerShapeData.h"
-#include "UIExtraDataManager.h"
-#include "UICommon.h"
 #include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
@@ -28,9 +28,9 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CConsole.h"
 #include "CEventListener.h"
 #include "CEventSource.h"
-#include "CConsole.h"
 
 
 /** Private QObject extension
@@ -92,38 +92,30 @@ public:
     /** Constructs event proxy object on the basis of passed @a pParent and @a pSession. */
     UIConsoleEventHandlerProxy(QObject *pParent, UISession *pSession);
     /** Destructs event proxy object. */
-    ~UIConsoleEventHandlerProxy();
-
-protected:
-
-    /** @name Prepare/Cleanup cascade.
-      * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares listener. */
-        void prepareListener();
-        /** Prepares connections. */
-        void prepareConnections();
-
-        /** Cleanups connections. */
-        void cleanupConnections();
-        /** Cleanups listener. */
-        void cleanupListener();
-        /** Cleanups all. */
-        void cleanup();
-    /** @} */
+    virtual ~UIConsoleEventHandlerProxy() /* override */;
 
 private slots:
 
-    /** @name Slots for waitable signals.
-      * @{ */
-        /** Returns whether VM window can be shown. */
-        void sltCanShowWindow(bool &fVeto, QString &strReason);
-        /** Shows VM window if possible. */
-        void sltShowWindow(qint64 &winId);
-    /** @} */
+    /** Returns whether VM window can be shown. */
+    void sltCanShowWindow(bool &fVeto, QString &strReason);
+    /** Shows VM window if possible. */
+    void sltShowWindow(qint64 &winId);
 
 private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Prepares listener. */
+    void prepareListener();
+    /** Prepares connections. */
+    void prepareConnections();
+
+    /** Cleanups connections. */
+    void cleanupConnections();
+    /** Cleanups listener. */
+    void cleanupListener();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the UI session reference. */
     UISession *m_pSession;
@@ -143,19 +135,39 @@ UIConsoleEventHandlerProxy::UIConsoleEventHandlerProxy(QObject *pParent, UISessi
     : QObject(pParent)
     , m_pSession(pSession)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIConsoleEventHandlerProxy::~UIConsoleEventHandlerProxy()
 {
-    /* Cleanup: */
     cleanup();
+}
+
+void UIConsoleEventHandlerProxy::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
+{
+    /* Nothing for now. */
+}
+
+void UIConsoleEventHandlerProxy::sltShowWindow(qint64 &winId)
+{
+#ifdef VBOX_WS_MAC
+    /* First of all, just ask the GUI thread to show the machine-window: */
+    winId = 0;
+    if (::darwinSetFrontMostProcess())
+        emit sigShowWindow();
+    else
+    {
+        /* If it's failed for some reason, send the other process our PSN so it can try: */
+        winId = ::darwinGetCurrentProcessId();
+    }
+#else /* !VBOX_WS_MAC */
+    /* Return the ID of the top-level machine-window. */
+    winId = (ULONG64)m_pSession->mainMachineWindowId();
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIConsoleEventHandlerProxy::prepare()
 {
-    /* Prepare: */
     prepareListener();
     prepareConnections();
 }
@@ -202,7 +214,8 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnShowWindow
         << KVBoxEventType_OnAudioAdapterChanged
         << KVBoxEventType_OnClipboardModeChanged
-        << KVBoxEventType_OnDnDModeChanged;
+        << KVBoxEventType_OnDnDModeChanged
+    ;
 
     /* Register event listener for console event source: */
     comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
@@ -310,32 +323,8 @@ void UIConsoleEventHandlerProxy::cleanupListener()
 
 void UIConsoleEventHandlerProxy::cleanup()
 {
-    /* Cleanup: */
     cleanupConnections();
     cleanupListener();
-}
-
-void UIConsoleEventHandlerProxy::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
-{
-    /* Nothing for now. */
-}
-
-void UIConsoleEventHandlerProxy::sltShowWindow(qint64 &winId)
-{
-#ifdef VBOX_WS_MAC
-    /* First of all, just ask the GUI thread to show the machine-window: */
-    winId = 0;
-    if (::darwinSetFrontMostProcess())
-        emit sigShowWindow();
-    else
-    {
-        /* If it's failed for some reason, send the other process our PSN so it can try: */
-        winId = ::darwinGetCurrentProcessId();
-    }
-#else /* !VBOX_WS_MAC */
-    /* Return the ID of the top-level machine-window. */
-    winId = (ULONG64)m_pSession->mainMachineWindowId();
-#endif /* !VBOX_WS_MAC */
 }
 
 
@@ -344,35 +333,33 @@ void UIConsoleEventHandlerProxy::sltShowWindow(qint64 &winId)
 *********************************************************************************************************************************/
 
 /* static */
-UIConsoleEventHandler *UIConsoleEventHandler::m_spInstance = 0;
+UIConsoleEventHandler *UIConsoleEventHandler::s_pInstance = 0;
 
 /* static */
 void UIConsoleEventHandler::create(UISession *pSession)
 {
-    if (!m_spInstance)
-        m_spInstance = new UIConsoleEventHandler(pSession);
+    if (!s_pInstance)
+        s_pInstance = new UIConsoleEventHandler(pSession);
 }
 
 /* static */
 void UIConsoleEventHandler::destroy()
 {
-    if (m_spInstance)
+    if (s_pInstance)
     {
-        delete m_spInstance;
-        m_spInstance = 0;
+        delete s_pInstance;
+        s_pInstance = 0;
     }
 }
 
 UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     : m_pProxy(new UIConsoleEventHandlerProxy(this, pSession))
 {
-    /* Prepare: */
     prepare();
 }
 
 void UIConsoleEventHandler::prepare()
 {
-    /* Prepare: */
     prepareConnections();
 }
 
@@ -392,7 +379,7 @@ void UIConsoleEventHandler::prepareConnections()
             this, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
             Qt::QueuedConnection);
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigStateChange,
-        this, &UIConsoleEventHandler::sigStateChange,
+            this, &UIConsoleEventHandler::sigStateChange,
             Qt::QueuedConnection);
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigAdditionsChange,
             this, &UIConsoleEventHandler::sigAdditionsChange,
@@ -401,7 +388,7 @@ void UIConsoleEventHandler::prepareConnections()
             this, &UIConsoleEventHandler::sigNetworkAdapterChange,
             Qt::QueuedConnection);
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigStorageDeviceChange,
-        this, &UIConsoleEventHandler::sigStorageDeviceChange,
+            this, &UIConsoleEventHandler::sigStorageDeviceChange,
             Qt::QueuedConnection);
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigMediumChange,
             this, &UIConsoleEventHandler::sigMediumChange,
