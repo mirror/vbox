@@ -5104,7 +5104,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         {
             LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
             hdaR3Reset(pDevIns);
-            hdaR3ReconfigLunWithNullAudio(pThis, pDrv->uLUN);
+            hdaR3ReconfigLunWithNullAudio(pDevIns, pThis, pThisCC, pDrv->uLUN);
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                                        N_("No audio devices could be opened. "
                                           "Selecting the NULL audio backend with the consequence that no sound is audible"));
