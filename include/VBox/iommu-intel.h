@@ -1357,7 +1357,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQH_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_IQH_REG_RW_MASK                                     UINT64_C(0x0)
 
 /** IQH_REG.QH: Gets the queue head. */
-#define VTD_IQT_REG_GET_QH(a)                                   ((a) & (VTD_BF_IQH_REG_QH_MASK | VTD_BF_IQH_REG_RSVD_3_0_MASK))
+#define VTD_IQH_REG_GET_QH(a)                                   ((a) & (VTD_BF_IQH_REG_QH_MASK | VTD_BF_IQH_REG_RSVD_3_0_MASK))
 /** @} */
 
 

@@ -49,7 +49,7 @@
          AssertReturn(!((a_off) & ((a_cb) - 1)), VINF_IOM_MMIO_UNUSED_FF); \
     } while (0)
 
-/** Checks whether the MMIO offset is valid. */
+/** Checks if the MMIO offset is valid. */
 #define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
                                                      || (a_off) - DMAR_MMIO_GROUP_1_OFF_FIRST < DMAR_MMIO_GROUP_1_SIZE)
 
@@ -854,25 +854,24 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 
 
 /**
- * Checks whether the invalidation-queue is empty.
+ * Checks if the invalidation-queue is empty.
  *
  * @returns @c true if empty, @c false otherwise.
  * @param   pThis   The shared DMAR device state.
  */
 static bool dmarInvQueueIsEmpty(PCDMAR pThis)
 {
-    uint64_t const uIqtReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQT_REG);
-    uint32_t const offQueueTail = VTD_IQT_REG_GET_QT(uIqtReg);
+    uint64_t const uIqtReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQT_REG);
+    uint64_t const uIqhReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQH_REG);
 
-    uint64_t const uIqhReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQH_REG);
-    uint32_t const offQueueHead = VTD_IQT_REG_GET_QH(uIqhReg);
-
-    return offQueueTail == offQueueHead;
+    uint32_t const offQt = VTD_IQT_REG_GET_QT(uIqtReg);
+    uint32_t const offQh = VTD_IQH_REG_GET_QH(uIqhReg);
+    return offQt == offQh;
 }
 
 
 /**
- * Checks whether the invalidation-queue is capable of processing requests.
+ * Checks if the invalidation-queue is capable of processing requests.
  *
  * @returns @c true if the invalidation-queue can process requests, @c false
  *          otherwise.
@@ -881,11 +880,11 @@ static bool dmarInvQueueIsEmpty(PCDMAR pThis)
 static bool dmarInvQueueCanProcessRequests(PCDMAR pThis)
 {
     /* Check if queued-invalidation is enabled. */
-    uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
     if (uGstsReg & VTD_BF_GSTS_REG_QIES_MASK)
     {
         /* Check if there are no invalidation-queue or timeout errors. */
-        uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+        uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
         if (!(uFstsReg & (VTD_BF_FSTS_REG_IQE_MASK | VTD_BF_FSTS_REG_ITE_MASK)))
             return true;
     }
@@ -927,7 +926,7 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
 #ifdef RT_STRICT
     {
-        uint32_t const uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+        uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
         uint32_t const fFaultMask = VTD_BF_FSTS_REG_PPF_MASK | VTD_BF_FSTS_REG_PFO_MASK
                                /* | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_AFO_MASK */    /* AFL not supported */
                                /* | VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK */    /* Device-TLBs not supported */
@@ -936,14 +935,14 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
     }
 #endif
 
-    uint32_t uFectlReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FECTL_REG);
+    uint32_t uFectlReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FECTL_REG);
     if (!(uFectlReg & VTD_BF_FECTL_REG_IM_MASK))
     {
         /* Software has unmasked the interrupt, raise it. */
         MSIMSG Msi;
-        Msi.Addr.u64 = RT_MAKE_U64(dmarRegRead32(pThis, VTD_MMIO_OFF_FEADDR_REG),
-                                   dmarRegRead32(pThis, VTD_MMIO_OFF_FEUADDR_REG));
-        Msi.Data.u32 = dmarRegRead32(pThis, VTD_MMIO_OFF_FEDATA_REG);
+        Msi.Addr.u64 = RT_MAKE_U64(dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEADDR_REG),
+                                   dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEUADDR_REG));
+        Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEDATA_REG);
 
         /** @todo Assert Msi.Addr is in the MSR_IA32_APICBASE_ADDR range and ensure on
          *        FEADD_REG write it can't be anything else. */
@@ -952,27 +951,27 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
 
         /* Clear interrupt pending bit. */
         uFectlReg &= ~VTD_BF_FECTL_REG_IP_MASK;
-        dmarRegWrite32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
     }
     else
     {
         /* Interrupt is masked, set the interrupt pending bit. */
         uFectlReg |= VTD_BF_FECTL_REG_IP_MASK;
-        dmarRegWrite32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
     }
 }
 
 
 #if 0
 /**
- * Checks whether a primary fault can be recorded.
+ * Checks if a primary fault can be recorded.
  *
  * @returns @c true if the fault can be recorded, @c false otherwise.
  * @param   pThis   The shared DMAR device state.
  */
 static bool dmarPrimaryFaultCanRecord(PDMAR pThis)
 {
-    uint32_t uFstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_FSTS_REG);
+    uint32_t uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
     if (uFstsReg & VTD_BF_FSTS_REG_PFO_MASK)
         return false;
 
@@ -984,7 +983,7 @@ static bool dmarPrimaryFaultCanRecord(PDMAR pThis)
      * See Intel VT-d spec. 7.2.1 "Primary Fault Logging".
      */
     AssertCompile(DMAR_FRCD_REG_COUNT == 1);
-    uint64_t const uFrcdRegHi = dmarRegRead64(pThis, DMAR_MMIO_OFF_FRCD_HI_REG);
+    uint64_t const uFrcdRegHi = dmarRegReadRaw64(pThis, DMAR_MMIO_OFF_FRCD_HI_REG);
     if (uFrcdRegHi & VTD_BF_1_FRCD_REG_F_MASK)
     {
         uFstsReg |= VTD_BF_FSTS_REG_PFO_MASK;
@@ -1012,7 +1011,7 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
-    /* Always update the latest diagnostic reason. */
+    /* Update the diagnostic reason. */
     pThis->enmDiag = enmDiag;
 
     /* Set the error bit. */
@@ -1037,29 +1036,27 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_
 static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
 {
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    uint32_t const uGstsReg = dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
     uint32_t const fChanged = uGstsReg ^ uGcmdReg;
-    if (pThis->fExtCap & VTD_BF_ECAP_REG_QI_MASK)
+
+    Assert(pThis->fExtCap & VTD_BF_ECAP_REG_QI_MASK);
+    if (fChanged & VTD_BF_GCMD_REG_QIE_MASK)
     {
-        if (fChanged & VTD_BF_GCMD_REG_QIE_MASK)
+        if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
         {
-            if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
-            {
-                /* Enable the invalidation-queue. */
-                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */,
-                                   VTD_BF_GSTS_REG_QIES_MASK /* fOrMask */);
-                dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
-            }
-            else
-            {
-                /* Disable the invalidation-queue and reset the queue head offset. */
-                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK /* fAndMask */, 0 /* fOrMask */);
-                dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
-            }
+            /* Enable the invalidation-queue. */
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_QIES_MASK /* fOrMask */);
+            dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
+        }
+        else
+        {
+            /* Disable the invalidation-queue. */
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK /* fAndMask */, 0 /* fOrMask */);
+            dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
         }
     }
 
-    /** @todo Rest of the bits? */
+    /** @todo Rest of the bits. */
 
     return VINF_SUCCESS;
 }
@@ -1121,7 +1118,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
 
     uint32_t const offQt   = VTD_IQT_REG_GET_QT(uIqtReg);
-    uint64_t const uIqaReg = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+    uint64_t const uIqaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
     uint8_t const  fDw     = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
 
     /* If the descriptor width is 256-bits, the queue tail offset must be aligned accordingly. */
@@ -1486,8 +1483,8 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,   fFlts & fFl1gp)
                     | RT_BF_MAKE(VTD_BF_CAP_REG_PI,      0)     /* Posted Interrupts not supported. */
                     | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,   fFlts & fFl5lp)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, 0)     /* Whether we invalidate interrupt cache on SIRTP flow. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  0);    /* Whether we invalidate translation cache on SRTP flow. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, 0)     /* If we invalidate interrupt cache on SIRTP flow. */
+                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  0);    /* If we invalidate translation cache on SRTP flow. */
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCap);
     }
 
