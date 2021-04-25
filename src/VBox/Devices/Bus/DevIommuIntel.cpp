@@ -143,6 +143,9 @@ typedef enum
     kDmarDiag_None = 0,
     kDmarDiag_IqtReg_Qt_NotAligned,
     kDmarDiag_IqaReg_Dw_Invalid,
+    kDmarDiag_CcmdReg_Ttm_Invalid,
+    kDmarDiag_CcmdReg_Qi_Enabled,
+    kDmarDiag_CcmdReg_NotSupported,
     /* Last member for determining array index limit. */
     kDmarDiag_End
 } DMARDIAG;
@@ -156,7 +159,10 @@ static const char *const g_apszDmarDiagDesc[] =
 {
     DMARDIAG_DESC(kNone                         ,   "None"                ),
     DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned,   "IqtReg_Qt_NotAligned"),
-    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   ,   "IqaReg_Dw_Invalid"   )
+    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   ,   "IqaReg_Dw_Invalid"   ),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_Ttm_Invalid ,   "CcmdReg_Ttm_Invalid" ),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_Qi_Enabled  ,   "CcmdReg_Qi_Enabled"  ),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_NotSupported,   "CcmdReg_NotSupported")
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -171,17 +177,6 @@ typedef struct DMAR
     uint32_t                    idxIommu;
     /** DMAR magic. */
     uint32_t                    u32Magic;
-
-    /** The MMIO handle. */
-    IOMMMIOHANDLE               hMmio;
-    /** The event semaphore the invalidation-queue thread waits on. */
-    SUPSEMEVENT                 hEvtInvQueue;
-    /** Whether the invalidation-queue thread has been signaled. */
-    bool volatile               fInvQueueThreadSignaled;
-    /** Padding. */
-    bool                        afPadding0[3];
-    /** Error diagnostic. */
-    DMARDIAG                    enmDiag;
 
     /** Registers (group 0). */
     uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
@@ -199,6 +194,17 @@ typedef struct DMAR
     /** Copy of ECAP_REG. */
     uint64_t                    fExtCap;
     /** @} */
+
+    /** The event semaphore the invalidation-queue thread waits on. */
+    SUPSEMEVENT                 hEvtInvQueue;
+    /** Whether the invalidation-queue thread has been signaled. */
+    bool volatile               fInvQueueThreadSignaled;
+    /** Padding. */
+    bool                        afPadding0[3];
+    /** Error diagnostic. */
+    DMARDIAG                    enmDiag;
+    /** The MMIO handle. */
+    IOMMMIOHANDLE               hMmio;
 
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER                 StatMmioReadR3;         /**< Number of MMIO reads in R3. */
@@ -863,10 +869,10 @@ static bool dmarInvQueueIsEmpty(PCDMAR pThis)
 {
     uint64_t const uIqtReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQT_REG);
     uint64_t const uIqhReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQH_REG);
-
-    uint32_t const offQt = VTD_IQT_REG_GET_QT(uIqtReg);
-    uint32_t const offQh = VTD_IQH_REG_GET_QH(uIqhReg);
-    return offQt == offQh;
+    /* Don't bother masking out QT, QH out of IQT_REG, IQH_REG since all other bits are RsvdZ. */
+    Assert(!(uIqtReg & ~VTD_BF_IQT_REG_QT_MASK));
+    Assert(!(uIqhReg & ~VTD_BF_IQH_REG_QH_MASK));
+    return uIqtReg == uIqhReg;
 }
 
 
@@ -905,7 +911,7 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
-    if (   dmarInvQueueCanProcessRequests(pThis)
+    if (    dmarInvQueueCanProcessRequests(pThis)
         && !dmarInvQueueIsEmpty(pThis)
         && !ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, true))
     {
@@ -1084,19 +1090,25 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
             uint8_t const uMajorVersion = RT_BF_GET(pThis->uVerReg, VTD_BF_VER_REG_MAX);
             if (uMajorVersion < 6)
             {
-                /** @todo Verify queued-invalidation is not enabled.
-                 *  See Intel VT-d spec. 6.5.1 "Register-based Invalidation Interface" */
-
-                /* Verify table translation mode is legacy. */
-                uint8_t const fTtm = dmarRtAddrRegGetTtm(pThis);
-                if (fTtm == VTD_TTM_LEGACY_MODE)
+                /* Register-based invalidation can only be used when queued-invalidations are not enabled. */
+                uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+                if (!(uGstsReg & VTD_BF_GSTS_REG_QIES_MASK))
                 {
-                    /** @todo Invalidate. */
-                    return VINF_SUCCESS;
+                    /* Verify table translation mode is legacy. */
+                    uint8_t const fTtm = dmarRtAddrRegGetTtm(pThis);
+                    if (fTtm == VTD_TTM_LEGACY_MODE)
+                    {
+                        /** @todo Invalidate. */
+                        return VINF_SUCCESS;
+                    }
+                    pThis->enmDiag = kDmarDiag_CcmdReg_Ttm_Invalid;
                 }
+                else
+                    pThis->enmDiag = kDmarDiag_CcmdReg_Qi_Enabled;
             }
-
-            /** @todo Record error. */
+            else
+                pThis->enmDiag = kDmarDiag_CcmdReg_NotSupported;
+            dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_CCMD_REG_CAIG_MASK /* fAndMask */, 0 /* fOrMask */);
         }
     }
     return VINF_SUCCESS;
@@ -1117,7 +1129,10 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     Assert(offReg == VTD_MMIO_OFF_IQT_REG);
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
 
-    uint32_t const offQt   = VTD_IQT_REG_GET_QT(uIqtReg);
+    /* Paranoia. */
+    Assert(!(uIqtReg & ~VTD_BF_IQT_REG_QT_MASK));
+
+    uint32_t const offQt   = uIqtReg;
     uint64_t const uIqaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
     uint8_t const  fDw     = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
 
