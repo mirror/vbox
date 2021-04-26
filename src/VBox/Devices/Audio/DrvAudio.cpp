@@ -47,24 +47,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef enum
-{
-    AUD_OPT_INT,
-    AUD_OPT_FMT,
-    AUD_OPT_STR,
-    AUD_OPT_BOOL
-} audio_option_tag_e;
-
-typedef struct audio_option
-{
-    const char *name;
-    audio_option_tag_e tag;
-    void *valp;
-    const char *descr;
-    int *overridenp;
-    int overriden;
-} audio_option;
-
 /**
  * Audio stream context.
  *
@@ -361,90 +343,10 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
 
 
 #ifndef VBOX_AUDIO_TESTCASE
-
-# if 0 /* unused */
-
-static PDMAUDIOFMT drvAudioGetConfFormat(PCFGMNODE pCfgHandle, const char *pszKey,
-                                         PDMAUDIOFMT enmDefault, bool *pfDefault)
-{
-    if (   pCfgHandle == NULL
-        || pszKey == NULL)
-    {
-        *pfDefault = true;
-        return enmDefault;
-    }
-
-    char *pszValue = NULL;
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, pszKey, &pszValue);
-    if (RT_FAILURE(rc))
-    {
-        *pfDefault = true;
-        return enmDefault;
-    }
-
-    PDMAUDIOFMT fmt = AudioHlpStrToAudFmt(pszValue);
-    if (fmt == PDMAUDIOFMT_INVALID)
-    {
-         *pfDefault = true;
-        return enmDefault;
-    }
-
-    *pfDefault = false;
-    return fmt;
-}
-
-static int drvAudioGetConfInt(PCFGMNODE pCfgHandle, const char *pszKey,
-                              int iDefault, bool *pfDefault)
-{
-
-    if (   pCfgHandle == NULL
-        || pszKey == NULL)
-    {
-        *pfDefault = true;
-        return iDefault;
-    }
-
-    uint64_t u64Data = 0;
-    int rc = CFGMR3QueryInteger(pCfgHandle, pszKey, &u64Data);
-    if (RT_FAILURE(rc))
-    {
-        *pfDefault = true;
-        return iDefault;
-
-    }
-
-    *pfDefault = false;
-    return u64Data;
-}
-
-static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
-                                      const char *pszDefault, bool *pfDefault)
-{
-    if (   pCfgHandle == NULL
-        || pszKey == NULL)
-    {
-        *pfDefault = true;
-        return pszDefault;
-    }
-
-    char *pszValue = NULL;
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, pszKey, &pszValue);
-    if (RT_FAILURE(rc))
-    {
-        *pfDefault = true;
-        return pszDefault;
-    }
-
-    *pfDefault = false;
-    return pszValue;
-}
-
-# endif /* unused */
-
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
 
 /** Buffer size for dbgAudioStreamStatusToStr.  */
-# define DRVAUDIO_STATUS_STR_MAX sizeof("INITIALIZED ENABLED PAUSED PENDING_DISABLED PENDING_REINIT 0x12345678")
+#  define DRVAUDIO_STATUS_STR_MAX sizeof("INITIALIZED ENABLED PAUSED PENDING_DISABLED PENDING_REINIT 0x12345678")
 
 /**
  * Converts an audio stream status to a string.
@@ -492,101 +394,7 @@ static const char *dbgAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX
     return pszDst;
 }
 
-#endif /* defined(LOG_ENABLED) */
-
-# if 0 /* unused */
-static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, audio_option *paOpts, size_t cOpts)
-{
-    AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPrefix,  VERR_INVALID_POINTER);
-    /* oaOpts and cOpts are optional. */
-
-    PCFGMNODE pCfgChildHandle = NULL;
-    PCFGMNODE pCfgChildChildHandle = NULL;
-
-   /* If pCfgHandle is NULL, let NULL be passed to get int and get string functions..
-    * The getter function will return default values.
-    */
-    if (pCfgHandle != NULL)
-    {
-       /* If its audio general setting, need to traverse to one child node.
-        * /Devices/ichac97/0/LUN#0/Config/Audio
-        */
-       if(!strncmp(pszPrefix, "AUDIO", 5)) /** @todo Use a \#define */
-       {
-            pCfgChildHandle = CFGMR3GetFirstChild(pCfgHandle);
-            if(pCfgChildHandle)
-                pCfgHandle = pCfgChildHandle;
-        }
-        else
-        {
-            /* If its driver specific configuration , then need to traverse two level deep child
-             * child nodes. for eg. in case of DirectSoundConfiguration item
-             * /Devices/ichac97/0/LUN#0/Config/Audio/DirectSoundConfig
-             */
-            pCfgChildHandle = CFGMR3GetFirstChild(pCfgHandle);
-            if (pCfgChildHandle)
-            {
-                pCfgChildChildHandle = CFGMR3GetFirstChild(pCfgChildHandle);
-                if (pCfgChildChildHandle)
-                    pCfgHandle = pCfgChildChildHandle;
-            }
-        }
-    }
-
-    for (size_t i = 0; i < cOpts; i++)
-    {
-        audio_option *pOpt = &paOpts[i];
-        if (!pOpt->valp)
-        {
-            LogFlowFunc(("Option value pointer for `%s' is not set\n", pOpt->name));
-            continue;
-        }
-
-        bool fUseDefault;
-
-        switch (pOpt->tag)
-        {
-            case AUD_OPT_BOOL:
-            case AUD_OPT_INT:
-            {
-                int *intp = (int *)pOpt->valp;
-                *intp = drvAudioGetConfInt(pCfgHandle, pOpt->name, *intp, &fUseDefault);
-
-                break;
-            }
-
-            case AUD_OPT_FMT:
-            {
-                PDMAUDIOFMT *fmtp = (PDMAUDIOFMT *)pOpt->valp;
-                *fmtp = drvAudioGetConfFormat(pCfgHandle, pOpt->name, *fmtp, &fUseDefault);
-
-                break;
-            }
-
-            case AUD_OPT_STR:
-            {
-                const char **strp = (const char **)pOpt->valp;
-                *strp = drvAudioGetConfStr(pCfgHandle, pOpt->name, *strp, &fUseDefault);
-
-                break;
-            }
-
-            default:
-                LogFlowFunc(("Bad value tag for option `%s' - %d\n", pOpt->name, pOpt->tag));
-                fUseDefault = false;
-                break;
-        }
-
-        if (!pOpt->overridenp)
-            pOpt->overridenp = &pOpt->overriden;
-
-        *pOpt->overridenp = !fUseDefault;
-    }
-
-    return VINF_SUCCESS;
-}
-# endif /* unused */
+# endif /* defined(LOG_ENABLED) */
 #endif /* !VBOX_AUDIO_TESTCASE */
 
 /**
