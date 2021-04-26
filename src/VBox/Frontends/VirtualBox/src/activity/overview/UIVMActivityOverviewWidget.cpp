@@ -1034,7 +1034,13 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 
 void UIActivityOverviewModel::clearData()
 {
+    /* We have a request to detach COM stuff,
+     * first of all we are removing all the items,
+     * this will detach COM wrappers implicitly: */
     m_itemList.clear();
+    /* Detaching perf. collector finally,
+     * please do not use it after all: */
+    m_performanceCollector.detach();
 }
 
 QVariant UIActivityOverviewModel::headerData(int section, Qt::Orientation orientation, int role) const
