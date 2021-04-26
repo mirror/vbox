@@ -788,11 +788,7 @@ void UIHelpViewer::findAllMatches(const QString &searchString)
 
 void UIHelpViewer::highlightFinds(int iSearchTermLength)
 {
-    QTextDocument* pDocument = document();
-    AssertReturnVoid(pDocument);
-
     QList<QTextEdit::ExtraSelection> extraSelections;
-
     for (int i = 0; i < m_matchedCursorPosition.size(); ++i)
     {
         QTextEdit::ExtraSelection selection;

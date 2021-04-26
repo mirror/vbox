@@ -274,87 +274,22 @@ void UIVMLogViewerWidget::sltRefresh()
         return;
 
     UIVMLogPage *pCurrentPage = currentLogPage();
-    if (!pCurrentPage)
+    if (!pCurrentPage || pCurrentPage->logFileId() == -1)
         return;
 
     CMachine comMachine = uiCommon().virtualBox().FindMachine(pCurrentPage->machineId().toString());
     if (comMachine.isNull())
         return;
 
+    QString strLogContent = readLogFile(comMachine, pCurrentPage->logFileId());
+    pCurrentPage->setLogContent(strLogContent, false);
 
+    if (m_pSearchPanel && m_pSearchPanel->isVisible())
+        m_pSearchPanel->refresh();
 
-
-    /* Disconnect this connection to avoid initial signals during page creation/deletion: */
-    // disconnect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
-    // disconnect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
-
-    // m_logPageList.clear();
-    // m_pTabWidget->setEnabled(true);
-    // int currentTabIndex = m_pTabWidget->currentIndex();
-    // /* Hide the container widget during updates to avoid flickering: */
-    // m_pTabWidget->hide();
-    // QVector<QVector<LogBookmark> > logPageBookmarks;
-    // /* Clear the tab widget. This might be an overkill but most secure way to deal with the case where
-    //    number of the log files changes. Store the bookmark vectors before deleting the pages*/
-    // while (m_pTabWidget->count())
-    // {
-    //     QWidget *pFirstPage = m_pTabWidget->widget(0);
-    //     UIVMLogPage *pLogPage = qobject_cast<UIVMLogPage*>(pFirstPage);
-    //     if (pLogPage)
-    //         logPageBookmarks.push_back(pLogPage->bookmarkVector());
-    //     m_pTabWidget->removeTab(0);
-    //     delete pFirstPage;
-    // }
-
-    // bool noLogsToShow = createLogViewerPages();
-
-    // /* Apply the filter settings: */
-    // if (m_pFilterPanel)
-    //     m_pFilterPanel->applyFilter();
-
-    // /* Restore the bookmarks: */
-    // if (!noLogsToShow)
-    // {
-    //     for (int i = 0; i <  m_pTabWidget->count(); ++i)
-    //     {
-    //         UIVMLogPage *pLogPage = qobject_cast<UIVMLogPage*>(m_pTabWidget->widget(i));
-    //         if (pLogPage && i < logPageBookmarks.size())
-    //             pLogPage->setBookmarkVector(logPageBookmarks[i]);
-    //     }
-    // }
-
-    // /* Setup this connection after refresh to avoid initial signals during page creation: */
-    // if (m_pFilterPanel)
-    //     connect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
-    // connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
-
-    // /* Show the first tab widget's page after the refresh: */
-    // int tabIndex = (currentTabIndex < m_pTabWidget->count()) ? currentTabIndex : 0;
-    // m_pTabWidget->setCurrentIndex(tabIndex);
-    // sltTabIndexChange(tabIndex);
-
-    // /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
-    // m_pActionPool->action(UIActionIndex_M_Log_T_Find)->setEnabled(!noLogsToShow);
-    // m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setEnabled(!noLogsToShow);
-    // m_pActionPool->action(UIActionIndex_M_Log_S_Save)->setEnabled(!noLogsToShow);
-    // m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark)->setEnabled(!noLogsToShow);
-    // m_pActionPool->action(UIActionIndex_M_Log_T_Options)->setEnabled(!noLogsToShow);
-
-    // m_pTabWidget->show();
-    // if (m_pSearchPanel && m_pSearchPanel->isVisible())
-    //     m_pSearchPanel->refresh();
-
-    // /* If there are no log files to show the hide all the open panels: */
-    // if (noLogsToShow)
-    // {
-    //     for (QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
-    //         iterator != m_panelActionMap.end(); ++iterator)
-    //     {
-    //         if (iterator.key())
-    //         hidePanel(iterator.key());
-    //     }
-    // }
-
+    /* Re-Apply the filter settings: */
+    if (m_pFilterPanel)
+        m_pFilterPanel->applyFilter();
 }
 
 void UIVMLogViewerWidget::sltSave()

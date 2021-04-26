@@ -63,8 +63,6 @@ public:
     QTextDocument  *document();
 
     void setLogContent(const QString &strLogContent, bool fError);
-    /* Only to be called when log file is re-read. */
-    // void setLogString(const QString &strLog);
     const QString& logString() const;
 
     void setLogFileName(const QString &strFileName);
@@ -136,7 +134,7 @@ private:
 
     QHBoxLayout    *m_pMainLayout;
     UIVMLogViewerTextEdit *m_pTextEdit;
-    /** Stores the log file (unmodified) content. */
+    /** Stores the log file (unmodified by filtering etc) content. */
     QString         m_strLog;
     /** Stores full path and name of the log file. */
     QString         m_strLogFileName;

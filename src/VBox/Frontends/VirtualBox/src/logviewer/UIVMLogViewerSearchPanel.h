@@ -94,7 +94,7 @@ private:
       * @param  highlight      if false highlight function is not called
                                thus we avoid calling highlighting for the same string repeatedly. */
     void performSearch(SearchDirection eDirection, bool highlight);
-    void highlightAll(QTextDocument *pDocument, const QString &searchString);
+    void highlightAll(const QString &searchString);
     void findAll(QTextDocument *pDocument, const QString &searchString);
     void selectMatch(int iMatchIndex, const QString &searchString);
     void moveSelection(bool fForward);
