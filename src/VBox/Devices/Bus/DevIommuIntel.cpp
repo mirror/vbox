@@ -877,11 +877,11 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
  */
 static bool dmarInvQueueIsEmptyEx(PCDMAR pThis, uint32_t *poffQh, uint32_t *poffQt)
 {
-    /* Read only the low-32 bits of the queue head and queue tail registers as high bits are all reserved.*/
+    /* Read only the low-32 bits of the queue head and queue tail as high bits are all RsvdZ.*/
     uint32_t const uIqtReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IQT_REG);
     uint32_t const uIqhReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IQH_REG);
 
-    /* Don't bother masking QT, QH out of IQT_REG, IQH_REG since all other bits are RsvdZ. */
+    /* Don't bother masking QT, QH since other bits are RsvdZ. */
     Assert(!(uIqtReg & ~VTD_BF_IQT_REG_QT_MASK));
     Assert(!(uIqhReg & ~VTD_BF_IQH_REG_QH_MASK));
     if (poffQh)
@@ -1420,12 +1420,13 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             bool const fIsEmpty = dmarInvQueueIsEmptyEx(pThis, &offQueueHead, &offQueueTail);
             if (!fIsEmpty)
             {
-                uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
-                uint8_t const  cQueuePages  = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
-                uint32_t const cbQueue      = cQueuePages << X86_PAGE_SHIFT;
+                uint64_t const uIqaReg     = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+                uint8_t const  cQueuePages = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
+                uint32_t const cbQueue     = cQueuePages << X86_PAGE_SHIFT;
                 if (offQueueTail <= cbQueue)
                 {
-                    uint32_t const cbDescriptors = offQueueTail - offQueueHead;
+                    Assert(offQueueTail > offQueueHead);
+                    uint32_t const cbDescriptors   = offQueueTail - offQueueHead;
                     RTGCPHYS const GCPhysQueueBase = uIqaReg & VTD_BF_IQA_REG_IQA_MASK;
 
                     DMAR_UNLOCK(pDevIns, pThisR3);
