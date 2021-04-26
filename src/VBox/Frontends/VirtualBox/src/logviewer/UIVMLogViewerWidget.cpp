@@ -223,6 +223,28 @@ void UIVMLogViewerWidget::setMachines(const QVector<QUuid> &machineIDs)
     m_pTabWidget->show();
 }
 
+QString UIVMLogViewerWidget::readLogFile(CMachine &comMachine, int iLogFileId)
+{
+    QString strLogFileContent;
+    ULONG uOffset = 0;
+
+    while (true)
+    {
+        QVector<BYTE> data = comMachine.ReadLog(iLogFileId, uOffset, _1M);
+        if (data.size() == 0)
+            break;
+        strLogFileContent.append(QString::fromUtf8((char*)data.data(), data.size()));
+        uOffset += data.size();
+        /* Don't read futher if we have reached the allowed size limit: */
+        if (uOffset >= uAllowedLogSize)
+        {
+            strLogFileContent.append("\n=========Log file has been truncated as it is too large.======");
+            break;
+        }
+    }
+    return strLogFileContent;
+}
+
 QFont UIVMLogViewerWidget::currentFont() const
 {
     const UIVMLogPage* logPage = currentLogPage();
@@ -248,9 +270,21 @@ void UIVMLogViewerWidget::sltSaveOptions()
 
 void UIVMLogViewerWidget::sltRefresh()
 {
-    // if (!m_pTabWidget)
-    //     return;
-    // /* Disconnect this connection to avoid initial signals during page creation/deletion: */
+    if (!m_pTabWidget)
+        return;
+
+    UIVMLogPage *pCurrentPage = currentLogPage();
+    if (!pCurrentPage)
+        return;
+
+    CMachine comMachine = uiCommon().virtualBox().FindMachine(pCurrentPage->machineId().toString());
+    if (comMachine.isNull())
+        return;
+
+
+
+
+    /* Disconnect this connection to avoid initial signals during page creation/deletion: */
     // disconnect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     // disconnect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
@@ -562,8 +596,6 @@ void UIVMLogViewerWidget::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Reading log files: */
-    sltRefresh();
     /* Setup escape shortcut: */
     manageEscapeShortCut();
     uiCommon().setHelpKeyword(this, "collect-debug-info");
@@ -863,8 +895,8 @@ QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
 }
 
 void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QString &strMachineName,
-                                        const QUuid &machineId,
-                                        const QString &strLogContent, bool noLogsToShow /* = false */)
+                                        const QUuid &machineId, int iLogFileId,
+                                        const QString &strLogContent, bool noLogsToShow)
 {
     if (!m_pTabWidget)
         return;
@@ -880,11 +912,12 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         pLogPage->setWrapLines(m_bWrapLines);
         pLogPage->setCurrentFont(m_font);
         pLogPage->setMachineId(machineId);
+        pLogPage->setLogFileId(iLogFileId);
         /* Set the file name only if we really have log file to read. */
         if (!noLogsToShow)
             pLogPage->setLogFileName(strFileName);
 
-        /* Add page-container to viewer-container: */
+        /* Add page-container to viewer-container in stacked mode (manager UI case): */
         bool fTitleWithMachineName = m_enmEmbedding == EmbedTo_Stack;
         QString strTabTitle;
         if (fTitleWithMachineName)
@@ -933,75 +966,39 @@ UIVMLogPage *UIVMLogViewerWidget::logPage(int iIndex)
     return qobject_cast<UIVMLogPage*>(m_pTabWidget->widget(iIndex));
 }
 
-bool UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList)
+void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList)
 {
-    bool noLogsToShow = false;
-
-    QString strDummyTabText;
-    /* check if the machine is valid: */
-    // if (m_comMachine.isNull())
-    // {
-    //     noLogsToShow = true;
-    //     strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected or the selected machine is not valid. "
-    //                                  "Please select a Virtual Machine to see its logs"));
-    // }
-
     const CSystemProperties &sys = uiCommon().virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
-    //bool logFileRead = false;
     foreach (const QUuid &machineId, machineList)
     {
         CMachine comMachine = uiCommon().virtualBox().FindMachine(machineId.toString());
-
         if (comMachine.isNull())
             continue;
-        for (unsigned i = 0; i < cMaxLogs && !noLogsToShow; ++i)
+        bool fNoLogFileForMachine = true;
+
+        QUuid uMachineId = comMachine.GetId();
+        QString strMachineName = comMachine.GetName();
+        for (unsigned iLogFileId = 0; iLogFileId < cMaxLogs; ++iLogFileId)
         {
-            /* Query the log file name for index i: */
-            QString strFileName = comMachine.QueryLogFilename(i);
-            if (!strFileName.isEmpty())
+            QString strLogContent = readLogFile(comMachine, iLogFileId);
+            if (!strLogContent.isEmpty())
             {
-                /* Try to read the log file with the index i: */
-                ULONG uOffset = 0;
-                QString strText;
-                while (true)
-                {
-                    QVector<BYTE> data = comMachine.ReadLog(i, uOffset, _1M);
-                    if (data.size() == 0)
-                        break;
-                    strText.append(QString::fromUtf8((char*)data.data(), data.size()));
-                    uOffset += data.size();
-                    /* Don't read futher if we have reached the allowed size limit: */
-                    if (uOffset >= uAllowedLogSize)
-                    {
-                        strText.append("\n=========Log file has been truncated as it is too large.======");
-                        break;
-                    }
-                }
-                /* Anything read at all? */
-                if (uOffset > 0)
-                {
-                    //logFileRead = true;
-                    createLogPage(strFileName, comMachine.GetName(), comMachine.GetId(), strText);
-                }
+                fNoLogFileForMachine = false;
+                createLogPage(comMachine.QueryLogFilename(iLogFileId),
+                              strMachineName, uMachineId, iLogFileId,
+                              strLogContent, false);
             }
         }
+        if (fNoLogFileForMachine)
+        {
+            QString strDummyTabText = QString(tr("<p>No log files for the machine %1 found. Press the "
+                                                 "<b>Rescan</b> button to rescan the log folder "
+                                                 "<nobr><b>%2</b></nobr>.</p>")
+                                              .arg(strMachineName).arg(comMachine.GetLogFolder()));
+            createLogPage(tr("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
+        }
     }
-    // if (!noLogsToShow && !logFileRead)
-    // {
-    //     noLogsToShow = true;
-    //     // strDummyTabText = QString(tr("<p>No log files found. Press the "
-    //     //                              "<b>Refresh</b> button to rescan the log folder "
-    //     //                              "<nobr><b>%1</b></nobr>.</p>")
-    //     //                              .arg(m_comMachine.GetLogFolder()));
-    // }
-
-    /* if noLogsToShow then ceate a single log page with an error message: */
-    // if (noLogsToShow)
-    // {
-    //     createLogPage("No Logs", strDummyTabText, noLogsToShow);
-    // }
-    return noLogsToShow;
 }
 
 void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList)

@@ -96,7 +96,7 @@ private slots:
     /** Saves options.  */
     void sltSaveOptions();
 
-    /** Handles refresh action triggering. */
+    /** Rereads the log file shown in the current tab. */
     void sltRefresh();
     /** Handles save action triggering. */
     void sltSave();
@@ -171,17 +171,15 @@ private:
     QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
     void createLogPage(const QString &strFileName, const QString &strMachineName,
-                       const QUuid &machineId,
-                       const QString &strLogContent, bool noLogsToShow = false);
+                       const QUuid &machineId, int iLogFileId,
+                       const QString &strLogContent, bool noLogsToShow);
 
     const UIVMLogPage *currentLogPage() const;
     UIVMLogPage *currentLogPage();
     /** Returns the log page at tab with iIndex if it contains a log page. Return 0 otherwise. */
     UIVMLogPage *logPage(int iIndex);
 
-    /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise.
-     *  @p machineList is the list of machine whose log should be read. */
-    bool createLogViewerPages(const QVector<QUuid> &machineList);
+    void createLogViewerPages(const QVector<QUuid> &machineList);
     /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */
     void removeLogViewerPages(const QVector<QUuid> &machineList);
 
@@ -197,6 +195,8 @@ private:
     void manageEscapeShortCut();
     void updateMachineSelectionMenu();
     void setMachines(const QVector<QUuid> &machineIDs);
+    /** Returns the content of the ith log file of @comMachine or possibly an empty string */
+    QString readLogFile(CMachine &comMachine, int iLogFileId);
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;

@@ -116,6 +116,9 @@ public:
     const QUuid &machineId() const;
     void setMachineId(const QUuid &machineId);
 
+    void setLogFileId(int iLogFileId);
+    int logFileId() const;
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);
@@ -161,6 +164,8 @@ private:
     /** @} */
     /** Id of the machine the log shown in this page belongs to. */
     QUuid m_machineId;
+    /** The id we pass to CMachine::ReadLog. Used while refreshing and saving page content. */
+    int m_iLogFileId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogPage_h */
