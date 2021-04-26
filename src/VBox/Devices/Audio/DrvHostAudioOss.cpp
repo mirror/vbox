@@ -86,21 +86,22 @@ typedef OSSAUDIOSTREAMCFG *POSSAUDIOSTREAMCFG;
  */
 typedef struct OSSAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The file descriptor. */
-    int                 hFile;
+    int                     hFile;
     /** Buffer alignment. */
-    uint8_t             uAlign;
+    uint8_t                 uAlign;
     /** Set if we're draining the stream (output only). */
-    bool                fDraining;
+    bool                    fDraining;
     /** Internal stream byte offset. */
-    uint64_t            offInternal;
+    uint64_t                offInternal;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG   Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** The acquired OSS configuration. */
-    OSSAUDIOSTREAMCFG   OssCfg;
+    OSSAUDIOSTREAMCFG       OssCfg;
     /** Handle to the thread draining output streams. */
-    RTTHREAD            hThreadDrain;
-
+    RTTHREAD                hThreadDrain;
 } OSSAUDIOSTREAM;
 /** Pointer to an OSS audio stream. */
 typedef OSSAUDIOSTREAM *POSSAUDIOSTREAM;

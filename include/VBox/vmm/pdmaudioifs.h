@@ -1219,10 +1219,28 @@ typedef struct PDMIAUDIOCONNECTOR
 #define PDMIAUDIOCONNECTOR_IID                  "9e7d9efb-45ac-4364-9e9d-67b6990df94c"
 
 
-/** Opque pointer host audio specific stream data.
- * @todo r=bird: should extend this to a public part that at least includes a
- *       PPDMAUDIOSTREAM member. */
-typedef struct PDMAUDIOBACKENDSTREAM *PPDMAUDIOBACKENDSTREAM;
+/**
+ * Host audio backend specific stream data.
+ *
+ * The backend will put this as the first member of it's own data structure.
+ */
+typedef struct PDMAUDIOBACKENDSTREAM
+{
+    /** Magic value (PDMAUDIOBACKENDSTREAM_MAGIC). */
+    uint32_t            uMagic;
+    /** Explicit zero padding - do not touch! */
+    uint32_t            uReserved;
+    /** Pointer to the stream this backend data is associated with. */
+    PPDMAUDIOSTREAM     pStream;
+    /** Reserved for future use (zeroed) - do not touch. */
+    void               *apvReserved[2];
+} PDMAUDIOBACKENDSTREAM;
+/** Pointer to host audio specific stream data! */
+typedef PDMAUDIOBACKENDSTREAM *PPDMAUDIOBACKENDSTREAM;
+
+/** Magic value for PDMAUDIOBACKENDSTREAM. */
+#define PDMAUDIOBACKENDSTREAM_MAGIC PDM_VERSION_MAKE(0xa0d4, 1, 0)
+
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
@@ -1392,7 +1410,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "ccfd4020-1a41-4158-8c42-6f7c98f0aaa8"
+#define PDMIHOSTAUDIO_IID                           "109d8c74-dfed-4056-b5ad-022de4d249c2"
 
 
 /** Pointer to a audio notify from host interface. */

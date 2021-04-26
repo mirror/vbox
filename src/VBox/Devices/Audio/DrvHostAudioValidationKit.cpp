@@ -42,29 +42,31 @@
  */
 typedef struct VAKITAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG   Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** Audio file to dump output to or read input from. */
-    PAUDIOHLPFILE       pFile;
+    PAUDIOHLPFILE           pFile;
     /** Text file to store timing of audio buffers submittions. */
-    PRTSTREAM           pFileTiming;
+    PRTSTREAM               pFileTiming;
     /** Timestamp of the first play or record request. */
-    uint64_t            tsStarted;
+    uint64_t                tsStarted;
     /** Total number of frames played or recorded so far. */
-    uint32_t            cFramesSinceStarted;
+    uint32_t                cFramesSinceStarted;
     union
     {
         struct
         {
             /** Timestamp of last captured samples. */
-            uint64_t    tsLastCaptured;
+            uint64_t        tsLastCaptured;
         } In;
         struct
         {
             /** Timestamp of last played samples. */
-            uint64_t    tsLastPlayed;
-            uint8_t    *pbPlayBuffer;
-            uint32_t    cbPlayBuffer;
+            uint64_t        tsLastPlayed;
+            uint8_t        *pbPlayBuffer;
+            uint32_t        cbPlayBuffer;
         } Out;
     };
 } VAKITAUDIOSTREAM;

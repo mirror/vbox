@@ -137,6 +137,9 @@ typedef struct DRVHOSTAUDIOWASCACHEDEV
  */
 typedef struct DRVHOSTAUDIOWASSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM       Core;
+
     /** Entry in DRVHOSTAUDIOWAS::StreamHead. */
     RTLISTNODE                  ListEntry;
     /** The stream's acquired configuration. */

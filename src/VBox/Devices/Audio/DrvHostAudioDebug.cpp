@@ -42,22 +42,24 @@
  */
 typedef struct DEBUGAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG   Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** Audio file to dump output to or read input from. */
-    PAUDIOHLPFILE       pFile;
+    PAUDIOHLPFILE           pFile;
     union
     {
         struct
         {
             /** Current sample index for generate the sine wave. */
-            uint64_t    uSample;
+            uint64_t        uSample;
             /** The fixed portion of the sin() input. */
-            double      rdFixed;
+            double          rdFixed;
             /** Timestamp of last captured samples. */
-            uint64_t    tsLastCaptured;
+            uint64_t        tsLastCaptured;
             /** Frequency (in Hz) of the sine wave to generate. */
-            double      rdFreqHz;
+            double          rdFreqHz;
         } In;
     };
 } DEBUGAUDIOSTREAM;

@@ -37,8 +37,10 @@
 /** Null audio stream. */
 typedef struct NULLAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG   Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
 } NULLAUDIOSTREAM;
 /** Pointer to a null audio stream.   */
 typedef NULLAUDIOSTREAM *PNULLAUDIOSTREAM;

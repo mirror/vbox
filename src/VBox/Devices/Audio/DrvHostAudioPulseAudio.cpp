@@ -132,45 +132,47 @@ typedef PULSEAUDIODEVENTRY *PPULSEAUDIODEVENTRY;
  */
 typedef struct PULSEAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG      Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** Pointer to driver instance. */
-    PDRVHOSTPULSEAUDIO     pDrv;
+    PDRVHOSTPULSEAUDIO      pDrv;
     /** Pointer to opaque PulseAudio stream. */
-    pa_stream             *pStream;
+    pa_stream              *pStream;
     /** Pulse sample format and attribute specification. */
-    pa_sample_spec         SampleSpec;
+    pa_sample_spec          SampleSpec;
     /** Pulse playback and buffer metrics. */
-    pa_buffer_attr         BufAttr;
+    pa_buffer_attr          BufAttr;
     /** Input: Pointer to Pulse sample peek buffer. */
-    const uint8_t         *pbPeekBuf;
+    const uint8_t          *pbPeekBuf;
     /** Input: Current size (in bytes) of peeked data in buffer. */
-    size_t                 cbPeekBuf;
+    size_t                  cbPeekBuf;
     /** Input: Our offset (in bytes) in peek data buffer. */
-    size_t                 offPeekBuf;
+    size_t                  offPeekBuf;
     /** Output: Asynchronous drain operation.  This is used as an indicator of
      *  whether we're currently draining the stream (will be cleaned up before
      *  resume/re-enable). */
-    pa_operation          *pDrainOp;
+    pa_operation           *pDrainOp;
     /** Asynchronous cork/uncork operation.
      * (This solely for cancelling before destroying the stream, so the callback
      * won't do any after-freed accesses.) */
-    pa_operation          *pCorkOp;
+    pa_operation           *pCorkOp;
     /** Asynchronous trigger operation.
      * (This solely for cancelling before destroying the stream, so the callback
      * won't do any after-freed accesses.) */
-    pa_operation          *pTriggerOp;
+    pa_operation           *pTriggerOp;
     /** Output: Current latency (in microsecs). */
-    uint64_t               cUsLatency;
+    uint64_t                cUsLatency;
 #ifdef LOG_ENABLED
     /** Creation timestamp (in microsecs) of stream playback / recording. */
-    pa_usec_t              tsStartUs;
+    pa_usec_t               tsStartUs;
     /** Timestamp (in microsecs) when last read from / written to the stream. */
-    pa_usec_t              tsLastReadWrittenUs;
+    pa_usec_t               tsLastReadWrittenUs;
 #endif
 #ifdef DEBUG
     /** Number of occurred audio data underflows. */
-    uint32_t               cUnderflows;
+    uint32_t                cUnderflows;
 #endif
 } PULSEAUDIOSTREAM;
 /** Pointer to pulse audio stream data. */

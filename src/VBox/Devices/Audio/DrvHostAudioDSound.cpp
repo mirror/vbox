@@ -107,17 +107,19 @@ typedef struct DSOUNDHOSTCFG
 
 typedef struct DSOUNDSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** Entry in DRVHOSTDSOUND::HeadStreams. */
-    RTLISTNODE          ListEntry;
+    RTLISTNODE              ListEntry;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG   Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** Buffer alignment. */
-    uint8_t             uAlign;
+    uint8_t                 uAlign;
     /** Whether this stream is in an enable state on the DirectSound side. */
-    bool                fEnabled;
-    bool                afPadding[2];
+    bool                    fEnabled;
+    bool                    afPadding[2];
     /** Size (in bytes) of the DirectSound buffer. */
-    DWORD               cbBufSize;
+    DWORD                   cbBufSize;
     union
     {
         struct
@@ -162,13 +164,13 @@ typedef struct DSOUNDSTREAM
     };
     /** Timestamp (in ms) of the last transfer from the internal buffer to/from the
      *  DirectSound buffer. */
-    uint64_t            msLastTransfer;
+    uint64_t                msLastTransfer;
     /** The stream's critical section for synchronizing access. */
-    RTCRITSECT          CritSect;
+    RTCRITSECT              CritSect;
     /** Used for formatting the current DSound status. */
-    char                szStatus[127];
+    char                    szStatus[127];
     /** Fixed zero terminator. */
-    char const          chStateZero;
+    char const              chStateZero;
 } DSOUNDSTREAM, *PDSOUNDSTREAM;
 
 /**

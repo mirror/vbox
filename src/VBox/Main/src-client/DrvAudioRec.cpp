@@ -245,22 +245,24 @@ typedef struct AVRECSINK
  */
 typedef struct AVRECSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG    Cfg;
+    PDMAUDIOSTREAMCFG       Cfg;
     /** (Audio) frame buffer. */
-    PRTCIRCBUF           pCircBuf;
+    PRTCIRCBUF              pCircBuf;
     /** Pointer to sink to use for writing. */
-    PAVRECSINK           pSink;
+    PAVRECSINK              pSink;
     /** Last encoded PTS (in ms). */
-    uint64_t             uLastPTSMs;
+    uint64_t                uLastPTSMs;
     /** Temporary buffer for the input (source) data to encode. */
-    void                *pvSrcBuf;
+    void                   *pvSrcBuf;
     /** Size (in bytes) of the temporary buffer holding the input (source) data to encode. */
-    size_t               cbSrcBuf;
+    size_t                  cbSrcBuf;
     /** Temporary buffer for the encoded output (destination) data. */
-    void                *pvDstBuf;
+    void                   *pvDstBuf;
     /** Size (in bytes) of the temporary buffer holding the encoded output (destination) data. */
-    size_t               cbDstBuf;
+    size_t                  cbDstBuf;
 } AVRECSTREAM, *PAVRECSTREAM;
 
 /**

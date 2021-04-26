@@ -373,6 +373,9 @@ typedef struct COREAUDIOSTREAMOUT
  */
 typedef struct COREAUDIOSTREAM
 {
+    /** Common part. */
+    PDMAUDIOBACKENDSTREAM       Core;
+
     /** The stream's acquired configuration. */
     PPDMAUDIOSTREAMCFG          pCfg;
     /** Stream-specific data, depending on the stream type. */

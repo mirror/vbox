@@ -1417,6 +1417,8 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
             LogRel(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pStreamEx->Core.szName, rc));
         return rc;
     }
+    AssertLogRelReturn(pStreamEx->pBackend->uMagic  == PDMAUDIOBACKENDSTREAM_MAGIC, VERR_INTERNAL_ERROR_3);
+    AssertLogRelReturn(pStreamEx->pBackend->pStream == &pStreamEx->Core, VERR_INTERNAL_ERROR_3);
 
     /* Validate acquired configuration. */
     char szTmp[PDMAUDIOPROPSTOSTRING_MAX];
@@ -1768,6 +1770,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
         pcFreeStreams = &pThis->Out.cStreamsFree;
     }
     size_t const cbHstStrm = pThis->BackendCfg.cbStream;
+    AssertStmt(cbHstStrm >= sizeof(PDMAUDIOBACKENDSTREAM), rc = VERR_OUT_OF_RANGE);
     AssertStmt(cbHstStrm < _16M, rc = VERR_OUT_OF_RANGE);
     if (RT_SUCCESS(rc))
     {
@@ -1782,12 +1785,14 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
             RTStrPrintf(pStreamEx->Core.szName, RT_ELEMENTS(pStreamEx->Core.szName), "[%s] %s",
                         pThis->BackendCfg.szName, pCfgHost->szName[0] != '\0' ? pCfgHost->szName : "<Untitled>");
 
-            pStreamEx->Core.enmDir    = pCfgHost->enmDir;
-            pStreamEx->Core.cbBackend = (uint32_t)cbHstStrm;
-            if (cbHstStrm)
-                pStreamEx->pBackend   = (PPDMAUDIOBACKENDSTREAM)(pStreamEx + 1);
-            pStreamEx->fNoMixBufs     = RT_BOOL(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF);
-            pStreamEx->uMagic         = DRVAUDIOSTREAM_MAGIC;
+            PPDMAUDIOBACKENDSTREAM pBackend = (PPDMAUDIOBACKENDSTREAM)(pStreamEx + 1);
+            pBackend->uMagic            = PDMAUDIOBACKENDSTREAM_MAGIC;
+            pBackend->pStream           = &pStreamEx->Core;
+            pStreamEx->pBackend         = pBackend;
+            pStreamEx->Core.enmDir      = pCfgHost->enmDir;
+            pStreamEx->Core.cbBackend   = (uint32_t)cbHstStrm;
+            pStreamEx->fNoMixBufs       = RT_BOOL(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF);
+            pStreamEx->uMagic           = DRVAUDIOSTREAM_MAGIC;
 
             /*
              * Try to init the rest.
@@ -1987,6 +1992,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
     PDRVAUDIOSTREAM pStreamEx = (PDRVAUDIOSTREAM)pStream;   /* Note! Do not touch pStream after this! */
     Assert(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC);
     Assert(pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC);
+    Assert(pStreamEx->pBackend && pStreamEx->pBackend->uMagic == PDMAUDIOBACKENDSTREAM_MAGIC);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
