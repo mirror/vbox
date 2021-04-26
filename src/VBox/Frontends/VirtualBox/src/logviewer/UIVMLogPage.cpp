@@ -105,9 +105,18 @@ void UIVMLogPage::cleanup()
 {
 }
 
-void UIVMLogPage::setLogString(const QString &strLog)
+void UIVMLogPage::setLogContent(const QString &strLogContent, bool fError)
 {
-    m_strLog = strLog;
+    if (!fError)
+    {
+        m_strLog = strLogContent;
+        setTextEditText(strLogContent);
+    }
+    else
+    {
+        markForError();
+        setTextEditTextAsHtml(strLogContent);
+    }
 }
 
 const QString& UIVMLogPage::logString() const
