@@ -83,8 +83,6 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
-    /** Defines the @a comMachine whose logs to show. */
-    void setMachine(const CMachine &comMachine);
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
@@ -206,8 +204,6 @@ private:
     UIActionPool *m_pActionPool;
     /** Holds whether we should create/show toolbar. */
     const bool    m_fShowToolbar;
-    /** Holds the machine instance. */
-    CMachine      m_comMachine;
     QVector<QUuid> m_machines;
 
     /** Holds whether the dialog is polished. */
