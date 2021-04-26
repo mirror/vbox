@@ -215,7 +215,9 @@ private:
  *********************************************************************************************************************************/
 class UIActivityOverviewItem
 {
+
 public:
+
     UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, KMachineState enmState);
     //yUIActivityOverviewItem(const QUuid &uid);
     UIActivityOverviewItem();
@@ -307,6 +309,7 @@ public:
     int      rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     int      columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     QVariant data(const QModelIndex &index, int role) const /* override */;
+    void clearData();
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     void setColumnCaptions(const QMap<int, QString>& captions);
     void setColumnVisible(const QMap<int, bool>& columnVisible);
@@ -1029,6 +1032,11 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
     return m_itemList[index.row()].m_columnData[index.column()];
 }
 
+void UIActivityOverviewModel::clearData()
+{
+    m_itemList.clear();
+}
+
 QVariant UIActivityOverviewModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
@@ -1435,6 +1443,8 @@ void UIVMActivityOverviewWidget::prepare()
     uiCommon().setHelpKeyword(this, "vm-activity-overview-widget");
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIVMActivityOverviewWidget::sltSaveSettings);
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
+            this, &UIVMActivityOverviewWidget::sltClearCOMData);
 }
 
 void UIVMActivityOverviewWidget::prepareWidgets()
@@ -1573,6 +1583,12 @@ void UIVMActivityOverviewWidget::sltSaveSettings()
     }
     gEDataManager->setVMActivityOverviewHiddenColumnList(hiddenColumnList);
     gEDataManager->setVMActivityOverviewShowAllMachines(m_fShowNotRunningVMs);
+}
+
+void UIVMActivityOverviewWidget::sltClearCOMData()
+{
+    if (m_pModel)
+        m_pModel->clearData();
 }
 
 void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)

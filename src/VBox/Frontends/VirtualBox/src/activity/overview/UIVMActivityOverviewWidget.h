@@ -86,6 +86,7 @@ private slots:
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltNotRunningVMVisibility(bool fShow);
     void sltSaveSettings();
+    void sltClearCOMData();
 
 private:
 
