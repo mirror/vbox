@@ -973,10 +973,14 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
  * Checks if a primary fault can be recorded.
  *
  * @returns @c true if the fault can be recorded, @c false otherwise.
- * @param   pThis   The shared DMAR device state.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThis       The shared DMAR device state.
  */
-static bool dmarPrimaryFaultCanRecord(PDMAR pThis)
+static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
 {
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
     uint32_t uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
     if (uFstsReg & VTD_BF_FSTS_REG_PFO_MASK)
         return false;
@@ -1267,28 +1271,28 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
         VBOXSTRICTRC rcStrict = VINF_SUCCESS;
         switch (off)
         {
-            case VTD_MMIO_OFF_GCMD_REG:
+            case VTD_MMIO_OFF_GCMD_REG:         /* 32-bit */
             {
                 rcStrict = dmarGcmdRegWrite(pDevIns, uRegWritten);
                 break;
             }
 
-            case VTD_MMIO_OFF_CCMD_REG:
+            case VTD_MMIO_OFF_CCMD_REG:         /* 64-bit */
             case VTD_MMIO_OFF_CCMD_REG + 4:
             {
                 rcStrict = dmarCcmdRegWrite(pDevIns, offReg, cb, uRegWritten);
                 break;
             }
 
-            case VTD_MMIO_OFF_IQT_REG:
-            /*   VTD_MMIO_OFF_IQT_REG + 4: (RsvdZ) */
+            case VTD_MMIO_OFF_IQT_REG:          /* 64-bit */
+            /*   VTD_MMIO_OFF_IQT_REG + 4: */   /* High 32-bits reserved. */
             {
                 rcStrict = dmarIqtRegWrite(pDevIns, offReg, uRegWritten);
                 break;
             }
 
-            case VTD_MMIO_OFF_IQA_REG:
-            /*   VTD_MMIO_OFF_IQA_REG + 4: (Data) */
+            case VTD_MMIO_OFF_IQA_REG:          /* 64-bit */
+            /*   VTD_MMIO_OFF_IQA_REG + 4: */   /* High 32-bits data. */
             {
                 rcStrict = dmarIqaRegWrite(pDevIns, offReg, uRegWritten);
                 break;
