@@ -153,12 +153,6 @@ typedef struct DRVAUDIOSTREAM
             } Dbg;
             struct
             {
-                STAMCOUNTER     TotalFramesPlayed;
-                STAMCOUNTER     AvgFramesPlayed;
-                STAMCOUNTER     TotalTimesPlayed;
-                STAMCOUNTER     TotalFramesWritten;
-                STAMCOUNTER     AvgFramesWritten;
-                STAMCOUNTER     TotalTimesWritten;
                 uint32_t        cbBackendWritableBefore;
                 uint32_t        cbBackendWritableAfter;
             } Stats;
@@ -188,32 +182,6 @@ typedef DRVAUDIOSTREAM *PDRVAUDIOSTREAM;
 /** Value for DRVAUDIOSTREAM::uMagic after destruction */
 #define DRVAUDIOSTREAM_MAGIC_DEAD   UINT32_C(0x17500728)
 
-
-#ifdef VBOX_WITH_STATISTICS
-/**
- * Structure for keeping stream statistics for the
- * statistic manager (STAM).
- */
-typedef struct DRVAUDIOSTATS
-{
-    STAMCOUNTER TotalStreamsActive;
-    STAMCOUNTER TotalStreamsCreated;
-    STAMCOUNTER TotalFramesRead;
-    STAMCOUNTER TotalFramesWritten;
-    STAMCOUNTER TotalFramesMixedIn;
-    STAMCOUNTER TotalFramesMixedOut;
-    STAMCOUNTER TotalFramesLostIn;
-    STAMCOUNTER TotalFramesLostOut;
-    STAMCOUNTER TotalFramesOut;
-    STAMCOUNTER TotalFramesIn;
-    STAMCOUNTER TotalBytesRead;
-    STAMCOUNTER TotalBytesWritten;
-    /** How much delay (in ms) for input processing. */
-    STAMPROFILEADV DelayIn;
-    /** How much delay (in ms) for output processing. */
-    STAMPROFILEADV DelayOut;
-} DRVAUDIOSTATS, *PDRVAUDIOSTATS;
-#endif
 
 /**
  * Audio driver configuration data, tweakable via CFGM.
@@ -316,8 +284,15 @@ typedef struct DRVAUDIO
     char                    szTimerName[23];
 
 #ifdef VBOX_WITH_STATISTICS
-    /** Statistics for the statistics manager (STAM). */
-    DRVAUDIOSTATS           Stats;
+    /** Statistics. */
+    struct
+    {
+        STAMCOUNTER TotalStreamsActive;
+        STAMCOUNTER TotalStreamsCreated;
+        STAMCOUNTER TotalFramesRead;
+        STAMCOUNTER TotalFramesIn;
+        STAMCOUNTER TotalBytesRead;
+    } Stats;
 #endif
 } DRVAUDIO;
 /** Pointer to the instance data of an audio driver. */
@@ -556,16 +531,11 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     if (pStreamEx->Core.enmDir == PDMAUDIODIR_IN)
     {
         STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalFramesCaptured);
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalFramesRead);
         STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesCaptured);
         STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesRead);
     }
     else if (pStreamEx->Core.enmDir == PDMAUDIODIR_OUT)
     {
-        STAM_COUNTER_RESET(&pStreamEx->Out.Stats.TotalFramesPlayed);
-        STAM_COUNTER_RESET(&pStreamEx->Out.Stats.TotalFramesWritten);
-        STAM_COUNTER_RESET(&pStreamEx->Out.Stats.TotalTimesPlayed);
-        STAM_COUNTER_RESET(&pStreamEx->Out.Stats.TotalTimesWritten);
     }
     else
         AssertFailed();
@@ -1688,22 +1658,12 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
                                "Total frames played.", "%s/TotalFramesCaptured", pStreamEx->Core.szName);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalTimesCaptured, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
                                "Total number of playbacks.", "%s/TotalTimesCaptured", pStreamEx->Core.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalFramesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total frames read.", "%s/TotalFramesRead", pStreamEx->Core.szName);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalTimesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
                                "Total number of reads.", "%s/TotalTimesRead", pStreamEx->Core.szName);
     }
     else
     {
         Assert(pCfgGuest->enmDir == PDMAUDIODIR_OUT);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.TotalFramesPlayed, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total frames played.", "%s/TotalFramesPlayed", pStreamEx->Core.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.TotalTimesPlayed, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total number of playbacks.", "%s/TotalTimesPlayed", pStreamEx->Core.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.TotalFramesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total frames written.", "%s/TotalFramesWritten", pStreamEx->Core.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.TotalTimesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total number of writes.", "%s/TotalTimesWritten", pStreamEx->Core.szName);
     }
 #endif /* VBOX_WITH_STATISTICS */
 
@@ -2454,8 +2414,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Guest.Cfg.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%RU32 bytes)\n", pStreamEx->Core.szName, cbBuf));
-
-/// @todo    STAM_PROFILE_ADV_START(&pThis->Stats.DelayOut, out); /* (stopped in drvAudioStreamPlayLocked) */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -3403,17 +3361,8 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsActive);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsCreated);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesRead);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesWritten);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesMixedIn);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesMixedOut);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesLostIn);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesLostOut);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesOut);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesIn);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesRead);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesWritten);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.DelayIn);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.DelayOut);
 #endif
 
     LogFlowFuncLeave();
@@ -3633,29 +3582,10 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                               STAMUNIT_COUNT, "Total created audio streams.");
     PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
                               STAMUNIT_COUNT, "Total frames read by device emulation.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesWritten,   "TotalFramesWritten",
-                              STAMUNIT_COUNT, "Total frames written by device emulation ");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedIn,   "TotalFramesMixedIn",
-                              STAMUNIT_COUNT, "Total input frames mixed.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedOut,  "TotalFramesMixedOut",
-                              STAMUNIT_COUNT, "Total output frames mixed.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostIn,    "TotalFramesLostIn",
-                              STAMUNIT_COUNT, "Total input frames lost.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostOut,   "TotalFramesLostOut",
-                              STAMUNIT_COUNT, "Total output frames lost.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesOut,       "TotalFramesOut",
-                              STAMUNIT_COUNT, "Total frames played by backend.");
     PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
                               STAMUNIT_COUNT, "Total frames captured by backend.");
     PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
                               STAMUNIT_BYTES, "Total bytes read.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
-                              STAMUNIT_BYTES, "Total bytes written.");
-
-    PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
-                                 STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
-    PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
-                                 STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
 
     /*
