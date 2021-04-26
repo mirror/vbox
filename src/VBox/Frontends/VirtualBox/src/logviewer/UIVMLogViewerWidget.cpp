@@ -160,6 +160,8 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     /* Prepare VM Log-Viewer: */
     prepare();
     restorePanelVisibility();
+    if (!comMachine.isNull())
+        setMachines(QVector<QUuid>(1, comMachine.GetId()));
 }
 
 int UIVMLogViewerWidget::defaultLogPageWidth() const
@@ -198,8 +200,6 @@ void UIVMLogViewerWidget::setMachine(const CMachine &comMachine)
 void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
     QVector<QUuid> selectedMachines;
-    /* List of machines that are newly added to selected machine list: */
-    QVector<QUuid> newSelections;
 
     foreach (const UIVirtualMachineItem *item, items)
     {
@@ -207,16 +207,22 @@ void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineIte
             continue;
         selectedMachines << item->id();
     }
+    setMachines(selectedMachines);
+}
 
+void UIVMLogViewerWidget::setMachines(const QVector<QUuid> &machineIDs)
+{
+    /* List of machines that are newly added to selected machine list: */
+    QVector<QUuid> newSelections;
     QVector<QUuid> unselectedMachines(m_machines);
 
-    foreach (const QUuid &id, selectedMachines)
+    foreach (const QUuid &id, machineIDs)
     {
         unselectedMachines.removeAll(id);
         if (!m_machines.contains(id))
             newSelections << id;
     }
-    m_machines = selectedMachines;
+    m_machines = machineIDs;
 
     m_pTabWidget->hide();
     /* Read logs and create pages/tabs for newly selected machines: */
@@ -224,13 +230,6 @@ void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineIte
     /* Remove the log pages/tabs of unselected machines from the tab widget: */
     removeLogViewerPages(unselectedMachines);
     m_pTabWidget->show();
-
-    printf("new selections\n");
-    foreach (const QUuid &id, newSelections)
-        printf("%s\n", qPrintable(id.toString()));
-    printf("unselected\n");
-    foreach (const QUuid &id, unselectedMachines)
-        printf("%s\n", qPrintable(id.toString()));
 }
 
 QFont UIVMLogViewerWidget::currentFont() const
@@ -628,7 +627,9 @@ void UIVMLogViewerWidget::prepareWidgets()
         {
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pTabWidget);
+#if 0
             m_pCornerButton = new QIToolButton(m_pTabWidget);
+#endif
             if (m_pCornerButton)
             {
                 m_pTabWidget->setCornerWidget(m_pCornerButton);//, Qt::TopLeftCorner);
@@ -636,6 +637,7 @@ void UIVMLogViewerWidget::prepareWidgets()
                 m_pMachineSelectionMenu = new UIMachineListMenu(this);
                 connect(m_pCornerButton, &QIToolButton::clicked, this, &UIVMLogViewerWidget::sltCornerButtonClicked);
             }
+
         }
 
         /* Create VM Log-Viewer search-panel: */
@@ -807,7 +809,8 @@ void UIVMLogViewerWidget::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
-    m_pCornerButton->setToolTip(tr("Select machines to show their log"));
+    if (m_pCornerButton)
+        m_pCornerButton->setToolTip(tr("Select machines to show their log"));
 }
 
 void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)

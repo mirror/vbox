@@ -198,6 +198,7 @@ private:
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
     void updateMachineSelectionMenu();
+    void setMachines(const QVector<QUuid> &machineIDs);
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
