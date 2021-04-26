@@ -330,16 +330,12 @@ typedef DRVAUDIO *PDRVAUDIO;
 #ifdef VBOX_WITH_AUDIO_ENUM
 static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum);
 #endif
-
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq);
 static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
-static void drvAudioStreamFree(PDRVAUDIOSTREAM pStream);
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
-static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
-static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 
 
 #ifndef VBOX_AUDIO_TESTCASE
@@ -420,6 +416,32 @@ static void drvAudioStreamFree(PDRVAUDIOSTREAM pStreamEx)
     }
 }
 
+
+/**
+ * Drops all audio data (and associated state) of a stream.
+ *
+ * @param   pThis       Pointer to driver instance.
+ * @param   pStreamEx   Stream to drop data for.
+ */
+static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    RT_NOREF(pThis);
+
+    LogFunc(("[%s]\n", pStreamEx->Core.szName));
+
+    if (pStreamEx->fNoMixBufs)
+    {
+        AudioMixBufReset(&pStreamEx->Guest.MixBuf);
+        AudioMixBufReset(&pStreamEx->Host.MixBuf);
+    }
+
+    pStreamEx->fThresholdReached    = false;
+    pStreamEx->nsLastIterated       = 0;
+    pStreamEx->nsLastPlayedCaptured = 0;
+    pStreamEx->nsLastReadWritten    = 0;
+}
+
+
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
  * Schedules a re-initialization of all current audio streams.
@@ -435,9 +457,9 @@ static void drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
     PDRVAUDIOSTREAM pStreamEx;
     RTListForEach(&pThis->lstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
     {
-        pStreamEx->Core.fStatus        |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
-        pStreamEx->cTriesReInit    = 0;
-        pStreamEx->nsLastReInit         = 0;
+        pStreamEx->Core.fStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
+        pStreamEx->cTriesReInit  = 0;
+        pStreamEx->nsLastReInit  = 0;
     }
 
 # ifdef VBOX_WITH_AUDIO_ENUM
@@ -446,6 +468,7 @@ static void drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
 # endif
 }
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
 
 /**
  * Re-initializes an audio stream with its existing host and guest stream
@@ -510,29 +533,6 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     return rc;
 }
 
-/**
- * Drops all audio data (and associated state) of a stream.
- *
- * @param   pThis       Pointer to driver instance.
- * @param   pStreamEx   Stream to drop data for.
- */
-static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
-{
-    RT_NOREF(pThis);
-
-    LogFunc(("[%s]\n", pStreamEx->Core.szName));
-
-    if (pStreamEx->fNoMixBufs)
-    {
-        AudioMixBufReset(&pStreamEx->Guest.MixBuf);
-        AudioMixBufReset(&pStreamEx->Host.MixBuf);
-    }
-
-    pStreamEx->fThresholdReached    = false;
-    pStreamEx->nsLastIterated       = 0;
-    pStreamEx->nsLastPlayedCaptured = 0;
-    pStreamEx->nsLastReadWritten    = 0;
-}
 
 /**
  * Resets the given audio stream.
@@ -2501,10 +2501,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
  * @returns VBox status code.
  * @param   pThis       Pointer to driver instance.
  * @param   pStreamEx   Stream to iterate.
- *
- * @todo    r=bird: Don't know why the default behavior isn't to push data into
- *          the backend...  We'll never get out of the pending-disable state if
- *          the mixing buffer doesn't empty out.
  */
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
 {
