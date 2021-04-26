@@ -355,6 +355,11 @@ private slots:
     /** Handles request for visual state change. */
     void sltHandleVisualStateChange();
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Cleanups debugger. */
+    void sltCleanupDebugger() { cleanupDebugger(); }
+#endif
+
 private:
 
     /** Update 'Devices' : 'Optical/Floppy Devices' menu routine. */

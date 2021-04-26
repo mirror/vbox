@@ -1217,6 +1217,13 @@ void UIMachineLogic::prepareOtherConnections()
     /* Extra-data connections: */
     connect(gEDataManager, &UIExtraDataManager::sigVisualStateChange,
             this, &UIMachineLogic::sltHandleVisualStateChange);
+
+    /* UICommon connections: */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Cleanup debugger before VBoxDbg module handle cleaned up: */
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIMachineLogic::sltCleanupDebugger);
+#endif
 }
 
 void UIMachineLogic::prepareHandlers()
