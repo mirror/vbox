@@ -1916,7 +1916,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_PC_INV_DSC_, UINT64_C(0), UINT64_MAX,
 /** DID: Domain Id. */
 #define VTD_BF_0_IOTLB_INV_DSC_DID_SHIFT                        16
 #define VTD_BF_0_IOTLB_INV_DSC_DID_MASK                         UINT64_C(0x00000000ffff0000)
-/** R: Reserved (bits 63:32).. */
+/** R: Reserved (bits 63:32). */
 #define VTD_BF_0_IOTLB_INV_DSC_RSVD_63_32_SHIFT                 32
 #define VTD_BF_0_IOTLB_INV_DSC_RSVD_63_32_MASK                  UINT64_C(0xffffffff00000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IOTLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
