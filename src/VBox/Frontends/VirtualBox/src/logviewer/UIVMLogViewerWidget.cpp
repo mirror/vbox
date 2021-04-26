@@ -885,7 +885,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             pLogPage->setLogFileName(strFileName);
 
         /* Add page-container to viewer-container: */
-        bool fTitleWithMachineName = true;
+        bool fTitleWithMachineName = m_enmEmbedding == EmbedTo_Stack;
         QString strTabTitle;
         if (fTitleWithMachineName)
         {
