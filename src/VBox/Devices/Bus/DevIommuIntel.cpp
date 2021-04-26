@@ -23,6 +23,7 @@
 #include "VBoxDD.h"
 #include "DevIommuIntel.h"
 
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 
@@ -142,7 +143,9 @@ typedef enum
 {
     kDmarDiag_None = 0,
     kDmarDiag_IqtReg_Qt_NotAligned,
+    kDmarDiag_IqtReg_Qt_Invalid,
     kDmarDiag_IqaReg_Dw_Invalid,
+    kDmarDiag_IqaReg_Dsc_Fetch_Failed,
     kDmarDiag_CcmdReg_Ttm_Invalid,
     kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_NotSupported,
@@ -157,12 +160,14 @@ AssertCompileSize(DMARDIAG, 4);
 /** DMAR diagnostics description. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(kNone                         ,   "None"                ),
-    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned,   "IqtReg_Qt_NotAligned"),
-    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid   ,   "IqaReg_Dw_Invalid"   ),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_Ttm_Invalid ,   "CcmdReg_Ttm_Invalid" ),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_Qi_Enabled  ,   "CcmdReg_Qi_Enabled"  ),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_NotSupported,   "CcmdReg_NotSupported")
+    DMARDIAG_DESC(kNone                            ,    "None"                  ),
+    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned   ,    "IqtReg_Qt_NotAligned"  ),
+    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_Invalid      ,    "IqtReg_Qt_Invalid"     ),
+    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid      ,    "IqaReg_Dw_Invalid"     ),
+    DMARDIAG_DESC(kDmarDiag_IqaReg_Dsc_Fetch_Failed,    "IqaReg_Dsc_Fetch_Failed"),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_Ttm_Invalid    ,    "CcmdReg_Ttm_Invalid"   ),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_Qi_Enabled     ,    "CcmdReg_Qi_Enabled"    ),
+    DMARDIAG_DESC(kDmarDiag_CcmdReg_NotSupported   ,    "CcmdReg_NotSupported"  )
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -862,17 +867,40 @@ static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
 /**
  * Checks if the invalidation-queue is empty.
  *
+ * Extended version which optionally returns the current queue head and tail
+ * offsets.
+ *
+ * @returns @c true if empty, @c false otherwise.
+ * @param   pThis   The shared DMAR device state.
+ * @param   poffQh  Where to store the queue head offset. Optional, can be NULL.
+ * @param   poffQt  Where to store the queue tail offset. Optional, can be NULL.
+ */
+static bool dmarInvQueueIsEmptyEx(PCDMAR pThis, uint32_t *poffQh, uint32_t *poffQt)
+{
+    /* Read only the low-32 bits of the queue head and queue tail registers as high bits are all reserved.*/
+    uint32_t const uIqtReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IQT_REG);
+    uint32_t const uIqhReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IQH_REG);
+
+    /* Don't bother masking QT, QH out of IQT_REG, IQH_REG since all other bits are RsvdZ. */
+    Assert(!(uIqtReg & ~VTD_BF_IQT_REG_QT_MASK));
+    Assert(!(uIqhReg & ~VTD_BF_IQH_REG_QH_MASK));
+    if (poffQh)
+        *poffQh = uIqhReg;
+    if (poffQt)
+        *poffQt = uIqtReg;
+    return uIqtReg == uIqhReg;
+}
+
+
+/**
+ * Checks if the invalidation-queue is empty.
+ *
  * @returns @c true if empty, @c false otherwise.
  * @param   pThis   The shared DMAR device state.
  */
 static bool dmarInvQueueIsEmpty(PCDMAR pThis)
 {
-    uint64_t const uIqtReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQT_REG);
-    uint64_t const uIqhReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQH_REG);
-    /* Don't bother masking out QT, QH out of IQT_REG, IQH_REG since all other bits are RsvdZ. */
-    Assert(!(uIqtReg & ~VTD_BF_IQT_REG_QT_MASK));
-    Assert(!(uIqhReg & ~VTD_BF_IQH_REG_QH_MASK));
-    return uIqtReg == uIqhReg;
+    return dmarInvQueueIsEmptyEx(pThis, NULL /* poffQh */,  NULL /* poffQt */);
 }
 
 
@@ -1015,7 +1043,7 @@ static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
  * @param   enmIqei     The IQE information.
  * @param   enmDiag     The diagnostic reason.
  */
-static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQERCD_IQEI_T enmIqei)
+static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T enmIqei)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
@@ -1148,7 +1176,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     {
         /* Hardware treats bit 4 as RsvdZ in this situation, so clear it. */
         dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4) /* fAndMask*/ , 0 /* fOrMask */);
-        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kQueueTailNotAligned);
+        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kIqei_QueueTailNotAligned);
     }
     return VINF_SUCCESS;
 }
@@ -1179,7 +1207,7 @@ static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
         if (fSupports256BitDw)
         { /* likely */ }
         else
-            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kInvalidDescriptorWidth);
+            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kIqei_InvalidDescriptorWidth);
     }
     return VINF_SUCCESS;
 }
@@ -1361,6 +1389,11 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
+    uint8_t const  cMaxPages = 1 << VTD_BF_IQA_REG_QS_MASK;
+    size_t const   cbMaxQs   = cMaxPages << X86_PAGE_SHIFT;
+    void *pvQueue = RTMemAllocZ(cbMaxQs);
+    AssertPtrReturn(pvQueue, VERR_NO_MEMORY);
+
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
@@ -1382,10 +1415,41 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
         DMAR_LOCK(pDevIns, pThisR3);
         if (dmarInvQueueCanProcessRequests(pThis))
         {
-            /** @todo Read IQH and IQT, descriptors from memory and perform invalidation. */
+            uint32_t offQueueHead;
+            uint32_t offQueueTail;
+            bool const fIsEmpty = dmarInvQueueIsEmptyEx(pThis, &offQueueHead, &offQueueTail);
+            if (!fIsEmpty)
+            {
+                uint64_t const uIqaReg      = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+                uint8_t const  cQueuePages  = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
+                uint32_t const cbQueue      = cQueuePages << X86_PAGE_SHIFT;
+                if (offQueueTail <= cbQueue)
+                {
+                    uint32_t const cbDescriptors = offQueueTail - offQueueHead;
+                    RTGCPHYS const GCPhysQueueBase = uIqaReg & VTD_BF_IQA_REG_IQA_MASK;
+
+                    DMAR_UNLOCK(pDevIns, pThisR3);
+                    int rc = PDMDevHlpPhysRead(pDevIns, GCPhysQueueBase, pvQueue, cbDescriptors);
+                    DMAR_LOCK(pDevIns, pThisR3);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        /** @todo Handle RTADDR_REG MMIO write first, for handling kIqei_InvalidTtm. I
+                         *        don't think it needs to be checked/handled here? */
+                        /** @todo Process invalidation descriptors. */
+                    }
+                    else
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Failed, kIqei_FetchDescriptorFailed);
+                }
+                else
+                    dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
+            }
         }
         DMAR_UNLOCK(pDevIns, pThisR3);
     }
+
+    RTMemFree(pvQueue);
+    pvQueue = NULL;
 
     LogFlowFunc(("Invalidation-queue thread terminating\n"));
     return VINF_SUCCESS;
