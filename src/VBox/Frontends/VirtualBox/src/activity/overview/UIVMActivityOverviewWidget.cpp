@@ -1360,11 +1360,6 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     prepare();
 }
 
-UIVMActivityOverviewWidget::~UIVMActivityOverviewWidget()
-{
-    saveSettings();
-}
-
 QMenu *UIVMActivityOverviewWidget::menu() const
 {
     return NULL;
@@ -1438,6 +1433,8 @@ void UIVMActivityOverviewWidget::prepare()
     retranslateUi();
     updateModelColumVisibilityCache();
     uiCommon().setHelpKeyword(this, "vm-activity-overview-widget");
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVMActivityOverviewWidget::sltSaveSettings);
 }
 
 void UIVMActivityOverviewWidget::prepareWidgets()
@@ -1565,7 +1562,7 @@ void UIVMActivityOverviewWidget::loadSettings()
     sltNotRunningVMVisibility(gEDataManager->VMActivityOverviewShowAllMachines());
 }
 
-void UIVMActivityOverviewWidget::saveSettings()
+void UIVMActivityOverviewWidget::sltSaveSettings()
 {
     /* Save the list of hidden columns: */
     QStringList hiddenColumnList;

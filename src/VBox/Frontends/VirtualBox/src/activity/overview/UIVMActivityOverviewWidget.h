@@ -57,7 +57,6 @@ public:
 
     UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
-    ~UIVMActivityOverviewWidget();
     QMenu *columnVisiblityToggleMenu() const;
     QMenu *menu() const;
 
@@ -86,6 +85,7 @@ private slots:
     void sltHandleShowVMActivityMonitor();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltNotRunningVMVisibility(bool fShow);
+    void sltSaveSettings();
 
 private:
 
@@ -103,7 +103,6 @@ private:
         void prepareActions();
         void updateColumnsMenu();
         void loadSettings();
-        void saveSettings();
     /** @} */
 
     /** @name General variables.
