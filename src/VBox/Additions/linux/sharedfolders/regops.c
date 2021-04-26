@@ -1466,8 +1466,8 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
     return -EFAULT;
 }
 
+#if RTLNX_VER_MAX(5,10,0) /* No regular .read/.write for 5.10, only .read_iter/.write_iter or in-kernel reads/writes fail. */
 
-#if RTLNX_VER_MAX(5,10,0)
 /**
  * Read function used when accessing files that are memory mapped.
  *
@@ -1626,6 +1626,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
     return cbRet;
 }
 
+
 /**
  * Read from a regular file.
  *
@@ -1724,8 +1725,8 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
 
     return vbsf_reg_read_locking(file, buf, size, off, pSuperInfo, sf_r);
 }
-#endif /* < 5.10.0 */
 
+#endif /* < 5.10.0 */
 
 /**
  * Helper the synchronizes the page cache content with something we just wrote
@@ -1813,8 +1814,8 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
     RT_NOREF(cSrcPages);
 }
 
+#if RTLNX_VER_MAX(5,10,0) /* No regular .read/.write for 5.10, only .read_iter/.write_iter or in-kernel reads/writes fail. */
 
-#if RTLNX_VER_MAX(5,10,0)
 /**
  * Fallback case of vbsf_reg_write() that locks the user buffers and let the host
  * write directly to them.
@@ -1941,6 +1942,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
     SFLOGFLOW(("vbsf_reg_write: returns %zd (%#zx), *off=%RX64 [lock]\n", cbRet, cbRet, *off));
     return cbRet;
 }
+
 
 /**
  * Write to a regular file.
@@ -2078,8 +2080,8 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
 
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, pSuperInfo, sf_r);
 }
-#endif /* < 5.10.0 */
 
+#endif /* < 5.10.0 */
 #if RTLNX_VER_MIN(2,6,19)
 
 /**
@@ -3507,7 +3509,7 @@ extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
  */
 struct file_operations vbsf_reg_fops = {
     .open            = vbsf_reg_open,
-#if RTLNX_VER_MAX(5,10,0)
+#if RTLNX_VER_MAX(5,10,0) /* No regular .read/.write for 5.10, only .read_iter/.write_iter or in-kernel reads/writes fail. */
     .read            = vbsf_reg_read,
     .write           = vbsf_reg_write,
 #endif
