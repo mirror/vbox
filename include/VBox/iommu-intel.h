@@ -1821,6 +1821,339 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
+/** @name Context-Cache Invalidation Descriptor (cc_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_CC_INV_DSC_TYPE_LO_SHIFT                       0
+#define VTD_BF_0_CC_INV_DSC_TYPE_LO_MASK                        UINT64_C(0x000000000000000f)
+/** G: Granularity. */
+#define VTD_BF_0_CC_INV_DSC_G_SHIFT                             4
+#define VTD_BF_0_CC_INV_DSC_G_MASK                              UINT64_C(0x0000000000000030)
+/** R: Reserved (bits 8:6). */
+#define VTD_BF_0_CC_INV_DSC_RSVD_8_6_SHIFT                      6
+#define VTD_BF_0_CC_INV_DSC_RSVD_8_6_MASK                       UINT64_C(0x00000000000001c0)
+/** Type (Hi). */
+#define VTD_BF_0_CC_INV_DSC_TYPE_HI_SHIFT                       9
+#define VTD_BF_0_CC_INV_DSC_TYPE_HI_MASK                        UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 15:12). */
+#define VTD_BF_0_CC_INV_DSC_RSVD_15_12_SHIFT                    12
+#define VTD_BF_0_CC_INV_DSC_RSVD_15_12_MASK                     UINT64_C(0x000000000000f000)
+/** DID: Domain Id. */
+#define VTD_BF_0_CC_INV_DSC_DID_SHIFT                           16
+#define VTD_BF_0_CC_INV_DSC_DID_MASK                            UINT64_C(0x00000000ffff0000)
+/** SID: Source Id. */
+#define VTD_BF_0_CC_INV_DSC_SID_SHIFT                           32
+#define VTD_BF_0_CC_INV_DSC_SID_MASK                            UINT64_C(0x0000ffff00000000)
+/** FM: Function Mask. */
+#define VTD_BF_0_CC_INV_DSC_FM_SHIFT                            48
+#define VTD_BF_0_CC_INV_DSC_FM_MASK                             UINT64_C(0x0003000000000000)
+/** R: Reserved (bits 63:50). */
+#define VTD_BF_0_CC_INV_DSC_RSVD_63_50_SHIFT                    50
+#define VTD_BF_0_CC_INV_DSC_RSVD_63_50_MASK                     UINT64_C(0xfffc000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_CC_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, G, RSVD_8_6, TYPE_HI, RSVD_15_12, DID, SID, FM, RSVD_63_50));
+/** @} */
+
+
+/** @name PASID-Cache Invalidation Descriptor (pc_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_PC_INV_DSC_TYPE_LO_SHIFT                       0
+#define VTD_BF_0_PC_INV_DSC_TYPE_LO_MASK                        UINT64_C(0x000000000000000f)
+/** G: Granularity. */
+#define VTD_BF_0_PC_INV_DSC_G_SHIFT                             4
+#define VTD_BF_0_PC_INV_DSC_G_MASK                              UINT64_C(0x0000000000000030)
+/** R: Reserved (bits 8:6). */
+#define VTD_BF_0_PC_INV_DSC_RSVD_8_6_SHIFT                      6
+#define VTD_BF_0_PC_INV_DSC_RSVD_8_6_MASK                       UINT64_C(0x00000000000001c0)
+/** Type (Hi). */
+#define VTD_BF_0_PC_INV_DSC_TYPE_HI_SHIFT                       9
+#define VTD_BF_0_PC_INV_DSC_TYPE_HI_MASK                        UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 15:12). */
+#define VTD_BF_0_PC_INV_DSC_RSVD_15_12_SHIFT                    12
+#define VTD_BF_0_PC_INV_DSC_RSVD_15_12_MASK                     UINT64_C(0x000000000000f000)
+/** DID: Domain Id. */
+#define VTD_BF_0_PC_INV_DSC_DID_SHIFT                           16
+#define VTD_BF_0_PC_INV_DSC_DID_MASK                            UINT64_C(0x00000000ffff0000)
+/** PASID: Process Address-Space Id. */
+#define VTD_BF_0_PC_INV_DSC_PASID_SHIFT                         32
+#define VTD_BF_0_PC_INV_DSC_PASID_MASK                          UINT64_C(0x000fffff00000000)
+/** R: Reserved (bits 63:52). */
+#define VTD_BF_0_PC_INV_DSC_RSVD_63_52_SHIFT                    52
+#define VTD_BF_0_PC_INV_DSC_RSVD_63_52_MASK                     UINT64_C(0xfff0000000000000)
+
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_PC_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, G, RSVD_8_6, TYPE_HI, RSVD_15_12, DID, PASID, RSVD_63_52));
+/** @} */
+
+
+/** @name IOTLB Invalidate Descriptor (iotlb_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_IOTLB_INV_DSC_TYPE_LO_SHIFT                    0
+#define VTD_BF_0_IOTLB_INV_DSC_TYPE_LO_MASK                     UINT64_C(0x000000000000000f)
+/** G: Granularity. */
+#define VTD_BF_0_IOTLB_INV_DSC_G_SHIFT                          4
+#define VTD_BF_0_IOTLB_INV_DSC_G_MASK                           UINT64_C(0x0000000000000030)
+/** DW: Drain Writes. */
+#define VTD_BF_0_IOTLB_INV_DSC_DW_SHIFT                         6
+#define VTD_BF_0_IOTLB_INV_DSC_DW_MASK                          UINT64_C(0x0000000000000040)
+/** DR: Drain Reads. */
+#define VTD_BF_0_IOTLB_INV_DSC_DR_SHIFT                         7
+#define VTD_BF_0_IOTLB_INV_DSC_DR_MASK                          UINT64_C(0x0000000000000080)
+/** R: Reserved (bit 8). */
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_8_SHIFT                     8
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_8_MASK                      UINT64_C(0x0000000000000100)
+/** Type (Hi). */
+#define VTD_BF_0_IOTLB_INV_DSC_TYPE_HI_SHIFT                    9
+#define VTD_BF_0_IOTLB_INV_DSC_TYPE_HI_MASK                     UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 15:12). */
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_15_12_SHIFT                 12
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_15_12_MASK                  UINT64_C(0x000000000000f000)
+/** DID: Domain Id. */
+#define VTD_BF_0_IOTLB_INV_DSC_DID_SHIFT                        16
+#define VTD_BF_0_IOTLB_INV_DSC_DID_MASK                         UINT64_C(0x00000000ffff0000)
+/** R: Reserved (bits 63:32).. */
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_63_32_SHIFT                 32
+#define VTD_BF_0_IOTLB_INV_DSC_RSVD_63_32_MASK                  UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IOTLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, G, DW, DR, RSVD_8, TYPE_HI, RSVD_15_12, DID, RSVD_63_32));
+
+/** AM: Address Mask. */
+#define VTD_BF_1_IOTLB_INV_DSC_AM_SHIFT                         0
+#define VTD_BF_1_IOTLB_INV_DSC_AM_MASK                          UINT64_C(0x000000000000003f)
+/** IH: Invalidation Hint. */
+#define VTD_BF_1_IOTLB_INV_DSC_IH_SHIFT                         6
+#define VTD_BF_1_IOTLB_INV_DSC_IH_MASK                          UINT64_C(0x0000000000000040)
+/** R: Reserved (bits 11:7). */
+#define VTD_BF_1_IOTLB_INV_DSC_RSVD_11_7_SHIFT                  7
+#define VTD_BF_1_IOTLB_INV_DSC_RSVD_11_7_MASK                   UINT64_C(0x0000000000000f80)
+/** ADDR: Address. */
+#define VTD_BF_1_IOTLB_INV_DSC_ADDR_SHIFT                       12
+#define VTD_BF_1_IOTLB_INV_DSC_ADDR_MASK                        UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_IOTLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (AM, IH, RSVD_11_7, ADDR));
+/** @} */
+
+
+/** @name PASID-based IOTLB Invalidate Descriptor (p_iotlb_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_P_IOTLB_INV_DSC_TYPE_LO_SHIFT                  0
+#define VTD_BF_0_P_IOTLB_INV_DSC_TYPE_LO_MASK                   UINT64_C(0x000000000000000f)
+/** G: Granularity. */
+#define VTD_BF_0_P_IOTLB_INV_DSC_G_SHIFT                        4
+#define VTD_BF_0_P_IOTLB_INV_DSC_G_MASK                         UINT64_C(0x0000000000000030)
+/** R: Reserved (bits 8:6). */
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_8_6_SHIFT                 6
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_8_6_MASK                  UINT64_C(0x00000000000001c0)
+/** Type (Hi). */
+#define VTD_BF_0_P_IOTLB_INV_DSC_TYPE_HI_SHIFT                  9
+#define VTD_BF_0_P_IOTLB_INV_DSC_TYPE_HI_MASK                   UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 15:12). */
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_15_12_SHIFT               12
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_15_12_MASK                UINT64_C(0x000000000000f000)
+/** DID: Domain Id. */
+#define VTD_BF_0_P_IOTLB_INV_DSC_DID_SHIFT                      16
+#define VTD_BF_0_P_IOTLB_INV_DSC_DID_MASK                       UINT64_C(0x00000000ffff0000)
+/** PASID: Process Address-Space Id. */
+#define VTD_BF_0_P_IOTLB_INV_DSC_PASID_SHIFT                    32
+#define VTD_BF_0_P_IOTLB_INV_DSC_PASID_MASK                     UINT64_C(0x000fffff00000000)
+/** R: Reserved (bits 63:52). */
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_63_52_SHIFT               52
+#define VTD_BF_0_P_IOTLB_INV_DSC_RSVD_63_52_MASK                UINT64_C(0xfff0000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_P_IOTLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, G, RSVD_8_6, TYPE_HI, RSVD_15_12, DID, PASID, RSVD_63_52));
+
+
+/** AM: Address Mask. */
+#define VTD_BF_1_P_IOTLB_INV_DSC_AM_SHIFT                       0
+#define VTD_BF_1_P_IOTLB_INV_DSC_AM_MASK                        UINT64_C(0x000000000000003f)
+/** IH: Invalidation Hint. */
+#define VTD_BF_1_P_IOTLB_INV_DSC_IH_SHIFT                       6
+#define VTD_BF_1_P_IOTLB_INV_DSC_IH_MASK                        UINT64_C(0x0000000000000040)
+/** R: Reserved (bits 11:7). */
+#define VTD_BF_1_P_IOTLB_INV_DSC_RSVD_11_7_SHIFT                7
+#define VTD_BF_1_P_IOTLB_INV_DSC_RSVD_11_7_MASK                 UINT64_C(0x0000000000000f80)
+/** ADDR: Address. */
+#define VTD_BF_1_P_IOTLB_INV_DSC_ADDR_SHIFT                     12
+#define VTD_BF_1_P_IOTLB_INV_DSC_ADDR_MASK                      UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_P_IOTLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (AM, IH, RSVD_11_7, ADDR));
+/** @} */
+
+
+/** @name Device-TLB Invalidate Descriptor (dev_tlb_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_TYPE_LO_SHIFT                  0
+#define VTD_BF_0_DEV_TLB_INV_DSC_TYPE_LO_MASK                   UINT64_C(0x000000000000000f)
+/** R: Reserved (bits 8:4). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_8_4_SHIFT                 4
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_8_4_MASK                  UINT64_C(0x00000000000001f0)
+/** Type (Hi). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_TYPE_HI_SHIFT                  9
+#define VTD_BF_0_DEV_TLB_INV_DSC_TYPE_HI_MASK                   UINT64_C(0x0000000000000e00)
+/** PFSID: Physical-Function Source Id (Lo). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_PFSID_LO_SHIFT                 12
+#define VTD_BF_0_DEV_TLB_INV_DSC_PFSID_LO_MASK                  UINT64_C(0x000000000000f000)
+/** MIP: Max Invalidations Pending. */
+#define VTD_BF_0_DEV_TLB_INV_DSC_MIP_SHIFT                      16
+#define VTD_BF_0_DEV_TLB_INV_DSC_MIP_MASK                       UINT64_C(0x00000000001f0000)
+/** R: Reserved (bits 31:21). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_31_21_SHIFT               21
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_31_21_MASK                UINT64_C(0x00000000ffe00000)
+/** SID: Source Id. */
+#define VTD_BF_0_DEV_TLB_INV_DSC_SID_SHIFT                      32
+#define VTD_BF_0_DEV_TLB_INV_DSC_SID_MASK                       UINT64_C(0x0000ffff00000000)
+/** R: Reserved (bits 51:48). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_51_48_SHIFT               48
+#define VTD_BF_0_DEV_TLB_INV_DSC_RSVD_51_48_MASK                UINT64_C(0x000f000000000000)
+/** PFSID: Physical-Function Source Id (Hi). */
+#define VTD_BF_0_DEV_TLB_INV_DSC_PFSID_HI_SHIFT                 52
+#define VTD_BF_0_DEV_TLB_INV_DSC_PFSID_HI_MASK                  UINT64_C(0xfff0000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_DEV_TLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, RSVD_8_4, TYPE_HI, PFSID_LO, MIP, RSVD_31_21, SID, RSVD_51_48, PFSID_HI));
+
+/** S: Size. */
+#define VTD_BF_1_DEV_TLB_INV_DSC_S_SHIFT                        0
+#define VTD_BF_1_DEV_TLB_INV_DSC_S_MASK                         UINT64_C(0x0000000000000001)
+/** R: Reserved (bits 11:1). */
+#define VTD_BF_1_DEV_TLB_INV_DSC_RSVD_11_1_SHIFT                1
+#define VTD_BF_1_DEV_TLB_INV_DSC_RSVD_11_1_MASK                 UINT64_C(0x0000000000000ffe)
+/** ADDR: Address. */
+#define VTD_BF_1_DEV_TLB_INV_DSC_ADDR_SHIFT                     12
+#define VTD_BF_1_DEV_TLB_INV_DSC_ADDR_MASK                      UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_DEV_TLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (S, RSVD_11_1, ADDR));
+/** @} */
+
+
+/** @name PASID-based-device-TLB Invalidate Descriptor (p_dev_tlb_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_TYPE_LO_SHIFT                0
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_TYPE_LO_MASK                 UINT64_C(0x000000000000000f)
+/** MIP: Max Invalidations Pending. */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_MIP_SHIFT                    4
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_MIP_MASK                     UINT64_C(0x00000000000001f0)
+/** Type (Hi). */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_TYPE_HI_SHIFT                9
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_TYPE_HI_MASK                 UINT64_C(0x0000000000000e00)
+/** PFSID: Physical-Function Source Id (Lo). */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PFSID_LO_SHIFT               12
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PFSID_LO_MASK                UINT64_C(0x000000000000f000)
+/** SID: Source Id. */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_SID_SHIFT                    16
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_SID_MASK                     UINT64_C(0x00000000ffff0000)
+/** PASID: Process Address-Space Id. */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PASID_SHIFT                  32
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PASID_MASK                   UINT64_C(0x000fffff00000000)
+/** PFSID: Physical-Function Source Id (Hi). */
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PFSID_HI_SHIFT               52
+#define VTD_BF_0_P_DEV_TLB_INV_DSC_PFSID_HI_MASK                UINT64_C(0xfff0000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_P_DEV_TLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, MIP, TYPE_HI, PFSID_LO, SID, PASID, PFSID_HI));
+
+/** G: Granularity. */
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_G_SHIFT                      0
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_G_MASK                       UINT64_C(0x0000000000000001)
+/** R: Reserved (bits 10:1). */
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_RSVD_10_1_SHIFT              1
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_RSVD_10_1_MASK               UINT64_C(0x00000000000007fe)
+/** S: Size. */
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_S_SHIFT                      11
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_S_MASK                       UINT64_C(0x0000000000000800)
+/** ADDR: Address. */
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_ADDR_SHIFT                   12
+#define VTD_BF_1_P_DEV_TLB_INV_DSC_ADDR_MASK                    UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_P_DEV_TLB_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (G, RSVD_10_1, S, ADDR));
+/** @} */
+
+
+/** @name Interrupt Entry Cache Invalidate Descriptor (iec_inv_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_IEC_INV_DSC_TYPE_LO_SHIFT                      0
+#define VTD_BF_0_IEC_INV_DSC_TYPE_LO_MASK                       UINT64_C(0x000000000000000f)
+/** G: Granularity. */
+#define VTD_BF_0_IEC_INV_DSC_G_SHIFT                            4
+#define VTD_BF_0_IEC_INV_DSC_G_MASK                             UINT64_C(0x0000000000000010)
+/** R: Reserved (bits 8:5). */
+#define VTD_BF_0_IEC_INV_DSC_RSVD_8_5_SHIFT                     5
+#define VTD_BF_0_IEC_INV_DSC_RSVD_8_5_MASK                      UINT64_C(0x00000000000001e0)
+/** Type (Hi). */
+#define VTD_BF_0_IEC_INV_DSC_TYPE_HI_SHIFT                      9
+#define VTD_BF_0_IEC_INV_DSC_TYPE_HI_MASK                       UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 26:12). */
+#define VTD_BF_0_IEC_INV_DSC_RSVD_26_12_SHIFT                   12
+#define VTD_BF_0_IEC_INV_DSC_RSVD_26_12_MASK                    UINT64_C(0x0000000007fff000)
+/** IM: Index Mask. */
+#define VTD_BF_0_IEC_INV_DSC_IM_SHIFT                           27
+#define VTD_BF_0_IEC_INV_DSC_IM_MASK                            UINT64_C(0x00000000f8000000)
+/** IIDX: Interrupt Index. */
+#define VTD_BF_0_IEC_INV_DSC_IIDX_SHIFT                         32
+#define VTD_BF_0_IEC_INV_DSC_IIDX_MASK                          UINT64_C(0x0000ffff00000000)
+/** R: Reserved (bits 63:48). */
+#define VTD_BF_0_IEC_INV_DSC_RSVD_63_48_SHIFT                   48
+#define VTD_BF_0_IEC_INV_DSC_RSVD_63_48_MASK                    UINT64_C(0xffff000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IEC_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, G, RSVD_8_5, TYPE_HI, RSVD_26_12, IM, IIDX, RSVD_63_48));
+/** @} */
+
+
+/** @name Invalidation Wait Descriptor (inv_wait_dsc).
+ * In accordance with the Intel spec.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_INV_WAIT_DSC_TYPE_LO_SHIFT                     0
+#define VTD_BF_0_INV_WAIT_DSC_TYPE_LO_MASK                      UINT64_C(0x000000000000000f)
+/** IF: Interrupt Flag. */
+#define VTD_BF_0_INV_WAIT_DSC_IF_SHIFT                          4
+#define VTD_BF_0_INV_WAIT_DSC_IF_MASK                           UINT64_C(0x0000000000000010)
+/** SW: Status Write. */
+#define VTD_BF_0_INV_WAIT_DSC_SW_SHIFT                          5
+#define VTD_BF_0_INV_WAIT_DSC_SW_MASK                           UINT64_C(0x0000000000000020)
+/** FN: Fence Flag. */
+#define VTD_BF_0_INV_WAIT_DSC_FN_SHIFT                          6
+#define VTD_BF_0_INV_WAIT_DSC_FN_MASK                           UINT64_C(0x0000000000000040)
+/** PD: Page-Request Drain. */
+#define VTD_BF_0_INV_WAIT_DSC_PD_SHIFT                          7
+#define VTD_BF_0_INV_WAIT_DSC_PD_MASK                           UINT64_C(0x0000000000000080)
+/** R: Reserved (bit 8). */
+#define VTD_BF_0_INV_WAIT_DSC_RSVD_8_SHIFT                      8
+#define VTD_BF_0_INV_WAIT_DSC_RSVD_8_MASK                       UINT64_C(0x0000000000000100)
+/** Type (Hi). */
+#define VTD_BF_0_INV_WAIT_DSC_TYPE_HI_SHIFT                     9
+#define VTD_BF_0_INV_WAIT_DSC_TYPE_HI_MASK                      UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 31:12). */
+#define VTD_BF_0_INV_WAIT_DSC_RSVD_31_12_SHIFT                  12
+#define VTD_BF_0_INV_WAIT_DSC_RSVD_31_12_MASK                   UINT64_C(0x00000000fffff000)
+/** STDATA: Status Data. */
+#define VTD_BF_0_INV_WAIT_DSC_STDATA_SHIFT                      32
+#define VTD_BF_0_INV_WAIT_DSC_STDATA_MASK                       UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, IF, SW, FN, PD, RSVD_8, TYPE_HI, RSVD_31_12, STDATA));
+
+/** R: Reserved (bits 1:0). */
+#define VTD_BF_1_INV_WAIT_DSC_RSVD_1_0_SHIFT                    0
+#define VTD_BF_1_INV_WAIT_DSC_RSVD_1_0_MASK                     UINT64_C(0x0000000000000003)
+/** STADDR: Status Address. */
+#define VTD_BF_1_INV_WAIT_DSC_STADDR_SHIFT                      2
+#define VTD_BF_1_INV_WAIT_DSC_STADDR_MASK                       UINT64_C(0xfffffffffffffffc)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
+                            (RSVD_1_0, STADDR));
+/** @} */
+
+
 /** @name ACPI_DMAR_F_XXX: DMA Remapping Reporting Structure Flags.
  * In accordance with the Intel spec.
  * @{ */
@@ -1928,3 +2261,4 @@ AssertCompileMemberOffset(ACPIDMARDEVSCOPE, Path,         6);
 
 
 #endif /* !VBOX_INCLUDED_iommu_intel_h */
+
