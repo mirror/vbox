@@ -239,10 +239,8 @@ typedef struct DRVAUDIO
 #endif
     /** Our audio connector interface. */
     PDMIAUDIOCONNECTOR      IAudioConnector;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /** Interface used by the host backend. */
     PDMIAUDIONOTIFYFROMHOST IAudioNotifyFromHost;
-#endif
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
@@ -3045,7 +3043,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 /*********************************************************************************************************************************
 *   PDMIAUDIONOTIFYFROMHOST interface implementation.                                                                            *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
 
 /**
  * Schedules a re-initialization of all current audio streams.
@@ -3085,8 +3082,6 @@ static DECLCALLBACK(void) drvAudioNotifyFromHost_NotifyDevicesChanged(PPDMIAUDIO
     drvAudioScheduleReInitInternal(pThis);
 }
 
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
-
 
 /*********************************************************************************************************************************
 *   PDMIBASE interface implementation.                                                                                           *
@@ -3104,9 +3099,7 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const c
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIONOTIFYFROMHOST, &pThis->IAudioNotifyFromHost);
-#endif
 
     return NULL;
 }
@@ -3574,10 +3567,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
     pThis->IAudioConnector.pfnStreamRead        = drvAudioStreamRead;
     pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /* IAudioNotifyFromHost */
     pThis->IAudioNotifyFromHost.pfnNotifyDevicesChanged = drvAudioNotifyFromHost_NotifyDevicesChanged;
-#endif
 
     /*
      * Statistics.
