@@ -124,7 +124,6 @@ public:
       * @param machine is machine reference. */
     UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
                          UIActionPool *pActionPool,bool fShowToolbar = false);
-    ~UIVMActivityMonitor();
     void setMachine(const CMachine &machine);
 
 #ifdef VBOX_WS_MAC
@@ -150,6 +149,7 @@ private slots:
     void sltMachineStateChange(const QUuid &uId);
     void sltExportMetricsToFile();
     void sltCreateContextMenu(const QPoint &point);
+    void sltClearCOMData();
 
 private:
 

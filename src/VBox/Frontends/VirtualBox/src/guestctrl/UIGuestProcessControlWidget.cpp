@@ -312,12 +312,6 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
     retranslateUi();
 }
 
-UIGuestProcessControlWidget::~UIGuestProcessControlWidget()
-{
-    saveSettings();
-    cleanupListener();
-}
-
 void UIGuestProcessControlWidget::retranslateUi()
 {
     if (m_pTreeWidget)
@@ -392,6 +386,11 @@ void UIGuestProcessControlWidget::prepareConnections()
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
                 this, &UIGuestProcessControlWidget::sltGuestSessionUnregistered);
     }
+
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIGuestProcessControlWidget::sltSaveSettings);
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
+            this, &UIGuestProcessControlWidget::sltCleanupListener);
 }
 
 void UIGuestProcessControlWidget::sltGuestSessionsUpdated()
@@ -513,24 +512,6 @@ void UIGuestProcessControlWidget::initGuestSessionTree()
     }
 }
 
-void UIGuestProcessControlWidget::cleanupListener()
-{
-    /* Unregister everything: */
-    m_pQtListener->getWrapped()->unregisterSources();
-
-    /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
-        return;
-
-    /* Get CProgress event source: */
-    CEventSource comEventSource = m_comGuest.GetEventSource();
-    AssertWrapperOk(comEventSource);
-
-    /* Unregister event listener for CProgress event source: */
-    comEventSource.UnregisterListener(m_comEventListener);
-}
-
-
 void UIGuestProcessControlWidget::sltGuestSessionRegistered(CGuestSession guestSession)
 {
     if (!guestSession.isOk())
@@ -575,11 +556,28 @@ void UIGuestProcessControlWidget::sltGuestSessionUnregistered(CGuestSession gues
         delete selectedItem;
 }
 
-void UIGuestProcessControlWidget::saveSettings()
+void UIGuestProcessControlWidget::sltSaveSettings()
 {
     if (!m_pSplitter)
         return;
     gEDataManager->setGuestControlProcessControlSplitterHints(m_pSplitter->sizes());
+}
+
+void UIGuestProcessControlWidget::sltCleanupListener()
+{
+    /* Unregister everything: */
+    m_pQtListener->getWrapped()->unregisterSources();
+
+    /* Make sure VBoxSVC is available: */
+    if (!uiCommon().isVBoxSVCAvailable())
+        return;
+
+    /* Get CProgress event source: */
+    CEventSource comEventSource = m_comGuest.GetEventSource();
+    //AssertWrapperOk(comEventSource);
+
+    /* Unregister event listener for CProgress event source: */
+    comEventSource.UnregisterListener(m_comEventListener);
 }
 
 void UIGuestProcessControlWidget::loadSettings()

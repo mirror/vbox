@@ -73,6 +73,7 @@ private slots:
     void suicide() { delete this; }
     /** Handles tab-widget page change. */
     void sltHandlePageChanged(int iIndex);
+    void sltSaveSettings();
 
 private:
 
@@ -90,11 +91,6 @@ private:
     void prepareButtonBox();
     /** Loads settings. */
     void loadSettings();
-
-    /** Saves settings. */
-    void saveSettings();
-    /** Cleanups all. */
-    void cleanup();
 
     /** @name General variables.
      * @{ */
@@ -116,4 +112,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIVMInformationDialog_h */
-

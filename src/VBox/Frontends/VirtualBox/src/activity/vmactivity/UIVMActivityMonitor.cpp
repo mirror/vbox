@@ -799,12 +799,8 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &UIVMActivityMonitor::customContextMenuRequested,
             this, &UIVMActivityMonitor::sltCreateContextMenu);
-}
-
-UIVMActivityMonitor::~UIVMActivityMonitor()
-{
-    if (!m_comSession.isNull())
-        m_comSession.UnlockMachine();
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
+            this, &UIVMActivityMonitor::sltClearCOMData);
 }
 
 void UIVMActivityMonitor::setMachine(const CMachine &comMachine)
@@ -1069,6 +1065,12 @@ void UIVMActivityMonitor::sltGuestAdditionsStateChange()
         return;
     m_fGuestAdditionsAvailable = fGuestAdditionsAvailable;
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+}
+
+void UIVMActivityMonitor::sltClearCOMData()
+{
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
 }
 
 void UIVMActivityMonitor::prepareMetrics()
