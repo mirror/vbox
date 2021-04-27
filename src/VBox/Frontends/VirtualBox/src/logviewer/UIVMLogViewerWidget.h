@@ -118,7 +118,7 @@ private slots:
     void sltSearchResultHighLigting();
     void sltHandleSearchUpdated();
     /** Handles the tab change of the logviewer. */
-    void sltTabIndexChange(int tabIndex);
+    void sltCurrentTabChanged(int tabIndex);
     /* if @a isOriginal true than the result of the filtering is equal to
        the original log file for some reason. */
     void sltFilterApplied(bool isOriginal);

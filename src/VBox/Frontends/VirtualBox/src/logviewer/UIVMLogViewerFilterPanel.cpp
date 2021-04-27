@@ -263,9 +263,8 @@ QString UIVMLogViewerFilterPanel::panelName() const
     return "FilterPanel";
 }
 
-void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
+void UIVMLogViewerFilterPanel::applyFilter()
 {
-    Q_UNUSED(iCurrentIndex);
     filter();
     retranslateUi();
 }
@@ -281,16 +280,6 @@ void UIVMLogViewerFilterPanel::filter()
     UIVMLogPage *logPage = viewer()->currentLogPage();
     if (!logPage)
         return;
-    /* Check if we have to reapply the filter. If not
-       restore line counts etc. and return */
-    // if (!logPage->shouldFilterBeApplied(m_filterTermSet, (int)m_eFilterOperatorButton))
-    // {
-    //     m_iFilteredLineCount = logPage->filteredLineCount();
-    //     m_iUnfilteredLineCount = logPage->unfilteredLineCount();
-    //     emit sigFilterApplied(!logPage->isFiltered() /* isOriginalLog */);
-    //     return;
-    // }
-
 
     const QString* originalLogString = logString();
     m_iUnfilteredLineCount = 0;
@@ -308,8 +297,6 @@ void UIVMLogViewerFilterPanel::filter()
         document->setPlainText(*originalLogString);
         emit sigFilterApplied(true /* isOriginalLog */);
         m_iFilteredLineCount = document->lineCount();
-        logPage->setFilterParameters(m_filterTermSet, (int)m_eFilterOperatorButton,
-                                     m_iFilteredLineCount, m_iUnfilteredLineCount);
         return;
     }
 
@@ -337,10 +324,11 @@ void UIVMLogViewerFilterPanel::filter()
     pCurrentTextEdit->setTextCursor(cursor);
 
     emit sigFilterApplied(false /* isOriginalLog */);
-    logPage->setFilterParameters(m_filterTermSet, (int)m_eFilterOperatorButton,
-                                 m_iFilteredLineCount, m_iUnfilteredLineCount);
 }
 
+void resetFiltering()
+{
+}
 
 bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
 {

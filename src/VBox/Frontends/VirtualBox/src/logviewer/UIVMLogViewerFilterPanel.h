@@ -60,9 +60,8 @@ public:
 
 public slots:
 
-    /** Applies filter settings and filters the current log-page.
-      * @param  iCurrentIndex  Specifies index of current log-page, but it is actually not used in the method. */
-    void applyFilter(const int iCurrentIndex = 0);
+    /** Applies filter settings and filters the current log-page. */
+    void applyFilter();
 
 protected:
 
@@ -96,6 +95,8 @@ private:
 
     bool applyFilterTermsToString(const QString& string);
     void filter();
+    /** Revert the document to original. */
+    void resetFiltering();
 
     QLabel              *m_pFilterLabel;
     QComboBox           *m_pFilterComboBox;

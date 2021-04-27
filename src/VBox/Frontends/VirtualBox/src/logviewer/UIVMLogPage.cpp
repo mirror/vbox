@@ -37,8 +37,6 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */)
     , m_pTextEdit(0)
     , m_iSelectedBookmarkIndex(-1)
     , m_bFiltered(false)
-    , m_iFilteredLineCount(-1)
-    , m_iUnfilteredLineCount(-1)
     , m_iLogFileId(-1)
 {
     prepare();
@@ -295,37 +293,6 @@ void UIVMLogPage::setWrapLines(bool bWrapLines)
     if (!m_pTextEdit)
         return;
     m_pTextEdit->setWrapLines(bWrapLines);
-}
-
-void UIVMLogPage::setFilterParameters(const QSet<QString> &filterTermSet, int filterOperationType,
-                                      int iFilteredLineCount, int iUnfilteredLineCount)
-{
-    m_filterTermSet = filterTermSet;
-    m_filterOperationType = filterOperationType;
-    m_iFilteredLineCount = iFilteredLineCount;
-    m_iUnfilteredLineCount = iUnfilteredLineCount;
-}
-
-int  UIVMLogPage::filteredLineCount() const
-{
-    return m_iFilteredLineCount;
-}
-
-int  UIVMLogPage::unfilteredLineCount() const
-{
-    return m_iUnfilteredLineCount;
-}
-
-bool UIVMLogPage::shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const
-{
-    /* If filter terms set is different reapply the filter. */
-    if (filterTermSet != m_filterTermSet)
-        return true;
-
-    /* If filter operation type set is different reapply the filter. */
-    if (filterOperationType != m_filterOperationType)
-        return true;
-    return false;
 }
 
 QFont UIVMLogPage::currentFont() const
