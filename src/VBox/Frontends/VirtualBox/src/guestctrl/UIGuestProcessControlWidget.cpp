@@ -574,7 +574,7 @@ void UIGuestProcessControlWidget::sltCleanupListener()
 
     /* Get CProgress event source: */
     CEventSource comEventSource = m_comGuest.GetEventSource();
-    //AssertWrapperOk(comEventSource);
+    AssertWrapperOk(comEventSource);
 
     /* Unregister event listener for CProgress event source: */
     comEventSource.UnregisterListener(m_comEventListener);
