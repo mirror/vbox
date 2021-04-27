@@ -865,6 +865,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pFileManagerDialog(0)
     , m_pProcessControlDialog(0)
     , m_pSoftKeyboardDialog(0)
+    , m_pVMInformationDialog(0)
 {
 }
 
@@ -1821,8 +1822,26 @@ void UIMachineLogic::sltShowInformationDialog()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Invoke VM information dialog: */
-    UIVMInformationDialog::invoke(activeMachineWindow());
+    if (m_pVMInformationDialog)
+        return;
+
+    m_pVMInformationDialog = new UIVMInformationDialog(activeMachineWindow());
+
+    if (m_pVMInformationDialog)
+    {
+        m_pVMInformationDialog->show();
+        m_pVMInformationDialog->raise();
+        m_pVMInformationDialog->setWindowState(m_pVMInformationDialog->windowState() & ~Qt::WindowMinimized);
+        m_pVMInformationDialog->activateWindow();
+        connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose,
+                this, &UIMachineLogic::sltCloseVMInformationDialog);
+    }
+}
+
+void UIMachineLogic::sltCloseVMInformationDialog()
+{
+    delete m_pVMInformationDialog;
+    m_pVMInformationDialog = 0;
 }
 
 void UIMachineLogic::sltShowFileManagerDialog()
@@ -1852,10 +1871,10 @@ void UIMachineLogic::sltShowFileManagerDialog()
 
 void UIMachineLogic::sltCloseFileManagerDialog()
 {
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pFileManagerDialog != pDialog || !pDialog)
+    if (!m_pFileManagerDialog)
         return;
 
+    QIManagerDialog* pDialog = m_pFileManagerDialog;
     /* Set the m_pFileManagerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pFileManagerDialog = 0;
     pDialog->close();
@@ -2788,6 +2807,8 @@ void UIMachineLogic::sltHandleCommitData()
     /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
 #endif
+    sltCloseFileManagerDialog();
+    sltCloseVMInformationDialog();
 }
 
 void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)

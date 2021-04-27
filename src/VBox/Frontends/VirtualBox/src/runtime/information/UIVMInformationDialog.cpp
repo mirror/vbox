@@ -57,44 +57,19 @@
 #include <iprt/time.h>
 
 
-/* static */
-UIVMInformationDialog *UIVMInformationDialog::s_pInstance = 0;
-
-void UIVMInformationDialog::invoke(UIMachineWindow *pMachineWindow)
-{
-    /* Make sure dialog instance exists: */
-    if (!s_pInstance)
-    {
-        /* Create new dialog instance if it doesn't exists yet: */
-        new UIVMInformationDialog(pMachineWindow);
-    }
-
-    /* Show dialog: */
-    s_pInstance->show();
-    /* Raise it: */
-    s_pInstance->raise();
-    /* De-miniaturize if necessary: */
-    s_pInstance->setWindowState(s_pInstance->windowState() & ~Qt::WindowMinimized);
-    /* And activate finally: */
-    s_pInstance->activateWindow();
-}
 
 UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
     : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
     , m_pTabWidget(0)
     , m_pMachineWindow(pMachineWindow)
 {
-    /* Initialize instance: */
-    s_pInstance = this;
-
     /* Prepare: */
     prepare();
 }
 
 UIVMInformationDialog::~UIVMInformationDialog()
 {
-    /* Deinitialize instance: */
-    s_pInstance = 0;
+    saveSettings();
 }
 
 bool UIVMInformationDialog::shouldBeMaximized() const
@@ -133,7 +108,7 @@ void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
     m_pTabWidget->widget(iIndex)->setFocus();
 }
 
-void UIVMInformationDialog::sltSaveSettings()
+void UIVMInformationDialog::saveSettings()
 {
     /* Save window geometry: */
     {
@@ -150,17 +125,10 @@ void UIVMInformationDialog::prepare()
     prepareThis();
     /* Load settings: */
     loadSettings();
-    connect(&uiCommon(), &UICommon::sigAskToCommitData,
-            this, &UIVMInformationDialog::sltSaveSettings);
 }
 
 void UIVMInformationDialog::prepareThis()
 {
-    /* Delete dialog on close: */
-    setAttribute(Qt::WA_DeleteOnClose);
-    /* Delete dialog on machine-window destruction: */
-    connect(m_pMachineWindow, &UIMachineWindow::destroyed, this, &UIVMInformationDialog::suicide);
-
 #ifdef VBOX_WS_MAC
     /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
@@ -273,7 +241,7 @@ void UIVMInformationDialog::prepareButtonBox()
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
         uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "vm-session-information");
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::close);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::sigClose);
         connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
                 &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
         /* add button-box into main-layout: */
