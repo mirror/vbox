@@ -300,9 +300,6 @@ typedef DRVAUDIO *PDRVAUDIO;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_AUDIO_ENUM
-static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum);
-#endif
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
@@ -327,9 +324,9 @@ static const char *dbgAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX
 {
     static const struct
     {
-        const char         *pszMnemonic;
-        uint32_t            cchMnemnonic;
-        uint32_t   fFlag;
+        const char *pszMnemonic;
+        uint32_t    cchMnemnonic;
+        uint32_t    fFlag;
     } s_aFlags[] =
     {
         { RT_STR_TUPLE("INITIALIZED "),     PDMAUDIOSTREAM_STS_INITIALIZED     },
@@ -363,132 +360,6 @@ static const char *dbgAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX
 
 # endif /* defined(LOG_ENABLED) */
 #endif /* !VBOX_AUDIO_TESTCASE */
-
-
-/**
- * Frees an audio stream and its allocated resources.
- *
- * @param   pStreamEx   Audio stream to free. After this call the pointer will
- *                      not be valid anymore.
- */
-static void drvAudioStreamFree(PDRVAUDIOSTREAM pStreamEx)
-{
-    if (pStreamEx)
-    {
-        LogFunc(("[%s]\n", pStreamEx->Core.szName));
-        Assert(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC);
-        Assert(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC);
-
-        pStreamEx->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
-        pStreamEx->pBackend       = NULL;
-        pStreamEx->uMagic         = DRVAUDIOSTREAM_MAGIC_DEAD;
-
-        RTMemFree(pStreamEx);
-    }
-}
-
-
-/**
- * Drops all audio data (and associated state) of a stream.
- *
- * @param   pThis       Pointer to driver instance.
- * @param   pStreamEx   Stream to drop data for.
- */
-static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
-{
-    RT_NOREF(pThis);
-
-    LogFunc(("[%s]\n", pStreamEx->Core.szName));
-
-    if (pStreamEx->fNoMixBufs)
-    {
-        AudioMixBufReset(&pStreamEx->Guest.MixBuf);
-        AudioMixBufReset(&pStreamEx->Host.MixBuf);
-    }
-
-    pStreamEx->fThresholdReached    = false;
-    pStreamEx->nsLastIterated       = 0;
-    pStreamEx->nsLastPlayedCaptured = 0;
-    pStreamEx->nsLastReadWritten    = 0;
-}
-
-
-/**
- * Resets the given audio stream.
- *
- * @param   pThis       Pointer to driver instance.
- * @param   pStreamEx   Stream to reset.
- */
-static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
-{
-    drvAudioStreamDropInternal(pThis, pStreamEx);
-
-    LogFunc(("[%s]\n", pStreamEx->Core.szName));
-
-    pStreamEx->Core.fStatus        = PDMAUDIOSTREAM_STS_INITIALIZED;
-    pStreamEx->Core.fWarningsShown = PDMAUDIOSTREAM_WARN_FLAGS_NONE;
-
-#ifdef VBOX_WITH_STATISTICS
-    /*
-     * Reset statistics.
-     */
-    if (pStreamEx->Core.enmDir == PDMAUDIODIR_IN)
-    {
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalFramesCaptured);
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesCaptured);
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesRead);
-    }
-    else if (pStreamEx->Core.enmDir == PDMAUDIODIR_OUT)
-    {
-    }
-    else
-        AssertFailed();
-#endif
-}
-
-
-/**
- * @callback_method_impl{FNTMTIMERDRV}
- */
-static DECLCALLBACK(void) drvAudioEmergencyIterateTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
-{
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    RT_NOREF(hTimer, pvUser);
-    RTCritSectEnter(&pThis->CritSect);
-
-    /*
-     * Iterate any stream with the pending-disable flag set.
-     */
-    uint32_t        cMilliesToNext = 0;
-    PDRVAUDIOSTREAM pStreamEx, pStreamExNext;
-    RTListForEachSafe(&pThis->lstStreams, pStreamEx, pStreamExNext, DRVAUDIOSTREAM, ListEntry)
-    {
-        if (   pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC
-            && pStreamEx->Core.cRefs >= 1)
-        {
-            if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE)
-            {
-                drvAudioStreamIterateInternal(pThis, pStreamEx);
-
-                if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE)
-                    cMilliesToNext = 10;
-            }
-        }
-    }
-
-    /*
-     * Re-arm the timer if we still got streams in the pending state.
-     */
-    if (cMilliesToNext)
-    {
-        pThis->fTimerArmed = true;
-        PDMDrvHlpTimerSetMillies(pDrvIns, pThis->hTimer, cMilliesToNext);
-    }
-    else
-        pThis->fTimerArmed = false;
-
-    RTCritSectLeave(&pThis->CritSect);
-}
 
 
 #ifdef VBOX_WITH_AUDIO_ENUM
@@ -563,67 +434,6 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
     return rc;
 }
 #endif /* VBOX_WITH_AUDIO_ENUM */
-
-/**
- * Initializes the host backend and queries its initial configuration.
- *
- * @returns VBox status code.
- * @param   pThis               Driver instance to be called.
- */
-static int drvAudioHostInit(PDRVAUDIO pThis)
-{
-    LogFlowFuncEnter();
-
-    /*
-     * Check the function pointers, make sure the ones we define as
-     * mandatory are present.
-     */
-    PPDMIHOSTAUDIO pHostDrvAudio = pThis->pHostDrvAudio;
-    AssertPtrReturn(pHostDrvAudio, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamConfigHint, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamGetReadable, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamGetWritable, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pHostDrvAudio->pfnStreamGetPending, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamGetStatus, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamPlay, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHostDrvAudio->pfnStreamCapture, VERR_INVALID_POINTER);
-
-    /*
-     * Get the backend configuration.
-     */
-    int rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("Audio: Getting configuration for driver '%s' failed with %Rrc\n", pThis->szName, rc));
-        return VERR_AUDIO_BACKEND_INIT_FAILED;
-    }
-
-    pThis->In.cStreamsFree  = pThis->BackendCfg.cMaxStreamsIn;
-    pThis->Out.cStreamsFree = pThis->BackendCfg.cMaxStreamsOut;
-
-    LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
-
-    LogRel2(("Audio: Host driver '%s' supports %RU32 input streams and %RU32 output streams at once.\n",
-             pThis->szName, pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
-
-#ifdef VBOX_WITH_AUDIO_ENUM
-    int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
-    if (rc2 != VERR_NOT_SUPPORTED) /* Some backends don't implement device enumeration. */
-        AssertRC(rc2);
-
-    RT_NOREF(rc2);
-    /* Ignore rc. */
-#endif
-
-    LogFlowFuncLeave();
-    return VINF_SUCCESS;
-}
 
 
 /*********************************************************************************************************************************
@@ -777,6 +587,29 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
     RTCritSectLeave(&pThis->CritSect);
     LogFlowFunc(("LEAVE - %#x\n", fBackendStatus));
     return fBackendStatus;
+}
+
+
+/**
+ * Frees an audio stream and its allocated resources.
+ *
+ * @param   pStreamEx   Audio stream to free. After this call the pointer will
+ *                      not be valid anymore.
+ */
+static void drvAudioStreamFree(PDRVAUDIOSTREAM pStreamEx)
+{
+    if (pStreamEx)
+    {
+        LogFunc(("[%s]\n", pStreamEx->Core.szName));
+        Assert(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC);
+        Assert(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC);
+
+        pStreamEx->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
+        pStreamEx->pBackend       = NULL;
+        pStreamEx->uMagic         = DRVAUDIOSTREAM_MAGIC_DEAD;
+
+        RTMemFree(pStreamEx);
+    }
 }
 
 
@@ -1638,6 +1471,34 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
 
 
 /**
+ * Drops all audio data (and associated state) of a stream.
+ *
+ * Used by drvAudioStreamIterateInternal(), drvAudioStreamResetInternal(), and
+ * drvAudioStreamReInitInternal().
+ *
+ * @param   pThis       Pointer to driver instance.
+ * @param   pStreamEx   Stream to drop data for.
+ */
+static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    RT_NOREF(pThis);
+
+    LogFunc(("[%s]\n", pStreamEx->Core.szName));
+
+    if (pStreamEx->fNoMixBufs)
+    {
+        AudioMixBufReset(&pStreamEx->Guest.MixBuf);
+        AudioMixBufReset(&pStreamEx->Host.MixBuf);
+    }
+
+    pStreamEx->fThresholdReached    = false;
+    pStreamEx->nsLastIterated       = 0;
+    pStreamEx->nsLastPlayedCaptured = 0;
+    pStreamEx->nsLastReadWritten    = 0;
+}
+
+
+/**
  * Re-initializes an audio stream with its existing host and guest stream
  * configuration.
  *
@@ -1931,6 +1792,85 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
 
     return rc;
 }
+
+
+/**
+ * Resets the given audio stream.
+ *
+ * @param   pThis       Pointer to driver instance.
+ * @param   pStreamEx   Stream to reset.
+ */
+static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    drvAudioStreamDropInternal(pThis, pStreamEx);
+
+    LogFunc(("[%s]\n", pStreamEx->Core.szName));
+
+    pStreamEx->Core.fStatus        = PDMAUDIOSTREAM_STS_INITIALIZED;
+    pStreamEx->Core.fWarningsShown = PDMAUDIOSTREAM_WARN_FLAGS_NONE;
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Reset statistics.
+     */
+    if (pStreamEx->Core.enmDir == PDMAUDIODIR_IN)
+    {
+        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalFramesCaptured);
+        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesCaptured);
+        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesRead);
+    }
+    else if (pStreamEx->Core.enmDir == PDMAUDIODIR_OUT)
+    {
+    }
+    else
+        AssertFailed();
+#endif
+}
+
+
+/**
+ * @callback_method_impl{FNTMTIMERDRV}
+ */
+static DECLCALLBACK(void) drvAudioEmergencyIterateTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    RT_NOREF(hTimer, pvUser);
+    RTCritSectEnter(&pThis->CritSect);
+
+    /*
+     * Iterate any stream with the pending-disable flag set.
+     */
+    uint32_t        cMilliesToNext = 0;
+    PDRVAUDIOSTREAM pStreamEx, pStreamExNext;
+    RTListForEachSafe(&pThis->lstStreams, pStreamEx, pStreamExNext, DRVAUDIOSTREAM, ListEntry)
+    {
+        if (   pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC
+            && pStreamEx->Core.cRefs >= 1)
+        {
+            if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE)
+            {
+                drvAudioStreamIterateInternal(pThis, pStreamEx);
+
+                if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE)
+                    cMilliesToNext = 10;
+            }
+        }
+    }
+
+    /*
+     * Re-arm the timer if we still got streams in the pending state.
+     */
+    if (cMilliesToNext)
+    {
+        pThis->fTimerArmed = true;
+        PDMDrvHlpTimerSetMillies(pDrvIns, pThis->hTimer, cMilliesToNext);
+    }
+    else
+        pThis->fTimerArmed = false;
+
+    RTCritSectLeave(&pThis->CritSect);
+}
+
 
 /**
  * Controls an audio stream.
@@ -3161,6 +3101,68 @@ static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
     pThis->pHostDrvAudio = NULL;
 
     RTCritSectLeave(&pThis->CritSect);
+}
+
+
+/**
+ * Initializes the host backend and queries its initial configuration.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Driver instance to be called.
+ */
+static int drvAudioHostInit(PDRVAUDIO pThis)
+{
+    LogFlowFuncEnter();
+
+    /*
+     * Check the function pointers, make sure the ones we define as
+     * mandatory are present.
+     */
+    PPDMIHOSTAUDIO pHostDrvAudio = pThis->pHostDrvAudio;
+    AssertPtrReturn(pHostDrvAudio, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamConfigHint, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetReadable, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetWritable, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamGetPending, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamGetStatus, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamPlay, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostDrvAudio->pfnStreamCapture, VERR_INVALID_POINTER);
+
+    /*
+     * Get the backend configuration.
+     */
+    int rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Audio: Getting configuration for driver '%s' failed with %Rrc\n", pThis->szName, rc));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
+    pThis->In.cStreamsFree  = pThis->BackendCfg.cMaxStreamsIn;
+    pThis->Out.cStreamsFree = pThis->BackendCfg.cMaxStreamsOut;
+
+    LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
+
+    LogRel2(("Audio: Host driver '%s' supports %RU32 input streams and %RU32 output streams at once.\n",
+             pThis->szName, pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
+
+#ifdef VBOX_WITH_AUDIO_ENUM
+    int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+    if (rc2 != VERR_NOT_SUPPORTED) /* Some backends don't implement device enumeration. */
+        AssertRC(rc2);
+
+    RT_NOREF(rc2);
+    /* Ignore rc. */
+#endif
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
 }
 
 
