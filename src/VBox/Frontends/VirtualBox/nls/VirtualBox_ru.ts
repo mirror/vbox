@@ -13726,7 +13726,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
-        <translation>Если галочка стоит, виртуальной машине будут достыпны расширенные функции вложенной аппаратной виртуализации процессора хоста, такие как Intel VT-x или AMD-V.</translation>
+        <translation>Если галочка стоит, виртуальной машине будут доступны расширенные функции вложенной аппаратной виртуализации процессора хоста, такие как Intel VT-x или AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
