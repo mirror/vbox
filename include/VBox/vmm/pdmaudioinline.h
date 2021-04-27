@@ -425,12 +425,8 @@ DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
  */
 DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
 {
-    AssertReturn(fStatus & PDMAUDIOSTREAM_STS_VALID_MASK, false);
-    /*
-    return      fStatus & PDMAUDIOSTREAM_STS_INITIALIZED
-           &&   fStatus & PDMAUDIOSTREAM_STS_ENABLED
-           && !(fStatus & PDMAUDIOSTREAM_STS_PAUSED)
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
     return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
                        | PDMAUDIOSTREAM_STS_ENABLED
                        | PDMAUDIOSTREAM_STS_PAUSED
@@ -447,13 +443,8 @@ DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
  */
 DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
 {
-    AssertReturn(fStatus & PDMAUDIOSTREAM_STS_VALID_MASK, false);
-    /*
-    return      fStatus & PDMAUDIOSTREAM_STS_INITIALIZED
-           &&   fStatus & PDMAUDIOSTREAM_STS_ENABLED
-           && !(fStatus & PDMAUDIOSTREAM_STS_PAUSED)
-           && !(fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE)
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
     return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
                        | PDMAUDIOSTREAM_STS_ENABLED
                        | PDMAUDIOSTREAM_STS_PAUSED
@@ -471,11 +462,8 @@ DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
  */
 DECLINLINE(bool) PDMAudioStrmStatusIsReady(uint32_t fStatus)
 {
-    AssertReturn(fStatus & PDMAUDIOSTREAM_STS_VALID_MASK, false);
-    /*
-    return      fStatus & PDMAUDIOSTREAM_STS_INITIALIZED
-           &&   fStatus & PDMAUDIOSTREAM_STS_ENABLED
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
     return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
                        | PDMAUDIOSTREAM_STS_ENABLED
                        | PDMAUDIOSTREAM_STS_NEED_REINIT))

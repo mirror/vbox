@@ -903,26 +903,32 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
  * @{ */
 /** No flags being set. */
 #define PDMAUDIOSTREAM_STS_NONE             UINT32_C(0)
-/** Whether this stream has been initialized by the backend or not. */
+/** Set if the backend for the stream has been initialized.
+ * This is generally always set after stream creation, but can be cleared if the
+ * re-initialization of the stream fails later on. */
 #define PDMAUDIOSTREAM_STS_INITIALIZED      RT_BIT_32(0)
-/** Whether this stream is enabled or disabled. */
+/** Set if the stream is enabled, clear if disabled. */
 #define PDMAUDIOSTREAM_STS_ENABLED          RT_BIT_32(1)
-/** Whether this stream has been paused or not. This also implies
- *  that this is an enabled stream! */
+/** Set if the stream is paused.
+ * Requires enabled status to be set when used. */
 #define PDMAUDIOSTREAM_STS_PAUSED           RT_BIT_32(2)
-/** Indicates that the stream is draining (output only).
- *  Whether this stream was marked as being disabled
- *  but there are still associated guest output streams
- *  which rely on its data. */
+/** Output only: Set when the stream is draining.
+ * Requires the enabled status to be set when used. */
 #define PDMAUDIOSTREAM_STS_PENDING_DISABLE  RT_BIT_32(3)
-/** Whether this stream is in re-initialization phase and requires the device
- *  to call pfnStreamReInit.
- *
- *  All other bits remain untouched to be able to restore the stream's state
- *  after the re-initialization has been completed. */
+/** Set if the stream needs to be re-initialized by the device (i.e. call
+ * PDMIAUDIOCONNECTOR::pfnStreamReInit).
+ * (The other status bits are preserved and are worked as normal while in this
+ * state, so that the stream can resume operation where it left off.)
+ * @note This is not appropriate for PDMIHOSTAUDIO::pfnStreamGetStatus.  */
 #define PDMAUDIOSTREAM_STS_NEED_REINIT      RT_BIT_32(4)
 /** Validation mask. */
 #define PDMAUDIOSTREAM_STS_VALID_MASK       UINT32_C(0x0000001f)
+/** Asserts the validity of the given stream status mask.   */
+#define PDMAUDIOSTREAM_STS_ASSERT_VALID(a_fStreamStatus) do { \
+        AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK), ("%#x\n", (a_fStreamStatus))); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+    } while (0)
 /** @} */
 
 /**
