@@ -54,7 +54,6 @@ public:
     UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
     /** Resets the search position and starts a new search. */
     void refresh();
-    void reset();
     const QVector<float> &matchLocationVector() const;
     virtual QString panelName() const /* override */;
     /** Returns the number of the matches to the current search. */
@@ -103,6 +102,8 @@ private:
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection) const;
     /** Searches the whole document and return the number of matches to the current search term. */
     int countMatches(QTextDocument *pDocument, const QString &searchString) const;
+    void reset();
+
     /** Holds the instance of search-editor we create. */
     UISearchLineEdit *m_pSearchEditor;
 

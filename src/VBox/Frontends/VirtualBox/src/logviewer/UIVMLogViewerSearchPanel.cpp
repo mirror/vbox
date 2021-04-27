@@ -57,7 +57,11 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
 void UIVMLogViewerSearchPanel::refresh()
 {
     /* We start the search from the end of the doc. assuming log's end is more interesting: */
-    performSearch(BackwardSearch, true);
+    if (isVisible())
+        performSearch(BackwardSearch, true);
+    else
+        reset();
+
     emit sigHighlightingUpdated();
 }
 
@@ -68,6 +72,7 @@ void UIVMLogViewerSearchPanel::reset()
     m_matchedCursorPosition.clear();
     if (m_pSearchEditor)
         m_pSearchEditor->reset();
+    emit sigHighlightingUpdated();
 }
 
 const QVector<float> &UIVMLogViewerSearchPanel::matchLocationVector() const

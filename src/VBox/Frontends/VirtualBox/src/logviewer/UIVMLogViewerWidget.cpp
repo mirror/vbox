@@ -416,7 +416,7 @@ void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
 void UIVMLogViewerWidget::sltFilterApplied()
 {
     /* Reapply the search to get highlighting etc. correctly */
-    if (m_pSearchPanel && m_pSearchPanel->isVisible())
+    if (m_pSearchPanel)
         m_pSearchPanel->refresh();
 }
 
