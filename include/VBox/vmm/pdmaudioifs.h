@@ -899,6 +899,7 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
 
 
 /** @name PDMAUDIOSTREAM_STS_XXX
+ * @sa PDMIAUDIOCONNECTOR::pfnStreamGetStatus, PDMIHOSTAUDIO::pfnStreamGetStatus
  * @{ */
 /** No flags being set. */
 #define PDMAUDIOSTREAM_STS_NONE             UINT32_C(0)
@@ -921,9 +922,7 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
  *  after the re-initialization has been completed. */
 #define PDMAUDIOSTREAM_STS_NEED_REINIT      RT_BIT_32(4)
 /** Validation mask. */
-#define PDMAUDIOSTREAM_STS_VALID_MASK       UINT32_C(0x0000001F)
-/** Stream status flag, PDMAUDIOSTREAM_STS_XXX. */
-typedef uint32_t uint32_t;
+#define PDMAUDIOSTREAM_STS_VALID_MASK       UINT32_C(0x0000001f)
 /** @} */
 
 /**
@@ -1157,7 +1156,7 @@ typedef struct PDMIAUDIOCONNECTOR
     /**
      * Returns the status of a specific audio stream.
      *
-     * @returns Audio stream status
+     * @returns PDMAUDIOSTREAM_STS_XXX
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
@@ -1374,7 +1373,7 @@ typedef struct PDMIHOSTAUDIO
     /**
      * Returns the current status of the given backend stream.
      *
-     * @returns uint32_t
+     * @returns PDMAUDIOSTREAM_STS_XXX
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */

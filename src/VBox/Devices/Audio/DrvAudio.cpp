@@ -2071,8 +2071,7 @@ static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface,
 
 
 /**
- * The no-mixing-buffers worker for drvAudioStreamWrite and
- * drvAudioStreamIterateInternal.
+ * Worker for drvAudioStreamPlay() and drvAudioStreamIterateInternal().
  *
  * The buffer is NULL and has a zero length when called from the interate
  * function.  This only occures when there is pre-buffered audio data that need
@@ -2080,10 +2079,11 @@ static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface,
  *
  * Caller owns the lock.
  */
-static int drvAudioStreamWriteNoMixBufs(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
-                                        const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, uint32_t fBackStatus,
+                                    const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    Log3Func(("%s: @%#RX64: cbBuf=%#x\n", pStreamEx->Core.szName, pStreamEx->offInternal, cbBuf));
+    Log3Func(("%s: @%#RX64: cbBuf=%#x fBackStatus=%#x\n", pStreamEx->Core.szName, pStreamEx->offInternal, cbBuf, fBackStatus));
+    RT_NOREF(fBackStatus);
 
     /*
      * Are we pre-buffering?
@@ -2292,8 +2292,8 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
     else
     {
         AssertReturn(pStreamEx->Core.enmDir == PDMAUDIODIR_OUT, VINF_SUCCESS);
-        /** @todo Add a timeout to these proceedings.  A few that of the reported buffer
-         *        size. */
+        /** @todo Add a timeout to these proceedings.  A few times that of the reported
+         *        buffer size or something like that. */
 
         /*
          * Check if we have any data we need to write to the backend, try
@@ -2311,7 +2311,9 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
         if (cFramesLive > 0)
         {
             uint32_t cbIgnored = 0;
-            drvAudioStreamWriteNoMixBufs(pThis, pStreamEx, NULL, 0, &cbIgnored);
+            drvAudioStreamPlayLocked(pThis, pStreamEx,
+                                     pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend),
+                                     NULL, 0, &cbIgnored);
             cFramesLive = PDMAudioPropsBytesToFrames(&pStreamEx->Core.Props, pStreamEx->Out.cbPreBuffered);
         }
         Log3Func(("[%s] cFramesLive=%RU32\n", pStreamEx->Core.szName, cFramesLive));
@@ -2633,28 +2635,27 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
      */
     if (PDMAudioStrmStatusIsReady(pStreamEx->Core.fStatus))
     {
-        if (   !pThis->Out.fEnabled         /* (see @bugref{9882}) */
-            || pThis->pHostDrvAudio == NULL /* (we used to work this condition differently) */
-            || !PDMAudioStrmStatusCanWrite(pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend)))
-        {
-            Log3Func(("[%s] Backend stream %s, discarding the data\n", pStreamEx->Core.szName,
-                      !pThis->Out.fEnabled ? "disabled" : !pThis->pHostDrvAudio ? "not attached" : "not ready yet"));
-            *pcbWritten = cbBuf;
-            pStreamEx->offInternal += cbBuf;
-        }
-        /*
-         * No-mixing buffer mode:  Write the data directly to the backend, unless
-         * we're prebuffering.  There will be no pfnStreamPlay call in this mode.
-         */
-        else
+        uint32_t fBackStatus;
+        if (   pThis->Out.fEnabled /* (see @bugref{9882}) */
+            && pThis->pHostDrvAudio != NULL
+            && PDMAudioStrmStatusCanWrite((fBackStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio,
+                                                                                                  pStreamEx->pBackend))))
         {
             uint64_t offInternalBefore = pStreamEx->offInternal; RT_NOREF(offInternalBefore);
-            rc = drvAudioStreamWriteNoMixBufs(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+            rc = drvAudioStreamPlayLocked(pThis, pStreamEx, fBackStatus, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
             Assert(offInternalBefore + *pcbWritten == pStreamEx->offInternal);
             if (!pThis->Out.Cfg.Dbg.fEnabled || RT_FAILURE(rc))
             { /* likely */ }
             else
                 AudioHlpFileWrite(pStreamEx->Out.Dbg.pFilePlayNonInterleaved, pvBuf, *pcbWritten, 0 /* fFlags */);
+
+        }
+        else
+        {
+            Log3Func(("[%s] Backend stream %s, discarding the data\n", pStreamEx->Core.szName,
+                      !pThis->Out.fEnabled ? "disabled" : !pThis->pHostDrvAudio ? "not attached" : "not ready yet"));
+            *pcbWritten = cbBuf;
+            pStreamEx->offInternal += cbBuf;
         }
     }
     else
