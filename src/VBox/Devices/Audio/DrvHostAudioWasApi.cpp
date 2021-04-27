@@ -2080,19 +2080,19 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetPending(PPDMIHOSTAUDIO 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAudioWasHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
-    AssertPtrReturn(pStreamWas, PDMAUDIOSTREAMSTS_FLAGS_NONE);
+    AssertPtrReturn(pStreamWas, PDMAUDIOSTREAM_STS_NONE);
 
-    PDMAUDIOSTREAMSTS fStrmStatus = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
+    uint32_t fStrmStatus = PDMAUDIOSTREAM_STS_INITIALIZED;
     if (pStreamWas->fEnabled)
-        fStrmStatus |= PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
+        fStrmStatus |= PDMAUDIOSTREAM_STS_ENABLED;
     if (pStreamWas->fDraining)
-        fStrmStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE;
+        fStrmStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
     if (pStreamWas->fRestartOnResume)
-        fStrmStatus |= PDMAUDIOSTREAMSTS_FLAGS_PAUSED;
+        fStrmStatus |= PDMAUDIOSTREAM_STS_PAUSED;
 
     LogFlowFunc(("returns %#x for '%s' {%s}\n", fStrmStatus, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
     return fStrmStatus;

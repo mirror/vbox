@@ -530,15 +530,14 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pI
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioVrdeHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     RT_NOREF(pStream);
 
-    PDMAUDIOSTREAMSTS fStrmStatus = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
-
+    uint32_t fStrmStatus = PDMAUDIOSTREAM_STS_INITIALIZED;
     if (pDrv->cClients) /* If any clients are connected, flag the stream as enabled. */
-       fStrmStatus |= PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
+       fStrmStatus |= PDMAUDIOSTREAM_STS_ENABLED;
 
     return fStrmStatus;
 }

@@ -898,32 +898,32 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
 #define PDMAUDIO_VOLUME_MAX     (255)
 
 
-/** @name PDMAUDIOSTREAMSTS_FLAGS_XXX
+/** @name PDMAUDIOSTREAM_STS_XXX
  * @{ */
 /** No flags being set. */
-#define PDMAUDIOSTREAMSTS_FLAGS_NONE            UINT32_C(0)
+#define PDMAUDIOSTREAM_STS_NONE             UINT32_C(0)
 /** Whether this stream has been initialized by the backend or not. */
-#define PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED     RT_BIT_32(0)
+#define PDMAUDIOSTREAM_STS_INITIALIZED      RT_BIT_32(0)
 /** Whether this stream is enabled or disabled. */
-#define PDMAUDIOSTREAMSTS_FLAGS_ENABLED         RT_BIT_32(1)
+#define PDMAUDIOSTREAM_STS_ENABLED          RT_BIT_32(1)
 /** Whether this stream has been paused or not. This also implies
  *  that this is an enabled stream! */
-#define PDMAUDIOSTREAMSTS_FLAGS_PAUSED          RT_BIT_32(2)
+#define PDMAUDIOSTREAM_STS_PAUSED           RT_BIT_32(2)
 /** Indicates that the stream is draining (output only).
  *  Whether this stream was marked as being disabled
  *  but there are still associated guest output streams
  *  which rely on its data. */
-#define PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE RT_BIT_32(3)
+#define PDMAUDIOSTREAM_STS_PENDING_DISABLE  RT_BIT_32(3)
 /** Whether this stream is in re-initialization phase and requires the device
  *  to call pfnStreamReInit.
  *
  *  All other bits remain untouched to be able to restore the stream's state
  *  after the re-initialization has been completed. */
-#define PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT     RT_BIT_32(4)
+#define PDMAUDIOSTREAM_STS_NEED_REINIT      RT_BIT_32(4)
 /** Validation mask. */
-#define PDMAUDIOSTREAMSTS_VALID_MASK            UINT32_C(0x0000001F)
-/** Stream status flag, PDMAUDIOSTREAMSTS_FLAGS_XXX. */
-typedef uint32_t PDMAUDIOSTREAMSTS;
+#define PDMAUDIOSTREAM_STS_VALID_MASK       UINT32_C(0x0000001F)
+/** Stream status flag, PDMAUDIOSTREAM_STS_XXX. */
+typedef uint32_t uint32_t;
 /** @} */
 
 /**
@@ -974,7 +974,7 @@ typedef struct PDMAUDIOSTREAM
      *  Only can be destroyed when the reference count reaches 0. */
     uint32_t volatile       cRefs;
     /** Stream status flag. */
-    PDMAUDIOSTREAMSTS       fStatus;
+    uint32_t       fStatus;
     /** Audio direction of this stream. */
     PDMAUDIODIR             enmDir;
     /** Size (in bytes) of the backend-specific stream data. */
@@ -1091,7 +1091,7 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Re-initializes the stream in response to PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT.
+     * Re-initializes the stream in response to PDMAUDIOSTREAM_STS_NEED_REINIT.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to this interface.
@@ -1161,7 +1161,7 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTS, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Sets the audio volume of a specific audio stream.
@@ -1374,11 +1374,11 @@ typedef struct PDMIHOSTAUDIO
     /**
      * Returns the current status of the given backend stream.
      *
-     * @returns PDMAUDIOSTREAMSTS
+     * @returns uint32_t
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Plays (writes to) an audio (output) stream.

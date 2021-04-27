@@ -1548,7 +1548,7 @@ static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetWritable(PPDMIHOSTAUDIO 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAudioPaHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     PDRVHOSTPULSEAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
     RT_NOREF(pStream);
@@ -1560,13 +1560,13 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAudioPaHA_StreamGetStatus(PPDMIHOS
         if (PA_CONTEXT_IS_GOOD(enmState))
         {
             /** @todo should we check the actual stream state? */
-            return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
+            return PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED;
         }
         LogFunc(("non-good context state: %d\n", enmState));
     }
     else
         LogFunc(("No context!\n"));
-    return PDMAUDIOSTREAMSTS_FLAGS_NONE;
+    return PDMAUDIOSTREAM_STS_NONE;
 }
 
 

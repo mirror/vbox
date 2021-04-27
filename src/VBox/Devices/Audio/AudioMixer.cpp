@@ -1733,8 +1733,8 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink)
         {
             if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
             {
-                PDMAUDIOSTREAMSTS const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
-                if (fSts & (PDMAUDIOSTREAMSTS_FLAGS_ENABLED | PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
+                uint32_t const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
+                if (fSts & (PDMAUDIOSTREAM_STS_ENABLED | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
                     cStreamsDisabled--;
             }
         }
@@ -1898,8 +1898,8 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         {
             if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
             {
-                PDMAUDIOSTREAMSTS const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
-                if (fSts & (PDMAUDIOSTREAMSTS_FLAGS_ENABLED | PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
+                uint32_t const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
+                if (fSts & (PDMAUDIOSTREAM_STS_ENABLED | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
                     cStreamsDisabled--;
             }
         }
@@ -2102,7 +2102,7 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
          * Do re-init if needed and fetch the status again afterwards.
          */
         uint32_t fStreamStatus = pConn->pfnStreamGetStatus(pConn, pStream);
-        if (!(fStreamStatus & PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT))
+        if (!(fStreamStatus & PDMAUDIOSTREAM_STS_NEED_REINIT))
         { /* likely */ }
         else
         {
@@ -2278,10 +2278,8 @@ bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
 
     if (   pMixStream->pConn
         && pMixStream->pStream
-        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAGS_ENABLED))
-    {
+        && (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAM_STS_ENABLED))
         fIsActive = true;
-    }
     else
         fIsActive = false;
 
@@ -2310,10 +2308,8 @@ bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)
 
     if (   pMixStream->pConn
         && pMixStream->pStream
-        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED))
-    {
+        && (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAM_STS_INITIALIZED))
         fIsValid = true;
-    }
     else
         fIsValid = false;
 
