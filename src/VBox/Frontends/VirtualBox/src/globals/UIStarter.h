@@ -59,9 +59,6 @@ private slots:
     /** Closes corresponding part of the UI. */
     void sltCloseUI();
 
-    /** Handles commit data request. */
-    void sltHandleCommitDataRequest();
-
 private:
 
     /** Holds the singleton UI starter instance. */

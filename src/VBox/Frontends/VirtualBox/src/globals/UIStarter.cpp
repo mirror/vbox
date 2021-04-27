@@ -75,8 +75,6 @@ void UIStarter::init()
             this, &UIStarter::sltRestartUI);
     connect(&uiCommon(), &UICommon::sigAskToCloseUI,
             this, &UIStarter::sltCloseUI);
-    connect(&uiCommon(), &UICommon::sigAskToCommitData,
-            this, &UIStarter::sltHandleCommitDataRequest);
 }
 
 void UIStarter::deinit()
@@ -86,8 +84,6 @@ void UIStarter::deinit()
                this, &UIStarter::sltRestartUI);
     disconnect(&uiCommon(), &UICommon::sigAskToCloseUI,
                this, &UIStarter::sltCloseUI);
-    disconnect(&uiCommon(), &UICommon::sigAskToCommitData,
-               this, &UIStarter::sltHandleCommitDataRequest);
 }
 
 void UIStarter::sltStartUI()
@@ -156,19 +152,5 @@ void UIStarter::sltCloseUI()
     /* Destroy Runtime UI: */
     if (gpMachine)
         UIMachine::destroy();
-#endif
-}
-
-void UIStarter::sltHandleCommitDataRequest()
-{
-    /* Exit if UICommon is not valid: */
-    if (!uiCommon().isValid())
-        return;
-
-#ifdef VBOX_RUNTIME_UI
-    /* Only for the case when we have this request
-     * earlier than the usual cleanup started: */
-    if (!UICommon::isCleaningUp())
-        gpMachine->uisession()->saveState();
 #endif
 }
