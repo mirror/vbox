@@ -3855,7 +3855,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     pHlp->pfnPrintf(pHlp, "%s#%d: %s ",
                     pDevIns->pReg->szName,
                     pDevIns->iInstance,
-                    pThis->uDevType >= RT_ELEMENTS(apszModels) ? "Uknown model" : apszModels[pThis->uDevType]);
+                    pThis->uDevType >= RT_ELEMENTS(apszModels) ? "Unknown model" : apszModels[pThis->uDevType]);
     if (pThis->uIsaIrq)
         pHlp->pfnPrintf(pHlp, "ISA I/O=%RTiop IRQ=%u ",
                         pThis->IOISABase,
