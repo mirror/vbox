@@ -101,6 +101,8 @@ public:
     void setLogFileId(int iLogFileId);
     int logFileId() const;
 
+    void scrollToEnd();
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);

@@ -327,3 +327,9 @@ int UIVMLogPage::logFileId() const
 {
     return m_iLogFileId;
 }
+
+void UIVMLogPage::scrollToEnd()
+{
+    if (m_pTextEdit)
+        m_pTextEdit->scrollToEnd();
+}

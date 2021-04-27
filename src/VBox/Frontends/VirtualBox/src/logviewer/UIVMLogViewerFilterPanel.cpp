@@ -265,7 +265,10 @@ QString UIVMLogViewerFilterPanel::panelName() const
 
 void UIVMLogViewerFilterPanel::applyFilter()
 {
-    filter();
+    if (isVisible())
+        filter();
+    else
+        resetFiltering();
     retranslateUi();
 }
 
@@ -293,12 +296,7 @@ void UIVMLogViewerFilterPanel::filter()
     m_iUnfilteredLineCount = stringLines.size();
 
     if (m_filterTermSet.empty())
-    {
-        document->setPlainText(*originalLogString);
-        emit sigFilterApplied(true /* isOriginalLog */);
-        m_iFilteredLineCount = document->lineCount();
-        return;
-    }
+        resetFiltering();
 
     /* Prepare filter-data: */
     QString strFilteredText;
@@ -324,10 +322,20 @@ void UIVMLogViewerFilterPanel::filter()
     pCurrentTextEdit->setTextCursor(cursor);
 
     emit sigFilterApplied(false /* isOriginalLog */);
+    logPage->scrollToEnd();
 }
 
-void resetFiltering()
+void UIVMLogViewerFilterPanel::resetFiltering()
 {
+    UIVMLogPage *logPage = viewer()->currentLogPage();
+    QTextDocument *document = textDocument();
+    if (!logPage || !document)
+        return;
+
+    document->setPlainText(logPage->logString());
+    m_iFilteredLineCount = document->lineCount();
+    m_iUnfilteredLineCount = document->lineCount();
+    logPage->scrollToEnd();
 }
 
 bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
@@ -389,7 +397,7 @@ void UIVMLogViewerFilterPanel::sltClearFilterTerms()
     if (m_filterTermSet.empty())
         return;
     m_filterTermSet.clear();
-    applyFilter();
+    resetFiltering();
     if (m_pFilterTermsLineEdit)
         m_pFilterTermsLineEdit->clearAll();
 }
@@ -600,6 +608,13 @@ void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
     UIVMLogViewerPanel::showEvent(pEvent);
     /* Set focus to combo-box: */
     m_pFilterComboBox->setFocus();
+    applyFilter();
+}
+
+void UIVMLogViewerFilterPanel::hideEvent(QHideEvent *pEvent)
+{
+    UIVMLogViewerPanel::hideEvent(pEvent);
+    applyFilter();
 }
 
 #include "UIVMLogViewerFilterPanel.moc"

@@ -53,6 +53,7 @@ public:
     void clearScrollBarMarkingsVector();
 
     void scrollToLine(int lineNumber);
+    void scrollToEnd();
     void setBookmarkLineSet(const QSet<int>& lineSet);
     void setShownTextIsFiltered(bool warning);
 

@@ -415,6 +415,12 @@ void UIVMLogViewerTextEdit::scrollToLine(int lineNumber)
     setTextCursor(cursor);
 }
 
+void UIVMLogViewerTextEdit::scrollToEnd()
+{
+    moveCursor(QTextCursor::End);
+    ensureCursorVisible();
+}
+
 int UIVMLogViewerTextEdit::visibleLineCount()
 {
     int height = 0;

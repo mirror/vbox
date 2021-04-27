@@ -72,6 +72,7 @@ protected:
     /** Handles Qt @a pEvent, used for keyboard processing. */
     bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     void showEvent(QShowEvent *pEvent) /* override */;
+    void hideEvent(QHideEvent *pEvent) /* override */;
 
 private slots:
 
