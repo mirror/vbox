@@ -2085,17 +2085,46 @@ static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMC
  */
 static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
 {
+    /*
+     * Reset the mixer status to start with.
+     */
     pMixStream->fStatus = AUDMIXSTREAM_STATUS_NONE;
 
-    if (pMixStream->pConn) /* Audio connector available? */
+    PPDMIAUDIOCONNECTOR const pConn = pMixStream->pConn;
+    if (pConn) /* Audio connector available? */
     {
-        const uint32_t fStreamStatus = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
+        PPDMAUDIOSTREAM const pStream = pMixStream->pStream;
+        PAUDMIXSINK const     pSink   = pMixStream->pSink;
+        AssertPtr(pSink);
 
+        /*
+         * Get the stream status.
+         * Do re-init if needed and fetch the status again afterwards.
+         */
+        uint32_t fStreamStatus = pConn->pfnStreamGetStatus(pConn, pStream);
+        if (!(fStreamStatus & PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT))
+        { /* likely */ }
+        else
+        {
+            LogFunc(("[%s] needs re-init...\n", pMixStream->pszName));
+            int rc = pConn->pfnStreamReInit(pConn, pStream);
+            fStreamStatus = pConn->pfnStreamGetStatus(pConn, pStream);
+            LogFunc(("[%s] re-init returns %Rrc and %#x.\n", pMixStream->pszName, rc, fStreamStatus)); RT_NOREF(rc);
+            if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+            {
+                rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
+                /** @todo we need to remember this, don't we? */
+                AssertRCReturn(rc, VINF_SUCCESS);
+            }
+        }
+
+        /*
+         * Translate the status to mixer speak.
+         */
         if (PDMAudioStrmStatusIsReady(fStreamStatus))
             pMixStream->fStatus |= AUDMIXSTREAM_STATUS_ENABLED;
 
-        AssertPtr(pMixStream->pSink);
-        switch (pMixStream->pSink->enmDir)
+        switch (pSink->enmDir)
         {
             case AUDMIXSINKDIR_INPUT:
                 if (PDMAudioStrmStatusCanRead(fStreamStatus))

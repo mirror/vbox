@@ -307,8 +307,6 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 #endif
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
-static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq);
-static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 
@@ -340,7 +338,7 @@ static const char *dbgAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX
         { RT_STR_TUPLE("ENABLED "),         PDMAUDIOSTREAMSTS_FLAGS_ENABLED         },
         { RT_STR_TUPLE("PAUSED "),          PDMAUDIOSTREAMSTS_FLAGS_PAUSED          },
         { RT_STR_TUPLE("PENDING_DISABLE "), PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE },
-        { RT_STR_TUPLE("PENDING_REINIT "),  PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT  },
+        { RT_STR_TUPLE("NEED_REINIT "),     PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT     },
     };
     if (!fStatus)
         strcpy(pszDst, "NONE");
@@ -417,98 +415,6 @@ static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
 }
 
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-/**
- * Schedules a re-initialization of all current audio streams.
- * The actual re-initialization will happen at some later point in time.
- *
- * @param   pThis               Pointer to driver instance.
- */
-static void drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
-{
-    LogFunc(("\n"));
-
-    /* Mark all host streams to re-initialize. */
-    PDRVAUDIOSTREAM pStreamEx;
-    RTListForEach(&pThis->lstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
-    {
-        pStreamEx->Core.fStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
-        pStreamEx->cTriesReInit  = 0;
-        pStreamEx->nsLastReInit  = 0;
-    }
-
-# ifdef VBOX_WITH_AUDIO_ENUM
-    /* Re-enumerate all host devices as soon as possible. */
-    pThis->fEnumerateDevices = true;
-# endif
-}
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
-
-
-/**
- * Re-initializes an audio stream with its existing host and guest stream
- * configuration.
- *
- * This might be the case if the backend told us we need to re-initialize
- * because something on the host side has changed.
- *
- * @note    Does not touch the stream's status flags.
- *
- * @returns VBox status code.
- * @param   pThis       Pointer to driver instance.
- * @param   pStreamEx   Stream to re-initialize.
- */
-static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
-{
-    AssertPtr(pThis);
-    AssertPtr(pStreamEx);
-
-    LogFlowFunc(("[%s]\n", pStreamEx->Core.szName));
-
-    /*
-     * Gather current stream status.
-     */
-    const bool fIsEnabled = RT_BOOL(pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED); /* Stream is enabled? */
-
-    /*
-     * Destroy and re-create stream on backend side.
-     */
-    int rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
-    if (RT_SUCCESS(rc))
-    {
-        rc = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
-        if (RT_SUCCESS(rc))
-        {
-            PDMAUDIOSTREAMCFG CfgHostAcq;
-            rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx, &pStreamEx->Host.Cfg, &CfgHostAcq);
-            /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Host.Cfg? */
-            if (RT_SUCCESS(rc))
-            {
-#ifdef LOG_ENABLED
-                LogFunc(("[%s] Acquired host format:\n",  pStreamEx->Core.szName));
-                PDMAudioStrmCfgLog(&CfgHostAcq);
-#endif
-            }
-        }
-    }
-
-    /* Drop all old data. */
-    drvAudioStreamDropInternal(pThis, pStreamEx);
-
-    /*
-     * Restore previous stream state.
-     */
-    if (fIsEnabled)
-        rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_ENABLE);
-
-    if (RT_FAILURE(rc))
-        LogRel(("Audio: Re-initializing stream '%s' failed with %Rrc\n", pStreamEx->Core.szName, rc));
-
-    LogFunc(("[%s] Returning %Rrc\n", pStreamEx->Core.szName, rc));
-    return rc;
-}
-
-
 /**
  * Resets the given audio stream.
  *
@@ -540,80 +446,6 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     else
         AssertFailed();
 #endif
-}
-
-
-/**
- * Re-initializes the given stream if it is scheduled for this operation.
- *
- * @note This caller must have entered the critical section of the driver instance,
- *       needed for the host device (re-)enumeration.
- *
- * @param   pThis       Pointer to driver instance.
- * @param   pStreamEx   Stream to check and maybe re-initialize.
- */
-static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
-{
-    if (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT)
-    {
-        const unsigned cMaxTries = 3; /** @todo Make this configurable? */
-        const uint64_t tsNowNs   = RTTimeNanoTS();
-
-        /* Throttle re-initializing streams on failure. */
-        if (   pStreamEx->cTriesReInit < cMaxTries
-            && tsNowNs - pStreamEx->nsLastReInit >= RT_NS_1SEC * pStreamEx->cTriesReInit) /** @todo Ditto. */
-        {
-#ifdef VBOX_WITH_AUDIO_ENUM
-            if (pThis->fEnumerateDevices)
-            {
-                /* Make sure to leave the driver's critical section before enumerating host stuff. */
-                int rc2 = RTCritSectLeave(&pThis->CritSect);
-                AssertRC(rc2);
-
-                /* Re-enumerate all host devices. */
-                drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
-
-                /* Re-enter the critical section again. */
-                rc2 = RTCritSectEnter(&pThis->CritSect);
-                AssertRC(rc2);
-
-                pThis->fEnumerateDevices = false;
-            }
-#endif /* VBOX_WITH_AUDIO_ENUM */
-
-            int rc = drvAudioStreamReInitInternal(pThis, pStreamEx);
-            if (RT_FAILURE(rc))
-            {
-                pStreamEx->cTriesReInit++;
-                pStreamEx->nsLastReInit = tsNowNs;
-            }
-            else
-            {
-                /* Remove the pending re-init flag on success. */
-                pStreamEx->Core.fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
-            }
-        }
-        else
-        {
-            /* Did we exceed our tries re-initializing the stream?
-             * Then this one is dead-in-the-water, so disable it for further use. */
-            if (pStreamEx->cTriesReInit == cMaxTries)
-            {
-                LogRel(("Audio: Re-initializing stream '%s' exceeded maximum retries (%u), leaving as disabled\n",
-                        pStreamEx->Core.szName, cMaxTries));
-
-                /* Don't try to re-initialize anymore and mark as disabled. */
-                pStreamEx->Core.fStatus &= ~(PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
-
-                /* Note: Further writes to this stream go to / will be read from the bit bucket (/dev/null) from now on. */
-            }
-        }
-
-#ifdef LOG_ENABLED
-        char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
-#endif
-        Log3Func(("[%s] fStatus=%s\n", pStreamEx->Core.szName, dbgAudioStreamStatusToStr(szStreamSts, pStreamEx->Core.fStatus)));
-    }
 }
 
 
@@ -1806,6 +1638,158 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
 
 
 /**
+ * Re-initializes an audio stream with its existing host and guest stream
+ * configuration.
+ *
+ * This might be the case if the backend told us we need to re-initialize
+ * because something on the host side has changed.
+ *
+ * @note    Does not touch the stream's status flags.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Pointer to driver instance.
+ * @param   pStreamEx   Stream to re-initialize.
+ */
+static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    AssertPtr(pThis);
+    AssertPtr(pStreamEx);
+
+    LogFlowFunc(("[%s]\n", pStreamEx->Core.szName));
+
+    /*
+     * Gather current stream status.
+     */
+    const bool fIsEnabled = RT_BOOL(pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED); /* Stream is enabled? */
+
+    /*
+     * Destroy and re-create stream on backend side.
+     */
+    int rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
+        if (RT_SUCCESS(rc))
+        {
+            PDMAUDIOSTREAMCFG CfgHostAcq;
+            rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx, &pStreamEx->Host.Cfg, &CfgHostAcq);
+            /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Host.Cfg? */
+            if (RT_SUCCESS(rc))
+            {
+#ifdef LOG_ENABLED
+                LogFunc(("[%s] Acquired host format:\n",  pStreamEx->Core.szName));
+                PDMAudioStrmCfgLog(&CfgHostAcq);
+#endif
+            }
+        }
+    }
+
+    /* Drop all old data. */
+    drvAudioStreamDropInternal(pThis, pStreamEx);
+
+    /*
+     * Restore previous stream state.
+     */
+    if (fIsEnabled)
+        rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_ENABLE);
+
+    if (RT_FAILURE(rc))
+        LogRel(("Audio: Re-initializing stream '%s' failed with %Rrc\n", pStreamEx->Core.szName, rc));
+
+    LogFunc(("[%s] Returning %Rrc\n", pStreamEx->Core.szName, rc));
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamReInit}
+ */
+static DECLCALLBACK(int) drvAudioStreamReInit(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+{
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    PDRVAUDIOSTREAM pStreamEx = (PDRVAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamEx, VERR_INVALID_POINTER);
+    AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT, VERR_INVALID_STATE);
+    LogFlowFunc(("\n"));
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    if (pStreamEx->Core.fStatus & PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT)
+    {
+        const unsigned cMaxTries = 3; /** @todo Make this configurable? */
+        const uint64_t tsNowNs   = RTTimeNanoTS();
+
+        /* Throttle re-initializing streams on failure. */
+        if (   pStreamEx->cTriesReInit < cMaxTries
+            && tsNowNs - pStreamEx->nsLastReInit >= RT_NS_1SEC * pStreamEx->cTriesReInit) /** @todo Ditto. */
+        {
+#ifdef VBOX_WITH_AUDIO_ENUM
+            if (pThis->fEnumerateDevices)
+            {
+                /* Make sure to leave the driver's critical section before enumerating host stuff. */
+                int rc2 = RTCritSectLeave(&pThis->CritSect);
+                AssertRC(rc2);
+
+                /* Re-enumerate all host devices. */
+                drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+
+                /* Re-enter the critical section again. */
+                rc2 = RTCritSectEnter(&pThis->CritSect);
+                AssertRC(rc2);
+
+                pThis->fEnumerateDevices = false;
+            }
+#endif /* VBOX_WITH_AUDIO_ENUM */
+
+            rc = drvAudioStreamReInitInternal(pThis, pStreamEx);
+            if (RT_SUCCESS(rc))
+            {
+                /* Remove the pending re-init flag on success. */
+                pStreamEx->Core.fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT;
+            }
+            else
+            {
+                pStreamEx->cTriesReInit++;
+                pStreamEx->nsLastReInit = tsNowNs;
+            }
+        }
+        else
+        {
+            /* Did we exceed our tries re-initializing the stream?
+             * Then this one is dead-in-the-water, so disable it for further use. */
+            if (pStreamEx->cTriesReInit == cMaxTries)
+            {
+                LogRel(("Audio: Re-initializing stream '%s' exceeded maximum retries (%u), leaving as disabled\n",
+                        pStreamEx->Core.szName, cMaxTries));
+
+                /* Don't try to re-initialize anymore and mark as disabled. */
+                pStreamEx->Core.fStatus &= ~(PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
+
+                /* Note: Further writes to this stream go to / will be read from the bit bucket (/dev/null) from now on. */
+            }
+        }
+
+#ifdef LOG_ENABLED
+        char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+        Log3Func(("[%s] fStatus=%s\n", pStreamEx->Core.szName, dbgAudioStreamStatusToStr(szStreamSts, pStreamEx->Core.fStatus)));
+    }
+    else
+    {
+        AssertFailed();
+        rc = VERR_INVALID_STATE;
+    }
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamRetain}
  */
 static DECLCALLBACK(uint32_t) drvAudioStreamRetain(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
@@ -2287,9 +2271,6 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
     if (!pThis->pHostDrvAudio)
         return VINF_SUCCESS;
 
-    /* Is the stream scheduled for re-initialization? Do so now. */
-    drvAudioStreamMaybeReInit(pThis, pStreamEx);
-
 #ifdef LOG_ENABLED
     char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
@@ -2362,7 +2343,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                     /*
                      * Okay, disable it.
                      */
-                    LogFunc(("[%s] Closing pending stream\n", pStreamEx->Core.szName));
+                    LogFunc(("[%s] Disabling pending stream\n", pStreamEx->Core.szName));
                     rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
                     if (RT_SUCCESS(rc))
                     {
@@ -2579,9 +2560,6 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, PDMAUDIOSTREAMSTS_FLAGS_NONE);
-
-    /* Is the stream scheduled for re-initialization? Do so now. */
-    drvAudioStreamMaybeReInit(pThis, pStreamEx);
 
     PDMAUDIOSTREAMSTS fStrmStatus = pStreamEx->Core.fStatus;
 
@@ -3053,6 +3031,33 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 *   PDMIAUDIONOTIFYFROMHOST interface implementation.                                                                            *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
+
+/**
+ * Schedules a re-initialization of all current audio streams.
+ * The actual re-initialization will happen at some later point in time.
+ *
+ * @param   pThis               Pointer to driver instance.
+ */
+static void drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
+{
+    LogFunc(("\n"));
+
+    /* Mark all host streams to re-initialize. */
+    PDRVAUDIOSTREAM pStreamEx;
+    RTListForEach(&pThis->lstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
+    {
+        pStreamEx->Core.fStatus |= PDMAUDIOSTREAMSTS_FLAGS_NEED_REINIT;
+        pStreamEx->cTriesReInit  = 0;
+        pStreamEx->nsLastReInit  = 0;
+    }
+
+# ifdef VBOX_WITH_AUDIO_ENUM
+    /* Re-enumerate all host devices as soon as possible. */
+    pThis->fEnumerateDevices = true;
+# endif
+}
+
+
 /**
  * @interface_method_impl{PDMIAUDIONOTIFYFROMHOST,pfnNotifyDevicesChanged}
  */
@@ -3541,6 +3546,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamConfigHint  = drvAudioStreamConfigHint;
     pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;
     pThis->IAudioConnector.pfnStreamDestroy     = drvAudioStreamDestroy;
+    pThis->IAudioConnector.pfnStreamReInit      = drvAudioStreamReInit;
     pThis->IAudioConnector.pfnStreamRetain      = drvAudioStreamRetain;
     pThis->IAudioConnector.pfnStreamRelease     = drvAudioStreamRelease;
     pThis->IAudioConnector.pfnStreamControl     = drvAudioStreamControl;
