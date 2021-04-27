@@ -2440,9 +2440,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
              * situations, but the device emulation needs input data to keep the DMA transfers moving.
              * Reading the actual data from a stream then will return silence then.
              */
-            uint32_t fStatus = PDMAUDIOSTREAM_STS_NONE;
-            if (pThis->pHostDrvAudio->pfnStreamGetStatus)
-                fStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend);
+            uint32_t fStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStreamEx->pBackend);
             if (   !PDMAudioStrmStatusCanRead(fStatus)
                 || fDisabled)
             {
