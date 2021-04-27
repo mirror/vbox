@@ -119,9 +119,7 @@ private slots:
     void sltHandleSearchUpdated();
     /** Handles the tab change of the logviewer. */
     void sltCurrentTabChanged(int tabIndex);
-    /* if @a isOriginal true than the result of the filtering is equal to
-       the original log file for some reason. */
-    void sltFilterApplied(bool isOriginal);
+    void sltFilterApplied();
     /* Handles the UIVMLogPage signal which is emitted when isFiltered property
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);

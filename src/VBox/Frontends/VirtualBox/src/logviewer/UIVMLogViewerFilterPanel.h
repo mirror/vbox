@@ -46,10 +46,7 @@ class UIVMLogViewerFilterPanel : public UIVMLogViewerPanel
 
 signals:
 
-    /* Notifies listeners that the filter has been applied. @a isOriginalLog is true
-     if filter function returns early for some reason (no filter term etc.) and log page
-     content is set to original log file. @a isOriginalLog is false if content is reduced (filtered)*/
-    void sigFilterApplied(bool isOriginalLog);
+    void sigFilterApplied();
 
 public:
 

@@ -270,6 +270,7 @@ void UIVMLogViewerFilterPanel::applyFilter()
     else
         resetFiltering();
     retranslateUi();
+    emit sigFilterApplied();
 }
 
 void UIVMLogViewerFilterPanel::filter()
@@ -320,8 +321,6 @@ void UIVMLogViewerFilterPanel::filter()
     QTextCursor cursor = pCurrentTextEdit->textCursor();
     cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
     pCurrentTextEdit->setTextCursor(cursor);
-
-    emit sigFilterApplied(false /* isOriginalLog */);
     logPage->scrollToEnd();
 }
 
@@ -397,7 +396,7 @@ void UIVMLogViewerFilterPanel::sltClearFilterTerms()
     if (m_filterTermSet.empty())
         return;
     m_filterTermSet.clear();
-    resetFiltering();
+    applyFilter();
     if (m_pFilterTermsLineEdit)
         m_pFilterTermsLineEdit->clearAll();
 }
