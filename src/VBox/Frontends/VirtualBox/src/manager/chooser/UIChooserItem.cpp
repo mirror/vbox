@@ -36,6 +36,7 @@
 #include "UIChooserView.h"
 #include "UIChooserModel.h"
 #include "UIChooserNode.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIImageTools.h"
 
 /* Other VBox includes: */
@@ -212,6 +213,10 @@ void UIChooserDisabledItemEffect::draw(QPainter *pPainter)
     /* Apply our blur and grayscale filters to the original pixmap: */
     UIImageTools::blurImage(pixmap.toImage(), resultImage, m_iBlurRadius);
     pixmap.convertFromImage(UIImageTools::toGray(resultImage));
+    QWidget *pParentWidget = qobject_cast<QWidget*>(parent());
+    pixmap.setDevicePixelRatio(  pParentWidget
+                               ? gpDesktop->devicePixelRatioActual(pParentWidget)
+                               : gpDesktop->devicePixelRatioActual());
     /* Use the filtered pixmap: */
     pPainter->drawPixmap(offset, pixmap);
 }
@@ -319,7 +324,7 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
         }
 
         /* Allocate the effect instance which we use when the item is marked as disabled: */
-        m_pDisabledEffect = new UIChooserDisabledItemEffect(1 /* Blur Radius */);
+        m_pDisabledEffect = new UIChooserDisabledItemEffect(1 /* Blur Radius */, model()->view());
         if (m_pDisabledEffect)
         {
             setGraphicsEffect(m_pDisabledEffect);
