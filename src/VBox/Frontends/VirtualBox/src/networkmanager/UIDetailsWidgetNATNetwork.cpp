@@ -107,7 +107,7 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
     /* Make sure IPv6 prefix isn't empty if IPv6 is supported: */
     if (m_newData.m_fSupportsIPv6 && m_newData.m_strPrefixIPv6.isEmpty())
     {
-        msgCenter().warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
+        msgCenter().warnAboutNoIPv6PrefixSpecified(m_newData.m_strName);
         return false;
     }
 
