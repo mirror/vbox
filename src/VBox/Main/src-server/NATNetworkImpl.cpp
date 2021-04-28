@@ -430,38 +430,51 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
     HRESULT hrc;
     int rc;
 
-    RTNETADDRIPV6 Net6;
-    int iPrefixLength;
-    rc = RTNetStrToIPv6Cidr(aIPv6Prefix.c_str(), &Net6, &iPrefixLength);
-    if (RT_FAILURE(rc))
-        return setError(E_INVALIDARG,
-                        "%s is not a valid IPv6 prefix",
-                        aIPv6Prefix.c_str());
-
-    /* Accept both addr:: and addr::/64 */
-    if (iPrefixLength == 128)   /* no length was specified after the address? */
-        iPrefixLength = 64;     /*   take it to mean /64 which we require anyway */
-    else if (iPrefixLength != 64)
-        return setError(E_INVALIDARG,
-                        "Invalid IPv6 prefix length %d, must be 64",
-                        iPrefixLength);
-
-    /* Verify the address is unicast. */
-    if (   ((Net6.au8[0] & 0xe0) != 0x20)  /* global 2000::/3 */
-        && ((Net6.au8[0] & 0xfe) != 0xfc)) /* local  fc00::/7 */
-        return setError(E_INVALIDARG,
-                        "IPv6 prefix %RTnaipv6 is not unicast",
-                        &Net6);
-
-    /* Verify the interfaces ID part is zero */
-    if (Net6.au64[1] != 0)
-        return setError(E_INVALIDARG,
-                        "Non-zero bits in the interface ID part"
-                        " of the IPv6 prefix %RTnaipv6/64",
-                        &Net6);
-
     /* Since we store it in text form, use canonical representation */
-    com::Utf8StrFmt strNormalizedIPv6Prefix("%RTnaipv6/64", &Net6);
+    com::Utf8Str strNormalizedIPv6Prefix;
+
+    const char *pcsz = RTStrStripL(aIPv6Prefix.c_str());
+    if (*pcsz != '\0')          /* verify it first if not empty/blank */
+    {
+        RTNETADDRIPV6 Net6;
+        int iPrefixLength;
+        rc = RTNetStrToIPv6Cidr(aIPv6Prefix.c_str(), &Net6, &iPrefixLength);
+        if (RT_FAILURE(rc))
+            return setError(E_INVALIDARG,
+                            "%s is not a valid IPv6 prefix",
+                            aIPv6Prefix.c_str());
+
+        /* Accept both addr:: and addr::/64 */
+        if (iPrefixLength == 128)   /* no length was specified after the address? */
+            iPrefixLength = 64;     /*   take it to mean /64 which we require anyway */
+        else if (iPrefixLength != 64)
+            return setError(E_INVALIDARG,
+                            "Invalid IPv6 prefix length %d, must be 64",
+                            iPrefixLength);
+
+        /* Verify the address is unicast. */
+        if (   ((Net6.au8[0] & 0xe0) != 0x20)  /* global 2000::/3 */
+            && ((Net6.au8[0] & 0xfe) != 0xfc)) /* local  fc00::/7 */
+            return setError(E_INVALIDARG,
+                            "IPv6 prefix %RTnaipv6 is not unicast",
+                            &Net6);
+
+        /* Verify the interfaces ID part is zero */
+        if (Net6.au64[1] != 0)
+            return setError(E_INVALIDARG,
+                            "Non-zero bits in the interface ID part"
+                            " of the IPv6 prefix %RTnaipv6/64",
+                            &Net6);
+
+        rc = strNormalizedIPv6Prefix.printfNoThrow("%RTnaipv6/64", &Net6);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_NO_MEMORY)
+                return setError(E_OUTOFMEMORY);
+            else
+                return setError(E_FAIL, "Internal error");
+        }
+    }
 
     {
         AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
@@ -472,6 +485,10 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
 
         if (strNormalizedIPv6Prefix == m->s.strIPv6Prefix)
             return S_OK;
+
+        /* only allow prefix to be empty if IPv6 is disabled */
+        if (strNormalizedIPv6Prefix.isEmpty() && m->s.fIPv6Enabled)
+            return setError(E_FAIL, "Setting an empty IPv6 prefix when IPv6 is enabled");
 
         /**
          * @todo
