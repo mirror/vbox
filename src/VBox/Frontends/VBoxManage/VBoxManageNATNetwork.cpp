@@ -90,22 +90,32 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
     do
     {
         Bstr strVal;
-        CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
-        RTPrintf("Name:        %ls\n", strVal.raw());
-        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Network)(strVal.asOutParam()));
-        RTPrintf("Network:     %ls\n", strVal.raw());
-        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Gateway)(strVal.asOutParam()));
-        RTPrintf("Gateway:     %ls\n", strVal.raw());
         BOOL fVal;
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
+        RTPrintf("Name:         %ls\n", strVal.raw());
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Network)(strVal.asOutParam()));
+        RTPrintf("Network:      %ls\n", strVal.raw());
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Gateway)(strVal.asOutParam()));
+        RTPrintf("Gateway:      %ls\n", strVal.raw());
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(NeedDhcpServer)(&fVal));
+        RTPrintf("DHCP Sever:   %s\n",  fVal ? "Yes" : "No");
+
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Enabled)(&fVal));
-        RTPrintf("IPv6:        %s\n",  fVal ? "Yes" : "No");
-        if (fVal)
-        {
-            CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
-            RTPrintf("IPv6 Prefix: %ls\n", strVal.raw());
-        }
+        RTPrintf("IPv6:         %s\n",  fVal ? "Yes" : "No");
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
+        RTPrintf("IPv6 Prefix:  %ls\n", strVal.raw());
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fVal));
+        RTPrintf("IPv6 Default: %s\n",  fVal ? "Yes" : "No");
+
+
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
-        RTPrintf("Enabled:     %s\n",  fVal ? "Yes" : "No");
+        RTPrintf("Enabled:      %s\n",  fVal ? "Yes" : "No");
         /** @todo Add more information here. */
         RTPrintf("\n");
 
