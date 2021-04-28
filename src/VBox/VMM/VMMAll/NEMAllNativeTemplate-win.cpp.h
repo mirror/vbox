@@ -1897,7 +1897,9 @@ DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPUCC pVCpu, HV_X64_INTERCEPT
     else
         EMSetInhibitInterruptsPC(pVCpu, pHdr->Rip);
 
-    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT);
+    APICSetTpr(pVCpu, pHdr->Cr8 << 4);
+
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
 }
 #elif defined(IN_RING3)
 /**
@@ -1928,7 +1930,9 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONT
     else
         EMSetInhibitInterruptsPC(pVCpu, pExitCtx->Rip);
 
-    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT);
+    APICSetTpr(pVCpu, pExitCtx->Cr8 << 4);
+
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
 }
 #endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
@@ -4119,13 +4123,24 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
                 }
                 else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
                 {
-                    *pfInterruptWindows |= (bInterrupt >> 4 /*??*/) << NEM_WIN_INTW_F_PRIO_SHIFT;
+                    *pfInterruptWindows |= ((bInterrupt >> 4) << NEM_WIN_INTW_F_PRIO_SHIFT) | NEM_WIN_INTW_F_REGULAR;
                     Log8(("VERR_APIC_INTR_MASKED_BY_TPR: *pfInterruptWindows=%#x\n", *pfInterruptWindows));
                 }
                 else
                     Log8(("PDMGetInterrupt failed -> %d\n", rc));
             }
             return rcStrict;
+        }
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC) && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC))
+        {
+            /* If only an APIC interrupt is pending, we need to know its priority. Otherwise we'll
+             * likely get pointless deliverability notifications with IF=1 but TPR still too high.
+             */
+            bool fPendingIntr;
+            uint8_t u8Tpr, u8PendingIntr;
+            int rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
+            AssertRC(rc);
+            *pfInterruptWindows |= (u8PendingIntr >> 4) << NEM_WIN_INTW_F_PRIO_SHIFT;
         }
         *pfInterruptWindows |= NEM_WIN_INTW_F_REGULAR;
         Log8(("Interrupt window pending on %u\n", pVCpu->idCpu));
