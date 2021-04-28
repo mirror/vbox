@@ -1888,27 +1888,37 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
         case SVGA_REG_WIDTH:
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthWr);
-            if (u32 <= pThis->svga.u32MaxWidth && u32 != pThis->svga.uWidth)
+            if (u32 != pThis->svga.uWidth)
             {
+                if (u32 <= pThis->svga.u32MaxWidth)
+                {
 #if defined(IN_RING3) || defined(IN_RING0)
-                pThis->svga.uWidth = u32;
-                vmsvgaHCUpdatePitch(pThis, pThisCC);
-                if (pThis->svga.fEnabled)
-                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+                    pThis->svga.uWidth = u32;
+                    vmsvgaHCUpdatePitch(pThis, pThisCC);
+                    if (pThis->svga.fEnabled)
+                        ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 #else
-                rc = VINF_IOM_R3_IOPORT_WRITE;
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
+                }
+                else
+                    Log(("SVGA_REG_WIDTH: New value is out of bounds: %u, max %u\n", u32, pThis->svga.u32MaxWidth));
             }
             /* else: nop */
             break;
 
         case SVGA_REG_HEIGHT:
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightWr);
-            if (u32 <= pThis->svga.u32MaxHeight && u32 != pThis->svga.uHeight)
+            if (u32 != pThis->svga.uHeight)
             {
-                pThis->svga.uHeight = u32;
-                if (pThis->svga.fEnabled)
-                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+                if (u32 <= pThis->svga.u32MaxHeight)
+                {
+                    pThis->svga.uHeight = u32;
+                    if (pThis->svga.fEnabled)
+                        ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+                }
+                else
+                    Log(("SVGA_REG_HEIGHT: New value is out of bounds: %u, max %u\n", u32, pThis->svga.u32MaxHeight));
             }
             /* else: nop */
             break;
@@ -1920,16 +1930,21 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
         case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelWr);
-            if (u32 <= 32 && pThis->svga.uBpp != u32)
+            if (pThis->svga.uBpp != u32)
             {
+                if (u32 <= 32)
+                {
 #if defined(IN_RING3) || defined(IN_RING0)
-                pThis->svga.uBpp = u32;
-                vmsvgaHCUpdatePitch(pThis, pThisCC);
-                if (pThis->svga.fEnabled)
-                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+                    pThis->svga.uBpp = u32;
+                    vmsvgaHCUpdatePitch(pThis, pThisCC);
+                    if (pThis->svga.fEnabled)
+                        ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 #else
-                rc = VINF_IOM_R3_IOPORT_WRITE;
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
+                }
+                else
+                    Log(("SVGA_REG_BITS_PER_PIXEL: New value is out of bounds: %u, max 32\n", u32));
             }
             /* else: nop */
             break;
