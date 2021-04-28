@@ -678,6 +678,20 @@ void UIMediumManagerWidget::sltHandlePerformSearch()
     performSearch(true);
 }
 
+void UIMediumManagerWidget::sltDetachCOM()
+{
+    /* Clear tree-widgets: */
+    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumDeviceType_HardDisk);
+    if (pTreeWidgetHD)
+        pTreeWidgetHD->clear();
+    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumDeviceType_DVD);
+    if (pTreeWidgetCD)
+        pTreeWidgetCD->clear();
+    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumDeviceType_Floppy);
+    if (pTreeWidgetFD)
+        pTreeWidgetFD->clear();
+}
+
 void UIMediumManagerWidget::prepare()
 {
     /* Prepare connections: */
@@ -728,6 +742,10 @@ void UIMediumManagerWidget::prepareConnections()
             this, &UIMediumManagerWidget::sltHandleMediumEnumerated);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationFinish);
+
+    /* Configure COM related connections: */
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
+            this, &UIMediumManagerWidget::sltDetachCOM);
 }
 
 void UIMediumManagerWidget::prepareActions()

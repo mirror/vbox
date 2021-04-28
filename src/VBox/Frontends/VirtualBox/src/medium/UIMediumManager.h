@@ -202,10 +202,16 @@ private slots:
         void sltPerformTablesAdjustment();
     /** @} */
 
-   /** @name Medium search stuff.
+    /** @name Medium search stuff.
       * @{ */
         /** Adjusts tree-widgets according content. */
         void sltHandlePerformSearch();
+    /** @} */
+
+    /** @name Medium search stuff.
+      * @{ */
+        /** Handles command to detach COM stuff. */
+        void sltDetachCOM();
     /** @} */
 
 private:
