@@ -442,7 +442,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 }
             }
         }
-    }// else of if (if (iMaximum == 0)
+    }// else of if (iMaximum == 0)
 
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
