@@ -200,48 +200,56 @@ bool UIMediumItem::isMediumAttachedTo(QUuid uId)
 
 bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewType)
 {
+    /* Cache the list of VMs the medium is attached to. We will need this for the re-attachment: */
     QList<AttachmentCache> attachmentCacheList;
-    /* Cache the list of vms the medium is attached to. We will need this for the re-attachment: */
     foreach (const QUuid &uMachineId, medium().curStateMachineIds())
     {
         const CMachine &comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
         if (comMachine.isNull())
             continue;
-        CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
+        foreach (const CStorageController &comController, comMachine.GetStorageControllers())
         {
-            const CMedium& comMedium = attachment.GetMedium();
-            if (comMedium.isNull() || comMedium.GetId() != id())
+            if (comController.isNull())
                 continue;
-            AttachmentCache attachmentCache;
-            attachmentCache.m_uMachineId = uMachineId;
-            attachmentCache.m_strControllerName = attachment.GetController();
-            attachmentCache.m_port = attachment.GetPort();
-            attachmentCache.m_device = attachment.GetDevice();
-            attachmentCacheList << attachmentCache;
+            const QString strControllerName = comController.GetName();
+            foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(strControllerName))
+            {
+                if (comAttachment.isNull())
+                    continue;
+                const CMedium &comMedium = comAttachment.GetMedium();
+                if (comMedium.isNull() || comMedium.GetId() != id())
+                    continue;
+                AttachmentCache attachmentCache;
+                attachmentCache.m_uMachineId = uMachineId;
+                attachmentCache.m_strControllerName = strControllerName;
+                attachmentCache.m_enmControllerBus = comController.GetBus();
+                attachmentCache.m_iAttachmentPort = comAttachment.GetPort();
+                attachmentCache.m_iAttachmentDevice = comAttachment.GetDevice();
+                attachmentCacheList << attachmentCache;
+            }
         }
     }
 
-    /* Detach the medium from all the vms it is already attached to: */
+    /* Detach the medium from all the VMs it's attached to: */
     if (!release(true))
         return false;
 
-    /* Search for corresponding medium: */
-    CMedium comMedium = uiCommon().medium(id()).medium();
-
     /* Attempt to change medium type: */
+    CMedium comMedium = medium().medium();
     comMedium.SetType(enmNewType);
-    bool fSuccess = true;
-    /* Show error message if necessary: */
-    if (!comMedium.isOk() && parentTree())
+    if (!comMedium.isOk())
     {
-        msgCenter().cannotChangeMediumType(comMedium, enmOldType, enmNewType, treeWidget());
-        fSuccess = false;
+        msgCenter().cannotChangeMediumType(comMedium, enmOldType, enmNewType, parentTree());
+        return false;
     }
-    /* Reattach the medium to all the vms it was previously attached: */
+
+    /* Reattach the medium to all the VMs it was previously attached: */
     foreach (const AttachmentCache &attachmentCache, attachmentCacheList)
-        attachTo(attachmentCache);
-    return fSuccess;
+        if (!attachTo(attachmentCache))
+            return false;
+
+    /* True finally: */
+    return true;
 }
 
 QString UIMediumItem::defaultText() const
@@ -349,37 +357,41 @@ bool UIMediumItem::releaseFrom(const QUuid &uMachineId)
 
 bool UIMediumItem::attachTo(const AttachmentCache &attachmentCache)
 {
-    CMedium comMedium = medium().medium();
-
-    if (comMedium.isNull())
-        return false;
-
     /* Open session: */
-    CSession session = uiCommon().openSession(attachmentCache.m_uMachineId);
-    if (session.isNull())
+    CSession comSession = uiCommon().openSession(attachmentCache.m_uMachineId);
+    if (comSession.isNull())
         return false;
 
-    /* Get machine: */
-    CMachine machine = session.GetMachine();
-
-    bool fSuccess = false;
-    machine.AttachDevice(attachmentCache.m_strControllerName, attachmentCache.m_port,
-                         attachmentCache.m_device, comMedium.GetDeviceType(), comMedium);
-
-    if (machine.isOk())
+    /* Attach device to machine: */
+    CMedium comMedium = medium().medium();
+    KDeviceType enmDeviceType = comMedium.GetDeviceType();
+    CMachine comMachine = comSession.GetMachine();
+    comMachine.AttachDevice(attachmentCache.m_strControllerName,
+                            attachmentCache.m_iAttachmentPort,
+                            attachmentCache.m_iAttachmentDevice,
+                            enmDeviceType,
+                            comMedium);
+    if (!comMachine.isOk())
+        msgCenter().cannotAttachDevice(comMachine,
+                                       mediumTypeToLocal(enmDeviceType),
+                                       comMedium.GetLocation(),
+                                       StorageSlot(attachmentCache.m_enmControllerBus,
+                                                   attachmentCache.m_iAttachmentPort,
+                                                   attachmentCache.m_iAttachmentDevice),
+                                       parentTree());
+    else
     {
-        machine.SaveSettings();
-        if (!machine.isOk())
-            msgCenter().cannotSaveMachineSettings(machine, treeWidget());
-        else
-            fSuccess = true;
+        /* Save machine settings: */
+        comMachine.SaveSettings();
+        if (!comMachine.isOk())
+            msgCenter().cannotSaveMachineSettings(comMachine, parentTree());
     }
 
     /* Close session: */
-    session.UnlockMachine();
+    comSession.UnlockMachine();
 
-    /* Return result: */
-    return fSuccess;
+    /* True finally: */
+    return true;
 }
 
 /* static */
