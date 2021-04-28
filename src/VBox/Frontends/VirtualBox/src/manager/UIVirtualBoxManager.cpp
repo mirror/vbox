@@ -2169,6 +2169,12 @@ void UIVirtualBoxManager::prepare()
     prepareWidgets();
     prepareConnections();
 
+    // WORKAROUND:
+    // These menus are dynamical since local and cloud VMs have different menu contents.
+    // Yet .. we have to prepare Machine/Group menus beforehand, they contains shortcuts.
+    updateMenuGroup(actionPool()->action(UIActionIndexMN_M_Group)->menu());
+    updateMenuMachine(actionPool()->action(UIActionIndexMN_M_Machine)->menu());
+
     /* Update actions initially: */
     updateActionsVisibility();
     updateActionsAppearance();
