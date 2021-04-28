@@ -86,6 +86,9 @@ public:
     void reset();
     void toFile(QTextStream &stream) const;
 
+    void setAutoUpdateMaximum(bool fAuto);
+    bool autoUpdateMaximum() const;
+
 private:
 
     QString m_strName;
@@ -103,6 +106,8 @@ private:
     /** Used for metrices whose data is computed as total deltas. That is we receieve only total value and
       * compute time step data from total deltas. m_isInitialised is true if the total has been set first time. */
     bool m_fIsInitialized;
+    /** Maximum is updated as a new data is added to data queue. */
+    bool m_fAutoUpdateMaximum;
 };
 
 /** UIVMActivityMonitor class displays some high level performance metric of the guest system.

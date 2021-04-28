@@ -631,6 +631,7 @@ UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQ
 #endif
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
+    , m_fAutoUpdateMaximum(false)
 {
     RT_NOREF(iMaximumQueueSize); /* Unused according to Clang 11. */
     m_iTotal[0] = 0;
@@ -672,13 +673,27 @@ const QString &UIMetric::unit() const
     return m_strUnit;
 }
 
-void UIMetric::addData(int iDataSeriesIndex, quint64 fData)
+void UIMetric::addData(int iDataSeriesIndex, quint64 iData)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
-    m_data[iDataSeriesIndex].enqueue(fData);
+    m_data[iDataSeriesIndex].enqueue(iData);
+    if (m_fAutoUpdateMaximum)
+        m_iMaximum = qMax(m_iMaximum, iData);
+
     if (m_data[iDataSeriesIndex].size() > g_iMaximumQueueSize)
+    {
+        bool fSearchMax = false;
+        if (m_fAutoUpdateMaximum && m_data[iDataSeriesIndex].head() >= m_iMaximum)
+            fSearchMax = true;
         m_data[iDataSeriesIndex].dequeue();
+        if (fSearchMax)
+        {
+            m_iMaximum = 0;
+            foreach (quint64 iVal, m_data[iDataSeriesIndex])
+                m_iMaximum = qMax(m_iMaximum, iVal);
+        }
+    }
 }
 
 const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
@@ -763,6 +778,16 @@ void UIMetric::toFile(QTextStream &stream) const
         }
     }
     stream << "\n";
+}
+
+void UIMetric::setAutoUpdateMaximum(bool fAuto)
+{
+    m_fAutoUpdateMaximum = fAuto;
+}
+
+bool UIMetric::autoUpdateMaximum() const
+{
+    return m_fAutoUpdateMaximum;
 }
 
 /*********************************************************************************************************************************
@@ -1111,16 +1136,19 @@ void UIVMActivityMonitor::prepareMetrics()
     UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
     networkMetric.setDataSeriesName(0, "Receive Rate");
     networkMetric.setDataSeriesName(1, "Transmit Rate");
+    networkMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strNetworkMetricName, networkMetric);
 
     /* Disk IO metric */
     UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
     diskIOMetric.setDataSeriesName(0, "Write Rate");
     diskIOMetric.setDataSeriesName(1, "Read Rate");
+    diskIOMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
     /* VM exits metric */
     UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
+    VMExitsMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 
@@ -1256,8 +1284,6 @@ void UIVMActivityMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, qu
 
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
-    quint64 iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
-    NetMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
@@ -1358,9 +1384,6 @@ void UIVMActivityMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritte
         return;
     }
 
-    quint64 iMaximum = qMax(diskMetric.maximum(), qMax(iWriteRate, iReadRate));
-    diskMetric.setMaximum(iMaximum);
-
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
         QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
@@ -1390,8 +1413,6 @@ void UIVMActivityMonitor::updateVMExitMetric(quint64 uTotalVMExits)
         return;
     }
     VMExitMetric.addData(0, iRate);
-    quint64 iMaximum = qMax(VMExitMetric.maximum(), iRate);
-    VMExitMetric.setMaximum(iMaximum);
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
         QString strInfo;
