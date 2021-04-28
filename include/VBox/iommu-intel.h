@@ -1516,7 +1516,7 @@ typedef enum VTD_IQEI_T
 {
     kIqei_InfoNotAvailable = 0,
     kIqei_InvalidTailPointer,
-    kIqei_FetchDescriptorFailed,
+    kIqei_FetchDescriptorError,
     kIqei_InvalidDescriptorType,
     kIqei_RsvdFieldViolation,
     kIqei_InvalidDescriptorWidth,
@@ -1818,6 +1818,30 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_VCRSP_REG_RW_MASK                                   UINT64_C(0)
+/** @} */
+
+
+/** @name Generic Invalidation Descriptor.
+ *  These are fields common to EVERY invalidation descriptor.
+ * @{ */
+/** Type (Lo). */
+#define VTD_BF_0_GENERIC_INV_DSC_TYPE_LO_SHIFT                  0
+#define VTD_BF_0_GENERIC_INV_DSC_TYPE_LO_MASK                   UINT64_C(0x000000000000000f)
+/** R: Reserved (bits 8:4). */
+#define VTD_BF_0_GENERIC_INV_DSC_RSVD_8_4_SHIFT                 4
+#define VTD_BF_0_GENERIC_INV_DSC_RSVD_8_4_MASK                  UINT64_C(0x00000000000001f0)
+/** Type (Hi). */
+#define VTD_BF_0_GENERIC_INV_DSC_TYPE_HI_SHIFT                  9
+#define VTD_BF_0_GENERIC_INV_DSC_TYPE_HI_MASK                   UINT64_C(0x0000000000000e00)
+/** R: Reserved (bits 63:12). */
+#define VTD_BF_0_GENERIC_INV_DSC_RSVD_63_12_SHIFT               12
+#define VTD_BF_0_GENERIC_INV_DSC_RSVD_63_12_MASK                UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_GENERIC_INV_DSC_, UINT64_C(0), UINT64_MAX,
+                            (TYPE_LO, RSVD_8_4, TYPE_HI, RSVD_63_12));
+
+/** GENERIC_INV_DSC: Type. */
+#define VTD_GENERIC_INV_DSC_GET_TYPE(a)                         ((((a) & VTD_BF_0_GENERIC_INV_DSC_TYPE_HI_MASK) >> 5) \
+                                                                 | ((a) & VTD_BF_0_GENERIC_INV_DSC_TYPE_LO_MASK))
 /** @} */
 
 
@@ -2151,6 +2175,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_1_INV_WAIT_DSC_STADDR_MASK                       UINT64_C(0xfffffffffffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
                             (RSVD_1_0, STADDR));
+/** @} */
+
+
+/** @name Invalidation descriptor types.
+ * In accordance with the Intel spec.
+ * @{ */
+#define VTD_CC_INV_DSC_TYPE                                     1
+#define VTD_IOTLB_INV_DSC_TYPE                                  2
+#define VTD_DEV_TLB_INV_DSC_TYPE                                3
+#define VTD_IEC_INV_DSC_TYPE                                    4
+#define VTD_INV_WAIT_DSC_TYPE                                   5
+#define VTD_P_IOTLB_INV_DSC_TYPE                                6
+#define VTD_PC_INV_DSC_TYPE                                     7
+#define VTD_P_DEV_TLB_INV_DSC_TYPE                              8
 /** @} */
 
 

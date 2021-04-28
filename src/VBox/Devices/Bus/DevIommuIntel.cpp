@@ -145,29 +145,35 @@ typedef enum
     kDmarDiag_IqtReg_Qt_NotAligned,
     kDmarDiag_IqtReg_Qt_Invalid,
     kDmarDiag_IqaReg_Dw_Invalid,
-    kDmarDiag_IqaReg_Dsc_Fetch_Failed,
+    kDmarDiag_IqaReg_Dsc_Fetch_Error,
+    kDmarDiag_Iqei_Dsc_Type_Invalid,
     kDmarDiag_CcmdReg_Ttm_Invalid,
     kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_NotSupported,
-    /* Last member for determining array index limit. */
-    kDmarDiag_End
+    /* Member for determining array index limit. */
+    kDmarDiag_End,
+    /* Type size hack. */
+    kDmarDiag_32Bit_Hack = 0x7fffffff
 } DMARDIAG;
 AssertCompileSize(DMARDIAG, 4);
 
-/** DMAR diagnostic enum description expansion. */
-#define DMARDIAG_DESC(a_Def, a_Desc)                #a_Def " - " #a_Desc
+/** DMAR diagnostic enum description expansion.
+ * The below construct ensures typos in the input to this macro are caught
+ * during compile time. */
+#define DMARDIAG_DESC(a_Name)        RT_CONCAT(kDmarDiag_, a_Name) < kDmarDiag_End ? RT_STR(a_Name) : "Ignored"
 
 /** DMAR diagnostics description. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(kNone                            ,    "None"                  ),
-    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_NotAligned   ,    "IqtReg_Qt_NotAligned"  ),
-    DMARDIAG_DESC(kDmarDiag_IqtReg_Qt_Invalid      ,    "IqtReg_Qt_Invalid"     ),
-    DMARDIAG_DESC(kDmarDiag_IqaReg_Dw_Invalid      ,    "IqaReg_Dw_Invalid"     ),
-    DMARDIAG_DESC(kDmarDiag_IqaReg_Dsc_Fetch_Failed,    "IqaReg_Dsc_Fetch_Failed"),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_Ttm_Invalid    ,    "CcmdReg_Ttm_Invalid"   ),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_Qi_Enabled     ,    "CcmdReg_Qi_Enabled"    ),
-    DMARDIAG_DESC(kDmarDiag_CcmdReg_NotSupported   ,    "CcmdReg_NotSupported"  )
+    DMARDIAG_DESC(None                  ),
+    DMARDIAG_DESC(IqtReg_Qt_NotAligned  ),
+    DMARDIAG_DESC(IqtReg_Qt_Invalid     ),
+    DMARDIAG_DESC(IqaReg_Dw_Invalid     ),
+    DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error),
+    DMARDIAG_DESC(Iqei_Dsc_Type_Invalid ),
+    DMARDIAG_DESC(CcmdReg_Ttm_Invalid   ),
+    DMARDIAG_DESC(CcmdReg_Qi_Enabled    ),
+    DMARDIAG_DESC(CcmdReg_NotSupported  )
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -187,6 +193,18 @@ typedef struct DMAR
     uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
     /** Registers (group 1). */
     uint8_t                     abRegs1[DMAR_MMIO_GROUP_1_SIZE];
+
+    /** @name Lazily activated registers.
+     * These are the active values for lazily activated registers. Software is free to
+     * modify the actual register values while remapping/translation is enabled but they
+     * take effect only when explicitly signaled by software, hence we need to hold the
+     * active values separately.
+     * @{ */
+    /** Currently active IRTA_REG. */
+    uint64_t                    uIrtaReg;
+    /** Currently active RTADDR_REG. */
+    uint64_t                    uRtaReg;
+    /** @} */
 
     /** @name Register copies for a tiny bit faster and more convenient access.
      *  @{ */
@@ -660,6 +678,7 @@ static void dmarRegWriteRaw64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 /**
  * Reads a 32-bit register with exactly the value it contains.
  *
+ * @returns The raw register value.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
@@ -675,10 +694,11 @@ static uint32_t dmarRegReadRaw32(PCDMAR pThis, uint16_t offReg)
 /**
  * Reads a 64-bit register with exactly the value it contains.
  *
+ * @returns The raw register value.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
-static uint32_t dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg)
+static uint64_t dmarRegReadRaw64(PCDMAR pThis, uint16_t offReg)
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs = dmarRegGetGroupRo(pThis, offReg, sizeof(uint64_t), &idxGroup);
@@ -792,7 +812,7 @@ static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
 /**
  * Reads a 32-bit register as it would be when read by software.
  *
- * @returns The 32-bit register value.
+ * @returns The register value.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
@@ -805,7 +825,7 @@ static uint32_t dmarRegRead32(PCDMAR pThis, uint16_t offReg)
 /**
  * Reads a 64-bit register as it would be when read by software.
  *
- * @returns The 64-bit register value.
+ * @returns The register value.
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  */
@@ -1076,9 +1096,13 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
     uint32_t const fChanged = uGstsReg ^ uGcmdReg;
+    uint64_t const fExtCap  = pThis->fExtCap;
 
-    Assert(pThis->fExtCap & VTD_BF_ECAP_REG_QI_MASK);
-    if (fChanged & VTD_BF_GCMD_REG_QIE_MASK)
+    /*
+     * Queued-invalidation.
+     */
+    if (   (fExtCap & VTD_BF_ECAP_REG_QI_MASK)
+        && (fChanged & VTD_BF_GCMD_REG_QIE_MASK))
     {
         if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
         {
@@ -1092,6 +1116,16 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
             dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK /* fAndMask */, 0 /* fOrMask */);
             dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
         }
+    }
+
+    /*
+     * Set interrupt remapping table pointer.
+     */
+    if (   (fExtCap & VTD_BF_ECAP_REG_IR_MASK)
+        && (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK))
+    {
+        pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
     }
 
     /** @todo Rest of the bits. */
@@ -1328,7 +1362,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
         }
 
         DMAR_UNLOCK(pDevIns, pThisCC);
-        LogFlowFunc(("offReg=%#x rc=%Rrc\n", offReg, VBOXSTRICTRC_VAL(rcStrict)));
+        LogFlowFunc(("offReg=%#x uRegWritten=%#RX64 rc=%Rrc\n", offReg, uRegWritten, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
@@ -1375,6 +1409,48 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef IN_RING3
 /**
+ * Process requests in the invalidation queue.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pvRequests  The requests data.
+ * @param   cbRequests  The size of all requests (in bytes).
+ * @param   fDw         The descriptor width (VTD_IQA_REG_DW_128_BIT or
+ *                      VTD_IQA_REG_DW_256_BIT).
+ */
+static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequests, uint32_t cbRequests, uint8_t fDw)
+{
+    uint8_t const cbDsc = fDw == VTD_IQA_REG_DW_256_BIT ? 32 : 16;
+    for (uint32_t offDsc = 0; offDsc < cbRequests; offDsc += cbDsc)
+    {
+        uint64_t const *puDscQwords = (uint64_t const *)((uintptr_t)pvRequests + offDsc);
+        uint8_t const   fDscType    = VTD_GENERIC_INV_DSC_GET_TYPE(puDscQwords[0]);
+        switch (fDscType)
+        {
+            case VTD_CC_INV_DSC_TYPE:           LogRelMax(32, ("%s: CC\n", DMAR_LOG_PFX));              break;
+            case VTD_IOTLB_INV_DSC_TYPE:        LogRelMax(32, ("%s: IOTLB\n", DMAR_LOG_PFX));           break;
+            case VTD_DEV_TLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: DEV_TLB\n", DMAR_LOG_PFX));         break;
+            case VTD_IEC_INV_DSC_TYPE:          LogRelMax(32, ("%s: IEC_INV\n", DMAR_LOG_PFX));         break;
+            case VTD_INV_WAIT_DSC_TYPE:         LogRelMax(32, ("%s: INV_WAIT\n", DMAR_LOG_PFX));        break;
+            case VTD_P_IOTLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: P_IOTLB\n", DMAR_LOG_PFX));         break;
+            case VTD_PC_INV_DSC_TYPE:           LogRelMax(32, ("%s: PC_INV\n", DMAR_LOG_PFX));          break;
+            case VTD_P_DEV_TLB_INV_DSC_TYPE:    LogRelMax(32, ("%s: P_DEVL_TLB\n", DMAR_LOG_PFX));      break;
+            {
+                break;
+            }
+
+            default:
+            {
+                LogFunc(("Invalid descriptor type: %#x\n", fDscType));
+                dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Dsc_Type_Invalid, kIqei_InvalidDescriptorType);
+                return;
+            }
+        }
+    }
+}
+
+
+
+/**
  * The invalidation-queue thread.
  *
  * @returns VBox status code.
@@ -1389,10 +1465,18 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    uint8_t const  cMaxPages = 1 << VTD_BF_IQA_REG_QS_MASK;
-    size_t const   cbMaxQs   = cMaxPages << X86_PAGE_SHIFT;
-    void *pvQueue = RTMemAllocZ(cbMaxQs);
-    AssertPtrReturn(pvQueue, VERR_NO_MEMORY);
+    /*
+     * Pre-allocate the maximum size of the invalidation queue allowed by the spec.
+     * This prevents trashing the heap as well as deal with out-of-memory situations
+     * up-front while starting the VM. It also simplifies the code from having to
+     * dynamically grow/shrink the allocation based on how software sizes the queue.
+     * Guests normally don't alter the queue size all the time, but that's not an
+     * assumption we can make.
+     */
+    uint8_t const cMaxPages = 1 << VTD_BF_IQA_REG_QS_MASK;
+    size_t const  cbMaxQs   = cMaxPages << X86_PAGE_SHIFT;
+    void *pvRequests = RTMemAllocZ(cbMaxQs);
+    AssertPtrReturn(pvRequests, VERR_NO_MEMORY);
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
@@ -1420,27 +1504,66 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             bool const fIsEmpty = dmarInvQueueIsEmptyEx(pThis, &offQueueHead, &offQueueTail);
             if (!fIsEmpty)
             {
-                uint64_t const uIqaReg     = dmarRegRead64(pThis, VTD_MMIO_OFF_IQA_REG);
+                /** @todo Handle RTADDR_REG MMIO write first, for handling kIqei_InvalidTtm. I
+                 *        don't think it needs to be checked/handled here? */
+
+                uint64_t const uIqaReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
                 uint8_t const  cQueuePages = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
                 uint32_t const cbQueue     = cQueuePages << X86_PAGE_SHIFT;
+                uint8_t const  fDw         = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+
+                /* Paranoia. */
+                Assert(cbQueue <= cbMaxQs);
+                Assert(!(offQueueTail & ~VTD_IQT_REG_RW_MASK));
+                Assert(!(offQueueHead & ~VTD_IQH_REG_RW_MASK));
+                Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueTail & RT_BIT(4)));
+                Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueHead & RT_BIT(4)));
+
                 if (offQueueTail <= cbQueue)
                 {
-                    Assert(offQueueTail > offQueueHead);
-                    uint32_t const cbDescriptors   = offQueueTail - offQueueHead;
-                    RTGCPHYS const GCPhysQueueBase = uIqaReg & VTD_BF_IQA_REG_IQA_MASK;
+                    RTGCPHYS const GCPhysRequests = (uIqaReg & VTD_BF_IQA_REG_IQA_MASK) + offQueueHead;
 
+                    /* Don't hold the lock while reading (potentially large amount of) requests. */
                     DMAR_UNLOCK(pDevIns, pThisR3);
-                    int rc = PDMDevHlpPhysRead(pDevIns, GCPhysQueueBase, pvQueue, cbDescriptors);
+
+                    int      rc;
+                    uint32_t cbRequests;
+                    if (offQueueTail > offQueueHead)
+                    {
+                        /* The requests have not wrapped around, read them in one go. */
+                        cbRequests = offQueueTail - offQueueHead;
+                        rc = PDMDevHlpPhysRead(pDevIns, GCPhysRequests, pvRequests, cbRequests);
+                    }
+                    else
+                    {
+                        /* The requests have wrapped around, read forward and wrapped-around. */
+                        uint32_t const cbForward = cbQueue - offQueueHead;
+                        rc  = PDMDevHlpPhysRead(pDevIns, GCPhysRequests, pvRequests, cbForward);
+
+                        uint32_t const cbWrapped = offQueueTail;
+                        if (   RT_SUCCESS(rc)
+                            && cbWrapped > 0)
+                        {
+                            rc = PDMDevHlpPhysRead(pDevIns, GCPhysRequests + cbForward,
+                                                   (void *)((uintptr_t)pvRequests + cbForward), cbWrapped);
+                        }
+                        cbRequests = cbForward + cbWrapped;
+                    }
+
+                    /* Re-acquire the lock since we need to update device state. */
                     DMAR_LOCK(pDevIns, pThisR3);
 
                     if (RT_SUCCESS(rc))
                     {
-                        /** @todo Handle RTADDR_REG MMIO write first, for handling kIqei_InvalidTtm. I
-                         *        don't think it needs to be checked/handled here? */
-                        /** @todo Process invalidation descriptors. */
+                        /* Indicate to software we've fetched all requests. */
+                        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_IQH_REG, offQueueTail);
+
+                        /* Process all requests (in FIFO order) after more paranoid checks. */
+                        Assert(cbRequests <= cbQueue);
+                        dmarR3InvQueueProcessRequests(pDevIns, pvRequests, cbRequests, fDw);
                     }
                     else
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Failed, kIqei_FetchDescriptorFailed);
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, kIqei_FetchDescriptorError);
                 }
                 else
                     dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
@@ -1449,8 +1572,8 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
         DMAR_UNLOCK(pDevIns, pThisR3);
     }
 
-    RTMemFree(pvQueue);
-    pvQueue = NULL;
+    RTMemFree(pvRequests);
+    pvRequests = NULL;
 
     LogFlowFunc(("Invalidation-queue thread terminating\n"));
     return VINF_SUCCESS;
@@ -1482,16 +1605,106 @@ static DECLCALLBACK(int) dmarR3InvQueueThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHRE
 static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PCDMAR      pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARR3    pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     bool const fVerbose = RTStrCmp(pszArgs, "verbose") == 0;
 
-    DMARDIAG const enmDiag = pThis->enmDiag;
-    const char *pszDiag    = enmDiag < RT_ELEMENTS(g_apszDmarDiagDesc) ? g_apszDmarDiagDesc[enmDiag] : "(Unknown)";
+    /*
+     * We lock the device to get a consistent register state, but it is
+     * ASSUMED pHlp->pfnPrintf is expensive, so we copy the registers into
+     * temporaries and release the lock ASAP.
+     *
+     * Order of register read and outputting according to
+     * Intel VT-d spec. 10.4 "Register Descriptions" for no particular reason.
+     */
+    DMAR_LOCK(pDevIns, pThisR3);
 
+    DMARDIAG const enmDiag      = pThis->enmDiag;
+    uint32_t const uVerReg      = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_VER_REG);
+    uint64_t const uCapReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_CAP_REG);
+    uint64_t const uEcapReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_ECAP_REG);
+    uint32_t const uGcmdReg     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GCMD_REG);
+    uint32_t const uGstsReg     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint64_t const uRtaddrReg   = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_RTADDR_REG);
+    uint64_t const uCcmdReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_CCMD_REG);
+    uint32_t const uFstsReg     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
+    uint32_t const uFectlReg    = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FECTL_REG);
+    uint32_t const uFedataReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEDATA_REG);
+    uint32_t const uFeaddrReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEADDR_REG);
+    uint32_t const uFeuaddrReg  = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEUADDR_REG);
+    uint64_t const uAflogReg    = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_AFLOG_REG);
+    uint32_t const uPmenReg     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PMEN_REG);
+    uint32_t const uPlmbaseReg  = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PLMBASE_REG);
+    uint32_t const uPlmlimitReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PLMLIMIT_REG);
+    uint64_t const uPhmbaseReg  = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_PHMBASE_REG);
+    uint64_t const uPhmlimitReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_PHMLIMIT_REG);
+    uint64_t const uIqhReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQH_REG);
+    uint64_t const uIqtReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQT_REG);
+    uint64_t const uIqaReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
+    uint32_t const uIcsReg      = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
+    uint32_t const uIectlReg    = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IECTL_REG);
+    uint32_t const uIedataReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
+    uint32_t const uIeaddrReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEADDR_REG);
+    uint32_t const uIeuaddrReg  = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG);
+    uint64_t const uIqercdReg   = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQERCD_REG);
+    uint64_t const uIrtaReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
+    uint64_t const uPqhReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_PQH_REG);
+    uint64_t const uPqtReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_PQT_REG);
+    uint64_t const uPqaReg      = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_PQA_REG);
+    uint32_t const uPrsReg      = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PRS_REG);
+    uint32_t const uPectlReg    = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PECTL_REG);
+    uint32_t const uPedataReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PEDATA_REG);
+    uint32_t const uPeaddrReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PEADDR_REG);
+    uint32_t const uPeuaddrReg  = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PEUADDR_REG);
+    uint64_t const uMtrrcapReg  = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_MTRRCAP_REG);
+    uint64_t const uMtrrdefReg  = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_MTRRDEF_REG);
+    /** @todo Do other registers as required, we don't implement them for now. */
+
+    DMAR_UNLOCK(pDevIns, pThisR3);
+
+    const char *const pszDiag = enmDiag < RT_ELEMENTS(g_apszDmarDiagDesc) ? g_apszDmarDiagDesc[enmDiag] : "(Unknown)";
     pHlp->pfnPrintf(pHlp, "Intel-IOMMU:\n");
-    pHlp->pfnPrintf(pHlp, " Diag = %u (%s)\n", enmDiag, pszDiag);
+    pHlp->pfnPrintf(pHlp, " Diag         = %s\n", pszDiag);
+    pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
+    pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
+    pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
+    pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
+    pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
+    pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
+    pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
+    pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
+    pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
+    pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
+    pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
+    pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
+    pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
+    pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
+    pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
+    pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
+    pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
+    pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
+    pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
+    pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
+    pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
+    pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
+    pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
+    pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
+    pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
+    pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
+    pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
+    pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
+    pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
+    pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
+    pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
+    pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
+    pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
+    pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
+    pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
     pHlp->pfnPrintf(pHlp, "\n");
 }
 
