@@ -373,68 +373,87 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     }
 
     quint64 iMaximum = m_pMetric->maximum();
+    /* Draw a straight line per data series: */
     if (iMaximum == 0)
-        return;
-    /* Draw the data lines: */
-    float fBarWidth = m_lineChartRect.width() / (float) (g_iMaximumQueueSize - 1);
-    float fH = m_lineChartRect.height() / (float)iMaximum;
-    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
-        if (m_fUseGradientLineColor)
+        for (int k = 0; k < DATA_SERIES_SIZE; ++k)
         {
-            QLinearGradient gradient(0, 0, 0, m_lineChartRect.height());
-            gradient.setColorAt(0, Qt::black);
-            gradient.setColorAt(1, m_dataSeriesColor[k]);
-            painter.setPen(QPen(gradient, 2.5));
-        }
 
-        const QQueue<quint64> *data = m_pMetric->data(k);
-        if (!m_fUseGradientLineColor)
+            QLineF bar(0 + m_iMarginLeft, height() - m_iMarginBottom,
+                       width() - m_iMarginRight, height() - m_iMarginBottom);
+            painter.drawLine(bar);
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-        if (m_fUseAreaChart && m_fIsAreaChartAllowed)
-        {
-            QVector<QPointF> points;
-            for (int i = 0; i < data->size(); ++i)
-            {
-                float fHeight = fH * data->at(i);
-                if (k == 0)
-                {
-                    if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
-                        fHeight += fH * m_pMetric->data(1)->at(i);
-                }
-                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
-                if (i == 0)
-                    points << QPointF(fX, height() - m_iMarginBottom);
-                points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
-                if (i == data->size() - 1)
-                    points << QPointF(fX, height() - + m_iMarginBottom);
-            }
-            painter.setPen(Qt::NoPen);
+
             painter.setBrush(m_dataSeriesColor[k]);
-            painter.drawPolygon(points, Qt::WindingFill);
-        }
-        else
-        {
-            for (int i = 0; i < data->size() - 1; ++i)
-            {
-                int j = i + 1;
-                float fHeight = fH * data->at(i);
-                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
-                float fHeight2 = fH * data->at(j);
-                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
-                QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
-                painter.drawLine(bar);
-            }
+
         }
     }
+    else
+    {
+        /* Draw the data lines: */
+        float fBarWidth = m_lineChartRect.width() / (float) (g_iMaximumQueueSize - 1);
+        float fH = m_lineChartRect.height() / (float)iMaximum;
+        for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+        {
+            if (m_fUseGradientLineColor)
+            {
+                QLinearGradient gradient(0, 0, 0, m_lineChartRect.height());
+                gradient.setColorAt(0, Qt::black);
+                gradient.setColorAt(1, m_dataSeriesColor[k]);
+                painter.setPen(QPen(gradient, 2.5));
+            }
+
+            const QQueue<quint64> *data = m_pMetric->data(k);
+            if (!m_fUseGradientLineColor)
+                painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
+            if (m_fUseAreaChart && m_fIsAreaChartAllowed)
+            {
+                QVector<QPointF> points;
+                for (int i = 0; i < data->size(); ++i)
+                {
+                    float fHeight = fH * data->at(i);
+                    if (k == 0)
+                    {
+                        if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
+                            fHeight += fH * m_pMetric->data(1)->at(i);
+                    }
+                    float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                    if (i == 0)
+                        points << QPointF(fX, height() - m_iMarginBottom);
+                    points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
+                    if (i == data->size() - 1)
+                        points << QPointF(fX, height() - + m_iMarginBottom);
+                }
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(m_dataSeriesColor[k]);
+                painter.drawPolygon(points, Qt::WindingFill);
+            }
+            else
+            {
+                for (int i = 0; i < data->size() - 1; ++i)
+                {
+                    int j = i + 1;
+                    float fHeight = fH * data->at(i);
+                    float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
+                    float fHeight2 = fH * data->at(j);
+                    float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+                    QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
+                    painter.drawLine(bar);
+                }
+            }
+        }
+    }// else of if (if (iMaximum == 0)
 
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
 
     /* Draw YAxis tick labels: */
     painter.setPen(mainAxisColor);
-    for (int i = 0; i < iYSubAxisCount + 2; ++i)
+    for (int i = iYSubAxisCount + 1; i >= 0; --i)
     {
+        /* Draw the bottom most label and skip others when data maximum is 0: */
+        if (iMaximum == 0 && i <= iYSubAxisCount)
+            break;
         int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * m_lineChartRect.height() / (float) (iYSubAxisCount + 1);
         QString strValue;
         quint64 iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
@@ -451,7 +470,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
-    if (m_fIsPieChartAllowed && m_fShowPieChart)
+    if (iMaximum != 0 && m_fIsPieChartAllowed && m_fShowPieChart)
         drawCombinedPieCharts(painter, iMaximum);
 }
 
