@@ -196,7 +196,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         { "--dhcp",             'h',                            RTGETOPT_REQ_BOOL    },
         { "--ipv6",             '6',                            RTGETOPT_REQ_BOOL    }, /* old name */
         { "--ipv6-enable",      '6',                            RTGETOPT_REQ_BOOL    }, /* new name */
-        { "--ipv6-prefix",      NATNET_CMD_OPT_IPV6_PREFIX,	RTGETOPT_REQ_STRING  },
+        { "--ipv6-prefix",      NATNET_CMD_OPT_IPV6_PREFIX,     RTGETOPT_REQ_STRING  },
         { "--enable",           'e',                            RTGETOPT_REQ_NOTHING },
         { "--disable",          'd',                            RTGETOPT_REQ_NOTHING },
         { "--port-forward-4",   'p',                            RTGETOPT_REQ_STRING  },
