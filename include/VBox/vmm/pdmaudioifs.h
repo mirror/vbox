@@ -902,30 +902,50 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
  * @sa PDMIAUDIOCONNECTOR::pfnStreamGetStatus, PDMIHOSTAUDIO::pfnStreamGetStatus
  * @{ */
 /** No flags being set. */
-#define PDMAUDIOSTREAM_STS_NONE             UINT32_C(0)
+#define PDMAUDIOSTREAM_STS_NONE                 UINT32_C(0)
 /** Set if the backend for the stream has been initialized.
- * This is generally always set after stream creation, but can be cleared if the
- * re-initialization of the stream fails later on. */
-#define PDMAUDIOSTREAM_STS_INITIALIZED      RT_BIT_32(0)
+ *
+ * PDMIAUDIOCONNECTOR: This is generally always set after stream creation, but
+ * can be cleared if the re-initialization of the stream fails later on.
+ *
+ * PDMIHOSTAUDIO: This may not be set immediately if the backend is doing some
+ * of the stream creation asynchronously.  The DrvAudio code will not report
+ * this to the devices, but keep on prebuffering till it is set. */
+#define PDMAUDIOSTREAM_STS_INITIALIZED          RT_BIT_32(0)
 /** Set if the stream is enabled, clear if disabled. */
-#define PDMAUDIOSTREAM_STS_ENABLED          RT_BIT_32(1)
+#define PDMAUDIOSTREAM_STS_ENABLED              RT_BIT_32(1)
 /** Set if the stream is paused.
  * Requires enabled status to be set when used. */
-#define PDMAUDIOSTREAM_STS_PAUSED           RT_BIT_32(2)
+#define PDMAUDIOSTREAM_STS_PAUSED               RT_BIT_32(2)
 /** Output only: Set when the stream is draining.
- * Requires the enabled status to be set when used. */
-#define PDMAUDIOSTREAM_STS_PENDING_DISABLE  RT_BIT_32(3)
-/** Set if the stream needs to be re-initialized by the device (i.e. call
- * PDMIAUDIOCONNECTOR::pfnStreamReInit).
- * (The other status bits are preserved and are worked as normal while in this
- * state, so that the stream can resume operation where it left off.)
- * @note This is not appropriate for PDMIHOSTAUDIO::pfnStreamGetStatus.  */
-#define PDMAUDIOSTREAM_STS_NEED_REINIT      RT_BIT_32(4)
-/** Validation mask. */
-#define PDMAUDIOSTREAM_STS_VALID_MASK       UINT32_C(0x0000001f)
-/** Asserts the validity of the given stream status mask.   */
+ * Requires the enabled status to be set when used.
+ * @todo See todo in drvAudioStreamPlay() regarding the suitability of this
+ *       for PDMIHOSTAUDIO. */
+#define PDMAUDIOSTREAM_STS_PENDING_DISABLE      RT_BIT_32(3)
+
+/** PDMIAUDIOCONNECTOR: Set if the stream needs to be re-initialized by the
+ * device (i.e. call PDMIAUDIOCONNECTOR::pfnStreamReInit). (The other status
+ * bits are preserved and are worked as normal while in this state, so that the
+ * stream can resume operation where it left off.)  */
+#define PDMAUDIOSTREAM_STS_NEED_REINIT          RT_BIT_32(8)
+/** Validation mask for PDMIAUDIOCONNECTOR. */
+#define PDMAUDIOSTREAM_STS_VALID_MASK           UINT32_C(0x0000010f)
+/** Asserts the validity of the given stream status mask for PDMIAUDIOCONNECTOR. */
 #define PDMAUDIOSTREAM_STS_ASSERT_VALID(a_fStreamStatus) do { \
         AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK), ("%#x\n", (a_fStreamStatus))); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+    } while (0)
+
+/** PDMIHOSTAUDIO: Backend is preparing a device switch, DrvAudio should
+ * pre-buffer to make that smoother and quicker.
+ * Call PDMIAUDIONOTIFYFROMHOST::pfnStreamNotifyDeviceChanged when clearing. */
+#define PDMAUDIOSTREAM_STS_PREPARING_SWITCH     RT_BIT_32(16)
+/** Validation mask for PDMIHOSTAUDIO. */
+#define PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND   UINT32_C(0x0001000f)
+/** Asserts the validity of the given stream status mask for PDMIHOSTAUDIO. */
+#define PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(a_fStreamStatus) do { \
+        AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), ("%#x\n", (a_fStreamStatus))); \
         Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
         Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
     } while (0)
@@ -978,8 +998,8 @@ typedef struct PDMAUDIOSTREAM
     /** Number of references to this stream.
      *  Only can be destroyed when the reference count reaches 0. */
     uint32_t volatile       cRefs;
-    /** Stream status flag. */
-    uint32_t       fStatus;
+    /** Stream status - PDMAUDIOSTREAM_STS_XXX. */
+    uint32_t                fStatus;
     /** Audio direction of this stream. */
     PDMAUDIODIR             enmDir;
     /** Size (in bytes) of the backend-specific stream data. */
@@ -1324,6 +1344,20 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
+     * Called from PDMIAUDIONOTIFYFROMHOST::pfnNotifyDeviceChanged so the backend
+     * can start the device change for a stream.
+     *
+     * This is mainly to avoid the need for a list of streams in the backend.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pStream             Pointer to audio stream.
+     * @param   pvUser              Backend specific parameter from the call to
+     *                              PDMIAUDIONOTIFYFROMHOST::pfnNotifyDeviceChanged.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamNotifyDeviceChanged,(PPDMIHOSTAUDIO pInterface,
+                                                             PPDMAUDIOBACKENDSTREAM pStream, void *pvUser));
+
+    /**
      * Controls an audio stream.
      *
      * @returns VBox status code.
@@ -1414,7 +1448,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "109d8c74-dfed-4056-b5ad-022de4d249c2"
+#define PDMIHOSTAUDIO_IID                           "faab0061-c3c8-481e-b875-abbe81baf94a"
 
 
 /** Pointer to a audio notify from host interface. */
@@ -1428,17 +1462,47 @@ typedef struct PDMIAUDIONOTIFYFROMHOST *PPDMIAUDIONOTIFYFROMHOST;
 typedef struct PDMIAUDIONOTIFYFROMHOST
 {
     /**
+     * The device for the given direction changed.
+     *
+     * The driver above backend (DrvAudio) will call the backend back
+     * (PDMIHOSTAUDIO::pfnStreamNotifyDeviceChanged) for all open streams in the
+     * given direction. (This ASSUMES the backend uses one output device and one
+     * input devices for all streams.)
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   enmDir      The audio direction.
+     * @param   pvUser      Backend specific parameter for
+     *                      PDMIHOSTAUDIO::pfnStreamNotifyDeviceChanged.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDeviceChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface, PDMAUDIODIR enmDir, void *pvUser));
+
+    /**
+     * The stream has changed its device and left the
+     * PDMAUDIOSTREAM_STS_PREPARING_SWITCH state.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     The stream that changed device (backend variant).
+     * @param   fReInit     Set if a re-init is required, clear if not.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamNotifyDeviceChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface,
+                                                             PPDMAUDIOBACKENDSTREAM pStream, bool fReInit));
+
+    /**
      * One or more audio devices have changed in some way.
      *
      * The upstream driver/device should re-evaluate the devices they're using.
      *
-     * @param   pInterface          Pointer to this interface.
+     * @todo r=bird: The upstream driver/device does not know which host audio
+     *       devices they are using.  This is mainly for triggering enumeration and
+     *       logging of the audio devices.
+     *
+     * @param   pInterface  Pointer to this interface.
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyDevicesChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface));
 } PDMIAUDIONOTIFYFROMHOST;
 
 /** PDMIAUDIONOTIFYFROMHOST interface ID. */
-#define PDMIAUDIONOTIFYFROMHOST_IID                 "ec10f36b-ec2d-4b97-9044-2a59fba837ad"
+#define PDMIAUDIONOTIFYFROMHOST_IID                 "603f9d72-4b8b-4e0a-aa00-a76982931039"
 
 /** @} */
 
