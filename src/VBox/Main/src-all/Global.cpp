@@ -194,12 +194,12 @@ const Global::OSType Global::sOSTypes[] =
        128,  16,  4 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  },
 
-    { "Linux",   "Linux",             "Linux26",            "Linux 2.6 / 3.x / 4.x (32-bit)",
+    { "Linux",   "Linux",             "Linux26",            "Linux 2.6 / 3.x / 4.x / 5.x (32-bit)",
       VBOXOSTYPE_Linux26,         VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC,
        512,  16,  8 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  },
 
-    { "Linux",   "Linux",             "Linux26_64",         "Linux 2.6 / 3.x / 4.x (64-bit)",
+    { "Linux",   "Linux",             "Linux26_64",         "Linux 2.6 / 3.x / 4.x / 5.x (64-bit)",
       VBOXOSTYPE_Linux26_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_RTCUTC
                                 | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC,
       1024,  16,  8 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
