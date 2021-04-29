@@ -134,6 +134,7 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 *********************************************************************************************************************************/
 /**
  * DMAR error diagnostics.
+ * Sorted alphabetically so it's easier to add and locate items, no other reason.
  *
  * @note Members of this enum are used as array indices, so no gaps in enum
  *       values are not allowed. Update g_apszDmarDiagDesc when you modify
@@ -142,14 +143,17 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 typedef enum
 {
     kDmarDiag_None = 0,
-    kDmarDiag_IqtReg_Qt_NotAligned,
-    kDmarDiag_IqtReg_Qt_Invalid,
-    kDmarDiag_IqaReg_Dw_Invalid,
-    kDmarDiag_IqaReg_Dsc_Fetch_Error,
-    kDmarDiag_Iqei_Dsc_Type_Invalid,
-    kDmarDiag_CcmdReg_Ttm_Invalid,
-    kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_NotSupported,
+    kDmarDiag_CcmdReg_Qi_Enabled,
+    kDmarDiag_CcmdReg_Ttm_Invalid,
+    kDmarDiag_IqaReg_Dsc_Fetch_Error,
+    kDmarDiag_IqaReg_Dw_Invalid,
+    kDmarDiag_Iqei_Dsc_Type_Invalid,
+    kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd,
+    kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd,
+    kDmarDiag_Iqei_Inv_Wait_Dsc_Ttm,
+    kDmarDiag_IqtReg_Qt_Invalid,
+    kDmarDiag_IqtReg_Qt_NotAligned,
     /* Member for determining array index limit. */
     kDmarDiag_End,
     /* Type size hack. */
@@ -162,18 +166,21 @@ AssertCompileSize(DMARDIAG, 4);
  * during compile time. */
 #define DMARDIAG_DESC(a_Name)        RT_CONCAT(kDmarDiag_, a_Name) < kDmarDiag_End ? RT_STR(a_Name) : "Ignored"
 
-/** DMAR diagnostics description. */
+/** DMAR diagnostics description for members in DMARDIAG. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(None                  ),
-    DMARDIAG_DESC(IqtReg_Qt_NotAligned  ),
-    DMARDIAG_DESC(IqtReg_Qt_Invalid     ),
-    DMARDIAG_DESC(IqaReg_Dw_Invalid     ),
-    DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error),
-    DMARDIAG_DESC(Iqei_Dsc_Type_Invalid ),
-    DMARDIAG_DESC(CcmdReg_Ttm_Invalid   ),
-    DMARDIAG_DESC(CcmdReg_Qi_Enabled    ),
-    DMARDIAG_DESC(CcmdReg_NotSupported  )
+    DMARDIAG_DESC(None                      ),
+    DMARDIAG_DESC(CcmdReg_NotSupported      ),
+    DMARDIAG_DESC(CcmdReg_Qi_Enabled        ),
+    DMARDIAG_DESC(CcmdReg_Ttm_Invalid       ),
+    DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error    ),
+    DMARDIAG_DESC(IqaReg_Dw_Invalid         ),
+    DMARDIAG_DESC(Iqei_Dsc_Type_Invalid     ),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_0_1_Rsvd),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_2_3_Rsvd),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Ttm     ),
+    DMARDIAG_DESC(IqtReg_Qt_Invalid         ),
+    DMARDIAG_DESC(IqtReg_Qt_NotAligned      )
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -990,11 +997,11 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 
 
 /**
- * Raises an interrupt in response to an event.
+ * Raises an interrupt in response to a fault event.
  *
  * @param   pDevIns     The IOMMU device instance.
  */
-static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
+static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
@@ -1034,6 +1041,46 @@ static void dmarFaultRaiseInterrupt(PPDMDEVINS pDevIns)
         dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, uFectlReg);
     }
 }
+
+
+#ifdef IN_RING3
+/**
+ * Raises an interrupt in response to an invalidation (complete) event.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
+{
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+
+    uint32_t const uIcsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
+    if (uIcsReg & VTD_BF_ICS_REG_IWC_MASK)
+        return;
+
+    uint32_t uIectlReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IECTL_REG);
+    if (!(uIectlReg & VTD_BF_FECTL_REG_IM_MASK))
+    {
+        /* Software has unmasked the interrupt, raise it. */
+        MSIMSG Msi;
+        Msi.Addr.u64 = RT_MAKE_U64(dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEADDR_REG),
+                                   dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG));
+        Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
+
+        pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
+
+        /* Clear interrupt pending bit. */
+        uIectlReg &= ~VTD_BF_IECTL_REG_IP_MASK;
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
+    }
+    else
+    {
+        /* Interrupt is masked, set the interrupt pending bit. */
+        uIectlReg |= VTD_BF_IECTL_REG_IP_MASK;
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
+    }
+}
+#endif /* IN_RING3 */
 
 
 #if 0
@@ -1100,7 +1147,7 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T 
     uint64_t const fIqei = RT_BF_MAKE(VTD_BF_IQERCD_REG_IQEI, enmIqei);
     dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
 
-    dmarFaultRaiseInterrupt(pDevIns);
+    dmarFaultEventRaiseInterrupt(pDevIns);
 }
 
 
@@ -1439,18 +1486,84 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
  */
 static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequests, uint32_t cbRequests, uint8_t fDw)
 {
+    PCDMAR   pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisR3);
+
     uint8_t const cbDsc = fDw == VTD_IQA_REG_DW_256_BIT ? 32 : 16;
     for (uint32_t offDsc = 0; offDsc < cbRequests; offDsc += cbDsc)
     {
         uint64_t const *puDscQwords = (uint64_t const *)((uintptr_t)pvRequests + offDsc);
-        uint8_t const   fDscType    = VTD_GENERIC_INV_DSC_GET_TYPE(puDscQwords[0]);
+        uint64_t const  uQword0     = puDscQwords[0];
+        uint64_t const  uQword1     = puDscQwords[1];
+        uint8_t const   fDscType    = VTD_GENERIC_INV_DSC_GET_TYPE(uQword0);
+        uint8_t const   fTtm        = dmarRtAddrRegGetTtm(pThis);
+        Assert(fTtm != VTD_TTM_RSVD);       /* Should be guaranteed when software updates GCMD_REG.SRTP. */
+
         switch (fDscType)
         {
             case VTD_CC_INV_DSC_TYPE:           LogRelMax(32, ("%s: CC\n", DMAR_LOG_PFX));              break;
             case VTD_IOTLB_INV_DSC_TYPE:        LogRelMax(32, ("%s: IOTLB\n", DMAR_LOG_PFX));           break;
             case VTD_DEV_TLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: DEV_TLB\n", DMAR_LOG_PFX));         break;
             case VTD_IEC_INV_DSC_TYPE:          LogRelMax(32, ("%s: IEC_INV\n", DMAR_LOG_PFX));         break;
-            case VTD_INV_WAIT_DSC_TYPE:         LogRelMax(32, ("%s: INV_WAIT\n", DMAR_LOG_PFX));        break;
+
+            case VTD_INV_WAIT_DSC_TYPE:
+            {
+                /* Validate translation modes valid for this descriptor. */
+                if (   fTtm == VTD_TTM_LEGACY_MODE
+                    || fDw == VTD_IQA_REG_DW_256_BIT)
+                { /* likely */  }
+                else
+                {
+                    dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_Ttm, kIqei_InvalidDescriptorType);
+                    return;
+                }
+
+                /* Validate reserved bits. */
+                uint64_t const fValidMask0 = !(pThis->fExtCap & VTD_BF_ECAP_REG_PDS_MASK)
+                                           ? VTD_INV_WAIT_DSC_0_VALID_MASK & ~VTD_BF_0_INV_WAIT_DSC_PD_MASK
+                                           : VTD_INV_WAIT_DSC_0_VALID_MASK;
+                if (   !(uQword0 & ~fValidMask0)
+                    && !(uQword1 & ~VTD_INV_WAIT_DSC_1_VALID_MASK))
+                { /* likely */ }
+                else
+                {
+                    dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd, kIqei_RsvdFieldViolation);
+                    return;
+                }
+                if (fDw == VTD_IQA_REG_DW_256_BIT)
+                {
+                    uint64_t const uQword2 = puDscQwords[2];
+                    uint64_t const uQword3 = puDscQwords[3];
+                    if (   !uQword2
+                        && !uQword3)
+                    { /* likely */ }
+                    else
+                    {
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd, kIqei_RsvdFieldViolation);
+                        return;
+                    }
+                }
+
+                /* Perform status write (this must be done prior to generating the completion interrupt). */
+                bool const fSw = RT_BF_GET(uQword0, VTD_BF_0_INV_WAIT_DSC_SW);
+                if (fSw)
+                {
+                    uint32_t const uStatus      = RT_BF_GET(uQword0, VTD_BF_0_INV_WAIT_DSC_STDATA);
+                    RTGCPHYS const GCPhysStatus = uQword1 & VTD_BF_1_INV_WAIT_DSC_STADDR_MASK;
+                    DMAR_UNLOCK(pDevIns, pThisR3);
+                    int const rc = PDMDevHlpPhysWrite(pDevIns, GCPhysStatus, (void const*)&uStatus, sizeof(uStatus));
+                    DMAR_LOCK(pDevIns, pThisR3);
+                    AssertRC(rc);
+                }
+
+                /* Generate invalidation event interrupt. */
+                bool const fIf = RT_BF_GET(uQword0, VTD_BF_0_INV_WAIT_DSC_IF);
+                if (fIf)
+                    dmarR3InvEventRaiseInterrupt(pDevIns);
+                break;
+            }
+
             case VTD_P_IOTLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: P_IOTLB\n", DMAR_LOG_PFX));         break;
             case VTD_PC_INV_DSC_TYPE:           LogRelMax(32, ("%s: PC_INV\n", DMAR_LOG_PFX));          break;
             case VTD_P_DEV_TLB_INV_DSC_TYPE:    LogRelMax(32, ("%s: P_DEVL_TLB\n", DMAR_LOG_PFX));      break;
@@ -1460,6 +1573,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
 
             default:
             {
+                /* Stop processing further requests. */
                 LogFunc(("Invalid descriptor type: %#x\n", fDscType));
                 dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Dsc_Type_Invalid, kIqei_InvalidDescriptorType);
                 return;
@@ -1509,7 +1623,7 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
         bool const fSignaled = ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, false);
         if (!fSignaled)
         {
-            int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtInvQueue, RT_INDEFINITE_WAIT);
+            int const rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtInvQueue, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;

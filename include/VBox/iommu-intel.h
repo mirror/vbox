@@ -2176,6 +2176,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_1_INV_WAIT_DSC_STADDR_MASK                       UINT64_C(0xfffffffffffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
                             (RSVD_1_0, STADDR));
+
+/* INV_WAIT_DSC: Qword 0 valid mask. */
+#define VTD_INV_WAIT_DSC_0_VALID_MASK                           (  VTD_BF_0_INV_WAIT_DSC_TYPE_LO_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_IF_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_SW_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_FN_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_PD_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_TYPE_HI_MASK \
+                                                                 | VTD_BF_0_INV_WAIT_DSC_STDATA_MASK)
+/* INV_WAIT_DSC: Qword 1 valid mask. */
+#define VTD_INV_WAIT_DSC_1_VALID_MASK                           VTD_BF_1_INV_WAIT_DSC_STADDR_MASK
 /** @} */
 
 
