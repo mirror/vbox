@@ -1977,7 +1977,6 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
-        {
             if (!(pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_ENABLED))
             {
                 /* Is a pending disable outstanding? Then disable first. */
@@ -2011,10 +2010,8 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 }
             }
             break;
-        }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
-        {
             if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_ENABLED)
             {
                 /*
@@ -2050,11 +2047,10 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 }
             }
             break;
-        }
 
         case PDMAUDIOSTREAMCMD_PAUSE:
-        {
-            if (!(pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PAUSED))
+            if (   (pStreamEx->Core.fStatus & (PDMAUDIOSTREAM_STS_ENABLED | PDMAUDIOSTREAM_STS_PAUSED))
+                ==                             PDMAUDIOSTREAM_STS_ENABLED)
             {
                 rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_PAUSE);
                 if (RT_SUCCESS(rc))
@@ -2064,12 +2060,11 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 }
             }
             break;
-        }
 
         case PDMAUDIOSTREAMCMD_RESUME:
-        {
             if (pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_PAUSED)
             {
+                Assert(pStreamEx->Core.fStatus & PDMAUDIOSTREAM_STS_ENABLED);
                 rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_RESUME);
                 if (RT_SUCCESS(rc))
                 {
@@ -2078,7 +2073,6 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 }
             }
             break;
-        }
 
         default:
             rc = VERR_NOT_IMPLEMENTED;
