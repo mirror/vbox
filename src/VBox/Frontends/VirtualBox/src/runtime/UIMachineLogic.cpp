@@ -2804,8 +2804,8 @@ void UIMachineLogic::sltHandleCommitData()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
-#endif
     sltCloseLogViewerWindow();
+#endif
     sltCloseFileManagerDialog();
     sltCloseVMInformationDialog();
     sltCloseGuestControlConsoleDialog();
