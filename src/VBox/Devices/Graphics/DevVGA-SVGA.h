@@ -35,6 +35,10 @@
 # include <VBox/vmm/vmcpuset.h>
 #endif
 
+#include <iprt/avl.h>
+#include <iprt/list.h>
+
+
 /*
  * PCI device IDs.
  */
@@ -58,7 +62,7 @@
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wpedantic"
 #endif
-/* VMSVGA headers from SVGA Gallium driver. */
+/* VMSVGA headers. */
 #pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga3d_caps.h>
 #include <svga3d_reg.h>
@@ -573,5 +577,74 @@ void vmsvgaR3ClipCopyBox(const SVGA3dSize *pSizeSrc, const SVGA3dSize *pSizeDest
 void vmsvgaR3ClipBox(const SVGA3dSize *pSize, SVGA3dBox *pBox);
 void vmsvgaR3ClipRect(SVGASignedRect const *pBound, SVGASignedRect *pRect);
 void vmsvgaR3Clip3dRect(SVGA3dRect const *pBound, SVGA3dRect RT_UNTRUSTED_GUEST *pRect);
+
+/*
+ * GBO (Guest Backed Object).
+ * A GBO is a list of the guest pages. GBOs are used for VMSVGA MOBs (Memory OBjects)
+ * and Object Tables which the guest shares with the host.
+ *
+ * A GBO is similar to a GMR. Nevertheless I'll create a new code for GBOs in order
+ * to avoid tweaking and possibly breaking existing code. Moreover it will be probably possible to
+ * map the guest pages into the host R3 memory and access them directly.
+ */
+
+/* GBO descriptor. */
+typedef struct VMSVGAGBODESCRIPTOR
+{
+   RTGCPHYS                 GCPhys;
+   uint64_t                 cPages;
+} VMSVGAGBODESCRIPTOR, *PVMSVGAGBODESCRIPTOR;
+typedef VMSVGAGBODESCRIPTOR const *PCVMSVGAGBODESCRIPTOR;
+
+/* GBO.
+ */
+typedef struct VMSVGAGBO
+{
+    uint32_t                fGboFlags;
+    uint32_t                cTotalPages;
+    uint32_t                cbTotal;
+    uint32_t                cDescriptors;
+    PVMSVGAGBODESCRIPTOR    paDescriptors;
+    void                   *pvHost; /* Pointer to cbTotal bytes on the host if VMSVGAGBO_F_HOST_BACKED is set. */
+} VMSVGAGBO, *PVMSVGAGBO;
+typedef VMSVGAGBO const *PCVMSVGAGBO;
+
+#define VMSVGAGBO_F_WRITE_PROTECTED 0x1
+#define VMSVGAGBO_F_HOST_BACKED     0x2
+
+#define VMSVGA_IS_GBO_CREATED(a_Gbo) ((a_Gbo)->paDescriptors != NULL)
+
+/* MOB is also a GBO.
+ */
+typedef struct VMSVGAMOB
+{
+    AVLU32NODECORE          Core; /* Key is the mobid. */
+    RTLISTNODE              nodeLRU;
+    VMSVGAGBO               Gbo;
+} VMSVGAMOB, *PVMSVGAMOB;
+typedef VMSVGAMOB const *PCVMSVGAMOB;
+
+int vmsvgaR3MobBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob, uint32_t cbValid);
+void vmsvgaR3MobBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob);
+void *vmsvgaR3MobBackingStoreGet(PVMSVGAMOB pMob, uint32_t off);
+
+DECLINLINE(uint32_t) vmsvgaR3MobSize(PVMSVGAMOB pMob)
+{
+    if (pMob)
+        return pMob->Gbo.cbTotal;
+    return 0;
+}
+
+DECLINLINE(uint32_t) vmsvgaR3MobId(PVMSVGAMOB pMob)
+{
+    if (pMob)
+        return pMob->Core.Key;
+    return SVGA_ID_INVALID;
+}
+
+#ifdef VBOX_WITH_VMSVGA3D
+int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox);
+int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc);
+#endif
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */

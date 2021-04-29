@@ -324,9 +324,15 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Graphics/DevVGA-SVGA3d-info.cpp \
   	Graphics/DevVGA-SVGA3d-shared.cpp \
   	Graphics/DevVGA-SVGA3d-savedstate.cpp
+  ifdef VBOX_WITH_VMSVGA3D_DX
+   VBoxDD_DEFS          += VMSVGA3D_DX
+   VBoxDD_SOURCES       += \
+       Graphics/DevVGA-SVGA3d-dx.cpp \
+       Graphics/DevVGA-SVGA3d-dx-shader.cpp
+  endif
   if  "$(KBUILD_TARGET)" == "win" && !defined(VBOX_WITH_VMSVGA3D_USE_OPENGL)
    ifdef VBOX_WITH_VMSVGA3D_DX
-    VBoxDD_DEFS          += VMSVGA3D_DX
+    VBoxDD_DEFS          += VMSVGA3D_D3D11
     VBoxDD_SOURCES       += \
         Graphics/DevVGA-SVGA3d-win-dx.cpp
    else

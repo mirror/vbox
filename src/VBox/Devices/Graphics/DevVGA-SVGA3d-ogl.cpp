@@ -7716,3 +7716,9 @@ int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
     *pu32Pixels = (uint32_t)pixels;
     return VINF_SUCCESS;
 }
+
+int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
+{
+    RT_NOREF(pThisCC, pszInterfaceName, pvInterfaceFuncs, cbInterfaceFuncs);
+    return VERR_NOT_IMPLEMENTED;
+}

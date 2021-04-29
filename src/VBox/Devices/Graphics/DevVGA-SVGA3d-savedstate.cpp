@@ -955,7 +955,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                         }
 
                         RTMemFree(pData);
-#elif defined(VMSVGA3D_DX)
+#elif defined(VMSVGA3D_D3D11)
                         /** @todo */
 #elif defined(VMSVGA3D_OPENGL)
                         void *pData = NULL;

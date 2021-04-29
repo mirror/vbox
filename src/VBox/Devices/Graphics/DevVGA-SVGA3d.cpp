@@ -95,7 +95,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
 #ifdef VMSVGA3D_OPENGL
     pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
     pSurface->oglId.buffer          = OPENGL_INVALID_ID;
-#elif defined(VMSVGA3D_DX)
+#elif defined(VMSVGA3D_D3D11)
+    pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
     // pSurface->pBackendSurface       = NULL;
 #else /* VMSVGA3D_DIRECT3D */
     pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
@@ -103,7 +104,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
     pSurface->pSharedObjectTree     = NULL;
 #endif
 
-    /** @todo This 'switch' and the sufraceFlags tweaks should not be necessary.
+    /** @todo This 'switch' and the surfaceFlags tweaks should not be necessary.
      * The actual surface type will be figured out when the surface is actually used later.
      * The backends code must be reviewed for unnecessary dependencies on the surfaceFlags value.
      */
@@ -294,7 +295,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
     /* pSurface->u.pSurface = NULL; */
     /* pSurface->bounce.pTexture = NULL; */
     /* pSurface->emulated.pTexture = NULL; */
-#elif defined(VMSVGA3D_DX)
+#elif defined(VMSVGA3D_D3D11)
     /* Nothing, because all backend specific data reside in pSurface->pBackendSurface. */
 #else
     /* pSurface->fEmulated = false; */
@@ -513,7 +514,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGuestImage gues
 #ifdef VMSVGA3D_DIRECT3D
         /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
         vmsvga3dSurfaceFlush(pSurface);
-#elif defined(VMSVGA3D_DX)
+#elif defined(VMSVGA3D_D3D11)
         /** @todo */
 #else /* VMSVGA3D_OPENGL */
         pContext = &pState->SharedCtx;
@@ -997,4 +998,34 @@ int vmsvga3dDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJEC
 int vmsvga3dDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
 {
     return vmsvga3dBackDestroyScreen(pThisCC, pScreen);
+}
+
+int vmsvga3dSurfaceInvalidate(PVGASTATECC pThisCC, uint32_t sid, uint32_t face, uint32_t mipmap)
+{
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
+    AssertReturn(pState, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSurface;
+    int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
+    AssertRCReturn(rc, rc);
+
+    if (face == SVGA_ID_INVALID && mipmap == SVGA_ID_INVALID)
+    {
+        for (uint32_t i = 0; i < pSurface->cLevels * pSurface->cFaces; ++i)
+        {
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
+            pMipmapLevel->fDirty = true;
+        }
+    }
+    else
+    {
+        PVMSVGA3DMIPMAPLEVEL pMipmapLevel;
+        rc = vmsvga3dMipmapLevel(pSurface, face, mipmap, &pMipmapLevel);
+        AssertRCReturn(rc, rc);
+
+        pMipmapLevel->fDirty = true;
+    }
+    pSurface->fDirty = true;
+
+    return rc;
 }

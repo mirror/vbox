@@ -28,9 +28,6 @@
 # error "DevVGA-SVGA-internal.h is only for ring-3 code"
 #endif
 
-#include <iprt/avl.h>
-#include <iprt/list.h>
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -54,50 +51,6 @@ typedef struct
     uint32_t                numDescriptors;
     PVMSVGAGMRDESCRIPTOR    paDesc;
 } GMR, *PGMR;
-
-/*
- * GBO (Guest Backed Object).
- * A GBO is a list of the guest pages. GBOs are used for VMSVGA MOBs (Memory OBjects)
- * and Object Tables which the guest shares with the host.
- *
- * A GBO is similar to a GMR. Nevertheless I'll create a new code for GBOs in order
- * to avoid tweaking and possibly breaking existing code. Moreover it will be probably possible to
- * map the guest pages into the host R3 memory and access them directly.
- */
-
-/* GBO descriptor. */
-typedef struct VMSVGAGBODESCRIPTOR
-{
-   RTGCPHYS                 GCPhys;
-   uint64_t                 cPages;
-} VMSVGAGBODESCRIPTOR, *PVMSVGAGBODESCRIPTOR;
-typedef VMSVGAGBODESCRIPTOR const *PCVMSVGAGBODESCRIPTOR;
-
-/* GBO.
- */
-typedef struct VMSVGAGBO
-{
-    uint32_t                fGboFlags;
-    uint32_t                cTotalPages;
-    uint32_t                cbTotal;
-    uint32_t                cDescriptors;
-    PVMSVGAGBODESCRIPTOR    paDescriptors;
-} VMSVGAGBO, *PVMSVGAGBO;
-typedef VMSVGAGBO const *PCVMSVGAGBO;
-
-#define VMSVGAGBO_F_WRITE_PROTECTED 1
-
-#define VMSVGA_IS_GBO_CREATED(a_Gbo) ((a_Gbo)->paDescriptors != NULL)
-
-/* MOB is also a GBO.
- */
-typedef struct VMSVGAMOB
-{
-    AVLU32NODECORE          Core; /* Key is the mobid. */
-    RTLISTNODE              nodeLRU;
-    VMSVGAGBO               Gbo;
-} VMSVGAMOB, *PVMSVGAMOB;
-typedef VMSVGAMOB const *PCVMSVGAMOB;
 
 
 typedef struct VMSVGACMDBUF *PVMSVGACMDBUF;
@@ -326,7 +279,7 @@ void vmsvgaR3CmdAnnotationCopy(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmd
 #ifdef VBOX_WITH_VMSVGA3D
 void vmsvgaR3CmdDefineGMR2(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDefineGMR2 const *pCmd);
 void vmsvgaR3CmdRemapGMR2(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdRemapGMR2 const *pCmd);
-int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd);
+int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXContext, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd);
 #endif
 
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)

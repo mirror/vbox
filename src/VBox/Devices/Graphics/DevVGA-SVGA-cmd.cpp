@@ -341,20 +341,6 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
 #endif /* LOG_ENABLED || VBOX_STRICT */
 
 
-#if !defined(VMSVGA3D_DX)
-# ifdef VBOX_WITH_VMSVGA3D
-/*
- * Stub for old backends.
- */
-int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
-{
-    RT_NOREF(pThisCC, pszInterfaceName, pvInterfaceFuncs, cbInterfaceFuncs);
-    return VERR_NOT_IMPLEMENTED;
-}
-# endif
-#endif
-
-
 /*
  *
  * Guest-Backed Objects (GBO).
@@ -598,6 +584,9 @@ static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth,
     else
         pGbo->paDescriptors = paDescriptors;
 
+#if 1 /// @todo PGMHandlerPhysicalRegister asserts deep in PGM code with enmKind of a page being out of range.
+fWriteProtected = false;
+#endif
     if (fWriteProtected)
     {
         pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
@@ -631,6 +620,7 @@ static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
     }
 }
 
+/** @todo static void vmsvgaR3GboWriteProtect(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo, bool fWriteProtect) */
 
 typedef enum VMSVGAGboTransferDirection
 {
@@ -716,6 +706,43 @@ static int vmsvgaR3GboRead(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
                                off, pvData, cbData,
                                VMSVGAGboTransferDirection_Read);
 }
+
+
+static void vmsvgaR3GboBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
+{
+    AssertReturnVoid(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED);
+    vmsvgaR3GboWrite(pSvgaR3State, pGbo, 0, pGbo->pvHost, pGbo->cbTotal);
+    RTMemFree(pGbo->pvHost);
+    pGbo->pvHost = NULL;
+    pGbo->fGboFlags &= ~VMSVGAGBO_F_HOST_BACKED;
+}
+
+
+static int vmsvgaR3GboBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo, uint32_t cbValid)
+{
+    int rc;
+
+    /* Just reread the data if pvHost has been allocated already. */
+    if (!(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED))
+        pGbo->pvHost = RTMemAllocZ(pGbo->cbTotal);
+
+    if (pGbo->pvHost)
+    {
+        rc = vmsvgaR3GboRead(pSvgaR3State, pGbo, 0, pGbo->pvHost, cbValid);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (RT_SUCCESS(rc))
+        pGbo->fGboFlags |= VMSVGAGBO_F_HOST_BACKED;
+    else
+    {
+        RTMemFree(pGbo->pvHost);
+        pGbo->pvHost = NULL;
+    }
+    return rc;
+}
+
 
 
 /*
@@ -830,8 +857,11 @@ static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
 }
 
 
-static PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
+static PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId RT_UNTRUSTED_GUEST mobid)
 {
+    if (mobid == SVGA_ID_INVALID)
+        return NULL;
+
     PVMSVGAMOB pMob = (PVMSVGAMOB)RTAvlU32Get(&pSvgaR3State->MOBTree, mobid);
     if (pMob)
     {
@@ -839,9 +869,143 @@ static PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
         RTListNodeRemove(&pMob->nodeLRU);
         RTListPrepend(&pSvgaR3State->MOBLRUList, &pMob->nodeLRU);
     }
+    else
+        ASSERT_GUEST_FAILED();
 
     return pMob;
 }
+
+
+/** Create a host ring-3 pointer to the MOB data.
+ * Current approach is to allocate a host memory buffer and copy the guest MOB data if necessary.
+ * @param pMob     The MOB.
+ * @param cbValid  How many bytes of the guest backing memory contain valid data.
+ * @return VBox status.
+ */
+/** @todo uint32_t cbValid -> uint32_t offStart, uint32_t cbData */
+int vmsvgaR3MobBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob, uint32_t cbValid)
+{
+    AssertReturn(pMob, VERR_INVALID_PARAMETER);
+    return vmsvgaR3GboBackingStoreCreate(pSvgaR3State, &pMob->Gbo, cbValid);
+}
+
+
+void vmsvgaR3MobBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob)
+{
+    if (pMob)
+        vmsvgaR3GboBackingStoreDelete(pSvgaR3State, &pMob->Gbo);
+}
+
+
+void *vmsvgaR3MobBackingStoreGet(PVMSVGAMOB pMob, uint32_t off)
+{
+    if (pMob && (pMob->Gbo.fGboFlags & VMSVGAGBO_F_HOST_BACKED))
+    {
+        if (off <= pMob->Gbo.cbTotal)
+            return (uint8_t *)pMob->Gbo.pvHost + off;
+    }
+    return NULL;
+}
+
+
+#ifdef VBOX_WITH_VMSVGA3D
+int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    SVGAOTableSurfaceEntry entrySurface;
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                                pImageId->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
+    if (RT_SUCCESS(rc))
+    {
+        PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
+        if (pMob)
+        {
+            VMSVGA3D_MAPPED_SURFACE map;
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, pImageId, pBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            if (RT_SUCCESS(rc))
+            {
+                /* Copy MOB -> mapped surface. */
+                uint32_t offSrc = pBox->x * map.cbPixel
+                                + pBox->y * entrySurface.size.width * map.cbPixel
+                                + pBox->z * entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                uint8_t *pu8Dst = (uint8_t *)map.pvData;
+                for (uint32_t z = 0; z < pBox->d; ++z)
+                {
+                    for (uint32_t y = 0; y < pBox->h; ++y)
+                    {
+                        rc = vmsvgaR3GboRead(pSvgaR3State, &pMob->Gbo, offSrc, pu8Dst, pBox->w * map.cbPixel);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        pu8Dst += map.cbRowPitch;
+                        offSrc += entrySurface.size.width * map.cbPixel;
+                    }
+
+                    pu8Dst += map.cbDepthPitch;
+                    offSrc += entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                }
+
+                pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, pImageId, &map, /* fWritten= */ true);
+            }
+        }
+        else
+            rc = VERR_INVALID_STATE;
+    }
+
+    return rc;
+}
+
+
+int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc)
+{
+    /* pPtSrc must be verified by the caller. */
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    SVGAOTableSurfaceEntry entrySurface;
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                                pImageId->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
+    if (RT_SUCCESS(rc))
+    {
+        PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
+        if (pMob)
+        {
+            VMSVGA3D_MAPPED_SURFACE map;
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, pImageId, pBoxDst, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            if (RT_SUCCESS(rc))
+            {
+                /* Copy MOB -> mapped surface. */
+                uint32_t offSrc = pPtSrc->x * map.cbPixel
+                                + pPtSrc->y * entrySurface.size.width * map.cbPixel
+                                + pPtSrc->z * entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                uint8_t *pu8Dst = (uint8_t *)map.pvData;
+                for (uint32_t z = 0; z < pBoxDst->d; ++z)
+                {
+                    for (uint32_t y = 0; y < pBoxDst->h; ++y)
+                    {
+                        rc = vmsvgaR3GboRead(pSvgaR3State, &pMob->Gbo, offSrc, pu8Dst, pBoxDst->w * map.cbPixel);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        pu8Dst += map.cbRowPitch;
+                        offSrc += entrySurface.size.width * map.cbPixel;
+                    }
+
+                    pu8Dst += map.cbDepthPitch;
+                    offSrc += entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                }
+
+                pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, pImageId, &map, /* fWritten= */ true);
+            }
+        }
+        else
+            rc = VERR_INVALID_STATE;
+    }
+
+    return rc;
+}
+#endif /* VBOX_WITH_VMSVGA3D */
+
 
 /*
  * Screen objects.
@@ -1184,7 +1348,6 @@ static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface
 {
 //     ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pCmd, pSvgaR3State);
 
     /* Assign the mobid to the surface. */
     int rc = VINF_SUCCESS;
@@ -1324,13 +1487,19 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
 }
 
 
+/* SVGA_3D_CMD_INVALIDATE_GB_IMAGE 1105 */
+static void vmsvga3dCmdInvalidateGBImage(PVGASTATECC pThisCC, SVGA3dCmdInvalidateGBImage const *pCmd)
+{
+// ASMBreakpoint();
+    vmsvga3dSurfaceInvalidate(pThisCC, pCmd->image.sid, pCmd->image.face, pCmd->image.mipmap);
+}
+
+
 /* SVGA_3D_CMD_INVALIDATE_GB_SURFACE 1106 */
 static void vmsvga3dCmdInvalidateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdInvalidateGBSurface const *pCmd)
 {
-//     ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd);
-    /** @todo Implement. */
+// ASMBreakpoint();
+    vmsvga3dSurfaceInvalidate(pThisCC, pCmd->sid, SVGA_ID_INVALID, SVGA_ID_INVALID);
 }
 
 
@@ -1381,12 +1550,13 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
     entry.image.sid = SVGA_ID_INVALID;
     // entry.image.face = 0;
     // entry.image.mipmap = 0;
-    entry.width = pCmd->width;
-    entry.height = pCmd->height;
-    entry.xRoot = pCmd->xRoot;
-    entry.yRoot = pCmd->yRoot;
-    entry.flags = pCmd->flags;
-    entry.dpi = pCmd->dpi;
+    entry.width     = pCmd->width;
+    entry.height    = pCmd->height;
+    entry.xRoot     = pCmd->xRoot;
+    entry.yRoot     = pCmd->yRoot;
+    entry.flags     = pCmd->flags;
+    entry.dpi       = pCmd->dpi;
+
     int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                  pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
@@ -1404,7 +1574,7 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
         pScreen->yOrigin = pCmd->yRoot;
         pScreen->cWidth  = pCmd->width;
         pScreen->cHeight = pCmd->height;
-        pScreen->offVRAM = 0; /* Always for screen targets, they use either a separate memory buffer or a host window. */
+        pScreen->offVRAM = 0; /* Not applicable for screen targets, they use either a separate memory buffer or a host window. */
         pScreen->cbPitch = pCmd->width * 4;
         pScreen->cBpp    = 32;
 
@@ -1568,6 +1738,36 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
 }
 
 
+/* SVGA_3D_CMD_DEFINE_GB_SURFACE_V2 1134 */
+static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v2 const *pCmd)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
+    SVGAOTableSurfaceEntry entry;
+    RT_ZERO(entry);
+    entry.format = pCmd->format;
+    entry.surface1Flags = pCmd->surfaceFlags;
+    entry.numMipLevels = pCmd->numMipLevels;
+    entry.multisampleCount = pCmd->multisampleCount;
+    entry.autogenFilter = pCmd->autogenFilter;
+    entry.size = pCmd->size;
+    entry.mobid = SVGA_ID_INVALID;
+    entry.arraySize = pCmd->arraySize;
+    // entry.mobPitch = 0;
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                                 pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Create the host surface. */
+        /** @todo fGBO = true flag. */
+        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
+                              pCmd->multisampleCount, pCmd->autogenFilter,
+                              pCmd->numMipLevels, &pCmd->size);
+    }
+}
+
+
 /* SVGA_3D_CMD_DEFINE_GB_MOB64 1135 */
 static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64 const *pCmd)
 {
@@ -1592,1601 +1792,1927 @@ static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64
 
 
 /* SVGA_3D_CMD_DX_DEFINE_CONTEXT 1143 */
-static void vmsvga3dCmdDXDefineContext(PVGASTATECC pThisCC, SVGA3dCmdDXDefineContext const *pCmd)
+static int vmsvga3dCmdDXDefineContext(PVGASTATECC pThisCC, SVGA3dCmdDXDefineContext const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
+
+    /* Update the entry in the pSvgaR3State->pGboOTable[SVGA_OTABLE_DXCONTEXT]. */
+    SVGAOTableDXContextEntry entry;
+    RT_ZERO(entry);
+    entry.cid = pCmd->cid;
+    entry.mobid = SVGA_ID_INVALID;
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_DXCONTEXT],
+                                 pCmd->cid, sizeof(SVGAOTableDXContextEntry), &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
     {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineContext(pThisCC->svga.p3dState);
+        /* Create the host context. */
+        rc = vmsvga3dDXDefineContext(pThisCC, pCmd->cid);
     }
+
+    return rc;
+#else
+    RT_NOREF(pThisCC, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_CONTEXT 1144 */
-static void vmsvga3dCmdDXDestroyContext(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyContext const *pCmd)
+static int vmsvga3dCmdDXDestroyContext(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyContext const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyContext(pThisCC->svga.p3dState);
-    }
+
+    /* Update the entry in the pSvgaR3State->pGboOTable[SVGA_OTABLE_DXCONTEXT]. */
+    SVGAOTableDXContextEntry entry;
+    RT_ZERO(entry);
+    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_DXCONTEXT],
+                        pCmd->cid, sizeof(SVGAOTableDXContextEntry), &entry, sizeof(entry));
+
+    return vmsvga3dDXDestroyContext(pThisCC, pCmd->cid);
+#else
+    RT_NOREF(pThisCC, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_CONTEXT 1145 */
-static void vmsvga3dCmdDXBindContext(PVGASTATECC pThisCC, SVGA3dCmdDXBindContext const *pCmd)
+static int vmsvga3dCmdDXBindContext(PVGASTATECC pThisCC, SVGA3dCmdDXBindContext const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
+
+    /* Assign a mobid to a cid. */
+    int rc = VINF_SUCCESS;
+    if (pCmd->mobid != SVGA_ID_INVALID)
+        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_MOB],
+                                       pCmd->mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE);
+    if (RT_SUCCESS(rc))
     {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindContext(pThisCC->svga.p3dState);
+        SVGAOTableDXContextEntry entry;
+        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_DXCONTEXT],
+                                pCmd->cid, sizeof(SVGAOTableDXContextEntry), &entry, sizeof(entry));
+        if (RT_SUCCESS(rc))
+        {
+            SVGADXContextMobFormat *pSvgaDXContext = NULL;
+            if (pCmd->mobid != entry.mobid && entry.mobid != SVGA_ID_INVALID)
+            {
+                /* Unbind notification to the DX backend. Copy the context data to the guest backing memory. */
+                pSvgaDXContext = (SVGADXContextMobFormat *)RTMemAlloc(sizeof(SVGADXContextMobFormat));
+                if (pSvgaDXContext)
+                {
+                    rc = vmsvga3dDXUnbindContext(pThisCC, pCmd->cid, pSvgaDXContext);
+                    if (RT_SUCCESS(rc))
+                    {
+                        PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entry.mobid);
+                        if (pMob)
+                        {
+                            rc = vmsvgaR3GboWrite(pSvgaR3State, &pMob->Gbo, 0, pSvgaDXContext, sizeof(SVGADXContextMobFormat));
+                        }
+                    }
+
+                    RTMemFree(pSvgaDXContext);
+                    pSvgaDXContext = NULL;
+                }
+            }
+
+            if (pCmd->mobid != SVGA_ID_INVALID)
+            {
+                /* Bind a new context. Copy existing data from the guyest backing memory. */
+                if (pCmd->validContents)
+                {
+                    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
+                    if (pMob)
+                    {
+                        pSvgaDXContext = (SVGADXContextMobFormat *)RTMemAlloc(sizeof(SVGADXContextMobFormat));
+                        if (pSvgaDXContext)
+                        {
+                            rc = vmsvgaR3GboRead(pSvgaR3State, &pMob->Gbo, 0, pSvgaDXContext, sizeof(SVGADXContextMobFormat));
+                            if (RT_FAILURE(rc))
+                            {
+                                RTMemFree(pSvgaDXContext);
+                                pSvgaDXContext = NULL;
+                            }
+                        }
+                    }
+                }
+
+                rc = vmsvga3dDXBindContext(pThisCC, pCmd->cid, pSvgaDXContext);
+
+                RTMemFree(pSvgaDXContext);
+            }
+
+            /* Update the object table. */
+            entry.mobid = pCmd->mobid;
+            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_DXCONTEXT],
+                                     pCmd->cid, sizeof(SVGAOTableDXContextEntry), &entry, sizeof(entry));
+        }
     }
+
+    return rc;
+#else
+    RT_NOREF(pThisCC, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_READBACK_CONTEXT 1146 */
-static void vmsvga3dCmdDXReadbackContext(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackContext const *pCmd)
+static int vmsvga3dCmdDXReadbackContext(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackContext const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXReadbackContext(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXReadbackContext(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_INVALIDATE_CONTEXT 1147 */
-static void vmsvga3dCmdDXInvalidateContext(PVGASTATECC pThisCC, SVGA3dCmdDXInvalidateContext const *pCmd)
+static int vmsvga3dCmdDXInvalidateContext(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXInvalidateContext const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXInvalidateContext(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXInvalidateContext(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SINGLE_CONSTANT_BUFFER 1148 */
-static void vmsvga3dCmdDXSetSingleConstantBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXSetSingleConstantBuffer const *pCmd)
+static int vmsvga3dCmdDXSetSingleConstantBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSingleConstantBuffer const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetSingleConstantBuffer(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetSingleConstantBuffer(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SHADER_RESOURCES 1149 */
-static void vmsvga3dCmdDXSetShaderResources(PVGASTATECC pThisCC, SVGA3dCmdDXSetShaderResources const *pCmd)
+static int vmsvga3dCmdDXSetShaderResources(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShaderResources const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetShaderResources(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetShaderResources(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SHADER 1150 */
-static void vmsvga3dCmdDXSetShader(PVGASTATECC pThisCC, SVGA3dCmdDXSetShader const *pCmd)
+static int vmsvga3dCmdDXSetShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShader const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetShader(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SAMPLERS 1151 */
-static void vmsvga3dCmdDXSetSamplers(PVGASTATECC pThisCC, SVGA3dCmdDXSetSamplers const *pCmd)
+static int vmsvga3dCmdDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSamplers const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetSamplers(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGA3dSamplerId const *paSamplerId = (SVGA3dSamplerId *)&pCmd[1];
+    uint32_t const cSamplerId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSamplerId);
+    return vmsvga3dDXSetSamplers(pThisCC, idDXContext, pCmd->startSampler, pCmd->type, cSamplerId, paSamplerId);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW 1152 */
-static void vmsvga3dCmdDXDraw(PVGASTATECC pThisCC, SVGA3dCmdDXDraw const *pCmd)
+static int vmsvga3dCmdDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDraw const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDraw(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDraw(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_INDEXED 1153 */
-static void vmsvga3dCmdDXDrawIndexed(PVGASTATECC pThisCC, SVGA3dCmdDXDrawIndexed const *pCmd)
+static int vmsvga3dCmdDXDrawIndexed(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexed const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawIndexed(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDrawIndexed(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_INSTANCED 1154 */
-static void vmsvga3dCmdDXDrawInstanced(PVGASTATECC pThisCC, SVGA3dCmdDXDrawInstanced const *pCmd)
+static int vmsvga3dCmdDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstanced const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawInstanced(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDrawInstanced(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_INDEXED_INSTANCED 1155 */
-static void vmsvga3dCmdDXDrawIndexedInstanced(PVGASTATECC pThisCC, SVGA3dCmdDXDrawIndexedInstanced const *pCmd)
+static int vmsvga3dCmdDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstanced const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstanced(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDrawIndexedInstanced(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_AUTO 1156 */
-static void vmsvga3dCmdDXDrawAuto(PVGASTATECC pThisCC, SVGA3dCmdDXDrawAuto const *pCmd)
+static int vmsvga3dCmdDXDrawAuto(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawAuto const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawAuto(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDrawAuto(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_INPUT_LAYOUT 1157 */
-static void vmsvga3dCmdDXSetInputLayout(PVGASTATECC pThisCC, SVGA3dCmdDXSetInputLayout const *pCmd)
+static int vmsvga3dCmdDXSetInputLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetInputLayout const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetInputLayout(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetInputLayout(pThisCC, idDXContext, pCmd->elementLayoutId);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_VERTEX_BUFFERS 1158 */
-static void vmsvga3dCmdDXSetVertexBuffers(PVGASTATECC pThisCC, SVGA3dCmdDXSetVertexBuffers const *pCmd)
+static int vmsvga3dCmdDXSetVertexBuffers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetVertexBuffers const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetVertexBuffers(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGA3dVertexBuffer const *paVertexBuffer = (SVGA3dVertexBuffer *)&pCmd[1];
+    uint32_t const cVertexBuffer = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dVertexBuffer);
+    return vmsvga3dDXSetVertexBuffers(pThisCC, idDXContext, pCmd->startBuffer, cVertexBuffer, paVertexBuffer);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_INDEX_BUFFER 1159 */
-static void vmsvga3dCmdDXSetIndexBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXSetIndexBuffer const *pCmd)
+static int vmsvga3dCmdDXSetIndexBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetIndexBuffer const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetIndexBuffer(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetIndexBuffer(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_TOPOLOGY 1160 */
-static void vmsvga3dCmdDXSetTopology(PVGASTATECC pThisCC, SVGA3dCmdDXSetTopology const *pCmd)
+static int vmsvga3dCmdDXSetTopology(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetTopology const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetTopology(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetTopology(pThisCC, idDXContext, pCmd->topology);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_RENDERTARGETS 1161 */
-static void vmsvga3dCmdDXSetRenderTargets(PVGASTATECC pThisCC, SVGA3dCmdDXSetRenderTargets const *pCmd)
+static int vmsvga3dCmdDXSetRenderTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetRenderTargets const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetRenderTargets(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGA3dRenderTargetViewId const *paRenderTargetViewId = (SVGA3dRenderTargetViewId *)&pCmd[1];
+    uint32_t const cRenderTargetViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dRenderTargetViewId);
+    return vmsvga3dDXSetRenderTargets(pThisCC, idDXContext, pCmd->depthStencilViewId, cRenderTargetViewId, paRenderTargetViewId);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_BLEND_STATE 1162 */
-static void vmsvga3dCmdDXSetBlendState(PVGASTATECC pThisCC, SVGA3dCmdDXSetBlendState const *pCmd)
+static int vmsvga3dCmdDXSetBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetBlendState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetBlendState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetBlendState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_DEPTHSTENCIL_STATE 1163 */
-static void vmsvga3dCmdDXSetDepthStencilState(PVGASTATECC pThisCC, SVGA3dCmdDXSetDepthStencilState const *pCmd)
+static int vmsvga3dCmdDXSetDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetDepthStencilState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetDepthStencilState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetDepthStencilState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_RASTERIZER_STATE 1164 */
-static void vmsvga3dCmdDXSetRasterizerState(PVGASTATECC pThisCC, SVGA3dCmdDXSetRasterizerState const *pCmd)
+static int vmsvga3dCmdDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetRasterizerState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetRasterizerState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetRasterizerState(pThisCC, idDXContext, pCmd->rasterizerId);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_QUERY 1165 */
-static void vmsvga3dCmdDXDefineQuery(PVGASTATECC pThisCC, SVGA3dCmdDXDefineQuery const *pCmd)
+static int vmsvga3dCmdDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_QUERY 1166 */
-static void vmsvga3dCmdDXDestroyQuery(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyQuery const *pCmd)
+static int vmsvga3dCmdDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_QUERY 1167 */
-static void vmsvga3dCmdDXBindQuery(PVGASTATECC pThisCC, SVGA3dCmdDXBindQuery const *pCmd)
+static int vmsvga3dCmdDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBindQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_QUERY_OFFSET 1168 */
-static void vmsvga3dCmdDXSetQueryOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetQueryOffset const *pCmd)
+static int vmsvga3dCmdDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetQueryOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetQueryOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetQueryOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BEGIN_QUERY 1169 */
-static void vmsvga3dCmdDXBeginQuery(PVGASTATECC pThisCC, SVGA3dCmdDXBeginQuery const *pCmd)
+static int vmsvga3dCmdDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBeginQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBeginQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBeginQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_END_QUERY 1170 */
-static void vmsvga3dCmdDXEndQuery(PVGASTATECC pThisCC, SVGA3dCmdDXEndQuery const *pCmd)
+static int vmsvga3dCmdDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEndQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXEndQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXEndQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_READBACK_QUERY 1171 */
-static void vmsvga3dCmdDXReadbackQuery(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackQuery const *pCmd)
+static int vmsvga3dCmdDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXReadbackQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXReadbackQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_PREDICATION 1172 */
-static void vmsvga3dCmdDXSetPredication(PVGASTATECC pThisCC, SVGA3dCmdDXSetPredication const *pCmd)
+static int vmsvga3dCmdDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPredication const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetPredication(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetPredication(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SOTARGETS 1173 */
-static void vmsvga3dCmdDXSetSOTargets(PVGASTATECC pThisCC, SVGA3dCmdDXSetSOTargets const *pCmd)
+static int vmsvga3dCmdDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSOTargets const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetSOTargets(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetSOTargets(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_VIEWPORTS 1174 */
-static void vmsvga3dCmdDXSetViewports(PVGASTATECC pThisCC, SVGA3dCmdDXSetViewports const *pCmd)
+static int vmsvga3dCmdDXSetViewports(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetViewports const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetViewports(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGA3dViewport const *paViewport = (SVGA3dViewport *)&pCmd[1];
+    uint32_t const cViewport = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dViewport);
+    return vmsvga3dDXSetViewports(pThisCC, idDXContext, cViewport, paViewport);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SCISSORRECTS 1175 */
-static void vmsvga3dCmdDXSetScissorRects(PVGASTATECC pThisCC, SVGA3dCmdDXSetScissorRects const *pCmd)
+static int vmsvga3dCmdDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetScissorRects const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetScissorRects(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dDXSetScissorRects(pThisCC, idDXContext, cRect, paRect);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_CLEAR_RENDERTARGET_VIEW 1176 */
-static void vmsvga3dCmdDXClearRenderTargetView(PVGASTATECC pThisCC, SVGA3dCmdDXClearRenderTargetView const *pCmd)
+static int vmsvga3dCmdDXClearRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearRenderTargetView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXClearRenderTargetView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXClearRenderTargetView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_CLEAR_DEPTHSTENCIL_VIEW 1177 */
-static void vmsvga3dCmdDXClearDepthStencilView(PVGASTATECC pThisCC, SVGA3dCmdDXClearDepthStencilView const *pCmd)
+static int vmsvga3dCmdDXClearDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearDepthStencilView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXClearDepthStencilView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXClearDepthStencilView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_COPY_REGION 1178 */
-static void vmsvga3dCmdDXPredCopyRegion(PVGASTATECC pThisCC, SVGA3dCmdDXPredCopyRegion const *pCmd)
+static int vmsvga3dCmdDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopyRegion const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredCopyRegion(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredCopyRegion(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_COPY 1179 */
-static void vmsvga3dCmdDXPredCopy(PVGASTATECC pThisCC, SVGA3dCmdDXPredCopy const *pCmd)
+static int vmsvga3dCmdDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRESENTBLT 1180 */
-static void vmsvga3dCmdDXPresentBlt(PVGASTATECC pThisCC, SVGA3dCmdDXPresentBlt const *pCmd)
+static int vmsvga3dCmdDXPresentBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPresentBlt const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPresentBlt(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPresentBlt(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_GENMIPS 1181 */
-static void vmsvga3dCmdDXGenMips(PVGASTATECC pThisCC, SVGA3dCmdDXGenMips const *pCmd)
+static int vmsvga3dCmdDXGenMips(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGenMips const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXGenMips(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXGenMips(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_UPDATE_SUBRESOURCE 1182 */
-static void vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXUpdateSubResource const *pCmd)
+static int vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXUpdateSubResource const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXUpdateSubResource(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXUpdateSubResource(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_READBACK_SUBRESOURCE 1183 */
-static void vmsvga3dCmdDXReadbackSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackSubResource const *pCmd)
+static int vmsvga3dCmdDXReadbackSubResource(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackSubResource const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXReadbackSubResource(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXReadbackSubResource(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_INVALIDATE_SUBRESOURCE 1184 */
-static void vmsvga3dCmdDXInvalidateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXInvalidateSubResource const *pCmd)
+static int vmsvga3dCmdDXInvalidateSubResource(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXInvalidateSubResource const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXInvalidateSubResource(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXInvalidateSubResource(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_SHADERRESOURCE_VIEW 1185 */
-static void vmsvga3dCmdDXDefineShaderResourceView(PVGASTATECC pThisCC, SVGA3dCmdDXDefineShaderResourceView const *pCmd)
+static int vmsvga3dCmdDXDefineShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShaderResourceView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineShaderResourceView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineShaderResourceView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_SHADERRESOURCE_VIEW 1186 */
-static void vmsvga3dCmdDXDestroyShaderResourceView(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyShaderResourceView const *pCmd)
+static int vmsvga3dCmdDXDestroyShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShaderResourceView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyShaderResourceView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyShaderResourceView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_RENDERTARGET_VIEW 1187 */
-static void vmsvga3dCmdDXDefineRenderTargetView(PVGASTATECC pThisCC, SVGA3dCmdDXDefineRenderTargetView const *pCmd)
+static int vmsvga3dCmdDXDefineRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRenderTargetView const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineRenderTargetView(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineRenderTargetView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_RENDERTARGET_VIEW 1188 */
-static void vmsvga3dCmdDXDestroyRenderTargetView(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyRenderTargetView const *pCmd)
+static int vmsvga3dCmdDXDestroyRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRenderTargetView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyRenderTargetView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyRenderTargetView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_DEPTHSTENCIL_VIEW 1189 */
-static void vmsvga3dCmdDXDefineDepthStencilView(PVGASTATECC pThisCC, SVGA3dCmdDXDefineDepthStencilView const *pCmd)
+static int vmsvga3dCmdDXDefineDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineDepthStencilView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineDepthStencilView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_DEPTHSTENCIL_VIEW 1190 */
-static void vmsvga3dCmdDXDestroyDepthStencilView(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyDepthStencilView const *pCmd)
+static int vmsvga3dCmdDXDestroyDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyDepthStencilView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyDepthStencilView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_ELEMENTLAYOUT 1191 */
-static void vmsvga3dCmdDXDefineElementLayout(PVGASTATECC pThisCC, SVGA3dCmdDXDefineElementLayout const *pCmd)
+static int vmsvga3dCmdDXDefineElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineElementLayout const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineElementLayout(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    SVGA3dInputElementDesc const *paDesc = (SVGA3dInputElementDesc *)&pCmd[1];
+    uint32_t const cDesc = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dInputElementDesc);
+    return vmsvga3dDXDefineElementLayout(pThisCC, idDXContext, pCmd->elementLayoutId, cDesc, paDesc);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_ELEMENTLAYOUT 1192 */
-static void vmsvga3dCmdDXDestroyElementLayout(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyElementLayout const *pCmd)
+static int vmsvga3dCmdDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyElementLayout const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyElementLayout(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyElementLayout(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_BLEND_STATE 1193 */
-static void vmsvga3dCmdDXDefineBlendState(PVGASTATECC pThisCC, SVGA3dCmdDXDefineBlendState const *pCmd)
+static int vmsvga3dCmdDXDefineBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineBlendState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineBlendState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineBlendState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_BLEND_STATE 1194 */
-static void vmsvga3dCmdDXDestroyBlendState(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyBlendState const *pCmd)
+static int vmsvga3dCmdDXDestroyBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyBlendState const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyBlendState(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyBlendState(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_DEPTHSTENCIL_STATE 1195 */
-static void vmsvga3dCmdDXDefineDepthStencilState(PVGASTATECC pThisCC, SVGA3dCmdDXDefineDepthStencilState const *pCmd)
+static int vmsvga3dCmdDXDefineDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineDepthStencilState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineDepthStencilState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_DEPTHSTENCIL_STATE 1196 */
-static void vmsvga3dCmdDXDestroyDepthStencilState(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyDepthStencilState const *pCmd)
+static int vmsvga3dCmdDXDestroyDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilState const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyDepthStencilState(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyDepthStencilState(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE 1197 */
-static void vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, SVGA3dCmdDXDefineRasterizerState const *pCmd)
+static int vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineRasterizerState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineRasterizerState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_RASTERIZER_STATE 1198 */
-static void vmsvga3dCmdDXDestroyRasterizerState(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyRasterizerState const *pCmd)
+static int vmsvga3dCmdDXDestroyRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRasterizerState const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyRasterizerState(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyRasterizerState(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_SAMPLER_STATE 1199 */
-static void vmsvga3dCmdDXDefineSamplerState(PVGASTATECC pThisCC, SVGA3dCmdDXDefineSamplerState const *pCmd)
+static int vmsvga3dCmdDXDefineSamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineSamplerState const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineSamplerState(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineSamplerState(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_SAMPLER_STATE 1200 */
-static void vmsvga3dCmdDXDestroySamplerState(PVGASTATECC pThisCC, SVGA3dCmdDXDestroySamplerState const *pCmd)
+static int vmsvga3dCmdDXDestroySamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroySamplerState const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroySamplerState(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroySamplerState(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_SHADER 1201 */
-static void vmsvga3dCmdDXDefineShader(PVGASTATECC pThisCC, SVGA3dCmdDXDefineShader const *pCmd)
+static int vmsvga3dCmdDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShader const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineShader(pThisCC->svga.p3dState);
-    }
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineShader(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_SHADER 1202 */
-static void vmsvga3dCmdDXDestroyShader(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyShader const *pCmd)
+static int vmsvga3dCmdDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShader const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyShader(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_SHADER 1203 */
-static void vmsvga3dCmdDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd)
+static int vmsvga3dCmdDXBindShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindShader const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindShader(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(cbCmd);
+    ASSERT_GUEST_LOGREL_MSG(idDXContext == pCmd->cid, ("idDXContext = %u, pCmd->cid = %u\n", idDXContext, pCmd->cid));
+    /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
+    return vmsvga3dDXBindShader(pThisCC, pCmd->cid, pMob, pCmd->shid, pCmd->offsetInBytes);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_STREAMOUTPUT 1204 */
-static void vmsvga3dCmdDXDefineStreamOutput(PVGASTATECC pThisCC, SVGA3dCmdDXDefineStreamOutput const *pCmd)
+static int vmsvga3dCmdDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutput const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutput(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineStreamOutput(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_STREAMOUTPUT 1205 */
-static void vmsvga3dCmdDXDestroyStreamOutput(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyStreamOutput const *pCmd)
+static int vmsvga3dCmdDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyStreamOutput const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyStreamOutput(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyStreamOutput(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_STREAMOUTPUT 1206 */
-static void vmsvga3dCmdDXSetStreamOutput(PVGASTATECC pThisCC, SVGA3dCmdDXSetStreamOutput const *pCmd)
+static int vmsvga3dCmdDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetStreamOutput const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetStreamOutput(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetStreamOutput(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_COTABLE 1207 */
-static void vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd)
+static int vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, uint32_t cbCmd)
 {
-ASMBreakpoint();
+#ifdef VMSVGA3D_DX
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC->svga.p3dState);
-    }
+    /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
+    return vmsvga3dDXSetCOTable(pThisCC, pCmd->cid, pMob, pCmd->type, pCmd->validSizeInBytes);
+#else
+    RT_NOREF(pThisCC, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_READBACK_COTABLE 1208 */
-static void vmsvga3dCmdDXReadbackCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackCOTable const *pCmd)
+static int vmsvga3dCmdDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackCOTable const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXReadbackCOTable(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXReadbackCOTable(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BUFFER_COPY 1209 */
-static void vmsvga3dCmdDXBufferCopy(PVGASTATECC pThisCC, SVGA3dCmdDXBufferCopy const *pCmd)
+static int vmsvga3dCmdDXBufferCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBufferCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBufferCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBufferCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_TRANSFER_FROM_BUFFER 1210 */
-static void vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTransferFromBuffer const *pCmd)
+static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXTransferFromBuffer const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXTransferFromBuffer(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXTransferFromBuffer(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SURFACE_COPY_AND_READBACK 1211 */
-static void vmsvga3dCmdDXSurfaceCopyAndReadback(PVGASTATECC pThisCC, SVGA3dCmdDXSurfaceCopyAndReadback const *pCmd)
+static int vmsvga3dCmdDXSurfaceCopyAndReadback(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSurfaceCopyAndReadback const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSurfaceCopyAndReadback(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSurfaceCopyAndReadback(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_MOVE_QUERY 1212 */
-static void vmsvga3dCmdDXMoveQuery(PVGASTATECC pThisCC, SVGA3dCmdDXMoveQuery const *pCmd)
+static int vmsvga3dCmdDXMoveQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXMoveQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXMoveQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXMoveQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_ALL_QUERY 1213 */
-static void vmsvga3dCmdDXBindAllQuery(PVGASTATECC pThisCC, SVGA3dCmdDXBindAllQuery const *pCmd)
+static int vmsvga3dCmdDXBindAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindAllQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindAllQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBindAllQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_READBACK_ALL_QUERY 1214 */
-static void vmsvga3dCmdDXReadbackAllQuery(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackAllQuery const *pCmd)
+static int vmsvga3dCmdDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackAllQuery const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXReadbackAllQuery(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXReadbackAllQuery(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_TRANSFER_FROM_BUFFER 1215 */
-static void vmsvga3dCmdDXPredTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXPredTransferFromBuffer const *pCmd)
+static int vmsvga3dCmdDXPredTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredTransferFromBuffer const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredTransferFromBuffer(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredTransferFromBuffer(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_MOB_FENCE_64 1216 */
-static void vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, SVGA3dCmdDXMobFence64 const *pCmd)
+static int vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXMobFence64 const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXMobFence64(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXMobFence64(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_ALL_SHADER 1217 */
-static void vmsvga3dCmdDXBindAllShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindAllShader const *pCmd)
+static int vmsvga3dCmdDXBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindAllShader const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindAllShader(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBindAllShader(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_HINT 1218 */
-static void vmsvga3dCmdDXHint(PVGASTATECC pThisCC, SVGA3dCmdDXHint const *pCmd)
+static int vmsvga3dCmdDXHint(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXHint const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXHint(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXHint(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BUFFER_UPDATE 1219 */
-static void vmsvga3dCmdDXBufferUpdate(PVGASTATECC pThisCC, SVGA3dCmdDXBufferUpdate const *pCmd)
+static int vmsvga3dCmdDXBufferUpdate(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBufferUpdate const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBufferUpdate(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBufferUpdate(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_VS_CONSTANT_BUFFER_OFFSET 1220 */
-static void vmsvga3dCmdDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetVSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetVSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetVSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetVSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_PS_CONSTANT_BUFFER_OFFSET 1221 */
-static void vmsvga3dCmdDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetPSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetPSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetPSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_GS_CONSTANT_BUFFER_OFFSET 1222 */
-static void vmsvga3dCmdDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetGSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetGSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetGSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetGSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_HS_CONSTANT_BUFFER_OFFSET 1223 */
-static void vmsvga3dCmdDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetHSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetHSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetHSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetHSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_DS_CONSTANT_BUFFER_OFFSET 1224 */
-static void vmsvga3dCmdDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetDSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetDSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetDSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetDSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_CS_CONSTANT_BUFFER_OFFSET 1225 */
-static void vmsvga3dCmdDXSetCSConstantBufferOffset(PVGASTATECC pThisCC, SVGA3dCmdDXSetCSConstantBufferOffset const *pCmd)
+static int vmsvga3dCmdDXSetCSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetCSConstantBufferOffset(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetCSConstantBufferOffset(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_COND_BIND_ALL_SHADER 1226 */
-static void vmsvga3dCmdDXCondBindAllShader(PVGASTATECC pThisCC, SVGA3dCmdDXCondBindAllShader const *pCmd)
+static int vmsvga3dCmdDXCondBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXCondBindAllShader const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXCondBindAllShader(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXCondBindAllShader(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_SCREEN_COPY 1227 */
-static void vmsvga3dCmdScreenCopy(PVGASTATECC pThisCC, SVGA3dCmdScreenCopy const *pCmd)
+static int vmsvga3dCmdScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdScreenCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnScreenCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dScreenCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_GROW_OTABLE 1236 */
-static void vmsvga3dCmdGrowOTable(PVGASTATECC pThisCC, SVGA3dCmdGrowOTable const *pCmd)
+static int vmsvga3dCmdGrowOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdGrowOTable const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnGrowOTable(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dGrowOTable(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_GROW_COTABLE 1237 */
-static void vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCmd)
+static int vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGrowCOTable const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXGrowCOTable(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXGrowCOTable(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_INTRA_SURFACE_COPY 1238 */
-static void vmsvga3dCmdIntraSurfaceCopy(PVGASTATECC pThisCC, SVGA3dCmdIntraSurfaceCopy const *pCmd)
+static int vmsvga3dCmdIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdIntraSurfaceCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnIntraSurfaceCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dIntraSurfaceCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V3 1239 */
-static void vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v3 const *pCmd)
+static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v3 const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDefineGBSurface_v3(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDefineGBSurface_v3(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_RESOLVE_COPY 1240 */
-static void vmsvga3dCmdDXResolveCopy(PVGASTATECC pThisCC, SVGA3dCmdDXResolveCopy const *pCmd)
+static int vmsvga3dCmdDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXResolveCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXResolveCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXResolveCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_RESOLVE_COPY 1241 */
-static void vmsvga3dCmdDXPredResolveCopy(PVGASTATECC pThisCC, SVGA3dCmdDXPredResolveCopy const *pCmd)
+static int vmsvga3dCmdDXPredResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredResolveCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredResolveCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredResolveCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_CONVERT_REGION 1242 */
-static void vmsvga3dCmdDXPredConvertRegion(PVGASTATECC pThisCC, SVGA3dCmdDXPredConvertRegion const *pCmd)
+static int vmsvga3dCmdDXPredConvertRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredConvertRegion const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredConvertRegion(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredConvertRegion(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_PRED_CONVERT 1243 */
-static void vmsvga3dCmdDXPredConvert(PVGASTATECC pThisCC, SVGA3dCmdDXPredConvert const *pCmd)
+static int vmsvga3dCmdDXPredConvert(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredConvert const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXPredConvert(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXPredConvert(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_WHOLE_SURFACE_COPY 1244 */
-static void vmsvga3dCmdWholeSurfaceCopy(PVGASTATECC pThisCC, SVGA3dCmdWholeSurfaceCopy const *pCmd)
+static int vmsvga3dCmdWholeSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdWholeSurfaceCopy const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnWholeSurfaceCopy(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dWholeSurfaceCopy(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_UA_VIEW 1245 */
-static void vmsvga3dCmdDXDefineUAView(PVGASTATECC pThisCC, SVGA3dCmdDXDefineUAView const *pCmd)
+static int vmsvga3dCmdDXDefineUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineUAView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineUAView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineUAView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DESTROY_UA_VIEW 1246 */
-static void vmsvga3dCmdDXDestroyUAView(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyUAView const *pCmd)
+static int vmsvga3dCmdDXDestroyUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyUAView const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDestroyUAView(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDestroyUAView(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_CLEAR_UA_VIEW_UINT 1247 */
-static void vmsvga3dCmdDXClearUAViewUint(PVGASTATECC pThisCC, SVGA3dCmdDXClearUAViewUint const *pCmd)
+static int vmsvga3dCmdDXClearUAViewUint(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearUAViewUint const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXClearUAViewUint(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXClearUAViewUint(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_CLEAR_UA_VIEW_FLOAT 1248 */
-static void vmsvga3dCmdDXClearUAViewFloat(PVGASTATECC pThisCC, SVGA3dCmdDXClearUAViewFloat const *pCmd)
+static int vmsvga3dCmdDXClearUAViewFloat(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearUAViewFloat const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXClearUAViewFloat(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXClearUAViewFloat(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_COPY_STRUCTURE_COUNT 1249 */
-static void vmsvga3dCmdDXCopyStructureCount(PVGASTATECC pThisCC, SVGA3dCmdDXCopyStructureCount const *pCmd)
+static int vmsvga3dCmdDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXCopyStructureCount const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXCopyStructureCount(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXCopyStructureCount(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_UA_VIEWS 1250 */
-static void vmsvga3dCmdDXSetUAViews(PVGASTATECC pThisCC, SVGA3dCmdDXSetUAViews const *pCmd)
+static int vmsvga3dCmdDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetUAViews const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetUAViews(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetUAViews(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_INDEXED_INSTANCED_INDIRECT 1251 */
-static void vmsvga3dCmdDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, SVGA3dCmdDXDrawIndexedInstancedIndirect const *pCmd)
+static int vmsvga3dCmdDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstancedIndirect const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstancedIndirect(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDrawIndexedInstancedIndirect(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DRAW_INSTANCED_INDIRECT 1252 */
-static void vmsvga3dCmdDXDrawInstancedIndirect(PVGASTATECC pThisCC, SVGA3dCmdDXDrawInstancedIndirect const *pCmd)
+static int vmsvga3dCmdDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstancedIndirect const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDrawInstancedIndirect(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDrawInstancedIndirect(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DISPATCH 1253 */
-static void vmsvga3dCmdDXDispatch(PVGASTATECC pThisCC, SVGA3dCmdDXDispatch const *pCmd)
+static int vmsvga3dCmdDXDispatch(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDispatch const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDispatch(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDispatch(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DISPATCH_INDIRECT 1254 */
-static void vmsvga3dCmdDXDispatchIndirect(PVGASTATECC pThisCC, SVGA3dCmdDXDispatchIndirect const *pCmd)
+static int vmsvga3dCmdDXDispatchIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDispatchIndirect const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDispatchIndirect(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDispatchIndirect(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_WRITE_ZERO_SURFACE 1255 */
-static void vmsvga3dCmdWriteZeroSurface(PVGASTATECC pThisCC, SVGA3dCmdWriteZeroSurface const *pCmd)
+static int vmsvga3dCmdWriteZeroSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdWriteZeroSurface const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnWriteZeroSurface(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dWriteZeroSurface(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_HINT_ZERO_SURFACE 1256 */
-static void vmsvga3dCmdHintZeroSurface(PVGASTATECC pThisCC, SVGA3dCmdHintZeroSurface const *pCmd)
+static int vmsvga3dCmdHintZeroSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdHintZeroSurface const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnHintZeroSurface(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dHintZeroSurface(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_TRANSFER_TO_BUFFER 1257 */
-static void vmsvga3dCmdDXTransferToBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTransferToBuffer const *pCmd)
+static int vmsvga3dCmdDXTransferToBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXTransferToBuffer const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXTransferToBuffer(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXTransferToBuffer(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_STRUCTURE_COUNT 1258 */
-static void vmsvga3dCmdDXSetStructureCount(PVGASTATECC pThisCC, SVGA3dCmdDXSetStructureCount const *pCmd)
+static int vmsvga3dCmdDXSetStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetStructureCount const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetStructureCount(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetStructureCount(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_BITBLT 1259 */
-static void vmsvga3dCmdLogicOpsBitBlt(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsBitBlt const *pCmd)
+static int vmsvga3dCmdLogicOpsBitBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsBitBlt const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsBitBlt(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsBitBlt(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_TRANSBLT 1260 */
-static void vmsvga3dCmdLogicOpsTransBlt(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsTransBlt const *pCmd)
+static int vmsvga3dCmdLogicOpsTransBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsTransBlt const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsTransBlt(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsTransBlt(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_STRETCHBLT 1261 */
-static void vmsvga3dCmdLogicOpsStretchBlt(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsStretchBlt const *pCmd)
+static int vmsvga3dCmdLogicOpsStretchBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsStretchBlt const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsStretchBlt(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsStretchBlt(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_COLORFILL 1262 */
-static void vmsvga3dCmdLogicOpsColorFill(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsColorFill const *pCmd)
+static int vmsvga3dCmdLogicOpsColorFill(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsColorFill const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsColorFill(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsColorFill(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_ALPHABLEND 1263 */
-static void vmsvga3dCmdLogicOpsAlphaBlend(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsAlphaBlend const *pCmd)
+static int vmsvga3dCmdLogicOpsAlphaBlend(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsAlphaBlend const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsAlphaBlend(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsAlphaBlend(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_LOGICOPS_CLEARTYPEBLEND 1264 */
-static void vmsvga3dCmdLogicOpsClearTypeBlend(PVGASTATECC pThisCC, SVGA3dCmdLogicOpsClearTypeBlend const *pCmd)
+static int vmsvga3dCmdLogicOpsClearTypeBlend(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsClearTypeBlend const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnLogicOpsClearTypeBlend(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dLogicOpsClearTypeBlend(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V4 1267 */
-static void vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v4 const *pCmd)
+static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v4 const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDefineGBSurface_v4(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDefineGBSurface_v4(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_CS_UA_VIEWS 1268 */
-static void vmsvga3dCmdDXSetCSUAViews(PVGASTATECC pThisCC, SVGA3dCmdDXSetCSUAViews const *pCmd)
+static int vmsvga3dCmdDXSetCSUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSUAViews const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetCSUAViews(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetCSUAViews(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_MIN_LOD 1269 */
-static void vmsvga3dCmdDXSetMinLOD(PVGASTATECC pThisCC, SVGA3dCmdDXSetMinLOD const *pCmd)
+static int vmsvga3dCmdDXSetMinLOD(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetMinLOD const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetMinLOD(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetMinLOD(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_DEPTHSTENCIL_VIEW_V2 1272 */
-static void vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, SVGA3dCmdDXDefineDepthStencilView_v2 const *pCmd)
+static int vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView_v2 const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineDepthStencilView_v2(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineDepthStencilView_v2(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_DEFINE_STREAMOUTPUT_WITH_MOB 1273 */
-static void vmsvga3dCmdDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd)
+static int vmsvga3dCmdDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutputWithMob(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXDefineStreamOutputWithMob(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_SET_SHADER_IFACE 1274 */
-static void vmsvga3dCmdDXSetShaderIface(PVGASTATECC pThisCC, SVGA3dCmdDXSetShaderIface const *pCmd)
+static int vmsvga3dCmdDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShaderIface const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXSetShaderIface(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXSetShaderIface(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_STREAMOUTPUT 1275 */
-static void vmsvga3dCmdDXBindStreamOutput(PVGASTATECC pThisCC, SVGA3dCmdDXBindStreamOutput const *pCmd)
+static int vmsvga3dCmdDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindStreamOutput const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindStreamOutput(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBindStreamOutput(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_SURFACE_STRETCHBLT_NON_MS_TO_MS 1276 */
-static void vmsvga3dCmdSurfaceStretchBltNonMSToMS(PVGASTATECC pThisCC, SVGA3dCmdSurfaceStretchBltNonMSToMS const *pCmd)
+static int vmsvga3dCmdSurfaceStretchBltNonMSToMS(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdSurfaceStretchBltNonMSToMS const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnSurfaceStretchBltNonMSToMS(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dSurfaceStretchBltNonMSToMS(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 /* SVGA_3D_CMD_DX_BIND_SHADER_IFACE 1277 */
-static void vmsvga3dCmdDXBindShaderIface(PVGASTATECC pThisCC, SVGA3dCmdDXBindShaderIface const *pCmd)
+static int vmsvga3dCmdDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindShaderIface const *pCmd, uint32_t cbCmd)
 {
+#ifdef VMSVGA3D_DX
 ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    if (pSvgaR3State->pFuncsDX)
-    {
-        RT_NOREF(pCmd);
-        pSvgaR3State->pFuncsDX->pfnDXBindShaderIface(pThisCC->svga.p3dState);
-    }
+    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    return vmsvga3dDXBindShaderIface(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
@@ -3210,12 +3736,13 @@ ASMBreakpoint();
  *
  * @param   pThis       The shared VGA/VMSVGA state.
  * @param   pThisCC     The VGA/VMSVGA state for the current context.
+ * @param   idDXContext VGPU10 DX context of the commands or SVGA3D_INVALID_ID if they are not for a specific context.
  * @param   enmCmdId    SVGA_3D_CMD_* command identifier.
  * @param   cbCmd       Size of the command in bytes.
  * @param   pvCmd       Pointer to the command.
  * @returns VBox status code if an error was detected parsing a command.
  */
-int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd)
+int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXContext, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd)
 {
     if (enmCmdId > SVGA_3D_CMD_MAX)
     {
@@ -3784,7 +4311,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdInvalidateGBImage *pCmd = (SVGA3dCmdInvalidateGBImage *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdInvalidateGBImage(pThisCC, pCmd);
         break;
     }
 
@@ -4011,10 +4538,9 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
 
     case SVGA_3D_CMD_DEFINE_GB_SURFACE_V2:
     {
-        /// @todo SVGA3dCmdDefineGBSurface_v2 is not defined in Mesa 17 header. Mesa 20 has it.
-        //SVGA3dCmdDefineGBSurface_v2 *pCmd = (SVGA3dCmdDefineGBSurface_v2 *)pvCmd;
-        //VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL();
+        SVGA3dCmdDefineGBSurface_v2 *pCmd = (SVGA3dCmdDefineGBSurface_v2 *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        vmsvga3dCmdDefineGBSurface_v2(pThisCC, pCmd);
         break;
     }
 
@@ -4082,7 +4608,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineContext *pCmd = (SVGA3dCmdDXDefineContext *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineContext(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineContext(pThisCC, pCmd, cbCmd);
         break;
     }
 
@@ -4090,7 +4616,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyContext *pCmd = (SVGA3dCmdDXDestroyContext *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyContext(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyContext(pThisCC, pCmd, cbCmd);
         break;
     }
 
@@ -4098,7 +4624,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindContext *pCmd = (SVGA3dCmdDXBindContext *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindContext(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindContext(pThisCC, pCmd, cbCmd);
         break;
     }
 
@@ -4106,7 +4632,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXReadbackContext *pCmd = (SVGA3dCmdDXReadbackContext *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXReadbackContext(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXReadbackContext(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4114,7 +4640,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXInvalidateContext *pCmd = (SVGA3dCmdDXInvalidateContext *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXInvalidateContext(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXInvalidateContext(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4122,7 +4648,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetSingleConstantBuffer *pCmd = (SVGA3dCmdDXSetSingleConstantBuffer *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetSingleConstantBuffer(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetSingleConstantBuffer(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4130,7 +4656,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetShaderResources *pCmd = (SVGA3dCmdDXSetShaderResources *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetShaderResources(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetShaderResources(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4138,7 +4664,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetShader *pCmd = (SVGA3dCmdDXSetShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4146,7 +4672,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetSamplers *pCmd = (SVGA3dCmdDXSetSamplers *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetSamplers(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetSamplers(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4154,7 +4680,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDraw *pCmd = (SVGA3dCmdDXDraw *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDraw(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDraw(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4162,7 +4688,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawIndexed *pCmd = (SVGA3dCmdDXDrawIndexed *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawIndexed(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawIndexed(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4170,7 +4696,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawInstanced *pCmd = (SVGA3dCmdDXDrawInstanced *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawInstanced(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawInstanced(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4178,7 +4704,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawIndexedInstanced *pCmd = (SVGA3dCmdDXDrawIndexedInstanced *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawIndexedInstanced(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawIndexedInstanced(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4186,7 +4712,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawAuto *pCmd = (SVGA3dCmdDXDrawAuto *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawAuto(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawAuto(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4194,7 +4720,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetInputLayout *pCmd = (SVGA3dCmdDXSetInputLayout *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetInputLayout(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetInputLayout(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4202,7 +4728,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetVertexBuffers *pCmd = (SVGA3dCmdDXSetVertexBuffers *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetVertexBuffers(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetVertexBuffers(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4210,7 +4736,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetIndexBuffer *pCmd = (SVGA3dCmdDXSetIndexBuffer *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetIndexBuffer(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetIndexBuffer(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4218,7 +4744,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetTopology *pCmd = (SVGA3dCmdDXSetTopology *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetTopology(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetTopology(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4226,7 +4752,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetRenderTargets *pCmd = (SVGA3dCmdDXSetRenderTargets *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetRenderTargets(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetRenderTargets(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4234,7 +4760,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetBlendState *pCmd = (SVGA3dCmdDXSetBlendState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetBlendState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetBlendState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4242,7 +4768,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetDepthStencilState *pCmd = (SVGA3dCmdDXSetDepthStencilState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetDepthStencilState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetDepthStencilState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4250,7 +4776,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetRasterizerState *pCmd = (SVGA3dCmdDXSetRasterizerState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetRasterizerState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetRasterizerState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4258,7 +4784,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineQuery *pCmd = (SVGA3dCmdDXDefineQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4266,7 +4792,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyQuery *pCmd = (SVGA3dCmdDXDestroyQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4274,7 +4800,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindQuery *pCmd = (SVGA3dCmdDXBindQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4282,7 +4808,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetQueryOffset *pCmd = (SVGA3dCmdDXSetQueryOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetQueryOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetQueryOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4290,7 +4816,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBeginQuery *pCmd = (SVGA3dCmdDXBeginQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBeginQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBeginQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4298,7 +4824,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXEndQuery *pCmd = (SVGA3dCmdDXEndQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXEndQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXEndQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4306,7 +4832,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXReadbackQuery *pCmd = (SVGA3dCmdDXReadbackQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXReadbackQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXReadbackQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4314,7 +4840,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetPredication *pCmd = (SVGA3dCmdDXSetPredication *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetPredication(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetPredication(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4322,7 +4848,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetSOTargets *pCmd = (SVGA3dCmdDXSetSOTargets *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetSOTargets(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetSOTargets(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4330,7 +4856,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetViewports *pCmd = (SVGA3dCmdDXSetViewports *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetViewports(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetViewports(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4338,7 +4864,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetScissorRects *pCmd = (SVGA3dCmdDXSetScissorRects *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetScissorRects(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetScissorRects(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4346,7 +4872,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXClearRenderTargetView *pCmd = (SVGA3dCmdDXClearRenderTargetView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXClearRenderTargetView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXClearRenderTargetView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4354,7 +4880,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXClearDepthStencilView *pCmd = (SVGA3dCmdDXClearDepthStencilView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXClearDepthStencilView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXClearDepthStencilView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4362,7 +4888,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredCopyRegion *pCmd = (SVGA3dCmdDXPredCopyRegion *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredCopyRegion(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredCopyRegion(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4370,7 +4896,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredCopy *pCmd = (SVGA3dCmdDXPredCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4378,7 +4904,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPresentBlt *pCmd = (SVGA3dCmdDXPresentBlt *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPresentBlt(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPresentBlt(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4386,7 +4912,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXGenMips *pCmd = (SVGA3dCmdDXGenMips *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXGenMips(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXGenMips(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4394,7 +4920,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXUpdateSubResource *pCmd = (SVGA3dCmdDXUpdateSubResource *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXUpdateSubResource(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXUpdateSubResource(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4402,7 +4928,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXReadbackSubResource *pCmd = (SVGA3dCmdDXReadbackSubResource *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXReadbackSubResource(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXReadbackSubResource(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4410,7 +4936,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXInvalidateSubResource *pCmd = (SVGA3dCmdDXInvalidateSubResource *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXInvalidateSubResource(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXInvalidateSubResource(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4418,7 +4944,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineShaderResourceView *pCmd = (SVGA3dCmdDXDefineShaderResourceView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineShaderResourceView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineShaderResourceView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4426,7 +4952,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyShaderResourceView *pCmd = (SVGA3dCmdDXDestroyShaderResourceView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyShaderResourceView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyShaderResourceView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4434,7 +4960,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineRenderTargetView *pCmd = (SVGA3dCmdDXDefineRenderTargetView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineRenderTargetView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineRenderTargetView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4442,7 +4968,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyRenderTargetView *pCmd = (SVGA3dCmdDXDestroyRenderTargetView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyRenderTargetView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyRenderTargetView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4450,7 +4976,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineDepthStencilView *pCmd = (SVGA3dCmdDXDefineDepthStencilView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineDepthStencilView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineDepthStencilView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4458,7 +4984,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyDepthStencilView *pCmd = (SVGA3dCmdDXDestroyDepthStencilView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyDepthStencilView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyDepthStencilView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4466,7 +4992,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineElementLayout *pCmd = (SVGA3dCmdDXDefineElementLayout *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineElementLayout(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineElementLayout(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4474,7 +5000,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyElementLayout *pCmd = (SVGA3dCmdDXDestroyElementLayout *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyElementLayout(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyElementLayout(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4482,7 +5008,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineBlendState *pCmd = (SVGA3dCmdDXDefineBlendState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineBlendState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineBlendState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4490,7 +5016,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyBlendState *pCmd = (SVGA3dCmdDXDestroyBlendState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyBlendState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyBlendState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4498,7 +5024,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineDepthStencilState *pCmd = (SVGA3dCmdDXDefineDepthStencilState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineDepthStencilState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineDepthStencilState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4506,7 +5032,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyDepthStencilState *pCmd = (SVGA3dCmdDXDestroyDepthStencilState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyDepthStencilState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyDepthStencilState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4514,7 +5040,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineRasterizerState *pCmd = (SVGA3dCmdDXDefineRasterizerState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineRasterizerState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineRasterizerState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4522,7 +5048,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyRasterizerState *pCmd = (SVGA3dCmdDXDestroyRasterizerState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyRasterizerState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyRasterizerState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4530,7 +5056,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineSamplerState *pCmd = (SVGA3dCmdDXDefineSamplerState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineSamplerState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineSamplerState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4538,7 +5064,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroySamplerState *pCmd = (SVGA3dCmdDXDestroySamplerState *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroySamplerState(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroySamplerState(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4546,7 +5072,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineShader *pCmd = (SVGA3dCmdDXDefineShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4554,7 +5080,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyShader *pCmd = (SVGA3dCmdDXDestroyShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4562,7 +5088,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindShader *pCmd = (SVGA3dCmdDXBindShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4570,7 +5096,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineStreamOutput *pCmd = (SVGA3dCmdDXDefineStreamOutput *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineStreamOutput(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineStreamOutput(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4578,7 +5104,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyStreamOutput *pCmd = (SVGA3dCmdDXDestroyStreamOutput *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyStreamOutput(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyStreamOutput(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4586,7 +5112,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetStreamOutput *pCmd = (SVGA3dCmdDXSetStreamOutput *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetStreamOutput(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetStreamOutput(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4594,7 +5120,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetCOTable *pCmd = (SVGA3dCmdDXSetCOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetCOTable(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetCOTable(pThisCC, pCmd, cbCmd);
         break;
     }
 
@@ -4602,7 +5128,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXReadbackCOTable *pCmd = (SVGA3dCmdDXReadbackCOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXReadbackCOTable(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXReadbackCOTable(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4610,7 +5136,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBufferCopy *pCmd = (SVGA3dCmdDXBufferCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBufferCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBufferCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4618,7 +5144,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXTransferFromBuffer *pCmd = (SVGA3dCmdDXTransferFromBuffer *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXTransferFromBuffer(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXTransferFromBuffer(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4626,7 +5152,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSurfaceCopyAndReadback *pCmd = (SVGA3dCmdDXSurfaceCopyAndReadback *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSurfaceCopyAndReadback(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSurfaceCopyAndReadback(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4634,7 +5160,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXMoveQuery *pCmd = (SVGA3dCmdDXMoveQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXMoveQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXMoveQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4642,7 +5168,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindAllQuery *pCmd = (SVGA3dCmdDXBindAllQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindAllQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindAllQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4650,7 +5176,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXReadbackAllQuery *pCmd = (SVGA3dCmdDXReadbackAllQuery *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXReadbackAllQuery(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXReadbackAllQuery(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4658,7 +5184,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredTransferFromBuffer *pCmd = (SVGA3dCmdDXPredTransferFromBuffer *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredTransferFromBuffer(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredTransferFromBuffer(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4666,7 +5192,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXMobFence64 *pCmd = (SVGA3dCmdDXMobFence64 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXMobFence64(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXMobFence64(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4674,7 +5200,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindAllShader *pCmd = (SVGA3dCmdDXBindAllShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindAllShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindAllShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4682,7 +5208,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXHint *pCmd = (SVGA3dCmdDXHint *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXHint(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXHint(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4690,7 +5216,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBufferUpdate *pCmd = (SVGA3dCmdDXBufferUpdate *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBufferUpdate(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBufferUpdate(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4698,7 +5224,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetVSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetVSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetVSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetVSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4706,7 +5232,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetPSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetPSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetPSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetPSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4714,7 +5240,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetGSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetGSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetGSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetGSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4722,7 +5248,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetHSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetHSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetHSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetHSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4730,7 +5256,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetDSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetDSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetDSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetDSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4738,7 +5264,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetCSConstantBufferOffset *pCmd = (SVGA3dCmdDXSetCSConstantBufferOffset *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetCSConstantBufferOffset(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetCSConstantBufferOffset(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4746,7 +5272,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXCondBindAllShader *pCmd = (SVGA3dCmdDXCondBindAllShader *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXCondBindAllShader(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXCondBindAllShader(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4754,7 +5280,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdScreenCopy *pCmd = (SVGA3dCmdScreenCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdScreenCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdScreenCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4810,7 +5336,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdGrowOTable *pCmd = (SVGA3dCmdGrowOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdGrowOTable(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdGrowOTable(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4818,7 +5344,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXGrowCOTable *pCmd = (SVGA3dCmdDXGrowCOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXGrowCOTable(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXGrowCOTable(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4826,7 +5352,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdIntraSurfaceCopy *pCmd = (SVGA3dCmdIntraSurfaceCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdIntraSurfaceCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdIntraSurfaceCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4834,7 +5360,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBSurface_v3 *pCmd = (SVGA3dCmdDefineGBSurface_v3 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDefineGBSurface_v3(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDefineGBSurface_v3(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4842,7 +5368,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXResolveCopy *pCmd = (SVGA3dCmdDXResolveCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXResolveCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXResolveCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4850,7 +5376,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredResolveCopy *pCmd = (SVGA3dCmdDXPredResolveCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredResolveCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredResolveCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4858,7 +5384,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredConvertRegion *pCmd = (SVGA3dCmdDXPredConvertRegion *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredConvertRegion(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredConvertRegion(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4866,7 +5392,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXPredConvert *pCmd = (SVGA3dCmdDXPredConvert *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXPredConvert(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXPredConvert(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4874,7 +5400,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdWholeSurfaceCopy *pCmd = (SVGA3dCmdWholeSurfaceCopy *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdWholeSurfaceCopy(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdWholeSurfaceCopy(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4882,7 +5408,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineUAView *pCmd = (SVGA3dCmdDXDefineUAView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineUAView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineUAView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4890,7 +5416,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDestroyUAView *pCmd = (SVGA3dCmdDXDestroyUAView *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDestroyUAView(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDestroyUAView(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4898,7 +5424,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXClearUAViewUint *pCmd = (SVGA3dCmdDXClearUAViewUint *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXClearUAViewUint(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXClearUAViewUint(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4906,7 +5432,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXClearUAViewFloat *pCmd = (SVGA3dCmdDXClearUAViewFloat *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXClearUAViewFloat(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXClearUAViewFloat(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4914,7 +5440,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXCopyStructureCount *pCmd = (SVGA3dCmdDXCopyStructureCount *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXCopyStructureCount(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXCopyStructureCount(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4922,7 +5448,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetUAViews *pCmd = (SVGA3dCmdDXSetUAViews *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetUAViews(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetUAViews(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4930,7 +5456,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawIndexedInstancedIndirect *pCmd = (SVGA3dCmdDXDrawIndexedInstancedIndirect *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawIndexedInstancedIndirect(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawIndexedInstancedIndirect(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4938,7 +5464,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDrawInstancedIndirect *pCmd = (SVGA3dCmdDXDrawInstancedIndirect *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDrawInstancedIndirect(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDrawInstancedIndirect(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4946,7 +5472,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDispatch *pCmd = (SVGA3dCmdDXDispatch *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDispatch(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDispatch(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4954,7 +5480,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDispatchIndirect *pCmd = (SVGA3dCmdDXDispatchIndirect *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDispatchIndirect(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDispatchIndirect(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4962,7 +5488,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdWriteZeroSurface *pCmd = (SVGA3dCmdWriteZeroSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdWriteZeroSurface(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdWriteZeroSurface(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4970,7 +5496,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdHintZeroSurface *pCmd = (SVGA3dCmdHintZeroSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdHintZeroSurface(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdHintZeroSurface(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4978,7 +5504,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXTransferToBuffer *pCmd = (SVGA3dCmdDXTransferToBuffer *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXTransferToBuffer(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXTransferToBuffer(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4986,7 +5512,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetStructureCount *pCmd = (SVGA3dCmdDXSetStructureCount *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetStructureCount(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetStructureCount(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -4994,7 +5520,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsBitBlt *pCmd = (SVGA3dCmdLogicOpsBitBlt *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsBitBlt(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsBitBlt(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5002,7 +5528,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsTransBlt *pCmd = (SVGA3dCmdLogicOpsTransBlt *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsTransBlt(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsTransBlt(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5010,7 +5536,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsStretchBlt *pCmd = (SVGA3dCmdLogicOpsStretchBlt *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsStretchBlt(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsStretchBlt(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5018,7 +5544,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsColorFill *pCmd = (SVGA3dCmdLogicOpsColorFill *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsColorFill(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsColorFill(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5026,7 +5552,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsAlphaBlend *pCmd = (SVGA3dCmdLogicOpsAlphaBlend *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsAlphaBlend(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsAlphaBlend(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5034,7 +5560,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdLogicOpsClearTypeBlend *pCmd = (SVGA3dCmdLogicOpsClearTypeBlend *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdLogicOpsClearTypeBlend(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdLogicOpsClearTypeBlend(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5054,7 +5580,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBSurface_v4 *pCmd = (SVGA3dCmdDefineGBSurface_v4 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDefineGBSurface_v4(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDefineGBSurface_v4(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5062,7 +5588,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetCSUAViews *pCmd = (SVGA3dCmdDXSetCSUAViews *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetCSUAViews(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetCSUAViews(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5070,7 +5596,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetMinLOD *pCmd = (SVGA3dCmdDXSetMinLOD *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetMinLOD(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetMinLOD(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5090,7 +5616,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineDepthStencilView_v2 *pCmd = (SVGA3dCmdDXDefineDepthStencilView_v2 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineDepthStencilView_v2(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineDepthStencilView_v2(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5098,7 +5624,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXDefineStreamOutputWithMob *pCmd = (SVGA3dCmdDXDefineStreamOutputWithMob *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXDefineStreamOutputWithMob(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXDefineStreamOutputWithMob(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5106,7 +5632,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXSetShaderIface *pCmd = (SVGA3dCmdDXSetShaderIface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXSetShaderIface(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXSetShaderIface(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5114,7 +5640,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindStreamOutput *pCmd = (SVGA3dCmdDXBindStreamOutput *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindStreamOutput(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindStreamOutput(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5122,7 +5648,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdSurfaceStretchBltNonMSToMS *pCmd = (SVGA3dCmdSurfaceStretchBltNonMSToMS *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdSurfaceStretchBltNonMSToMS(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdSurfaceStretchBltNonMSToMS(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5130,7 +5656,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDXBindShaderIface *pCmd = (SVGA3dCmdDXBindShaderIface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdDXBindShaderIface(pThisCC, pCmd);
+        rcParse = vmsvga3dCmdDXBindShaderIface(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 
@@ -5155,7 +5681,8 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
         break;
     }
 
-    return rcParse;
+    return VINF_SUCCESS;
+//    return rcParse;
 }
 # undef VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
 #endif /* VBOX_WITH_VMSVGA3D */

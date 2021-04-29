@@ -3244,7 +3244,7 @@ static SVGACBStatus vmsvgaR3CmdBufSubmitDC(PPDMDEVINS pDevIns, PVGASTATECC pThis
  * @return SVGACBStatus code.
  * @thread EMT
  */
-static SVGACBStatus vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGACMDBUF *ppCmdBuf)
+static SVGACBStatus vmsvgaR3CmdBufSubmitCtx(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGACMDBUF *ppCmdBuf)
 {
     /* Command buffer submission. */
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -3317,7 +3317,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
         {
             /* Verify the command buffer header. */
             if (RT_LIKELY(   pCmdBuf->hdr.status == SVGA_CB_STATUS_NONE
-                          && (pCmdBuf->hdr.flags & ~(SVGA_CB_FLAG_NO_IRQ)) == 0 /* No unexpected flags. */
+                          && (pCmdBuf->hdr.flags & ~(SVGA_CB_FLAG_NO_IRQ | SVGA_CB_FLAG_DX_CONTEXT)) == 0 /* No unexpected flags. */
                           && pCmdBuf->hdr.length <= SVGA_CB_MAX_SIZE))
             {
                 RT_UNTRUSTED_VALIDATED_FENCE();
@@ -3333,7 +3333,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
                         /* Submit the buffer. Device context buffers will be processed synchronously. */
                         if (RT_LIKELY(CBCtx < RT_ELEMENTS(pSvgaR3State->apCmdBufCtxs)))
                             /* This usually processes the CB async and sets pCmbBuf to NULL. */
-                            CBstatus = vmsvgaR3CmdBufSubmit(pDevIns, pThis, pThisCC, &pCmdBuf);
+                            CBstatus = vmsvgaR3CmdBufSubmitCtx(pDevIns, pThis, pThisCC, &pCmdBuf);
                         else
                             CBstatus = vmsvgaR3CmdBufSubmitDC(pDevIns, pThisCC, &pCmdBuf, &offNextCmd);
                     }
@@ -3376,7 +3376,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
 
     if (CBstatus != SVGA_CB_STATUS_NONE)
     {
-        LogFunc(("Write status %#x, offNextCmd %#x (of %#x), fIRQ %#x\n", CBstatus, offNextCmd, pCmdBuf->hdr.length, fIRQ));
+        LogFunc(("Write status %#x, offNextCmd %#x (of %#x), fIRQ %#x\n", CBstatus, offNextCmd, pCmdBuf ? pCmdBuf->hdr.length : 0, fIRQ));
         vmsvgaR3CmdBufWriteStatus(pDevIns, GCPhysCB, CBstatus, offNextCmd);
         if (fIRQ)
             vmsvgaR3CmdBufRaiseIRQ(pDevIns, pThis, fIRQ);
@@ -3402,6 +3402,7 @@ static bool vmsvgaR3CmdBufHasWork(PVGASTATECC pThisCC)
  * @param pDevIns      The device instance.
  * @param pThis        The shared VGA/VMSVGA state.
  * @param pThisCC      The VGA/VMSVGA state for the current context.
+ * @param idDXContext  VGPU10 DX context of the commands or SVGA3D_INVALID_ID if they are not for a specific context.
  * @param pvCommands   Pointer to the command buffer.
  * @param cbCommands   Size of the command buffer.
  * @param poffNextCmd  Where to store the offset of the first unprocessed command.
@@ -3409,8 +3410,11 @@ static bool vmsvgaR3CmdBufHasWork(PVGASTATECC pThisCC)
  * @return SVGACBStatus code.
  * @thread FIFO
  */
-static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, void const *pvCommands, uint32_t cbCommands, uint32_t *poffNextCmd, uint32_t *pu32IrqStatus)
+static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXContext, void const *pvCommands, uint32_t cbCommands, uint32_t *poffNextCmd, uint32_t *pu32IrqStatus)
 {
+# ifndef VBOX_WITH_VMSVGA3D
+    RT_NOREF(idDXContext);
+# endif
     SVGACBStatus CBstatus = SVGA_CB_STATUS_COMPLETED;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
@@ -3722,7 +3726,7 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
                     }
 
                     /* Command data begins after the 32 bit command length. */
-                    int rc = vmsvgaR3Process3dCmd(pThis, pThisCC, (SVGAFifo3dCmdId)cmdId, *pcbMore, pcbMore + 1);
+                    int rc = vmsvgaR3Process3dCmd(pThis, pThisCC, idDXContext, (SVGAFifo3dCmdId)cmdId, *pcbMore, pcbMore + 1);
                     if (RT_SUCCESS(rc))
                     { /* likely */ }
                     else
@@ -3822,9 +3826,11 @@ static void vmsvgaR3CmdBufProcessBuffers(PPDMDEVINS pDevIns, PVGASTATE pThis, PV
         SVGACBStatus CBstatus = SVGA_CB_STATUS_NONE;
         uint32_t offNextCmd = 0;
         uint32_t u32IrqStatus = 0;
-
+        uint32_t const idDXContext = RT_BOOL(pCmdBuf->hdr.flags & SVGA_CB_FLAG_DX_CONTEXT)
+                                   ? pCmdBuf->hdr.dxContext
+                                   : SVGA3D_INVALID_ID;
         /* Process one buffer. */
-        CBstatus = vmsvgaR3CmdBufProcessCommands(pDevIns, pThis, pThisCC, pCmdBuf->pvCommands, pCmdBuf->hdr.length, &offNextCmd, &u32IrqStatus);
+        CBstatus = vmsvgaR3CmdBufProcessCommands(pDevIns, pThis, pThisCC, idDXContext, pCmdBuf->pvCommands, pCmdBuf->hdr.length, &offNextCmd, &u32IrqStatus);
 
         if (!RT_BOOL(pCmdBuf->hdr.flags & SVGA_CB_FLAG_NO_IRQ))
             u32IrqStatus |= SVGA_IRQFLAG_COMMAND_BUFFER;
@@ -4978,7 +4984,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         break;
                     }
 
-                    vmsvgaR3Process3dCmd(pThis, pThisCC, (SVGAFifo3dCmdId)enmCmdId, cbCmd, pu32Cmd);
+                    vmsvgaR3Process3dCmd(pThis, pThisCC, SVGA3D_INVALID_ID, (SVGAFifo3dCmdId)enmCmdId, cbCmd, pu32Cmd);
                 }
                 else
 # endif // VBOX_WITH_VMSVGA3D

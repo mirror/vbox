@@ -294,42 +294,70 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
     switch (format)
     {
     case SVGA3D_X8R8G8B8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_A8R8G8B8:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
 
     case SVGA3D_R5G6B5:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
     case SVGA3D_X1R5G5B5:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
     case SVGA3D_A1R5G5B5:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
     case SVGA3D_A4R4G4B4:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 2;
 
     case SVGA3D_Z_D32:
-    case SVGA3D_Z_D24S8:
-    case SVGA3D_Z_D24X8:
-    case SVGA3D_Z_DF24:
-    case SVGA3D_Z_D24S8_INT:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
 
     case SVGA3D_Z_D16:
-    case SVGA3D_Z_DF16:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_Z_D24S8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_Z_D15S1:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 2;
 
     case SVGA3D_LUMINANCE8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
     case SVGA3D_LUMINANCE4_ALPHA4:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 1;
 
     case SVGA3D_LUMINANCE16:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
     case SVGA3D_LUMINANCE8_ALPHA8:
         *pcxBlock = 1;
         *pcyBlock = 1;
@@ -341,47 +369,81 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         return 8;
 
     case SVGA3D_DXT2:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
     case SVGA3D_DXT3:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
     case SVGA3D_DXT4:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
     case SVGA3D_DXT5:
         *pcxBlock = 4;
         *pcyBlock = 4;
         return 16;
 
     case SVGA3D_BUMPU8V8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
     case SVGA3D_BUMPL6V5U5:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 2;
 
     case SVGA3D_BUMPX8L8V8U8:
-    case SVGA3D_Q8W8V8U8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_FORMAT_DEAD1:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 3;
+
+    case SVGA3D_ARGB_S10E5:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_ARGB_S23E8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 16;
+
+    case SVGA3D_A2R10G10B10:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
 
     case SVGA3D_V8U8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_Q8W8V8U8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_CxV8U8:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 2;
 
     case SVGA3D_X8L8V8U8:
-    case SVGA3D_A2W10V10U10:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
 
-    case SVGA3D_ARGB_S10E5:   /* 16-bit floating-point ARGB */
-        *pcxBlock = 1;
-        *pcyBlock = 1;
-        return 8;
-    case SVGA3D_ARGB_S23E8:   /* 32-bit floating-point ARGB */
-        *pcxBlock = 1;
-        *pcyBlock = 1;
-        return 16;
-
-    case SVGA3D_A2R10G10B10:
+    case SVGA3D_A2W10V10U10:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
@@ -397,6 +459,10 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         return 2;
 
     case SVGA3D_R_S23E8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_RG_S10E5:
         *pcxBlock = 1;
         *pcyBlock = 1;
@@ -407,23 +473,13 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         *pcyBlock = 1;
         return 8;
 
-    /*
-     * Any surface can be used as a buffer object, but SVGA3D_BUFFER is
-     * the most efficient format to use when creating new surfaces
-     * expressly for index or vertex data.
-     */
     case SVGA3D_BUFFER:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 1;
 
-    case SVGA3D_UYVY:
-        *pcxBlock = 2;
-        *pcyBlock = 1;
-        return 4;
-
-    case SVGA3D_YUY2:
-        *pcxBlock = 2;
+    case SVGA3D_Z_D24X8:
+        *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
 
@@ -436,16 +492,563 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
+
     case SVGA3D_A16B16G16R16:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 8;
+
+    case SVGA3D_UYVY:
+        *pcxBlock = 2;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_YUY2:
+        *pcxBlock = 2;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_NV12:
+        *pcxBlock = 2;
+        *pcyBlock = 2;
+        return 6;
+
+    case SVGA3D_FORMAT_DEAD2:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R32G32B32A32_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 16;
+
+    case SVGA3D_R32G32B32A32_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 16;
+
+    case SVGA3D_R32G32B32A32_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 16;
+
+    case SVGA3D_R32G32B32_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 12;
+
+    case SVGA3D_R32G32B32_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 12;
+
+    case SVGA3D_R32G32B32_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 12;
+
+    case SVGA3D_R32G32B32_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 12;
+
+    case SVGA3D_R16G16B16A16_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R16G16B16A16_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R16G16B16A16_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R16G16B16A16_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32G32_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32G32_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32G32_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32G8X24_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_D32_FLOAT_S8X24_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32_FLOAT_X8X24:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_X32_G8X24_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R10G10B10A2_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R10G10B10A2_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R11G11B10_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8B8A8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_R8G8B8A8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8B8A8_UNORM_SRGB:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8B8A8_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8B8A8_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R16G16_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R16G16_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R16G16_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R32_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_D32_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R32_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R32_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R24G8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_D24_UNORM_S8_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R24_UNORM_X8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_X24_G8_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R8G8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R8G8_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R8G8_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_R8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_R8_UINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_R8_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_R8_SINT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_P8:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_R9G9B9E5_SHAREDEXP:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8_B8G8_UNORM:
+        *pcxBlock = 2;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_G8R8_G8B8_UNORM:
+        *pcxBlock = 2;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_BC1_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC1_UNORM_SRGB:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC2_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC2_UNORM_SRGB:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC3_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC3_UNORM_SRGB:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC4_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_ATI1:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC4_SNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC5_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_ATI2:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC5_SNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_R10G10B10_XR_BIAS_A2_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_B8G8R8A8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_B8G8R8A8_UNORM_SRGB:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_B8G8R8X8_TYPELESS:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_B8G8R8X8_UNORM_SRGB:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_Z_DF16:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_Z_DF24:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_Z_D24S8_INT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_YV12:
+        *pcxBlock = 2;
+        *pcyBlock = 2;
+        return 6;
+
+    case SVGA3D_R32G32B32A32_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 16;
+
+    case SVGA3D_R16G16B16A16_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R16G16B16A16_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R32G32_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 8;
+
+    case SVGA3D_R10G10B10A2_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_R8G8B8A8_SNORM:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
+
+    case SVGA3D_R16G16_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
     case SVGA3D_R16G16_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R16G16_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R32_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_R8G8_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_R16_FLOAT:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_D16_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_A8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 1;
+
+    case SVGA3D_BC1_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC2_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC3_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_B5G6R5_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_B5G5R5A1_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_B8G8R8A8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_B8G8R8X8_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+
+    case SVGA3D_BC4_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 8;
+
+    case SVGA3D_BC5_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_B4G4R4A4_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 2;
+
+    case SVGA3D_BC6H_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC6H_UF16:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC6H_SF16:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC7_TYPELESS:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC7_UNORM:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_BC7_UNORM_SRGB:
+        *pcxBlock = 4;
+        *pcyBlock = 4;
+        return 16;
+
+    case SVGA3D_AYUV:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 4;
