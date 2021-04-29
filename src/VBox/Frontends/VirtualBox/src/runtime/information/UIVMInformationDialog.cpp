@@ -56,12 +56,11 @@
 /* Other VBox includes: */
 #include <iprt/time.h>
 
-
-
 UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
     : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
     , m_pTabWidget(0)
     , m_pMachineWindow(pMachineWindow)
+    , m_fCloseEmitted(false)
 {
     /* Prepare: */
     prepare();
@@ -99,6 +98,16 @@ void UIVMInformationDialog::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
         m_pButtonBox->button(QDialogButtonBox::Close)->setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Close)->shortcut().toString()));
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(tr("Show Help (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Help)->shortcut().toString()));
+    }
+}
+
+void UIVMInformationDialog::closeEvent(QCloseEvent *pEvent)
+{
+    if (!m_fCloseEmitted)
+    {
+        m_fCloseEmitted = true;
+        UIVMInformationDialog::sigClose();
+        pEvent->ignore();
     }
 }
 

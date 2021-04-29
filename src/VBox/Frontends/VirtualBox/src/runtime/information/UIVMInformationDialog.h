@@ -65,7 +65,8 @@ public:
 protected:
 
     /** Handles translation event. */
-    void retranslateUi();
+    void retranslateUi() /* override */;
+    void closeEvent(QCloseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -101,6 +102,7 @@ private:
     /** Holds the machine-window reference. */
     UIMachineWindow              *m_pMachineWindow;
     /** @} */
+    bool m_fCloseEmitted;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIVMInformationDialog_h */
