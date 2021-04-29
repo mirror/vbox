@@ -1507,6 +1507,9 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                 /** @todo Handle RTADDR_REG MMIO write first, for handling kIqei_InvalidTtm. I
                  *        don't think it needs to be checked/handled here? */
 
+                /*
+                 * Get the current queue size.
+                 */
                 uint64_t const uIqaReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
                 uint8_t const  cQueuePages = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
                 uint32_t const cbQueue     = cQueuePages << X86_PAGE_SHIFT;
@@ -1518,8 +1521,12 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                 Assert(!(offQueueHead & ~VTD_IQH_REG_RW_MASK));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueTail & RT_BIT(4)));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueHead & RT_BIT(4)));
+                Assert(offQueueHead < cbQueue);
 
-                if (offQueueTail <= cbQueue)
+                /*
+                 * Read the requests in the queue from guest memory into our buffer.
+                 */
+                if (offQueueTail < cbQueue)
                 {
                     RTGCPHYS const GCPhysRequests = (uIqaReg & VTD_BF_IQA_REG_IQA_MASK) + offQueueHead;
 
@@ -1558,7 +1565,7 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                         /* Indicate to software we've fetched all requests. */
                         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_IQH_REG, offQueueTail);
 
-                        /* Process all requests (in FIFO order) after more paranoid checks. */
+                        /* Process all requests (in FIFO order). */
                         Assert(cbRequests <= cbQueue);
                         dmarR3InvQueueProcessRequests(pDevIns, pvRequests, cbRequests, fDw);
                     }
@@ -1616,7 +1623,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
      * ASSUMED pHlp->pfnPrintf is expensive, so we copy the registers into
      * temporaries and release the lock ASAP.
      *
-     * Order of register read and outputting according to
+     * Order of register being read and outputted is in according with the
      * Intel VT-d spec. 10.4 "Register Descriptions" for no particular reason.
      */
     DMAR_LOCK(pDevIns, pThisR3);

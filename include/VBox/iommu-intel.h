@@ -1822,7 +1822,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Generic Invalidation Descriptor.
- *  These are fields common to EVERY invalidation descriptor.
+ * In accordance with the Intel spec.
+ * Non-reserved fields here are common to all invalidation descriptors.
  * @{ */
 /** Type (Lo). */
 #define VTD_BF_0_GENERIC_INV_DSC_TYPE_LO_SHIFT                  0
