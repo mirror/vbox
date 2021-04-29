@@ -2601,9 +2601,9 @@ static void sb16StreamUpdate(PSB16STREAM pStream, PAUDMIXSINK pSink)
 
             RTCircBufAcquireReadBlock(pStream->State.pCircBuf, cbToReadFromStream, &pvSrcBuf, &cbSrcBuf);
 
-            int rc2 = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, cbSrcBuf, &cbWritten);
+            int rc2 = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
             AssertRC(rc2);
-            Assert(cbWritten <= cbSrcBuf);
+            Assert(cbWritten <= (uint32_t)cbSrcBuf);
 
             RTCircBufReleaseReadBlock(pStream->State.pCircBuf, cbWritten);
 
