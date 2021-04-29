@@ -56,6 +56,7 @@ class UISoftKeyboard : public QMainWindowWithRestorableGeometryAndRetranslateUi
 signals:
 
     void sigHelpRequested(const QString &strHelpKeyword);
+    void sigClose();
 
 public:
 

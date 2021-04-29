@@ -3848,7 +3848,6 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pStatusBarWidget(0)
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
-    setAttribute(Qt::WA_DeleteOnClose);
     prepareObjects();
     prepareConnections();
 
@@ -3887,17 +3886,18 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
     if (m_pKeyboardWidget && !strNameList.empty())
     {
         QString strJoinedString = strNameList.join("<br/>");
-        if (msgCenter().questionBinary(this, MessageType_Warning,
+        if (!msgCenter().questionBinary(this, MessageType_Warning,
                                        tr("<p>Following layouts are edited/copied but not saved:</p>%1"
                                           "<p>Closing this dialog will cause loosing the changes. Proceed?</p>").arg(strJoinedString),
                                        0 /* auto-confirm id */,
                                        "Ok", "Cancel"))
-            QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
-        else
+        {
             event->ignore();
-        return;
+            return;
+        }
     }
-    QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
+    emit sigClose();
+    event->ignore();
 }
 
 bool UISoftKeyboard::event(QEvent *pEvent)
