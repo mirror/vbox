@@ -3643,8 +3643,8 @@ static DECLCALLBACK(void) drvAudioNotifyFromHost_StreamNotifyDeviceChanged(PPDMI
         {
             DRVAUDIOPLAYSTATE const enmPlayState = pStreamEx->Out.enmPlayState;
             pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_PREBUF;
-            LogFunc(("%s: %s -> %s\n", pStreamEx->Core.szName,
-                     drvAudioPlayStateName(enmPlayState), drvAudioPlayStateName(pStreamEx->Out.enmPlayState) ));
+            LogFunc(("%s: %s -> %s\n", pStreamEx->Core.szName, drvAudioPlayStateName(enmPlayState),
+                     drvAudioPlayStateName(pStreamEx->Out.enmPlayState) )); RT_NOREF(enmPlayState);
         }
     }
 
@@ -3782,6 +3782,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrNullReturn(pHostDrvAudio->pfnStreamConfigHint, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamCreate, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHostDrvAudio->pfnStreamNotifyDeviceChanged, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamGetReadable, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostDrvAudio->pfnStreamGetWritable, VERR_INVALID_POINTER);

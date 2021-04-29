@@ -431,18 +431,19 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostValKitAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvHostValKitAudioHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
-    pThis->IHostAudio.pfnGetStatus          = drvHostValKitAudioHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvHostValKitAudioHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvHostValKitAudioHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvHostValKitAudioHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvHostValKitAudioHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvHostValKitAudioHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvHostValKitAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvHostValKitAudioHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvHostValKitAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostValKitAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = NULL;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostValKitAudioHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostValKitAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostValKitAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvHostValKitAudioHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostValKitAudioHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostValKitAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvHostValKitAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostValKitAudioHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostValKitAudioHA_StreamCapture;
 
     return VINF_SUCCESS;
 }

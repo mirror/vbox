@@ -1404,18 +1404,19 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAlsaAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvHostAlsaAudioHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = drvHostAlsaAudioHA_GetDevices;
-    pThis->IHostAudio.pfnGetStatus          = drvHostAlsaAudioHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvHostAlsaAudioHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvHostAlsaAudioHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvHostAlsaAudioHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvHostAlsaAudioHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvHostAlsaAudioHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending   = drvHostAlsaAudioHA_StreamGetPending;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvHostAlsaAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvHostAlsaAudioHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvHostAlsaAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostAlsaAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = drvHostAlsaAudioHA_GetDevices;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostAlsaAudioHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostAlsaAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostAlsaAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvHostAlsaAudioHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostAlsaAudioHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostAlsaAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = drvHostAlsaAudioHA_StreamGetPending;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvHostAlsaAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostAlsaAudioHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostAlsaAudioHA_StreamCapture;
 
     /*
      * Read configuration.

@@ -1911,18 +1911,19 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAudioPaQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvHostAudioPaHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = drvHostAudioPaHA_GetDevices;
-    pThis->IHostAudio.pfnGetStatus          = drvHostAudioPaHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvHostAudioPaHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvHostAudioPaHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvHostAudioPaHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvHostAudioPaHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvHostAudioPaHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvHostAudioPaHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvHostAudioPaHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvHostAudioPaHA_StreamCapture;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostAudioPaHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = drvHostAudioPaHA_GetDevices;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostAudioPaHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostAudioPaHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioPaHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvHostAudioPaHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioPaHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioPaHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvHostAudioPaHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostAudioPaHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostAudioPaHA_StreamCapture;
 
     /*
      * Read configuration.

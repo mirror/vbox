@@ -2544,18 +2544,19 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostCoreAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvHostCoreAudioHA_GetConfig;
-    pThis->IHostAudio.pfnGetStatus          = drvHostCoreAudioHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvHostCoreAudioHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvHostCoreAudioHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvHostCoreAudioHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvHostCoreAudioHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvHostCoreAudioHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvHostCoreAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvHostCoreAudioHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvHostCoreAudioHA_StreamCapture;
-    pThis->IHostAudio.pfnGetDevices         = drvHostCoreAudioHA_GetDevices;
-    pThis->IHostAudio.pfnStreamGetPending   = NULL;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostCoreAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostCoreAudioHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostCoreAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostCoreAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvHostCoreAudioHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostCoreAudioHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostCoreAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvHostCoreAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostCoreAudioHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostCoreAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnGetDevices                 = drvHostCoreAudioHA_GetDevices;
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);

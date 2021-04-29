@@ -1098,18 +1098,19 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvAudioVideoRecHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
-    pThis->IHostAudio.pfnGetStatus          = drvAudioVideoRecHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvAudioVideoRecHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvAudioVideoRecHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvAudioVideoRecHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvAudioVideoRecHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvAudioVideoRecHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending   = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvAudioVideoRecHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvAudioVideoRecHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvAudioVideoRecHA_StreamCapture;
+    pThis->IHostAudio.pfnGetConfig                  = drvAudioVideoRecHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = NULL;
+    pThis->IHostAudio.pfnGetStatus                  = drvAudioVideoRecHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvAudioVideoRecHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvAudioVideoRecHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvAudioVideoRecHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVideoRecHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVideoRecHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvAudioVideoRecHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvAudioVideoRecHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvAudioVideoRecHA_StreamCapture;
 
     /*
      * Get the Console object pointer.

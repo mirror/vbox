@@ -434,18 +434,19 @@ static DECLCALLBACK(int) drvHostDebugAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostDebugAudioQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig          = drvHostDebugAudioHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices         = NULL;
-    pThis->IHostAudio.pfnGetStatus          = drvHostDebugAudioHA_GetStatus;
-    pThis->IHostAudio.pfnStreamCreate       = drvHostDebugAudioHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamDestroy      = drvHostDebugAudioHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamControl      = drvHostDebugAudioHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable  = drvHostDebugAudioHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable  = drvHostDebugAudioHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending   = drvHostDebugAudioHA_StreamGetPending;
-    pThis->IHostAudio.pfnStreamGetStatus    = drvHostDebugAudioHA_StreamGetStatus;
-    pThis->IHostAudio.pfnStreamPlay         = drvHostDebugAudioHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture      = drvHostDebugAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostDebugAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = NULL;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostDebugAudioHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostDebugAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostDebugAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamControl              = drvHostDebugAudioHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostDebugAudioHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostDebugAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetPending           = drvHostDebugAudioHA_StreamGetPending;
+    pThis->IHostAudio.pfnStreamGetStatus            = drvHostDebugAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostDebugAudioHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostDebugAudioHA_StreamCapture;
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "AudioDebugOutput.pcm");
