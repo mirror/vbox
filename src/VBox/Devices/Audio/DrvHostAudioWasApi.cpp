@@ -569,7 +569,7 @@ static void drvHostAudioWasWaveFmtExFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMA
  *
  * @returns VINF_SUCCESS on success, VERR_AUDIO_STREAM_COULD_NOT_CREATE if not
  *          supported.
- * @param   pCfg        The stream configuration to update (input:
+ * @param   pProps      The stream properties to update (input:
  *                      requested config; output: acquired).
  * @param   pFmt        The windows wave format structure.
  * @param   pszStream   The stream name for error logging.
@@ -697,7 +697,7 @@ static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis)
  * @returns Pointer to the device config (removed from cache) on success.  NULL
  *          if no matching config found.
  * @param   pDevEntry       Where to perform the lookup.
- * @param   pProp           The config properties to match.
+ * @param   pProps          The config properties to match.
  */
 static PDRVHOSTAUDIOWASCACHEDEVCFG
 drvHostAudioWasCacheLookupLocked(PDRVHOSTAUDIOWASCACHEDEV pDevEntry, PCPDMAUDIOPCMPROPS pProps)
