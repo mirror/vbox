@@ -2567,10 +2567,10 @@ void UIMachineLogic::sltShowLogDialog()
 
 void UIMachineLogic::sltCloseLogViewerWindow()
 {
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pLogViewerDialog != pDialog || !pDialog)
+    if (!m_pLogViewerDialog)
         return;
 
+    QIManagerDialog* pDialog = m_pLogViewerDialog;
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pLogViewerDialog = 0;
     pDialog->close();
@@ -2807,6 +2807,7 @@ void UIMachineLogic::sltHandleCommitData()
     /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
 #endif
+    sltCloseLogViewerWindow();
     sltCloseFileManagerDialog();
     sltCloseVMInformationDialog();
 }

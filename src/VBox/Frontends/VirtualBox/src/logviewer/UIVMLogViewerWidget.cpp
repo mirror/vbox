@@ -163,6 +163,14 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
         setMachines(QVector<QUuid>(1, comMachine.GetId()));
 }
 
+UIVMLogViewerWidget::~UIVMLogViewerWidget()
+{
+    /* In machine UI context we perform cleanup during destruction.
+       UIMachineLogic makes sure this happens early enough: */
+    if (m_enmEmbedding == EmbedTo_Dialog)
+        sltSaveOptions();
+}
+
 int UIVMLogViewerWidget::defaultLogPageWidth() const
 {
     if (!m_pTabWidget)
@@ -727,8 +735,10 @@ void UIVMLogViewerWidget::loadOptions()
     QFont loadedFont = gEDataManager->logViewerFont();
     if (loadedFont != QFont())
         m_font = loadedFont;
-    connect(&uiCommon(), &UICommon::sigAskToCommitData,
-            this, &UIVMLogViewerWidget::sltSaveOptions);
+    /* In manager UI we cleanup by listening the sigAskToCommitData signal: */
+    if (m_enmEmbedding == EmbedTo_Stack)
+        connect(&uiCommon(), &UICommon::sigAskToCommitData,
+                this, &UIVMLogViewerWidget::sltSaveOptions);
 }
 
 void UIVMLogViewerWidget::restorePanelVisibility()

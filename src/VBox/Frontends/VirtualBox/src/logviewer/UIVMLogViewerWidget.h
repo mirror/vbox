@@ -72,6 +72,7 @@ public:
       * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
     UIVMLogViewerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                         bool fShowToolbar = true, const CMachine &comMachine = CMachine(), QWidget *pParent = 0);
+    ~UIVMLogViewerWidget();
     /** Returns the width of the current log page. return 0 if there is no current log page: */
     int defaultLogPageWidth() const;
 
