@@ -2214,7 +2214,7 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream,
         RTCircBufAcquireWriteBlock(pStream->State.pCircBuf, cbChunk, &pv, &cb);
 
         uint32_t cbRead;
-        rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, uDmaChan, pv, offDma, cb, &cbRead);
+        rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, uDmaChan, pv, offDma, (uint32_t)cb, &cbRead);
         AssertMsgRCReturn(rc, ("Reading from DMA failed, rc=%Rrc\n", rc), rc);
         Assert(cbRead == cb);
 
