@@ -6142,8 +6142,8 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     pThis->svga.uBpp       = pThis->svga.uHostBpp;
     pThis->svga.cbScanline = 0;
 
-    pThis->svga.u32MaxWidth  = VBE_DISPI_MAX_YRES;
-    pThis->svga.u32MaxHeight = VBE_DISPI_MAX_XRES;
+    pThis->svga.u32MaxWidth  = VBE_DISPI_MAX_XRES;
+    pThis->svga.u32MaxHeight = VBE_DISPI_MAX_YRES;
     while (pThis->svga.u32MaxWidth * pThis->svga.u32MaxHeight * 4 /* 32 bpp */ > pThis->vram_size)
     {
         pThis->svga.u32MaxWidth  -= 256;
