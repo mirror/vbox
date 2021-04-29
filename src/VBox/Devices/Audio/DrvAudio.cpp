@@ -3555,7 +3555,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
  */
 static void drvAudioStreamMarkNeedReInit(PDRVAUDIOSTREAM pStreamEx, const char *pszCaller)
 {
-    LogFlow((LOG_FN_FMT ": Flagging %s for re-init.\n", pStreamEx->Core.szName)); RT_NOREF(pszCaller);
+    LogFlow((LOG_FN_FMT ": Flagging %s for re-init.\n", pszCaller, pStreamEx->Core.szName)); RT_NOREF(pszCaller);
     pStreamEx->Core.fStatus |= PDMAUDIOSTREAM_STS_NEED_REINIT;
     PDMAUDIOSTREAM_STS_ASSERT_VALID(pStreamEx->Core.fStatus);
     pStreamEx->cTriesReInit  = 0;
