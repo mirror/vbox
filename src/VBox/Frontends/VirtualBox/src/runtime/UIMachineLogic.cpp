@@ -1822,10 +1822,8 @@ void UIMachineLogic::sltShowInformationDialog()
     if (!isMachineWindowsCreated())
         return;
 
-    if (m_pVMInformationDialog)
-        return;
-
-    m_pVMInformationDialog = new UIVMInformationDialog(activeMachineWindow());
+    if (!m_pVMInformationDialog)
+        m_pVMInformationDialog = new UIVMInformationDialog(activeMachineWindow());
 
     if (m_pVMInformationDialog)
     {
@@ -2582,7 +2580,7 @@ void UIMachineLogic::sltShowGuestControlConsoleDialog()
     if (machine().isNull() || !activeMachineWindow())
         return;
 
-    /* Create a logviewer only if we don't have one already */
+    /* Create the dialog only if we don't have one already */
     if (m_pProcessControlDialog)
         return;
 
@@ -2604,10 +2602,10 @@ void UIMachineLogic::sltShowGuestControlConsoleDialog()
 
 void UIMachineLogic::sltCloseGuestControlConsoleDialog()
 {
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pProcessControlDialog != pDialog || !pDialog)
+    if (!m_pProcessControlDialog)
         return;
 
+    QIManagerDialog* pDialog = m_pProcessControlDialog;
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pProcessControlDialog = 0;
     pDialog->close();
@@ -2810,6 +2808,7 @@ void UIMachineLogic::sltHandleCommitData()
     sltCloseLogViewerWindow();
     sltCloseFileManagerDialog();
     sltCloseVMInformationDialog();
+    sltCloseGuestControlConsoleDialog();
 }
 
 void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)
