@@ -2805,10 +2805,10 @@ void UIMachineLogic::sltHandleCommitData()
     /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
     sltCloseLogViewerWindow();
+    sltCloseGuestControlConsoleDialog();
 #endif
     sltCloseFileManagerDialog();
     sltCloseVMInformationDialog();
-    sltCloseGuestControlConsoleDialog();
 }
 
 void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)
