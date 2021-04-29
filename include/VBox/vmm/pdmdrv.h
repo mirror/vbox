@@ -1742,7 +1742,7 @@ DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnSTAMDeregisterByPrefix
+ * @copydoc PDMDRVHLPR3::pfnSTAMDeregisterByPrefix
  */
 DECLINLINE(int) PDMDrvHlpSTAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
 {
