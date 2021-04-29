@@ -56,6 +56,7 @@
 class CExeModule : public ATL::CComModule
 {
 public:
+    LONG Lock();
     LONG Unlock();
     DWORD dwThreadID;
     HANDLE hEventShutdown;
@@ -103,9 +104,19 @@ static DWORD WINAPI MonitorProc(void *pv) RT_NOTHROW_DEF
     return 0;
 }
 
+
+LONG CExeModule::Lock()
+{
+    LONG cLocks = ATL::CComModule::Lock();
+    LogRel(("CExeModule::Lock: cLocks = %d\n", (int)cLocks));
+    return cLocks;
+}
+
+
 LONG CExeModule::Unlock()
 {
     LONG cLocks = ATL::CComModule::Unlock();
+    LogRel(("CExeModule::Unlock: cLocks = %d\n", (int)cLocks));
     if (isIdleLockCount(cLocks))
     {
         bActivity = true;
@@ -116,7 +127,12 @@ LONG CExeModule::Unlock()
 
 bool CExeModule::HasActiveConnection()
 {
-    return bActivity || !isIdleLockCount(GetLockCount());
+    const LONG cLocks = GetLockCount();
+    LogRel(("%s: bActivity = %s;  cLocks = %d\n",
+            __FUNCTION__,
+            bActivity ? "TRUE" : "false",
+            (int)cLocks));
+    return bActivity || !isIdleLockCount(cLocks);
 }
 
 /**
@@ -138,14 +154,17 @@ void CExeModule::MonitorShutdown()
 {
     while (1)
     {
-        WaitForSingleObject(hEventShutdown, INFINITE);
         DWORD dwWait;
+        dwWait = WaitForSingleObject(hEventShutdown, INFINITE);
+        LogRel(("%s: dwWait INFINITE = 0x%x\n", __FUNCTION__, dwWait));        
         do
         {
             bActivity = false;
             dwWait = WaitForSingleObject(hEventShutdown, dwTimeOut);
+            LogRel(("%s: dwWait %d = 0x%x\n", __FUNCTION__, dwTimeOut, dwWait));
         } while (dwWait == WAIT_OBJECT_0);
         /* timed out */
+        // LogRel(("%s: dwWait = %x\n", __FUNCTION__, dwWait));
         if (!HasActiveConnection()) /* if no activity let's really bail */
         {
             /* Disable log rotation at this point, worst case a log file
@@ -170,6 +189,7 @@ void CExeModule::MonitorShutdown()
             }
 #if _WIN32_WINNT >= 0x0400
             CoSuspendClassObjects();
+            LogRel(("%s (end of loop)\n", __FUNCTION__));
             if (!HasActiveConnection())
 #endif
                 break;
@@ -323,6 +343,8 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
     LogRel(("i_registerWithSds: RpcServerInqCallAttributesW -> %#x ClientPID=%#x IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid\n",
             rcRpc, CallAttribs.ClientPID, CallAttribs.IsClientLocal, CallAttribs.ProtocolSequence, CallAttribs.CallStatus,
             CallAttribs.CallType, CallAttribs.OpNum, &CallAttribs.InterfaceUuid));
+# else  // XXX: uwe
+    LogRel(("VirtualBoxClassFactory::i_registerWithSds\n"));
 # endif
 
     /*
@@ -353,7 +375,7 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
 
 void VirtualBoxClassFactory::i_deregisterWithSds(void)
 {
-    Log(("VirtualBoxClassFactory::i_deregisterWithSds\n"));
+    LogRel(("VirtualBoxClassFactory::i_deregisterWithSds\n"));
 
     if (m_ptrVirtualBoxSDS.isNotNull())
     {
@@ -390,11 +412,11 @@ HRESULT VirtualBoxClassFactory::i_getVirtualBox(IUnknown **ppResult)
          *        deals with that........... */
         pObj->AddRef();
         *ppResult = pObj;
-        Log(("VirtualBoxClassFactory::GetVirtualBox: S_OK - %p\n", pObj));
+        LogRel(("VirtualBoxClassFactory::GetVirtualBox: S_OK - %p\n", pObj));
         return S_OK;
     }
     *ppResult = NULL;
-    Log(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
+    LogRel(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
     return E_FAIL;
 }
 
@@ -430,7 +452,12 @@ public:
         if (cRefs == 2)
         {
             AssertMsg(ATL::_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
+            LogRel(("VirtualBoxObjectCached::AddRef: cRefs = 2, LOCKING the module\n"));
             ATL::_pAtlModule->Lock();
+        }
+        else
+        {
+            LogRel(("VirtualBoxObjectCached::AddRef: cRefs = %u\n", (unsigned)cRefs));
         }
         return cRefs;
     }
@@ -439,11 +466,19 @@ public:
     {
         ULONG cRefs = InternalRelease();
         if (cRefs == 0)
+        {
+            LogRel(("VirtualBoxObjectCached::Release: cRefs = 0: deleting...\n"));
             delete this;
+        }
         else if (cRefs == 1)
         {
             AssertMsg(ATL::_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
+            LogRel(("VirtualBoxObjectCached::Release: cRefs = 1: unlocking the module\n"));
             ATL::_pAtlModule->Unlock();
+        }
+        else
+        {
+            LogRel(("VirtualBoxObjectCached::Release: cRefs = %u\n", (unsigned)cRefs));
         }
         return cRefs;
     }
@@ -479,6 +514,7 @@ public:
             else
                 *ppObj = p;
         }
+        LogRel(("VirtualBoxObjectCached::CreateInstance: %Rhrc\n", hrc));
         return hrc;
     }
 };
@@ -525,6 +561,7 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                      * (necessary for the monitor shutdown thread to correctly
                      * terminate the module in case when CreateInstance() fails)
                      */
+                    LogRel(("VirtualBoxClassFactory::CreateInstance: LOCKING the module\n"));
                     ATL::_pAtlModule->Lock();
                     __try
                     {
@@ -537,6 +574,7 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                             m_pObj = pOtherVirtualBox;
                         else if (SUCCEEDED(hrc))
                         {
+                            LogRel(("VirtualBoxClassFactory::CreateInstance: LOCKING the module\n"));
                             ATL::_pAtlModule->Lock();
                             VirtualBoxObjectCached *p;
                             m_hrcCreate = hrc = VirtualBoxObjectCached::CreateInstance(&p);
@@ -557,6 +595,7 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                     }
                     __finally
                     {
+                        LogRel(("VirtualBoxClassFactory::CreateInstance: finally unlocking the module\n"));
                         ATL::_pAtlModule->Unlock();
                     }
                 }
@@ -629,6 +668,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     {
         case WM_QUERYENDSESSION:
         {
+            LogRel(("WM_QUERYENDSESSION\n"));
             if (g_pModule)
             {
                 bool fActiveConnection = g_pModule->HasActiveConnection();
@@ -638,7 +678,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                     ShutdownBlockReasonCreateAPI(hwnd, L"Has active connections.");
                     /* decrease a latency of MonitorShutdown loop */
                     ASMAtomicXchgU32(&dwTimeOut, 100);
-                    Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
+                    LogRel(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
                          g_pModule->bActivity, g_pModule->GetLockCount()));
                 }
                 rc = !fActiveConnection;
@@ -649,11 +689,12 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
         }
         case WM_ENDSESSION:
         {
+            LogRel(("WM_ENDSESSION(%s)\n", wParam == FALSE ? "false" : "true"));
             /* Restore timeout of Monitor Shutdown if user canceled system shutdown */
             if (wParam == FALSE)
             {
                 ASMAtomicXchgU32(&dwTimeOut, dwNormalTimeout);
-                Log(("VBoxSVCWinMain: user canceled system shutdown.\n"));
+                LogRel(("VBoxSVCWinMain: user canceled system shutdown.\n"));
             }
             break;
         }
@@ -693,7 +734,7 @@ static int CreateMainWindow()
     ATOM atomWindowClass = RegisterClass(&wc);
     if (atomWindowClass == 0)
     {
-        Log(("Failed to register main window class\n"));
+        LogRel(("Failed to register main window class\n"));
         rc = VERR_NOT_SUPPORTED;
     }
     else
@@ -705,7 +746,7 @@ static int CreateMainWindow()
                                        0, 0, 1, 1, NULL, NULL, g_hInstance, NULL);
         if (g_hMainWindow == NULL)
         {
-            Log(("Failed to create main window\n"));
+            LogRel(("Failed to create main window\n"));
             rc = VERR_NOT_SUPPORTED;
         }
         else
@@ -722,7 +763,7 @@ static int CreateMainWindow()
 static void DestroyMainWindow()
 {
     Assert(g_hMainWindow != NULL);
-    Log(("SVCMain: DestroyMainWindow \n"));
+    LogRel(("SVCMain: DestroyMainWindow \n"));
     if (g_hMainWindow != NULL)
     {
         DestroyWindow(g_hMainWindow);
@@ -972,7 +1013,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 #endif
         if (pszPipeName)
         {
-            Log(("SVCMAIN: Processing Helper request (cmdline=\"%s\")...\n", pszPipeName));
+            LogRel(("SVCMAIN: Processing Helper request (cmdline=\"%s\")...\n", pszPipeName));
 
             if (!*pszPipeName)
                 vrc = VERR_INVALID_PARAMETER;
@@ -987,7 +1028,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             }
             if (RT_FAILURE(vrc))
             {
-                Log(("SVCMAIN: Failed to process Helper request (%Rrc).\n", vrc));
+                LogRel(("SVCMAIN: Failed to process Helper request (%Rrc).\n", vrc));
                 nRet = 1;
             }
         }
@@ -1005,15 +1046,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         _ASSERTE(SUCCEEDED(hRes));
 
         if (RT_SUCCESS(CreateMainWindow()))
-            Log(("SVCMain: Main window succesfully created\n"));
+            LogRel(("SVCMain: Main window succesfully created\n"));
         else
-            Log(("SVCMain: Failed to create main window\n"));
+            LogRel(("SVCMain: Failed to create main window\n"));
 
         MSG msg;
         while (GetMessage(&msg, 0, 0, 0) > 0)
         {
-            DispatchMessage(&msg);
             TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
 
         DestroyMainWindow();
@@ -1032,6 +1073,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         delete g_pModule;
     g_pModule = NULL;
 
-    Log(("SVCMAIN: Returning, COM server process ends.\n"));
+    LogRel(("SVCMAIN: Returning, COM server process ends.\n"));
     return nRet;
 }
