@@ -561,8 +561,8 @@ AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
  *        Devices/testcase/tstDeviceStructSize[RC].cpp  */
 
 /**
- * Gets the number of supported adjusted guest-address width (SAGAW) in bits given a
- * CAP_REG.SAGAW value.
+ * Returns the number of supported adjusted guest-address width (SAGAW) in bits
+ * given a CAP_REG.SAGAW value.
  *
  * @returns Number of SAGAW bits.
  * @param   uSagaw  The CAP_REG.SAGAW value.
@@ -576,8 +576,8 @@ static uint8_t vtdCapRegGetSagawBits(uint8_t uSagaw)
 
 
 /**
- * Gets the supported adjusted guest-address width (SAGAW) given the maximum guest
- * address width (MGAW).
+ * Returns the supported adjusted guest-address width (SAGAW) given the maximum
+ * guest address width (MGAW).
  *
  * @returns The CAP_REG.SAGAW value.
  * @param   uMgaw  The CAP_REG.MGAW value.
@@ -591,6 +591,26 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
         case 57:    return 3;
     }
     return 0;
+}
+
+
+/**
+ * Returns table translation mode's descriptive name.
+ *
+ * @returns The descriptive name.
+ * @param   uTtm    The RTADDR_REG.TTM value.
+ */
+static const char* vtdRtaddrRegGetTtmDesc(uint8_t uTtm)
+{
+    Assert(!(uTtm & 3));
+    static const char* s_apszTtmNames[] =
+    {
+        "Legacy Mode",
+        "Scalable Mode",
+        "Reserved",
+        "Abort-DMA Mode"
+    };
+    return s_apszTtmNames[uTtm & (RT_ELEMENTS(s_apszTtmNames) - 1)];
 }
 
 
@@ -1623,8 +1643,9 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
      * ASSUMED pHlp->pfnPrintf is expensive, so we copy the registers into
      * temporaries and release the lock ASAP.
      *
-     * Order of register being read and outputted is in according with the
-     * Intel VT-d spec. 10.4 "Register Descriptions" for no particular reason.
+     * Order of register being read and outputted is in accordance with the
+     * spec. for no particular reason.
+     * See Intel VT-d spec. 10.4 "Register Descriptions".
      */
     DMAR_LOCK(pDevIns, pThisR3);
 
@@ -1674,45 +1695,195 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     const char *const pszDiag = enmDiag < RT_ELEMENTS(g_apszDmarDiagDesc) ? g_apszDmarDiagDesc[enmDiag] : "(Unknown)";
     pHlp->pfnPrintf(pHlp, "Intel-IOMMU:\n");
     pHlp->pfnPrintf(pHlp, " Diag         = %s\n", pszDiag);
-    pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
-    pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
-    pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
-    pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
-    pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
-    pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
-    pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
-    pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
-    pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
-    pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
-    pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
-    pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
-    pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
-    pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
-    pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
-    pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
-    pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
-    pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
-    pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
-    pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
-    pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
-    pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
-    pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
-    pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
-    pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
-    pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
-    pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
-    pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
-    pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
-    pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
-    pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
-    pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
-    pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
-    pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
-    pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
-    pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
-    pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
-    pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
-    pHlp->pfnPrintf(pHlp, "\n");
+    if (!fVerbose)
+    {
+        pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
+        pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
+        pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
+        pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
+        pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
+        pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
+        pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
+        pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
+        pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
+        pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
+        pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
+        pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
+        pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
+        pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
+        pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
+        pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
+        pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
+        pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
+        pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
+        pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
+        pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
+        pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
+        pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
+        pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
+        pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
+        pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
+        pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
+        pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
+        pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
+        pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
+        pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
+        pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
+        pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
+        pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
+        pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
+        pHlp->pfnPrintf(pHlp, "\n");
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   MAJ          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX));
+            pHlp->pfnPrintf(pHlp, "   MIN          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN));
+        }
+        pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
+        {
+            uint8_t const uSagaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW);
+            uint8_t const uMgaw  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
+            uint8_t const uNfr   = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
+            pHlp->pfnPrintf(pHlp, "   ND           = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
+            pHlp->pfnPrintf(pHlp, "   AFL          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_AFL));
+            pHlp->pfnPrintf(pHlp, "   RWBF         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_RWBF));
+            pHlp->pfnPrintf(pHlp, "   PLMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PLMR));
+            pHlp->pfnPrintf(pHlp, "   PHMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PHMR));
+            pHlp->pfnPrintf(pHlp, "   CM           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_CM));
+            pHlp->pfnPrintf(pHlp, "   SAGAW        = %#x (%u bits)\n", uSagaw, vtdCapRegGetSagawBits(uSagaw));
+            pHlp->pfnPrintf(pHlp, "   MGAW         = %#x (%u bits)\n", uMgaw, uMgaw + 1);
+            pHlp->pfnPrintf(pHlp, "   ZLR          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ZLR));
+            pHlp->pfnPrintf(pHlp, "   FRO          = %#x bytes\n",  RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FRO));
+            pHlp->pfnPrintf(pHlp, "   SLLPS        = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SLLPS));
+            pHlp->pfnPrintf(pHlp, "   PSI          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PSI));
+            pHlp->pfnPrintf(pHlp, "   NFR          = %#x (%u FRCD register%s)\n", uNfr, uNfr + 1, uNfr > 0 ? "s" : "");
+            pHlp->pfnPrintf(pHlp, "   MAMV         = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MAMV));
+            pHlp->pfnPrintf(pHlp, "   DWD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DWD));
+            pHlp->pfnPrintf(pHlp, "   DRD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DRD));
+            pHlp->pfnPrintf(pHlp, "   FL1GP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL1GP));
+            pHlp->pfnPrintf(pHlp, "   PI           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PI));
+            pHlp->pfnPrintf(pHlp, "   FL5LP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL5LP));
+            pHlp->pfnPrintf(pHlp, "   ESIRTPS      = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESIRTPS));
+            pHlp->pfnPrintf(pHlp, "   ESRTPS       = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESRTPS));
+        }
+        pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
+        {
+            uint8_t const uPss = RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PSS);
+            pHlp->pfnPrintf(pHlp, "   C            = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_C));
+            pHlp->pfnPrintf(pHlp, "   QI           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_QI));
+            pHlp->pfnPrintf(pHlp, "   DT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DT));
+            pHlp->pfnPrintf(pHlp, "   IR           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IR));
+            pHlp->pfnPrintf(pHlp, "   EIM          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EIM));
+            pHlp->pfnPrintf(pHlp, "   PT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PT));
+            pHlp->pfnPrintf(pHlp, "   SC           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SC));
+            pHlp->pfnPrintf(pHlp, "   IRO          = %#x bytes\n",  RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IRO));
+            pHlp->pfnPrintf(pHlp, "   MHMV         = %#x\n",        RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MHMV));
+            pHlp->pfnPrintf(pHlp, "   MTS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MTS));
+            pHlp->pfnPrintf(pHlp, "   NEST         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NEST));
+            pHlp->pfnPrintf(pHlp, "   PRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PRS));
+            pHlp->pfnPrintf(pHlp, "   ERS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ERS));
+            pHlp->pfnPrintf(pHlp, "   SRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SRS));
+            pHlp->pfnPrintf(pHlp, "   NWFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NWFS));
+            pHlp->pfnPrintf(pHlp, "   EAFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EAFS));
+            pHlp->pfnPrintf(pHlp, "   PSS          = %#x (%u bits)\n", uPss, uPss > 0 ? uPss + 1 : 0);
+            pHlp->pfnPrintf(pHlp, "   PASID        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PASID));
+            pHlp->pfnPrintf(pHlp, "   DIT          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DIT));
+            pHlp->pfnPrintf(pHlp, "   PDS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PDS));
+            pHlp->pfnPrintf(pHlp, "   SMTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMTS));
+            pHlp->pfnPrintf(pHlp, "   VCS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_VCS));
+            pHlp->pfnPrintf(pHlp, "   SLADS        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLADS));
+            pHlp->pfnPrintf(pHlp, "   SLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLTS));
+            pHlp->pfnPrintf(pHlp, "   FLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_FLTS));
+            pHlp->pfnPrintf(pHlp, "   SMPWCS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMPWCS));
+            pHlp->pfnPrintf(pHlp, "   RPS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPS));
+            pHlp->pfnPrintf(pHlp, "   ADMS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ADMS));
+            pHlp->pfnPrintf(pHlp, "   RPRIVS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPRIVS));
+        }
+        pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
+        {
+            uint8_t const fCfi = RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_CFI);
+            pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass interrupt remapping"
+                                                                            : "Block compatible format interrupts");
+            pHlp->pfnPrintf(pHlp, "   SIRTP        = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SIRTP));
+            pHlp->pfnPrintf(pHlp, "   IRE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_IRE));
+            pHlp->pfnPrintf(pHlp, "   QIE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_QIE));
+            pHlp->pfnPrintf(pHlp, "   WBF          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_WBF));
+            pHlp->pfnPrintf(pHlp, "   EAFL         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
+            pHlp->pfnPrintf(pHlp, "   SFL          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
+            pHlp->pfnPrintf(pHlp, "   SRTP         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SRTP));
+            pHlp->pfnPrintf(pHlp, "   TE           = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_TE));
+        }
+        pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
+        {
+            uint8_t const fCfis = RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_CFIS);
+            pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass interrupt remapping"
+                                                                              : "Block compatible format interrupts");
+            pHlp->pfnPrintf(pHlp, "   IRTPS        = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRTPS));
+            pHlp->pfnPrintf(pHlp, "   IRES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRES));
+            pHlp->pfnPrintf(pHlp, "   QIES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_QIES));
+            pHlp->pfnPrintf(pHlp, "   WBFS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_WBFS));
+            pHlp->pfnPrintf(pHlp, "   AFLS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_AFLS));
+            pHlp->pfnPrintf(pHlp, "   FLS          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_FLS));
+            pHlp->pfnPrintf(pHlp, "   RTPS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_RTPS));
+            pHlp->pfnPrintf(pHlp, "   TES          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_TES));
+        }
+        pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
+        {
+            uint8_t const uTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+            pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n", uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
+            pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",  RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
+        }
+        pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
+        pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   PFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PFO));
+            pHlp->pfnPrintf(pHlp, "   PPF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PPF));
+            pHlp->pfnPrintf(pHlp, "   AFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_AFO));
+            pHlp->pfnPrintf(pHlp, "   APF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_APF));
+            pHlp->pfnPrintf(pHlp, "   IQE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_IQE));
+            pHlp->pfnPrintf(pHlp, "   ICS          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ICE));
+            pHlp->pfnPrintf(pHlp, "   ITE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ITE));
+            pHlp->pfnPrintf(pHlp, "   FRI          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_FRI));
+        }
+
+        /** @todo Verbose others as needed during debugging/rainy day. */
+        pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
+        pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
+        pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
+        pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
+        pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
+        pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
+        pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
+        pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
+        pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
+        pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
+        pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
+        pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
+        pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
+        pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
+        pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
+        pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
+        pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
+        pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
+        pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
+        pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
+        pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
+        pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
+        pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
+        pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
+        pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
+        pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
+        pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
+        pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
+        pHlp->pfnPrintf(pHlp, "\n");
+    }
 }
 
 
