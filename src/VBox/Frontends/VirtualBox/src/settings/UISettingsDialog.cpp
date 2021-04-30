@@ -726,68 +726,68 @@ void UISettingsDialog::prepare()
 
 void UISettingsDialog::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UISettingsDialog"));
-    resize(550, 450);
-    QWidget *pCentralWidget = new QWidget(this);
-    pCentralWidget->setObjectName(QStringLiteral("pCentralWidget"));
-    QGridLayout *pMainLayout = new QGridLayout(pCentralWidget);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pLabelTitle = new QLabel(pCentralWidget);
-    m_pLabelTitle->setObjectName(QStringLiteral("m_pLabelTitle"));
-    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pLabelTitle->sizePolicy().hasHeightForWidth());
-    m_pLabelTitle->setSizePolicy(sizePolicy);
-    QPalette palette;
-    QBrush brush(QColor(255, 255, 255, 255));
-    brush.setStyle(Qt::SolidPattern);
-    palette.setBrush(QPalette::Active, QPalette::Window, brush);
-    palette.setBrush(QPalette::Inactive, QPalette::Window, brush);
-    palette.setBrush(QPalette::Disabled, QPalette::Window, brush);
-    m_pLabelTitle->setPalette(palette);
-    QFont font;
-    font.setFamily(QStringLiteral("Sans Serif"));
-    font.setPointSize(11);
-    font.setBold(true);
-    font.setWeight(75);
-    m_pLabelTitle->setFont(font);
-    m_pLabelTitle->setAutoFillBackground(true);
-    m_pLabelTitle->setFrameShape(QFrame::Box);
-    m_pLabelTitle->setFrameShadow(QFrame::Sunken);
-    m_pLabelTitle->setMargin(7);
-    pMainLayout->addWidget(m_pLabelTitle, 0, 1, 1, 1);
+    /* Prepare central-widget: */
+    setCentralWidget(new QWidget);
+    if (centralWidget())
+    {
+        /* Prepare main layout: */
+        QGridLayout *pLayoutMain = new QGridLayout(centralWidget());
+        if (pLayoutMain)
+        {
+            /* Prepare title label: */
+            m_pLabelTitle = new QLabel(centralWidget());
+            if (m_pLabelTitle)
+            {
+                m_pLabelTitle->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
+                QPalette pal = QApplication::palette();
+                pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
+                m_pLabelTitle->setPalette(pal);
+                QFont fnt;
+                fnt.setFamily(QStringLiteral("Sans Serif"));
+                fnt.setPointSize(11);
+                fnt.setBold(true);
+                fnt.setWeight(75);
+                m_pLabelTitle->setFont(fnt);
+                m_pLabelTitle->setAutoFillBackground(true);
+                m_pLabelTitle->setFrameShadow(QFrame::Sunken);
+                m_pLabelTitle->setMargin(9);
 
-    m_pWidgetStackHandler = new QWidget(pCentralWidget);
-    m_pWidgetStackHandler->setObjectName(QStringLiteral("m_pWidgetStackHandler"));
-    QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    sizePolicy1.setHorizontalStretch(0);
-    sizePolicy1.setVerticalStretch(0);
-    sizePolicy1.setHeightForWidth(m_pWidgetStackHandler->sizePolicy().hasHeightForWidth());
-    m_pWidgetStackHandler->setSizePolicy(sizePolicy1);
-    pMainLayout->addWidget(m_pWidgetStackHandler, 1, 1, 1, 1);
+                pLayoutMain->addWidget(m_pLabelTitle, 0, 1);
+            }
 
-    m_pButtonBox = new QIDialogButtonBox(pCentralWidget);
-    m_pButtonBox->setObjectName(QStringLiteral("m_pButtonBox"));
+            /* Prepare widget stack handler: */
+            m_pWidgetStackHandler = new QWidget(centralWidget());
+            if (m_pWidgetStackHandler)
+            {
+                m_pWidgetStackHandler->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
+                pLayoutMain->addWidget(m_pWidgetStackHandler, 1, 1);
+            }
+
+            /* Prepare button-box: */
+            m_pButtonBox = new QIDialogButtonBox(centralWidget());
+            if (m_pButtonBox)
+            {
 #ifndef VBOX_WS_MAC
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|
-                                     QDialogButtonBox::Ok| QDialogButtonBox::Help);
-    m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
+                                                 QDialogButtonBox::NoButton | QDialogButtonBox::Help);
+                m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 #else
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|
-                                     QDialogButtonBox::Ok);
+                // WORKAROUND:
+                // No Help button on macOS for now, conflict with old Qt.
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
+                                                 QDialogButtonBox::NoButton);
 #endif
-    pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
-
-    setCentralWidget(pCentralWidget);
-
-    QObject::connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
-    QObject::connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
+                connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
+                connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 #ifndef VBOX_WS_MAC
-    connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
-                                 &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
+                        &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
 #endif
+
+                pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 2);
+            }
+        }
+    }
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
