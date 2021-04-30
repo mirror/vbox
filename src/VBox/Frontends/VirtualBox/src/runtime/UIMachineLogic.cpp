@@ -1838,7 +1838,9 @@ void UIMachineLogic::sltShowInformationDialog()
 
 void UIMachineLogic::sltCloseVMInformationDialog()
 {
-    delete m_pVMInformationDialog;
+    if (!m_pVMInformationDialog)
+        return;
+    m_pVMInformationDialog->deleteLater();
     m_pVMInformationDialog = 0;
 }
 
