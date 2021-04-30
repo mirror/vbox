@@ -1770,11 +1770,11 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                 }
                 else
                 {
-                    if (fTtm != VTD_TTM_RSVD)
+                    if (fTtm == VTD_TTM_RSVD)
                         dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Ttm_Rsvd, kIqei_InvalidTtm);
                     else
                     {
-                        Assert(offQueueTail < cbQueue);
+                        Assert(offQueueTail >= cbQueue);
                         dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
                     }
                 }
