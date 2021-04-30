@@ -459,10 +459,8 @@ static int sb16StreamAsyncIOCreate(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16ST
             rc = RTCritSectInit(&pAIO->CritSect);
             if (RT_SUCCESS(rc))
             {
-                /** @todo Make the device thread naming more specific once we have more streams here. */
-
-                char szDevTag[20];
-                RTStrPrintf(szDevTag, sizeof(szDevTag), "SB16-%u", pDevIns->iInstance);
+                char szDevTag[16]; /* see RTTHREAD_NAME_LEN. */
+                RTStrPrintf(szDevTag, sizeof(szDevTag), "SB16%RU32-%RU8", pDevIns->iInstance, pStream->uIdx);
 
                 PSB16STREAMTHREADCTX pCtx = (PSB16STREAMTHREADCTX)RTMemAllocZ(sizeof(SB16STREAMTHREADCTX));
                 if (pCtx)
