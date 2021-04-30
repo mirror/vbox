@@ -265,6 +265,15 @@ typedef struct DMAR
     STAMCOUNTER                 StatMemBulkReadRZ;      /**< Number of memory read bulk translation requests in RZ. */
     STAMCOUNTER                 StatMemBulkWriteR3;     /**< Number of memory write bulk translation requests in R3. */
     STAMCOUNTER                 StatMemBulkWriteRZ;     /**< Number of memory write bulk translation requests in RZ. */
+
+    STAMCOUNTER                 StatCcInvDsc;           /**< Number of Context-cache descriptors processed. */
+    STAMCOUNTER                 StatIotlbInvDsc;        /**< Number of IOTLB descriptors processed. */
+    STAMCOUNTER                 StatDevtlbInvDsc;       /**< Number of Device-TLB descriptors processed. */
+    STAMCOUNTER                 StatIecInvDsc;          /**< Number of Interrupt-Entry cache descriptors processed. */
+    STAMCOUNTER                 StatInvWaitDsc;         /**< Number of Invalidation wait descriptors processed. */
+    STAMCOUNTER                 StatPasidIotlbInvDsc;   /**< Number of PASID-based IOTLB descriptors processed. */
+    STAMCOUNTER                 StatPasidCacheInvDsc;   /**< Number of PASID-cache descriptors processed. */
+    STAMCOUNTER                 StatPasidDevtlbInvDsc;  /**< Number of PASID-based device-TLB descriptors processed. */
 #endif
 } DMAR;
 /** Pointer to the DMAR device state. */
@@ -1491,12 +1500,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
  * Process requests in the invalidation queue.
  *
  * @param   pDevIns     The IOMMU device instance.
- * @param   pvRequests  The requests data.
+ * @param   pvRequests  The requests to process.
  * @param   cbRequests  The size of all requests (in bytes).
  * @param   fDw         The descriptor width (VTD_IQA_REG_DW_128_BIT or
  *                      VTD_IQA_REG_DW_256_BIT).
- * @param   fTtm        The current table translation mode. Must not be
- *                      VTD_TTM_RSVD.
+ * @param   fTtm        The table translation mode. Must not be VTD_TTM_RSVD.
  */
 static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequests, uint32_t cbRequests, uint8_t fDw,
                                           uint8_t fTtm)
@@ -1510,7 +1518,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
         return; \
     } while (0)
 
-    PCDMAR   pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
 
     DMAR_ASSERT_LOCK_IS_NOT_OWNER(pDevIns, pThisR3);
@@ -1553,11 +1561,6 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
         uint8_t const   fDscType    = VTD_GENERIC_INV_DSC_GET_TYPE(uQword0);
         switch (fDscType)
         {
-            case VTD_CC_INV_DSC_TYPE:           LogRelMax(32, ("%s: CC\n", DMAR_LOG_PFX));              break;
-            case VTD_IOTLB_INV_DSC_TYPE:        LogRelMax(32, ("%s: IOTLB\n", DMAR_LOG_PFX));           break;
-            case VTD_DEV_TLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: DEV_TLB\n", DMAR_LOG_PFX));         break;
-            case VTD_IEC_INV_DSC_TYPE:          LogRelMax(32, ("%s: IEC_INV\n", DMAR_LOG_PFX));         break;
-
             case VTD_INV_WAIT_DSC_TYPE:
             {
                 /* Validate descriptor type. */
@@ -1604,16 +1607,18 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
                     dmarR3InvEventRaiseInterrupt(pDevIns);
                     DMAR_UNLOCK(pDevIns, pThisR3);
                 }
+
+                STAM_COUNTER_INC(&pThis->StatInvWaitDsc);
                 break;
             }
 
-            case VTD_P_IOTLB_INV_DSC_TYPE:      LogRelMax(32, ("%s: P_IOTLB\n", DMAR_LOG_PFX));         break;
-            case VTD_PC_INV_DSC_TYPE:           LogRelMax(32, ("%s: PC_INV\n", DMAR_LOG_PFX));          break;
-            case VTD_P_DEV_TLB_INV_DSC_TYPE:    LogRelMax(32, ("%s: P_DEVL_TLB\n", DMAR_LOG_PFX));      break;
-            {
-                break;
-            }
-
+            case VTD_CC_INV_DSC_TYPE:           STAM_COUNTER_INC(&pThis->StatCcInvDsc);             break;
+            case VTD_IOTLB_INV_DSC_TYPE:        STAM_COUNTER_INC(&pThis->StatIotlbInvDsc);          break;
+            case VTD_DEV_TLB_INV_DSC_TYPE:      STAM_COUNTER_INC(&pThis->StatDevtlbInvDsc);         break;
+            case VTD_IEC_INV_DSC_TYPE:          STAM_COUNTER_INC(&pThis->StatIecInvDsc);            break;
+            case VTD_P_IOTLB_INV_DSC_TYPE:      STAM_COUNTER_INC(&pThis->StatPasidIotlbInvDsc);     break;
+            case VTD_PC_INV_DSC_TYPE:           STAM_COUNTER_INC(&pThis->StatPasidCacheInvDsc);     break;
+            case VTD_P_DEV_TLB_INV_DSC_TYPE:    STAM_COUNTER_INC(&pThis->StatPasidDevtlbInvDsc);    break;
             default:
             {
                 /* Stop processing further requests. */
@@ -2364,6 +2369,15 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteR3, STAMTYPE_COUNTER, "R3/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteRZ, STAMTYPE_COUNTER, "RZ/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCcInvDsc,          STAMTYPE_COUNTER, "R3/QI/CcInv",          STAMUNIT_OCCURENCES, "Number of cc_inv_dsc processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbInvDsc,       STAMTYPE_COUNTER, "R3/QI/IotlbInv",       STAMUNIT_OCCURENCES, "Number of iotlb_inv_dsc processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDevtlbInvDsc,      STAMTYPE_COUNTER, "R3/QI/DevtlbInv",      STAMUNIT_OCCURENCES, "Number of dev_tlb_inv_dsc processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIecInvDsc,         STAMTYPE_COUNTER, "R3/QI/IecInv",         STAMUNIT_OCCURENCES, "Number of iec_inv processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatInvWaitDsc,        STAMTYPE_COUNTER, "R3/QI/InvWait",        STAMUNIT_OCCURENCES, "Number of inv_wait_dsc processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPasidIotlbInvDsc,  STAMTYPE_COUNTER, "R3/QI/PasidIotlbInv",  STAMUNIT_OCCURENCES, "Number of p_iotlb_inv_dsc processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPasidCacheInvDsc,  STAMTYPE_COUNTER, "R3/QI/PasidCacheInv",  STAMUNIT_OCCURENCES, "Number of pc_inv_dsc pprocessed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPasidDevtlbInvDsc, STAMTYPE_COUNTER, "R3/QI/PasidDevtlbInv", STAMUNIT_OCCURENCES, "Number of p_dev_tlb_inv_dsc processed.");
 #endif
 
     /*
