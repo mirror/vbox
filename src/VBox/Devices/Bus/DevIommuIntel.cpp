@@ -1196,6 +1196,8 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
     if (   (fExtCapReg & VTD_BF_ECAP_REG_IR_MASK)
         && (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK))
     {
+        /** @todo Perform global invalidation of all interrupt-entry cache when ESIRTPS is
+         *        supported. */
         pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
         dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
     }
@@ -1205,12 +1207,8 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
      */
     if (uGcmdReg & VTD_BF_GCMD_REG_SRTP_MASK)
     {
-        /** @todo Perform global invalidation of all remapping translation caches. */
-#if 0
-        if (pThis->fCapReg & VTD_BF_CAP_REG_ESRTPS_MASK)
-        {
-        }
-#endif
+        /** @todo Perform global invalidation of all remapping translation caches when
+         *        ESRTPS is supported. */
         pThis->uRtaddrReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_RTADDR_REG);
     }
 
@@ -2110,21 +2108,23 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t cGstLinearAddrBits;
         PDMDevHlpCpuGetGuestAddrWidths(pDevIns, &cGstPhysAddrBits, &cGstLinearAddrBits);
 
-        uint8_t const fFl1gp  = 1;                              /* First-Level 1GB pages support. */
-        uint8_t const fFl5lp  = 1;                              /* First-level 5-level paging support (PML5E). */
-        uint8_t const fSl2mp  = fSlts & 1;                      /* Second-Level 2MB pages support. */
-        uint8_t const fSl2gp  = fSlts & 1;                      /* Second-Level 1GB pages support. */
-        uint8_t const fSllps  = fSl2mp                          /* Second-Level large page Support. */
-                              | ((fSl2mp & fFl1gp) & RT_BIT(1));
-        uint8_t const fMamv   = (fSl2gp ?                       /* Maximum address mask value (for second-level invalidations). */
-                                X86_PAGE_1G_SHIFT : X86_PAGE_2M_SHIFT) - X86_PAGE_4K_SHIFT;
-        uint8_t const fNd     = 2;                              /* Number of domains (0=16, 1=64, 2=256, 3=1K, 4=4K, 5=16K, 6=64K,
-                                                                   7=Reserved). */
-        uint8_t const fPsi    = 1;                              /* Page selective invalidation. */
-        uint8_t const uMgaw   = cGstPhysAddrBits - 1;           /* Maximum guest address width. */
-        uint8_t const uSagaw  = vtdCapRegGetSagaw(uMgaw);       /* Supported adjust guest address width. */
-        uint16_t const offFro = DMAR_MMIO_OFF_FRCD_LO_REG >> 4; /* MMIO offset of FRCD registers. */
-        uint8_t const fEsrtps = 1;                              /* Enhanced SRTPS (flush all caches on SRTP flow). */
+        uint8_t const fFl1gp   = 1;                                /* First-Level 1GB pages support. */
+        uint8_t const fFl5lp   = 1;                                /* First-level 5-level paging support (PML5E). */
+        uint8_t const fSl2mp   = fSlts & 1;                        /* Second-Level 2MB pages support. */
+        uint8_t const fSl2gp   = fSlts & 1;                        /* Second-Level 1GB pages support. */
+        uint8_t const fSllps   = fSl2mp                            /* Second-Level large page Support. */
+                               | ((fSl2mp & fFl1gp) & RT_BIT(1));
+        uint8_t const fMamv    = (fSl2gp ? X86_PAGE_1G_SHIFT       /* Maximum address mask value (for 2nd-level invalidations). */
+                                         : X86_PAGE_2M_SHIFT)
+                               - X86_PAGE_4K_SHIFT;
+        uint8_t const fNd      = 2;                                /* Number of domains supported (0=16, 1=64, 2=256, 3=1K, 4=4K,
+                                                                      5=16K, 6=64K, 7=Reserved). */
+        uint8_t const fPsi     = 1;                                /* Page selective invalidation. */
+        uint8_t const uMgaw    = cGstPhysAddrBits - 1;             /* Maximum guest address width. */
+        uint8_t const uSagaw   = vtdCapRegGetSagaw(uMgaw);         /* Supported adjust guest address width. */
+        uint16_t const offFro  = DMAR_MMIO_OFF_FRCD_LO_REG >> 4;   /* MMIO offset of FRCD registers. */
+        uint8_t const fEsrtps  = 1;                                /* Enhanced SRTPS (auto invalidate cache on SRTP). */
+        uint8_t const fEsirtps = 1;                                /* Enhanced SIRTPS (auto invalidate cache on SIRTP). */
 
         pThis->fCapReg = RT_BF_MAKE(VTD_BF_CAP_REG_ND,      fNd)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,     0)     /* Advanced fault logging not supported. */
@@ -2145,20 +2145,20 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,   fFlts & fFl1gp)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PI,      0)     /* Posted Interrupts not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,   fFlts & fFl5lp)
-                       | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, 0)     /* If we invalidate interrupt cache on SIRTP flow. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, fEsirtps)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
     }
 
     /* ECAP_REG */
     {
-        uint8_t const  fQi    = 1;                              /* Queued-invalidations. */
-        uint8_t const  fIr    = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);  /* Interrupt remapping support. */
-        uint8_t const  fMhmv  = 0xf;                            /* Maximum handle mask value. */
-        uint16_t const offIro = DMAR_MMIO_OFF_IVA_REG >> 4;     /* MMIO offset of IOTLB registers. */
-        uint8_t const  fSrs   = 1;                              /* Supervisor request support. */
-        uint8_t const  fEim   = 1;                              /* Extended interrupt mode.*/
-        uint8_t const  fAdms  = 1;                              /* Abort DMA mode support. */
+        uint8_t const  fQi    = 1;                                 /* Queued-invalidations. */
+        uint8_t const  fIr    = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);      /* Interrupt remapping support. */
+        uint8_t const  fMhmv  = 0xf;                               /* Maximum handle mask value. */
+        uint16_t const offIro = DMAR_MMIO_OFF_IVA_REG >> 4;        /* MMIO offset of IOTLB registers. */
+        uint8_t const  fSrs   = 1;                                 /* Supervisor request support. */
+        uint8_t const  fEim   = 1;                                 /* Extended interrupt mode.*/
+        uint8_t const  fAdms  = 1;                                 /* Abort DMA mode support. */
 
         pThis->fExtCapReg = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     fQi)
