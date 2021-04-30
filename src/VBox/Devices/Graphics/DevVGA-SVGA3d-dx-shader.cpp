@@ -1559,11 +1559,12 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
     VGPU10ProgramToken const *pProgramToken = (VGPU10ProgramToken *)&paToken[0];
     ASSERT_GUEST_RETURN(   pProgramToken->majorVersion >= 4
                         && pProgramToken->programType <= VGPU10_COMPUTE_SHADER, VERR_INVALID_PARAMETER);
+    if (pInfo)
+        pInfo->enmProgramType = (VGPU10_PROGRAM_TYPE)pProgramToken->programType;
 
     uint32_t const cToken = paToken[1];
     Log6(("Shader version %d.%d type %s(%d) Length %d\n",
           pProgramToken->majorVersion, pProgramToken->minorVersion, dxbcShaderTypeToString(pProgramToken->programType), pProgramToken->programType, cToken));
-
     ASSERT_GUEST_RETURN(cbShaderCode / 4 == cToken, VERR_INVALID_PARAMETER); /* Declared length should be equal to the actual. */
 
     DXBCTokenReader parser;
@@ -1610,6 +1611,27 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
             }
         }
     }
+
+#ifdef LOG_ENABLED
+    if (pInfo->cInputSignature)
+    {
+        Log6(("Input signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cInputSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aInputSignature[i].registerIndex, pInfo->aInputSignature[i].semanticName, pInfo->aInputSignature[i].mask));
+    }
+    if (pInfo->cOutputSignature)
+    {
+        Log6(("Output signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cOutputSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aOutputSignature[i].registerIndex, pInfo->aOutputSignature[i].semanticName, pInfo->aOutputSignature[i].mask));
+    }
+    if (pInfo->cPatchConstantSignature)
+    {
+        Log6(("Patch constant signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cPatchConstantSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aPatchConstantSignature[i].registerIndex, pInfo->aPatchConstantSignature[i].semanticName, pInfo->aPatchConstantSignature[i].mask));
+    }
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1694,16 +1716,25 @@ static VGPUSemanticInfo const g_aSemanticInfo[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_LINE_DENSITY_TESSFACTOR      22
 };
 
+static VGPUSemanticInfo const g_SemanticPSOutput =
+    { "SV_TARGET",                      3 }; // SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED                          0
 
-static VGPUSemanticInfo const *dxbcSemanticInfo(SVGA3dDXSignatureSemanticName enmSemanticName)
+
+static VGPUSemanticInfo const *dxbcSemanticInfo(DXShaderInfo const *pInfo, SVGA3dDXSignatureSemanticName enmSemanticName, uint32_t u32BlobType)
 {
     if (enmSemanticName < RT_ELEMENTS(g_aSemanticInfo))
+    {
+        if (   enmSemanticName == 0
+            && pInfo->enmProgramType == VGPU10_PIXEL_SHADER
+            && u32BlobType == DXBC_BLOB_TYPE_OSGN)
+            return &g_SemanticPSOutput;
         return &g_aSemanticInfo[enmSemanticName];
+    }
     return &g_aSemanticInfo[0];
 }
 
 
-static int dxbcCreateIOSGNBlob(DXBCHeader *pHdr, uint32_t u32BlobType,
+static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint32_t u32BlobType,
                                uint32_t cSignature, SVGA3dDXSignatureEntry const *paSignature, DXBCByteWriter *w)
 {
     /* aIdxSignature contains signature indices. aIdxSignature[0] = signature index for register 0. */
@@ -1745,7 +1776,7 @@ static int dxbcCreateIOSGNBlob(DXBCHeader *pHdr, uint32_t u32BlobType,
         DXBCBlobIOSGNElement *dst = &pHdrISGN->aElement[iSignature];
 
         ASSERT_GUEST_RETURN(src->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX, VERR_INVALID_PARAMETER);
-        VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(src->semanticName);
+        VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
 
         dst->offElementName   = cbBlob; /* Offset of the semantic's name relative to the start of the blob (without hdr). */
         dst->idxSemantic      = aSemanticIdx[src->semanticName]++;
@@ -1753,7 +1784,10 @@ static int dxbcCreateIOSGNBlob(DXBCHeader *pHdr, uint32_t u32BlobType,
         dst->enmComponentType = src->componentType ? src->componentType : pSemanticInfo->u32Type;
         dst->idxRegister      = src->registerIndex;
         dst->mask             = src->mask;
-        dst->mask2            = src->mask;
+        if (u32BlobType == DXBC_BLOB_TYPE_OSGN)
+            dst->mask2            = 0;
+        else
+            dst->mask2            = src->mask;
 
         /* Figure out the semantic name for this element. */
         char const * const pszElementName = pSemanticInfo->pszName;
@@ -1827,11 +1861,11 @@ static int dxbcCreateFromInfo(DXShaderInfo const *pInfo, void const *pvShader, u
     uint32_t iBlob = 0;
 
     pHdr->aBlobOffset[iBlob++] = dxbcByteWriterSize(w);
-    rc = dxbcCreateIOSGNBlob(pHdr, DXBC_BLOB_TYPE_ISGN, pInfo->cInputSignature, &pInfo->aInputSignature[0], w);
+    rc = dxbcCreateIOSGNBlob(pInfo, pHdr, DXBC_BLOB_TYPE_ISGN, pInfo->cInputSignature, &pInfo->aInputSignature[0], w);
     AssertRCReturn(rc, rc);
 
     pHdr->aBlobOffset[iBlob++] = dxbcByteWriterSize(w);
-    rc = dxbcCreateIOSGNBlob(pHdr, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0], w);
+    rc = dxbcCreateIOSGNBlob(pInfo, pHdr, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0], w);
     AssertRCReturn(rc, rc);
 
     pHdr->aBlobOffset[iBlob++] = dxbcByteWriterSize(w);

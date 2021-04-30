@@ -1977,10 +1977,10 @@ static int vmsvga3dCmdDXSetSingleConstantBuffer(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXSetShaderResources(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShaderResources const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetShaderResources(pThisCC, idDXContext);
+//ASMBreakpoint();
+    SVGA3dShaderResourceViewId const *paShaderResourceViewId = (SVGA3dShaderResourceViewId *)&pCmd[1];
+    uint32_t const cShaderResourceViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dShaderResourceViewId);
+    return vmsvga3dDXSetShaderResources(pThisCC, idDXContext, pCmd, cShaderResourceViewId, paShaderResourceViewId);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2009,7 +2009,7 @@ static int vmsvga3dCmdDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, S
 //ASMBreakpoint();
     SVGA3dSamplerId const *paSamplerId = (SVGA3dSamplerId *)&pCmd[1];
     uint32_t const cSamplerId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSamplerId);
-    return vmsvga3dDXSetSamplers(pThisCC, idDXContext, pCmd->startSampler, pCmd->type, cSamplerId, paSamplerId);
+    return vmsvga3dDXSetSamplers(pThisCC, idDXContext, pCmd, cSamplerId, paSamplerId);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2035,7 +2035,7 @@ static int vmsvga3dCmdDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
 static int vmsvga3dCmdDXDrawIndexed(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexed const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+//ASMBreakpoint();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDrawIndexed(pThisCC, idDXContext, pCmd);
 #else
@@ -2373,10 +2373,9 @@ static int vmsvga3dCmdDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContex
 static int vmsvga3dCmdDXClearRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearRenderTargetView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXClearRenderTargetView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXClearRenderTargetView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2388,10 +2387,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXClearDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXClearDepthStencilView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXClearDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2403,10 +2401,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopyRegion const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXPredCopyRegion(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXPredCopyRegion(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2448,10 +2445,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXGenMips(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGenMips const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXGenMips(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXGenMips(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2508,7 +2504,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShaderResourceView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+//ASMBreakpoint();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineShaderResourceView(pThisCC, idDXContext, pCmd);
 #else
@@ -2522,10 +2518,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDestroyShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShaderResourceView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyShaderResourceView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyShaderResourceView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2551,10 +2546,9 @@ static int vmsvga3dCmdDXDefineRenderTargetView(PVGASTATECC pThisCC, uint32_t idD
 static int vmsvga3dCmdDXDestroyRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRenderTargetView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyRenderTargetView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyRenderTargetView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2566,10 +2560,18 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineDepthStencilView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    SVGA3dCmdDXDefineDepthStencilView_v2 cmd;
+    cmd.depthStencilViewId = pCmd->depthStencilViewId;
+    cmd.sid                = pCmd->sid;
+    cmd.format             = pCmd->format;
+    cmd.resourceDimension  = pCmd->resourceDimension;
+    cmd.mipSlice           = pCmd->mipSlice;
+    cmd.firstArraySlice    = pCmd->firstArraySlice;
+    cmd.arraySize          = pCmd->arraySize;
+    cmd.flags              = 0;
+    return vmsvga3dDXDefineDepthStencilView(pThisCC, idDXContext, &cmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2581,10 +2583,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDestroyDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyDepthStencilView(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3631,10 +3632,9 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView_v2 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineDepthStencilView_v2(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
