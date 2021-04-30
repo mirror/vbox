@@ -1933,7 +1933,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
             uint8_t const uSagaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW);
             uint8_t const uMgaw  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
             uint8_t const uNfr   = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
-            pHlp->pfnPrintf(pHlp, "   ND           = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
+            pHlp->pfnPrintf(pHlp, "   ND           = %u\n",         RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
             pHlp->pfnPrintf(pHlp, "   AFL          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_AFL));
             pHlp->pfnPrintf(pHlp, "   RWBF         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_RWBF));
             pHlp->pfnPrintf(pHlp, "   PLMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PLMR));
@@ -1945,7 +1945,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
             pHlp->pfnPrintf(pHlp, "   FRO          = %#x bytes\n",  RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FRO));
             pHlp->pfnPrintf(pHlp, "   SLLPS        = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SLLPS));
             pHlp->pfnPrintf(pHlp, "   PSI          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PSI));
-            pHlp->pfnPrintf(pHlp, "   NFR          = %#x (%u FRCD register%s)\n", uNfr, uNfr + 1, uNfr > 0 ? "s" : "");
+            pHlp->pfnPrintf(pHlp, "   NFR          = %u (%u FRCD register%s)\n", uNfr, uNfr + 1, uNfr > 0 ? "s" : "");
             pHlp->pfnPrintf(pHlp, "   MAMV         = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MAMV));
             pHlp->pfnPrintf(pHlp, "   DWD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DWD));
             pHlp->pfnPrintf(pHlp, "   DRD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DRD));
@@ -1974,7 +1974,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
             pHlp->pfnPrintf(pHlp, "   SRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SRS));
             pHlp->pfnPrintf(pHlp, "   NWFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NWFS));
             pHlp->pfnPrintf(pHlp, "   EAFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EAFS));
-            pHlp->pfnPrintf(pHlp, "   PSS          = %#x (%u bits)\n", uPss, uPss > 0 ? uPss + 1 : 0);
+            pHlp->pfnPrintf(pHlp, "   PSS          = %u (%u bits)\n", uPss, uPss > 0 ? uPss + 1 : 0);
             pHlp->pfnPrintf(pHlp, "   PASID        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PASID));
             pHlp->pfnPrintf(pHlp, "   DIT          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DIT));
             pHlp->pfnPrintf(pHlp, "   PDS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PDS));
@@ -2019,8 +2019,8 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
         {
             uint8_t const uTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
-            pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n", uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
-            pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",  RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
+            pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n",  uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
+            pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",   RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
         }
         pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
         pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
@@ -2034,12 +2034,15 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
             pHlp->pfnPrintf(pHlp, "   ITE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ITE));
             pHlp->pfnPrintf(pHlp, "   FRI          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_FRI));
         }
-
-        /** @todo Verbose others as needed during debugging/rainy day. */
         pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IM));
+            pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IP));
+        }
         pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
         pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
         pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
+        /** @todo Verbose others as needed during debugging/rainy day. */
         pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
         pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
         pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
@@ -2049,12 +2052,31 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
         pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
         pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
+        {
+            uint8_t const  fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+            uint8_t const  fQs = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_QS);
+            uint8_t const  cQueuePages = 1 << fQs;
+            pHlp->pfnPrintf(pHlp, "   DW           = %u (%s)\n",  fDw, fDw == VTD_IQA_REG_DW_128_BIT ? "128-bit" : "256-bit");
+            pHlp->pfnPrintf(pHlp, "   QS           = %u (%u page%s)\n", fQs, cQueuePages, cQueuePages > 1 ? "s" : "");
+        }
         pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   IWC          = %u\n",       RT_BF_GET(uIcsReg, VTD_BF_ICS_REG_IWC));
+        }
         pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IM));
+            pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IP));
+        }
         pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
         pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
         pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
         pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
+        {
+            pHlp->pfnPrintf(pHlp, "   ICESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ICESID));
+            pHlp->pfnPrintf(pHlp, "   ITESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ITESID));
+            pHlp->pfnPrintf(pHlp, "   IQEI         = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_IQEI));
+        }
         pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
         pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
         pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
