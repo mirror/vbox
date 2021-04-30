@@ -395,9 +395,9 @@ UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     setFrameShape(QFrame::Box);
     setLineWidth(1);
     setAutoFillBackground(true);
-    QPalette newPalette = palette();
-    newPalette.setColor(QPalette::Background, qApp->palette().color(QPalette::Light));
-    setPalette(newPalette);
+    QPalette pal = QApplication::palette();
+    pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
+    setPalette(pal);
     /* Allow the labe become smaller than the current text. calling setpath in resizeEvent truncated the text anyway: */
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
