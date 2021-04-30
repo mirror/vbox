@@ -1238,7 +1238,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
                 if (!(uGstsReg & VTD_BF_GSTS_REG_QIES_MASK))
                 {
                     /* Verify table translation mode is legacy. */
-                    uint8_t const  fTtm = RT_BF_GET(pThis->uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+                    uint8_t const fTtm = RT_BF_GET(pThis->uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
                     if (fTtm == VTD_TTM_LEGACY_MODE)
                     {
                         /** @todo Invalidate. */
@@ -1692,7 +1692,7 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                 RTGCPHYS const GCPhysRequests = (uIqaReg & VTD_BF_IQA_REG_IQA_MASK) + offQueueHead;
 
                 /* Paranoia. */
-                Assert(cbQueue <= cbMaxQs); NOREF(cbMaxQs);
+                Assert(cbQueue <= cbMaxQs);
                 Assert(!(offQueueTail & ~VTD_IQT_REG_RW_MASK));
                 Assert(!(offQueueHead & ~VTD_IQH_REG_RW_MASK));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueTail & RT_BIT(4)));
@@ -1755,8 +1755,8 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
 
                         /*
                          * We've processed all requests and the lock shouldn't be held at this point.
-                         * Instead of re-acquiring the lock just to release it again and go back to
-                         * the thread loop using 'continue' here. It's a bit ugly but it certainly
+                         * Using 'continue' here allows us to skip re-acquiring the lock just to release
+                         * it again before going back to the thread loop. It's a bit ugly but it certainly
                          * helps with performance.
                          */
                         DMAR_ASSERT_LOCK_IS_NOT_OWNER(pDevIns, pThisR3);
