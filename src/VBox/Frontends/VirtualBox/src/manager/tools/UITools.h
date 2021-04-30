@@ -109,8 +109,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares palette. */
-        void preparePalette();
         /** Prepares contents. */
         void prepareContents();
         /** Prepares model. */

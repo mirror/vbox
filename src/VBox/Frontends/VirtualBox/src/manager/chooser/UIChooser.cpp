@@ -211,22 +211,12 @@ void UIChooser::sltToolMenuRequested(UIToolClass enmClass, const QPoint &positio
 void UIChooser::prepare()
 {
     /* Prepare everything: */
-    preparePalette();
     prepareModel();
     prepareWidgets();
     prepareConnections();
 
     /* Init model: */
     initModel();
-}
-
-void UIChooser::preparePalette()
-{
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
-    pal.setColor(QPalette::Window, bodyColor);
-    setPalette(pal);
 }
 
 void UIChooser::prepareModel()

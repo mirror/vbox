@@ -197,8 +197,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares palette. */
-        void preparePalette();
         /** Prepares model. */
         void prepareModel();
         /** Prepares widgets. */

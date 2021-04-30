@@ -764,8 +764,8 @@ void UIDetailsSet::paintBackground(QPainter *pPainter, const QStyleOptionGraphic
     const QRect optionRect = pOptions->rect;
 
     /* Paint default background: */
-    const QColor defaultColor = palette().color(QPalette::Active, QPalette::Midlight).darker(110);
-    pPainter->fillRect(optionRect, defaultColor);
+    const QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
+    pPainter->fillRect(optionRect, backgroundColor);
 
     /* Restore painter: */
     pPainter->restore();

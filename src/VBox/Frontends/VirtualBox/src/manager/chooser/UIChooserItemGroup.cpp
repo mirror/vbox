@@ -1587,35 +1587,14 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     /* Save painter: */
     pPainter->save();
 
-    /* Prepare color: */
-    const QPalette pal = palette();
-    const QColor headerColor = pal.color(QPalette::Active,
-                                         model()->selectedItems().contains(this) ?
-                                         QPalette::Highlight : QPalette::Midlight);
-
-    /* Root-item: */
-    if (isRoot())
-    {
-#if 0
-        /* Non-main root-item: */
-        if (!isMainRoot())
-        {
-            /* Prepare variables: */
-            const int iMarginV = data(GroupItemData_MarginV).toInt();
-            const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
-            QRect headerRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
-
-            /* Fill background: */
-            QLinearGradient headerGradient(headerRect.bottomLeft(), headerRect.topLeft());
-            headerGradient.setColorAt(1, headerColor.darker(headerDarkness()));
-            headerGradient.setColorAt(0, headerColor.darker(animatedValue()));
-            pPainter->fillRect(headerRect, headerGradient);
-        }
-#endif
-    }
     /* Non-root-item: */
-    else
+    if (!isRoot())
     {
+        /* Prepare color: */
+        const QColor headerColor = QApplication::palette().color(QPalette::Active,
+                                                                 model()->selectedItems().contains(this) ?
+                                                                 QPalette::Highlight : QPalette::Window);
+
         /* Prepare variables: */
         const int iMarginV = data(GroupItemData_MarginV).toInt();
         const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();

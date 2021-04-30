@@ -99,21 +99,11 @@ UIToolsItem *UITools::currentItem() const
 void UITools::prepare()
 {
     /* Prepare everything: */
-    preparePalette();
     prepareContents();
     prepareConnections();
 
     /* Init model finally: */
     initModel();
-}
-
-void UITools::preparePalette()
-{
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
-    pal.setColor(QPalette::Window, bodyColor);
-    setPalette(pal);
 }
 
 void UITools::prepareContents()

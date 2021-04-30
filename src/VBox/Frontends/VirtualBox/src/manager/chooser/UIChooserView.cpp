@@ -246,9 +246,8 @@ void UIChooserView::prepare()
 void UIChooserView::prepareThis()
 {
     /* Prepare palette: */
-    QPalette pal = qApp->palette();
-    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
-    pal.setColor(QPalette::Base, bodyColor);
+    QPalette pal = QApplication::palette();
+    pal.setColor(QPalette::Active, QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
     setPalette(pal);
 
     /* Prepare frame: */
