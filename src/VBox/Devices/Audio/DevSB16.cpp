@@ -197,12 +197,20 @@ typedef struct SB16STREAMDEBUG
     SB16STREAMDEBUGRT               Runtime;
 } SB16STREAMDEBUG;
 
+/**
+ * Structure for keeping a SB16 hardware stream configuration.
+ */
 typedef struct SB16STREAMHWCFG
 {
+    /** IRQ # to use. */
     uint8_t                         uIrq;
+    /** Low DMA channel to use. */
     uint8_t                         uDmaChanLow;
+    /** High DMA channel to use. */
     uint8_t                         uDmaChanHigh;
+    /** IO port to use. */
     RTIOPORT                        uPort;
+    /** DSP version to expose. */
     uint16_t                        uVer;
 } SB16STREAMHWCFG;
 
