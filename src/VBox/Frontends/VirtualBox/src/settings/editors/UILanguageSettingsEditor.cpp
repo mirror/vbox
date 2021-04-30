@@ -291,7 +291,7 @@ void UILanguageSettingsEditor::sltHandleItemPainting(QTreeWidgetItem *pItem, QPa
     {
         /* We are drawing a separator line in the tree: */
         const QRect rect = m_pTreeWidget->visualItemRect(pLanguageItem);
-        pPainter->setPen(m_pTreeWidget->palette().color(QPalette::Mid));
+        pPainter->setPen(m_pTreeWidget->palette().color(QPalette::Window));
         pPainter->drawLine(rect.x(), rect.y() + rect.height() - 1,
                            rect.x() + rect.width(), rect.y() + rect.height() - 1);
     }
