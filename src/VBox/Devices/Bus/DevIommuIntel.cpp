@@ -80,6 +80,13 @@
         RT_NOREF1(a_pThisCC); \
     } while (0)
 
+/** Asserts that the calling thread does not own the DMAR lock. */
+#define DMAR_ASSERT_LOCK_IS_NOT_OWNER(a_pDevIns, a_pThisCC) \
+    do { \
+        Assert((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLockIsOwner(a_pDevIns) == false); \
+        RT_NOREF1(a_pThisCC); \
+    } while (0)
+
 /** The number of fault recording registers our implementation supports.
  *  Normal guest operation shouldn't trigger faults anyway, so we only support the
  *  minimum number of registers (which is 1).
@@ -147,11 +154,13 @@ typedef enum
     kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_Ttm_Invalid,
     kDmarDiag_IqaReg_Dsc_Fetch_Error,
-    kDmarDiag_IqaReg_Dw_Invalid,
+    kDmarDiag_IqaReg_Dw_128_Invalid,
+    kDmarDiag_IqaReg_Dw_256_Invalid,
     kDmarDiag_Iqei_Dsc_Type_Invalid,
     kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd,
     kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd,
-    kDmarDiag_Iqei_Inv_Wait_Dsc_Ttm,
+    kDmarDiag_Iqei_Inv_Wait_Dsc_Invalid,
+    kDmarDiag_Iqei_Ttm_Rsvd,
     kDmarDiag_IqtReg_Qt_Invalid,
     kDmarDiag_IqtReg_Qt_NotAligned,
     /* Member for determining array index limit. */
@@ -174,11 +183,13 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(CcmdReg_Qi_Enabled        ),
     DMARDIAG_DESC(CcmdReg_Ttm_Invalid       ),
     DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error    ),
-    DMARDIAG_DESC(IqaReg_Dw_Invalid         ),
+    DMARDIAG_DESC(IqaReg_Dw_128_Invalid     ),
+    DMARDIAG_DESC(IqaReg_Dw_256_Invalid     ),
     DMARDIAG_DESC(Iqei_Dsc_Type_Invalid     ),
     DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_0_1_Rsvd),
     DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_2_3_Rsvd),
-    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Ttm     ),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Invalid ),
+    DMARDIAG_DESC(Iqei_Ttm_Rsvd             ),
     DMARDIAG_DESC(IqtReg_Qt_Invalid         ),
     DMARDIAG_DESC(IqtReg_Qt_NotAligned      )
     /* kDmarDiag_End */
@@ -210,7 +221,7 @@ typedef struct DMAR
     /** Currently active IRTA_REG. */
     uint64_t                    uIrtaReg;
     /** Currently active RTADDR_REG. */
-    uint64_t                    uRtaReg;
+    uint64_t                    uRtaddrReg;
     /** @} */
 
     /** @name Register copies for a tiny bit faster and more convenient access.
@@ -220,9 +231,9 @@ typedef struct DMAR
     /** Alignment. */
     uint8_t                     abPadding[7];
     /** Copy of CAP_REG. */
-    uint64_t                    fCap;
+    uint64_t                    fCapReg;
     /** Copy of ECAP_REG. */
-    uint64_t                    fExtCap;
+    uint64_t                    fExtCapReg;
     /** @} */
 
     /** The event semaphore the invalidation-queue thread waits on. */
@@ -899,19 +910,6 @@ static void dmarRegChangeRaw64(PDMAR pThis, uint16_t offReg, uint64_t fAndMask, 
 
 
 /**
- * Gets the table translation mode from the RTADDR_REG.
- *
- * @returns The table translation mode.
- * @param   pThis   The shared DMAR device state.
- */
-static uint8_t dmarRtAddrRegGetTtm(PCDMAR pThis)
-{
-    uint64_t const uRtAddrReg = dmarRegRead64(pThis, VTD_MMIO_OFF_RTADDR_REG);
-    return RT_BF_GET(uRtAddrReg, VTD_BF_RTADDR_REG_TTM);
-}
-
-
-/**
  * Checks if the invalidation-queue is empty.
  *
  * Extended version which optionally returns the current queue head and tail
@@ -1003,8 +1001,7 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
  */
 static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
-    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
 #ifdef RT_STRICT
     {
         uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
@@ -1026,7 +1023,8 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
         Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEDATA_REG);
 
         /** @todo Assert Msi.Addr is in the MSR_IA32_APICBASE_ADDR range and ensure on
-         *        FEADD_REG write it can't be anything else. */
+         *        FEADD_REG write it can't be anything else? */
+        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
         pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
         /* Clear interrupt pending bit. */
@@ -1050,9 +1048,7 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
  */
 static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
-    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
-
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     uint32_t const uIcsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
     if (uIcsReg & VTD_BF_ICS_REG_IWC_MASK)
         return;
@@ -1066,6 +1062,7 @@ static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
         Msi.Addr.au32[1] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG);
         Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
 
+        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
         pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
         /* Clear interrupt pending bit. */
@@ -1160,14 +1157,14 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T 
 static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
 {
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
-    uint32_t const fChanged = uGstsReg ^ uGcmdReg;
-    uint64_t const fExtCap  = pThis->fExtCap;
+    uint32_t const uGstsReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint32_t const fChanged   = uGstsReg ^ uGcmdReg;
+    uint64_t const fExtCapReg = pThis->fExtCapReg;
 
     /*
      * Queued-invalidation.
      */
-    if (   (fExtCap & VTD_BF_ECAP_REG_QI_MASK)
+    if (   (fExtCapReg & VTD_BF_ECAP_REG_QI_MASK)
         && (fChanged & VTD_BF_GCMD_REG_QIE_MASK))
     {
         if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
@@ -1185,13 +1182,27 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
     }
 
     /*
-     * Set interrupt remapping table pointer.
+     * Set Interrupt Remapping Table Pointer (SIRTP).
      */
-    if (   (fExtCap & VTD_BF_ECAP_REG_IR_MASK)
+    if (   (fExtCapReg & VTD_BF_ECAP_REG_IR_MASK)
         && (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK))
     {
         pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
         dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
+    }
+
+    /*
+     * Set Root Table Pointer (SRTP).
+     */
+    if (uGcmdReg & VTD_BF_GCMD_REG_SRTP_MASK)
+    {
+        /** @todo Perform global invalidation of all remapping translation caches. */
+#if 0
+        if (pThis->fCapReg & VTD_BF_CAP_REG_ESRTPS_MASK)
+        {
+        }
+#endif
+        pThis->uRtaddrReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_RTADDR_REG);
     }
 
     /** @todo Rest of the bits. */
@@ -1227,7 +1238,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
                 if (!(uGstsReg & VTD_BF_GSTS_REG_QIES_MASK))
                 {
                     /* Verify table translation mode is legacy. */
-                    uint8_t const fTtm = dmarRtAddrRegGetTtm(pThis);
+                    uint8_t const  fTtm = RT_BF_GET(pThis->uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
                     if (fTtm == VTD_TTM_LEGACY_MODE)
                     {
                         /** @todo Invalidate. */
@@ -1303,12 +1314,14 @@ static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     uint8_t const fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
     if (fDw == VTD_IQA_REG_DW_256_BIT)
     {
-        bool const fSupports256BitDw = (pThis->fExtCap & (VTD_BF_ECAP_REG_SMTS_MASK | VTD_BF_ECAP_REG_ADMS_MASK));
+        bool const fSupports256BitDw = (pThis->fExtCapReg & (VTD_BF_ECAP_REG_SMTS_MASK | VTD_BF_ECAP_REG_ADMS_MASK));
         if (fSupports256BitDw)
         { /* likely */ }
         else
-            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_Invalid, kIqei_InvalidDescriptorWidth);
+            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_256_Invalid, kIqei_InvalidDescriptorWidth);
     }
+    /* else: 128-bit descriptor width is validated lazily, see explanation in dmarR3InvQueueProcessRequests. */
+
     return VINF_SUCCESS;
 }
 
@@ -1482,13 +1495,55 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioRead(PPDMDEVINS pDevIns, void *pvUser,
  * @param   cbRequests  The size of all requests (in bytes).
  * @param   fDw         The descriptor width (VTD_IQA_REG_DW_128_BIT or
  *                      VTD_IQA_REG_DW_256_BIT).
+ * @param   fTtm        The current table translation mode. Must not be
+ *                      VTD_TTM_RSVD.
  */
-static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequests, uint32_t cbRequests, uint8_t fDw)
+static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequests, uint32_t cbRequests, uint8_t fDw,
+                                          uint8_t fTtm)
 {
+#define DMAR_IQE_FAULT_RECORD_RET(a_enmDiag, a_enmIqei) \
+    do \
+    { \
+        DMAR_LOCK(pDevIns, pThisR3); \
+        dmarIqeFaultRecord(pDevIns, (a_enmDiag), (a_enmIqei)); \
+        DMAR_UNLOCK(pDevIns, pThisR3); \
+        return; \
+    } while (0)
+
     PCDMAR   pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
-    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisR3);
 
+    DMAR_ASSERT_LOCK_IS_NOT_OWNER(pDevIns, pThisR3);
+    Assert(fTtm != VTD_TTM_RSVD);       /* Should've beeen handled by caller. */
+
+    /*
+     * The below check is redundant since we check both TTM and DW for each
+     * descriptor type we process. However, the error reported by hardware
+     * may differ hence this is kept commented out but not removed from the code
+     * if we need to change this in the future.
+     *
+     * In our implementation, we would report the descriptor type as invalid,
+     * while on real hardware it may report descriptor width as invalid.
+     * The Intel VT-d spec. is not clear which error takes preceedence.
+     */
+#if 0
+    /*
+     * Verify that 128-bit descriptors are not used when operating in scalable mode.
+     * We don't check this while software writes IQA_REG but defer it until now because
+     * RTADDR_REG can be updated lazily (via GCMD_REG.SRTP). The 256-bit descriptor check
+     * -IS- performed when software writes IQA_REG since it only requires checking against
+     * immutable hardware features.
+     */
+    if (   fTtm != VTD_TTM_SCALABLE_MODE
+        || fDw != VTD_IQA_REG_DW_128_BIT)
+    { /* likely */ }
+    else
+        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_IqaReg_Dw_128_Invalid, kIqei_InvalidDescriptorWidth);
+#endif
+
+    /*
+     * Process requests in FIFO order.
+     */
     uint8_t const cbDsc = fDw == VTD_IQA_REG_DW_256_BIT ? 32 : 16;
     for (uint32_t offDsc = 0; offDsc < cbRequests; offDsc += cbDsc)
     {
@@ -1496,9 +1551,6 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
         uint64_t const  uQword0     = puDscQwords[0];
         uint64_t const  uQword1     = puDscQwords[1];
         uint8_t const   fDscType    = VTD_GENERIC_INV_DSC_GET_TYPE(uQword0);
-        uint8_t const   fTtm        = dmarRtAddrRegGetTtm(pThis);
-        Assert(fTtm != VTD_TTM_RSVD);       /* Should be guaranteed when software updates GCMD_REG.SRTP. */
-
         switch (fDscType)
         {
             case VTD_CC_INV_DSC_TYPE:           LogRelMax(32, ("%s: CC\n", DMAR_LOG_PFX));              break;
@@ -1508,40 +1560,30 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
 
             case VTD_INV_WAIT_DSC_TYPE:
             {
-                /* Validate translation modes valid for this descriptor. */
+                /* Validate descriptor type. */
                 if (   fTtm == VTD_TTM_LEGACY_MODE
                     || fDw == VTD_IQA_REG_DW_256_BIT)
                 { /* likely */  }
                 else
-                {
-                    dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_Ttm, kIqei_InvalidDescriptorType);
-                    return;
-                }
+                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_Invalid, kIqei_InvalidDescriptorType);
 
                 /* Validate reserved bits. */
-                uint64_t const fValidMask0 = !(pThis->fExtCap & VTD_BF_ECAP_REG_PDS_MASK)
+                uint64_t const fValidMask0 = !(pThis->fExtCapReg & VTD_BF_ECAP_REG_PDS_MASK)
                                            ? VTD_INV_WAIT_DSC_0_VALID_MASK & ~VTD_BF_0_INV_WAIT_DSC_PD_MASK
                                            : VTD_INV_WAIT_DSC_0_VALID_MASK;
                 if (   !(uQword0 & ~fValidMask0)
                     && !(uQword1 & ~VTD_INV_WAIT_DSC_1_VALID_MASK))
                 { /* likely */ }
                 else
-                {
-                    dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd, kIqei_RsvdFieldViolation);
-                    return;
-                }
+                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd, kIqei_RsvdFieldViolation);
+
                 if (fDw == VTD_IQA_REG_DW_256_BIT)
                 {
-                    uint64_t const uQword2 = puDscQwords[2];
-                    uint64_t const uQword3 = puDscQwords[3];
-                    if (   !uQword2
-                        && !uQword3)
+                    if (   !puDscQwords[2]
+                        && !puDscQwords[3])
                     { /* likely */ }
                     else
-                    {
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd, kIqei_RsvdFieldViolation);
-                        return;
-                    }
+                        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd, kIqei_RsvdFieldViolation);
                 }
 
                 /* Perform status write (this must be done prior to generating the completion interrupt). */
@@ -1550,16 +1592,18 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
                 {
                     uint32_t const uStatus      = RT_BF_GET(uQword0, VTD_BF_0_INV_WAIT_DSC_STDATA);
                     RTGCPHYS const GCPhysStatus = uQword1 & VTD_BF_1_INV_WAIT_DSC_STADDR_MASK;
-                    DMAR_UNLOCK(pDevIns, pThisR3);
                     int const rc = PDMDevHlpPhysWrite(pDevIns, GCPhysStatus, (void const*)&uStatus, sizeof(uStatus));
-                    DMAR_LOCK(pDevIns, pThisR3);
                     AssertRC(rc);
                 }
 
                 /* Generate invalidation event interrupt. */
                 bool const fIf = RT_BF_GET(uQword0, VTD_BF_0_INV_WAIT_DSC_IF);
                 if (fIf)
+                {
+                    DMAR_LOCK(pDevIns, pThisR3);
                     dmarR3InvEventRaiseInterrupt(pDevIns);
+                    DMAR_UNLOCK(pDevIns, pThisR3);
+                }
                 break;
             }
 
@@ -1574,13 +1618,12 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
             {
                 /* Stop processing further requests. */
                 LogFunc(("Invalid descriptor type: %#x\n", fDscType));
-                dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Dsc_Type_Invalid, kIqei_InvalidDescriptorType);
-                return;
+                DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Dsc_Type_Invalid, kIqei_InvalidDescriptorType);
             }
         }
     }
+#undef DMAR_IQE_FAULT_RECORD_RET
 }
-
 
 
 /**
@@ -1611,11 +1654,11 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     void *pvRequests = RTMemAllocZ(cbMaxQs);
     AssertPtrReturn(pvRequests, VERR_NO_MEMORY);
 
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
+
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-        PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
-
         /*
          * Sleep until we are woken up.
          */
@@ -1637,19 +1680,19 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             bool const fIsEmpty = dmarInvQueueIsEmptyEx(pThis, &offQueueHead, &offQueueTail);
             if (!fIsEmpty)
             {
-                /** @todo Handle RTADDR_REG MMIO write first, for handling kIqei_InvalidTtm. I
-                 *        don't think it needs to be checked/handled here? */
-
                 /*
-                 * Get the current queue size.
+                 * Get the current queue size, descriptor width, queue base address and the
+                 * table translation mode while the lock is still held.
                  */
-                uint64_t const uIqaReg     = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
-                uint8_t const  cQueuePages = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
-                uint32_t const cbQueue     = cQueuePages << X86_PAGE_SHIFT;
-                uint8_t const  fDw         = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+                uint64_t const uIqaReg        = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IQA_REG);
+                uint8_t const  cQueuePages    = 1 << (uIqaReg & VTD_BF_IQA_REG_QS_MASK);
+                uint32_t const cbQueue        = cQueuePages << X86_PAGE_SHIFT;
+                uint8_t const  fDw            = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+                uint8_t const  fTtm           = RT_BF_GET(pThis->uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+                RTGCPHYS const GCPhysRequests = (uIqaReg & VTD_BF_IQA_REG_IQA_MASK) + offQueueHead;
 
                 /* Paranoia. */
-                Assert(cbQueue <= cbMaxQs);
+                Assert(cbQueue <= cbMaxQs); NOREF(cbMaxQs);
                 Assert(!(offQueueTail & ~VTD_IQT_REG_RW_MASK));
                 Assert(!(offQueueHead & ~VTD_IQH_REG_RW_MASK));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueTail & RT_BIT(4)));
@@ -1657,13 +1700,18 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                 Assert(offQueueHead < cbQueue);
 
                 /*
-                 * Read the requests in the queue from guest memory into our buffer.
+                 * A table translation mode of "reserved" isn't valid for any descriptor type.
+                 * However, RTADDR_REG can be modified in parallel to invalidation-queue processing,
+                 * but if ESRTPS is support, we will perform a global invalidation when software
+                 * changes RTADDR_REG, or it's the responsibility of software to do it explicitly.
+                 * So caching TTM while reading all descriptors should not be a problem.
+                 *
+                 * Also, validate the queue tail offset as it's mutable by software.
                  */
-                if (offQueueTail < cbQueue)
+                if (   fTtm != VTD_TTM_RSVD
+                    && offQueueTail < cbQueue)
                 {
-                    RTGCPHYS const GCPhysRequests = (uIqaReg & VTD_BF_IQA_REG_IQA_MASK) + offQueueHead;
-
-                    /* Don't hold the lock while reading (potentially large amount of) requests. */
+                    /* Don't hold the lock while reading (a potentially large amount of) requests */
                     DMAR_UNLOCK(pDevIns, pThisR3);
 
                     int      rc;
@@ -1698,15 +1746,35 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                         /* Indicate to software we've fetched all requests. */
                         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_IQH_REG, offQueueTail);
 
-                        /* Process all requests (in FIFO order). */
+                        /* Don't hold the lock while processing requests. */
+                        DMAR_UNLOCK(pDevIns, pThisR3);
+
+                        /* Process all requests. */
                         Assert(cbRequests <= cbQueue);
-                        dmarR3InvQueueProcessRequests(pDevIns, pvRequests, cbRequests, fDw);
+                        dmarR3InvQueueProcessRequests(pDevIns, pvRequests, cbRequests, fDw, fTtm);
+
+                        /*
+                         * We've processed all requests and the lock shouldn't be held at this point.
+                         * Instead of re-acquiring the lock just to release it again and go back to
+                         * the thread loop using 'continue' here. It's a bit ugly but it certainly
+                         * helps with performance.
+                         */
+                        DMAR_ASSERT_LOCK_IS_NOT_OWNER(pDevIns, pThisR3);
+                        continue;
                     }
                     else
                         dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, kIqei_FetchDescriptorError);
                 }
                 else
-                    dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
+                {
+                    if (fTtm != VTD_TTM_RSVD)
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Ttm_Rsvd, kIqei_InvalidTtm);
+                    else
+                    {
+                        Assert(offQueueTail < cbQueue);
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
+                    }
+                }
             }
         }
         DMAR_UNLOCK(pDevIns, pThisR3);
@@ -2051,29 +2119,30 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t const uMgaw   = cGstPhysAddrBits - 1;           /* Maximum guest address width. */
         uint8_t const uSagaw  = vtdCapRegGetSagaw(uMgaw);       /* Supported adjust guest address width. */
         uint16_t const offFro = DMAR_MMIO_OFF_FRCD_LO_REG >> 4; /* MMIO offset of FRCD registers. */
+        uint8_t const fEsrtps = 1;                              /* Enhanced SRTPS (flush all caches on SRTP flow). */
 
-        pThis->fCap = RT_BF_MAKE(VTD_BF_CAP_REG_ND,      fNd)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,     0)     /* Advanced fault logging not supported. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,    0)     /* Software need not flush write-buffers. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,    0)     /* Protected Low-Memory Region not supported. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,    0)     /* Protected High-Memory Region not supported. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /** @todo Figure out if required when we impl. caching. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & uSagaw)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,    uMgaw)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,     1)     /** @todo Figure out if/how to support zero-length reads. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,     offFro)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,   fSlts & fSllps)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,     fPsi)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,     DMAR_FRCD_REG_COUNT - 1)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,    fPsi & fMamv)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,     1)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_DRD,     1)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,   fFlts & fFl1gp)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_PI,      0)     /* Posted Interrupts not supported. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,   fFlts & fFl5lp)
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, 0)     /* If we invalidate interrupt cache on SIRTP flow. */
-                    | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  0);    /* If we invalidate translation cache on SRTP flow. */
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCap);
+        pThis->fCapReg = RT_BF_MAKE(VTD_BF_CAP_REG_ND,      fNd)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,     0)     /* Advanced fault logging not supported. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,    0)     /* Software need not flush write-buffers. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,    0)     /* Protected Low-Memory Region not supported. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,    0)     /* Protected High-Memory Region not supported. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /** @todo Figure out if required when we impl. caching. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & uSagaw)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,    uMgaw)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,     1)     /** @todo Figure out if/how to support zero-length reads. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,     offFro)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_SLLPS,   fSlts & fSllps)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_PSI,     fPsi)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_NFR,     DMAR_FRCD_REG_COUNT - 1)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_MAMV,    fPsi & fMamv)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_DWD,     1)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_DRD,     1)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_FL1GP,   fFlts & fFl1gp)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_PI,      0)     /* Posted Interrupts not supported. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_FL5LP,   fFlts & fFl5lp)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, 0)     /* If we invalidate interrupt cache on SIRTP flow. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
     }
 
     /* ECAP_REG */
@@ -2086,36 +2155,36 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t const  fEim   = 1;                              /* Extended interrupt mode.*/
         uint8_t const  fAdms  = 1;                              /* Abort DMA mode support. */
 
-        pThis->fExtCap = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     fQi)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fQi & fIr)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    fIr & fEim)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PT,     fPt)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SC,     0)  /* Snoop control not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_IRO,    offIro)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_MHMV,   fIr & fMhmv)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_MTS,    0)  /* Memory type not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_NEST,   fNest)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PRS,    0)  /* 0 as DT not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    0)  /* Execute request not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    fSmts & fSrs)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /** @todo figure out if EAFS is required? */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as PASID not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* PASID support. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_DIT,    0)  /* 0 as DT not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_PDS,    0)  /* 0 as DT not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SMTS,   fSmts)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_VCS,    0)  /* 0 as PASID not supported (commands seem PASID specific). */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SLADS,  0)  /* Second-level accessed/dirty not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SLTS,   fSlts)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_FLTS,   fFlts)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_SMPWCS, 0)  /* 0 as PASID not supported. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_RPS,    0)  /* We don't support RID_PASID field in SM context entry. */
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_ADMS,   fAdms)
-                       | RT_BF_MAKE(VTD_BF_ECAP_REG_RPRIVS, 0); /** @todo figure out if we should/can support this? */
-        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_ECAP_REG, pThis->fExtCap);
+        pThis->fExtCapReg = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     fQi)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_DT,     0)  /* Device-TLBs not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_IR,     fQi & fIr)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_EIM,    fIr & fEim)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PT,     fPt)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SC,     0)  /* Snoop control not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_IRO,    offIro)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_MHMV,   fIr & fMhmv)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_MTS,    0)  /* Memory type not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_NEST,   fNest)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PRS,    0)  /* 0 as DT not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    0)  /* Execute request not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    fSmts & fSrs)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /** @todo figure out if EAFS is required? */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as PASID not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* PASID support. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_DIT,    0)  /* 0 as DT not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PDS,    0)  /* 0 as DT not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SMTS,   fSmts)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_VCS,    0)  /* 0 as PASID not supported (commands seem PASID specific). */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SLADS,  0)  /* Second-level accessed/dirty not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SLTS,   fSlts)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_FLTS,   fFlts)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SMPWCS, 0)  /* 0 as PASID not supported. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_RPS,    0)  /* We don't support RID_PASID field in SM context entry. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_ADMS,   fAdms)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_RPRIVS, 0); /** @todo figure out if we should/can support this? */
+        dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_ECAP_REG, pThis->fExtCapReg);
     }
 
     /*
@@ -2134,8 +2203,8 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
     }
 
 #ifdef VBOX_STRICT
-    Assert(!RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_PRS));    /* PECTL_REG - Reserved if don't support PRS. */
-    Assert(!RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_MTS));    /* MTRRCAP_REG - Reserved if we don't support MTS. */
+    Assert(!RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_PRS));    /* PECTL_REG - Reserved if don't support PRS. */
+    Assert(!RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_MTS));    /* MTRRCAP_REG - Reserved if we don't support MTS. */
 #endif
 }
 
@@ -2319,13 +2388,13 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Log some of the features exposed to software.
      */
     uint32_t const uVerReg         = pThis->uVerReg;
-    uint8_t const  cMaxGstAddrBits = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_MGAW) + 1;
-    uint8_t const  cSupGstAddrBits = vtdCapRegGetSagawBits(RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_SAGAW));
-    uint16_t const offFrcd         = RT_BF_GET(pThis->fCap, VTD_BF_CAP_REG_FRO);
-    uint16_t const offIva          = RT_BF_GET(pThis->fExtCap, VTD_BF_ECAP_REG_IRO);
+    uint8_t const  cMaxGstAddrBits = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const  cSupGstAddrBits = vtdCapRegGetSagawBits(RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW));
+    uint16_t const offFrcd         = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
+    uint16_t const offIva          = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
     LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits, FRO=%#x, IRO=%#x) mapped at %#RGp\n",
             DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
-            pThis->fCap, pThis->fExtCap, cMaxGstAddrBits, cSupGstAddrBits, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
+            pThis->fCapReg, pThis->fExtCapReg, cMaxGstAddrBits, cSupGstAddrBits, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
 
     return VINF_SUCCESS;
 }
