@@ -653,12 +653,11 @@ void UIChooserItem::paintFlatButton(QPainter *pPainter, const QRect &rectangle, 
     pPainter->save();
 
     /* Prepare colors: */
-    const QPalette pal = QApplication::palette();
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid);
+    const QColor color = QApplication::palette().color(QPalette::Active, QPalette::Button);
 
     /* Prepare pen: */
     QPen pen;
-    pen.setColor(color.darker(110));
+    pen.setColor(color);
     pen.setWidth(0);
     pPainter->setPen(pen);
 
@@ -669,8 +668,12 @@ void UIChooserItem::paintFlatButton(QPainter *pPainter, const QRect &rectangle, 
 
     /* Paint active background: */
     QRadialGradient grad(rectangle.center(), rectangle.width(), cursorPosition);
-    grad.setColorAt(0, color.lighter(150));
-    grad.setColorAt(1, color.lighter(110));
+    QColor color1 = color;
+    color1.setAlpha(50);
+    QColor color2 = color;
+    color2.setAlpha(250);
+    grad.setColorAt(0, color1);
+    grad.setColorAt(1, color2);
     pPainter->fillRect(rectangle.adjusted(0, 0, -1, -1), grad);
 
     /* Paint frame: */
