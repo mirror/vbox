@@ -3127,21 +3127,41 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     int rc = pHlp->pfnCFGMQueryU8Def(pCfg, "IRQ", &pStream->HwCfgDefault.uIrq, 5);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"IRQ\" value"));
+    /* Sanity-check supported SB16 IRQs. */
+    if (    2 != pStream->HwCfgDefault.uIrq
+        &&  5 != pStream->HwCfgDefault.uIrq
+        &&  7 != pStream->HwCfgDefault.uIrq
+        && 10 != pStream->HwCfgDefault.uIrq)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Invalid \"IRQ\" value."));
     pStream->HwCfgRuntime.uIrq  = pStream->HwCfgDefault.uIrq;
 
     rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DMA", &pStream->HwCfgDefault.uDmaChanLow, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"DMA\" value"));
+    if (    0 != pStream->HwCfgDefault.uDmaChanLow
+        &&  1 != pStream->HwCfgDefault.uDmaChanLow
+        &&  3 != pStream->HwCfgDefault.uDmaChanLow)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Invalid \"DMA\" value."));
     pStream->HwCfgRuntime.uDmaChanLow  = pStream->HwCfgDefault.uDmaChanLow;
 
     rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DMA16", &pStream->HwCfgDefault.uDmaChanHigh, 5);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"DMA16\" value"));
+    if (    5 != pStream->HwCfgDefault.uDmaChanHigh
+        &&  6 != pStream->HwCfgDefault.uDmaChanHigh
+        &&  7 != pStream->HwCfgDefault.uDmaChanHigh)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Invalid \"DMA16\" value."));
     pStream->HwCfgRuntime.uDmaChanHigh = pStream->HwCfgDefault.uDmaChanHigh;
 
     rc = pHlp->pfnCFGMQueryPortDef(pCfg, "Port", &pStream->HwCfgDefault.uPort, 0x220);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"Port\" value"));
+    /* Sanity-check supported SB16 ports. */
+    if (   0x220 != pStream->HwCfgDefault.uPort
+        && 0x240 != pStream->HwCfgDefault.uPort
+        && 0x260 != pStream->HwCfgDefault.uPort
+        && 0x280 != pStream->HwCfgDefault.uPort)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Invalid \"Port\" value. Did you specify it as a hex value (e.g. 0x220)?"));
     pStream->HwCfgRuntime.uPort = pStream->HwCfgDefault.uPort;
 
     rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Version", &pStream->HwCfgDefault.uVer, 0x0405);
