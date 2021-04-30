@@ -1644,7 +1644,9 @@ void UIMachineLogic::sltShowSoftKeyboard()
 
 void UIMachineLogic::sltCloseSoftKeyboard()
 {
-    delete m_pSoftKeyboardDialog;
+    if (!m_pSoftKeyboardDialog)
+        return;
+    m_pSoftKeyboardDialog->deleteLater();
     m_pSoftKeyboardDialog = 0;
 }
 
