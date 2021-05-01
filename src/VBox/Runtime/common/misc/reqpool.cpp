@@ -115,6 +115,8 @@ typedef struct RTREQPOOLINT
      * @{  */
     /** The worker thread type. */
     RTTHREADTYPE            enmThreadType;
+    /** The work thread flags (RTTHREADFLAGS). */
+    uint32_t                fThreadFlags;
     /** The maximum number of worker threads. */
     uint32_t                cMaxThreads;
     /** The minimum number of worker threads. */
@@ -462,7 +464,7 @@ static void rtReqPoolCreateNewWorker(RTREQPOOL pPool)
     pPool->cThreadsCreated++;
 
     int rc = RTThreadCreateF(&pThread->hThread, rtReqPoolThreadProc, pThread, 0 /*default stack size*/,
-                             pPool->enmThreadType, 0 /*fFlags*/, "%s%02u", pPool->szName, pPool->cThreadsCreated);
+                             pPool->enmThreadType, pPool->fThreadFlags, "%s%02u", pPool->szName, pPool->cThreadsCreated);
     if (RT_SUCCESS(rc))
         pPool->uLastThreadCreateNanoTs = pThread->uBirthNanoTs;
     else
@@ -657,10 +659,11 @@ RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
     if (!pPool)
         return VERR_NO_MEMORY;
 
-    pPool->u32Magic         = RTREQPOOL_MAGIC;
+    pPool->u32Magic             = RTREQPOOL_MAGIC;
     RTStrCopy(pPool->szName, sizeof(pPool->szName), pszName);
 
     pPool->enmThreadType        = RTTHREADTYPE_DEFAULT;
+    pPool->fThreadFlags         = 0;
     pPool->cMaxThreads          = cMaxThreads;
     pPool->cMinThreads          = cMinThreads;
     pPool->cMsMinIdle           = cMsMinIdle == RT_INDEFINITE_WAIT || cMsMinIdle >= UINT32_MAX ? UINT32_MAX : cMsMinIdle;
@@ -728,6 +731,13 @@ RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t
                                ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
 
             pPool->enmThreadType = (RTTHREADTYPE)uValue;
+            break;
+
+        case RTREQPOOLCFGVAR_THREAD_FLAGS:
+            AssertMsgBreakStmt(!(uValue & ~(uint64_t)RTTHREADFLAGS_MASK) && !(uValue & RTTHREADFLAGS_WAITABLE),
+                               ("%#llx\n",  uValue), rc = VERR_INVALID_FLAGS);
+
+            pPool->fThreadFlags = (uint32_t)uValue;
             break;
 
         case RTREQPOOLCFGVAR_MIN_THREADS:
@@ -878,6 +888,10 @@ RTDECL(uint64_t) RTReqPoolGetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar)
     {
         case RTREQPOOLCFGVAR_THREAD_TYPE:
             u64 = pPool->enmThreadType;
+            break;
+
+        case RTREQPOOLCFGVAR_THREAD_FLAGS:
+            u64 = pPool->fThreadFlags;
             break;
 
         case RTREQPOOLCFGVAR_MIN_THREADS:

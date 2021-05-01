@@ -331,6 +331,8 @@ typedef enum RTREQPOOLCFGVAR
     RTREQPOOLCFGVAR_INVALID = 0,
     /** The desired RTTHREADTYPE of the worker threads. */
     RTREQPOOLCFGVAR_THREAD_TYPE,
+    /** The RTTHREADFLAGS mask for the worker threads (not waitable). */
+    RTREQPOOLCFGVAR_THREAD_FLAGS,
     /** The minimum number of threads to keep handy once spawned. */
     RTREQPOOLCFGVAR_MIN_THREADS,
     /** The maximum number of thread to start. */
