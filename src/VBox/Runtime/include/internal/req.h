@@ -48,11 +48,14 @@ typedef enum RTREQSTATE
     RTREQSTATE_QUEUED,
     /** The request is begin processed. */
     RTREQSTATE_PROCESSING,
+    /** The request has been cancelled. */
+    RTREQSTATE_CANCELLED,
     /** The request is completed, the requester is begin notified. */
     RTREQSTATE_COMPLETED,
-    /** The request packet is in the free chain. (The requester */
+    /** The request packet is in the free chain. */
     RTREQSTATE_FREE
 } RTREQSTATE;
+AssertCompileSize(RTREQSTATE, sizeof(uint32_t));
 
 
 /**
@@ -113,7 +116,7 @@ struct RTREQ
             /** Number of arguments. */
             uint32_t            cArgs;
             /** Array of arguments. */
-            uintptr_t           aArgs[64];
+            uintptr_t           aArgs[12];
         } Internal;
     } u;
 };
@@ -164,6 +167,7 @@ DECLHIDDEN(int)  rtReqProcessOne(PRTREQ pReq);
 /* reqpool.cpp / reqqueue.cpp. */
 DECLHIDDEN(void) rtReqQueueSubmit(PRTREQQUEUEINT pQueue, PRTREQINT pReq);
 DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq);
+DECLHIDDEN(void) rtReqPoolCancel(PRTREQPOOLINT pPool, PRTREQINT pReq);
 DECLHIDDEN(bool) rtReqQueueRecycle(PRTREQQUEUEINT pQueue, PRTREQINT pReq);
 DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq);
 

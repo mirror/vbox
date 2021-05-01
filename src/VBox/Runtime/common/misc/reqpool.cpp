@@ -186,6 +186,8 @@ typedef struct RTREQPOOLINT
     uint32_t volatile       cCurActiveRequests;
     /** The number of requests submitted. */
     uint64_t                cReqSubmitted;
+    /** The number of cancelled. */
+    uint64_t                cReqCancelled;
 
     /** Head of the request recycling LIFO. */
     PRTREQINT               pFreeRequests;
@@ -230,7 +232,9 @@ static void rtReqPoolRecalcPushBack(PRTREQPOOLINT pPool)
     uint32_t const iStep    = pPool->cCurThreads - pPool->cThreadsPushBackThreshold;
 
     uint32_t cMsCurPushBack;
-    if ((cMsRange >> 2) >= cSteps)
+    if (cSteps == 0 /* disabled */)
+        cMsCurPushBack = 0;
+    else if ((cMsRange >> 2) >= cSteps)
         cMsCurPushBack = cMsRange / cSteps * iStep;
     else
         cMsCurPushBack = (uint32_t)( (uint64_t)cMsRange * RT_NS_1MS  / cSteps * iStep / RT_NS_1MS );
@@ -557,7 +561,7 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
      */
     pReq->pNext = NULL;
     *pPool->ppPendingRequests = pReq;
-    pPool->ppPendingRequests  = (PRTREQINT*)&pReq->pNext;
+    pPool->ppPendingRequests  = (PRTREQINT *)&pReq->pNext;
     pPool->cCurPendingRequests++;
 
     /*
@@ -587,6 +591,59 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
      * For simplicity, we don't bother leaving the critical section while doing so.
      */
     rtReqPoolCreateNewWorker(pPool);
+
+    RTCritSectLeave(&pPool->CritSect);
+    return;
+}
+
+
+/**
+ * Worker for RTReqCancel that looks for the request in the pending list and
+ * completes it if found there.
+ *
+ * @param   pPool               The request thread pool.
+ * @param   pReq                The request.
+ */
+DECLHIDDEN(void) rtReqPoolCancel(PRTREQPOOLINT pPool, PRTREQINT pReq)
+{
+    RTCritSectEnter(&pPool->CritSect);
+
+    pPool->cReqCancelled++;
+
+    /*
+     * Check if the request is in the pending list.
+     */
+    PRTREQINT pPrev = NULL;
+    PRTREQINT pCur  = pPool->pPendingRequests;
+    while (pCur)
+        if (pCur != pReq)
+        {
+            pPrev = pCur;
+            pCur  = pCur->pNext;
+        }
+        else
+        {
+            /*
+             * Unlink it and process it.
+             */
+            if (!pPrev)
+            {
+                pPool->pPendingRequests = pReq->pNext;
+                if (!pReq->pNext)
+                    pPool->ppPendingRequests = &pPool->pPendingRequests;
+            }
+            else
+            {
+                pPrev->pNext = pReq->pNext;
+                if (!pReq->pNext)
+                    pPool->ppPendingRequests = (PRTREQINT *)&pPrev->pNext;
+            }
+            Assert(pPool->cCurPendingRequests > 0);
+            pPool->cCurPendingRequests--;
+
+            rtReqProcessOne(pReq);
+            break;
+        }
 
     RTCritSectLeave(&pPool->CritSect);
     return;
@@ -691,6 +748,7 @@ RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
     pPool->cCurPendingRequests  = 0;
     pPool->cCurActiveRequests   = 0;
     pPool->cReqSubmitted        = 0;
+    pPool->cReqCancelled        = 0;
     pPool->pFreeRequests        = NULL;
     pPool->cCurFreeRequests     = 0;
 
@@ -955,6 +1013,7 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
         case RTREQPOOLSTAT_THREADS_CREATED:             u64 = pPool->cThreadsCreated; break;
         case RTREQPOOLSTAT_REQUESTS_PROCESSED:          u64 = pPool->cReqProcessed; break;
         case RTREQPOOLSTAT_REQUESTS_SUBMITTED:          u64 = pPool->cReqSubmitted; break;
+        case RTREQPOOLSTAT_REQUESTS_CANCELLED:          u64 = pPool->cReqCancelled; break;
         case RTREQPOOLSTAT_REQUESTS_PENDING:            u64 = pPool->cCurPendingRequests; break;
         case RTREQPOOLSTAT_REQUESTS_ACTIVE:             u64 = pPool->cCurActiveRequests; break;
         case RTREQPOOLSTAT_REQUESTS_FREE:               u64 = pPool->cCurFreeRequests; break;
@@ -1125,7 +1184,7 @@ RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phR
      */
     AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
     AssertMsgReturn(!((uint32_t)fFlags & ~(uint32_t)(RTREQFLAGS_NO_WAIT | RTREQFLAGS_RETURN_MASK)), ("%#x\n", (uint32_t)fFlags), VERR_INVALID_PARAMETER);
-    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+    if (!(fFlags & RTREQFLAGS_NO_WAIT) || phReq)
     {
         AssertPtrReturn(phReq, VERR_INVALID_POINTER);
         *phReq = NIL_RTREQ;
@@ -1158,13 +1217,16 @@ RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phR
         pReq = NULL;
     }
 
-    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+    if (phReq)
     {
         *phReq = pReq;
         LogFlow(("RTReqPoolCallExV: returns %Rrc *phReq=%p\n", rc, pReq));
     }
     else
+    {
+        RTReqRelease(pReq);
         LogFlow(("RTReqPoolCallExV: returns %Rrc\n", rc));
+    }
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqPoolCallExV);

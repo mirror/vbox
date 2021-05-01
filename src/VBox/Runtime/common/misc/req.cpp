@@ -196,14 +196,14 @@ RTDECL(uint32_t) RTReqRelease(PRTREQ hReq)
         /*
          * Check packet state.
          */
-        switch (pReq->enmState)
+        RTREQSTATE const enmState = pReq->enmState;
+        switch (enmState)
         {
             case RTREQSTATE_ALLOCATED:
             case RTREQSTATE_COMPLETED:
                 break;
             default:
-                AssertMsgFailed(("Invalid state %d!\n", pReq->enmState));
-                return 0;
+                AssertMsgFailedReturn(("Invalid state %d!\n", enmState), 0);
         }
 
         /*
@@ -247,14 +247,13 @@ RTDECL(int) RTReqSubmit(PRTREQ hReq, RTMSINTERVAL cMillies)
                     VERR_RT_REQUEST_INVALID_TYPE);
 
     /*
-     * Insert it.  Donate the caller's reference if RTREQFLAGS_NO_WAIT is set,
-     * otherwise retain another reference for the queue.
+     * Insert it.  Always grab a reference for the queue (we used to
+     * donate the caller's reference in the NO_WAIT case once upon a time).
      */
     pReq->uSubmitNanoTs = RTTimeNanoTS();
     pReq->enmState      = RTREQSTATE_QUEUED;
     unsigned fFlags = ((RTREQ volatile *)pReq)->fFlags;                    /* volatile paranoia */
-    if (!(fFlags & RTREQFLAGS_NO_WAIT))
-        RTReqRetain(pReq);
+    RTReqRetain(pReq);
 
     if (!pReq->fPoolOrQueue)
         rtReqQueueSubmit(pReq->uOwner.hQueue, pReq);
@@ -284,10 +283,12 @@ RTDECL(int) RTReqWait(PRTREQ hReq, RTMSINTERVAL cMillies)
     PRTREQINT pReq = hReq;
     AssertPtrReturn(pReq, VERR_INVALID_HANDLE);
     AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_HANDLE);
-    AssertMsgReturn(   pReq->enmState == RTREQSTATE_QUEUED
-                    || pReq->enmState == RTREQSTATE_PROCESSING
-                    || pReq->enmState == RTREQSTATE_COMPLETED,
-                    ("Invalid state %d\n", pReq->enmState),
+    RTREQSTATE enmState = pReq->enmState;
+    AssertMsgReturn(   enmState == RTREQSTATE_QUEUED
+                    || enmState == RTREQSTATE_PROCESSING
+                    || enmState == RTREQSTATE_COMPLETED
+                    || enmState == RTREQSTATE_CANCELLED,
+                    ("Invalid state %d\n", enmState),
                     VERR_RT_REQUEST_STATE);
     AssertMsgReturn(pReq->uOwner.hQueue && pReq->EventSem != NIL_RTSEMEVENT,
                     ("Invalid request package! Anyone cooking their own packages???\n"),
@@ -312,7 +313,7 @@ RTDECL(int) RTReqWait(PRTREQ hReq, RTMSINTERVAL cMillies)
         } while (pReq->enmState != RTREQSTATE_COMPLETED);
     }
     if (rc == VINF_SUCCESS)
-        ASMAtomicXchgSize(&pReq->fEventSemClear, true);
+        ASMAtomicWriteBool(&pReq->fEventSemClear, true);
     if (pReq->enmState == RTREQSTATE_COMPLETED)
         rc = VINF_SUCCESS;
     LogFlow(("RTReqWait: returns %Rrc\n", rc));
@@ -321,6 +322,47 @@ RTDECL(int) RTReqWait(PRTREQ hReq, RTMSINTERVAL cMillies)
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqWait);
+
+
+RTDECL(int) RTReqCancel(PRTREQ hReq)
+{
+    LogFlow(("RTReqCancel: hReq=%p\n", hReq));
+
+    /*
+     * Verify the supplied package.
+     */
+    PRTREQINT pReq = hReq;
+    AssertPtrReturn(pReq, VERR_INVALID_HANDLE);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_HANDLE);
+    //AssertMsgReturn(pReq->enmState == RTREQSTATE_ALLOCATED, ("%d\n", pReq->enmState), VERR_RT_REQUEST_STATE);
+    AssertMsgReturn(pReq->uOwner.hQueue && !pReq->pNext && pReq->EventSem != NIL_RTSEMEVENT,
+                    ("Invalid request package! Anyone cooking their own packages???\n"),
+                    VERR_RT_REQUEST_INVALID_PACKAGE);
+    AssertMsgReturn(pReq->enmType > RTREQTYPE_INVALID && pReq->enmType < RTREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
+                     pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1),
+                    VERR_RT_REQUEST_INVALID_TYPE);
+
+    /*
+     * Try cancel the request itself by changing its state.
+     */
+    int rc;
+    if (ASMAtomicCmpXchgU32((uint32_t volatile *)&pReq->enmState, RTREQSTATE_CANCELLED, RTREQSTATE_QUEUED))
+    {
+        if (pReq->fPoolOrQueue)
+            rtReqPoolCancel(pReq->uOwner.hPool, pReq);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        Assert(pReq->enmState == RTREQSTATE_PROCESSING || pReq->enmState == RTREQSTATE_COMPLETED);
+        rc = VERR_RT_REQUEST_STATE;
+    }
+
+    LogFlow(("RTReqCancel: returns %Rrc\n", rc));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqCancel);
 
 
 RTDECL(int) RTReqGetStatus(PRTREQ hReq)
@@ -346,107 +388,117 @@ DECLHIDDEN(int) rtReqProcessOne(PRTREQINT pReq)
     LogFlow(("rtReqProcessOne: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
 
     /*
-     * Process the request.
+     * Try switch the request status to processing.
      */
-    Assert(pReq->enmState == RTREQSTATE_QUEUED);
-    pReq->enmState = RTREQSTATE_PROCESSING;
     int     rcRet = VINF_SUCCESS;           /* the return code of this function. */
     int     rcReq = VERR_NOT_IMPLEMENTED;   /* the request status. */
-    switch (pReq->enmType)
+    if (ASMAtomicCmpXchgU32((uint32_t volatile *)&pReq->enmState, RTREQSTATE_PROCESSING, RTREQSTATE_QUEUED))
     {
         /*
-         * A packed down call frame.
+         * Process the request.
          */
-        case RTREQTYPE_INTERNAL:
+        pReq->enmState = RTREQSTATE_PROCESSING;
+        switch (pReq->enmType)
         {
-            uintptr_t *pauArgs = &pReq->u.Internal.aArgs[0];
-            union
+            /*
+             * A packed down call frame.
+             */
+            case RTREQTYPE_INTERNAL:
             {
-                PFNRT pfn;
-                DECLCALLBACKMEMBER(int, pfn00,(void));
-                DECLCALLBACKMEMBER(int, pfn01,(uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn02,(uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn03,(uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn04,(uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn05,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn06,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn07,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn08,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn09,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn10,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn11,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-                DECLCALLBACKMEMBER(int, pfn12,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
-            } u;
-            u.pfn = pReq->u.Internal.pfn;
+                uintptr_t *pauArgs = &pReq->u.Internal.aArgs[0];
+                union
+                {
+                    PFNRT pfn;
+                    DECLCALLBACKMEMBER(int, pfn00,(void));
+                    DECLCALLBACKMEMBER(int, pfn01,(uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn02,(uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn03,(uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn04,(uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn05,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn06,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn07,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn08,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn09,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn10,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn11,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                    DECLCALLBACKMEMBER(int, pfn12,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                } u;
+                u.pfn = pReq->u.Internal.pfn;
 #ifndef RT_ARCH_X86
-            switch (pReq->u.Internal.cArgs)
-            {
-                case 0:  rcRet = u.pfn00(); break;
-                case 1:  rcRet = u.pfn01(pauArgs[0]); break;
-                case 2:  rcRet = u.pfn02(pauArgs[0], pauArgs[1]); break;
-                case 3:  rcRet = u.pfn03(pauArgs[0], pauArgs[1], pauArgs[2]); break;
-                case 4:  rcRet = u.pfn04(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3]); break;
-                case 5:  rcRet = u.pfn05(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4]); break;
-                case 6:  rcRet = u.pfn06(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5]); break;
-                case 7:  rcRet = u.pfn07(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6]); break;
-                case 8:  rcRet = u.pfn08(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7]); break;
-                case 9:  rcRet = u.pfn09(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8]); break;
-                case 10: rcRet = u.pfn10(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9]); break;
-                case 11: rcRet = u.pfn11(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9], pauArgs[10]); break;
-                case 12: rcRet = u.pfn12(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9], pauArgs[10], pauArgs[11]); break;
-                default:
-                    AssertReleaseMsgFailed(("cArgs=%d\n", pReq->u.Internal.cArgs));
-                    rcRet = rcReq = VERR_INTERNAL_ERROR;
-                    break;
-            }
+                switch (pReq->u.Internal.cArgs)
+                {
+                    case 0:  rcRet = u.pfn00(); break;
+                    case 1:  rcRet = u.pfn01(pauArgs[0]); break;
+                    case 2:  rcRet = u.pfn02(pauArgs[0], pauArgs[1]); break;
+                    case 3:  rcRet = u.pfn03(pauArgs[0], pauArgs[1], pauArgs[2]); break;
+                    case 4:  rcRet = u.pfn04(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3]); break;
+                    case 5:  rcRet = u.pfn05(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4]); break;
+                    case 6:  rcRet = u.pfn06(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5]); break;
+                    case 7:  rcRet = u.pfn07(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6]); break;
+                    case 8:  rcRet = u.pfn08(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7]); break;
+                    case 9:  rcRet = u.pfn09(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8]); break;
+                    case 10: rcRet = u.pfn10(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9]); break;
+                    case 11: rcRet = u.pfn11(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9], pauArgs[10]); break;
+                    case 12: rcRet = u.pfn12(pauArgs[0], pauArgs[1], pauArgs[2], pauArgs[3], pauArgs[4], pauArgs[5], pauArgs[6], pauArgs[7], pauArgs[8], pauArgs[9], pauArgs[10], pauArgs[11]); break;
+                    default:
+                        AssertReleaseMsgFailed(("cArgs=%d\n", pReq->u.Internal.cArgs));
+                        rcRet = rcReq = VERR_INTERNAL_ERROR;
+                        break;
+                }
 #else /* RT_ARCH_X86 */
-            size_t cbArgs = pReq->u.Internal.cArgs * sizeof(uintptr_t);
+                size_t cbArgs = pReq->u.Internal.cArgs * sizeof(uintptr_t);
 # ifdef __GNUC__
-            __asm__ __volatile__("movl  %%esp, %%edx\n\t"
-                                 "subl  %2, %%esp\n\t"
-                                 "andl  $0xfffffff0, %%esp\n\t"
-                                 "shrl  $2, %2\n\t"
-                                 "movl  %%esp, %%edi\n\t"
-                                 "rep movsl\n\t"
-                                 "movl  %%edx, %%edi\n\t"
-                                 "call  *%%eax\n\t"
-                                 "mov   %%edi, %%esp\n\t"
-                                 : "=a" (rcRet),
-                                   "=S" (pauArgs),
-                                   "=c" (cbArgs)
-                                 : "0" (u.pfn),
-                                   "1" (pauArgs),
-                                   "2" (cbArgs)
-                                 : "edi", "edx");
+                __asm__ __volatile__("movl  %%esp, %%edx\n\t"
+                                     "subl  %2, %%esp\n\t"
+                                     "andl  $0xfffffff0, %%esp\n\t"
+                                     "shrl  $2, %2\n\t"
+                                     "movl  %%esp, %%edi\n\t"
+                                     "rep movsl\n\t"
+                                     "movl  %%edx, %%edi\n\t"
+                                     "call  *%%eax\n\t"
+                                     "mov   %%edi, %%esp\n\t"
+                                     : "=a" (rcRet),
+                                       "=S" (pauArgs),
+                                       "=c" (cbArgs)
+                                     : "0" (u.pfn),
+                                       "1" (pauArgs),
+                                       "2" (cbArgs)
+                                     : "edi", "edx");
 # else
-            __asm
-            {
-                xor     edx, edx        /* just mess it up. */
-                mov     eax, u.pfn
-                mov     ecx, cbArgs
-                shr     ecx, 2
-                mov     esi, pauArgs
-                mov     ebx, esp
-                sub     esp, cbArgs
-                and     esp, 0xfffffff0
-                mov     edi, esp
-                rep movsd
-                call    eax
-                mov     esp, ebx
-                mov     rcRet, eax
-            }
+                __asm
+                {
+                    xor     edx, edx        /* just mess it up. */
+                    mov     eax, u.pfn
+                    mov     ecx, cbArgs
+                    shr     ecx, 2
+                    mov     esi, pauArgs
+                    mov     ebx, esp
+                    sub     esp, cbArgs
+                    and     esp, 0xfffffff0
+                    mov     edi, esp
+                    rep movsd
+                    call    eax
+                    mov     esp, ebx
+                    mov     rcRet, eax
+                }
 # endif
 #endif /* RT_ARCH_X86 */
-            if ((pReq->fFlags & (RTREQFLAGS_RETURN_MASK)) == RTREQFLAGS_VOID)
-                rcRet = VINF_SUCCESS;
-            rcReq = rcRet;
-            break;
-        }
+                if ((pReq->fFlags & (RTREQFLAGS_RETURN_MASK)) == RTREQFLAGS_VOID)
+                    rcRet = VINF_SUCCESS;
+                rcReq = rcRet;
+                break;
+            }
 
-        default:
-            AssertMsgFailed(("pReq->enmType=%d\n", pReq->enmType));
-            rcReq = VERR_NOT_IMPLEMENTED;
-            break;
+            default:
+                AssertMsgFailed(("pReq->enmType=%d\n", pReq->enmType));
+                rcReq = VERR_NOT_IMPLEMENTED;
+                break;
+        }
+    }
+    else
+    {
+        Assert(pReq->enmState == RTREQSTATE_CANCELLED);
+        rcReq = VERR_CANCELLED;
     }
 
     /*
@@ -462,7 +514,7 @@ DECLHIDDEN(int) rtReqProcessOne(PRTREQINT pReq)
         /* Notify the waiting thread. */
         LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
-        ASMAtomicXchgSize(&pReq->fEventSemClear, false);
+        ASMAtomicWriteBool(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);
         if (rc2 != VINF_SUCCESS)
         {

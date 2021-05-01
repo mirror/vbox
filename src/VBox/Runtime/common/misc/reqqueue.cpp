@@ -236,7 +236,7 @@ RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMill
     if (!(fFlags & RTREQFLAGS_NO_WAIT) || ppReq)
     {
         AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
-        *ppReq = NULL;
+        *ppReq = NIL_RTREQ;
     }
 
     PRTREQ pReq = NULL;
@@ -268,13 +268,16 @@ RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMill
         RTReqRelease(pReq);
         pReq = NULL;
     }
-    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+    if (ppReq)
     {
         *ppReq = pReq;
         LogFlow(("RTReqQueueCallV: returns %Rrc *ppReq=%p\n", rc, pReq));
     }
     else
+    {
+        RTReqRelease(pReq);
         LogFlow(("RTReqQueueCallV: returns %Rrc\n", rc));
+    }
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
