@@ -2063,7 +2063,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnTerm(PVBOXSERVICECTRLPROCESS pThis
 
 
 static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx, bool fAsync,
-                                         RTMSINTERVAL uTimeoutMS, PRTREQ pReq, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+                                         RTMSINTERVAL uTimeoutMS, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     RT_NOREF1(pHostCtx);
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
@@ -2086,7 +2086,9 @@ static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const
             fFlags |= RTREQFLAGS_NO_WAIT;
         }
 
-        rc = RTReqQueueCallV(pProcess->hReqQueue, &pReq, uTimeoutMS, fFlags, pfnFunction, cArgs, Args);
+        PRTREQ hReq = NIL_RTREQ;
+        rc = RTReqQueueCallV(pProcess->hReqQueue, &hReq, uTimeoutMS, fFlags, pfnFunction, cArgs, Args);
+        RTReqRelease(hReq);
         if (RT_SUCCESS(rc))
         {
             /* Wake up the process' notification pipe to get
@@ -2130,7 +2132,7 @@ static int vgsvcGstCtrlProcessRequestAsync(PVBOXSERVICECTRLPROCESS pProcess, con
     va_list va;
     va_start(va, cArgs);
     int rc = vgsvcGstCtrlProcessRequestExV(pProcess, pHostCtx, true /* fAsync */, 0 /* uTimeoutMS */,
-                                           NULL /* pReq */, pfnFunction, cArgs, va);
+                                           pfnFunction, cArgs, va);
     va_end(va);
 
     return rc;
@@ -2139,7 +2141,7 @@ static int vgsvcGstCtrlProcessRequestAsync(PVBOXSERVICECTRLPROCESS pProcess, con
 
 #if 0 /* unused */
 static int vgsvcGstCtrlProcessRequestWait(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx,
-                                          RTMSINTERVAL uTimeoutMS, PRTREQ pReq, PFNRT pfnFunction, unsigned cArgs, ...)
+                                          RTMSINTERVAL uTimeoutMS, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     /* pHostCtx is optional. */
@@ -2148,7 +2150,7 @@ static int vgsvcGstCtrlProcessRequestWait(PVBOXSERVICECTRLPROCESS pProcess, cons
     va_list va;
     va_start(va, cArgs);
     int rc = vgsvcGstCtrlProcessRequestExV(pProcess, pHostCtx, false /* fAsync */, uTimeoutMS,
-                                           pReq, pfnFunction, cArgs, va);
+                                           pfnFunction, cArgs, va);
     va_end(va);
 
     return rc;
