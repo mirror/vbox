@@ -1518,7 +1518,6 @@ static DECLCALLBACK(int) pdmR3DrvHlp_STAMDeregister(PPDMDRVINS pDrvIns, void *pv
 static DECLCALLBACK(int) pdmR3DrvHlp_STAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
 
     if (*pszPrefix == '/')
         return STAMR3DeregisterByPrefix(pDrvIns->Internal.s.pVMR3->pUVM, pszPrefix);
