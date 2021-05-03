@@ -172,34 +172,21 @@
 # define IOMMU_DTE_CACHE_F_IGNORE_UNMAPPED_INTR_SHIFT    10
 
 /** Acquires the cache lock. */
-#define IOMMU_LOCK_CACHE(a_pDevIns, a_pThis) \
+#define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis) \
     do { \
-        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_SEM_BUSY); \
-        if (rcLock == VINF_SUCCESS) \
-        { /* likely */ } \
-        else \
-        { \
-            AssertRC(rcLock); \
-            return rcLock; \
-        } \
-    } while (0)
-
-/** Acquires the cache lock (asserts on failure). */
-# define IOMMU_LOCK_CACHE_NORET(a_pDevIns, a_pThis) \
-    do { \
-        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_SEM_BUSY); \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VINF_SUCCESS); \
         AssertRC(rcLock); \
     } while (0)
 
 /** Releases the cache lock.  */
-# define IOMMU_UNLOCK_CACHE(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
+# define IOMMU_CACHE_UNLOCK(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
 #endif  /* IOMMU_WITH_DTE_CACHE */
 
 /** Gets the page offset mask given the number of bits to shift. */
 #define IOMMU_GET_PAGE_OFF_MASK(a_cShift)           (~(UINT64_C(0xffffffffffffffff) << (a_cShift)))
 
-/** Acquires the PDM lock. */
-#define IOMMU_LOCK(a_pDevIns, a_pThisCC, a_rcBusy)  \
+/** Acquires the PDM lock (returns a_rcBusy on contention). */
+#define IOMMU_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy)  \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
@@ -208,19 +195,23 @@
             return rcLock; \
     } while (0)
 
+/** Acquires the PDM lock (shouldn't really fail). */
+#ifdef IN_RING3
+# define IOMMU_LOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED)
+#else
+# define IOMMU_LOCK(a_pDevIns, a_pThisCC) \
+    do { \
+        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
+        AssertRC(rcLock); \
+    } while (0)
+#endif
+
 /** Checks if the current thread owns the PDM lock. */
 # define IOMMU_ASSERT_LOCK_IS_OWNER(a_pDevIns, a_pThisCC) \
     do \
     { \
         Assert((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLockIsOwner((a_pDevIns))); \
         NOREF(a_pThisCC); \
-    } while (0)
-
-/** Acquires the PDM lock (asserts on failure). */
-#define IOMMU_LOCK_NORET(a_pDevIns, a_pThisCC)  \
-    do { \
-        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_SEM_BUSY); \
-        AssertRC(rcLock); \
     } while (0)
 
 /** Releases the PDM lock.   */
@@ -953,7 +944,7 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
     uint16_t const idDomain = pDte->n.u16DomainId;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
@@ -971,7 +962,7 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
     else
         rc = VERR_OUT_OF_RESOURCES;
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
@@ -987,7 +978,7 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
 static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t fFlags)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t const idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
@@ -995,7 +986,7 @@ static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint
         && (pThis->aDteCache[idxDte].fFlags & IOMMU_DTE_CACHE_F_PRESENT))
         pThis->aDteCache[idxDte].fFlags |= fFlags;
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1009,7 +1000,7 @@ static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint
 static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t const idxDte    = iommuAmdDteCacheEntryLookup(pThis, idDevice);
@@ -1019,7 +1010,7 @@ static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
         pThis->aDteCache[idxDte].idDomain = 0;
     }
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1031,10 +1022,10 @@ static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 static void iommuAmdDteCacheRemoveAll(PPDMDEVINS pDevIns)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
     RT_ZERO(pThis->aDeviceIds);
     RT_ZERO(pThis->aDteCache);
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 # endif  /* IN_RING3 */
 #endif  /* IOMMU_WITH_DTE_CACHE */
@@ -1309,7 +1300,7 @@ static void iommuAmdIotlbRemoveAll(PPDMDEVINS pDevIns)
 {
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     if (pThisR3->cCachedIotlbes > 0)
     {
@@ -1321,7 +1312,7 @@ static void iommuAmdIotlbRemoveAll(PPDMDEVINS pDevIns)
         RTListInit(&pThisR3->LstLruIotlbe);
     }
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1343,7 +1334,7 @@ static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     do
     {
@@ -1355,7 +1346,7 @@ static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint
         cbInvalidate -= X86_PAGE_4K_SIZE;
     } while (cbInvalidate > 0);
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1375,14 +1366,14 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t idDomain)
      */
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     IOTLBEFLUSHARG Args;
     Args.pIommuR3 = pThisR3;
     Args.idDomain = idDomain;
     RTAvlU64DoWithAll(&pThisR3->TreeIotlbe, true /* fFromLeft */, iommuAmdIotlbEntryRemoveDomainId, &Args);
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1417,7 +1408,7 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_
     size_t cPages = cbIova / X86_PAGE_4K_SIZE;
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
 
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
     /** @todo Re-check DTE cache? */
     do
     {
@@ -1426,7 +1417,7 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_
         PageLookup.GCPhysSpa += X86_PAGE_4K_SIZE;
         --cPages;
     } while (cPages > 0);
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
@@ -1496,7 +1487,7 @@ static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
         return rc;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (idxDteCache < RT_ELEMENTS(pThis->aDteCache))
@@ -1541,7 +1532,7 @@ static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
         }
     }
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
@@ -1563,7 +1554,7 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t 
 
     int rc = VINF_SUCCESS;
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     /* Find an existing entry or get an unused slot. */
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
@@ -1577,7 +1568,7 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t 
     else
         rc = VERR_OUT_OF_RESOURCES;
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
@@ -1592,7 +1583,7 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t 
 static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
     for (uint16_t i = 0; i < cIrteCache; i++)
     {
@@ -1604,7 +1595,7 @@ static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
             /* There could multiple IRTE entries for a device ID, continue searching. */
         }
     }
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -1616,14 +1607,14 @@ static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 static void iommuAmdIrteCacheRemoveAll(PPDMDEVINS pDevIns)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
     for (uint16_t i = 0; i < cIrteCache; i++)
     {
         pThis->aIrteCache[i].uKey     = IOMMU_IRTE_CACHE_KEY_NIL;
         pThis->aIrteCache[i].Irte.u32 = 0;
     }
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 # endif /* IN_RING3 */
 #endif  /* IOMMU_WITH_IRTE_CACHE */
@@ -2744,7 +2735,7 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
     {
         if (!(off & 7))
         {
-            IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+            IOMMU_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
             VBOXSTRICTRC rcStrict = pReg->pfnWrite(pDevIns, pThis, off, uValue);
             IOMMU_UNLOCK(pDevIns, pThisCC);
             return rcStrict;
@@ -2759,7 +2750,7 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
     if (!(off & 7))
     {
         VBOXSTRICTRC rcStrict;
-        IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+        IOMMU_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
 
         /*
          * Lower 32 bits of a 64-bit register or a 32-bit register is being written.
@@ -2870,7 +2861,7 @@ static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint6
      */
     if (!(off & 7))
     {
-        IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
+        IOMMU_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
         VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, puResult);
         IOMMU_UNLOCK(pDevIns, pThisCC);
         return rcStrict;
@@ -2883,7 +2874,7 @@ static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint6
     Assert(!(off & 3));
     Assert(off & 7);
     Assert(off >= 4);
-    IOMMU_LOCK(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
+    IOMMU_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_READ);
     VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, puResult);
     IOMMU_UNLOCK(pDevIns, pThisCC);
     if (RT_SUCCESS(rcStrict))
@@ -2947,7 +2938,7 @@ static int iommuAmdEvtLogEntryWrite(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
 
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
+    IOMMU_LOCK(pDevIns, pThisCC);
 
     /* Check if event logging is active and the log has not overflowed. */
     IOMMU_STATUS_T const Status = pThis->Status;
@@ -3066,7 +3057,7 @@ static void iommuAmdPageTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtPageTabHwErr;
 
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
+    IOMMU_LOCK(pDevIns, pThisCC);
 
     iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
@@ -3112,7 +3103,7 @@ static void iommuAmdCmdHwErrorEventRaise(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
+    IOMMU_LOCK(pDevIns, pThisCC);
 
     iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
@@ -3164,7 +3155,7 @@ static void iommuAmdDevTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtDevTabHwErr;
 
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
+    IOMMU_LOCK(pDevIns, pThisCC);
 
     iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
@@ -3483,7 +3474,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp,
     PCIOMMU  pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
 
-    IOMMU_LOCK(pDevIns, pThisCC, VERR_SEM_BUSY);
+    IOMMU_LOCK(pDevIns, pThisCC);
 
     /* Figure out which device table segment is being accessed. */
     uint8_t const idxSegsEn = pThis->Ctrl.n.u3DevTabSegEn;
@@ -4167,7 +4158,7 @@ static int iommuAmdIotlbCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint6
      * We hold the cache lock across both the DTE and the IOTLB lookups (if any) because
      * we don't want the DTE cache to be invalidate while we perform IOTBL lookups.
      */
-    IOMMU_LOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     /* Lookup the DTE cache entry. */
     uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, idDevice);
@@ -4223,7 +4214,7 @@ static int iommuAmdIotlbCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint6
     else
         IOMMU_IOTLB_LOOKUP_FAILED(VERR_NOT_FOUND);
 
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 
     return rc;
 
@@ -4877,7 +4868,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /* If the command requests an interrupt and completion wait interrupts are enabled, raise it. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
-                    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
+                    IOMMU_LOCK(pDevIns, pThisR3);
                     ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
                     bool const fRaiseInt = pThis->Ctrl.n.u1CompWaitIntrEn;
                     IOMMU_UNLOCK(pDevIns, pThisR3);
@@ -5107,7 +5098,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        temporary host buffer before processing them as a batch. If we want to
          *        save on host memory a bit, we could (once PGM has the necessary APIs)
          *        lock the page mappings page mappings and access them directly. */
-        IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
+        IOMMU_LOCK(pDevIns, pThisR3);
 
         if (pThis->Status.n.u1CmdBufRunning)
         {
@@ -5128,7 +5119,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
 
                 IOMMU_UNLOCK(pDevIns, pThisR3);
                 int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
-                IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
+                IOMMU_LOCK(pDevIns, pThisR3);
 
                 if (RT_SUCCESS(rc))
                 {
@@ -5291,7 +5282,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
     }
 
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
-    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
+    IOMMU_LOCK(pDevIns, pThisR3);
 
     VBOXSTRICTRC rcStrict;
     switch (uAddress)
@@ -6023,7 +6014,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDteCache(PPDMDEVINS pDevIns, PCDBGFIN
 {
     RT_NOREF(pszArgs);
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDeviceIds);
     pHlp->pfnPrintf(pHlp, "DTE Cache: Capacity=%u entries\n", cDteCache);
@@ -6043,7 +6034,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDteCache(PPDMDEVINS pDevIns, PCDBGFIN
             pHlp->pfnPrintf(pHlp, "\n");
         }
     }
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 # endif /* IOMMU_WITH_DTE_CACHE */
 
@@ -6068,9 +6059,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIotlb(PPDMDEVINS pDevIns, PCDBGFINFOH
             Args.pHlp     = pHlp;
             Args.idDomain = idDomain;
 
-            IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+            IOMMU_CACHE_LOCK(pDevIns, pThis);
             RTAvlU64DoWithAll(&pThisR3->TreeIotlbe, true /* fFromLeft */, iommuAmdR3IotlbEntryInfo, &Args);
-            IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+            IOMMU_CACHE_UNLOCK(pDevIns, pThis);
         }
         else
             pHlp->pfnPrintf(pHlp, "Failed to parse a valid 16-bit domain ID. rc=%Rrc\n", rc);
@@ -6107,7 +6098,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIrteCache(PPDMDEVINS pDevIns, PCDBGFI
     RT_NOREF(pszArgs);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
     pHlp->pfnPrintf(pHlp, "IRTE Cache: Capacity=%u entries\n", cIrteCache);
@@ -6137,7 +6128,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIrteCache(PPDMDEVINS pDevIns, PCDBGFI
             pHlp->pfnPrintf(pHlp, "\n");
         }
     }
-    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 # endif /* IOMMU_WITH_IRTE_CACHE */
 
@@ -6635,7 +6626,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertPtrReturn(pThisR3, VERR_INVALID_POINTER);
 
     int rc;
-    IOMMU_LOCK(pDevIns, pThisR3, VERR_IGNORED);
+    IOMMU_LOCK(pDevIns, pThisR3);
 
     /* Map MMIO regions if the IOMMU BAR is enabled. */
     if (pThis->IommuBar.n.u1Enable)
@@ -6674,7 +6665,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
     LogFlowFunc(("\n"));
 
-    IOMMU_LOCK_NORET(pDevIns, pThisR3);
+    IOMMU_LOCK(pDevIns, pThisR3);
 
     RT_ZERO(pThis->aDevTabBaseAddrs);
 
@@ -6769,7 +6760,7 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
     LogFlowFunc(("\n"));
 
-    IOMMU_LOCK_NORET(pDevIns, pThisR3);
+    IOMMU_LOCK(pDevIns, pThisR3);
 
     if (pThis->hEvtCmdThread != NIL_SUPSEMEVENT)
     {
