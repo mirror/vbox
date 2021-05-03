@@ -136,7 +136,7 @@ private slots:
         void sltChangeFont(QFont font);
         void sltResetOptionsToDefault();
     /** @} */
-    void sltCornerButtonClicked();
+
 private:
 
     /** @name Prepare/Cleanup
@@ -194,7 +194,6 @@ private:
         - grab it from the dialog as soon as a panel becomes visible again
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
-    void updateMachineSelectionMenu();
     void setMachines(const QVector<QUuid> &machineIDs);
     /** Returns the content of the ith log file of @comMachine or possibly an empty string */
     QString readLogFile(CMachine &comMachine, int iLogFileId);

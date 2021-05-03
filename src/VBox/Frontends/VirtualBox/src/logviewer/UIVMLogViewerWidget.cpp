@@ -59,127 +59,86 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+/*********************************************************************************************************************************
+*   UITabBar definition.                                                                                        *
+*********************************************************************************************************************************/
+
 class UITabBar : public QTabBar
 {
+
     Q_OBJECT;
+
 public:
-    UITabBar(QWidget *pParent = 0)
-        :QTabBar(pParent)
-    {
-        QStyleOptionTab opt;
-        m_alternateColors << opt.palette.color(QPalette::Button).lighter(125);
-        m_alternateColors << opt.palette.color(QPalette::Button).darker(125);
-    }
 
-    void paintEvent(QPaintEvent * /*event*/) {
+    UITabBar(QWidget *pParent = 0);
+protected:
 
-        QStylePainter painter(this);
-        QStyleOptionTab opt;
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
-        for (int i = 0; i < count(); i++) {
-            initStyleOption(&opt, i);
-            int iColorIndex = tabData(i).toInt();
-            if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
-            {
-                opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
-            }
-
-            painter.drawControl(QStyle::CE_TabBarTabShape, opt);
-            painter.drawControl(QStyle::CE_TabBarTabLabel, opt);
-        }
-    }
 private:
+
     QVector<QColor> m_alternateColors;
 };
 
-class UITabWidget : public QTabWidget
-{
-    Q_OBJECT;
-public:
-    UITabWidget(QWidget *pParent = 0)
-        :QTabWidget(pParent)
-    {
-        setTabBar(new UITabBar(this));
-    }
-};
+/*********************************************************************************************************************************
+*   UITabWidget definition.                                                                                        *
+*********************************************************************************************************************************/
 
-class UIMachineListCheckBox : public QCheckBox
+class UITabWidget : public QITabWidget
 {
 
     Q_OBJECT;
 
 public:
 
-    UIMachineListCheckBox(const QString &strText, QWidget *pParent = 0);
-    void setId(const QUuid &id);
-    const QUuid &id() const;
-private:
-    QUuid m_id;
+    UITabWidget(QWidget *pParent = 0);
 };
 
-UIMachineListCheckBox::UIMachineListCheckBox(const QString &strText, QWidget *pParent /* = 0 */)
-    :QCheckBox(strText, pParent)
+/*********************************************************************************************************************************
+*   UITabBar implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UITabBar::UITabBar(QWidget *pParent /* = 0 */)
+    :QTabBar(pParent)
 {
+    QStyleOptionTab opt;
+    m_alternateColors << opt.palette.color(QPalette::Button).lighter(135);
+    m_alternateColors << opt.palette.color(QPalette::Button).darker(135);
 }
 
-void UIMachineListCheckBox::setId(const QUuid &id)
+void UITabBar::paintEvent(QPaintEvent *pEvent)
 {
-    m_id = id;
-}
+    Q_UNUSED(pEvent);
+    QStylePainter painter(this);
+    QStyleOptionTab opt;
 
-const QUuid &UIMachineListCheckBox::id() const
-{
-    return m_id;
-}
+    for (int i = 0; i < count(); i++) {
+        initStyleOption(&opt, i);
+        int iColorIndex = tabData(i).toInt();
+        if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
+        {
+            opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
+        }
 
-class UIMachineListMenu : public QWidget
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIMachineListMenu(QWidget *pParent = 0);
-    /** Removes the actions and deletes them. */
-    void clear();
-    void addListItem(const QString &strText, const QUuid &id);
-
-private:
-
-    void computeMinimumSize();
-    QVector<UIMachineListCheckBox*> m_checkboxes;
-    QVBoxLayout *m_pLayout;
-};
-
-UIMachineListMenu::UIMachineListMenu(QWidget *pParent /* = 0 */)
-    :QWidget(pParent, Qt::Popup)
-    , m_pLayout(0)
-{
-    m_pLayout = new QVBoxLayout(this);
-    if (m_pLayout)
-    {
-        /* Configure layout: */
-        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
-        const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) / 2;
-        const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
-        const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
-        m_pLayout->setContentsMargins(iL, iT, iR, iB);
+        painter.drawControl(QStyle::CE_TabBarTabShape, opt);
+        painter.drawControl(QStyle::CE_TabBarTabLabel, opt);
     }
 }
 
-void UIMachineListMenu::clear()
+/*********************************************************************************************************************************
+*   UITabWidget implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UITabWidget::UITabWidget(QWidget *pParent /* = 0 */)
+    :QITabWidget(pParent)
 {
-    qDeleteAll(m_checkboxes.begin(), m_checkboxes.end());
-    m_checkboxes.clear();
+    setTabBar(new UITabBar(this));
 }
 
-void UIMachineListMenu::addListItem(const QString &strText, const QUuid &id)
-{
-    UIMachineListCheckBox *pCheckBox = new UIMachineListCheckBox(strText, this);
-    m_checkboxes << pCheckBox;
-    pCheckBox->setId(id);
-    m_pLayout->addWidget(pCheckBox);
-}
+
+/*********************************************************************************************************************************
+*   UIVMLogViewerWidget implementation.                                                                                          *
+*********************************************************************************************************************************/
 
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
@@ -371,61 +330,62 @@ void UIVMLogViewerWidget::sltRefresh()
 
 void UIVMLogViewerWidget::sltSave()
 {
-    // if (m_comMachine.isNull())
-    //     return;
+    UIVMLogPage *pLogPage = currentLogPage();
+    if (!pLogPage)
+        return;
 
-    // UIVMLogPage *logPage = currentLogPage();
-    // if (!logPage)
-    //     return;
+    CMachine comMachine = uiCommon().virtualBox().FindMachine(pLogPage->machineId().toString());
+    if (comMachine.isNull())
+        return;
 
-    // const QString& fileName = logPage->logFileName();
-    // if (fileName.isEmpty())
-    //     return;
-    // /* Prepare "save as" dialog: */
-    // const QFileInfo fileInfo(fileName);
-    // /* Prepare default filename: */
-    // const QDateTime dtInfo = fileInfo.lastModified();
-    // const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
-    // const QString strDefaultFileName = QString("%1-%2.log").arg(m_comMachine.GetName()).arg(strDtString);
-    // const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
+    const QString& fileName = pLogPage->logFileName();
+    if (fileName.isEmpty())
+        return;
+    /* Prepare "save as" dialog: */
+    const QFileInfo fileInfo(fileName);
+    /* Prepare default filename: */
+    const QDateTime dtInfo = fileInfo.lastModified();
+    const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
+    const QString strDefaultFileName = QString("%1-%2.log").arg(comMachine.GetName()).arg(strDtString);
+    const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
 
-    // const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
-    //                                                              "",
-    //                                                              this,
-    //                                                              tr("Save VirtualBox Log As"),
-    //                                                              0 /* selected filter */,
-    //                                                              true /* resolve symlinks */,
-    //                                                              true /* confirm overwrite */);
-    // /* Make sure file-name is not empty: */
-    // if (!strNewFileName.isEmpty())
-    // {
-    //     /* Delete the previous file if already exists as user already confirmed: */
-    //     if (QFile::exists(strNewFileName))
-    //         QFile::remove(strNewFileName);
-    //     /* Copy log into the file: */
-    //     QFile::copy(m_comMachine.QueryLogFilename(m_pTabWidget->currentIndex()), strNewFileName);
-    // }
+    const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
+                                                                 "",
+                                                                 this,
+                                                                 tr("Save VirtualBox Log As"),
+                                                                 0 /* selected filter */,
+                                                                 true /* resolve symlinks */,
+                                                                 true /* confirm overwrite */);
+    /* Make sure file-name is not empty: */
+    if (!strNewFileName.isEmpty())
+    {
+        /* Delete the previous file if already exists as user already confirmed: */
+        if (QFile::exists(strNewFileName))
+            QFile::remove(strNewFileName);
+        /* Copy log into the file: */
+        QFile::copy(comMachine.QueryLogFilename(m_pTabWidget->currentIndex()), strNewFileName);
+    }
 }
 
 void UIVMLogViewerWidget::sltDeleteBookmark(int index)
 {
-    UIVMLogPage* logPage = currentLogPage();
-    if (!logPage)
+    UIVMLogPage* pLogPage = currentLogPage();
+    if (!pLogPage)
         return;
-    logPage->deleteBookmark(index);
+    pLogPage->deleteBookmark(index);
     if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(logPage->bookmarkVector());
+        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkVector());
 }
 
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
 {
-    UIVMLogPage* logPage = currentLogPage();
-    if (!logPage)
+    UIVMLogPage* pLogPage = currentLogPage();
+    if (!pLogPage)
         return;
-    logPage->deleteAllBookmarks();
+    pLogPage->deleteAllBookmarks();
 
     if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(logPage->bookmarkVector());
+        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkVector());
 }
 
 void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
@@ -585,16 +545,6 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     }
 }
 
-void UIVMLogViewerWidget::sltCornerButtonClicked()
-{
-    if (m_pMachineSelectionMenu && m_pCornerButton)
-    {
-        m_pMachineSelectionMenu->adjustSize();
-        m_pMachineSelectionMenu->move(m_pCornerButton->mapToGlobal(QPoint(-m_pMachineSelectionMenu->width(), 0)));
-        m_pMachineSelectionMenu->show();
-    }
-}
-
 void UIVMLogViewerWidget::prepare()
 {
     /* Load options: */
@@ -663,17 +613,6 @@ void UIVMLogViewerWidget::prepareWidgets()
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pTabWidget);
             connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
-#if 0
-            m_pCornerButton = new QIToolButton(m_pTabWidget);
-#endif
-            if (m_pCornerButton)
-            {
-                m_pTabWidget->setCornerWidget(m_pCornerButton);//, Qt::TopLeftCorner);
-                m_pCornerButton->setIcon(UIIconPool::iconSet(":/machine_16px.png"));
-                m_pMachineSelectionMenu = new UIMachineListMenu(this);
-                connect(m_pCornerButton, &QIToolButton::clicked, this, &UIVMLogViewerWidget::sltCornerButtonClicked);
-            }
-
         }
 
         /* Create VM Log-Viewer search-panel: */
@@ -1093,19 +1032,6 @@ void UIVMLogViewerWidget::manageEscapeShortCut()
         m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
     }
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
-}
-
-void UIVMLogViewerWidget::updateMachineSelectionMenu()
-{
-    if (!m_pMachineSelectionMenu)
-        return;
-    m_pMachineSelectionMenu->clear();
-
-    // foreach (const Machine &machine, m_machines)
-    // {
-
-    //     m_pMachineSelectionMenu->addListItem(machine.m_strName, machine.m_id);
-    // }
 }
 
 #include "UIVMLogViewerWidget.moc"
