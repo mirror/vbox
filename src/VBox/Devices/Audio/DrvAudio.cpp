@@ -974,7 +974,7 @@ static DECLCALLBACK(void) drvAudioStreamConfigHint(PPDMIAUDIOCONNECTOR pInterfac
  */
 static DECLCALLBACK(void) drvAudioStreamInitAsync(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
 {
-    LogFlow(("pThis=%p pStreamEx=%p (%s)\n", pThis, pStreamEx->Core.szName));
+    LogFlow(("pThis=%p pStreamEx=%p (%s)\n", pThis, pStreamEx, pStreamEx->Core.szName));
 
     /*
      * Do the init job.
