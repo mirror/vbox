@@ -3873,6 +3873,7 @@ ifdef VBOX_SIGNING_MODE
   ifeq ($(VBOX_SIGNING_MODE),test)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
+   VBOX_TSA_URL ?= none
   else
    VBOX_CERTIFICATE_SUBJECT_NAME ?= Developer ID Application: Oracle America, Inc.
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
@@ -3945,7 +3946,7 @@ ifdef VBOX_SIGNING_MODE
 	$(if $(2),--identifier "$(2)",)
   endif
 
-  ## Commands for signing an the extpack dylib files after link.
+  ## Commands for signing an extpack dylib file after link.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    VBOX_SIGN_EXTPACK_DYLIB_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),, \
 	$(call VBOX_CCS_SIGN_CMD,binary,$(out),, \
