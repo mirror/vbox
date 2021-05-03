@@ -3446,7 +3446,8 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
         uint32_t cbCmd = sizeof(uint32_t);
 
         LogFlowFunc(("[cid=%d] %s %d\n", (int32_t)idDXContext, vmsvgaR3FifoCmdToString(cmdId), cmdId));
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
+#  ifdef VBOX_WITH_VMSVGA3D
         if (SVGA_3D_CMD_BASE <= cmdId && cmdId < SVGA_3D_CMD_MAX)
         {
             SVGA3dCmdHeader const *header = (SVGA3dCmdHeader *)pu8Cmd;
@@ -3457,7 +3458,8 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
             Log7(("\tSVGA_CMD_FENCE\n"));
             Log7(("\t\t0x%08x\n", ((uint32_t *)pu8Cmd)[1]));
         }
-#endif
+#  endif
+# endif
 
         /* At the end of the switch cbCmd is equal to the total length of the command including the cmdId.
          * I.e. pu8Cmd + cbCmd must point to the next command.
