@@ -64,6 +64,7 @@
 /shaderlib/winoverride.h:                --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 
 --filter-out-dirs  "/vmsvga_include/."
+--filter-out-dirs  "/svgadump/."
 
 /vmsvga_glext/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 
