@@ -3758,7 +3758,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 
 
 /*********************************************************************************************************************************
-*   PDMIHOSTAUDIOPORT interface implementation.                                                                                   *
+*   PDMIHOSTAUDIOPORT interface implementation.                                                                                  *
 *********************************************************************************************************************************/
 
 /**
