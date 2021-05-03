@@ -2760,7 +2760,10 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IHostAudio.pfnGetConfig                  = drvHostDSoundHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = drvHostDSoundHA_GetDevices;
     pThis->IHostAudio.pfnGetStatus                  = drvHostDSoundHA_GetStatus;
+    pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
+    pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvHostDSoundHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvHostDSoundHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHostDSoundHA_StreamControl;
@@ -2800,14 +2803,14 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     {
         /* Get the notification interface (from DrvAudio). */
 # ifdef VBOX_WITH_AUDIO_CALLBACKS
-        PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIONOTIFYFROMHOST);
-        Assert(pIAudioNotifyFromHost);
+        PPDMIHOSTAUDIOPORT pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
+        Assert(pIHostAudioPort);
 # else
-        PPDMIAUDIONOTIFYFROMHOST pIAudioNotifyFromHost = NULL;
+        PPDMIHOSTAUDIOPORT pIHostAudioPort = NULL;
 # endif
         try
         {
-            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIAudioNotifyFromHost);
+            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIHostAudioPort);
         }
         catch (std::bad_alloc &)
         {

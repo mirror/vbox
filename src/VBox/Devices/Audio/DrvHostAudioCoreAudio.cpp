@@ -2546,7 +2546,10 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHostCoreAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetStatus                  = drvHostCoreAudioHA_GetStatus;
+    pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
+    pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvHostCoreAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvHostCoreAudioHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHostCoreAudioHA_StreamControl;

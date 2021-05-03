@@ -1101,7 +1101,10 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     pThis->IHostAudio.pfnGetConfig                  = drvAudioVideoRecHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = NULL;
     pThis->IHostAudio.pfnGetStatus                  = drvAudioVideoRecHA_GetStatus;
+    pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
+    pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvAudioVideoRecHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVideoRecHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvAudioVideoRecHA_StreamControl;

@@ -724,7 +724,10 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnGetConfig                  = drvAudioVrdeHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = NULL;
     pThis->IHostAudio.pfnGetStatus                  = drvAudioVrdeHA_GetStatus;
+    pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
+    pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvAudioVrdeHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVrdeHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvAudioVrdeHA_StreamControl;

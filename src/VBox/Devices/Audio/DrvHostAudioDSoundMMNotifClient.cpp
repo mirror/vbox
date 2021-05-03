@@ -29,7 +29,7 @@
 #include <VBox/log.h>
 
 
-DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(PPDMIAUDIONOTIFYFROMHOST pInterface)
+DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(PPDMIHOSTAUDIOPORT pInterface)
     : m_fRegisteredClient(false)
     , m_cRef(1)
     , m_pIAudioNotifyFromHost(pInterface)

@@ -438,7 +438,7 @@ typedef struct PDMAUDIOBACKENDCFG
     char            szName[32];
     /** The size of the backend specific stream data (in bytes). */
     uint32_t        cbStream;
-    /** Flags, MBZ. */
+    /** PDMAUDIOBACKEND_F_XXX. */
     uint32_t        fFlags;
     /** Number of concurrent output (playback) streams supported on the host.
      *  UINT32_MAX for unlimited concurrent streams, 0 if no concurrent input streams are supported. */
@@ -449,6 +449,14 @@ typedef struct PDMAUDIOBACKENDCFG
 } PDMAUDIOBACKENDCFG;
 /** Pointer to a static host audio audio configuration. */
 typedef PDMAUDIOBACKENDCFG *PPDMAUDIOBACKENDCFG;
+
+/** @name PDMAUDIOBACKEND_F_XXX - PDMAUDIOBACKENDCFG::fFlags
+ * @{ */
+/** PDMIHOSTAUDIO::pfnStreamConfigHint should preferably be called on a
+ *  worker thread rather than EMT as it may take a good while. */
+#define PDMAUDIOBACKEND_F_ASYNC_HINT    RT_BIT_32(0)
+/** @} */
+
 
 /**
  * A single audio frame.
@@ -903,22 +911,24 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
  * @{ */
 /** No flags being set. */
 #define PDMAUDIOSTREAM_STS_NONE                 UINT32_C(0)
-/** Set if the backend for the stream has been initialized.
+/** Set if the backend for the stream has been created.
  *
  * PDMIAUDIOCONNECTOR: This is generally always set after stream creation, but
  * can be cleared if the re-initialization of the stream fails later on.
+ * Asynchronous init may still be incomplete, see
  *
  * PDMIHOSTAUDIO: This may not be set immediately if the backend is doing some
- * of the stream creation asynchronously.  The DrvAudio code will not report
- * this to the devices, but keep on prebuffering till it is set. */
+ * of the stream creation asynchronously via PDMIHOSTAUDIO::pfnStreamInitAsync.
+ * The DrvAudio code will not report this to the devices, but keep on
+ * prebuffering till pfnStreamInitAsync is done and this bit is set. */
 #define PDMAUDIOSTREAM_STS_INITIALIZED          RT_BIT_32(0)
 /** Set if the stream is enabled, clear if disabled. */
 #define PDMAUDIOSTREAM_STS_ENABLED              RT_BIT_32(1)
 /** Set if the stream is paused.
- * Requires enabled status to be set when used. */
+ * Requires the ENABLED status to be set when used. */
 #define PDMAUDIOSTREAM_STS_PAUSED               RT_BIT_32(2)
 /** Output only: Set when the stream is draining.
- * Requires the enabled status to be set when used.
+ * Requires the ENABLED status to be set when used.
  * @todo See todo in drvAudioStreamPlay() regarding the suitability of this
  *       for PDMIHOSTAUDIO. */
 #define PDMAUDIOSTREAM_STS_PENDING_DISABLE      RT_BIT_32(3)
@@ -928,18 +938,22 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
  * bits are preserved and are worked as normal while in this state, so that the
  * stream can resume operation where it left off.)  */
 #define PDMAUDIOSTREAM_STS_NEED_REINIT          RT_BIT_32(8)
+/** PDMIAUDIOCONNECTOR: The backend is ready (PDMIHOSTAUDIO::pfnStreamInitAsync  done).
+ * Requires the INITIALIZED status to be set.  */
+#define PDMAUDIOSTREAM_STS_BACKEND_READY        RT_BIT_32(9)
 /** Validation mask for PDMIAUDIOCONNECTOR. */
-#define PDMAUDIOSTREAM_STS_VALID_MASK           UINT32_C(0x0000010f)
+#define PDMAUDIOSTREAM_STS_VALID_MASK           UINT32_C(0x0000030f)
 /** Asserts the validity of the given stream status mask for PDMIAUDIOCONNECTOR. */
 #define PDMAUDIOSTREAM_STS_ASSERT_VALID(a_fStreamStatus) do { \
         AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK), ("%#x\n", (a_fStreamStatus))); \
         Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
         Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_BACKEND_READY)   || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_INITIALIZED)); \
     } while (0)
 
 /** PDMIHOSTAUDIO: Backend is preparing a device switch, DrvAudio should
  * pre-buffer to make that smoother and quicker.
- * Call PDMIAUDIONOTIFYFROMHOST::pfnStreamNotifyDeviceChanged when clearing. */
+ * Call PDMIHOSTAUDIOPORT::pfnStreamNotifyDeviceChanged when clearing. */
 #define PDMAUDIOSTREAM_STS_PREPARING_SWITCH     RT_BIT_32(16)
 /** Validation mask for PDMIHOSTAUDIO. */
 #define PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND   UINT32_C(0x0001000f)
@@ -995,11 +1009,6 @@ typedef struct PDMAUDIOSTREAM
 {
     /** Magic value (PDMAUDIOSTREAM_MAGIC). */
     uint32_t                uMagic;
-    /** Number of references to this stream.
-     *  Only can be destroyed when the reference count reaches 0. */
-    uint32_t volatile       cRefs;
-    /** Stream status - PDMAUDIOSTREAM_STS_XXX. */
-    uint32_t                fStatus;
     /** Audio direction of this stream. */
     PDMAUDIODIR             enmDir;
     /** Size (in bytes) of the backend-specific stream data. */
@@ -1020,7 +1029,7 @@ typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 
 /** Magic value for PDMAUDIOSTREAM. */
-#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 3, 0)
+#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 4, 0)
 
 
 
@@ -1302,6 +1311,29 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
 
     /**
+     * Callback for genric on-worker-thread requests initiated by the backend itself.
+     *
+     * This is the counterpart to PDMIHOSTAUDIOPORT::pfnDoOnWorkerThread that will
+     * be invoked on a worker thread when the backend requests it - optional.
+     *
+     * This does not return a value, so the backend must keep track of
+     * failure/success on its own.
+     *
+     * This method is optional.  A non-NULL will, together with pfnStreamInitAsync
+     * and PDMAUDIOBACKEND_F_ASYNC_HINT, force DrvAudio to create the thread pool.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Optionally a backend stream if specified in the
+     *                      PDMIHOSTAUDIOPORT::pfnDoOnWorkerThread() call.
+     * @param   uUser       User specific value as specified in the
+     *                      PDMIHOSTAUDIOPORT::pfnDoOnWorkerThread() call.
+     * @param   pvUser      User specific pointer as specified in the
+     *                      PDMIHOSTAUDIOPORT::pfnDoOnWorkerThread() call.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnDoOnWorkerThread,(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                    uintptr_t uUser, void *pvUser));
+
+    /**
      * Gives the audio backend a hint about a typical configuration (optional).
      *
      * This is a little hack for windows (and maybe other hosts) where stream
@@ -1309,6 +1341,10 @@ typedef struct PDMIHOSTAUDIO
      * The audio backend can use this hint to cache pre-configured stream setups,
      * so that when the guest actually wants to play something EMT won't be blocked
      * configuring host audio.
+     *
+     * The backend can return PDMAUDIOBACKEND_F_ASYNC_HINT in
+     * PDMIHOSTAUDIO::pfnGetConfig to avoid having EMT making this call and thereby
+     * speeding up VM construction.
      *
      * @param   pInterface      Pointer to this interface.
      * @param   pCfg            The typical configuration.  (Feel free to change it
@@ -1324,6 +1360,8 @@ typedef struct PDMIHOSTAUDIO
      * best match in the acquired configuration structure on success.
      *
      * @returns VBox status code.
+     * @retval  VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED if
+     *          PDMIHOSTAUDIO::pfnStreamInitAsync should be called.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      * @param   pCfgReq             Pointer to requested stream configuration.
@@ -1335,6 +1373,23 @@ typedef struct PDMIHOSTAUDIO
                                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
 
     /**
+     * Asynchronous stream initialization step, optional.
+     *
+     * This is called on a worker thread iff the PDMIHOSTAUDIO::pfnStreamCreate
+     * method returns VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pStream             Pointer to audio stream to continue
+     *                              initialization of.
+     * @param   fDestroyed          Set to @c true if the stream has been destroyed
+     *                              before the worker thread got to making this
+     *                              call.  The backend should just ready the stream
+     *                              for destruction in that case.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamInitAsync, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, bool fDestroyed));
+
+    /**
      * Destroys an audio stream.
      *
      * @returns VBox status code.
@@ -1344,15 +1399,15 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Called from PDMIAUDIONOTIFYFROMHOST::pfnNotifyDeviceChanged so the backend
-     * can start the device change for a stream.
+     * Called from PDMIHOSTAUDIOPORT::pfnNotifyDeviceChanged so the backend can start
+     * the device change for a stream.
      *
      * This is mainly to avoid the need for a list of streams in the backend.
      *
      * @param   pInterface          Pointer to this interface.
      * @param   pStream             Pointer to audio stream.
      * @param   pvUser              Backend specific parameter from the call to
-     *                              PDMIAUDIONOTIFYFROMHOST::pfnNotifyDeviceChanged.
+     *                              PDMIHOSTAUDIOPORT::pfnNotifyDeviceChanged.
      */
     DECLR3CALLBACKMEMBER(void, pfnStreamNotifyDeviceChanged,(PPDMIHOSTAUDIO pInterface,
                                                              PPDMAUDIOBACKENDSTREAM pStream, void *pvUser));
@@ -1448,19 +1503,37 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "faab0061-c3c8-481e-b875-abbe81baf94a"
+#define PDMIHOSTAUDIO_IID                           "b320d6ab-6cbc-46a8-8011-57e7f7eb0e25"
 
 
 /** Pointer to a audio notify from host interface. */
-typedef struct PDMIAUDIONOTIFYFROMHOST *PPDMIAUDIONOTIFYFROMHOST;
+typedef struct PDMIHOSTAUDIOPORT *PPDMIHOSTAUDIOPORT;
 
 /**
- * PDM audio notification interface, for use by host audio.
- *
- * @todo better name?
+ * PDM host audio port interface, upwards sibling of PDMIHOSTAUDIO.
  */
-typedef struct PDMIAUDIONOTIFYFROMHOST
+typedef struct PDMIHOSTAUDIOPORT
 {
+    /**
+     * Ask DrvAudio to call PDMIHOSTAUDIO::pfnDoOnWorkerThread on a worker thread.
+     *
+     * Generic method for doing asynchronous work using the DrvAudio thread pool.
+     *
+     * This function will not wait for PDMIHOSTAUDIO::pfnDoOnWorkerThread to
+     * complete, but returns immediately after submitting the request to the thread
+     * pool.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Optional backend stream structure to pass along.  The
+     *                      reference count will be increased till the call
+     *                      completes to make sure the stream stays valid.
+     * @param   uUser       User specific value.
+     * @param   pvUser      User specific pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDoOnWorkerThread,(PPDMIHOSTAUDIOPORT pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                   uintptr_t uUser, void *pvUser));
+
     /**
      * The device for the given direction changed.
      *
@@ -1474,7 +1547,7 @@ typedef struct PDMIAUDIONOTIFYFROMHOST
      * @param   pvUser      Backend specific parameter for
      *                      PDMIHOSTAUDIO::pfnStreamNotifyDeviceChanged.
      */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyDeviceChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface, PDMAUDIODIR enmDir, void *pvUser));
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDeviceChanged,(PPDMIHOSTAUDIOPORT pInterface, PDMAUDIODIR enmDir, void *pvUser));
 
     /**
      * The stream has changed its device and left the
@@ -1484,7 +1557,7 @@ typedef struct PDMIAUDIONOTIFYFROMHOST
      * @param   pStream     The stream that changed device (backend variant).
      * @param   fReInit     Set if a re-init is required, clear if not.
      */
-    DECLR3CALLBACKMEMBER(void, pfnStreamNotifyDeviceChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface,
+    DECLR3CALLBACKMEMBER(void, pfnStreamNotifyDeviceChanged,(PPDMIHOSTAUDIOPORT pInterface,
                                                              PPDMAUDIOBACKENDSTREAM pStream, bool fReInit));
 
     /**
@@ -1498,11 +1571,11 @@ typedef struct PDMIAUDIONOTIFYFROMHOST
      *
      * @param   pInterface  Pointer to this interface.
      */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyDevicesChanged,(PPDMIAUDIONOTIFYFROMHOST pInterface));
-} PDMIAUDIONOTIFYFROMHOST;
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDevicesChanged,(PPDMIHOSTAUDIOPORT pInterface));
+} PDMIHOSTAUDIOPORT;
 
-/** PDMIAUDIONOTIFYFROMHOST interface ID. */
-#define PDMIAUDIONOTIFYFROMHOST_IID                 "603f9d72-4b8b-4e0a-aa00-a76982931039"
+/** PDMIHOSTAUDIOPORT interface ID. */
+#define PDMIHOSTAUDIOPORT_IID                    "4d513a11-5be1-4f6f-9a06-a2f628cf67ac"
 
 /** @} */
 

@@ -2929,6 +2929,11 @@
 #define VERR_AUDIO_STREAM_COULD_NOT_CREATE          (-6606)
 /** Generic audio device enumeration error. */
 #define VERR_AUDIO_ENUMERATION_FAILED               (-6607)
+/** Asynchronous stream initialization still on-going. */
+#define VERR_AUDIO_STREAM_INIT_IN_PROGRESS          (-6608)
+/** Special PDMIHOSTAUDIO::pfnStreamCreate return value for triggering
+ * calling of PDMIHOSTAUDIO::pfnStreamInitAsync on a worker thread. */
+#define VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED         (6609)
 /** @} */
 
 

@@ -42,7 +42,7 @@ class DrvHostAudioDSoundMMNotifClient : public IMMNotificationClient
 {
 public:
 
-    DrvHostAudioDSoundMMNotifClient(PPDMIAUDIONOTIFYFROMHOST pInterface);
+    DrvHostAudioDSoundMMNotifClient(PPDMIHOSTAUDIOPORT pInterface);
     virtual ~DrvHostAudioDSoundMMNotifClient();
 
     HRESULT Initialize();
@@ -63,7 +63,7 @@ private:
 
     long                        m_cRef;
 
-    PPDMIAUDIONOTIFYFROMHOST    m_pIAudioNotifyFromHost;
+    PPDMIHOSTAUDIOPORT           m_pIAudioNotifyFromHost;
 
     HRESULT AttachToDefaultEndpoint();
     void    DetachFromEndpoint();
