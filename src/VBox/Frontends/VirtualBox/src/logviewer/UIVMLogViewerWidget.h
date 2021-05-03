@@ -100,6 +100,8 @@ private slots:
 
     /** Rereads the log file shown in the current tab. */
     void sltRefresh();
+    /** Rereads all the log files . */
+    void sltReload();
     /** Handles save action triggering. */
     void sltSave();
 
@@ -178,10 +180,13 @@ private:
     UIVMLogPage *currentLogPage();
     /** Returns the log page at tab with iIndex if it contains a log page. Return 0 otherwise. */
     UIVMLogPage *logPage(int iIndex);
+    /** Returns a vector of all the log pages of the tab widget. */
+    QVector<UIVMLogPage*> logPages();
 
     void createLogViewerPages(const QVector<QUuid> &machineList);
     /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */
     void removeLogViewerPages(const QVector<QUuid> &machineList);
+    void removeAllLogPages();
     /** We alternate tab colors between two `darker and lighter` one per machine. This function goes over tabs and
       * sets tab data so tab our QTabBar extension can color tabs correctly. */
     void setTabColorPerMachine();

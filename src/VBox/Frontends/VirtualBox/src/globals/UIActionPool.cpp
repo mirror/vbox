@@ -1375,8 +1375,55 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
-        setStatusTip(QApplication::translate("UIActionPool", "Refresh selected virtual machine log"));
-        setToolTip(  QApplication::translate("UIActionPool", "Refresh Virtual Machine Log")
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh the currently viewed log"));
+        setToolTip(  QApplication::translate("UIActionPool", "Refresh the Currently Viewed Log")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform Reload' action class. */
+class UIActionMenuSelectorLogPerformReload : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogPerformReload(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/log_viewer_refresh_32px.png", ":/log_viewer_refresh_16px.png",
+                         ":/log_viewer_refresh_disabled_32px.png", ":/log_viewer_refresh_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ReloadAllLogs");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Returns standard shortcut. */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Reload"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
+        setStatusTip(QApplication::translate("UIActionPool", "Reread all the log files and refresh pages"));
+        setToolTip(  QApplication::translate("UIActionPool", "Reread All the Log Files and Refresh Pages")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2538,6 +2585,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
     m_pool[UIActionIndex_M_Log_T_Options] = new UIActionMenuSelectorLogTogglePaneOptions(this);
     m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
+    m_pool[UIActionIndex_M_Log_S_Reload] = new UIActionMenuSelectorLogPerformReload(this);
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
     /* Create 'Performance Monitor' actions: */
@@ -2962,6 +3010,8 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
 
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Reload)) || fSeparator;
+
 }
 
 void UIActionPool::updateMenuVMActivityMonitor()

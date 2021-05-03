@@ -331,6 +331,26 @@ void UIVMLogViewerWidget::sltRefresh()
         m_pFilterPanel->applyFilter();
 }
 
+void UIVMLogViewerWidget::sltReload()
+{
+    if (!m_pTabWidget)
+        return;
+
+    m_pTabWidget->blockSignals(true);
+    m_pTabWidget->hide();
+
+    removeAllLogPages();
+    createLogViewerPages(m_machines);
+
+    /* re-Apply the filter settings: */
+    if (m_pFilterPanel)
+        m_pFilterPanel->applyFilter();
+
+    m_pTabWidget->blockSignals(false);
+    setTabColorPerMachine();
+    m_pTabWidget->show();
+}
+
 void UIVMLogViewerWidget::sltSave()
 {
     UIVMLogPage *pLogPage = currentLogPage();
@@ -587,6 +607,8 @@ void UIVMLogViewerWidget::prepareActions()
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
     connect(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltRefresh);
+    connect(m_pActionPool->action(UIActionIndex_M_Log_S_Reload), &QAction::triggered,
+            this, &UIVMLogViewerWidget::sltReload);
     connect(m_pActionPool->action(UIActionIndex_M_Log_S_Save), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltSave);
 }
@@ -724,6 +746,7 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Options));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Reload));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -842,13 +865,27 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
 
 QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
 {
-    if (!m_pTabWidget->isEnabled())
+    if (m_pTabWidget)
         return 0;
     QWidget* pContainer = m_pTabWidget->widget(pIndex);
     if (!pContainer)
         return 0;
     QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
     return pBrowser;
+}
+
+QVector<UIVMLogPage*> UIVMLogViewerWidget::logPages()
+{
+    QVector<UIVMLogPage*> pages;
+    if (m_pTabWidget)
+        return pages;
+    for (int i = 0; i < m_pTabWidget->count(); ++i)
+    {
+        UIVMLogPage *pPage = logPage(i);
+        if (pPage)
+            pages << pPage;
+    }
+    return pages;
 }
 
 void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QString &strMachineName,
@@ -962,6 +999,7 @@ void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList
     }
     /* Remove all the tabs from tab widget, note that this does not delete tab widgets: */
     m_pTabWidget->clear();
+    QVector<UIVMLogPage*> pagesToRemove;
     /* Add tab widgets (log pages) back as long as machine id is not in machineList: */
     for (int i = 0; i < logPages.size(); ++i)
     {
@@ -970,12 +1008,24 @@ void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList
         const QUuid &id = logPages[i].first->machineId();
 
         if (machineList.contains(id))
-            continue;
-        m_pTabWidget->addTab(logPages[i].first, logPages[i].second);
+            pagesToRemove << logPages[i].first;
+        else
+            m_pTabWidget->addTab(logPages[i].first, logPages[i].second);
     }
+    /* Delete all the other pages: */
+    qDeleteAll(pagesToRemove.begin(), pagesToRemove.end());
     m_pTabWidget->blockSignals(false);
 }
 
+void UIVMLogViewerWidget::removeAllLogPages()
+{
+    if (!m_pTabWidget)
+        return;
+
+    QVector<UIVMLogPage*> pagesToRemove = logPages();
+    m_pTabWidget->clear();
+    qDeleteAll(pagesToRemove.begin(), pagesToRemove.end());
+}
 
 void UIVMLogViewerWidget::resetHighlighthing()
 {
