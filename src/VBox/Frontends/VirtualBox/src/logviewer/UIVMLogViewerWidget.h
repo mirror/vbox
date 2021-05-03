@@ -182,6 +182,8 @@ private:
     void createLogViewerPages(const QVector<QUuid> &machineList);
     /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */
     void removeLogViewerPages(const QVector<QUuid> &machineList);
+    /** We alternate tab colors between two `darker and lighter` one per machine. This function goes over tabs and
+      * sets tab data so tab our QTabBar extension can color tabs correctly. */
     void setTabColorPerMachine();
 
     /** Resets document (of the curent tab) and scrollbar highligthing */

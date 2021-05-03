@@ -62,7 +62,7 @@ const ULONG uAllowedLogSize = _256M;
 /*********************************************************************************************************************************
 *   UITabBar definition.                                                                                        *
 *********************************************************************************************************************************/
-
+/** A QTabBar extention to be able to override paintEvent for custom tab coloring. */
 class UITabBar : public QTabBar
 {
 
@@ -84,6 +84,7 @@ private:
 *   UITabWidget definition.                                                                                        *
 *********************************************************************************************************************************/
 
+/** A QITabWidget used only for setTabBar since it is protected. */
 class UITabWidget : public QITabWidget
 {
 
@@ -235,6 +236,7 @@ void UIVMLogViewerWidget::setMachines(const QVector<QUuid> &machineIDs)
     createLogViewerPages(newSelections);
     /* Remove the log pages/tabs of unselected machines from the tab widget: */
     removeLogViewerPages(unselectedMachines);
+    /* Assign color indexes to tabs based on machines. We use two alternating colors to indicate different machine logs. */
     setTabColorPerMachine();
     m_pTabWidget->show();
 }
@@ -253,6 +255,7 @@ void UIVMLogViewerWidget::setTabColorPerMachine()
         UIVMLogPage *pLogPagePrev = logPage(i - 1);
         if (!pLogPage || !pLogPagePrev)
             continue;
+        /* We the machine if the tab is different than that of previous alternate the color index. */
         if (pLogPage->machineId() != pLogPagePrev->machineId())
             ++iColorIndex;
         pTabBar->setTabData(i, iColorIndex % 2);
