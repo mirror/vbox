@@ -57,12 +57,8 @@
 # define FALSE 0
 #endif
 
-/* GCC complains that 'ISO C++ prohibits anonymous structs' when "-Wpedantic" is enabled. */
-#if RT_GNUC_PREREQ(4, 6)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wpedantic"
-#endif
 /* VMSVGA headers. */
+#include "vmsvga_headers_begin.h"
 #pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga3d_caps.h>
 #include <svga3d_reg.h>
@@ -70,9 +66,7 @@
 #include <svga_escape.h>
 #include <svga_overlay.h>
 #pragma pack()
-#if RT_GNUC_PREREQ(4, 6)
-# pragma GCC diagnostic pop
-#endif
+#include "vmsvga_headers_end.h"
 
 /**@def FLOAT_FMT_STR
  * Format string bits to go with FLOAT_FMT_ARGS. */

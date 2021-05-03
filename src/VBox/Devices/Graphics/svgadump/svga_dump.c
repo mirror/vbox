@@ -33,16 +33,11 @@
  */
 
 #include "svga_types.h"
-#if RT_GNUC_PREREQ(4, 6)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-#pragma pack(1)
+#include "vmsvga_headers_begin.h"
+#pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include "svga3d_reg.h"
 #pragma pack()
-#if RT_GNUC_PREREQ(4, 6)
-# pragma GCC diagnostic pop
-#endif
+#include "vmsvga_headers_end.h"
 
 #include "svga_dump.h"
 
