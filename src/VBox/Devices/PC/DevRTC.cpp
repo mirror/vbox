@@ -290,7 +290,7 @@ static void rtc_raise_irq(PPDMDEVINS pDevIns, PRTCSTATE pThis, uint32_t iLevel)
     {
         PDMDevHlpISASetIrq(pDevIns, pThis->irq, iLevel);
         if (iLevel)
-            STAM_COUNTER_INC(&pThis->StatRTCIrq);
+            STAM_REL_COUNTER_INC(&pThis->StatRTCIrq);
     }
 }
 
@@ -597,7 +597,7 @@ static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
     RT_NOREF2(hTimer, pvUser);
 
     rtc_timer_update(pDevIns, pThis, pThis->next_periodic_time);
-    STAM_COUNTER_INC(&pThis->StatRTCTimerCB);
+    STAM_REL_COUNTER_INC(&pThis->StatRTCTimerCB);
     pThis->cmos_data[RTC_REG_C] |= 0xc0;
 
     rtc_raise_irq(pDevIns, pThis, 1);
