@@ -1984,8 +1984,8 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
         rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx, &pStreamEx->Host.Cfg, &CfgHostAcq);
         if (RT_SUCCESS(rc))
         {
-            LogFunc(("[%s] Acquired host format:\n", pStreamEx->Core.szName,
-                     PDMAudioStrmCfgToString(&CfgHostAcq, szTmp, sizeof(szTmp)) ));
+            LogFunc(("[%s] Acquired host format: %s\n",
+                     pStreamEx->Core.szName, PDMAudioStrmCfgToString(&CfgHostAcq, szTmp, sizeof(szTmp)) ));
             if (true) /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Host.Cfg? */
             {
                 /*
