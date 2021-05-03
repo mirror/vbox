@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - The PIT IRQ Handler and associated data.
+ * BS3Kit - bs3-timers-1, 16-bit C code.
  */
 
 /*
- * Copyright (C) 2007-2020 Oracle Corporation
+ * Copyright (C) 2007-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,39 +28,38 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "bs3kit-template-header.h"
+#include <bs3kit.h>
 #include <iprt/asm-amd64-x86.h>
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_1000Hz_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_2000Hz_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_4000Hz_f16;
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if ARCH_BITS == 16
-/** Nano seconds (approx) since last the PIT timer was started. */
-uint64_t volatile   g_cBs3PitNs    = 0;
-/** Milliseconds seconds (very approx) since last the PIT timer was started. */
-uint64_t volatile   g_cBs3PitMs    = 0;
-/** Number of ticks since last the PIT timer was started.  */
-uint32_t volatile   g_cBs3PitTicks = 0;
-/** The current interval in nanon seconds.  */
-uint32_t            g_cBs3PitIntervalNs = 0;
-/** The current interval in milliseconds (approximately).
- * This is 0 if not yet started (used for checking the state internally). */
-uint16_t            g_cBs3PitIntervalMs = 0;
-/** The current PIT frequency (approximately).  0 if not yet started.  */
-uint16_t volatile   g_cBs3PitIntervalHz = 0;
-#endif
-
-
-BS3_DECL_NEAR_CALLBACK(void) BS3_CMN_NM(bs3PitIrqHandler)(PBS3TRAPFRAME pTrapFrame)
+static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
-    if (g_cBs3PitIntervalHz)
-    {
-        g_cBs3PitMs += g_cBs3PitIntervalMs;
-        g_cBs3PitNs += g_cBs3PitIntervalNs;
-        g_cBs3PitTicks++;
-    }
-    NOREF(pTrapFrame);
-    ASMOutU8(0x20, 0x20); /** @todo function! */
+    { "pit-100Hz",      bs3Timers1_Pit_100Hz_f16,  BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-1000Hz",     bs3Timers1_Pit_1000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-2000Hz",     bs3Timers1_Pit_2000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-4000Hz",     bs3Timers1_Pit_4000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+};
+
+
+BS3_DECL(void) Main_rm()
+{
+    Bs3InitAll_rm();
+    Bs3TestInit("bs3-timers-1");
+
+    Bs3TestDoModesByOne_rm(g_aModeByOneTests, RT_ELEMENTS(g_aModeByOneTests), 0);
+
+    Bs3TestTerm();
 }
 

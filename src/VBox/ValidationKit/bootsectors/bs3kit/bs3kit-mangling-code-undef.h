@@ -159,6 +159,7 @@
 #undef Bs3TestHostPrintf
 #undef Bs3TestHostPrintfV
 #undef Bs3TestInit
+#undef Bs3TestNow
 #undef Bs3TestPrintf
 #undef Bs3TestPrintfV
 #undef Bs3TestSkipped

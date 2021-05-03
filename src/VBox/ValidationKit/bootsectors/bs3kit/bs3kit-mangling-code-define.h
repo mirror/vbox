@@ -159,6 +159,7 @@
 #define Bs3TestHostPrintf BS3_CMN_MANGLER(Bs3TestHostPrintf)
 #define Bs3TestHostPrintfV BS3_CMN_MANGLER(Bs3TestHostPrintfV)
 #define Bs3TestInit BS3_CMN_MANGLER(Bs3TestInit)
+#define Bs3TestNow BS3_CMN_MANGLER(Bs3TestNow)
 #define Bs3TestPrintf BS3_CMN_MANGLER(Bs3TestPrintf)
 #define Bs3TestPrintfV BS3_CMN_MANGLER(Bs3TestPrintfV)
 #define Bs3TestSkipped BS3_CMN_MANGLER(Bs3TestSkipped)

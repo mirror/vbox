@@ -2458,19 +2458,22 @@ BS3_CMN_PROTO_STUB(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired));
  */
 BS3_CMN_PROTO_STUB(void, Bs3PitDisable,(void));
 
-/** Nano seconds (approx) since last the PIT timer was started. */
+/** Nanoseconds (approx) since last the PIT timer was started. */
 extern uint64_t volatile    g_cBs3PitNs;
 /** Milliseconds seconds (very approx) since last the PIT timer was started. */
 extern uint64_t volatile    g_cBs3PitMs;
 /** Number of ticks since last the PIT timer was started.  */
 extern uint32_t volatile    g_cBs3PitTicks;
-/** The current interval in nanon seconds.  */
+/** The current interval in nanoseconds.
+ * This is 0 if not yet started (cleared by Bs3PitDisable). */
 extern uint32_t             g_cBs3PitIntervalNs;
 /** The current interval in milliseconds (approximately).
- * This is 0 if not yet started (used for checking the state internally). */
-extern uint16_t volatile    g_cBs3PitIntervalMs;
-/** The current PIT frequency (approximately).  0 if not yet started.  */
-extern uint16_t             g_cBs3PitIntervalHz;
+ * This is 0 if not yet started (cleared by Bs3PitDisable). */
+extern uint16_t             g_cBs3PitIntervalMs;
+/** The current PIT frequency (approximately).
+ * 0 if not yet started (cleared by Bs3PitDisable; used for checking the
+ * state internally). */
+extern uint16_t volatile    g_cBs3PitIntervalHz;
 
 
 /**
@@ -3204,6 +3207,14 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSubDone,(void));
 BS3_CMN_PROTO_STUB(uint16_t, Bs3TestSubErrorCount,(void));
 
 /**
+ * Get nanosecond host timestamp.
+ *
+ * This only works when testing is enabled and will not work in VMs configured
+ * with a 286, 186 or 8086/8088 CPU profile.
+ */
+BS3_CMN_PROTO_STUB(uint64_t, Bs3TestNow,(void));
+
+/**
  * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
  *
  * @param   pszFormat   What to print, format string.  Explicit newline char.
@@ -3658,6 +3669,8 @@ typedef BS3TESTMODEBYONEENTRY const *PCBS3TESTMODEBYONEENTRY;
  * @{ */
 /** Only test modes that has paging enabled. */
 #define BS3TESTMODEBYONEENTRY_F_ONLY_PAGING     RT_BIT_32(0)
+/** Minimal mode selection. */
+#define BS3TESTMODEBYONEENTRY_F_MINIMAL         RT_BIT_32(1)
 /** @} */
 
 
