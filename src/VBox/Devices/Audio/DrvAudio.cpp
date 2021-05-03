@@ -893,7 +893,8 @@ static int drvAudioStreamAdjustConfig(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfgRe
 
 
 /**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamConfigHint}
+ * Worker thread function for drvAudioStreamConfigHint that's used when
+ * PDMAUDIOBACKEND_F_ASYNC_HINT is in effect.
  */
 static DECLCALLBACK(void) drvAudioStreamConfigHintWorker(PPDMIHOSTAUDIO pHostDrvAudio, PPDMAUDIOSTREAMCFG pCfg)
 {
