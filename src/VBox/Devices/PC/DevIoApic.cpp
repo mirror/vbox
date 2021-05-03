@@ -501,103 +501,109 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
      */
     uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
     if (!IOAPIC_RTE_IS_MASKED(u64Rte))
+    { /* likely */ }
+    else
+        return;
+
+    /* We cannot accept another level-triggered interrupt until remote IRR has been cleared. */
+    uint8_t const u8TriggerMode = IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte);
+    if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL)
     {
-        /* We cannot accept another level-triggered interrupt until remote IRR has been cleared. */
-        uint8_t const u8TriggerMode = IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte);
-        if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL)
+        uint8_t const u8RemoteIrr = IOAPIC_RTE_GET_REMOTE_IRR(u64Rte);
+        if (u8RemoteIrr)
         {
-            uint8_t const u8RemoteIrr = IOAPIC_RTE_GET_REMOTE_IRR(u64Rte);
-            if (u8RemoteIrr)
-            {
-                STAM_COUNTER_INC(&pThis->StatSuppressedLevelIntr);
-                return;
-            }
-        }
-
-        XAPICINTR ApicIntr;
-        RT_ZERO(ApicIntr);
-        ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
-        ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
-        ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
-        ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
-        ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
-        ApicIntr.u8TriggerMode  = u8TriggerMode;
-        ApicIntr.u8RedirHint    = 0;
-
-#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
-        /*
-         * The interrupt may need to be remapped (or discarded) if an IOMMU is present.
-         * For line-based interrupts we must use the southbridge I/O APIC's BDF as
-         * the origin of the interrupt, see @bugref{9654#c74}.
-         */
-        MSIMSG MsiOut;
-        MSIMSG MsiIn;
-        RT_ZERO(MsiOut);
-        RT_ZERO(MsiIn);
-        ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
-        int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
-        if (   rcRemap == VERR_IOMMU_NOT_PRESENT
-            || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
-            MsiOut = MsiIn;
-        else if (RT_SUCCESS(rcRemap))
-            STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
-        else
-        {
-            STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
+            STAM_COUNTER_INC(&pThis->StatSuppressedLevelIntr);
             return;
         }
+    }
 
-        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+    /** @todo We might be able to release the IOAPIC(PDM) lock here and re-acquire it
+     *        before setting the remote IRR bit below. The APIC and IOMMU should not
+     *        require the caller to hold the PDM lock. */
+
+    XAPICINTR ApicIntr;
+    RT_ZERO(ApicIntr);
+    ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
+    ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
+    ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
+    ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+    ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
+    ApicIntr.u8TriggerMode  = u8TriggerMode;
+    //ApicIntr.u8RedirHint    = 0;
+
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
+    /*
+     * The interrupt may need to be remapped (or discarded) if an IOMMU is present.
+     * For line-based interrupts we must use the southbridge I/O APIC's BDF as
+     * the origin of the interrupt, see @bugref{9654#c74}.
+     */
+    MSIMSG MsiOut;
+    MSIMSG MsiIn;
+    RT_ZERO(MsiOut);
+    RT_ZERO(MsiIn);
+    ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
+    int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
+    if (   rcRemap == VERR_IOMMU_NOT_PRESENT
+        || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
+        MsiOut = MsiIn;
+    else if (RT_SUCCESS(rcRemap))
+        STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
+    else
+    {
+        STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
+        return;
+    }
+
+    ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
 
 # ifdef RT_STRICT
-        if (RT_SUCCESS(rcRemap))
-        {
-            Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
-            Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
-        }
+    if (RT_SUCCESS(rcRemap))
+    {
+        Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
+        Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
+    }
 # endif
 #endif
 
-        uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
-        Log2(("IOAPIC: Signaling %s-triggered interrupt. Dest=%#x DestMode=%s Vector=%#x (%u)\n",
-              ApicIntr.u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE ? "edge" : "level", ApicIntr.u8Dest,
-              ApicIntr.u8DestMode == IOAPIC_RTE_DEST_MODE_PHYSICAL ? "physical" : "logical",
-              ApicIntr.u8Vector, ApicIntr.u8Vector));
+    uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
+    Log2(("IOAPIC: Signaling %s-triggered interrupt. Dest=%#x DestMode=%s Vector=%#x (%u)\n",
+          ApicIntr.u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE ? "edge" : "level", ApicIntr.u8Dest,
+          ApicIntr.u8DestMode == IOAPIC_RTE_DEST_MODE_PHYSICAL ? "physical" : "logical",
+          ApicIntr.u8Vector, ApicIntr.u8Vector));
 
-        /*
-         * Deliver to the local APIC via the system/3-wire-APIC bus.
-         */
-        int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
-                                                        ApicIntr.u8Dest,
-                                                        ApicIntr.u8DestMode,
-                                                        ApicIntr.u8DeliveryMode,
-                                                        ApicIntr.u8Vector,
-                                                        ApicIntr.u8Polarity,
-                                                        ApicIntr.u8TriggerMode,
-                                                        u32TagSrc);
-        /* Can't reschedule to R3. */
-        Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
+    /*
+     * Deliver to the local APIC via the system/3-wire-APIC bus.
+     */
+    int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
+                                                    ApicIntr.u8Dest,
+                                                    ApicIntr.u8DestMode,
+                                                    ApicIntr.u8DeliveryMode,
+                                                    ApicIntr.u8Vector,
+                                                    ApicIntr.u8Polarity,
+                                                    ApicIntr.u8TriggerMode,
+                                                    u32TagSrc);
+    /* Can't reschedule to R3. */
+    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
 #ifdef DEBUG_ramshankar
-        if (rc == VERR_APIC_INTR_DISCARDED)
-            AssertMsgFailed(("APIC: Interrupt discarded u8Vector=%#x (%u) u64Rte=%#RX64\n", u8Vector, u8Vector, u64Rte));
+    if (rc == VERR_APIC_INTR_DISCARDED)
+        AssertMsgFailed(("APIC: Interrupt discarded u8Vector=%#x (%u) u64Rte=%#RX64\n", u8Vector, u8Vector, u64Rte));
 #endif
 
-        /*
-         * For level-triggered interrupts, we set the remote IRR bit to indicate
-         * the local APIC has accepted the interrupt.
-         *
-         * For edge-triggered interrupts, we should not clear the IRR bit as it
-         * should remain intact to reflect the state of the interrupt line.
-         * The device will explicitly transition to inactive state via the
-         * ioapicSetIrq() callback.
-         */
-        if (   u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL
-            && rc == VINF_SUCCESS)
-        {
-            Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
-            pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
-            STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
-        }
+    /*
+     * For level-triggered interrupts, we set the remote IRR bit to indicate
+     * the local APIC has accepted the interrupt.
+     *
+     * For edge-triggered interrupts, we should not clear the IRR bit as it
+     * should remain intact to reflect the state of the interrupt line.
+     * The device will explicitly transition to inactive state via the
+     * ioapicSetIrq() callback.
+     */
+    if (   u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL
+        && rc == VINF_SUCCESS)
+    {
+        Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
+        pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
+        STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
     }
 }
 
