@@ -1057,7 +1057,10 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
  */
 static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
     uint32_t const uIcsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
     if (uIcsReg & VTD_BF_ICS_REG_IWC_MASK)
         return;
@@ -1071,7 +1074,6 @@ static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
         Msi.Addr.au32[1] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG);
         Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
 
-        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
         pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
         /* Clear interrupt pending bit. */
@@ -1402,11 +1404,54 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
  */
 static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
-    RT_NOREF3(idDevice, pMsiIn, pMsiOut);
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap)); NOREF(pThis);
+    /* Validate. */
+    Assert(pDevIns);
+    Assert(pMsiIn);
+    Assert(pMsiOut);
+    RT_NOREF1(idDevice);
 
-    return VERR_NOT_IMPLEMENTED;
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+
+    /* Lock and read all registers required for interrupt remapping up-front. */
+    DMAR_LOCK(pDevIns, pThisCC);
+    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint64_t const uIrtaReg = pThis->uIrtaReg;
+    DMAR_UNLOCK(pDevIns, pThisCC);
+
+    if (uGstsReg & VTD_BF_GSTS_REG_IRES_MASK)
+    {
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
+
+        /*
+         * Handle interrupts in compatibility format.
+         */
+        uint8_t const fIntrFormat = VTD_MSI_ADDR_GET_INTR_FORMAT(pMsiIn->Addr.u64);
+        if (fIntrFormat == VTD_INTR_FORMAT_COMPAT)
+        {
+            /* If Extended Interrupt Mode (EIM) is enabled or compatibility format interrupts (CFI) are  disabled,
+               block the interrupt. */
+            if (    (uIrtaReg & VTD_BF_IRTA_REG_EIME_MASK)
+                || !(uGstsReg & VTD_BF_GSTS_REG_CFIS_MASK))
+                return VERR_IOMMU_INTR_REMAP_DENIED;
+
+            /* Interrupt isn't subject to remapping, pass-through the interrupt. */
+            *pMsiOut = *pMsiIn;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Handle interrupts in remappable format.
+         */
+        /** @todo index IRTA. */
+    }
+    else
+    {
+        /* If interrupt-remapping isn't enabled, all interrupts are pass-through.  */
+        *pMsiOut = *pMsiIn;
+    }
+
+    return VINF_SUCCESS;
 }
 
 

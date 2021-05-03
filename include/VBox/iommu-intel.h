@@ -2204,6 +2204,49 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
+/** Gets the interrupt format from an MSI address. */
+#define VTD_MSI_ADDR_GET_INTR_FORMAT(a_uMsiAddr)                ((a_uMsiAddr) & RT_BIT_64(4))
+/** Interrupt format: Compatibility. */
+#define VTD_INTR_FORMAT_COMPAT                                  0
+/** Interrupt format: Remappable. */
+#define VTD_INTR_FORMAT_REMAPPABLE                              1
+
+
+/** @name Remappable Format Interrupt Request.
+ * In accordance with the Intel spec.
+ * @{ */
+/** IGN: Ignored (bits 1:0). */
+#define VTD_BF_REMAPPABLE_IR_ADDR_IGN_1_0_SHIFT                 0
+#define VTD_BF_REMAPPABLE_IR_ADDR_IGN_1_0_MASK                  UINT32_C(0x00000003)
+/** Handle (Hi). */
+#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_HI_SHIFT               2
+#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_HI_MASK                UINT32_C(0x00000004)
+/** SHV: Subhandle Valid. */
+#define VTD_BF_REMAPPABLE_IR_ADDR_SHV_SHIFT                     3
+#define VTD_BF_REMAPPABLE_IR_ADDR_SHV_MASK                      UINT32_C(0x00000008)
+/** Interrupt format. */
+#define VTD_BF_REMAPPABLE_IR_ADDR_INTR_FMT_SHIFT                4
+#define VTD_BF_REMAPPABLE_IR_ADDR_INTR_FMT_MASK                 UINT32_C(0x00000010)
+/** Handle (Lo). */
+#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_LO_SHIFT               5
+#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_LO_MASK                UINT32_C(0x000fffe0)
+/** Address. */
+#define VTD_BF_REMAPPABLE_IR_ADDR_ADDR_SHIFT                    20
+#define VTD_BF_REMAPPABLE_IR_ADDR_ADDR_MASK                     UINT32_C(0xfff00000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_IR_ADDR_, UINT32_C(0), UINT32_MAX,
+                            (IGN_1_0, HANDLE_HI, SHV, INTR_FMT, HANDLE_LO, ADDR));
+
+/** Subhandle. */
+#define VTD_BF_REMAPPABLE_IR_DATA_SUBHANDLE_SHIFT               0
+#define VTD_BF_REMAPPABLE_IR_DATA_SUBHANDLE_MASK                UINT32_C(0x0000ffff)
+/** R: Reserved (bits 31:16). */
+#define VTD_BF_REMAPPABLE_IR_DATA_RSVD_31_16_SHIFT              16
+#define VTD_BF_REMAPPABLE_IR_DATA_RSVD_31_16_MASK               UINT32_C(0xffff0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_IR_DATA_, UINT32_C(0), UINT32_MAX,
+                            (SUBHANDLE, RSVD_31_16));
+/** @} */
+
+
 /** @name ACPI_DMAR_F_XXX: DMA Remapping Reporting Structure Flags.
  * In accordance with the Intel spec.
  * @{ */
