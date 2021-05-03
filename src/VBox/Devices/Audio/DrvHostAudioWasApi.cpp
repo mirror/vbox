@@ -525,6 +525,10 @@ private:
         RT_NOREF(pszCaller, pwszDeviceId);
 
         RTCritSectEnter(&m_CritSect);
+
+        /*
+         * Update our internal device reference.
+         */
         if (m_pDrvWas)
         {
             if (fOutput)
@@ -548,6 +552,30 @@ private:
         }
         else if (pIDevice)
             pIDevice->Release();
+
+        /*
+         * Tell DrvAudio that the device has changed for one of the directions.
+         *
+         * We have to exit the critsect when doing so, or we'll create a locking
+         * order violation.  So, try make sure the VM won't be destroyed while
+         * till DrvAudio have entered its critical section...
+         */
+        if (m_pDrvWas)
+        {
+            PPDMIHOSTAUDIOPORT const pIHostAudioPort = m_pDrvWas->pIHostAudioPort;
+            if (pIHostAudioPort)
+            {
+                VMSTATE const enmVmState = PDMDrvHlpVMState(m_pDrvWas->pDrvIns);
+                if (enmVmState < VMSTATE_POWERING_OFF)
+                {
+                    RTCritSectLeave(&m_CritSect);
+                    pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, fOutput ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN, NULL);
+                    return;
+                }
+                LogFlowFunc(("Ignoring change: enmVmState=%d\n", enmVmState));
+            }
+        }
+
         RTCritSectLeave(&m_CritSect);
     }
 };
@@ -2031,7 +2059,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
 static DECLCALLBACK(int) drvHostAudioWasHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+                                                         PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
      *        replacing it with individual StreamXxxx methods.  That would save us
@@ -2767,7 +2795,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->pNotifyClient->lockLeave();
 
     /*
-     * We need a timer and a R/W critical section for draining streams.
+     * We need a timer for draining streams.
      */
     rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvHostWasDrainStopTimer, NULL /*pvUser*/, 0 /*fFlags*/,
                                 "WasAPI drain", &pThis->hDrainTimer);
