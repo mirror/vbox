@@ -53,11 +53,6 @@
  * @{
  */
 
-/* Fix later: */
-DECLINLINE(bool) PDMAudioPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
-DECLINLINE(bool) PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2);
-
-
 
 /**
  * Gets the name of an audio direction enum value.
@@ -244,273 +239,6 @@ DECLINLINE(const char *) PDMAudioFormatGetName(PDMAUDIOFMT enmFmt)
     AssertMsgFailedReturn(("Bogus audio format %d\n", enmFmt), "bad");
 }
 
-/**
- * Initializes a stream configuration from PCM properties.
- *
- * @returns VBox status code.
- * @param   pCfg        The stream configuration to initialize.
- * @param   pProps      The PCM properties to use.
- */
-DECLINLINE(int) PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
-{
-    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
-
-    RT_ZERO(*pCfg);
-    pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
-
-    memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Checks whether stream configuration matches the given PCM properties.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pCfg    The stream configuration.
- * @param   pProps  The PCM properties to match with.
- */
-DECLINLINE(bool) PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
-{
-    AssertPtrReturn(pCfg, false);
-    return PDMAudioPropsAreEqual(pProps, &pCfg->Props);
-}
-
-/**
- * Checks whether two stream configuration matches.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pCfg1   The first stream configuration.
- * @param   pCfg2   The second stream configuration.
- */
-DECLINLINE(bool) PDMAudioStrmCfgEquals(PCPDMAUDIOSTREAMCFG pCfg1, PCPDMAUDIOSTREAMCFG pCfg2)
-{
-    if (!pCfg1 || !pCfg2)
-        return false;
-    if (pCfg1 == pCfg2)
-        return pCfg1 != NULL;
-    if (PDMAudioPropsAreEqual(&pCfg1->Props, &pCfg2->Props))
-        return pCfg1->enmDir    == pCfg2->enmDir
-            && pCfg1->u.enmDst  == pCfg2->u.enmDst
-            && pCfg1->enmLayout == pCfg2->enmLayout
-            && pCfg1->Device.cMsSchedulingHint == pCfg2->Device.cMsSchedulingHint
-            && pCfg1->Backend.cFramesPeriod == pCfg2->Backend.cFramesPeriod
-            && pCfg1->Backend.cFramesBufferSize == pCfg2->Backend.cFramesBufferSize
-            && pCfg1->Backend.cFramesPreBuffering == pCfg2->Backend.cFramesPreBuffering
-            && strcmp(pCfg1->szName, pCfg2->szName) == 0;
-    return false;
-}
-
-/**
- * Frees an audio stream allocated by PDMAudioStrmCfgDup().
- *
- * @param   pCfg    The stream configuration to free.
- */
-DECLINLINE(void) PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
-{
-    if (pCfg)
-        RTMemFree(pCfg);
-}
-
-/**
- * Checks whether the given stream configuration is valid or not.
- *
- * @returns true/false accordingly.
- * @param   pCfg    Stream configuration to check.
- *
- * @remarks This just performs a generic check of value ranges.  Further, it
- *          will assert if the input is invalid.
- *
- * @sa      PDMAudioPropsAreValid
- */
-DECLINLINE(bool) PDMAudioStrmCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pCfg, false);
-    AssertMsgReturn(pCfg->enmDir    >= PDMAUDIODIR_UNKNOWN          && pCfg->enmDir    < PDMAUDIODIR_END,
-                    ("%d\n", pCfg->enmDir), false);
-    AssertMsgReturn(pCfg->enmLayout >= PDMAUDIOSTREAMLAYOUT_UNKNOWN && pCfg->enmLayout < PDMAUDIOSTREAMLAYOUT_END,
-                    ("%d\n", pCfg->enmLayout), false);
-    return PDMAudioPropsAreValid(&pCfg->Props);
-}
-
-/**
- * Copies one stream configuration to another.
- *
- * @returns VBox status code.
- * @param   pDstCfg     The destination stream configuration.
- * @param   pSrcCfg     The source stream configuration.
- */
-DECLINLINE(int) PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
-{
-    AssertPtrReturn(pDstCfg, VERR_INVALID_POINTER);
-    AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
-
-    /* This used to be VBOX_STRICT only and return VERR_INVALID_PARAMETER, but
-       that's making release builds work differently from debug & strict builds,
-       which is a terrible idea: */
-    Assert(PDMAudioStrmCfgIsValid(pSrcCfg));
-
-    memcpy(pDstCfg, pSrcCfg, sizeof(PDMAUDIOSTREAMCFG));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Duplicates an audio stream configuration.
- *
- * @returns Pointer to duplicate on success, NULL on failure.  Must be freed
- *          using PDMAudioStrmCfgFree().
- *
- * @param   pCfg        The audio stream configuration to duplicate.
- */
-DECLINLINE(PPDMAUDIOSTREAMCFG) PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pCfg, NULL);
-
-    PPDMAUDIOSTREAMCFG pDst = (PPDMAUDIOSTREAMCFG)RTMemAllocZ(sizeof(PDMAUDIOSTREAMCFG));
-    if (pDst)
-    {
-        int rc = PDMAudioStrmCfgCopy(pDst, pCfg);
-        if (RT_SUCCESS(rc))
-            return pDst;
-
-        PDMAudioStrmCfgFree(pDst);
-    }
-    return NULL;
-}
-
-/**
- * Logs an audio stream configuration.
- *
- * @param   pCfg        The stream configuration to log.
- */
-DECLINLINE(void) PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
-{
-    if (pCfg)
-        LogFunc(("szName=%s enmDir=%RU32 uHz=%RU32 cBits=%RU8%s cChannels=%RU8\n", pCfg->szName, pCfg->enmDir,
-                 pCfg->Props.uHz, pCfg->Props.cbSampleX * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannelsX));
-}
-
-/**
- * Converts a stream command enum value to a string.
- *
- * @returns Pointer to read-only stream command name on success,
- *          "bad" if invalid command value.
- * @param   enmCmd      The stream command to name.
- */
-DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
-{
-    switch (enmCmd)
-    {
-        case PDMAUDIOSTREAMCMD_INVALID: return "Invalid";
-        case PDMAUDIOSTREAMCMD_ENABLE:  return "Enable";
-        case PDMAUDIOSTREAMCMD_DISABLE: return "Disable";
-        case PDMAUDIOSTREAMCMD_PAUSE:   return "Pause";
-        case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
-        case PDMAUDIOSTREAMCMD_DRAIN:   return "Drain";
-        case PDMAUDIOSTREAMCMD_END:
-        case PDMAUDIOSTREAMCMD_32BIT_HACK:
-            break;
-        /* no default! */
-    }
-    AssertMsgFailedReturn(("Invalid stream command %d\n", enmCmd), "bad");
-}
-
-/**
- * Checks if the stream status is one that can be read from.
- *
- * @returns @c true if ready to be read from, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanRead)!
- */
-DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is one that can be read from.
- *
- * @returns @c true if ready to be read from, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Only for backend statuses.
- */
-DECLINLINE(bool) PDMAudioStrmStatusBackendCanRead(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_NEED_REINIT ))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is one that can be written to.
- *
- * @returns @c true if ready to be written to, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanWrite)!
- */
-DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE
-                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is one that can be written to, backend edition.
- *
- * @returns @c true if ready to be written to, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Only for backend statuses.
- */
-DECLINLINE(bool) PDMAudioStrmStatusBackendCanWrite(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is a read-to-operate one.
- *
- * @returns @c true if ready to operate, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Not for backend statuses!
- */
-DECLINLINE(bool) PDMAudioStrmStatusIsReady(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
 
 
 /*********************************************************************************************************************************
@@ -1172,6 +900,305 @@ DECLINLINE(char *) PDMAudioPropsToString(PCPDMAUDIOPCMPROPS pProps, char *pszDst
     return pszDst;
 }
 
+
+/*********************************************************************************************************************************
+*   Stream Configuration Helpers                                                                                                 *
+*********************************************************************************************************************************/
+
+/**
+ * Initializes a stream configuration from PCM properties.
+ *
+ * @returns VBox status code.
+ * @param   pCfg        The stream configuration to initialize.
+ * @param   pProps      The PCM properties to use.
+ */
+DECLINLINE(int) PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+
+    RT_ZERO(*pCfg);
+    pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
+
+    memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Checks whether stream configuration matches the given PCM properties.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pCfg    The stream configuration.
+ * @param   pProps  The PCM properties to match with.
+ */
+DECLINLINE(bool) PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pCfg, false);
+    return PDMAudioPropsAreEqual(pProps, &pCfg->Props);
+}
+
+/**
+ * Checks whether two stream configuration matches.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pCfg1   The first stream configuration.
+ * @param   pCfg2   The second stream configuration.
+ */
+DECLINLINE(bool) PDMAudioStrmCfgEquals(PCPDMAUDIOSTREAMCFG pCfg1, PCPDMAUDIOSTREAMCFG pCfg2)
+{
+    if (!pCfg1 || !pCfg2)
+        return false;
+    if (pCfg1 == pCfg2)
+        return pCfg1 != NULL;
+    if (PDMAudioPropsAreEqual(&pCfg1->Props, &pCfg2->Props))
+        return pCfg1->enmDir    == pCfg2->enmDir
+            && pCfg1->u.enmDst  == pCfg2->u.enmDst
+            && pCfg1->enmLayout == pCfg2->enmLayout
+            && pCfg1->Device.cMsSchedulingHint == pCfg2->Device.cMsSchedulingHint
+            && pCfg1->Backend.cFramesPeriod == pCfg2->Backend.cFramesPeriod
+            && pCfg1->Backend.cFramesBufferSize == pCfg2->Backend.cFramesBufferSize
+            && pCfg1->Backend.cFramesPreBuffering == pCfg2->Backend.cFramesPreBuffering
+            && strcmp(pCfg1->szName, pCfg2->szName) == 0;
+    return false;
+}
+
+/**
+ * Frees an audio stream allocated by PDMAudioStrmCfgDup().
+ *
+ * @param   pCfg    The stream configuration to free.
+ */
+DECLINLINE(void) PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
+{
+    if (pCfg)
+        RTMemFree(pCfg);
+}
+
+/**
+ * Checks whether the given stream configuration is valid or not.
+ *
+ * @returns true/false accordingly.
+ * @param   pCfg    Stream configuration to check.
+ *
+ * @remarks This just performs a generic check of value ranges.  Further, it
+ *          will assert if the input is invalid.
+ *
+ * @sa      PDMAudioPropsAreValid
+ */
+DECLINLINE(bool) PDMAudioStrmCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pCfg, false);
+    AssertMsgReturn(pCfg->enmDir    >= PDMAUDIODIR_UNKNOWN          && pCfg->enmDir    < PDMAUDIODIR_END,
+                    ("%d\n", pCfg->enmDir), false);
+    AssertMsgReturn(pCfg->enmLayout >= PDMAUDIOSTREAMLAYOUT_UNKNOWN && pCfg->enmLayout < PDMAUDIOSTREAMLAYOUT_END,
+                    ("%d\n", pCfg->enmLayout), false);
+    return PDMAudioPropsAreValid(&pCfg->Props);
+}
+
+/**
+ * Copies one stream configuration to another.
+ *
+ * @returns VBox status code.
+ * @param   pDstCfg     The destination stream configuration.
+ * @param   pSrcCfg     The source stream configuration.
+ */
+DECLINLINE(int) PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
+{
+    AssertPtrReturn(pDstCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
+
+    /* This used to be VBOX_STRICT only and return VERR_INVALID_PARAMETER, but
+       that's making release builds work differently from debug & strict builds,
+       which is a terrible idea: */
+    Assert(PDMAudioStrmCfgIsValid(pSrcCfg));
+
+    memcpy(pDstCfg, pSrcCfg, sizeof(PDMAUDIOSTREAMCFG));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Duplicates an audio stream configuration.
+ *
+ * @returns Pointer to duplicate on success, NULL on failure.  Must be freed
+ *          using PDMAudioStrmCfgFree().
+ *
+ * @param   pCfg        The audio stream configuration to duplicate.
+ */
+DECLINLINE(PPDMAUDIOSTREAMCFG) PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pCfg, NULL);
+
+    PPDMAUDIOSTREAMCFG pDst = (PPDMAUDIOSTREAMCFG)RTMemAllocZ(sizeof(PDMAUDIOSTREAMCFG));
+    if (pDst)
+    {
+        int rc = PDMAudioStrmCfgCopy(pDst, pCfg);
+        if (RT_SUCCESS(rc))
+            return pDst;
+
+        PDMAudioStrmCfgFree(pDst);
+    }
+    return NULL;
+}
+
+/**
+ * Logs an audio stream configuration.
+ *
+ * @param   pCfg        The stream configuration to log.
+ */
+DECLINLINE(void) PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
+{
+    if (pCfg)
+        LogFunc(("szName=%s enmDir=%RU32 uHz=%RU32 cBits=%RU8%s cChannels=%RU8\n", pCfg->szName, pCfg->enmDir,
+                 pCfg->Props.uHz, pCfg->Props.cbSampleX * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannelsX));
+}
+
+/**
+ * Converts a stream command enum value to a string.
+ *
+ * @returns Pointer to read-only stream command name on success,
+ *          "bad" if invalid command value.
+ * @param   enmCmd      The stream command to name.
+ */
+DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
+{
+    switch (enmCmd)
+    {
+        case PDMAUDIOSTREAMCMD_INVALID: return "Invalid";
+        case PDMAUDIOSTREAMCMD_ENABLE:  return "Enable";
+        case PDMAUDIOSTREAMCMD_DISABLE: return "Disable";
+        case PDMAUDIOSTREAMCMD_PAUSE:   return "Pause";
+        case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
+        case PDMAUDIOSTREAMCMD_DRAIN:   return "Drain";
+        case PDMAUDIOSTREAMCMD_END:
+        case PDMAUDIOSTREAMCMD_32BIT_HACK:
+            break;
+        /* no default! */
+    }
+    AssertMsgFailedReturn(("Invalid stream command %d\n", enmCmd), "bad");
+}
+
+/** Max necessary buffer space for PDMAudioStrmCfgToString  */
+#define PDMAUDIOSTRMCFGTOSTRING_MAX \
+    sizeof("'01234567890123456789012345678901234567890123456789012345678901234' Unknown 16ch S64 4294967296Hz swap raw")
+
+/**
+ * Formats an audio stream configuration.
+ *
+ * @param   pCfg        The stream configuration to stringify.
+ * @param   pszDst      The destination buffer.
+ * @param   cbDst       The size of the destination buffer.  Recommend this be
+ *                      at least PDMAUDIOSTRMCFGTOSTRING_MAX bytes.
+ */
+DECLINLINE(const char *) PDMAudioStrmCfgToString(PCPDMAUDIOSTREAMCFG pCfg, char *pszDst, size_t cbDst)
+{
+    RTStrPrintf(pszDst, cbDst,
+                "'%s' %s %uch %c%u %RU32Hz%s%s",
+                pCfg->szName, PDMAudioDirGetName(pCfg->enmDir), PDMAudioPropsChannels(&pCfg->Props),
+                PDMAudioPropsIsSigned(&pCfg->Props) ? 'S' : 'U', PDMAudioPropsSampleBits(&pCfg->Props),
+                PDMAudioPropsHz(&pCfg->Props), pCfg->Props.fSwapEndian ? " swap" : "", pCfg->Props.fRaw ? " raw" : "");
+    return pszDst;
+}
+
+
+/*********************************************************************************************************************************
+*   Stream Status Helpers                                                                                                        *
+*********************************************************************************************************************************/
+
+/**
+ * Checks if the stream status is one that can be read from.
+ *
+ * @returns @c true if ready to be read from, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanRead)!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is one that can be read from.
+ *
+ * @returns @c true if ready to be read from, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Only for backend statuses.
+ */
+DECLINLINE(bool) PDMAudioStrmStatusBackendCanRead(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT ))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is one that can be written to.
+ *
+ * @returns @c true if ready to be written to, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanWrite)!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is one that can be written to, backend edition.
+ *
+ * @returns @c true if ready to be written to, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Only for backend statuses.
+ */
+DECLINLINE(bool) PDMAudioStrmStatusBackendCanWrite(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is a read-to-operate one.
+ *
+ * @returns @c true if ready to operate, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusIsReady(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
 
 
 /** @} */
