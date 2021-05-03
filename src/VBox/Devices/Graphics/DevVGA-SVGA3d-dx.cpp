@@ -100,6 +100,8 @@ int vmsvga3dDXDefineContext(PVGASTATECC pThisCC, uint32_t cid)
 
     pDXContext = p3dState->papDXContexts[cid];
     memset(pDXContext, 0, sizeof(*pDXContext));
+    /* 0xFFFFFFFF (SVGA_ID_INVALID) is a better initial value than 0 for most of svgaDXContext fields. */
+    memset(&pDXContext->svgaDXContext, 0xFF, sizeof(pDXContext->svgaDXContext));
     pDXContext->cid = cid;
 
     /* Init the backend specific data. */
@@ -201,6 +203,14 @@ int vmsvga3dDXSetSingleConstantBuffer(PVGASTATECC pThisCC, uint32_t idDXContext,
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetSingleConstantBuffer(pThisCC, pDXContext, pCmd->slot, pCmd->type, pCmd->sid, pCmd->offsetInBytes, pCmd->sizeInBytes);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const idxShaderState = pCmd->type - SVGA3D_SHADERTYPE_MIN;
+        SVGA3dConstantBufferBinding *pCBB = &pDXContext->svgaDXContext.shaderState[idxShaderState].constantBuffers[pCmd->slot];
+        pCBB->sid           = pCmd->sid;
+        pCBB->offsetInBytes = pCmd->offsetInBytes;
+        pCBB->sizeInBytes   = pCmd->sizeInBytes;
+    }
     return rc;
 }
 
@@ -294,6 +304,20 @@ int vmsvga3dDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDraw co
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXDraw(pThisCC, pDXContext, pCmd->vertexCount, pCmd->startVertexLocation);
+#ifdef DUMP_BITMAPS
+    SVGACOTableDXRTViewEntry *pRTViewEntry = &pDXContext->cot.paRTView[pDXContext->svgaDXContext.renderState.renderTargetViewIds[0]];
+    SVGA3dSurfaceImageId image;
+    image.sid = pRTViewEntry->sid;
+    image.face = 0;
+    image.mipmap = 0;
+    VMSVGA3D_MAPPED_SURFACE map;
+    int rc2 = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, idDXContext, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+    if (RT_SUCCESS(rc2))
+    {
+        vmsvga3dMapWriteBmpFile(&map, "rt-");
+        pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, &image, &map, /* fWritten =  */ false);
+    }
+#endif
     return rc;
 }
 
@@ -421,6 +445,12 @@ int vmsvga3dDXSetIndexBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetIndexBuffer(pThisCC, pDXContext, pCmd->sid, pCmd->format, pCmd->offset);
+    if (RT_SUCCESS(rc))
+    {
+        pDXContext->svgaDXContext.inputAssembly.indexBufferSid = pCmd->sid;
+        pDXContext->svgaDXContext.inputAssembly.indexBufferOffset = pCmd->offset;
+        pDXContext->svgaDXContext.inputAssembly.indexBufferFormat = pCmd->format;
+    }
     return rc;
 }
 
@@ -440,6 +470,8 @@ int vmsvga3dDXSetTopology(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dPrimi
     ASSERT_GUEST_RETURN(topology >= SVGA3D_PRIMITIVE_MIN && topology < SVGA3D_PRIMITIVE_MAX, VERR_INVALID_PARAMETER);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetTopology(pThisCC, pDXContext, topology);
+    if (RT_SUCCESS(rc))
+        pDXContext->svgaDXContext.inputAssembly.topology = topology;
     return rc;
 }
 
@@ -456,19 +488,21 @@ int vmsvga3dDXSetRenderTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
+    ASSERT_GUEST_RETURN(   depthStencilViewId < pDXContext->cot.cDSView
+                        || depthStencilViewId == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(cRenderTargetViewId < SVGA3D_MAX_RENDER_TARGETS, VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_RETURN(depthStencilViewId < pDXContext->cot.cDSView || depthStencilViewId == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
     for (uint32_t i = 0; i < cRenderTargetViewId; ++i)
         ASSERT_GUEST_RETURN(   paRenderTargetViewId[i] < pDXContext->cot.cRTView
                             || paRenderTargetViewId[i] == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetRenderTargets(pThisCC, pDXContext, depthStencilViewId, cRenderTargetViewId, paRenderTargetViewId);
-    /// @todo if (RT_SUCCESS(rc))
-    //{
-    //    for (uint32_t i = 0; i < cRenderTargetViewId; ++i)
-    //        pDXContext->svgaDXContext.renderState.renderTargetViewIds[i] = paRenderTargetViewId[i];
-    //}
+    if (RT_SUCCESS(rc))
+    {
+        pDXContext->svgaDXContext.renderState.depthStencilViewId = depthStencilViewId;
+        for (uint32_t i = 0; i < cRenderTargetViewId; ++i)
+            pDXContext->svgaDXContext.renderState.renderTargetViewIds[i] = paRenderTargetViewId[i];
+    }
     return rc;
 }
 

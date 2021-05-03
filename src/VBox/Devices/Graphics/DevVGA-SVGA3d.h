@@ -37,6 +37,8 @@
 #define SVGA3D_MAX_LIGHTS                       32
 /** Arbitrary upper limit; 2GB enough for 32768x16384*4. */
 #define SVGA3D_MAX_SURFACE_MEM_SIZE             0x80000000
+/** Arbitrary upper limit. [0,15] is enough for 2^15=32768x32768. */
+#define SVGA3D_MAX_MIP_LEVELS                   16
 
 
 /**@def FLOAT_FMT_STR
@@ -66,6 +68,8 @@ typedef struct VMSVGA3D_MAPPED_SURFACE
     void *pvData;
 } VMSVGA3D_MAPPED_SURFACE;
 
+/* Write render targets to bitmaps. */
+//#define DUMP_BITMAPS
 #ifdef DUMP_BITMAPS
 void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix);
 #endif
@@ -278,7 +282,7 @@ typedef struct
 #define VMSVGA3D_BACKEND_INTERFACE_NAME_MAP "MAP"
 typedef struct
 {
-    DECLCALLBACKMEMBER(int, pfnSurfaceMap,   (PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap));
+    DECLCALLBACKMEMBER(int, pfnSurfaceMap,   (PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap));
     DECLCALLBACKMEMBER(int, pfnSurfaceUnmap, (PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten));
 } VMSVGA3DBACKENDFUNCSMAP;
 

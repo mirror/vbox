@@ -329,6 +329,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    VBoxDD_SOURCES       += \
        Graphics/DevVGA-SVGA3d-dx.cpp \
        Graphics/DevVGA-SVGA3d-dx-shader.cpp
+   VBoxDD_SOURCES       += \
+       Graphics/svgadump/svga_dump.c
   endif
   if  "$(KBUILD_TARGET)" == "win" && !defined(VBOX_WITH_VMSVGA3D_USE_OPENGL)
    ifdef VBOX_WITH_VMSVGA3D_DX

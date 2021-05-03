@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
+#include <VBox/AssertGuest.h>
 #include <VBox/vmm/pdmdev.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
@@ -66,8 +67,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
              sid, surfaceFlags, vmsvgaLookupEnum((int)format, &g_SVGA3dSurfaceFormat2String), format, multisampleCount, autogenFilter,
              numMipLevels, pMipLevel0Size->width, pMipLevel0Size->height, pMipLevel0Size->depth));
 
-    AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
-    AssertReturn(numMipLevels >= 1, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(numMipLevels >= 1 && numMipLevels < SVGA3D_MAX_MIP_LEVELS, VERR_INVALID_PARAMETER);
 
     if (sid >= pState->cSurfaces)
     {
@@ -303,14 +304,53 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
     vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif
 
-    LogFunc(("surface hint(s):%s%s%s%s%s%s\n",
-            (surfaceFlags & SVGA3D_SURFACE_HINT_INDEXBUFFER)  ? " SVGA3D_SURFACE_HINT_INDEXBUFFER"  : "",
-            (surfaceFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER) ? " SVGA3D_SURFACE_HINT_VERTEXBUFFER"  : "",
-            (surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE)      ? " SVGA3D_SURFACE_HINT_TEXTURE"  : "",
-            (surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL) ? " SVGA3D_SURFACE_HINT_DEPTHSTENCIL"  : "",
-            (surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET) ? " SVGA3D_SURFACE_HINT_RENDERTARGET"  : "",
-            (surfaceFlags & SVGA3D_SURFACE_CUBEMAP)           ? " SVGA3D_SURFACE_CUBEMAP"  : ""
+#ifdef LOG_ENABLED
+    SVGA3dSurfaceAllFlags const f = surfaceFlags;
+    LogFunc(("surface flags:%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s 0x%RX64\n",
+            (f & SVGA3D_SURFACE_CUBEMAP)              ? " CUBEMAP"  : "",
+            (f & SVGA3D_SURFACE_HINT_STATIC)          ? " HINT_STATIC"  : "",
+            (f & SVGA3D_SURFACE_HINT_DYNAMIC)         ? " HINT_DYNAMIC"  : "",
+            (f & SVGA3D_SURFACE_HINT_INDEXBUFFER)     ? " HINT_INDEXBUFFER"  : "",
+            (f & SVGA3D_SURFACE_HINT_VERTEXBUFFER)    ? " HINT_VERTEXBUFFER"  : "",
+            (f & SVGA3D_SURFACE_HINT_TEXTURE)         ? " HINT_TEXTURE"  : "",
+            (f & SVGA3D_SURFACE_HINT_RENDERTARGET)    ? " HINT_RENDERTARGET"  : "",
+            (f & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)    ? " HINT_DEPTHSTENCIL"  : "",
+            (f & SVGA3D_SURFACE_HINT_WRITEONLY)       ? " HINT_WRITEONLY"  : "",
+            (f & SVGA3D_SURFACE_DEAD2)                ? " DEAD2"  : "",
+            (f & SVGA3D_SURFACE_AUTOGENMIPMAPS)       ? " AUTOGENMIPMAPS"  : "",
+            (f & SVGA3D_SURFACE_DEAD1)                ? " DEAD1"  : "",
+            (f & SVGA3D_SURFACE_MOB_PITCH)            ? " MOB_PITCH"  : "",
+            (f & SVGA3D_SURFACE_INACTIVE)             ? " INACTIVE"  : "",
+            (f & SVGA3D_SURFACE_HINT_RT_LOCKABLE)     ? " HINT_RT_LOCKABLE"  : "",
+            (f & SVGA3D_SURFACE_VOLUME)               ? " VOLUME"  : "",
+            (f & SVGA3D_SURFACE_SCREENTARGET)         ? " SCREENTARGET"  : "",
+            (f & SVGA3D_SURFACE_ALIGN16)              ? " ALIGN16"  : "",
+            (f & SVGA3D_SURFACE_1D)                   ? " 1D"  : "",
+            (f & SVGA3D_SURFACE_ARRAY)                ? " ARRAY"  : "",
+            (f & SVGA3D_SURFACE_BIND_VERTEX_BUFFER)   ? " BIND_VERTEX_BUFFER"  : "",
+            (f & SVGA3D_SURFACE_BIND_INDEX_BUFFER)    ? " BIND_INDEX_BUFFER"  : "",
+            (f & SVGA3D_SURFACE_BIND_CONSTANT_BUFFER) ? " BIND_CONSTANT_BUFFER"  : "",
+            (f & SVGA3D_SURFACE_BIND_SHADER_RESOURCE) ? " BIND_SHADER_RESOURCE"  : "",
+            (f & SVGA3D_SURFACE_BIND_RENDER_TARGET)   ? " BIND_RENDER_TARGET"  : "",
+            (f & SVGA3D_SURFACE_BIND_DEPTH_STENCIL)   ? " BIND_DEPTH_STENCIL"  : "",
+            (f & SVGA3D_SURFACE_BIND_STREAM_OUTPUT)   ? " BIND_STREAM_OUTPUT"  : "",
+            (f & SVGA3D_SURFACE_STAGING_UPLOAD)       ? " STAGING_UPLOAD"  : "",
+            (f & SVGA3D_SURFACE_STAGING_DOWNLOAD)     ? " STAGING_DOWNLOAD"  : "",
+            (f & SVGA3D_SURFACE_HINT_INDIRECT_UPDATE) ? " HINT_INDIRECT_UPDATE"  : "",
+            (f & SVGA3D_SURFACE_TRANSFER_FROM_BUFFER) ? " TRANSFER_FROM_BUFFER"  : "",
+            (f & SVGA3D_SURFACE_RESERVED1)            ? " RESERVED1"  : "",
+            (f & SVGA3D_SURFACE_MULTISAMPLE)          ? " MULTISAMPLE"  : "",
+            (f & SVGA3D_SURFACE_BIND_UAVIEW)          ? " BIND_UAVIEW"  : "",
+            (f & SVGA3D_SURFACE_TRANSFER_TO_BUFFER)   ? " TRANSFER_TO_BUFFER"  : "",
+            (f & SVGA3D_SURFACE_BIND_LOGICOPS)        ? " BIND_LOGICOPS"  : "",
+            (f & SVGA3D_SURFACE_BIND_RAW_VIEWS)       ? " BIND_RAW_VIEWS"  : "",
+            (f & SVGA3D_SURFACE_BUFFER_STRUCTURED)    ? " BUFFER_STRUCTURED"  : "",
+            (f & SVGA3D_SURFACE_DRAWINDIRECT_ARGS)    ? " DRAWINDIRECT_ARGS"  : "",
+            (f & SVGA3D_SURFACE_RESOURCE_CLAMP)       ? " RESOURCE_CLAMP"  : "",
+            (f & SVGA3D_SURFACE_FLAG_MAX)             ? " FLAG_MAX"  : "",
+            f & ~(SVGA3D_SURFACE_FLAG_MAX - 1ULL)
            ));
+#endif
 
     Assert(!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface));
 

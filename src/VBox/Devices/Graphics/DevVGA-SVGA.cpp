@@ -9,6 +9,8 @@
  *  - Log3 for hex dump of shader code.
  *  - Log4 for hex dumps of 3D data.
  *  - Log5 for info about GMR pages.
+ *  - Log6 for DX shaders.
+ *  - Log7 for SVGA command dump.
  *  - LogRel for the usual important stuff.
  *  - LogRel2 for cursor.
  *  - LogRel3 for 3D performance data.
@@ -151,6 +153,12 @@
 #include <VBox/VMMDev.h>
 #include <VBoxVideo.h>
 #include <VBox/bioslogo.h>
+
+#ifdef LOG_ENABLED
+RT_C_DECLS_BEGIN
+#include "svgadump/svga_dump.h"
+RT_C_DECLS_END
+#endif
 
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
@@ -3439,7 +3447,19 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
         uint32_t const cmdId = *(uint32_t *)pu8Cmd;
         uint32_t cbCmd = sizeof(uint32_t);
 
-        LogFlowFunc(("%s %d\n", vmsvgaR3FifoCmdToString(cmdId), cmdId));
+        LogFlowFunc(("[cid=%d] %s %d\n", (int32_t)idDXContext, vmsvgaR3FifoCmdToString(cmdId), cmdId));
+#ifdef LOG_ENABLED
+        if (SVGA_3D_CMD_BASE <= cmdId && cmdId < SVGA_3D_CMD_MAX)
+        {
+            SVGA3dCmdHeader const *header = (SVGA3dCmdHeader *)pu8Cmd;
+            svga_dump_command(cmdId, (uint8_t *)&header[1], header->size);
+        }
+        else if (cmdId == SVGA_CMD_FENCE)
+        {
+            Log7(("\tSVGA_CMD_FENCE\n"));
+            Log7(("\t\t0x%08x\n", ((uint32_t *)pu8Cmd)[1]));
+        }
+#endif
 
         /* At the end of the switch cbCmd is equal to the total length of the command including the cmdId.
          * I.e. pu8Cmd + cbCmd must point to the next command.
@@ -6063,6 +6083,15 @@ int vmsvgaR3Destruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(size_t) vmsvga3dFloatFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                const char *pszType, void const *pvValue,
+                                                int cchWidth, int cchPrecision, unsigned fFlags, void *pvUser)
+{
+    RT_NOREF(pszType, cchWidth, cchPrecision, fFlags, pvUser);
+    double const v = *(double *)&pvValue;
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, FLOAT_FMT_STR, FLOAT_FMT_ARGS(v));
+}
+
 /**
  * Initialize the SVGA hardware state
  *
@@ -6075,6 +6104,9 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     PVGASTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     PVMSVGAR3STATE  pSVGAState;
     int             rc;
+
+    rc = RTStrFormatTypeRegister("float", vmsvga3dFloatFormat, NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
 
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     memset(pThis->svga.au32ScratchRegion, 0, sizeof(pThis->svga.au32ScratchRegion));

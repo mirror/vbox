@@ -910,7 +910,7 @@ void *vmsvgaR3MobBackingStoreGet(PVMSVGAMOB pMob, uint32_t off)
 
 
 #ifdef VBOX_WITH_VMSVGA3D
-int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox)
+int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox)
 {
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
@@ -923,7 +923,7 @@ int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pIm
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, pImageId, pBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, idDXContext, pImageId, pBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -958,7 +958,7 @@ int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pIm
 }
 
 
-int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc)
+int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc)
 {
     /* pPtSrc must be verified by the caller. */
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -972,7 +972,7 @@ int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *p
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, pImageId, pBoxDst, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, idDXContext, pImageId, pBoxDst, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -1430,14 +1430,15 @@ void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *ps
 {
     static int idxBitmap = 0;
     char *pszFilename = RTStrAPrintf2("bmp\\%s%d.bmp", pszPrefix, idxBitmap++);
-    vmsvga3dBmpWrite(pszFilename, pMap);
+    int rc = vmsvga3dBmpWrite(pszFilename, pMap);
+    Log(("WriteBmpFile %s %Rrc\n", pszFilename, rc)); RT_NOREF(rc);
     RTStrFree(pszFilename);
 }
 #endif /* DUMP_BITMAPS */
 
 
 /* SVGA_3D_CMD_UPDATE_GB_IMAGE 1101 */
-static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage const *pCmd)
+static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdUpdateGBImage const *pCmd)
 {
 //     ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1455,7 +1456,8 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, &pCmd->image, &pCmd->box, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            /** @todo vmsvga3dSurfaceMap */
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, idDXContext, &pCmd->image, &pCmd->box, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -1708,7 +1710,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
                     {
                         /* Copy the screen target surface to the memory buffer. */
                         VMSVGA3D_MAPPED_SURFACE map;
-                        rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, &entryScreenTarget.image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+                        rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, SVGA_ID_INVALID, &entryScreenTarget.image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
                         if (RT_SUCCESS(rc))
                         {
                             uint8_t const *pu8Src = (uint8_t *)map.pvData
@@ -1742,6 +1744,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V2 1134 */
 static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v2 const *pCmd)
 {
+//ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
@@ -1890,7 +1893,7 @@ static int vmsvga3dCmdDXBindContext(PVGASTATECC pThisCC, SVGA3dCmdDXBindContext 
 
             if (pCmd->mobid != SVGA_ID_INVALID)
             {
-                /* Bind a new context. Copy existing data from the guyest backing memory. */
+                /* Bind a new context. Copy existing data from the guest backing memory. */
                 if (pCmd->validContents)
                 {
                     PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
@@ -4280,7 +4283,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdUpdateGBImage *pCmd = (SVGA3dCmdUpdateGBImage *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdUpdateGBImage(pThisCC, pCmd);
+        vmsvga3dCmdUpdateGBImage(pThisCC, idDXContext, pCmd);
         break;
     }
 

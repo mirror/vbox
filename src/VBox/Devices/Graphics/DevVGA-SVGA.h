@@ -643,8 +643,8 @@ DECLINLINE(uint32_t) vmsvgaR3MobId(PVMSVGAMOB pMob)
 }
 
 #ifdef VBOX_WITH_VMSVGA3D
-int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox);
-int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc);
+int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox);
+int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBoxDst, SVGA3dPoint const *pPtSrc);
 #endif
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */
