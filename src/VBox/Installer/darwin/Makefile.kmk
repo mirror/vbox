@@ -515,7 +515,6 @@ ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we
  VBOX_DI_VBAPP_MISC_FILES += \
  	Info.plist \
  	PkgInfo \
- 	$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),embedded.provisionprofile,) \
  	$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
  	Resources/VirtualBoxVM.app/Contents/Info.plist \
  	Resources/VirtualBoxVM.app/Contents/PkgInfo \
@@ -598,6 +597,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/, $(VBOX_UNATTENDED_TEMPLATES)) \
 		$(if-expr defined(VBOX_WITH_PYTHON), $(addprefix $(VBOX_PATH_DIST)/, $(VBOX_DI_VBAPP_PYTHON_FILES)),) \
 		$(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
+		$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),$(VBOX_PATH_DI_SRC)/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile,) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
