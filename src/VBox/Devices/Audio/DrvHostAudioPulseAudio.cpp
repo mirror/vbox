@@ -1822,10 +1822,13 @@ static DECLCALLBACK(void *) drvHostAudioPaQueryInterface(PPDMIBASE pInterface, c
 *********************************************************************************************************************************/
 
 /**
- * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ * Destructs a PulseAudio Audio driver instance.
+ *
+ * @copydoc FNPDMDRVDESTRUCT
  */
-static DECLCALLBACK(void) drvHostAudioPaPowerOff(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvHostAudioPaDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
     LogFlowFuncEnter();
 
@@ -1845,20 +1848,6 @@ static DECLCALLBACK(void) drvHostAudioPaPowerOff(PPDMDRVINS pDrvIns)
         pThis->pMainLoop = NULL;
     }
 
-    LogFlowFuncLeave();
-}
-
-
-/**
- * Destructs a PulseAudio Audio driver instance.
- *
- * @copydoc FNPDMDRVDESTRUCT
- */
-static DECLCALLBACK(void) drvHostAudioPaDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    LogFlowFuncEnter();
-    drvHostAudioPaPowerOff(pDrvIns);
     LogFlowFuncLeave();
 }
 
@@ -1899,8 +1888,6 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
 {
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
-
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
     LogRel(("Audio: Initializing PulseAudio driver\n"));
 
@@ -2067,7 +2054,7 @@ const PDMDRVREG g_DrvHostPulseAudio =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvHostAudioPaPowerOff,
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
