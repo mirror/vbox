@@ -293,7 +293,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS )
 	@# Copy the launch daemon bits.
 	$(INSTALL) -m 0755  $(VBOX_PATH_DI_SRC)/VBoxKEXTs/VirtualBoxStartup.sh          $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons/
-	$(INSTALL) -m 0644  $(VBOX_PATH_DI_SRC)/VBoxKEXTs/org.virtualbox.startup.plist 	$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons/
+	$(INSTALL) -m 0644  $(VBOX_PATH_DI_SRC)/VBoxKEXTs/org.virtualbox.startup.plist	$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons/
 	@# Copy the common files (Info.plist).
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/)
@@ -413,7 +413,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,)
 ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/UICommon.dylib
+  	MacOS/UICommon.dylib
  ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
   VBOX_DI_VBAPP_DYLIBS += \
   	MacOS/accessible/libqtaccessiblewidgets.dylib
@@ -421,11 +421,11 @@ ifdef VBOX_WITH_QTGUI
 endif
 if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
-	MacOS/VBoxVRDP.dylib
+ 	MacOS/VBoxVRDP.dylib
 endif
 ifdef VBOX_WITH_DEBUGGER
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/DbgPlugInDiggers.dylib
+  	MacOS/DbgPlugInDiggers.dylib
  if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
   VBOX_DI_VBAPP_DYLIBS += \
   	MacOS/VBoxDbg.dylib
@@ -466,7 +466,7 @@ endif
 
 if defined(VBOX_WITH_JXPCOM)
  VBOX_DI_VBAPP_DYLIBS += \
-        MacOS/libvboxjxpcom.jnilib
+ 	MacOS/libvboxjxpcom.jnilib
 endif
 
 if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64), $(VBOX_DI_VBAPP_DYLIBS.x86))
@@ -490,8 +490,8 @@ VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 
 ifdef VBOX_WITH_RAW_MODE
  VBOX_DI_VBAPP_OTHER_BINS = \
-	MacOS/VMMRC.rc \
-	MacOS/VBoxDDRC.rc
+ 	MacOS/VMMRC.rc \
+ 	MacOS/VBoxDDRC.rc
 else
  VBOX_DI_VBAPP_OTHER_BINS =
 endif
@@ -515,7 +515,7 @@ ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we
  VBOX_DI_VBAPP_MISC_FILES += \
  	Info.plist \
  	PkgInfo \
-    $(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),embedded.provisionprofile,) \
+ 	$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),embedded.provisionprofile,) \
  	$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
  	Resources/VirtualBoxVM.app/Contents/Info.plist \
  	Resources/VirtualBoxVM.app/Contents/PkgInfo \
@@ -525,24 +525,24 @@ ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we
  	$(addprefix Resources/vmstarter.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
 endif
 ifdef VBOX_WITH_DOCS_PACKING
-VBOX_DI_VBAPP_MISC_FILES += \
-	MacOS/UserManual.pdf
+ VBOX_DI_VBAPP_MISC_FILES += \
+ 	MacOS/UserManual.pdf
 endif
 ifdef VBOX_WITH_ADDITIONS_PACKING
  ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/VBoxGuestAdditions.iso),)
  VBOX_DI_VBAPP_MISC_FILES += \
-	MacOS/VBoxGuestAdditions.iso
+ 	MacOS/VBoxGuestAdditions.iso
  endif
 endif
 ifdef VBOX_WITH_EFIFW_PACKING
-VBOX_DI_VBAPP_MISC_FILES += \
-	MacOS/VBoxEFI32.fd \
-	MacOS/VBoxEFI64.fd
+ VBOX_DI_VBAPP_MISC_FILES += \
+ 	MacOS/VBoxEFI32.fd \
+ 	MacOS/VBoxEFI64.fd
 endif
 VBOX_DI_VBAPP_SYMLINKS =
 ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
+ 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
  	plugins/platforms/libqcocoa$(SUFF_DLL) \
  	plugins/platforms/libqminimal$(SUFF_DLL) \
  	plugins/platforms/libqoffscreen$(SUFF_DLL) \
@@ -597,20 +597,20 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/*) \
 		$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/, $(VBOX_UNATTENDED_TEMPLATES)) \
 		$(if-expr defined(VBOX_WITH_PYTHON), $(addprefix $(VBOX_PATH_DIST)/, $(VBOX_DI_VBAPP_PYTHON_FILES)),) \
-                $(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
+		$(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh \
-               $(if-expr defined(VBOX_WITH_DTRACE), \
-                $(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES), \
-		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/lib/x86/$f) \
-		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/lib/amd64/$f)) \
-                $(foreach f, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES), \
-		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/testcase/x86/$f) \
-		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/testcase/amd64/$f)) \
-                $(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
-		 ,) \
+		$(if-expr defined(VBOX_WITH_DTRACE), \
+			$(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES), \
+				$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/lib/x86/$f) \
+				$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/lib/amd64/$f)) \
+			$(foreach f, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES), \
+				$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/testcase/x86/$f) \
+				$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/testcase/amd64/$f)) \
+			$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
+			,) \
 		$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE), \
 			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist \
 			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,) \
@@ -637,7 +637,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/nls \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/accessible \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources \
-               $(if-expr defined(VBOX_WITH_QTGUI), \
+		$(if-expr defined(VBOX_WITH_QTGUI), \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app \
@@ -652,8 +652,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/python/xpcom \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/python/xpcom/client \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/python/xpcom/server,) \
-                $(if-expr defined(VBOX_WITH_JXPCOM), \
-                        $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/java,) \
+		$(if-expr defined(VBOX_WITH_JXPCOM), \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/java,) \
 		$(addprefix $(VBOX_PATH_VBOX_APP_TMP)/Contents/,$(dir \
 			$(VBOX_DI_VBAPP_DYLIBS) \
 			$(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
@@ -713,7 +713,7 @@ endif
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(otherbin)$(NLTAB))
 	@# Copy the binaries.
 	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) \
-		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(prog)$(NLTAB))
+		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(prog)$(NLTAB))
 ifdef VBOX_UNATTENDED_TEMPLATES
 # Unattended installation template scripts.
 	$(MKDIR) -p -m 0755 -- $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates
@@ -729,7 +729,7 @@ ifdef VBOX_WITH_DTRACE
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/scripts/
 	$(foreach file, $(addprefix lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
 			$(addprefix testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
-       		$(addprefix scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
+			$(addprefix scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/$(file)$(NLTAB))
 endif
@@ -741,18 +741,18 @@ ifndef VBOX_WITH_QTGUI
 		'<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
 		'<plist version="1.0">' \
 		'<dict>' \
-    		'  <key>CFBundlePackageType</key>              <string>APPL</string>' \
-    		'  <key>CFBundleSignature</key>                <string>VBOX</string>' \
-    		'  <key>CFBundleDevelopmentRegion</key>        <string>English</string>' \
-    		'  <key>CFBundleIdentifier</key>               <string>org.virtualbox.app.VBoxManage</string>' \
-    		'  <key>CFBundleName</key>                     <string>VirtualBox</string>' \
-    		'  <key>CFBundleExecutable</key>               <string>VBoxManage</string>' \
-    		'  <key>CFBundleVersion</key>                  <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
-    		'  <key>CFBundleShortVersionString</key>       <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
-    		'  <key>CFBundleGetInfoString</key>            <string>$(VBOX_PRODUCT) Manager $(VBOX_VERSION_STRING), © 2007-$(VBOX_C_YEAR) $(VBOX_VENDOR)</string>' \
-    		'  <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>' \
-    		'  </dict>' \
-    		'  </plist>'
+		'  <key>CFBundlePackageType</key>              <string>APPL</string>' \
+		'  <key>CFBundleSignature</key>                <string>VBOX</string>' \
+		'  <key>CFBundleDevelopmentRegion</key>        <string>English</string>' \
+		'  <key>CFBundleIdentifier</key>               <string>org.virtualbox.app.VBoxManage</string>' \
+		'  <key>CFBundleName</key>                     <string>VirtualBox</string>' \
+		'  <key>CFBundleExecutable</key>               <string>VBoxManage</string>' \
+		'  <key>CFBundleVersion</key>                  <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
+		'  <key>CFBundleShortVersionString</key>       <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
+		'  <key>CFBundleGetInfoString</key>            <string>$(VBOX_PRODUCT) Manager $(VBOX_VERSION_STRING), © 2007-$(VBOX_C_YEAR) $(VBOX_VENDOR)</string>' \
+		'  <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>' \
+		'</dict>' \
+		'</plist>'
 endif
 	@# Sign the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
@@ -779,11 +779,11 @@ ifdef VBOX_SIGNING_MODE
 			$(if-expr defined(VBOX_WITH_PYTHON),$(addprefix MacOS/, $(VBOX_DI_VBAPP_PYTHON_FILES) vboxshell.py),) \
 			$(if-expr defined(VBOX_WITH_JXPCOM),MacOS/sdk/bindings/xpcom/java/vboxjxpcom.jar,) \
 			$(filter MacOS/%,$(VBOX_DI_VBAPP_MISC_FILES)) \
-                       $(if-expr defined(VBOX_WITH_DOCS_PACKING),$(addprefix MacOS/,$(VBOX_ADD_MANUALS)),) \
-                       $(if-expr defined(VBOX_WITH_DTRACE),\
+			$(if-expr defined(VBOX_WITH_DOCS_PACKING),$(addprefix MacOS/,$(VBOX_ADD_MANUALS)),) \
+			$(if-expr defined(VBOX_WITH_DTRACE),\
 				$(addprefix MacOS/dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
 				$(addprefix MacOS/dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
-       			$(addprefix MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) ,) \
+				$(addprefix MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) ,) \
 			$(addprefix MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
 		, $(NLTAB)$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(file),org.virtualbox.app.$(tolower $(subst $(SP),,$(subst /,.,$(file))))) )
 
@@ -842,7 +842,7 @@ endif
 	ls -lR $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/
 	@# Build the package.
 	$(VBOX_PKGBUILD) \
-       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/ \
+		--root   $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/ \
 		--component-plist $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/PkgBuildComponent.plist \
 		--script $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res \
 		--identifier org.virtualbox.pkg.virtualbox \
@@ -932,7 +932,7 @@ endif
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr
 	@# Build the package.
 	$(VBOX_PKGBUILD) \
-       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin \
+		--root   $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin \
 		--identifier org.virtualbox.pkg.virtualboxcli \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /usr/local/bin \
