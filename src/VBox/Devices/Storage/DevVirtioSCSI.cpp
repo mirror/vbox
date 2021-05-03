@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -83,7 +83,7 @@
 #define VIRTIOSCSI_REQ_VIRTQ_CNT                    4           /**< T.B.D. Consider increasing                      */
 #define VIRTIOSCSI_VIRTQ_CNT                        (VIRTIOSCSI_REQ_VIRTQ_CNT + 2)
 #define VIRTIOSCSI_MAX_TARGETS                      256         /**< T.B.D. Figure out a a good value for this.      */
-#define VIRTIOSCSI_MAX_LUN                          256         /**< VirtIO specification, section 5.6.4             */
+#define VIRTIOSCSI_MAX_LUN                          1           /**< VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128         /**< T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SEG_COUNT                    126         /**< T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000     /**< VirtIO specification, section 5.6.4             */
@@ -1269,6 +1269,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
                                    VIRTIOSCSI_S_RESET, NULL /*pbSense*/, 0 /*cbSense*/, cbSenseCfg);
     }
 
+#if 0
     if (RT_LIKELY(!cbDataIn || !cbDataOut || pThis->fHasInOutBufs)) /* VirtIO 1.0, 5.6.6.1.1 */
     { /*  likely */ }
     else
@@ -1279,7 +1280,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf, cbDataIn + cbDataOut, SCSI_STATUS_CHECK_CONDITION,
                                    VIRTIOSCSI_S_FAILURE, abSense, sizeof(abSense), cbSenseCfg);
     }
-
+#endif
     /*
      * Have underlying driver allocate a req of size set during initialization of this device.
      */
@@ -1709,7 +1710,17 @@ static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIO
         LogFunc(("VirtIO is resetting\n"));
         for (unsigned i = 0; i < VIRTIOSCSI_VIRTQ_CNT; i++)
             pThis->afVirtqAttached[i] = false;
+
+        /*
+         * BIOS may change these values. When the OS comes up, and KVM driver accessed
+         * through the Windows, assumes they are the default size. So as per the VirtIO 1.0 spec,
+         * 5.6.4, these device configuration values must be set to default upon device reset.
+         */
+        pThis->virtioScsiConfig.uSenseSize = VIRTIOSCSI_SENSE_SIZE_DEFAULT;
+        pThis->virtioScsiConfig.uCdbSize   = VIRTIOSCSI_CDB_SIZE_DEFAULT;
     }
+
+
 }
 
 

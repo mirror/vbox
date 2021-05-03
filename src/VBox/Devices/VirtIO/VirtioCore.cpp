@@ -973,7 +973,8 @@ int virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
  */
 static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, uint16_t uNotifyIdx)
 {
-    PVIRTIOCORECC pVirtioCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
+    PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
+
 
     /* See VirtIO 1.0, section 4.1.5.2 It implies that uVirtq and uNotifyIdx should match.
      * Disregarding this notification may cause throughput to stop, however there's no way to know
@@ -1407,16 +1408,16 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocCommonCfgCap))
         return virtioCommonCfgAccessed(pDevIns, pVirtio, pVirtioCC, false /* fWrite */, uOffset, cb, pv);
 
-    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocIsrCap) && cb == sizeof(uint8_t))
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocIsrCap))
     {
         *(uint8_t *)pv = pVirtio->uISR;
         Log6Func(("Read and clear ISR\n"));
-        pVirtio->uISR = 0; /* VirtIO specification requires reads of ISR to clear it */
+        pVirtio->uISR = 0; /* VirtIO spec requires reads of ISR to clear it */
         virtioLowerInterrupt(pDevIns, 0);
         return VINF_SUCCESS;
     }
 
-    ASSERT_GUEST_MSG_FAILED(("Bad read access to mapped capabilities region: off=%RGp cb=%u\n", off, cb));
+    ASSERT_GUEST_MSG_FAILED(("Bad read access to mapped capabilities region: off=%RGp cb=%u\n"));
     return VINF_IOM_MMIO_UNUSED_00;
 }
 
@@ -1499,7 +1500,6 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
                      pDevIns, pPciDev, uAddress,  uAddress < 0x10 ? " " : "", cb, uLength, pPciCap->uBar));
 
         if (  (uLength != 1 && uLength != 2 && uLength != 4)
-            || cb != uLength
             || pPciCap->uBar != VIRTIO_REGION_PCI_CAP)
         {
             ASSERT_GUEST_MSG_FAILED(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. "
