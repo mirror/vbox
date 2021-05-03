@@ -28,15 +28,202 @@
  * Dump SVGA commands.
  *
  * Generated automatically from svga3d_reg.h by svga_dump.py.
+ *
+ * Modified for VirtualBox.
  */
 
-#include "../svga_format.h"
 #include "svga_types.h"
-#include "svga_shader_dump.h"
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#pragma pack(1)
 #include "svga3d_reg.h"
+#pragma pack()
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
 
-#include "util/u_debug.h"
 #include "svga_dump.h"
+
+#define LOG_GROUP LOG_GROUP_DEV_VMSVGA
+#include <VBox/log.h>
+
+#define _debug_printf(...) Log7((__VA_ARGS__));
+
+#ifdef LOG_ENABLED
+struct SVGAFormatName
+{
+    SVGA3dSurfaceFormat f;
+    const char *pszName;
+};
+
+static struct SVGAFormatName g_formats[] =
+{
+    { SVGA3D_FORMAT_INVALID                , "INVALID" },
+    { SVGA3D_X8R8G8B8                      , "X8R8G8B8" },
+    { SVGA3D_A8R8G8B8                      , "A8R8G8B8" },
+    { SVGA3D_R5G6B5                        , "R5G6B5" },
+    { SVGA3D_X1R5G5B5                      , "X1R5G5B5" },
+    { SVGA3D_A1R5G5B5                      , "A1R5G5B5" },
+    { SVGA3D_A4R4G4B4                      , "A4R4G4B4" },
+    { SVGA3D_Z_D32                         , "Z_D32" },
+    { SVGA3D_Z_D16                         , "Z_D16" },
+    { SVGA3D_Z_D24S8                       , "Z_D24S8" },
+    { SVGA3D_Z_D15S1                       , "Z_D15S1" },
+    { SVGA3D_LUMINANCE8                    , "LUMINANCE8" },
+    { SVGA3D_LUMINANCE4_ALPHA4             , "LUMINANCE4_ALPHA4" },
+    { SVGA3D_LUMINANCE16                   , "LUMINANCE16" },
+    { SVGA3D_LUMINANCE8_ALPHA8             , "LUMINANCE8_ALPHA8" },
+    { SVGA3D_DXT1                          , "DXT1" },
+    { SVGA3D_DXT2                          , "DXT2" },
+    { SVGA3D_DXT3                          , "DXT3" },
+    { SVGA3D_DXT4                          , "DXT4" },
+    { SVGA3D_DXT5                          , "DXT5" },
+    { SVGA3D_BUMPU8V8                      , "BUMPU8V8" },
+    { SVGA3D_BUMPL6V5U5                    , "BUMPL6V5U5" },
+    { SVGA3D_BUMPX8L8V8U8                  , "BUMPX8L8V8U8" },
+    { SVGA3D_FORMAT_DEAD1                  , "FORMAT_DEAD1" },
+    { SVGA3D_ARGB_S10E5                    , "ARGB_S10E5" },
+    { SVGA3D_ARGB_S23E8                    , "ARGB_S23E8" },
+    { SVGA3D_A2R10G10B10                   , "A2R10G10B10" },
+    { SVGA3D_V8U8                          , "V8U8" },
+    { SVGA3D_Q8W8V8U8                      , "Q8W8V8U8" },
+    { SVGA3D_CxV8U8                        , "CxV8U8" },
+    { SVGA3D_X8L8V8U8                      , "X8L8V8U8" },
+    { SVGA3D_A2W10V10U10                   , "A2W10V10U10" },
+    { SVGA3D_ALPHA8                        , "ALPHA8" },
+    { SVGA3D_R_S10E5                       , "R_S10E5" },
+    { SVGA3D_R_S23E8                       , "R_S23E8" },
+    { SVGA3D_RG_S10E5                      , "RG_S10E5" },
+    { SVGA3D_RG_S23E8                      , "RG_S23E8" },
+    { SVGA3D_BUFFER                        , "BUFFER" },
+    { SVGA3D_Z_D24X8                       , "Z_D24X8" },
+    { SVGA3D_V16U16                        , "V16U16" },
+    { SVGA3D_G16R16                        , "G16R16" },
+    { SVGA3D_A16B16G16R16                  , "A16B16G16R16" },
+    { SVGA3D_UYVY                          , "UYVY" },
+    { SVGA3D_YUY2                          , "YUY2" },
+    { SVGA3D_NV12                          , "NV12" },
+    { SVGA3D_FORMAT_DEAD2                  , "FORMAT_DEAD2" },
+    { SVGA3D_R32G32B32A32_TYPELESS         , "R32G32B32A32_TYPELESS" },
+    { SVGA3D_R32G32B32A32_UINT             , "R32G32B32A32_UINT" },
+    { SVGA3D_R32G32B32A32_SINT             , "R32G32B32A32_SINT" },
+    { SVGA3D_R32G32B32_TYPELESS            , "R32G32B32_TYPELESS" },
+    { SVGA3D_R32G32B32_FLOAT               , "R32G32B32_FLOAT" },
+    { SVGA3D_R32G32B32_UINT                , "R32G32B32_UINT" },
+    { SVGA3D_R32G32B32_SINT                , "R32G32B32_SINT" },
+    { SVGA3D_R16G16B16A16_TYPELESS         , "R16G16B16A16_TYPELESS" },
+    { SVGA3D_R16G16B16A16_UINT             , "R16G16B16A16_UINT" },
+    { SVGA3D_R16G16B16A16_SNORM            , "R16G16B16A16_SNORM" },
+    { SVGA3D_R16G16B16A16_SINT             , "R16G16B16A16_SINT" },
+    { SVGA3D_R32G32_TYPELESS               , "R32G32_TYPELESS" },
+    { SVGA3D_R32G32_UINT                   , "R32G32_UINT" },
+    { SVGA3D_R32G32_SINT                   , "R32G32_SINT" },
+    { SVGA3D_R32G8X24_TYPELESS             , "R32G8X24_TYPELESS" },
+    { SVGA3D_D32_FLOAT_S8X24_UINT          , "D32_FLOAT_S8X24_UINT" },
+    { SVGA3D_R32_FLOAT_X8X24               , "R32_FLOAT_X8X24" },
+    { SVGA3D_X32_G8X24_UINT                , "X32_G8X24_UINT" },
+    { SVGA3D_R10G10B10A2_TYPELESS          , "R10G10B10A2_TYPELESS" },
+    { SVGA3D_R10G10B10A2_UINT              , "R10G10B10A2_UINT" },
+    { SVGA3D_R11G11B10_FLOAT               , "R11G11B10_FLOAT" },
+    { SVGA3D_R8G8B8A8_TYPELESS             , "R8G8B8A8_TYPELESS" },
+    { SVGA3D_R8G8B8A8_UNORM                , "R8G8B8A8_UNORM" },
+    { SVGA3D_R8G8B8A8_UNORM_SRGB           , "R8G8B8A8_UNORM_SRGB" },
+    { SVGA3D_R8G8B8A8_UINT                 , "R8G8B8A8_UINT" },
+    { SVGA3D_R8G8B8A8_SINT                 , "R8G8B8A8_SINT" },
+    { SVGA3D_R16G16_TYPELESS               , "R16G16_TYPELESS" },
+    { SVGA3D_R16G16_UINT                   , "R16G16_UINT" },
+    { SVGA3D_R16G16_SINT                   , "R16G16_SINT" },
+    { SVGA3D_R32_TYPELESS                  , "R32_TYPELESS" },
+    { SVGA3D_D32_FLOAT                     , "D32_FLOAT" },
+    { SVGA3D_R32_UINT                      , "R32_UINT" },
+    { SVGA3D_R32_SINT                      , "R32_SINT" },
+    { SVGA3D_R24G8_TYPELESS                , "R24G8_TYPELESS" },
+    { SVGA3D_D24_UNORM_S8_UINT             , "D24_UNORM_S8_UINT" },
+    { SVGA3D_R24_UNORM_X8                  , "R24_UNORM_X8" },
+    { SVGA3D_X24_G8_UINT                   , "X24_G8_UINT" },
+    { SVGA3D_R8G8_TYPELESS                 , "R8G8_TYPELESS" },
+    { SVGA3D_R8G8_UNORM                    , "R8G8_UNORM" },
+    { SVGA3D_R8G8_UINT                     , "R8G8_UINT" },
+    { SVGA3D_R8G8_SINT                     , "R8G8_SINT" },
+    { SVGA3D_R16_TYPELESS                  , "R16_TYPELESS" },
+    { SVGA3D_R16_UNORM                     , "R16_UNORM" },
+    { SVGA3D_R16_UINT                      , "R16_UINT" },
+    { SVGA3D_R16_SNORM                     , "R16_SNORM" },
+    { SVGA3D_R16_SINT                      , "R16_SINT" },
+    { SVGA3D_R8_TYPELESS                   , "R8_TYPELESS" },
+    { SVGA3D_R8_UNORM                      , "R8_UNORM" },
+    { SVGA3D_R8_UINT                       , "R8_UINT" },
+    { SVGA3D_R8_SNORM                      , "R8_SNORM" },
+    { SVGA3D_R8_SINT                       , "R8_SINT" },
+    { SVGA3D_P8                            , "P8" },
+    { SVGA3D_R9G9B9E5_SHAREDEXP            , "R9G9B9E5_SHAREDEXP" },
+    { SVGA3D_R8G8_B8G8_UNORM               , "R8G8_B8G8_UNORM" },
+    { SVGA3D_G8R8_G8B8_UNORM               , "G8R8_G8B8_UNORM" },
+    { SVGA3D_BC1_TYPELESS                  , "BC1_TYPELESS" },
+    { SVGA3D_BC1_UNORM_SRGB                , "BC1_UNORM_SRGB" },
+    { SVGA3D_BC2_TYPELESS                  , "BC2_TYPELESS" },
+    { SVGA3D_BC2_UNORM_SRGB                , "BC2_UNORM_SRGB" },
+    { SVGA3D_BC3_TYPELESS                  , "BC3_TYPELESS" },
+    { SVGA3D_BC3_UNORM_SRGB                , "BC3_UNORM_SRGB" },
+    { SVGA3D_BC4_TYPELESS                  , "BC4_TYPELESS" },
+    { SVGA3D_ATI1                          , "ATI1" },
+    { SVGA3D_BC4_SNORM                     , "BC4_SNORM" },
+    { SVGA3D_BC5_TYPELESS                  , "BC5_TYPELESS" },
+    { SVGA3D_ATI2                          , "ATI2" },
+    { SVGA3D_BC5_SNORM                     , "BC5_SNORM" },
+    { SVGA3D_R10G10B10_XR_BIAS_A2_UNORM    , "R10G10B10_XR_BIAS_A2_UNORM" },
+    { SVGA3D_B8G8R8A8_TYPELESS             , "B8G8R8A8_TYPELESS" },
+    { SVGA3D_B8G8R8A8_UNORM_SRGB           , "B8G8R8A8_UNORM_SRGB" },
+    { SVGA3D_B8G8R8X8_TYPELESS             , "B8G8R8X8_TYPELESS" },
+    { SVGA3D_B8G8R8X8_UNORM_SRGB           , "B8G8R8X8_UNORM_SRGB" },
+    { SVGA3D_Z_DF16                        , "Z_DF16" },
+    { SVGA3D_Z_DF24                        , "Z_DF24" },
+    { SVGA3D_Z_D24S8_INT                   , "Z_D24S8_INT" },
+    { SVGA3D_YV12                          , "YV12" },
+    { SVGA3D_R32G32B32A32_FLOAT            , "R32G32B32A32_FLOAT" },
+    { SVGA3D_R16G16B16A16_FLOAT            , "R16G16B16A16_FLOAT" },
+    { SVGA3D_R16G16B16A16_UNORM            , "R16G16B16A16_UNORM" },
+    { SVGA3D_R32G32_FLOAT                  , "R32G32_FLOAT" },
+    { SVGA3D_R10G10B10A2_UNORM             , "R10G10B10A2_UNORM" },
+    { SVGA3D_R8G8B8A8_SNORM                , "R8G8B8A8_SNORM" },
+    { SVGA3D_R16G16_FLOAT                  , "R16G16_FLOAT" },
+    { SVGA3D_R16G16_UNORM                  , "R16G16_UNORM" },
+    { SVGA3D_R16G16_SNORM                  , "R16G16_SNORM" },
+    { SVGA3D_R32_FLOAT                     , "R32_FLOAT" },
+    { SVGA3D_R8G8_SNORM                    , "R8G8_SNORM" },
+    { SVGA3D_R16_FLOAT                     , "R16_FLOAT" },
+    { SVGA3D_D16_UNORM                     , "D16_UNORM" },
+    { SVGA3D_A8_UNORM                      , "A8_UNORM" },
+    { SVGA3D_BC1_UNORM                     , "BC1_UNORM" },
+    { SVGA3D_BC2_UNORM                     , "BC2_UNORM" },
+    { SVGA3D_BC3_UNORM                     , "BC3_UNORM" },
+    { SVGA3D_B5G6R5_UNORM                  , "B5G6R5_UNORM" },
+    { SVGA3D_B5G5R5A1_UNORM                , "B5G5R5A1_UNORM" },
+    { SVGA3D_B8G8R8A8_UNORM                , "B8G8R8A8_UNORM" },
+    { SVGA3D_B8G8R8X8_UNORM                , "B8G8R8X8_UNORM" },
+    { SVGA3D_BC4_UNORM                     , "BC4_UNORM" },
+    { SVGA3D_BC5_UNORM                     , "BC5_UNORM" },
+    { SVGA3D_B4G4R4A4_UNORM                , "B4G4R4A4_UNORM" },
+    { SVGA3D_BC6H_TYPELESS                 , "BC6H_TYPELESS" },
+    { SVGA3D_BC6H_UF16                     , "BC6H_UF16" },
+    { SVGA3D_BC6H_SF16                     , "BC6H_SF16" },
+    { SVGA3D_BC7_TYPELESS                  , "BC7_TYPELESS" },
+    { SVGA3D_BC7_UNORM                     , "BC7_UNORM" },
+    { SVGA3D_BC7_UNORM_SRGB                , "BC7_UNORM_SRGB" },
+    { SVGA3D_AYUV                          , "AYUV" },
+};
+
+
+static const char *
+svga_format_name(SVGA3dSurfaceFormat format)
+{
+   if (format < RT_ELEMENTS(g_formats))
+      return g_formats[format].pszName;
+   return "???";
+}
+
 
 static const char *
 shader_name(unsigned type)
@@ -303,18 +490,18 @@ dump_SVGA3dTextureState(const SVGA3dTextureState *cmd)
       break;
    }
    _debug_printf("\t\t.value = %u\n", (*cmd).value);
-   _debug_printf("\t\t.floatValue = %f\n", (*cmd).floatValue);
+   _debug_printf("\t\t.floatValue = %R[float]\n", (*cmd).floatValue);
 }
 
 static void
 dump_SVGA3dViewport(const SVGA3dViewport *cmd)
 {
-   _debug_printf("\t\t.x = %f\n", (*cmd).x);
-   _debug_printf("\t\t.y = %f\n", (*cmd).y);
-   _debug_printf("\t\t.width = %f\n", (*cmd).width);
-   _debug_printf("\t\t.height = %f\n", (*cmd).height);
-   _debug_printf("\t\t.minDepth = %f\n", (*cmd).minDepth);
-   _debug_printf("\t\t.maxDepth = %f\n", (*cmd).maxDepth);
+   _debug_printf("\t\t.x = %R[float]\n", (*cmd).x);
+   _debug_printf("\t\t.y = %R[float]\n", (*cmd).y);
+   _debug_printf("\t\t.width = %R[float]\n", (*cmd).width);
+   _debug_printf("\t\t.height = %R[float]\n", (*cmd).height);
+   _debug_printf("\t\t.minDepth = %R[float]\n", (*cmd).minDepth);
+   _debug_printf("\t\t.maxDepth = %R[float]\n", (*cmd).maxDepth);
 }
 
 static void
@@ -374,10 +561,10 @@ dump_SVGA3dCmdSetClipPlane(const SVGA3dCmdSetClipPlane *cmd)
 {
    _debug_printf("\t\t.cid = %u\n", (*cmd).cid);
    _debug_printf("\t\t.index = %u\n", (*cmd).index);
-   _debug_printf("\t\t.plane[0] = %f\n", (*cmd).plane[0]);
-   _debug_printf("\t\t.plane[1] = %f\n", (*cmd).plane[1]);
-   _debug_printf("\t\t.plane[2] = %f\n", (*cmd).plane[2]);
-   _debug_printf("\t\t.plane[3] = %f\n", (*cmd).plane[3]);
+   _debug_printf("\t\t.plane[0] = %R[float]\n", (*cmd).plane[0]);
+   _debug_printf("\t\t.plane[1] = %R[float]\n", (*cmd).plane[1]);
+   _debug_printf("\t\t.plane[2] = %R[float]\n", (*cmd).plane[2]);
+   _debug_printf("\t\t.plane[3] = %R[float]\n", (*cmd).plane[3]);
 }
 
 static void
@@ -463,23 +650,23 @@ dump_SVGA3dCmdSetMaterial(const SVGA3dCmdSetMaterial *cmd)
       _debug_printf("\t\t.face = %i\n", (*cmd).face);
       break;
    }
-   _debug_printf("\t\t.material.diffuse[0] = %f\n", (*cmd).material.diffuse[0]);
-   _debug_printf("\t\t.material.diffuse[1] = %f\n", (*cmd).material.diffuse[1]);
-   _debug_printf("\t\t.material.diffuse[2] = %f\n", (*cmd).material.diffuse[2]);
-   _debug_printf("\t\t.material.diffuse[3] = %f\n", (*cmd).material.diffuse[3]);
-   _debug_printf("\t\t.material.ambient[0] = %f\n", (*cmd).material.ambient[0]);
-   _debug_printf("\t\t.material.ambient[1] = %f\n", (*cmd).material.ambient[1]);
-   _debug_printf("\t\t.material.ambient[2] = %f\n", (*cmd).material.ambient[2]);
-   _debug_printf("\t\t.material.ambient[3] = %f\n", (*cmd).material.ambient[3]);
-   _debug_printf("\t\t.material.specular[0] = %f\n", (*cmd).material.specular[0]);
-   _debug_printf("\t\t.material.specular[1] = %f\n", (*cmd).material.specular[1]);
-   _debug_printf("\t\t.material.specular[2] = %f\n", (*cmd).material.specular[2]);
-   _debug_printf("\t\t.material.specular[3] = %f\n", (*cmd).material.specular[3]);
-   _debug_printf("\t\t.material.emissive[0] = %f\n", (*cmd).material.emissive[0]);
-   _debug_printf("\t\t.material.emissive[1] = %f\n", (*cmd).material.emissive[1]);
-   _debug_printf("\t\t.material.emissive[2] = %f\n", (*cmd).material.emissive[2]);
-   _debug_printf("\t\t.material.emissive[3] = %f\n", (*cmd).material.emissive[3]);
-   _debug_printf("\t\t.material.shininess = %f\n", (*cmd).material.shininess);
+   _debug_printf("\t\t.material.diffuse[0] = %R[float]\n", (*cmd).material.diffuse[0]);
+   _debug_printf("\t\t.material.diffuse[1] = %R[float]\n", (*cmd).material.diffuse[1]);
+   _debug_printf("\t\t.material.diffuse[2] = %R[float]\n", (*cmd).material.diffuse[2]);
+   _debug_printf("\t\t.material.diffuse[3] = %R[float]\n", (*cmd).material.diffuse[3]);
+   _debug_printf("\t\t.material.ambient[0] = %R[float]\n", (*cmd).material.ambient[0]);
+   _debug_printf("\t\t.material.ambient[1] = %R[float]\n", (*cmd).material.ambient[1]);
+   _debug_printf("\t\t.material.ambient[2] = %R[float]\n", (*cmd).material.ambient[2]);
+   _debug_printf("\t\t.material.ambient[3] = %R[float]\n", (*cmd).material.ambient[3]);
+   _debug_printf("\t\t.material.specular[0] = %R[float]\n", (*cmd).material.specular[0]);
+   _debug_printf("\t\t.material.specular[1] = %R[float]\n", (*cmd).material.specular[1]);
+   _debug_printf("\t\t.material.specular[2] = %R[float]\n", (*cmd).material.specular[2]);
+   _debug_printf("\t\t.material.specular[3] = %R[float]\n", (*cmd).material.specular[3]);
+   _debug_printf("\t\t.material.emissive[0] = %R[float]\n", (*cmd).material.emissive[0]);
+   _debug_printf("\t\t.material.emissive[1] = %R[float]\n", (*cmd).material.emissive[1]);
+   _debug_printf("\t\t.material.emissive[2] = %R[float]\n", (*cmd).material.emissive[2]);
+   _debug_printf("\t\t.material.emissive[3] = %R[float]\n", (*cmd).material.emissive[3]);
+   _debug_printf("\t\t.material.shininess = %R[float]\n", (*cmd).material.shininess);
 }
 
 static void
@@ -511,33 +698,33 @@ dump_SVGA3dCmdSetLightData(const SVGA3dCmdSetLightData *cmd)
       break;
    }
    _debug_printf("\t\t.data.inWorldSpace = %u\n", (*cmd).data.inWorldSpace);
-   _debug_printf("\t\t.data.diffuse[0] = %f\n", (*cmd).data.diffuse[0]);
-   _debug_printf("\t\t.data.diffuse[1] = %f\n", (*cmd).data.diffuse[1]);
-   _debug_printf("\t\t.data.diffuse[2] = %f\n", (*cmd).data.diffuse[2]);
-   _debug_printf("\t\t.data.diffuse[3] = %f\n", (*cmd).data.diffuse[3]);
-   _debug_printf("\t\t.data.specular[0] = %f\n", (*cmd).data.specular[0]);
-   _debug_printf("\t\t.data.specular[1] = %f\n", (*cmd).data.specular[1]);
-   _debug_printf("\t\t.data.specular[2] = %f\n", (*cmd).data.specular[2]);
-   _debug_printf("\t\t.data.specular[3] = %f\n", (*cmd).data.specular[3]);
-   _debug_printf("\t\t.data.ambient[0] = %f\n", (*cmd).data.ambient[0]);
-   _debug_printf("\t\t.data.ambient[1] = %f\n", (*cmd).data.ambient[1]);
-   _debug_printf("\t\t.data.ambient[2] = %f\n", (*cmd).data.ambient[2]);
-   _debug_printf("\t\t.data.ambient[3] = %f\n", (*cmd).data.ambient[3]);
-   _debug_printf("\t\t.data.position[0] = %f\n", (*cmd).data.position[0]);
-   _debug_printf("\t\t.data.position[1] = %f\n", (*cmd).data.position[1]);
-   _debug_printf("\t\t.data.position[2] = %f\n", (*cmd).data.position[2]);
-   _debug_printf("\t\t.data.position[3] = %f\n", (*cmd).data.position[3]);
-   _debug_printf("\t\t.data.direction[0] = %f\n", (*cmd).data.direction[0]);
-   _debug_printf("\t\t.data.direction[1] = %f\n", (*cmd).data.direction[1]);
-   _debug_printf("\t\t.data.direction[2] = %f\n", (*cmd).data.direction[2]);
-   _debug_printf("\t\t.data.direction[3] = %f\n", (*cmd).data.direction[3]);
-   _debug_printf("\t\t.data.range = %f\n", (*cmd).data.range);
-   _debug_printf("\t\t.data.falloff = %f\n", (*cmd).data.falloff);
-   _debug_printf("\t\t.data.attenuation0 = %f\n", (*cmd).data.attenuation0);
-   _debug_printf("\t\t.data.attenuation1 = %f\n", (*cmd).data.attenuation1);
-   _debug_printf("\t\t.data.attenuation2 = %f\n", (*cmd).data.attenuation2);
-   _debug_printf("\t\t.data.theta = %f\n", (*cmd).data.theta);
-   _debug_printf("\t\t.data.phi = %f\n", (*cmd).data.phi);
+   _debug_printf("\t\t.data.diffuse[0] = %R[float]\n", (*cmd).data.diffuse[0]);
+   _debug_printf("\t\t.data.diffuse[1] = %R[float]\n", (*cmd).data.diffuse[1]);
+   _debug_printf("\t\t.data.diffuse[2] = %R[float]\n", (*cmd).data.diffuse[2]);
+   _debug_printf("\t\t.data.diffuse[3] = %R[float]\n", (*cmd).data.diffuse[3]);
+   _debug_printf("\t\t.data.specular[0] = %R[float]\n", (*cmd).data.specular[0]);
+   _debug_printf("\t\t.data.specular[1] = %R[float]\n", (*cmd).data.specular[1]);
+   _debug_printf("\t\t.data.specular[2] = %R[float]\n", (*cmd).data.specular[2]);
+   _debug_printf("\t\t.data.specular[3] = %R[float]\n", (*cmd).data.specular[3]);
+   _debug_printf("\t\t.data.ambient[0] = %R[float]\n", (*cmd).data.ambient[0]);
+   _debug_printf("\t\t.data.ambient[1] = %R[float]\n", (*cmd).data.ambient[1]);
+   _debug_printf("\t\t.data.ambient[2] = %R[float]\n", (*cmd).data.ambient[2]);
+   _debug_printf("\t\t.data.ambient[3] = %R[float]\n", (*cmd).data.ambient[3]);
+   _debug_printf("\t\t.data.position[0] = %R[float]\n", (*cmd).data.position[0]);
+   _debug_printf("\t\t.data.position[1] = %R[float]\n", (*cmd).data.position[1]);
+   _debug_printf("\t\t.data.position[2] = %R[float]\n", (*cmd).data.position[2]);
+   _debug_printf("\t\t.data.position[3] = %R[float]\n", (*cmd).data.position[3]);
+   _debug_printf("\t\t.data.direction[0] = %R[float]\n", (*cmd).data.direction[0]);
+   _debug_printf("\t\t.data.direction[1] = %R[float]\n", (*cmd).data.direction[1]);
+   _debug_printf("\t\t.data.direction[2] = %R[float]\n", (*cmd).data.direction[2]);
+   _debug_printf("\t\t.data.direction[3] = %R[float]\n", (*cmd).data.direction[3]);
+   _debug_printf("\t\t.data.range = %R[float]\n", (*cmd).data.range);
+   _debug_printf("\t\t.data.falloff = %R[float]\n", (*cmd).data.falloff);
+   _debug_printf("\t\t.data.attenuation0 = %R[float]\n", (*cmd).data.attenuation0);
+   _debug_printf("\t\t.data.attenuation1 = %R[float]\n", (*cmd).data.attenuation1);
+   _debug_printf("\t\t.data.attenuation2 = %R[float]\n", (*cmd).data.attenuation2);
+   _debug_printf("\t\t.data.theta = %R[float]\n", (*cmd).data.theta);
+   _debug_printf("\t\t.data.phi = %R[float]\n", (*cmd).data.phi);
 }
 
 static void
@@ -947,7 +1134,7 @@ dump_SVGA3dRenderState(const SVGA3dRenderState *cmd)
       break;
    }
    _debug_printf("\t\t.uintValue = %u\n", (*cmd).uintValue);
-   _debug_printf("\t\t.floatValue = %f\n", (*cmd).floatValue);
+   _debug_printf("\t\t.floatValue = %R[float]\n", (*cmd).floatValue);
 }
 
 static void
@@ -990,7 +1177,7 @@ dump_constants(SVGA3dShaderConstType type, unsigned start,
       _debug_printf("\t\t.ctype = SVGA3D_CONST_TYPE_FLOAT\n");
       fvalues = (const float (*)[4]) buf;
       for (i = 0; i < numConsts; ++i) {
-         _debug_printf("\t\t.values[%u] = {%f, %f, %f, %f}\n",
+         _debug_printf("\t\t.values[%u] = {%R[float], %R[float], %R[float], %R[float]}\n",
                        start + i, 
                        fvalues[i][0],
                        fvalues[i][1],
@@ -1060,8 +1247,8 @@ static void
 dump_SVGA3dCmdSetZRange(const SVGA3dCmdSetZRange *cmd)
 {
    _debug_printf("\t\t.cid = %u\n", (*cmd).cid);
-   _debug_printf("\t\t.zRange.min = %f\n", (*cmd).zRange.min);
-   _debug_printf("\t\t.zRange.max = %f\n", (*cmd).zRange.max);
+   _debug_printf("\t\t.zRange.min = %R[float]\n", (*cmd).zRange.min);
+   _debug_printf("\t\t.zRange.max = %R[float]\n", (*cmd).zRange.max);
 }
 
 static void
@@ -1257,22 +1444,22 @@ dump_SVGA3dCmdSetTransform(const SVGA3dCmdSetTransform *cmd)
       _debug_printf("\t\t.type = %i\n", (*cmd).type);
       break;
    }
-   _debug_printf("\t\t.matrix[0] = %f\n", (*cmd).matrix[0]);
-   _debug_printf("\t\t.matrix[1] = %f\n", (*cmd).matrix[1]);
-   _debug_printf("\t\t.matrix[2] = %f\n", (*cmd).matrix[2]);
-   _debug_printf("\t\t.matrix[3] = %f\n", (*cmd).matrix[3]);
-   _debug_printf("\t\t.matrix[4] = %f\n", (*cmd).matrix[4]);
-   _debug_printf("\t\t.matrix[5] = %f\n", (*cmd).matrix[5]);
-   _debug_printf("\t\t.matrix[6] = %f\n", (*cmd).matrix[6]);
-   _debug_printf("\t\t.matrix[7] = %f\n", (*cmd).matrix[7]);
-   _debug_printf("\t\t.matrix[8] = %f\n", (*cmd).matrix[8]);
-   _debug_printf("\t\t.matrix[9] = %f\n", (*cmd).matrix[9]);
-   _debug_printf("\t\t.matrix[10] = %f\n", (*cmd).matrix[10]);
-   _debug_printf("\t\t.matrix[11] = %f\n", (*cmd).matrix[11]);
-   _debug_printf("\t\t.matrix[12] = %f\n", (*cmd).matrix[12]);
-   _debug_printf("\t\t.matrix[13] = %f\n", (*cmd).matrix[13]);
-   _debug_printf("\t\t.matrix[14] = %f\n", (*cmd).matrix[14]);
-   _debug_printf("\t\t.matrix[15] = %f\n", (*cmd).matrix[15]);
+   _debug_printf("\t\t.matrix[0] = %R[float]\n", (*cmd).matrix[0]);
+   _debug_printf("\t\t.matrix[1] = %R[float]\n", (*cmd).matrix[1]);
+   _debug_printf("\t\t.matrix[2] = %R[float]\n", (*cmd).matrix[2]);
+   _debug_printf("\t\t.matrix[3] = %R[float]\n", (*cmd).matrix[3]);
+   _debug_printf("\t\t.matrix[4] = %R[float]\n", (*cmd).matrix[4]);
+   _debug_printf("\t\t.matrix[5] = %R[float]\n", (*cmd).matrix[5]);
+   _debug_printf("\t\t.matrix[6] = %R[float]\n", (*cmd).matrix[6]);
+   _debug_printf("\t\t.matrix[7] = %R[float]\n", (*cmd).matrix[7]);
+   _debug_printf("\t\t.matrix[8] = %R[float]\n", (*cmd).matrix[8]);
+   _debug_printf("\t\t.matrix[9] = %R[float]\n", (*cmd).matrix[9]);
+   _debug_printf("\t\t.matrix[10] = %R[float]\n", (*cmd).matrix[10]);
+   _debug_printf("\t\t.matrix[11] = %R[float]\n", (*cmd).matrix[11]);
+   _debug_printf("\t\t.matrix[12] = %R[float]\n", (*cmd).matrix[12]);
+   _debug_printf("\t\t.matrix[13] = %R[float]\n", (*cmd).matrix[13]);
+   _debug_printf("\t\t.matrix[14] = %R[float]\n", (*cmd).matrix[14]);
+   _debug_printf("\t\t.matrix[15] = %R[float]\n", (*cmd).matrix[15]);
 }
 
 static void
@@ -1318,7 +1505,7 @@ dump_SVGA3dCmdClear(const SVGA3dCmdClear *cmd)
       break;
    }
    _debug_printf("\t\t.color = %u\n", (*cmd).color);
-   _debug_printf("\t\t.depth = %f\n", (*cmd).depth);
+   _debug_printf("\t\t.depth = %R[float]\n", (*cmd).depth);
    _debug_printf("\t\t.stencil = %u\n", (*cmd).stencil);
 }
 
@@ -1504,13 +1691,13 @@ default: \
 SVGA3D_DUMP_HEADER(SetShader)
 {
    SVGA3D_DUMP_PARAMETER(shaderId, u);
-   debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
+   _debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
 }
 
 SVGA3D_DUMP_HEADER(SetSamplers)
 {
    SVGA3D_DUMP_PARAMETER(startSampler, u);
-   debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
+   _debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
    /* XXX: note we're not printing the sampler IDs at this time */
 }
 
@@ -1546,12 +1733,13 @@ SVGA3D_DUMP_HEADER(DrawIndexedInstanced)
 
 SVGA3D_DUMP_HEADER(DrawAuto)
 {
+   (void)cmd;
 }
 
 SVGA3D_DUMP_HEADER(SetBlendState)
 {
    SVGA3D_DUMP_PARAMETER(blendId, u);
-   _debug_printf("\t\t.blendFactor[4] = %f %f %f %f\n", cmd->blendFactor[0],
+   _debug_printf("\t\t.blendFactor[4] = %R[float] %R[float] %R[float] %R[float]\n", cmd->blendFactor[0],
                                                         cmd->blendFactor[1],
                                                         cmd->blendFactor[2],
                                                         cmd->blendFactor[3]);
@@ -1638,6 +1826,7 @@ SVGA3D_DUMP_HEADER(SetPredication)
 
 SVGA3D_DUMP_HEADER(SetSOTargets)
 {
+   (void)cmd;
 }
 
 
@@ -1649,23 +1838,23 @@ SVGA3D_DUMP_HEADER(BindContext)
 
 SVGA3D_DUMP_HEADER(SetViewports)
 {
-
+   (void)cmd;
    /* XXX: note we're not printing the SVGA3dViewport list at this time */
 }
 
 SVGA3D_DUMP_HEADER(SetScissorRects)
 {
- 
+   (void)cmd;
    /* XXX: note we're not printing the SVGASignedRect list at this time */
 }
 
 SVGA3D_DUMP_HEADER(ClearRenderTargetView)
 {
    SVGA3D_DUMP_PARAMETER(renderTargetViewId, u);
-   SVGA3D_DUMP_PARAMETER(rgba.r, f);
-   SVGA3D_DUMP_PARAMETER(rgba.g, f);
-   SVGA3D_DUMP_PARAMETER(rgba.b, f);
-   SVGA3D_DUMP_PARAMETER(rgba.a, f);
+   SVGA3D_DUMP_PARAMETER(rgba.r, R[float]);
+   SVGA3D_DUMP_PARAMETER(rgba.g, R[float]);
+   SVGA3D_DUMP_PARAMETER(rgba.b, R[float]);
+   SVGA3D_DUMP_PARAMETER(rgba.a, R[float]);
 }
 
 SVGA3D_DUMP_HEADER(ClearDepthStencilView)
@@ -1673,7 +1862,7 @@ SVGA3D_DUMP_HEADER(ClearDepthStencilView)
    SVGA3D_DUMP_PARAMETER(flags, u);
    SVGA3D_DUMP_PARAMETER(stencil, u);
    SVGA3D_DUMP_PARAMETER(depthStencilViewId, u);
-   SVGA3D_DUMP_PARAMETER(depth, f);
+   SVGA3D_DUMP_PARAMETER(depth, R[float]);
 }
 
 SVGA3D_DUMP_HEADER(DefineShaderResourceView)
@@ -1706,7 +1895,7 @@ SVGA3D_DUMP_HEADER(DefineShaderResourceView)
 SVGA3D_DUMP_HEADER(SetShaderResources)
 {
    SVGA3D_DUMP_PARAMETER(startView, u);
-   debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
+   _debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
 }
 
 
@@ -1845,13 +2034,13 @@ SVGA3D_DUMP_HEADER(DefineRasterizerState)
    SVGA3D_DUMP_PARAMETER(cullMode, u);
    SVGA3D_DUMP_PARAMETER(frontCounterClockwise, u);
    SVGA3D_DUMP_PARAMETER(depthBias, u);
-   SVGA3D_DUMP_PARAMETER(depthBiasClamp, f);
-   SVGA3D_DUMP_PARAMETER(slopeScaledDepthBias, f);
+   SVGA3D_DUMP_PARAMETER(depthBiasClamp, R[float]);
+   SVGA3D_DUMP_PARAMETER(slopeScaledDepthBias, R[float]);
    SVGA3D_DUMP_PARAMETER(depthClipEnable, u);
    SVGA3D_DUMP_PARAMETER(scissorEnable, u);
    SVGA3D_DUMP_PARAMETER(multisampleEnable, u);
    SVGA3D_DUMP_PARAMETER(antialiasedLineEnable, u);
-   SVGA3D_DUMP_PARAMETER(lineWidth, f);
+   SVGA3D_DUMP_PARAMETER(lineWidth, R[float]);
    SVGA3D_DUMP_PARAMETER(lineStippleEnable, u);
    SVGA3D_DUMP_PARAMETER(lineStippleFactor, u);
    SVGA3D_DUMP_PARAMETER(lineStipplePattern, u);
@@ -1870,15 +2059,15 @@ SVGA3D_DUMP_HEADER(DefineSamplerState)
    SVGA3D_DUMP_PARAMETER(addressU, u);
    SVGA3D_DUMP_PARAMETER(addressV, u);
    SVGA3D_DUMP_PARAMETER(addressW, u);
-   SVGA3D_DUMP_PARAMETER(mipLODBias, f);
+   SVGA3D_DUMP_PARAMETER(mipLODBias, R[float]);
    SVGA3D_DUMP_PARAMETER(maxAnisotropy, u);
    SVGA3D_DUMP_PARAMETER(comparisonFunc, u);
-   SVGA3D_DUMP_PARAMETER(borderColor.r, f);
-   SVGA3D_DUMP_PARAMETER(borderColor.g, f);
-   SVGA3D_DUMP_PARAMETER(borderColor.b, f);
-   SVGA3D_DUMP_PARAMETER(borderColor.a, f);
-   SVGA3D_DUMP_PARAMETER(minLOD, f);
-   SVGA3D_DUMP_PARAMETER(maxLOD, f);
+   SVGA3D_DUMP_PARAMETER(borderColor.r, R[float]);
+   SVGA3D_DUMP_PARAMETER(borderColor.g, R[float]);
+   SVGA3D_DUMP_PARAMETER(borderColor.b, R[float]);
+   SVGA3D_DUMP_PARAMETER(borderColor.a, R[float]);
+   SVGA3D_DUMP_PARAMETER(minLOD, R[float]);
+   SVGA3D_DUMP_PARAMETER(maxLOD, R[float]);
 }
 
 SVGA3D_DUMP_HEADER(DestroySamplerState)
@@ -1889,7 +2078,7 @@ SVGA3D_DUMP_HEADER(DestroySamplerState)
 SVGA3D_DUMP_HEADER(DefineShader)
 {
    SVGA3D_DUMP_PARAMETER(shaderId, u);
-   debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
+   _debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
    SVGA3D_DUMP_PARAMETER(sizeInBytes, u);
 }
 
@@ -1937,7 +2126,7 @@ SVGA3D_DUMP_HEADER(SetSingleConstantBuffer)
 {
    SVGA3D_DUMP_PARAMETER(slot, u);
    SVGA3D_DUMP_PARAMETER(sid, u);
-   debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
+   _debug_printf("\t\t.type = %s\n", shader_name(cmd->type));
    SVGA3D_DUMP_PARAMETER(offsetInBytes, u);
    SVGA3D_DUMP_PARAMETER(sizeInBytes, u);
 }
@@ -2039,6 +2228,15 @@ SVGA3D_DUMP_HEADER(TransferFromBuffer)
    SVGA3D_DUMP_PARAMETER(destSid, u);
    SVGA3D_DUMP_PARAMETER(destSubResource, u);
    dump_SVGA3dBox(&cmd->destBox);
+}
+
+static void
+dump_SVGA3dCmdIntraSurfaceCopy(const SVGA3dCmdIntraSurfaceCopy *cmd)
+{
+   SVGA3D_DUMP_PARAMETER(surface.sid, u);
+   SVGA3D_DUMP_PARAMETER(surface.face, u);
+   SVGA3D_DUMP_PARAMETER(surface.mipmap, u);
+   dump_SVGA3dCopyBox(&cmd->box);
 }
 
 static void
@@ -2349,9 +2547,9 @@ svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size)
          const SVGA3dCmdDefineShader *cmd = (const SVGA3dCmdDefineShader *)body;
          dump_SVGA3dCmdDefineShader(cmd);
          body = (const uint8_t *)&cmd[1];
-         svga_shader_dump((const uint32_t *)body, 
-                      (unsigned)(next - body)/sizeof(uint32_t),
-                      FALSE );
+         //svga_shader_dump((const uint32_t *)body, 
+         //             (unsigned)(next - body)/sizeof(uint32_t),
+         //             FALSE );
          body = next;
       }
       break;
@@ -2559,6 +2757,14 @@ svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size)
          body = (const uint8_t *)&cmd[1];
       }
       break;
+   case SVGA_3D_CMD_INTRA_SURFACE_COPY:
+      _debug_printf("\tSVGA_3D_CMD_INTRA_SURFACE_COPY\n");
+      {
+         const SVGA3dCmdIntraSurfaceCopy *cmd = (const SVGA3dCmdIntraSurfaceCopy *)body;
+         dump_SVGA3dCmdIntraSurfaceCopy(cmd);
+         body = (const uint8_t *)&cmd[1];
+      }
+      break;
    default:
       _debug_printf("\t0x%08x\n", cmd_id);
       break;
@@ -2579,7 +2785,7 @@ svga_dump_commands(const void *commands, uint32_t size)
    const uint8_t *next = commands;
    const uint8_t *last = next + size;
    
-   assert(size % sizeof(uint32_t) == 0);
+   //assert(size % sizeof(uint32_t) == 0);
    
    while(next < last) {
       const uint32_t cmd_id = *(const uint32_t *)next;
@@ -2605,4 +2811,4 @@ svga_dump_commands(const void *commands, uint32_t size)
       }
    }
 }
-
+#endif /* LOG_ENABLED */
