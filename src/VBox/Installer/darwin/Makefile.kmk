@@ -515,7 +515,8 @@ ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we
  VBOX_DI_VBAPP_MISC_FILES += \
  	Info.plist \
  	PkgInfo \
-       $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
+    $(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),embedded.provisionprofile,) \
+ 	$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
  	Resources/VirtualBoxVM.app/Contents/Info.plist \
  	Resources/VirtualBoxVM.app/Contents/PkgInfo \
  	$(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES)) \
@@ -671,6 +672,9 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 # Install all supported language files
 	$(foreach f, $(VBOX_INSTALL_LANG_FILES) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/nls/$(f)    $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/nls/$(f)$(NLTAB))
+ifdef VBOX_PROVISIONPROFILE_TEAM_ID
+	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile	$(VBOX_PATH_VBOX_APP_TMP)/Contents/embedded.provisionprofile
+endif
 ifdef VBOX_WITH_WEBSERVICES
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist       $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 endif
