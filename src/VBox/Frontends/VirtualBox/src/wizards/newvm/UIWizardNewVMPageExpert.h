@@ -147,7 +147,7 @@ private:
        QLabel *m_pLocationLabel;
        /** Set of widgets which user explicitly modified their values. They are exempt from
          * adjusting when OS type changes. */
-       QSet<QWidget*> m_userSetWidgets;
+       QSet<QObject*> m_userSetWidgets;
     /** @} */
 };
 

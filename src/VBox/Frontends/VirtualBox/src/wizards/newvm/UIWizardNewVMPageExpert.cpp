@@ -284,20 +284,24 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
     }
     LONG64 recommendedDiskSize = type.GetRecommendedHDD();
     /* Prepare initial disk choice: */
-    if (!m_userSetWidgets.contains(m_pDiskNew) &&
-        !m_userSetWidgets.contains(m_pDiskEmpty) &&
-        !m_userSetWidgets.contains(m_pDiskExisting))
+    if (!m_userSetWidgets.contains(m_pDiskSourceButtonGroup))
     {
         if (recommendedDiskSize != 0)
         {
             if (m_pDiskNew)
                 m_pDiskNew->setChecked(true);
+            setSelectedDiskSource(SelectedDiskSource_New);
+            setEnableDiskSelectionWidgets(false);
+            setEnableNewDiskWidgets(true);
             m_fRecommendedNoDisk = false;
         }
         else
         {
             if (m_pDiskEmpty)
                 m_pDiskEmpty->setChecked(true);
+            setSelectedDiskSource(SelectedDiskSource_Empty);
+            setEnableDiskSelectionWidgets(false);
+            setEnableNewDiskWidgets(false);
             m_fRecommendedNoDisk = true;
         }
         if (m_pDiskSelector)
@@ -320,8 +324,6 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 void UIWizardNewVMPageExpert::initializePage()
 {
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateVirtualDiskPathFromMachinePathName();
@@ -433,6 +435,18 @@ bool UIWizardNewVMPageExpert::isComplete() const
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
         fIsComplete = false;
     }
+
+    if (m_pDiskNew && m_pDiskNew->isChecked())
+    {
+        qulonglong uSize = field("mediumSize").toULongLong();
+        if (uSize <= 0)
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
+                                         UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
+            fIsComplete = false;
+        }
+    }
+
     /* Check unattended install related stuff: */
     if (isUnattendedEnabled())
     {
@@ -579,7 +593,7 @@ void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 {
     if (!m_pDiskSourceButtonGroup)
         return;
-
+    m_userSetWidgets << m_pDiskSourceButtonGroup;
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         setSelectedDiskSource(SelectedDiskSource_Empty);
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)

@@ -329,6 +329,7 @@ void UIWizardNewVMPageDisk::initializePage()
             m_pDiskNew->setFocus();
             m_pDiskNew->setChecked(true);
         }
+        setSelectedDiskSource(SelectedDiskSource_New);
         m_fRecommendedNoDisk = false;
     }
     else
@@ -338,10 +339,13 @@ void UIWizardNewVMPageDisk::initializePage()
             m_pDiskEmpty->setFocus();
             m_pDiskEmpty->setChecked(true);
         }
+        setSelectedDiskSource(SelectedDiskSource_Empty);
         m_fRecommendedNoDisk = true;
-     }
+    }
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
     /* We set the medium name and path according to machine name/path and do let user change these in the guided mode: */
     QString strDefaultName = fieldImp("machineBaseName").toString();
@@ -369,6 +373,13 @@ bool UIWizardNewVMPageDisk::isComplete() const
     AssertReturn(pWizard, false);
     if (selectedDiskSource() == SelectedDiskSource_Existing)
         return !pWizard->virtualDisk().isNull();
+
+    if (m_pDiskNew && m_pDiskNew->isChecked())
+    {
+        qulonglong uSize = field("mediumSize").toULongLong();
+        if (uSize <= 0)
+            return false;
+    }
 
     return true;
 }
