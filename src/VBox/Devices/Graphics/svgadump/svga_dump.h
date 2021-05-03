@@ -28,10 +28,12 @@
 
 #include <iprt/types.h>
 
+RT_C_DECLS_BEGIN
 void            
 svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size);
 
 void
 svga_dump_commands(const void *commands, uint32_t size);
+RT_C_DECLS_END
 
 #endif /* SVGA_DUMP_H_ */

@@ -155,9 +155,7 @@
 #include <VBox/bioslogo.h>
 
 #ifdef LOG_ENABLED
-RT_C_DECLS_BEGIN
 #include "svgadump/svga_dump.h"
-RT_C_DECLS_END
 #endif
 
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
