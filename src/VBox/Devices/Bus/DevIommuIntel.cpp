@@ -1190,16 +1190,30 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
         }
     }
 
-    /*
-     * Set Interrupt Remapping Table Pointer (SIRTP).
-     */
-    if (   (fExtCapReg & VTD_BF_ECAP_REG_IR_MASK)
-        && (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK))
+    if (fExtCapReg & VTD_BF_ECAP_REG_IR_MASK)
     {
-        /** @todo Perform global invalidation of all interrupt-entry cache when ESIRTPS is
-         *        supported. */
-        pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
-        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
+        /*
+         * Set Interrupt Remapping Table Pointer (SIRTP).
+         */
+        if (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK)
+        {
+            /** @todo Perform global invalidation of all interrupt-entry cache when ESIRTPS is
+             *        supported. */
+            pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
+        }
+
+        /*
+         * Interrupt remapping.
+         */
+        if (fChanged & VTD_BF_GCMD_REG_IRE_MASK)
+        {
+            if (uGcmdReg & VTD_BF_GCMD_REG_IRE_MASK)
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */,
+                                   VTD_BF_GSTS_REG_IRES_MASK /* fOrMask */);
+            else
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_IRES_MASK /* fAndMask */, 0 /* fOrMask */);
+        }
     }
 
     /*
@@ -1696,8 +1710,8 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
 
                 /* Paranoia. */
                 Assert(cbQueue <= cbMaxQs);
-                Assert(!(offQueueTail & ~VTD_IQT_REG_RW_MASK));
-                Assert(!(offQueueHead & ~VTD_IQH_REG_RW_MASK));
+                Assert(!(offQueueTail & ~VTD_BF_IQT_REG_QT_MASK));
+                Assert(!(offQueueHead & ~VTD_BF_IQH_REG_QH_MASK));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueTail & RT_BIT(4)));
                 Assert(fDw != VTD_IQA_REG_DW_256_BIT || !(offQueueHead & RT_BIT(4)));
                 Assert(offQueueHead < cbQueue);
@@ -2042,7 +2056,6 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
         pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
         pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
-        /** @todo Verbose others as needed during debugging/rainy day. */
         pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
         pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
         pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
