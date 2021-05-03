@@ -1327,7 +1327,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
 static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_t uIqaReg)
 {
     /* At present, we only care about the low 32-bits, high 32-bits are data. */
-    Assert(offReg == VTD_MMIO_OFF_IQA_REG);
+    Assert(offReg == VTD_MMIO_OFF_IQA_REG); NOREF(offReg);
 
     /** @todo What happens if IQA_REG is written when dmarInvQueueCanProcessRequests
      *        returns true? The Intel VT-d spec. doesn't state anywhere that it
@@ -1876,15 +1876,12 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
 {
     PCDMAR      pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARR3    pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
-    PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
-    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
     bool const fVerbose = RTStrCmp(pszArgs, "verbose") == 0;
 
     /*
-     * We lock the device to get a consistent register state, but it is
-     * ASSUMED pHlp->pfnPrintf is expensive, so we copy the registers into
-     * temporaries and release the lock ASAP.
+     * We lock the device to get a consistent register state as it is
+     * ASSUMED pHlp->pfnPrintf is expensive, so we copy the registers (the
+     * ones we care about here) into temporaries and release the lock ASAP.
      *
      * Order of register being read and outputted is in accordance with the
      * spec. for no particular reason.
