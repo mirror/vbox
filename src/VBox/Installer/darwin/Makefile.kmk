@@ -597,7 +597,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/, $(VBOX_UNATTENDED_TEMPLATES)) \
 		$(if-expr defined(VBOX_WITH_PYTHON), $(addprefix $(VBOX_PATH_DIST)/, $(VBOX_DI_VBAPP_PYTHON_FILES)),) \
 		$(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
-		$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),$(VBOX_PATH_DI_SRC)/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile,) \
+		$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),$(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile,) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
