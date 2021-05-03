@@ -21,10 +21,14 @@
 #include <QDir>
 #include <QFont>
 #include <QMenu>
+#include <QPalette>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QScrollBar>
 #include <QStyle>
+#include <QStylePainter>
+#include <QStyleOptionTab>
+#include <QTabBar>
 #include <QTextBlock>
 #include <QVBoxLayout>
 #ifdef RT_OS_SOLARIS
@@ -54,6 +58,50 @@
 
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
+
+class UITabBar : public QTabBar
+{
+    Q_OBJECT;
+public:
+    UITabBar(QWidget *pParent = 0)
+        :QTabBar(pParent)
+    {
+        QStyleOptionTab opt;
+        m_alternateColors << opt.palette.color(QPalette::Button).lighter(125);
+        m_alternateColors << opt.palette.color(QPalette::Button).darker(125);
+    }
+
+    void paintEvent(QPaintEvent * /*event*/) {
+
+        QStylePainter painter(this);
+        QStyleOptionTab opt;
+
+        for (int i = 0; i < count(); i++) {
+            initStyleOption(&opt, i);
+            int iColorIndex = tabData(i).toInt();
+            if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
+            {
+                opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
+            }
+
+            painter.drawControl(QStyle::CE_TabBarTabShape, opt);
+            painter.drawControl(QStyle::CE_TabBarTabLabel, opt);
+        }
+    }
+private:
+    QVector<QColor> m_alternateColors;
+};
+
+class UITabWidget : public QTabWidget
+{
+    Q_OBJECT;
+public:
+    UITabWidget(QWidget *pParent = 0)
+        :QTabWidget(pParent)
+    {
+        setTabBar(new UITabBar(this));
+    }
+};
 
 class UIMachineListCheckBox : public QCheckBox
 {
@@ -228,7 +276,28 @@ void UIVMLogViewerWidget::setMachines(const QVector<QUuid> &machineIDs)
     createLogViewerPages(newSelections);
     /* Remove the log pages/tabs of unselected machines from the tab widget: */
     removeLogViewerPages(unselectedMachines);
+    setTabColorPerMachine();
     m_pTabWidget->show();
+}
+
+void UIVMLogViewerWidget::setTabColorPerMachine()
+{
+    if (!m_pTabWidget || !m_pTabWidget->tabBar() || m_pTabWidget->tabBar()->count() == 0)
+        return;
+    QTabBar *pTabBar = m_pTabWidget->tabBar();
+    int iColorIndex = 0;
+    pTabBar->setTabData(0, iColorIndex);
+
+    for (int i = 1; i < pTabBar->count(); ++i)
+    {
+        UIVMLogPage *pLogPage = logPage(i);
+        UIVMLogPage *pLogPagePrev = logPage(i - 1);
+        if (!pLogPage || !pLogPagePrev)
+            continue;
+        if (pLogPage->machineId() != pLogPagePrev->machineId())
+            ++iColorIndex;
+        pTabBar->setTabData(i, iColorIndex % 2);
+    }
 }
 
 QString UIVMLogViewerWidget::readLogFile(CMachine &comMachine, int iLogFileId)
@@ -588,7 +657,7 @@ void UIVMLogViewerWidget::prepareWidgets()
             prepareToolBar();
 
         /* Create VM Log-Viewer container: */
-        m_pTabWidget = new QITabWidget;
+        m_pTabWidget = new UITabWidget;
         if (m_pTabWidget)
         {
             /* Add into layout: */
@@ -872,7 +941,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             strTabTitle.append(" - ");
         }
         strTabTitle.append(QFileInfo(strFileName).fileName());
-        m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, strTabTitle);
+        m_pTabWidget->addTab(pLogPage, strTabTitle);
 
         pLogPage->setLogContent(strLogContent, noLogsToShow);
         pLogPage->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
