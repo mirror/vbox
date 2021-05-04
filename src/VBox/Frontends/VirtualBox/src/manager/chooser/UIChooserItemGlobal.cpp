@@ -701,23 +701,31 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
 
-    /* Selected-item foreground: */
-    if (model()->selectedItems().contains(unconst(this)))
+    /* Selected or hovered item foreground: */
+    if (model()->selectedItems().contains(unconst(this)) || isHovered())
     {
-        const QPalette pal = palette();
-        pPainter->setPen(pal.color(QPalette::HighlightedText));
-    }
-    /* Hovered item foreground: */
-    else if (isHovered())
-    {
-        /* Prepare color: */
-        const QPalette pal = palette();
+        /* Prepare palette: */
+        const QPalette pal = QApplication::palette();
+
+        /* Get background color: */
         const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
-        const QColor hhl = highlight.lighter(m_iHoverLightnessMax);
-        if (hhl.value() - hhl.saturation() > 0)
-            pPainter->setPen(pal.color(QPalette::Active, QPalette::Text));
+        const QColor background = model()->selectedItems().contains(unconst(this))
+                                ? highlight.lighter(m_iHighlightLightnessMin)
+                                : highlight.lighter(m_iHoverLightnessMin);
+
+        /* Get foreground color: */
+        const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
+        const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
+        const QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
+        const QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+
+        /* Gather foreground color for background one: */
+        double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
+        //printf("luminance = %f\n", dLuminance);
+        if (dLuminance > 0.5)
+            pPainter->setPen(darkText);
         else
-            pPainter->setPen(pal.color(QPalette::Active, QPalette::HighlightedText));
+            pPainter->setPen(lightText);
     }
 
     /* Calculate indents: */

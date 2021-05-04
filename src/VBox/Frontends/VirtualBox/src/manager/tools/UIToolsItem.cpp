@@ -852,30 +852,31 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
     const int iSpacing = data(ToolsItemData_Spacing).toInt();
     const QPalette pal = palette();
 
-    /* Selected item foreground: */
-    if (model()->currentItem() == this)
+    /* Selected or hovered item foreground: */
+    if (model()->currentItem() == this || isHovered())
     {
-        const QColor textColor = isEnabled()
-                               ? pal.color(QPalette::Active, QPalette::HighlightedText)
-                               : pal.color(QPalette::Disabled, QPalette::Text);
-        pPainter->setPen(textColor);
-    }
-    /* Hovered item foreground: */
-    else if (isHovered())
-    {
-        /* Prepare color: */
-        QColor defaultHighlighted = pal.color(QPalette::Active, QPalette::Highlight);
-        QColor hoveredHighlighted = defaultHighlighted.lighter(m_iHoverLightnessMax);
-        QColor textColor;
-        if (hoveredHighlighted.value() - hoveredHighlighted.saturation() > 0)
-            textColor = isEnabled()
-                      ? pal.color(QPalette::Active, QPalette::Text)
-                      : pal.color(QPalette::Disabled, QPalette::Text);
+        /* Prepare palette: */
+        const QPalette pal = QApplication::palette();
+
+        /* Get background color: */
+        const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor background = model()->currentItem() == this
+                                ? highlight.lighter(m_iHighlightLightnessMin)
+                                : highlight.lighter(m_iHoverLightnessMin);
+
+        /* Get foreground color: */
+        const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
+        const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
+        const QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
+        const QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+
+        /* Gather foreground color for background one: */
+        double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
+        //printf("luminance = %f\n", dLuminance);
+        if (dLuminance > 0.5)
+            pPainter->setPen(darkText);
         else
-            textColor = isEnabled()
-                      ? pal.color(QPalette::Active, QPalette::HighlightedText)
-                      : pal.color(QPalette::Disabled, QPalette::Text);
-        pPainter->setPen(textColor);
+            pPainter->setPen(lightText);
     }
     /* Default item foreground: */
     else
