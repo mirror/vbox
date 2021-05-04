@@ -1524,7 +1524,6 @@ static int dmarIrReadIrte(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idxInt
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   uIrtaReg    The IRTA_REG.
- * @param   uGstsReg    The GSTS_REG.
  * @param   idDevice    The device ID (bus, device, function).
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
