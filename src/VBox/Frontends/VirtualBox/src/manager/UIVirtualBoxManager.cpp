@@ -2224,7 +2224,7 @@ void UIVirtualBoxManager::prepareMenuBar()
     {
         /* Make sure menu-bar fills own solid background: */
         menuBar()->setAutoFillBackground(true);
-        QPalette pal = menuBar()->palette();
+        QPalette pal = QApplication::palette();
         const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
         pal.setColor(QPalette::Active, QPalette::Button, color);
         menuBar()->setPalette(pal);

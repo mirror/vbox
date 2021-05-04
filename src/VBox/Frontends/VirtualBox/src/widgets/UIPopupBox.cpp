@@ -281,7 +281,7 @@ void UIPopupBox::paintEvent(QPaintEvent *pEvent)
     QPainter painter(this);
     painter.setClipRect(pEvent->rect());
 
-    QPalette pal = palette();
+    QPalette pal = QApplication::palette();
     painter.setClipPath(*m_pLabelPath);
     QColor base = pal.color(QPalette::Active, QPalette::Window);
     QRect rect = QRect(QPoint(0, 0), size()).adjusted(0, 0, -1, -1);

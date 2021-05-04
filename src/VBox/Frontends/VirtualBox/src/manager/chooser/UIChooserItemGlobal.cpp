@@ -558,7 +558,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     pPainter->save();
 
     /* Prepare color: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
 
     /* Selected-item background: */
     if (model()->selectedItems().contains(unconst(this)))
@@ -664,7 +664,7 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
     pPainter->save();
 
     /* Prepare color: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
     QColor strokeColor;
 
     /* Selected-item frame: */

@@ -246,7 +246,7 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     QPainter painter(this);
 
     /* Prepare palette colors: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
     const QColor color0 = m_fCurrent
                         ? pal.color(QPalette::Shadow).darker(110)
                         : pal.color(QPalette::Window).lighter(105);
@@ -367,7 +367,7 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     QPainter painter(this);
 
     /* Prepare palette colors: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
     const QColor color0 = m_fCurrent ? pal.color(QPalette::Base)
                         : m_fHovered ? pal.color(QPalette::Base).darker(102)
                         :              pal.color(QPalette::Button).darker(102);

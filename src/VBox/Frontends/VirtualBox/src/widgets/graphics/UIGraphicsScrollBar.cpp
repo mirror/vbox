@@ -152,7 +152,7 @@ void UIGraphicsScrollBarToken::paint(QPainter *pPainter, const QStyleOptionGraph
     pPainter->save();
 
     /* Prepare color: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
 
 #ifdef VBOX_WS_MAC
 
@@ -990,7 +990,7 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
     pPainter->save();
 
     /* Prepare color: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
 
 #ifdef VBOX_WS_MAC
 

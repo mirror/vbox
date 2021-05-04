@@ -567,7 +567,7 @@ void UIVirtualBoxManagerWidget::prepare()
 void UIVirtualBoxManagerWidget::preparePalette()
 {
     setAutoFillBackground(true);
-    QPalette pal = palette();
+    QPalette pal = QApplication::palette();
 #ifdef VBOX_WS_MAC
     const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
 #else
@@ -695,7 +695,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             }
 
             /* Adjust splitter colors according to main widgets it splits: */
-            m_pSplitter->configureColor(palette().color(QPalette::Active, QPalette::Midlight).darker(110));
+            m_pSplitter->configureColor(QApplication::palette().color(QPalette::Active, QPalette::Midlight).darker(110));
             /* Set the initial distribution. The right site is bigger. */
             m_pSplitter->setStretchFactor(0, 2);
             m_pSplitter->setStretchFactor(1, 3);

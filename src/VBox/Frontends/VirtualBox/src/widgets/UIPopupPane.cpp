@@ -239,7 +239,7 @@ void UIPopupPane::prepare()
 void UIPopupPane::prepareBackground()
 {
     /* Prepare palette: */
-    QPalette pal = palette();
+    QPalette pal = QApplication::palette();
     pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Window));
     setPalette(pal);
 }

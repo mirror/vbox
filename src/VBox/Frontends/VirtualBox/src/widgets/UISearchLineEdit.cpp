@@ -92,7 +92,7 @@ void UISearchLineEdit::reset()
 
 void UISearchLineEdit::colorBackground(bool fWarning)
 {
-    QPalette mPalette = palette();
+    QPalette mPalette = QApplication::palette();
     /** Make sure we reset color. */
     if (!fWarning || !m_fMark)
     {

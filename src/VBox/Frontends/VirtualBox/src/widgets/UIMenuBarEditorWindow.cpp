@@ -673,7 +673,7 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent *)
     QPainter painter(this);
 
     /* Prepare palette colors: */
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
     QColor color0 = pal.color(QPalette::Window);
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);

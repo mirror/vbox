@@ -265,7 +265,7 @@ void UIMiniToolBarPrivate::paintEvent(QPaintEvent*)
         painter.setClipPath(m_shape);
     }
     QRect backgroundRect = rect();
-    QColor backgroundColor = palette().color(QPalette::Window);
+    QColor backgroundColor = QApplication::palette().color(QPalette::Window);
     QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
     headerGradient.setColorAt(0, backgroundColor.darker(120));
     headerGradient.setColorAt(1, backgroundColor.darker(90));
@@ -889,7 +889,7 @@ void UIMiniToolBar::prepare()
         m_pToolbar->setAlignment(m_alignment);
         /* Configure own background: */
         QPalette pal = m_pToolbar->palette();
-        pal.setColor(QPalette::Window, palette().color(QPalette::Window));
+        pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Window));
         m_pToolbar->setPalette(pal);
         /* Configure child connections: */
         connect(m_pToolbar, &UIMiniToolBarPrivate::sigResized, this, &UIMiniToolBar::sltHandleToolbarResize);

@@ -248,7 +248,7 @@ void UIMenuToolBarPrivate::paintEvent(QPaintEvent * /* pEvent */)
         painter.setClipPath(m_shape);
     }
     QRect backgroundRect = rect();
-    QColor backgroundColor = palette().color(QPalette::Window);
+    QColor backgroundColor = QApplication::palette().color(QPalette::Window);
     QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
     headerGradient.setColorAt(0, backgroundColor.darker(120));
     headerGradient.setColorAt(1, backgroundColor.darker(104));

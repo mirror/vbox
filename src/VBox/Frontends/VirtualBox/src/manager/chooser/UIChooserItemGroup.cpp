@@ -1664,13 +1664,12 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
     /* Prepare color: */
-    const QPalette pal = palette();
-    const QColor strokeColor = pal.color(QPalette::Active,
-                                         model()->selectedItems().contains(this) ?
-                                         QPalette::Highlight : QPalette::Midlight).darker(headerDarkness() + 10);
+    const QColor frameColor = QApplication::palette().color(QPalette::Active,
+                                                            model()->selectedItems().contains(this) ?
+                                                            QPalette::Highlight : QPalette::Midlight).darker(headerDarkness() + 10);
 
     /* Create/assign pen: */
-    QPen pen(strokeColor);
+    QPen pen(frameColor);
     pen.setWidth(0);
     pPainter->setPen(pen);
 
@@ -1704,9 +1703,9 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
-    pPainter->setPen(palette().color(QPalette::Active,
-                                     model()->selectedItems().contains(this) ?
-                                     QPalette::HighlightedText : QPalette::ButtonText));
+    pPainter->setPen(QApplication::palette().color(QPalette::Active,
+                                                   model()->selectedItems().contains(this) ?
+                                                   QPalette::HighlightedText : QPalette::ButtonText));
 
     /* Paint name: */
     int iNameX = iMarginHL;

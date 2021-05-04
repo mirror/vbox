@@ -365,7 +365,7 @@ bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle
     pNewPage->setIndex(iIndex);
     pNewPage->setTitle(strTitle);
 
-    const QPalette pal = palette();
+    const QPalette pal = QApplication::palette();
     QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(130);
     pNewPage->setTitleBackgroundColor(tabBackgroundColor);
 
