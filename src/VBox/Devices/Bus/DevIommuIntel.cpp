@@ -54,7 +54,7 @@
 #define DMAR_IS_MMIO_OFF_VALID(a_off)               (   (a_off) < DMAR_MMIO_GROUP_0_OFF_END \
                                                      || (a_off) - DMAR_MMIO_GROUP_1_OFF_FIRST < DMAR_MMIO_GROUP_1_SIZE)
 
-/** Acquires the DMAR lock but returns with the given error code on failure. */
+/** Acquires the DMAR lock but returns with the given busy error code on failure. */
 #define DMAR_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy) \
     do { \
         if ((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)) == VINF_SUCCESS) \
@@ -63,12 +63,16 @@
             return (a_rcBusy); \
     } while (0)
 
-/** Acquires the DMAR lock and is not expected to fail. */
-#define DMAR_LOCK(a_pDevIns, a_pThisCC) \
+/** Acquires the DMAR lock (not expected to fail). */
+#ifdef IN_RING3
+# define DMAR_LOCK(a_pDevIns, a_pThisCC)            (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED)
+#else
+# define DMAR_LOCK(a_pDevIns, a_pThisCC) \
     do { \
-        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED); \
-        Assert(rcLock == VINF_SUCCESS); \
+        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
+        AssertRC(rcLock); \
     } while (0)
+#endif
 
 /** Release the DMAR lock. */
 #define DMAR_UNLOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnUnlock(a_pDevIns)
@@ -163,6 +167,12 @@ typedef enum
     kDmarDiag_Iqei_Ttm_Rsvd,
     kDmarDiag_IqtReg_Qt_Invalid,
     kDmarDiag_IqtReg_Qt_NotAligned,
+    kDmarDiag_Ir_Cfi_Blocked,
+    kDmarDiag_Ir_Rfi_Intr_Index_Invalid,
+    kDmarDiag_Ir_Rfi_Irte_Read_Failed,
+    kDmarDiag_Ir_Rfi_Irte_Not_Present,
+    kDmarDiag_Ir_Rfi_Irte_Rsvd,
+    kDmarDiag_Ir_Rfi_Rsvd,
     /* Member for determining array index limit. */
     kDmarDiag_End,
     /* Type size hack. */
@@ -191,7 +201,13 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Invalid ),
     DMARDIAG_DESC(Iqei_Ttm_Rsvd             ),
     DMARDIAG_DESC(IqtReg_Qt_Invalid         ),
-    DMARDIAG_DESC(IqtReg_Qt_NotAligned      )
+    DMARDIAG_DESC(IqtReg_Qt_NotAligned      ),
+    DMARDIAG_DESC(Ir_Cfi_Blocked            ),
+    DMARDIAG_DESC(Ir_Rfi_Intr_Index_Invalid ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed   ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Not_Present   ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Rsvd          ),
+    DMARDIAG_DESC(Ir_Rfi_Rsvd               ),
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -622,6 +638,28 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 
 
 /**
+ * Returns whether the interrupt remapping fault is qualified or not.
+ *
+ * @returns @c true if qualified, @c false otherwise.
+ * @param   enmIrFault  The interrupt remapping fault condition.
+ */
+static bool vtdIrFaultIsQualified(VTD_IR_FAULT_T enmIrFault)
+{
+    switch (enmIrFault)
+    {
+        case kIrf_Irte_Not_Present:
+        case kIrf_Irte_Present_Rsvd:
+        case kIrf_Irte_Present_Invalid:
+        case kIrf_Pid_Read_Failed:
+        case kIrf_Pid_Rsvd:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+/**
  * Returns table translation mode's descriptive name.
  *
  * @returns The descriptive name.
@@ -1007,6 +1045,9 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
  * Raises an interrupt in response to a fault event.
  *
  * @param   pDevIns     The IOMMU device instance.
+ *
+ * @remarks This assumes the caller has already set the required status bits in the
+ *          FSTS_REG (namely one or more of PPF, PFO, IQE, ICE or ITE bits).
  */
 static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
@@ -1090,13 +1131,15 @@ static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
 #endif /* IN_RING3 */
 
 
-#if 0
 /**
  * Checks if a primary fault can be recorded.
  *
  * @returns @c true if the fault can be recorded, @c false otherwise.
  * @param   pDevIns     The IOMMU device instance.
  * @param   pThis       The shared DMAR device state.
+ *
+ * @remarks Warning: This function has side-effects wrt the DMAR register state. Do
+ *          NOT call it unless there is a fault condition!
  */
 static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
 {
@@ -1123,11 +1166,72 @@ static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
         return false;
     }
 
-    uFstsReg |= VTD_BF_FSTS_REG_PPF_MASK;
-    dmarRegWrite32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
     return true;
 }
-#endif
+
+
+/**
+ * Records an interrupt request fault.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   enmDiag     The diagnostic reason.
+ * @param   enmIrFault  The interrupt fault reason.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   idxIntr     The interrupt index.
+ */
+static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT_T enmIrFault, uint16_t idDevice,
+                              uint16_t idxIntr)
+{
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    /* Update the diagnostic reason. */
+    pThis->enmDiag = enmDiag;
+
+    /* We don't support advance fault logging. */
+    Assert(!(dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG) & VTD_BF_GSTS_REG_AFLS_MASK));
+
+    if (dmarPrimaryFaultCanRecord(pDevIns, pThis))
+    {
+        /* Update the fault recording registers with the fault information. */
+        uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID, idDevice)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIrFault)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,   1);
+        uint64_t const uFrcdLo = (uint64_t)idxIntr << 48;
+        dmarRegWriteRaw64(pThis, DMAR_MMIO_OFF_FRCD_HI_REG, uFrcdHi);
+        dmarRegWriteRaw64(pThis, DMAR_MMIO_OFF_FRCD_LO_REG, uFrcdLo);
+
+        /* Set the Pending Primary Fault (PPF) field in the status register. */
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_FSTS_REG, UINT32_MAX, VTD_BF_FSTS_REG_PPF_MASK);
+
+        /* Raise interrupt if necessary. */
+        dmarFaultEventRaiseInterrupt(pDevIns);
+    }
+}
+
+
+/**
+ * Records a qualified interrupt request fault.
+ *
+ * Qualified faults are those that can be suppressed by software using the FPD bit
+ * in the IRTE.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   enmDiag     The diagnostic reason.
+ * @param   enmIrFault  The interrupt fault reason.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   idxIntr     The interrupt index.
+ * @param   pIrte       The IRTE that caused this fault.
+ */
+static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT_T enmIrFault, uint16_t idDevice,
+                                       uint16_t idxIntr, PCVTD_IRTE_T pIrte)
+{
+    Assert(vtdIrFaultIsQualified(enmIrFault));
+    Assert(pIrte);
+    if (!(pIrte->au64[0] & VTD_BF_0_IRTE_FPD_MASK))
+        return dmarIrFaultRecord(pDevIns, enmDiag, enmIrFault, idDevice, idxIntr);
+}
 
 
 /**
@@ -1181,13 +1285,13 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
         if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
         {
             /* Enable the invalidation-queue. */
-            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_QIES_MASK /* fOrMask */);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_QIES_MASK);
             dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
         }
         else
         {
             /* Disable the invalidation-queue. */
-            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK /* fAndMask */, 0 /* fOrMask */);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK, 0 /* fOrMask */);
             dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
         }
     }
@@ -1202,7 +1306,7 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
             /** @todo Perform global invalidation of all interrupt-entry cache when ESIRTPS is
              *        supported. */
             pThis->uIrtaReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_IRTA_REG);
-            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */, VTD_BF_GSTS_REG_IRTPS_MASK /* fOrMask */);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_IRTPS_MASK);
         }
 
         /*
@@ -1211,10 +1315,9 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
         if (fChanged & VTD_BF_GCMD_REG_IRE_MASK)
         {
             if (uGcmdReg & VTD_BF_GCMD_REG_IRE_MASK)
-                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX /* fAndMask */,
-                                   VTD_BF_GSTS_REG_IRES_MASK /* fOrMask */);
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_IRES_MASK);
             else
-                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_IRES_MASK /* fAndMask */, 0 /* fOrMask */);
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_IRES_MASK, 0 /* fOrMask */);
         }
     }
 
@@ -1274,7 +1377,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
             }
             else
                 pThis->enmDiag = kDmarDiag_CcmdReg_NotSupported;
-            dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_CCMD_REG_CAIG_MASK /* fAndMask */, 0 /* fOrMask */);
+            dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_CCMD_REG_CAIG_MASK, 0 /* fOrMask */);
         }
     }
     return VINF_SUCCESS;
@@ -1309,7 +1412,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     else
     {
         /* Hardware treats bit 4 as RsvdZ in this situation, so clear it. */
-        dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4) /* fAndMask*/ , 0 /* fOrMask */);
+        dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4), 0 /* fOrMask */);
         dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kIqei_QueueTailNotAligned);
     }
     return VINF_SUCCESS;
@@ -1394,6 +1497,111 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
 
 
 /**
+ * Reads an IRTE from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uIrtaReg    The IRTA_REG.
+ * @param   idxIntr     The interrupt index.
+ * @param   pIrte       Where to store the read IRTE.
+ */
+static int dmarIrReadIrte(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idxIntr, PVTD_IRTE_T pIrte)
+{
+    Assert(idxIntr < VTD_IRTA_REG_GET_ENTRIES(uIrtaReg));
+
+    size_t const   cbIrte     = sizeof(*pIrte);
+    RTGCPHYS const GCPhysIrte = (uIrtaReg & VTD_BF_IRTA_REG_IRTA_MASK) + (idxIntr * cbIrte);
+    int rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysIrte, pIrte, cbIrte);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Handles remapping of interrupts in remappable interrupt format.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uIrtaReg    The IRTA_REG.
+ * @param   uGstsReg    The GSTS_REG.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
+ */
+static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+{
+    Assert(VTD_MSI_ADDR_GET_INTR_FORMAT(pMsiIn->Addr.u64) == VTD_INTR_FORMAT_REMAPPABLE);
+
+    /* Validate reserved bits in the interrupt request. */
+    AssertCompile(VTD_REMAPPABLE_MSI_ADDR_VALID_MASK == UINT32_MAX);
+    if (!(pMsiIn->Data.u32 & ~VTD_REMAPPABLE_MSI_DATA_VALID_MASK))
+    { /* likely */ }
+    else
+    {
+        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, kIrf_Remappable_Intr_Rsvd, idDevice, 0 /* idxIntr */);
+        return VERR_IOMMU_INTR_REMAP_DENIED;
+    }
+
+    /* Compute the index into the interrupt remap table. */
+    uint16_t const uHandleHi       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_HI);
+    uint16_t const uHandleLo       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO);
+    uint16_t const uHandle         = uHandleLo | (uHandleHi << 15);
+    bool const     fSubHandleValid = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_SHV);
+    uint32_t const idxIntr         = fSubHandleValid
+                                   ? uHandle + RT_BF_GET(pMsiIn->Data.u32, VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE)
+                                   : uHandle;
+
+    /* Validate the index. */
+    uint32_t const cEntries = VTD_IRTA_REG_GET_ENTRIES(uIrtaReg);
+    if (idxIntr < cEntries)
+    { /* likely */ }
+    else
+    {
+        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, kIrf_Intr_Index_Invalid, idDevice, idxIntr);
+        return VERR_IOMMU_INTR_REMAP_DENIED;
+    }
+
+    /** @todo Implement and read IRTE from interrupt-entry cache here. */
+
+    /* Read the interrupt remap table entry (IRTE). */
+    VTD_IRTE_T Irte;
+    int rc = dmarIrReadIrte(pDevIns, uIrtaReg, idxIntr, &Irte);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+    {
+        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, kIrf_Irte_Read_Failed, idDevice, idxIntr);
+        return VERR_IOMMU_INTR_REMAP_DENIED;
+    }
+
+    /* Validate IRTE. */
+    uint64_t const uIrteQword0 = Irte.au64[0];
+    uint64_t const uIrteQword1 = Irte.au64[1];
+    bool const fPresent = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_P);
+    if (fPresent)
+    { /* likely */ }
+    else
+    {
+        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, kIrf_Irte_Not_Present, idDevice, idxIntr, &Irte);
+        return VERR_IOMMU_INTR_REMAP_DENIED;
+    }
+    if (   !(uIrteQword0 & ~VTD_IRTE_0_VALID_MASK)
+        && !(uIrteQword1 & ~VTD_IRTE_1_VALID_MASK))
+    { /* likely */ }
+    else
+    {
+        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, kIrf_Irte_Present_Rsvd, idDevice, idxIntr, &Irte);
+        return VERR_IOMMU_INTR_REMAP_DENIED;
+    }
+
+    /** @todo rest of validation using SVT and SQ. */
+    *pMsiOut = *pMsiIn;      // This is just temporary to shut up the compiler!
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
  * Interrupt remap request from a device.
  *
  * @returns VBox status code.
@@ -1419,38 +1627,34 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
     uint64_t const uIrtaReg = pThis->uIrtaReg;
     DMAR_UNLOCK(pDevIns, pThisCC);
 
+    /* Check if interrupt remapping is enabled. */
     if (uGstsReg & VTD_BF_GSTS_REG_IRES_MASK)
     {
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
 
-        /*
-         * Handle interrupts in compatibility format.
-         */
+        /* Handle compatibility format interrupts. */
         uint8_t const fIntrFormat = VTD_MSI_ADDR_GET_INTR_FORMAT(pMsiIn->Addr.u64);
         if (fIntrFormat == VTD_INTR_FORMAT_COMPAT)
         {
-            /* If Extended Interrupt Mode (EIM) is enabled or compatibility format interrupts (CFI) are  disabled,
-               block the interrupt. */
+            /* If in Extended Interrupt Mode (EIM) or compatibility format interrupts are  disabled, block the interrupt. */
             if (    (uIrtaReg & VTD_BF_IRTA_REG_EIME_MASK)
                 || !(uGstsReg & VTD_BF_GSTS_REG_CFIS_MASK))
+            {
+                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Cfi_Blocked, kIrf_Cfi_Blocked, idDevice, 0 /* idxIntr */);
                 return VERR_IOMMU_INTR_REMAP_DENIED;
+            }
 
             /* Interrupt isn't subject to remapping, pass-through the interrupt. */
             *pMsiOut = *pMsiIn;
             return VINF_SUCCESS;
         }
 
-        /*
-         * Handle interrupts in remappable format.
-         */
-        /** @todo index IRTA. */
-    }
-    else
-    {
-        /* If interrupt-remapping isn't enabled, all interrupts are pass-through.  */
-        *pMsiOut = *pMsiIn;
+        /* Handle remappable format interrupts. */
+        return dmarIrRemapIntr(pDevIns, uIrtaReg, idDevice, pMsiIn, pMsiOut);
     }
 
+    /* If interrupt-remapping isn't enabled, all interrupts are pass-through.  */
+    *pMsiOut = *pMsiIn;
     return VINF_SUCCESS;
 }
 
@@ -1928,13 +2132,16 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     uint32_t const uPeuaddrReg  = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_PEUADDR_REG);
     uint64_t const uMtrrcapReg  = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_MTRRCAP_REG);
     uint64_t const uMtrrdefReg  = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_MTRRDEF_REG);
-    /** @todo Do other registers as required, we don't implement them for now. */
 
     DMAR_UNLOCK(pDevIns, pThisR3);
 
     const char *const pszDiag = enmDiag < RT_ELEMENTS(g_apszDmarDiagDesc) ? g_apszDmarDiagDesc[enmDiag] : "(Unknown)";
     pHlp->pfnPrintf(pHlp, "Intel-IOMMU:\n");
     pHlp->pfnPrintf(pHlp, " Diag         = %s\n", pszDiag);
+
+    /*
+     * Non-verbose output.
+     */
     if (!fVerbose)
     {
         pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
@@ -1976,175 +2183,177 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
         pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
         pHlp->pfnPrintf(pHlp, "\n");
+        return;
     }
-    else
+
+    /*
+     * Verbose output.
+     */
+    pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
     {
-        pHlp->pfnPrintf(pHlp, " VER_REG      = %#RX32\n", uVerReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   MAJ          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX));
-            pHlp->pfnPrintf(pHlp, "   MIN          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN));
-        }
-        pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
-        {
-            uint8_t const uSagaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW);
-            uint8_t const uMgaw  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
-            uint8_t const uNfr   = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
-            pHlp->pfnPrintf(pHlp, "   ND           = %u\n",         RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
-            pHlp->pfnPrintf(pHlp, "   AFL          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_AFL));
-            pHlp->pfnPrintf(pHlp, "   RWBF         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_RWBF));
-            pHlp->pfnPrintf(pHlp, "   PLMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PLMR));
-            pHlp->pfnPrintf(pHlp, "   PHMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PHMR));
-            pHlp->pfnPrintf(pHlp, "   CM           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_CM));
-            pHlp->pfnPrintf(pHlp, "   SAGAW        = %#x (%u bits)\n", uSagaw, vtdCapRegGetSagawBits(uSagaw));
-            pHlp->pfnPrintf(pHlp, "   MGAW         = %#x (%u bits)\n", uMgaw, uMgaw + 1);
-            pHlp->pfnPrintf(pHlp, "   ZLR          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ZLR));
-            pHlp->pfnPrintf(pHlp, "   FRO          = %#x bytes\n",  RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FRO));
-            pHlp->pfnPrintf(pHlp, "   SLLPS        = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SLLPS));
-            pHlp->pfnPrintf(pHlp, "   PSI          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PSI));
-            pHlp->pfnPrintf(pHlp, "   NFR          = %u (%u FRCD register%s)\n", uNfr, uNfr + 1, uNfr > 0 ? "s" : "");
-            pHlp->pfnPrintf(pHlp, "   MAMV         = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MAMV));
-            pHlp->pfnPrintf(pHlp, "   DWD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DWD));
-            pHlp->pfnPrintf(pHlp, "   DRD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DRD));
-            pHlp->pfnPrintf(pHlp, "   FL1GP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL1GP));
-            pHlp->pfnPrintf(pHlp, "   PI           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PI));
-            pHlp->pfnPrintf(pHlp, "   FL5LP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL5LP));
-            pHlp->pfnPrintf(pHlp, "   ESIRTPS      = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESIRTPS));
-            pHlp->pfnPrintf(pHlp, "   ESRTPS       = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESRTPS));
-        }
-        pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
-        {
-            uint8_t const uPss = RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PSS);
-            pHlp->pfnPrintf(pHlp, "   C            = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_C));
-            pHlp->pfnPrintf(pHlp, "   QI           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_QI));
-            pHlp->pfnPrintf(pHlp, "   DT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DT));
-            pHlp->pfnPrintf(pHlp, "   IR           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IR));
-            pHlp->pfnPrintf(pHlp, "   EIM          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EIM));
-            pHlp->pfnPrintf(pHlp, "   PT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PT));
-            pHlp->pfnPrintf(pHlp, "   SC           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SC));
-            pHlp->pfnPrintf(pHlp, "   IRO          = %#x bytes\n",  RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IRO));
-            pHlp->pfnPrintf(pHlp, "   MHMV         = %#x\n",        RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MHMV));
-            pHlp->pfnPrintf(pHlp, "   MTS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MTS));
-            pHlp->pfnPrintf(pHlp, "   NEST         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NEST));
-            pHlp->pfnPrintf(pHlp, "   PRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PRS));
-            pHlp->pfnPrintf(pHlp, "   ERS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ERS));
-            pHlp->pfnPrintf(pHlp, "   SRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SRS));
-            pHlp->pfnPrintf(pHlp, "   NWFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NWFS));
-            pHlp->pfnPrintf(pHlp, "   EAFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EAFS));
-            pHlp->pfnPrintf(pHlp, "   PSS          = %u (%u bits)\n", uPss, uPss > 0 ? uPss + 1 : 0);
-            pHlp->pfnPrintf(pHlp, "   PASID        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PASID));
-            pHlp->pfnPrintf(pHlp, "   DIT          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DIT));
-            pHlp->pfnPrintf(pHlp, "   PDS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PDS));
-            pHlp->pfnPrintf(pHlp, "   SMTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMTS));
-            pHlp->pfnPrintf(pHlp, "   VCS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_VCS));
-            pHlp->pfnPrintf(pHlp, "   SLADS        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLADS));
-            pHlp->pfnPrintf(pHlp, "   SLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLTS));
-            pHlp->pfnPrintf(pHlp, "   FLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_FLTS));
-            pHlp->pfnPrintf(pHlp, "   SMPWCS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMPWCS));
-            pHlp->pfnPrintf(pHlp, "   RPS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPS));
-            pHlp->pfnPrintf(pHlp, "   ADMS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ADMS));
-            pHlp->pfnPrintf(pHlp, "   RPRIVS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPRIVS));
-        }
-        pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
-        {
-            uint8_t const fCfi = RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_CFI);
-            pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass interrupt remapping"
-                                                                            : "Block compatible format interrupts");
-            pHlp->pfnPrintf(pHlp, "   SIRTP        = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SIRTP));
-            pHlp->pfnPrintf(pHlp, "   IRE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_IRE));
-            pHlp->pfnPrintf(pHlp, "   QIE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_QIE));
-            pHlp->pfnPrintf(pHlp, "   WBF          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_WBF));
-            pHlp->pfnPrintf(pHlp, "   EAFL         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
-            pHlp->pfnPrintf(pHlp, "   SFL          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
-            pHlp->pfnPrintf(pHlp, "   SRTP         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SRTP));
-            pHlp->pfnPrintf(pHlp, "   TE           = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_TE));
-        }
-        pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
-        {
-            uint8_t const fCfis = RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_CFIS);
-            pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass interrupt remapping"
-                                                                              : "Block compatible format interrupts");
-            pHlp->pfnPrintf(pHlp, "   IRTPS        = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRTPS));
-            pHlp->pfnPrintf(pHlp, "   IRES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRES));
-            pHlp->pfnPrintf(pHlp, "   QIES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_QIES));
-            pHlp->pfnPrintf(pHlp, "   WBFS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_WBFS));
-            pHlp->pfnPrintf(pHlp, "   AFLS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_AFLS));
-            pHlp->pfnPrintf(pHlp, "   FLS          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_FLS));
-            pHlp->pfnPrintf(pHlp, "   RTPS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_RTPS));
-            pHlp->pfnPrintf(pHlp, "   TES          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_TES));
-        }
-        pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
-        {
-            uint8_t const uTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
-            pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n",  uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
-            pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",   RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
-        }
-        pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
-        pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   PFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PFO));
-            pHlp->pfnPrintf(pHlp, "   PPF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PPF));
-            pHlp->pfnPrintf(pHlp, "   AFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_AFO));
-            pHlp->pfnPrintf(pHlp, "   APF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_APF));
-            pHlp->pfnPrintf(pHlp, "   IQE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_IQE));
-            pHlp->pfnPrintf(pHlp, "   ICS          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ICE));
-            pHlp->pfnPrintf(pHlp, "   ITE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ITE));
-            pHlp->pfnPrintf(pHlp, "   FRI          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_FRI));
-        }
-        pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IM));
-            pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IP));
-        }
-        pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
-        pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
-        pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
-        pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
-        pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
-        pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
-        pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
-        pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
-        pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
-        pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
-        pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
-        pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
-        {
-            uint8_t const  fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
-            uint8_t const  fQs = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_QS);
-            uint8_t const  cQueuePages = 1 << fQs;
-            pHlp->pfnPrintf(pHlp, "   DW           = %u (%s)\n",  fDw, fDw == VTD_IQA_REG_DW_128_BIT ? "128-bit" : "256-bit");
-            pHlp->pfnPrintf(pHlp, "   QS           = %u (%u page%s)\n", fQs, cQueuePages, cQueuePages > 1 ? "s" : "");
-        }
-        pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   IWC          = %u\n",       RT_BF_GET(uIcsReg, VTD_BF_ICS_REG_IWC));
-        }
-        pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IM));
-            pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IP));
-        }
-        pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
-        pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
-        pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
-        pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
-        {
-            pHlp->pfnPrintf(pHlp, "   ICESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ICESID));
-            pHlp->pfnPrintf(pHlp, "   ITESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ITESID));
-            pHlp->pfnPrintf(pHlp, "   IQEI         = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_IQEI));
-        }
-        pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
-        pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
-        pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
-        pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
-        pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
-        pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
-        pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
-        pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
-        pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
-        pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
-        pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
-        pHlp->pfnPrintf(pHlp, "\n");
+        pHlp->pfnPrintf(pHlp, "   MAJ          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX));
+        pHlp->pfnPrintf(pHlp, "   MIN          = %#x\n", RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN));
     }
+    pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
+    {
+        uint8_t const uSagaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW);
+        uint8_t const uMgaw  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
+        uint8_t const uNfr   = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
+        pHlp->pfnPrintf(pHlp, "   ND           = %u\n",         RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
+        pHlp->pfnPrintf(pHlp, "   AFL          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_AFL));
+        pHlp->pfnPrintf(pHlp, "   RWBF         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_RWBF));
+        pHlp->pfnPrintf(pHlp, "   PLMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PLMR));
+        pHlp->pfnPrintf(pHlp, "   PHMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PHMR));
+        pHlp->pfnPrintf(pHlp, "   CM           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_CM));
+        pHlp->pfnPrintf(pHlp, "   SAGAW        = %#x (%u bits)\n", uSagaw, vtdCapRegGetSagawBits(uSagaw));
+        pHlp->pfnPrintf(pHlp, "   MGAW         = %#x (%u bits)\n", uMgaw, uMgaw + 1);
+        pHlp->pfnPrintf(pHlp, "   ZLR          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ZLR));
+        pHlp->pfnPrintf(pHlp, "   FRO          = %#x bytes\n",  RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FRO));
+        pHlp->pfnPrintf(pHlp, "   SLLPS        = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SLLPS));
+        pHlp->pfnPrintf(pHlp, "   PSI          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PSI));
+        pHlp->pfnPrintf(pHlp, "   NFR          = %u (%u FRCD register%s)\n", uNfr, uNfr + 1, uNfr > 0 ? "s" : "");
+        pHlp->pfnPrintf(pHlp, "   MAMV         = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MAMV));
+        pHlp->pfnPrintf(pHlp, "   DWD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DWD));
+        pHlp->pfnPrintf(pHlp, "   DRD          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_DRD));
+        pHlp->pfnPrintf(pHlp, "   FL1GP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL1GP));
+        pHlp->pfnPrintf(pHlp, "   PI           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PI));
+        pHlp->pfnPrintf(pHlp, "   FL5LP        = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FL5LP));
+        pHlp->pfnPrintf(pHlp, "   ESIRTPS      = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESIRTPS));
+        pHlp->pfnPrintf(pHlp, "   ESRTPS       = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ESRTPS));
+    }
+    pHlp->pfnPrintf(pHlp, " ECAP_REG     = %#RX64\n", uEcapReg);
+    {
+        uint8_t const uPss = RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PSS);
+        pHlp->pfnPrintf(pHlp, "   C            = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_C));
+        pHlp->pfnPrintf(pHlp, "   QI           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_QI));
+        pHlp->pfnPrintf(pHlp, "   DT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DT));
+        pHlp->pfnPrintf(pHlp, "   IR           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IR));
+        pHlp->pfnPrintf(pHlp, "   EIM          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EIM));
+        pHlp->pfnPrintf(pHlp, "   PT           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PT));
+        pHlp->pfnPrintf(pHlp, "   SC           = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SC));
+        pHlp->pfnPrintf(pHlp, "   IRO          = %#x bytes\n",  RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_IRO));
+        pHlp->pfnPrintf(pHlp, "   MHMV         = %#x\n",        RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MHMV));
+        pHlp->pfnPrintf(pHlp, "   MTS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_MTS));
+        pHlp->pfnPrintf(pHlp, "   NEST         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NEST));
+        pHlp->pfnPrintf(pHlp, "   PRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PRS));
+        pHlp->pfnPrintf(pHlp, "   ERS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ERS));
+        pHlp->pfnPrintf(pHlp, "   SRS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SRS));
+        pHlp->pfnPrintf(pHlp, "   NWFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_NWFS));
+        pHlp->pfnPrintf(pHlp, "   EAFS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_EAFS));
+        pHlp->pfnPrintf(pHlp, "   PSS          = %u (%u bits)\n", uPss, uPss > 0 ? uPss + 1 : 0);
+        pHlp->pfnPrintf(pHlp, "   PASID        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PASID));
+        pHlp->pfnPrintf(pHlp, "   DIT          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_DIT));
+        pHlp->pfnPrintf(pHlp, "   PDS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_PDS));
+        pHlp->pfnPrintf(pHlp, "   SMTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMTS));
+        pHlp->pfnPrintf(pHlp, "   VCS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_VCS));
+        pHlp->pfnPrintf(pHlp, "   SLADS        = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLADS));
+        pHlp->pfnPrintf(pHlp, "   SLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SLTS));
+        pHlp->pfnPrintf(pHlp, "   FLTS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_FLTS));
+        pHlp->pfnPrintf(pHlp, "   SMPWCS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_SMPWCS));
+        pHlp->pfnPrintf(pHlp, "   RPS          = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPS));
+        pHlp->pfnPrintf(pHlp, "   ADMS         = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_ADMS));
+        pHlp->pfnPrintf(pHlp, "   RPRIVS       = %RTbool\n",    RT_BF_GET(uEcapReg, VTD_BF_ECAP_REG_RPRIVS));
+    }
+    pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
+    {
+        uint8_t const fCfi = RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_CFI);
+        pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass interrupt remapping"
+                                                                        : "Block compatible format interrupts");
+        pHlp->pfnPrintf(pHlp, "   SIRTP        = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SIRTP));
+        pHlp->pfnPrintf(pHlp, "   IRE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_IRE));
+        pHlp->pfnPrintf(pHlp, "   QIE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_QIE));
+        pHlp->pfnPrintf(pHlp, "   WBF          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_WBF));
+        pHlp->pfnPrintf(pHlp, "   EAFL         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
+        pHlp->pfnPrintf(pHlp, "   SFL          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SFL));
+        pHlp->pfnPrintf(pHlp, "   SRTP         = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SRTP));
+        pHlp->pfnPrintf(pHlp, "   TE           = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_TE));
+    }
+    pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
+    {
+        uint8_t const fCfis = RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_CFIS);
+        pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass interrupt remapping"
+                                                                          : "Block compatible format interrupts");
+        pHlp->pfnPrintf(pHlp, "   IRTPS        = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRTPS));
+        pHlp->pfnPrintf(pHlp, "   IRES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRES));
+        pHlp->pfnPrintf(pHlp, "   QIES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_QIES));
+        pHlp->pfnPrintf(pHlp, "   WBFS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_WBFS));
+        pHlp->pfnPrintf(pHlp, "   AFLS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_AFLS));
+        pHlp->pfnPrintf(pHlp, "   FLS          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_FLS));
+        pHlp->pfnPrintf(pHlp, "   RTPS         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_RTPS));
+        pHlp->pfnPrintf(pHlp, "   TES          = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_TES));
+    }
+    pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
+    {
+        uint8_t const uTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+        pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n",  uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
+        pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",   RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
+    }
+    pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
+    pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
+    {
+        pHlp->pfnPrintf(pHlp, "   PFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PFO));
+        pHlp->pfnPrintf(pHlp, "   PPF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_PPF));
+        pHlp->pfnPrintf(pHlp, "   AFO          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_AFO));
+        pHlp->pfnPrintf(pHlp, "   APF          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_APF));
+        pHlp->pfnPrintf(pHlp, "   IQE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_IQE));
+        pHlp->pfnPrintf(pHlp, "   ICS          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ICE));
+        pHlp->pfnPrintf(pHlp, "   ITE          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_ITE));
+        pHlp->pfnPrintf(pHlp, "   FRI          = %u\n",  RT_BF_GET(uFstsReg, VTD_BF_FSTS_REG_FRI));
+    }
+    pHlp->pfnPrintf(pHlp, " FECTL_REG    = %#RX32\n", uFectlReg);
+    {
+        pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IM));
+        pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uFectlReg, VTD_BF_FECTL_REG_IP));
+    }
+    pHlp->pfnPrintf(pHlp, " FEDATA_REG   = %#RX32\n", uFedataReg);
+    pHlp->pfnPrintf(pHlp, " FEADDR_REG   = %#RX32\n", uFeaddrReg);
+    pHlp->pfnPrintf(pHlp, " FEUADDR_REG  = %#RX32\n", uFeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " AFLOG_REG    = %#RX64\n", uAflogReg);
+    pHlp->pfnPrintf(pHlp, " PMEN_REG     = %#RX32\n", uPmenReg);
+    pHlp->pfnPrintf(pHlp, " PLMBASE_REG  = %#RX32\n", uPlmbaseReg);
+    pHlp->pfnPrintf(pHlp, " PLMLIMIT_REG = %#RX32\n", uPlmlimitReg);
+    pHlp->pfnPrintf(pHlp, " PHMBASE_REG  = %#RX64\n", uPhmbaseReg);
+    pHlp->pfnPrintf(pHlp, " PHMLIMIT_REG = %#RX64\n", uPhmlimitReg);
+    pHlp->pfnPrintf(pHlp, " IQH_REG      = %#RX64\n", uIqhReg);
+    pHlp->pfnPrintf(pHlp, " IQT_REG      = %#RX64\n", uIqtReg);
+    pHlp->pfnPrintf(pHlp, " IQA_REG      = %#RX64\n", uIqaReg);
+    {
+        uint8_t const  fDw = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_DW);
+        uint8_t const  fQs = RT_BF_GET(uIqaReg, VTD_BF_IQA_REG_QS);
+        uint8_t const  cQueuePages = 1 << fQs;
+        pHlp->pfnPrintf(pHlp, "   DW           = %u (%s)\n",  fDw, fDw == VTD_IQA_REG_DW_128_BIT ? "128-bit" : "256-bit");
+        pHlp->pfnPrintf(pHlp, "   QS           = %u (%u page%s)\n", fQs, cQueuePages, cQueuePages > 1 ? "s" : "");
+    }
+    pHlp->pfnPrintf(pHlp, " ICS_REG      = %#RX32\n", uIcsReg);
+    {
+        pHlp->pfnPrintf(pHlp, "   IWC          = %u\n",       RT_BF_GET(uIcsReg, VTD_BF_ICS_REG_IWC));
+    }
+    pHlp->pfnPrintf(pHlp, " IECTL_REG    = %#RX32\n", uIectlReg);
+    {
+        pHlp->pfnPrintf(pHlp, "   IM           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IM));
+        pHlp->pfnPrintf(pHlp, "   IP           = %RTbool\n",  RT_BF_GET(uIectlReg, VTD_BF_IECTL_REG_IP));
+    }
+    pHlp->pfnPrintf(pHlp, " IEDATA_REG   = %#RX32\n", uIedataReg);
+    pHlp->pfnPrintf(pHlp, " IEADDR_REG   = %#RX32\n", uIeaddrReg);
+    pHlp->pfnPrintf(pHlp, " IEUADDR_REG  = %#RX32\n", uIeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " IQERCD_REG   = %#RX64\n", uIqercdReg);
+    {
+        pHlp->pfnPrintf(pHlp, "   ICESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ICESID));
+        pHlp->pfnPrintf(pHlp, "   ITESID       = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_ITESID));
+        pHlp->pfnPrintf(pHlp, "   IQEI         = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_IQEI));
+    }
+    pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
+    pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
+    pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
+    pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
+    pHlp->pfnPrintf(pHlp, " PRS_REG      = %#RX32\n", uPrsReg);
+    pHlp->pfnPrintf(pHlp, " PECTL_REG    = %#RX32\n", uPectlReg);
+    pHlp->pfnPrintf(pHlp, " PEDATA_REG   = %#RX32\n", uPedataReg);
+    pHlp->pfnPrintf(pHlp, " PEADDR_REG   = %#RX32\n", uPeaddrReg);
+    pHlp->pfnPrintf(pHlp, " PEUADDR_REG  = %#RX32\n", uPeuaddrReg);
+    pHlp->pfnPrintf(pHlp, " MTRRCAP_REG  = %#RX64\n", uMtrrcapReg);
+    pHlp->pfnPrintf(pHlp, " MTRRDEF_REG  = %#RX64\n", uMtrrdefReg);
+    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 
@@ -2296,14 +2505,11 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
 {
-    RT_NOREF1(pDevIns);
+    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
     LogFlowFunc(("\n"));
 
-    PCDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARR3);
     DMAR_LOCK(pDevIns, pThisR3);
-
     dmarR3RegsInit(pDevIns);
-
     DMAR_UNLOCK(pDevIns, pThisR3);
 }
 

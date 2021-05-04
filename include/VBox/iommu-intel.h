@@ -670,6 +670,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IRTE_, UINT64_C(0), UINT64_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_IRTE_, UINT64_C(0), UINT64_MAX,
                             (SID, SQ, SVT, RSVD_63_20));
 
+/** IRTE: Qword 0 valid mask. */
+#define VTD_IRTE_0_VALID_MASK                                   (  VTD_BF_0_IRTE_P_MASK  | VTD_BF_0_IRTE_FPD_MASK \
+                                                                 | VTD_BF_0_IRTE_DM_MASK | VTD_BF_0_IRTE_RH_MASK \
+                                                                 | VTD_BF_0_IRTE_TM_MASK | VTD_BF_0_IRTE_DLM_MASK \
+                                                                 | VTD_BF_0_IRTE_AVAIL_MASK | VTD_BF_0_IRTE_IM_MASK \
+                                                                 | VTD_BF_0_IRTE_V_MASK | VTD_BF_0_IRTE_DST_MASK)
+/** IRTE: Qword 1 valid mask. */
+#define VTD_IRTE_1_VALID_MASK                                   (  VTD_BF_1_IRTE_SID_MASK | VTD_BF_1_IRTE_SQ_MASK \
+                                                                 | VTD_BF_1_IRTE_SVT_MASK)
+
 /** Interrupt Remapping Table Entry (IRTE) for remapped interrupts. */
 typedef struct VTD_IRTE_T
 {
@@ -680,6 +690,15 @@ typedef struct VTD_IRTE_T
 typedef VTD_IRTE_T *PVTD_IRTE_T;
 /** Pointer to a const IRTE. */
 typedef VTD_IRTE_T const *PCVTD_IRTE_T;
+
+/** IRTE SVT: No validation required. */
+#define VTD_IRTE_SVT_NONE                                       0
+/** IRTE SVT: Validate using a mask derived from SID and SQT. */
+#define VTD_IRTE_SVT_VALIDATE_MASK                              1
+/** IRTE SVT: Validate using Bus range in the SID. */
+#define VTD_IRTE_SVT_VALIDATE_BUS_RANGE                         2
+/** IRTE SVT: Reserved. */
+#define VTD_IRTE_SVT_VALIDATE_RSVD                              3
 /** @} */
 
 
@@ -1547,6 +1566,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IRTA_REG_, UINT64_C(0), UINT64_MAX,
 /** RW: Read/write mask. */
 #define VTD_IRTA_REG_RW_MASK                                    (  VTD_BF_IRTA_REG_S_MASK | VTD_BF_IRTA_REG_EIME_MASK \
                                                                  | VTD_BF_IRTA_REG_IRTA_MASK)
+/** IRTA_REG: Get number of interrupt entries. */
+#define VTD_IRTA_REG_GET_ENTRIES(a)                             (UINT32_C(1) << (1 + ((a) & VTD_BF_IRTA_REG_S_MASK)))
 /** @} */
 
 
@@ -2204,46 +2225,81 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_INV_WAIT_DSC_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
+/** @name Remappable Format Interrupt Request.
+ * In accordance with the Intel spec.
+ * @{ */
+/** IGN: Ignored (bits 1:0). */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_IGN_1_0_SHIFT                0
+#define VTD_BF_REMAPPABLE_MSI_ADDR_IGN_1_0_MASK                 UINT32_C(0x00000003)
+/** Handle (Hi). */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_HI_SHIFT              2
+#define VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_HI_MASK               UINT32_C(0x00000004)
+/** SHV: Subhandle Valid. */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_SHV_SHIFT                    3
+#define VTD_BF_REMAPPABLE_MSI_ADDR_SHV_MASK                     UINT32_C(0x00000008)
+/** Interrupt format. */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_INTR_FMT_SHIFT               4
+#define VTD_BF_REMAPPABLE_MSI_ADDR_INTR_FMT_MASK                UINT32_C(0x00000010)
+/** Handle (Lo). */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO_SHIFT              5
+#define VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO_MASK               UINT32_C(0x000fffe0)
+/** Address. */
+#define VTD_BF_REMAPPABLE_MSI_ADDR_ADDR_SHIFT                   20
+#define VTD_BF_REMAPPABLE_MSI_ADDR_ADDR_MASK                    UINT32_C(0xfff00000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_MSI_ADDR_, UINT32_C(0), UINT32_MAX,
+                            (IGN_1_0, HANDLE_HI, SHV, INTR_FMT, HANDLE_LO, ADDR));
+
+/** Subhandle. */
+#define VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE_SHIFT              0
+#define VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE_MASK               UINT32_C(0x0000ffff)
+/** R: Reserved (bits 31:16). */
+#define VTD_BF_REMAPPABLE_MSI_DATA_RSVD_31_16_SHIFT             16
+#define VTD_BF_REMAPPABLE_MSI_DATA_RSVD_31_16_MASK              UINT32_C(0xffff0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_MSI_DATA_, UINT32_C(0), UINT32_MAX,
+                            (SUBHANDLE, RSVD_31_16));
+
+/** Remappable MSI Address: Valid mask. */
+#define VTD_REMAPPABLE_MSI_ADDR_VALID_MASK                      UINT32_MAX
+/** Remappable MSI Data: Valid mask. */
+#define VTD_REMAPPABLE_MSI_DATA_VALID_MASK                      VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE_MASK
+
 /** Gets the interrupt format from an MSI address. */
 #define VTD_MSI_ADDR_GET_INTR_FORMAT(a_uMsiAddr)                ((a_uMsiAddr) & RT_BIT_64(4))
 /** Interrupt format: Compatibility. */
 #define VTD_INTR_FORMAT_COMPAT                                  0
 /** Interrupt format: Remappable. */
 #define VTD_INTR_FORMAT_REMAPPABLE                              1
+/** @} */
 
 
-/** @name Remappable Format Interrupt Request.
+/** @name Interrupt Remapping Fault Conditions.
  * In accordance with the Intel spec.
  * @{ */
-/** IGN: Ignored (bits 1:0). */
-#define VTD_BF_REMAPPABLE_IR_ADDR_IGN_1_0_SHIFT                 0
-#define VTD_BF_REMAPPABLE_IR_ADDR_IGN_1_0_MASK                  UINT32_C(0x00000003)
-/** Handle (Hi). */
-#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_HI_SHIFT               2
-#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_HI_MASK                UINT32_C(0x00000004)
-/** SHV: Subhandle Valid. */
-#define VTD_BF_REMAPPABLE_IR_ADDR_SHV_SHIFT                     3
-#define VTD_BF_REMAPPABLE_IR_ADDR_SHV_MASK                      UINT32_C(0x00000008)
-/** Interrupt format. */
-#define VTD_BF_REMAPPABLE_IR_ADDR_INTR_FMT_SHIFT                4
-#define VTD_BF_REMAPPABLE_IR_ADDR_INTR_FMT_MASK                 UINT32_C(0x00000010)
-/** Handle (Lo). */
-#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_LO_SHIFT               5
-#define VTD_BF_REMAPPABLE_IR_ADDR_HANDLE_LO_MASK                UINT32_C(0x000fffe0)
-/** Address. */
-#define VTD_BF_REMAPPABLE_IR_ADDR_ADDR_SHIFT                    20
-#define VTD_BF_REMAPPABLE_IR_ADDR_ADDR_MASK                     UINT32_C(0xfff00000)
-RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_IR_ADDR_, UINT32_C(0), UINT32_MAX,
-                            (IGN_1_0, HANDLE_HI, SHV, INTR_FMT, HANDLE_LO, ADDR));
-
-/** Subhandle. */
-#define VTD_BF_REMAPPABLE_IR_DATA_SUBHANDLE_SHIFT               0
-#define VTD_BF_REMAPPABLE_IR_DATA_SUBHANDLE_MASK                UINT32_C(0x0000ffff)
-/** R: Reserved (bits 31:16). */
-#define VTD_BF_REMAPPABLE_IR_DATA_RSVD_31_16_SHIFT              16
-#define VTD_BF_REMAPPABLE_IR_DATA_RSVD_31_16_MASK               UINT32_C(0xffff0000)
-RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_IR_DATA_, UINT32_C(0), UINT32_MAX,
-                            (SUBHANDLE, RSVD_31_16));
+typedef enum VTD_IR_FAULT_T
+{
+    /** Reserved bits invalid in remappable interrupt. */
+    kIrf_Remappable_Intr_Rsvd = 0x20,
+    /** Interrupt index for remappable interrupt exceeds table size or referenced
+     *  address above host address width (HAW) */
+    kIrf_Intr_Index_Invalid = 0x21,
+    /** The IRTE is not present.  */
+    kIrf_Irte_Not_Present = 0x22,
+    /** Reading IRTE from memory failed. */
+    kIrf_Irte_Read_Failed = 0x23,
+    /** IRTE reserved bits invalid for an IRTE with Present bit set. */
+    kIrf_Irte_Present_Rsvd = 0x24,
+    /** Compatibility format interrupt (CFI) blocked due to EIME is enabled or CFIs
+     *  disabled. */
+    kIrf_Cfi_Blocked = 0x25,
+    /** IRTE SID, SVT, SQ bits invalid for an IRTE with Present bit set. */
+    kIrf_Irte_Present_Invalid = 0x26,
+    /** Reading posted interrupt descriptor (PID) failed. */
+    kIrf_Pid_Read_Failed = 0x27,
+    /** PID reserved bits invalid. */
+    kIrf_Pid_Rsvd = 0x28,
+    /** Untranslated interrupt requested (without PASID) is invalid. */
+    kIrf_Ir_Without_Pasid_Invalid = 0x29
+} VTD_IR_FAULT_T;
 /** @} */
 
 
