@@ -208,10 +208,15 @@ endif
 #
 ifeq ($(KBUILD_HOST),darwin)
  VBOX_DARWIN_HOST_VERSION := $(subst ., ,$(shell uname -r))
+ # Keep counting _MAJOR past 19.x (macOS 10.15.x) to simplify dealing with macOS 11.x.
  VBOX_DARWIN_HOST_VERSION_MAJOR := $(expr $(word 1, $(VBOX_DARWIN_HOST_VERSION)) - 4)
  VBOX_DARWIN_HOST_VERSION_MINOR := $(word 2, $(VBOX_DARWIN_HOST_VERSION))
  VBOX_DARWIN_HOST_VERSION_PATCH := $(word 3, $(VBOX_DARWIN_HOST_VERSION))
- VBOX_DARWIN_HOST_VERSION := 10.$(VBOX_DARWIN_HOST_VERSION_MAJOR).$(VBOX_DARWIN_HOST_VERSION_MINOR)
+ if $(VBOX_DARWIN_HOST_VERSION_MAJOR) <= 15)
+  VBOX_DARWIN_HOST_VERSION := 10.$(VBOX_DARWIN_HOST_VERSION_MAJOR).$(VBOX_DARWIN_HOST_VERSION_MINOR)
+ else
+  VBOX_DARWIN_HOST_VERSION := 11.$(expr $(VBOX_DARWIN_HOST_VERSION_MAJOR) - 16).$(VBOX_DARWIN_HOST_VERSION_MINOR)
+ endif
 endif
 
 include $(PATH_ROOT)/Version.kmk
@@ -3885,6 +3890,10 @@ ifdef VBOX_SIGNING_MODE
   else
    VBOX_DARWIN_KEXT_SIGN_FILES = CodeResources
   endif
+
+  # Always enable the hardened runtime when signing. Can be disabled if
+  # trying to build on quite old macOS, which will likely need some effort.
+  VBOX_WITH_MACOS_HARDENED_RUNTIME ?= 1
 
   ##
   # Corp Code Notarization command line. Modifies the file because the tickets are stapled.
