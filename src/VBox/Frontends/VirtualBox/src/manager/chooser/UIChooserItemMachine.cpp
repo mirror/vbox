@@ -1049,6 +1049,10 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
 
 void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 {
+    /* Only selected and/or hovered item should have a frame: */
+    if (!model()->selectedItems().contains(unconst(this)) && !isHovered())
+        return;
+
     /* Save painter: */
     pPainter->save();
 
@@ -1062,9 +1066,6 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     /* Hovered-item frame: */
     else if (isHovered())
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
-    /* Default frame: */
-    else
-        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultLightnessMin);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);
