@@ -278,11 +278,6 @@ typedef struct DRVAUDIO
     RTCRITSECT              CritSect;
     /** Shutdown indicator. */
     bool                    fTerminate;
-#ifdef VBOX_WITH_AUDIO_ENUM
-    /** Flag indicating that we need to enumerate and log of the host
-     * audio devices again. */
-    bool                    fEnumerateDevices;
-#endif
     /** Our audio connector interface. */
     PDMIAUDIOCONNECTOR      IAudioConnector;
     /** Interface used by the host backend. */
@@ -329,6 +324,13 @@ typedef struct DRVAUDIO
     bool volatile           fTimerArmed;
     /** Unique name for the the disable-iteration timer.  */
     char                    szTimerName[23];
+
+#ifdef VBOX_WITH_AUDIO_ENUM
+    /** Handle to the timer for delayed re-enumeration of backend devices. */
+    TMTIMERHANDLE           hEnumTimer;
+    /** Unique name for the the disable-iteration timer.  */
+    char                    szEnumTimerName[24];
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics. */
@@ -463,7 +465,7 @@ DECLINLINE(uint32_t) drvAudioStreamGetBackendStatus(PDRVAUDIO pThis, PDRVAUDIOST
  *
  * @remarks This is currently ONLY used for release logging.
  */
-static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum)
+static DECLCALLBACK(int) drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum)
 {
     AssertReturn(!RTCritSectIsOwner(&pThis->CritSect), VERR_WRONG_ORDER);
 
@@ -2113,26 +2115,6 @@ static DECLCALLBACK(int) drvAudioStreamReInit(PPDMIAUDIOCONNECTOR pInterface, PP
         AssertFailed();
         rc = VERR_INVALID_STATE;
     }
-
-#ifdef VBOX_WITH_AUDIO_ENUM
-/** @todo do this elsewhere.  What if stuff changes when there are no open
- *        streams to re-init? */
-    if (pThis->fEnumerateDevices)
-    {
-        /* Make sure to leave the driver's critical section before enumerating host stuff. */
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-
-        /* Re-enumerate all host devices. */
-        drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
-
-        /* Re-enter the critical section again. */
-        rc2 = RTCritSectEnter(&pThis->CritSect);
-        AssertRC(rc2);
-
-        pThis->fEnumerateDevices = false;
-    }
-#endif /* VBOX_WITH_AUDIO_ENUM */
 
     RTCritSectLeave(&pThis->CritSect);
 
@@ -3995,6 +3977,35 @@ static DECLCALLBACK(void) drvAudioHostPort_StreamNotifyDeviceChanged(PPDMIHOSTAU
 }
 
 
+#ifdef VBOX_WITH_AUDIO_ENUM
+/**
+ * @callback_method_impl{FNTMTIMERDRV, Re-enumerate backend devices.}
+ *
+ * Used to do/trigger re-enumeration of backend devices with a delay after we
+ * got notification as there can be further notifications following shortly
+ * after the first one.  Also good to get it of random COM/whatever threads.
+ */
+static DECLCALLBACK(void) drvAudioEnumerateTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    RT_NOREF(hTimer, pvUser);
+
+    /* Try push the work over to the thread-pool if we've got one. */
+    if (pThis->hReqPool != NIL_RTREQPOOL)
+    {
+        int rc = RTReqPoolCallEx(pThis->hReqPool, 0 /*cMillies*/, NULL, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                                 (PFNRT)drvAudioDevicesEnumerateInternal,
+                                 3, pThis, true /*fLog*/, (PPDMAUDIOHOSTENUM)NULL /*pDevEnum*/);
+        LogFunc(("RTReqPoolCallEx: %Rrc\n", rc));
+        if (RT_SUCCESS(rc))
+            return;
+    }
+    LogFunc(("Calling drvAudioDevicesEnumerateInternal...\n"));
+    drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+}
+#endif /* VBOX_WITH_AUDIO_ENUM */
+
+
 /**
  * @interface_method_impl{PDMIHOSTAUDIOPORT,pfnNotifyDevicesChanged}
  */
@@ -4003,22 +4014,25 @@ static DECLCALLBACK(void) drvAudioHostPort_NotifyDevicesChanged(PPDMIHOSTAUDIOPO
     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IHostAudioPort);
     LogRel(("Audio: Device configuration of driver '%s' has changed\n", pThis->szName));
 
-    /** @todo Remove legacy behaviour: */
-    if (!pThis->pHostDrvAudio->pfnStreamNotifyDeviceChanged)
-    {
+#ifdef RT_OS_DARWIN /** @todo Remove legacy behaviour: */
 /** @todo r=bird: Locking?   */
-        /* Mark all host streams to re-initialize. */
-        PDRVAUDIOSTREAM pStreamEx;
-        RTListForEach(&pThis->lstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
-        {
-            drvAudioStreamMarkNeedReInit(pStreamEx, __PRETTY_FUNCTION__);
-        }
+    /* Mark all host streams to re-initialize. */
+    PDRVAUDIOSTREAM pStreamEx;
+    RTListForEach(&pThis->lstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
+    {
+        drvAudioStreamMarkNeedReInit(pStreamEx, __PRETTY_FUNCTION__);
     }
+#endif
 
-# ifdef VBOX_WITH_AUDIO_ENUM
-    /* Re-enumerate all host devices as soon as possible. */
-    pThis->fEnumerateDevices = true;
-# endif
+#ifdef VBOX_WITH_AUDIO_ENUM
+    /*
+     * Re-enumerate all host devices with a tiny delay to avoid re-doing this
+     * when a bunch of changes happens at once (they typically do on windows).
+     * We'll keep postponing it till it quiesces for a fraction of a second.
+     */
+    int rc = PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hEnumTimer, RT_MS_1SEC / 3);
+    AssertRC(rc);
+#endif
 }
 
 
@@ -4679,6 +4693,16 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_VIRTUAL, drvAudioEmergencyIterateTimer, NULL /*pvUser*/,
                                 0 /*fFlags*/, pThis->szTimerName, &pThis->hTimer);
     AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_AUDIO_ENUM
+    /*
+     * Create a timer to trigger delayed device enumeration on device changes.
+     */
+    RTStrPrintf(pThis->szEnumTimerName, sizeof(pThis->szEnumTimerName), "AudioEnum-%u", pDrvIns->iInstance);
+    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvAudioEnumerateTimer, NULL /*pvUser*/,
+                                0 /*fFlags*/, pThis->szEnumTimerName, &pThis->hEnumTimer);
+    AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Attach the host driver, if present.

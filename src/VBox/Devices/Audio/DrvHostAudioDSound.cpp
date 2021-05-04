@@ -2810,7 +2810,9 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 # endif
         try
         {
-            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIHostAudioPort);
+            pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIHostAudioPort,
+                                                                               pThis->Cfg.pGuidCapture == NULL,
+                                                                               pThis->Cfg.pGuidPlay == NULL);
         }
         catch (std::bad_alloc &)
         {

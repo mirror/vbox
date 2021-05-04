@@ -29,8 +29,10 @@
 #include <VBox/log.h>
 
 
-DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(PPDMIHOSTAUDIOPORT pInterface)
-    : m_fRegisteredClient(false)
+DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(PPDMIHOSTAUDIOPORT pInterface, bool fDefaultIn, bool fDefaultOut)
+    : m_fDefaultIn(fDefaultIn)
+    , m_fDefaultOut(fDefaultOut)
+    , m_fRegisteredClient(false)
     , m_cRef(1)
     , m_pIAudioNotifyFromHost(pInterface)
 {
@@ -47,11 +49,7 @@ HRESULT DrvHostAudioDSoundMMNotifClient::Register(void)
 {
     HRESULT hr = m_pEnum->RegisterEndpointNotificationCallback(this);
     if (SUCCEEDED(hr))
-    {
         m_fRegisteredClient = true;
-
-        hr = AttachToDefaultEndpoint();
-    }
 
     return hr;
 }
@@ -61,8 +59,6 @@ HRESULT DrvHostAudioDSoundMMNotifClient::Register(void)
  */
 void DrvHostAudioDSoundMMNotifClient::Unregister(void)
 {
-    DetachFromEndpoint();
-
     if (m_fRegisteredClient)
     {
         m_pEnum->UnregisterEndpointNotificationCallback(this);
@@ -83,33 +79,6 @@ HRESULT DrvHostAudioDSoundMMNotifClient::Initialize(void)
 
     LogFunc(("Returning %Rhrc\n",  hr));
     return hr;
-}
-
-/**
- * Stub being called when attaching to the default audio endpoint.
- * Does nothing at the moment.
- */
-HRESULT DrvHostAudioDSoundMMNotifClient::AttachToDefaultEndpoint(void)
-{
-    return S_OK;
-}
-
-/**
- * Stub being called when detaching from the default audio endpoint.
- * Does nothing at the moment.
- */
-void DrvHostAudioDSoundMMNotifClient::DetachFromEndpoint(void)
-{
-
-}
-
-/**
- * Helper function for invoking the audio connector callback (if any).
- */
-void DrvHostAudioDSoundMMNotifClient::doCallback(void)
-{
-    if (m_pIAudioNotifyFromHost)
-        m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
 }
 
 /**
@@ -144,7 +113,8 @@ STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceStateChanged(LPCWSTR pwstr
 
     LogRel(("Audio: Device '%ls' has changed state to '%s'\n", pwstrDeviceId, pszState));
 
-    doCallback();
+    if (m_pIAudioNotifyFromHost)
+        m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
 
     return S_OK;
 }
@@ -158,7 +128,12 @@ STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceStateChanged(LPCWSTR pwstr
 STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
     LogRel(("Audio: Device '%ls' has been added\n", pwstrDeviceId));
-
+    /* Note! It is hard to properly support non-default devices when the backend is DSound,
+             as DSound talks GUID where-as the pwszDeviceId string we get here is something
+             completely different.  So, ignorining that edge case here.  The WasApi backend
+             supports this, though. */
+    if (m_pIAudioNotifyFromHost)
+        m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
     return S_OK;
 }
 
@@ -171,7 +146,8 @@ STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceAdded(LPCWSTR pwstrDeviceI
 STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
     LogRel(("Audio: Device '%ls' has been removed\n", pwstrDeviceId));
-
+    if (m_pIAudioNotifyFromHost)
+        m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
     return S_OK;
 }
 
@@ -186,19 +162,36 @@ STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceRemoved(LPCWSTR pwstrDevic
  */
 STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDefaultDeviceChanged(EDataFlow eFlow, ERole eRole, LPCWSTR pwstrDefaultDeviceId)
 {
-    RT_NOREF(eRole);
+    /* When the user triggers a default device change, we'll typically get two or
+       three notifications. Just pick up the one for the multimedia role for now
+       (dunno if DSound default equals eMultimedia or eConsole, and whether it make
+       any actual difference). */
+    if (eRole == eMultimedia)
+    {
+        PDMAUDIODIR enmDir  = PDMAUDIODIR_INVALID;
+        char       *pszRole = "unknown";
+        if (eFlow == eRender)
+        {
+            pszRole = "output";
+            if (m_fDefaultOut)
+                enmDir = PDMAUDIODIR_OUT;
+        }
+        else if (eFlow == eCapture)
+        {
+            pszRole = "input";
+            if (m_fDefaultIn)
+                enmDir = PDMAUDIODIR_IN;
+        }
 
-    char *pszRole = "unknown";
+        LogRel(("Audio: Default %s device has been changed to '%ls'\n", pszRole, pwstrDefaultDeviceId));
 
-    if (eFlow == eRender)
-        pszRole = "output";
-    else if (eFlow == eCapture)
-        pszRole = "input";
-
-    LogRel(("Audio: Default %s device has been changed to '%ls'\n", pszRole, pwstrDefaultDeviceId));
-
-    doCallback();
-
+        if (m_pIAudioNotifyFromHost)
+        {
+            if (enmDir != PDMAUDIODIR_INVALID)
+                m_pIAudioNotifyFromHost->pfnNotifyDeviceChanged(m_pIAudioNotifyFromHost, enmDir, NULL);
+            m_pIAudioNotifyFromHost->pfnNotifyDevicesChanged(m_pIAudioNotifyFromHost);
+        }
+    }
     return S_OK;
 }
 

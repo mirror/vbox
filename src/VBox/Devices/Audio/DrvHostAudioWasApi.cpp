@@ -414,6 +414,18 @@ public:
     {
         RT_NOREF(pwszDeviceId, dwNewState);
         Log7Func(("pwszDeviceId=%ls dwNewState=%u (%#x)\n", pwszDeviceId, dwNewState, dwNewState));
+
+        /*
+         * Just trigger device re-enumeration.
+         */
+        notifyDeviceChanges();
+
+        /** @todo do we need to check for our devices here too?  Not when using a
+         *        default device.  But when using a specific device, we could perhaps
+         *        re-init the stream when dwNewState indicates precense.  We might
+         *        also take action when a devices ceases to be operating, but again
+         *        only for non-default devices, probably... */
+
         return S_OK;
     }
 
@@ -450,6 +462,11 @@ public:
                 LogRelMax(64, ("WasAPI: Failed to get %s device '%ls' (OnDeviceAdded): %Rhrc\n",
                                fOutput ? "output" : "input", pwszDeviceId, hrc));
             pIEnumerator->Release();
+
+            /*
+             * Trigger device re-enumeration.
+             */
+            notifyDeviceChanges();
         }
         return S_OK;
     }
@@ -467,8 +484,17 @@ public:
         if (   m_pDrvWas != NULL
             && (   (fOutput = RTUtf16ICmp(m_pDrvWas->pwszOutputDevId, pwszDeviceId) == 0)
                 || RTUtf16ICmp(m_pDrvWas->pwszInputDevId, pwszDeviceId) == 0))
+        {
+            RTCritSectLeave(&m_CritSect);
             setDevice(fOutput, NULL, pwszDeviceId, __PRETTY_FUNCTION__);
-        RTCritSectLeave(&m_CritSect);
+        }
+        else
+            RTCritSectLeave(&m_CritSect);
+
+        /*
+         * Trigger device re-enumeration.
+         */
+        notifyDeviceChanges();
         return S_OK;
     }
 
@@ -501,9 +527,13 @@ public:
                 LogRelMax(64, ("WasAPI: Failed to get default %s device (OnDefaultDeviceChange): %Rhrc\n",
                                enmFlow == eRender ? "output" : "input", hrc));
             pIEnumerator->Release();
+
+            /*
+             * Trigger device re-enumeration.
+             */
+            notifyDeviceChanges();
         }
 
-        RT_NOREF(enmFlow, enmRole, pwszDefaultDeviceId);
         Log7Func(("enmFlow=%d enmRole=%d pwszDefaultDeviceId=%ls\n", enmFlow, enmRole, pwszDefaultDeviceId));
         return S_OK;
     }
@@ -576,6 +606,34 @@ private:
             }
         }
 
+        RTCritSectLeave(&m_CritSect);
+    }
+
+    /**
+     * Tell DrvAudio to re-enumerate devices when it get a chance.
+     *
+     * We exit the critsect here too before calling DrvAudio just to be on the safe
+     * side (see setDevice()), even though the current DrvAudio code doesn't take
+     * any critsects.
+     */
+    void notifyDeviceChanges(void)
+    {
+        RTCritSectEnter(&m_CritSect);
+        if (m_pDrvWas)
+        {
+            PPDMIHOSTAUDIOPORT const pIHostAudioPort = m_pDrvWas->pIHostAudioPort;
+            if (pIHostAudioPort)
+            {
+                VMSTATE const enmVmState = PDMDrvHlpVMState(m_pDrvWas->pDrvIns);
+                if (enmVmState < VMSTATE_POWERING_OFF)
+                {
+                    RTCritSectLeave(&m_CritSect);
+                    pIHostAudioPort->pfnNotifyDevicesChanged(pIHostAudioPort);
+                    return;
+                }
+                LogFlowFunc(("Ignoring change: enmVmState=%d\n", enmVmState));
+            }
+        }
         RTCritSectLeave(&m_CritSect);
     }
 };
@@ -2574,6 +2632,18 @@ static DECLCALLBACK(void) drvHostAudioWasPowerOff(PPDMDRVINS pDrvIns)
         AssertRC(rc);
     }
 #endif
+
+    /*
+     * Deregister the notification client to reduce the risk of notifications
+     * comming in while we're being detatched or the VM is being destroyed.
+     */
+    if (pThis->pNotifyClient)
+    {
+        pThis->pNotifyClient->notifyDriverDestroyed();
+        pThis->pIEnumerator->UnregisterEndpointNotificationCallback(pThis->pNotifyClient);
+        pThis->pNotifyClient->Release();
+        pThis->pNotifyClient = NULL;
+    }
 }
 
 
@@ -2591,6 +2661,7 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
         pThis->pNotifyClient->notifyDriverDestroyed();
         pThis->pIEnumerator->UnregisterEndpointNotificationCallback(pThis->pNotifyClient);
         pThis->pNotifyClient->Release();
+        pThis->pNotifyClient = NULL;
     }
 
 #if 0
