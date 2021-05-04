@@ -2708,33 +2708,33 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 
     int32_t s32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uIrq = s32Tmp;
+    pStream->HwCfgRuntime.uIrq = s32Tmp;                        /* IRQ. */
     pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uDmaChanLow = s32Tmp;
+    pStream->HwCfgRuntime.uDmaChanLow = s32Tmp;                 /* Low (8-bit) DMA channel. */
     pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uDmaChanHigh = s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp); /* Port */
+    pStream->HwCfgRuntime.uDmaChanHigh = s32Tmp;                /* High (16-bit) DMA channel. */
+    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Used I/O port. */
     pStream->HwCfgRuntime.uPort = s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp); /* Ver */
+    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* DSP version running. */
     pStream->HwCfgRuntime.uVer  = s32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_in_idx);
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_out_data_len);
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp); /* Channels */
+    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: Numer of channels. */
     pStream->Cfg.Props.cChannelsX = (uint8_t)s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp); /* Signed */
+    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: Signed format bit. */
     pStream->Cfg.Props.fSigned    = s32Tmp == 0 ? false : true;
     pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->Cfg.Props.cbSampleX  = s32Tmp / 8; /* Convert bits to bytes. */
-    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));  /* Legacy; was PDMAUDIOFMT, unused now. */
+    pStream->Cfg.Props.cbSampleX  = s32Tmp / 8;                 /* Convert bits to bytes. */
+    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was PDMAUDIOFMT, unused now. */
     pHlp->pfnSSMGetS32(pSSM, &pStream->dma_auto);
     pHlp->pfnSSMGetS32(pSSM, &pThis->aStreams[SB16_IDX_OUT].cbDmaBlockSize);
     pHlp->pfnSSMGetS32(pSSM, &pStream->fifo);
     pHlp->pfnSSMGetS32(pSSM, &s32Tmp); pStream->Cfg.Props.uHz = s32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &pStream->time_const);
-    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));  /* Legacy; was speaker (on / off) for output stream. */
+    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was speaker (on / off) for output stream. */
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_in_needed_bytes);
     pHlp->pfnSSMGetS32(pSSM, &pThis->cmd);
-    pHlp->pfnSSMGetS32(pSSM, &pStream->fDmaUseHigh);
+    pHlp->pfnSSMGetS32(pSSM, &pStream->fDmaUseHigh);            /* Output stream: Whether to use the high or low DMA channel. */
     pHlp->pfnSSMGetS32(pSSM, &pThis->highspeed);
     pHlp->pfnSSMGetS32(pSSM, &pStream->can_write);
     pHlp->pfnSSMGetS32(pSSM, &pThis->v2x6);
@@ -2742,7 +2742,7 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_param);
     pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_value);
     pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_mode);
-    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_param);   /* Bug compatible! */
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_param);                /* Bug compatible! */
     pHlp->pfnSSMGetMem(pSSM, pThis->csp_regs, 256);
     pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_index);
     pHlp->pfnSSMGetMem(pSSM, pThis->csp_reg83, 4);
@@ -2756,10 +2756,10 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 
     pHlp->pfnSSMGetS32(pSSM, &pThis->nzero);
     pHlp->pfnSSMGetS32(pSSM, &pStream->cbDmaLeft);
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->State.fEnabled = s32Tmp == 0 ? false: true;
-    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t)); /* Legacy; was the output stream's current bitrate (in bytes). */
-    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t)); /* Legacy; was the output stream's DMA block alignment. */
+    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: DMA currently running bit. */
+    const bool fStreamEnabled = s32Tmp == 0 ? false: true;
+    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was the output stream's current bitrate (in bytes). */
+    pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was the output stream's DMA block alignment. */
 
     int32_t mixer_nreg = 0;
     int rc = pHlp->pfnSSMGetS32(pSSM, &mixer_nreg);
@@ -2768,7 +2768,7 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     rc = pHlp->pfnSSMGetMem(pSSM, pThis->mixer_regs, 256);
     AssertRCReturn(rc, rc);
 
-    if (pStream->State.fEnabled)
+    if (fStreamEnabled)
         sb16StreamControl(pDevIns, pThis, pStream, true /* fRun */);
 
     /* Update the master (mixer) and PCM out volumes. */
