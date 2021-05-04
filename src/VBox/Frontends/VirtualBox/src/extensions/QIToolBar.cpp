@@ -20,6 +20,7 @@
 #include <QMainWindow>
 #include <QResizeEvent>
 #ifdef VBOX_WS_MAC
+# include <QApplication>
 # include <QPainter>
 #endif
 
