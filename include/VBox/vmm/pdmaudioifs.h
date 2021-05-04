@@ -1550,8 +1550,21 @@ typedef struct PDMIHOSTAUDIOPORT
     DECLR3CALLBACKMEMBER(void, pfnNotifyDeviceChanged,(PPDMIHOSTAUDIOPORT pInterface, PDMAUDIODIR enmDir, void *pvUser));
 
     /**
+     * Notification that the stream is about to change device in a bit.
+     *
+     * This will assume PDMAUDIOSTREAM_STS_PREPARING_SWITCH will be set when
+     * PDMIHOSTAUDIO::pfnStreamGetStatus is next called and change the stream state
+     * accordingly.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     The stream that changed device (backend variant).
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamNotifyPreparingDeviceSwitch,(PPDMIHOSTAUDIOPORT pInterface,
+                                                                     PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
      * The stream has changed its device and left the
-     * PDMAUDIOSTREAM_STS_PREPARING_SWITCH state.
+     * PDMAUDIOSTREAM_STS_PREPARING_SWITCH state (if it entered it at all).
      *
      * @param   pInterface  Pointer to this interface.
      * @param   pStream     The stream that changed device (backend variant).
@@ -1575,7 +1588,7 @@ typedef struct PDMIHOSTAUDIOPORT
 } PDMIHOSTAUDIOPORT;
 
 /** PDMIHOSTAUDIOPORT interface ID. */
-#define PDMIHOSTAUDIOPORT_IID                    "4d513a11-5be1-4f6f-9a06-a2f628cf67ac"
+#define PDMIHOSTAUDIOPORT_IID                    "1aa566e2-b3df-4b8a-9f80-99bdcb5e9964"
 
 /** @} */
 

@@ -38,6 +38,7 @@
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
 #include <iprt/rand.h>
+#include <iprt/semaphore.h>
 #include <iprt/utf16.h>
 #include <iprt/uuid.h>
 
@@ -62,7 +63,8 @@
 
 /** @name DRVHOSTAUDIOWAS_DO_XXX - Worker thread operations.
  * @{ */
-#define DRVHOSTAUDIOWAS_DO_PURGE_CACHE      ((uintptr_t)0x49f37300 + 1)
+#define DRVHOSTAUDIOWAS_DO_PURGE_CACHE          ((uintptr_t)0x49f37300 + 1)
+#define DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH    ((uintptr_t)0x49f37300 + 2)
 /** @} */
 
 
@@ -167,6 +169,8 @@ typedef struct DRVHOSTAUDIOWASSTREAM
     bool                        fDraining;
     /** Set if we should restart the stream on resume (saved pause state). */
     bool                        fRestartOnResume;
+    /** Set if we're switching to a new output/input device. */
+    bool                        fSwitchingDevice;
 
     /** The RTTimeMilliTS() deadline for the draining of this stream (output). */
     uint64_t                    msDrainDeadline;
@@ -250,6 +254,9 @@ typedef struct DRVHOSTAUDIOWAS
     RTLISTANCHOR                    CacheHead;
     /** Serializing access to CacheHead. */
     RTCRITSECT                      CritSectCache;
+    /** Semaphore for signalling that cache purge is done and that the destructor
+     *  can do cleanups. */
+    RTSEMEVENTMULTI                 hEvtCachePurge;
 
 #if 0
     /** The worker thread. */
@@ -577,8 +584,6 @@ private:
                     m_pDrvWas->pIDeviceInput->Release();
                 m_pDrvWas->pIDeviceInput = pIDevice;
             }
-
-            /** @todo Invalid/update in-use streams. */
         }
         else if (pIDevice)
             pIDevice->Release();
@@ -777,7 +782,7 @@ static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWASCACHEDEV pDevEnt
 /**
  * Purges all the entries in the cache.
  */
-static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis)
+static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis, bool fOnWorker)
 {
     for (;;)
     {
@@ -787,6 +792,12 @@ static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis)
         if (!pDevEntry)
             break;
         drvHostAudioWasCacheDestroyDevEntry(pDevEntry);
+    }
+
+    if (fOnWorker)
+    {
+        int rc = RTSemEventMultiSignal(pThis->hEvtCachePurge);
+        AssertRC(rc);
     }
 }
 
@@ -1048,10 +1059,16 @@ static int drvHostAudioWasCacheLookupOrCreateConfig(PDRVHOSTAUDIOWAS pThis, PDRV
  * if missing.
  *
  * @returns VBox status code.
+ * @retval  VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED if @a fOnWorker is @c false and
+ *          we created a new entry that needs initalization by calling
+ *          drvHostAudioWasCacheInitConfig() on it.
  * @param   pThis       The WASAPI host audio driver instance data.
  * @param   pIDevice    The device to look up.
  * @param   pCfgReq     The configuration to look up.
- * @param   fOnWorker   Set if we're on a worker thread, otherwise false.
+ * @param   fOnWorker   Set if we're on a worker thread, otherwise false.  When
+ *                      set to @c true, VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED will
+ *                      not be returned and a new entry will be fully
+ *                      initialized before returning.
  * @param   ppDevCfg    Where to return the requested device config.
  */
 static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice *pIDevice, PCPDMAUDIOSTREAMCFG pCfgReq,
@@ -1289,7 +1306,7 @@ static DECLCALLBACK(int) drvHostWasWorkerThread(RTTHREAD hThreadSelf, void *pvUs
                     AssertBreak(Msg.hwnd == NULL);
                     AssertBreak(Msg.lParam == 0);
 
-                    drvHostAudioWasCachePurge(pThis);
+                    drvHostAudioWasCachePurge(pThis, false /*fOnWorker*/);
                     break;
                 }
 
@@ -1303,7 +1320,7 @@ static DECLCALLBACK(int) drvHostWasWorkerThread(RTTHREAD hThreadSelf, void *pvUs
     }
 
     LogFlowFunc(("Pre-quit cache purge...\n"));
-    drvHostAudioWasCachePurge(pThis);
+    drvHostAudioWasCachePurge(pThis, false /*fOnWorker*/);
 
     LogFunc(("Quits\n"));
     return VINF_SUCCESS;
@@ -1525,13 +1542,75 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioWasHA_GetStatus(PPDMIHOSTAUD
 
 
 /**
+ * Performs the actual switching of device config.
+ *
+ * Worker for drvHostAudioWasDoStreamDevSwitch() and
+ * drvHostAudioWasHA_StreamNotifyDeviceChanged().
+ */
+static void drvHostAudioWasCompleteStreamDevSwitch(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASSTREAM pStreamWas,
+                                                   PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
+{
+    RTCritSectEnter(&pStreamWas->CritSect);
+
+    /* Do the switch. */
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfgOld = pStreamWas->pDevCfg;
+    pStreamWas->pDevCfg = pDevCfg;
+
+    /* The new stream is neither started nor draining. */
+    pStreamWas->fStarted         = false;
+    pStreamWas->fDraining        = false;
+
+    /* Device switching is done now. */
+    pStreamWas->fSwitchingDevice = false;
+
+    /* Stop the old stream or Reset() will fail when putting it back into the cache. */
+    if (pStreamWas->fEnabled && pDevCfgOld->pIAudioClient)
+        pDevCfgOld->pIAudioClient->Stop();
+
+    RTCritSectLeave(&pStreamWas->CritSect);
+
+    /* Notify DrvAudio. */
+    pThis->pIHostAudioPort->pfnStreamNotifyDeviceChanged(pThis->pIHostAudioPort, &pStreamWas->Core, false /*fReInit*/);
+
+    /* Put the old config back into the cache. */
+    drvHostAudioWasCachePutBack(pThis, pDevCfgOld);
+
+    LogFlowFunc(("returns with '%s' state: %s\n", pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas) ));
+}
+
+
+/**
+ * Called on a worker thread to initialize a new device config and switch the
+ * given stream to using it.
+ *
+ * @sa  drvHostAudioWasHA_StreamNotifyDeviceChanged
+ */
+static void drvHostAudioWasDoStreamDevSwitch(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASSTREAM pStreamWas,
+                                             PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
+{
+    /*
+     * Do the initializing.
+     */
+    int rc = drvHostAudioWasCacheInitConfig(pDevCfg);
+    if (RT_SUCCESS(rc))
+        drvHostAudioWasCompleteStreamDevSwitch(pThis, pStreamWas, pDevCfg);
+    else
+    {
+        LogRelMax(64, ("WasAPI: Failed to set up new device config '%ls:%s' for stream '%s': %Rrc\n",
+                       pDevCfg->pDevEntry->wszDevId, pDevCfg->szProps, pStreamWas->Cfg.szName, rc));
+        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+        pThis->pIHostAudioPort->pfnStreamNotifyDeviceChanged(pThis->pIHostAudioPort, &pStreamWas->Core, true /*fReInit*/);
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnDoOnWorkerThread}
  */
 static DECLCALLBACK(void) drvHostAudioWasHA_DoOnWorkerThread(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                              uintptr_t uUser, void *pvUser)
 {
     PDRVHOSTAUDIOWAS pThis = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
-    RT_NOREF(pStream, pvUser);
     LogFlowFunc(("uUser=%#zx pStream=%p pvUser=%p\n", uUser, pStream, pvUser));
 
     switch (uUser)
@@ -1539,7 +1618,13 @@ static DECLCALLBACK(void) drvHostAudioWasHA_DoOnWorkerThread(PPDMIHOSTAUDIO pInt
         case DRVHOSTAUDIOWAS_DO_PURGE_CACHE:
             Assert(pStream == NULL);
             Assert(pvUser == NULL);
-            drvHostAudioWasCachePurge(pThis);
+            drvHostAudioWasCachePurge(pThis, true /*fOnWorker*/);
+            break;
+
+        case DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH:
+            AssertPtr(pStream);
+            AssertPtr(pvUser);
+            drvHostAudioWasDoStreamDevSwitch(pThis, (PDRVHOSTAUDIOWASSTREAM)pStream, (PDRVHOSTAUDIOWASCACHEDEVCFG)pvUser);
             break;
 
         default:
@@ -1776,6 +1861,75 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDestroy(PPDMIHOSTAUDIO pInterfa
 
     LogFlowFunc(("returns\n"));
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamNotifyDeviceChanged}
+ */
+static DECLCALLBACK(void) drvHostAudioWasHA_StreamNotifyDeviceChanged(PPDMIHOSTAUDIO pInterface,
+                                                                      PPDMAUDIOBACKENDSTREAM pStream, void *pvUser)
+{
+    PDRVHOSTAUDIOWAS        pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
+    PDRVHOSTAUDIOWASSTREAM  pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
+    LogFlowFunc(("pStreamWas=%p (%s)\n", pStreamWas, pStreamWas->Cfg.szName));
+    RT_NOREF(pvUser);
+
+    /*
+     * See if we've got a cached config for the new device around.
+     * We ignore this entirely, for now at least, if the device was
+     * disconnected and there is no replacement.
+     */
+    pThis->pNotifyClient->lockEnter();
+    IMMDevice *pIDevice = pStreamWas->Cfg.enmDir == PDMAUDIODIR_IN ? pThis->pIDeviceInput : pThis->pIDeviceOutput;
+    if (pIDevice)
+        pIDevice->AddRef();
+    pThis->pNotifyClient->lockLeave();
+    if (pIDevice)
+    {
+        PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = NULL;
+        int rc = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, &pStreamWas->Cfg, false /*fOnWorker*/, &pDevCfg);
+
+        pIDevice->Release();
+        pIDevice = NULL;
+
+        /*
+         * If we have a working audio client, just do the switch.
+         */
+        if (RT_SUCCESS(rc) && pDevCfg->pIAudioClient)
+        {
+            LogFlowFunc(("New device config is ready already!\n"));
+            Assert(rc == VINF_SUCCESS);
+            drvHostAudioWasCompleteStreamDevSwitch(pThis, pStreamWas, pDevCfg);
+        }
+        /*
+         * Otherwise create one asynchronously on a worker thread.
+         */
+        else if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("New device config needs async init ...\n"));
+            Assert(rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED);
+
+            RTCritSectEnter(&pStreamWas->CritSect);
+            pStreamWas->fSwitchingDevice = true;
+            RTCritSectLeave(&pStreamWas->CritSect);
+
+            pThis->pIHostAudioPort->pfnStreamNotifyPreparingDeviceSwitch(pThis->pIHostAudioPort, &pStreamWas->Core);
+
+            rc = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, &pStreamWas->Core,
+                                                             DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH, pDevCfg);
+            AssertRCStmt(rc, drvHostAudioWasDoStreamDevSwitch(pThis, pStreamWas, pDevCfg));
+        }
+        else
+        {
+            LogRelMax(64, ("WasAPI: Failed to create new device config '%ls:%s' for stream '%s': %Rrc\n",
+                           pDevCfg->pDevEntry->wszDevId, pDevCfg->szProps, pStreamWas->Cfg.szName, rc));
+
+            pThis->pIHostAudioPort->pfnStreamNotifyDeviceChanged(pThis->pIHostAudioPort, &pStreamWas->Core, true /*fReInit*/);
+        }
+    }
+    else
+        LogFlowFunc(("no new device, leaving it as-is\n"));
 }
 
 
@@ -2282,11 +2436,15 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetStatus(PPDMIHOSTAUDIO p
         }
     }
     if (pStreamWas->fEnabled)
+    {
         fStrmStatus |= PDMAUDIOSTREAM_STS_ENABLED;
-    if (pStreamWas->fDraining)
-        fStrmStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
-    if (pStreamWas->fRestartOnResume)
-        fStrmStatus |= PDMAUDIOSTREAM_STS_PAUSED;
+        if (pStreamWas->fDraining)
+            fStrmStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
+        if (pStreamWas->fRestartOnResume)
+            fStrmStatus |= PDMAUDIOSTREAM_STS_PAUSED;
+    }
+    if (pStreamWas->fSwitchingDevice)
+        fStrmStatus |= PDMAUDIOSTREAM_STS_PREPARING_SWITCH;
 
     LogFlowFunc(("returns %#x for '%s' {%s}\n", fStrmStatus, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
     return fStrmStatus;
@@ -2627,9 +2785,13 @@ static DECLCALLBACK(void) drvHostAudioWasPowerOff(PPDMDRVINS pDrvIns)
 #else
     if (!RTListIsEmpty(&pThis->CacheHead) && pThis->pIHostAudioPort)
     {
-        int rc = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, NULL/*pStream*/,
+        int rc = RTSemEventMultiCreate(&pThis->hEvtCachePurge);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, NULL/*pStream*/,
                                                              DRVHOSTAUDIOWAS_DO_PURGE_CACHE, NULL /*pvUser*/);
-        AssertRC(rc);
+            AssertRC(rc);
+        }
     }
 #endif
 
@@ -2656,6 +2818,9 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     LogFlowFuncEnter();
 
+    /*
+     * Release the notification client first.
+     */
     if (pThis->pNotifyClient)
     {
         pThis->pNotifyClient->notifyDriverDestroyed();
@@ -2677,8 +2842,16 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
 
     if (RTCritSectIsInitialized(&pThis->CritSectCache))
     {
-        drvHostAudioWasCachePurge(pThis);
+        drvHostAudioWasCachePurge(pThis, false /*fOnWorker*/);
+        if (pThis->hEvtCachePurge != NIL_RTSEMEVENTMULTI)
+            RTSemEventMultiWait(pThis->hEvtCachePurge, RT_MS_30SEC);
         RTCritSectDelete(&pThis->CritSectCache);
+    }
+
+    if (pThis->hEvtCachePurge != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(pThis->hEvtCachePurge);
+        pThis->hEvtCachePurge = NIL_RTSEMEVENTMULTI;
     }
 
     if (pThis->pIEnumerator)
@@ -2721,6 +2894,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      */
     pThis->pDrvIns                          = pDrvIns;
     pThis->hDrainTimer                      = NIL_TMTIMERHANDLE;
+    pThis->hEvtCachePurge                   = NIL_RTSEMEVENTMULTI;
 #if 0
     pThis->hWorkerThread                    = NIL_RTTHREAD;
     pThis->idWorkerThread                   = 0;
@@ -2738,7 +2912,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->IHostAudio.pfnStreamCreate               = drvHostAudioWasHA_StreamCreate;
     pThis->IHostAudio.pfnStreamInitAsync            = drvHostAudioWasHA_StreamInitAsync;
     pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioWasHA_StreamDestroy;
-    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
+    pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = drvHostAudioWasHA_StreamNotifyDeviceChanged;
     pThis->IHostAudio.pfnStreamControl              = drvHostAudioWasHA_StreamControl;
     pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioWasHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioWasHA_StreamGetWritable;
