@@ -73,9 +73,6 @@ private:
     /** Calculates suitable @a strText size. */
     QSize featTextWidth(const QString &strText) const;
 
-    /** The original background base color. Used when marking/unmarking the combo box. */
-    QColor  m_originalBaseColor;
-
     /** Holds whether this is allowed to copy contents when disabled. */
     bool     m_fAllowToCopyContentsWhenDisabled;
     /** Holds the copy to clipboard action. */

@@ -129,8 +129,6 @@ void QILineEdit::copy()
 void QILineEdit::prepare()
 {
     m_markIcon = UIIconPool::iconSet(":/status_error_16px.png");
-    /* Prepare original base color: */
-    m_originalBaseColor = palette().color(QPalette::Base);
 
     /* Prepare invisible copy action: */
     m_pCopyAction = new QAction(this);
