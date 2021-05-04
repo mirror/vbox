@@ -260,7 +260,7 @@ static DECLCALLBACK(uint32_t) drvHostDebugAudioHA_StreamGetPending(PPDMIHOSTAUDI
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
 static DECLCALLBACK(uint32_t) drvHostDebugAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {

@@ -730,6 +730,7 @@ static int drvHostAudioWasCacheWaveFmtExToProps(PPDMAUDIOPCMPROPS pProps, WAVEFO
 /**
  * Destroys a devie config cache entry.
  *
+ * @param   pThis       The WASAPI host audio driver instance data.
  * @param   pDevCfg     Device config entry.  Must not be in the list.
  */
 static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
@@ -771,6 +772,7 @@ static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOS
 /**
  * Destroys a device cache entry.
  *
+ * @param   pThis       The WASAPI host audio driver instance data.
  * @param   pDevEntry   The device entry. Must not be in the cache!
  */
 static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
