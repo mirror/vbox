@@ -51,12 +51,16 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Max GetCurrentPadding value we accept (to make sure it's safe to convert to bytes). */
-#define VBOX_WASAPI_MAX_PADDING         UINT32_C(0x007fffff)
+#define VBOX_WASAPI_MAX_PADDING                 UINT32_C(0x007fffff)
+
+/** Maximum number of cached device configs in each direction.
+ * The number 4 was picked at random.  */
+#define VBOX_WASAPI_MAX_TOTAL_CONFIG_ENTRIES    4
 
 #if 0
 /** @name WM_DRVHOSTAUDIOWAS_XXX - Worker thread messages.
  * @{ */
-#define WM_DRVHOSTAUDIOWAS_PURGE_CACHE  (WM_APP + 3)
+#define WM_DRVHOSTAUDIOWAS_PURGE_CACHE          (WM_APP + 3)
 /** @} */
 #endif
 
@@ -64,7 +68,8 @@
 /** @name DRVHOSTAUDIOWAS_DO_XXX - Worker thread operations.
  * @{ */
 #define DRVHOSTAUDIOWAS_DO_PURGE_CACHE          ((uintptr_t)0x49f37300 + 1)
-#define DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH    ((uintptr_t)0x49f37300 + 2)
+#define DRVHOSTAUDIOWAS_DO_PRUNE_CACHE          ((uintptr_t)0x49f37300 + 2)
+#define DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH    ((uintptr_t)0x49f37300 + 3)
 /** @} */
 
 
@@ -113,6 +118,8 @@ typedef struct DRVHOSTAUDIOWASCACHEDEVCFG
     uint64_t                    nsCreated;
     /** Init complete timestamp (just for reference). */
     uint64_t                    nsInited;
+    /** When it was last used. */
+    uint64_t                    nsLastUsed;
     /** The stringified properties. */
     char                        szProps[32];
 } DRVHOSTAUDIOWASCACHEDEVCFG;
@@ -257,6 +264,12 @@ typedef struct DRVHOSTAUDIOWAS
     /** Semaphore for signalling that cache purge is done and that the destructor
      *  can do cleanups. */
     RTSEMEVENTMULTI                 hEvtCachePurge;
+    /** Total number of device config entire for capturing.
+     * This includes in-use ones. */
+    uint32_t volatile               cCacheEntriesIn;
+    /** Total number of device config entire for playback.
+     * This includes in-use ones. */
+    uint32_t volatile               cCacheEntriesOut;
 
 #if 0
     /** The worker thread. */
@@ -719,8 +732,13 @@ static int drvHostAudioWasCacheWaveFmtExToProps(PPDMAUDIOPCMPROPS pProps, WAVEFO
  *
  * @param   pDevCfg     Device config entry.  Must not be in the list.
  */
-static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
+static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
 {
+    if (pDevCfg->pDevEntry->enmDir == PDMAUDIODIR_IN)
+        ASMAtomicDecU32(&pThis->cCacheEntriesIn);
+    else
+        ASMAtomicDecU32(&pThis->cCacheEntriesOut);
+
     uint32_t cTypeClientRefs = 0;
     if (pDevCfg->pIAudioCaptureClient)
     {
@@ -755,14 +773,14 @@ static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDe
  *
  * @param   pDevEntry   The device entry. Must not be in the cache!
  */
-static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
+static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
 {
     Log8Func(("Destroying cache entry: %p - '%ls'\n", pDevEntry, pDevEntry->wszDevId));
 
     PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg, pDevCfgNext;
     RTListForEachSafe(&pDevEntry->ConfigList, pDevCfg, pDevCfgNext, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
     {
-        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+        drvHostAudioWasCacheDestroyDevConfig(pThis, pDevCfg);
     }
 
     uint32_t cDevRefs = 0;
@@ -780,6 +798,54 @@ static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWASCACHEDEV pDevEnt
 
 
 /**
+ * Prunes the cache.
+ */
+static void drvHostAudioWasCachePrune(PDRVHOSTAUDIOWAS pThis)
+{
+    /*
+     * Prune each direction separately.
+     */
+    struct
+    {
+        PDMAUDIODIR        enmDir;
+        uint32_t volatile *pcEntries;
+    } aWork[] = { { PDMAUDIODIR_IN, &pThis->cCacheEntriesIn }, { PDMAUDIODIR_OUT, &pThis->cCacheEntriesOut }, };
+    for (uint32_t iWork = 0; iWork < RT_ELEMENTS(aWork); iWork++)
+    {
+        /*
+         * Remove the least recently used entry till we're below the threshold
+         * or there are no more inactive entries.
+         */
+        LogFlowFunc(("iWork=%u cEntries=%u\n", iWork, *aWork[iWork].pcEntries));
+        while (*aWork[iWork].pcEntries > VBOX_WASAPI_MAX_TOTAL_CONFIG_ENTRIES)
+        {
+            RTCritSectEnter(&pThis->CritSectCache);
+            PDRVHOSTAUDIOWASCACHEDEVCFG pLeastRecentlyUsed = NULL;
+            PDRVHOSTAUDIOWASCACHEDEV    pDevEntry;
+            RTListForEach(&pThis->CacheHead, pDevEntry, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
+            {
+                if (pDevEntry->enmDir == aWork[iWork].enmDir)
+                {
+                    PDRVHOSTAUDIOWASCACHEDEVCFG pHeadCfg = RTListGetFirst(&pDevEntry->ConfigList,
+                                                                          DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry);
+                    if (   pHeadCfg
+                        && (!pLeastRecentlyUsed || pHeadCfg->nsLastUsed < pLeastRecentlyUsed->nsLastUsed))
+                        pLeastRecentlyUsed = pHeadCfg;
+                }
+            }
+            if (pLeastRecentlyUsed)
+                RTListNodeRemove(&pLeastRecentlyUsed->ListEntry);
+            RTCritSectLeave(&pThis->CritSectCache);
+
+            if (!pLeastRecentlyUsed)
+                break;
+            drvHostAudioWasCacheDestroyDevConfig(pThis, pLeastRecentlyUsed);
+        }
+    }
+}
+
+
+/**
  * Purges all the entries in the cache.
  */
 static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis, bool fOnWorker)
@@ -791,7 +857,7 @@ static void drvHostAudioWasCachePurge(PDRVHOSTAUDIOWAS pThis, bool fOnWorker)
         RTCritSectLeave(&pThis->CritSectCache);
         if (!pDevEntry)
             break;
-        drvHostAudioWasCacheDestroyDevEntry(pDevEntry);
+        drvHostAudioWasCacheDestroyDevEntry(pThis, pDevEntry);
     }
 
     if (fOnWorker)
@@ -819,6 +885,7 @@ drvHostAudioWasCacheLookupLocked(PDRVHOSTAUDIOWASCACHEDEV pDevEntry, PCPDMAUDIOP
         if (PDMAudioPropsAreEqual(&pDevCfg->Props, pProps))
         {
             RTListNodeRemove(&pDevCfg->ListEntry);
+            pDevCfg->nsLastUsed = RTTimeNanoTS();
             return pDevCfg;
         }
     }
@@ -873,7 +940,8 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
     if (FAILED(hrc))
     {
         LogRelMax(64, ("WasAPI: Activate(%ls, IAudioClient) failed: %Rhrc\n", pDevEntry->wszDevId, hrc));
-        pDevCfg->nsInited = RTTimeNanoTS();
+        pDevCfg->nsInited   = RTTimeNanoTS();
+        pDevCfg->nsLastUsed = pDevCfg->nsInited;
         return pDevCfg->rcSetup = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     }
 
@@ -943,6 +1011,7 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
                             pDevCfg->cFramesPeriod      = PDMAudioPropsNanoToFrames(&pDevCfg->Props,
                                                                                     cDefaultPeriodInNtTicks * 100);
                             pDevCfg->nsInited           = RTTimeNanoTS();
+                            pDevCfg->nsLastUsed         = pDevCfg->nsInited;
                             pDevCfg->rcSetup            = VINF_SUCCESS;
 
                             if (pClosestMatch)
@@ -983,7 +1052,8 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
     pIAudioClient->Release();
     if (pClosestMatch)
         CoTaskMemFree(pClosestMatch);
-    pDevCfg->nsInited = RTTimeNanoTS();
+    pDevCfg->nsInited   = RTTimeNanoTS();
+    pDevCfg->nsLastUsed = 0;
     Log8Func(("returns VERR_AUDIO_STREAM_COULD_NOT_CREATE (inited in %'RU64 ns)\n", pDevCfg->nsInited - pDevCfg->nsCreated));
     return pDevCfg->rcSetup = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 }
@@ -1027,6 +1097,20 @@ static int drvHostAudioWasCacheLookupOrCreateConfig(PDRVHOSTAUDIOWAS pThis, PDRV
     pDevCfg->cFramesBufferSize = pCfgReq->Backend.cFramesBufferSize;
     PDMAudioPropsToString(&pDevCfg->Props, pDevCfg->szProps, sizeof(pDevCfg->szProps));
     pDevCfg->nsCreated         = RTTimeNanoTS();
+    pDevCfg->nsLastUsed        = pDevCfg->nsCreated;
+
+    uint32_t cCacheEntries;
+    if (pDevCfg->pDevEntry->enmDir == PDMAUDIODIR_IN)
+        cCacheEntries = ASMAtomicIncU32(&pThis->cCacheEntriesIn);
+    else
+        cCacheEntries = ASMAtomicIncU32(&pThis->cCacheEntriesOut);
+    if (cCacheEntries > VBOX_WASAPI_MAX_TOTAL_CONFIG_ENTRIES)
+    {
+        LogFlowFunc(("Trigger cache pruning.\n"));
+        int rc2 = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, NULL /*pStream*/,
+                                                              DRVHOSTAUDIOWAS_DO_PRUNE_CACHE, NULL /*pvUser*/);
+        AssertRCStmt(rc2, drvHostAudioWasCachePrune(pThis));
+    }
 
     if (!fOnWorker)
     {
@@ -1175,12 +1259,22 @@ static void drvHostAudioWasCachePutBack(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWAS
         Log8Func(("Putting %p/'%s' back\n", pDevCfg, pDevCfg->szProps));
         RTCritSectEnter(&pThis->CritSectCache);
         RTListAppend(&pDevCfg->pDevEntry->ConfigList, &pDevCfg->ListEntry);
+        uint32_t const cEntries = pDevCfg->pDevEntry->enmDir == PDMAUDIODIR_IN ? pThis->cCacheEntriesIn : pThis->cCacheEntriesOut;
         RTCritSectLeave(&pThis->CritSectCache);
+
+        /* Trigger pruning if we're over the threshold. */
+        if (cEntries > VBOX_WASAPI_MAX_TOTAL_CONFIG_ENTRIES)
+        {
+            LogFlowFunc(("Trigger cache pruning.\n"));
+            int rc2 = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, NULL /*pStream*/,
+                                                                  DRVHOSTAUDIOWAS_DO_PRUNE_CACHE, NULL /*pvUser*/);
+            AssertRCStmt(rc2, drvHostAudioWasCachePrune(pThis));
+        }
     }
     else
     {
         Log8Func(("IAudioClient::Reset failed (%Rhrc) on %p/'%s', destroying it.\n", hrc, pDevCfg, pDevCfg->szProps));
-        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+        drvHostAudioWasCacheDestroyDevConfig(pThis, pDevCfg);
     }
 }
 
@@ -1598,7 +1692,7 @@ static void drvHostAudioWasDoStreamDevSwitch(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUD
     {
         LogRelMax(64, ("WasAPI: Failed to set up new device config '%ls:%s' for stream '%s': %Rrc\n",
                        pDevCfg->pDevEntry->wszDevId, pDevCfg->szProps, pStreamWas->Cfg.szName, rc));
-        drvHostAudioWasCacheDestroyDevConfig(pDevCfg);
+        drvHostAudioWasCacheDestroyDevConfig(pThis, pDevCfg);
         pThis->pIHostAudioPort->pfnStreamNotifyDeviceChanged(pThis->pIHostAudioPort, &pStreamWas->Core, true /*fReInit*/);
     }
 }
@@ -1619,6 +1713,12 @@ static DECLCALLBACK(void) drvHostAudioWasHA_DoOnWorkerThread(PPDMIHOSTAUDIO pInt
             Assert(pStream == NULL);
             Assert(pvUser == NULL);
             drvHostAudioWasCachePurge(pThis, true /*fOnWorker*/);
+            break;
+
+        case DRVHOSTAUDIOWAS_DO_PRUNE_CACHE:
+            Assert(pStream == NULL);
+            Assert(pvUser == NULL);
+            drvHostAudioWasCachePrune(pThis);
             break;
 
         case DRVHOSTAUDIOWAS_DO_STREAM_DEV_SWITCH:
