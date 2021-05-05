@@ -414,7 +414,6 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDestroy(PPDMIHOSTAUDIO pInterface,
             pStreamVRDE->In.pCircBuf = NULL;
         }
     }
-    pDrv->pConsoleVRDPServer = NULL;   /** @todo r=bird: WTF? */
 
     return VINF_SUCCESS;
 }
