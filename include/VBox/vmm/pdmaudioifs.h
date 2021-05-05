@@ -1307,6 +1307,30 @@ typedef PDMAUDIOBACKENDSTREAM *PPDMAUDIOBACKENDSTREAM;
 /** Magic value for PDMAUDIOBACKENDSTREAM. */
 #define PDMAUDIOBACKENDSTREAM_MAGIC PDM_VERSION_MAKE(0xa0d4, 1, 0)
 
+/**
+ * Host audio (backend) stream state returned by PDMIHOSTAUDIO::pfnStreamGetState.
+ */
+typedef enum PDMHOSTAUDIOSTREAMSTATE
+{
+    /** Invalid zero value, as per usual.   */
+    PDMHOSTAUDIOSTREAMSTATE_INVALID = 0,
+    /** The stream is being initialized.
+     * This should also be used when switching to a new device and the stream
+     * stops to work with the old device while the new one being configured.  */
+    PDMHOSTAUDIOSTREAMSTATE_INITIALIZING,
+    /** The stream does not work (async init failed, audio subsystem gone
+     *  fishing, or similar). */
+    PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING,
+    /** Backend is working okay. */
+    PDMHOSTAUDIOSTREAMSTATE_OKAY,
+    /** Backend is working but doesn't want any commands or data reads/writes. */
+    PDMHOSTAUDIOSTREAMSTATE_INACTIVE,
+    /** End of valid values. */
+    PDMHOSTAUDIOSTREAMSTATE_END,
+    /** Blow the type up to 32 bits. */
+    PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK = 0x7fffffff
+} PDMHOSTAUDIOSTREAMSTATE;
+
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
@@ -1499,13 +1523,14 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetPending, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns the current status of the given backend stream.
+     * Returns the current state of the given backend stream.
      *
-     * @returns PDMAUDIOSTREAM_STS_XXX
+     * @returns PDMHOSTAUDIOSTREAMSTATE value.
+     * @retval  PDMHOSTAUDIOSTREAMSTATE_INVALID if invalid stream.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+    DECLR3CALLBACKMEMBER(PDMHOSTAUDIOSTREAMSTATE, pfnStreamGetState, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Plays (writes to) an audio (output) stream.
@@ -1532,11 +1557,10 @@ typedef struct PDMIHOSTAUDIO
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                  void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
-
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "b320d6ab-6cbc-46a8-8011-57e7f7eb0e25"
+#define PDMIHOSTAUDIO_IID                           "53949a0a-ca2d-4d25-869f-2a8357991293"
 
 
 /** Pointer to a audio notify from host interface. */

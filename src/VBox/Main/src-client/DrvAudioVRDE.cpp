@@ -414,7 +414,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDestroy(PPDMIHOSTAUDIO pInterface,
             pStreamVRDE->In.pCircBuf = NULL;
         }
     }
-    pDrv->pConsoleVRDPServer = NULL;
+    pDrv->pConsoleVRDPServer = NULL;   /** @todo r=bird: WTF? */
 
     return VINF_SUCCESS;
 }
@@ -594,20 +594,15 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pI
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVrdeHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                           PPDMAUDIOBACKENDSTREAM pStream)
 {
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    RT_NOREF(pStream);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    return pDrv->cClients > 0
-         ? PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED
-#if 0 /* later mabye */ /** @todo r=bird: Weird backend status mess. */
-         : PDMAUDIOSTREAM_STS_NONE /* play possum if the clients all disappears. Re-init should be underways. */;
-#else
-         : PDMAUDIOSTREAM_STS_INITIALIZED /* If any clients are connected, flag the stream as enabled. */;
-#endif
+    return pDrv->cClients > 0 ? PDMHOSTAUDIOSTREAMSTATE_OKAY : PDMHOSTAUDIOSTREAMSTATE_INACTIVE;
 }
 
 
@@ -805,7 +800,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVrdeHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVrdeHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus            = drvAudioVrdeHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamGetState             = drvAudioVrdeHA_StreamGetState;
     pThis->IHostAudio.pfnStreamPlay                 = drvAudioVrdeHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvAudioVrdeHA_StreamCapture;
 

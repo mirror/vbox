@@ -2423,24 +2423,22 @@ static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetWritable(PPDMIHOSTAUDI
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostCoreAudioHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                               PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    PCOREAUDIOSTREAM pStreamCa = (PCOREAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamCa, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
-
-    uint32_t fStrmStatus = PDMAUDIOSTREAM_STS_NONE;
-
-    if (pCAStream->pCfg) /* Configured?  */
+    if (pStreamCa->pCfg) /* Configured?  */
     {
-        if (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
-            fStrmStatus |= PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED;
+        if (ASMAtomicReadU32(&pStreamCa->enmStatus) == COREAUDIOSTATUS_INIT)
+            return PDMHOSTAUDIOSTREAMSTATE_OKAY;
     }
 
-    return fStrmStatus;
+    return PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING; /** @todo ?? */
 }
 
 
@@ -2556,7 +2554,7 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamGetReadable          = drvHostCoreAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHostCoreAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus            = drvHostCoreAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamGetState             = drvHostCoreAudioHA_StreamGetState;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostCoreAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostCoreAudioHA_StreamCapture;
     pThis->IHostAudio.pfnGetDevices                 = drvHostCoreAudioHA_GetDevices;

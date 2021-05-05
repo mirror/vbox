@@ -1546,12 +1546,13 @@ static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetWritable(PPDMIHOSTAUDIO 
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioPaHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                             PPDMAUDIOBACKENDSTREAM pStream)
 {
     PDRVHOSTPULSEAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
-    RT_NOREF(pStream);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
     /* Check PulseAudio's general status. */
     if (pThis->pContext)
@@ -1560,13 +1561,13 @@ static DECLCALLBACK(uint32_t) drvHostAudioPaHA_StreamGetStatus(PPDMIHOSTAUDIO pI
         if (PA_CONTEXT_IS_GOOD(enmState))
         {
             /** @todo should we check the actual stream state? */
-            return PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED;
+            return PDMHOSTAUDIOSTREAMSTATE_OKAY;
         }
         LogFunc(("non-good context state: %d\n", enmState));
     }
     else
         LogFunc(("No context!\n"));
-    return PDMAUDIOSTREAM_STS_NONE;
+    return PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
 }
 
 
@@ -1911,7 +1912,7 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioPaHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioPaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
-    pThis->IHostAudio.pfnStreamGetStatus            = drvHostAudioPaHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamGetState             = drvHostAudioPaHA_StreamGetState;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostAudioPaHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostAudioPaHA_StreamCapture;
 

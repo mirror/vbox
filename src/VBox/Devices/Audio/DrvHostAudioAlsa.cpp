@@ -1117,13 +1117,15 @@ static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetPending(PPDMIHOSTAUDIO
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAlsaAudioHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                               PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    return PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED;
+    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
 }
 
 
@@ -1417,7 +1419,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamGetReadable          = drvHostAlsaAudioHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHostAlsaAudioHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = drvHostAlsaAudioHA_StreamGetPending;
-    pThis->IHostAudio.pfnStreamGetStatus            = drvHostAlsaAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamGetState             = drvHostAlsaAudioHA_StreamGetState;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostAlsaAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostAlsaAudioHA_StreamCapture;
 

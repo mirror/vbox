@@ -1106,6 +1106,56 @@ DECLINLINE(const char *) PDMAudioStrmCfgToString(PCPDMAUDIOSTREAMCFG pCfg, char 
 *********************************************************************************************************************************/
 
 /**
+ * Converts a audio stream state enum value to a string.
+ *
+ * @returns Pointer to read-only audio stream state string on success,
+ *          "illegal" if invalid command value.
+ * @param   enmStreamState  The state to convert.
+ */
+DECLINLINE(const char *) PDMAudioStreamStateGetName(PDMAUDIOSTREAMSTATE enmStreamState)
+{
+    switch (enmStreamState)
+    {
+        case PDMAUDIOSTREAMSTATE_INVALID:           return "invalid";
+        case PDMAUDIOSTREAMSTATE_NOT_WORKING:       return "not-working";
+        case PDMAUDIOSTREAMSTATE_NEED_REINIT:       return "need-reinit";
+        case PDMAUDIOSTREAMSTATE_INACTIVE:          return "inactive";
+        case PDMAUDIOSTREAMSTATE_ENABLED:           return "enabled";
+        case PDMAUDIOSTREAMSTATE_ENABLED_READABLE:  return "enabled-readable";
+        case PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE:  return "enabled-writable";
+        /* no default: */
+        case PDMAUDIOSTREAMSTATE_END:
+        case PDMAUDIOSTREAMSTATE_32BIT_HACK:
+            break;
+    }
+    AssertMsgFailedReturn(("Invalid audio stream state: %d\n", enmStreamState), "illegal");
+}
+
+/**
+ * Converts a host audio (backend) stream state enum value to a string.
+ *
+ * @returns Pointer to read-only host audio stream state string on success,
+ *          "illegal" if invalid command value.
+ * @param   enmHostAudioStreamState The state to convert.
+ */
+DECLINLINE(const char *) PDMHostAudioStreamStateGetName(PDMHOSTAUDIOSTREAMSTATE enmHostAudioStreamState)
+{
+    switch (enmHostAudioStreamState)
+    {
+        case PDMHOSTAUDIOSTREAMSTATE_INVALID:       return "invalid";
+        case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:  return "initializing";
+        case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:   return "not-working";
+        case PDMHOSTAUDIOSTREAMSTATE_OKAY:          return "okay";
+        case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:      return "inactive";
+        /* no default: */
+        case PDMHOSTAUDIOSTREAMSTATE_END:
+        case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
+            break;
+    }
+    AssertMsgFailedReturn(("Invalid host audio stream state: %d\n", enmHostAudioStreamState), "illegal");
+}
+
+/**
  * Checks if the stream status is one that can be read from.
  *
  * @returns @c true if ready to be read from, @c false if not.
@@ -1120,25 +1170,6 @@ DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
                        | PDMAUDIOSTREAM_STS_ENABLED
                        | PDMAUDIOSTREAM_STS_PAUSED
                        | PDMAUDIOSTREAM_STS_NEED_REINIT))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is one that can be read from.
- *
- * @returns @c true if ready to be read from, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Only for backend statuses.
- */
-DECLINLINE(bool) PDMAudioStrmStatusBackendCanRead(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_NEED_REINIT ))
         == (  PDMAUDIOSTREAM_STS_INITIALIZED
             | PDMAUDIOSTREAM_STS_ENABLED);
 }
@@ -1159,25 +1190,6 @@ DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
                        | PDMAUDIOSTREAM_STS_PAUSED
                        | PDMAUDIOSTREAM_STS_PENDING_DISABLE
                        | PDMAUDIOSTREAM_STS_NEED_REINIT))
-        == (  PDMAUDIOSTREAM_STS_INITIALIZED
-            | PDMAUDIOSTREAM_STS_ENABLED);
-}
-
-/**
- * Checks if the stream status is one that can be written to, backend edition.
- *
- * @returns @c true if ready to be written to, @c false if not.
- * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
- * @note    Only for backend statuses.
- */
-DECLINLINE(bool) PDMAudioStrmStatusBackendCanWrite(uint32_t fStatus)
-{
-    PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(fStatus);
-    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), false);
-    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
-                       | PDMAUDIOSTREAM_STS_ENABLED
-                       | PDMAUDIOSTREAM_STS_PAUSED
-                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
         == (  PDMAUDIOSTREAM_STS_INITIALIZED
             | PDMAUDIOSTREAM_STS_ENABLED);
 }

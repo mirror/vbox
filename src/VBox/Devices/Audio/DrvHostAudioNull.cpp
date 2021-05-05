@@ -180,12 +180,20 @@ static DECLCALLBACK(uint32_t) drvHostNullAudioHA_StreamGetPending(PPDMIHOSTAUDIO
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostNullAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostNullAudioHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                               PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    return PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED;
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+#if 0
+    /* Bit bucket appraoch where we ignore the output and silence the input buffers.  */
+    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+#else
+    /* Approach where the mixer in the devices skips us and saves a few CPU cycles. */
+    return PDMHOSTAUDIOSTREAMSTATE_INACTIVE;
+#endif
 }
 
 
@@ -241,7 +249,7 @@ DECL_HIDDEN_CONST(PDMIHOSTAUDIO) const g_DrvHostAudioNull =
     /* .pfnStreamGetReadable         =*/ drvHostNullAudioHA_StreamGetReadable,
     /* .pfnStreamGetWritable         =*/ drvHostNullAudioHA_StreamGetWritable,
     /* .pfnStreamGetPending          =*/ drvHostNullAudioHA_StreamGetPending,
-    /* .pfnStreamGetStatus           =*/ drvHostNullAudioHA_StreamGetStatus,
+    /* .pfnStreamGetState            =*/ drvHostNullAudioHA_StreamGetState,
     /* .pfnStreamPlay                =*/ drvHostNullAudioHA_StreamPlay,
     /* .pfnStreamCapture             =*/ drvHostNullAudioHA_StreamCapture,
 };

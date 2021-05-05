@@ -2518,38 +2518,34 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetPending(PPDMIHOSTAUDIO 
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioWasHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                              PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
-    AssertPtrReturn(pStreamWas, PDMAUDIOSTREAM_STS_NONE);
+    AssertPtrReturn(pStreamWas, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    uint32_t fStrmStatus = 0;
+    PDMHOSTAUDIOSTREAMSTATE enmState;
     AssertPtr(pStreamWas->pDevCfg);
     if (pStreamWas->pDevCfg /*paranoia*/)
     {
         if (RT_SUCCESS(pStreamWas->pDevCfg->rcSetup))
-            fStrmStatus |= PDMAUDIOSTREAM_STS_INITIALIZED;
-        else if (pStreamWas->pDevCfg->rcSetup != VERR_AUDIO_STREAM_INIT_IN_PROGRESS)
-        {
-            /** @todo trigger device reset? Probably won't help, so what to do?  */
-        }
+            enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+        else if (   pStreamWas->pDevCfg->rcSetup == VERR_AUDIO_STREAM_INIT_IN_PROGRESS
+                 || pStreamWas->fSwitchingDevice )
+            enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
+        else
+            enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
     }
-    if (pStreamWas->fEnabled)
-    {
-        fStrmStatus |= PDMAUDIOSTREAM_STS_ENABLED;
-        if (pStreamWas->fDraining)
-            fStrmStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
-        if (pStreamWas->fRestartOnResume)
-            fStrmStatus |= PDMAUDIOSTREAM_STS_PAUSED;
-    }
-    if (pStreamWas->fSwitchingDevice)
-        fStrmStatus |= PDMAUDIOSTREAM_STS_PREPARING_SWITCH;
+    else if (pStreamWas->fSwitchingDevice)
+        enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
+    else
+        enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
 
-    LogFlowFunc(("returns %#x for '%s' {%s}\n", fStrmStatus, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
-    return fStrmStatus;
+    LogFlowFunc(("returns %d for '%s' {%s}\n", enmState, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
+    return enmState;
 }
 
 
@@ -3019,7 +3015,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioWasHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioWasHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = drvHostAudioWasHA_StreamGetPending;
-    pThis->IHostAudio.pfnStreamGetStatus            = drvHostAudioWasHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamGetState             = drvHostAudioWasHA_StreamGetState;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostAudioWasHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostAudioWasHA_StreamCapture;
 
