@@ -71,6 +71,9 @@ public:
     void addData(int iDataSeriesIndex, quint64 fData);
     const QQueue<quint64> *data(int iDataSeriesIndex) const;
 
+    /** # of the data point of the data series with index iDataSeriesIndex. */
+    int dataSize(int iDataSeriesIndex) const;
+
     void setDataSeriesName(int iDataSeriesIndex, const QString &strName);
     QString dataSeriesName(int iDataSeriesIndex) const;
 

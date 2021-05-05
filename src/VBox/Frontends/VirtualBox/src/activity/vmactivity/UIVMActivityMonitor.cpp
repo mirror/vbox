@@ -100,6 +100,8 @@ public:
 
 protected:
 
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual QSize minimumSizeHint() const /* override */;
     virtual QSize sizeHint() const  /* override */;
@@ -136,6 +138,9 @@ private:
     QRect m_lineChartRect;
     int m_iPieChartRadius;
     int m_iPieChartSpacing;
+    float m_fPixelPerDataPoint;
+    /** is set to -1 if mouse cursor is not over a data point*/
+    int m_iDataIndexUnderCursor;
     /** For some chart it is not possible to have a pie chart, Then We dont present the
       * option to show it to user. see m_fIsPieChartAllowed. */
     bool m_fIsPieChartAllowed;
@@ -166,6 +171,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
     , m_iOverlayAlpha(80)
+    , m_fPixelPerDataPoint(0.f)
+    , m_iDataIndexUnderCursor(-1)
     , m_fIsPieChartAllowed(false)
     , m_fShowPieChart(true)
     , m_fUseGradientLineColor(false)
@@ -176,6 +183,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setMouseTracking(true);
     connect(this, &UIChart::customContextMenuRequested,
             this, &UIChart::sltCreateContextMenu);
 
@@ -317,6 +325,23 @@ void UIChart::retranslateUi()
     m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
     m_strAreaChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Draw Area Chart");
     update();
+}
+
+void UIChart::resizeEvent(QResizeEvent *pEvent)
+{
+    int iWidth = width() - m_iMarginLeft - m_iMarginRight;
+    if (g_iMaximumQueueSize > 0)
+        m_fPixelPerDataPoint = iWidth / (float)g_iMaximumQueueSize;
+    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+}
+
+void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
+{
+    int iX = pEvent->x();
+    m_iDataIndexUnderCursor = -1;
+    if (iX > m_iMarginLeft && iX <= width() - m_iMarginRight)
+        m_iDataIndexUnderCursor = (int)(g_iMaximumQueueSize -  (iX - m_iMarginLeft) / m_fPixelPerDataPoint);
+    QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
@@ -636,7 +661,6 @@ void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
     setUseAreaChart(fUseAreaChart);
 }
 
-
 /*********************************************************************************************************************************
 *   UIMetric implementation.                                                                                                     *
 *********************************************************************************************************************************/
@@ -721,6 +745,13 @@ const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return &m_data[iDataSeriesIndex];
+}
+
+int UIMetric::dataSize(int iDataSeriesIndex) const
+{
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
+        return 0;
+    return m_data[iDataSeriesIndex].size();
 }
 
 void UIMetric::setDataSeriesName(int iDataSeriesIndex, const QString &strName)
@@ -882,7 +913,7 @@ void UIVMActivityMonitor::openSession()
 void UIVMActivityMonitor::retranslateUi()
 {
     foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Seconds"));
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
 
     /* Translate the chart info labels: */
     int iMaximum = 0;
