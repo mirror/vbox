@@ -44,9 +44,10 @@ ifeq ($(KBUILD_TARGET),linux)
  include $(PATH_SUB_CURRENT)/usb/Makefile.kmk
 endif
 
-ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
- include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
-endif
+# Disabled for now; does not work without WinMM.dll.
+#fdef VBOX_WITH_AUDIO_VALIDATIONKIT
+# include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
+#endif
 
 #
 # On OS/2 the binaries requires the libc DLLs
