@@ -70,6 +70,8 @@ private slots:
     void sltTreeItemUpdated();
     void sltCloseSessionOrProcess();
     void sltShowProperties();
+    void sltSaveSettings();
+    void sltCleanupListener();
 
 private:
 
@@ -81,8 +83,6 @@ private:
     void updateTreeWidget();
     void addGuestSession(CGuestSession guestSession);
     void loadSettings();
-    void cleanupListener();
-    void saveSettings();
 
     CGuest                    m_comGuest;
     QVBoxLayout              *m_pMainLayout;

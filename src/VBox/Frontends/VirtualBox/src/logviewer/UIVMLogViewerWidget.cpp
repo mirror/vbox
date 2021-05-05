@@ -173,10 +173,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
 
 UIVMLogViewerWidget::~UIVMLogViewerWidget()
 {
-    /* In machine UI context we perform cleanup during destruction.
-       UIMachineLogic makes sure this happens early enough: */
-    if (m_enmEmbedding == EmbedTo_Dialog)
-        sltSaveOptions();
 }
 
 int UIVMLogViewerWidget::defaultLogPageWidth() const
@@ -769,10 +765,8 @@ void UIVMLogViewerWidget::loadOptions()
     QFont loadedFont = gEDataManager->logViewerFont();
     if (loadedFont != QFont())
         m_font = loadedFont;
-    /* In manager UI we cleanup by listening the sigAskToCommitData signal: */
-    if (m_enmEmbedding == EmbedTo_Stack)
-        connect(&uiCommon(), &UICommon::sigAskToCommitData,
-                this, &UIVMLogViewerWidget::sltSaveOptions);
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVMLogViewerWidget::sltSaveOptions);
 }
 
 void UIVMLogViewerWidget::restorePanelVisibility()

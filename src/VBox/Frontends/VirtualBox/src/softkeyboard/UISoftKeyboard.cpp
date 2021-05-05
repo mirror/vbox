@@ -3866,8 +3866,6 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
 
 UISoftKeyboard::~UISoftKeyboard()
 {
-    saveSettings();
-    keyboard().ReleaseKeys();
 }
 
 void UISoftKeyboard::retranslateUi()
@@ -4216,9 +4214,11 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
 
     connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+    connect(&uiCommon(), &UICommon::sigAskToCommitData, this, &UISoftKeyboard::sltSaveSettings);
+    connect(&uiCommon(), &UICommon::sigAskToCommitData, this, &UISoftKeyboard::sltReleaseKeys);
 }
 
-void UISoftKeyboard::saveSettings()
+void UISoftKeyboard::sltSaveSettings()
 {
     /* Save geometry to extradata: */
     const QRect geo = currentGeometry();
@@ -4240,6 +4240,11 @@ void UISoftKeyboard::saveSettings()
         if (m_pKeyboardWidget->currentLayout())
             gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
     }
+}
+
+void UISoftKeyboard::sltReleaseKeys()
+{
+    keyboard().ReleaseKeys();
 }
 
 void UISoftKeyboard::loadSettings()

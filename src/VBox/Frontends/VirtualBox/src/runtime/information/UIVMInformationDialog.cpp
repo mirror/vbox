@@ -68,7 +68,6 @@ UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
 
 UIVMInformationDialog::~UIVMInformationDialog()
 {
-    saveSettings();
 }
 
 bool UIVMInformationDialog::shouldBeMaximized() const
@@ -117,7 +116,7 @@ void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
     m_pTabWidget->widget(iIndex)->setFocus();
 }
 
-void UIVMInformationDialog::saveSettings()
+void UIVMInformationDialog::sltSaveSettings()
 {
     /* Save window geometry: */
     {
@@ -134,6 +133,8 @@ void UIVMInformationDialog::prepare()
     prepareThis();
     /* Load settings: */
     loadSettings();
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVMInformationDialog::sltSaveSettings);
 }
 
 void UIVMInformationDialog::prepareThis()

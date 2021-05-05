@@ -103,12 +103,13 @@ private slots:
     void sltHandleColorCellClick(int iColorRow);
     void sltResetKeyboard();
     void sltHandleHelpRequest();
+    void sltSaveSettings();
+    void sltReleaseKeys();
 
 private:
 
     void prepareObjects();
     void prepareConnections();
-    void saveSettings();
     void loadSettings();
     void configure();
     void updateStatusBarMessage(const QString &strLayoutName);

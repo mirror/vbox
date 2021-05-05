@@ -72,6 +72,7 @@ private slots:
 
     /** Handles tab-widget page change. */
     void sltHandlePageChanged(int iIndex);
+    void sltSaveSettings();
 
 private:
 
@@ -89,7 +90,6 @@ private:
     void prepareButtonBox();
     /** Loads settings. */
     void loadSettings();
-    void saveSettings();
 
     /** @name Widget variables.
      * @{ */
