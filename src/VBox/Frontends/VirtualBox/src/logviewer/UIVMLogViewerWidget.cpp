@@ -914,10 +914,18 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             strTabTitle.append(" - ");
         }
         strTabTitle.append(QFileInfo(strFileName).fileName());
-        m_pTabWidget->addTab(pLogPage, strTabTitle);
+
+
+        m_pTabWidget->blockSignals(true);
+        int iIndex = m_pTabWidget->addTab(pLogPage, strTabTitle);
+        /* !!Hack alert. Setting html to text edit while th tab is not current ends up in an empty text edit: */
+        if (noLogsToShow)
+            m_pTabWidget->setCurrentIndex(iIndex);
+        m_pTabWidget->blockSignals(false);
 
         pLogPage->setLogContent(strLogContent, noLogsToShow);
         pLogPage->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
+
     }
 }
 
@@ -969,7 +977,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         if (fNoLogFileForMachine)
         {
             QString strDummyTabText = QString(tr("<p>No log files for the machine %1 found. Press the "
-                                                 "<b>Rescan</b> button to rescan the log folder "
+                                                 "<b>Reload</b> button to reload the log folder "
                                                  "<nobr><b>%2</b></nobr>.</p>")
                                               .arg(strMachineName).arg(comMachine.GetLogFolder()));
             createLogPage(tr("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);

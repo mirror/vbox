@@ -149,7 +149,8 @@ void UIVMLogPage::setTextEditTextAsHtml(const QString &strText)
 {
     if (!m_pTextEdit)
         return;
-    m_pTextEdit->appendHtml(strText);
+    if (document())
+        document()->setHtml(strText);
     update();
 }
 
