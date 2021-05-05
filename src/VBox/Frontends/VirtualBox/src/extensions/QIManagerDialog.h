@@ -153,6 +153,8 @@ protected:
         /** Handles close @a pEvent. */
         virtual void closeEvent(QCloseEvent *pEvent) /* override */;
     /** @} */
+        /** Returns the value of m_fCloseEmitted. */
+        bool closeEmitted() const { return m_fCloseEmitted; }
 
 private slots:
 

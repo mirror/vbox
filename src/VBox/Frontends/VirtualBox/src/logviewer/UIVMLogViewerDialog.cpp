@@ -158,7 +158,7 @@ bool UIVMLogViewerDialog::shouldBeMaximized() const
 
 void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
-    if (button(ButtonType_Close))
+    if (!closeEmitted() &&  button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
 }
 
