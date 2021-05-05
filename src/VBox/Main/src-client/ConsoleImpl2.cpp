@@ -2970,6 +2970,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         i_attachStatusDriver(pInst, DeviceType_SharedFolder, 0, 0, NULL, NULL, NULL, 0);
 
         /*
+         * Audio configuration.
+         */
+
+        /*
          * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio.
          */
         BOOL fAudioEnabled = FALSE;
@@ -3002,6 +3006,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Utf8Str strDebugPathOut;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
 
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/VaKit/Enabled", &strTmp);
+            const bool fVaKitEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
+#endif
             /** @todo Implement an audio device class, similar to the audio backend class, to construct the common stuff
              *        without duplicating (more) code. */
 
@@ -3134,7 +3142,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     pszAudioDriver = "NullAudio";
                     break;
 #ifdef RT_OS_WINDOWS
-#ifdef VBOX_WITH_WINMM
+# ifdef VBOX_WITH_WINMM
                 case AudioDriverType_WinMM:
 #  error "Port WinMM audio backend!" /** @todo Still needed? */
                     break;
@@ -3234,14 +3242,17 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
 
 #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
-            /** @todo Make this a runtime-configurable entry! */
+            if (fVaKitEnabled)
+            {
+                /*
+                 * The ValidationKit backend.
+                 */
+                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+                i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "ValidationKitAudio");
+                idxAudioLun++;
 
-            /*
-             * The ValidationKit backend.
-             */
-            InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-            i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "ValidationKitAudio");
-            idxAudioLun++;
+                LogRel(("Audio: ValidationKit driver active\n"));
+            }
 #endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
         }
 
