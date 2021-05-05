@@ -172,6 +172,9 @@ typedef enum
     kDmarDiag_Ir_Rfi_Irte_Read_Failed,
     kDmarDiag_Ir_Rfi_Irte_Not_Present,
     kDmarDiag_Ir_Rfi_Irte_Rsvd,
+    kDmarDiag_Ir_Rfi_Irte_Svt_Bus,
+    kDmarDiag_Ir_Rfi_Irte_Svt_Masked,
+    kDmarDiag_Ir_Rfi_Irte_Svt_Rsvd,
     kDmarDiag_Ir_Rfi_Rsvd,
     /* Member for determining array index limit. */
     kDmarDiag_End,
@@ -207,6 +210,9 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed   ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Not_Present   ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Rsvd          ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Bus       ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Masked    ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Rsvd      ),
     DMARDIAG_DESC(Ir_Rfi_Rsvd               ),
     /* kDmarDiag_End */
 };
@@ -1051,7 +1057,11 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
  */
 static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+
+    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
 #ifdef RT_STRICT
     {
         uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
@@ -1070,11 +1080,10 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
         MSIMSG Msi;
         Msi.Addr.au32[0] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEADDR_REG);
         Msi.Addr.au32[1] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEUADDR_REG);
-        Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEDATA_REG);
+        Msi.Data.u32     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FEDATA_REG);
 
         /** @todo Assert Msi.Addr is in the MSR_IA32_APICBASE_ADDR range and ensure on
          *        FEADD_REG write it can't be anything else? */
-        PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
         pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
         /* Clear interrupt pending bit. */
@@ -1100,32 +1109,33 @@ static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
     uint32_t const uIcsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
-    if (uIcsReg & VTD_BF_ICS_REG_IWC_MASK)
-        return;
-
-    uint32_t uIectlReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IECTL_REG);
-    if (!(uIectlReg & VTD_BF_IECTL_REG_IM_MASK))
+    if (!(uIcsReg & VTD_BF_ICS_REG_IWC_MASK))
     {
-        /* Software has unmasked the interrupt, raise it. */
-        MSIMSG Msi;
-        Msi.Addr.au32[0] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEADDR_REG);
-        Msi.Addr.au32[1] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG);
-        Msi.Data.u32 = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
+        uint32_t uIectlReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IECTL_REG);
+        if (!(uIectlReg & VTD_BF_IECTL_REG_IM_MASK))
+        {
+            /* Software has unmasked the interrupt, raise it. */
+            MSIMSG Msi;
+            Msi.Addr.au32[0] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEADDR_REG);
+            Msi.Addr.au32[1] = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEUADDR_REG);
+            Msi.Data.u32     = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_IEDATA_REG);
 
-        pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
+            pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi(pDevIns, &Msi, 0 /* uTagSrc */);
 
-        /* Clear interrupt pending bit. */
-        uIectlReg &= ~VTD_BF_IECTL_REG_IP_MASK;
-        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
-    }
-    else
-    {
-        /* Interrupt is masked, set the interrupt pending bit. */
-        uIectlReg |= VTD_BF_IECTL_REG_IP_MASK;
-        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
+            /* Clear interrupt pending bit. */
+            uIectlReg &= ~VTD_BF_IECTL_REG_IP_MASK;
+            dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
+        }
+        else
+        {
+            /* Interrupt is masked, set the interrupt pending bit. */
+            uIectlReg |= VTD_BF_IECTL_REG_IP_MASK;
+            dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, uIectlReg);
+        }
     }
 }
 #endif /* IN_RING3 */
@@ -1184,7 +1194,8 @@ static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
-    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    DMAR_LOCK(pDevIns, pThisCC);
 
     /* Update the diagnostic reason. */
     pThis->enmDiag = enmDiag;
@@ -1208,6 +1219,8 @@ static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT
         /* Raise interrupt if necessary. */
         dmarFaultEventRaiseInterrupt(pDevIns);
     }
+
+    DMAR_UNLOCK(pDevIns, pThisCC);
 }
 
 
@@ -1245,7 +1258,8 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T 
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
-    DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
+
+    DMAR_LOCK(pDevIns, pThisCC);
 
     /* Update the diagnostic reason. */
     pThis->enmDiag = enmDiag;
@@ -1259,6 +1273,8 @@ static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T 
     dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_IQERCD_REG, UINT64_MAX, fIqei);
 
     dmarFaultEventRaiseInterrupt(pDevIns);
+
+    DMAR_UNLOCK(pDevIns, pThisCC);
 }
 
 
@@ -1511,10 +1527,7 @@ static int dmarIrReadIrte(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idxInt
 
     size_t const   cbIrte     = sizeof(*pIrte);
     RTGCPHYS const GCPhysIrte = (uIrtaReg & VTD_BF_IRTA_REG_IRTA_MASK) + (idxIntr * cbIrte);
-    int rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysIrte, pIrte, cbIrte);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
-    return rc;
+    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysIrte, pIrte, cbIrte);
 }
 
 
@@ -1535,68 +1548,105 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
     /* Validate reserved bits in the interrupt request. */
     AssertCompile(VTD_REMAPPABLE_MSI_ADDR_VALID_MASK == UINT32_MAX);
     if (!(pMsiIn->Data.u32 & ~VTD_REMAPPABLE_MSI_DATA_VALID_MASK))
-    { /* likely */ }
-    else
     {
+        /* Compute the index into the interrupt remap table. */
+        uint16_t const uHandleHi       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_HI);
+        uint16_t const uHandleLo       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO);
+        uint16_t const uHandle         = uHandleLo | (uHandleHi << 15);
+        bool const     fSubHandleValid = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_SHV);
+        uint32_t const idxIntr         = fSubHandleValid
+                                       ? uHandle + RT_BF_GET(pMsiIn->Data.u32, VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE)
+                                       : uHandle;
+
+        /* Validate the index. */
+        uint32_t const cEntries = VTD_IRTA_REG_GET_ENTRIES(uIrtaReg);
+        if (idxIntr < cEntries)
+        {
+            /** @todo Implement and read IRTE from interrupt-entry cache here. */
+
+            /* Read the interrupt remap table entry (IRTE) at the index. */
+            VTD_IRTE_T Irte;
+            int rc = dmarIrReadIrte(pDevIns, uIrtaReg, idxIntr, &Irte);
+            if (RT_SUCCESS(rc))
+            {
+                /* Check if the IRTE is present (this must be done -before- checking reserved bits). */
+                uint64_t const uIrteQword0 = Irte.au64[0];
+                uint64_t const uIrteQword1 = Irte.au64[1];
+                bool const fPresent = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_P);
+                if (fPresent)
+                {
+                    /* Validate reserved bits in the IRTE. */
+                    if (   !(uIrteQword0 & ~VTD_IRTE_0_VALID_MASK)
+                        && !(uIrteQword1 & ~VTD_IRTE_1_VALID_MASK))
+                    {
+                        /* Validate requester id (the device ID) as configured in the IRTE. */
+                        bool     fSrcValid;
+                        DMARDIAG enmIrDiag;
+                        uint8_t const fSvt = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SVT);
+                        switch (fSvt)
+                        {
+                            case VTD_IRTE_SVT_NONE:
+                            {
+                                fSrcValid = true;
+                                enmIrDiag = kDmarDiag_None;
+                                break;
+                            }
+
+                            case VTD_IRTE_SVT_VALIDATE_MASK:
+                            {
+                                static uint16_t const s_afValidMasks[] = { 0xffff, 0xfffb, 0xfff9, 0xfff8 };
+                                uint8_t const idxMask     = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SQ) & 3;
+                                uint16_t const fValidMask = s_afValidMasks[idxMask];
+                                fSrcValid = (idDevice & fValidMask) == idDevice;
+                                enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Masked;
+                                break;
+                            }
+
+                            case VTD_IRTE_SVT_VALIDATE_BUS_RANGE:
+                            {
+                                uint16_t const uSourceId = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SID);
+                                uint8_t const uBusFirst  = RT_HI_U8(uSourceId);
+                                uint8_t const uBusLast   = RT_LO_U8(uSourceId);
+                                uint8_t const uRequesterIdBus = idDevice >> VBOX_PCI_BUS_SHIFT;
+                                fSrcValid = (uRequesterIdBus >= uBusFirst && uRequesterIdBus <= uBusLast);
+                                enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Bus;
+                                break;
+                            }
+
+                            default:
+                            {
+                                fSrcValid = false;
+                                enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Bus;
+                                break;
+                            }
+                        }
+
+                        if (fSrcValid)
+                        {
+                            /** @todo Get the interrupt mode (must not be posted) and then remap. */
+                            *pMsiOut = *pMsiIn;      // This is just temporary to shut up the compiler!
+                            return VERR_NOT_IMPLEMENTED;
+                        }
+                        else
+                            dmarIrFaultRecordQualified(pDevIns, enmIrDiag, kIrf_Irte_Present_Rsvd, idDevice, idxIntr, &Irte);
+                    }
+                    else
+                        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, kIrf_Irte_Present_Rsvd, idDevice,
+                                                   idxIntr, &Irte);
+                }
+                else
+                    dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, kIrf_Irte_Not_Present, idDevice,
+                                               idxIntr, &Irte);
+            }
+            else
+                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, kIrf_Irte_Read_Failed, idDevice, idxIntr);
+        }
+        else
+            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, kIrf_Intr_Index_Invalid, idDevice, idxIntr);
+    }
+    else
         dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, kIrf_Remappable_Intr_Rsvd, idDevice, 0 /* idxIntr */);
-        return VERR_IOMMU_INTR_REMAP_DENIED;
-    }
-
-    /* Compute the index into the interrupt remap table. */
-    uint16_t const uHandleHi       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_HI);
-    uint16_t const uHandleLo       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO);
-    uint16_t const uHandle         = uHandleLo | (uHandleHi << 15);
-    bool const     fSubHandleValid = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_SHV);
-    uint32_t const idxIntr         = fSubHandleValid
-                                   ? uHandle + RT_BF_GET(pMsiIn->Data.u32, VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE)
-                                   : uHandle;
-
-    /* Validate the index. */
-    uint32_t const cEntries = VTD_IRTA_REG_GET_ENTRIES(uIrtaReg);
-    if (idxIntr < cEntries)
-    { /* likely */ }
-    else
-    {
-        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, kIrf_Intr_Index_Invalid, idDevice, idxIntr);
-        return VERR_IOMMU_INTR_REMAP_DENIED;
-    }
-
-    /** @todo Implement and read IRTE from interrupt-entry cache here. */
-
-    /* Read the interrupt remap table entry (IRTE). */
-    VTD_IRTE_T Irte;
-    int rc = dmarIrReadIrte(pDevIns, uIrtaReg, idxIntr, &Irte);
-    if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-    {
-        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, kIrf_Irte_Read_Failed, idDevice, idxIntr);
-        return VERR_IOMMU_INTR_REMAP_DENIED;
-    }
-
-    /* Validate IRTE. */
-    uint64_t const uIrteQword0 = Irte.au64[0];
-    uint64_t const uIrteQword1 = Irte.au64[1];
-    bool const fPresent = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_P);
-    if (fPresent)
-    { /* likely */ }
-    else
-    {
-        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, kIrf_Irte_Not_Present, idDevice, idxIntr, &Irte);
-        return VERR_IOMMU_INTR_REMAP_DENIED;
-    }
-    if (   !(uIrteQword0 & ~VTD_IRTE_0_VALID_MASK)
-        && !(uIrteQword1 & ~VTD_IRTE_1_VALID_MASK))
-    { /* likely */ }
-    else
-    {
-        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, kIrf_Irte_Present_Rsvd, idDevice, idxIntr, &Irte);
-        return VERR_IOMMU_INTR_REMAP_DENIED;
-    }
-
-    /** @todo rest of validation using SVT and SQ. */
-    *pMsiOut = *pMsiIn;      // This is just temporary to shut up the compiler!
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IOMMU_INTR_REMAP_DENIED;
 }
 
 
@@ -1652,7 +1702,7 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
         return dmarIrRemapIntr(pDevIns, uIrtaReg, idDevice, pMsiIn, pMsiOut);
     }
 
-    /* If interrupt-remapping isn't enabled, all interrupts are pass-through.  */
+    /* Interrupt-remapping isn't enabled, all interrupts are pass-through.  */
     *pMsiOut = *pMsiIn;
     return VINF_SUCCESS;
 }
@@ -1772,9 +1822,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
 #define DMAR_IQE_FAULT_RECORD_RET(a_enmDiag, a_enmIqei) \
     do \
     { \
-        DMAR_LOCK(pDevIns, pThisR3); \
         dmarIqeFaultRecord(pDevIns, (a_enmDiag), (a_enmIqei)); \
-        DMAR_UNLOCK(pDevIns, pThisR3); \
         return; \
     } while (0)
 
@@ -1985,20 +2033,20 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                     {
                         /* The requests have not wrapped around, read them in one go. */
                         cbRequests = offQueueTail - offQueueHead;
-                        rc = PDMDevHlpPhysRead(pDevIns, GCPhysRequests, pvRequests, cbRequests);
+                        rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysRequests, pvRequests, cbRequests);
                     }
                     else
                     {
                         /* The requests have wrapped around, read forward and wrapped-around. */
                         uint32_t const cbForward = cbQueue - offQueueHead;
-                        rc  = PDMDevHlpPhysRead(pDevIns, GCPhysRequests, pvRequests, cbForward);
+                        rc  = PDMDevHlpPhysReadMeta(pDevIns, GCPhysRequests, pvRequests, cbForward);
 
                         uint32_t const cbWrapped = offQueueTail;
                         if (   RT_SUCCESS(rc)
                             && cbWrapped > 0)
                         {
-                            rc = PDMDevHlpPhysRead(pDevIns, GCPhysRequests + cbForward,
-                                                   (void *)((uintptr_t)pvRequests + cbForward), cbWrapped);
+                            rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysRequests + cbForward,
+                                                       (void *)((uintptr_t)pvRequests + cbForward), cbWrapped);
                         }
                         cbRequests = cbForward + cbWrapped;
                     }
