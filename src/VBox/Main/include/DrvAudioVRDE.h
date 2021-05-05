@@ -69,6 +69,8 @@ private:
 
     /** Pointer to the associated VRDE audio driver. */
     struct DRVAUDIOVRDE *mpDrv;
+    /** Protects accesses to mpDrv from racing driver destruction. */
+    RTCRITSECT mCritSect;
 };
 
 #endif /* !MAIN_INCLUDED_DrvAudioVRDE_h */

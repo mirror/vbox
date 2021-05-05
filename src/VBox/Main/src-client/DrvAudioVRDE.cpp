@@ -74,10 +74,10 @@ typedef struct DRVAUDIOVRDE
     PPDMDRVINS           pDrvIns;
     /** Pointer to the VRDP's console object. */
     ConsoleVRDPServer   *pConsoleVRDPServer;
-    /** Pointer to the DrvAudio port interface that is above us. */
-    PPDMIAUDIOCONNECTOR  pDrvAudio;
     /** Number of connected clients to this VRDE instance. */
     uint32_t             cClients;
+    /** Interface to the driver above us (DrvAudio).   */
+    PDMIHOSTAUDIOPORT   *pIHostAudioPort;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO        IHostAudio;
 } DRVAUDIOVRDE;
@@ -97,16 +97,20 @@ AudioVRDE::AudioVRDE(Console *pConsole)
     : AudioDriver(pConsole)
     , mpDrv(NULL)
 {
+    RTCritSectInit(&mCritSect);
 }
 
 
 AudioVRDE::~AudioVRDE(void)
 {
+    RTCritSectEnter(&mCritSect);
     if (mpDrv)
     {
         mpDrv->pAudioVRDE = NULL;
         mpDrv = NULL;
     }
+    RTCritSectLeave(&mCritSect);
+    RTCritSectDelete(&mCritSect);
 }
 
 
@@ -128,9 +132,34 @@ void AudioVRDE::onVRDEClientConnect(uint32_t uClientID)
 {
     RT_NOREF(uClientID);
 
-    LogRel2(("Audio: VRDE client connected\n"));
+    RTCritSectEnter(&mCritSect);
     if (mpDrv)
+    {
         mpDrv->cClients++;
+        LogRel2(("Audio: VRDE client connected (#%u)\n", mpDrv->cClients));
+
+#if 0 /* later, maybe */
+        /*
+         * The first client triggers a device change event in both directions
+         * so that can start talking to the audio device.
+         *
+         * Note! Should be okay to stay in the critical section here, as it's only
+         *       used at construction and destruction time.
+         */
+        if (mpDrv->cClients == 1)
+        {
+            VMSTATE enmState = PDMDrvHlpVMState(mpDrv->pDrvIns);
+            if (enmState <= VMSTATE_POWERING_OFF)
+            {
+                PDMIHOSTAUDIOPORT *pIHostAudioPort = mpDrv->pIHostAudioPort;
+                AssertPtr(pIHostAudioPort);
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_OUT, NULL /*pvUser*/);
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_IN,  NULL /*pvUser*/);
+            }
+        }
+#endif
+    }
+    RTCritSectLeave(&mCritSect);
 }
 
 
@@ -138,10 +167,33 @@ void AudioVRDE::onVRDEClientDisconnect(uint32_t uClientID)
 {
     RT_NOREF(uClientID);
 
-    LogRel2(("Audio: VRDE client disconnected\n"));
-    Assert(mpDrv->cClients);
+    RTCritSectEnter(&mCritSect);
     if (mpDrv)
+    {
+        Assert(mpDrv->cClients > 0);
         mpDrv->cClients--;
+        LogRel2(("Audio: VRDE client disconnected (%u left)\n", mpDrv->cClients));
+#if 0 /* later maybe */
+        /*
+         * The last client leaving triggers a device change event in both
+         * directions so the audio devices can stop wasting time trying to
+         * talk to us.  (There is an additional safeguard in
+         * drvAudioVrdeHA_StreamGetStatus.)
+         */
+        if (mpDrv->cClients == 0)
+        {
+            VMSTATE enmState = PDMDrvHlpVMState(mpDrv->pDrvIns);
+            if (enmState <= VMSTATE_POWERING_OFF)
+            {
+                PDMIHOSTAUDIOPORT *pIHostAudioPort = mpDrv->pIHostAudioPort;
+                AssertPtr(pIHostAudioPort);
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_OUT, NULL /*pvUser*/);
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_IN,  NULL /*pvUser*/);
+            }
+        }
+#endif
+    }
+    RTCritSectLeave(&mCritSect);
 }
 
 
@@ -312,18 +364,32 @@ static int vrdeCreateStreamOut(PPDMAUDIOSTREAMCFG pCfgAcq)
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pInterface);
-    PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
+    PDRVAUDIOVRDE pThis       = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
     AssertPtrReturn(pStreamVRDE, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
 
+    /*
+     * Only create a stream if we have clients.
+     */
     int rc;
-    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = vrdeCreateStreamIn(pStreamVRDE, pCfgAcq);
+    NOREF(pThis);
+#if 0 /* later maybe */
+    if (pThis->cClients == 0)
+    {
+        LogFunc(("No clients, failing with VERR_AUDIO_STREAM_COULD_NOT_CREATE.\n"));
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+    }
     else
-        rc = vrdeCreateStreamOut(pCfgAcq);
-    PDMAudioStrmCfgCopy(&pStreamVRDE->Cfg, pCfgAcq);
+#endif
+    {
+        if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+            rc = vrdeCreateStreamIn(pStreamVRDE, pCfgAcq);
+        else
+            rc = vrdeCreateStreamOut(pCfgAcq);
+        PDMAudioStrmCfgCopy(&pStreamVRDE->Cfg, pCfgAcq);
+    }
     return rc;
 }
 
@@ -535,11 +601,13 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetStatus(PPDMIHOSTAUDIO pInt
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     RT_NOREF(pStream);
 
-    uint32_t fStrmStatus = PDMAUDIOSTREAM_STS_INITIALIZED;
-    if (pDrv->cClients) /* If any clients are connected, flag the stream as enabled. */
-       fStrmStatus |= PDMAUDIOSTREAM_STS_ENABLED;
-
-    return fStrmStatus;
+    return pDrv->cClients > 0
+         ? PDMAUDIOSTREAM_STS_INITIALIZED | PDMAUDIOSTREAM_STS_ENABLED
+#if 0 /* later mabye */ /** @todo r=bird: Weird backend status mess. */
+         : PDMAUDIOSTREAM_STS_NONE /* play possum if the clients all disappears. Re-init should be underways. */;
+#else
+         : PDMAUDIOSTREAM_STS_INITIALIZED /* If any clients are connected, flag the stream as enabled. */;
+#endif
 }
 
 
@@ -684,10 +752,13 @@ static DECLCALLBACK(void *) drvAudioVrdeQueryInterface(PPDMIBASE pInterface, con
      * If the AudioVRDE object is still alive, we must clear it's reference to
      * us since we'll be invalid when we return from this method.
      */
-    if (pThis->pAudioVRDE)
+    AudioVRDE *pAudioVRDE = pThis->pAudioVRDE;
+    if (pAudioVRDE)
     {
-        pThis->pAudioVRDE->mpDrv = NULL;
+        RTCritSectEnter(&pAudioVRDE->mCritSect);
+        pAudioVRDE->mpDrv = NULL;
         pThis->pAudioVRDE = NULL;
+        RTCritSectLeave(&pAudioVRDE->mCritSect);
     }
 }
 
@@ -739,6 +810,12 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnStreamCapture              = drvAudioVrdeHA_StreamCapture;
 
     /*
+     * Resolve the interface to the driver above us.
+     */
+    pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
+    AssertPtrReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
+
+    /*
      * Get the ConsoleVRDPServer object pointer.
      */
     void *pvUser;
@@ -760,14 +837,9 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     pThis->pAudioVRDE = (AudioVRDE *)pvUser;
     AssertLogRelMsgReturn(RT_VALID_PTR(pThis->pAudioVRDE), ("pAudioVRDE=%p\n", pThis->pAudioVRDE), VERR_INVALID_POINTER);
+    RTCritSectEnter(&pThis->pAudioVRDE->mCritSect);
     pThis->pAudioVRDE->mpDrv = pThis;
-
-    /*
-     * Get the interface for the above driver (DrvAudio) to make mixer/conversion calls.
-     * Described in CFGM tree.
-     */
-    pThis->pDrvAudio = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
-    AssertMsgReturn(pThis->pDrvAudio, ("Configuration error: No upper interface specified!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
+    RTCritSectLeave(&pThis->pAudioVRDE->mCritSect);
 
     return VINF_SUCCESS;
 }
