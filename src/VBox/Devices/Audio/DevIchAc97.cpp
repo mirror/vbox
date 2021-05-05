@@ -4113,26 +4113,6 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
 }
 
 
-# ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
-/**
- * Replaces a driver with a the NullAudio drivers.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThisCC     The ring-3 AC'97 device state.
- * @param   iLun        The logical unit which is being replaced.
- */
-static int ichac97R3ReconfigLunWithNullAudio(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned iLun)
-{
-    int rc = PDMDevHlpDriverReconfigure2(pDevIns, iLun, "AUDIO", "NullAudio");
-    if (RT_SUCCESS(rc))
-        rc = ichac97R3AttachInternal(pDevIns,  pThisCC, iLun, 0 /* fFlags */, NULL /* ppDrv */);
-    LogFunc(("pThisCC=%p, iLun=%u, rc=%Rrc\n", pThisCC, iLun, rc));
-    return rc;
-}
-# endif
-
-
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
@@ -4369,102 +4349,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->aStreams[i].hTimer, &pThis->CritSect);
         AssertRCReturn(rc, rc);
     }
-
-
-# ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
-    PAC97DRIVER pDrv;
-    RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
-    {
-        /*
-         * Only primary drivers are critical for the VM to run. Everything else
-         * might not worth showing an own error message box in the GUI.
-         */
-        if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
-            continue;
-
-        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-        AssertPtr(pCon);
-
-        bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
-        bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
-        bool fValidOut    = AudioMixerStreamIsValid(pDrv->Out.pMixStrm);
-
-        if (    !fValidLineIn
-             && !fValidMicIn
-             && !fValidOut)
-        {
-            LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
-            ichac97R3Reset(pDevIns);
-            ichac97R3ReconfigLunWithNullAudio(pDevIns, pThisCC, pDrv->uLUN);
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                       N_("No audio devices could be opened. "
-                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
-        }
-        else
-        {
-            bool fWarn = false;
-
-            PDMAUDIOBACKENDCFG backendCfg;
-            int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
-            if (RT_SUCCESS(rc2))
-            {
-                if (backendCfg.cMaxStreamsIn)
-                {
-                    /* If the audio backend supports two or more input streams at once,
-                     * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                    if (backendCfg.cMaxStreamsIn >= 2)
-                        fWarn = !fValidLineIn || !fValidMicIn;
-                    /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
-                     * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
-                     * One of the two simply is not in use then. */
-                    else if (backendCfg.cMaxStreamsIn == 1)
-                        fWarn = !fValidLineIn && !fValidMicIn;
-                    /* Don't warn if our backend is not able of supporting any input streams at all. */
-                }
-
-                if (   !fWarn
-                    && backendCfg.cMaxStreamsOut)
-                {
-                    fWarn = !fValidOut;
-                }
-            }
-            else
-            {
-                LogRel(("AC97: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-                fWarn = true;
-            }
-
-            if (fWarn)
-            {
-                char   szMissingStreams[255] = "";
-                size_t len = 0;
-                if (!fValidLineIn)
-                {
-                    LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
-                    len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-                }
-                if (!fValidMicIn)
-                {
-                    LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                }
-                if (!fValidOut)
-                {
-                    LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                }
-
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                           N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
-                                              "output or depending on audio input may hang. Make sure your host audio device "
-                                              "is working properly. Check the logfile for error messages of the audio "
-                                              "subsystem"), szMissingStreams);
-            }
-        }
-    }
-# endif /* VBOX_WITH_AUDIO_AC97_ONETIME_INIT */
 
     ichac97R3Reset(pDevIns);
 

@@ -105,14 +105,6 @@ VBOX_AUDIO_DEFS  += VBOX_WITH_AUDIO_ENUM
 # Enable backend callback support.
 VBOX_AUDIO_DEFS += VBOX_WITH_AUDIO_CALLBACKS
 
-# Disable one-time audio stream initialization at device creation (VM startup) instead
-# of creating the stream when needed at some later point in time.
-#
-# This was the default behavior ever since.
-#
-# We now go with the new behavior by default now.
-#VBOX_AUDIO_DEFS += VBOX_WITH_AUDIO_SB16_ONETIME_INIT
-
 ifdef VBOX_WITH_HP_HDA
  VBOX_AUDIO_DEFS += VBOX_WITH_HP_HDA
 endif

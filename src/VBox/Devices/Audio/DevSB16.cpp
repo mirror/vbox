@@ -2987,25 +2987,6 @@ static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 }
 
 
-#ifdef VBOX_WITH_AUDIO_SB16_ONETIME_INIT
-/**
- * Replaces a driver with a the NullAudio drivers.
- *
- * @returns VBox status code.
- * @param   pThis       Device instance.
- * @param   iLun        The logical unit which is being replaced.
- */
-static int sb16ReconfigLunWithNullAudio(PSB16STATE pThis, unsigned iLun)
-{
-    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, iLun, "AUDIO", "NullAudio");
-    if (RT_SUCCESS(rc))
-        rc = sb16AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
-    LogFunc(("pThis=%p, iLun=%u, rc=%Rrc\n", pThis, iLun, rc));
-    return rc;
-}
-#endif
-
-
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -3314,36 +3295,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     sb16DspCmdResetLegacy(pThis);
-
-#ifdef VBOX_WITH_AUDIO_SB16_ONETIME_INIT
-    PSB16DRIVER pDrv, pNext;
-    RTListForEachSafe(&pThis->lstDrv, pDrv, pNext, SB16DRIVER, Node)
-    {
-        /*
-         * Only primary drivers are critical for the VM to run. Everything else
-         * might not worth showing an own error message box in the GUI.
-         */
-        if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
-            continue;
-
-        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-        AssertPtr(pCon);
-
-        /** @todo No input streams available for SB16 yet. */
-        if (!AudioMixerStreamIsValid(pDrv->Out.pMixStrm))
-        {
-            LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
-
-            sb16DspCmdResetLegacy(pThis);
-            sb16ReconfigLunWithNullAudio(pThis, pDrv->uLUN);
-            pDrv = NULL; /* no longer valid */
-
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                       N_("No audio devices could be opened. "
-                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
-        }
-    }
-#endif /* VBOX_WITH_AUDIO_SB16_ONETIME_INIT */
 
     /*
      * Register statistics.
