@@ -169,8 +169,9 @@ typedef enum
     kDmarDiag_IqtReg_Qt_NotAligned,
     kDmarDiag_Ir_Cfi_Blocked,
     kDmarDiag_Ir_Rfi_Intr_Index_Invalid,
-    kDmarDiag_Ir_Rfi_Irte_Read_Failed,
+    kDmarDiag_Ir_Rfi_Irte_Mode_Invalid,
     kDmarDiag_Ir_Rfi_Irte_Not_Present,
+    kDmarDiag_Ir_Rfi_Irte_Read_Failed,
     kDmarDiag_Ir_Rfi_Irte_Rsvd,
     kDmarDiag_Ir_Rfi_Irte_Svt_Bus,
     kDmarDiag_Ir_Rfi_Irte_Svt_Masked,
@@ -207,8 +208,9 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(IqtReg_Qt_NotAligned      ),
     DMARDIAG_DESC(Ir_Cfi_Blocked            ),
     DMARDIAG_DESC(Ir_Rfi_Intr_Index_Invalid ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed   ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Mode_Invalid  ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Not_Present   ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed   ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Rsvd          ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Bus       ),
     DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Masked    ),
@@ -1532,6 +1534,50 @@ static int dmarIrReadIrte(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idxInt
 
 
 /**
+ * Remaps the source MSI to the destination MSI given the IRTE.
+ *
+ * @param   fExtIntrMode    Whether extended interrupt mode is enabled (i.e
+ *                          IRTA_REG.EIME).
+ * @param   pMsiIn          The source MSI (currently unused).
+ * @param   pMsiOut         Where to store the remapped MSI.
+ * @param   pIrte           The IRTE used for the remapping.
+ */
+static void dmarIrRemapFromIrte(bool fExtIntrMode, PCVTD_IRTE_T pIrte, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+{
+    NOREF(pMsiIn);
+    uint64_t const uIrteQword0 = pIrte->au64[0];
+
+    /*
+     * Let's start with a clean slate and preserve unspecified bits if the need arises.
+     * For instance, address bits 1:0 is supposed to be "ignored" by remapping hardware,
+     * but it's not clear if hardware zeroes out these bits in the remapped MSI or if
+     * it copies it from the source MSI.
+     */
+    RT_ZERO(*pMsiOut);
+    pMsiOut->Addr.n.u1DestMode  = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_DM);
+    pMsiOut->Addr.n.u1RedirHint = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_RH);
+    pMsiOut->Addr.n.u12Addr     = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
+    if (fExtIntrMode)
+    {
+        /*
+         * Apparently the DMAR stuffs the high 24-bits of the destination ID into the
+         * high 24-bits of the upper 32-bits of the message address, see @bugref{9967#c22}.
+         */
+        uint32_t const idDest = VTD_IRTE_0_GET_X2APIC_DEST_ID(uIrteQword0);
+        pMsiOut->Addr.n.u8DestId = idDest & 0xff;
+        pMsiOut->Addr.n.u32Rsvd0 = idDest & 0xffffff00;
+    }
+    else
+        pMsiOut->Addr.n.u8DestId = VTD_IRTE_0_GET_XAPIC_DEST_ID(uIrteQword0);
+
+    pMsiOut->Data.n.u8Vector       = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_V);
+    pMsiOut->Data.n.u3DeliveryMode = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_DLM);
+    pMsiOut->Data.n.u1Level        = 1;
+    pMsiOut->Data.n.u1TriggerMode  = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_TM);
+}
+
+
+/**
  * Handles remapping of interrupts in remappable interrupt format.
  *
  * @returns VBox status code.
@@ -1623,9 +1669,15 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
 
                         if (fSrcValid)
                         {
-                            /** @todo Get the interrupt mode (must not be posted) and then remap. */
-                            *pMsiOut = *pMsiIn;      // This is just temporary to shut up the compiler!
-                            return VERR_NOT_IMPLEMENTED;
+                            uint8_t const fPostedMode = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_IM);
+                            if (!fPostedMode)
+                            {
+                                bool const fExtIntrMode = RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_EIME);
+                                dmarIrRemapFromIrte(fExtIntrMode, &Irte, pMsiIn, pMsiOut);
+                                return VINF_SUCCESS;
+                            }
+                            dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Mode_Invalid, kIrf_Irte_Present_Rsvd,
+                                                       idDevice, idxIntr, &Irte);
                         }
                         else
                             dmarIrFaultRecordQualified(pDevIns, enmIrDiag, kIrf_Irte_Present_Rsvd, idDevice, idxIntr, &Irte);

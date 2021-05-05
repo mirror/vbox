@@ -699,6 +699,11 @@ typedef VTD_IRTE_T const *PCVTD_IRTE_T;
 #define VTD_IRTE_SVT_VALIDATE_BUS_RANGE                         2
 /** IRTE SVT: Reserved. */
 #define VTD_IRTE_SVT_VALIDATE_RSVD                              3
+
+/** IRTE: Gets the x2APIC destination ID given qword 0 of an IRTE. */
+#define VTD_IRTE_0_GET_X2APIC_DEST_ID(a)                        RT_BF_GET(a, VTD_BF_0_IRTE_DST)
+/** IRTE: Gets the xAPIC destination ID given qword 0 of an IRTE. */
+#define VTD_IRTE_0_GET_XAPIC_DEST_ID(a)                         (((a) >> 40) & 0xff)
 /** @} */
 
 
