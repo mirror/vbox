@@ -1183,7 +1183,7 @@ DECLINLINE(bool) PDMAudioStrmStatusBackendCanWrite(uint32_t fStatus)
 }
 
 /**
- * Checks if the stream status is a read-to-operate one.
+ * Checks if the stream status is a ready-to-operate one.
  *
  * @returns @c true if ready to operate, @c false if not.
  * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.

@@ -1212,7 +1212,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     {
         Log3Func(("[%s] No recording source specified, skipping ...\n", pSink->pszName));
     }
-    else if (!(pStreamRecSource->fStatus & AUDMIXSTREAM_STATUS_ENABLED))
+    else if (!(pStreamRecSource->fStatus & AUDMIXSTREAM_STATUS_ENABLED)) /** @todo r=bird: AUDMIXSTREAM_STATUS_CAN_READ ?*/
     {
         Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pStreamRecSource->pszName));
     }
@@ -1691,6 +1691,7 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink)
             int rc2 = pMixStream->pConn->pfnStreamIterate(pMixStream->pConn, pMixStream->pStream);
             if (RT_SUCCESS(rc2))
             {
+                /** @todo r=bird: Check for AUDMIXSTREAM_STATUS_CAN_READ? */
                 rc2 = pMixStream->pConn->pfnStreamCapture(pMixStream->pConn, pMixStream->pStream, &cFramesCaptured);
                 if (RT_SUCCESS(rc2))
                 {
@@ -1733,8 +1734,8 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink)
         {
             if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
             {
-                uint32_t const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
-                if (fSts & (PDMAUDIOSTREAM_STS_ENABLED | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
+                PDMAUDIOSTREAMSTATE const enmState = pMixStream->pConn->pfnStreamGetState(pMixStream->pConn, pMixStream->pStream);
+                if (enmState >= PDMAUDIOSTREAMSTATE_ENABLED)
                     cStreamsDisabled--;
             }
         }
@@ -1776,7 +1777,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         int rc2 = audioMixerStreamUpdateStatus(pMixStream);
         AssertRC(rc2);
 
-        if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
+        if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_CAN_WRITE)
         {
             uint32_t const cbWritable = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
             uint32_t cFrames = PDMAudioPropsBytesToFrames(&pMixStream->pStream->Props, cbWritable);
@@ -1809,7 +1810,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
              */
             RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
             {
-                if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
+                if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_CAN_WRITE)
                 {
                     uint32_t offSrcFrame = 0;
                     do
@@ -1898,8 +1899,8 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         {
             if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)
             {
-                uint32_t const fSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
-                if (fSts & (PDMAUDIOSTREAM_STS_ENABLED | PDMAUDIOSTREAM_STS_PENDING_DISABLE))
+                PDMAUDIOSTREAMSTATE const enmState = pMixStream->pConn->pfnStreamGetState(pMixStream->pConn, pMixStream->pStream);
+                if (enmState >= PDMAUDIOSTREAMSTATE_ENABLED)
                     cStreamsDisabled--;
             }
         }
@@ -2080,6 +2081,9 @@ static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMC
 /**
  * Updates a mixer stream's internal status.
  *
+ * This may perform a stream re-init if the driver requests it, in which case
+ * this may take a little while longer than usual...
+ *
  * @returns VBox status code.
  * @param   pMixStream          Mixer stream to to update internal status for.
  */
@@ -2094,22 +2098,23 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
     if (pConn) /* Audio connector available? */
     {
         PPDMAUDIOSTREAM const pStream = pMixStream->pStream;
-        PAUDMIXSINK const     pSink   = pMixStream->pSink;
-        AssertPtr(pSink);
 
         /*
          * Get the stream status.
          * Do re-init if needed and fetch the status again afterwards.
          */
-        uint32_t fStreamStatus = pConn->pfnStreamGetStatus(pConn, pStream);
-        if (!(fStreamStatus & PDMAUDIOSTREAM_STS_NEED_REINIT))
+        PDMAUDIOSTREAMSTATE enmState = pConn->pfnStreamGetState(pConn, pStream);
+        if (enmState != PDMAUDIOSTREAMSTATE_NEED_REINIT)
         { /* likely */ }
         else
         {
             LogFunc(("[%s] needs re-init...\n", pMixStream->pszName));
             int rc = pConn->pfnStreamReInit(pConn, pStream);
-            fStreamStatus = pConn->pfnStreamGetStatus(pConn, pStream);
-            LogFunc(("[%s] re-init returns %Rrc and %#x.\n", pMixStream->pszName, rc, fStreamStatus)); RT_NOREF(rc);
+            enmState = pConn->pfnStreamGetState(pConn, pStream);
+            LogFunc(("[%s] re-init returns %Rrc and %d.\n", pMixStream->pszName, rc, enmState));
+
+            PAUDMIXSINK const pSink = pMixStream->pSink;
+            AssertPtr(pSink);
             if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
             {
                 rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
@@ -2121,23 +2126,29 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
         /*
          * Translate the status to mixer speak.
          */
-        if (PDMAudioStrmStatusIsReady(fStreamStatus))
-            pMixStream->fStatus |= AUDMIXSTREAM_STATUS_ENABLED;
-
-        switch (pSink->enmDir)
+        AssertMsg(enmState > PDMAUDIOSTREAMSTATE_INVALID && enmState < PDMAUDIOSTREAMSTATE_END, ("%d\n", enmState));
+        switch (enmState)
         {
-            case AUDMIXSINKDIR_INPUT:
-                if (PDMAudioStrmStatusCanRead(fStreamStatus))
-                   pMixStream->fStatus |= AUDMIXSTREAM_STATUS_CAN_READ;
+            case PDMAUDIOSTREAMSTATE_NOT_WORKING:
+            case PDMAUDIOSTREAMSTATE_NEED_REINIT:
+            case PDMAUDIOSTREAMSTATE_INACTIVE:
+                pMixStream->fStatus = AUDMIXSTREAM_STATUS_NONE;
                 break;
-
-            case AUDMIXSINKDIR_OUTPUT:
-                if (PDMAudioStrmStatusCanWrite(fStreamStatus))
-                   pMixStream->fStatus |= AUDMIXSTREAM_STATUS_CAN_WRITE;
+            case PDMAUDIOSTREAMSTATE_ENABLED:
+                pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED;
                 break;
-
-            default:
-                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            case PDMAUDIOSTREAMSTATE_ENABLED_READABLE:
+                Assert(pMixStream->pSink->enmDir == AUDMIXSINKDIR_INPUT);
+                pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED | AUDMIXSTREAM_STATUS_CAN_READ;
+                break;
+            case PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE:
+                Assert(pMixStream->pSink->enmDir == AUDMIXSINKDIR_OUTPUT);
+                pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED | AUDMIXSTREAM_STATUS_CAN_WRITE;
+                break;
+            /* no default */
+            case PDMAUDIOSTREAMSTATE_INVALID:
+            case PDMAUDIOSTREAMSTATE_END:
+            case PDMAUDIOSTREAMSTATE_32BIT_HACK:
                 break;
         }
     }
@@ -2257,65 +2268,5 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns)
     }
 
     LogFlowFunc(("Returning %Rrc\n", rc2));
-}
-
-/**
- * Returns whether a mixer stream currently is active (playing/recording) or not.
- *
- * @returns @c true if playing/recording, @c false if not.
- * @param   pMixStream          Mixer stream to return status for.
- */
-bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
-{
-    int rc2 = RTCritSectEnter(&pMixStream->CritSect);
-    if (RT_FAILURE(rc2))
-        return false;
-
-    AssertPtr(pMixStream->pConn);
-    AssertPtr(pMixStream->pStream);
-
-    bool fIsActive;
-
-    if (   pMixStream->pConn
-        && pMixStream->pStream
-        && (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAM_STS_ENABLED))
-        fIsActive = true;
-    else
-        fIsActive = false;
-
-    rc2 = RTCritSectLeave(&pMixStream->CritSect);
-    AssertRC(rc2);
-
-    return fIsActive;
-}
-
-/**
- * Returns whether a mixer stream is valid (e.g. initialized and in a working state) or not.
- *
- * @returns @c true if valid, @c false if not.
- * @param   pMixStream          Mixer stream to return status for.
- */
-bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)
-{
-    if (!pMixStream)
-        return false;
-
-    int rc2 = RTCritSectEnter(&pMixStream->CritSect);
-    if (RT_FAILURE(rc2))
-        return false;
-
-    bool fIsValid;
-
-    if (   pMixStream->pConn
-        && pMixStream->pStream
-        && (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAM_STS_INITIALIZED))
-        fIsValid = true;
-    else
-        fIsValid = false;
-
-    rc2 = RTCritSectLeave(&pMixStream->CritSect);
-    AssertRC(rc2);
-
-    return fIsValid;
 }
 

@@ -1988,7 +1988,11 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
         {
             LogFunc(("[%s] Acquired host format: %s\n",
                      pStreamEx->Core.szName, PDMAudioStrmCfgToString(&CfgHostAcq, szTmp, sizeof(szTmp)) ));
-            if (true) /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Host.Cfg? */
+            /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Host.Cfg?
+             * drvAudioStreamInitInternal() does some setup and a bunch of
+             * validations + adjustments of the stream config, so this surely is quite
+             * optimistic. */
+            if (true)
             {
                 /*
                  * Kick off the asynchronous init.
@@ -3080,33 +3084,51 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
 
 
 /**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
-    AssertPtr(pThis);
-
-    /** @todo r=bird: It is not documented that we ignore NULL streams...  Why is
-     *        this necessary? */
-    if (!pStream)
-        return PDMAUDIOSTREAM_STS_NONE;
+    PDRVAUDIO       pThis     = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
     PDRVAUDIOSTREAM pStreamEx = (PDRVAUDIOSTREAM)pStream;
-    AssertPtrReturn(pStreamEx, PDMAUDIOSTREAM_STS_NONE);
-    AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, PDMAUDIOSTREAM_STS_NONE);
-    AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, PDMAUDIOSTREAM_STS_NONE);
+    AssertPtrReturn(pStreamEx, PDMAUDIOSTREAMSTATE_INVALID);
+    AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, PDMAUDIOSTREAMSTATE_INVALID);
+    AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, PDMAUDIOSTREAMSTATE_INVALID);
 
+    /*
+     * Get the status mask.
+     */
     int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, PDMAUDIOSTREAM_STS_NONE);
+    AssertRCReturn(rc, PDMAUDIOSTREAMSTATE_INVALID);
 
-    uint32_t fStrmStatus = pStreamEx->fStatus;
+    uint32_t const    fStrmStatus = pStreamEx->fStatus;
+    PDMAUDIODIR const enmDir      = pStreamEx->Guest.Cfg.enmDir;
 
     RTCritSectLeave(&pThis->CritSect);
+
+    /*
+     * Translate it to state enum value.
+     */
+    PDMAUDIOSTREAMSTATE enmState;
+    if (!(fStrmStatus & PDMAUDIOSTREAM_STS_NEED_REINIT))
+    {
+        if (fStrmStatus & PDMAUDIOSTREAM_STS_INITIALIZED)
+        {
+            if (fStrmStatus & PDMAUDIOSTREAM_STS_ENABLED)
+                enmState = enmDir == PDMAUDIODIR_IN ? PDMAUDIOSTREAMSTATE_ENABLED_READABLE : PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE;
+            else
+                enmState = PDMAUDIOSTREAMSTATE_INACTIVE;
+        }
+        else
+            enmState = PDMAUDIOSTREAMSTATE_NOT_WORKING;
+    }
+    else
+        enmState = PDMAUDIOSTREAMSTATE_NEED_REINIT;
+
 #ifdef LOG_ENABLED
     char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
-    Log3Func(("[%s] %s\n", pStreamEx->Core.szName, drvAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
-    return fStrmStatus;
+    Log3Func(("[%s] returns %d (%s)\n", pStreamEx->Core.szName, enmState, drvAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
+    return enmState;
 }
 
 
@@ -4675,7 +4697,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamIterate     = drvAudioStreamIterate;
     pThis->IAudioConnector.pfnStreamGetReadable = drvAudioStreamGetReadable;
     pThis->IAudioConnector.pfnStreamGetWritable = drvAudioStreamGetWritable;
-    pThis->IAudioConnector.pfnStreamGetStatus   = drvAudioStreamGetStatus;
+    pThis->IAudioConnector.pfnStreamGetState    = drvAudioStreamGetState;
     pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
     pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
     pThis->IAudioConnector.pfnStreamRead        = drvAudioStreamRead;

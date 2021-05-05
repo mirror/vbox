@@ -69,14 +69,20 @@ typedef AUDIOMIXER *PAUDIOMIXER;
 /** Defines an audio mixer stream's internal status. */
 #define AUDMIXSTREAMSTATUS uint32_t
 
+/** @name AUDMIXSTREAM_STATUS_XXX - mixer stream status.
+ * (This is a destilled version of PDMAUDIOSTREAM_STS_XXX.)
+ * @{ */
 /** No status set. */
 #define AUDMIXSTREAM_STATUS_NONE                0
 /** The mixing stream is enabled (active). */
 #define AUDMIXSTREAM_STATUS_ENABLED             RT_BIT(0)
-/** The mixing stream can be read from. */
+/** The mixing stream can be read from.
+ * Always set together with AUDMIXSTREAM_STATUS_ENABLED. */
 #define AUDMIXSTREAM_STATUS_CAN_READ            RT_BIT(1)
-/** The mixing stream can be written to. */
+/** The mixing stream can be written to.
+ * Always set together with AUDMIXSTREAM_STATUS_ENABLED. */
 #define AUDMIXSTREAM_STATUS_CAN_WRITE           RT_BIT(2)
+/** @} */
 
 
 /**
@@ -294,8 +300,6 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
 
 int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
-bool AudioMixerStreamIsActive(PAUDMIXSTREAM pStream);
-bool AudioMixerStreamIsValid(PAUDMIXSTREAM pStream);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */
 

@@ -988,6 +988,38 @@ typedef enum PDMAUDIOBACKENDSTS
     PDMAUDIOBACKENDSTS_32BIT_HACK = 0x7fffffff
 } PDMAUDIOBACKENDSTS;
 
+/**
+ * PDM audio stream state.
+ *
+ * This is all the mixer/device needs.  The PDMAUDIOSTREAM_STS_XXX stuff will
+ * become DrvAudio internal state once the backend stuff is destilled out of it.
+ *
+ * @note    The value order is significant, don't change it willy-nilly.
+ */
+typedef enum PDMAUDIOSTREAMSTATE
+{
+    /** Invalid state value. */
+    PDMAUDIOSTREAMSTATE_INVALID = 0,
+    /** The stream is not operative and cannot be enabled. */
+    PDMAUDIOSTREAMSTATE_NOT_WORKING,
+    /** The stream needs to be re-initialized by the device/mixer
+     * (i.e. call PDMIAUDIOCONNECTOR::pfnStreamReInit). */
+    PDMAUDIOSTREAMSTATE_NEED_REINIT,
+    /** The stream is inactive (not enabled). */
+    PDMAUDIOSTREAMSTATE_INACTIVE,
+    /** The stream is enabled but nothing to read/write.
+     *  @todo not sure if we need this variant... */
+    PDMAUDIOSTREAMSTATE_ENABLED,
+    /** The stream is enabled and captured samples can be read. */
+    PDMAUDIOSTREAMSTATE_ENABLED_READABLE,
+    /** The stream is enabled and samples can be written for playback. */
+    PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE,
+    /** End of valid states.   */
+    PDMAUDIOSTREAMSTATE_END,
+    /** Make sure the type is 32-bit wide. */
+    PDMAUDIOSTREAMSTATE_32BIT_HACK = 0x7fffffff
+} PDMAUDIOSTREAMSTATE;
+
 /** @name PDMAUDIOSTREAM_CREATE_F_XXX
  * @{ */
 /** Does not need any mixing buffers, the device takes care of all conversion. */
@@ -1189,13 +1221,14 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Returns the status of a specific audio stream.
+     * Returns the state of a specific audio stream (destilled status).
      *
-     * @returns PDMAUDIOSTREAM_STS_XXX
+     * @returns PDMAUDIOSTREAMSTATE value.
+     * @retval  PDMAUDIOSTREAMSTATE_INVALID if the input isn't valid (w/ assertion).
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTATE, pfnStreamGetState, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Sets the audio volume of a specific audio stream.
@@ -1249,7 +1282,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "ff6788cc-1a4d-4d4b-a2e0-9f56fce9b397"
+#define PDMIAUDIOCONNECTOR_IID                  "5bd85091-e99c-4092-acea-f0c5e9872408"
 
 
 /**
