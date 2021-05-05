@@ -3061,12 +3061,10 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     AssertPtr(pThis->pIEnumerator);
 
     /*
-     * Resolve the notification interface.
+     * Resolve the interface to the driver above us.
      */
     pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
-# ifdef VBOX_WITH_AUDIO_CALLBACKS
-    AssertPtr(pThis->pIHostAudioPort);
-# endif
+    AssertPtrReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     /*
      * Instantiate and register the notification client with the enumerator.
