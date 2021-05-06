@@ -1603,6 +1603,16 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink)
 }
 
 
+/**
+ * Helper for audioMixerSinkUpdateOutput that determins now many frames it
+ * can transfer from the sink's mixer buffer and to the drivers.
+ *
+ * This also updates the mixer stream status, which may involve stream re-inits.
+ *
+ * @returns Number of frames.
+ * @param   pSink               The sink.
+ * @param   pcWritableStreams   Where to return the number of writable streams.
+ */
 static uint32_t audioMixerSinkUpdateOutputCalcFramesToRead(PAUDMIXSINK pSink, uint32_t *pcWritableStreams)
 {
     uint32_t      cFramesToRead    = AudioMixBufLive(&pSink->MixBuf); /* (to read from the mixing buffer) */
