@@ -906,65 +906,6 @@ typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
 #define PDMAUDIO_VOLUME_MAX     (255)
 
 
-/** @name PDMAUDIOSTREAM_STS_XXX
- * @sa PDMIAUDIOCONNECTOR::pfnStreamGetStatus, PDMIHOSTAUDIO::pfnStreamGetStatus
- * @{ */
-/** No flags being set. */
-#define PDMAUDIOSTREAM_STS_NONE                 UINT32_C(0)
-/** Set if the backend for the stream has been created.
- *
- * PDMIAUDIOCONNECTOR: This is generally always set after stream creation, but
- * can be cleared if the re-initialization of the stream fails later on.
- * Asynchronous init may still be incomplete, see
- *
- * PDMIHOSTAUDIO: This may not be set immediately if the backend is doing some
- * of the stream creation asynchronously via PDMIHOSTAUDIO::pfnStreamInitAsync.
- * The DrvAudio code will not report this to the devices, but keep on
- * prebuffering till pfnStreamInitAsync is done and this bit is set. */
-#define PDMAUDIOSTREAM_STS_INITIALIZED          RT_BIT_32(0)
-/** Set if the stream is enabled, clear if disabled. */
-#define PDMAUDIOSTREAM_STS_ENABLED              RT_BIT_32(1)
-/** Set if the stream is paused.
- * Requires the ENABLED status to be set when used. */
-#define PDMAUDIOSTREAM_STS_PAUSED               RT_BIT_32(2)
-/** Output only: Set when the stream is draining.
- * Requires the ENABLED status to be set when used.
- * @todo See todo in drvAudioStreamPlay() regarding the suitability of this
- *       for PDMIHOSTAUDIO. */
-#define PDMAUDIOSTREAM_STS_PENDING_DISABLE      RT_BIT_32(3)
-
-/** PDMIAUDIOCONNECTOR: Set if the stream needs to be re-initialized by the
- * device (i.e. call PDMIAUDIOCONNECTOR::pfnStreamReInit). (The other status
- * bits are preserved and are worked as normal while in this state, so that the
- * stream can resume operation where it left off.)  */
-#define PDMAUDIOSTREAM_STS_NEED_REINIT          RT_BIT_32(8)
-/** PDMIAUDIOCONNECTOR: The backend is ready (PDMIHOSTAUDIO::pfnStreamInitAsync  done).
- * Requires the INITIALIZED status to be set.  */
-#define PDMAUDIOSTREAM_STS_BACKEND_READY        RT_BIT_32(9)
-/** Validation mask for PDMIAUDIOCONNECTOR. */
-#define PDMAUDIOSTREAM_STS_VALID_MASK           UINT32_C(0x0000030f)
-/** Asserts the validity of the given stream status mask for PDMIAUDIOCONNECTOR. */
-#define PDMAUDIOSTREAM_STS_ASSERT_VALID(a_fStreamStatus) do { \
-        AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK), ("%#x\n", (a_fStreamStatus))); \
-        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
-        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
-        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_BACKEND_READY)   || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_INITIALIZED)); \
-    } while (0)
-
-/** PDMIHOSTAUDIO: Backend is preparing a device switch, DrvAudio should
- * pre-buffer to make that smoother and quicker.
- * Call PDMIHOSTAUDIOPORT::pfnStreamNotifyDeviceChanged when clearing. */
-#define PDMAUDIOSTREAM_STS_PREPARING_SWITCH     RT_BIT_32(16)
-/** Validation mask for PDMIHOSTAUDIO. */
-#define PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND   UINT32_C(0x0001000f)
-/** Asserts the validity of the given stream status mask for PDMIHOSTAUDIO. */
-#define PDMAUDIOSTREAM_STS_ASSERT_VALID_BACKEND(a_fStreamStatus) do { \
-        AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK_BACKEND), ("%#x\n", (a_fStreamStatus))); \
-        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
-        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
-    } while (0)
-/** @} */
-
 /**
  * Backend status.
  */

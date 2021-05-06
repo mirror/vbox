@@ -47,6 +47,56 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @name PDMAUDIOSTREAM_STS_XXX - Used internally by DRVAUDIOSTREAM::fStatus.
+ * @{ */
+/** No flags being set. */
+#define PDMAUDIOSTREAM_STS_NONE                 UINT32_C(0)
+/** Set if the backend for the stream has been created.
+ *
+ * PDMIAUDIOCONNECTOR: This is generally always set after stream creation, but
+ * can be cleared if the re-initialization of the stream fails later on.
+ * Asynchronous init may still be incomplete, see
+ *
+ * PDMIHOSTAUDIO: This may not be set immediately if the backend is doing some
+ * of the stream creation asynchronously via PDMIHOSTAUDIO::pfnStreamInitAsync.
+ * The DrvAudio code will not report this to the devices, but keep on
+ * prebuffering till pfnStreamInitAsync is done and this bit is set. */
+#define PDMAUDIOSTREAM_STS_INITIALIZED          RT_BIT_32(0)
+/** Set if the stream is enabled, clear if disabled. */
+#define PDMAUDIOSTREAM_STS_ENABLED              RT_BIT_32(1)
+/** Set if the stream is paused.
+ * Requires the ENABLED status to be set when used. */
+#define PDMAUDIOSTREAM_STS_PAUSED               RT_BIT_32(2)
+/** Output only: Set when the stream is draining.
+ * Requires the ENABLED status to be set when used.
+ * @todo See todo in drvAudioStreamPlay() regarding the suitability of this
+ *       for PDMIHOSTAUDIO. */
+#define PDMAUDIOSTREAM_STS_PENDING_DISABLE      RT_BIT_32(3)
+
+/** PDMIAUDIOCONNECTOR: Set if the stream needs to be re-initialized by the
+ * device (i.e. call PDMIAUDIOCONNECTOR::pfnStreamReInit). (The other status
+ * bits are preserved and are worked as normal while in this state, so that the
+ * stream can resume operation where it left off.)  */
+#define PDMAUDIOSTREAM_STS_NEED_REINIT          RT_BIT_32(8)
+/** PDMIAUDIOCONNECTOR: The backend is ready (PDMIHOSTAUDIO::pfnStreamInitAsync  done).
+ * Requires the INITIALIZED status to be set.  */
+#define PDMAUDIOSTREAM_STS_BACKEND_READY        RT_BIT_32(9)
+/** Validation mask for PDMIAUDIOCONNECTOR. */
+#define PDMAUDIOSTREAM_STS_VALID_MASK           UINT32_C(0x0000030f)
+/** Asserts the validity of the given stream status mask for PDMIAUDIOCONNECTOR. */
+#define PDMAUDIOSTREAM_STS_ASSERT_VALID(a_fStreamStatus) do { \
+        AssertMsg(!((a_fStreamStatus) & ~PDMAUDIOSTREAM_STS_VALID_MASK), ("%#x\n", (a_fStreamStatus))); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PAUSED)          || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_PENDING_DISABLE) || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_ENABLED)); \
+        Assert(!((a_fStreamStatus) & PDMAUDIOSTREAM_STS_BACKEND_READY)   || ((a_fStreamStatus) & PDMAUDIOSTREAM_STS_INITIALIZED)); \
+    } while (0)
+
+/** @} */
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
@@ -359,7 +409,7 @@ static uint32_t drvAudioStreamReleaseInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM p
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 
 /** Buffer size for drvAudioStreamStatusToStr.  */
-# define DRVAUDIO_STATUS_STR_MAX sizeof("INITIALIZED ENABLED PAUSED PENDING_DISABLED NEED_REINIT BACKEND_READY PREPARING_SWITCH 0x12345678")
+# define DRVAUDIO_STATUS_STR_MAX sizeof("INITIALIZED ENABLED PAUSED PENDING_DISABLED NEED_REINIT BACKEND_READY 0x12345678")
 
 /**
  * Converts an audio stream status to a string.
@@ -384,7 +434,6 @@ static const char *drvAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX
         { RT_STR_TUPLE("PENDING_DISABLE "),  PDMAUDIOSTREAM_STS_PENDING_DISABLE  },
         { RT_STR_TUPLE("NEED_REINIT "),      PDMAUDIOSTREAM_STS_NEED_REINIT      },
         { RT_STR_TUPLE("BACKEND_READY "),    PDMAUDIOSTREAM_STS_BACKEND_READY    },
-        { RT_STR_TUPLE("PREPARING_SWITCH "), PDMAUDIOSTREAM_STS_PREPARING_SWITCH },
     };
     if (!fStatus)
         strcpy(pszDst, "NONE");
@@ -429,6 +478,63 @@ static const char *drvAudioPlayStateName(DRVAUDIOPLAYSTATE enmState)
             break;
     }
     return "BAD";
+}
+
+/**
+ * Checks if the stream status is one that can be read from.
+ *
+ * @returns @c true if ready to be read from, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanRead)!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusCanRead(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is one that can be written to.
+ *
+ * @returns @c true if ready to be written to, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses (use PDMAudioStrmStatusBackendCanWrite)!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusCanWrite(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_PAUSED
+                       | PDMAUDIOSTREAM_STS_PENDING_DISABLE
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
+}
+
+/**
+ * Checks if the stream status is a ready-to-operate one.
+ *
+ * @returns @c true if ready to operate, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAM_STS_XXX.
+ * @note    Not for backend statuses!
+ */
+DECLINLINE(bool) PDMAudioStrmStatusIsReady(uint32_t fStatus)
+{
+    PDMAUDIOSTREAM_STS_ASSERT_VALID(fStatus);
+    AssertReturn(!(fStatus & ~PDMAUDIOSTREAM_STS_VALID_MASK), false);
+    return (fStatus & (  PDMAUDIOSTREAM_STS_INITIALIZED
+                       | PDMAUDIOSTREAM_STS_ENABLED
+                       | PDMAUDIOSTREAM_STS_NEED_REINIT))
+        == (  PDMAUDIOSTREAM_STS_INITIALIZED
+            | PDMAUDIOSTREAM_STS_ENABLED);
 }
 
 
