@@ -174,7 +174,7 @@ typedef struct DRVAUDIOSTREAM
     /** Number of (re-)tries while re-initializing the stream. */
     uint32_t                cTriesReInit;
 
-    /** The backend state at the last play or capture call.
+    /** The last backend state we saw.
      * This is used to detect state changes (for what that is worth).  */
     PDMHOSTAUDIOSTREAMSTATE enmLastBackendState;
 
@@ -400,6 +400,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 static uint32_t drvAudioStreamRetainInternal(PDRVAUDIOSTREAM pStreamEx);
 static uint32_t drvAudioStreamReleaseInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, bool fMayDestroy);
+static void drvAudioStreamResetInternal(PDRVAUDIOSTREAM pStreamEx);
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
 
 
@@ -546,9 +547,109 @@ DECLINLINE(PDMHOSTAUDIOSTREAMSTATE) drvAudioStreamGetBackendState(PDRVAUDIO pThi
     {
         PDMHOSTAUDIOSTREAMSTATE enmState = pThis->pHostDrvAudio->pfnStreamGetState(pThis->pHostDrvAudio, pStreamEx->pBackend);
         Assert(enmState > PDMHOSTAUDIOSTREAMSTATE_INVALID && enmState < PDMHOSTAUDIOSTREAMSTATE_END);
+        Log9Func(("%s: %s\n", pStreamEx->Core.szName, PDMHostAudioStreamStateGetName(enmState) ));
         return enmState;
     }
+    Log9Func(("%s: not-working\n", pStreamEx->Core.szName));
     return PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
+}
+
+
+/**
+ * Processes backend state change.
+ *
+ * @returns the new state value.
+ */
+static PDMHOSTAUDIOSTREAMSTATE drvAudioStreamProcessBackendStateChange(PDRVAUDIOSTREAM pStreamEx,
+                                                                       PDMHOSTAUDIOSTREAMSTATE enmNewState,
+                                                                       PDMHOSTAUDIOSTREAMSTATE enmOldState)
+{
+    PDMAUDIODIR const       enmDir       = pStreamEx->Guest.Cfg.enmDir;
+#ifdef LOG_ENABLED
+    DRVAUDIOPLAYSTATE const enmPlayState = enmDir == PDMAUDIODIR_OUT ? pStreamEx->Out.enmPlayState : DRVAUDIOPLAYSTATE_INVALID;
+#endif
+    Assert(enmNewState != enmOldState);
+    Assert(enmOldState > PDMHOSTAUDIOSTREAMSTATE_INVALID && enmOldState < PDMHOSTAUDIOSTREAMSTATE_END);
+    AssertReturn(enmNewState > PDMHOSTAUDIOSTREAMSTATE_INVALID && enmNewState < PDMHOSTAUDIOSTREAMSTATE_END, enmOldState);
+
+    /*
+     * Figure out what happend and how that reflects on the playback state and stuff.
+     */
+    switch (enmNewState)
+    {
+        case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:
+            /* Guess we're switching device. Nothing to do because the backend will tell us, right? */
+            break;
+
+        case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:
+            /* The stream has stopped working.  Switch to noplay mode. */
+            if (enmDir == PDMAUDIODIR_OUT)
+                pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_NOPLAY;
+            break;
+
+        case PDMHOSTAUDIOSTREAMSTATE_OKAY:
+            switch (enmOldState)
+            {
+                case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:
+                    /* Should be taken care of elsewhere, so do nothing. */
+                    break;
+
+                case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:
+                case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:
+                    /* Go back to pre-buffering/playing depending on whether it is enabled
+                       or not, resetting the stream state. */
+                    drvAudioStreamResetInternal(pStreamEx);
+                    break;
+
+                /* no default: */
+                case PDMHOSTAUDIOSTREAMSTATE_OKAY: /* impossible */
+                case PDMHOSTAUDIOSTREAMSTATE_INVALID:
+                case PDMHOSTAUDIOSTREAMSTATE_END:
+                case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
+                    break;
+            }
+            break;
+
+        case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:
+            /* Stream is now inactive. Switch to noplay mode. */
+            if (enmDir == PDMAUDIODIR_OUT)
+                pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_NOPLAY;
+            break;
+
+        /* no default: */
+        case PDMHOSTAUDIOSTREAMSTATE_INVALID:
+        case PDMHOSTAUDIOSTREAMSTATE_END:
+        case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
+            break;
+    }
+
+    if (enmDir == PDMAUDIODIR_OUT)
+        LogFunc(("Output stream '%s': %s/%s -> %s/%s\n", pStreamEx->Core.szName,
+                 PDMHostAudioStreamStateGetName(enmOldState), drvAudioPlayStateName(enmPlayState),
+                 PDMHostAudioStreamStateGetName(enmNewState), drvAudioPlayStateName(pStreamEx->Out.enmPlayState) ));
+    else
+        LogFunc(("Input stream '%s': %s -> %s\n", pStreamEx->Core.szName,
+                 PDMHostAudioStreamStateGetName(enmOldState), PDMHostAudioStreamStateGetName(enmNewState) ));
+
+    pStreamEx->enmLastBackendState = enmNewState;
+    return enmNewState;
+}
+
+
+/**
+ * This gets the backend state and handles changes compared to
+ * DRVAUDIOSTREAM::enmLastBackendState (updated).
+ *
+ * @returns A PDMHOSTAUDIOSTREAMSTATE value.
+ * @param   pThis       Pointer to the DrvAudio instance data.
+ * @param   pStreamEx   The stream to get the backend status for.
+ */
+DECLINLINE(PDMHOSTAUDIOSTREAMSTATE) drvAudioStreamGetBackendStateAndProcessChanges(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendState(pThis, pStreamEx);
+    if (pStreamEx->enmLastBackendState == enmBackendState)
+        return enmBackendState;
+    return drvAudioStreamProcessBackendStateChange(pStreamEx, enmBackendState, pStreamEx->enmLastBackendState);
 }
 
 
@@ -3233,7 +3334,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNEC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, PDMAUDIOSTREAMSTATE_INVALID);
 
-    PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendState(pThis, pStreamEx);
+    PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendStateAndProcessChanges(pThis, pStreamEx);
     uint32_t const                fStrmStatus     = pStreamEx->fStatus;
     PDMAUDIODIR const             enmDir          = pStreamEx->Guest.Cfg.enmDir;
     Assert(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT);
@@ -3294,74 +3395,6 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
 
 
 /**
- * Processes backend state change.
- */
-static void drvAudioStreamPlayProcessBackendStateChange(PDRVAUDIOSTREAM pStreamEx, PDMHOSTAUDIOSTREAMSTATE enmNewState,
-                                                        PDMHOSTAUDIOSTREAMSTATE enmOldState)
-{
-#ifdef LOG_ENABLED
-    DRVAUDIOPLAYSTATE const enmPlayState = pStreamEx->Out.enmPlayState;
-#endif
-    Assert(enmNewState != enmOldState);
-    Assert(enmOldState > PDMHOSTAUDIOSTREAMSTATE_INVALID && enmOldState < PDMHOSTAUDIOSTREAMSTATE_END);
-    AssertReturnVoid(enmNewState > PDMHOSTAUDIOSTREAMSTATE_INVALID && enmNewState < PDMHOSTAUDIOSTREAMSTATE_END);
-
-    /*
-     * Figure out what happend and how that reflects on the playback state and stuff.
-     */
-    switch (enmNewState)
-    {
-        case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:
-            /* Guess we're switching device. Nothing to do because the backend will tell us, right? */
-            break;
-
-        case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:
-            /* The stream has stopped working.  Switch to noplay mode. */
-            pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_NOPLAY;
-            break;
-
-        case PDMHOSTAUDIOSTREAMSTATE_OKAY:
-            switch (enmOldState)
-            {
-                case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:
-                    /* Should be taken care of elsewhere, so do nothing. */
-                    break;
-
-                case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:
-                case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:
-                    /* Go back to pre-buffering/playing depending on whether it is enabled
-                       or not, resetting the stream state. */
-                    drvAudioStreamResetInternal(pStreamEx);
-                    break;
-
-                /* no default: */
-                case PDMHOSTAUDIOSTREAMSTATE_OKAY: /* impossible */
-                case PDMHOSTAUDIOSTREAMSTATE_INVALID:
-                case PDMHOSTAUDIOSTREAMSTATE_END:
-                case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
-                    break;
-            }
-            break;
-
-        case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:
-            /* Stream is now inactive. Switch to noplay mode. */
-            pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_NOPLAY;
-            break;
-
-        /* no default: */
-        case PDMHOSTAUDIOSTREAMSTATE_INVALID:
-        case PDMHOSTAUDIOSTREAMSTATE_END:
-        case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
-            break;
-    }
-
-    LogFunc(("Stream '%s': %s/%s -> %s/%s\n", pStreamEx->Guest.Cfg.szName,
-             PDMHostAudioStreamStateGetName(enmOldState), drvAudioPlayStateName(enmPlayState),
-             PDMHostAudioStreamStateGetName(enmNewState), drvAudioPlayStateName(pStreamEx->Out.enmPlayState) ));
-}
-
-
-/**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
@@ -3406,19 +3439,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
             && pThis->pHostDrvAudio != NULL)
         {
             /*
-             * Get the backend state and check if it changed.
+             * Get the backend state and process changes to it since last time we checked.
              */
-/** @todo This is the wrong place for doing this, or we need to do it in more places.  Problem is that if we've
- * entered NOPLAY mode this function won't get called because StreamGetWritable returns zero. A bit difficult to
- * reproduce, though. */
-            PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendState(pThis, pStreamEx);
-            if (enmBackendState == pStreamEx->enmLastBackendState)
-            { /* no relevant change - likely */ }
-            else
-            {
-                drvAudioStreamPlayProcessBackendStateChange(pStreamEx, enmBackendState, pStreamEx->enmLastBackendState);
-                pStreamEx->enmLastBackendState = enmBackendState;
-            }
+            PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendStateAndProcessChanges(pThis, pStreamEx);
 
             /*
              * Do the transfering.
@@ -4029,7 +4052,7 @@ static DECLCALLBACK(void) drvAudioHostPort_StreamNotifyPreparingDeviceSwitch(PPD
     AssertPtrReturnVoid(pStreamEx);
     AssertReturnVoid(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC);
     AssertReturnVoid(pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC);
-    LogFlowFunc(("pStreamEx=%p '%s'\n", pStreamEx, pStreamEx->Guest.Cfg.szName));
+    LogFlowFunc(("pStreamEx=%p '%s'\n", pStreamEx, pStreamEx->Core.szName));
 
     /*
      * Grab the lock and do switch the state (only needed for output streams for now).
