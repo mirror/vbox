@@ -2849,22 +2849,15 @@ static DECLCALLBACK(void *) sb16QueryInterface(struct PDMIBASE *pInterface, cons
 *********************************************************************************************************************************/
 
 /**
- * Attach command, internal version.
- *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor has to attach to all the available drivers.
+ * Worker for sb16Construct() and sb16Attach().
  *
  * @returns VBox status code.
  * @param   pThis       SB16 state.
  * @param   uLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, PSB16DRIVER *ppDrv)
+static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, PSB16DRIVER *ppDrv)
 {
-    RT_NOREF(fFlags);
-
     /*
      * Allocate a new driver structure and try attach the driver.
      */
@@ -2902,7 +2895,7 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
 
             if (ppDrv)
                 *ppDrv = pDrv;
-            LogFunc(("iLUN=%u, fFlags=0x%x: VINF_SUCCESS\n", uLUN, fFlags));
+            LogFunc(("LUN#%u: VINF_SUCCESS\n", uLUN));
             return VINF_SUCCESS;
         }
         rc = VERR_PDM_MISSING_INTERFACE_BELOW;
@@ -2913,7 +2906,7 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
         LogFunc(("Failed to attached driver for LUN #%u: %Rrc\n", uLUN, rc));
     RTMemFree(pDrv);
 
-    LogFunc(("iLUN=%u, fFlags=0x%x: rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("LUN#%u: rc=%Rrc\n", uLUN, rc));
     return rc;
 }
 
@@ -2923,13 +2916,13 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
 static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
-
-    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
+    RT_NOREF(fFlags);
+    LogFunc(("iLUN=%u, fFlags=%#x\n", iLUN, fFlags));
 
     /** @todo r=andy Any locking required here? */
 
     PSB16DRIVER pDrv;
-    int rc = sb16AttachInternal(pThis, iLUN, fFlags, &pDrv);
+    int rc = sb16AttachInternal(pThis, iLUN, &pDrv);
     if (RT_SUCCESS(rc))
     {
         int rc2 = sb16AddDrv(pDevIns, pThis, pDrv);
@@ -3262,7 +3255,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     {
         AssertBreak(iLun < UINT8_MAX);
         LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
-        rc = sb16AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        rc = sb16AttachInternal(pThis, iLun, NULL /* ppDrv */);
         if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             LogFunc(("cLUNs=%u\n", iLun));

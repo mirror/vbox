@@ -3920,23 +3920,16 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * Attach command, internal version.
- *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor has to attach to all the available drivers.
+ * Worker for ichac97R3Construct() and ichac97R3Attach().
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 device state.
  * @param   iLun        The logical unit which is being attached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned iLun, uint32_t fFlags, PAC97DRIVER *ppDrv)
+static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned iLun, PAC97DRIVER *ppDrv)
 {
-    RT_NOREF(fFlags);
-
     /*
      * Attach driver.
      */
@@ -3976,7 +3969,7 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
 
                 if (ppDrv)
                     *ppDrv = pDrv;
-                LogFunc(("iLun=%u, fFlags=0x%x: VINF_SUCCESS\n", iLun, fFlags));
+                LogFunc(("LUN#%u: VINF_SUCCESS\n", iLun));
                 return VINF_SUCCESS;
             }
             RTMemFree(pDrv);
@@ -3991,7 +3984,7 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
         LogFunc(("Attached driver for LUN #%u failed: %Rrc\n", iLun, rc));
 
     RTStrFree(pszDesc);
-    LogFunc(("iLun=%u, fFlags=0x%x: rc=%Rrc\n", iLun, fFlags, rc));
+    LogFunc(("LUN#%u: rc=%Rrc\n", iLun, rc));
     return rc;
 }
 
@@ -4002,13 +3995,13 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
 {
     PAC97STATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     PAC97STATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
-
-    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
+    RT_NOREF(fFlags);
+    LogFunc(("iLUN=%u, fFlags=%#x\n", iLUN, fFlags));
 
     DEVAC97_LOCK(pDevIns, pThis);
 
     PAC97DRIVER pDrv;
-    int rc = ichac97R3AttachInternal(pDevIns, pThisCC, iLUN, fFlags, &pDrv);
+    int rc = ichac97R3AttachInternal(pDevIns, pThisCC, iLUN, &pDrv);
     if (RT_SUCCESS(rc))
     {
         int rc2 = ichac97R3MixerAddDrv(pDevIns, pThisCC, pDrv);
@@ -4281,7 +4274,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     {
         AssertBreak(iLun < UINT8_MAX);
         LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
-        rc = ichac97R3AttachInternal(pDevIns, pThisCC, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        rc = ichac97R3AttachInternal(pDevIns, pThisCC, iLun, NULL /* ppDrv */);
         if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             LogFunc(("cLUNs=%u\n", iLun));
