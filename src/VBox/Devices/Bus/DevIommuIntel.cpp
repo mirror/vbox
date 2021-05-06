@@ -277,8 +277,10 @@ typedef struct DMAR
     STAMCOUNTER                 StatMmioWriteR3;        /**< Number of MMIO writes in R3. */
     STAMCOUNTER                 StatMmioWriteRZ;        /**< Number of MMIO writes in RZ. */
 
-    STAMCOUNTER                 StatMsiRemapR3;         /**< Number of MSI remap requests in R3. */
-    STAMCOUNTER                 StatMsiRemapRZ;         /**< Number of MSI remap requests in RZ. */
+    STAMCOUNTER                 StatMsiRemapCfiR3;      /**< Number of compatibility-format interrupts remap requests in R3. */
+    STAMCOUNTER                 StatMsiRemapCfiRZ;      /**< Number of compatibility-format interrupts remap requests in RZ. */
+    STAMCOUNTER                 StatMsiRemapRfiR3;      /**< Number of remappable-format interrupts remap requests in R3. */
+    STAMCOUNTER                 StatMsiRemapRfiRZ;      /**< Number of remappable-format interrupts remap requests in RZ. */
 
     STAMCOUNTER                 StatMemReadR3;          /**< Number of memory read translation requests in R3. */
     STAMCOUNTER                 StatMemReadRZ;          /**< Number of memory read translation requests in RZ. */
@@ -1294,21 +1296,17 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
     uint32_t const fChanged   = uGstsReg ^ uGcmdReg;
     uint64_t const fExtCapReg = pThis->fExtCapReg;
 
-    /*
-     * Queued-invalidation.
-     */
+    /* Queued-invalidation. */
     if (   (fExtCapReg & VTD_BF_ECAP_REG_QI_MASK)
         && (fChanged & VTD_BF_GCMD_REG_QIE_MASK))
     {
         if (uGcmdReg & VTD_BF_GCMD_REG_QIE_MASK)
         {
-            /* Enable the invalidation-queue. */
             dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_QIES_MASK);
             dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
         }
         else
         {
-            /* Disable the invalidation-queue. */
             dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_QIES_MASK, 0 /* fOrMask */);
             dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_IQH_REG, 0);
         }
@@ -1316,9 +1314,7 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
 
     if (fExtCapReg & VTD_BF_ECAP_REG_IR_MASK)
     {
-        /*
-         * Set Interrupt Remapping Table Pointer (SIRTP).
-         */
+        /* Set Interrupt Remapping Table Pointer (SIRTP). */
         if (uGcmdReg & VTD_BF_GCMD_REG_SIRTP_MASK)
         {
             /** @todo Perform global invalidation of all interrupt-entry cache when ESIRTPS is
@@ -1327,9 +1323,7 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
             dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_IRTPS_MASK);
         }
 
-        /*
-         * Interrupt remapping.
-         */
+        /* Interrupt remapping. */
         if (fChanged & VTD_BF_GCMD_REG_IRE_MASK)
         {
             if (uGcmdReg & VTD_BF_GCMD_REG_IRE_MASK)
@@ -1337,11 +1331,18 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
             else
                 dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_IRES_MASK, 0 /* fOrMask */);
         }
+
+        /* Compatibility format interrupts. */
+        if (fChanged & VTD_BF_GCMD_REG_CFI_MASK)
+        {
+            if (uGcmdReg & VTD_BF_GCMD_REG_CFI_MASK)
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_CFIS_MASK);
+            else
+                dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_CFIS_MASK, 0 /* fOrMask */);
+        }
     }
 
-    /*
-     * Set Root Table Pointer (SRTP).
-     */
+    /* Set Root Table Pointer (SRTP). */
     if (uGcmdReg & VTD_BF_GCMD_REG_SRTP_MASK)
     {
         /** @todo Perform global invalidation of all remapping translation caches when
@@ -1525,7 +1526,7 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
  */
 static int dmarIrReadIrte(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idxIntr, PVTD_IRTE_T pIrte)
 {
-    Assert(idxIntr < VTD_IRTA_REG_GET_ENTRIES(uIrtaReg));
+    Assert(idxIntr < VTD_IRTA_REG_GET_ENTRY_COUNT(uIrtaReg));
 
     size_t const   cbIrte     = sizeof(*pIrte);
     RTGCPHYS const GCPhysIrte = (uIrtaReg & VTD_BF_IRTA_REG_IRTA_MASK) + (idxIntr * cbIrte);
@@ -1600,12 +1601,12 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
         uint16_t const uHandleLo       = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_HANDLE_LO);
         uint16_t const uHandle         = uHandleLo | (uHandleHi << 15);
         bool const     fSubHandleValid = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_SHV);
-        uint32_t const idxIntr         = fSubHandleValid
+        uint16_t const idxIntr         = fSubHandleValid
                                        ? uHandle + RT_BF_GET(pMsiIn->Data.u32, VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE)
                                        : uHandle;
 
         /* Validate the index. */
-        uint32_t const cEntries = VTD_IRTA_REG_GET_ENTRIES(uIrtaReg);
+        uint32_t const cEntries = VTD_IRTA_REG_GET_ENTRY_COUNT(uIrtaReg);
         if (idxIntr < cEntries)
         {
             /** @todo Implement and read IRTE from interrupt-entry cache here. */
@@ -1732,13 +1733,13 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
     /* Check if interrupt remapping is enabled. */
     if (uGstsReg & VTD_BF_GSTS_REG_IRES_MASK)
     {
-        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
-
         /* Handle compatibility format interrupts. */
-        uint8_t const fIntrFormat = VTD_MSI_ADDR_GET_INTR_FORMAT(pMsiIn->Addr.u64);
-        if (fIntrFormat == VTD_INTR_FORMAT_COMPAT)
+        bool const fIsRemapFormat = RT_BF_GET(pMsiIn->Addr.au32[0], VTD_BF_REMAPPABLE_MSI_ADDR_INTR_FMT);
+        if (!fIsRemapFormat)
         {
-            /* If in Extended Interrupt Mode (EIM) or compatibility format interrupts are  disabled, block the interrupt. */
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemapCfi));
+
+            /* If EIME is enabled or CFIs are  disabled, block the interrupt. */
             if (    (uIrtaReg & VTD_BF_IRTA_REG_EIME_MASK)
                 || !(uGstsReg & VTD_BF_GSTS_REG_CFIS_MASK))
             {
@@ -1752,6 +1753,7 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
         }
 
         /* Handle remappable format interrupts. */
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemapRfi));
         return dmarIrRemapIntr(pDevIns, uIrtaReg, idDevice, pMsiIn, pMsiOut);
     }
 
@@ -2357,8 +2359,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
     {
         uint8_t const fCfi = RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_CFI);
-        pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass interrupt remapping"
-                                                                        : "Block compatible format interrupts");
+        pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass" : "Block");
         pHlp->pfnPrintf(pHlp, "   SIRTP        = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SIRTP));
         pHlp->pfnPrintf(pHlp, "   IRE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_IRE));
         pHlp->pfnPrintf(pHlp, "   QIE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_QIE));
@@ -2371,8 +2372,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
     {
         uint8_t const fCfis = RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_CFIS);
-        pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass interrupt remapping"
-                                                                          : "Block compatible format interrupts");
+        pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass" : "Block");
         pHlp->pfnPrintf(pHlp, "   IRTPS        = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRTPS));
         pHlp->pfnPrintf(pHlp, "   IRES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRES));
         pHlp->pfnPrintf(pHlp, "   QIES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_QIES));
@@ -2443,6 +2443,13 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, "   IQEI         = %#RX32\n",   RT_BF_GET(uIqercdReg, VTD_BF_IQERCD_REG_IQEI));
     }
     pHlp->pfnPrintf(pHlp, " IRTA_REG     = %#RX64\n", uIrtaReg);
+    {
+        uint32_t const cIrtEntries = VTD_IRTA_REG_GET_ENTRY_COUNT(uIrtaReg);
+        uint32_t const cbIrt       = sizeof(VTD_IRTE_T) * cIrtEntries;
+        pHlp->pfnPrintf(pHlp, "   IRTA         = %#RX64\n",   RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_IRTA));
+        pHlp->pfnPrintf(pHlp, "   EIME         = %RTbool\n",  RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_EIME));
+        pHlp->pfnPrintf(pHlp, "   S            = %u entries (%u bytes)\n", cIrtEntries, cbIrt);
+    }
     pHlp->pfnPrintf(pHlp, " PQH_REG      = %#RX64\n", uPqhReg);
     pHlp->pfnPrintf(pHlp, " PQT_REG      = %#RX64\n", uPqtReg);
     pHlp->pfnPrintf(pHlp, " PQA_REG      = %#RX64\n", uPqaReg);
@@ -2738,8 +2745,10 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in RZ.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapR3, STAMTYPE_COUNTER, "R3/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRZ, STAMTYPE_COUNTER, "RZ/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapCfiR3, STAMTYPE_COUNTER, "R3/MsiRemapCfi", STAMUNIT_OCCURENCES, "Number of compatibility-format interrupt remap requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapCfiRZ, STAMTYPE_COUNTER, "RZ/MsiRemapCfi", STAMUNIT_OCCURENCES, "Number of compatibility-format interrupt remap requests in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRfiR3, STAMTYPE_COUNTER, "R3/MsiRemapRfi", STAMUNIT_OCCURENCES, "Number of remappable-format interrupt remap requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRfiRZ, STAMTYPE_COUNTER, "RZ/MsiRemapRfi", STAMUNIT_OCCURENCES, "Number of remappable-format interrupt remap requests in RZ.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadR3,  STAMTYPE_COUNTER, "R3/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadRZ,  STAMTYPE_COUNTER, "RZ/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in RZ.");

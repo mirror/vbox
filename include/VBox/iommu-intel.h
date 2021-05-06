@@ -989,7 +989,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GCMD_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_22_0, CFI, SIRTP, IRE, QIE, WBF, EAFL, SFL, SRTP, TE));
 
 /** RW: Read/write mask. */
-#define VTD_GCMD_REG_RW_MASK                                    UINT32_C(0xff800000)
+#define VTD_GCMD_REG_RW_MASK                                    (  VTD_BF_GCMD_REG_TE_MASK | VTD_BF_GCMD_REG_SRTP_MASK \
+                                                                 | VTD_BF_GCMD_REG_SFL_MASK | VTD_BF_GCMD_REG_EAFL_MASK \
+                                                                 | VTD_BF_GCMD_REG_WBF_MASK | VTD_BF_GCMD_REG_QIE_MASK \
+                                                                 | VTD_BF_GCMD_REG_IRE_MASK | VTD_BF_GCMD_REG_SIRTP_MASK \
+                                                                 | VTD_BF_GCMD_REG_CFI_MASK)
 /** @} */
 
 
@@ -1584,7 +1588,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IRTA_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_IRTA_REG_RW_MASK                                    (  VTD_BF_IRTA_REG_S_MASK | VTD_BF_IRTA_REG_EIME_MASK \
                                                                  | VTD_BF_IRTA_REG_IRTA_MASK)
 /** IRTA_REG: Get number of interrupt entries. */
-#define VTD_IRTA_REG_GET_ENTRIES(a)                             (UINT32_C(1) << (1 + ((a) & VTD_BF_IRTA_REG_S_MASK)))
+#define VTD_IRTA_REG_GET_ENTRY_COUNT(a)                         (UINT32_C(1) << (1 + ((a) & VTD_BF_IRTA_REG_S_MASK)))
 /** @} */
 
 
