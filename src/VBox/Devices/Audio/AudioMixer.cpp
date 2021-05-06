@@ -775,12 +775,6 @@ static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char 
         pSink->VolumeCombined.fMuted = false;
         pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
         pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
-
-        const size_t cbScratchBuf = _1K; /** @todo Make this configurable? */
-
-        pSink->pabScratchBuf = (uint8_t *)RTMemAlloc(cbScratchBuf);
-        AssertPtrReturn(pSink->pabScratchBuf, VERR_NO_MEMORY);
-        pSink->cbScratchBuf  = cbScratchBuf;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -852,10 +846,6 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
 
     RTStrFree(pSink->pszName);
     pSink->pszName = NULL;
-
-    RTMemFree(pSink->pabScratchBuf);
-    pSink->pabScratchBuf = NULL;
-    pSink->cbScratchBuf = 0;
 
     AudioMixBufDestroy(&pSink->MixBuf);
     RTCritSectDelete(&pSink->CritSect);

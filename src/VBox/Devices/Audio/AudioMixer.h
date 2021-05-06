@@ -47,7 +47,7 @@ typedef struct AUDIOMIXER
     RTCRITSECT              CritSect;
     /** The master volume of this mixer. */
     PDMAUDIOVOLUME          VolMaster;
-    /** List of audio mixer sinks. */
+    /** List of audio mixer sinks (AUDMIXSINK). */
     RTLISTANCHOR            lstSinks;
     /** Number of used audio sinks. */
     uint8_t                 cSinks;
@@ -56,6 +56,17 @@ typedef struct AUDIOMIXER
 } AUDIOMIXER;
 /** Pointer to an audio mixer instance. */
 typedef AUDIOMIXER *PAUDIOMIXER;
+
+/** @name AUDMIXER_FLAGS_XXX - For AudioMixerCreate().
+ * @{ */
+/** No mixer flags specified. */
+#define AUDMIXER_FLAGS_NONE             0
+/** Debug mode enabled.
+ *  This writes .WAV file to the host, usually to the temporary directory. */
+#define AUDMIXER_FLAGS_DEBUG            RT_BIT(0)
+/** Validation mask. */
+#define AUDMIXER_FLAGS_VALID_MASK       UINT32_C(0x00000001)
+/** @} */
 
 
 /**
@@ -122,17 +133,13 @@ typedef struct AUDMIXSINK
     char                   *pszName;
     /** The sink direction (either PDMAUDIODIR_IN or PDMAUDIODIR_OUT). */
     PDMAUDIODIR             enmDir;
-    /** Scratch buffer for multiplexing / mixing. Might be NULL if not needed. */
-    uint8_t                *pabScratchBuf;
-    /** Size (in bytes) of pabScratchBuf. Might be 0 if not needed. */
-    size_t                  cbScratchBuf;
-    /** The sink's PCM format. */
+    /** The sink's PCM format (i.e. the guest device side). */
     PDMAUDIOPCMPROPS        PCMProps;
     /** Sink status bits - AUDMIXSINK_STS_XXX. */
     uint32_t                fStatus;
     /** Number of streams assigned. */
     uint8_t                 cStreams;
-    /** List of assigned streams.
+    /** List of assigned streams (AUDMIXSTREAM).
      * @note All streams have the same PCM properties, so the mixer does not do
      *       any conversion.  bird: That is *NOT* true any more, the mixer has
      *       encoders/decoder states for each stream (well, input is still a todo).
@@ -206,18 +213,6 @@ typedef enum AUDMIXOP
     /** The usual 32-bit hack. */
     AUDMIXOP_32BIT_HACK = 0x7fffffff
 } AUDMIXOP;
-
-
-/** @name AUDMIXER_FLAGS_XXX - For AudioMixerCreate().
- * @{ */
-/** No mixer flags specified. */
-#define AUDMIXER_FLAGS_NONE             0
-/** Debug mode enabled.
- *  This writes .WAV file to the host, usually to the temporary directory. */
-#define AUDMIXER_FLAGS_DEBUG            RT_BIT(0)
-/** Validation mask. */
-#define AUDMIXER_FLAGS_VALID_MASK       UINT32_C(0x00000001)
-/** @} */
 
 
 int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
