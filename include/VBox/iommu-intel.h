@@ -652,8 +652,19 @@ typedef VTD_FAULT_RECORD_T const *PCVTD_FAULT_RECORD_T;
 /** DST: Desination Id. */
 #define VTD_BF_0_IRTE_DST_SHIFT                                 32
 #define VTD_BF_0_IRTE_DST_MASK                                  UINT64_C(0xffffffff00000000)
+/** R: Reserved (bits 39:32) when EIME=0. */
+#define VTD_BF_0_IRTE_RSVD_39_32_SHIFT                          32
+#define VTD_BF_0_IRTE_RSVD_39_32_MASK                           UINT64_C(0x000000ff00000000)
+/** DST_XAPIC: Destination Id when EIME=0. */
+#define VTD_BF_0_IRTE_DST_XAPIC_SHIFT                           40
+#define VTD_BF_0_IRTE_DST_XAPIC_MASK                            UINT64_C(0x0000ff0000000000)
+/** R: Reserved (bits 63:48) when EIME=0. */
+#define VTD_BF_0_IRTE_RSVD_63_48_SHIFT                          48
+#define VTD_BF_0_IRTE_RSVD_63_48_MASK                           UINT64_C(0xffff000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IRTE_, UINT64_C(0), UINT64_MAX,
                             (P, FPD, DM, RH, TM, DLM, AVAIL, RSVD_14_12, IM, V, RSVD_31_24, DST));
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IRTE_, UINT64_C(0), UINT64_MAX,
+                            (P, FPD, DM, RH, TM, DLM, AVAIL, RSVD_14_12, IM, V, RSVD_31_24, RSVD_39_32, DST_XAPIC, RSVD_63_48));
 
 /** SID: Source Identifier. */
 #define VTD_BF_1_IRTE_SID_SHIFT                                 0
@@ -670,12 +681,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_IRTE_, UINT64_C(0), UINT64_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_IRTE_, UINT64_C(0), UINT64_MAX,
                             (SID, SQ, SVT, RSVD_63_20));
 
-/** IRTE: Qword 0 valid mask. */
-#define VTD_IRTE_0_VALID_MASK                                   (  VTD_BF_0_IRTE_P_MASK  | VTD_BF_0_IRTE_FPD_MASK \
+/** IRTE: Qword 0 valid mask when EIME=1. */
+#define VTD_IRTE_0_X2APIC_VALID_MASK                            (  VTD_BF_0_IRTE_P_MASK  | VTD_BF_0_IRTE_FPD_MASK \
                                                                  | VTD_BF_0_IRTE_DM_MASK | VTD_BF_0_IRTE_RH_MASK \
                                                                  | VTD_BF_0_IRTE_TM_MASK | VTD_BF_0_IRTE_DLM_MASK \
                                                                  | VTD_BF_0_IRTE_AVAIL_MASK | VTD_BF_0_IRTE_IM_MASK \
                                                                  | VTD_BF_0_IRTE_V_MASK | VTD_BF_0_IRTE_DST_MASK)
+/** IRTE: Qword 0 valid mask when EIME=0. */
+#define VTD_IRTE_0_XAPIC_VALID_MASK                             (  VTD_BF_0_IRTE_P_MASK  | VTD_BF_0_IRTE_FPD_MASK \
+                                                                 | VTD_BF_0_IRTE_DM_MASK | VTD_BF_0_IRTE_RH_MASK \
+                                                                 | VTD_BF_0_IRTE_TM_MASK | VTD_BF_0_IRTE_DLM_MASK \
+                                                                 | VTD_BF_0_IRTE_AVAIL_MASK | VTD_BF_0_IRTE_IM_MASK \
+                                                                 | VTD_BF_0_IRTE_V_MASK | VTD_BF_0_IRTE_DST_XAPIC_MASK)
 /** IRTE: Qword 1 valid mask. */
 #define VTD_IRTE_1_VALID_MASK                                   (  VTD_BF_1_IRTE_SID_MASK | VTD_BF_1_IRTE_SQ_MASK \
                                                                  | VTD_BF_1_IRTE_SVT_MASK)
@@ -699,11 +716,6 @@ typedef VTD_IRTE_T const *PCVTD_IRTE_T;
 #define VTD_IRTE_SVT_VALIDATE_BUS_RANGE                         2
 /** IRTE SVT: Reserved. */
 #define VTD_IRTE_SVT_VALIDATE_RSVD                              3
-
-/** IRTE: Gets the x2APIC destination ID given qword 0 of an IRTE. */
-#define VTD_IRTE_0_GET_X2APIC_DEST_ID(a)                        RT_BF_GET(a, VTD_BF_0_IRTE_DST)
-/** IRTE: Gets the xAPIC destination ID given qword 0 of an IRTE. */
-#define VTD_IRTE_0_GET_XAPIC_DEST_ID(a)                         (((a) >> 40) & 0xff)
 /** @} */
 
 

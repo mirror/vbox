@@ -1563,12 +1563,12 @@ static void dmarIrRemapFromIrte(bool fExtIntrMode, PCVTD_IRTE_T pIrte, PCMSIMSG 
          * Apparently the DMAR stuffs the high 24-bits of the destination ID into the
          * high 24-bits of the upper 32-bits of the message address, see @bugref{9967#c22}.
          */
-        uint32_t const idDest = VTD_IRTE_0_GET_X2APIC_DEST_ID(uIrteQword0);
-        pMsiOut->Addr.n.u8DestId = idDest & 0xff;
-        pMsiOut->Addr.n.u32Rsvd0 = idDest & 0xffffff00;
+        uint32_t const idDest = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_DST);
+        pMsiOut->Addr.n.u8DestId = idDest;
+        pMsiOut->Addr.n.u32Rsvd0 = idDest & UINT32_C(0xffffff00);
     }
     else
-        pMsiOut->Addr.n.u8DestId = VTD_IRTE_0_GET_XAPIC_DEST_ID(uIrteQword0);
+        pMsiOut->Addr.n.u8DestId = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_DST_XAPIC);
 
     pMsiOut->Data.n.u8Vector       = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_V);
     pMsiOut->Data.n.u3DeliveryMode = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_DLM);
@@ -1622,7 +1622,9 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                 if (fPresent)
                 {
                     /* Validate reserved bits in the IRTE. */
-                    if (   !(uIrteQword0 & ~VTD_IRTE_0_VALID_MASK)
+                    bool const     fExtIntrMode  = RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_EIME);
+                    uint64_t const fQw0ValidMask = fExtIntrMode ? VTD_IRTE_0_X2APIC_VALID_MASK : VTD_IRTE_0_XAPIC_VALID_MASK;
+                    if (   !(uIrteQword0 & ~fQw0ValidMask)
                         && !(uIrteQword1 & ~VTD_IRTE_1_VALID_MASK))
                     {
                         /* Validate requester id (the device ID) as configured in the IRTE. */
@@ -1672,7 +1674,6 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                             uint8_t const fPostedMode = RT_BF_GET(uIrteQword0, VTD_BF_0_IRTE_IM);
                             if (!fPostedMode)
                             {
-                                bool const fExtIntrMode = RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_EIME);
                                 dmarIrRemapFromIrte(fExtIntrMode, &Irte, pMsiIn, pMsiOut);
                                 return VINF_SUCCESS;
                             }
