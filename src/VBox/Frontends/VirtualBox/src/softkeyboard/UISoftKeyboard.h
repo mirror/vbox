@@ -115,6 +115,7 @@ private:
     void loadSettings();
     void saveCustomColorTheme();
     void saveSelectedColorThemeName();
+    void saveCurrentLayout();
     void saveDialogGeometry();
     void configure();
     void updateStatusBarMessage(const QString &strLayoutName);

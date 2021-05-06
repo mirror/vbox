@@ -3140,7 +3140,10 @@ void UISoftKeyboardWidget::loadLayouts()
         return;
     for (QMap<QUuid, UISoftKeyboardLayout>::iterator iterator = m_layouts.begin(); iterator != m_layouts.end(); ++iterator)
         iterator.value().setEditedBuNotSaved(false);
+    /* Block sigCurrentLayoutChange since it causes saving set layout to exra data: */
+    blockSignals(true);
     setCurrentLayout(m_layouts.firstKey());
+    blockSignals(false);
 }
 
 void UISoftKeyboardWidget::prepareObjects()
@@ -3975,6 +3978,7 @@ void UISoftKeyboard::sltCurentLayoutChanged()
     if (!pCurrentLayout)
         return;
     updateStatusBarMessage(pCurrentLayout->nameString());
+    saveCurrentLayout();
 }
 
 void UISoftKeyboard::sltShowLayoutSelector()
@@ -4258,6 +4262,12 @@ void UISoftKeyboard::saveSelectedColorThemeName()
     gEDataManager->setSoftKeyboardSelectedColorTheme(m_pKeyboardWidget->currentColorThemeName());
 }
 
+void UISoftKeyboard::saveCurrentLayout()
+{
+    if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout())
+        gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
+}
+
 void UISoftKeyboard::sltSaveSettings()
 {
     /* Save other settings: */
@@ -4266,8 +4276,6 @@ void UISoftKeyboard::sltSaveSettings()
         gEDataManager->setSoftKeyboardOptions(m_pKeyboardWidget->hideNumPad(),
                                               m_pKeyboardWidget->hideOSMenuKeys(),
                                               m_pKeyboardWidget->hideMultimediaKeys());
-        if (m_pKeyboardWidget->currentLayout())
-            gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
     }
 }
 
