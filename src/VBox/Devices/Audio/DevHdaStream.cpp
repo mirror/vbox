@@ -902,7 +902,7 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
     int                 rc;
     if (   pStreamR3->pMixSink
         && pStreamR3->pMixSink->pMixSink)
-        rc = AudioMixerSinkCtl(pStreamR3->pMixSink->pMixSink, fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+        rc = AudioMixerSinkEnable(pStreamR3->pMixSink->pMixSink, fEnable);
     else
         rc = VINF_SUCCESS;
 

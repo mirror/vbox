@@ -2224,8 +2224,7 @@ static int sb16StreamEnable(PSB16STATE pThis, PSB16STREAM pStream, bool fEnable,
     LogFlowFunc(("fEnable=%RTbool, fForce=%RTbool, fStreamEnabled=%RTbool\n", fEnable, fForce, pStream->State.fEnabled));
 
     /* First, enable or disable the stream and the stream's sink. */
-    int rc = AudioMixerSinkCtl(sb16StreamIndexToSink(pThis, pStream->uIdx),
-                               fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+    int rc = AudioMixerSinkEnable(sb16StreamIndexToSink(pThis, pStream->uIdx), fEnable);
     AssertRCReturn(rc, rc);
 
     pStream->State.fEnabled = fEnable;

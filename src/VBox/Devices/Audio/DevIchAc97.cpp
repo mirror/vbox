@@ -1023,8 +1023,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     if (RT_SUCCESS(rc))
     {
         /* First, enable or disable the stream and the stream's sink, if any. */
-        rc = AudioMixerSinkCtl(ichac97R3IndexToSink(pThisCC, pStream->u8SD),
-                               fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+        rc = AudioMixerSinkEnable(ichac97R3IndexToSink(pThisCC, pStream->u8SD), fEnable);
     }
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO

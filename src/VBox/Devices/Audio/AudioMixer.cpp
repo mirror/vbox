@@ -660,23 +660,18 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
 }
 
 /**
- * Controls a mixer sink.
+ * Enables or disables a mixer sink.
  *
  * @returns VBox status code.
  *          Generally always VINF_SUCCESS unless the input is invalid.
  *          Individual driver errors are suppressed and ignored.
  * @param   pSink       Mixer sink to control.
- * @param   enmCmd      The command to to perform on the sink and its streams.
+ * @param   fEnable     Whether to enable or disable the sink.
  */
-int AudioMixerSinkCtl(PAUDMIXSINK pSink, PDMAUDIOSTREAMCMD enmCmd)
+int AudioMixerSinkEnable(PAUDMIXSINK pSink, bool fEnable)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-
-    /* Only ENABLE/DISABLE is implemented. */
-    AssertMsgReturn(   enmCmd == PDMAUDIOSTREAMCMD_ENABLE
-                    || enmCmd == PDMAUDIOSTREAMCMD_DISABLE,
-                   ("enmSinkCmd=%d (%s)\n", enmCmd, PDMAudioStrmCmdGetName(enmCmd)),
-                    VERR_INVALID_FUNCTION);
+    PDMAUDIOSTREAMCMD const enmCmd = fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE;
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     AssertRCReturn(rc, rc);
@@ -718,28 +713,25 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, PDMAUDIOSTREAMCMD enmCmd)
                 audioMixerStreamCtlInternal(pStream, enmCmd);
             }
         }
+        else
+            AssertFailed();
 
         /*
          * Update the sink status.
          */
-        switch (enmCmd)
+        if (fEnable)
         {
-            case PDMAUDIOSTREAMCMD_ENABLE:
-                /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
-                pSink->fStatus = AUDMIXSINK_STS_RUNNING;
-                break;
-
-            case PDMAUDIOSTREAMCMD_DISABLE:
-                if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
-                {
-                    /* Set the sink in a pending disable state first.
-                     * The final status (disabled) will be set in the sink's iteration. */
-                    pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
-                }
-                break;
-
-            default:
-                AssertFailed(/*impossible!*/);
+            /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
+            pSink->fStatus = AUDMIXSINK_STS_RUNNING;
+        }
+        else
+        {
+            if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+            {
+                /* Set the sink in a pending disable state first.
+                 * The final status (disabled) will be set in the sink's iteration. */
+                pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+            }
         }
     }
 
