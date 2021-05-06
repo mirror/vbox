@@ -98,6 +98,8 @@ public:
     bool isAvailable() const;
     void setIsAvailable(bool fIsAvailable);
 
+    void setMouseOver(bool isOver);
+
 protected:
 
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
@@ -121,7 +123,7 @@ private:
        void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
        void drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex, const QRectF &chartRect, bool fWithBorder = true);
        void drawCombinedPieCharts(QPainter &painter, quint64 iMaximum);
-
+       QString YAxisValueLabel(quint64 iValue) const;
        /** Drawing an overlay rectangle over the charts to indicate that they are disabled. */
        void drawDisabledChartRectangle(QPainter &painter);
        QConicalGradient conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex);
@@ -160,6 +162,7 @@ private:
     QString m_strResetActionLabel;
     QString m_strPieChartToggleActionLabel;
     QString m_strAreaChartToggleActionLabel;
+    bool    m_fDrawCurenValueIndicators;
 };
 
 /*********************************************************************************************************************************
@@ -179,6 +182,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fUseAreaChart(true)
     , m_fIsAvailable(true)
     , m_fIsAreaChartAllowed(false)
+    , m_fDrawCurenValueIndicators(true)
 {
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
@@ -190,8 +194,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_dataSeriesColor[0] = QColor(200, 0, 0, 255);
     m_dataSeriesColor[1] = QColor(0, 0, 200, 255);
 
-    m_iMarginLeft = 1 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_iMarginRight = 9 * QFontMetrics(m_axisFont).width('X');
+    m_iMarginLeft = 3 * QFontMetrics(m_axisFont).averageCharWidth();
+    m_iMarginRight = 9 * QFontMetrics(m_axisFont).averageCharWidth();
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = QFontMetrics(m_axisFont).height();
 
@@ -308,6 +312,12 @@ void UIChart::setIsAvailable(bool fIsAvailable)
     update();
 }
 
+void UIChart::setMouseOver(bool isOver)
+{
+    if (!isOver)
+        m_iDataIndexUnderCursor = -1;
+}
+
 QSize UIChart::minimumSizeHint() const
 {
     return m_size;
@@ -337,10 +347,11 @@ void UIChart::resizeEvent(QResizeEvent *pEvent)
 
 void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
 {
-    int iX = pEvent->x();
+    int iX = width() - pEvent->x() - m_iMarginRight;
     m_iDataIndexUnderCursor = -1;
     if (iX > m_iMarginLeft && iX <= width() - m_iMarginRight)
-        m_iDataIndexUnderCursor = (int)(g_iMaximumQueueSize -  (iX - m_iMarginLeft) / m_fPixelPerDataPoint);
+        m_iDataIndexUnderCursor = (int)((iX) / m_fPixelPerDataPoint) + 1;
+    update();
     QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
 }
 
@@ -398,19 +409,20 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     }
 
     quint64 iMaximum = m_pMetric->maximum();
+    QFontMetrics fontMetrics(painter.font());
+    int iFontHeight = fontMetrics.height();
+    int iAverageFontWidth = fontMetrics.averageCharWidth();
+
     /* Draw a straight line per data series: */
     if (iMaximum == 0)
     {
         for (int k = 0; k < DATA_SERIES_SIZE; ++k)
         {
-
             QLineF bar(0 + m_iMarginLeft, height() - m_iMarginBottom,
                        width() - m_iMarginRight, height() - m_iMarginBottom);
             painter.drawLine(bar);
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-
             painter.setBrush(m_dataSeriesColor[k]);
-
         }
     }
     else
@@ -427,7 +439,6 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 gradient.setColorAt(1, m_dataSeriesColor[k]);
                 painter.setPen(QPen(gradient, 2.5));
             }
-
             const QQueue<quint64> *data = m_pMetric->data(k);
             if (!m_fUseGradientLineColor)
                 painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
@@ -466,11 +477,28 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                     painter.drawLine(bar);
                 }
             }
+            /* Draw a horizontal and vertical line on data point under the mouse cursor
+             * and draw the value on the left hand side of the chart: */
+            if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
+            {
+                painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
+                float fHeight = fH * data->at(data->size() - m_iDataIndexUnderCursor);
+                if (fHeight > 0)
+                {
+                    painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
+                                     width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
+                    QPoint cursorPosition = mapFromGlobal(cursor().pos());
+                    painter.setPen(mainAxisColor);
+                    painter.drawLine(cursorPosition.x(), 0,
+                                     cursorPosition.x(), height() - m_iMarginBottom);
+                    QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
+                    painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
+                                     height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+
+                }
+            }
         }
     }// else of if (iMaximum == 0)
-
-    QFontMetrics fontMetrics(painter.font());
-    int iFontHeight = fontMetrics.height();
 
     /* Draw YAxis tick labels: */
     painter.setPen(mainAxisColor);
@@ -480,24 +508,29 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         if (iMaximum == 0 && i <= iYSubAxisCount)
             break;
         int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * m_lineChartRect.height() / (float) (iYSubAxisCount + 1);
-        QString strValue;
         quint64 iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
-        if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
-            strValue = QString::number(iValue);
-        else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (quint64)iValue, g_iDecimalCount);
-        else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
-                 m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(iValue, g_iDecimalCount);
-        else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
-            strValue = UICommon::addMetricSuffixToNumber(iValue);
-
+        QString strValue = YAxisValueLabel(iValue);
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
     if (iMaximum != 0 && m_fIsPieChartAllowed && m_fShowPieChart)
         drawCombinedPieCharts(painter, iMaximum);
 }
+
+QString UIChart::YAxisValueLabel(quint64 iValue) const
+{
+    if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
+        return QString::number(iValue);
+    else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
+        return uiCommon().formatSize(_1K * (quint64)iValue, g_iDecimalCount);
+    else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
+             m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
+        return uiCommon().formatSize(iValue, g_iDecimalCount);
+    else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
+        return UICommon::addMetricSuffixToNumber(iValue);
+    return QString();
+}
+
 
 void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
 {
@@ -975,6 +1008,18 @@ void UIVMActivityMonitor::retranslateUi()
     }
 }
 
+bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
+{
+    if (pEvent-> type() == QEvent::Enter ||
+        pEvent-> type() == QEvent::Leave)
+    {
+        UIChart *pChart = qobject_cast<UIChart*>(pObj);
+        if (pChart)
+            pChart->setMouseOver(pEvent-> type() == QEvent::Enter);
+    }
+    return false;
+}
+
 void UIVMActivityMonitor::prepareWidgets()
 {
     m_pMainLayout = new QVBoxLayout(this);
@@ -1020,6 +1065,7 @@ void UIVMActivityMonitor::prepareWidgets()
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]));
+        pChart->installEventFilter(this);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
         m_charts.insert(strMetricName, pChart);

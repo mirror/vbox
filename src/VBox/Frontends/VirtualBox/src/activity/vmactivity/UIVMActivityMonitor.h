@@ -147,7 +147,8 @@ public:
 
 protected:
 
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
+    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
 
 private slots:
 
