@@ -1821,24 +1821,35 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
                     do
                     {
                         /* Convert a chunk from the mixer buffer.  */
+/*#define ELECTRIC_PEEK_BUFFER*/ /* if buffer code is misbehaving, enable this to catch overflows. */
+#ifndef ELECTRIC_PEEK_BUFFER
                         union
                         {
                             uint8_t  ab[8192];
                             uint64_t au64[8192 / sizeof(uint64_t)]; /* Use uint64_t to ensure good alignment. */
                         } Buf;
-                        uint32_t cbDstPeeked      = sizeof(Buf);
+                        void * const   pvBuf = &Buf;
+                        uint32_t const cbBuf = sizeof(Buf);
+#else
+                        uint32_t const cbBuf = 0x2000 - 16;
+                        void * const   pvBuf = RTMemEfAlloc(cbBuf, RTMEM_TAG, RT_SRC_POS);
+#endif
+                        uint32_t cbDstPeeked      = cbBuf;
                         uint32_t cSrcFramesPeeked = cFramesToRead - offSrcFrame;
                         AudioMixBufPeek(&pSink->MixBuf, offSrcFrame, cSrcFramesPeeked, &cSrcFramesPeeked,
-                                        &pMixStream->PeekState, &Buf, sizeof(Buf), &cbDstPeeked);
+                                        &pMixStream->PeekState, pvBuf, cbBuf, &cbDstPeeked);
                         offSrcFrame += cSrcFramesPeeked;
 
                         /* Write it to the backend.  Since've checked that there is buffer
                            space available, this should always write the whole buffer. */
                         uint32_t cbDstWritten = 0;
                         int rc2 = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pMixStream->pStream,
-                                                                   &Buf, cbDstPeeked, &cbDstWritten);
+                                                                   pvBuf, cbDstPeeked, &cbDstWritten);
                         Log3Func(("%s: %#x L %#x => %#x bytes; wrote %#x rc2=%Rrc %s\n", pSink->pszName, offSrcFrame,
                                   cSrcFramesPeeked - cSrcFramesPeeked, cbDstPeeked, cbDstWritten, rc2, pMixStream->pszName));
+#ifdef ELECTRIC_PEEK_BUFFER
+                        RTMemEfFree(pvBuf, RT_SRC_POS);
+#endif
                         if (RT_SUCCESS(rc2))
                             AssertLogRelMsg(cbDstWritten == cbDstPeeked,
                                             ("cbDstWritten=%#x cbDstPeeked=%#x - (sink '%s')\n",
