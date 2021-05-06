@@ -65,14 +65,15 @@ public:
 protected:
 
     /** Handles translation event. */
-    void retranslateUi() /* override */;
-    void closeEvent(QCloseEvent *pEvent) /* override */;
+    virtual void retranslateUi() /* override */;
+    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void moveEvent(QMoveEvent *pEvent) /* override */;
 
 private slots:
 
     /** Handles tab-widget page change. */
     void sltHandlePageChanged(int iIndex);
-    void sltSaveSettings();
 
 private:
 
@@ -88,8 +89,8 @@ private:
     void prepareTab(int iTabIndex);
     /** Prepares button-box. */
     void prepareButtonBox();
-    /** Loads settings. */
-    void loadSettings();
+    void loadDialogGeometry();
+    void saveDialogGeometry();
 
     /** @name Widget variables.
      * @{ */
