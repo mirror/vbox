@@ -86,6 +86,18 @@ void UIVMLogViewerDialog::retranslateUi()
     button(ButtonType_Help)->setToolTip(UIVMLogViewerWidget::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }
 
+void UIVMLogViewerDialog::resizeEvent(QResizeEvent *pEvent)
+{
+    QIWithRetranslateUI<QIManagerDialog>::resizeEvent(pEvent);
+    saveDialogGeometry();
+}
+
+void UIVMLogViewerDialog::moveEvent(QMoveEvent *pEvent)
+{
+    QIWithRetranslateUI<QIManagerDialog>::moveEvent(pEvent);
+    saveDialogGeometry();
+}
+
 void UIVMLogViewerDialog::configure()
 {
     /* Apply window icons: */
@@ -117,9 +129,10 @@ void UIVMLogViewerDialog::finalize()
     /* Apply language settings: */
     retranslateUi();
     manageEscapeShortCut();
+    loadDialogGeometry();
 }
 
-void UIVMLogViewerDialog::loadSettings()
+void UIVMLogViewerDialog::loadDialogGeometry()
 {
 
     const QRect availableGeo = gpDesktop->availableGeometry(this);
@@ -142,7 +155,7 @@ void UIVMLogViewerDialog::loadSettings()
     restoreGeometry(geo);
 }
 
-void UIVMLogViewerDialog::saveSettings()
+void UIVMLogViewerDialog::saveDialogGeometry()
 {
     /* Save geometry to extradata: */
     const QRect geo = currentGeometry();
