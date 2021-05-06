@@ -269,7 +269,6 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
 void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
-void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
@@ -281,24 +280,19 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
 AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
-const char *AudioMixerSinkGetName(const PAUDMIXSINK pSink);
 PAUDMIXSTREAM AudioMixerSinkGetRecordingSource(PAUDMIXSINK pSink);
-PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex);
 AUDMIXSINKSTS AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
-uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink);
 bool AudioMixerSinkIsActive(PAUDMIXSINK pSink);
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 void AudioMixerSinkReset(PAUDMIXSINK pSink);
-void AudioMixerSinkGetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps);
 int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps);
 int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
 
-int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */
