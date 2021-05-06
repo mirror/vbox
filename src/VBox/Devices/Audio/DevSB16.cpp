@@ -2001,7 +2001,7 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
         AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
         PAUDMIXSTREAM pMixStrm;
-        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, pDevIns, &pMixStrm);
+        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, pDevIns, &pMixStrm);
         LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
         if (RT_SUCCESS(rc))
         {

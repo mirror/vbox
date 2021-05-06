@@ -2328,7 +2328,7 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
     AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
     PAUDMIXSTREAM pMixStrm = NULL;
-    int rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, &StreamCfg, 0 /* fFlags */, pDevIns, &pMixStrm);
+    int rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, &StreamCfg, pDevIns, &pMixStrm);
     LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, StreamCfg.szName, rc));
     if (RT_SUCCESS(rc))
     {

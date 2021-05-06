@@ -120,7 +120,7 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
  * @param   pszDst      The output buffer.  Must be at least
  *                      AUDIOMIXERSINK_STATUS_STR_MAX in length.
  */
-static const char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus, char pszDst[AUDIOMIXERSINK_STATUS_STR_MAX])
+static const char *dbgAudioMixerSinkStatusToStr(uint32_t fStatus, char pszDst[AUDIOMIXERSINK_STATUS_STR_MAX])
 {
     if (!fStatus)
         return strcpy(pszDst, "NONE");
@@ -214,7 +214,7 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR en
  *
  * @returns VBox status code.
  * @param   pcszName            Name of the audio mixer.
- * @param   fFlags              Creation flags.
+ * @param   fFlags              Creation flags - AUDMIXER_FLAGS_XXX.
  * @param   ppMixer             Pointer which returns the created mixer object.
  */
 int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
@@ -530,18 +530,16 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
  * @param   pCfg        Audio stream configuration to use.  This may be modified
  *                      in some unspecified way (see
  *                      PDMIAUDIOCONNECTOR::pfnStreamCreate).
- * @param   fFlags      Stream flags. Currently unused, set to 0.
  * @param   pDevIns     The device instance to register statistics with.
  * @param   ppStream    Pointer which receives the newly created audio stream.
  */
 int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg,
-                               AUDMIXSTREAMFLAGS fFlags, PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream)
+                               PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pConn, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
-    /** @todo Validate fFlags. */
-    /* ppStream is optional. */
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(ppStream, VERR_INVALID_POINTER);
     RT_NOREF(pDevIns); /* we'll probably be adding more statistics */
 
     /*
@@ -560,8 +558,6 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
     PAUDMIXSTREAM pMixStream = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
     AssertReturn(pMixStream, VERR_NO_MEMORY);
 
-    pMixStream->fFlags = fFlags;
-
     /* Assign the backend's name to the mixer stream's name for easier identification in the (release) log. */
     pMixStream->pszName = RTStrAPrintf2("[%s] %s", pCfg->szName, BackendCfg.szName);
     pMixStream->pszStatPrefix = RTStrAPrintf2("MixerSink-%s/%s/", pSink->pszName, BackendCfg.szName);
@@ -578,7 +574,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
-                LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %u bits, %RU8 channels, %RU32Hz)\n", pSink->pszName, fFlags, pCfg->enmDir,
+                LogFlowFunc(("[%s] (enmDir=%ld, %u bits, %RU8 channels, %RU32Hz)\n", pSink->pszName, pCfg->enmDir,
                              PDMAudioPropsSampleBits(&pCfg->Props), PDMAudioPropsChannels(&pCfg->Props), pCfg->Props.uHz));
 
                 /*
@@ -999,10 +995,10 @@ PDMAUDIODIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
 /**
  * Returns the current status of a mixer sink.
  *
- * @returns The sink's current status.
+ * @returns The sink's current status (AUDMIXSINK_STS_XXX).
  * @param   pSink               Mixer sink to return status for.
  */
-AUDMIXSINKSTS AudioMixerSinkGetStatus(PAUDMIXSINK pSink)
+uint32_t AudioMixerSinkGetStatus(PAUDMIXSINK pSink)
 {
     if (!pSink)
         return AUDMIXSINK_STS_NONE;
@@ -1012,12 +1008,12 @@ AUDMIXSINKSTS AudioMixerSinkGetStatus(PAUDMIXSINK pSink)
         return AUDMIXSINK_STS_NONE;
 
     /* If the dirty flag is set, there is unprocessed data in the sink. */
-    AUDMIXSINKSTS stsSink = pSink->fStatus;
+    uint32_t const fStsSink = pSink->fStatus;
 
     rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
 
-    return stsSink;
+    return fStsSink;
 }
 
 /**
