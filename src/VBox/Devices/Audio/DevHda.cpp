@@ -2363,8 +2363,11 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
                     LogFunc(("LUN#%RU8: Unable to retrieve backend configuration for '%s', rc=%Rrc\n",
                              pDrv->uLUN, StreamCfg.szName, rc));
             }
+            if (RT_FAILURE(rc))
+                AudioMixerSinkRemoveStream(pMixSink, pMixStrm);
         }
-/** @todo r=bird: We are missing cleanup code here!   */
+        if (RT_FAILURE(rc))
+            AudioMixerStreamDestroy(pMixStrm, pDevIns);
     }
 
     if (RT_SUCCESS(rc))

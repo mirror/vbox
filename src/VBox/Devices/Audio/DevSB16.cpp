@@ -2007,11 +2007,8 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
         {
             rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
             LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-
             if (RT_SUCCESS(rc))
-            {
                 pDrvStream->pMixStrm = pMixStrm;
-            }
             else
                 AudioMixerStreamDestroy(pMixStrm, pDevIns);
         }
