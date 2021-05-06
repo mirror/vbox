@@ -3031,10 +3031,11 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
      *       audio connector to make sense of it.
      */
     uint32_t cbWritable = 0;
+    DRVAUDIOPLAYSTATE const enmPlayMode = pStreamEx->Out.enmPlayState;
     if (   PDMAudioStrmStatusCanWrite(pStreamEx->fStatus)
         && pThis->pHostDrvAudio != NULL)
     {
-        switch (pStreamEx->Out.enmPlayState)
+        switch (enmPlayMode)
         {
             /*
              * Whatever the backend can hold.
@@ -3092,6 +3093,10 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
             }
 
             case DRVAUDIOPLAYSTATE_NOPLAY:
+/** @todo we'll return zero here. but what if the device was
+ * reactivate/whatever.  We won't get to the play code that detects that
+ * state change and we end up playing nothing...  Probably holding up both
+ * this and other output streams / driver chains. */
                 break;
             case DRVAUDIOPLAYSTATE_INVALID:
             case DRVAUDIOPLAYSTATE_END:
@@ -3104,8 +3109,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     }
 
     RTCritSectLeave(&pThis->CritSect);
-    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
-              pStreamEx->Core.szName, cbWritable, PDMAudioPropsBytesToMilli(&pStreamEx->Host.Cfg.Props, cbWritable)));
+    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms) enmPlayMode=%s\n", pStreamEx->Core.szName, cbWritable,
+              PDMAudioPropsBytesToMilli(&pStreamEx->Host.Cfg.Props, cbWritable), drvAudioPlayStateName(enmPlayMode) ));
     return cbWritable;
 }
 
@@ -3302,6 +3307,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
             /*
              * Get the backend state and check if it changed.
              */
+/** @todo This is the wrong place for doing this, or we need to do it in more places.  Problem is that if we've
+ * entered NOPLAY mode this function won't get called because StreamGetWritable returns zero. A bit difficult to
+ * reproduce, though. */
             PDMHOSTAUDIOSTREAMSTATE const enmBackendState = drvAudioStreamGetBackendState(pThis, pStreamEx);
             if (enmBackendState == pStreamEx->enmLastBackendState)
             { /* no relevant change - likely */ }
