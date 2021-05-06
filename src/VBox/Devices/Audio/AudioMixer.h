@@ -137,41 +137,6 @@ typedef struct AUDMIXSTREAM
 #define AUDMIXSINK_STS_DIRTY                 RT_BIT(2)
 
 /**
- * Audio mixer sink direction.
- * @todo r=bird: use PDMAUDIODIR instead.
- */
-typedef enum AUDMIXSINKDIR
-{
-    /** Unknown direction. */
-    AUDMIXSINKDIR_UNKNOWN = 0,
-    /** Input (capturing from a device). */
-    AUDMIXSINKDIR_INPUT,
-    /** Output (playing to a device). */
-    AUDMIXSINKDIR_OUTPUT,
-    /** The usual 32-bit hack. */
-    AUDMIXSINKDIR_32BIT_HACK = 0x7fffffff
-} AUDMIXSINKDIR;
-
-/**
- * Audio mixer sink command.
- */
-typedef enum AUDMIXSINKCMD
-{
-    /** Unknown command, do not use. */
-    AUDMIXSINKCMD_UNKNOWN = 0,
-    /** Enables the sink. */
-    AUDMIXSINKCMD_ENABLE,
-    /** Disables the sink. */
-    AUDMIXSINKCMD_DISABLE,
-    /** Pauses the sink. */
-    AUDMIXSINKCMD_PAUSE,
-    /** Resumes the sink. */
-    AUDMIXSINKCMD_RESUME,
-    /** Hack to blow the type up to 32-bit. */
-    AUDMIXSINKCMD_32BIT_HACK = 0x7fffffff
-} AUDMIXSINKCMD;
-
-/**
  * Audio input sink specifics.
  *
  * Do not use directly. Instead, use AUDMIXSINK.
@@ -201,9 +166,8 @@ typedef struct AUDMIXSINK
     PAUDIOMIXER             pParent;
     /** Name of this sink. */
     char                   *pszName;
-    /** The sink direction, that is,
-     *  if this sink handles input or output. */
-    AUDMIXSINKDIR           enmDir;
+    /** The sink direction (either PDMAUDIODIR_IN or PDMAUDIODIR_OUT). */
+    PDMAUDIODIR             enmDir;
     /** The sink's critical section. */
     RTCRITSECT              CritSect;
     /** This sink's mixing buffer, acting as
@@ -269,7 +233,7 @@ typedef enum AUDMIXOP
 #define AUDMIXER_FLAGS_VALID_MASK       UINT32_C(0x00000001)
 
 int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
-int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
+int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
 void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
@@ -278,11 +242,11 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
 int     AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int     AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg,
                                    AUDMIXSTREAMFLAGS fFlags, PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream);
-int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd);
+int     AudioMixerSinkCtl(PAUDMIXSINK pSink, PDMAUDIOSTREAMCMD enmCmd);
 void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
-AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
+PDMAUDIODIR   AudioMixerSinkGetDir(PAUDMIXSINK pSink);
 PAUDMIXSTREAM AudioMixerSinkGetRecordingSource(PAUDMIXSINK pSink);
 AUDMIXSINKSTS AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
 bool AudioMixerSinkIsActive(PAUDMIXSINK pSink);

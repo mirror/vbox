@@ -1024,7 +1024,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     {
         /* First, enable or disable the stream and the stream's sink, if any. */
         rc = AudioMixerSinkCtl(ichac97R3IndexToSink(pThisCC, pStream->u8SD),
-                               fEnable ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
+                               fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
     }
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -4283,13 +4283,13 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     AssertRCReturn(rc, rc);
 
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Line In",
-                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->pSinkLineIn);
+                              PDMAUDIODIR_IN, pDevIns, &pThisCC->pSinkLineIn);
     AssertRCReturn(rc, rc);
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Microphone In",
-                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->pSinkMicIn);
+                              PDMAUDIODIR_IN, pDevIns, &pThisCC->pSinkMicIn);
     AssertRCReturn(rc, rc);
     rc = AudioMixerCreateSink(pThisCC->pMixer, "PCM Output",
-                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->pSinkOut);
+                              PDMAUDIODIR_OUT, pDevIns, &pThisCC->pSinkOut);
     AssertRCReturn(rc, rc);
 
     /*

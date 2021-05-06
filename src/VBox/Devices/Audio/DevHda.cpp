@@ -2549,7 +2549,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
         /* If this an output stream, determine the correct SD#. */
         if (   uSD < HDA_MAX_SDI
-            && AudioMixerSinkGetDir(pSink->pMixSink) == AUDMIXSINKDIR_OUTPUT)
+            && AudioMixerSinkGetDir(pSink->pMixSink) == PDMAUDIODIR_OUT)
             uSD += HDA_MAX_SDI;
 
         /* Make 100% sure we got a good stream number before continuing. */
@@ -4970,17 +4970,17 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Front",
-                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->SinkFront.pMixSink);
+                              PDMAUDIODIR_OUT, pDevIns, &pThisCC->SinkFront.pMixSink);
     AssertRCReturn(rc, rc);
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Center+Subwoofer",
-                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->SinkCenterLFE.pMixSink);
+                              PDMAUDIODIR_OUT, pDevIns, &pThisCC->SinkCenterLFE.pMixSink);
     AssertRCReturn(rc, rc);
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Rear",
-                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->SinkRear.pMixSink);
+                              PDMAUDIODIR_OUT, pDevIns, &pThisCC->SinkRear.pMixSink);
     AssertRCReturn(rc, rc);
 # else
     rc = AudioMixerCreateSink(pThisCC->pMixer, "PCM Output",
-                              AUDMIXSINKDIR_OUTPUT, pDevIns, &pThisCC->SinkFront.pMixSink);
+                              PDMAUDIODIR_OUT, pDevIns, &pThisCC->SinkFront.pMixSink);
     AssertRCReturn(rc, rc);
 # endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
@@ -4988,11 +4988,11 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Add mixer input sinks.
      */
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Line In",
-                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->SinkLineIn.pMixSink);
+                              PDMAUDIODIR_IN, pDevIns, &pThisCC->SinkLineIn.pMixSink);
     AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     rc = AudioMixerCreateSink(pThisCC->pMixer, "Microphone In",
-                              AUDMIXSINKDIR_INPUT, pDevIns, &pThisCC->SinkMicIn.pMixSink);
+                              PDMAUDIODIR_IN, pDevIns, &pThisCC->SinkMicIn.pMixSink);
     AssertRCReturn(rc, rc);
 # endif
 

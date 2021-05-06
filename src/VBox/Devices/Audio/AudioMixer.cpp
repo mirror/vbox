@@ -96,7 +96,7 @@
 static int audioMixerAddSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 
-static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, AUDMIXSINKDIR enmDir);
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir);
 static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 static void audioMixerSinkRemoveAllStreamsInternal(PAUDMIXSINK pSink);
@@ -162,7 +162,7 @@ static const char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus, char pszD
  * @param   pDevIns     The device instance to register statistics under.
  * @param   ppSink      Pointer which returns the created sink on success.
  */
-int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink)
+int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink)
 {
     AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -502,7 +502,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
         audioMixerStreamCtlInternal(pStream, PDMAUDIOSTREAMCMD_ENABLE);
     }
 
-    if (pSink->enmDir != AUDMIXSINKDIR_OUTPUT)
+    if (pSink->enmDir != PDMAUDIODIR_OUT)
     {
         /* Apply the sink's combined volume to the stream. */
         int rc2 = pStream->pConn->pfnStreamSetVolume(pStream->pConn, pStream->pStream, &pSink->VolumeCombined);
@@ -593,7 +593,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                 AssertRC(rc); /* cannot fail */
 
                 /* Apply the sink's direction for the configuration to use to create the stream. */
-                if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+                if (pSink->enmDir == PDMAUDIODIR_IN)
                 {
                     CfgHost.enmDir      = PDMAUDIODIR_IN;
                     CfgHost.u.enmSrc    = pCfg->u.enmSrc;
@@ -616,12 +616,12 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                  * to use this mixer code too.
                  */
                 PPDMAUDIOSTREAM pStream;
-                rc = pConn->pfnStreamCreate(pConn, pSink->enmDir == AUDMIXSINKDIR_OUTPUT ? PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF : 0,
+                rc = pConn->pfnStreamCreate(pConn, pSink->enmDir == PDMAUDIODIR_OUT ? PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF : 0,
                                             &CfgHost, pCfg, &pStream);
                 if (RT_SUCCESS(rc))
                 {
                     /* Set up the mixing buffer conversion state. */
-                    if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+                    if (pSink->enmDir == PDMAUDIODIR_OUT)
                         rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
                     if (RT_SUCCESS(rc))
                     {
@@ -669,20 +669,18 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
  * @returns VBox status code.
  *          Generally always VINF_SUCCESS unless the input is invalid.
  *          Individual driver errors are suppressed and ignored.
- * @param   pSink               Mixer sink to control.
- * @param   enmSinkCmd          Sink command to set.
+ * @param   pSink       Mixer sink to control.
+ * @param   enmCmd      The command to to perform on the sink and its streams.
  */
-int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
+int AudioMixerSinkCtl(PAUDMIXSINK pSink, PDMAUDIOSTREAMCMD enmCmd)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
 
     /* Only ENABLE/DISABLE is implemented. */
-    AssertMsgReturn(   enmSinkCmd == AUDMIXSINKCMD_ENABLE
-                    || enmSinkCmd == AUDMIXSINKCMD_DISABLE,
-                   ("enmSinkCmd=%d\n", enmSinkCmd),
+    AssertMsgReturn(   enmCmd == PDMAUDIOSTREAMCMD_ENABLE
+                    || enmCmd == PDMAUDIOSTREAMCMD_DISABLE,
+                   ("enmSinkCmd=%d (%s)\n", enmCmd, PDMAudioStrmCmdGetName(enmCmd)),
                     VERR_INVALID_FUNCTION);
-    PDMAUDIOSTREAMCMD const enmCmdStream = enmSinkCmd == AUDMIXSINKCMD_ENABLE
-                                         ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE;
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     AssertRCReturn(rc, rc);
@@ -690,7 +688,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     /*
      * Input sink and no recording source set? Return early without updating the stream status...
      */
-    if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
+    if (   pSink->enmDir == PDMAUDIODIR_IN
         && pSink->In.pStreamRecSource == NULL)
     {
         /** @todo r=bird: will the cause trouble for the stream status management? */
@@ -700,7 +698,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         /*
          * Send the command to the streams.
          */
-        if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+        if (pSink->enmDir == PDMAUDIODIR_IN)
         {
             /** @todo r=bird: we already check this. duh.   */
             if (pSink->In.pStreamRecSource) /* Any recording source set? */
@@ -710,32 +708,32 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
                 {
                     if (pStream == pSink->In.pStreamRecSource)
                     {
-                        audioMixerStreamCtlInternal(pStream, enmCmdStream);
+                        audioMixerStreamCtlInternal(pStream, enmCmd);
                         break;
                     }
                 }
             }
         }
-        else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+        else if (pSink->enmDir == PDMAUDIODIR_OUT)
         {
             PAUDMIXSTREAM pStream;
             RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
             {
-                audioMixerStreamCtlInternal(pStream, enmCmdStream);
+                audioMixerStreamCtlInternal(pStream, enmCmd);
             }
         }
 
         /*
          * Update the sink status.
          */
-        switch (enmSinkCmd)
+        switch (enmCmd)
         {
-            case AUDMIXSINKCMD_ENABLE:
+            case PDMAUDIOSTREAMCMD_ENABLE:
                 /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
                 pSink->fStatus = AUDMIXSINK_STS_RUNNING;
                 break;
 
-            case AUDMIXSINKCMD_DISABLE:
+            case PDMAUDIOSTREAMCMD_DISABLE:
                 if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
                 {
                     /* Set the sink in a pending disable state first.
@@ -750,8 +748,8 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     }
 
     char szStatus[AUDIOMIXERSINK_STATUS_STR_MAX];
-    LogRel2(("Audio Mixer: Set new status of sink '%s': %s (enmCmd=%RU32)\n",
-             pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus), enmSinkCmd));
+    LogRel2(("Audio Mixer: Set new status of sink '%s': %s (enmCmd=%s)\n",
+             pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus), PDMAudioStrmCmdGetName(enmCmd)));
 
     RTCritSectLeave(&pSink->CritSect);
     return VINF_SUCCESS;
@@ -766,7 +764,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
  * @param   pcszName            Name of the sink.
  * @param   enmDir              Direction of the sink.
  */
-static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, AUDMIXSINKDIR enmDir)
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir)
 {
     pSink->pszName = RTStrDup(pcszName);
     if (!pSink->pszName)
@@ -886,7 +884,7 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
 {
     AssertPtrReturn(pSink, 0);
 
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT, ("%s: Can't read from a non-input sink\n", pSink->pszName));
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_IN, ("%s: Can't read from a non-input sink\n", pSink->pszName));
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
@@ -932,7 +930,7 @@ PAUDMIXSTREAM AudioMixerSinkGetRecordingSource(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return NULL;
 
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT, ("Specified sink is not an input sink\n"));
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_IN, ("Specified sink is not an input sink\n"));
 
     PAUDMIXSTREAM pStream = pSink->In.pStreamRecSource;
 
@@ -953,7 +951,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 {
     AssertPtrReturn(pSink, 0);
 
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT, ("%s: Can't write to a non-output sink\n", pSink->pszName));
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_OUT, ("%s: Can't write to a non-output sink\n", pSink->pszName));
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
@@ -982,15 +980,15 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
  * @returns Mixing direction.
  * @param   pSink               Sink to return direction for.
  */
-AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
+PDMAUDIODIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
 {
-    AssertPtrReturn(pSink, AUDMIXSINKDIR_UNKNOWN);
+    AssertPtrReturn(pSink, PDMAUDIODIR_INVALID);
 
+    /** @todo the sink direction should be static...    */
     int rc = RTCritSectEnter(&pSink->CritSect);
-    if (RT_FAILURE(rc))
-        return AUDMIXSINKDIR_UNKNOWN;
+    AssertRCReturn(rc, PDMAUDIODIR_INVALID);
 
-    const AUDMIXSINKDIR enmDir = pSink->enmDir;
+    PDMAUDIODIR const  enmDir = pSink->enmDir;
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1074,7 +1072,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT,
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_IN,
               ("Can't read from a sink which is not an input sink\n"));
 
     uint32_t cbRead = 0;
@@ -1184,7 +1182,7 @@ static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 
     int rc = VINF_SUCCESS;
 
-    if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+    if (pSink->enmDir == PDMAUDIODIR_IN)
     {
         /* Make sure to also un-set the recording source if this stream was set
          * as the recording source before. */
@@ -1383,7 +1381,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps)
  */
 static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
 {
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT, ("Specified sink is not an input sink\n"));
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_IN, ("Specified sink is not an input sink\n"));
 
     int rc;
 
@@ -1876,9 +1874,9 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
     if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
     {
         /* Do separate processing for input and output sinks. */
-        if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+        if (pSink->enmDir == PDMAUDIODIR_OUT)
             rc = audioMixerSinkUpdateOutput(pSink);
-        else if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+        else if (pSink->enmDir == PDMAUDIODIR_IN)
             rc = audioMixerSinkUpdateInput(pSink);
         else
             AssertFailed();
@@ -1924,7 +1922,7 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
      * Input sinks must currently propagate the new volume settings to
      * all the streams.  (For output sinks we do the volume control here.)
      */
-    if (pSink->enmDir != AUDMIXSINKDIR_OUTPUT)
+    if (pSink->enmDir != PDMAUDIODIR_OUT)
     {
         PAUDMIXSTREAM pMixStream;
         RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -1960,7 +1958,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 
     AssertMsg(pSink->fStatus & AUDMIXSINK_STS_RUNNING,
               ("%s: Can't write to a sink which is not running (anymore) (status 0x%x)\n", pSink->pszName, pSink->fStatus));
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
+    AssertMsg(pSink->enmDir == PDMAUDIODIR_OUT,
               ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
 
     uint32_t cbWritten = 0;
@@ -2055,7 +2053,7 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
 
             PAUDMIXSINK const pSink = pMixStream->pSink;
             AssertPtr(pSink);
-            if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+            if (pSink->enmDir == PDMAUDIODIR_OUT)
             {
                 rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
                 /** @todo we need to remember this, don't we? */
@@ -2078,11 +2076,11 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
                 pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED;
                 break;
             case PDMAUDIOSTREAMSTATE_ENABLED_READABLE:
-                Assert(pMixStream->pSink->enmDir == AUDMIXSINKDIR_INPUT);
+                Assert(pMixStream->pSink->enmDir == PDMAUDIODIR_IN);
                 pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED | AUDMIXSTREAM_STATUS_CAN_READ;
                 break;
             case PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE:
-                Assert(pMixStream->pSink->enmDir == AUDMIXSINKDIR_OUTPUT);
+                Assert(pMixStream->pSink->enmDir == PDMAUDIODIR_OUT);
                 pMixStream->fStatus = AUDMIXSTREAM_STATUS_ENABLED | AUDMIXSTREAM_STATUS_CAN_WRITE;
                 break;
             /* no default */

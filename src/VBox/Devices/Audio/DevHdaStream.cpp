@@ -896,15 +896,15 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
 
     LogFunc(("[SD%RU8] fEnable=%RTbool, pMixSink=%p\n", pStreamShared->u8SD, fEnable, pStreamR3->pMixSink));
 
-    int rc = VINF_SUCCESS;
 
-    AUDMIXSINKCMD enmCmd = fEnable
-                         ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
     /* First, enable or disable the stream and the stream's sink, if any. */
+    int                 rc;
     if (   pStreamR3->pMixSink
         && pStreamR3->pMixSink->pMixSink)
-        rc = AudioMixerSinkCtl(pStreamR3->pMixSink->pMixSink, enmCmd);
+        rc = AudioMixerSinkCtl(pStreamR3->pMixSink->pMixSink, fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+    else
+        rc = VINF_SUCCESS;
 
     if (   RT_SUCCESS(rc)
         && fEnable
