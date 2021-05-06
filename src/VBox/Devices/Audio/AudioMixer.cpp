@@ -1602,23 +1602,9 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink)
     return rc;
 }
 
-/**
- * Updates an output mixer sink.
- *
- * @returns VBox status code.
- * @param   pSink               Mixer sink to update.
- */
-static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+
+static uint32_t audioMixerSinkUpdateOutputCalcFramesToRead(PAUDMIXSINK pSink, uint32_t *pcWritableStreams)
 {
-    /*
-     * Update each mixing sink stream's status and check how much we can
-     * write into them.
-     *
-     * We're currently using the minimum size of all streams, however this
-     * isn't a smart approach as it means one disfunctional stream can block
-     * working ones.
-     */
-    /** @todo rework this so a broken stream cannot hold up everyone. */
     uint32_t      cFramesToRead    = AudioMixBufLive(&pSink->MixBuf); /* (to read from the mixing buffer) */
     uint32_t      cWritableStreams = 0;
     PAUDMIXSTREAM pMixStream;
@@ -1636,6 +1622,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         {
             uint32_t const cbWritable = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
             uint32_t cFrames = PDMAudioPropsBytesToFrames(&pMixStream->pStream->Props, cbWritable);
+            pMixStream->cFramesLastAvail = cFrames;
             if (PDMAudioPropsHz(&pMixStream->pStream->Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
             { /* likely */ }
             else
@@ -1643,7 +1630,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
                 cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pMixStream->pStream->Props);
                 cFrames = cFrames > 2 ? cFrames - 2 : 0; /* rounding safety fudge */
             }
-            if (cFramesToRead > cFrames)
+            if (cFramesToRead > cFrames && !pMixStream->fUnreliable)
             {
                 Log4Func(("%s: cFramesToRead %u -> %u; %s (%u bytes writable)\n",
                           pSink->pszName, cFramesToRead, cFrames, pMixStream->pszName, cbWritable));
@@ -1652,8 +1639,87 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
             cWritableStreams++;
         }
     }
-    Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x\n", pSink->pszName,
-              AudioMixBufLive(&pSink->MixBuf), cFramesToRead, cWritableStreams));
+
+    *pcWritableStreams = cWritableStreams;
+    return cFramesToRead;
+}
+
+
+/**
+ * Updates an output mixer sink.
+ *
+ * @returns VBox status code.
+ * @param   pSink               Mixer sink to update.
+ */
+static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+{
+    PAUDMIXSTREAM pMixStream;
+
+    /*
+     * Update each mixing sink stream's status and check how much we can
+     * write into them.
+     *
+     * We're currently using the minimum size of all streams, however this
+     * isn't a smart approach as it means one disfunctional stream can block
+     * working ones.  So, if we end up with zero frames and a full mixer
+     * buffer we'll disregard the stream that accept the smallest amount and
+     * try again.
+     */
+    uint32_t cReliableStreams  = 0;
+    uint32_t cMarkedUnreliable = 0;
+    uint32_t cWritableStreams  = 0;
+    uint32_t cFramesToRead     = audioMixerSinkUpdateOutputCalcFramesToRead(pSink, &cWritableStreams);
+    if (   cFramesToRead != 0
+        || cWritableStreams <= 1
+        || AudioMixBufFree(&pSink->MixBuf) > 2)
+        Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x\n", pSink->pszName,
+                  AudioMixBufLive(&pSink->MixBuf), cFramesToRead, cWritableStreams));
+    else
+    {
+        Log3Func(("%s: MixBuf is full but one or more streams only want zero frames.  Try disregarding those...\n", pSink->pszName));
+        PAUDMIXSTREAM pMixStreamMin     = NULL;
+        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+        {
+            if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_CAN_WRITE)
+            {
+                if (!pMixStream->fUnreliable)
+                {
+                    if (pMixStream->cFramesLastAvail == 0)
+                    {
+                        cMarkedUnreliable++;
+                        pMixStream->fUnreliable = true;
+                        Log3Func(("%s: Marked '%s' as unreliable.\n", pSink->pszName, pMixStream->pszName));
+                        pMixStreamMin = pMixStreamMin;
+                    }
+                    else
+                    {
+                        if (!pMixStreamMin || pMixStream->cFramesLastAvail < pMixStreamMin->cFramesLastAvail)
+                            pMixStreamMin = pMixStreamMin;
+                        cReliableStreams++;
+                    }
+                }
+            }
+        }
+
+        if (cMarkedUnreliable == 0 && pMixStreamMin && cReliableStreams > 1)
+        {
+            cReliableStreams--;
+            cMarkedUnreliable++;
+            pMixStreamMin->fUnreliable = true;
+            Log3Func(("%s: Marked '%s' as unreliable (%u frames).\n",
+                      pSink->pszName, pMixStream->pszName, pMixStream->cFramesLastAvail));
+        }
+
+        if (cMarkedUnreliable > 0)
+        {
+            cWritableStreams = 0;
+            cFramesToRead = audioMixerSinkUpdateOutputCalcFramesToRead(pSink, &cWritableStreams);
+        }
+
+        Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x cMarkedUnreliable=%#x cReliableStreams=%#x\n",
+                  pSink->pszName, AudioMixBufLive(&pSink->MixBuf), cFramesToRead,
+                  cWritableStreams, cMarkedUnreliable, cReliableStreams));
+    }
 
     if (cWritableStreams > 0)
     {
@@ -1691,7 +1757,8 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
                         offSrcFrame += cSrcFramesPeeked;
 
                         /* Write it to the backend.  Since've checked that there is buffer
-                           space available, this should always write the whole buffer. */
+                           space available, this should always write the whole buffer unless
+                           it's an unreliable stream. */
                         uint32_t cbDstWritten = 0;
                         int rc2 = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pMixStream->pStream,
                                                                    pvBuf, cbDstPeeked, &cbDstWritten);
@@ -1701,7 +1768,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
                         RTMemEfFree(pvBuf, RT_SRC_POS);
 #endif
                         if (RT_SUCCESS(rc2))
-                            AssertLogRelMsg(cbDstWritten == cbDstPeeked,
+                            AssertLogRelMsg(cbDstWritten == cbDstPeeked || pMixStream->fUnreliable,
                                             ("cbDstWritten=%#x cbDstPeeked=%#x - (sink '%s')\n",
                                              cbDstWritten, cbDstPeeked, pSink->pszName));
                         else if (rc2 == VERR_AUDIO_STREAM_NOT_READY)
