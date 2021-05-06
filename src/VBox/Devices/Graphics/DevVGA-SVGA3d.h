@@ -289,7 +289,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXInvalidateContext,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetSingleConstantBuffer,   (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t slot, SVGA3dShaderType type, SVGA3dSurfaceId sid, uint32_t offsetInBytes, uint32_t sizeInBytes));
     DECLCALLBACKMEMBER(int, pfnDXSetShaderResources,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startView, SVGA3dShaderType type, uint32_t cShaderResourceViewId, SVGA3dShaderResourceViewId const *paShaderResourceViewId));
-    DECLCALLBACKMEMBER(int, pfnDXSetShader,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSHADER pShader));
+    DECLCALLBACKMEMBER(int, pfnDXSetShader,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderType type, PVMSVGA3DSHADER pShader));
     DECLCALLBACKMEMBER(int, pfnDXSetSamplers,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startSampler, SVGA3dShaderType type, uint32_t cSamplerId, SVGA3dSamplerId const *paSamplerId));
     DECLCALLBACKMEMBER(int, pfnDXDraw,                      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t vertexCount, uint32_t startVertexLocation));
     DECLCALLBACKMEMBER(int, pfnDXDrawIndexed,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t indexCount, uint32_t startIndexLocation, int32_t baseVertexLocation));
@@ -346,8 +346,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXDefineStreamOutput,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXDestroyStreamOutput,       (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetStreamOutput,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnDXSetCOTable,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGACOTableType type, uint32_t cEntries));
-    DECLCALLBACKMEMBER(int, pfnDXReadbackCOTable,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnDXSetCOTable,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGACOTableType type, uint32_t cEntries, uint32_t cValidEntries));
     DECLCALLBACKMEMBER(int, pfnDXBufferCopy,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXTransferFromBuffer,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSurfaceCopyAndReadback,    (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -473,12 +472,12 @@ int vmsvga3dDXDefineSamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
 int vmsvga3dDXDestroySamplerState(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShader const *pCmd);
 int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext);
-int vmsvga3dDXBindShader(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, uint32_t shid, uint32_t offsetInBytes);
+int vmsvga3dDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd, PVMSVGAMOB pMob);
 int vmsvga3dDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext);
-int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, SVGACOTableType type, uint32_t validSizeInBytes);
-int vmsvga3dDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, PVMSVGAMOB pMob);
+int vmsvga3dDXReadbackCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackCOTable const *pCmd);
 int vmsvga3dDXBufferCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXSurfaceCopyAndReadback(PVGASTATECC pThisCC, uint32_t idDXContext);

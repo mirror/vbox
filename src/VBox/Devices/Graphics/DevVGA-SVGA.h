@@ -628,7 +628,9 @@ typedef VMSVGAMOB const *PCVMSVGAMOB;
 
 int vmsvgaR3MobBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob, uint32_t cbValid);
 void vmsvgaR3MobBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob);
-void *vmsvgaR3MobBackingStoreGet(PVMSVGAMOB pMob, uint32_t off);
+int vmsvgaR3MobBackingStoreWriteToGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob);
+int vmsvgaR3MobBackingStoreReadFromGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob);
+void *vmsvgaR3MobBackingStorePtr(PVMSVGAMOB pMob, uint32_t off);
 
 DECLINLINE(uint32_t) vmsvgaR3MobSize(PVMSVGAMOB pMob)
 {

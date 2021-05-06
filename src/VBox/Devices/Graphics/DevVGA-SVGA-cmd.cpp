@@ -708,16 +708,6 @@ static int vmsvgaR3GboRead(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
 }
 
 
-static void vmsvgaR3GboBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
-{
-    AssertReturnVoid(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED);
-    vmsvgaR3GboWrite(pSvgaR3State, pGbo, 0, pGbo->pvHost, pGbo->cbTotal);
-    RTMemFree(pGbo->pvHost);
-    pGbo->pvHost = NULL;
-    pGbo->fGboFlags &= ~VMSVGAGBO_F_HOST_BACKED;
-}
-
-
 static int vmsvgaR3GboBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo, uint32_t cbValid)
 {
     int rc;
@@ -728,6 +718,7 @@ static int vmsvgaR3GboBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO
 
     if (pGbo->pvHost)
     {
+        cbValid = RT_MIN(cbValid, pGbo->cbTotal);
         rc = vmsvgaR3GboRead(pSvgaR3State, pGbo, 0, pGbo->pvHost, cbValid);
     }
     else
@@ -741,6 +732,30 @@ static int vmsvgaR3GboBackingStoreCreate(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO
         pGbo->pvHost = NULL;
     }
     return rc;
+}
+
+
+static void vmsvgaR3GboBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
+{
+    RT_NOREF(pSvgaR3State);
+    AssertReturnVoid(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED);
+    RTMemFree(pGbo->pvHost);
+    pGbo->pvHost = NULL;
+    pGbo->fGboFlags &= ~VMSVGAGBO_F_HOST_BACKED;
+}
+
+
+static int vmsvgaR3GboBackingStoreWriteToGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
+{
+    AssertReturn(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED, VERR_INVALID_STATE);
+    return vmsvgaR3GboWrite(pSvgaR3State, pGbo, 0, pGbo->pvHost, pGbo->cbTotal);
+}
+
+
+static int vmsvgaR3GboBackingStoreReadFromGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
+{
+    AssertReturn(pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED, VERR_INVALID_STATE);
+    return vmsvgaR3GboRead(pSvgaR3State, pGbo, 0, pGbo->pvHost, pGbo->cbTotal);
 }
 
 
@@ -898,7 +913,23 @@ void vmsvgaR3MobBackingStoreDelete(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob)
 }
 
 
-void *vmsvgaR3MobBackingStoreGet(PVMSVGAMOB pMob, uint32_t off)
+int vmsvgaR3MobBackingStoreWriteToGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob)
+{
+    if (pMob)
+        return vmsvgaR3GboBackingStoreWriteToGuest(pSvgaR3State, &pMob->Gbo);
+    return VERR_INVALID_PARAMETER;
+}
+
+
+int vmsvgaR3MobBackingStoreReadFromGuest(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob)
+{
+    if (pMob)
+        return vmsvgaR3GboBackingStoreReadFromGuest(pSvgaR3State, &pMob->Gbo);
+    return VERR_INVALID_PARAMETER;
+}
+
+
+void *vmsvgaR3MobBackingStorePtr(PVMSVGAMOB pMob, uint32_t off)
 {
     if (pMob && (pMob->Gbo.fGboFlags & VMSVGAGBO_F_HOST_BACKED))
     {
@@ -2777,11 +2808,10 @@ static int vmsvga3dCmdDXBindShader(PVGASTATECC pThisCC, uint32_t idDXContext, SV
 #ifdef VMSVGA3D_DX
 //ASMBreakpoint();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(cbCmd);
-    ASSERT_GUEST_LOGREL_MSG(idDXContext == pCmd->cid, ("idDXContext = %u, pCmd->cid = %u\n", idDXContext, pCmd->cid));
+    RT_NOREF(idDXContext, cbCmd);
     /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
     PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
-    return vmsvga3dDXBindShader(pThisCC, pCmd->cid, pMob, pCmd->shid, pCmd->offsetInBytes);
+    return vmsvga3dDXBindShader(pThisCC, pCmd, pMob);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2843,7 +2873,7 @@ static int vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable co
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
     PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
-    return vmsvga3dDXSetCOTable(pThisCC, pCmd->cid, pMob, pCmd->type, pCmd->validSizeInBytes);
+    return vmsvga3dDXSetCOTable(pThisCC, pCmd, pMob);
 #else
     RT_NOREF(pThisCC, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2855,10 +2885,9 @@ static int vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable co
 static int vmsvga3dCmdDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackCOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXReadbackCOTable(pThisCC, idDXContext);
+//ASMBreakpoint();
+    RT_NOREF(idDXContext, cbCmd);
+    return vmsvga3dDXReadbackCOTable(pThisCC, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;

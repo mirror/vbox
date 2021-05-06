@@ -253,15 +253,23 @@ int vmsvga3dDXSetShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSe
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(pCmd->shaderId < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   pCmd->shaderId < pDXContext->cot.cShader
+                        || pCmd->shaderId == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[pCmd->shaderId];
-    ASSERT_GUEST_RETURN(pEntry->type == pCmd->type, VERR_INVALID_PARAMETER);
-    RT_UNTRUSTED_VALIDATED_FENCE();
+    PVMSVGA3DSHADER pShader;
+    if (pCmd->shaderId != SVGA_ID_INVALID)
+    {
+        SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[pCmd->shaderId];
+        ASSERT_GUEST_RETURN(pEntry->type == pCmd->type, VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
 
-    PVMSVGA3DSHADER pShader = &pDXContext->paShader[pCmd->shaderId];
-    rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, pShader);
+        pShader = &pDXContext->paShader[pCmd->shaderId];
+    }
+    else
+        pShader = NULL;
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, pCmd->type, pShader);
     return rc;
 }
 
@@ -1509,7 +1517,7 @@ static int dxBindShader(PVMSVGA3DSHADER pShader, PVMSVGAMOB pMob, SVGACOTableDXS
 }
 
 
-int vmsvga3dDXBindShader(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, uint32_t shid, uint32_t offsetInBytes)
+int vmsvga3dDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd, PVMSVGAMOB pMob)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1518,16 +1526,16 @@ int vmsvga3dDXBindShader(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, uin
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
     PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, cid, &pDXContext);
+    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(shid < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->shid < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[shid];
+    SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[pCmd->shid];
     //pEntry->type;
     //pEntry->sizeInBytes;
-    pEntry->offsetInBytes = offsetInBytes;
+    pEntry->offsetInBytes = pCmd->offsetInBytes;
     pEntry->mobid         = vmsvgaR3MobId(pMob);
 
     if (pMob)
@@ -1539,11 +1547,11 @@ int vmsvga3dDXBindShader(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, uin
         if (RT_SUCCESS(rc))
         {
             /* Get pointer to the shader bytecode. This will also verify the offset. */
-            void const *pvShaderBytecode = vmsvgaR3MobBackingStoreGet(pMob, pEntry->offsetInBytes);
+            void const *pvShaderBytecode = vmsvgaR3MobBackingStorePtr(pMob, pEntry->offsetInBytes);
             ASSERT_GUEST_RETURN(pvShaderBytecode, VERR_INVALID_PARAMETER);
 
-            PVMSVGA3DSHADER pShader = &pDXContext->paShader[shid];
-            Assert(   pShader->id == shid
+            PVMSVGA3DSHADER pShader = &pDXContext->paShader[pCmd->shid];
+            Assert(   pShader->id == pCmd->shid
                    && pShader->type == pEntry->type); /* The host ensures this. */
 
             /* Get the shader and optional signatures from the MOB. */
@@ -1620,7 +1628,7 @@ int vmsvga3dDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, SVGACOTableType type, uint32_t validSizeInBytes)
+int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, PVMSVGAMOB pMob)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1629,23 +1637,33 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, SVG
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
     PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, cid, &pDXContext);
+    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
     AssertRCReturn(rc, rc);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    ASSERT_GUEST_RETURN(type < RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->type < RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
+    uint32_t validSizeInBytes;
+    uint32_t cbCOT;
     if (pMob)
     {
         /* Bind a mob to the COTable. */
+        validSizeInBytes = pCmd->validSizeInBytes;
+        cbCOT = vmsvgaR3MobSize(pMob);
+
+        ASSERT_GUEST_RETURN(validSizeInBytes <= cbCOT, VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
         /* Create a memory pointer, which is accessible by host. */
         rc = vmsvgaR3MobBackingStoreCreate(pSvgaR3State, pMob, validSizeInBytes);
     }
     else
     {
         /* Unbind. */
-        vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pDXContext->aCOTMobs[type]);
+        validSizeInBytes = 0;
+        cbCOT = 0;
+        vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pDXContext->aCOTMobs[pCmd->type]);
     }
 
     uint32_t cEntries = 0;
@@ -1667,17 +1685,18 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, SVG
             sizeof(SVGACOTableDXUAViewEntry),
         };
 
-        uint32_t cbCOT = vmsvgaR3MobSize(pMob);
-        cEntries = cbCOT / s_acbEntry[type];
+        cEntries = cbCOT / s_acbEntry[pCmd->type];
+        uint32_t const cValidEntries = validSizeInBytes / s_acbEntry[pCmd->type];
 
-        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, type, cEntries);
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, pCmd->type, cEntries, cValidEntries);
     }
 
     if (RT_SUCCESS(rc))
     {
-        pDXContext->aCOTMobs[type] = pMob;
-        void *pvCOT = vmsvgaR3MobBackingStoreGet(pMob, 0);
-        switch (type)
+        pDXContext->aCOTMobs[pCmd->type] = pMob;
+
+        void *pvCOT = vmsvgaR3MobBackingStorePtr(pMob, 0);
+        switch (pCmd->type)
         {
             case SVGA_COTABLE_RTVIEW:
                 pDXContext->cot.paRTView          = (SVGACOTableDXRTViewEntry *)pvCOT;
@@ -1737,19 +1756,24 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, uint32_t cid, PVMSVGAMOB pMob, SVG
 }
 
 
-int vmsvga3dDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXReadbackCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackCOTable const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXReadbackCOTable, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
     PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
+    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
     AssertRCReturn(rc, rc);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXReadbackCOTable(pThisCC, pDXContext);
+    ASSERT_GUEST_RETURN(pCmd->type < RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    PVMSVGAMOB pMob = pDXContext->aCOTMobs[pCmd->type];
+    rc = vmsvgaR3MobBackingStoreWriteToGuest(pSvgaR3State, pMob);
     return rc;
 }
 
