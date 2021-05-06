@@ -163,6 +163,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_font(QFontDatabase::systemFont(QFontDatabase::FixedFont))
     , m_pCornerButton(0)
     , m_pMachineSelectionMenu(0)
+    , m_fDialogBeingClosed(false)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -288,19 +289,30 @@ QFont UIVMLogViewerWidget::currentFont() const
     return logPage->currentFont();
 }
 
+void UIVMLogViewerWidget::setDialogBeingClosed(bool fFlag)
+{
+    m_fDialogBeingClosed = fFlag;
+}
+
 bool UIVMLogViewerWidget::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerWidget::sltSaveOptions()
+void UIVMLogViewerWidget::saveOptions()
 {
+    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
+}
+
+void UIVMLogViewerWidget::savePanelVisibility()
+{
+    if (m_fDialogBeingClosed)
+        return;
     /* Save a list of currently visible panels: */
     QStringList strNameList;
     foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
         strNameList.append(pPanel->panelName());
     gEDataManager->setLogViewerVisiblePanels(strNameList);
-    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 
 void UIVMLogViewerWidget::sltRefresh()
@@ -507,6 +519,7 @@ void UIVMLogViewerWidget::sltShowLineNumbers(bool bShowLineNumbers)
         if (pLogPage)
             pLogPage->setShowLineNumbers(m_bShowLineNumbers);
     }
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::sltWrapLines(bool bWrapLines)
@@ -522,6 +535,7 @@ void UIVMLogViewerWidget::sltWrapLines(bool bWrapLines)
         if (pLogPage)
             pLogPage->setWrapLines(m_bWrapLines);
     }
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::sltFontSizeChanged(int fontSize)
@@ -535,6 +549,7 @@ void UIVMLogViewerWidget::sltFontSizeChanged(int fontSize)
         if (pLogPage)
             pLogPage->setCurrentFont(m_font);
     }
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::sltChangeFont(QFont font)
@@ -548,6 +563,7 @@ void UIVMLogViewerWidget::sltChangeFont(QFont font)
         if (pLogPage)
             pLogPage->setCurrentFont(m_font);
     }
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::sltResetOptionsToDefault()
@@ -562,6 +578,7 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
         m_pOptionsPanel->setWrapLines(false);
         m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
     }
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::prepare()
@@ -765,8 +782,6 @@ void UIVMLogViewerWidget::loadOptions()
     QFont loadedFont = gEDataManager->logViewerFont();
     if (loadedFont != QFont())
         m_font = loadedFont;
-    connect(&uiCommon(), &UICommon::sigAskToCommitData,
-            this, &UIVMLogViewerWidget::sltSaveOptions);
 }
 
 void UIVMLogViewerWidget::restorePanelVisibility()
@@ -1053,6 +1068,7 @@ void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.removeOne(panel);
     manageEscapeShortCut();
+    savePanelVisibility();
 }
 
 void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
@@ -1068,6 +1084,7 @@ void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
     if (!m_visiblePanelsList.contains(panel))
         m_visiblePanelsList.push_back(panel);
     manageEscapeShortCut();
+    savePanelVisibility();
 }
 
 void UIVMLogViewerWidget::manageEscapeShortCut()

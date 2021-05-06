@@ -77,6 +77,7 @@ public:
       * @param  pActionPool    Brings the action-pool reference.
       * @param  comMachine     Brings the machine reference. */
     UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
+    ~UIVMLogViewerDialog();
 
 protected:
 

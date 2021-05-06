@@ -67,6 +67,13 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *p
 {
 }
 
+UIVMLogViewerDialog::~UIVMLogViewerDialog()
+{
+    UIVMLogViewerWidget *pWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
+    if (pWidget)
+        pWidget->setDialogBeingClosed(true);
+}
+
 void UIVMLogViewerDialog::retranslateUi()
 {
     /* Translate window title: */

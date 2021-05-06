@@ -88,15 +88,15 @@ public:
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
+    /** Sets m_fDialogBeingClosed. */
+    void setDialogBeingClosed(bool fFlag);
+
 protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const /* override */;
 
 private slots:
-
-    /** Saves options.  */
-    void sltSaveOptions();
 
     /** Rereads the log file shown in the current tab. */
     void sltRefresh();
@@ -151,8 +151,10 @@ private:
         void prepareWidgets();
         /** Prepares toolbar. */
         void prepareToolBar();
+        void saveOptions();
         /** Loads options.  */
         void loadOptions();
+        void savePanelVisibility();
         /** Shows the panels that have been visible the last time logviewer is closed. */
         void restorePanelVisibility();
     /** @} */
@@ -245,6 +247,9 @@ private:
     /** @} */
     QIToolButton *m_pCornerButton;
     UIMachineListMenu *m_pMachineSelectionMenu;
+    /** This is set to true by the parent dialog. This is necessary not to save
+      * visible panel list during destruction since they are hidden automatically during that. */
+    bool m_fDialogBeingClosed;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
