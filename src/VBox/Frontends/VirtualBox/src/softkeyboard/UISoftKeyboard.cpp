@@ -4047,6 +4047,7 @@ void UISoftKeyboard::sltHandleColorThemeListSelection(const QString &strColorThe
 {
     if (m_pKeyboardWidget)
         m_pKeyboardWidget->setColorThemeByName(strColorThemeName);
+    saveSelectedColorThemeName();
 }
 
 void UISoftKeyboard::sltHandleKeyboardWidgetColorThemeChange()
@@ -4128,6 +4129,7 @@ void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
     m_pKeyboardWidget->setColor(static_cast<KeyboardColorType>(iColorRow), newColor);
     m_pSettingsWidget->setColorSelectionButtonBackgroundAndTooltip(static_cast<KeyboardColorType>(iColorRow),
                                                                    newColor, m_pKeyboardWidget->isColorThemeEditable());
+    saveCustomColorTheme();
 }
 
 void UISoftKeyboard::sltResetKeyboard()
@@ -4239,16 +4241,28 @@ void UISoftKeyboard::saveDialogGeometry()
     gEDataManager->setSoftKeyboardDialogGeometry(geo, isCurrentlyMaximized());
 }
 
+void UISoftKeyboard::saveCustomColorTheme()
+{
+    if (!m_pKeyboardWidget)
+        return;
+    /* Save the changes to the 'Custom' color theme to extra data: */
+    QStringList colors = m_pKeyboardWidget->colorsToStringList("Custom");
+    colors.prepend("Custom");
+    gEDataManager->setSoftKeyboardColorTheme(colors);
+}
+
+void UISoftKeyboard::saveSelectedColorThemeName()
+{
+    if (!m_pKeyboardWidget)
+        return;
+    gEDataManager->setSoftKeyboardSelectedColorTheme(m_pKeyboardWidget->currentColorThemeName());
+}
+
 void UISoftKeyboard::sltSaveSettings()
 {
     /* Save other settings: */
     if (m_pKeyboardWidget)
     {
-        /* Save the changes to the 'Custom' color theme to extra data: */
-        QStringList colors = m_pKeyboardWidget->colorsToStringList("Custom");
-        colors.prepend("Custom");
-        gEDataManager->setSoftKeyboardColorTheme(colors);
-        gEDataManager->setSoftKeyboardSelectedColorTheme(m_pKeyboardWidget->currentColorThemeName());
         gEDataManager->setSoftKeyboardOptions(m_pKeyboardWidget->hideNumPad(),
                                               m_pKeyboardWidget->hideOSMenuKeys(),
                                               m_pKeyboardWidget->hideMultimediaKeys());
