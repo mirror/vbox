@@ -1699,25 +1699,25 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
                         cMarkedUnreliable++;
                         pMixStream->fUnreliable = true;
                         Log3Func(("%s: Marked '%s' as unreliable.\n", pSink->pszName, pMixStream->pszName));
-                        pMixStreamMin = pMixStreamMin;
+                        pMixStreamMin = pMixStream;
                     }
                     else
                     {
                         if (!pMixStreamMin || pMixStream->cFramesLastAvail < pMixStreamMin->cFramesLastAvail)
-                            pMixStreamMin = pMixStreamMin;
+                            pMixStreamMin = pMixStream;
                         cReliableStreams++;
                     }
                 }
             }
         }
 
-        if (cMarkedUnreliable == 0 && pMixStreamMin && cReliableStreams > 1)
+        if (cMarkedUnreliable == 0 && cReliableStreams > 1 && pMixStreamMin != NULL)
         {
             cReliableStreams--;
             cMarkedUnreliable++;
             pMixStreamMin->fUnreliable = true;
             Log3Func(("%s: Marked '%s' as unreliable (%u frames).\n",
-                      pSink->pszName, pMixStream->pszName, pMixStream->cFramesLastAvail));
+                      pSink->pszName, pMixStreamMin->pszName, pMixStreamMin->cFramesLastAvail));
         }
 
         if (cMarkedUnreliable > 0)
