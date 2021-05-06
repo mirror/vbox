@@ -2400,12 +2400,11 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
         PHDADRIVER pDrv;
         RTListForEach(&pThisCC->lstDrv, pDrv, HDADRIVER, Node)
         {
+            /* We ignore failures here because one non-working driver shouldn't
+               be allowed to spoil it for everyone else. */
             int rc2 = hdaR3MixerAddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
             if (RT_FAILURE(rc2))
-                LogFunc(("Attaching stream failed with %Rrc\n", rc2));
-
-            /* Do not pass failure to rc here, as there might be drivers which aren't
-             * configured / ready yet. */
+                LogFunc(("Attaching stream failed with %Rrc (ignored)\n", rc2));
         }
     }
     return rc;
@@ -4388,30 +4387,22 @@ static DECLCALLBACK(void *) hdaR3QueryInterface(struct PDMIBASE *pInterface, con
 *********************************************************************************************************************************/
 
 /**
- * Attach command, internal version.
- *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor has to attach to all the available drivers.
+ * Worker for hdaR3Construct() and hdaR3Attach().
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared HDA device state.
  * @param   pThisCC     The ring-3 HDA device state.
  * @param   uLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, unsigned uLUN, uint32_t fFlags, PHDADRIVER *ppDrv)
+static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, unsigned uLUN, PHDADRIVER *ppDrv)
 {
-    RT_NOREF(fFlags);
-
     /*
      * Attach driver.
      */
-    char *pszDesc;
-    if (RTStrAPrintf(&pszDesc, "Audio driver port (HDA) for LUN#%u", uLUN) <= 0)
-        AssertLogRelFailedReturn(VERR_NO_MEMORY);
+    char *pszDesc = RTStrAPrintf2("Audio driver port (HDA) for LUN#%u", uLUN);
+    AssertLogRelReturn(pszDesc, VERR_NO_STR_MEMORY);
 
     PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, uLUN, &pThisCC->IBase, &pDrvBase, pszDesc);
@@ -4420,86 +4411,114 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
         PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
         if (pDrv)
         {
-            pDrv->pDrvBase          = pDrvBase;
-            pDrv->pHDAStateShared   = pThis;
-            pDrv->pHDAStateR3       = pThisCC;
-            pDrv->uLUN              = uLUN;
-            pDrv->pConnector        = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-            AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN#%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
-
-            /*
-             * For now we always set the driver at LUN 0 as our primary
-             * host backend. This might change in the future.
-             */
-            if (pDrv->uLUN == 0)
-                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
-
-            /* Attach to driver list if not attached yet. */
-            if (!pDrv->fAttached)
+            pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
+            AssertPtr(pDrv->pConnector);
+            if (RT_VALID_PTR(pDrv->pConnector))
             {
-                RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
-                pDrv->fAttached = true;
+                pDrv->pDrvBase          = pDrvBase;
+                pDrv->pHDAStateShared   = pThis;
+                pDrv->pHDAStateR3       = pThisCC;
+                pDrv->uLUN              = uLUN;
+                AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN#%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
+
+                /*
+                 * For now we always set the driver at LUN 0 as our primary
+                 * host backend. This might change in the future.
+                 */
+                if (pDrv->uLUN == 0)
+                    pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
+
+                LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
+
+                /* Attach to driver list if not attached yet. */
+                if (!pDrv->fAttached)
+                {
+                    RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
+                    pDrv->fAttached = true;
+                }
+
+                if (ppDrv)
+                    *ppDrv = pDrv;
+
+                /*
+                 * While we're here, give the windows backends a hint about our typical playback
+                 * configuration.
+                 * Note! If 48000Hz is advertised to the guest, add it here.
+                 */
+                if (   pDrv->pConnector
+                    && pDrv->pConnector->pfnStreamConfigHint)
+                {
+                    PDMAUDIOSTREAMCFG Cfg;
+                    RT_ZERO(Cfg);
+                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                    Cfg.u.enmDst                      = PDMAUDIOPLAYBACKDST_FRONT;
+                    Cfg.enmLayout                     = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+                    Cfg.Device.cMsSchedulingHint      = 10;
+                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
+                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
+
+                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+                }
+
+                LogFunc(("LUN#%u: VINF_SUCCESS\n", uLUN));
+                return VINF_SUCCESS;
             }
 
-            if (ppDrv)
-                *ppDrv = pDrv;
-
-            /*
-             * While we're here, give the windows backends a hint about our typical playback
-             * configuration.
-             * Note! If 48000Hz is advertised to the guest, add it here.
-             */
-            if (   pDrv->pConnector
-                && pDrv->pConnector->pfnStreamConfigHint)
-            {
-                PDMAUDIOSTREAMCFG Cfg;
-                RT_ZERO(Cfg);
-                Cfg.enmDir                        = PDMAUDIODIR_OUT;
-                Cfg.u.enmDst                      = PDMAUDIOPLAYBACKDST_FRONT;
-                Cfg.enmLayout                     = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
-                Cfg.Device.cMsSchedulingHint      = 10;
-                Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
-                PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
-                RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
-
-                pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
-            }
+            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
         }
         else
             rc = VERR_NO_MEMORY;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         LogFunc(("No attached driver for LUN #%u\n", uLUN));
+    else
+        LogFunc(("Failed attaching driver for LUN #%u: %Rrc\n", uLUN, rc));
 
-    if (RT_FAILURE(rc))
-    {
-        /* Only free this string on failure;
-         * must remain valid for the live of the driver instance. */
-        RTStrFree(pszDesc);
-    }
-
-    LogFunc(("uLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    RTStrFree(pszDesc);
+    LogFunc(("LUN#%u: rc=%Rrc\n", uLUN, rc));
     return rc;
 }
 
+
 /**
- * Detach command, internal version.
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
+ */
+static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+{
+    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    RT_NOREF(fFlags);
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+
+    DEVHDA_LOCK_RETURN(pDevIns, pThis, VERR_IGNORED);
+
+    PHDADRIVER pDrv;
+    int rc = hdaR3AttachInternal(pDevIns, pThis, pThisCC, uLUN, &pDrv);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = hdaR3MixerAddDrv(pDevIns, pThisCC, pDrv);
+        if (RT_FAILURE(rc2))
+            LogFunc(("hdaR3MixerAddDrv failed with %Rrc (ignored)\n", rc2));
+    }
+
+    DEVHDA_UNLOCK(pDevIns, pThis);
+    return rc;
+}
+
+
+/**
+ * Worker for hdaR3Detach that does all but free pDrv.
  *
  * This is called to let the device detach from a driver for a specified LUN
- * during runtime.
+ * at runtime.
  *
- * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 HDA device state.
  * @param   pDrv        Driver to detach from device.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static int hdaR3DetachInternal(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER pDrv, uint32_t fFlags)
+static void hdaR3DetachInternal(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 {
-    RT_NOREF(fFlags);
-
     /* First, remove the driver from our list and destory it's associated streams.
      * This also will un-set the driver as a recording source (if associated). */
     hdaR3MixerRemoveDrv(pDevIns, pThisCC, pDrv);
@@ -4538,65 +4557,36 @@ static int hdaR3DetachInternal(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIV
         }
     }
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnAttach}
- */
-static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
-{
-    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VERR_IGNORED);
-
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
-
-    PHDADRIVER pDrv;
-    int rc2 = hdaR3AttachInternal(pDevIns, pThis, pThisCC, uLUN, fFlags, &pDrv);
-    if (RT_SUCCESS(rc2))
-        rc2 = hdaR3MixerAddDrv(pDevIns, pThisCC, pDrv);
-
-    if (RT_FAILURE(rc2))
-        LogFunc(("Failed with %Rrc\n", rc2));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-
-    return VINF_SUCCESS;
+    LogFunc(("LUN#%u detached\n", pDrv->uLUN));
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDetach}
  */
-static DECLCALLBACK(void) hdaR3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(void) hdaR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    RT_NOREF(fFlags);
+    LogFunc(("iLUN=%u, fFlags=%#x\n", iLUN, fFlags));
 
     DEVHDA_LOCK(pDevIns, pThis);
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
-
-    PHDADRIVER pDrv, pDrvNext;
-    RTListForEachSafe(&pThisCC->lstDrv, pDrv, pDrvNext, HDADRIVER, Node)
+    PHDADRIVER pDrv;
+    RTListForEach(&pThisCC->lstDrv, pDrv, HDADRIVER, Node)
     {
-        if (pDrv->uLUN == uLUN)
+        if (pDrv->uLUN == iLUN)
         {
-            int rc2 = hdaR3DetachInternal(pDevIns, pThisCC, pDrv, fFlags);
-            if (RT_SUCCESS(rc2))
-            {
-                RTMemFree(pDrv);
-                pDrv = NULL;
-            }
-            break;
+            hdaR3DetachInternal(pDevIns, pThisCC, pDrv);
+            RTMemFree(pDrv);
+            DEVHDA_UNLOCK(pDevIns, pThis);
+            return;
         }
     }
 
     DEVHDA_UNLOCK(pDevIns, pThis);
+    LogFunc(("LUN#%u was not found\n", iLUN));
 }
 
 
@@ -4954,7 +4944,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         AssertBreak(iLun < UINT8_MAX);
         LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
-        rc = hdaR3AttachInternal(pDevIns, pThis, pThisCC, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        rc = hdaR3AttachInternal(pDevIns, pThis, pThisCC, iLun, NULL /* ppDrv */);
         if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             LogFunc(("cLUNs=%u\n", iLun));

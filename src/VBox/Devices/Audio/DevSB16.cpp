@@ -1933,7 +1933,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 
 
 /*********************************************************************************************************************************
-*   Driver handling                                                                                                              *
+*   LUN (driver) management                                                                                                      *
 *********************************************************************************************************************************/
 
 /**
@@ -1949,10 +1949,9 @@ static PSB16DRIVERSTREAM sb16GetDrvStream(PSB16DRIVER pDrv, PDMAUDIODIR enmDir, 
     PSB16DRIVERSTREAM pDrvStream = NULL;
 
     if (enmDir == PDMAUDIODIR_IN)
-    {
         return NULL; /** @todo Recording not implemented yet. */
-    }
-    else if (enmDir == PDMAUDIODIR_OUT)
+
+    if (enmDir == PDMAUDIODIR_OUT)
     {
         LogFunc(("enmDst=%RU32\n", dstSrc.enmDst));
 
@@ -2123,8 +2122,8 @@ static int sb16AddDrv(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv)
     {
         if (AudioHlpStreamCfgIsValid(&pThis->aStreams[i].Cfg))
         {
-            int rc2 = sb16AddDrvStream(pDevIns,
-                                       sb16StreamIndexToSink(pThis, pThis->aStreams[i].uIdx), &pThis->aStreams[i].Cfg, pDrv);
+            int rc2 = sb16AddDrvStream(pDevIns, sb16StreamIndexToSink(pThis, pThis->aStreams[i].uIdx),
+                                       &pThis->aStreams[i].Cfg, pDrv);
             if (RT_SUCCESS(rc))
                 rc = rc2;
         }
@@ -2136,6 +2135,8 @@ static int sb16AddDrv(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv)
 /**
  * Removes a specific SB16 driver from the driver chain and destroys its
  * associated streams.
+ *
+ * This is only used by sb16Detach.
  *
  * @param   pDevIns     The device instance.
  * @param   pThis       The SB16 device state.
@@ -2865,7 +2866,7 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
     RT_NOREF(fFlags);
 
     /*
-     * Attach driver.
+     * Allocate a new driver structure and try attach the driver.
      */
     PSB16DRIVER pDrv = (PSB16DRIVER)RTMemAllocZ(sizeof(SB16DRIVER));
     AssertReturn(pDrv, VERR_NO_MEMORY);
@@ -2875,64 +2876,45 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
     int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, uLUN, &pThis->IBase, &pDrvBase, pDrv->szDesc);
     if (RT_SUCCESS(rc))
     {
-        pDrv->pDrvBase   = pDrvBase;
         pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-        AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN #%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
-        pDrv->pSB16State = pThis;
-        pDrv->uLUN       = uLUN;
-
-        /*
-         * For now we always set the driver at LUN 0 as our primary
-         * host backend. This might change in the future.
-         */
-        if (pDrv->uLUN == 0)
-            pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-        LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
-
-        /* Attach to driver list if not attached yet. */
-        if (!pDrv->fAttached)
+        AssertPtr(pDrv->pConnector);
+        if (RT_VALID_PTR(pDrv->pConnector))
         {
-            RTListAppend(&pThis->lstDrv, &pDrv->Node);
-            pDrv->fAttached = true;
+            pDrv->pDrvBase   = pDrvBase;
+            pDrv->pSB16State = pThis;
+            pDrv->uLUN       = uLUN;
+
+            /*
+             * For now we always set the driver at LUN 0 as our primary
+             * host backend. This might change in the future.
+             */
+            if (pDrv->uLUN == 0)
+                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
+
+            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
+
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
+            {
+                RTListAppend(&pThis->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
+            }
+
+            if (ppDrv)
+                *ppDrv = pDrv;
+            LogFunc(("iLUN=%u, fFlags=0x%x: VINF_SUCCESS\n", uLUN, fFlags));
+            return VINF_SUCCESS;
         }
-
-        if (ppDrv)
-            *ppDrv = pDrv;
+        rc = VERR_PDM_MISSING_INTERFACE_BELOW;
     }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        LogFunc(("No attached driver for LUN #%u\n", uLUN));
     else
-    {
-        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-            LogFunc(("No attached driver for LUN #%u\n", uLUN));
-        RTMemFree(pDrv);
-    }
+        LogFunc(("Failed to attached driver for LUN #%u: %Rrc\n", uLUN, rc));
+    RTMemFree(pDrv);
 
-    LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("iLUN=%u, fFlags=0x%x: rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
-}
-
-/**
- * Detach command, internal version.
- *
- * This is called to let the device detach from a driver for a specified LUN
- * during runtime.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThis       The SB16 device state.
- * @param   pDrv        Driver to detach from device.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- */
-static int sb16DetachInternal(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv, uint32_t fFlags)
-{
-    RT_NOREF(fFlags);
-
-    /** @todo r=andy Any locking required here? */
-
-    sb16RemoveDrv(pDevIns, pThis, pDrv);
-
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2947,14 +2929,15 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     /** @todo r=andy Any locking required here? */
 
     PSB16DRIVER pDrv;
-    int rc2 = sb16AttachInternal(pThis, iLUN, fFlags, &pDrv);
-    if (RT_SUCCESS(rc2))
-        rc2 = sb16AddDrv(pDevIns, pThis, pDrv);
+    int rc = sb16AttachInternal(pThis, iLUN, fFlags, &pDrv);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = sb16AddDrv(pDevIns, pThis, pDrv);
+        if (RT_FAILURE(rc2))
+            LogFunc(("sb16AddDrv failed with %Rrc (ignored)\n", rc2));
+    }
 
-    if (RT_FAILURE(rc2))
-        LogFunc(("Failed with %Rrc\n", rc2));
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -2967,20 +2950,17 @@ static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
-    PSB16DRIVER pDrv, pDrvNext;
-    RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, SB16DRIVER, Node)
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
         if (pDrv->uLUN == iLUN)
         {
-            int rc2 = sb16DetachInternal(pDevIns, pThis, pDrv, fFlags);
-            if (RT_SUCCESS(rc2))
-            {
-                RTMemFree(pDrv);
-                pDrv = NULL;
-            }
-            break;
+            sb16RemoveDrv(pDevIns, pThis, pDrv);
+            RTMemFree(pDrv);
+            return;
         }
     }
+    LogFunc(("LUN#%u was not found\n", iLUN));
 }
 
 

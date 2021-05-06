@@ -3940,9 +3940,8 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
     /*
      * Attach driver.
      */
-    char *pszDesc;
-    if (RTStrAPrintf(&pszDesc, "Audio driver port (AC'97) for LUN #%u", iLun) <= 0)
-        AssertLogRelFailedReturn(VERR_NO_MEMORY);
+    char *pszDesc = RTStrAPrintf2("Audio driver port (AC'97) for LUN #%u", iLun);
+    AssertLogRelReturn(pszDesc, VERR_NO_STR_MEMORY);
 
     PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, iLun, &pThisCC->IBase, &pDrvBase, pszDesc);
@@ -3951,64 +3950,89 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
         PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
         if (pDrv)
         {
-            pDrv->pDrvBase   = pDrvBase;
             pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-            AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN #%u has no host audio interface, rc=%Rrc\n", iLun, rc));
-            pDrv->uLUN       = iLun;
-            pDrv->pszDesc    = pszDesc;
-
-            /*
-             * For now we always set the driver at LUN 0 as our primary
-             * host backend. This might change in the future.
-             */
-            if (iLun == 0)
-                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", iLun, pDrv->pConnector, pDrv->fFlags));
-
-            /* Attach to driver list if not attached yet. */
-            if (!pDrv->fAttached)
+            AssertPtr(pDrv->pConnector);
+            if (pDrv->pConnector)
             {
-                RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
-                pDrv->fAttached = true;
-            }
+                pDrv->pDrvBase   = pDrvBase;
+                pDrv->uLUN       = iLun;
+                pDrv->pszDesc    = pszDesc;
 
-            if (ppDrv)
-                *ppDrv = pDrv;
+                /*
+                 * For now we always set the driver at LUN 0 as our primary
+                 * host backend. This might change in the future.
+                 */
+                if (iLun == 0)
+                    pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
+
+                LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", iLun, pDrv->pConnector, pDrv->fFlags));
+
+                /* Attach to driver list if not attached yet. */
+                if (!pDrv->fAttached)
+                {
+                    RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
+                    pDrv->fAttached = true;
+                }
+
+                if (ppDrv)
+                    *ppDrv = pDrv;
+                LogFunc(("iLun=%u, fFlags=0x%x: VINF_SUCCESS\n", iLun, fFlags));
+                return VINF_SUCCESS;
+            }
+            RTMemFree(pDrv);
+            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
         }
         else
             rc = VERR_NO_MEMORY;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         LogFunc(("No attached driver for LUN #%u\n", iLun));
+    else
+        LogFunc(("Attached driver for LUN #%u failed: %Rrc\n", iLun, rc));
 
-    if (RT_FAILURE(rc))
-    {
-        /* Only free this string on failure;
-         * must remain valid for the live of the driver instance. */
-        RTStrFree(pszDesc);
-    }
-
-    LogFunc(("iLun=%u, fFlags=0x%x, rc=%Rrc\n", iLun, fFlags, rc));
+    RTStrFree(pszDesc);
+    LogFunc(("iLun=%u, fFlags=0x%x: rc=%Rrc\n", iLun, fFlags, rc));
     return rc;
 }
 
 /**
- * Detach command, internal version.
+ * @interface_method_impl{PDMDEVREGR3,pfnAttach}
+ */
+static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PAC97STATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
+
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
+
+    DEVAC97_LOCK(pDevIns, pThis);
+
+    PAC97DRIVER pDrv;
+    int rc = ichac97R3AttachInternal(pDevIns, pThisCC, iLUN, fFlags, &pDrv);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = ichac97R3MixerAddDrv(pDevIns, pThisCC, pDrv);
+        if (RT_FAILURE(rc2))
+            LogFunc(("ichac97R3MixerAddDrv failed with %Rrc (ignored)\n", rc2));
+    }
+
+    DEVAC97_UNLOCK(pDevIns, pThis);
+
+    return rc;
+}
+
+/**
+ * Worker for ichac97R3Detach that does all but freeing the pDrv structure.
  *
  * This is called to let the device detach from a driver for a specified LUN
- * during runtime.
+ * at runtime.
  *
- * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 device state.
  * @param   pDrv        Driver to detach from device.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static int ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv, uint32_t fFlags)
+static void ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 {
-    RT_NOREF(fFlags);
-
     /* First, remove the driver from our list and destory it's associated streams.
      * This also will un-set the driver as a recording source (if associated). */
     ichac97R3MixerRemoveDrv(pDevIns, pThisCC, pDrv);
@@ -4048,33 +4072,7 @@ static int ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC
         }
     }
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMDEVREGR3,pfnAttach}
- */
-static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    PAC97STATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
-    PAC97STATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
-
-    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
-
-    DEVAC97_LOCK(pDevIns, pThis);
-
-    PAC97DRIVER pDrv;
-    int rc2 = ichac97R3AttachInternal(pDevIns, pThisCC, iLUN, fFlags, &pDrv);
-    if (RT_SUCCESS(rc2))
-        rc2 = ichac97R3MixerAddDrv(pDevIns, pThisCC, pDrv);
-
-    if (RT_FAILURE(rc2))
-        LogFunc(("Failed with %Rrc\n", rc2));
-
-    DEVAC97_UNLOCK(pDevIns, pThis);
-
-    return VINF_SUCCESS;
+    LogFunc(("Detached LUN#%u\n", pDrv->uLUN));
 }
 
 /**
@@ -4084,29 +4082,27 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
 {
     PAC97STATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     PAC97STATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
+    RT_NOREF(fFlags);
 
     LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
     DEVAC97_LOCK(pDevIns, pThis);
 
-    PAC97DRIVER pDrv, pDrvNext;
-    RTListForEachSafe(&pThisCC->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
+    PAC97DRIVER pDrv;
+    RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
     {
         if (pDrv->uLUN == iLUN)
         {
-            int rc2 = ichac97R3DetachInternal(pDevIns, pThisCC, pDrv, fFlags);
-            if (RT_SUCCESS(rc2))
-            {
-                RTStrFree(pDrv->pszDesc);
-                RTMemFree(pDrv);
-                pDrv = NULL;
-            }
-
-            break;
+            ichac97R3DetachInternal(pDevIns, pThisCC, pDrv);
+            RTStrFree(pDrv->pszDesc);
+            RTMemFree(pDrv);
+            DEVAC97_UNLOCK(pDevIns, pThis);
+            return;
         }
     }
 
     DEVAC97_UNLOCK(pDevIns, pThis);
+    LogFunc(("LUN#%u was not found\n", iLUN));
 }
 
 
