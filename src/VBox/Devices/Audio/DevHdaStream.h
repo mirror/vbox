@@ -25,7 +25,6 @@
 #include "DevHdaStreamMap.h"
 
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
  * HDA stream's state for asynchronous I/O.
  */
@@ -47,7 +46,6 @@ typedef struct HDASTREAMSTATEAIO
 } HDASTREAMSTATEAIO;
 /** Pointer to a HDA stream's asynchronous I/O state. */
 typedef HDASTREAMSTATEAIO *PHDASTREAMSTATEAIO;
-#endif
 
 /**
  * Structure containing HDA stream debug stuff, configurable at runtime.
@@ -267,13 +265,11 @@ typedef struct HDASTREAM
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     /** Pad the structure size to a 64 byte alignment. */
     uint64_t                    au64Padding1[4];
     /** Critical section for serialize access to the stream state between the async
      * I/O thread and (basically) the guest. */
     PDMCRITSECT                 CritSect;
-#endif
 } HDASTREAM;
 AssertCompileMemberAlignment(HDASTREAM, State.aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAM, State.aSchedule, 16);
@@ -311,10 +307,8 @@ typedef struct HDASTREAMR3
         /** List of DMA handlers. */
         RTLISTANCHORR3          lstDMAHandlers;
 #endif
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         /** Asynchronous I/O state members. */
         HDASTREAMSTATEAIO       AIO;
-#endif
         /** Size of the DMA buffer (pCircBuf) in bytes. */
         uint32_t                StatDmaBufSize;
         /** Number of used bytes in the DMA buffer (pCircBuf). */
@@ -377,13 +371,11 @@ void                hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
 /** @name Async I/O stream functions (ring-3).
  * @{
  */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 int                 hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3);
 void                hdaR3StreamAsyncIOLock(PHDASTREAMR3 pStreamR3);
 void                hdaR3StreamAsyncIOUnlock(PHDASTREAMR3 pStreamR3);
 void                hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable);
 int                 hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3);
-# endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 /** @} */
 
 #endif /* IN_RING3 */

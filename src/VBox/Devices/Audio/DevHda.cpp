@@ -1340,10 +1340,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         STAM_REL_PROFILE_START_NS(&pStreamR3->State.StatReset, a);
         hdaStreamLock(pStreamShared);
-
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOLock(pStreamR3);
-# endif
+
         /* Deal with reset while running. */
         if (pStreamShared->State.fRunning)
         {
@@ -1354,9 +1352,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, pStreamR3, uSD);
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOUnlock(pStreamR3);
-# endif
         hdaStreamUnlock(pStreamShared);
         STAM_REL_PROFILE_STOP_NS(&pStreamR3->State.StatReset, a);
     }
@@ -1374,13 +1370,10 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             hdaStreamLock(pStreamShared);
 
             int rc2 = VINF_SUCCESS;
-
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             if (fRun)
                 rc2 = hdaR3StreamAsyncIOCreate(pStreamR3);
 
             hdaR3StreamAsyncIOLock(pStreamR3);
-# endif
             if (fRun)
             {
                 if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
@@ -1465,10 +1458,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     hdaR3StreamMarkStopped(pStreamShared);
             }
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-            hdaR3StreamAsyncIOUnlock(pStreamR3);
-# endif
             /* Make sure to leave the lock before (eventually) starting the timer. */
+            hdaR3StreamAsyncIOUnlock(pStreamR3);
             hdaStreamUnlock(pStreamShared);
             STAM_REL_PROFILE_STOP_NS((fRun ? &pStreamR3->State.StatStart : &pStreamR3->State.StatStop), r);
         }
@@ -2812,9 +2803,7 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
     {
         PHDASTREAM const pStreamShared = &pThis->aStreams[idxStream];
         hdaStreamLock(pStreamShared);
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOLock(&pThisCC->aStreams[idxStream]);
-# endif
 
         /* We're doing this unconditionally, hope that's not problematic in any way... */
         int rc = hdaR3StreamEnable(pThis, pStreamShared, &pThisCC->aStreams[idxStream], false /* fEnable */);
@@ -2824,9 +2813,7 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, &pThisCC->aStreams[idxStream], (uint8_t)idxStream);
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOUnlock(&pThisCC->aStreams[idxStream]);
-# endif
         hdaStreamUnlock(pStreamShared);
     }
 
@@ -3410,18 +3397,14 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     {
         cbCircBuf = (uint32_t)RTCircBufSize(pStreamR3->State.pCircBuf);
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         /* We take the AIO lock here and releases it after saving the buffer,
            otherwise the AIO thread could race us reading out the buffer data. */
         if (   !pStreamR3->State.AIO.fStarted
             || RT_SUCCESS(RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect)))
-#endif
         {
             cbCircBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             if (cbCircBufUsed == 0 && pStreamR3->State.AIO.fStarted)
                 RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
-#endif
         }
     }
 
@@ -3444,10 +3427,8 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
             rc = pHlp->pfnSSMPutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
         RTCircBufReleaseReadBlock(pStreamR3->State.pCircBuf, 0 /* Don't advance read pointer! */);
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (pStreamR3->State.AIO.fStarted)
             RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
-#endif
     }
 
     Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", pStreamR3->u8SD, HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD),
@@ -3515,15 +3496,12 @@ static DECLCALLBACK(int) hdaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         {
             PHDASTREAMR3 pStreamR3 = &pThisCC->aStreams[i];
 
-            int rc2;
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             /* Make sure to also create the async I/O thread before actually enabling the stream. */
-            rc2 = hdaR3StreamAsyncIOCreate(pStreamR3);
+            int rc2 = hdaR3StreamAsyncIOCreate(pStreamR3);
             AssertRC(rc2);
 
             /* ... and enabling it. */
             hdaR3StreamAsyncIOEnable(pStreamR3, true /* fEnable */);
-#endif
             /* (Re-)enable the stream. */
             rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, true /* fEnable */);
             AssertRC(rc2);
@@ -4937,10 +4915,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 NULL /*pfnSavePrep*/, hdaR3SaveExec, NULL /*pfnSaveDone*/,
                                 NULL /*pfnLoadPrep*/, hdaR3LoadExec, hdaR3LoadDone);
     AssertRCReturn(rc, rc);
-
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    LogRel(("HDA: Asynchronous I/O enabled\n"));
-# endif
 
     /*
      * Attach drivers.  We ASSUME they are configured consecutively without any

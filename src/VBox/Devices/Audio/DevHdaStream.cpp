@@ -78,13 +78,11 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
     RTListInit(&pStreamR3->State.lstDMAHandlers);
 #endif
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     AssertPtr(pStreamR3->pHDAStateR3);
     AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
     rc = PDMDevHlpCritSectInit(pStreamR3->pHDAStateR3->pDevIns, &pStreamShared->CritSect,
                                RT_SRC_POS, "hda_sd#%RU8", pStreamShared->u8SD);
     AssertRCReturn(rc, rc);
-#endif
 
 #ifdef DEBUG
     rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
@@ -173,18 +171,14 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 
     int rc2;
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     rc2 = hdaR3StreamAsyncIODestroy(pStreamR3);
     AssertRC(rc2);
-#endif
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     if (PDMCritSectIsInitialized(&pStreamShared->CritSect))
     {
         rc2 = PDMR3CritSectDelete(&pStreamShared->CritSect);
         AssertRC(rc2);
     }
-#endif
 
     if (pStreamR3->State.pCircBuf)
     {
@@ -1954,7 +1948,7 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
  * The host sink(s) set the overall pace.
  *
  * This routine is called by both, the synchronous and the asynchronous
- * (VBOX_WITH_AUDIO_HDA_ASYNC_IO), implementations.
+ * implementations.
  *
  * When running synchronously, the device DMA transfers *and* the mixer sink
  * processing is within the device timer.
@@ -2008,9 +2002,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
     if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT)
     {
         bool fDoRead; /* Whether to push data down the driver stack or not.  */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (fInTimer)
-# endif
         {
             /*
              * Check how much room we have in our DMA buffer.  There should be at
@@ -2024,7 +2016,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
                      pStreamShared->u8SD, cbStreamFree, cbPeriod));
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
                 if (RT_SUCCESS(rc))
                 {
@@ -2033,9 +2024,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 }
                 else
                     RTThreadYield();
-#else
-                hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
-#endif
                 Log(("hdaR3StreamUpdate: Gained %u bytes.\n", hdaR3StreamGetFree(pStreamR3) - cbStreamFree));
 
                 cbStreamFree = hdaR3StreamGetFree(pStreamR3);
@@ -2060,18 +2048,14 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             /*
              * Do the DMA transfer.
              */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             rc2 = PDMDevHlpCritSectEnter(pDevIns, &pStreamShared->CritSect, VERR_IGNORED);
             AssertRC(rc2);
-# endif
 
             uint64_t const offWriteBefore = pStreamR3->State.offWrite;
             hdaR3StreamDoDmaOutput(pDevIns, pThis, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             rc2 = PDMDevHlpCritSectLeave(pDevIns, &pStreamShared->CritSect);
             AssertRC(rc2);
-# endif
 
             /*
              * Should we push data to down thru the mixer to and to the host drivers?
@@ -2112,12 +2096,10 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
             if (fDoRead)
             {
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 /* Notify the async I/O worker thread that there's work to do. */
                 Log5Func(("Notifying AIO thread\n"));
                 rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
                 AssertRC(rc2);
-# endif
                 /* Update last read timestamp for logging/debugging. */
                 pStreamShared->State.tsLastReadNs = tsNowNs;
             }
@@ -2127,11 +2109,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
          * Move data out of the pStreamR3->State.pCircBuf buffer and to
          * the mixer and in direction of the host audio devices.
          */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         else
-# else
-        if (fDoRead)
-# endif
             hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
     }
     /*
@@ -2145,13 +2123,9 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
          * If we're the async I/O worker, or not using AIO, pull bytes
          * from the mixer and into our internal DMA buffer.
          */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (!fInTimer)
-# endif
             hdaR3StreamPullFromMixer(pStreamShared, pStreamR3, pSink);
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        else /* fInTimer */
-# endif
+        else
         {
             /*
              * See how much data we've got buffered...
@@ -2196,7 +2170,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
                      pStreamShared->u8SD, cbStreamUsed, cbPeriod));
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
                 if (RT_SUCCESS(rc))
                 {
@@ -2205,9 +2178,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 }
                 else
                     RTThreadYield();
-#else
-                hdaR3StreamPullFromMixer(pStreamShared, pStreamR3, pSink);
-#endif
                 Log(("hdaR3StreamUpdate: Gained %u bytes.\n", hdaR3StreamGetUsed(pStreamR3) - cbStreamUsed));
                 cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
                 if (cbStreamUsed < cbPeriod)
@@ -2219,9 +2189,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                     uint32_t cbSilence = 0;
                     do
                     {
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                         RTCritSectEnter(&pStreamR3->State.AIO.CritSect);
-#endif
                         cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
                         if (cbStreamUsed < cbPeriod)
                         {
@@ -2240,9 +2208,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                             }
                         }
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                         RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
-#endif
                     } while (cbStreamUsed < cbPeriod);
                     if (cbSilence > 0)
                     {
@@ -2259,21 +2225,16 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
              */
             if (cbStreamUsed)
             {
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 rc2 = PDMDevHlpCritSectEnter(pDevIns, &pStreamShared->CritSect, VERR_IGNORED);
                 AssertRC(rc2);
-# endif
 
                 hdaR3StreamDoDmaInput(pDevIns, pThis, pStreamShared, pStreamR3,
                                       RT_MIN(cbStreamUsed, cbPeriod), fWriteSilence, tsNowNs);
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 rc2 = PDMDevHlpCritSectLeave(pDevIns, &pStreamShared->CritSect);
                 AssertRC(rc2);
-# endif
             }
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             /*
              * We should always kick the AIO thread.
              */
@@ -2284,7 +2245,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
             AssertRC(rc2);
             pStreamShared->State.tsLastReadNs = tsNowNs;
-# endif
         }
     }
 }
@@ -2300,10 +2260,8 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 void hdaStreamLock(PHDASTREAM pStreamShared)
 {
     AssertPtrReturnVoid(pStreamShared);
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     int rc2 = PDMCritSectEnter(&pStreamShared->CritSect, VINF_SUCCESS);
     AssertRC(rc2);
-#endif
 }
 
 /**
@@ -2315,10 +2273,8 @@ void hdaStreamLock(PHDASTREAM pStreamShared)
 void hdaStreamUnlock(PHDASTREAM pStreamShared)
 {
     AssertPtrReturnVoid(pStreamShared);
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     int rc2 = PDMCritSectLeave(&pStreamShared->CritSect);
     AssertRC(rc2);
-# endif
 }
 
 #ifdef IN_RING3
@@ -2530,7 +2486,6 @@ void hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream)
 }
 
 # endif /* HDA_USE_DMA_ACCESS_HANDLER */
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 
 /**
  * @callback_method_impl{FNRTTHREAD,
@@ -2723,5 +2678,4 @@ void hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable)
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
 
-# endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 #endif /* IN_RING3 */
