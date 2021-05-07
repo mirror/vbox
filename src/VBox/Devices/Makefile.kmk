@@ -651,6 +651,11 @@ endif
 	Audio/DrvAudio.cpp \
 	Audio/DrvHostAudioNull.cpp
 
+ if defined(VBOX_WITH_AUDIO_DEBUG) || defined(VBOX_WITH_AUDIO_VALIDATIONKIT)
+  VBoxDD_SOURCES += \
+ 	Audio/AudioTest.cpp
+ endif
+
  ifdef VBOX_WITH_AUDIO_DEBUG
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_DEBUG
   VBoxDD_SOURCES += \
