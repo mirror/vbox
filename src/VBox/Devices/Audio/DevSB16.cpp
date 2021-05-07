@@ -95,7 +95,6 @@ static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 /** Pointer to the SB16 state. */
 typedef struct SB16STATE *PSB16STATE;
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
 /**
  * Asynchronous I/O state for an SB16 stream.
  */
@@ -116,7 +115,6 @@ typedef struct SB16STREAMSTATEAIO
 } SB16STREAMSTATEAIO;
 /** Pointer to the async I/O state for a SB16 stream. */
 typedef SB16STREAMSTATEAIO *PSB16STREAMSTATEAIO;
-#endif /* VBOX_WITH_AUDIO_SB16_ASYNC_IO */
 
 /**
  * The internal state of a SB16 stream.
@@ -125,10 +123,8 @@ typedef struct SB16STREAMSTATE
 {
     /** Flag indicating whether this stream is in enabled state or not. */
     bool                    fEnabled;
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
     /** Asynchronous I/O state members. */
     SB16STREAMSTATEAIO      AIO;
-#endif
     /** DMA cache to read data from / write data to. */
     PRTCIRCBUF              pCircBuf;
 } SB16STREAMSTATE;
@@ -256,7 +252,6 @@ typedef struct SB16STREAM
 /** Pointer to a SB16 stream */
 typedef SB16STREAM *PSB16STREAM;
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
 /**
  * Asynchronous I/O thread context (arguments).
  */
@@ -269,7 +264,6 @@ typedef struct SB16STREAMTHREADCTX
 } SB16STREAMTHREADCTX;
 /** Pointer to the context for an async I/O thread. */
 typedef SB16STREAMTHREADCTX *PSB16STREAMTHREADCTX;
-#endif /* VBOX_WITH_AUDIO_SB16_ASYNC_IO */
 
 /**
  * SB16 debug settings.
@@ -367,17 +361,14 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser);
 DECLINLINE(void) sb16TimerSet(PPDMDEVINS pDevIns, PSB16STREAM pStream, uint64_t cTicksToDeadline);
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
 static int  sb16StreamAsyncIOCreate(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream);
 static int  sb16StreamAsyncIODestroy(PPDMDEVINS pDevIns, PSB16STREAM pStream);
 static int  sb16StreamAsyncIONotify(PPDMDEVINS pDevIns, PSB16STREAM pStream);
-#endif /* VBOX_WITH_AUDIO_SB16_ASYNC_IO */
 
 static void sb16SpeakerControl(PSB16STATE pThis, bool fOn);
 static void sb16UpdateVolume(PSB16STATE pThis);
 
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
 /**
  * @callback_method_impl{FNPDMTHREADDEV}
  */
@@ -531,7 +522,6 @@ static int sb16StreamAsyncIODestroy(PPDMDEVINS pDevIns, PSB16STREAM pStream)
     pAIO->fShutdown = false;
     return rc;
 }
-#endif /* VBOX_WITH_AUDIO_SB16_ASYNC_IO */
 
 static void sb16SpeakerControl(PSB16STATE pThis, bool fOn)
 {
@@ -1913,11 +1903,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 
     LogFlowFunc(("fSinkActive=%RTbool\n", fSinkActive));
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
     sb16StreamAsyncIONotify(pDevIns, pStream);
-#else
-    sb16StreamUpdate(pStream, pSink);
-#endif
 
     /* Schedule the next transfer. */
     PDMDevHlpDMASchedule(pDevIns);
@@ -2282,12 +2268,8 @@ static int sb16StreamCreate(PSB16STATE pThis, PSB16STREAM pStream, uint8_t uIdx)
 
     pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
 
-    int rc2;
-
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
-    rc2 = sb16StreamAsyncIOCreate(pThis->pDevInsR3, pThis, pStream);
+    int rc2 = sb16StreamAsyncIOCreate(pThis->pDevInsR3, pThis, pStream);
     AssertRCReturn(rc2, rc2);
-#endif
 
     if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
     { /* likely */ }
@@ -2330,12 +2312,8 @@ static int sb16StreamDestroy(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM p
 
     sb16StreamClose(pDevIns, pThis, pStream);
 
-#ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
     int rc = sb16StreamAsyncIODestroy(pDevIns, pStream);
     AssertRCReturn(rc, rc);
-#else
-    RT_NOREF(pDevIns);
-#endif
 
     if (pStream->State.pCircBuf)
     {
@@ -2477,7 +2455,6 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
                          sb16StreamIndexToSink(pThis, pStream->uIdx), pStream->Cfg.enmDir, pStream->Cfg.u);
 
     rc = sb16AddDrvStreams(pDevIns, pThis, pMixerSink, &pStream->Cfg);
-
     if (RT_SUCCESS(rc))
     {
         if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
@@ -3237,9 +3214,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpSSMRegister3(pDevIns, SB16_SAVE_STATE_VERSION, sizeof(SB16STATE), sb16LiveExec, sb16SaveExec, sb16LoadExec);
     AssertRCReturn(rc, rc);
 
-# ifdef VBOX_WITH_AUDIO_SB16_ASYNC_IO
-    LogRel(("SB16: Asynchronous I/O enabled\n"));
-# endif
     LogRel2(("SB16: Using port %#x, DMA%RU8, IRQ%RU8\n",
              pStream->HwCfgRuntime.uPort, pStream->HwCfgRuntime.uDmaChanLow, pStream->HwCfgRuntime.uIrq));
 
