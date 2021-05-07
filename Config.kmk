@@ -792,7 +792,10 @@ endif
 # Enable audio support for VRDE.
 VBOX_WITH_AUDIO_VRDE = 1
 ifdef VBOX_WITH_VALIDATIONKIT
- VBOX_WITH_AUDIO_VALIDATIONKIT = 1
+ # Enable more platforms later.
+ if1of ($(KBUILD_TARGET), linux)
+  VBOX_WITH_AUDIO_VALIDATIONKIT = 1
+ endif
 endif
 # Use the VRDE external authentication library from VBoxSVC.
 if1of ($(KBUILD_TARGET), win)

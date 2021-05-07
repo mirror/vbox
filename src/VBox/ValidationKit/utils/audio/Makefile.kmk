@@ -41,32 +41,30 @@ endif
 #
 # The Validation Kit Audio Test (VKAT) utility.
 #
-if1of ($(KBUILD_TARGET), linux)
- VKAT_PATH_AUDIO=$(PATH_ROOT)/src/VBox/Devices/Audio
+VKAT_PATH_AUDIO=$(PATH_ROOT)/src/VBox/Devices/Audio
 
- PROGRAMS += AudioTest
- AudioTest_TEMPLATE = VBoxValidationKitR3
- AudioTest_DEFS    += VBOX_AUDIO_VKAT
- AudioTest_SOURCES  = \
-  vkat.cpp \
-  $(VKAT_PATH_AUDIO)/AudioTest.cpp
+PROGRAMS += AudioTest
+AudioTest_TEMPLATE = VBoxValidationKitR3
+AudioTest_DEFS    += VBOX_AUDIO_VKAT
+AudioTest_SOURCES  = \
+	vkat.cpp \
+	$(VKAT_PATH_AUDIO)/AudioTest.cpp
 
- ifdef VBOX_WITH_AUDIO_PULSE
-  AudioTest_SOURCES += \
-   $(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudioStubs.cpp \
-   $(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudio.cpp
- endif
+ifdef VBOX_WITH_AUDIO_PULSE
+ AudioTest_SOURCES += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudioStubs.cpp \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudio.cpp
+endif
 
- ifdef VBOX_WITH_AUDIO_ALSA
-  AudioTest_SOURCES += \
-   $(VKAT_PATH_AUDIO)/DrvHostAudioAlsa.cpp \
-   $(VKAT_PATH_AUDIO)/DrvHostAudioAlsaStubs.cpp
- endif
+ifdef VBOX_WITH_AUDIO_ALSA
+ AudioTest_SOURCES += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsa.cpp \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsaStubs.cpp
+endif
 
- ifdef VBOX_WITH_AUDIO_OSS
-  AudioTest_SOURCES += \
-   $(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
- endif
+ifdef VBOX_WITH_AUDIO_OSS
+ AudioTest_SOURCES += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
