@@ -243,9 +243,5 @@ if !defined(VBOX_ONLY_BUILD)
 
 endif # !VBOX_ONLY_BUILD
 
-if1of ($(USERNAME), andy) # Speeds up compilation locally. Remove later.
- PROGRAMS = RTHttpServer
-endif
-
 include $(FILE_KBUILD_SUB_FOOTER)
 
