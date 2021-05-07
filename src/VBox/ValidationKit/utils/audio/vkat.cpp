@@ -154,10 +154,12 @@ enum
     VKAT_TEST_OPT_VOL,
 };
 
+#if 0
 static const RTGETOPTDEF g_aCmdCommonOptions[] =
 {
     { "--help",             'h',                 RTGETOPT_REQ_NOTHING }
 };
+#endif
 
 /** Command line parameters for test mode. */
 static const RTGETOPTDEF g_aCmdTestOptions[] =
@@ -422,7 +424,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
 
 static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     unsigned uSeq = 0;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)

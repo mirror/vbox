@@ -1102,7 +1102,7 @@ static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetPending(PPDMIHOSTAUDIO
             case SND_PCM_STATE_DRAINING:
                 if (rc >= 0)
                 {
-                    if (cFramesAvail >= pStreamALSA->Cfg.Backend.cFramesBufferSize)
+                    if ((uint32_t)cFramesAvail >= pStreamALSA->Cfg.Backend.cFramesBufferSize)
                         cbPending = 0;
                     else
                         cbPending = PDMAudioPropsFramesToBytes(&pStreamALSA->Cfg.Props, cFramesDelay);
