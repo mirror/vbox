@@ -78,6 +78,7 @@ protected:
 private:
 
     QVector<QColor> m_alternateColors;
+    QColor m_selectedTabColor;
 };
 
 /*********************************************************************************************************************************
@@ -103,26 +104,34 @@ UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     :QTabBar(pParent)
 {
     QStyleOptionTab opt;
-    m_alternateColors << opt.palette.color(QPalette::Button).lighter(135);
-    m_alternateColors << opt.palette.color(QPalette::Button).darker(135);
+    m_alternateColors << opt.palette.color(QPalette::Button).darker(230);
+    m_alternateColors << opt.palette.color(QPalette::Button).darker(140);
+    m_selectedTabColor = opt.palette.color(QPalette::Window).lighter(300);
 }
 
 void UITabBar::paintEvent(QPaintEvent *pEvent)
 {
+
     Q_UNUSED(pEvent);
     QStylePainter painter(this);
-    QStyleOptionTab opt;
 
-    for (int i = 0; i < count(); i++) {
+    for (int i = 0; i < count(); i++)
+    {
+        QStyleOptionTab opt;
         initStyleOption(&opt, i);
-        int iColorIndex = tabData(i).toInt();
-        if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
-        {
-            opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
-        }
 
-        painter.drawControl(QStyle::CE_TabBarTabShape, opt);
-        painter.drawControl(QStyle::CE_TabBarTabLabel, opt);
+        if (i == currentIndex())
+            opt.palette.setColor(QPalette::Window, m_selectedTabColor);
+        else
+        {
+            /* Hack alert. I could not convince drawControl to use the set color if QStyle::State_Selected is not set: */
+            opt.state |=  QStyle::State_Selected;
+
+            int iColorIndex = tabData(i).toInt();
+            if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
+                opt.palette.setColor(QPalette::Window, m_alternateColors[iColorIndex]);
+        }
+        painter.drawControl(QStyle::CE_TabBarTab, opt);
     }
 }
 
