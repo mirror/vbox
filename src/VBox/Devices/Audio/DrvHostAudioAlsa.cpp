@@ -60,7 +60,11 @@ RT_C_DECLS_END
 #include <alsa/asoundlib.h>
 #include <alsa/control.h> /* For device enumeration. */
 
-#include "VBoxDD.h"
+#ifdef VBOX_AUDIO_VKAT
+# include "VBoxDDVKAT.h"
+#else
+# include "VBoxDD.h"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1449,8 +1453,9 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
 }
 
 
+#ifndef VBOX_AUDIO_VKAT
 /**
- * Char driver registration record.
+ * ALSA audio driver registration record.
  */
 const PDMDRVREG g_DrvHostALSAAudio =
 {
@@ -1499,4 +1504,14 @@ const PDMDRVREG g_DrvHostALSAAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+#else /* VBOX_AUDIO_VKAT */
+const PDMDRVREG g_DrvVKATAlsa =
+{
+    /* cbInstance */
+    sizeof(DRVHOSTALSAAUDIO),
+    drvHostAlsaAudioConstruct,
+    /* pfnDestruct */
+    NULL
+};
+#endif /* VBOX_AUDIO_VKAT */
 

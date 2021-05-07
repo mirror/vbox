@@ -28,8 +28,6 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 
-#include <VBox/vmm/pdmdev.h>
-#include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
 /** @name Audio calculation helper methods.

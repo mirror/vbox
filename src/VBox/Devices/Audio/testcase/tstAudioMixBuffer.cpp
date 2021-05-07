@@ -27,6 +27,7 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
+#include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
 #include "../AudioMixBuffer.h"

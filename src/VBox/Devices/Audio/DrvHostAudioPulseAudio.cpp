@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,7 +43,11 @@
 # define PA_CONTEXT_NOFLAGS (pa_context_flags_t)0x0000U /* since 0.9.19 */
 #endif
 
-#include "VBoxDD.h"
+#ifdef VBOX_AUDIO_VKAT
+# include "VBoxDDVKAT.h"
+#else
+# include "VBoxDD.h"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -2010,7 +2014,7 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     return rc;
 }
 
-
+#ifndef VBOX_AUDIO_VKAT
 /**
  * Pulse audio driver registration record.
  */
@@ -2061,4 +2065,13 @@ const PDMDRVREG g_DrvHostPulseAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
+#else /* VBOX_AUDIO_VKAT */
+const PDMDRVREG g_DrvVKATPulseAudio =
+{
+    /* cbInstance */
+    sizeof(DRVHOSTPULSEAUDIO),
+    drvHostAudioPaConstruct,
+    /* pfnDestruct */
+    drvHostAudioPaDestruct
+};
+#endif /* VBOX_AUDIO_VKAT */
