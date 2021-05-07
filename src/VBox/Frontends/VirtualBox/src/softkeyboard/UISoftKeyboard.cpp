@@ -637,6 +637,7 @@ signals:
     void sigCurrentLayoutChange();
     void sigKeyToEdit(UISoftKeyboardKey* pKey);
     void sigCurrentColorThemeChanged();
+    void sigOptionsChanged();
 
 public:
 
@@ -2562,6 +2563,7 @@ void UISoftKeyboardWidget::setHideOSMenuKeys(bool fHide)
         return;
     m_fHideOSMenuKeys = fHide;
     update();
+    emit sigOptionsChanged();
 }
 
 bool UISoftKeyboardWidget::hideNumPad() const
@@ -2575,6 +2577,7 @@ void UISoftKeyboardWidget::setHideNumPad(bool fHide)
         return;
     m_fHideNumPad = fHide;
     update();
+    emit sigOptionsChanged();
 }
 
 bool UISoftKeyboardWidget::hideMultimediaKeys() const
@@ -2588,6 +2591,7 @@ void UISoftKeyboardWidget::setHideMultimediaKeys(bool fHide)
         return;
     m_fHideMultimediaKeys = fHide;
     update();
+    emit sigOptionsChanged();
 }
 
 QColor UISoftKeyboardWidget::color(KeyboardColorType enmColorType) const
@@ -4204,11 +4208,11 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutKeyboardSequence, this, &UISoftKeyboard::sltPutKeyboardSequence);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutUsageCodesPress, this, &UISoftKeyboard::sltPutUsageCodesPress);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutUsageCodesRelease, this, &UISoftKeyboard::sltPutUsageCodesRelease);
-
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigCurrentLayoutChange, this, &UISoftKeyboard::sltCurentLayoutChanged);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigKeyToEdit, this, &UISoftKeyboard::sltKeyToEditChanged);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigStatusBarMessage, this, &UISoftKeyboard::sltStatusBarMessage);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigCurrentColorThemeChanged, this, &UISoftKeyboard::sltHandleKeyboardWidgetColorThemeChange);
+    connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigOptionsChanged, this, &UISoftKeyboard::sltSaveSettings);
 
     connect(m_pLayoutSelector, &UILayoutSelector::sigLayoutSelectionChanged, this, &UISoftKeyboard::sltLayoutSelectionChanged);
     connect(m_pLayoutSelector, &UILayoutSelector::sigShowLayoutEditor, this, &UISoftKeyboard::sltShowLayoutEditor);
@@ -4233,7 +4237,6 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
 
     connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
-    connect(&uiCommon(), &UICommon::sigAskToCommitData, this, &UISoftKeyboard::sltSaveSettings);
     connect(&uiCommon(), &UICommon::sigAskToCommitData, this, &UISoftKeyboard::sltReleaseKeys);
 }
 
