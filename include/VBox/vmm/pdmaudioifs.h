@@ -863,7 +863,7 @@ typedef enum PDMAUDIOSTREAMCMD
      * This is currently only issued when the VM is suspended (paused). */
     PDMAUDIOSTREAMCMD_PAUSE,
     /** Resumes the stream.
-     *This is currently only issued when the VM is resumed. */
+     * This is currently only issued when the VM is resumed. */
     PDMAUDIOSTREAMCMD_RESUME,
     /** Drain the stream, that is, play what's in the buffer and then stop.
      *

@@ -963,8 +963,7 @@ static bool ichac97R3StreamIsEnabled(PAC97STATER3 pThisCC, PAC97STREAM pStream)
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AC'97 state.
  * @param   pThisCC     The ring-3 AC'97 state.
- * @param   pStream     The AC'97 stream to enable or disable (shared
- *                      state).
+ * @param   pStream     The AC'97 stream to enable or disable (shared state).
  * @param   pStreamCC   The ring-3 stream state (matching to @a pStream).
  * @param   fEnable     Whether to enable or disable the stream.
  *
@@ -1450,8 +1449,8 @@ static int ichac97R3StreamAsyncIONotify(PAC97STREAMR3 pStreamCC)
  * Destroys the async I/O thread of a specific AC'97 audio stream.
  *
  * @returns VBox status code.
- * @param   pThis               The shared AC'97 state.
- * @param   pStreamCC           AC'97 audio stream to destroy the async I/O thread for.
+ * @param   pThis       The shared AC'97 state.
+ * @param   pStreamR3   AC'97 audio stream to destroy the async I/O thread for.
  */
 static int ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamR3)
 {
