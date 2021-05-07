@@ -792,6 +792,7 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
     if (!pSink)
         return;
 
+    /** @todo wrong critsect for audioMixerRemoveSinkInternal...   */
     int rc2 = RTCritSectEnter(&pSink->CritSect);
     AssertRC(rc2);
 

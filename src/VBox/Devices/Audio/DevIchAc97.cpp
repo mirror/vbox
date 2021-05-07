@@ -4068,6 +4068,13 @@ static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
     /* Sanity. */
     Assert(RTListIsEmpty(&pThisCC->lstDrv));
 
+    /* We don't always go via PowerOff, so make sure the mixer is destroyed. */
+    if (pThisCC->pMixer)
+    {
+        AudioMixerDestroy(pThisCC->pMixer, pDevIns);
+        pThisCC->pMixer = NULL;
+    }
+
     return VINF_SUCCESS;
 }
 

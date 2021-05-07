@@ -4665,6 +4665,13 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
         hdaR3StreamDestroy(&pThis->aStreams[i], &pThisCC->aStreams[i]);
 
+    /* We don't always go via PowerOff, so make sure the mixer is destroyed. */
+    if (pThisCC->pMixer)
+    {
+        AudioMixerDestroy(pThisCC->pMixer, pDevIns);
+        pThisCC->pMixer = NULL;
+    }
+
     DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }

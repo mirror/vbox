@@ -3014,6 +3014,13 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
         RTMemFree(pDrv);
     }
 
+    /* We don't always go via PowerOff, so make sure the mixer is destroyed. */
+    if (pThis->pMixer)
+    {
+        AudioMixerDestroy(pThis->pMixer, pDevIns);
+        pThis->pMixer = NULL;
+    }
+
     return VINF_SUCCESS;
 }
 
