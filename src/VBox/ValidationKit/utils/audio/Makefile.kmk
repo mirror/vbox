@@ -51,18 +51,21 @@ AudioTest_SOURCES  = \
 	$(VKAT_PATH_AUDIO)/AudioTest.cpp
 
 ifdef VBOX_WITH_AUDIO_PULSE
+ AudioTest_DEFS    += VBOX_WITH_AUDIO_PULSE
  AudioTest_SOURCES += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudioStubs.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudio.cpp
 endif
 
 ifdef VBOX_WITH_AUDIO_ALSA
+ AudioTest_DEFS    += VBOX_WITH_AUDIO_ALSA
  AudioTest_SOURCES += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsa.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsaStubs.cpp
 endif
 
 ifdef VBOX_WITH_AUDIO_OSS
+ AudioTest_DEFS    += VBOX_WITH_AUDIO_OSS
  AudioTest_SOURCES += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
 endif

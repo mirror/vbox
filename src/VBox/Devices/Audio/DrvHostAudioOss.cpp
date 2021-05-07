@@ -936,8 +936,10 @@ const PDMDRVREG g_DrvHostOSSAudio =
     PDM_DRVREG_VERSION
 };
 #else
-const PDMDRVREG g_DrvVKATOSS =
+const PDMDRVREG g_DrvVKATOss =
 {
+    /* szName */
+    "OSSAudio",
     /* cbInstance */
     sizeof(DRVHOSTOSSAUDIO),
     drvHostOSSAudioConstruct,

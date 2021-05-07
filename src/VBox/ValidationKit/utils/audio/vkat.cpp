@@ -164,6 +164,7 @@ static const RTGETOPTDEF g_aCmdCommonOptions[] =
 /** Command line parameters for test mode. */
 static const RTGETOPTDEF g_aCmdTestOptions[] =
 {
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
     { "--exclude",          'e',                          RTGETOPT_REQ_UINT32  },
     { "--exclude-all",      'a',                          RTGETOPT_REQ_NOTHING },
     { "--include",          'i',                          RTGETOPT_REQ_UINT32  },
@@ -303,7 +304,10 @@ static int audioTestDrvConstruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns, P
 {
     AssertReturn(pDrvReg->cbInstance, VERR_INVALID_PARAMETER); /** @todo Very crude; improve. */
 
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing backend '%s' ...\n", pDrvReg->szName);
+
     pDrvIns->pvInstanceData = RTMemAllocZ(pDrvReg->cbInstance);
+    AssertPtrReturn(pDrvIns->pvInstanceData, VERR_NO_MEMORY);
 
     int rc = pDrvReg->pfnConstruct(pDrvIns, NULL /* PCFGMNODE */, 0 /* fFlags */);
     if (RT_SUCCESS(rc))
@@ -447,9 +451,12 @@ int mainTest(int argc, char **argv)
     AUDIOTESTPARMS TstCust;
     audioTestParmsInit(&TstCust);
 
+    RT_ZERO(g_DrvIns);
+    const PDMDRVREG *pDrvReg = NULL;
+
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 1, 0 /* fFlags */);
+    RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 0, 0 /* fFlags */);
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (rc)
@@ -477,6 +484,28 @@ int mainTest(int argc, char **argv)
             {
                 for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
                     g_aTests[i].fExcluded = true;
+                break;
+            }
+
+            case 'b':
+            {
+#ifdef VBOX_WITH_AUDIO_PULSE
+                if (   !RTStrICmp(ValueUnion.psz, "pulseaudio")
+                    || !RTStrICmp(ValueUnion.psz, "pa"))
+                    pDrvReg = &g_DrvVKATPulseAudio;
+#endif
+#ifdef VBOX_WITH_AUDIO_ALSA
+                if (   !RTStrICmp(ValueUnion.psz, "alsa"))
+                    pDrvReg = &g_DrvVKATAlsa;
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+                if (   !RTStrICmp(ValueUnion.psz, "oss"))
+                    pDrvReg = &g_DrvVKATOss;
+#endif
+                /** @todo Add more backends here. */
+
+                if (pDrvReg == NULL)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid / unsupported backend '%s' specified\n", ValueUnion.psz);
                 break;
             }
 
@@ -555,9 +584,9 @@ int mainTest(int argc, char **argv)
      */
     RTTestBanner(g_hTest);
 
-    const PDMDRVREG *pDrvReg = &g_DrvVKATAlsa;
-
-    RT_ZERO(g_DrvIns);
+    /* If no backend is specified, go with the ALSA one by default. */
+    if (pDrvReg == NULL)
+        pDrvReg = &g_DrvVKATAlsa;
 
     PPDMIHOSTAUDIO pDrvAudio;
     rc = audioTestDrvConstruct(pDrvReg, &g_DrvIns, &pDrvAudio);

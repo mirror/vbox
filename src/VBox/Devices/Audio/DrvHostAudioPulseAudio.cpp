@@ -2068,6 +2068,8 @@ const PDMDRVREG g_DrvHostPulseAudio =
 #else /* VBOX_AUDIO_VKAT */
 const PDMDRVREG g_DrvVKATPulseAudio =
 {
+    /* szName */
+    "PulseAudio",
     /* cbInstance */
     sizeof(DRVHOSTPULSEAUDIO),
     drvHostAudioPaConstruct,

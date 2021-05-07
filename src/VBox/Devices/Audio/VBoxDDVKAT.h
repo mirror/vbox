@@ -51,6 +51,8 @@ typedef FNPDMDRVDESTRUCT *PFNPDMDRVDESTRUCT;
 
 typedef struct PDMDRVREG
 {
+    /** Driver name. */
+    char                szName[32];
     /** Size of the instance data. */
     uint32_t            cbInstance;
     /** Construct instance - required. */
@@ -75,5 +77,6 @@ DECLINLINE(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char 
 
 extern const PDMDRVREG g_DrvVKATPulseAudio;
 extern const PDMDRVREG g_DrvVKATAlsa;
+extern const PDMDRVREG g_DrvVKATOss;
 
 #endif /* VBoxDDVKAT_h__ */

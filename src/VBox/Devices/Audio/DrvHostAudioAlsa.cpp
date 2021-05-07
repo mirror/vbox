@@ -1507,6 +1507,8 @@ const PDMDRVREG g_DrvHostALSAAudio =
 #else /* VBOX_AUDIO_VKAT */
 const PDMDRVREG g_DrvVKATAlsa =
 {
+    /* szName */
+    "ALSAAudio",
     /* cbInstance */
     sizeof(DRVHOSTALSAAUDIO),
     drvHostAlsaAudioConstruct,
