@@ -324,7 +324,6 @@ AssertCompileSizeAlignment(AC97BMREGS, 8);
 /** Pointer to the BM registers of an audio stream. */
 typedef AC97BMREGS *PAC97BMREGS;
 
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 /**
  * Asynchronous I/O state for an AC'97 stream.
  */
@@ -346,7 +345,6 @@ typedef struct AC97STREAMSTATEAIO
 } AC97STREAMSTATEAIO;
 /** Pointer to the async I/O state for an AC'97 stream. */
 typedef AC97STREAMSTATEAIO *PAC97STREAMSTATEAIO;
-#endif
 
 
 /**
@@ -363,10 +361,8 @@ typedef struct AC97STREAMSTATE
 #endif
     /** The stream's current configuration. */
     PDMAUDIOSTREAMCFG       Cfg; //+108
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO      AIO;
-#endif
     /** Timestamp of the last DMA data transfer. */
     uint64_t                tsTransferLast;
     /** Timestamp of the next DMA data transfer.
@@ -453,7 +449,6 @@ AssertCompileSizeAlignment(AC97STREAMR3, 8);
 typedef AC97STREAMR3 *PAC97STREAMR3;
 
 
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 /**
  * Asynchronous I/O thread context (arguments).
  */
@@ -470,7 +465,6 @@ typedef struct AC97STREAMTHREADCTX
 } AC97STREAMTHREADCTX;
 /** Pointer to the context for an async I/O thread. */
 typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
-#endif
 
 /**
  * A driver stream (host backend).
@@ -698,13 +692,11 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 static void               ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
                                                          PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc);
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC);
 static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamCC);
 static void               ichac97R3StreamAsyncIOLock(PAC97STREAMR3 pStreamCC);
 static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAMR3 pStreamCC);
 /*static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable); Unused */
-# endif
 
 DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 DECLINLINE(void)          ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint64_t cTicksToDeadline);
@@ -983,56 +975,51 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     ichac97R3StreamLock(pStreamCC);
 
     int rc = VINF_SUCCESS;
-
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     if (fEnable)
         rc = ichac97R3StreamAsyncIOCreate(pThis, pThisCC, pStream, pStreamCC);
     if (RT_SUCCESS(rc))
-        ichac97R3StreamAsyncIOLock(pStreamCC);
-# endif
-
-    if (fEnable)
     {
-        if (pStreamCC->State.pCircBuf)
-            RTCircBufReset(pStreamCC->State.pCircBuf);
-
-        rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
-
-        if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-        { /* likely */ }
-        else
+        ichac97R3StreamAsyncIOLock(pStreamCC);
+        if (fEnable)
         {
-            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
-            {
-                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                           &pStreamCC->State.Cfg.Props);
-                AssertRC(rc2);
-            }
+            if (pStreamCC->State.pCircBuf)
+                RTCircBufReset(pStreamCC->State.pCircBuf);
 
-            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
+            rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
+
+            if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+            { /* likely */ }
+            else
             {
-                int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                           &pStreamCC->State.Cfg.Props);
-                AssertRC(rc2);
+                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
+                {
+                    int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                               &pStreamCC->State.Cfg.Props);
+                    AssertRC(rc2);
+                }
+
+                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
+                {
+                    int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                               &pStreamCC->State.Cfg.Props);
+                    AssertRC(rc2);
+                }
             }
         }
-    }
-    else
-        rc = ichac97R3StreamClose(pStream);
+        else
+            rc = ichac97R3StreamClose(pStream);
 
-    if (RT_SUCCESS(rc))
-    {
-        /* First, enable or disable the stream and the stream's sink, if any. */
-        rc = AudioMixerSinkEnable(ichac97R3IndexToSink(pThisCC, pStream->u8SD), fEnable);
-    }
+        if (RT_SUCCESS(rc))
+        {
+            /* First, enable or disable the stream and the stream's sink, if any. */
+            rc = AudioMixerSinkEnable(ichac97R3IndexToSink(pThisCC, pStream->u8SD), fEnable);
+        }
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    ichac97R3StreamAsyncIOUnlock(pStreamCC);
-# endif
+        ichac97R3StreamAsyncIOUnlock(pStreamCC);
+    }
 
     /* Make sure to leave the lock before (eventually) starting the timer. */
     ichac97R3StreamUnlock(pStreamCC);
-
     LogFunc(("[SD%RU8] fEnable=%RTbool, rc=%Rrc\n", pStream->u8SD, fEnable, rc));
     return rc;
 }
@@ -1146,12 +1133,8 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream, PAC97S
     int rc2 = RTCritSectDelete(&pStreamCC->State.CritSect);
     AssertRC(rc2);
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     rc2 = ichac97R3StreamAsyncIODestroy(pThis, pStreamCC);
     AssertRC(rc2);
-# else
-    RT_NOREF(pThis);
-# endif
 
     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
     { /* likely */ }
@@ -1330,7 +1313,6 @@ static int ichac97R3StreamRead(PAC97STREAMR3 pSrcStreamCC, PAUDMIXSINK pDstMixSi
     return rc;
 }
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 
 /**
  * Asynchronous I/O thread for an AC'97 stream.
@@ -1553,7 +1535,6 @@ static void ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
 #endif
-# endif /* VBOX_WITH_AUDIO_AC97_ASYNC_IO */
 
 # ifdef LOG_ENABLED
 static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16_t cBDLE)
@@ -1593,7 +1574,7 @@ static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16
  * The host sink(s) set the overall pace.
  *
  * This routine is called by both, the synchronous and the asynchronous
- * (VBOX_WITH_AUDIO_AC97_ASYNC_IO), implementations.
+ * implementations.
  *
  * When running synchronously, the device DMA transfers *and* the mixer sink
  * processing is within the device timer.
@@ -1626,9 +1607,7 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
 
     if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (fInTimer)
-# endif
         {
             const uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
             if (cbStreamFree)
@@ -1650,15 +1629,11 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
 
         Log3Func(("[SD%RU8] fInTimer=%RTbool\n", pStream->u8SD, fInTimer));
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         rc2 = ichac97R3StreamAsyncIONotify(pStreamCC);
         AssertRC(rc2);
-# endif
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (!fInTimer) /* In async I/O thread */
         {
-# endif
             const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
             const uint32_t cbStreamReadable   = ichac97R3StreamGetUsed(pStreamCC);
             const uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
@@ -1671,9 +1646,7 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
                 rc2 = ichac97R3StreamRead(pStreamCC, pSink, cbToReadFromStream, NULL /* pcbRead */);
                 AssertRC(rc2);
             }
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-#endif
         /* When running synchronously, update the associated sink here.
          * Otherwise this will be done in the async I/O thread. */
         rc2 = AudioMixerSinkUpdate(pSink);
@@ -1681,10 +1654,8 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
     }
     else /* Input (SDI). */
     {
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (!fInTimer)
         {
-# endif
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
 
@@ -1707,13 +1678,10 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
                 rc2 = ichac97R3StreamWrite(pStreamCC, pSink, cbSinkReadable, NULL /* pcbWritten */);
                 AssertRC(rc2);
             }
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
         else /* fInTimer */
         {
-# endif
 
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
             const uint64_t tsNowNs = RTTimeNanoTS();
             if (tsNowNs - pStreamCC->State.tsLastUpdateNs >= pStreamCC->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
@@ -1722,7 +1690,6 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
 
                 pStreamCC->State.tsLastUpdateNs = tsNowNs;
             }
-# endif
 
             const uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
             if (cbStreamUsed)
@@ -1732,9 +1699,7 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
                 rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, cbStreamUsed);
                 AssertRC(rc2);
             }
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-# endif
     }
 }
 
@@ -4245,10 +4210,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     rc = PDMDevHlpSSMRegister(pDevIns, AC97_SAVED_STATE_VERSION, sizeof(*pThis), ichac97R3SaveExec, ichac97R3LoadExec);
     if (RT_FAILURE(rc))
         return rc;
-
-# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    LogRel(("AC97: Asynchronous I/O enabled\n"));
-# endif
 
     /*
      * Attach drivers.  We ASSUME they are configured consecutively without any

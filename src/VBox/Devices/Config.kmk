@@ -115,9 +115,6 @@ ifdef VBOX_WITH_NVIDIA_HDA
  VBOX_AUDIO_DEFS += VBOX_WITH_NVIDIA_HDA
 endif
 
-# AC'97 needs testing:
-VBOX_AUDIO_DEFS  += VBOX_WITH_AUDIO_AC97_ASYNC_IO
-
 # Not yet enabled: Callbacks for the device emulation to let the backends
 #                  tell the emulation when and how to process data.
 if 0
