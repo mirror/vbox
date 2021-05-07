@@ -15,19 +15,13 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- *
- * The contents of this file may alternatively be used under the terms
- * of the Common Development and Distribution License Version 1.0
- * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
- * VirtualBox OSE distribution, in which case the provisions of the
- * CDDL are applicable instead of those of the GPL.
- *
- * You may elect to license modified versions of this file under the
- * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_SRC_build_VBoxDDVKAT_h
-#define VBOX_INCLUDED_SRC_build_VBoxDDVKAT_h
+#ifndef VBOX_INCLUDED_SRC_Audio_VBoxDDVKAT_h
+#define VBOX_INCLUDED_SRC_Audio_VBoxDDVKAT_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmifs.h>
 
@@ -105,4 +99,4 @@ extern const PDMDRVREG g_DrvVKATPulseAudio;
 extern const PDMDRVREG g_DrvVKATAlsa;
 extern const PDMDRVREG g_DrvVKATOss;
 
-#endif /* VBOX_INCLUDED_SRC_build_VBoxDDVKAT_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_VBoxDDVKAT_h */
