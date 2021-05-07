@@ -3901,6 +3901,7 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
             return;
         }
     }
+    keyboard().ReleaseKeys();
     emit sigClose();
     event->ignore();
 }
