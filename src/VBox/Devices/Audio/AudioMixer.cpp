@@ -2139,8 +2139,8 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
     /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
     cbToTransfer = PDMAudioPropsFloorBytesToFrame(&pSink->PCMProps, cbToTransfer);
 
-    Log3Func(("idStream=%#x: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32\n",
-              idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer));
+    Log3Func(("idStream=%#x: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32 @%#RX64\n",
+              idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer, offStream));
     RT_NOREF(idStream);
 
     /*
@@ -2157,7 +2157,7 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
         AssertRC(rc);
         Assert(cbWritten <= cbSrcBuf);
 
-        Log2Func(("idStream=%#x: %#RX32/%#zx bytes read @%#RX64\n", cbWritten, cbSrcBuf, offStream));
+        Log2Func(("idStream=%#x: %#RX32/%#zx bytes read @%#RX64\n", idStream, cbWritten, cbSrcBuf, offStream));
 #ifdef VBOX_WITH_DTRACE
         VBOXDD_AUDIO_MIXER_SINK_AIO_OUT(idStream, cbWritten, offStream);
 #endif
@@ -2212,7 +2212,7 @@ uint64_t AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf,
     /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
     cbToTransfer = PDMAudioPropsFloorBytesToFrame(&pSink->PCMProps, cbToTransfer);
 
-    Log3Func(("idStream=%#x: cbSinkReadable=%#RX32 cbCircBufWritable=%#RX32 -> cbToTransfer=%#RX32 @#RX64\n",
+    Log3Func(("idStream=%#x: cbSinkReadable=%#RX32 cbCircBufWritable=%#RX32 -> cbToTransfer=%#RX32 @%#RX64\n",
               idStream, cbSinkReadable, cbCircBufWritable, cbToTransfer, offStream));
     RT_NOREF(idStream);
 
