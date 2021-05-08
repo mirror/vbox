@@ -26,28 +26,6 @@
 
 
 /**
- * HDA stream's state for asynchronous I/O.
- */
-typedef struct HDASTREAMSTATEAIO
-{
-    /** Thread handle for the actual I/O thread. */
-    RTTHREAD                hThread;
-    /** Event for letting the thread know there is some data to process. */
-    RTSEMEVENT              hEvent;
-    /** Critical section for synchronizing access. */
-    RTCRITSECT              CritSect;
-    /** Started indicator. */
-    volatile bool           fStarted;
-    /** Shutdown indicator. */
-    volatile bool           fShutdown;
-    /** Whether the thread should do any data processing or not. */
-    volatile bool           fEnabled;
-    bool                    afPadding[1+4];
-} HDASTREAMSTATEAIO;
-/** Pointer to a HDA stream's asynchronous I/O state. */
-typedef HDASTREAMSTATEAIO *PHDASTREAMSTATEAIO;
-
-/**
  * Structure containing HDA stream debug stuff, configurable at runtime.
  */
 typedef struct HDASTREAMDEBUGRT
@@ -307,8 +285,13 @@ typedef struct HDASTREAMR3
         /** List of DMA handlers. */
         RTLISTANCHORR3          lstDMAHandlers;
 #endif
-        /** Asynchronous I/O state members. */
-        HDASTREAMSTATEAIO       AIO;
+        /** The mixer sink this stream has registered AIO update callback with.
+         * This is NULL till we register it, typically in hdaR3StreamEnable.
+         * (The problem with following the pMixSink assignment is that hdaR3StreamReset
+         * sets it without updating the HDA sink structure, so things get out of
+         * wack in hdaR3MixerControl later in the initial device reset.) */
+        PAUDMIXSINK             pAioRegSink;
+
         /** Size of the DMA buffer (pCircBuf) in bytes. */
         uint32_t                StatDmaBufSize;
         /** Number of used bytes in the DMA buffer (pCircBuf). */
@@ -361,21 +344,12 @@ uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PH
                                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
 void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                       PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
+DECLCALLBACK(void)  hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 bool                hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
 void                hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
 # endif
-/** @} */
-
-/** @name Async I/O stream functions (ring-3).
- * @{
- */
-int                 hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3);
-void                hdaR3StreamAsyncIOLock(PHDASTREAMR3 pStreamR3);
-void                hdaR3StreamAsyncIOUnlock(PHDASTREAMR3 pStreamR3);
-void                hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable);
-int                 hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3);
 /** @} */
 
 #endif /* IN_RING3 */

@@ -87,7 +87,9 @@
 #include <iprt/alloc.h>
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 
 /*********************************************************************************************************************************
@@ -96,7 +98,7 @@
 static int audioMixerAddSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 
-static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir);
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns);
 static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 static void audioMixerSinkRemoveAllStreamsInternal(PAUDMIXSINK pSink);
@@ -174,7 +176,7 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR en
     PAUDMIXSINK pSink = (PAUDMIXSINK)RTMemAllocZ(sizeof(AUDMIXSINK));
     if (pSink)
     {
-        rc = audioMixerSinkInit(pSink, pMixer, pszName, enmDir);
+        rc = audioMixerSinkInit(pSink, pMixer, pszName, enmDir, pDevIns);
         if (RT_SUCCESS(rc))
         {
             rc = audioMixerAddSinkInternal(pMixer, pSink);
@@ -731,6 +733,10 @@ int AudioMixerSinkEnable(PAUDMIXSINK pSink, bool fEnable)
                 /* Set the sink in a pending disable state first.
                  * The final status (disabled) will be set in the sink's iteration. */
                 pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+
+                /* Kick the AIO thread so it can keep pushing data till we're out of this status. */
+                if (pSink->AIO.hEvent != NIL_RTSEMEVENT)
+                    AudioMixerSinkSignalUpdateJob(pSink);
             }
         }
     }
@@ -747,12 +753,13 @@ int AudioMixerSinkEnable(PAUDMIXSINK pSink, bool fEnable)
  * Initializes a sink.
  *
  * @returns VBox status code.
- * @param   pSink               Sink to initialize.
- * @param   pMixer              Mixer the sink is assigned to.
- * @param   pcszName            Name of the sink.
- * @param   enmDir              Direction of the sink.
+ * @param   pSink           Sink to initialize.
+ * @param   pMixer          Mixer the sink is assigned to.
+ * @param   pcszName        Name of the sink.
+ * @param   enmDir          Direction of the sink.
+ * @param   pDevIns         The device instance.
  */
-static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir)
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns)
 {
     pSink->pszName = RTStrDup(pcszName);
     if (!pSink->pszName)
@@ -775,6 +782,15 @@ static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char 
         pSink->VolumeCombined.fMuted = false;
         pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
         pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
+
+        /* AIO */
+        AssertPtr(pDevIns);
+        pSink->AIO.pDevIns     = pDevIns;
+        pSink->AIO.hThread     = NIL_RTTHREAD;
+        pSink->AIO.hEvent      = NIL_RTSEMEVENT;
+        pSink->AIO.fStarted    = false;
+        pSink->AIO.fShutdown   = false;
+        pSink->AIO.cUpdateJobs = 0;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -844,6 +860,27 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
     char szPrefix[128];
     RTStrPrintf(szPrefix, sizeof(szPrefix), "MixerSink-%s/", pSink->pszName);
     PDMDevHlpSTAMDeregisterByPrefix(pDevIns, szPrefix);
+
+    /* Shutdown the AIO thread if started: */
+    ASMAtomicWriteBool(&pSink->AIO.fShutdown, true);
+    if (pSink->AIO.hEvent != NIL_RTSEMEVENT)
+    {
+        int rc2 = RTSemEventSignal(pSink->AIO.hEvent);
+        AssertRC(rc2);
+    }
+    if (pSink->AIO.hThread != NIL_RTTHREAD)
+    {
+        LogFlowFunc(("Waiting for AIO thread for %s...\n", pSink->pszName));
+        int rc2 = RTThreadWait(pSink->AIO.hThread, RT_MS_30SEC, NULL);
+        AssertRC(rc2);
+        pSink->AIO.hThread = NIL_RTTHREAD;
+    }
+    if (pSink->AIO.hEvent != NIL_RTSEMEVENT)
+    {
+        int rc2 = RTSemEventDestroy(pSink->AIO.hEvent);
+        AssertRC(rc2);
+        pSink->AIO.hEvent = NIL_RTSEMEVENT;
+    }
 
     RTStrFree(pSink->pszName);
     pSink->pszName = NULL;
@@ -1866,6 +1903,257 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
     RTCritSectLeave(&pSink->CritSect);
     return rc;
 }
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD, Audio Mixer Sink asynchronous I/O thread}
+ */
+static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    PAUDMIXSINK pSink = (PAUDMIXSINK)pvUser;
+    AssertPtr(pSink);
+    RT_NOREF(hThreadSelf);
+
+    /*
+     * The run loop.
+     */
+    LogFlowFunc(("%s: Entering run loop...\n", pSink->pszName));
+    while (!pSink->AIO.fShutdown)
+    {
+        RTMSINTERVAL cMsSleep = RT_INDEFINITE_WAIT;
+
+        RTCritSectEnter(&pSink->CritSect);
+        if (pSink->fStatus & (AUDMIXSINK_STS_RUNNING | AUDMIXSINK_STS_PENDING_DISABLE))
+        {
+            /*
+             * Before doing jobs, always update input sinks.
+             */
+            if (pSink->enmDir == PDMAUDIODIR_IN)
+                audioMixerSinkUpdateInput(pSink);
+
+            /*
+             * Do the device specific updating.
+             */
+            uintptr_t const cUpdateJobs = RT_MIN(pSink->AIO.cUpdateJobs, RT_ELEMENTS(pSink->AIO.aUpdateJobs));
+            for (uintptr_t iJob = 0; iJob < cUpdateJobs; iJob++)
+                pSink->AIO.aUpdateJobs[iJob].pfnUpdate(pSink->AIO.pDevIns, pSink, pSink->AIO.aUpdateJobs[iJob].pvUser);
+
+            /*
+             * Update output sinks after the updating.
+             */
+            if (pSink->enmDir == PDMAUDIODIR_OUT)
+                audioMixerSinkUpdateOutput(pSink);
+
+            /*
+             * If we're in draining mode, we use the smallest typical interval of the
+             * jobs for the next wait as we're unlikly to be woken up again by any
+             * DMA timer as it has normally stopped running at this point.
+             */
+            if (!(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
+            { /* likely */ }
+            else
+            {
+                /** @todo Also do some kind of timeout here and do a forced stream disable w/o
+                 *        any draining if we exceed it. */
+                cMsSleep = pSink->AIO.cMsMinTypicalInterval;
+            }
+
+        }
+        RTCritSectLeave(&pSink->CritSect);
+
+        /*
+         * Now block till we're signalled or
+         */
+        if (!pSink->AIO.fShutdown)
+        {
+            int rc = RTSemEventWait(pSink->AIO.hEvent, cMsSleep);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%s: RTSemEventWait -> %Rrc\n", pSink->pszName, rc), rc);
+        }
+    }
+
+    LogFlowFunc(("%s: returnining normally.\n", pSink->pszName));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Adds an AIO update job to the sink.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if already registered job with same @a pvUser
+ *          and @a pfnUpdate.
+ *
+ * @param   pSink               The mixer sink to remove the AIO job from.
+ * @param   pfnUpdate           The update callback for the job.
+ * @param   pvUser              The user parameter to pass to @a pfnUpdate.  This should
+ *                              identify the job unique together with @a pfnUpdate.
+ * @param   cMsTypicalInterval  A typical interval between jobs in milliseconds.
+ *                              This is used when draining.
+ */
+int AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    int rc = RTCritSectEnter(&pSink->CritSect);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Check that the job hasn't already been added.
+     */
+    uintptr_t const iEnd = pSink->AIO.cUpdateJobs;
+    for (uintptr_t i = 0; i < iEnd; i++)
+        AssertReturnStmt(   pvUser    != pSink->AIO.aUpdateJobs[i].pvUser
+                         || pfnUpdate != pSink->AIO.aUpdateJobs[i].pfnUpdate,
+                         RTCritSectLeave(&pSink->CritSect),
+                         VERR_ALREADY_EXISTS);
+
+    AssertReturnStmt(iEnd < RT_ELEMENTS(pSink->AIO.aUpdateJobs),
+                     RTCritSectLeave(&pSink->CritSect),
+                     VERR_ALREADY_EXISTS);
+
+    /*
+     * Create the thread if not already running or if it stopped.
+     */
+/** @todo move this to the sink "enable" code */
+    if (pSink->AIO.hThread != NIL_RTTHREAD)
+    {
+        int rcThread = VINF_SUCCESS;
+        rc = RTThreadWait(pSink->AIO.hThread, 0, &rcThread);
+        if (RT_FAILURE_NP(rc))
+        { /* likely */ }
+        else
+        {
+            LogRel(("Audio: AIO thread for '%s' died? rcThread=%Rrc\n", pSink->pszName, rcThread));
+            pSink->AIO.hThread = NIL_RTTHREAD;
+        }
+    }
+    if (pSink->AIO.hThread == NIL_RTTHREAD)
+    {
+        LogFlowFunc(("%s: Starting AIO thread...\n", pSink->pszName));
+        if (pSink->AIO.hEvent == NIL_RTSEMEVENT)
+        {
+            rc = RTSemEventCreate(&pSink->AIO.hEvent);
+            AssertRCReturnStmt(rc, RTCritSectLeave(&pSink->CritSect), rc);
+        }
+        static uint32_t volatile s_idxThread = 0;
+        uint32_t idxThread = ASMAtomicIncU32(&s_idxThread);
+        rc = RTThreadCreateF(&pSink->AIO.hThread, audioMixerSinkAsyncIoThread, pSink, 0 /*cbStack*/, RTTHREADTYPE_IO,
+                             RTTHREADFLAGS_WAITABLE | RTTHREADFLAGS_COM_MTA, "MixAIO-%u", idxThread);
+        AssertRCReturnStmt(rc, RTCritSectLeave(&pSink->CritSect), rc);
+    }
+
+    /*
+     * Finally, actually add the job.
+     */
+    pSink->AIO.aUpdateJobs[iEnd].pfnUpdate          = pfnUpdate;
+    pSink->AIO.aUpdateJobs[iEnd].pvUser             = pvUser;
+    pSink->AIO.aUpdateJobs[iEnd].cMsTypicalInterval = cMsTypicalInterval;
+    pSink->AIO.cUpdateJobs = (uint8_t)(iEnd + 1);
+    if (cMsTypicalInterval < pSink->AIO.cMsMinTypicalInterval)
+        pSink->AIO.cMsMinTypicalInterval = cMsTypicalInterval;
+    LogFlowFunc(("%s: [#%zu]: Added pfnUpdate=%p pvUser=%p typically every %u ms (min %u ms)\n",
+                 pSink->pszName, iEnd, pfnUpdate, pvUser, cMsTypicalInterval, pSink->AIO.cMsMinTypicalInterval));
+
+    RTCritSectLeave(&pSink->CritSect);
+    return VINF_SUCCESS;
+
+}
+
+
+/**
+ * Removes an update job previously registered via AudioMixerSinkAddUpdateJob().
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if not found.
+ *
+ * @param   pSink       The mixer sink to remove the AIO job from.
+ * @param   pfnUpdate   The update callback of the job.
+ * @param   pvUser      The user parameter identifying the job.
+ */
+int AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    int rc = RTCritSectEnter(&pSink->CritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = VERR_NOT_FOUND;
+    for (uintptr_t iJob = 0; iJob < pSink->AIO.cUpdateJobs; iJob++)
+        if (   pvUser    == pSink->AIO.aUpdateJobs[iJob].pvUser
+            && pfnUpdate == pSink->AIO.aUpdateJobs[iJob].pfnUpdate)
+        {
+            pSink->AIO.cUpdateJobs--;
+            if (iJob != pSink->AIO.cUpdateJobs)
+                memmove(&pSink->AIO.aUpdateJobs[iJob], &pSink->AIO.aUpdateJobs[iJob + 1],
+                        (pSink->AIO.cUpdateJobs - iJob) * sizeof(pSink->AIO.aUpdateJobs[0]));
+            LogFlowFunc(("%s: [#%zu]: Removed pfnUpdate=%p pvUser=%p => cUpdateJobs=%u\n",
+                         pSink->pszName, iJob, pfnUpdate, pvUser, pSink->AIO.cUpdateJobs));
+            rc = VINF_SUCCESS;
+            break;
+        }
+    AssertRC(rc);
+
+    /* Recalc the minimum sleep interval (do it always). */
+    pSink->AIO.cMsMinTypicalInterval = RT_MS_1SEC / 2;
+    for (uintptr_t iJob = 0; iJob < pSink->AIO.cUpdateJobs; iJob++)
+        if (pSink->AIO.aUpdateJobs[iJob].cMsTypicalInterval < pSink->AIO.cMsMinTypicalInterval)
+            pSink->AIO.cMsMinTypicalInterval = pSink->AIO.aUpdateJobs[iJob].cMsTypicalInterval;
+
+
+    RTCritSectLeave(&pSink->CritSect);
+    return rc;
+}
+
+
+/**
+ * Signals the AIO thread to perform updates.
+ *
+ * @returns VBox status code.
+ * @param   pSink       The mixer sink which AIO thread needs to do chores.
+ */
+int AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    return RTSemEventSignal(pSink->AIO.hEvent);
+}
+
+
+/**
+ * Locks the mixer sink for purposes of serializing with the AIO thread.
+ *
+ * @returns VBox status code.
+ * @param   pSink       The mixer sink to lock.
+ */
+int AudioMixerSinkLock(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    return RTCritSectEnter(&pSink->CritSect);
+}
+
+
+/**
+ * Try to lock the mixer sink for purposes of serializing with the AIO thread.
+ *
+ * @returns VBox status code.
+ * @param   pSink       The mixer sink to lock.
+ */
+int AudioMixerSinkTryLock(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    return RTCritSectTryEnter(&pSink->CritSect);
+}
+
+
+/**
+ * Unlocks the sink.
+ *
+ * @returns VBox status code.
+ * @param   pSink       The mixer sink to unlock.
+ */
+int     AudioMixerSinkUnlock(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    return RTCritSectLeave(&pSink->CritSect);
+}
+
 
 /**
  * Updates the (master) volume of a mixer sink.

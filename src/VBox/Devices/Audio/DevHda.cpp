@@ -1340,7 +1340,9 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         STAM_REL_PROFILE_START_NS(&pStreamR3->State.StatReset, a);
         hdaStreamLock(pStreamShared);
-        hdaR3StreamAsyncIOLock(pStreamR3);
+        PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
+        if (pMixSink)
+            AudioMixerSinkLock(pMixSink);
 
         /* Deal with reset while running. */
         if (pStreamShared->State.fRunning)
@@ -1352,7 +1354,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, pStreamR3, uSD);
 
-        hdaR3StreamAsyncIOUnlock(pStreamR3);
+        if (pMixSink) /* (FYI. pMixSink might not be what pStreamR3->pMixSink->pMixSink points at any longer) */
+            AudioMixerSinkUnlock(pMixSink);
         hdaStreamUnlock(pStreamShared);
         STAM_REL_PROFILE_STOP_NS(&pStreamR3->State.StatReset, a);
     }
@@ -1368,12 +1371,13 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
             hdaStreamLock(pStreamShared);
+            /** @todo bird: It's not clear to me when the pMixSink is actually
+             *        assigned to the stream, so being paranoid till I find out... */
+            PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
+            if (pMixSink)
+                AudioMixerSinkLock(pMixSink);
 
             int rc2 = VINF_SUCCESS;
-            if (fRun)
-                rc2 = hdaR3StreamAsyncIOCreate(pStreamR3);
-
-            hdaR3StreamAsyncIOLock(pStreamR3);
             if (fRun)
             {
                 if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
@@ -1450,7 +1454,10 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                         AssertRC(rc);
 
                         /** @todo we should have a delayed AIO thread kick off, really... */
-                        hdaR3StreamAsyncIONotify(pStreamR3);
+                        if (pStreamR3->pMixSink && pStreamR3->pMixSink->pMixSink)
+                            AudioMixerSinkSignalUpdateJob(pStreamR3->pMixSink->pMixSink);
+                        else
+                            AssertFailed();
                     }
                     hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
                 }
@@ -1459,7 +1466,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             }
 
             /* Make sure to leave the lock before (eventually) starting the timer. */
-            hdaR3StreamAsyncIOUnlock(pStreamR3);
+            if (pMixSink)
+                AudioMixerSinkUnlock(pMixSink);
             hdaStreamUnlock(pStreamShared);
             STAM_REL_PROFILE_STOP_NS((fRun ? &pStreamR3->State.StatStart : &pStreamR3->State.StatStop), r);
         }
@@ -2547,31 +2555,39 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
         AssertLogRelReturn(uSD < RT_ELEMENTS(pThisCC->aStreams), VERR_NOT_IMPLEMENTED);
 
         /* Detach the existing stream from the sink. */
-        if (   pSink->pStreamShared
-            && pSink->pStreamR3
-            && (   pSink->pStreamShared->u8SD      != uSD
-                || pSink->pStreamShared->u8Channel != uChannel)
+        PHDASTREAM const   pOldStreamShared = pSink->pStreamShared;
+        PHDASTREAMR3 const pOldStreamR3     = pSink->pStreamR3;
+        if (   pOldStreamShared
+            && pOldStreamR3
+            && (   pOldStreamShared->u8SD      != uSD
+                || pOldStreamShared->u8Channel != uChannel)
            )
         {
             LogFunc(("Sink '%s' was assigned to stream #%RU8 (channel %RU8) before\n",
-                     pSink->pMixSink->pszName, pSink->pStreamShared->u8SD, pSink->pStreamShared->u8Channel));
+                     pSink->pMixSink->pszName, pOldStreamShared->u8SD, pOldStreamShared->u8Channel));
 
-            hdaStreamLock(pSink->pStreamShared);
+            hdaStreamLock(pOldStreamShared);
 
             /* Only disable the stream if the stream descriptor # has changed. */
-            if (pSink->pStreamShared->u8SD != uSD)
-                hdaR3StreamEnable(pThis, pSink->pStreamShared, pSink->pStreamR3, false /*fEnable*/);
+            if (pOldStreamShared->u8SD != uSD)
+                hdaR3StreamEnable(pThis, pOldStreamShared, pOldStreamR3, false /*fEnable*/);
 
-            pSink->pStreamR3->pMixSink = NULL;
+            if (pOldStreamR3->State.pAioRegSink)
+            {
+                AudioMixerSinkRemoveUpdateJob(pOldStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pOldStreamR3);
+                pOldStreamR3->State.pAioRegSink = NULL;
+            }
 
-            hdaStreamUnlock(pSink->pStreamShared);
+            pOldStreamR3->pMixSink = NULL;
+
+            hdaStreamUnlock(pOldStreamShared);
 
             pSink->pStreamShared = NULL;
             pSink->pStreamR3     = NULL;
         }
 
         /* Attach the new stream to the sink.
-         * Enabling the stream will be done by the gust via a separate SDnCTL call then. */
+         * Enabling the stream will be done by the guest via a separate SDnCTL call then. */
         if (pSink->pStreamShared == NULL)
         {
             LogRel2(("HDA: Setting sink '%s' to stream #%RU8 (channel %RU8), mixer control=%s\n",
@@ -2801,9 +2817,12 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
      */
     for (size_t idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
-        PHDASTREAM const pStreamShared = &pThis->aStreams[idxStream];
+        PHDASTREAM const   pStreamShared = &pThis->aStreams[idxStream];
+        PHDASTREAMR3 const pStreamR3     = &pThisCC->aStreams[idxStream];
         hdaStreamLock(pStreamShared);
-        hdaR3StreamAsyncIOLock(&pThisCC->aStreams[idxStream]);
+        PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
+        if (pMixSink)
+            AudioMixerSinkLock(pMixSink);
 
         /* We're doing this unconditionally, hope that's not problematic in any way... */
         int rc = hdaR3StreamEnable(pThis, pStreamShared, &pThisCC->aStreams[idxStream], false /* fEnable */);
@@ -2813,7 +2832,8 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, &pThisCC->aStreams[idxStream], (uint8_t)idxStream);
 
-        hdaR3StreamAsyncIOUnlock(&pThisCC->aStreams[idxStream]);
+        if (pMixSink) /* (FYI. pMixSink might not be what pStreamR3->pMixSink->pMixSink points at any longer) */
+            AudioMixerSinkUnlock(pMixSink);
         hdaStreamUnlock(pStreamShared);
     }
 
@@ -3391,20 +3411,22 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = pHlp->pfnSSMPutStructEx(pSSM, &TmpState, sizeof(TmpState), 0 /*fFlags*/,  g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    uint32_t cbCircBuf     = 0;
-    uint32_t cbCircBufUsed = 0;
+    PAUDMIXSINK pSink         = NULL;
+    uint32_t    cbCircBuf     = 0;
+    uint32_t    cbCircBufUsed = 0;
     if (pStreamR3->State.pCircBuf)
     {
         cbCircBuf = (uint32_t)RTCircBufSize(pStreamR3->State.pCircBuf);
 
         /* We take the AIO lock here and releases it after saving the buffer,
            otherwise the AIO thread could race us reading out the buffer data. */
-        if (   !pStreamR3->State.AIO.fStarted
-            || RT_SUCCESS(RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect)))
+        pSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
+        if (   !pSink
+            || RT_SUCCESS(AudioMixerSinkTryLock(pSink)))
         {
             cbCircBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
-            if (cbCircBufUsed == 0 && pStreamR3->State.AIO.fStarted)
-                RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+            if (cbCircBufUsed == 0 && pSink)
+                AudioMixerSinkUnlock(pSink);
         }
     }
 
@@ -3427,8 +3449,8 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
             rc = pHlp->pfnSSMPutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
         RTCircBufReleaseReadBlock(pStreamR3->State.pCircBuf, 0 /* Don't advance read pointer! */);
 
-        if (pStreamR3->State.AIO.fStarted)
-            RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+        if (pSink)
+            AudioMixerSinkUnlock(pSink);
     }
 
     Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", pStreamR3->u8SD, HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD),
@@ -3496,14 +3518,8 @@ static DECLCALLBACK(int) hdaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         {
             PHDASTREAMR3 pStreamR3 = &pThisCC->aStreams[i];
 
-            /* Make sure to also create the async I/O thread before actually enabling the stream. */
-            int rc2 = hdaR3StreamAsyncIOCreate(pStreamR3);
-            AssertRC(rc2);
-
-            /* ... and enabling it. */
-            hdaR3StreamAsyncIOEnable(pStreamR3, true /* fEnable */);
             /* (Re-)enable the stream. */
-            rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, true /* fEnable */);
+            int rc2 = hdaR3StreamEnable(pThis, pStreamShared, pStreamR3, true /* fEnable */);
             AssertRC(rc2);
 
             /* Add the stream to the device setup. */
@@ -4588,8 +4604,19 @@ static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
 
     LogRel2(("HDA: Powering off ...\n"));
 
+/** @todo r=bird: What this "releasing references" and whatever here is
+ *        referring to, is apparently that the device is destroyed after the
+ *        drivers, so creating trouble as those structures have been torn down
+ *        already...  Reverse order, like we do for power off?  Need a new
+ *        PDMDEVREG flag. */
+
     /* Ditto goes for the codec, which in turn uses the mixer. */
     hdaR3CodecPowerOff(pThisCC->pCodec);
+
+    /* This is to prevent us from calling into the mixer and mixer sink code
+       after it has been destroyed below. */
+    for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
+        pThisCC->aStreams[i].State.pAioRegSink = NULL; /* don't need to remove, we're destorying it. */
 
     /*
      * Note: Destroy the mixer while powering off and *not* in hdaR3Destruct,

@@ -47,8 +47,6 @@
 *********************************************************************************************************************************/
 static void hdaR3StreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uLPIB);
 
-static int  hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3);
-
 
 
 /**
@@ -166,13 +164,16 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
 void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 {
     LogFlowFunc(("[SD%RU8] Destroying ...\n", pStreamShared->u8SD));
+    int rc2;
 
     hdaR3StreamMapDestroy(&pStreamR3->State.Mapping);
 
-    int rc2;
-
-    rc2 = hdaR3StreamAsyncIODestroy(pStreamR3);
-    AssertRC(rc2);
+    if (pStreamR3->State.pAioRegSink)
+    {
+        rc2 = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
+        AssertRC(rc2);
+        pStreamR3->State.pAioRegSink = NULL;
+    }
 
     if (PDMCritSectIsInitialized(&pStreamShared->CritSect))
     {
@@ -823,6 +824,12 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
 
     /* Assign the default mixer sink to the stream. */
     pStreamR3->pMixSink = hdaR3GetDefaultSink(pThisCC, uSD);
+    if (pStreamR3->State.pAioRegSink)
+    {
+        int rc2 = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
+        AssertRC(rc2);
+        pStreamR3->State.pAioRegSink = NULL;
+    }
 
     /* Reset transfer stuff. */
     pStreamShared->State.cTransferPendingInterrupts = 0;
@@ -890,16 +897,26 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
 
     LogFunc(("[SD%RU8] fEnable=%RTbool, pMixSink=%p\n", pStreamShared->u8SD, fEnable, pStreamR3->pMixSink));
 
-
-
     /* First, enable or disable the stream and the stream's sink, if any. */
-    int                 rc;
-    if (   pStreamR3->pMixSink
-        && pStreamR3->pMixSink->pMixSink)
-        rc = AudioMixerSinkEnable(pStreamR3->pMixSink->pMixSink, fEnable);
-    else
-        rc = VINF_SUCCESS;
-
+    int               rc    = VINF_SUCCESS;
+    PAUDMIXSINK const pSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
+    if (pSink)
+    {
+        if (fEnable && pStreamR3->State.pAioRegSink != pSink)
+        {
+            if (pStreamR3->State.pAioRegSink)
+            {
+                rc = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
+                AssertRC(rc);
+            }
+            rc = AudioMixerSinkAddUpdateJob(pSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3,
+                                            pStreamShared->State.Cfg.Device.cMsSchedulingHint);
+            AssertLogRelRC(rc);
+            pStreamR3->State.pAioRegSink = RT_SUCCESS(rc) ? pSink : NULL;
+        }
+        if (RT_SUCCESS(rc))
+            rc = AudioMixerSinkEnable(pSink, fEnable);
+    }
     if (   RT_SUCCESS(rc)
         && fEnable
         && pStreamR3->Dbg.Runtime.fEnabled)
@@ -1527,8 +1544,8 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
 
 
 /**
- * Input streams: Pulls data from to the host device thru the mixer, putting it
- * in the internal DMA buffer.
+ * Input streams: Pulls data from the mixer, putting it in the internal DMA
+ * buffer.
  *
  * @param   pStreamShared   HDA stream to update (shared bits).
  * @param   pStreamR3       HDA stream to update (ring-3 bits).
@@ -1537,8 +1554,6 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
 static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
 {
     RT_NOREF(pStreamShared);
-    int rc = AudioMixerSinkUpdate(pSink);
-    AssertRC(rc);
 
     /* Is the sink ready to be read (host input data) from? If so, by how much? */
     uint32_t cbSinkReadable = AudioMixerSinkGetReadable(pSink);
@@ -1563,7 +1578,7 @@ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStr
         /* Read a chunk of data. */
         uint8_t  abBuf[4096];
         uint32_t cbRead = 0;
-        rc = AudioMixerSinkRead(pSink, AUDMIXOP_COPY, abBuf, RT_MIN(cbSinkReadable, sizeof(abBuf)), &cbRead);
+        int rc = AudioMixerSinkRead(pSink, AUDMIXOP_COPY, abBuf, RT_MIN(cbSinkReadable, sizeof(abBuf)), &cbRead);
         AssertRCBreak(rc);
         AssertMsg(cbRead > 0, ("Nothing read from sink, even if %RU32 bytes were (still) announced\n", cbSinkReadable));
 
@@ -1813,7 +1828,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
 }
 
 /**
- * Output streams: Pushes data from to the mixer and host device.
+ * Output streams: Pushes data from to the mixer.
  *
  * @param   pStreamShared   HDA stream to update (shared bits).
  * @param   pStreamR3       HDA stream to update (ring-3 bits).
@@ -1870,12 +1885,6 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
 
     /* Update buffer stats. */
     pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
-
-    /*
-     * Push the stuff thru the mixer jungle and down the host audio driver (backend).
-     */
-    int rc2 = AudioMixerSinkUpdate(pSink);
-    AssertRC(rc2);
 }
 
 /**
@@ -1973,9 +1982,10 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
     int rc2;
 
     /*
-     * Make sure we're running and got an active mixer sink.
+     * Make sure we're running (only when on timer, as the AIO thread needs
+     * to properly drain the internal DMA buffer) and got an active mixer sink.
      */
-    if (RT_LIKELY(pStreamShared->State.fRunning))
+    if (RT_LIKELY(pStreamShared->State.fRunning || !fInTimer))
     { /* likely */ }
     else
         return;
@@ -2016,11 +2026,12 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
                      pStreamShared->u8SD, cbStreamFree, cbPeriod));
-                int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
+                int rc = AudioMixerSinkTryLock(pSink);
                 if (RT_SUCCESS(rc))
                 {
                     hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
-                    RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+                    AudioMixerSinkUpdate(pSink);
+                    AudioMixerSinkUnlock(pSink);
                 }
                 else
                     RTThreadYield();
@@ -2098,7 +2109,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             {
                 /* Notify the async I/O worker thread that there's work to do. */
                 Log5Func(("Notifying AIO thread\n"));
-                rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
+                rc2 = AudioMixerSinkSignalUpdateJob(pSink);
                 AssertRC(rc2);
                 /* Update last read timestamp for logging/debugging. */
                 pStreamShared->State.tsLastReadNs = tsNowNs;
@@ -2170,11 +2181,12 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
                      pStreamShared->u8SD, cbStreamUsed, cbPeriod));
-                int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
+                int rc = AudioMixerSinkTryLock(pSink);
                 if (RT_SUCCESS(rc))
                 {
+                    AudioMixerSinkUpdate(pSink);
                     hdaR3StreamPullFromMixer(pStreamShared, pStreamR3, pSink);
-                    RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+                    AudioMixerSinkUnlock(pSink);
                 }
                 else
                     RTThreadYield();
@@ -2189,7 +2201,8 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                     uint32_t cbSilence = 0;
                     do
                     {
-                        RTCritSectEnter(&pStreamR3->State.AIO.CritSect);
+                        AudioMixerSinkLock(pSink);
+
                         cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
                         if (cbStreamUsed < cbPeriod)
                         {
@@ -2208,7 +2221,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                             }
                         }
 
-                        RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+                        AudioMixerSinkUnlock(pSink);
                     } while (cbStreamUsed < cbPeriod);
                     if (cbSilence > 0)
                     {
@@ -2242,11 +2255,32 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
              *        we ideally want the AIO thread to run right before the DMA timer
              *        rather than right after it ran. */
             Log5Func(("Notifying AIO thread\n"));
-            rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
+            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
             AssertRC(rc2);
             pStreamShared->State.tsLastReadNs = tsNowNs;
         }
     }
+}
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD,
+ * Asynchronous I/O thread for a HDA stream.
+ *
+ * This will do the heavy lifting work for us as soon as it's getting notified
+ * by the DMA timer callout.}
+ */
+DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser)
+{
+    PHDASTATE const         pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATER3 const       pThisCC       = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    PHDASTREAMR3 const      pStreamR3     = (PHDASTREAMR3)pvUser;
+    PHDASTREAM const        pStreamShared = &pThis->aStreams[pStreamR3 - &pThisCC->aStreams[0]];
+    Assert(pStreamR3 - &pThisCC->aStreams[0] == pStreamR3->u8SD);
+    Assert(pStreamShared->u8SD == pStreamR3->u8SD);
+    RT_NOREF(pSink);
+
+    hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, false /* fInTimer */);
 }
 
 #endif /* IN_RING3 */
@@ -2486,196 +2520,5 @@ void hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream)
 }
 
 # endif /* HDA_USE_DMA_ACCESS_HANDLER */
-
-/**
- * @callback_method_impl{FNRTTHREAD,
- * Asynchronous I/O thread for a HDA stream.
- *
- * This will do the heavy lifting work for us as soon as it's getting notified
- * by the DMA timer callout.}
- */
-static DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
-{
-    PHDASTREAMR3 const       pStreamR3     = (PHDASTREAMR3)pvUser;
-    PHDASTREAMSTATEAIO const pAIO          = &pStreamR3->State.AIO;
-    PHDASTATE const          pThis         = pStreamR3->pHDAStateShared;
-    PHDASTATER3 const        pThisCC       = pStreamR3->pHDAStateR3;
-    PPDMDEVINS const         pDevIns       = pThisCC->pDevIns;
-    PHDASTREAM const         pStreamShared = &pThis->aStreams[pStreamR3 - &pThisCC->aStreams[0]];
-    Assert(pStreamR3 - &pThisCC->aStreams[0] == pStreamR3->u8SD);
-    Assert(pStreamShared->u8SD == pStreamR3->u8SD);
-
-    /* Signal parent thread that we've started  */
-    ASMAtomicWriteBool(&pAIO->fStarted, true);
-    RTThreadUserSignal(hThreadSelf);
-
-    LogFunc(("[SD%RU8] Started\n", pStreamShared->u8SD));
-
-    while (!ASMAtomicReadBool(&pAIO->fShutdown))
-    {
-        int rc2 = RTSemEventWait(pAIO->hEvent, RT_INDEFINITE_WAIT);
-        if (RT_SUCCESS(rc2))
-        { /* likely */ }
-        else
-            break;
-
-        if (!ASMAtomicReadBool(&pAIO->fShutdown))
-        { /* likely */ }
-        else
-            break;
-
-        rc2 = RTCritSectEnter(&pAIO->CritSect);
-        AssertRC(rc2);
-        if (RT_SUCCESS(rc2))
-        {
-            if (pAIO->fEnabled)
-                hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, false /* fInTimer */);
-
-            int rc3 = RTCritSectLeave(&pAIO->CritSect);
-            AssertRC(rc3);
-        }
-    }
-
-    LogFunc(("[SD%RU8] Ended\n", pStreamShared->u8SD));
-    ASMAtomicWriteBool(&pAIO->fStarted, false);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Creates the async I/O thread for a specific HDA audio stream.
- *
- * @returns VBox status code.
- * @param   pStreamR3           HDA audio stream to create the async I/O thread for.
- */
-int hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3)
-{
-    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-
-    int rc;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-    {
-        pAIO->fShutdown = false;
-        pAIO->fEnabled  = true; /* Enabled by default. */
-
-        rc = RTSemEventCreate(&pAIO->hEvent);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCritSectInit(&pAIO->CritSect);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTThreadCreateF(&pAIO->hThread, hdaR3StreamAsyncIOThread, pStreamR3, 0 /*cbStack*/, RTTHREADTYPE_IO,
-                                     RTTHREADFLAGS_WAITABLE | RTTHREADFLAGS_COM_MTA, "hdaAIO%RU8", pStreamR3->u8SD);
-                if (RT_SUCCESS(rc))
-                    rc = RTThreadUserWait(pAIO->hThread, 10 * 1000 /* 10s timeout */);
-            }
-        }
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
-    return rc;
-}
-
-/**
- * Destroys the async I/O thread of a specific HDA audio stream.
- *
- * @returns VBox status code.
- * @param   pStreamR3           HDA audio stream to destroy the async I/O thread for.
- */
-static int hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3)
-{
-    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return VINF_SUCCESS;
-
-    ASMAtomicWriteBool(&pAIO->fShutdown, true);
-
-    int rc = hdaR3StreamAsyncIONotify(pStreamR3);
-    AssertRC(rc);
-
-    int rcThread;
-    rc = RTThreadWait(pAIO->hThread, 30 * 1000 /* 30s timeout */, &rcThread);
-    LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc, rcThread));
-
-    if (RT_SUCCESS(rc))
-    {
-        pAIO->hThread = NIL_RTTHREAD;
-
-        rc = RTCritSectDelete(&pAIO->CritSect);
-        AssertRC(rc);
-
-        rc = RTSemEventDestroy(pAIO->hEvent);
-        AssertRC(rc);
-        pAIO->hEvent = NIL_RTSEMEVENT;
-
-        pAIO->fStarted  = false;
-        pAIO->fShutdown = false;
-        pAIO->fEnabled  = false;
-    }
-
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
-    return rc;
-}
-
-/**
- * Lets the stream's async I/O thread know that there is some data to process.
- *
- * @returns VBox status code.
- * @param   pStreamR3           HDA stream to notify async I/O thread for.
- */
-int hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3)
-{
-    return RTSemEventSignal(pStreamR3->State.AIO.hEvent);
-}
-
-/**
- * Locks the async I/O thread of a specific HDA audio stream.
- *
- * @param   pStreamR3           HDA stream to lock async I/O thread for.
- */
-void hdaR3StreamAsyncIOLock(PHDASTREAMR3 pStreamR3)
-{
-    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return;
-
-    int rc2 = RTCritSectEnter(&pAIO->CritSect);
-    AssertRC(rc2);
-}
-
-/**
- * Unlocks the async I/O thread of a specific HDA audio stream.
- *
- * @param   pStreamR3           HDA stream to unlock async I/O thread for.
- */
-void hdaR3StreamAsyncIOUnlock(PHDASTREAMR3 pStreamR3)
-{
-    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return;
-
-    int rc2 = RTCritSectLeave(&pAIO->CritSect);
-    AssertRC(rc2);
-}
-
-/**
- * Enables (resumes) or disables (pauses) the async I/O thread.
- *
- * @param   pStreamR3           HDA stream to enable/disable async I/O thread for.
- * @param   fEnable             Whether to enable or disable the I/O thread.
- *
- * @remarks Does not do locking.
- */
-void hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable)
-{
-    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-    ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
-}
 
 #endif /* IN_RING3 */

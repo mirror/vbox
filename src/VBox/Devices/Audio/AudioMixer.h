@@ -120,6 +120,11 @@ typedef AUDMIXSTREAM *PAUDMIXSTREAM;
 /** @} */
 
 
+/** Callback for an asynchronous I/O update job.  */
+typedef DECLCALLBACKTYPE(void, FNAUDMIXSINKUPDATE,(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser));
+/** Pointer to a callback for an asynchronous I/O update job.  */
+typedef FNAUDMIXSINKUPDATE *PFNAUDMIXSINKUPDATE;
+
 /**
  * Audio mixer sink.
  */
@@ -175,9 +180,36 @@ typedef struct AUDMIXSINK
     {
         PAUDIOHLPFILE       pFile;
     } Dbg;
-    /** This sink's mixing buffer, acting as
-     * a parent buffer for all streams this sink owns. */
+    /** This sink's mixing buffer. */
     AUDIOMIXBUF             MixBuf;
+    /** Asynchronous I/O thread related stuff. */
+    struct
+    {
+        /** The thread handle, NIL_RTTHREAD if not active. */
+        RTTHREAD                hThread;
+        /** Event for letting the thread know there is some data to process. */
+        RTSEMEVENT              hEvent;
+        /** The device instance (same for all update jobs). */
+        PPDMDEVINS              pDevIns;
+        /** Started indicator. */
+        volatile bool           fStarted;
+        /** Shutdown indicator. */
+        volatile bool           fShutdown;
+        /** Number of update jobs this sink has (usually zero or one). */
+        uint8_t                 cUpdateJobs;
+        /** The minimum typical interval for all jobs. */
+        uint32_t                cMsMinTypicalInterval;
+        /** Update jobs for this sink. */
+        struct
+        {
+            /** User specific argument. */
+            void               *pvUser;
+            /** The callback. */
+            PFNAUDMIXSINKUPDATE pfnUpdate;
+            /** Typical interval in milliseconds. */
+            uint32_t            cMsTypicalInterval;
+        } aUpdateJobs[8];
+    } AIO;
     /** The sink's critical section. */
     RTCRITSECT              CritSect;
 } AUDMIXSINK;
@@ -242,6 +274,13 @@ int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
+
+int     AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
+int     AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
+int     AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink);
+int     AudioMixerSinkLock(PAUDMIXSINK pSink);
+int     AudioMixerSinkTryLock(PAUDMIXSINK pSink);
+int     AudioMixerSinkUnlock(PAUDMIXSINK pSink);
 
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
 
