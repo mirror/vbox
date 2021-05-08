@@ -356,13 +356,15 @@ typedef struct AC97STREAMSTATE
     RTCRITSECT              CritSect;
     /** Circular buffer (FIFO) for holding DMA'ed data. */
     R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
+    /** Current circular buffer read offset (for tracing & logging). */
+    uint64_t                offRead;
+    /** Current circular buffer write offset (for tracing & logging). */
+    uint64_t                offWrite;
 #if HC_ARCH_BITS == 32
     uint32_t                Padding;
 #endif
     /** The stream's current configuration. */
     PDMAUDIOSTREAMCFG       Cfg; //+108
-    /** Asynchronous I/O state members. */
-    AC97STREAMSTATEAIO      AIO;
     /** Timestamp of the last DMA data transfer. */
     uint64_t                tsTransferLast;
     /** Timestamp of the next DMA data transfer.
@@ -376,11 +378,18 @@ typedef struct AC97STREAMSTATE
      *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
      *  Set in R3StreamInit(). */
     uint16_t                uTimerHz;
-    uint8_t                 Padding3[2];
+    /** Set if we've registered the asynchronous update job. */
+    bool                    fRegisteredAsyncUpdateJob;
+    uint8_t                 Padding3;
     /** (Virtual) clock ticks per transfer. */
     uint64_t                cTransferTicks;
-   /** Timestamp (in ns) of last stream update. */
+    /** Timestamp (in ns) of last stream update. */
     uint64_t                tsLastUpdateNs;
+
+    /** Size of the DMA buffer (pCircBuf) in bytes. */
+    uint32_t                StatDmaBufSize;
+    /** Number of used bytes in the DMA buffer (pCircBuf). */
+    uint32_t                StatDmaBufUsed;
 } AC97STREAMSTATE;
 AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 /** Pointer to internal state of an AC'97 stream. */
@@ -684,19 +693,12 @@ static uint32_t           ichac97R3StreamGetUsed(PAC97STREAMR3 pStreamCC);
 static uint32_t           ichac97R3StreamGetFree(PAC97STREAMR3 pStreamCC);
 static int                ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
                                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax);
-static void               ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
-                                                PAC97STREAMR3 pStreamCC, bool fInTimer);
+static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 
 static void               ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
                                                          PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc);
-
-static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC);
-static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamCC);
-static void               ichac97R3StreamAsyncIOLock(PAC97STREAMR3 pStreamCC);
-static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAMR3 pStreamCC);
-/*static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable); Unused */
 
 DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 DECLINLINE(void)          ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint64_t cTicksToDeadline);
@@ -972,52 +974,57 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
                                  PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fEnable)
 {
     ichac97R3StreamLock(pStreamCC);
+    PAUDMIXSINK const pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
+    AudioMixerSinkLock(pSink);
 
     int rc = VINF_SUCCESS;
     if (fEnable)
-        rc = ichac97R3StreamAsyncIOCreate(pThis, pThisCC, pStream, pStreamCC);
-    if (RT_SUCCESS(rc))
     {
-        ichac97R3StreamAsyncIOLock(pStreamCC);
-        if (fEnable)
+        if (pStreamCC->State.pCircBuf)
+            RTCircBufReset(pStreamCC->State.pCircBuf);
+
+        rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
+
+        /* Re-register the update job with the AIO thread with correct sched hint.
+           Note! We do not unregister it on disable because of draining. */
+        if (pStreamCC->State.fRegisteredAsyncUpdateJob)
+            AudioMixerSinkRemoveUpdateJob(pSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC);
+        int rc2 = AudioMixerSinkAddUpdateJob(pSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC,
+                                             pStreamCC->State.Cfg.Device.cMsSchedulingHint);
+        AssertRC(rc2);
+        pStreamCC->State.fRegisteredAsyncUpdateJob = RT_SUCCESS(rc2) || rc2 == VERR_ALREADY_EXISTS;
+
+        /* Open debug files: */
+        if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+        { /* likely */ }
+        else
         {
-            if (pStreamCC->State.pCircBuf)
-                RTCircBufReset(pStreamCC->State.pCircBuf);
-
-            rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
-
-            if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-            { /* likely */ }
-            else
+            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
             {
-                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
-                {
-                    int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                               &pStreamCC->State.Cfg.Props);
-                    AssertRC(rc2);
-                }
+                rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                       &pStreamCC->State.Cfg.Props);
+                AssertRC(rc2);
+            }
 
-                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
-                {
-                    int rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                               &pStreamCC->State.Cfg.Props);
-                    AssertRC(rc2);
-                }
+            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
+            {
+                rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                       &pStreamCC->State.Cfg.Props);
+                AssertRC(rc2);
             }
         }
-        else
-            rc = ichac97R3StreamClose(pStream);
+    }
+    else
+        rc = ichac97R3StreamClose(pStream);
 
-        if (RT_SUCCESS(rc))
-        {
-            /* First, enable or disable the stream and the stream's sink, if any. */
-            rc = AudioMixerSinkEnable(ichac97R3IndexToSink(pThisCC, pStream->u8SD), fEnable);
-        }
-
-        ichac97R3StreamAsyncIOUnlock(pStreamCC);
+    if (RT_SUCCESS(rc))
+    {
+        /* First, enable or disable the stream and the stream's sink, if any. */
+        rc = AudioMixerSinkEnable(pSink, fEnable);
     }
 
     /* Make sure to leave the lock before (eventually) starting the timer. */
+    AudioMixerSinkUnlock(pSink);
     ichac97R3StreamUnlock(pStreamCC);
     LogFunc(("[SD%RU8] fEnable=%RTbool, rc=%Rrc\n", pStream->u8SD, fEnable, rc));
     return rc;
@@ -1119,11 +1126,11 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
  * Destroys an AC'97 audio stream.
  *
  * @returns VBox status code.
- * @param   pThis               The shared AC'97 state.
+ * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to destroy (shared).
  * @param   pStreamCC           The AC'97 stream to destroy (ring-3).
  */
-static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
+static void ichac97R3StreamDestroy(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
 
@@ -1132,8 +1139,13 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream, PAC97S
     int rc2 = RTCritSectDelete(&pStreamCC->State.CritSect);
     AssertRC(rc2);
 
-    rc2 = ichac97R3StreamAsyncIODestroy(pThis, pStreamCC);
-    AssertRC(rc2);
+    if (pStreamCC->State.fRegisteredAsyncUpdateJob)
+    {
+        PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
+        if (pSink)
+            AudioMixerSinkRemoveUpdateJob(pSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC);
+        pStreamCC->State.fRegisteredAsyncUpdateJob = false;
+    }
 
     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
     { /* likely */ }
@@ -1170,13 +1182,12 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
      * Destroy all AC'97 streams.
      */
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
-        ichac97R3StreamDestroy(pThis, &pThis->aStreams[i], &pThisCC->aStreams[i]);
+        ichac97R3StreamDestroy(pThisCC, &pThis->aStreams[i], &pThisCC->aStreams[i]);
 
     /*
      * Destroy all sinks.
      */
-
-    PDMAUDIODSTSRCUNION dstSrc;
+    PDMAUDIODSTSRCUNION dstSrc; /** @todo r=bird: this is just impractical. combine the two enums into one, they already have no overlapping values. */
     if (pThisCC->pSinkLineIn)
     {
         dstSrc.enmSrc = PDMAUDIORECSRC_LINE;
@@ -1205,335 +1216,59 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
     }
 }
 
-/**
- * Writes audio data from a mixer sink into an AC'97 stream's DMA buffer.
- *
- * @returns VBox status code.
- * @param   pDstStreamCC        The AC'97 stream to write to (ring-3).
- * @param   pSrcMixSink         Mixer sink to get audio data to write from.
- * @param   cbToWrite           Number of bytes to write.
- * @param   pcbWritten          Number of bytes written. Optional.
- */
-static int ichac97R3StreamWrite(PAC97STREAMR3 pDstStreamCC, PAUDMIXSINK pSrcMixSink, uint32_t cbToWrite, uint32_t *pcbWritten)
-{
-    AssertPtrReturn(pSrcMixSink, VERR_INVALID_POINTER);
-    AssertReturn(cbToWrite > 0,  VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
-
-    PRTCIRCBUF pCircBuf = pDstStreamCC->State.pCircBuf;
-    AssertPtr(pCircBuf);
-
-    uint32_t cbRead = 0;
-
-    void    *pvDst;
-    size_t   cbDst;
-    RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvDst, &cbDst);
-
-    if (cbDst)
-    {
-        int rc2 = AudioMixerSinkRead(pSrcMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbRead);
-        AssertRC(rc2);
-
-        if (RT_LIKELY(!pDstStreamCC->Dbg.Runtime.fEnabled))
-        { /* likely */ }
-        else
-            AudioHlpFileWrite(pDstStreamCC->Dbg.Runtime.pFileStream, pvDst, cbRead, 0 /* fFlags */);
-    }
-
-    RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
-
-    if (pcbWritten)
-        *pcbWritten = cbRead;
-
-    return VINF_SUCCESS;
-}
 
 /**
- * Reads audio data from an AC'97 stream's DMA buffer and writes into a specified mixer sink.
+ * Input streams: Pulls data from the mixer, putting it in the internal DMA
+ * buffer.
  *
- * @returns VBox status code.
- * @param   pSrcStreamCC        AC'97 stream to read audio data from (ring-3).
- * @param   pDstMixSink         Mixer sink to write audio data to.
- * @param   cbToRead            Number of bytes to read.
- * @param   pcbRead             Number of bytes read. Optional.
+ * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   pSink           The mixer sink to pull from.
  */
-static int ichac97R3StreamRead(PAC97STREAMR3 pSrcStreamCC, PAUDMIXSINK pDstMixSink, uint32_t cbToRead, uint32_t *pcbRead)
+static void ichac97R3StreamPullFromMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSink)
 {
-    AssertPtrReturn(pDstMixSink, VERR_INVALID_POINTER);
-    AssertReturn(cbToRead > 0, VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
-
-    PRTCIRCBUF pCircBuf = pSrcStreamCC->State.pCircBuf;
-    AssertPtr(pCircBuf);
-
-    void *pvSrc;
-    size_t cbSrc;
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t cbReadTotal = 0;
-    uint32_t cbLeft      = RT_MIN(cbToRead, (uint32_t)RTCircBufUsed(pCircBuf));
-
-    while (cbLeft)
-    {
-        uint32_t cbWritten = 0;
-
-        RTCircBufAcquireReadBlock(pCircBuf, cbLeft, &pvSrc, &cbSrc);
-
-        if (cbSrc)
-        {
-            if (RT_LIKELY(!pSrcStreamCC->Dbg.Runtime.fEnabled))
-            { /* likely */ }
-            else
-                AudioHlpFileWrite(pSrcStreamCC->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
-
-            rc = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
-            AssertRC(rc);
-
-            Assert(cbSrc >= cbWritten);
-            Log3Func(("[SD%RU8] %RU32/%zu bytes read\n", pSrcStreamCC->u8SD, cbWritten, cbSrc));
-        }
-
-        RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
-
-        if (   !cbWritten /* Nothing written? */
-            || RT_FAILURE(rc))
-            break;
-
-        Assert(cbLeft  >= cbWritten);
-        cbLeft         -= cbWritten;
-
-        cbReadTotal    += cbWritten;
-    }
-
-    if (pcbRead)
-        *pcbRead = cbReadTotal;
-
-    return rc;
-}
-
-
-/**
- * Asynchronous I/O thread for an AC'97 stream.
- * This will do the heavy lifting work for us as soon as it's getting notified by another thread.
- *
- * @returns VBox status code.
- * @param   hThreadSelf         Thread handle.
- * @param   pvUser              User argument. Must be of type PAC97STREAMTHREADCTX.
- */
-static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
-{
-    PAC97STREAMTHREADCTX    pCtx = (PAC97STREAMTHREADCTX)pvUser;
-    PAC97STATE              pThis     = pCtx->pThis;
-    PAC97STATER3            pThisCC   = pCtx->pThisCC;
-    PAC97STREAM             pStream   = pCtx->pStream;
-    PAC97STREAMR3           pStreamCC = pCtx->pStreamCC;
-    PAC97STREAMSTATEAIO     pAIO      = &pStreamCC->State.AIO;
-
-    ASMAtomicXchgBool(&pAIO->fStarted, true);
-
-    RTThreadUserSignal(hThreadSelf);
-
-    LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
-
-    for (;;)
-    {
-        Log2Func(("[SD%RU8] Waiting ...\n", pStream->u8SD));
-
-        int rc2 = RTSemEventWait(pAIO->Event, RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc2))
-            break;
-
-        if (ASMAtomicReadBool(&pAIO->fShutdown))
-            break;
-
-        rc2 = RTCritSectEnter(&pAIO->CritSect);
-        if (RT_SUCCESS(rc2))
-        {
-            if (!pAIO->fEnabled)
-            {
-                RTCritSectLeave(&pAIO->CritSect);
-                continue;
-            }
-
-            ichac97R3StreamUpdate(pThisCC->pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fInTimer */);
-
-            int rc3 = RTCritSectLeave(&pAIO->CritSect);
-            AssertRC(rc3);
-        }
-
-        AssertRC(rc2);
-    }
-
-    LogFunc(("[SD%RU8] Ended\n", pStream->u8SD));
-
-    ASMAtomicXchgBool(&pAIO->fStarted, false);
-
-    RTMemFree(pCtx);
-    pCtx = NULL;
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Creates the async I/O thread for a specific AC'97 audio stream.
- *
- * @returns VBox status code.
- * @param   pThis               The shared AC'97 state (shared).
- * @param   pThisCC             The shared AC'97 state (ring-3).
- * @param   pStream             AC'97 audio stream to create the async I/O thread for (shared).
- * @param   pStreamCC           AC'97 audio stream to create the async I/O thread for (ring-3).
- */
-static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
-{
-    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
-
-    int rc;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-    {
-        pAIO->fShutdown = false;
-        pAIO->fEnabled  = true; /* Enabled by default. */
-
-        rc = RTSemEventCreate(&pAIO->Event);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCritSectInit(&pAIO->CritSect);
-            if (RT_SUCCESS(rc))
-            {
-/** @todo r=bird:
- *        Why aren't this code using the PDM threads (PDMDevHlpThreadCreate)?
- *        They would help you with managing stuff like VM suspending, resuming
- *        and powering off.
- *
- *        Finally, just create the threads at construction time. */
-                PAC97STREAMTHREADCTX pCtx = (PAC97STREAMTHREADCTX)RTMemAllocZ(sizeof(AC97STREAMTHREADCTX));
-                if (pCtx)
-                {
-                    pCtx->pStream   = pStream;
-                    pCtx->pStreamCC = pStreamCC;
-                    pCtx->pThis     = pThis;
-                    pCtx->pThisCC   = pThisCC;
-
-                    rc = RTThreadCreateF(&pAIO->Thread, ichac97R3StreamAsyncIOThread, pCtx, 0 /*cbStack*/, RTTHREADTYPE_IO,
-                                         RTTHREADFLAGS_WAITABLE | RTTHREADFLAGS_COM_MTA, "ac97AIO%RU8", pStreamCC->u8SD);
-                    if (RT_SUCCESS(rc))
-                        rc = RTThreadUserWait(pAIO->Thread, 30 * 1000 /* 30s timeout */);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-        }
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamCC->u8SD, rc));
-    return rc;
-}
-
-/**
- * Lets the stream's async I/O thread know that there is some data to process.
- *
- * @returns VBox status code.
- * @param   pStreamCC             The AC'97 stream to notify async I/O thread
- *                                for (ring-3).
- */
-static int ichac97R3StreamAsyncIONotify(PAC97STREAMR3 pStreamCC)
-{
-    LogFunc(("[SD%RU8]\n", pStreamCC->u8SD));
-    return RTSemEventSignal(pStreamCC->State.AIO.Event);
-}
-
-/**
- * Destroys the async I/O thread of a specific AC'97 audio stream.
- *
- * @returns VBox status code.
- * @param   pThis       The shared AC'97 state.
- * @param   pStreamR3   AC'97 audio stream to destroy the async I/O thread for.
- */
-static int ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamR3)
-{
-    RT_NOREF(pThis);
-
-    PAC97STREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return VINF_SUCCESS;
-
-    ASMAtomicWriteBool(&pAIO->fShutdown, true);
-
-    int rc = ichac97R3StreamAsyncIONotify(pStreamR3);
-    AssertRC(rc);
-
-    int rcThread;
-    rc = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
-    LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc, rcThread));
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTCritSectDelete(&pAIO->CritSect);
-        AssertRC(rc);
-
-        rc = RTSemEventDestroy(pAIO->Event);
-        AssertRC(rc);
-
-        pAIO->fStarted  = false;
-        pAIO->fShutdown = false;
-        pAIO->fEnabled  = false;
-    }
-
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
-    return rc;
-}
-
-/**
- * Locks the async I/O thread of a specific AC'97 audio stream.
- *
- * @param   pStreamCC           AC'97 stream to lock async I/O thread for.
- */
-static void ichac97R3StreamAsyncIOLock(PAC97STREAMR3 pStreamCC)
-{
-    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return;
-
-    int rc2 = RTCritSectEnter(&pAIO->CritSect);
-    AssertRC(rc2);
-}
-
-/**
- * Unlocks the async I/O thread of a specific AC'97 audio stream.
- *
- * @param   pStreamCC           AC'97 stream to unlock async I/O thread for.
- */
-static void ichac97R3StreamAsyncIOUnlock(PAC97STREAMR3 pStreamCC)
-{
-    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return;
-
-    int rc2 = RTCritSectLeave(&pAIO->CritSect);
-    AssertRC(rc2);
-}
-
-#if 0 /* Unused */
-/**
- * Enables (resumes) or disables (pauses) the async I/O thread.
- *
- * @param   pStream             AC'97 stream to enable/disable async I/O thread for.
- * @param   fEnable             Whether to enable or disable the I/O thread.
- *
- * @remarks Does not do locking.
- */
-static void ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
-{
-    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
-    ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
-}
+#ifdef LOG_ENABLED
+    uint64_t const offWriteOld = pStreamR3->State.offWrite;
 #endif
+    pStreamR3->State.offWrite = AudioMixerSinkTransferFromCircBuf(pSink,
+                                                                  pStreamR3->State.pCircBuf,
+                                                                  pStreamR3->State.offWrite,
+                                                                  pStreamR3->u8SD,
+                                                                  pStreamR3->Dbg.Runtime.fEnabled
+                                                                  ? pStreamR3->Dbg.Runtime.pFileStream : NULL);
+
+    Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64\n", pStreamR3->u8SD,
+              pStreamR3->State.offWrite - offWriteOld, pStreamR3->State.offWrite));
+
+    /* Update buffer stats. */
+    pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
+}
+
+
+/**
+ * Output streams: Pushes data to the mixer.
+ *
+ * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   pSink           The mixer sink to push to.
+ */
+static void ichac97R3StreamPushToMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSink)
+{
+#ifdef LOG_ENABLED
+    uint64_t const offReadOld = pStreamR3->State.offRead;
+#endif
+    pStreamR3->State.offRead = AudioMixerSinkTransferFromCircBuf(pSink,
+                                                                 pStreamR3->State.pCircBuf,
+                                                                 pStreamR3->State.offRead,
+                                                                 pStreamR3->u8SD,
+                                                                 pStreamR3->Dbg.Runtime.fEnabled
+                                                                 ? pStreamR3->Dbg.Runtime.pFileStream : NULL);
+
+    Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64\n", pStreamR3->u8SD,
+              pStreamR3->State.offRead - offReadOld, pStreamR3->State.offRead));
+
+    /* Update buffer stats. */
+    pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
+}
+
 
 # ifdef LOG_ENABLED
 static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16_t cBDLE)
@@ -1569,46 +1304,35 @@ static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16
 # endif /* LOG_ENABLED */
 
 /**
- * Updates an AC'97 stream by doing its required data transfers.
- * The host sink(s) set the overall pace.
+ * Updates an AC'97 stream by doing its DMA transfers.
  *
- * This routine is called by both, the synchronous and the asynchronous
- * implementations.
- *
- * When running synchronously, the device DMA transfers *and* the mixer sink
- * processing is within the device timer.
- *
- * When running asynchronously, only the device DMA transfers are done in the
- * device timer, whereas the mixer sink processing then is done in the stream's
- * own async I/O thread. This thread also will call this function
- * (with fInTimer set to @c false).
+ * The host sink(s) set the overall pace (bird: no it doesn't, the DMA timer
+ * does - we just hope like heck it matches the speed at which the *backend*
+ * host audio driver processes samples).
  *
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared AC'97 state.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to update (shared).
  * @param   pStreamCC           The AC'97 stream to update (ring-3).
- * @param   fInTimer            Whether to this function was called from the timer
- *                              context or an asynchronous I/O stream thread (if supported).
  */
-static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
-                                  PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fInTimer)
+static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
+                                     PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
-    RT_NOREF(fInTimer);
-
+    int         rc2;
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
     AssertPtr(pSink);
-
-    if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
-        return;
-
-    int rc2;
-
-    if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT) /* Output (SDO). */
+    if (AudioMixerSinkIsActive(pSink))
     {
-        if (fInTimer)
+        if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT) /* Output (SDO). */
         {
-            const uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
+            uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
+            if (cbStreamFree)
+            { /* likely */ }
+            else
+            {
+                /** @todo Record this as a statistic. Try make some space available.    */
+            }
             if (cbStreamFree)
             {
                 Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
@@ -1624,73 +1348,32 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
 
                 pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
             }
-        }
 
-        Log3Func(("[SD%RU8] fInTimer=%RTbool\n", pStream->u8SD, fInTimer));
-
-        rc2 = ichac97R3StreamAsyncIONotify(pStreamCC);
-        AssertRC(rc2);
-
-        if (!fInTimer) /* In async I/O thread */
-        {
-            const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
-            const uint32_t cbStreamReadable   = ichac97R3StreamGetUsed(pStreamCC);
-            const uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
-
-            Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32\n", pStream->u8SD, cbSinkWritable, cbStreamReadable));
-
-            if (cbToReadFromStream)
-            {
-                /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = ichac97R3StreamRead(pStreamCC, pSink, cbToReadFromStream, NULL /* pcbRead */);
-                AssertRC(rc2);
-            }
-        }
-        /* When running synchronously, update the associated sink here.
-         * Otherwise this will be done in the async I/O thread. */
-        rc2 = AudioMixerSinkUpdate(pSink);
-        AssertRC(rc2);
-    }
-    else /* Input (SDI). */
-    {
-        if (!fInTimer)
-        {
-            rc2 = AudioMixerSinkUpdate(pSink);
+            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
             AssertRC(rc2);
-
-            /* Is the sink ready to be read (host input data) from? If so, by how much? */
-            uint32_t cbSinkReadable = AudioMixerSinkGetReadable(pSink);
-
-            /* How much (guest input) data is available for writing at the moment for the AC'97 stream? */
-            uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
-
-            Log3Func(("[SD%RU8] cbSinkReadable=%RU32, cbStreamFree=%RU32\n", pStream->u8SD, cbSinkReadable, cbStreamFree));
-
-            /* Do not read more than the sink can provide at the moment.
-             * The host sets the overall pace. */
-            if (cbSinkReadable > cbStreamFree)
-                cbSinkReadable = cbStreamFree;
-
-            if (cbSinkReadable)
-            {
-                /* Write (guest input) data to the stream which was read from stream's sink before. */
-                rc2 = ichac97R3StreamWrite(pStreamCC, pSink, cbSinkReadable, NULL /* pcbWritten */);
-                AssertRC(rc2);
-            }
         }
-        else /* fInTimer */
+        else /* Input (SDI). */
         {
-
+#if 0 /* bird: I just love when crusial code like this with no explanation.  This just causing AIO
+       *       skipping a DMA timer cycle if the timer callback is a bit quicker than the 'hint' (see HDA/9890).   */
             const uint64_t tsNowNs = RTTimeNanoTS();
             if (tsNowNs - pStreamCC->State.tsLastUpdateNs >= pStreamCC->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
-                rc2 = ichac97R3StreamAsyncIONotify(pStreamCC);
+                rc2 = AudioMixerSinkSignalUpdateJob(pSink);
                 AssertRC(rc2);
 
                 pStreamCC->State.tsLastUpdateNs = tsNowNs;
             }
+#endif
 
-            const uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+            uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+            if (cbStreamUsed)
+            { /* likey */ }
+            else
+            {
+                /** @todo Record this as a statistic. Try pull some data into the DMA buffer.*/
+            }
+
             if (cbStreamUsed)
             {
                 /* When running synchronously, do the DMA data transfers here.
@@ -1698,8 +1381,51 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
                 rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, cbStreamUsed);
                 AssertRC(rc2);
             }
+
+            /*
+             * We should always kick the AIO thread.
+             */
+            /** @todo This isn't entirely ideal.  If we get into an underrun situation,
+             *        we ideally want the AIO thread to run right before the DMA timer
+             *        rather than right after it ran. */
+            Log5Func(("Notifying AIO thread\n"));
+            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+            AssertRC(rc2);
+            pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
         }
     }
+}
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD, Asynchronous I/O thread for an AC'97 stream.}
+ *
+ * For output streams this moves data from the internal DMA buffer (in which
+ * ichac97R3StreamUpdateDma put it), thru the mixer and to the various backend
+ * audio devices.
+ *
+ * For input streams this pulls data from the backend audio device(s), thru the
+ * mixer and puts it in the internal DMA buffer ready for
+ * ichac97R3StreamUpdateDma to pump into guest memory.
+ */
+static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser)
+{
+    PAC97STATER3 const  pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
+    PAC97STREAMR3 const pStreamCC = (PAC97STREAMR3)pvUser;
+    uintptr_t const     idxStream = pStreamCC - &pThisCC->aStreams[0];
+    Assert(pStreamCC->u8SD == idxStream);
+    Assert(pSink == ichac97R3IndexToSink(pThisCC, (uint8_t)idxStream));
+
+    /*
+     * Output (SDO).
+     */
+    if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT)
+        ichac97R3StreamPushToMixer(pStreamCC, pSink);
+    /*
+     * Input (SDI).
+     */
+    else
+        ichac97R3StreamPullFromMixer(pStreamCC, pSink);
 }
 
 #endif /* IN_RING3 */
@@ -2186,8 +1912,9 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
                 rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
                 if (RT_SUCCESS(rc))
                 {
-                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
+                    pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
 
+                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
                     rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
                     if (RT_SUCCESS(rc))
                         rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
@@ -2719,7 +2446,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTime
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStream->hTimer));
 
-    ichac97R3StreamUpdate(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fInTimer */);
+    ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC);
 
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
     if (pSink && AudioMixerSinkIsActive(pSink))
