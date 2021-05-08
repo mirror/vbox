@@ -169,6 +169,11 @@ DECLINLINE(void) rtR0SemBsdWaitPrepare(PRTR0SEMBSDSLEEP pWait)
  */
 DECLINLINE(void) rtR0SemBsdWaitDoIt(PRTR0SEMBSDSLEEP pWait)
 {
+#if __NetBSD_Prereq__(9,99,57)
+#define sleepq_enqueue(sq, wchan, wmesg, sobj) \
+            sleepq_enqueue((sq), (wchan), (wmesg), (sobj), true)
+#endif
+
     sleepq_enter(pWait->sq, curlwp, pWait->sq_lock);
     sleepq_enqueue(pWait->sq, pWait->wchan, "VBoxIS", &vbox_syncobj);
 
