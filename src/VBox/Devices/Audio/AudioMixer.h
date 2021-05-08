@@ -275,12 +275,16 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
 
-int     AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
-int     AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
-int     AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink);
-int     AudioMixerSinkLock(PAUDMIXSINK pSink);
-int     AudioMixerSinkTryLock(PAUDMIXSINK pSink);
-int     AudioMixerSinkUnlock(PAUDMIXSINK pSink);
+int         AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
+int         AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
+int         AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink);
+uint64_t    AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
+                                              uint32_t idStream, PAUDIOHLPFILE pDbgFile);
+uint64_t    AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
+                                            uint32_t idStream, PAUDIOHLPFILE pDbgFile);
+int         AudioMixerSinkLock(PAUDMIXSINK pSink);
+int         AudioMixerSinkTryLock(PAUDMIXSINK pSink);
+int         AudioMixerSinkUnlock(PAUDMIXSINK pSink);
 
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
 

@@ -2104,6 +2104,168 @@ int AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpda
 
 
 /**
+ * Transfer data from the device's DMA buffer and into the sink.
+ *
+ * The caller is already holding the mixer sink's critical section, either by
+ * way of being the AIO thread doing update jobs or by explicit locking calls.
+ *
+ * @returns The new stream offset.
+ * @param   pSink       The mixer sink to transfer samples to.
+ * @param   pCircBuf    The internal DMA buffer to move samples from.
+ * @param   offStream   The stream current offset (logging, dtrace, return).
+ * @param   idStream    Device specific audio stream identifier (logging, dtrace).
+ * @param   pDbgFile    Debug file, NULL if disabled.
+ */
+uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
+                                           uint32_t idStream, PAUDIOHLPFILE pDbgFile)
+{
+    /*
+     * Sanity.
+     */
+    AssertReturn(pSink, offStream);
+    AssertReturn(pCircBuf, offStream);
+    Assert(RTCritSectIsOwner(&pSink->CritSect));
+
+    /*
+     * Figure how much that we can push down.
+     */
+    uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
+    uint32_t const cbCircBufReadable  = (uint32_t)RTCircBufUsed(pCircBuf);
+    uint32_t       cbToTransfer       = RT_MIN(cbCircBufReadable, cbSinkWritable);
+    /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
+    cbToTransfer = PDMAudioPropsFloorBytesToFrame(&pSink->PCMProps, cbToTransfer);
+
+    Log3Func(("idStream=%#x: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32\n",
+              idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer));
+    RT_NOREF(idStream);
+
+    /*
+     * Do the pushing.
+     */
+    while (cbToTransfer > 0)
+    {
+        void /*const*/ *pvSrcBuf;
+        size_t          cbSrcBuf;
+        RTCircBufAcquireReadBlock(pCircBuf, cbToTransfer, &pvSrcBuf, &cbSrcBuf);
+
+        uint32_t cbWritten = 0;
+        int rc = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
+        AssertRC(rc);
+        Assert(cbWritten <= cbSrcBuf);
+
+        Log2Func(("idStream=%#x: %#RX32/%#zx bytes read @%#RX64\n", cbWritten, cbSrcBuf, offStream));
+#ifdef VBOX_WITH_DTRACE
+        VBOXDD_AUDIO_MIXER_SINK_AIO_OUT(idStream, cbWritten, offStream);
+#endif
+        offStream += cbWritten;
+
+        if (!pDbgFile)
+        { /* likely */ }
+        else
+            AudioHlpFileWrite(pDbgFile, pvSrcBuf, cbSrcBuf, 0 /* fFlags */);
+
+
+        RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
+
+        /* advance */
+        cbToTransfer -= cbWritten;
+    }
+
+    return offStream;
+}
+
+
+/**
+ * Transfer data to the device's DMA buffer from the sink.
+ *
+ * The caller is already holding the mixer sink's critical section, either by
+ * way of being the AIO thread doing update jobs or by explicit locking calls.
+ *
+ * @returns The new stream offset.
+ * @param   pSink       The mixer sink to transfer samples from.
+ * @param   pCircBuf    The internal DMA buffer to move samples to.
+ * @param   offStream   The stream current offset (logging, dtrace, return).
+ * @param   idStream    Device specific audio stream identifier (logging, dtrace).
+ * @param   pDbgFile    Debug file, NULL if disabled.
+ */
+uint64_t AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
+                                         uint32_t idStream, PAUDIOHLPFILE pDbgFile)
+{
+    /*
+     * Sanity.
+     */
+    AssertReturn(pSink, offStream);
+    AssertReturn(pCircBuf, offStream);
+    Assert(RTCritSectIsOwner(&pSink->CritSect));
+
+    /*
+     * Figure out how much we can transfer.
+     */
+    const uint32_t cbSinkReadable    = AudioMixerSinkGetReadable(pSink);
+    const uint32_t cbCircBufWritable = (uint32_t)RTCircBufFree(pCircBuf);
+    uint32_t       cbToTransfer      = RT_MIN(cbCircBufWritable, cbSinkReadable);
+
+    /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
+    cbToTransfer = PDMAudioPropsFloorBytesToFrame(&pSink->PCMProps, cbToTransfer);
+
+    Log3Func(("idStream=%#x: cbSinkReadable=%#RX32 cbCircBufWritable=%#RX32 -> cbToTransfer=%#RX32 @#RX64\n",
+              idStream, cbSinkReadable, cbCircBufWritable, cbToTransfer, offStream));
+    RT_NOREF(idStream);
+
+    /** @todo should we throttle (read less) this if we're far ahead? */
+
+    /*
+     * Copy loop.
+     */
+    while (cbToTransfer > 0)
+    {
+/** @todo We should be able to read straight into the circular buffer here
+ *        as it should have a frame aligned size. */
+
+        /* Read a chunk of data. */
+        uint8_t  abBuf[4096];
+        uint32_t cbRead = 0;
+        int rc = AudioMixerSinkRead(pSink, AUDMIXOP_COPY, abBuf, RT_MIN(cbToTransfer, sizeof(abBuf)), &cbRead);
+        AssertRCBreak(rc);
+        AssertMsg(cbRead > 0, ("Nothing read from sink, even if %#RX32 bytes were (still) announced\n", cbToTransfer));
+
+        /* Write it to the internal DMA buffer. */
+        uint32_t off = 0;
+        while (off < cbRead)
+        {
+            void  *pvDstBuf;
+            size_t cbDstBuf;
+            RTCircBufAcquireWriteBlock(pCircBuf, cbRead - off, &pvDstBuf, &cbDstBuf);
+
+            memcpy(pvDstBuf, &abBuf[off], cbDstBuf);
+
+#ifdef VBOX_WITH_DTRACE
+            VBOXDD_AUDIO_MIXER_SINK_AIO_IN(idStream, (uint32_t)cbDstBuf, offStream);
+#endif
+            offStream += cbDstBuf;
+
+            RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
+
+            off += (uint32_t)cbDstBuf;
+        }
+        Assert(off == cbRead);
+
+        /* Write to debug file? */
+        if (RT_LIKELY(!pDbgFile))
+        { /* likely */ }
+        else
+            AudioHlpFileWrite(pDbgFile, abBuf, cbRead, 0 /* fFlags */);
+
+        /* Advance. */
+        Assert(cbRead <= cbToTransfer);
+        cbToTransfer -= cbRead;
+    }
+
+    return offStream;
+}
+
+
+/**
  * Signals the AIO thread to perform updates.
  *
  * @returns VBox status code.
