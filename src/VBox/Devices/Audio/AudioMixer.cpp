@@ -91,6 +91,10 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
+#ifdef VBOX_WITH_DTRACE
+# include "dtrace/VBoxDD.h"
+#endif
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
