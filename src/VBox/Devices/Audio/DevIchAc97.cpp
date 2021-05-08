@@ -1412,9 +1412,9 @@ static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PA
 {
     PAC97STATER3 const  pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
     PAC97STREAMR3 const pStreamCC = (PAC97STREAMR3)pvUser;
-    uintptr_t const     idxStream = pStreamCC - &pThisCC->aStreams[0];
-    Assert(pStreamCC->u8SD == idxStream);
-    Assert(pSink == ichac97R3IndexToSink(pThisCC, (uint8_t)idxStream));
+    Assert(pStreamCC->u8SD == (uintptr_t)(pStreamCC - &pThisCC->aStreams[0]));
+    Assert(pSink == ichac97R3IndexToSink(pThisCC, pStreamCC->u8SD));
+    RT_NOREF(pThisCC);
 
     /*
      * Output (SDO).
@@ -4028,6 +4028,18 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
 # endif
+    for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(s_apszNames); idxStream++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer write position.",   "Stream%u/offWrite", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
+
+    }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
