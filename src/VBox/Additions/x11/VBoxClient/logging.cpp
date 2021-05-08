@@ -16,6 +16,7 @@
  */
 
 
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
