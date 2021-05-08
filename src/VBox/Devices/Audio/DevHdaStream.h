@@ -342,8 +342,6 @@ void                hdaR3StreamMarkStopped(PHDASTREAM pStreamShared);
 void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
 uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
-void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
-                                      PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
 DECLCALLBACK(void)  hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
