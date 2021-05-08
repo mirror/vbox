@@ -1045,7 +1045,7 @@ static void hdaR3StreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevI
  * @param   pThis               The shared HDA device state.
  * @param   cbToAdd             Position (in bytes) to add to the current read / write position.
  */
-void hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t cbToAdd)
+static void hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t cbToAdd)
 {
     if (cbToAdd) /* No need to update anything if 0. */
     {
