@@ -17,10 +17,10 @@
 
 provider vboxdd
 {
-    probe hgcmcall__enter(void *pvCmd, unsigned int idFunction, unsigned int idClient, unsigned int cbCmd);
+    probe hgcmcall__enter(void *pvCmd, uint32_t idFunction, uint32_t idClient, uint32_t cbCmd);
     probe hgcmcall__completed__req(void *pvCmd, int rc);
     probe hgcmcall__completed__emt(void *pvCmd, int rc);
-    probe hgcmcall__completed__done(void *pvCmd, unsigned int idFunction, unsigned int idClient, int rc);
+    probe hgcmcall__completed__done(void *pvCmd, uint32_t idFunction, uint32_t idClient, int rc);
 
     probe ahci__req__submit(void *pvReq, int iTxDir, uint64_t offStart, uint64_t cbXfer);
     probe ahci__req__completed(void *pvReq, int rcReq, uint64_t offStart, uint64_t cbXfer);

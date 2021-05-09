@@ -44,6 +44,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+typedef struct VTGPROBE *PVTGPROBE;
 
 typedef struct VTGATTRS
 {
@@ -68,6 +69,12 @@ typedef struct VTGARG
     const char     *pszArgPassingFmt;
     /** The type flags. */
     uint32_t        fType;
+    /** The argument number (0-based) for complaining/whatever. */
+    uint16_t        iArgNo;
+    /** The probe the argument belongs to (for complaining/whatever). */
+    PVTGPROBE       pProbe;
+    /** The absolute source position. */
+    size_t          offSrc;
 } VTGARG;
 typedef VTGARG *PVTGARG;
 
@@ -81,8 +88,8 @@ typedef struct VTGPROBE
     bool            fHaveLargeArgs;
     uint32_t        offArgList;
     uint32_t        iProbe;
+    size_t          iLine;
 } VTGPROBE;
-typedef VTGPROBE *PVTGPROBE;
 
 typedef struct VTGPROVIDER
 {
@@ -1293,21 +1300,29 @@ static RTEXITCODE generateWrapperHeader(PSCMSTREAM pStrm)
  * Parser error with line and position.
  *
  * @returns RTEXITCODE_FAILURE.
- * @param   pStrm               The stream.
- * @param   cb                  The offset from the current position to the
- *                              point of failure.
- * @param   pszMsg              The message to display.
+ * @param   pStrm       The stream.
+ * @param   fAbs        Absolute or relative offset.
+ * @param   offSeek     When @a fAbs is @c false, the offset from the current
+ *                      position to the point of failure.  When @a fAbs is @c
+ *                      true, it's the absolute position.
+ * @param   pszFormat   The message format string.
+ * @param   va          Format arguments.
  */
-static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t cb, const char *pszMsg)
+static RTEXITCODE parseErrorExV(PSCMSTREAM pStrm, bool fAbs, size_t offSeek, const char *pszFormat, va_list va)
 {
-    if (cb)
-        ScmStreamSeekRelative(pStrm, -(ssize_t)cb);
+    if (fAbs)
+        ScmStreamSeekAbsolute(pStrm, offSeek);
+    else if (offSeek != 0)
+        ScmStreamSeekRelative(pStrm, -(ssize_t)offSeek);
     size_t const off     = ScmStreamTell(pStrm);
     size_t const iLine   = ScmStreamTellLine(pStrm);
     ScmStreamSeekByLine(pStrm, iLine);
     size_t const offLine = ScmStreamTell(pStrm);
 
-    RTPrintf("%s:%d:%zd: error: %s.\n", g_pszScript, iLine + 1, off - offLine + 1, pszMsg);
+    va_list va2;
+    va_copy(va2, va);
+    RTPrintf("%s:%d:%zd: error: %N.\n", g_pszScript, iLine + 1, off - offLine + 1, pszFormat, &va2);
+    va_end(va2);
 
     size_t cchLine;
     SCMEOL enmEof;
@@ -1324,15 +1339,119 @@ static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t cb, const char *pszMsg)
  * Parser error with line and position.
  *
  * @returns RTEXITCODE_FAILURE.
- * @param   pStrm               The stream.
- * @param   cb                  The offset from the current position to the
- *                              point of failure.
- * @param   pszMsg              The message to display.
+ * @param   pStrm       The stream.
+ * @param   off         The offset from the current position to the point of
+ *                      failure.
+ * @param   pszFormat   The message format string.
+ * @param   ...         Format arguments.
  */
-static RTEXITCODE parseErrorAbs(PSCMSTREAM pStrm, size_t off, const char *pszMsg)
+static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t off, const char *pszFormat, ...)
 {
-    ScmStreamSeekAbsolute(pStrm, off);
-    return parseError(pStrm, 0, pszMsg);
+    va_list va;
+    va_start(va, pszFormat);
+    RTEXITCODE rcExit = parseErrorExV(pStrm, false, off, pszFormat, va);
+    va_end(va);
+    return rcExit;
+}
+
+
+/**
+ * Parser error with line and position, absolute version.
+ *
+ * @returns RTEXITCODE_FAILURE.
+ * @param   pStrm       The stream.
+ * @param   off         The offset from the current position to the point of
+ *                      failure.
+ * @param   pszFormat   The message format string.
+ * @param   ...         Format arguments.
+ */
+static RTEXITCODE parseErrorAbs(PSCMSTREAM pStrm, size_t off, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTEXITCODE rcExit = parseErrorExV(pStrm, true /*fAbs*/, off, pszFormat, va);
+    va_end(va);
+    return rcExit;
+}
+
+
+/**
+ * Parser warning with line and position.
+ *
+ * @param   pStrm       The stream.
+ * @param   fAbs        Absolute or relative offset.
+ * @param   offSeek     When @a fAbs is @c false, the offset from the current
+ *                      position to the point of failure.  When @a fAbs is @c
+ *                      true, it's the absolute position.
+ * @param   pszFormat   The message format string.
+ * @param   va          Format arguments.
+ */
+static void parseWarnExV(PSCMSTREAM pStrm, bool fAbs, size_t offSeek, const char *pszFormat, va_list va)
+{
+    /* Save the stream position. */
+    size_t const offOrg = ScmStreamTell(pStrm);
+
+    if (fAbs)
+        ScmStreamSeekAbsolute(pStrm, offSeek);
+    else if (offSeek != 0)
+        ScmStreamSeekRelative(pStrm, -(ssize_t)offSeek);
+    size_t const off     = ScmStreamTell(pStrm);
+    size_t const iLine   = ScmStreamTellLine(pStrm);
+    ScmStreamSeekByLine(pStrm, iLine);
+    size_t const offLine = ScmStreamTell(pStrm);
+
+    va_list va2;
+    va_copy(va2, va);
+    RTPrintf("%s:%d:%zd: warning: %N.\n", g_pszScript, iLine + 1, off - offLine + 1, pszFormat, &va2);
+    va_end(va2);
+
+    size_t cchLine;
+    SCMEOL enmEof;
+    const char *pszLine = ScmStreamGetLineByNo(pStrm, iLine, &cchLine, &enmEof);
+    if (pszLine)
+        RTPrintf("  %.*s\n"
+                 "  %*s^\n",
+                 cchLine, pszLine, off - offLine, "");
+
+    /* restore the position. */
+    int rc = ScmStreamSeekAbsolute(pStrm, offOrg);
+    AssertRC(rc);
+}
+
+#if 0 /* unused */
+/**
+ * Parser warning with line and position.
+ *
+ * @param   pStrm       The stream.
+ * @param   off         The offset from the current position to the point of
+ *                      failure.
+ * @param   pszFormat   The message format string.
+ * @param   ...         Format arguments.
+ */
+static void parseWarn(PSCMSTREAM pStrm, size_t off, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    parseWarnExV(pStrm, false, off, pszFormat, va);
+    va_end(va);
+}
+#endif /* unused */
+
+/**
+ * Parser warning with line and position, absolute version.
+ *
+ * @param   pStrm       The stream.
+ * @param   off         The offset from the current position to the point of
+ *                      failure.
+ * @param   pszFormat   The message format string.
+ * @param   ...         Format arguments.
+ */
+static void parseWarnAbs(PSCMSTREAM pStrm, size_t off, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    parseWarnExV(pStrm, true /*fAbs*/, off, pszFormat, va);
+    va_end(va);
 }
 
 
@@ -1704,8 +1823,11 @@ static RTEXITCODE parsePragma(PSCMSTREAM pStrm)
  *
  * @return  Type flags.
  * @param   pszType         The type expression.
+ * @param   pStrm           The input stream (for errors + warnings).
+ * @param   offSrc          The absolute source position of this expression (for
+ *                          warnings).
  */
-static uint32_t parseTypeExpression(const char *pszType)
+static uint32_t parseTypeExpression(const char *pszType, PSCMSTREAM pStrm, size_t offSrc)
 {
     size_t cchType = strlen(pszType);
 #define MY_STRMATCH(a_sz)  (cchType == sizeof(a_sz) - 1 && !memcmp(a_sz, pszType, sizeof(a_sz) - 1))
@@ -1720,7 +1842,7 @@ static uint32_t parseTypeExpression(const char *pszType)
     }
     if (pszType[cchType - 1] == '&')
     {
-        RTMsgWarning("Please avoid using references like '%s' for probe arguments!", pszType);
+        parseWarnAbs(pStrm, offSrc, "Please avoid using references like '%s' for probe arguments!", pszType);
         return VTG_TYPE_POINTER;
     }
 
@@ -1822,7 +1944,7 @@ static uint32_t parseTypeExpression(const char *pszType)
         || MY_STRMATCH("signed short")
         || MY_STRMATCH("unsigned short")
        )
-        RTMsgWarning("Please avoid using the type '%s' for probe arguments!", pszType);
+        parseWarnAbs(pStrm, offSrc, "Please avoid using the type '%s' for probe arguments!", pszType);
     if (MY_STRMATCH("unsigned"))        return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_UNSIGNED;
     if (MY_STRMATCH("unsigned int"))    return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_UNSIGNED;
     if (MY_STRMATCH("signed"))          return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_SIGNED;
@@ -1857,7 +1979,7 @@ static uint32_t parseTypeExpression(const char *pszType)
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pProbe              The probe.
  * @param   pArg                The argument.
- * @param   pStrm               The input stream (for errors).
+ * @param   pStrm               The input stream (for errors + warnings).
  * @param   pchType             The type.
  * @param   cchType             The type length.
  * @param   pchName             The name.
@@ -1873,7 +1995,7 @@ static RTEXITCODE parseInitArgument(PVTGPROBE pProbe, PVTGARG pArg, PSCMSTREAM p
     pArg->pszTracerType     = strtabInsertN(pchType, cchType);
     if (!pArg->pszTracerType || !pArg->pszName)
         return parseError(pStrm, 1, "Out of memory");
-    pArg->fType             = parseTypeExpression(pArg->pszTracerType);
+    pArg->fType             = parseTypeExpression(pArg->pszTracerType, pStrm, pArg->offSrc);
 
     if (   (pArg->fType & VTG_TYPE_POINTER)
         && !(g_fTypeContext & VTG_TYPE_CTX_R0) )
@@ -1964,6 +2086,8 @@ static const char *parseUnmangleProbeName(const char *pszMangled)
  */
 static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
 {
+    size_t const iProbeLine = ScmStreamTellLine(pStrm);
+
     /*
      * Next up is a name followed by an opening parenthesis.
      */
@@ -1984,6 +2108,7 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
     RTListInit(&pProbe->ArgHead);
     RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
     pProbe->offArgList     = UINT32_MAX;
+    pProbe->iLine          = iProbeLine;
     pProbe->pszMangledName = RTStrDupN(pszProbe, cchProbe);
     if (!pProbe->pszMangledName)
         return parseError(pStrm, 0, "Out of memory");
@@ -2046,7 +2171,9 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
                     if (!pArg)
                         return parseError(pStrm, 1, "Out of memory");
                     RTListAppend(&pProbe->ArgHead, &pArg->ListEntry);
-                    pProbe->cArgs++;
+                    pArg->iArgNo = pProbe->cArgs++;
+                    pArg->pProbe = pProbe;
+                    pArg->offSrc = ScmStreamTell(pStrm) - cchWord;
 
                     if (cchWord + 1 > sizeof(szArg))
                         return parseError(pStrm, 1, "Too long parameter declaration");
