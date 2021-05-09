@@ -416,7 +416,13 @@ static void VBoxGuestNetBSDWsmAttach(vboxguest_softc *sc)
     if (RT_FAILURE(rc))
         goto fail;
 
+#if __NetBSD_Prereq__(9,99,82)
+    config_found(sc->sc_dev, &am, wsmousedevprint,
+                 CFARG_IATTR, "wsmousedev",
+                 CFARG_EOL);
+#else
     sc->sc_wsmousedev = config_found_ia(sc->sc_dev, "wsmousedev", &am, wsmousedevprint);
+#endif
     if (sc->sc_wsmousedev == NULL)
         goto fail;
 
