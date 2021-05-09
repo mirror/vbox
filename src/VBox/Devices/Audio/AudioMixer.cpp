@@ -1073,24 +1073,19 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
  *
  * @returns VBox status code.
  * @param   pSink               Mixer sink to read data from.
- * @param   enmOp               Mixer operation to use for reading the data.
  * @param   pvBuf               Buffer where to store the read data.
  * @param   cbBuf               Buffer size (in bytes) where to store the data.
- * @param   pcbRead             Number of bytes read. Optional.
+ * @param   pcbRead             Number of bytes read.
  */
-int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+int AudioMixerSinkRead(PAUDMIXSINK pSink, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    RT_NOREF(enmOp);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
-
-    /** @todo Handle mixing operation enmOp! */
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     AssertMsg(pSink->enmDir == PDMAUDIODIR_IN,
               ("Can't read from a sink which is not an input sink\n"));
@@ -1159,6 +1154,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
             }
         }
     }
+    *pcbRead = cbRead;
 
 #ifdef LOG_ENABLED
     char szStatus[AUDIOMIXERSINK_STATUS_STR_MAX];
@@ -1166,12 +1162,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     Log2Func(("[%s] cbRead=%RU32, fClean=%RTbool, fStatus=%s, rc=%Rrc\n",
               pSink->pszName, cbRead, fClean, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus), rc));
 
-    if (pcbRead)
-        *pcbRead = cbRead;
-
-    int rc2 = RTCritSectLeave(&pSink->CritSect);
-    AssertRC(rc2);
-
+    RTCritSectLeave(&pSink->CritSect);
     return rc;
 }
 
@@ -2229,7 +2220,7 @@ uint64_t AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf,
         /* Read a chunk of data. */
         uint8_t  abBuf[4096];
         uint32_t cbRead = 0;
-        int rc = AudioMixerSinkRead(pSink, AUDMIXOP_COPY, abBuf, RT_MIN(cbToTransfer, sizeof(abBuf)), &cbRead);
+        int rc = AudioMixerSinkRead(pSink, abBuf, RT_MIN(cbToTransfer, sizeof(abBuf)), &cbRead);
         AssertRCBreak(rc);
         AssertMsg(cbRead > 0, ("Nothing read from sink, even if %#RX32 bytes were (still) announced\n", cbToTransfer));
 
@@ -2530,6 +2521,8 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
 
 /**
  * Destroys a mixer stream, internal version.
+ *
+ * Worker for audioMixerSinkDestroyInternal and AudioMixerStreamDestroy.
  *
  * @param   pMixStream  Mixer stream to destroy.
  * @param   pDevIns     The device instance the statistics are registered with.
