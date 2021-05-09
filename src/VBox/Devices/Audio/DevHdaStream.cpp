@@ -2161,7 +2161,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
 
 
 /**
- * @callback_method_impl{FNRTTHREAD, Asynchronous I/O thread for a HDA stream.}
+ * @callback_method_impl{FNAUDMIXSINKUPDATE}
  *
  * For output streams this moves data from the internal DMA buffer (in which
  * hdaR3StreamUpdateDma put it), thru the mixer and to the various backend audio

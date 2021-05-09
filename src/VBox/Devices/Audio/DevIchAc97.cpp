@@ -333,13 +333,13 @@ typedef struct AC97STREAMSTATE
     RTCRITSECT              CritSect;
     /** Circular buffer (FIFO) for holding DMA'ed data. */
     R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
+#if HC_ARCH_BITS == 32
+    uint32_t                Padding;
+#endif
     /** Current circular buffer read offset (for tracing & logging). */
     uint64_t                offRead;
     /** Current circular buffer write offset (for tracing & logging). */
     uint64_t                offWrite;
-#if HC_ARCH_BITS == 32
-    uint32_t                Padding;
-#endif
     /** The stream's current configuration. */
     PDMAUDIOSTREAMCFG       Cfg; //+108
     /** Timestamp of the last DMA data transfer. */
@@ -1181,7 +1181,7 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
  * Input streams: Pulls data from the mixer, putting it in the internal DMA
  * buffer.
  *
- * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   pStreamR3       The AC'97 stream (ring-3 bits).
  * @param   pSink           The mixer sink to pull from.
  */
 static void ichac97R3StreamPullFromMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSink)
@@ -1207,7 +1207,7 @@ static void ichac97R3StreamPullFromMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pS
 /**
  * Output streams: Pushes data to the mixer.
  *
- * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   pStreamR3       The AC'97 stream (ring-3 bits).
  * @param   pSink           The mixer sink to push to.
  */
 static void ichac97R3StreamPushToMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSink)
@@ -1358,7 +1358,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
 
 
 /**
- * @callback_method_impl{FNRTTHREAD, Asynchronous I/O thread for an AC'97 stream.}
+ * @callback_method_impl{FNAUDMIXSINKUPDATE}
  *
  * For output streams this moves data from the internal DMA buffer (in which
  * ichac97R3StreamUpdateDma put it), thru the mixer and to the various backend
@@ -3988,7 +3988,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
 # endif
-    for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(s_apszNames); idxStream++)
+    for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
@@ -3998,7 +3998,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
                                "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
-
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
