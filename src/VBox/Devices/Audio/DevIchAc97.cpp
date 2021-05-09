@@ -325,29 +325,6 @@ AssertCompileSizeAlignment(AC97BMREGS, 8);
 typedef AC97BMREGS *PAC97BMREGS;
 
 /**
- * Asynchronous I/O state for an AC'97 stream.
- */
-typedef struct AC97STREAMSTATEAIO
-{
-    /** Thread handle for the actual I/O thread. */
-    RTTHREAD                Thread;
-    /** Event for letting the thread know there is some data to process. */
-    RTSEMEVENT              Event;
-    /** Critical section for synchronizing access. */
-    RTCRITSECT              CritSect;
-    /** Started indicator. */
-    volatile bool           fStarted;
-    /** Shutdown indicator. */
-    volatile bool           fShutdown;
-    /** Whether the thread should do any data processing or not. */
-    volatile bool           fEnabled;
-    bool                    afPadding[5];
-} AC97STREAMSTATEAIO;
-/** Pointer to the async I/O state for an AC'97 stream. */
-typedef AC97STREAMSTATEAIO *PAC97STREAMSTATEAIO;
-
-
-/**
  * The internal state of an AC'97 stream.
  */
 typedef struct AC97STREAMSTATE
@@ -457,23 +434,6 @@ AssertCompileSizeAlignment(AC97STREAMR3, 8);
 /** Pointer to an AC'97 stream state for ring-3. */
 typedef AC97STREAMR3 *PAC97STREAMR3;
 
-
-/**
- * Asynchronous I/O thread context (arguments).
- */
-typedef struct AC97STREAMTHREADCTX
-{
-    /** The AC'97 device state (shared). */
-    PAC97STATE              pThis;
-    /** The AC'97 device state (ring-3). */
-    PAC97STATER3            pThisCC;
-    /** The AC'97 stream state (shared). */
-    PAC97STREAM             pStream;
-    /** The AC'97 stream state (ring-3). */
-    PAC97STREAMR3           pStreamCC;
-} AC97STREAMTHREADCTX;
-/** Pointer to the context for an async I/O thread. */
-typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
 
 /**
  * A driver stream (host backend).
