@@ -96,37 +96,25 @@ static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 typedef struct SB16STATE *PSB16STATE;
 
 /**
- * Asynchronous I/O state for an SB16 stream.
- */
-typedef struct SB16STREAMSTATEAIO
-{
-    PPDMTHREAD              pThread;
-    /** Event for letting the thread know there is some data to process. */
-    SUPSEMEVENT             hEvtProcess;
-    /** Critical section for synchronizing access. */
-    RTCRITSECT              CritSect;
-    /** Started indicator. */
-    volatile bool           fStarted;
-    /** Shutdown indicator. */
-    volatile bool           fShutdown;
-    /** Whether the thread should do any data processing or not. */
-    volatile bool           fEnabled;
-    bool                    afPadding[5];
-} SB16STREAMSTATEAIO;
-/** Pointer to the async I/O state for a SB16 stream. */
-typedef SB16STREAMSTATEAIO *PSB16STREAMSTATEAIO;
-
-/**
  * The internal state of a SB16 stream.
  */
 typedef struct SB16STREAMSTATE
 {
     /** Flag indicating whether this stream is in enabled state or not. */
     bool                    fEnabled;
-    /** Asynchronous I/O state members. */
-    SB16STREAMSTATEAIO      AIO;
+    /** Set if we've registered the asynchronous update job. */
+    bool                    fRegisteredAsyncUpdateJob;
     /** DMA cache to read data from / write data to. */
     PRTCIRCBUF              pCircBuf;
+    /** Current circular buffer read offset (for tracing & logging). */
+    uint64_t                offRead;
+    /** Current circular buffer write offset (for tracing & logging). */
+    uint64_t                offWrite;
+
+    /** Size of the DMA buffer (pCircBuf) in bytes. */
+    uint32_t                StatDmaBufSize;
+    /** Number of used bytes in the DMA buffer (pCircBuf). */
+    uint32_t                StatDmaBufUsed;
 } SB16STREAMSTATE;
 /** Pointer to internal state of an SB16 stream. */
 typedef SB16STREAMSTATE *PSB16STREAMSTATE;
@@ -253,19 +241,6 @@ typedef struct SB16STREAM
 typedef SB16STREAM *PSB16STREAM;
 
 /**
- * Asynchronous I/O thread context (arguments).
- */
-typedef struct SB16STREAMTHREADCTX
-{
-    /** The SB16 device state. */
-    PSB16STATE              pThis;
-    /** The SB16 stream state. */
-    PSB16STREAM             pStream;
-} SB16STREAMTHREADCTX;
-/** Pointer to the context for an async I/O thread. */
-typedef SB16STREAMTHREADCTX *PSB16STREAMTHREADCTX;
-
-/**
  * SB16 debug settings.
  */
 typedef struct SB16STATEDEBUG
@@ -354,174 +329,17 @@ static int  sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pSt
 static void sb16StreamClose(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream);
 DECLINLINE(PAUDMIXSINK) sb16StreamIndexToSink(PSB16STATE pThis, uint8_t uIdx);
 static void sb16StreamTransferScheduleNext(PSB16STATE pThis, PSB16STREAM pStream, uint32_t cSamples);
-static void sb16StreamUpdate(PSB16STREAM pStream, PAUDMIXSINK pSink);
 static int  sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDmaChan, uint32_t offDma, uint32_t cbDma, uint32_t cbToRead, uint32_t *pcbRead);
+static DECLCALLBACK(void) sb16StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser);
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser);
 DECLINLINE(void) sb16TimerSet(PPDMDEVINS pDevIns, PSB16STREAM pStream, uint64_t cTicksToDeadline);
 
-static int  sb16StreamAsyncIOCreate(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream);
-static int  sb16StreamAsyncIODestroy(PPDMDEVINS pDevIns, PSB16STREAM pStream);
-static int  sb16StreamAsyncIONotify(PPDMDEVINS pDevIns, PSB16STREAM pStream);
-
 static void sb16SpeakerControl(PSB16STATE pThis, bool fOn);
 static void sb16UpdateVolume(PSB16STATE pThis);
 
 
-/**
- * @callback_method_impl{FNPDMTHREADDEV}
- */
-static DECLCALLBACK(int) sb16StreamAsyncIOThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    PSB16STREAMTHREADCTX pCtx = (PSB16STREAMTHREADCTX)pThread->pvUser;
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
-    PSB16STATE pThis = pCtx->pThis;
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
-    PSB16STREAM pStream = pCtx->pStream;
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
-    AssertReturn(pThread == pStream->State.AIO.pThread, VERR_INVALID_PARAMETER);
-
-    PAUDMIXSINK pSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-
-    while (   pThread->enmState != PDMTHREADSTATE_TERMINATING
-           && pThread->enmState != PDMTHREADSTATE_TERMINATED)
-    {
-        int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pStream->State.AIO.hEvtProcess, RT_INDEFINITE_WAIT);
-        if (pStream->State.AIO.fShutdown)
-            break;
-        AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
-        if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
-            return VINF_SUCCESS;
-        if (rc == VERR_INTERRUPTED)
-            continue;
-
-        sb16StreamUpdate(pStream, pSink);
-    }
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @callback_method_impl{FNPDMTHREADWAKEUPDEV}
- */
-static DECLCALLBACK(int) sb16StreamAsyncIOWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    PSB16STREAMTHREADCTX pCtx = (PSB16STREAMTHREADCTX)pThread->pvUser;
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
-    PSB16STREAM pStream = pCtx->pStream;
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
-    sb16StreamAsyncIONotify(pDevIns, pStream);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Creates the async I/O thread for a specific SB16 audio stream.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- * @param   pThis               The shared SB16 state.
- * @param   pStream             SB16 audio stream to create the async I/O thread for.
- */
-static int sb16StreamAsyncIOCreate(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream)
-{
-    PSB16STREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    int rc;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-    {
-        pAIO->fShutdown = false;
-        pAIO->fEnabled  = true; /* Enabled by default. */
-
-        rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pAIO->hEvtProcess);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCritSectInit(&pAIO->CritSect);
-            if (RT_SUCCESS(rc))
-            {
-                char szDevTag[16]; /* see RTTHREAD_NAME_LEN. */
-                RTStrPrintf(szDevTag, sizeof(szDevTag), "SB16%RU32-%RU8", pDevIns->iInstance, pStream->uIdx);
-
-                PSB16STREAMTHREADCTX pCtx = (PSB16STREAMTHREADCTX)RTMemAllocZ(sizeof(SB16STREAMTHREADCTX));
-                if (pCtx)
-                {
-                    pCtx->pStream = pStream;
-                    pCtx->pThis   = pThis;
-
-                    rc = PDMDevHlpThreadCreate(pDevIns, &pAIO->pThread, pCtx, sb16StreamAsyncIOThread,
-                                               sb16StreamAsyncIOWakeUp, 0, RTTHREADTYPE_IO, szDevTag);
-                    if (RT_FAILURE(rc))
-                        RTMemFree(pCtx);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-        }
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    return rc;
-}
-
-/**
- * Lets the stream's async I/O thread know that there is some data to process.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- * @param   pStream             The SB16 stream to notify async I/O thread.
- */
-static int sb16StreamAsyncIONotify(PPDMDEVINS pDevIns, PSB16STREAM pStream)
-{
-    return PDMDevHlpSUPSemEventSignal(pDevIns, pStream->State.AIO.hEvtProcess);
-}
-
-/**
- * Destroys the async I/O thread of a specific SB16 audio stream.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- * @param   pStream             SB16 audio stream to destroy the async I/O thread for.
- */
-static int sb16StreamAsyncIODestroy(PPDMDEVINS pDevIns, PSB16STREAM pStream)
-{
-    PSB16STREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    if (!ASMAtomicReadBool(&pAIO->fStarted))
-        return VINF_SUCCESS;
-
-    ASMAtomicWriteBool(&pAIO->fShutdown, true);
-
-    int rc = sb16StreamAsyncIONotify(pDevIns, pStream);
-    AssertRC(rc);
-
-    rc = PDMDevHlpThreadDestroy(pDevIns, pAIO->pThread, NULL);
-    AssertRC(rc);
-
-    rc = RTCritSectDelete(&pAIO->CritSect);
-    AssertRC(rc);
-
-    if (pStream->State.AIO.hEvtProcess != NIL_SUPSEMEVENT)
-    {
-        PDMDevHlpSUPSemEventSignal(pDevIns, pStream->State.AIO.hEvtProcess);
-        PDMDevHlpSUPSemEventClose(pDevIns, pStream->State.AIO.hEvtProcess);
-        pStream->State.AIO.hEvtProcess = NIL_SUPSEMEVENT;
-    }
-
-    pAIO->fShutdown = false;
-    return rc;
-}
 
 static void sb16SpeakerControl(PSB16STATE pThis, bool fOn)
 {
@@ -1903,8 +1721,6 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 
     LogFlowFunc(("fSinkActive=%RTbool\n", fSinkActive));
 
-    sb16StreamAsyncIONotify(pDevIns, pStream);
-
     /* Schedule the next transfer. */
     PDMDevHlpDMASchedule(pDevIns);
 
@@ -1913,6 +1729,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
         /** @todo adjust cTicks down by now much cbOutMin represents. */
         sb16TimerSet(pDevIns, pStream, pStream->cTicksTimerIOInterval);
     }
+
+    AudioMixerSinkSignalUpdateJob(pSink);
 
     STAM_PROFILE_STOP(&pThis->StatTimerIO, a);
 }
@@ -2146,31 +1964,33 @@ static void sb16RemoveDrv(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv
 *   Stream handling                                                                                                              *
 *********************************************************************************************************************************/
 
-static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream,
-                                 int uDmaChan, uint32_t offDma, uint32_t cbDma, uint32_t cbToRead, uint32_t *pcbRead)
+static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDmaChan, uint32_t offDma, uint32_t cbDma,
+                                 uint32_t cbToRead, uint32_t *pcbRead)
 {
-    uint32_t cbFree      = (uint32_t)RTCircBufFree(pStream->State.pCircBuf);
-    uint32_t cbReadTotal = 0;
-
-    //Assert(cbToRead <= cbFree); /** @todo Add STAM value for overflows. */
-
+    uint32_t cbFree = (uint32_t)RTCircBufFree(pStream->State.pCircBuf);
+    //Assert(cbToRead <= cbFree); /** @todo Add statistics for overflows. */
     cbToRead = RT_MIN(cbToRead, cbFree);
 
-    int rc = VINF_SUCCESS;
-
-    void  *pv;
-    size_t cb;
-
+    uint32_t cbReadTotal = 0;
     while (cbToRead)
     {
-        uint32_t cbChunk = RT_MIN(cbDma - offDma, cbToRead);
+        void  *pv = NULL;
+        size_t cb = 0;
+        RTCircBufAcquireWriteBlock(pStream->State.pCircBuf, RT_MIN(cbDma - offDma, cbToRead), &pv, &cb);
 
-        RTCircBufAcquireWriteBlock(pStream->State.pCircBuf, cbChunk, &pv, &cb);
-
-        uint32_t cbRead;
-        rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, uDmaChan, pv, offDma, (uint32_t)cb, &cbRead);
-        AssertMsgRCReturn(rc, ("Reading from DMA failed, rc=%Rrc\n", rc), rc);
-        Assert(cbRead == cb);
+        uint32_t cbRead = 0;
+        int rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, uDmaChan, pv, offDma, (uint32_t)cb, &cbRead);
+        if (RT_SUCCESS(rc))
+            Assert(cbRead == cb);
+        else
+        {
+            AssertMsgFailed(("Reading from DMA failed: %Rrc (cbReadTotal=%#x)\n", rc, cbReadTotal));
+            RTCircBufReleaseWriteBlock(pStream->State.pCircBuf, 0);
+            if (cbReadTotal > 0)
+                break;
+            *pcbRead = 0;
+            return rc;
+        }
 
         if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
         { /* likely */ }
@@ -2180,15 +2000,18 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream,
         RTCircBufReleaseWriteBlock(pStream->State.pCircBuf, cbRead);
 
         Assert(cbToRead >= cbRead);
-        cbToRead    -= cbRead;
-        offDma       = (offDma + cbRead) % cbDma;
-        cbReadTotal += cbRead;
+        pStream->State.offWrite += cbRead;
+        offDma                   = (offDma + cbRead) % cbDma;
+        cbReadTotal             += cbRead;
+        cbToRead                -= cbRead;
     }
 
-    if (pcbRead)
-        *pcbRead = cbReadTotal;
+    *pcbRead = cbReadTotal;
 
-    return rc;
+    /* Update buffer stats. */
+    pStream->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2209,8 +2032,20 @@ static int sb16StreamEnable(PSB16STATE pThis, PSB16STREAM pStream, bool fEnable,
 
     LogFlowFunc(("fEnable=%RTbool, fForce=%RTbool, fStreamEnabled=%RTbool\n", fEnable, fForce, pStream->State.fEnabled));
 
+    PAUDMIXSINK pSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
+    AssertPtrReturn(pSink, VERR_INTERNAL_ERROR_2);
+
+    /* We only need to register the AIO update job the first time around as the requence doesn't change. */
+    int rc;
+    if (fEnable && !pStream->State.fRegisteredAsyncUpdateJob)
+    {
+        rc = AudioMixerSinkAddUpdateJob(pSink, sb16StreamUpdateAsyncIoJob, pStream, RT_MS_1SEC / pStream->uTimerHz);
+        AssertRC(rc);
+        pStream->State.fRegisteredAsyncUpdateJob = RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS;
+    }
+
     /* First, enable or disable the stream and the stream's sink. */
-    int rc = AudioMixerSinkEnable(sb16StreamIndexToSink(pThis, pStream->uIdx), fEnable);
+    rc = AudioMixerSinkEnable(pSink, fEnable);
     AssertRCReturn(rc, rc);
 
     pStream->State.fEnabled = fEnable;
@@ -2268,9 +2103,6 @@ static int sb16StreamCreate(PSB16STATE pThis, PSB16STREAM pStream, uint8_t uIdx)
 
     pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
 
-    int rc2 = sb16StreamAsyncIOCreate(pThis->pDevInsR3, pThis, pStream);
-    AssertRCReturn(rc2, rc2);
-
     if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
     { /* likely */ }
     else
@@ -2283,8 +2115,8 @@ static int sb16StreamCreate(PSB16STATE pThis, PSB16STREAM pStream, uint8_t uIdx)
             RTStrPrintf(szFile, sizeof(szFile), "sb16StreamReadSD%RU8", pStream->uIdx);
 
         char szPath[RTPATH_MAX];
-        rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.pszOutPath, szFile,
-                                  0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
+        int rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.pszOutPath, szFile,
+                                      0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
         AssertRC(rc2);
         rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMA);
         AssertRC(rc2);
@@ -2312,8 +2144,13 @@ static int sb16StreamDestroy(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM p
 
     sb16StreamClose(pDevIns, pThis, pStream);
 
-    int rc = sb16StreamAsyncIODestroy(pDevIns, pStream);
-    AssertRCReturn(rc, rc);
+    if (pStream->State.fRegisteredAsyncUpdateJob)
+    {
+        PAUDMIXSINK pSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
+        if (pSink)
+            AudioMixerSinkRemoveUpdateJob(pSink, sb16StreamUpdateAsyncIoJob, pStream);
+        pStream->State.fRegisteredAsyncUpdateJob = false;
+    }
 
     if (pStream->State.pCircBuf)
     {
@@ -2438,15 +2275,16 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
         pStream->State.pCircBuf = NULL;
     }
 
-    const uint32_t cbCircBuf
-        = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, (RT_MS_1SEC / pStream->uTimerHz) * 2 /* Use double buffering here */);
+    /** @todo r=bird: two DMA periods is probably too little. */
+    const uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props,
+                                                         (RT_MS_1SEC / pStream->uTimerHz) * 2 /* Use double buffering here */);
 
     int rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBuf);
     AssertRCReturn(rc, rc);
+    pStream->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStream->State.pCircBuf);
 
-    /* Set scheduling hint (if available). */
-    if (pStream->cTicksTimerIOInterval)
-        pStream->Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / pStream->uTimerHz;
+    /* Set scheduling hint. */
+    pStream->Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / RT_MIN(pStream->uTimerHz, 1);
 
     PAUDMIXSINK pMixerSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
     AssertPtrReturn(pMixerSink, VERR_INVALID_POINTER);
@@ -2517,52 +2355,58 @@ static void sb16StreamTransferScheduleNext(PSB16STATE pThis, PSB16STREAM pStream
     }
 }
 
+
 /**
- * Main function for off-DMA data processing by the audio backend(s).
+ * Output streams: Pushes data to the mixer.
  *
- * Might be called by a timer callback or by an async I/O worker thread, depending
- * on the configuration.
- *
- * @param   pStream     The SB16 stream to open.
- * @param   pSink       Mixer sink to use for updating.
+ * @param   pStream         The SB16 stream.
+ * @param   pSink           The mixer sink to push to.
  */
-static void sb16StreamUpdate(PSB16STREAM pStream, PAUDMIXSINK pSink)
+static void sb16StreamPushToMixer(PSB16STREAM pStream, PAUDMIXSINK pSink)
 {
+#ifdef LOG_ENABLED
+    uint64_t const offReadOld = pStream->State.offRead;
+#endif
+    pStream->State.offRead = AudioMixerSinkTransferFromCircBuf(pSink,
+                                                               pStream->State.pCircBuf,
+                                                               pStream->State.offRead,
+                                                               pStream->uIdx,
+                                                               /** @todo pStream->Dbg.Runtime.fEnabled
+                                                               ? pStream->Dbg.Runtime.pFileStream :*/ NULL);
+
+    Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64\n", pStream->uIdx,
+              pStream->State.offRead - offReadOld, pStream->State.offRead));
+
+    /* Update buffer stats. */
+    pStream->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
+}
+
+
+/**
+ * @callback_method_impl{FNAUDMIXSINKUPDATE}
+ *
+ * For output streams this moves data from the internal DMA buffer (in which
+ * ichac97R3StreamUpdateDma put it), thru the mixer and to the various backend
+ * audio devices.
+ */
+static DECLCALLBACK(void) sb16StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser)
+{
+    PSB16STATE const  pThis   = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STREAM const pStream = (PSB16STREAM)pvUser;
+    Assert(pStream->uIdx == (uintptr_t)(pStream - &pThis->aStreams[0]));
+    Assert(pSink == sb16StreamIndexToSink(pThis, pStream->uIdx));
+    RT_NOREF(pThis);
+
+    /*
+     * Output.
+     */
     if (sb16GetDirFromIndex(pStream->uIdx) == PDMAUDIODIR_OUT)
-    {
-        uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
-        uint32_t const cbStreamReadable   = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
-
-        uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
-        /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
-        cbToReadFromStream = PDMAudioPropsFloorBytesToFrame(&pStream->Cfg.Props, cbToReadFromStream);
-
-        Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32\n", pStream->uIdx, cbSinkWritable, cbStreamReadable));
-
-        void /*const*/ *pvSrcBuf;
-        size_t          cbSrcBuf;
-
-        while (cbToReadFromStream > 0)
-        {
-            uint32_t cbWritten = 0;
-
-            RTCircBufAcquireReadBlock(pStream->State.pCircBuf, cbToReadFromStream, &pvSrcBuf, &cbSrcBuf);
-
-            int rc2 = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
-            AssertRC(rc2);
-            Assert(cbWritten <= (uint32_t)cbSrcBuf);
-
-            RTCircBufReleaseReadBlock(pStream->State.pCircBuf, cbWritten);
-
-            Assert(cbToReadFromStream >= cbWritten);
-            cbToReadFromStream -= cbWritten;
-        }
-    }
+        sb16StreamPushToMixer(pStream, pSink);
+    /*
+     * No input streams at present.
+     */
     else
-        AssertFailed(); /** @todo Recording not implemented yet. */
-
-    int rc2 = AudioMixerSinkUpdate(pSink);
-    AssertRC(rc2);
+        AssertFailed();
 }
 
 
@@ -3250,6 +3094,17 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimerIO,   STAMTYPE_PROFILE, "Timer",     STAMUNIT_TICKS_PER_CALL, "Profiling sb16TimerIO.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, "BytesRead", STAMUNIT_BYTES,          "Bytes read from SB16 emulation.");
 # endif
+    for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer write position.",   "Stream%u/offWrite", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.StatDmaBufSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
+    }
 
     return VINF_SUCCESS;
 }
