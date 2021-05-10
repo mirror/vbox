@@ -492,10 +492,21 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
     return rc;
 }
 
+/**
+ * Overrides audio test base parameters with another set.
+ *
+ * @returns VBox status code.
+ * @param   pBaseParms          Base parameters to override.
+ * @param   pOverrideParms      Override parameters to use for overriding the base parameters.
+ *
+ * @note    Overriding a parameter depends on its type / default values.
+ */
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms)
 {
     RT_NOREF(pBaseParms, pOverrideParms);
-    return 0;
+
+    /** @todo Implement parameter overriding. */
+    return VERR_NOT_IMPLEMENTED;
 }
 
 /**
@@ -525,7 +536,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
         return VINF_SUCCESS;
     }
 
-    void *pvCtx = NULL;
+    void *pvCtx = NULL; /* Test-specific opaque context. Optional and can be NULL. */
 
     if (pTstDesc->pfnSetup)
     {
