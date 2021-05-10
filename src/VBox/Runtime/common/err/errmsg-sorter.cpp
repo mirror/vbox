@@ -106,7 +106,7 @@ static RTSTATUSMSGINT1 g_aStatusMsgs[] =
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
 # include "errmsgdata.h"
 #else
-    { "Success.", "Success.", "VINF_SUCCESS", 0 },
+    { "Success.", "Success.", "VINF_SUCCESS", 0, false },
 #endif
 };
 
