@@ -227,8 +227,8 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
     }
 
     char szName[128];
-    rc = RTStrPrintf(szName, sizeof(szName), "%s%s", AUDIOTEST_PATH_PREFIX_STR, szTag);
-    AssertRCReturn(rc, rc);
+    if (RTStrPrintf2(szName, sizeof(szName), "%s%s", AUDIOTEST_PATH_PREFIX_STR, szTag) < 0)
+        AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     rc = RTPathAppend(pszPath, cbPath, szName);
     AssertRCReturn(rc, rc);
