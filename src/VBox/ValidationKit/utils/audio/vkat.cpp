@@ -39,6 +39,7 @@
 #include <iprt/test.h>
 
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/vmm/pdmaudiohostenuminline.h>
 
 #include "../../../Devices/Audio/AudioHlp.h"
 #include "../../../Devices/Audio/AudioTest.h"
@@ -64,9 +65,8 @@ typedef struct AUDIOTESTPARMS
     uint32_t                idxTest;
     /** How many iterations the test should be executed. */
     uint32_t                cIterations;
-    /** Name or path of audio device to use, depending on the OS.
-     *  If NULL, the default device for this specific test (input / output) will be used. */
-    char                   *pszDevice;
+    /** Audio device to use. */
+    PDMAUDIOHOSTDEV         Dev;
     /** Absolute path where to store the test audio data.
      *  If NULL, no test audio data will be written. */
     char                   *pszPathOutAbs;
@@ -112,7 +112,10 @@ typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
  */
 typedef struct AUDIOTESTENV
 {
-    PPDMIHOSTAUDIO          pDrvAudio;
+    /** The host (backend) driver to use. */
+    PPDMIHOSTAUDIO   pDrvAudio;
+    /** The current (last) audio device enumeration to use. */
+    PDMAUDIOHOSTENUM DevEnm;
 } AUDIOTESTENV;
 /** Pointer a audio test environment. */
 typedef AUDIOTESTENV *PAUDIOTESTENV;
@@ -207,7 +210,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
 
 //    PDMAudioPropsInit(&Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
-    //AudioTestToneParamsInitRandom(&pTestParms->ToneParms, &pTestParms->ToneParms.Props);
+    //AudioTestToneParamsInitRandom(&pTstParms->ToneParms, &pTstParms->ToneParms.Props);
 
     return VINF_SUCCESS;
 }
@@ -231,22 +234,37 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
 *   Implementation                                                                                                               *
 *********************************************************************************************************************************/
 
-static void audioTestParmsInit(PAUDIOTESTPARMS pTestParms)
+static void audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio)
 {
-    RT_BZERO(pTestParms, sizeof(AUDIOTESTPARMS));
+    RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
+
+    pTstEnv->pDrvAudio = pDrvAudio;
+    PDMAudioHostEnumInit(&pTstEnv->DevEnm);
+
     return;
 }
 
-static void audioTestParmsDestroy(PAUDIOTESTPARMS pTestParms)
+static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 {
-    if (!pTestParms)
+    if (!pTstEnv)
         return;
 
-    RTStrFree(pTestParms->pszDevice);
-    pTestParms->pszDevice = NULL;
+    PDMAudioHostEnumDelete(&pTstEnv->DevEnm);
+}
 
-    RTStrFree(pTestParms->pszPathOutAbs);
-    pTestParms->pszPathOutAbs = NULL;
+static void audioTestParmsInit(PAUDIOTESTPARMS pTstParms)
+{
+    RT_BZERO(pTstParms, sizeof(AUDIOTESTPARMS));
+    return;
+}
+
+static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
+{
+    if (!pTstParms)
+        return;
+
+    RTStrFree(pTstParms->pszPathOutAbs);
+    pTstParms->pszPathOutAbs = NULL;
 
     return;
 }
@@ -339,27 +357,76 @@ static int audioTestDrvDestruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns)
     return VINF_SUCCESS;
 }
 
-/**
- * Searches for the default audio test device and return the device path.
- *
- * @returns Path to the device audio device or NULL if none was found.
- */
-static char *audioTestDeviceFindDefault(void)
+static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
 {
-    /** @todo Implement finding default device. */
-    return NULL;
+    RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev ? pszDev : "<Default>");
+
+    if (!pTstEnv->pDrvAudio->pfnGetDevices)
+    {
+        RTTestSkipped(g_hTest, "Backend does not support device enumeration, skipping");
+        return VINF_NOT_SUPPORTED;
+    }
+
+    Assert(pszDev == NULL || ppDev);
+
+    if (ppDev)
+        *ppDev = NULL;
+
+    int rc = pTstEnv->pDrvAudio->pfnGetDevices(pTstEnv->pDrvAudio, &pTstEnv->DevEnm);
+    if (RT_SUCCESS(rc))
+    {
+        PPDMAUDIOHOSTDEV pDev;
+        RTListForEach(&pTstEnv->DevEnm.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
+        {
+            char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s':\n", pDev->szName);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Usage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage));
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Flags           = %s\n",   PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags));
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Input channels  = %RU8\n", pDev->cMaxInputChannels);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Output channels = %RU8\n", pDev->cMaxOutputChannels);
+
+            if (   pszDev
+                && !RTStrCmp(pDev->szName, pszDev))
+            {
+                *ppDev = pDev;
+            }
+        }
+    }
+    else
+        RTTestFailed(g_hTest, "Enumerating audio devices failed with %Rrc", rc);
+
+    RTTestSubDone(g_hTest);
+
+    if (   pszDev
+        && *ppDev == NULL)
+    {
+        RTTestFailed(g_hTest, "Audio device '%s' not found", pszDev);
+        return VERR_NOT_FOUND;
+    }
+
+    return VINF_SUCCESS;
 }
 
-static int audioTestDeviceOpen(const char *pszDevice)
+static int audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev)
 {
     int rc = VINF_SUCCESS;
 
-    RTTestSubF(g_hTest, "Opening audio device '%s' ...", pszDevice ? "<Default>>" : pszDevice);
-
-    if (!pszDevice)
-        audioTestDeviceFindDefault();
+    RTTestSubF(g_hTest, "Opening audio device '%s' ...", pDev->szName);
 
     /** @todo Detect + open device here. */
+
+    RTTestSubDone(g_hTest);
+
+    return rc;
+}
+
+static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
+{
+    int rc = VINF_SUCCESS;
+
+    RTTestSubF(g_hTest, "Closing audio device '%s' ...", pDev->szName);
+
+    /** @todo Close device here. */
 
     RTTestSubDone(g_hTest);
 
@@ -375,6 +442,8 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
 static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
                         unsigned uSeq, PAUDIOTESTPARMS pOverrideParms)
 {
+    RT_NOREF(uSeq);
+
     int rc;
 
     AUDIOTESTPARMS TstParms;
@@ -399,15 +468,8 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
 
     audioTestCombineParms(&TstParms, pOverrideParms);
 
-    /* Open the device on the first test being run. */
-    if (   uSeq == 0
-        && TstParms.pszDevice
-        && strlen(TstParms.pszDevice))
-    {
-        rc = audioTestDeviceOpen(TstParms.pszDevice);
-        if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Unable to find audio device '%s'", TstParms.pszDevice);
-    }
+    if (strlen(TstParms.Dev.szName)) /** @todo Refine this check. */
+        rc = audioTestDeviceOpen(&TstParms.Dev);
 
     AssertPtr(pTstDesc->pfnExec);
     rc = pTstDesc->pfnExec(pTstEnv, pvCtx, &TstParms);
@@ -420,6 +482,8 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    rc = audioTestDeviceClose(&TstParms.Dev);
 
     audioTestParmsDestroy(&TstParms);
 
@@ -450,6 +514,8 @@ int mainTest(int argc, char **argv)
 
     AUDIOTESTPARMS TstCust;
     audioTestParmsInit(&TstCust);
+
+    char *pszDevice = NULL; /* Custom device to use. Can be NULL if not being used. */
 
     RT_ZERO(g_DrvIns);
     const PDMDRVREG *pDrvReg = NULL;
@@ -538,7 +604,7 @@ int mainTest(int argc, char **argv)
 
             case VKAT_TEST_OPT_DEV:
             {
-                TstCust.pszDevice = RTStrDup(ValueUnion.psz);
+                pszDevice = RTStrDup(ValueUnion.psz);
                 break;
             }
 
@@ -610,15 +676,21 @@ int mainTest(int argc, char **argv)
     if (RT_SUCCESS(rc))
     {
         /* For now all tests have the same test environment. */
-        AUDIOTESTENV TestEnv;
-        TestEnv.pDrvAudio = pDrvAudio;
+        AUDIOTESTENV TstEnv;
+        audioTestEnvInit(&TstEnv, pDrvAudio);
 
-        audioTestWorker(&TestEnv, &TstCust);
+        PPDMAUDIOHOSTDEV pDev;
+        rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
+        if (RT_SUCCESS(rc))
+            audioTestWorker(&TstEnv, &TstCust);
 
+        audioTestEnvDestroy(&TstEnv);
         audioTestDrvDestruct(pDrvReg, &g_DrvIns);
     }
 
     audioTestParmsDestroy(&TstCust);
+
+    RTStrFree(pszDevice);
 
     /*
      * Print summary and exit.
