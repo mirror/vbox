@@ -2014,7 +2014,7 @@ static DECLCALLBACK(int) drvHostAudioPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     return rc;
 }
 
-#ifndef VBOX_AUDIO_VKAT
+
 /**
  * Pulse audio driver registration record.
  */
@@ -2065,15 +2065,4 @@ const PDMDRVREG g_DrvHostPulseAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-#else /* VBOX_AUDIO_VKAT */
-const PDMDRVREG g_DrvVKATPulseAudio =
-{
-    /* szName */
-    "PulseAudio",
-    /* cbInstance */
-    sizeof(DRVHOSTPULSEAUDIO),
-    drvHostAudioPaConstruct,
-    /* pfnDestruct */
-    drvHostAudioPaDestruct
-};
-#endif /* VBOX_AUDIO_VKAT */
+

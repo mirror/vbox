@@ -1453,7 +1453,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
 }
 
 
-#ifndef VBOX_AUDIO_VKAT
 /**
  * ALSA audio driver registration record.
  */
@@ -1504,16 +1503,4 @@ const PDMDRVREG g_DrvHostALSAAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-#else /* VBOX_AUDIO_VKAT */
-const PDMDRVREG g_DrvVKATAlsa =
-{
-    /* szName */
-    "ALSAAudio",
-    /* cbInstance */
-    sizeof(DRVHOSTALSAAUDIO),
-    drvHostAlsaAudioConstruct,
-    /* pfnDestruct */
-    NULL
-};
-#endif /* VBOX_AUDIO_VKAT */
 

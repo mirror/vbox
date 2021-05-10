@@ -492,15 +492,15 @@ int mainTest(int argc, char **argv)
 #ifdef VBOX_WITH_AUDIO_PULSE
                 if (   !RTStrICmp(ValueUnion.psz, "pulseaudio")
                     || !RTStrICmp(ValueUnion.psz, "pa"))
-                    pDrvReg = &g_DrvVKATPulseAudio;
+                    pDrvReg = &g_DrvHostPulseAudio;
 #endif
 #ifdef VBOX_WITH_AUDIO_ALSA
                 if (   !RTStrICmp(ValueUnion.psz, "alsa"))
-                    pDrvReg = &g_DrvVKATAlsa;
+                    pDrvReg = &g_DrvHostALSAAudio;
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
                 if (   !RTStrICmp(ValueUnion.psz, "oss"))
-                    pDrvReg = &g_DrvVKATOss;
+                    pDrvReg = &g_DrvHostOSSAudio;
 #endif
                 /** @todo Add more backends here. */
 
@@ -586,7 +586,7 @@ int mainTest(int argc, char **argv)
 
     /* If no backend is specified, go with the ALSA one by default. */
     if (pDrvReg == NULL)
-        pDrvReg = &g_DrvVKATAlsa;
+        pDrvReg = &g_DrvHostALSAAudio;
 
     PPDMIHOSTAUDIO pDrvAudio;
     rc = audioTestDrvConstruct(pDrvReg, &g_DrvIns, &pDrvAudio);
