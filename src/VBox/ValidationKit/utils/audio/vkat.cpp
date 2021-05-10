@@ -502,8 +502,17 @@ int mainTest(int argc, char **argv)
                 if (   !RTStrICmp(ValueUnion.psz, "oss"))
                     pDrvReg = &g_DrvHostOSSAudio;
 #endif
-                /** @todo Add more backends here. */
-
+#if defined(RT_OS_DARWIN)
+                if (   !RTStrICmp(ValueUnion.psz, "coreaudio"))
+                    pDrvReg = &g_DrvHostCoreAudio;
+#endif
+#if defined(RT_OS_WINDOWS)
+                if (        !RTStrICmp(ValueUnion.psz, "wasapi"))
+                    pDrvReg = &g_DrvHostAudioWas;
+                else if (   !RTStrICmp(ValueUnion.psz, "directsound")
+                         || !RTStrICmp(ValueUnion.psz, "dsound")
+                    pDrvReg = &g_DrvHostDSound;
+#endif
                 if (pDrvReg == NULL)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid / unsupported backend '%s' specified\n", ValueUnion.psz);
                 break;
@@ -584,9 +593,17 @@ int mainTest(int argc, char **argv)
      */
     RTTestBanner(g_hTest);
 
-    /* If no backend is specified, go with the ALSA one by default. */
+    /* If no backend is specified, go with the default backend for that OS. */
     if (pDrvReg == NULL)
+#if defined(RT_OS_WINDOWS)
+        pDrvReg = &g_DrvHostAudioWas;
+#elif defined(RT_OS_DARWIN)
+        pDrvReg = &g_DrvHostCoreAudio;
+#elif defined(RT_OS_SOLARIS)
+        pDrvReg = &g_DrvHostOSSAudio;
+#else
         pDrvReg = &g_DrvHostALSAAudio;
+#endif
 
     PPDMIHOSTAUDIO pDrvAudio;
     rc = audioTestDrvConstruct(pDrvReg, &g_DrvIns, &pDrvAudio);

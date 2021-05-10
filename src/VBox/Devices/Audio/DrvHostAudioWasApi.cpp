@@ -44,7 +44,11 @@
 
 #include <new> /* std::bad_alloc */
 
-#include "VBoxDD.h"
+#ifdef VBOX_AUDIO_VKAT
+# include "VBoxDDVKAT.h"
+#else
+# include "VBoxDD.h"
+#endif
 
 
 /*********************************************************************************************************************************

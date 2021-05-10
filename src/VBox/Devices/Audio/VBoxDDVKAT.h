@@ -149,5 +149,12 @@ extern const PDMDRVREG g_DrvHostALSAAudio;
 #ifdef VBOX_WITH_AUDIO_OSS
 extern const PDMDRVREG g_DrvHostOSSAudio;
 #endif
+#if defined(RT_OS_WINDOWS)
+extern const PDMDRVREG g_DrvHostAudioWas;
+extern const PDMDRVREG g_DrvHostDSound;
+#endif
+#if defined(RT_OS_DARWIN)
+extern const PDMDRVREG g_DrvHostCoreAudio;
+#endif
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_VBoxDDVKAT_h */
