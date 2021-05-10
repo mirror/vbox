@@ -24,7 +24,9 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
+#include <iprt/dir.h>
 #include <iprt/rand.h>
+#include <iprt/uuid.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h> /* sin, M_PI */
@@ -203,5 +205,113 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
     pToneParams->uVolumePercent = RTRandU32Ex(0, 100);
 
     return VINF_SUCCESS;
+}
+
+int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
+{
+    int rc;
+
+    char szTag[RTUUID_STR_LENGTH + 1];
+    if (pszTag)
+    {
+        rc = RTStrCopy(szTag, sizeof(szTag), pszTag);
+        AssertRCReturn(rc, rc);
+    }
+    else /* Create an UUID if no tag is specified. */
+    {
+        RTUUID UUID;
+        rc = RTUuidCreate(&UUID);
+        AssertRCReturn(rc, rc);
+        rc = RTUuidToStr(&UUID, szTag, sizeof(szTag));
+        AssertRCReturn(rc, rc);
+    }
+
+    char szName[128];
+    rc = RTStrPrintf(szName, sizeof(szName), "%s%s", AUDIOTEST_PATH_PREFIX_STR, szTag);
+    AssertRCReturn(rc, rc);
+
+    rc = RTPathAppend(pszPath, cbPath, szName);
+    AssertRCReturn(rc, rc);
+
+    char szTime[64];
+    RTTIMESPEC time;
+    if (!RTTimeSpecToString(RTTimeNow(&time), szTime, sizeof(szTime)))
+        return VERR_BUFFER_UNDERFLOW;
+
+    rc = RTPathAppend(pszPath, cbPath, szTime);
+    AssertRCReturn(rc, rc);
+
+    return RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
+}
+
+int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
+{
+    int rc = RTPathTemp(pszPath, cbPath);
+    AssertRCReturn(rc, rc);
+    rc = AudioTestPathCreate(pszPath, cbPath, pszTag);
+    AssertRCReturn(rc, rc);
+
+    return rc;
+}
+
+int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
+{
+    int rc;
+
+    if (pszPath)
+    {
+        rc = RTStrCopy(pSet->szPathOutAbs, sizeof(pSet->szPathOutAbs), pszPath);
+        AssertRCReturn(rc, rc);
+
+        rc = AudioTestPathCreate(pSet->szPathOutAbs, sizeof(pSet->szPathOutAbs), pszTag);
+    }
+    else
+        rc = AudioTestPathCreateTemp(pSet->szPathOutAbs, sizeof(pSet->szPathOutAbs), pszTag);
+    AssertRCReturn(rc, rc);
+
+    return rc;
+}
+
+void AudioTestSetDestroy(PAUDIOTESTSET pSet)
+{
+    RT_NOREF(pSet);
+}
+
+int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
+{
+    RT_NOREF(pSet, pszPath, pszTag);
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+void AudioTestSetClose(PAUDIOTESTSET pSet)
+{
+    AudioTestSetDestroy(pSet);
+}
+
+int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir)
+{
+    RT_NOREF(pSet, pszOutDir);
+    // RTZipTarCmd()
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
+{
+    RT_NOREF(pszFile, pszOutDir);
+    // RTZipTarCmd()
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag)
+{
+    RT_NOREF(pSet, pszTag);
+    //RTIniFileQueryPair()
+
+    /** @todo Compare tag with test set. */
+
+    return VERR_NOT_IMPLEMENTED;
 }
 

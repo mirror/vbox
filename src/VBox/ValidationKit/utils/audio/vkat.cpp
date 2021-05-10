@@ -73,9 +73,6 @@ typedef struct AUDIOTESTPARMS
     uint32_t                cIterations;
     /** Audio device to use. */
     PDMAUDIOHOSTDEV         Dev;
-    /** Absolute path where to store the test audio data.
-     *  If NULL, no test audio data will be written. */
-    char                   *pszPathOutAbs;
     /** How much to delay (wait, in ms) the test being executed. */
     RTMSINTERVAL            msDelay;
     /** The test type. */
@@ -119,6 +116,8 @@ typedef struct AUDIOTESTENV
     PPDMIHOSTAUDIO   pDrvAudio;
     /** The current (last) audio device enumeration to use. */
     PDMAUDIOHOSTENUM DevEnm;
+    /** The audio test set to use. */
+    AUDIOTESTSET     Set;
 } AUDIOTESTENV;
 /** Pointer a audio test environment. */
 typedef AUDIOTESTENV *PAUDIOTESTENV;
@@ -158,10 +157,11 @@ enum
     VKAT_TEST_OPT_DEV,
     VKAT_TEST_OPT_OUTDIR,
     VKAT_TEST_OPT_PAUSE,
-    VKAT_TEST_OPT_HZ,
-    VKAT_TEST_OPT_BIT,
-    VKAT_TEST_OPT_CHAN,
-    VKAT_TEST_OPT_SIGNED,
+    VKAT_TEST_OPT_PCM_HZ,
+    VKAT_TEST_OPT_PCM_BIT,
+    VKAT_TEST_OPT_PCM_CHAN,
+    VKAT_TEST_OPT_PCM_SIGNED,
+    VKAT_TEST_OPT_TAG,
     VKAT_TEST_OPT_VOL
 };
 
@@ -183,10 +183,11 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--count",            VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
     { "--device",           VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
     { "--pause",            VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
-    { "--pcm-bit",          VKAT_TEST_OPT_BIT,            RTGETOPT_REQ_UINT8   },
-    { "--pcm-chan",         VKAT_TEST_OPT_CHAN,           RTGETOPT_REQ_UINT8   },
-    { "--pcm-hz",           VKAT_TEST_OPT_HZ,             RTGETOPT_REQ_UINT16  },
-    { "--pcm-signed",       VKAT_TEST_OPT_SIGNED,         RTGETOPT_REQ_BOOL    },
+    { "--pcm-bit",          VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
+    { "--pcm-chan",         VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
+    { "--pcm-hz",           VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
+    { "--pcm-signed",       VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
+    { "--tag",              VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
     { "--volume",           VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
 
 };
@@ -241,15 +242,17 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
  *
  * @param   pTstEnv             Audio test environment to initialize.
  * @param   pDrvAudio           Audio driver to use.
+ * @param   pszPathOut          Output path to use. If NULL, the system's temp directory will be used.
+ * @þaram   pszTag              Tag name to use. If NULL, a generated UUID will be used.
  */
-static void audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio)
+static int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio, const char *pszPathOut, const char *pszTag)
 {
     RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
 
     pTstEnv->pDrvAudio = pDrvAudio;
     PDMAudioHostEnumInit(&pTstEnv->DevEnm);
 
-    return;
+    return AudioTestSetCreate(&pTstEnv->Set, pszPathOut, pszTag);
 }
 
 /**
@@ -263,6 +266,8 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
         return;
 
     PDMAudioHostEnumDelete(&pTstEnv->DevEnm);
+
+    AudioTestSetDestroy(&pTstEnv->Set);
 }
 
 /**
@@ -273,6 +278,7 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 static void audioTestParmsInit(PAUDIOTESTPARMS pTstParms)
 {
     RT_BZERO(pTstParms, sizeof(AUDIOTESTPARMS));
+
     return;
 }
 
@@ -285,9 +291,6 @@ static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
 {
     if (!pTstParms)
         return;
-
-    RTStrFree(pTstParms->pszPathOutAbs);
-    pTstParms->pszPathOutAbs = NULL;
 
     return;
 }
@@ -608,7 +611,9 @@ int mainTest(int argc, char **argv)
     AUDIOTESTPARMS TstCust;
     audioTestParmsInit(&TstCust);
 
-    char *pszDevice = NULL; /* Custom device to use. Can be NULL if not being used. */
+    char *pszDevice  = NULL; /* Custom device to use. Can be NULL if not being used. */
+    char *pszPathOut = NULL; /* Custom output path to use. Can be NULL if not being used. */
+    char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
 
     RT_ZERO(g_DrvIns);
     const PDMDRVREG *pDrvReg = NULL;
@@ -708,31 +713,37 @@ int mainTest(int argc, char **argv)
 
             case VKAT_TEST_OPT_OUTDIR:
             {
-                TstCust.pszPathOutAbs = RTStrDup(ValueUnion.psz);
+                pszPathOut = RTStrDup(ValueUnion.psz);
                 break;
             }
 
-            case VKAT_TEST_OPT_BIT:
+            case VKAT_TEST_OPT_PCM_BIT:
             {
                 TstCust.ToneParms.Props.cbSampleX = ValueUnion.u8 / 8 /* bit */;
                 break;
             }
 
-            case VKAT_TEST_OPT_CHAN:
+            case VKAT_TEST_OPT_PCM_CHAN:
             {
                 TstCust.ToneParms.Props.cChannelsX = ValueUnion.u8;
                 break;
             }
 
-            case VKAT_TEST_OPT_HZ:
+            case VKAT_TEST_OPT_PCM_HZ:
             {
                 TstCust.ToneParms.Props.uHz = ValueUnion.u32;
                 break;
             }
 
-            case VKAT_TEST_OPT_SIGNED:
+            case VKAT_TEST_OPT_PCM_SIGNED:
             {
                 TstCust.ToneParms.Props.fSigned = ValueUnion.f;
+                break;
+            }
+
+            case VKAT_TEST_OPT_TAG:
+            {
+                pszTag = RTStrDup(ValueUnion.psz);
                 break;
             }
 
@@ -770,20 +781,26 @@ int mainTest(int argc, char **argv)
     {
         /* For now all tests have the same test environment. */
         AUDIOTESTENV TstEnv;
-        audioTestEnvInit(&TstEnv, pDrvAudio);
-
-        PPDMAUDIOHOSTDEV pDev;
-        rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
+        rc = audioTestEnvInit(&TstEnv, pDrvAudio, pszPathOut, pszTag);
         if (RT_SUCCESS(rc))
-            audioTestWorker(&TstEnv, &TstCust);
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", TstEnv.Set.szPathOutAbs);
 
-        audioTestEnvDestroy(&TstEnv);
+            PPDMAUDIOHOSTDEV pDev;
+            rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
+            if (RT_SUCCESS(rc))
+                audioTestWorker(&TstEnv, &TstCust);
+
+            audioTestEnvDestroy(&TstEnv);
+        }
         audioTestDrvDestruct(pDrvReg, &g_DrvIns);
     }
 
     audioTestParmsDestroy(&TstCust);
 
     RTStrFree(pszDevice);
+    RTStrFree(pszPathOut);
+    RTStrFree(pszTag);
 
     /*
      * Print summary and exit.

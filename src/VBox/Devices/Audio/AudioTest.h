@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
  * Audio testing routines.
- * Common code which is being used by the ValidationKit and the debug / ValdikationKit audio driver(s).
+ * Common code which is being used by the ValidationKit audio test (VKAT)
+ * and the debug / ValdikationKit audio driver(s).
  */
 
 /*
@@ -21,6 +22,8 @@
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
+
+#define AUDIOTEST_PATH_PREFIX_STR "audio-test-"
 
 /**
  * Structure for handling an audio (sine wave) test tone.
@@ -59,11 +62,32 @@ typedef struct AUDIOTESTTONEPARMS
 /** Pointer to audio test tone parameters. */
 typedef AUDIOTESTTONEPARMS *PAUDIOTESTTONEPARMS;
 
+typedef struct AUDIOTESTSET
+{
+    /** Absolute path where to store the test audio data.
+     *  If NULL, no test audio data will be written. */
+    char             szPathOutAbs[RTPATH_MAX];
+
+} AUDIOTESTSET;
+/** Pointer to audio test set parameters. */
+typedef AUDIOTESTSET *PAUDIOTESTSET;
+
 
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 int    AudioTestToneWrite(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 
 int    AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMPROPS pProps);
+
+int    AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszUUID);
+int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
+
+int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
+void   AudioTestSetDestroy(PAUDIOTESTSET pSet);
+int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
+void   AudioTestSetClose(PAUDIOTESTSET pSet);
+int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir);
+int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
+int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTest_h */
 
