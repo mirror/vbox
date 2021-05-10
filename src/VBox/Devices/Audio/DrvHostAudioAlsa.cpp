@@ -52,13 +52,10 @@
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
-RT_C_DECLS_BEGIN
-#include "DrvHostAudioAlsaStubs.h"
 #include "DrvHostAudioAlsaStubsMangling.h"
-RT_C_DECLS_END
-
 #include <alsa/asoundlib.h>
 #include <alsa/control.h> /* For device enumeration. */
+#include "DrvHostAudioAlsaStubs.h"
 
 #ifdef VBOX_AUDIO_VKAT
 # include "VBoxDDVKAT.h"
