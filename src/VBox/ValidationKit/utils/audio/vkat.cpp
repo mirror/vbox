@@ -234,6 +234,12 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
 *   Implementation                                                                                                               *
 *********************************************************************************************************************************/
 
+/**
+ * Initializes an audio test environment.
+ *
+ * @param   pTstEnv             Audio test environment to initialize.
+ * @param   pDrvAudio           Audio driver to use.
+ */
 static void audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio)
 {
     RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
@@ -244,6 +250,11 @@ static void audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio)
     return;
 }
 
+/**
+ * Destroys an audio test environment.
+ *
+ * @param   pTstEnv             Audio test environment to destroy.
+ */
 static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 {
     if (!pTstEnv)
@@ -252,12 +263,22 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     PDMAudioHostEnumDelete(&pTstEnv->DevEnm);
 }
 
+/**
+ * Initializes an audio test parameters set.
+ *
+ * @param   pTstParms           Test parameters set to initialize.
+ */
 static void audioTestParmsInit(PAUDIOTESTPARMS pTstParms)
 {
     RT_BZERO(pTstParms, sizeof(AUDIOTESTPARMS));
     return;
 }
 
+/**
+ * Destroys an audio test parameters set.
+ *
+ * @param   pTstParms           Test parameters set to destroy.
+ */
 static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
 {
     if (!pTstParms)
@@ -318,6 +339,14 @@ static void audioTestUsage(PRTSTREAM pStrm)
     /** @todo Add all other options. */
 }
 
+/**
+ * Constructs a PDM audio driver instance.
+ *
+ * @returns VBox status code.
+ * @param   pDrvReg             PDM driver registration record to use for construction.
+ * @param   pDrvIns             Driver instance to use for construction.
+ * @param   ppDrvAudio          Where to return the audio driver interface of type IHOSTAUDIO.
+ */
 static int audioTestDrvConstruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns, PPDMIHOSTAUDIO *ppDrvAudio)
 {
     AssertReturn(pDrvReg->cbInstance, VERR_INVALID_PARAMETER); /** @todo Very crude; improve. */
@@ -340,6 +369,13 @@ static int audioTestDrvConstruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns, P
     return rc;
 }
 
+/**
+ * Destructs a PDM audio driver instance.
+ *
+ * @returns VBox status code.
+ * @param   pDrvReg             PDM driver registration record to destruct.
+ * @param   pDrvIns             Driver instance to destruct.
+ */
 static int audioTestDrvDestruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns)
 {
     if (!pDrvIns)
@@ -357,6 +393,15 @@ static int audioTestDrvDestruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns)
     return VINF_SUCCESS;
 }
 
+/**
+ * Enumerates audio devices and optionally searches for a specific device.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test env to use for enumeration.
+ * @param   pszDev              Device name to search for. Can be NULL if the default device shall be used.
+ * @param   ppDev               Where to return the pointer of the device enumeration of \a pTstEnv when a
+ *                              specific device was found.
+ */
 static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
 {
     RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev ? pszDev : "<Default>");
@@ -407,6 +452,12 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     return VINF_SUCCESS;
 }
 
+/**
+ * Opens an audio device.
+ *
+ * @returns VBox status code.
+ * @param   pDev                Audio device to open.
+ */
 static int audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev)
 {
     int rc = VINF_SUCCESS;
@@ -420,6 +471,12 @@ static int audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev)
     return rc;
 }
 
+/**
+ * Closes an audio device.
+ *
+ * @returns VBox status code.
+ * @param   pDev                Audio device to close.
+ */
 static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
 {
     int rc = VINF_SUCCESS;
@@ -439,6 +496,15 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
     return 0;
 }
 
+/**
+ * Runs one specific audio test.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for running the test.
+ * @param   pTstDesc            Test to run.
+ * @param   uSeq                Test sequence # in case there are more tests.
+ * @param   pOverrideParms      Test parameters for overriding the actual test parameters. Optional.
+ */
 static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
                         unsigned uSeq, PAUDIOTESTPARMS pOverrideParms)
 {
@@ -490,6 +556,13 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
     return rc;
 }
 
+/**
+ * Runs all specified tests in a row.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for running all tests.
+ * @param   pOverrideParms      Test parameters for (some / all) specific test parameters. Optional.
+ */
 static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
 {
     int rc = VINF_SUCCESS;
@@ -508,6 +581,13 @@ static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms
     return rc;
 }
 
+/**
+ * Main (entry) function for the testing functionality of VKAT.
+ *
+ * @returns RTEXITCODE
+ * @param   argc                Number of argv arguments.
+ * @param   argv                argv arguments.
+ */
 int mainTest(int argc, char **argv)
 {
     int rc;
@@ -698,10 +778,18 @@ int mainTest(int argc, char **argv)
     return RTTestSummaryAndDestroy(g_hTest);
 }
 
+/**
+ * Main (entry) function for the verification functionality of VKAT.
+ *
+ * @returns RTEXITCODE
+ * @param   argc                Number of argv arguments.
+ * @param   argv                argv arguments.
+ */
 int mainVerify(int argc, char **argv)
 {
     RT_NOREF(argc, argv);
-    return 0;
+
+    return RTMsgErrorExit(RTEXITCODE_SKIPPED, "Sorry, not implemented yet!\n");
 }
 
 int main(int argc, char **argv)
