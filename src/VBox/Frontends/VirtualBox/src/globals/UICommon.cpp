@@ -168,10 +168,6 @@
 
 //#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 
-#ifdef VBOX_WITH_QT_RUNTIME_PATCHING
-DECLHIDDEN(void) uiCommonQtRuntimePatch(void);
-#endif
-
 /* Namespaces: */
 using namespace UIExtraDataDefs;
 using namespace UIMediumDefs;
@@ -4093,11 +4089,6 @@ void UICommon::prepare()
     /* Determine OS release early: */
     m_enmMacOSVersion = determineOsRelease();
 #endif /* VBOX_WS_MAC */
-
-#ifdef VBOX_WITH_QT_RUNTIME_PATCHING
-    /* Patch some Qt modules to tailor the behavior towards our needs. */
-    uiCommonQtRuntimePatch();
-#endif
 
     /* Prepare converter: */
     UIConverter::prepare();
