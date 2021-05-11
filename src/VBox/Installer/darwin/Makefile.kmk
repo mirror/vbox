@@ -574,19 +574,19 @@ VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(PATH_ROOT)/src/VBox/HostDrivers/Support/
 define def_vbox_entitlement_add_app_and_team_id =
 $(2): $(1) $$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE) | $$$$(dir $$$$@)
 	$$(QUIET)$$(SED) \
-		-e '/^<dict>$$$$/a \    <key>com.apple.application-identifier</key>\n    <string>$(4).$(3)</string>\n    <key>com.apple.developer.team-identifier</key>\n    <string>$(4)</string>' \
+		-e '/^<dict>$$$$/a \    <key>com.apple.application-identifier</key>\n    <string>$(strip $(4)).$(strip $(3))</string>\n    <key>com.apple.developer.team-identifier</key>\n    <string>$(strip $(4))</string>' \
 		--output $$@ $$<
 endef
 
 if defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE) && defined(VBOX_PROVISIONPROFILE_TEAM_ID)
  ifdef VBOX_VIRTUALBOX_APP_ID
   VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlements.plist
-$(evalcall2 def_vbox_entitlement_add_app_and_team_id, $(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist, $(VBOX_VIRTUALBOX_APP_ENTITLEMENTS), $(VBOX_VIRTUALBOX_APP_ID), $(VBOX_PROVISIONPROFILE_TEAM_ID))
+$(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOX_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 
  ifdef VBOX_VIRTUALBOXVM_APP_ID
   VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlementsVM.plist
-$(evalcall2 def_vbox_entitlement_add_app_and_team_id, $(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist, $(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS), $(VBOX_VIRTUALBOXVM_APP_ID), $(VBOX_PROVISIONPROFILE_TEAM_ID))
+$(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,$(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOXVM_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 endif
 
@@ -814,6 +814,9 @@ ifdef VBOX_SIGNING_MODE
 			$(addprefix MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
 		, $(NLTAB)$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(file),org.virtualbox.app.$(tolower $(subst $(SP),,$(subst /,.,$(file))))) )
 
+ifdef VBOX_PROVISIONPROFILE_TEAM_ID
+#	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile	$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/embedded.provisionprofile
+endif
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME)\
 		,--entitlements="$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS)",))
  ifdef VBOX_WITH_QTGUI
