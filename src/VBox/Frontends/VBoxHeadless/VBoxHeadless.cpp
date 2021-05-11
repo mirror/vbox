@@ -35,6 +35,7 @@ using namespace com;
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
@@ -1458,9 +1459,28 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: Waiting for PowerDown...\n"));
 
-        while (   !g_fTerminateFE
-               && RT_SUCCESS(gEventQ->processEventQueue(RT_INDEFINITE_WAIT)))
-            /* nothing */ ;
+        /*
+         * Pump vbox events forever
+         */
+        for (;;)
+        {
+            int irc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
+
+            /*
+             * interruptEventQueueProcessing from another thread is
+             * reported as VERR_INTERRUPTED, so check the flag first.
+             */
+            if (g_fTerminateFE)
+            {
+                break;
+            }
+
+            if (RT_FAILURE(irc))
+            {
+                RTMsgError("event loop: %Rrc", irc);
+                break;
+            }
+        }
 
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
