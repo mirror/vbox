@@ -277,9 +277,9 @@ void AudioTestSetDestroy(PAUDIOTESTSET pSet)
     RT_NOREF(pSet);
 }
 
-int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
+int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath)
 {
-    RT_NOREF(pSet, pszPath, pszTag);
+    RT_NOREF(pSet, pszPath);
 
     return VERR_NOT_IMPLEMENTED;
 }

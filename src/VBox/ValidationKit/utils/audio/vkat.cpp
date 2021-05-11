@@ -151,6 +151,9 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/**
+ * Enumeration of test ("test") command line parameters.
+ */
 enum
 {
     VKAT_TEST_OPT_COUNT = 900,
@@ -165,14 +168,26 @@ enum
     VKAT_TEST_OPT_VOL
 };
 
-#if 0
+/**
+ * Enumeration of verification ("verify") command line parameters.
+ */
+enum
+{
+    VKAT_VERIFY_OPT_TAG = 900
+};
+
+/**
+ * Common command line parameters.
+ */
 static const RTGETOPTDEF g_aCmdCommonOptions[] =
 {
-    { "--help",             'h',                 RTGETOPT_REQ_NOTHING }
+    { "--help",             'h',                          RTGETOPT_REQ_NOTHING },
+    { "--verbose",          'v',                          RTGETOPT_REQ_NOTHING }
 };
-#endif
 
-/** Command line parameters for test mode. */
+/**
+ * Command line parameters for test mode.
+ */
 static const RTGETOPTDEF g_aCmdTestOptions[] =
 {
     { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
@@ -189,14 +204,22 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--pcm-signed",       VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
     { "--tag",              VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
     { "--volume",           VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
+};
 
+/**
+ * Command line parameters for verification mode.
+ */
+static const RTGETOPTDEF g_aCmdVerifyOptions[] =
+{
+    { "--tag",              VKAT_VERIFY_OPT_TAG,          RTGETOPT_REQ_STRING  }
 };
 
 /** The test handle. */
 static RTTEST g_hTest;
 /** The driver instance data. */
 PDMDRVINS g_DrvIns;
-
+/** The current verbosity level. */
+unsigned  g_uVerbosity = 0;
 
 /*********************************************************************************************************************************
 *   Test callbacks                                                                                                               *
@@ -604,7 +627,7 @@ static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms
  * @param   argc                Number of argv arguments.
  * @param   argv                argv arguments.
  */
-int mainTest(int argc, char **argv)
+int audioTestMain(int argc, char **argv)
 {
     int rc;
 
@@ -620,7 +643,9 @@ int mainTest(int argc, char **argv)
 
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 0, 0 /* fFlags */);
+    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 0, 0 /* fFlags */);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (rc)
@@ -809,17 +834,132 @@ int mainTest(int argc, char **argv)
 }
 
 /**
+ * Verifies one single test set.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Absolute path to test set.
+ * @param   pszTag              Tag of test set to verify. Optional and can be NULL.
+ */
+int audioVerifyOne(const char *pszPath, const char *pszTag)
+{
+    RTTestSubF(g_hTest, "Verifying test set (tag '%s') ...", pszTag ? pszTag : "<Default>");
+
+    AUDIOTESTSET tstSet;
+    int rc = AudioTestSetOpen(&tstSet, pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        rc = AudioTestSetVerify(&tstSet, pszTag);
+        if (RT_SUCCESS(rc))
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful");
+        }
+        else
+            RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
+
+        AudioTestSetClose(&tstSet);
+    }
+    else
+        RTTestFailed(g_hTest, "Opening test set '%s' (tag '%s') failed, rc=%Rrc\n", pszPath, pszTag, rc);
+
+    RTTestSubDone(g_hTest);
+
+    return rc;
+}
+
+/**
  * Main (entry) function for the verification functionality of VKAT.
  *
  * @returns RTEXITCODE
  * @param   argc                Number of argv arguments.
  * @param   argv                argv arguments.
  */
-int mainVerify(int argc, char **argv)
+int audioVerifyMain(int argc, char **argv)
 {
-    RT_NOREF(argc, argv);
+    char *pszTag = NULL; /* Custom tag to use. Can be NULL if not being used. */
 
-    return RTMsgErrorExit(RTEXITCODE_SKIPPED, "Sorry, not implemented yet!\n");
+    char szDirCur[RTPATH_MAX];
+    int rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+
+    /*
+     * Process common options.
+     */
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdVerifyOptions, RT_ELEMENTS(g_aCmdVerifyOptions),
+                      0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case VKAT_VERIFY_OPT_TAG:
+            {
+                pszTag = RTStrDup(ValueUnion.psz);
+                break;
+            }
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                Assert(GetState.iNext);
+                GetState.iNext--;
+                break;
+            }
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+
+        /* All flags / options processed? Bail out here.
+         * Processing the file / directory list comes down below. */
+        if (rc == VINF_GETOPT_NOT_OPTION)
+            break;
+    }
+
+    if (pszTag)
+        RTMsgInfo("Using tag '%s'\n", pszTag);
+
+    /*
+     * Start testing.
+     */
+    RTTestBanner(g_hTest);
+
+    /*
+     * Deal with test sets.
+     */
+    rc = RTGetOpt(&GetState, &ValueUnion);
+    do
+    {
+        char const *pszPath;
+
+        if (rc == 0) /* Use current directory if no element specified. */
+            pszPath = szDirCur;
+        else
+            pszPath = ValueUnion.psz;
+
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfoEx(pszPath, &objInfo,
+                               RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
+        if (RT_SUCCESS(rc))
+        {
+            rc = audioVerifyOne(pszPath, pszTag);
+        }
+        else
+            RTTestFailed(g_hTest, "Cannot access path '%s', rc=%Rrc\n", pszPath, rc);
+
+    } while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0);
+
+    RTStrFree(pszTag);
+
+    /*
+     * Print summary and exit.
+     */
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 
 int main(int argc, char **argv)
@@ -831,24 +971,68 @@ int main(int argc, char **argv)
     if (rc)
         return rc;
 
+    /* At least the operation mode must be there. */
     if (argc < 2)
     {
         audioTestUsage(g_pStdOut);
         return RTEXITCODE_SYNTAX;
     }
 
-    const char *pszMode = argv[1];
+    /*
+     * Process common options.
+     */
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions, RT_ELEMENTS(g_aCmdCommonOptions), 1 /* idxFirst */, 0 /* fFlags */);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
 
-    argc -= 2;
-    argv += 2;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case 'h':
+            {
+                audioTestUsage(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
+            }
+
+            case 'v':
+            {
+                g_uVerbosity++;
+                break;
+            }
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                Assert(GetState.iNext);
+                GetState.iNext--;
+            }
+
+            default:
+                /* Ignore everything else here. */
+                break;
+        }
+
+        /* All flags / options processed? Bail out here.
+         * Processing the file / directory list comes down below. */
+        if (rc == VINF_GETOPT_NOT_OPTION)
+            break;
+    }
+
+    /* Get operation mode. */
+    const char *pszMode = argv[GetState.iNext++]; /** @todo Also do it busybox-like? */
+
+    argv += GetState.iNext;
+    Assert(argc >= GetState.iNext);
+    argc -= GetState.iNext;
 
     if (!RTStrICmp(pszMode, "test"))
     {
-        return mainTest(argc, argv);
+        return audioTestMain(argc, argv);
     }
     else if (!RTStrICmp(pszMode, "verify"))
     {
-        return mainVerify(argc, argv);
+        return audioVerifyMain(argc, argv);
     }
 
     RTStrmPrintf(g_pStdOut, "Must specify a mode first, either 'test' or 'verify'\n\n");

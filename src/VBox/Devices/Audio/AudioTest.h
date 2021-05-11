@@ -83,7 +83,7 @@ int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
 
 int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
 void   AudioTestSetDestroy(PAUDIOTESTSET pSet);
-int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
+int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 void   AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
