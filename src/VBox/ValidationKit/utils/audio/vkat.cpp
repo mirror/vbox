@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/buildconfig.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
@@ -38,6 +39,10 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
+#include <package-generated.h>
+#include "product-generated.h"
+
+#include <VBox/version.h>
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
@@ -323,6 +328,26 @@ static AUDIOTESTDESC g_aTests[] =
     /* pszTest      fExcluded      pfnSetup */
     { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy }
 };
+
+
+/**
+ * Shows the application logo.
+ *
+ * @param   pStream             Output stream to show logo on.
+ */
+void showLogo(PRTSTREAM pStream)
+{
+    static bool s_fLogoShown = false; /* Show logo only once. */
+
+    if (!s_fLogoShown)
+    {
+        RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) "
+                     VBOX_VERSION_STRING " - r%s\n"
+                     "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                     "All rights reserved.\n\n", RTBldCfgRevisionStr());
+        s_fLogoShown = true;
+    }
+}
 
 /**
  * Shows tool usage text.
@@ -971,6 +996,8 @@ int main(int argc, char **argv)
     if (rc)
         return rc;
 
+    AssertReturn(argc > 0, false);
+
     /* At least the operation mode must be there. */
     if (argc < 2)
     {
@@ -992,6 +1019,7 @@ int main(int argc, char **argv)
         {
             case 'h':
             {
+                showLogo(g_pStdOut);
                 audioTestUsage(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             }
@@ -1018,6 +1046,8 @@ int main(int argc, char **argv)
         if (rc == VINF_GETOPT_NOT_OPTION)
             break;
     }
+
+    showLogo(g_pStdOut);
 
     /* Get operation mode. */
     const char *pszMode = argv[GetState.iNext++]; /** @todo Also do it busybox-like? */
