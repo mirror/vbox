@@ -152,9 +152,10 @@ protected:
       * @{ */
         /** Handles close @a pEvent. */
         virtual void closeEvent(QCloseEvent *pEvent) /* override */;
-    /** @} */
-        /** Returns the value of m_fCloseEmitted. */
+
+        /** Returns whether the manager had emitted command to be closed. */
         bool closeEmitted() const { return m_fCloseEmitted; }
+    /** @} */
 
 private slots:
 
