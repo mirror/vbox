@@ -62,15 +62,65 @@ typedef struct AUDIOTESTTONEPARMS
 /** Pointer to audio test tone parameters. */
 typedef AUDIOTESTTONEPARMS *PAUDIOTESTTONEPARMS;
 
+/**
+ * Enumeration for the test set mode.
+ */
+typedef enum AUDIOTESTSETMODE
+{
+    /** Invalid test set mode. */
+    AUDIOTESTSETMODE_INVALID = 0,
+    /** Test set is being created (testing in progress). */
+    AUDIOTESTSETMODE_TEST,
+    /** Existing test set is being verified. */
+    AUDIOTESTSETMODE_VERIFY,
+    /** The usual 32-bit hack. */
+    AUDIOTESTSETMODE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTSETMODE;
+
+/**
+ * Structure specifying an audio test set.
+ */
 typedef struct AUDIOTESTSET
 {
-    /** Absolute path where to store the test audio data.
-     *  If NULL, no test audio data will be written. */
-    char             szPathOutAbs[RTPATH_MAX];
-
+    /** Absolute path where to store the test audio data. */
+    char             szPathAbs[RTPATH_MAX];
+    /** Current mode the test set is in. */
+    AUDIOTESTSETMODE enmMode;
+    union
+    {
+        RTFILE       hFile;
+        RTINIFILE    hIniFile;
+    } f;
 } AUDIOTESTSET;
-/** Pointer to audio test set parameters. */
+/** Pointer to an audio test set. */
 typedef AUDIOTESTSET *PAUDIOTESTSET;
+
+/**
+ * Structure for holding a single audio test error entry.
+ */
+typedef struct AUDIOTESTERRORENTRY
+{
+    /** The entrie's list node. */
+    RTLISTNODE       Node;
+    /** Additional rc. */
+    int              rc;
+    /** Actual error description. */
+    char             szDesc[128];
+} AUDIOTESTERRORENTRY;
+/** Pointer to an audio test error description. */
+typedef AUDIOTESTERRORENTRY *PAUDIOTESTERRORENTRY;
+
+/**
+ * Structure for holding an audio test error description.
+ * This can contain multiple errors (FIFO list).
+ */
+typedef struct AUDIOTESTERRORDESC
+{
+    RTLISTANCHOR     List;
+    uint32_t         cErrors;
+} AUDIOTESTERRORDESC;
+/** Pointer to an audio test error description. */
+typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
 
 
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
@@ -87,7 +137,10 @@ int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 void   AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
-int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag);
+int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc);
+
+bool   AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr);
+void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTest_h */
 

@@ -834,7 +834,7 @@ int audioTestMain(int argc, char **argv)
         rc = audioTestEnvInit(&TstEnv, pDrvAudio, pszPathOut, pszTag);
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", TstEnv.Set.szPathOutAbs);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", TstEnv.Set.szPathAbs);
 
             PPDMAUDIOHOSTDEV pDev;
             rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
@@ -873,10 +873,21 @@ int audioVerifyOne(const char *pszPath, const char *pszTag)
     int rc = AudioTestSetOpen(&tstSet, pszPath);
     if (RT_SUCCESS(rc))
     {
-        rc = AudioTestSetVerify(&tstSet, pszTag);
+        AUDIOTESTERRORDESC errDesc;
+        rc = AudioTestSetVerify(&tstSet, pszTag, &errDesc);
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful");
+            if (AudioTestErrorDescFailed(&errDesc))
+            {
+                /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
+                PAUDIOTESTERRORENTRY pErrEntry;
+                RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
+                    RTTestFailed(g_hTest, pErrEntry->szDesc);
+            }
+            else
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful");
+
+            AudioTestErrorDescDestroy(&errDesc);
         }
         else
             RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
