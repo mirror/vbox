@@ -59,6 +59,7 @@ using namespace com;
 //#define VBOX_WITH_SAVESTATE_ON_SIGNAL
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
 #include <signal.h>
+static void HandleSignal(int sig);
 #endif
 
 #include "PasswordInput.h"
@@ -390,61 +391,11 @@ VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
-static void SaveState(int sig)
+static void
+HandleSignal(int sig)
 {
-    ComPtr <IProgress> progress = NULL;
-
-/** @todo Deal with nested signals, multithreaded signal dispatching (esp. on windows),
- * and multiple signals (both SIGINT and SIGTERM in some order).
- * Consider processing the signal request asynchronously since there are lots of things
- * which aren't safe (like RTPrintf and printf IIRC) in a signal context. */
-
-    RTPrintf("Signal received, saving state.\n");
-
-    HRESULT rc = gConsole->SaveState(progress.asOutParam());
-    if (FAILED(rc))
-    {
-        RTPrintf("Error saving state! rc = 0x%x\n", rc);
-        return;
-    }
-    Assert(progress);
-    LONG cPercent = 0;
-
-    RTPrintf("0%%");
-    RTStrmFlush(g_pStdOut);
-    for (;;)
-    {
-        BOOL fCompleted = false;
-        rc = progress->COMGETTER(Completed)(&fCompleted);
-        if (FAILED(rc) || fCompleted)
-            break;
-        ULONG cPercentNow;
-        rc = progress->COMGETTER(Percent)(&cPercentNow);
-        if (FAILED(rc))
-            break;
-        if ((cPercentNow / 10) != (cPercent / 10))
-        {
-            cPercent = cPercentNow;
-            RTPrintf("...%d%%", cPercentNow);
-            RTStrmFlush(g_pStdOut);
-        }
-
-        /* wait */
-        rc = progress->WaitForCompletion(100);
-    }
-
-    HRESULT lrc;
-    rc = progress->COMGETTER(ResultCode)(&lrc);
-    if (FAILED(rc))
-        lrc = ~0;
-    if (!lrc)
-    {
-        RTPrintf(" -- Saved the state successfully.\n");
-        RTThreadYield();
-    }
-    else
-        RTPrintf("-- Error saving state, lrc=%d (%#x)\n", lrc, lrc);
-
+    RT_NOREF(sig);
+    g_fTerminateFE = true;
 }
 #endif /* VBOX_WITH_SAVESTATE_ON_SIGNAL */
 
@@ -1453,8 +1404,17 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
-        signal(SIGINT, SaveState);
-        signal(SIGTERM, SaveState);
+        signal(SIGPIPE, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
+
+        struct sigaction sa;
+        RT_ZERO(sa);
+        sa.sa_handler = HandleSignal;
+        sigaction(SIGHUP,  &sa, NULL);
+        sigaction(SIGINT,  &sa, NULL);
+        sigaction(SIGTERM, &sa, NULL);
+        sigaction(SIGUSR1, &sa, NULL);
+        sigaction(SIGUSR2, &sa, NULL);
 #endif
 
         Log(("VBoxHeadless: Waiting for PowerDown...\n"));
@@ -1522,7 +1482,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         consoleListener->getWrapped()->ignorePowerOffEvents(true);
 
         ComPtr<IProgress> pProgress;
-        CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
+#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+        if (!machine.isNull())
+            CHECK_ERROR_BREAK(machine, SaveState(pProgress.asOutParam()));
+        else
+#endif
+            CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
 
         rc = showProgress(pProgress);
         if (FAILED(rc))
