@@ -797,6 +797,84 @@ static void hideSetUidRootFromAppKit()
 
 #endif /* RT_OS_DARWIN */
 
+
+/*
+ * Simplified version of showProgress() borrowed from VBoxManage.
+ */
+HRESULT
+showProgress(const ComPtr<IProgress> &progress)
+{
+    BOOL fCompleted = FALSE;
+    ULONG ulLastPercent = 0;
+    ULONG ulCurrentPercent = 0;
+    HRESULT hrc;
+
+    com::Bstr bstrDescription;
+    hrc = progress->COMGETTER(Description(bstrDescription.asOutParam()));
+    if (FAILED(hrc))
+    {
+        RTStrmPrintf(g_pStdErr, "Failed to get progress description: %Rhrc\n", hrc);
+        return hrc;
+    }
+
+    RTStrmPrintf(g_pStdErr, "%ls: ", bstrDescription.raw());
+    RTStrmFlush(g_pStdErr);
+
+    hrc = progress->COMGETTER(Completed(&fCompleted));
+    while (SUCCEEDED(hrc))
+    {
+        progress->COMGETTER(Percent(&ulCurrentPercent));
+
+        /* did we cross a 10% mark? */
+        if (ulCurrentPercent / 10  >  ulLastPercent / 10)
+        {
+            /* make sure to also print out missed steps */
+            for (ULONG curVal = (ulLastPercent / 10) * 10 + 10; curVal <= (ulCurrentPercent / 10) * 10; curVal += 10)
+            {
+                if (curVal < 100)
+                {
+                    RTStrmPrintf(g_pStdErr, "%u%%...", curVal);
+                    RTStrmFlush(g_pStdErr);
+                }
+            }
+            ulLastPercent = (ulCurrentPercent / 10) * 10;
+        }
+
+        if (fCompleted)
+            break;
+
+        gEventQ->processEventQueue(500);
+        hrc = progress->COMGETTER(Completed(&fCompleted));
+    }
+
+    /* complete the line. */
+    LONG iRc = E_FAIL;
+    hrc = progress->COMGETTER(ResultCode)(&iRc);
+    if (SUCCEEDED(hrc))
+    {
+        if (SUCCEEDED(iRc))
+            RTStrmPrintf(g_pStdErr, "100%%\n");
+#if 0
+        else if (g_fCanceled)
+            RTStrmPrintf(g_pStdErr, "CANCELED\n");
+#endif
+        else
+        {
+            RTStrmPrintf(g_pStdErr, "\n");
+            RTStrmPrintf(g_pStdErr, "Operation failed: %Rhrc\n", iRc);
+        }
+        hrc = iRc;
+    }
+    else
+    {
+        RTStrmPrintf(g_pStdErr, "\n");
+        RTStrmPrintf(g_pStdErr, "Failed to obtain operation result: %Rhrc\n", hrc);
+    }
+    RTStrmFlush(g_pStdErr);
+    return hrc;
+}
+
+
 /**
  *  Entry point.
  */
@@ -1358,47 +1436,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
             CHECK_ERROR_BREAK(console, PowerUpPaused(progress.asOutParam()));
 
-        /*
-         * Wait for the result because there can be errors.
-         *
-         * It's vital to process events while waiting (teleportation deadlocks),
-         * so we'll poll for the completion instead of waiting on it.
-         */
-        for (;;)
+        rc = showProgress(progress);
+        if (FAILED(rc))
         {
-            BOOL fCompleted;
-            rc = progress->COMGETTER(Completed)(&fCompleted);
-            if (FAILED(rc) || fCompleted)
-                break;
-
-            /* Process pending events, then wait for new ones. Note, this
-             * processes NULL events signalling event loop termination. */
-            gEventQ->processEventQueue(0);
-            if (!g_fTerminateFE)
-                gEventQ->processEventQueue(500);
-        }
-
-        if (SUCCEEDED(progress->WaitForCompletion(-1)))
-        {
-            /* Figure out if the operation completed with a failed status
-             * and print the error message. Terminate immediately, and let
-             * the cleanup code take care of potentially pending events. */
-            LONG progressRc;
-            progress->COMGETTER(ResultCode)(&progressRc);
-            rc = progressRc;
-            if (FAILED(rc))
+            com::ProgressErrorInfo info(progress);
+            if (info.isBasicAvailable())
             {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                {
-                    RTPrintf("Error: failed to start machine. Error message: %ls\n", info.getText().raw());
-                }
-                else
-                {
-                    RTPrintf("Error: failed to start machine. No error message available!\n");
-                }
-                break;
+                RTPrintf("Error: failed to start machine. Error message: %ls\n", info.getText().raw());
             }
+            else
+            {
+                RTPrintf("Error: failed to start machine. No error message available!\n");
+            }
+            break;
         }
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
@@ -1450,22 +1500,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     do
     {
         consoleListener->getWrapped()->ignorePowerOffEvents(true);
+
         ComPtr<IProgress> pProgress;
         CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
-        CHECK_ERROR_BREAK(pProgress, WaitForCompletion(-1));
-        BOOL completed;
-        CHECK_ERROR_BREAK(pProgress, COMGETTER(Completed)(&completed));
-        ASSERT(completed);
-        LONG hrc;
-        CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&hrc));
-        if (FAILED(hrc))
+
+        rc = showProgress(pProgress);
+        if (FAILED(rc))
         {
             RTPrintf("VBoxHeadless: ERROR: Failed to power down VM!");
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
-                com::GluePrintRCMessage(hrc);
+                com::GluePrintRCMessage(rc);
             else
-                GluePrintErrorInfo(info);
+                com::GluePrintErrorInfo(info);
             break;
         }
     } while (0);
