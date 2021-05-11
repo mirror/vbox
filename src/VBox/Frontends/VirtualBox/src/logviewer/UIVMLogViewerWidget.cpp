@@ -105,9 +105,9 @@ UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     :QTabBar(pParent)
 {
     QStyleOptionTab opt;
-    m_alternateColors << opt.palette.color(QPalette::Button).darker(230);
-    m_alternateColors << opt.palette.color(QPalette::Button).darker(140);
-    m_selectedTabColor = opt.palette.color(QPalette::Window).lighter(300);
+    m_alternateColors << opt.palette.color(QPalette::Button).darker(180);
+    m_alternateColors << opt.palette.color(QPalette::Button).darker(120);
+    m_selectedTabColor = opt.palette.color(QPalette::Button).lighter(300);
 
     QStyle *pFusionStyle = QStyleFactory::create("Fusion");
     if (pFusionStyle)
