@@ -358,6 +358,10 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
                 pMem->uRel.Parent.papMappings[pMem->uRel.Parent.cMappings++] = pChild;
                 return rc;
             }
+
+            pChild->u32Magic++;
+            pChild->enmType = RTR0MEMOBJTYPE_END;
+            RTMemFree(pChild);
         }
     }
 
