@@ -60,6 +60,24 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+class UILabelTab : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    UILabelTab(QWidget *pParent, const QUuid &uMachineId)
+        : QWidget(pParent)
+        , m_uMachineId(uMachineId)
+    {
+    }
+
+private:
+
+    QUuid m_uMachineId;
+
+};
+
 /*********************************************************************************************************************************
 *   UITabBar definition.                                                                                        *
 *********************************************************************************************************************************/
@@ -109,9 +127,9 @@ UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     m_alternateColors << opt.palette.color(QPalette::Button).darker(120);
     m_selectedTabColor = opt.palette.color(QPalette::Button).lighter(300);
 
-    QStyle *pFusionStyle = QStyleFactory::create("Fusion");
-    if (pFusionStyle)
-        setStyle(pFusionStyle);
+    // QStyle *pFusionStyle = QStyleFactory::create("Fusion");
+    // if (pFusionStyle)
+    //     setStyle(pFusionStyle);
 }
 
 void UITabBar::paintEvent(QPaintEvent *pEvent)
@@ -124,16 +142,18 @@ void UITabBar::paintEvent(QPaintEvent *pEvent)
     {
         QStyleOptionTab opt;
         initStyleOption(&opt, i);
-
-        if (i == currentIndex())
-            opt.palette.setColor(QPalette::Button, m_selectedTabColor);
-        else
-        {
-            int iColorIndex = tabData(i).toInt();
-            if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
-                opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
-        }
-        painter.drawControl(QStyle::CE_TabBarTab, opt);
+        bool fLabelTab = tabData(i).toBool();
+        // if (i == currentIndex())
+        //     opt.palette.setColor(QPalette::Button, m_selectedTabColor);
+        // else
+        // {
+        //     int iColorIndex = tabData(i).toInt();
+        //     if (iColorIndex >= 0 && iColorIndex <= m_alternateColors.size())
+        //         opt.palette.setColor(QPalette::Button, m_alternateColors[iColorIndex]);
+        // }
+        if (!fLabelTab)
+            painter.drawControl(QStyle::CE_TabBarTabShape, opt);
+        painter.drawControl(QStyle::CE_TabBarTabLabel, opt);
     }
 }
 
@@ -254,19 +274,22 @@ void UIVMLogViewerWidget::setTabColorPerMachine()
     if (!m_pTabWidget || !m_pTabWidget->tabBar() || m_pTabWidget->tabBar()->count() == 0)
         return;
     QTabBar *pTabBar = m_pTabWidget->tabBar();
-    int iColorIndex = 0;
-    pTabBar->setTabData(0, iColorIndex);
+    //int iColorIndex = 0;
 
-    for (int i = 1; i < pTabBar->count(); ++i)
+    for (int i = 0; i < pTabBar->count(); ++i)
     {
-        UIVMLogPage *pLogPage = logPage(i);
-        UIVMLogPage *pLogPagePrev = logPage(i - 1);
-        if (!pLogPage || !pLogPagePrev)
-            continue;
-        /* We the machine if the tab is different than that of previous alternate the color index. */
-        if (pLogPage->machineId() != pLogPagePrev->machineId())
-            ++iColorIndex;
-        pTabBar->setTabData(i, iColorIndex % 2);
+        // UIVMLogPage *pLogPage = logPage(i);
+        // UIVMLogPage *pLogPagePrev = logPage(i - 1);
+        // if (!pLogPage || !pLogPagePrev)
+        //     continue;
+
+        // /* We the machine if the tab is different than that of previous alternate the color index. */
+        // if (i > 0 && pLogPage->machineId() != pLogPagePrev->machineId())
+        //     ++iColorIndex;
+        if (qobject_cast<UILabelTab*>(m_pTabWidget->widget(i)))
+            pTabBar->setTabData(i, true);
+        else
+            pTabBar->setTabData(i, false);
     }
 }
 
@@ -481,7 +504,8 @@ void UIVMLogViewerWidget::sltHandleSearchUpdated()
 void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
 {
     Q_UNUSED(tabIndex);
-
+    if (labelTabHandler())
+        return;
     /* Dont refresh the search here as it is refreshed by the filtering mechanism
        which is updated as tab current index changes (see sltFilterApplied): */
     if (m_pFilterPanel)
@@ -883,17 +907,6 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     QWidget::keyPressEvent(pEvent);
 }
 
-QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
-{
-    if (m_pTabWidget)
-        return 0;
-    QWidget* pContainer = m_pTabWidget->widget(pIndex);
-    if (!pContainer)
-        return 0;
-    QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
-    return pBrowser;
-}
-
 QVector<UIVMLogPage*> UIVMLogViewerWidget::logPages()
 {
     QVector<UIVMLogPage*> pages;
@@ -932,7 +945,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             pLogPage->setLogFileName(strFileName);
 
         /* Add page-container to viewer-container in stacked mode (manager UI case): */
-        bool fTitleWithMachineName = m_enmEmbedding == EmbedTo_Stack;
+        bool fTitleWithMachineName = false;//m_enmEmbedding == EmbedTo_Stack;
         QString strTabTitle;
         if (fTitleWithMachineName)
         {
@@ -941,17 +954,13 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         }
         strTabTitle.append(QFileInfo(strFileName).fileName());
 
-
-        m_pTabWidget->blockSignals(true);
         int iIndex = m_pTabWidget->addTab(pLogPage, strTabTitle);
         /* !!Hack alert. Setting html to text edit while th tab is not current ends up in an empty text edit: */
         if (noLogsToShow)
             m_pTabWidget->setCurrentIndex(iIndex);
-        m_pTabWidget->blockSignals(false);
 
         pLogPage->setLogContent(strLogContent, noLogsToShow);
         pLogPage->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
-
     }
 }
 
@@ -978,6 +987,10 @@ UIVMLogPage *UIVMLogViewerWidget::logPage(int iIndex)
 
 void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList)
 {
+    if (!m_pTabWidget)
+        return;
+    m_pTabWidget->blockSignals(true);
+
     const CSystemProperties &sys = uiCommon().virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
     foreach (const QUuid &machineId, machineList)
@@ -985,10 +998,13 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         CMachine comMachine = uiCommon().virtualBox().FindMachine(machineId.toString());
         if (comMachine.isNull())
             continue;
-        bool fNoLogFileForMachine = true;
 
         QUuid uMachineId = comMachine.GetId();
         QString strMachineName = comMachine.GetName();
+
+        m_pTabWidget->addTab(new UILabelTab(this, uMachineId), strMachineName);
+
+        bool fNoLogFileForMachine = true;
         for (unsigned iLogFileId = 0; iLogFileId < cMaxLogs; ++iLogFileId)
         {
             QString strLogContent = readLogFile(comMachine, iLogFileId);
@@ -1009,6 +1025,8 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
             createLogPage(tr("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
         }
     }
+    m_pTabWidget->blockSignals(false);
+    labelTabHandler();
 }
 
 void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList)
@@ -1115,6 +1133,15 @@ void UIVMLogViewerWidget::manageEscapeShortCut()
         m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
     }
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+}
+
+bool UIVMLogViewerWidget::labelTabHandler()
+{
+    if (!m_pTabWidget || !qobject_cast<UILabelTab*>(m_pTabWidget->currentWidget()))
+        return false;
+    if (m_pTabWidget->currentIndex() < m_pTabWidget->count() - 1)
+        m_pTabWidget->setCurrentIndex(m_pTabWidget->currentIndex() + 1);
+    return true;
 }
 
 #include "UIVMLogViewerWidget.moc"

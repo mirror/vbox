@@ -170,9 +170,6 @@ private:
         virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** @} */
 
-
-    /** Returns the log-page from the tab with index @a pIndex. */
-    QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
     void createLogPage(const QString &strFileName, const QString &strMachineName,
                        const QUuid &machineId, int iLogFileId,
@@ -206,6 +203,8 @@ private:
     void setMachines(const QVector<QUuid> &machineIDs);
     /** Returns the content of the ith log file of @comMachine or possibly an empty string */
     QString readLogFile(CMachine &comMachine, int iLogFileId);
+    /** If the current tab is a label tab then switch to the next tab and return true. Returns false otherwise. */
+    bool labelTabHandler();
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
