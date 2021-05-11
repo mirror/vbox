@@ -170,9 +170,30 @@
 # define RTLNX_UBUNTU_MAX(a_iMajor, a_iMinor, a_iPatch, a_iAbi) \
     (   RTLNX_UBUNTU_VERSION(LINUX_VERSION_CODE, UTS_UBUNTU_RELEASE_ABI) \
      <  RTLNX_UBUNTU_VERSION(KERNEL_VERSION(a_iMajor, a_iMinor, a_iPatch), a_iAbi) )
+
+/** @def RTLNX_UBUNTU_RANGE
+ * Require Ubuntu release to be in specified versions range.
+ * The max version is exclusive, the minimum inclusive.
+ *
+ * @param a_iMajorMin   The major kernel version number (minimum).
+ * @param a_iMinorMin   The minor kernel version number (minimum).
+ * @param a_iPatchMin   The micro kernel version number (minimum).
+ * @param a_iAbiMin     Ubuntu kernel ABI version number (minimum).
+ * @param a_iMajorMax   The major kernel version number (maximum).
+ * @param a_iMinorMax   The minor kernel version number (maximum).
+ * @param a_iPatchMax   The micro kernel version number (maximum).
+ * @param a_iAbiMax     Ubuntu kernel ABI version number (maximum).
+ */
+# define RTLNX_UBUNTU_RANGE(a_iMajorMin, a_iMinorMin, a_iPatchMin, a_iAbiMin, \
+    a_iMajorMax, a_iMinorMax, a_iPatchMax, a_iAbiMax) \
+    (   RTLNX_UBUNTU_MIN(a_iMajorMin, a_iMinorMin, a_iPatchMin, a_iAbiMin) \
+     && RTLNX_UBUNTU_MAX(a_iMajorMax, a_iMinorMax, a_iPatchMax, a_iAbiMax))
+
 #else /* !UTS_UBUNTU_RELEASE_ABI */
 # define RTLNX_UBUNTU_MIN(a_iMajor, a_iMinor, a_iPatch, a_iAbi)  (0)
 # define RTLNX_UBUNTU_MAX(a_iMajor, a_iMinor, a_iPatch, a_iAbi)  (0)
+#define RTLNX_UBUNTU_RANGE(a_iMajorMin, a_iMinorMin, a_iPatchMin, a_iAbiMin, \
+    a_iMajorMax, a_iMinorMax, a_iPatchMax, a_iAbiMax) (0)
 #endif /* !UTS_UBUNTU_RELEASE_ABI */
 
 #endif /* !IPRT_INCLUDED_linux_version_h */
