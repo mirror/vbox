@@ -868,14 +868,14 @@ int audioTestMain(int argc, char **argv)
  */
 int audioVerifyOne(const char *pszPath, const char *pszTag)
 {
-    RTTestSubF(g_hTest, "Verifying test set (tag '%s') ...", pszTag ? pszTag : "<Default>");
+    RTTestSubF(g_hTest, "Verifying test set (tag '%s') ...", pszTag ? pszTag : "default");
 
     AUDIOTESTSET tstSet;
     int rc = AudioTestSetOpen(&tstSet, pszPath);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTERRORDESC errDesc;
-        rc = AudioTestSetVerify(&tstSet, pszTag, &errDesc);
+        rc = AudioTestSetVerify(&tstSet, pszTag ? pszTag : "default", &errDesc);
         if (RT_SUCCESS(rc))
         {
             if (AudioTestErrorDescFailed(&errDesc))
