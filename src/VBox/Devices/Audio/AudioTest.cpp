@@ -264,22 +264,53 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
     return RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
 }
 
-static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, ...)
+static int audioTestManifestWriteV(PAUDIOTESTSET pSet, const char *pszFormat, va_list args)
 {
-    va_list va;
-    va_start(va, pszFormat);
-
     char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, va);
+    RTStrAPrintfV(&psz, pszFormat, args);
     AssertPtr(psz);
 
     /** @todo Use RTIniFileWrite once its implemented. */
     int rc = RTFileWrite(pSet->f.hFile, psz, strlen(psz), NULL);
     AssertRC(rc);
+
+    RTStrFree(psz);
+
+    return rc;
+}
+
+static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+
+    int rc = audioTestManifestWriteV(pSet, pszFormat, va);
+    AssertRC(rc);
+
+    va_end(va);
+
+    /** @todo Keep it as simple as possible for now. Improve this later. */
     rc = RTFileWrite(pSet->f.hFile, "\n", strlen("\n"), NULL);
     AssertRC(rc);
 
-    RTStrFree(psz);
+    return rc;
+}
+
+static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+
+    /** @todo Keep it as simple as possible for now. Improve this later. */
+    int rc = RTFileWrite(pSet->f.hFile, "[", strlen("["), NULL);
+    AssertRC(rc);
+
+    rc = audioTestManifestWriteV(pSet, pszFormat, va);
+    AssertRC(rc);
+
+    rc = RTFileWrite(pSet->f.hFile, "]\n", strlen("]\n"), NULL);
+    AssertRC(rc);
+
     va_end(va);
 
     return rc;
@@ -417,6 +448,9 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
 
         rc = RTFileOpen(&pSet->f.hFile, szManifest,
                         RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        AssertRCReturn(rc, rc);
+
+        rc = audioTestManifestWriteSection(pSet, "header");
         AssertRCReturn(rc, rc);
 
         rc = audioTestManifestWriteLn(pSet, "magic=vkat_ini"); /* VKAT Manifest, .INI-style. */
