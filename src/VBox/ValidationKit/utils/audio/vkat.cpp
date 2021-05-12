@@ -35,6 +35,7 @@
 #include <iprt/path.h>
 #include <iprt/message.h>
 #include <iprt/process.h>
+#include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
@@ -67,28 +68,6 @@ struct AUDIOTESTPARMS;
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * Audio test request data.
- */
-typedef struct AUDIOTESTPARMS
-{
-    /** Specifies the test to run. */
-    uint32_t                idxTest;
-    /** How many iterations the test should be executed. */
-    uint32_t                cIterations;
-    /** Audio device to use. */
-    PDMAUDIOHOSTDEV         Dev;
-    /** How much to delay (wait, in ms) the test being executed. */
-    RTMSINTERVAL            msDelay;
-    /** The test type. */
-    PDMAUDIODIR             enmDir;
-    union
-    {
-        AUDIOTESTTONEPARMS  ToneParms;
-    };
-} AUDIOTESTPARMS;
-/** Pointer to a test parameter structure. */
-typedef AUDIOTESTPARMS *PAUDIOTESTPARMS;
 
 /**
  * Callback to set up the test parameters for a specific test.
@@ -124,7 +103,7 @@ typedef struct AUDIOTESTENV
     PPDMIHOSTAUDIO        pDrvAudio;
     /** The current (last) audio device enumeration to use. */
     PDMAUDIOHOSTENUM      DevEnm;
-    PDMAUDIOBACKENDSTREAM aStreams[AUDIOTESTENV_MAX_STREAMS];
+    AUDIOTESTSTREAM       aStreams[AUDIOTESTENV_MAX_STREAMS];
     /** The audio test set to use. */
     AUDIOTESTSET          Set;
 } AUDIOTESTENV;
@@ -155,8 +134,8 @@ typedef AUDIOTESTDESC *PAUDIOTESTDESC;
 *   Forward declarations                                                                                                         *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
-static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
-
+static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
+static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -233,41 +212,6 @@ unsigned  g_uVerbosity = 0;
 
 
 /*********************************************************************************************************************************
-*   Test callbacks                                                                                                               *
-*********************************************************************************************************************************/
-
-/**
- * Setup callback for playing an output tone.
- *
- * @copydoc FNAUDIOTESTSETUP
- */
-static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
-{
-    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
-
-    PDMAudioPropsInit(&pTstParmsAcq->ToneParms.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
-
-    AudioTestToneParamsInitRandom(&pTstParmsAcq->ToneParms, &pTstParmsAcq->ToneParms.Props);
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms)
-{
-    RT_NOREF(pvCtx);
-
-    return audioTestPlayTone(pTstEnv, &pTstEnv->aStreams[0], &pTstParms->ToneParms);
-}
-
-static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *pvCtx)
-{
-    RT_NOREF(pTstEnv, pvCtx);
-
-    return VINF_SUCCESS;
-}
-
-
-/*********************************************************************************************************************************
 *   Implementation                                                                                                               *
 *********************************************************************************************************************************/
 
@@ -301,6 +245,13 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 
     PDMAudioHostEnumDelete(&pTstEnv->DevEnm);
 
+    for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)
+    {
+        int rc2 = audioTestStreamDestroy(pTstEnv, &pTstEnv->aStreams[i]);
+        if (RT_FAILURE(rc2))
+            RTTestFailed(g_hTest, "Stream destruction for stream #%u failed with %Rrc\n", i, rc2);
+    }
+
     AudioTestSetDestroy(&pTstEnv->Set);
 }
 
@@ -328,13 +279,6 @@ static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
 
     return;
 }
-
-static AUDIOTESTDESC g_aTests[] =
-{
-    /* pszTest      fExcluded      pfnSetup */
-    { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy }
-};
-
 
 /**
  * Shows the application logo.
@@ -549,41 +493,75 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
     return rc;
 }
 
-static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg)
 {
-    PDMAUDIOSTREAMCFG CfgReq;
     PDMAUDIOSTREAMCFG CfgAcq;
 
-    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, &pParms->Props);
+    int rc = PDMAudioStrmCfgCopy(&CfgAcq, pCfg);
     AssertRC(rc); /* Cannot fail. */
 
-    CfgReq.enmDir      = PDMAUDIODIR_OUT;
-    CfgReq.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
-    CfgReq.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-    rc = PDMAudioStrmCfgCopy(&CfgAcq, &CfgReq);
-    AssertRC(rc); /* Ditto. */
-
-    rc = pTstEnv->pDrvAudio->pfnStreamCreate(pTstEnv->pDrvAudio, pStream, &CfgReq, &CfgAcq);
+    rc = pTstEnv->pDrvAudio->pfnStreamCreate(pTstEnv->pDrvAudio, &pStream->Backend, pCfg, &CfgAcq);
     if (RT_FAILURE(rc))
         return rc;
 
     /* Do the async init in a synchronous way for now here. */
     if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
-        rc = pTstEnv->pDrvAudio->pfnStreamInitAsync(pTstEnv->pDrvAudio, pStream, false /* fDestroyed */);
+        rc = pTstEnv->pDrvAudio->pfnStreamInitAsync(pTstEnv->pDrvAudio, &pStream->Backend, false /* fDestroyed */);
 
+    if (RT_SUCCESS(rc))
+        pStream->fCreated = true;
+
+    return rc;
+}
+
+static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream)
+{
+    if (!pStream)
+        return VINF_SUCCESS;
+
+  if (!pStream->fCreated)
+        return VINF_SUCCESS;
+
+    /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
+
+    int rc = pTstEnv->pDrvAudio->pfnStreamDestroy(pTstEnv->pDrvAudio, &pStream->Backend);
+    if (RT_SUCCESS(rc))
+        RT_BZERO(pStream, sizeof(PDMAUDIOBACKENDSTREAM));
+
+    return rc;
+}
+
+static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
+{
+    PDMAUDIOSTREAMCFG Cfg;
+    int rc = PDMAudioStrmCfgInitWithProps(&Cfg, pProps);
+    AssertRC(rc); /* Cannot fail. */
+
+    Cfg.enmDir      = PDMAUDIODIR_OUT;
+    Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
+    Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
+    return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
+}
+
+static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+{
     AUDIOTESTTONE TstTone;
     AudioTestToneInitRandom(&TstTone, &pParms->Props);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->pDrvAudio->pfnStreamGetState(pTstEnv->pDrvAudio, pStream);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (freq %RU16, %RU32ms)\n", TstTone.rdFreqHz, pParms->msDuration);
+
+    int rc;
+
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->pDrvAudio->pfnStreamGetState(pTstEnv->pDrvAudio, &pStream->Backend);
     if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
     {
         uint32_t cbBuf;
         uint8_t  abBuf[_4K];
 
         const uint64_t tsStartMs     = RTTimeMilliTS();
-        const unsigned cSchedulingMs = 10;
-        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&CfgAcq.Props, cSchedulingMs);
+        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Chose a random scheduling (in ms). */
+        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, cSchedulingMs);
 
         do
         {
@@ -591,7 +569,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStre
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbWritten;
-                rc = pTstEnv->pDrvAudio->pfnStreamPlay(pTstEnv->pDrvAudio, pStream, abBuf, cbBuf, &cbWritten);
+                rc = pTstEnv->pDrvAudio->pfnStreamPlay(pTstEnv->pDrvAudio, &pStream->Backend, abBuf, cbBuf, &cbWritten);
             }
 
             if (RTTimeMilliTS() - tsStartMs >= pParms->msDuration)
@@ -601,12 +579,10 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStre
 
         } while (RT_SUCCESS(rc));
     }
+    else
+        rc = VERR_AUDIO_STREAM_NOT_READY;
 
-    int rc2 = pTstEnv->pDrvAudio->pfnStreamDestroy(pTstEnv->pDrvAudio, pStream);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -625,6 +601,72 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
     /** @todo Implement parameter overriding. */
     return VERR_NOT_IMPLEMENTED;
 }
+
+
+/*********************************************************************************************************************************
+*   Test callbacks                                                                                                               *
+*********************************************************************************************************************************/
+
+/**
+ * @copydoc FNAUDIOTESTSETUP
+ */
+static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
+{
+    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
+
+    PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+
+    pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @copydoc FNAUDIOTESTEXEC
+ */
+static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms)
+{
+    RT_NOREF(pvCtx);
+
+    int rc;
+
+    PAUDIOTESTSTREAM pStream = &pTstEnv->aStreams[0];
+
+    for (uint32_t i = 0; i < pTstParms->cIterations; i++)
+    {
+        AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->TestTone.Props);
+        rc = audioTestCreateStreamDefaultOut(pTstEnv, pStream, &pTstParms->TestTone.Props);
+        if (RT_SUCCESS(rc))
+            rc = audioTestPlayTone(pTstEnv, pStream, &pTstParms->TestTone);
+
+        int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+/**
+ * @copydoc FNAUDIOTESTDESTROY
+ */
+static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *pvCtx)
+{
+    RT_NOREF(pTstEnv, pvCtx);
+
+    return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Test execution                                                                                                               *
+*********************************************************************************************************************************/
+
+static AUDIOTESTDESC g_aTests[] =
+{
+    /* pszTest      fExcluded      pfnSetup */
+    { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy }
+};
 
 /**
  * Runs one specific audio test.
@@ -659,10 +701,15 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
     {
         rc = pTstDesc->pfnSetup(pTstEnv, pTstDesc, &TstParms, &pvCtx);
         if (RT_FAILURE(rc))
+        {
+            RTTestFailed(g_hTest, "Test setup failed\n");
             return rc;
+        }
     }
 
     audioTestCombineParms(&TstParms, pOverrideParms);
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%u: %RU32 iterations\n", uSeq, TstParms.cIterations);
 
     if (strlen(TstParms.Dev.szName)) /** @todo Refine this check. */
         rc = audioTestDeviceOpen(&TstParms.Dev);
@@ -677,6 +724,9 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
         int rc2 = pTstDesc->pfnDestroy(pTstEnv, pvCtx);
         if (RT_SUCCESS(rc))
             rc = rc2;
+
+        if (RT_FAILURE(rc2))
+            RTTestFailed(g_hTest, "Test destruction failed\n");
     }
 
     rc = audioTestDeviceClose(&TstParms.Dev);
@@ -835,25 +885,25 @@ int audioTestMain(int argc, char **argv)
 
             case VKAT_TEST_OPT_PCM_BIT:
             {
-                TstCust.ToneParms.Props.cbSampleX = ValueUnion.u8 / 8 /* bit */;
+                TstCust.TestTone.Props.cbSampleX = ValueUnion.u8 / 8 /* bit */;
                 break;
             }
 
             case VKAT_TEST_OPT_PCM_CHAN:
             {
-                TstCust.ToneParms.Props.cChannelsX = ValueUnion.u8;
+                TstCust.TestTone.Props.cChannelsX = ValueUnion.u8;
                 break;
             }
 
             case VKAT_TEST_OPT_PCM_HZ:
             {
-                TstCust.ToneParms.Props.uHz = ValueUnion.u32;
+                TstCust.TestTone.Props.uHz = ValueUnion.u32;
                 break;
             }
 
             case VKAT_TEST_OPT_PCM_SIGNED:
             {
-                TstCust.ToneParms.Props.fSigned = ValueUnion.f;
+                TstCust.TestTone.Props.fSigned = ValueUnion.f;
                 break;
             }
 
@@ -865,7 +915,7 @@ int audioTestMain(int argc, char **argv)
 
             case VKAT_TEST_OPT_VOL:
             {
-                TstCust.ToneParms.uVolumePercent = ValueUnion.u8;
+                TstCust.TestTone.uVolumePercent = ValueUnion.u8;
                 break;
             }
 

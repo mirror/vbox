@@ -84,6 +84,19 @@ typedef struct AUDIOTESTTONEPARMS
 typedef AUDIOTESTTONEPARMS *PAUDIOTESTTONEPARMS;
 
 /**
+ * Structure for keeping an audio test audio stream.
+ */
+typedef struct AUDIOTESTSTREAM
+{
+    /** Created flag to avoid double destruction in backends. */
+    bool                  fCreated;
+    /** Backend-specific stream data. */
+    PDMAUDIOBACKENDSTREAM Backend;
+} AUDIOTESTSTREAM;
+/** Pointer to audio test stream. */
+typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
+
+/**
  * Enumeration for the test set mode.
  */
 typedef enum AUDIOTESTSETMODE
@@ -97,6 +110,43 @@ typedef enum AUDIOTESTSETMODE
     /** The usual 32-bit hack. */
     AUDIOTESTSETMODE_32BIT_HACK = 0x7fffffff
 } AUDIOTESTSETMODE;
+
+/**
+ * Enumeration to specify an audio test type.
+ */
+typedef enum AUDIOTESTTYPE
+{
+    /** Invalid test type, do not use. */
+    AUDIOTESTTYPE_INVALID = 0,
+    /** Play a test tone. */
+    AUDIOTESTTYPE_TESTTONE
+} AUDIOTESTTYPE;
+
+/**
+ * Audio test request data.
+ */
+typedef struct AUDIOTESTPARMS
+{
+    /** Specifies the test to run. */
+    uint32_t                idxTest;
+    /** How many iterations the test should be executed. */
+    uint32_t                cIterations;
+    /** Audio device to use. */
+    PDMAUDIOHOSTDEV         Dev;
+    /** How much to delay (wait, in ms) the test being executed. */
+    RTMSINTERVAL            msDelay;
+    /** The test direction.. */
+    PDMAUDIODIR             enmDir;
+    /** The test type. */
+    AUDIOTESTTYPE           enmType;
+    /** Union for test type-specific data. */
+    union
+    {
+        AUDIOTESTTONEPARMS  TestTone;
+    };
+} AUDIOTESTPARMS;
+/** Pointer to a test parameter structure. */
+typedef AUDIOTESTPARMS *PAUDIOTESTPARMS;
 
 /**
  * Structure specifying an audio test set.
