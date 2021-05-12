@@ -135,7 +135,7 @@ typedef struct AUDIOTESTPARMS
     PDMAUDIOHOSTDEV         Dev;
     /** How much to delay (wait, in ms) the test being executed. */
     RTMSINTERVAL            msDelay;
-    /** The test direction.. */
+    /** The test direction. */
     PDMAUDIODIR             enmDir;
     /** The test type. */
     AUDIOTESTTYPE           enmType;
