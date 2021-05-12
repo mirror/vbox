@@ -2203,6 +2203,15 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     {
         drvAudioStreamResetInternal(pStreamEx);
 
+/** @todo
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *  We need to zero the backend storage here!!
+ *   */
         PDMAUDIOSTREAMCFG CfgHostAcq;
         rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx, &pStreamEx->Host.Cfg, &CfgHostAcq);
         if (RT_SUCCESS(rc))
