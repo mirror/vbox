@@ -1566,13 +1566,13 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioPaHA_StreamGetState(PPD
     PDMHOSTAUDIOSTREAMSTATE enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
     if (pThis->pContext)
     {
-        pa_context_state_t const enmCtxState = pa_context_get_state(pThis->pContext);
-        if (PA_CONTEXT_IS_GOOD(enmCtxState))
+        pa_context_state_t const enmPaCtxState = pa_context_get_state(pThis->pContext);
+        if (PA_CONTEXT_IS_GOOD(enmPaCtxState))
         {
-            pa_stream_state_t const enmStreamState = pa_stream_get_state(pStreamPA->pStream);
-            if (PA_STREAM_IS_GOOD(enmState))
+            pa_stream_state_t const enmPaStreamState = pa_stream_get_state(pStreamPA->pStream);
+            if (PA_STREAM_IS_GOOD(enmPaStreamState))
             {
-                if (enmState != PA_STREAM_CREATING)
+                if (enmPaStreamState != PA_STREAM_CREATING)
                 {
                     if (   pStreamPA->Cfg.enmDir != PDMAUDIODIR_OUT
                         || pStreamPA->pDrainOp == NULL
@@ -1585,10 +1585,10 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioPaHA_StreamGetState(PPD
                     enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
             }
             else
-                LogFunc(("non-good PA stream state: %d\n", enmStreamState));
+                LogFunc(("non-good PA stream state: %d\n", enmPaStreamState));
         }
         else
-            LogFunc(("non-good PA context state: %d\n", enmCtxState));
+            LogFunc(("non-good PA context state: %d\n", enmPaCtxState));
     }
     else
         LogFunc(("No context!\n"));
