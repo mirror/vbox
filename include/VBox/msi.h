@@ -138,26 +138,60 @@
 
 /**
  * MSI Address Register.
- * In accordance with the Intel spec.
- * See Intel spec. 10.11.1 "Message Address Register Format".
- *
- * This also conforms to the AMD IOMMU spec. which omits specifying individual
- * fields but specifies reserved bits.
  */
 typedef union MSIADDR
 {
+    /*
+     * Intel and AMD xAPIC format.
+     * See Intel spec. 10.11.1 "Message Address Register Format".
+     * This also conforms to the AMD IOMMU spec. which omits specifying
+     * individual fields but specifies reserved bits.
+     */
     struct
     {
-        uint32_t   u2Ign0 : 2;          /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
-        uint32_t   u1DestMode : 1;      /**< Bit  2     - DM: Destination Mode. */
-        uint32_t   u1RedirHint : 1;     /**< Bit  3     - RH: Redirection Hint. */
-        uint32_t   u8Rsvd0 : 8;         /**< Bits 11:4  - Reserved. */
-        uint32_t   u8DestId : 8;        /**< Bits 19:12 - Destination Id. */
-        uint32_t   u12Addr : 12;        /**< Bits 31:20 - Address. */
+        uint32_t   u2Ign0      :  2;    /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
+        uint32_t   u1DestMode  :  1;    /**< Bit  2     - DM: Destination Mode. */
+        uint32_t   u1RedirHint :  1;    /**< Bit  3     - RH: Redirection Hint. */
+        uint32_t   u8Rsvd0     :  8;    /**< Bits 11:4  - Reserved. */
+        uint32_t   u8DestId    :  8;    /**< Bits 19:12 - Destination Id. */
+        uint32_t   u12Addr     : 12;    /**< Bits 31:20 - Address. */
         uint32_t   u32Rsvd0;            /**< Bits 63:32 - Reserved. */
     } n;
+
+    /*
+     * Intel x2APIC Format.
+     * See Intel VT-d spec. 5.1.6.2 "Programming in Intel 64 x2APIC Mode".
+     */
+    struct
+    {
+        uint32_t   u2Ign0      :  2;    /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
+        uint32_t   u1DestMode  :  1;    /**< Bit  2     - DM: Destination Mode. */
+        uint32_t   u1RedirHint :  1;    /**< Bit  3     - RH: Redirection Hint. */
+        uint32_t   u8Rsvd0     :  8;    /**< Bits 11:4  - Reserved. */
+        uint32_t   u8DestIdLo  :  8;    /**< Bits 19:12 - Destination Id (bits 7:0). */
+        uint32_t   u12Addr     : 12;    /**< Bits 31:20 - Address. */
+        uint32_t   u8Rsvd      :  8;    /**< Bits 39:32 - Reserved. */
+        uint32_t   u24DestIdHi : 24;    /**< Bits 63:40 - Destination Id (bits 31:8). */
+    } x2apic;
+
+    /*
+     * Intel IOMMU Remappable Interrupt Format.
+     * See Intel VT-d spec. 5.1.2.2 "Interrupt Requests in Remappable Format".
+     */
+    struct
+    {
+        uint32_t   u2Ign0         :  2; /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
+        uint32_t   u1IntrIndexHi  :  1; /**< Bit  2     - Interrupt Index[15]. */
+        uint32_t   fShv           :  1; /**< Bit  3     - Sub-Handle Valid. */
+        uint32_t   fIntrFormat    :  1; /**< Bit  4     - Interrupt Format (1=remappable, 0=compatibility). */
+        uint32_t   u14IntrIndexLo : 15; /**< Bits 19:5  - Interrupt Index[14:0]. */
+        uint32_t   u12Addr        : 12; /**< Bits 31:20 - Address. */
+        uint32_t   u32Rsvd0;            /**< Bits 63:32 - Reserved. */
+    } dmar_remap;
+
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[2];
+
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
 } MSIADDR;
@@ -177,23 +211,46 @@ typedef MSIADDR const *PCMSIADDR;
 
 /**
  * MSI Data Register.
- * In accordance with the Intel spec.
- * See Intel spec. 10.11.2 "Message Data Register Format".
- *
- * This also conforms to the AMD IOMMU spec. which omits specifying individual
- * fields but specifies reserved bits.
  */
 typedef union MSIDATA
 {
+    /*
+     * Intel and AMD xAPIC format.
+     * See Intel spec. 10.11.2 "Message Data Register Format".
+     * This also conforms to the AMD IOMMU spec. which omits specifying
+     * individual fields but specifies reserved bits.
+     */
     struct
     {
-        uint32_t    u8Vector : 8;           /**< Bits 7:0   - Vector. */
+        uint32_t    u8Vector       : 8;     /**< Bits 7:0   - Vector. */
         uint32_t    u3DeliveryMode : 3;     /**< Bits 10:8  - Delivery Mode. */
-        uint32_t    u3Rsvd0 : 3;            /**< Bits 13:11 - Reserved. */
-        uint32_t    u1Level : 1;            /**< Bit  14    - Level. */
-        uint32_t    u1TriggerMode : 1;      /**< Bit  15    - Trigger Mode (0=edge, 1=level). */
-        uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
+        uint32_t    u3Rsvd0        : 3;     /**< Bits 13:11 - Reserved. */
+        uint32_t    u1Level        : 1;     /**< Bit  14    - Level. */
+        uint32_t    u1TriggerMode  : 1;     /**< Bit  15    - Trigger Mode (0=edge, 1=level). */
+        uint32_t    u16Rsvd0       : 16;    /**< Bits 31:16 - Reserved. */
     } n;
+
+    /*
+     * Intel x2APIC Format.
+     * See Intel VT-d spec. 5.1.6.2 "Programming in Intel 64 x2APIC Mode".
+     */
+    struct
+    {
+        uint32_t    u8Vector       :  8;    /**< Bits 7:0   - Vector. */
+        uint32_t    u1DeliveryMode :  1;    /**< Bit  8     - Delivery Mode (0=fixed, 1=lowest priority). */
+        uint32_t    u23Rsvd0       : 23;    /**< Bits 31:9  - Reserved. */
+    } x2apic;
+
+    /*
+     * Intel IOMMU Remappable Interrupt Format.
+     * See Intel VT-d spec. 5.1.2.2 "Interrupt Requests in Remappable Format".
+     */
+    struct
+    {
+        uint16_t    u16SubHandle;
+        uint16_t    u16Rsvd0;
+    } dmar_remap;
+
     /** The 32-bit unsigned integer view. */
     uint32_t    u32;
 } MSIDATA;
