@@ -2580,6 +2580,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                                 break;
                             case PDMHOSTAUDIOSTREAMSTATE_DRAINING:
                                 AssertFailed();
+                                RT_FALL_THROUGH();
                             case PDMHOSTAUDIOSTREAMSTATE_OKAY:
                                 pStreamEx->Out.enmPlayState = pStreamEx->Out.cbPreBufThreshold > 0
                                                             ? DRVAUDIOPLAYSTATE_PREBUF : DRVAUDIOPLAYSTATE_PLAY;
@@ -2658,8 +2659,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                     case DRVAUDIOPLAYSTATE_PREBUF:
                         if (pStreamEx->Out.cbPreBuffered > 0)
                         {
-                            LogFunc(("DRAIN '%s': Initiating draining of pre-buffered data...\n",
-                                     pStreamEx->Core.szName, drvAudioPlayStateName(pStreamEx->Out.enmPlayState)));
+                            LogFunc(("DRAIN '%s': Initiating draining of pre-buffered data...\n", pStreamEx->Core.szName));
                             pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_PREBUF_COMMITTING;
                             pStreamEx->fStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
                             PDMAUDIOSTREAM_STS_ASSERT_VALID(pStreamEx->fStatus);
@@ -2690,7 +2690,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                         else
                         {
                             LogFunc(("DRAIN '%s': Backend DRAIN failed with %Rrc, disabling the stream instead...\n",
-                                     pStreamEx->Core.szName));
+                                     pStreamEx->Core.szName, rc));
                             rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
                             AssertRC(rc);
                             drvAudioStreamResetOnDisable(pStreamEx);
@@ -2699,7 +2699,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
 
                     case DRVAUDIOPLAYSTATE_PREBUF_COMMITTING:
                         LogFunc(("DRAIN '%s': Initiating draining of pre-buffered data (already committing)...\n",
-                                 pStreamEx->Core.szName, drvAudioPlayStateName(pStreamEx->Out.enmPlayState)));
+                                 pStreamEx->Core.szName));
                         pStreamEx->fStatus |= PDMAUDIOSTREAM_STS_PENDING_DISABLE;
                         PDMAUDIOSTREAM_STS_ASSERT_VALID(pStreamEx->fStatus);
                         break;
@@ -3047,7 +3047,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 if (RT_FAILURE(rc))
                 {
                     LogFunc(("Stream '%s': Backend DRAIN failed with %Rrc, disabling the stream instead...\n",
-                             pStreamEx->Core.szName));
+                             pStreamEx->Core.szName, rc));
                     rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
                     AssertRC(rc);
                     drvAudioStreamResetOnDisable(pStreamEx);
