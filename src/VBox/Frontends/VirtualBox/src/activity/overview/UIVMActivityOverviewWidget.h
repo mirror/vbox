@@ -133,46 +133,4 @@ private:
     bool    m_fShowNotRunningVMs;
 };
 
-class UIVMActivityOverviewFactory : public QIManagerDialogFactory
-{
-public:
-
-    UIVMActivityOverviewFactory(UIActionPool *pActionPool = 0);
-
-protected:
-
-    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
-    UIActionPool *m_pActionPool;
-};
-
-class UIVMActivityOverviewDialog : public QIWithRetranslateUI<QIManagerDialog>
-{
-    Q_OBJECT;
-
-private:
-
-    UIVMActivityOverviewDialog(QWidget *pCenterWidget, UIActionPool *pActionPool);
-
-    virtual void retranslateUi() /* override */;
-
-    /** @name Prepare/cleanup cascade.
-      * @{ */
-        virtual void configure() /* override */;
-        virtual void configureCentralWidget() /* override */;
-        virtual void configureButtonBox() /* override */;
-        virtual void finalize() /* override */;
-    /** @} */
-
-    /** @name Widget stuff.
-      * @{ */
-        virtual UIVMActivityOverviewWidget *widget() /* override */;
-    /** @} */
-
-    /** @name Action related variables.
-      * @{ */
-        UIActionPool *m_pActionPool;
-    /** @} */
-    friend class UIVMActivityOverviewFactory;
-};
-
 #endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityOverviewWidget_h */
