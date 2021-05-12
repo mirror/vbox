@@ -865,7 +865,7 @@ int AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming)
                 }
                 else
                 {
-                    LogFunc(("%s: No active streams, doing an immediate stop.\n"));
+                    LogFunc(("%s: No active streams, doing an immediate stop.\n", pSink->pszName));
                     PAUDMIXSTREAM pStream;
                     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
                     {
@@ -2022,7 +2022,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         else
         {
             LogFunc(("Sink '%s': All %u streams disabled. Drain done after %RU64 ns.\n",
-                     pSink->pszName, cStreamsDisabled, cStreams, nsNow - pSink->nsDrainStarted));
+                     pSink->pszName, cStreamsDisabled, nsNow - pSink->nsDrainStarted));
             audioMixerSinkReset(pSink); /* clears the status */
         }
     }
