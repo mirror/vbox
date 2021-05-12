@@ -26,18 +26,39 @@
 #define AUDIOTEST_PATH_PREFIX_STR "audio-test-"
 
 /**
+ * Enumeration for an audio test tone (wave) type.
+ */
+typedef enum AUDIOTESTTONETYPE
+{
+    /** Invalid type. */
+    AUDIOTESTTONETYPE_INVALID = 0,
+    /** Sine wave. */
+    AUDIOTESTTONETYPE_SINE,
+    /** Square wave. Not implemented yet. */
+    AUDIOTESTTONETYPE_SQUARE,
+    /** Triangluar wave. Not implemented yet. */
+    AUDIOTESTTONETYPE_TRIANGLE,
+    /** Sawtooth wave. Not implemented yet. */
+    AUDIOTESTTONETYPE_SAWTOOTH,
+    /** The usual 32-bit hack. */
+    AUDIOTESTTONETYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTTONETYPE;
+
+/**
  * Structure for handling an audio (sine wave) test tone.
  */
 typedef struct AUDIOTESTTONE
 {
+    /** The tone's wave type. */
+    AUDIOTESTTONETYPE   enmType;
     /** The PCM properties. */
-    PDMAUDIOPCMPROPS Props;
+    PDMAUDIOPCMPROPS    Props;
     /** Current sample index for generate the sine wave. */
-    uint64_t         uSample;
+    uint64_t            uSample;
     /** The fixed portion of the sin() input. */
-    double           rdFixed;
+    double              rdFixed;
     /** Frequency (in Hz) of the sine wave to generate. */
-    double           rdFreqHz;
+    double              rdFreqHz;
 } AUDIOTESTTONE;
 /** Pointer to an audio test tone. */
 typedef AUDIOTESTTONE *PAUDIOTESTTONE;

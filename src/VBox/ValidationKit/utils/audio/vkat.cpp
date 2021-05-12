@@ -111,6 +111,9 @@ typedef DECLCALLBACKTYPE(int, FNAUDIOTESTDESTROY,(AUDIOTESTENV *pTstEnv, void *p
 /** Pointer to an audio test destroy callback. */
 typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
 
+/** Maximum audio streams a test environment can handle. */
+#define AUDIOTESTENV_MAX_STREAMS 8
+
 /**
  * Audio test environment parameters.
  * Not necessarily bound to a specific test (can be reused).
@@ -118,11 +121,12 @@ typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
 typedef struct AUDIOTESTENV
 {
     /** The host (backend) driver to use. */
-    PPDMIHOSTAUDIO   pDrvAudio;
+    PPDMIHOSTAUDIO        pDrvAudio;
     /** The current (last) audio device enumeration to use. */
-    PDMAUDIOHOSTENUM DevEnm;
+    PDMAUDIOHOSTENUM      DevEnm;
+    PDMAUDIOBACKENDSTREAM aStreams[AUDIOTESTENV_MAX_STREAMS];
     /** The audio test set to use. */
-    AUDIOTESTSET     Set;
+    AUDIOTESTSET          Set;
 } AUDIOTESTENV;
 /** Pointer a audio test environment. */
 typedef AUDIOTESTENV *PAUDIOTESTENV;
@@ -151,6 +155,7 @@ typedef AUDIOTESTDESC *PAUDIOTESTDESC;
 *   Forward declarations                                                                                                         *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
+static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
 
 
 /*********************************************************************************************************************************
@@ -238,20 +243,20 @@ unsigned  g_uVerbosity = 0;
  */
 static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
 {
-    RT_NOREF(pTstEnv, pTstDesc, pTstParmsAcq, ppvCtx);
+    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
 
-//    PDMAudioPropsInit(&Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+    PDMAudioPropsInit(&pTstParmsAcq->ToneParms.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
-    //AudioTestToneParamsInitRandom(&pTstParms->ToneParms, &pTstParms->ToneParms.Props);
+    AudioTestToneParamsInitRandom(&pTstParmsAcq->ToneParms, &pTstParmsAcq->ToneParms.Props);
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms)
 {
-    RT_NOREF(pTstEnv, pvCtx, pTstParms);
+    RT_NOREF(pvCtx);
 
-    return VINF_SUCCESS;
+    return audioTestPlayTone(pTstEnv, &pTstEnv->aStreams[0], &pTstParms->ToneParms);
 }
 
 static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *pvCtx)
@@ -542,6 +547,66 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
     RTTestSubDone(g_hTest);
 
     return rc;
+}
+
+static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PPDMAUDIOBACKENDSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+{
+    PDMAUDIOSTREAMCFG CfgReq;
+    PDMAUDIOSTREAMCFG CfgAcq;
+
+    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, &pParms->Props);
+    AssertRC(rc); /* Cannot fail. */
+
+    CfgReq.enmDir      = PDMAUDIODIR_OUT;
+    CfgReq.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
+    CfgReq.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
+    rc = PDMAudioStrmCfgCopy(&CfgAcq, &CfgReq);
+    AssertRC(rc); /* Ditto. */
+
+    rc = pTstEnv->pDrvAudio->pfnStreamCreate(pTstEnv->pDrvAudio, pStream, &CfgReq, &CfgAcq);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Do the async init in a synchronous way for now here. */
+    if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
+        rc = pTstEnv->pDrvAudio->pfnStreamInitAsync(pTstEnv->pDrvAudio, pStream, false /* fDestroyed */);
+
+    AUDIOTESTTONE TstTone;
+    AudioTestToneInitRandom(&TstTone, &pParms->Props);
+
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->pDrvAudio->pfnStreamGetState(pTstEnv->pDrvAudio, pStream);
+    if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
+    {
+        uint32_t cbBuf;
+        uint8_t  abBuf[_4K];
+
+        const uint64_t tsStartMs     = RTTimeMilliTS();
+        const unsigned cSchedulingMs = 10;
+        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&CfgAcq.Props, cSchedulingMs);
+
+        do
+        {
+            rc = AudioTestToneWrite(&TstTone, abBuf, RT_MIN(cbPerMs, sizeof(abBuf)), &cbBuf);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cbWritten;
+                rc = pTstEnv->pDrvAudio->pfnStreamPlay(pTstEnv->pDrvAudio, pStream, abBuf, cbBuf, &cbWritten);
+            }
+
+            if (RTTimeMilliTS() - tsStartMs >= pParms->msDuration)
+                break;
+
+            RTThreadSleep(cSchedulingMs);
+
+        } while (RT_SUCCESS(rc));
+    }
+
+    int rc2 = pTstEnv->pDrvAudio->pfnStreamDestroy(pTstEnv->pDrvAudio, pStream);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return VINF_SUCCESS;
 }
 
 /**

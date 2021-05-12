@@ -136,8 +136,8 @@ DECLINLINE(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *ps
 
 DECLINLINE(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
-    RT_NOREF(pNode, pszName, pszString, cchString, pszDef);
-    return 0;
+    RT_NOREF(pNode, pszName);
+    return RTStrCopy(pszString, cchString, pszDef); /* Just return the expected default value. */
 }
 
 #ifdef VBOX_WITH_AUDIO_PULSE

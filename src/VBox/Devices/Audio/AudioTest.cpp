@@ -93,6 +93,8 @@ double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps)
 
     memcpy(&pTone->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
 
+    pTone->enmType = AUDIOTESTTONETYPE_SINE; /* Only type implemented so far. */
+
     return pTone->rdFreqHz;
 }
 
