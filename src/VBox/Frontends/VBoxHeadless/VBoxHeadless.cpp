@@ -395,7 +395,7 @@ static void
 HandleSignal(int sig)
 {
     RT_NOREF(sig);
-    Log(("%s: received singal %d\n", __FUNCTION__, sig));
+    LogRel(("VBoxHeadless: received singal %d\n", sig));
     g_fTerminateFE = true;
 }
 #endif /* VBOX_WITH_SAVESTATE_ON_SIGNAL */
@@ -1418,11 +1418,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         sigaction(SIGUSR2, &sa, NULL);
 #endif
 
-        Log(("VBoxHeadless: Waiting for PowerDown...\n"));
 
         /*
          * Pump vbox events forever
          */
+        LogRel(("VBoxHeadless: starting event loop\n"));
         for (;;)
         {
             int irc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
@@ -1433,13 +1433,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             if (g_fTerminateFE)
             {
-                Log(("processEventQueue: %Rrc, g_fTerminateFE = true\n", irc));
+                LogRel(("VBoxHeadless: processEventQueue: %Rrc, termination requested\n", irc));
                 break;
             }
 
             if (RT_FAILURE(irc))
             {
-                Log(("processEventQueue: %Rrc, g_fTerminateFE = false\n", irc));
+                LogRel(("VBoxHeadless: processEventQueue: %Rrc\n", irc));
                 RTMsgError("event loop: %Rrc", irc);
                 break;
             }
