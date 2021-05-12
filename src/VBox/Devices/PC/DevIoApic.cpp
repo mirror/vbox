@@ -92,9 +92,9 @@ Controller" */
 #define IOAPIC_RTE_REMOTE_IRR                   RT_BIT_64(14)
 /** Redirection table entry - Trigger Mode. */
 #define IOAPIC_RTE_TRIGGER_MODE                 RT_BIT_64(15)
-/** Redirection table entry - the mask bit number. */
+/** Redirection table entry - Number of bits to shift to get the Mask. */
 #define IOAPIC_RTE_MASK_BIT                     16
-/** Redirection table entry - the mask. */
+/** Redirection table entry - The Mask. */
 #define IOAPIC_RTE_MASK                         RT_BIT_64(IOAPIC_RTE_MASK_BIT)
 /** Redirection table entry - Extended Destination ID. */
 #define IOAPIC_RTE_EXT_DEST_ID                  UINT64_C(0x00ff000000000000)
@@ -122,6 +122,30 @@ Controller" */
 /** Redirection table entry - Gets the vector. */
 #define IOAPIC_RTE_GET_VECTOR(a_Reg)            ((a_Reg) & IOAPIC_RTE_VECTOR)
 
+/** @name DMAR variant interpretation of RTE fields.
+ * @{ */
+/** Redirection table entry - Number of bits to shift to get Interrupt
+ *  Index[14:0]. */
+#define IOAPIC_RTE_INTR_INDEX_LO_BIT            49
+/** Redirection table entry - Interrupt Index[14:0]. */
+#define IOAPIC_RTE_INTR_INDEX_LO                UINT64_C(0xfffe000000000000)
+/** Redirection table entry - Number of bits to shift to get interrupt format. */
+#define IOAPIC_RTE_INTR_FORMAT_BIT              48
+/** Redirection table entry - Interrupt format. */
+#define IOAPIC_RTE_INTR_FORMAT                  RT_BIT_64(IOAPIC_RTE_INTR_FORMAT_BIT)
+/** Redirection table entry - Number of bits to shift to get Interrupt Index[15]. */
+#define IOAPIC_RTE_INTR_INDEX_HI_BIT            11
+/** Redirection table entry - Interrupt Index[15]. */
+#define IOAPIC_RTE_INTR_INDEX_HI                RT_BIT_64(11)
+
+/** Redirection table entry - Gets the Interrupt Index[14:0]. */
+#define IOAPIC_RTE_GET_INTR_INDEX_LO(a_Reg)     ((a_Reg) >> IOAPIC_RTE_INTR_INDEX_LO_BIT)
+/** Redirection table entry - Gets the Interrupt format. */
+#define IOAPIC_RTE_GET_INTR_FORMAT(a_Reg)       (((a_Reg) >> IOAPIC_RTE_INTR_FORMAT_BIT) & 0x1)
+/** Redirection table entry - Gets the Interrupt Index[15]. */
+#define IOAPIC_RTE_GET_INTR_INDEX_HI(a_Reg)     (((a_Reg) >> IOAPIC_RTE_INTR_INDEX_HI_BIT) & 0x1)
+/** @} */
+
 /** Redirection table entry - Valid write mask for 82093AA. */
 #define IOAPIC_RTE_VALID_WRITE_MASK_82093AA     (  IOAPIC_RTE_DEST     | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
                                                  | IOAPIC_RTE_POLARITY | IOAPIC_RTE_DEST_MODE | IOAPIC_RTE_DELIVERY_MODE \
@@ -134,13 +158,23 @@ Controller" */
 /** Redirection table entry - Valid write mask for ICH9. */
 /** @note The remote IRR bit has been reverted to read-only as it turns out the
  *        ICH9 spec. is wrong, see @bugref{8386#c46}. */
-#define IOAPIC_RTE_VALID_WRITE_MASK_ICH9        (  IOAPIC_RTE_DEST       | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
+#define IOAPIC_RTE_VALID_WRITE_MASK_ICH9        (  IOAPIC_RTE_DEST           | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
                                                  /*| IOAPIC_RTE_REMOTE_IRR */| IOAPIC_RTE_POLARITY  | IOAPIC_RTE_DEST_MODE \
-                                                 | IOAPIC_RTE_DELIVERY_MODE | IOAPIC_RTE_VECTOR)
+                                                 | IOAPIC_RTE_DELIVERY_MODE  | IOAPIC_RTE_VECTOR)
 /** Redirection table entry - Valid read mask (incl. ExtDestID) for ICH9. */
 #define IOAPIC_RTE_VALID_READ_MASK_ICH9         (  IOAPIC_RTE_DEST            | IOAPIC_RTE_EXT_DEST_ID | IOAPIC_RTE_MASK \
                                                  | IOAPIC_RTE_TRIGGER_MODE    | IOAPIC_RTE_REMOTE_IRR  | IOAPIC_RTE_POLARITY \
                                                  | IOAPIC_RTE_DELIVERY_STATUS | IOAPIC_RTE_DEST_MODE   | IOAPIC_RTE_DELIVERY_MODE \
+                                                 | IOAPIC_RTE_VECTOR)
+
+/** Redirection table entry - Valid write mask for DMAR variant. */
+#define IOAPIC_RTE_VALID_WRITE_MASK_DMAR        (  IOAPIC_RTE_INTR_INDEX_LO  | IOAPIC_RTE_INTR_FORMAT |  IOAPIC_RTE_MASK \
+                                                 | IOAPIC_RTE_TRIGGER_MODE   | IOAPIC_RTE_POLARITY    | IOAPIC_RTE_INTR_INDEX_HI \
+                                                 | IOAPIC_RTE_DELIVERY_MODE  | IOAPIC_RTE_VECTOR)
+/** Redirection table entry - Valid read mask for DMAR variant. */
+#define IOAPIC_RTE_VALID_READ_MASK_DMAR         (  IOAPIC_RTE_INTR_INDEX_LO   | IOAPIC_RTE_INTR_FORMAT   | IOAPIC_RTE_MASK \
+                                                 | IOAPIC_RTE_TRIGGER_MODE    | IOAPIC_RTE_REMOTE_IRR    | IOAPIC_RTE_POLARITY \
+                                                 | IOAPIC_RTE_DELIVERY_STATUS | IOAPIC_RTE_INTR_INDEX_HI | IOAPIC_RTE_DELIVERY_MODE \
                                                  | IOAPIC_RTE_VECTOR)
 
 /** Redirection table entry - Trigger mode edge. */
@@ -181,6 +215,19 @@ Controller" */
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
+ * I/O APIC chipset (and variants) we support.
+ */
+typedef enum IOAPICTYPE
+{
+    IOAPICTYPE_ICH9 = 1,
+    IOAPICTYPE_DMAR,
+    IOAPICTYPE_82093AA,
+    IOAPICTYPE_82379AB,
+    IOAPICTYPE_32BIT_HACK = 0x7fffffff
+} IOAPICTYPE;
+AssertCompileSize(IOAPICTYPE, 4);
+
+/**
  * The shared I/O APIC device state.
  */
 typedef struct IOAPIC
@@ -213,8 +260,8 @@ typedef struct IOAPIC
 
     /** The internal IRR reflecting state of the interrupt lines. */
     uint32_t                uIrr;
-    /** Alignment padding. */
-    uint32_t                u32Padding2;
+    /** The I/O APIC chipset type. */
+    IOAPICTYPE              enmType;
 
 #ifndef IOAPIC_WITH_PDM_CRITSECT
     /** The critsect for updating to the RTEs. */
@@ -452,27 +499,51 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
 }
 
 
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
 /**
- * Convert an APIC interrupt to an MSI message.
+ * Convert an RTE into an MSI message.
  *
- * @param   pIntr   The APIC interrupt to convert.
- * @param   pMsi    Where to store the MSI message.
+ * @param   u64Rte      The RTE to convert.
+ * @param   enmType     The I/O APIC chipset type.
+ * @param   pMsi        Where to store the MSI message.
  */
-DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
+DECLINLINE(void) ioapicGetMsiFromRte(uint64_t u64Rte, IOAPICTYPE enmType, PMSIMSG pMsi)
 {
-    pMsi->Addr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
-    pMsi->Addr.n.u8DestId       = pIntr->u8Dest;
-    pMsi->Addr.n.u1RedirHint    = pIntr->u8RedirHint;
-    pMsi->Addr.n.u1DestMode     = pIntr->u8DestMode;
+    bool const fRemappable = IOAPIC_RTE_GET_INTR_FORMAT(u64Rte);
+    if (!fRemappable)
+    {
+        pMsi->Addr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
+        pMsi->Addr.n.u8DestId       = IOAPIC_RTE_GET_DEST(u64Rte);
+        pMsi->Addr.n.u1RedirHint    = 0;
+        pMsi->Addr.n.u1DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
 
-    pMsi->Data.n.u8Vector       = pIntr->u8Vector;
-    pMsi->Data.n.u3DeliveryMode = pIntr->u8DeliveryMode;
-    pMsi->Data.n.u1TriggerMode  = pIntr->u8TriggerMode;
+        pMsi->Data.n.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
+        pMsi->Data.n.u3DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+        pMsi->Data.n.u1TriggerMode  = IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte);
+        /* pMsi->Data.n.u1Level     = ??? */
+        /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
+         *        possible in theory? Maybe document this more explicitly... */
+    }
+    else
+    {
+        Assert(enmType == IOAPICTYPE_DMAR);
+        NOREF(enmType);
 
-    /* pMsi->Data.n.u1Level     = ??? */
-    /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
-     *        possible in theory? Maybe document this more explicitly... */
+        /*
+         * The spec. mentions that SHV will be 0 when delivery mode is 0 (fixed), but
+         * not what SHV will be if delivery mode is not 0. I ASSUME copying delivery
+         * mode into SHV here is what hardware actually does.
+         *
+         * See Intel VT-d spec. 5.1.5.1 "I/OxAPIC Programming".
+         */
+        pMsi->Addr.dmar_remap.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
+        pMsi->Addr.dmar_remap.u14IntrIndexLo = IOAPIC_RTE_GET_INTR_INDEX_LO(u64Rte);
+        pMsi->Addr.dmar_remap.fIntrFormat    = 1;
+        pMsi->Addr.dmar_remap.fShv           = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+        pMsi->Addr.dmar_remap.u1IntrIndexHi  = IOAPIC_RTE_GET_INTR_INDEX_HI(u64Rte);
+
+        pMsi->Data.dmar_remap.u16SubHandle   = 0;
+    }
 }
 #endif
 
@@ -523,13 +594,6 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
 
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
-    ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
-    ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
-    ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
-    ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
-    ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
-    ApicIntr.u8TriggerMode  = u8TriggerMode;
-    //ApicIntr.u8RedirHint    = 0;
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     /*
@@ -541,7 +605,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
     MSIMSG MsiIn;
     RT_ZERO(MsiOut);
     RT_ZERO(MsiIn);
-    ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
+    ioapicGetMsiFromRte(u64Rte, pThis->enmType, &MsiIn);
     int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
     if (   rcRemap == VERR_IOMMU_NOT_PRESENT
         || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
@@ -555,7 +619,6 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
     }
 
     ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
-
 # ifdef RT_STRICT
     if (RT_SUCCESS(rcRemap))
     {
@@ -563,6 +626,14 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
     }
 # endif
+#else
+    ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
+    ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
+    ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
+    ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+    ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
+    ApicIntr.u8TriggerMode  = u8TriggerMode;
+    //ApicIntr.u8RedirHint    = 0;
 #endif
 
     uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
@@ -930,10 +1001,12 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
      * The MSI may need to be remapped (or discarded) if an IOMMU is present.
      *
      * If the Bus:Dev:Fn isn't valid, it is ASSUMED the device generating the
-     * MSI may be the IOMMU itself and hence is not subject to remapping.
+     * MSI is the IOMMU itself and hence isn't subjected to remapping. This
+     * is the case with Intel IOMMUs.
      *
-     * For AMD IOMMUs, since it's a full fledged PCI device, the BDF will be
-     * valid but will be handled by VERR_IOMMU_CANNOT_CALL_SELF case.
+     * AMD IOMMUs are full fledged PCI devices, hence the BDF will be a
+     * valid PCI slot, but interrupts generated by the IOMMU will be handled
+     * by VERR_IOMMU_CANNOT_CALL_SELF case.
      */
     if (PCIBDF_IS_VALID(uBusDevFn))
     {
@@ -1198,6 +1271,24 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
 
+    bool const fLegacy = RTStrCmp(pszArgs, "legacy") == 0;
+
+    static const char * const s_apszDeliveryModes[] =
+    {
+        " fixed",
+        "lowpri",
+        "   smi",
+        "  rsvd",
+        "   nmi",
+        "  init",
+        "  rsvd",
+        "extint"
+    };
+    static const char * const s_apszDestMode[]       = { "phys", "log " };
+    static const char * const s_apszTrigMode[]       = { " edge", "level" };
+    static const char * const s_apszPolarity[]       = { "acthi", "actlo" };
+    static const char * const s_apszDeliveryStatus[] = { "idle", "pend" };
+
     pHlp->pfnPrintf(pHlp, "I/O APIC at %#010x:\n", IOAPIC_MMIO_BASE_PHYSADDR);
 
     uint32_t const uId = ioapicGetId(pThis);
@@ -1220,49 +1311,79 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "  Current index           = %#x\n",     ioapicGetIndex(pThis));
 
     pHlp->pfnPrintf(pHlp, "  I/O Redirection Table and IRR:\n");
-    pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector\n");
-
-    uint8_t const idxMaxRte = RT_MIN(pThis->u8MaxRte, RT_ELEMENTS(pThis->au64RedirTable) - 1);
-    for (uint8_t idxRte = 0; idxRte <= idxMaxRte; idxRte++)
+    if (   pThis->enmType != IOAPICTYPE_DMAR
+        || fLegacy)
     {
-        static const char * const s_apszDeliveryModes[] =
+        pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector rte\n");
+        pHlp->pfnPrintf(pHlp, "  ---------------------------------------------------------------------------------------------\n");
+
+        uint8_t const idxMaxRte = RT_MIN(pThis->u8MaxRte, RT_ELEMENTS(pThis->au64RedirTable) - 1);
+        for (uint8_t idxRte = 0; idxRte <= idxMaxRte; idxRte++)
         {
-            "Fixed ",
-            "LowPri",
-            "SMI   ",
-            "Rsvd  ",
-            "NMI   ",
-            "INIT  ",
-            "Rsvd  ",
-            "ExtINT"
-        };
+            const uint64_t u64Rte = pThis->au64RedirTable[idxRte];
+            const char    *pszDestMode       = s_apszDestMode[IOAPIC_RTE_GET_DEST_MODE(u64Rte)];
+            const uint8_t  uDest             = IOAPIC_RTE_GET_DEST(u64Rte);
+            const uint8_t  uMask             = IOAPIC_RTE_GET_MASK(u64Rte);
+            const char    *pszTriggerMode    = s_apszTrigMode[IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte)];
+            const uint8_t  uRemoteIrr        = IOAPIC_RTE_GET_REMOTE_IRR(u64Rte);
+            const char    *pszPolarity       = s_apszPolarity[IOAPIC_RTE_GET_POLARITY(u64Rte)];
+            const char    *pszDeliveryStatus = s_apszDeliveryStatus[IOAPIC_RTE_GET_DELIVERY_STATUS(u64Rte)];
+            const uint8_t  uDeliveryMode     = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+            Assert(uDeliveryMode < RT_ELEMENTS(s_apszDeliveryModes));
+            const char    *pszDeliveryMode   = s_apszDeliveryModes[uDeliveryMode];
+            const uint8_t  uVector           = IOAPIC_RTE_GET_VECTOR(u64Rte);
 
-        const uint64_t u64Rte = pThis->au64RedirTable[idxRte];
-        const char    *pszDestMode       = IOAPIC_RTE_GET_DEST_MODE(u64Rte) == 0 ? "phys" : "log ";
-        const uint8_t  uDest             = IOAPIC_RTE_GET_DEST(u64Rte);
-        const uint8_t  uMask             = IOAPIC_RTE_GET_MASK(u64Rte);
-        const char    *pszTriggerMode    = IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte) == 0 ? "edge " : "level";
-        const uint8_t  uRemoteIrr        = IOAPIC_RTE_GET_REMOTE_IRR(u64Rte);
-        const char    *pszPolarity       = IOAPIC_RTE_GET_POLARITY(u64Rte) == 0 ? "acthi" : "actlo";
-        const char    *pszDeliveryStatus = IOAPIC_RTE_GET_DELIVERY_STATUS(u64Rte) == 0 ? "idle" : "pend";
-        const uint8_t  uDeliveryMode     = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
-        Assert(uDeliveryMode < RT_ELEMENTS(s_apszDeliveryModes));
-        const char    *pszDeliveryMode   = s_apszDeliveryModes[uDeliveryMode];
-        const uint8_t  uVector           = IOAPIC_RTE_GET_VECTOR(u64Rte);
+            pHlp->pfnPrintf(pHlp, "   %02d     %s       %02x    %u   %u   %s    %u %s    %s    %s    %3u (%016llx)\n",
+                            idxRte,
+                            pszDestMode,
+                            uDest,
+                            uMask,
+                            (pThis->uIrr >> idxRte) & 1,
+                            pszTriggerMode,
+                            uRemoteIrr,
+                            pszPolarity,
+                            pszDeliveryStatus,
+                            pszDeliveryMode,
+                            uVector,
+                            u64Rte);
+        }
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "  idx intr_idx fmt mask irr trigger rirr polar dlvr_st dlvr_mode vector rte\n");
+        pHlp->pfnPrintf(pHlp, "  ----------------------------------------------------------------------------------------\n");
 
-        pHlp->pfnPrintf(pHlp, "   %02d   %s      %02x     %u    %u   %s   %u   %s  %s     %s   %3u (%016llx)\n",
-                        idxRte,
-                        pszDestMode,
-                        uDest,
-                        uMask,
-                        (pThis->uIrr >> idxRte) & 1,
-                        pszTriggerMode,
-                        uRemoteIrr,
-                        pszPolarity,
-                        pszDeliveryStatus,
-                        pszDeliveryMode,
-                        uVector,
-                        u64Rte);
+        uint8_t const idxMaxRte = RT_MIN(pThis->u8MaxRte, RT_ELEMENTS(pThis->au64RedirTable) - 1);
+        for (uint8_t idxRte = 0; idxRte <= idxMaxRte; idxRte++)
+        {
+            const uint64_t u64Rte = pThis->au64RedirTable[idxRte];
+            const uint16_t idxIntrLo         = IOAPIC_RTE_GET_INTR_INDEX_LO(u64Rte);
+            const uint8_t  fIntrFormat       = IOAPIC_RTE_GET_INTR_FORMAT(u64Rte);
+            const uint8_t  uMask             = IOAPIC_RTE_GET_MASK(u64Rte);
+            const char    *pszTriggerMode    = s_apszTrigMode[IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte)];
+            const uint8_t  uRemoteIrr        = IOAPIC_RTE_GET_REMOTE_IRR(u64Rte);
+            const char    *pszPolarity       = s_apszPolarity[IOAPIC_RTE_GET_POLARITY(u64Rte)];
+            const char    *pszDeliveryStatus = s_apszDeliveryStatus[IOAPIC_RTE_GET_DELIVERY_STATUS(u64Rte)];
+            const uint8_t  uDeliveryMode     = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+            Assert(uDeliveryMode < RT_ELEMENTS(s_apszDeliveryModes));
+            const char    *pszDeliveryMode   = s_apszDeliveryModes[uDeliveryMode];
+            const uint16_t idxIntrHi         = IOAPIC_RTE_GET_INTR_INDEX_HI(u64Rte);
+            const uint8_t  uVector           = IOAPIC_RTE_GET_VECTOR(u64Rte);
+            const uint16_t idxIntr           = idxIntrLo | (idxIntrHi << 15);
+            pHlp->pfnPrintf(pHlp, "   %02d     %4u   %u    %u   %u   %s    %u %s    %s    %s    %3u (%016llx)\n",
+                            idxRte,
+                            idxIntr,
+                            fIntrFormat,
+                            uMask,
+                            (pThis->uIrr >> idxRte) & 1,
+                            pszTriggerMode,
+                            uRemoteIrr,
+                            pszPolarity,
+                            pszDeliveryStatus,
+                            pszDeliveryMode,
+                            uVector,
+                            u64Rte);
+        }
     }
 }
 
@@ -1412,6 +1533,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     if (!strcmp(szChipType, "ICH9"))
     {
         /* Newer 2007-ish I/O APIC integrated into ICH southbridges. */
+        pThis->enmType         = IOAPICTYPE_ICH9;
         pThis->u8ApicVer       = IOAPIC_VERSION_ICH9;
         pThis->u8IdMask        = 0xff;
         pThis->u8MaxRte        = IOAPIC_MAX_RTE_INDEX;
@@ -1419,9 +1541,22 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_ICH9;
         pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_ICH9;
     }
+    else if (!strcmp(szChipType, "DMAR"))
+    {
+        /* Intel DMAR compatible I/O APIC integrated into ICH southbridges. */
+        /* Identical to ICH9, but interprets RTEs and MSI address and data fields differently. */
+        pThis->enmType         = IOAPICTYPE_DMAR;
+        pThis->u8ApicVer       = IOAPIC_VERSION_ICH9;
+        pThis->u8IdMask        = 0xff;
+        pThis->u8MaxRte        = IOAPIC_MAX_RTE_INDEX;
+        pThis->u8LastRteRegIdx = IOAPIC_INDIRECT_INDEX_RTE_END;
+        pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_DMAR;
+        pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_DMAR;
+    }
     else if (!strcmp(szChipType, "82093AA"))
     {
         /* Older 1995-ish discrete I/O APIC, used in P6 class systems. */
+        pThis->enmType         = IOAPICTYPE_82093AA;
         pThis->u8ApicVer       = IOAPIC_VERSION_82093AA;
         pThis->u8IdMask        = 0x0f;
         pThis->u8MaxRte        = IOAPIC_MAX_RTE_INDEX;
@@ -1433,6 +1568,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     {
         /* Even older 1993-ish I/O APIC built into SIO.A, used in EISA and early PCI systems. */
         /* Exact same version and behavior as 82093AA, only the number of RTEs is different. */
+        pThis->enmType         = IOAPICTYPE_82379AB;
         pThis->u8ApicVer       = IOAPIC_VERSION_82093AA;
         pThis->u8IdMask        = 0x0f;
         pThis->u8MaxRte        = IOAPIC_REDUCED_MAX_RTE_INDEX;
@@ -1532,7 +1668,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Init. the device state.
      */
-    LogRel(("IOAPIC: Using implementation 2.0! I/O APIC version is %d.%d\n", pThis->u8ApicVer >> 4, pThis->u8ApicVer & 0x0F));
+    LogRel(("IOAPIC: Version=%d.%d ChipType=%s\n", pThis->u8ApicVer >> 4, pThis->u8ApicVer & 0x0f, szChipType));
     ioapicR3Reset(pDevIns);
 
     return VINF_SUCCESS;
