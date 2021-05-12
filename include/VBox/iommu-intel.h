@@ -1247,8 +1247,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FECTL_REG_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, RSVD_31_16));
 
-/** RW: Read/write mask. */
-#define VTD_FEDATA_REG_RW_MASK                                  VTD_BF_FEDATA_REG_IMD_MASK
+/** RW: Read/write mask, see 5.1.6 "Remapping Hardware Event Interrupt
+ *  Programming". */
+#define VTD_FEDATA_REG_RW_MASK                                  UINT32_C(0x000001ff)
 /** @} */
 
 
@@ -1497,8 +1498,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IECTL_REG_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, RSVD_31_16));
 
-/** RW: Read/write mask. */
-#define VTD_IEDATA_REG_RW_MASK                                  VTD_BF_IEDATA_REG_IMD_MASK
+/** RW: Read/write mask, see 5.1.6 "Remapping Hardware Event Interrupt
+ *  Programming". */
+#define VTD_IEDATA_REG_RW_MASK                                  UINT32_C(0x000001ff)
 /** @} */
 
 
@@ -1706,8 +1708,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PECTL_REG_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, RSVD_31_16));
 
-/** RW: Read/write mask. */
-#define VTD_PEDATA_REG_RW_MASK                                  VTD_BF_PEDATA_REG_IMD_MASK
+/** RW: Read/write mask, see 5.1.6 "Remapping Hardware Event Interrupt
+ *  Programming". */
+#define VTD_PEDATA_REG_RW_MASK                                  UINT32_C(0x000001ff)
 /** @} */
 
 
@@ -2284,8 +2287,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_MSI_DATA_, UINT32_C(0), UINT32_MAX
 /** Remappable MSI Data: Valid mask. */
 #define VTD_REMAPPABLE_MSI_DATA_VALID_MASK                      VTD_BF_REMAPPABLE_MSI_DATA_SUBHANDLE_MASK
 
-/** Gets the interrupt format from an MSI address. */
-#define VTD_MSI_ADDR_GET_INTR_FORMAT(a_uMsiAddr)                ((a_uMsiAddr) & RT_BIT_64(4))
 /** Interrupt format: Compatibility. */
 #define VTD_INTR_FORMAT_COMPAT                                  0
 /** Interrupt format: Remappable. */
