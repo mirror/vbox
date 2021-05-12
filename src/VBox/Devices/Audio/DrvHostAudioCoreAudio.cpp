@@ -3,8 +3,10 @@
  * Host audio driver - Mac OS X CoreAudio.
  *
  * For relevant Apple documentation, here are some starters:
- *     - http://developer.apple.com/mac/library/technotes/tn2004/tn2097.html
- *     - http://developer.apple.com/mac/library/technotes/tn2002/tn2091.html
+ *     - TN2097: Playing a sound file using the Default Output Audio Unit
+ *       https://developer.apple.com/library/archive/technotes/tn2097/
+ *     - TN2091: Device input using the HAL Output Audio Unit
+ *       https://developer.apple.com/library/archive/technotes/tn2091/
  *     - http://developer.apple.com/mac/library/qa/qa2007/qa1533.html
  *     - http://developer.apple.com/mac/library/qa/qa2001/qa1317.html
  *     - http://developer.apple.com/mac/library/documentation/AudioUnit/Reference/AUComponentServicesReference/Reference/reference.html
@@ -169,8 +171,6 @@ typedef struct COREAUDIOSTREAM
     };
     /** List node for the device's stream list. */
     RTLISTNODE                  Node;
-    /** Pointer to driver instance this stream is bound to. */
-    PDRVHOSTCOREAUDIO           pDrv;
     /** The stream's thread handle for maintaining the audio queue. */
     RTTHREAD                    hThread;
     /** The runloop of the queue thread. */
@@ -1695,7 +1695,6 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
         /*
          * Basic structure init.
          */
-        pStreamCA->pDrv         = pThis;
         pStreamCA->hThread      = NIL_RTTHREAD;
         pStreamCA->fRun         = false;
         pStreamCA->fIsRunning   = false;
@@ -1851,7 +1850,6 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
         }
 
         pStreamCA->Unit.pDevice = NULL;
-        pStreamCA->pDrv         = NULL;
 
         RTCritSectDelete(&pStreamCA->CritSect);
 
