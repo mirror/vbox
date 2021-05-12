@@ -171,7 +171,7 @@ private:
     /** @} */
 
     /** Returns the newly created log-page using @a strPage filename. */
-    void createLogPage(const QString &strFileName, const QString &strMachineName,
+    void createLogPage(const QString &strFileName,
                        const QUuid &machineId, int iLogFileId,
                        const QString &strLogContent, bool noLogsToShow);
 
@@ -186,9 +186,7 @@ private:
     /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */
     void removeLogViewerPages(const QVector<QUuid> &machineList);
     void removeAllLogPages();
-    /** We alternate tab colors between two `darker and lighter` one per machine. This function goes over tabs and
-      * sets tab data so tab our QTabBar extension can color tabs correctly. */
-    void setTabColorPerMachine();
+    void markLabelTabs();
 
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();

@@ -40,9 +40,25 @@ class UIVMLogViewerTextEdit;
 /** first is line number, second is block text */
 typedef QPair<int, QString> LogBookmark;
 
+
+class UIVMLogTab : public QIWithRetranslateUI<QWidget>
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIVMLogTab(QWidget *pParent, const QUuid &uMachineId);
+    const QUuid &machineId() const;
+
+private:
+
+    QUuid m_uMachineId;
+};
+
 /** UIVMLogPage defines data and functionalities of the each tab page of a UIVMLogViewerWidget.
  *  It stores the original log file content , a list of bookmarks, etc */
-class UIVMLogPage  : public QIWithRetranslateUI<QWidget>
+class UIVMLogPage  : public UIVMLogTab
 {
     Q_OBJECT;
 
@@ -53,7 +69,7 @@ signals:
 
 public:
 
-    UIVMLogPage(QWidget *pParent = 0);
+    UIVMLogPage(QWidget *pParent, const QUuid &uMachineId);
     ~UIVMLogPage();
 
     /** Returns the width of the current log page. return 0 if there is no current log page: */
@@ -94,9 +110,6 @@ public:
 
     QFont currentFont() const;
     void setCurrentFont(QFont font);
-
-    const QUuid &machineId() const;
-    void setMachineId(const QUuid &machineId);
 
     void setLogFileId(int iLogFileId);
     int logFileId() const;
@@ -141,8 +154,6 @@ private:
         if m_bFiltered is false than (m_strLog == m_pTextEdit->text()). */
         bool           m_bFiltered;
     /** @} */
-    /** Id of the machine the log shown in this page belongs to. */
-    QUuid m_machineId;
     /** The id we pass to CMachine::ReadLog. Used while refreshing and saving page content. */
     int m_iLogFileId;
 };

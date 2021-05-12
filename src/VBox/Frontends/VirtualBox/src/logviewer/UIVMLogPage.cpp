@@ -30,9 +30,26 @@
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerTextEdit.h"
 
+/*********************************************************************************************************************************
+*   UIVMLogTab implementation.                                                                                        *
+*********************************************************************************************************************************/
 
-UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */)
+UIVMLogTab::UIVMLogTab(QWidget *pParent, const QUuid &uMachineId)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_uMachineId(uMachineId)
+{
+}
+const QUuid &UIVMLogTab::machineId() const
+{
+    return m_uMachineId;
+}
+
+/*********************************************************************************************************************************
+*   UIVMLogPage implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UIVMLogPage::UIVMLogPage(QWidget *pParent, const QUuid &uMachineId)
+    : UIVMLogTab(pParent, uMachineId)
     , m_pMainLayout(0)
     , m_pTextEdit(0)
     , m_iSelectedBookmarkIndex(-1)
@@ -307,16 +324,6 @@ void UIVMLogPage::setCurrentFont(QFont font)
 {
     if (m_pTextEdit)
         m_pTextEdit->setCurrentFont(font);
-}
-
-const QUuid &UIVMLogPage::machineId() const
-{
-    return m_machineId;
-}
-
-void UIVMLogPage::setMachineId(const QUuid &machineId)
-{
-    m_machineId = machineId;
 }
 
 void UIVMLogPage::setLogFileId(int iLogFileId)
