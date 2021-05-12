@@ -1371,8 +1371,9 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
          */
         else if (pState->enmSignType == VERIFYEXESTATE::kSignType_OSX)
         {
-            uint32_t cDevIdApp  = 0;
-            uint32_t cDevIdKext = 0;
+            uint32_t cDevIdApp    = 0;
+            uint32_t cDevIdKext   = 0;
+            uint32_t cDevIdMacDev = 0;
             for (uint32_t i = 0; i < pCert->TbsCertificate.T3.Extensions.cItems; i++)
             {
                 PCRTCRX509EXTENSION pExt = pCert->TbsCertificate.T3.Extensions.papItems[i];
@@ -1390,13 +1391,30 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
                         rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
                                            "Dev ID kext certificate extension is not flagged critical");
                 }
+                else if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_MAC_SW_DEV_OID) == 0)
+                {
+                    cDevIdMacDev++;
+                    if (!pExt->Critical.fValue)
+                        rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                           "Dev ID Mac SW dev certificate extension is not flagged critical");
+                }
             }
             if (cDevIdApp == 0)
-                rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
-                                   "Certificate is missing the 'Dev ID Application' extension");
+            {
+                if (cDevIdMacDev == 0)
+                    rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                       "Certificate is missing the 'Dev ID Application' extension");
+                else
+                    RTMsgWarning("Mac SW dev certificate used to sign code.");
+            }
             if (cDevIdKext == 0 && pState->fKernel)
-                rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
-                                   "Certificate is missing the 'Dev ID kext' extension");
+            {
+                if (cDevIdMacDev == 0)
+                    rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                       "Certificate is missing the 'Dev ID kext' extension");
+                else
+                    RTMsgWarning("Mac SW dev certificate used to sign kernel code.");
+            }
         }
     }
 

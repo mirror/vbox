@@ -1319,6 +1319,7 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509C
     {
         uint32_t cDevIdApp  = 0;
         uint32_t cDevIdKext = 0;
+        uint32_t cDevIdMacDev = 0;
         for (uint32_t i = 0; i < pCert->TbsCertificate.T3.Extensions.cItems; i++)
         {
             PCRTCRX509EXTENSION pExt = pCert->TbsCertificate.T3.Extensions.papItems[i];
@@ -1336,7 +1337,24 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509C
                     rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
                                        "Dev ID kext certificate extension is not flagged critical");
             }
+            else if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_MAC_SW_DEV_OID) == 0)
+            {
+                cDevIdMacDev++;
+                if (!pExt->Critical.fValue)
+                    rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                       "Dev ID MAC SW dev certificate extension is not flagged critical");
+            }
         }
+# ifdef VBOX_WITH_DARWIN_R0_TEST_SIGN
+        /*
+         * Mac application software development certs do not have the usually required extensions.
+         */
+        if (cDevIdMacDev)
+        {
+            cDevIdApp++;
+            cDevIdKext++;
+        }
+# endif
         if (cDevIdApp == 0)
             rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
                                "Certificate is missing the 'Dev ID Application' extension");

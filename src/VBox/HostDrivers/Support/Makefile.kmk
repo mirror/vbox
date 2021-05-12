@@ -634,6 +634,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  endif
  if defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE)
   VBoxDrv_DEFS.darwin    += VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
+  ifeq ($(VBOX_SIGNING_MODE),test)
+   VBoxDrv_DEFS.darwin   += VBOX_WITH_DARWIN_R0_TEST_SIGN
+  endif
  endif
  ifdef VBOX_WITH_NETFLT
   VBoxDrv_DEFS.solaris   += VBOX_WITH_NETFLT
