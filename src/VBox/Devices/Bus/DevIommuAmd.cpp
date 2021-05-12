@@ -5350,12 +5350,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    bool fVerbose;
-    if (   pszArgs
-        && !strncmp(pszArgs, RT_STR_TUPLE("verbose")))
-        fVerbose = true;
-    else
-        fVerbose = false;
+    bool const fVerbose = RTStrCmp(pszArgs, "verbose") == 0;
 
     pHlp->pfnPrintf(pHlp, "AMD-IOMMU:\n");
     /* Device Table Base Addresses (all segments). */
