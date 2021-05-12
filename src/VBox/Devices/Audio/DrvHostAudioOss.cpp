@@ -501,7 +501,7 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
          */
         if (pStreamOSS->fDraining)
         {
-            LogFuncFlow(("Trying to cancel draining...\n"));
+            LogFlowFunc(("Trying to cancel draining...\n"));
             if (pStreamOSS->hThreadDrain != NIL_RTTHREAD)
             {
                 RTThreadPoke(pStreamOSS->hThreadDrain);
@@ -509,11 +509,11 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
                 if (RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE)
                     pStreamOSS->fDraining = false;
                 else
-                    LogFuncFlow(("Failed to cancel draining (%Rrc)\n", rc));
+                    LogFunc(("Failed to cancel draining (%Rrc)\n", rc));
             }
             else
             {
-                LogFuncFlow(("Thread handle is NIL, so we can't be draining\n"));
+                LogFlowFunc(("Thread handle is NIL, so we can't be draining\n"));
                 pStreamOSS->fDraining = false;
             }
         }
