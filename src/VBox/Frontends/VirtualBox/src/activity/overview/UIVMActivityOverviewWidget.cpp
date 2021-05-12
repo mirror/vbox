@@ -344,8 +344,8 @@ private:
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
-    QVector<QString> m_nameList;
-    QVector<CUnknown> m_objectList;
+       QVector<QString> m_nameList;
+       QVector<CUnknown> m_objectList;
     /** @} */
     CPerformanceCollector m_performanceCollector;
     QMap<int, bool> m_columnVisible;
