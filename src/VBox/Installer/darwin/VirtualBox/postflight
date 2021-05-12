@@ -98,5 +98,10 @@ for bin in ${SET_UID_BINARIES}; do
     chmod u+s "/Applications/VirtualBox.app/Contents/${bin}"
 done
 
+# Install provisioning profile if present, needed by VBoxHeadless.
+if [ -f /Applications/VirtualBox.app/Contents/embedded.provisionprofile ]; then
+    profiles -i -F /Applications/VirtualBox.app/Contents/embedded.provisionprofile
+fi
+
 exit 0;
 
