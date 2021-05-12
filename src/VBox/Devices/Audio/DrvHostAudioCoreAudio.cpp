@@ -3,13 +3,18 @@
  * Host audio driver - Mac OS X CoreAudio.
  *
  * For relevant Apple documentation, here are some starters:
+ *     - Core Audio Essentials
+ *       https://developer.apple.com/library/archive/documentation/MusicAudio/Conceptual/CoreAudioOverview/CoreAudioEssentials/CoreAudioEssentials.html
  *     - TN2097: Playing a sound file using the Default Output Audio Unit
  *       https://developer.apple.com/library/archive/technotes/tn2097/
  *     - TN2091: Device input using the HAL Output Audio Unit
  *       https://developer.apple.com/library/archive/technotes/tn2091/
- *     - http://developer.apple.com/mac/library/qa/qa2007/qa1533.html
- *     - http://developer.apple.com/mac/library/qa/qa2001/qa1317.html
- *     - http://developer.apple.com/mac/library/documentation/AudioUnit/Reference/AUComponentServicesReference/Reference/reference.html
+ *     - Audio Component Services
+ *       https://developer.apple.com/documentation/audiounit/audio_component_services?language=objc
+ *     - QA1533: How to handle kAudioUnitProperty_MaximumFramesPerSlice
+ *       https://developer.apple.com/library/archive/qa/qa1533/
+ *     - QA1317: Signaling the end of data when using AudioConverterFillComplexBuffer
+ *       https://developer.apple.com/library/archive/qa/qa1317/
  */
 
 /*
@@ -151,7 +156,7 @@ typedef struct COREAUDIOSTREAM
 
     /** The stream's acquired configuration. */
     PDMAUDIOSTREAMCFG           Cfg;
-    /** Stream-specific data, depending on the stream type. */
+    /** Direction specific data. */
     union
     {
         struct
