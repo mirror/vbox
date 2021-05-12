@@ -2547,7 +2547,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   endif
   export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
  else # effectively VBOX_WITH_EVEN_NEWER_XCODE
-  override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(TOOL_$(VBOX_GCC_TOOL)_CC)"
+  override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(filter-out -f%,$(TOOL_$(VBOX_GCC_TOOL)_CC))"
  endif
 
  ifdef VBOX_WITH_EVEN_NEWER_XCODE
