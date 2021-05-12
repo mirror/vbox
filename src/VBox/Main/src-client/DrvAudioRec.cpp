@@ -558,6 +558,7 @@ static int avRecControlStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         case PDMAUDIOSTREAMCMD_PAUSE:
+        case PDMAUDIOSTREAMCMD_DRAIN:
             rc = VINF_SUCCESS;
             break;
 
@@ -628,8 +629,8 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     RT_NOREF(pInterface);
     PAVRECSTREAM pStreamAV = (PAVRECSTREAM)pStream;
     AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
@@ -652,7 +653,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     /*
      * Write as much as we can into our internal ring buffer.
      */
-    while (   cbToWrite
+    while (   cbToWrite > 0
            && RTCircBufFree(pCircBuf))
     {
         void  *pvCircBuf = NULL;

@@ -904,20 +904,25 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
     PAUDMIXSINK const pSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
     if (pSink)
     {
-        if (fEnable && pStreamR3->State.pAioRegSink != pSink)
+        if (fEnable)
         {
-            if (pStreamR3->State.pAioRegSink)
+            if (pStreamR3->State.pAioRegSink != pSink)
             {
-                rc = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
-                AssertRC(rc);
+                if (pStreamR3->State.pAioRegSink)
+                {
+                    rc = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
+                    AssertRC(rc);
+                }
+                rc = AudioMixerSinkAddUpdateJob(pSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3,
+                                                pStreamShared->State.Cfg.Device.cMsSchedulingHint);
+                AssertLogRelRC(rc);
+                pStreamR3->State.pAioRegSink = RT_SUCCESS(rc) ? pSink : NULL;
             }
-            rc = AudioMixerSinkAddUpdateJob(pSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3,
-                                            pStreamShared->State.Cfg.Device.cMsSchedulingHint);
-            AssertLogRelRC(rc);
-            pStreamR3->State.pAioRegSink = RT_SUCCESS(rc) ? pSink : NULL;
+            rc = AudioMixerSinkStart(pSink);
         }
-        if (RT_SUCCESS(rc))
-            rc = AudioMixerSinkEnable(pSink, fEnable);
+        else
+            rc = AudioMixerSinkDrainAndStop(pSink,
+                                            pStreamR3->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf) : 0);
     }
     if (   RT_SUCCESS(rc)
         && fEnable

@@ -854,27 +854,35 @@ typedef enum PDMAUDIOSTREAMCMD
     PDMAUDIOSTREAMCMD_INVALID = 0,
     /** Enables the stream. */
     PDMAUDIOSTREAMCMD_ENABLE,
-    /** Disables the stream.
-     *  For output streams this stops the stream after playing the remaining (buffered) audio data.
-     *  For input streams this will deliver the remaining (captured) audio data and not accepting
-     *  any new audio input data afterwards. */
-    PDMAUDIOSTREAMCMD_DISABLE,
     /** Pauses the stream.
-     * This is currently only issued when the VM is suspended (paused). */
+     * This is currently only issued when the VM is suspended (paused).
+     * @remarks This is issued by DrvAudio, never by the mixer or devices. */
     PDMAUDIOSTREAMCMD_PAUSE,
     /** Resumes the stream.
-     * This is currently only issued when the VM is resumed. */
+     * This is currently only issued when the VM is resumed.
+     * @remarks This is issued by DrvAudio, never by the mixer or devices. */
     PDMAUDIOSTREAMCMD_RESUME,
-    /** Drain the stream, that is, play what's in the buffer and then stop.
+    /** Drain the stream, that is, play what's in the buffers and then stop.
      *
-     * A separate DISABLE command will be issued to disable the stream.
+     * There will be no more samples written after this command is issued.
+     * PDMIAUDIOCONNECTOR::pfnStreamIterate will drive progress for DrvAudio and
+     * calls to PDMIHOSTAUDIO::pfnStreamPlay with a zero sized buffer will provide
+     * the backend with a way to drive it forwards.  These calls will come at a
+     * frequency set by the device and be on an asynchronous I/O thread.
      *
-     * @note This should not wait for the stream to finish draining, just change the
-     *       state.  (EMT cannot wait hundreds of milliseconds of
-     *       buffer to finish draining.)
-     * @note Does not apply to input streams. Backends should refuse such requests.
-     * @note No supported by all backends. */
+     * A DISABLE command maybe submitted if the device/mixer wants to re-enable the
+     * stream while it's still draining or if it gets impatient and thinks the
+     * draining has been going on too long, in which case the stream should stop
+     * immediately.
+     *
+     * @note    This should not wait for the stream to finish draining, just change
+     *          the state.  (The caller could be an EMT and it must not block for
+     *          hundreds of milliseconds of buffer to finish draining.)
+     *
+     * @note    Does not apply to input streams. Backends should refuse such requests. */
     PDMAUDIOSTREAMCMD_DRAIN,
+    /** Stops the stream immediately w/o any draining. */
+    PDMAUDIOSTREAMCMD_DISABLE,
     /** End of valid values. */
     PDMAUDIOSTREAMCMD_END,
     /** Hack to blow the type up to 32-bit. */
@@ -898,7 +906,9 @@ typedef struct PDMAUDIOVOLUME
     uint8_t uRight;
 } PDMAUDIOVOLUME;
 /** Pointer to audio volume settings. */
-typedef PDMAUDIOVOLUME  *PPDMAUDIOVOLUME;
+typedef PDMAUDIOVOLUME *PPDMAUDIOVOLUME;
+/** Pointer to const audio volume settings. */
+typedef PDMAUDIOVOLUME const *PCPDMAUDIOVOLUME;
 
 /** Defines the minimum volume allowed. */
 #define PDMAUDIO_VOLUME_MIN     (0)
@@ -1223,7 +1233,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "5bd85091-e99c-4092-acea-f0c5e9872408"
+#define PDMIAUDIOCONNECTOR_IID                  "2c2bdfcd-7a2b-4739-9663-07ee9e8fe079"
 
 
 /**
@@ -1264,6 +1274,8 @@ typedef enum PDMHOSTAUDIOSTREAMSTATE
     PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING,
     /** Backend is working okay. */
     PDMHOSTAUDIOSTREAMSTATE_OKAY,
+    /** Backend is working okay, but currently draining the stream. */
+    PDMHOSTAUDIOSTREAMSTATE_DRAINING,
     /** Backend is working but doesn't want any commands or data reads/writes. */
     PDMHOSTAUDIOSTREAMSTATE_INACTIVE,
     /** End of valid values. */
@@ -1444,22 +1456,13 @@ typedef struct PDMIHOSTAUDIO
     /**
      * Returns the number of buffered bytes that hasn't been played yet (optional).
      *
-     * This function is used by DrvAudio to detect when it is appropriate to fully
-     * disable an output stream w/o cutting off the playback too early.  The backend
-     * should have already received the PDMAUDIOSTREAMCMD_DRAIN command prior to
-     * this.  It doesn't really matter whether the returned value is 100% correct,
-     * as long as it isn't reported as zero too early (and that zero is reported).
-     *
      * Is not valid on an input stream, implementions shall assert and return zero.
      *
      * @returns Number of pending bytes.
      * @param   pInterface          Pointer to this interface.
      * @param   pStream             Pointer to audio stream.
      *
-     * @remarks This interface can be omitted if the backend properly implements the
-     *          drain operation, i.e. automatically disables the stream when done
-     *          draining and ignores any requests to disable the stream while doing
-     *          so (there will probably be one right after initiating draining).
+     * @todo This is no longer not used by DrvAudio and can probably be removed.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetPending, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
@@ -1476,11 +1479,18 @@ typedef struct PDMIHOSTAUDIO
     /**
      * Plays (writes to) an audio (output) stream.
      *
+     * This is always called with data in the buffer, except after
+     * PDMAUDIOSTREAMCMD_DRAIN is issued when it's called every so often to assist
+     * the backend with moving the draining operation forward (kind of like
+     * PDMIAUDIOCONNECTOR::pfnStreamIterate).
+     *
      * @returns VBox status code.
      * @param   pInterface  Pointer to the interface structure containing the called function pointer.
      * @param   pStream     Pointer to audio stream.
-     * @param   pvBuf       Pointer to audio data buffer to play.
-     * @param   cbBuf       The number of bytes of audio data to play.
+     * @param   pvBuf       Pointer to audio data buffer to play.  This will be NULL
+     *                      when called to assist draining the stream.
+     * @param   cbBuf       The number of bytes of audio data to play.  This will be
+     *                      zero when called to assist draining the stream.
      * @param   pcbWritten  Where to return the actual number of bytes played.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -1501,7 +1511,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "53949a0a-ca2d-4d25-869f-2a8357991293"
+#define PDMIHOSTAUDIO_IID                           "a5650399-be78-4e82-8115-e34a4450378c"
 
 
 /** Pointer to a audio notify from host interface. */
@@ -1586,7 +1596,7 @@ typedef struct PDMIHOSTAUDIOPORT
 } PDMIHOSTAUDIOPORT;
 
 /** PDMIHOSTAUDIOPORT interface ID. */
-#define PDMIHOSTAUDIOPORT_IID                    "1aa566e2-b3df-4b8a-9f80-99bdcb5e9964"
+#define PDMIHOSTAUDIOPORT_IID                    "c752404b-1ccb-4fc0-aa60-eb76ae130e0f"
 
 /** @} */
 

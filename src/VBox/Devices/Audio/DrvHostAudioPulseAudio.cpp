@@ -1278,6 +1278,8 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamDisable(PPDMIHOSTAUDIO pInterfac
             pa_operation_state_t const enmOpState = pa_operation_get_state(pStreamPA->pDrainOp);
             if (enmOpState == PA_OPERATION_RUNNING)
             {
+/** @todo consider corking it immediately instead, as that's what the caller
+ *        wants now... */
                 LogFlowFunc(("Drain (%p) already running on '%s', skipping.\n", pStreamPA->pDrainOp, pStreamPA->Cfg.szName));
                 pa_threaded_mainloop_unlock(pThis->pMainLoop);
                 return VINF_SUCCESS;
@@ -1557,21 +1559,41 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioPaHA_StreamGetState(PPD
 {
     PDRVHOSTPULSEAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
     AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamPA, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
     /* Check PulseAudio's general status. */
+    PDMHOSTAUDIOSTREAMSTATE enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
     if (pThis->pContext)
     {
-        pa_context_state_t const enmState = pa_context_get_state(pThis->pContext);
-        if (PA_CONTEXT_IS_GOOD(enmState))
+        pa_context_state_t const enmCtxState = pa_context_get_state(pThis->pContext);
+        if (PA_CONTEXT_IS_GOOD(enmCtxState))
         {
-            /** @todo should we check the actual stream state? */
-            return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+            pa_stream_state_t const enmStreamState = pa_stream_get_state(pStreamPA->pStream);
+            if (PA_STREAM_IS_GOOD(enmState))
+            {
+                if (enmState != PA_STREAM_CREATING)
+                {
+                    if (   pStreamPA->Cfg.enmDir != PDMAUDIODIR_OUT
+                        || pStreamPA->pDrainOp == NULL
+                        || pa_operation_get_state(pStreamPA->pDrainOp) != PA_OPERATION_RUNNING)
+                        enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+                    else
+                        enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+                }
+                else
+                    enmBackendStreamState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
+            }
+            else
+                LogFunc(("non-good PA stream state: %d\n", enmStreamState));
         }
-        LogFunc(("non-good context state: %d\n", enmState));
+        else
+            LogFunc(("non-good PA context state: %d\n", enmCtxState));
     }
     else
         LogFunc(("No context!\n"));
-    return PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
+    LogFlowFunc(("returns %s for stream '%s'\n", PDMHostAudioStreamStateGetName(enmBackendStreamState), pStreamPA->Cfg.szName));
+    return enmBackendStreamState;
 }
 
 
@@ -1584,9 +1606,15 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
     PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
     PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamPA, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    else
+    {
+        /* Fend off draining calls. */
+        *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 

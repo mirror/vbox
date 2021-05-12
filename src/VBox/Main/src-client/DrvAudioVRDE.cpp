@@ -615,8 +615,8 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
     AssertPtr(pDrv);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     if (!pDrv->pConsoleVRDPServer)
@@ -638,7 +638,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
 
     /** @todo r=bird: there was some incoherent mumbling about "using the
      *        internal counter to track if we (still) can write to the VRDP
-     *        server or if need to wait anothe round (time slot)".  However it
+     *        server or if need to wait another round (time slot)".  However it
      *        wasn't accessing any internal counter nor doing anything else
      *        sensible, so I've removed it. */
 
@@ -658,8 +658,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
     }
 
     Log3Func(("cFramesWritten=%RU32\n", cFramesWritten));
-    if (pcbWritten)
-        *pcbWritten = cFramesWritten * sizeof(PDMAUDIOFRAME);
+    *pcbWritten = cFramesWritten * sizeof(PDMAUDIOFRAME);
     return VINF_SUCCESS;
 }
 

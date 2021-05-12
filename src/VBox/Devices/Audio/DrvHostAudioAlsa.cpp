@@ -55,6 +55,7 @@
 #include "DrvHostAudioAlsaStubsMangling.h"
 #include <alsa/asoundlib.h>
 #include <alsa/control.h> /* For device enumeration. */
+#include <alsa/version.h>
 #include "DrvHostAudioAlsaStubs.h"
 
 #ifdef VBOX_AUDIO_VKAT
@@ -1124,9 +1125,21 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAlsaAudioHA_StreamGetState(P
                                                                                PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamALSA, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    PDMHOSTAUDIOSTREAMSTATE enmStreamState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    snd_pcm_state_t         enmAlsaState   = snd_pcm_state(pStreamALSA->hPCM);
+    if (enmAlsaState == SND_PCM_STATE_DRAINING)
+        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+#if (((SND_LIB_MAJOR) << 16) | ((SND_LIB_MAJOR) << 8) | (SND_LIB_SUBMINOR)) >= 0x10002 /* was added in 1.0.2 */
+    else if (enmAlsaState == SND_PCM_STATE_DISCONNECTED)
+        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
+#endif
+
+    Log5Func(("Stream '%s': ALSA state=%s -> %s\n",
+              pStreamALSA->Cfg.szName, snd_pcm_state_name(enmAlsaState), PDMHostAudioStreamStateGetName(enmStreamState) ));
+    return enmStreamState;
 }
 
 
@@ -1273,11 +1286,17 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
     Log4Func(("@%#RX64: pvBuf=%p cbBuf=%#x (%u) state=%s - %s\n", pStreamALSA->offInternal, pvBuf, cbBuf, cbBuf,
               snd_pcm_state_name(snd_pcm_state(pStreamALSA->hPCM)), pStreamALSA->Cfg.szName));
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    else
+    {
+        /* Fend off draining calls. */
+        *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
 
     /*
      * Determine how much we can write (caller actually did this

@@ -251,9 +251,6 @@ typedef struct DRVHOSTAUDIOWAS
      * All access must be done inside the pNotifyClient critsect. */
     IMMDevice                      *pIDeviceOutput;
 
-    /** A drain stop timer that makes sure a draining stream will be properly
-     * stopped (mainly for clean state and to reduce resource usage). */
-    TMTIMERHANDLE                   hDrainTimer;
     /** List of streams (DRVHOSTAUDIOWASSTREAM).
      * Requires CritSect ownership.  */
     RTLISTANCHOR                    StreamHead;
@@ -2139,24 +2136,17 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
     Assert(!pStreamWas->fDraining || pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
 
     int rc = VINF_SUCCESS;
-    if (!pStreamWas->fDraining)
+    if (pStreamWas->fStarted)
     {
-        if (pStreamWas->fStarted)
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
+        LogFlowFunc(("Stop(%s) returns %Rhrc\n", pStreamWas->Cfg.szName, hrc));
+        if (FAILED(hrc))
         {
-            HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
-            LogFlowFunc(("Stop(%s) returns %Rhrc\n", pStreamWas->Cfg.szName, hrc));
-            if (FAILED(hrc))
-            {
-                LogRelMax(64, ("WasAPI: Stopping '%s' failed (disable): %Rhrc\n", pStreamWas->Cfg.szName, hrc));
-                rc = VERR_GENERAL_FAILURE;
-            }
-            pStreamWas->fStarted = false;
+            LogRelMax(64, ("WasAPI: Stopping '%s' failed (disable): %Rhrc\n", pStreamWas->Cfg.szName, hrc));
+            rc = VERR_GENERAL_FAILURE;
         }
-    }
-    else
-    {
-        LogFunc(("Stream '%s' is still draining...\n", pStreamWas->Cfg.szName));
-        Assert(pStreamWas->fStarted);
+        pStreamWas->fStarted  = false;
+        pStreamWas->fDraining = false;
     }
 
     RTCritSectLeave(&pStreamWas->CritSect);
@@ -2240,80 +2230,11 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamResume(PPDMIHOSTAUDIO pInterfac
 
 
 /**
- * This is used by the timer function as well as when arming the timer.
- *
- * @param   pThis       The DSound host audio driver instance data.
- * @param   msNow       A current RTTimeMilliTS() value.
- */
-static void drvHostWasDrainTimerWorker(PDRVHOSTAUDIOWAS pThis, uint64_t msNow)
-{
-    /*
-     * Go thru the stream list and look at draining streams.
-     */
-    uint64_t        msNext = UINT64_MAX;
-    RTCritSectRwEnterShared(&pThis->CritSectStreamList);
-    PDRVHOSTAUDIOWASSTREAM   pCur;
-    RTListForEach(&pThis->StreamHead, pCur, DRVHOSTAUDIOWASSTREAM, ListEntry)
-    {
-        if (   pCur->fDraining
-            && pCur->Cfg.enmDir == PDMAUDIODIR_OUT)
-        {
-            Assert(pCur->fStarted);
-            uint64_t msCurDeadline = pCur->msDrainDeadline;
-            if (msCurDeadline > 0 && msCurDeadline < msNext)
-            {
-                /* Take the lock and recheck: */
-                RTCritSectEnter(&pCur->CritSect);
-                msCurDeadline = pCur->msDrainDeadline;
-                if (   pCur->fDraining
-                    && msCurDeadline > 0
-                    && msCurDeadline < msNext)
-                {
-                    if (msCurDeadline > msNow)
-                        msNext = pCur->msDrainDeadline;
-                    else
-                    {
-                        LogRel2(("WasAPI: Stopping draining of '%s' {%s} ...\n",
-                                 pCur->Cfg.szName, drvHostWasStreamStatusString(pCur)));
-                        HRESULT hrc = pCur->pDevCfg->pIAudioClient->Stop();
-                        if (FAILED(hrc))
-                            LogRelMax(64, ("WasAPI: Failed to stop draining stream '%s': %Rhrc\n", pCur->Cfg.szName, hrc));
-                        pCur->fDraining = false;
-                        pCur->fStarted  = false;
-                    }
-                }
-                RTCritSectLeave(&pCur->CritSect);
-            }
-        }
-    }
-
-    /*
-     * Re-arm the timer if necessary.
-     */
-    if (msNext != UINT64_MAX)
-        PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hDrainTimer, msNext - msNow);
-    RTCritSectRwLeaveShared(&pThis->CritSectStreamList);
-}
-
-
-/**
- * @callback_method_impl{FNTMTIMERDRV,
- * This is to ensure that draining streams stop properly.}
- */
-static DECLCALLBACK(void) drvHostWasDrainStopTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
-{
-    PDRVHOSTAUDIOWAS pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTAUDIOWAS);
-    RT_NOREF(hTimer, pvUser);
-    drvHostWasDrainTimerWorker(pThis, RTTimeMilliTS());
-}
-
-
-/**
  * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
  */
 static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    PDRVHOSTAUDIOWAS        pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
+    RT_NOREF(pInterface);
     PDRVHOSTAUDIOWASSTREAM  pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
     AssertReturn(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
     LogFlowFunc(("cMsLastTransfer=%RI64 ms, stream '%s' {%s} \n",
@@ -2322,8 +2243,9 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface
 
     /*
      * If the stram was started, calculate when the buffered data has finished
-     * playing and switch to drain mode.  Use the drain timer callback worker
-     * to re-arm the timer or to stop the playback.
+     * playing and switch to drain mode.  DrvAudio will keep on calling
+     * pfnStreamPlay with an empty buffer while we're draining, so we'll use
+     * that for checking the deadline and finally stopping the stream.
      */
     RTCritSectEnter(&pStreamWas->CritSect);
     int rc = VINF_SUCCESS;
@@ -2361,12 +2283,6 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface
     else
         AssertStmt(!pStreamWas->fDraining, pStreamWas->fDraining = false);
     RTCritSectLeave(&pStreamWas->CritSect);
-
-    /*
-     * Always do drain timer processing to re-arm the timer or actually stop
-     * this stream (and others).  (Must be done _after_ unlocking the stream.)
-     */
-    drvHostWasDrainTimerWorker(pThis, RTTimeMilliTS());
 
     LogFlowFunc(("returns %Rrc {%s}\n", rc, drvHostWasStreamStatusString(pStreamWas)));
     return rc;
@@ -2536,7 +2452,15 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioWasHA_StreamGetState(PP
     if (pStreamWas->pDevCfg /*paranoia*/)
     {
         if (RT_SUCCESS(pStreamWas->pDevCfg->rcSetup))
-            enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+        {
+            if (!pStreamWas->fDraining)
+                enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+            else
+            {
+                Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
+                enmState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+            }
+        }
         else if (   pStreamWas->pDevCfg->rcSetup == VERR_AUDIO_STREAM_INIT_IN_PROGRESS
                  || pStreamWas->fSwitchingDevice )
             enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
@@ -2562,9 +2486,9 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     PDRVHOSTAUDIOWAS        pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
     PDRVHOSTAUDIOWASSTREAM  pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
     AssertPtrReturn(pStreamWas, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     Assert(PDMAudioPropsIsSizeAligned(&pStreamWas->Cfg.Props, cbBuf));
 
     RTCritSectEnter(&pStreamWas->CritSect);
@@ -2614,7 +2538,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
         uint32_t const cbToWrite      = PDMAudioPropsFloorBytesToFrame(&pStreamWas->Cfg.Props, RT_MIN(cbWritable, cbBuf));
         uint32_t const cFramesToWrite = PDMAudioPropsBytesToFrames(&pStreamWas->Cfg.Props, cbToWrite);
         Assert(PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props, cFramesToWrite) == cbToWrite);
-        Log3Func(("@%RX64: cFramesPending=%#x -> cbWritable=%#x cbToWrite=%#x cFramesToWrite=%#x {%s}\n",
+        Log3Func(("@%#RX64: cFramesPending=%#x -> cbWritable=%#x cbToWrite=%#x cFramesToWrite=%#x {%s}\n",
                   pStreamWas->offInternal, cFramesPending, cbWritable, cbToWrite, cFramesToWrite,
                   drvHostWasStreamStatusString(pStreamWas) ));
 
@@ -2672,10 +2596,26 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     }
 
     /*
+     * Do draining deadline processing.
+     */
+    uint64_t const msNow = RTTimeMilliTS();
+    if (   !pStreamWas->fDraining
+        || msNow < pStreamWas->msDrainDeadline)
+    { /* likely */ }
+    else
+    {
+        LogRel2(("WasAPI: Stopping draining of '%s' {%s} ...\n", pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->Stop();
+        if (FAILED(hrc))
+            LogRelMax(64, ("WasAPI: Failed to stop draining stream '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
+        pStreamWas->fDraining = false;
+        pStreamWas->fStarted  = false;
+    }
+
+    /*
      * Done.
      */
     uint64_t const msPrev = pStreamWas->msLastTransfer;
-    uint64_t const msNow  = RTTimeMilliTS();
     if (cbWritten)
         pStreamWas->msLastTransfer = msNow;
 
@@ -2995,7 +2935,6 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      * Init basic data members and interfaces.
      */
     pThis->pDrvIns                          = pDrvIns;
-    pThis->hDrainTimer                      = NIL_TMTIMERHANDLE;
     pThis->hEvtCachePurge                   = NIL_RTSEMEVENTMULTI;
 #if 0
     pThis->hWorkerThread                    = NIL_RTTHREAD;
@@ -3138,13 +3077,6 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->pIDeviceOutput = pIDeviceOutput;
 
     pThis->pNotifyClient->lockLeave();
-
-    /*
-     * We need a timer for draining streams.
-     */
-    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvHostWasDrainStopTimer, NULL /*pvUser*/, 0 /*fFlags*/,
-                                "WasAPI drain", &pThis->hDrainTimer);
-    AssertRCReturn(rc, rc);
 
 #if 0
     /*

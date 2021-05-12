@@ -223,9 +223,6 @@ typedef struct DRVHOSTDSOUND
     LPDIRECTSOUND8              pDS;
     /** The Direct Sound capturing interface. */
     LPDIRECTSOUNDCAPTURE8       pDSC;
-    /** A drain stop timer that makes sure a draining stream will be
-     *  properly stopped (seem the non-loop mode is a bit buggy). */
-    TMTIMERHANDLE               hDrainTimer;
     /** List of streams (DSOUNDSTREAM).
      * Requires CritSect ownership.  */
     RTLISTANCHOR                HeadStreams;
@@ -1962,15 +1959,9 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamDisable(PPDMIHOSTAUDIO pInterface
         Assert(pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT);
         if (pStreamDS->Out.pDSB)
         {
-            /* Don't stop draining buffers. They'll stop by themselves. */
-            if (pStreamDS->Out.fDrain)
-                LogFunc(("Stream '%s' is draining\n", pStreamDS->Cfg.szName));
-            else
-            {
-                rc = drvHostDSoundStreamStopPlayback(pThis, pStreamDS, true /*fReset*/);
-                if (RT_SUCCESS(rc))
-                    LogRel3(("DSound: Stopped playback on '%s'.\n", pStreamDS->Cfg.szName));
-            }
+            rc = drvHostDSoundStreamStopPlayback(pThis, pStreamDS, true /*fReset*/);
+            if (RT_SUCCESS(rc))
+                LogRel3(("DSound: Stopped playback on '%s'.\n", pStreamDS->Cfg.szName));
         }
     }
 
@@ -2096,67 +2087,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamResume(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * This is used by the timer function as well as when arming the timer.
- *
- * @param   pThis       The DSound host audio driver instance data.
- * @param   msNow       A current RTTimeMilliTS() value.
- */
-static void drvHostDSoundDrainTimerWorker(PDRVHOSTDSOUND pThis, uint64_t msNow)
-{
-    /*
-     * Go thru the stream list and look at draining streams.
-     */
-    uint64_t        msNext = UINT64_MAX;
-    RTCritSectEnter(&pThis->CritSect);
-    PDSOUNDSTREAM   pCur;
-    RTListForEach(&pThis->HeadStreams, pCur, DSOUNDSTREAM, ListEntry)
-    {
-        if (   pCur->Cfg.enmDir == PDMAUDIODIR_OUT
-            && pCur->Out.fDrain)
-        {
-            uint64_t const msCurDeadline = pCur->Out.msDrainDeadline;
-            if (msCurDeadline > 0 && msCurDeadline < msNext)
-            {
-                if (msCurDeadline > msNow)
-                    msNext = pCur->Out.msDrainDeadline;
-                else
-                {
-                    LogRel2(("DSound: Stopping draining of '%s' {%s} ...\n",
-                             pCur->Cfg.szName, drvHostDSoundStreamStatusString(pCur)));
-                    if (pCur->Out.pDSB)
-                    {
-                        HRESULT hrc = IDirectSoundBuffer8_Stop(pCur->Out.pDSB);
-                        if (FAILED(hrc))
-                            LogRelMax(64, ("DSound: Failed to stop draining stream '%s': %Rhrc\n", pCur->Cfg.szName, hrc));
-                    }
-                    pCur->Out.fDrain = false;
-                }
-            }
-        }
-    }
-
-    /*
-     * Re-arm the timer if necessary.
-     */
-    if (msNext != UINT64_MAX)
-        PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hDrainTimer, msNext - msNow);
-    RTCritSectLeave(&pThis->CritSect);
-}
-
-
-/**
- * @callback_method_impl{FNTMTIMERDRV,
- * This is a hack to ensure that draining streams stop playing.}
- */
-static DECLCALLBACK(void) drvHostDSoundDrainStopHackTimer(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
-{
-    PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
-    RT_NOREF(hTimer, pvUser);
-    drvHostDSoundDrainTimerWorker(pThis, RTTimeMilliTS());
-}
-
-
-/**
  * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
  */
 static DECLCALLBACK(int) drvHostDSoundHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -2184,7 +2114,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamDrain(PPDMIHOSTAUDIO pInterface, 
                 uint64_t const msNow = RTTimeMilliTS();
                 pStreamDS->Out.msDrainDeadline = PDMAudioPropsBytesToMilli(&pStreamDS->Cfg.Props,  pStreamDS->cbBufSize) + msNow;
                 pStreamDS->Out.fDrain          = true;
-                drvHostDSoundDrainTimerWorker(pThis, msNow);
             }
             else
                 LogRelMax(64, ("DSound: Failed to restart '%s' in drain mode: %Rhrc\n", pStreamDS->Cfg.szName, hrc));
@@ -2415,8 +2344,14 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostDSoundHA_StreamGetState(PPDM
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
     AssertPtrReturn(pStreamDS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    LogFlowFunc(("returns OKAY for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
-    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    if (   pStreamDS->Cfg.enmDir != PDMAUDIODIR_OUT
+        || !pStreamDS->Out.fDrain)
+    {
+        LogFlowFunc(("returns OKAY for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    }
+    LogFlowFunc(("returns DRAINING for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 }
 
 
@@ -2429,8 +2364,8 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
     PDRVHOSTDSOUND  pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
     PDSOUNDSTREAM   pStreamDS = (PDSOUNDSTREAM)pStream;
     AssertPtrReturn(pStreamDS, 0);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    if (cbBuf)
+        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     if (pStreamDS->fEnabled)
@@ -2528,6 +2463,20 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
                      cbWritten, msPrev, pStreamDS->msLastTransfer, msPrev ? pStreamDS->msLastTransfer - msPrev : 0,
                      drvHostDSoundStreamStatusString(pStreamDS) ));
     }
+    else if (   pStreamDS->Out.fDrain
+             && RTTimeMilliTS() >= pStreamDS->Out.msDrainDeadline)
+    {
+        LogRel2(("DSound: Stopping draining of '%s' {%s} ...\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+        if (pStreamDS->Out.pDSB)
+        {
+            HRESULT hrc = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
+            if (FAILED(hrc))
+                LogRelMax(64, ("DSound: Failed to stop draining stream '%s': %Rhrc\n", pStreamDS->Cfg.szName, hrc));
+        }
+        pStreamDS->Out.fDrain = false;
+        pStreamDS->fEnabled   = false;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -2755,7 +2704,6 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     RTListInit(&pThis->HeadStreams);
     pThis->pDrvIns                   = pDrvIns;
-    pThis->hDrainTimer               = NIL_TMTIMERHANDLE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
@@ -2841,14 +2789,6 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     else
         LogRel2(("DSound: Notification client is disabled (ver %#RX64)\n", RTSystemGetNtVersion()));
 #endif
-
-    /*
-     * Create a timer that helps making sure draining streams actually stop playing.
-     * (Seem dsound doesn't stop by itself in many cases.)
-     */
-    int rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvHostDSoundDrainStopHackTimer, NULL /*pvUser*/, 0 /*fFlags*/,
-                                    "DSound drain", &pThis->hDrainTimer);
-    AssertRCReturn(rc, rc);
 
     /*
      * Initialize configuration values and critical section.

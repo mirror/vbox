@@ -460,6 +460,7 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamEnable(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
     POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
 
+    /** @todo this might be a little optimisitic...   */
     pStreamOSS->fDraining = false;
 
     int rc;
@@ -493,13 +494,30 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
     int rc;
     if (pStreamOSS->Cfg.enmDir == PDMAUDIODIR_IN)
         rc = VINF_SUCCESS; /** @todo apparently nothing to do here? */
-    else if (pStreamOSS->fDraining)
-    {
-        LogFlow(("Ignoring stream disable because we're draining...\n"));
-        rc = VINF_SUCCESS; /** @todo apparently nothing to do here? */
-    }
     else
     {
+        /*
+         * If we're still draining, try kick the thread before we try disable the stream.
+         */
+        if (pStreamOSS->fDraining)
+        {
+            LogFuncFlow(("Trying to cancel draining...\n"));
+            if (pStreamOSS->hThreadDrain != NIL_RTTHREAD)
+            {
+                RTThreadPoke(pStreamOSS->hThreadDrain);
+                rc = RTThreadWait(pStreamOSS->hThreadDrain, 1 /*ms*/, NULL);
+                if (RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE)
+                    pStreamOSS->fDraining = false;
+                else
+                    LogFuncFlow(("Failed to cancel draining (%Rrc)\n", rc));
+            }
+            else
+            {
+                LogFuncFlow(("Thread handle is NIL, so we can't be draining\n"));
+                pStreamOSS->fDraining = false;
+            }
+        }
+
         /** @todo Official documentation says this isn't the right way to stop playback.
          *        It may work in some implementations but fail in all others...  Suggest
          *        using SNDCTL_DSP_RESET / SNDCTL_DSP_HALT. */
@@ -709,8 +727,11 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostOssAudioHA_StreamGetState(PP
                                                                               PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
-    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamOSS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    if (!pStreamOSS->fDraining)
+        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 }
 
 

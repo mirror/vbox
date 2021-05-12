@@ -1146,6 +1146,7 @@ DECLINLINE(const char *) PDMHostAudioStreamStateGetName(PDMHOSTAUDIOSTREAMSTATE 
         case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:  return "initializing";
         case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:   return "not-working";
         case PDMHOSTAUDIOSTREAMSTATE_OKAY:          return "okay";
+        case PDMHOSTAUDIOSTREAMSTATE_DRAINING:      return "draining";
         case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:      return "inactive";
         /* no default: */
         case PDMHOSTAUDIOSTREAMSTATE_END:
