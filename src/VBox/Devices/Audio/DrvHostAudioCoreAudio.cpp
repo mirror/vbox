@@ -110,10 +110,8 @@ typedef struct DRVHOSTCOREAUDIO
     /** Pointer to the currently used output device in the device enumeration.
      *  Can be NULL if none assigned. */
     PCOREAUDIODEVICEDATA    pDefaultDevOut;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /** Upwards notification interface. */
     PPDMIHOSTAUDIOPORT      pIHostAudioPort;
-#endif
     /** Indicates whether we've registered default input device change listener. */
     bool                     fRegisteredDefaultInputListener;
     /** Indicates whether we've registered default output device change listener. */
@@ -206,31 +204,6 @@ static void coreAudioPCMPropsToASBD(PCPDMAUDIOPCMPROPS pProps, AudioStreamBasicD
     pASBD->mBytesPerPacket   = PDMAudioPropsFrameSize(pProps) * pASBD->mFramesPerPacket;
 }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pASBD, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_PARAMETER);
-
-    AssertLogRelMsgReturn(pASBD->mChannelsPerFrame > 0, VERR_NOT_SUPPORTED);
-    AssertLogRelMsgReturn(pASBD->mChannelsPerFrame < 16, VERR_NOT_SUPPORTED);
-    AssertLogRelMsgReturn(   pASBD->mBitsPerChannel == 8
-                          || pASBD->mBitsPerChannel == 16
-                          || pASBD->mBitsPerChannel == 32,
-                          ("%u\n", pASBD->mBitsPerChannel), VERR_NOT_SUPPORTED);
-    AssertLogRelMsgReturn(!(pASBD->mFormatFlags & (kAudioFormatFlagIsFloat /** @todo more we don't like?*/)),
-                          ("%#x\n", pASBD->mFormatFlags), VERR_NOT_SUPPORTED);
-
-    PDMAudioPropsInitEx(&pCfg->Props,
-                        pASBD->mBitsPerChannel / 8,
-                        RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger),
-                        pASBD->mChannelsPerFrame,
-                        (uint32_t)pASBD->mSampleRate,
-                        RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsBigEndian),
-                        false /*fRaw*/);
-    return VINF_SUCCESS;
-}
-#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
 #if 0 /* unused */
 static int coreAudioCFStringToCString(const CFStringRef pCFString, char **ppszString)
@@ -307,13 +280,6 @@ typedef enum COREAUDIOSTATUS
     COREAUDIOSTATUS_INIT,
     /** The device is currently uninitializing. */
     COREAUDIOSTATUS_IN_UNINIT,
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /** The device has to be reinitialized.
-     * @note Only needed if VBOX_WITH_AUDIO_CALLBACKS is not defined, as otherwise
-     *       the Audio Connector will take care of this as soon as this backend
-     *       tells it to do so via the provided audio callback. */
-    COREAUDIOSTATUS_REINIT,
-#endif
     /** The usual 32-bit hack. */
     COREAUDIOSTATUS_32BIT_HACK = 0x7fffffff
 } COREAUDIOSTATUS, *PCOREAUDIOSTATUS;
@@ -424,9 +390,6 @@ typedef struct COREAUDIOSTREAM
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-static int coreAudioStreamReinit(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAStream, PCOREAUDIODEVICEDATA pDev);
-#endif
 static int coreAudioStreamUninit(PCOREAUDIOSTREAM pCAStream);
 
 static int coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAStream, PDMAUDIOSTREAMCMD enmStreamCmd);
@@ -625,106 +588,19 @@ static DECLCALLBACK(OSStatus) coreAudioDefaultDeviceChangedCb(AudioObjectID prop
         }
 
         LogFlowFunc(("pDev=%p\n", pDev));
-
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-        if (pDev)
-        {
-            /* This listener is called on every change of the hardware
-             * device. So check if the default device has really changed. */
-            UInt32 uSize = sizeof(AudioDeviceID);
-            UInt32 uResp = 0;
-
-            OSStatus err = AudioObjectGetPropertyData(kAudioObjectSystemObject, pProperty, 0, NULL, &uSize, &uResp);
-            if (err == noErr)
-            {
-                if (pDev->deviceID != uResp) /* Has the device ID changed? */
-                {
-                    rc2 = coreAudioDevicePropagateStatus(pDev, COREAUDIOSTATUS_REINIT);
-                    AssertRC(rc2);
-                }
-            }
-        }
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
     }
 
     /* Make sure to leave the critical section before notify higher drivers/devices. */
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /* Notify the driver/device above us about possible changes in devices. */
     if (pThis->pIHostAudioPort)
         pThis->pIHostAudioPort->pfnNotifyDevicesChanged(pThis->pIHostAudioPort);
-#endif
 
     return noErr;
 }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-
-/**
- * Re-initializes a Core Audio stream with a specific audio device and stream configuration.
- *
- * @return IPRT status code.
- * @param  pThis                Driver instance.
- * @param  pCAStream            Audio stream to re-initialize.
- * @param  pDev                 Audio device to use for re-initialization.
- * @param  pCfg                 Stream configuration to use for re-initialization.
- */
-static int coreAudioStreamReinitEx(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAStream,
-                                   PCOREAUDIODEVICEDATA pDev, PPDMAUDIOSTREAMCFG pCfg)
-{
-    LogFunc(("pCAStream=%p\n", pCAStream));
-
-    int rc = coreAudioStreamUninit(pCAStream);
-    if (RT_SUCCESS(rc))
-    {
-        rc = coreAudioStreamInit(pCAStream, pThis, pDev);
-        if (RT_SUCCESS(rc))
-        {
-            rc = coreAudioStreamInitQueue(pCAStream, pCfg /* pCfgReq */, NULL /* pCfgAcq */);
-            if (RT_SUCCESS(rc))
-                rc = coreAudioStreamControl(pCAStream->pDrv, pCAStream, PDMAUDIOSTREAMCMD_ENABLE);
-
-            if (RT_FAILURE(rc))
-            {
-                int rc2 = coreAudioStreamUninit(pCAStream);
-                AssertRC(rc2);
-            }
-        }
-    }
-
-    if (RT_FAILURE(rc))
-        LogRel(("CoreAudio: Unable to re-init stream: %Rrc\n", rc));
-
-    return rc;
-}
-
-/**
- * Re-initializes a Core Audio stream with a specific audio device.
- *
- * @return IPRT status code.
- * @param  pThis                Driver instance.
- * @param  pCAStream            Audio stream to re-initialize.
- * @param  pDev                 Audio device to use for re-initialization.
- */
-static int coreAudioStreamReinit(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAStream, PCOREAUDIODEVICEDATA pDev)
-{
-    int rc = coreAudioStreamUninit(pCAStream);
-    if (RT_SUCCESS(rc))
-    {
-        /* Use the acquired stream configuration from the former initialization to
-         * re-initialize the stream. */
-        PDMAUDIOSTREAMCFG CfgAcq;
-        rc = coreAudioASBDToStreamCfg(&pCAStream->Unit.streamFmt, &CfgAcq);
-        if (RT_SUCCESS(rc))
-            rc = coreAudioStreamReinitEx(pThis, pCAStream, pDev, &CfgAcq);
-    }
-
-    return rc;
-}
-
-#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
 #ifdef VBOX_WITH_AUDIO_CA_CONVERTER
 /* Callback to convert audio input data from one format to another. */
@@ -1144,12 +1020,7 @@ static DECLCALLBACK(OSStatus) coreAudioDevPropChgCb(AudioObjectID               
 #endif /* DEBUG */
         case kAudioDevicePropertyNominalSampleRate:
         {
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-            int rc2 = coreAudioDevicePropagateStatus(pDev, COREAUDIOSTATUS_REINIT);
-            AssertRC(rc2);
-#else
             RT_NOREF(pDev);
-#endif
             break;
         }
 
@@ -1983,11 +1854,7 @@ static int coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAS
 
     LogFlowFunc(("enmStreamCmd=%RU32, enmStatus=%RU32\n", enmStreamCmd, enmStatus));
 
-    if (!(   enmStatus == COREAUDIOSTATUS_INIT
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-          || enmStatus == COREAUDIOSTATUS_REINIT
-#endif
-          ))
+    if (enmStatus != COREAUDIOSTATUS_INIT)
     {
         return VINF_SUCCESS;
     }
@@ -2125,11 +1992,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
     uint32_t status = ASMAtomicReadU32(&pCAStream->enmStatus);
-    if (!(   status == COREAUDIOSTATUS_INIT
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-          || status == COREAUDIOSTATUS_REINIT
-#endif
-          ))
+    if (status != COREAUDIOSTATUS_INIT)
     {
         return VINF_SUCCESS;
     }
@@ -2267,23 +2130,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
     PCOREAUDIOSTREAM  pCAStream = (PCOREAUDIOSTREAM)pStream;
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /* Check if the audio device should be reinitialized. If so do it. */
-    if (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_REINIT)
-    {
-        if (pThis->pDefaultDevOut)
-        {
-            /* For now re just re-initialize with the current output device. */
-            int rc2 = coreAudioStreamReinit(pThis, pCAStream, pThis->pDefaultDevOut);
-            if (RT_FAILURE(rc2))
-                return VERR_NOT_AVAILABLE;
-        }
-        else
-            return VERR_NOT_AVAILABLE;
-    }
-#else
     RT_NOREF(pThis);
-#endif
 
     if (ASMAtomicReadU32(&pCAStream->enmStatus) != COREAUDIOSTATUS_INIT)
     {
@@ -2380,23 +2227,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
     PCOREAUDIOSTREAM  pCAStream = (PCOREAUDIOSTREAM)pStream;
     PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /* Check if the audio device should be reinitialized. If so do it. */
-    if (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_REINIT)
-    {
-        /* For now re just re-initialize with the current input device. */
-        if (pThis->pDefaultDevIn)
-        {
-            int rc2 = coreAudioStreamReinit(pThis, pCAStream, pThis->pDefaultDevIn);
-            if (RT_FAILURE(rc2))
-                return VERR_NOT_AVAILABLE;
-        }
-        else
-            return VERR_NOT_AVAILABLE;
-    }
-#else
     RT_NOREF(pThis);
-#endif
 
     if (ASMAtomicReadU32(&pCAStream->enmStatus) != COREAUDIOSTATUS_INIT)
     {
@@ -2592,13 +2423,11 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
         && orc != kAudioHardwareIllegalOperationError)
         LogRel(("CoreAudio: Failed to add the output default device changed listener: %d (%#x)\n", orc, orc));
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
      * Query the notification interface from the driver/device above us.
      */
     pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
-    Assert(pThis->pIHostAudioPort);
-#endif
+    AssertReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "caConverterCbInput.pcm");
