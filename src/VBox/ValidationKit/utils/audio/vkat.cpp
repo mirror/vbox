@@ -493,6 +493,14 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
     return rc;
 }
 
+/**
+ * Creates an audio test stream.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for creating the stream.
+ * @param   pStream             Audio stream to create.
+ * @param   pCfg                Stream configuration to use for creation.
+ */
 static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg)
 {
     PDMAUDIOSTREAMCFG CfgAcq;
@@ -514,12 +522,19 @@ static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream
     return rc;
 }
 
+/**
+ * Destroys an audio test stream.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment the stream to destroy contains.
+ * @param   pStream             Audio stream to destroy.
+ */
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream)
 {
     if (!pStream)
         return VINF_SUCCESS;
 
-  if (!pStream->fCreated)
+    if (!pStream->fCreated)
         return VINF_SUCCESS;
 
     /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
@@ -531,6 +546,15 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
     return rc;
 }
 
+/**
+ * Creates an audio default output test stream.
+ * Convenience function.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for creating the stream.
+ * @param   pStream             Audio stream to create.
+ * @param   pProps              PCM properties to use for creation.
+ */
 static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
     PDMAUDIOSTREAMCFG Cfg;
@@ -544,6 +568,16 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
     return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
 }
 
+/**
+ * Plays a test tone on a specific audio test stream.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for running the test.
+ * @param   pStream             Stream to use for playing the tone.
+ * @param   pParms              Tone parameters to use.
+ *
+ * @note    Blocking function.
+ */
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     AUDIOTESTTONE TstTone;
@@ -628,7 +662,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 {
     RT_NOREF(pvCtx);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     PAUDIOTESTSTREAM pStream = &pTstEnv->aStreams[0];
 
