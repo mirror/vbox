@@ -1840,18 +1840,19 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                                 static uint16_t const s_afValidMasks[] = { 0xffff, 0xfffb, 0xfff9, 0xfff8 };
                                 uint8_t const idxMask     = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SQ) & 3;
                                 uint16_t const fValidMask = s_afValidMasks[idxMask];
-                                fSrcValid = (idDevice & fValidMask) == idDevice;
+                                uint16_t const idSource   = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SID);
+                                fSrcValid = (idDevice & fValidMask) == (idSource & fValidMask);
                                 enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Masked;
                                 break;
                             }
 
                             case VTD_IRTE_SVT_VALIDATE_BUS_RANGE:
                             {
-                                uint16_t const uSourceId = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SID);
-                                uint8_t const uBusFirst  = RT_HI_U8(uSourceId);
-                                uint8_t const uBusLast   = RT_LO_U8(uSourceId);
-                                uint8_t const uRequesterIdBus = idDevice >> VBOX_PCI_BUS_SHIFT;
-                                fSrcValid = (uRequesterIdBus >= uBusFirst && uRequesterIdBus <= uBusLast);
+                                uint16_t const idSource   = RT_BF_GET(uIrteQword1, VTD_BF_1_IRTE_SID);
+                                uint8_t const uBusFirst   = RT_HI_U8(idSource);
+                                uint8_t const uBusLast    = RT_LO_U8(idSource);
+                                uint8_t const idDeviceBus = idDevice >> VBOX_PCI_BUS_SHIFT;
+                                fSrcValid = (idDeviceBus >= uBusFirst && idDeviceBus <= uBusLast);
                                 enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Bus;
                                 break;
                             }
