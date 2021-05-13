@@ -264,13 +264,15 @@ static const OSStatus g_rcCoreAudioConverterEOFDErr = 0x656F6664; /* 'eofd' */
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-DECLHIDDEN(int) coreAudioInputPermissionCheck(void); /* DrvHostAudioCoreAudioAuth.mm */
-static int drvHostCoreAudioStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDMAUDIOSTREAMCMD enmStreamCmd);
+static int drvHostAudioCaStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDMAUDIOSTREAMCMD enmStreamCmd);
+
+/* DrvHostAudioCoreAudioAuth.mm: */
+DECLHIDDEN(int) coreAudioInputPermissionCheck(void);
 
 
 
 
-static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescription *pASBD)
+static void drvHostAudioCaPrintASBD(const char *pszDesc, const AudioStreamBasicDescription *pASBD)
 {
     LogRel2(("CoreAudio: %s description:\n", pszDesc));
     LogRel2(("CoreAudio:  Format ID: %RU32 (%c%c%c%c)\n", pASBD->mFormatID,
@@ -304,7 +306,7 @@ static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescri
 }
 
 
-static void coreAudioPCMPropsToASBD(PCPDMAUDIOPCMPROPS pProps, AudioStreamBasicDescription *pASBD)
+static void drvHostAudioCaPCMPropsToASBD(PCPDMAUDIOPCMPROPS pProps, AudioStreamBasicDescription *pASBD)
 {
     AssertPtrReturnVoid(pProps);
     AssertPtrReturnVoid(pASBD);
@@ -327,7 +329,7 @@ static void coreAudioPCMPropsToASBD(PCPDMAUDIOPCMPROPS pProps, AudioStreamBasicD
 
 
 #if 0 /* unused */
-static int coreAudioCFStringToCString(const CFStringRef pCFString, char **ppszString)
+static int drvHostAudioCaCFStringToCString(const CFStringRef pCFString, char **ppszString)
 {
     CFIndex cLen = CFStringGetLength(pCFString) + 1;
     char *pszResult = (char *)RTMemAllocZ(cLen * sizeof(char));
@@ -341,7 +343,7 @@ static int coreAudioCFStringToCString(const CFStringRef pCFString, char **ppszSt
     return VINF_SUCCESS;
 }
 
-static AudioDeviceID coreAudioDeviceUIDtoID(const char* pszUID)
+static AudioDeviceID drvHostAudioCaDeviceUIDtoID(const char* pszUID)
 {
     /* Create a CFString out of our CString. */
     CFStringRef strUID = CFStringCreateWithCString(NULL, pszUID, kCFStringEncodingMacRoman);
@@ -389,8 +391,8 @@ static AudioDeviceID coreAudioDeviceUIDtoID(const char* pszUID)
  * @param   pASBDSrc            Input (source) stream description to use.
  * @param   pASBDDst            Output (destination) stream description to use.
  */
-static int coreAudioInitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx, PCOREAUDIOSTREAM pStream,
-                                  AudioStreamBasicDescription *pASBDSrc, AudioStreamBasicDescription *pASBDDst)
+static int drvHostAudioCaInitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx, PCOREAUDIOSTREAM pStream,
+                                       AudioStreamBasicDescription *pASBDSrc, AudioStreamBasicDescription *pASBDDst)
 {
     AssertPtrReturn(pConvCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -398,8 +400,8 @@ static int coreAudioInitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx, PCOREAUDIOSTRE
     AssertPtrReturn(pASBDDst,   VERR_INVALID_POINTER);
 
 # ifdef DEBUG
-    coreAudioPrintASBD("CbCtx: Src", pASBDSrc);
-    coreAudioPrintASBD("CbCtx: Dst", pASBDDst);
+    drvHostAudioCaPrintASBD("CbCtx: Src", pASBDSrc);
+    drvHostAudioCaPrintASBD("CbCtx: Dst", pASBDDst);
 # endif
 
     pConvCbCtx->pStream = pStream;
@@ -420,7 +422,7 @@ static int coreAudioInitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx, PCOREAUDIOSTRE
  * @return  IPRT status code.
  * @param   pConvCbCtx          Conversion callback context to uninitialize.
  */
-static void coreAudioUninitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx)
+static void drvHostAudioCaUninitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx)
 {
     AssertPtrReturnVoid(pConvCbCtx);
 
@@ -434,11 +436,8 @@ static void coreAudioUninitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx)
 }
 
 /* Callback to convert audio input data from one format to another. */
-static OSStatus coreAudioConverterCb(AudioConverterRef              inAudioConverter,
-                                     UInt32                        *ioNumberDataPackets,
-                                     AudioBufferList               *ioData,
-                                     AudioStreamPacketDescription **ppASPD,
-                                     void                          *pvUser)
+static OSStatus drvHostAudioCaConverterCb(AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
+                                          AudioBufferList *ioData, AudioStreamPacketDescription **ppASPD, void *pvUser)
 {
     RT_NOREF(inAudioConverter);
 
@@ -725,7 +724,7 @@ static OSStatus drvHostAudioCaDefaultDeviceChangedCallback(AudioObjectID idObjec
  * @param   pStreamCA           Core Audio stream to process output data for.
  * @param   audioBuffer         Audio buffer to store data into.
  */
-static int coreAudioOutputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueueBufferRef audioBuffer)
+static int drvHostAudioCaOutputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueueBufferRef audioBuffer)
 {
     AssertPtr(pStreamCA);
 
@@ -793,7 +792,7 @@ static int coreAudioOutputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueue
  *
  * @thread  queue thread.
  */
-static void coreAudioOutputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, AudioQueueBufferRef audioBuffer)
+static void drvHostAudioCaOutputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, AudioQueueBufferRef audioBuffer)
 {
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pvUser;
     AssertPtr(pStreamCA);
@@ -801,7 +800,7 @@ static void coreAudioOutputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, Audi
     int rc = RTCritSectEnter(&pStreamCA->CritSect);
     AssertRC(rc);
 
-    rc = coreAudioOutputQueueProcBuffer(pStreamCA, audioBuffer);
+    rc = drvHostAudioCaOutputQueueProcBuffer(pStreamCA, audioBuffer);
     if (RT_SUCCESS(rc))
         AudioQueueEnqueueBuffer(hAudioQueue, audioBuffer, 0, NULL);
 
@@ -817,7 +816,7 @@ static void coreAudioOutputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, Audi
  * @param   pStreamCA           Core Audio stream to store input data into.
  * @param   audioBuffer         Audio buffer to process input data from.
  */
-static int coreAudioInputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueueBufferRef audioBuffer)
+static int drvHostAudioCaInputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueueBufferRef audioBuffer)
 {
     PRTCIRCBUF pCircBuf = pStreamCA->pCircBuf;
     AssertPtr(pCircBuf);
@@ -872,9 +871,9 @@ static int coreAudioInputQueueProcBuffer(PCOREAUDIOSTREAM pStreamCA, AudioQueueB
  * @param   cPacketDesc         Number of packet descriptors.
  * @param   paPacketDesc        Array of packet descriptors.
  */
-static void coreAudioInputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, AudioQueueBufferRef audioBuffer,
-                                  const AudioTimeStamp *pAudioTS,
-                                  UInt32 cPacketDesc, const AudioStreamPacketDescription *paPacketDesc)
+static void drvHostAudioCaInputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, AudioQueueBufferRef audioBuffer,
+                                       const AudioTimeStamp *pAudioTS,
+                                       UInt32 cPacketDesc, const AudioStreamPacketDescription *paPacketDesc)
 {
     RT_NOREF(pAudioTS, cPacketDesc, paPacketDesc);
 
@@ -884,7 +883,7 @@ static void coreAudioInputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, Audio
     int rc = RTCritSectEnter(&pStreamCA->CritSect);
     AssertRC(rc);
 
-    rc = coreAudioInputQueueProcBuffer(pStreamCA, audioBuffer);
+    rc = drvHostAudioCaInputQueueProcBuffer(pStreamCA, audioBuffer);
     if (RT_SUCCESS(rc))
         AudioQueueEnqueueBuffer(hAudioQueue, audioBuffer, 0, NULL);
 
@@ -900,7 +899,7 @@ static void coreAudioInputQueueCb(void *pvUser, AudioQueueRef hAudioQueue, Audio
  * This thread is required per audio queue to pump data to/from the Core Audio
  * stream and handling its callbacks.
  */
-static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvHostAudioCaQueueThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     PCOREAUDIOSTREAM           pStreamCA = (PCOREAUDIOSTREAM)pvUser;
     AssertPtr(pStreamCA);
@@ -917,10 +916,10 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
     int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     OSStatus orc;
     if (fIn)
-        orc = AudioQueueNewInput(&pStreamCA->asbdStream, coreAudioInputQueueCb, pStreamCA /* pvData */,
+        orc = AudioQueueNewInput(&pStreamCA->asbdStream, drvHostAudioCaInputQueueCb, pStreamCA /* pvData */,
                                  CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pStreamCA->hAudioQueue);
     else
-        orc = AudioQueueNewOutput(&pStreamCA->asbdStream, coreAudioOutputQueueCb, pStreamCA /* pvData */,
+        orc = AudioQueueNewOutput(&pStreamCA->asbdStream, drvHostAudioCaOutputQueueCb, pStreamCA /* pvData */,
                                   CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pStreamCA->hAudioQueue);
     if (orc == noErr)
     {
@@ -992,7 +991,7 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
  *
  * @todo r=bird: Which use of the word 'invalidate' is this?
  */
-static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pStreamCA)
+static int drvHostAudioCaStreamInvalidateQueue(PCOREAUDIOSTREAM pStreamCA)
 {
     int rc = VINF_SUCCESS;
 
@@ -1003,14 +1002,14 @@ static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pStreamCA)
         AudioQueueBufferRef pBuf = pStreamCA->apAudioBuffers[i];
         if (pStreamCA->Cfg.enmDir == PDMAUDIODIR_IN)
         {
-            int rc2 = coreAudioInputQueueProcBuffer(pStreamCA, pBuf);
+            int rc2 = drvHostAudioCaInputQueueProcBuffer(pStreamCA, pBuf);
             if (RT_SUCCESS(rc2))
                 AudioQueueEnqueueBuffer(pStreamCA->hAudioQueue, pBuf, 0 /*inNumPacketDescs*/, NULL /*inPacketDescs*/);
         }
         else
         {
             Assert(pStreamCA->Cfg.enmDir == PDMAUDIODIR_OUT);
-            int rc2 = coreAudioOutputQueueProcBuffer(pStreamCA, pBuf);
+            int rc2 = drvHostAudioCaOutputQueueProcBuffer(pStreamCA, pBuf);
             if (   RT_SUCCESS(rc2)
                 && pBuf->mAudioDataByteSize)
                 AudioQueueEnqueueBuffer(pStreamCA->hAudioQueue, pBuf, 0 /*inNumPacketDescs*/, NULL /*inPacketDescs*/);
@@ -1031,7 +1030,7 @@ static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pStreamCA)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
+static DECLCALLBACK(int) drvHostAudioCaHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     PDRVHOSTCOREAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
@@ -1060,7 +1059,8 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface,
  * @param   fIsInput            Whether this is an input device or not.
  * @param   pDrv                Driver instance to use.
  */
-static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID, bool fIsInput, PDRVHOSTCOREAUDIO pDrv)
+static void drvHostAudioCaDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID,
+                                         bool fIsInput, PDRVHOSTCOREAUDIO pDrv)
 {
     AssertPtrReturnVoid(pDevData);
     AssertPtrReturnVoid(pDrv);
@@ -1095,7 +1095,7 @@ static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID
  * @param   enmUsage            Which devices to enumerate.
  * @param   pDevEnm             Where to store the enumerated devices.
  */
-static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsage, PPDMAUDIOHOSTENUM pDevEnm)
+static int drvHostAudioCaDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsage, PPDMAUDIOHOSTENUM pDevEnm)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
@@ -1104,9 +1104,10 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
     do /* (this is not a loop, just a device for avoid gotos while trying not to shoot oneself in the foot too badly.) */
     {
+        /*
+         * First get the device ID of the default device.
+         */
         AudioDeviceID defaultDeviceID = kAudioDeviceUnknown;
-
-        /* Fetch the default audio device currently in use. */
         AudioObjectPropertyAddress PropAddrDefaultDev =
         {
             enmUsage == PDMAUDIODIR_IN ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice,
@@ -1128,6 +1129,9 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             /* Keep going. */
         }
 
+        /*
+         * Get a list of all audio devices.
+         */
         AudioObjectPropertyAddress PropAddrDevList =
         {
             kAudioHardwarePropertyDevices,
@@ -1151,6 +1155,9 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
         UInt16 cDevices = uSize / sizeof(AudioDeviceID);
 
+        /*
+         * Try get details on each device and try add them to the enumeration result.
+         */
         PCOREAUDIODEVICEDATA pDev = NULL;
         for (UInt16 i = 0; i < cDevices; i++)
         {
@@ -1168,7 +1175,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             pDev->Core.enmUsage = enmUsage;
 
             /* Init backend-specific device data. */
-            coreAudioDeviceDataInit(pDev, pDevIDs[i], enmUsage == PDMAUDIODIR_IN, pThis);
+            drvHostAudioCaDeviceDataInit(pDev, pDevIDs[i], enmUsage == PDMAUDIODIR_IN, pThis);
 
             /* Check if the device is valid. */
             AudioDeviceID curDevID = pDev->deviceID;
@@ -1323,7 +1330,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
  * @param   pEnmSrc               Device enumeration to search device ID in.
  * @param   deviceID              Device ID to search.
  */
-bool coreAudioDevicesHasDevice(PPDMAUDIOHOSTENUM pEnmSrc, AudioDeviceID deviceID)
+static bool drvHostAudioCaDevicesHasDevice(PPDMAUDIOHOSTENUM pEnmSrc, AudioDeviceID deviceID)
 {
     PCOREAUDIODEVICEDATA pDevSrc;
     RTListForEach(&pEnmSrc->LstDevices, pDevSrc, COREAUDIODEVICEDATA, Core.ListEntry)
@@ -1344,16 +1351,27 @@ bool coreAudioDevicesHasDevice(PPDMAUDIOHOSTENUM pEnmSrc, AudioDeviceID deviceID
  * @param   pThis               Host audio driver instance.
  * @param   pEnmDst             Where to store the device enumeration list.
  */
-int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnmDst)
+static int drvHostAudioCaDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnmDst)
 {
     PDMAUDIOHOSTENUM devEnmIn;
-    int rc = coreAudioDevicesEnumerate(pThis, PDMAUDIODIR_IN, &devEnmIn);
+    int rc = drvHostAudioCaDevicesEnumerate(pThis, PDMAUDIODIR_IN, &devEnmIn);
     if (RT_SUCCESS(rc))
     {
         PDMAUDIOHOSTENUM devEnmOut;
-        rc = coreAudioDevicesEnumerate(pThis, PDMAUDIODIR_OUT, &devEnmOut);
+        rc = drvHostAudioCaDevicesEnumerate(pThis, PDMAUDIODIR_OUT, &devEnmOut);
         if (RT_SUCCESS(rc))
         {
+
+/** @todo r=bird: This is an awfully complicated and inefficient way of doing
+ * it.   Here you could just merge the two list (walk one, remove duplicates
+ * from the other one) and skip all that duplication.
+ *
+ * Howerver, drvHostAudioCaDevicesEnumerate gets the device list twice, which is
+ * a complete waste of time.  You could easily do all the work in
+ * drvHostAudioCaDevicesEnumerate by just querying the IDs of both default
+ * devices we're interested in, saving the merging extra allocations and
+ * extra allocation.  */
+
             /*
              * Build up the final device enumeration, based on the input and output device lists
              * just enumerated.
@@ -1372,7 +1390,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                     break;
                 }
 
-                coreAudioDeviceDataInit(pDevDst, pDevSrcIn->deviceID, true /* fIsInput */, pThis);
+                drvHostAudioCaDeviceDataInit(pDevDst, pDevSrcIn->deviceID, true /* fIsInput */, pThis);
 
                 RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcIn->Core.szName);
 
@@ -1422,7 +1440,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                 PCOREAUDIODEVICEDATA pDevSrcOut;
                 RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.ListEntry)
                 {
-                    if (coreAudioDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
+                    if (drvHostAudioCaDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
                         continue; /* Already in our list, skip. */
 
                     PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioHostDevAlloc(sizeof(*pDevDst));
@@ -1432,7 +1450,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                         break;
                     }
 
-                    coreAudioDeviceDataInit(pDevDst, pDevSrcOut->deviceID, false /* fIsInput */, pThis);
+                    drvHostAudioCaDeviceDataInit(pDevDst, pDevSrcOut->deviceID, false /* fIsInput */, pThis);
 
                     RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcOut->Core.szName);
 
@@ -1476,7 +1494,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
  * @param  pThis                Host audio driver instance.
  * @param  pDev                 Audio device to use for the registered callbacks.
  */
-static int coreAudioDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIODEVICEDATA pDev)
+static int drvHostAudioCaDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIODEVICEDATA pDev)
 {
     RT_NOREF(pThis);
 
@@ -1528,7 +1546,7 @@ static int coreAudioDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOD
  * @param  pThis                Host audio driver instance.
  * @param  pDev                 Audio device to use for the registered callbacks.
  */
-static int coreAudioDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIODEVICEDATA pDev)
+static int drvHostAudioCaDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIODEVICEDATA pDev)
 {
     RT_NOREF(pThis);
 
@@ -1578,7 +1596,7 @@ static int coreAudioDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDI
  * @returns IPRT status code.
  * @param   pThis               Host audio driver instance.
  */
-static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
+static int drvHostAudioCaEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
 {
     LogFlowFuncEnter();
 
@@ -1587,13 +1605,13 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
      */
     if (pThis->pDefaultDevIn)
     {
-        coreAudioDeviceUnregisterCallbacks(pThis, pThis->pDefaultDevIn);
+        drvHostAudioCaDeviceUnregisterCallbacks(pThis, pThis->pDefaultDevIn);
         pThis->pDefaultDevIn = NULL;
     }
 
     if (pThis->pDefaultDevOut)
     {
-        coreAudioDeviceUnregisterCallbacks(pThis, pThis->pDefaultDevOut);
+        drvHostAudioCaDeviceUnregisterCallbacks(pThis, pThis->pDefaultDevOut);
         pThis->pDefaultDevOut = NULL;
     }
 
@@ -1601,7 +1619,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
     PDMAudioHostEnumDelete(&pThis->Devices);
 
     /* Enumerate all devices internally. */
-    int rc = coreAudioDevicesEnumerateAll(pThis, &pThis->Devices);
+    int rc = drvHostAudioCaDevicesEnumerateAll(pThis, &pThis->Devices);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1612,7 +1630,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
         {
             LogRel2(("CoreAudio: Default capturing device is '%s'\n", pThis->pDefaultDevIn->Core.szName));
             LogFunc(("pDefaultDevIn=%p, ID=%RU32\n", pThis->pDefaultDevIn, pThis->pDefaultDevIn->deviceID));
-            rc = coreAudioDeviceRegisterCallbacks(pThis, pThis->pDefaultDevIn);
+            rc = drvHostAudioCaDeviceRegisterCallbacks(pThis, pThis->pDefaultDevIn);
         }
         else
             LogRel2(("CoreAudio: No default capturing device found\n"));
@@ -1625,7 +1643,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
         {
             LogRel2(("CoreAudio: Default playback device is '%s'\n", pThis->pDefaultDevOut->Core.szName));
             LogFunc(("pDefaultDevOut=%p, ID=%RU32\n", pThis->pDefaultDevOut, pThis->pDefaultDevOut->deviceID));
-            rc = coreAudioDeviceRegisterCallbacks(pThis, pThis->pDefaultDevOut);
+            rc = drvHostAudioCaDeviceRegisterCallbacks(pThis, pThis->pDefaultDevOut);
         }
         else
             LogRel2(("CoreAudio: No default playback device found\n"));
@@ -1639,7 +1657,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetDevices}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
+static DECLCALLBACK(int) drvHostAudioCaHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
     PDRVHOSTCOREAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
     AssertPtrReturn(pDeviceEnum, VERR_INVALID_POINTER);
@@ -1652,7 +1670,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        rc = coreAudioEnumerateDevices(pThis);
+        rc = drvHostAudioCaEnumerateDevices(pThis);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -1675,7 +1693,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioCaHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     RT_NOREF(pInterface, enmDir);
     return PDMAUDIOBACKENDSTS_RUNNING;
@@ -1685,8 +1703,8 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioHA_GetStatus(PPDMIHOSTAU
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                         PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                       PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDRVHOSTCOREAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
     PCOREAUDIOSTREAM  pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -1736,11 +1754,11 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
              * data to/from the queue thread.
              */
             PDMAudioStrmCfgCopy(&pStreamCA->Cfg, pCfgReq);
-            coreAudioPCMPropsToASBD(&pCfgReq->Props, &pStreamCA->asbdStream);
+            drvHostAudioCaPCMPropsToASBD(&pCfgReq->Props, &pStreamCA->asbdStream);
             /** @todo Do some validation? */
-            coreAudioPrintASBD(  pCfgReq->enmDir == PDMAUDIODIR_IN
-                               ? "Capturing queue format"
-                               : "Playback queue format", &pStreamCA->asbdStream);
+            drvHostAudioCaPrintASBD(  pCfgReq->enmDir == PDMAUDIODIR_IN
+                                    ? "Capturing queue format"
+                                    : "Playback queue format", &pStreamCA->asbdStream);
 
             rc = RTCircBufCreate(&pStreamCA->pCircBuf,
                                  PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize));
@@ -1752,7 +1770,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
                 static uint32_t volatile s_idxThread = 0;
                 uint32_t idxThread = ASMAtomicIncU32(&s_idxThread);
 
-                rc = RTThreadCreateF(&pStreamCA->hThread, coreAudioQueueThread, pStreamCA, 0 /*cbStack*/,
+                rc = RTThreadCreateF(&pStreamCA->hThread, drvHostAudioCaQueueThread, pStreamCA, 0 /*cbStack*/,
                                      RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CaQue%u", idxThread);
                 if (RT_SUCCESS(rc))
                 {
@@ -1805,7 +1823,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -1825,7 +1843,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
          */
         /** @todo this isn't paranoid enough, the pStreamCA->hAudioQueue is
          *        owned+released by the queue thread. */
-        drvHostCoreAudioStreamControlInternal(pStreamCA, PDMAUDIOSTREAMCMD_DISABLE);
+        drvHostAudioCaStreamControlInternal(pStreamCA, PDMAUDIOSTREAMCMD_DISABLE);
 
         /*
          * Change the state (cannot do before the stop).
@@ -1890,7 +1908,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
 }
 
 
-static int drvHostCoreAudioStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDMAUDIOSTREAMCMD enmStreamCmd)
+static int drvHostAudioCaStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     uint32_t enmInitState = ASMAtomicReadU32(&pStreamCA->enmInitState);
 
@@ -1910,7 +1928,7 @@ static int drvHostCoreAudioStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDM
             LogFunc(("Queue enable\n"));
             if (pStreamCA->Cfg.enmDir == PDMAUDIODIR_IN)
             {
-                rc = coreAudioStreamInvalidateQueue(pStreamCA);
+                rc = drvHostAudioCaStreamInvalidateQueue(pStreamCA);
                 if (RT_SUCCESS(rc))
                 {
                     /* Start the audio queue immediately. */
@@ -1955,21 +1973,21 @@ static int drvHostCoreAudioStreamControlInternal(PCOREAUDIOSTREAM pStreamCA, PDM
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                          PDMAUDIOSTREAMCMD enmStreamCmd)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                        PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamCA, VERR_INVALID_POINTER);
 
-    return drvHostCoreAudioStreamControlInternal(pStreamCA, enmStreamCmd);
+    return drvHostAudioCaStreamControlInternal(pStreamCA, enmStreamCmd);
 }
 
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
-static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -1991,7 +2009,7 @@ static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetReadable(PPDMIHOSTAUDI
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -2015,8 +2033,8 @@ static DECLCALLBACK(uint32_t) drvHostCoreAudioHA_StreamGetWritable(PPDMIHOSTAUDI
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostCoreAudioHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                               PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioCaHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                             PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCa = (PCOREAUDIOSTREAM)pStream;
@@ -2030,8 +2048,8 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostCoreAudioHA_StreamGetState(P
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                     const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     PDRVHOSTCOREAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
     PCOREAUDIOSTREAM  pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -2093,7 +2111,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         &&  pStreamCA->fRun
         && !pStreamCA->fIsRunning)
     {
-        rc = coreAudioStreamInvalidateQueue(pStreamCA);
+        rc = drvHostAudioCaStreamInvalidateQueue(pStreamCA);
         if (RT_SUCCESS(rc))
         {
             AudioQueueStart(pStreamCA->hAudioQueue, NULL);
@@ -2113,8 +2131,8 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                          void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM  pStreamCA = (PCOREAUDIOSTREAM)pStream;
@@ -2164,7 +2182,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) drvHostAudioCaQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS        pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVHOSTCOREAUDIO pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
@@ -2183,7 +2201,7 @@ static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface,
 /**
  * Worker for the power off and destructor callbacks.
  */
-static void drvHostCoreAudioRemoveDefaultDeviceListners(PDRVHOSTCOREAUDIO pThis)
+static void drvHostAudioCaRemoveDefaultDeviceListners(PDRVHOSTCOREAUDIO pThis)
 {
     /*
      * Unregister system callbacks.
@@ -2223,22 +2241,22 @@ static void drvHostCoreAudioRemoveDefaultDeviceListners(PDRVHOSTCOREAUDIO pThis)
 /**
  * @interface_method_impl{PDMDRVREG,pfnPowerOff}
  */
-static DECLCALLBACK(void) drvHostCoreAudioPowerOff(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvHostAudioCaPowerOff(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTCOREAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
-    drvHostCoreAudioRemoveDefaultDeviceListners(pThis);
+    drvHostAudioCaRemoveDefaultDeviceListners(pThis);
 }
 
 
 /**
  * @callback_method_impl{FNPDMDRVDESTRUCT}
  */
-static DECLCALLBACK(void) drvHostCoreAudioDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvHostAudioCaDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVHOSTCOREAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
 
-    drvHostCoreAudioRemoveDefaultDeviceListners(pThis);
+    drvHostAudioCaRemoveDefaultDeviceListners(pThis);
 
     int rc2 = RTCritSectDelete(&pThis->CritSect);
     AssertRC(rc2);
@@ -2251,7 +2269,7 @@ static DECLCALLBACK(void) drvHostCoreAudioDestruct(PPDMDRVINS pDrvIns)
  * @callback_method_impl{FNPDMDRVCONSTRUCT,
  *      Construct a Core Audio driver instance.}
  */
-static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
+static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -2264,24 +2282,24 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->pDrvIns                   = pDrvIns;
     PDMAudioHostEnumInit(&pThis->Devices);
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface = drvHostCoreAudioQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface = drvHostAudioCaQueryInterface;
     /* IHostAudio */
-    pThis->IHostAudio.pfnGetConfig                  = drvHostCoreAudioHA_GetConfig;
-    pThis->IHostAudio.pfnGetDevices                 = drvHostCoreAudioHA_GetDevices;
-    pThis->IHostAudio.pfnGetStatus                  = drvHostCoreAudioHA_GetStatus;
+    pThis->IHostAudio.pfnGetConfig                  = drvHostAudioCaHA_GetConfig;
+    pThis->IHostAudio.pfnGetDevices                 = drvHostAudioCaHA_GetDevices;
+    pThis->IHostAudio.pfnGetStatus                  = drvHostAudioCaHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
-    pThis->IHostAudio.pfnStreamCreate               = drvHostCoreAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamCreate               = drvHostAudioCaHA_StreamCreate;
     pThis->IHostAudio.pfnStreamInitAsync            = NULL;
-    pThis->IHostAudio.pfnStreamDestroy              = drvHostCoreAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioCaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
-    pThis->IHostAudio.pfnStreamControl              = drvHostCoreAudioHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHostCoreAudioHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHostCoreAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamControl              = drvHostAudioCaHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioCaHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioCaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
-    pThis->IHostAudio.pfnStreamGetState             = drvHostCoreAudioHA_StreamGetState;
-    pThis->IHostAudio.pfnStreamPlay                 = drvHostCoreAudioHA_StreamPlay;
-    pThis->IHostAudio.pfnStreamCapture              = drvHostCoreAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnStreamGetState             = drvHostAudioCaHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamPlay                 = drvHostAudioCaHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture              = drvHostAudioCaHA_StreamCapture;
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -2289,7 +2307,7 @@ static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /*
      * Enumerate audio devices.
      */
-    rc = coreAudioEnumerateDevices(pThis);
+    rc = drvHostAudioCaEnumerateDevices(pThis);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2356,9 +2374,9 @@ const PDMDRVREG g_DrvHostCoreAudio =
     /* cbInstance */
     sizeof(DRVHOSTCOREAUDIO),
     /* pfnConstruct */
-    drvHostCoreAudioConstruct,
+    drvHostAudioCaConstruct,
     /* pfnDestruct */
-    drvHostCoreAudioDestruct,
+    drvHostAudioCaDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
@@ -2376,7 +2394,7 @@ const PDMDRVREG g_DrvHostCoreAudio =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvHostCoreAudioPowerOff,
+    drvHostAudioCaPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
