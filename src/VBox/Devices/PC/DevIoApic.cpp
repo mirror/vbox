@@ -485,7 +485,9 @@ DECLINLINE(uint32_t) ioapicGetIndex(PCIOAPIC pThis)
 DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
 {
     /*
-     * Parse the message from the physical address and data
+     * Parse the message from the physical address and data.
+     * Do -not- zero out other fields in the APIC interrupt.
+     *
      * See Intel spec. 10.11.1 "Message Address Register Format".
      * See Intel spec. 10.11.2 "Message Data Register Format".
      */
@@ -588,12 +590,19 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         }
     }
 
+    XAPICINTR ApicIntr;
+    RT_ZERO(ApicIntr);
+    ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
+    ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
+    ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
+    ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+    ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
+    ApicIntr.u8TriggerMode  = u8TriggerMode;
+    //ApicIntr.u8RedirHint    = 0;
+
     /** @todo We might be able to release the IOAPIC(PDM) lock here and re-acquire it
      *        before setting the remote IRR bit below. The APIC and IOMMU should not
      *        require the caller to hold the PDM lock. */
-
-    XAPICINTR ApicIntr;
-    RT_ZERO(ApicIntr);
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     /*
@@ -618,22 +627,11 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         return;
     }
 
+    /* Update the APIC interrupt with the remapped data. */
     ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
-# ifdef RT_STRICT
-    if (RT_SUCCESS(rcRemap))
-    {
-        Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
-        Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
-    }
-# endif
-#else
-    ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
-    ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
-    ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
-    ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
-    ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
-    ApicIntr.u8TriggerMode  = u8TriggerMode;
-    //ApicIntr.u8RedirHint    = 0;
+
+    /* Ensure polarity hasn't changed (trigger mode might change with Intel IOMMUs). */
+    Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte));
 #endif
 
     uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
