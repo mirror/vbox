@@ -1187,7 +1187,10 @@ static void dmarR3InvEventRaiseInterrupt(PPDMDEVINS pDevIns)
 
     uint32_t const uIcsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_ICS_REG);
     if (!(uIcsReg & VTD_BF_ICS_REG_IWC_MASK))
+    {
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_ICS_REG, UINT32_MAX, VTD_BF_ICS_REG_IWC_MASK);
         dmarEventRaiseInterrupt(pDevIns, DMAREVENTTYPE_INV_COMPLETE);
+    }
 }
 #endif /* IN_RING3 */
 
@@ -1397,7 +1400,14 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
         pThis->uRtaddrReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_RTADDR_REG);
     }
 
-    /** @todo Rest of the bits. */
+    /* Translation (DMA remapping). */
+    if (fChanged & VTD_BF_GCMD_REG_TE_MASK)
+    {
+        if (uGcmdReg & VTD_BF_GCMD_REG_TE_MASK)
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_TES_MASK);
+        else
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_GSTS_REG_TES_MASK, 0 /* fOrMask */);
+    }
 
     return VINF_SUCCESS;
 }
@@ -1514,6 +1524,48 @@ static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     }
     /* else: 128-bit descriptor width is validated lazily, see explanation in dmarR3InvQueueProcessRequests. */
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to ICS_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uIcsReg     The value written to ICS_REG.
+ */
+static VBOXSTRICTRC dmarIcsRegWrite(PPDMDEVINS pDevIns, uint32_t uIcsReg)
+{
+    /*
+     * If the IP field is set when software services the interrupt condition,
+     * (by clearing the IWC field), the IP field must be cleared.
+     */
+    if (!(uIcsReg & VTD_BF_ICS_REG_IWC_MASK))
+    {
+        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_IECTL_REG, ~VTD_BF_IECTL_REG_IP_MASK, 0 /* fOrMask */);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to IECTL_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uIectlReg   The value written to IECTL_REG.
+ */
+static VBOXSTRICTRC dmarIectlRegWrite(PPDMDEVINS pDevIns, uint32_t uIectlReg)
+{
+    /*
+     * If software unmasks the interrupt when the interrupt is pending, we must raise
+     * the interrupt now (which will consequently clear the interrupt pending bit).
+     */
+    if (    (uIectlReg & VTD_BF_IECTL_REG_IP_MASK)
+        && ~(uIectlReg & VTD_BF_IECTL_REG_IM_MASK))
+        dmarEventRaiseInterrupt(pDevIns, DMAREVENTTYPE_INV_COMPLETE);
     return VINF_SUCCESS;
 }
 
@@ -1864,6 +1916,18 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             /*   VTD_MMIO_OFF_IQA_REG + 4: */   /* High 32-bits data. */
             {
                 rcStrict = dmarIqaRegWrite(pDevIns, offReg, uRegWritten);
+                break;
+            }
+
+            case VTD_MMIO_OFF_ICS_REG:        /* 32-bit */
+            {
+                rcStrict = dmarIcsRegWrite(pDevIns, uRegWritten);
+                break;
+            }
+
+            case VTD_MMIO_OFF_IECTL_REG:        /* 32-bit */
+            {
+                rcStrict = dmarIectlRegWrite(pDevIns, uRegWritten);
                 break;
             }
         }
@@ -2413,7 +2477,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, " GCMD_REG     = %#RX32\n", uGcmdReg);
     {
         uint8_t const fCfi = RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_CFI);
-        pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Bypass" : "Block");
+        pHlp->pfnPrintf(pHlp, "   CFI          = %u (%s)\n", fCfi, fCfi ? "Passthrough" : "Blocked");
         pHlp->pfnPrintf(pHlp, "   SIRTP        = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_SIRTP));
         pHlp->pfnPrintf(pHlp, "   IRE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_IRE));
         pHlp->pfnPrintf(pHlp, "   QIE          = %u\n", RT_BF_GET(uGcmdReg, VTD_BF_GCMD_REG_QIE));
@@ -2426,7 +2490,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, " GSTS_REG     = %#RX32\n", uGstsReg);
     {
         uint8_t const fCfis = RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_CFIS);
-        pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Bypass" : "Block");
+        pHlp->pfnPrintf(pHlp, "   CFIS         = %u (%s)\n", fCfis, fCfis ? "Passthrough" : "Blocked");
         pHlp->pfnPrintf(pHlp, "   IRTPS        = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRTPS));
         pHlp->pfnPrintf(pHlp, "   IRES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_IRES));
         pHlp->pfnPrintf(pHlp, "   QIES         = %u\n", RT_BF_GET(uGstsReg, VTD_BF_GSTS_REG_QIES));
@@ -2439,8 +2503,8 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, " RTADDR_REG   = %#RX64\n", uRtaddrReg);
     {
         uint8_t const uTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+        pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",   uRtaddrReg & VTD_BF_RTADDR_REG_RTA_MASK);
         pHlp->pfnPrintf(pHlp, "   TTM          = %u (%s)\n",  uTtm, vtdRtaddrRegGetTtmDesc(uTtm));
-        pHlp->pfnPrintf(pHlp, "   RTA          = %#RX64\n",   RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_RTA));
     }
     pHlp->pfnPrintf(pHlp, " CCMD_REG     = %#RX64\n", uCcmdReg);
     pHlp->pfnPrintf(pHlp, " FSTS_REG     = %#RX32\n", uFstsReg);
@@ -2500,7 +2564,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     {
         uint32_t const cIrtEntries = VTD_IRTA_REG_GET_ENTRY_COUNT(uIrtaReg);
         uint32_t const cbIrt       = sizeof(VTD_IRTE_T) * cIrtEntries;
-        pHlp->pfnPrintf(pHlp, "   IRTA         = %#RX64\n",   RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_IRTA));
+        pHlp->pfnPrintf(pHlp, "   IRTA         = %#RX64\n",   uIrtaReg & VTD_BF_IRTA_REG_IRTA_MASK);
         pHlp->pfnPrintf(pHlp, "   EIME         = %RTbool\n",  RT_BF_GET(uIrtaReg, VTD_BF_IRTA_REG_EIME));
         pHlp->pfnPrintf(pHlp, "   S            = %u entries (%u bytes)\n", cIrtEntries, cbIrt);
     }
@@ -2578,7 +2642,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_RWBF,    0)     /* Software need not flush write-buffers. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,    0)     /* Protected Low-Memory Region not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,    0)     /* Protected High-Memory Region not supported. */
-                       | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /** @todo Figure out if required when we impl. caching. */
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /* Software should invalidate on mapping structure changes. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & uSagaw)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,    uMgaw)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,     1)     /** @todo Figure out if/how to support zero-length reads. */
