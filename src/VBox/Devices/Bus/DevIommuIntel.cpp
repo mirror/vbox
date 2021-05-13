@@ -867,14 +867,16 @@ static void dmarRegReadRaw64Ex(PCDMAR pThis, uint16_t offReg, uint64_t *puReg, u
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 32-bit value to write.
+ * @param   puPrev  Where to store the register value prior to writing.
  */
-static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
+static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg, uint32_t *puPrev)
 {
     /* Read current value from the 32-bit register. */
     uint32_t uCurReg;
     uint32_t fRwMask;
     uint32_t fRw1cMask;
     dmarRegReadRaw32Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    *puPrev = uCurReg;
 
     uint32_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint32_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -895,14 +897,16 @@ static uint32_t dmarRegWrite32(PDMAR pThis, uint16_t offReg, uint32_t uReg)
  * @param   pThis   The shared DMAR device state.
  * @param   offReg  The MMIO offset of the register.
  * @param   uReg    The 64-bit value to write.
+ * @param   puPrev  Where to store the register value prior to writing.
  */
-static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg)
+static uint64_t dmarRegWrite64(PDMAR pThis, uint16_t offReg, uint64_t uReg, uint64_t *puPrev)
 {
     /* Read current value from the 64-bit register. */
     uint64_t uCurReg;
     uint64_t fRwMask;
     uint64_t fRw1cMask;
     dmarRegReadRaw64Ex(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    *puPrev = uCurReg;
 
     uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
     uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
@@ -1226,7 +1230,7 @@ static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
     if (uFrcdRegHi & VTD_BF_1_FRCD_REG_F_MASK)
     {
         uFstsReg |= VTD_BF_FSTS_REG_PFO_MASK;
-        dmarRegWrite32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
+        dmarRegWriteRaw32(pThis, VTD_MMIO_OFF_FSTS_REG, uFstsReg);
         return false;
     }
 
@@ -1398,6 +1402,7 @@ static VBOXSTRICTRC dmarGcmdRegWrite(PPDMDEVINS pDevIns, uint32_t uGcmdReg)
         /** @todo Perform global invalidation of all remapping translation caches when
          *        ESRTPS is supported. */
         pThis->uRtaddrReg = dmarRegReadRaw64(pThis, VTD_MMIO_OFF_RTADDR_REG);
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_GSTS_REG, UINT32_MAX, VTD_BF_GSTS_REG_RTPS_MASK);
     }
 
     /* Translation (DMA remapping). */
@@ -1455,6 +1460,53 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
                 pThis->enmDiag = kDmarDiag_CcmdReg_NotSupported;
             dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_CCMD_REG_CAIG_MASK, 0 /* fOrMask */);
         }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to FECTL_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uFectlReg   The value written to FECTL_REG.
+ */
+static VBOXSTRICTRC dmarFectlRegWrite(PPDMDEVINS pDevIns, uint32_t uFectlReg)
+{
+    /*
+     * If software unmasks the interrupt when the interrupt is pending, we must raise
+     * the interrupt now (which will consequently clear the interrupt pending (IP) bit).
+     */
+    if (    (uFectlReg & VTD_BF_FECTL_REG_IP_MASK)
+        && ~(uFectlReg & VTD_BF_FECTL_REG_IM_MASK))
+        dmarEventRaiseInterrupt(pDevIns, DMAREVENTTYPE_FAULT);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to FSTS_REG.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uFstsReg    The value written to FSTS_REG.
+ * @param   uPrev       The value in FSTS_REG prior to writing it.
+ */
+static VBOXSTRICTRC dmarFstsRegWrite(PPDMDEVINS pDevIns, uint32_t uFstsReg, uint32_t uPrev)
+{
+    /*
+     * If software clears other status bits in FSTS_REG (pertaining to primary fault logging),
+     * the interrupt pending (IP) bit must be cleared.
+     *
+     * See Intel VT-d spec. 10.4.10 "Fault Event Control Register".
+     */
+    uint32_t const fChanged = uPrev ^ uFstsReg;
+    if (fChanged & (  VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK
+                    | VTD_BF_FSTS_REG_IQE_MASK | VTD_BF_FSTS_REG_PFO_MASK))
+    {
+        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+        dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, ~VTD_BF_FECTL_REG_IP_MASK, 0 /* fOrMask */);
     }
     return VINF_SUCCESS;
 }
@@ -1561,11 +1613,47 @@ static VBOXSTRICTRC dmarIectlRegWrite(PPDMDEVINS pDevIns, uint32_t uIectlReg)
 {
     /*
      * If software unmasks the interrupt when the interrupt is pending, we must raise
-     * the interrupt now (which will consequently clear the interrupt pending bit).
+     * the interrupt now (which will consequently clear the interrupt pending (IP) bit).
      */
     if (    (uIectlReg & VTD_BF_IECTL_REG_IP_MASK)
         && ~(uIectlReg & VTD_BF_IECTL_REG_IM_MASK))
         dmarEventRaiseInterrupt(pDevIns, DMAREVENTTYPE_INV_COMPLETE);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles writes to FRCD_REG (High 64-bits).
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   offReg      The MMIO register offset.
+ * @param   cbReg       The size of the MMIO access (in bytes).
+ * @param   uFrcdHiReg  The value written to FRCD_REG.
+ * @param   uPrev       The value in FRCD_REG prior to writing it.
+ */
+static VBOXSTRICTRC dmarFrcdHiRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_t cbReg, uint64_t uFrcdHiReg, uint64_t uPrev)
+{
+    /* We only care about responding to high 32-bits, low 32-bits are read-only. */
+    if (offReg + cbReg > DMAR_MMIO_OFF_FRCD_HI_REG + 4)
+    {
+        /*
+         * If software cleared the RW1C F (fault) bit in all FRCD_REGs, hardware clears the
+         * Primary Pending Fault (PPF) and the interrupt pending (IP) bits. Our implementation
+         * has only 1 FRCD register.
+         *
+         * See Intel VT-d spec. 10.4.10 "Fault Event Control Register".
+         */
+        AssertCompile(DMAR_FRCD_REG_COUNT == 1);
+        uint64_t const fChanged = uPrev ^ uFrcdHiReg;
+        if (fChanged & VTD_BF_1_FRCD_REG_F_MASK)
+        {
+            Assert(!(uFrcdHiReg & VTD_BF_1_FRCD_REG_F_MASK));  /* Software should only ever be able to clear this bit. */
+            PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_FSTS_REG, ~VTD_BF_FSTS_REG_PPF_MASK, 0 /* fOrMask */);
+            dmarRegChangeRaw32(pThis, VTD_MMIO_OFF_FECTL_REG, ~VTD_BF_FECTL_REG_IP_MASK, 0 /* fOrMask */);
+        }
+    }
     return VINF_SUCCESS;
 }
 
@@ -1887,8 +1975,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
         PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
         DMAR_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
 
-        uint64_t const uRegWritten = cb == 8 ? dmarRegWrite64(pThis, offReg, *(uint64_t *)pv)
-                                             : dmarRegWrite32(pThis, offReg, *(uint32_t *)pv);
+        uint64_t uPrev = 0;
+        uint64_t const uRegWritten = cb == 8 ? dmarRegWrite64(pThis, offReg, *(uint64_t *)pv, &uPrev)
+                                             : dmarRegWrite32(pThis, offReg, *(uint32_t *)pv, (uint32_t *)&uPrev);
         VBOXSTRICTRC rcStrict = VINF_SUCCESS;
         switch (off)
         {
@@ -1902,6 +1991,18 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             case VTD_MMIO_OFF_CCMD_REG + 4:
             {
                 rcStrict = dmarCcmdRegWrite(pDevIns, offReg, cb, uRegWritten);
+                break;
+            }
+
+            case VTD_MMIO_OFF_FSTS_REG:         /* 32-bit */
+            {
+                rcStrict = dmarFstsRegWrite(pDevIns, uRegWritten, uPrev);
+                break;
+            }
+
+            case VTD_MMIO_OFF_FECTL_REG:        /* 32-bit */
+            {
+                rcStrict = dmarFectlRegWrite(pDevIns, uRegWritten);
                 break;
             }
 
@@ -1919,7 +2020,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
                 break;
             }
 
-            case VTD_MMIO_OFF_ICS_REG:        /* 32-bit */
+            case VTD_MMIO_OFF_ICS_REG:          /* 32-bit */
             {
                 rcStrict = dmarIcsRegWrite(pDevIns, uRegWritten);
                 break;
@@ -1928,6 +2029,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dmarMmioWrite(PPDMDEVINS pDevIns, void *pvUser
             case VTD_MMIO_OFF_IECTL_REG:        /* 32-bit */
             {
                 rcStrict = dmarIectlRegWrite(pDevIns, uRegWritten);
+                break;
+            }
+
+            case DMAR_MMIO_OFF_FRCD_HI_REG:     /* 64-bit */
+            case DMAR_MMIO_OFF_FRCD_HI_REG + 4:
+            {
+                rcStrict = dmarFrcdHiRegWrite(pDevIns, offReg, cb, uRegWritten, uPrev);
                 break;
             }
         }
