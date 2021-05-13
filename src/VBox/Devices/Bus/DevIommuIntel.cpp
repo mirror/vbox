@@ -1699,13 +1699,26 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
 {
     RT_NOREF6(idDevice, uIova, cbIova, fFlags, pGCPhysSpa, pcbContiguous);
 
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    if (fFlags & PDMIOMMU_MEM_F_READ)
-        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
-    else
-        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
 
-    return VERR_NOT_IMPLEMENTED;
+    DMAR_LOCK(pDevIns, pThisCC);
+    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    DMAR_UNLOCK(pDevIns, pThisCC);
+
+    if (uGstsReg & VTD_BF_GSTS_REG_TES_MASK)
+    {
+        if (fFlags & PDMIOMMU_MEM_F_READ)
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
+        else
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    *pGCPhysSpa    = uIova;
+    *pcbContiguous = cbIova;
+    return VINF_SUCCESS;
 }
 
 
