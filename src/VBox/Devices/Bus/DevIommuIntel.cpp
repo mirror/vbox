@@ -2772,13 +2772,12 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
     /* ECAP_REG */
     {
-        uint8_t const  fQi    = 1;                                 /* Queued-invalidations. */
-        uint8_t const  fIr    = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);      /* Interrupt remapping support. */
-        uint8_t const  fMhmv  = 0xf;                               /* Maximum handle mask value. */
-        uint16_t const offIro = DMAR_MMIO_OFF_IVA_REG >> 4;        /* MMIO offset of IOTLB registers. */
-        uint8_t const  fSrs   = 1;                                 /* Supervisor request support. */
-        uint8_t const  fEim   = 1;                                 /* Extended interrupt mode.*/
-        uint8_t const  fAdms  = 1;                                 /* Abort DMA mode support. */
+        uint8_t const  fQi     = 1;                                /* Queued-invalidations. */
+        uint8_t const  fIr     = !!(DMAR_ACPI_DMAR_FLAGS & ACPI_DMAR_F_INTR_REMAP);      /* Interrupt remapping support. */
+        uint8_t const  fMhmv   = 0xf;                              /* Maximum handle mask value. */
+        uint16_t const offIro  = DMAR_MMIO_OFF_IVA_REG >> 4;       /* MMIO offset of IOTLB registers. */
+        uint8_t const  fEim    = 1;                                /* Extended interrupt mode.*/
+        uint8_t const  fAdms   = 1;                                /* Abort DMA mode support. */
 
         pThis->fExtCapReg = RT_BF_MAKE(VTD_BF_ECAP_REG_C,      0)  /* Accesses don't snoop CPU cache. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_QI,     fQi)
@@ -2793,7 +2792,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_NEST,   fNest)
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_PRS,    0)  /* 0 as DT not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    0)  /* Execute request not supported. */
-                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    fSmts & fSrs)
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    0)  /* Supervisor request not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /** @todo figure out if EAFS is required? */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as PASID not supported. */
@@ -2808,7 +2807,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_SMPWCS, 0)  /* 0 as PASID not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_RPS,    0)  /* We don't support RID_PASID field in SM context entry. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_ADMS,   fAdms)
-                          | RT_BF_MAKE(VTD_BF_ECAP_REG_RPRIVS, 0); /** @todo figure out if we should/can support this? */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_RPRIVS, 0); /* 0 as SRS not supported. */
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_ECAP_REG, pThis->fExtCapReg);
     }
 
