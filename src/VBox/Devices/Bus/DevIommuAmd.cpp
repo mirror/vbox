@@ -2790,6 +2790,7 @@ static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint
     Assert(off & 7);
     Assert(off >= 4);
     uint64_t u64Read;
+    IOMMU_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_MMIO_WRITE);
     if (pReg->pfnRead)
         rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
     else
