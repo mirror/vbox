@@ -610,28 +610,29 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
      * For line-based interrupts we must use the southbridge I/O APIC's BDF as
      * the origin of the interrupt, see @bugref{9654#c74}.
      */
-    MSIMSG MsiOut;
     MSIMSG MsiIn;
-    RT_ZERO(MsiOut);
     RT_ZERO(MsiIn);
     ioapicGetMsiFromRte(u64Rte, pThis->enmType, &MsiIn);
+
+    MSIMSG MsiOut;
     int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
     if (   rcRemap == VERR_IOMMU_NOT_PRESENT
         || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
-        MsiOut = MsiIn;
+    { /* likely - assuming majority of VMs don't have IOMMU configured. */ }
     else if (RT_SUCCESS(rcRemap))
+    {
+        /* Update the APIC interrupt with the remapped data. */
+        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+
+        /* Ensure polarity hasn't changed (trigger mode might change with Intel IOMMUs). */
+        Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte));
         STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
+    }
     else
     {
         STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
         return;
     }
-
-    /* Update the APIC interrupt with the remapped data. */
-    ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
-
-    /* Ensure polarity hasn't changed (trigger mode might change with Intel IOMMUs). */
-    Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte));
 #endif
 
     uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
@@ -1009,19 +1010,20 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     if (PCIBDF_IS_VALID(uBusDevFn))
     {
         MSIMSG MsiOut;
-        RT_ZERO(MsiOut);
         int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
         if (   rcRemap == VERR_IOMMU_NOT_PRESENT
             || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
-            MsiOut = *pMsi;
+        { /* likely - assuming majority of VMs don't have IOMMU configured. */ }
         else if (RT_SUCCESS(rcRemap))
+        {
             STAM_COUNTER_INC(&pThis->StatIommuRemappedMsi);
+            ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+        }
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
             return;
         }
-        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
     }
     else
         ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
