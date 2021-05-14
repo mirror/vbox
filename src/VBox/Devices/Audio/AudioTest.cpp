@@ -298,7 +298,7 @@ static int audioTestManifestWriteV(PAUDIOTESTSET pSet, const char *pszFormat, va
  * @returns VBox status code.
  * @param   pSet                Test set to write manifest for.
  * @param   pszFormat           Format string to write.
- * @param   args                Variable arguments for \a pszFormat.
+ * @param   ...                 Variable arguments for \a pszFormat. Optional.
  */
 static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, ...)
 {
@@ -322,19 +322,19 @@ static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, .
  *
  * @returns VBox status code.
  * @param   pSet                Test set to write manifest for.
- * @param   pszFormat           Format string of section to write.
- * @param   args                Variable arguments for \a pszFormat.
+ * @param   pszSection          Format string of section to write.
+ * @param   ...                 Variable arguments for \a pszSection. Optional.
  */
-static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszFormat, ...)
+static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszSection, ...)
 {
     va_list va;
-    va_start(va, pszFormat);
+    va_start(va, pszSection);
 
     /** @todo Keep it as simple as possible for now. Improve this later. */
     int rc = RTFileWrite(pSet->f.hFile, "[", strlen("["), NULL);
     AssertRC(rc);
 
-    rc = audioTestManifestWriteV(pSet, pszFormat, va);
+    rc = audioTestManifestWriteV(pSet, pszSection, va);
     AssertRC(rc);
 
     rc = RTFileWrite(pSet->f.hFile, "]\n", strlen("]\n"), NULL);
