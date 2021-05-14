@@ -730,13 +730,13 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
     PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
     AssertPtrReturn(pObj, VERR_NO_MEMORY);
 
-    int rc = RTStrPrintf(pObj->szName, sizeof(pObj->szName), "%04RU32-%s", pSet->cObj, pszName);
-    AssertRCReturn(rc, rc);
+    if (RTStrPrintf2(pObj->szName, sizeof(pObj->szName), "%04RU32-%s", pSet->cObj, pszName) <= 0)
+        AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     /** @todo Generalize this function more once we have more object types. */
 
     char szFilePath[RTPATH_MAX];
-    rc = RTPathJoin(szFilePath, sizeof(szFilePath), pSet->szPathAbs, pObj->szName);
+    int rc = RTPathJoin(szFilePath, sizeof(szFilePath), pSet->szPathAbs, pObj->szName);
     AssertRCReturn(rc, rc);
 
     rc = RTFileOpen(&pObj->File.hFile, szFilePath, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
@@ -812,11 +812,11 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
     char szOutName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 16];
-    int rc = RTStrPrintf(szOutName, sizeof(szOutName), "%s-%s.tar.gz", AUDIOTEST_PATH_PREFIX_STR, pSet->szTag);
-    AssertRCReturn(rc, rc);
+    if (RTStrPrintf2(szOutName, sizeof(szOutName), "%s-%s.tar.gz", AUDIOTEST_PATH_PREFIX_STR, pSet->szTag) <= 0)
+        AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     char szOutPath[RTPATH_MAX];
-    rc = RTPathJoin(szOutPath, sizeof(szOutPath), pszOutDir, szOutName);
+    int rc = RTPathJoin(szOutPath, sizeof(szOutPath), pszOutDir, szOutName);
     AssertRCReturn(rc, rc);
 
     const char *apszArgs[10];
