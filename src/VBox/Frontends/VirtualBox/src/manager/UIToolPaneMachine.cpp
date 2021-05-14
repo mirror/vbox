@@ -27,7 +27,7 @@
 #include "UIErrorPane.h"
 #include "UIDetails.h"
 #include "UIIconPool.h"
-#include "UIVMActivityMonitor.h"
+#include "UIVMActivityToolWidget.h"
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
 #include "UIVirtualMachineItem.h"
@@ -192,8 +192,8 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
             }
             case UIToolType_VMActivity:
             {
-                m_pPaneVMActivityMonitor = new UIVMActivityMonitor(EmbedTo_Stack, 0,
-                                                                     m_comMachine, m_pActionPool, false /* Show toolbar */);
+                m_pPaneVMActivityMonitor = new UIVMActivityToolWidget(EmbedTo_Stack, m_pActionPool,
+                                                                      false /* Show toolbar */, 0 /* Parent */);
                 AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
 #ifndef VBOX_WS_MAC
                 const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
@@ -202,12 +202,12 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 
                 /* Configure pane: */
                 m_pPaneVMActivityMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivity));
-
+                m_pPaneVMActivityMonitor->setSelectedVMListItems(m_items);
                 /* Add into layout: */
                 m_pLayout->addWidget(m_pPaneVMActivityMonitor);
                 m_pLayout->setCurrentWidget(m_pPaneVMActivityMonitor);
 
-                connect(m_pPaneVMActivityMonitor, &UIVMActivityMonitor::sigSwitchToResourcesPane,
+                connect(m_pPaneVMActivityMonitor, &UIVMActivityToolWidget::sigSwitchToResourcesPane,
                         this, &UIToolPaneMachine::sigSwitchToResourcesPane);
                 break;
             }
@@ -284,6 +284,12 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setSelectedVMListItems(m_items);
     }
+    /* Update performance monitor pane is it is open: */
+    if (isToolOpened(UIToolType_VMActivity))
+    {
+        AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
+        m_pPaneVMActivityMonitor->setSelectedVMListItems(m_items);
+    }
 }
 
 void UIToolPaneMachine::setMachine(const CMachine &comMachine)
@@ -296,12 +302,6 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
     {
         AssertPtrReturnVoid(m_pPaneSnapshots);
         m_pPaneSnapshots->setMachine(m_comMachine);
-    }
-    /* Update performance monitor pane is it is open: */
-    if (isToolOpened(UIToolType_VMActivity))
-    {
-        AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
-        m_pPaneVMActivityMonitor->setMachine(m_comMachine);
     }
 }
 

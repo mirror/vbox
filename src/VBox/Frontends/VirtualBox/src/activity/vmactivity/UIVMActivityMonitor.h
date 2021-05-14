@@ -48,7 +48,6 @@ class UIActionPool;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
-class QIToolBar;
 
 #define DATA_SERIES_SIZE 2
 
@@ -120,23 +119,18 @@ private:
   * special casing etc.*/
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QIWithRetranslateUI<QWidget>
 {
+
     Q_OBJECT;
-
- signals:
-
-    void sigSwitchToResourcesPane();
 
 public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
     UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
-                         UIActionPool *pActionPool,bool fShowToolbar = false);
+                        UIActionPool *pActionPool);
     void setMachine(const CMachine &machine);
-
-#ifdef VBOX_WS_MAC
-    QIToolBar *toolbar() const { return m_pToolBar; }
-#endif
+    QUuid machineId() const;
+    QString machineName() const;
 
  public slots:
 
@@ -164,7 +158,6 @@ private:
 
     void prepareWidgets();
     void prepareMetrics();
-    void prepareToolBar();
     void prepareActions();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
@@ -204,7 +197,6 @@ private:
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
     QTimer      *m_pTimer;
-    QIToolBar   *m_pToolBar;
 
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
       * @{ */
@@ -257,7 +249,6 @@ private:
     /** @} */
     quint64 m_iTimeStep;
     EmbedTo m_enmEmbedding;
-    bool    m_fShowToolbar;
     UIActionPool *m_pActionPool;
 };
 

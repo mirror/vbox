@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMActivityListWidget class declaration.
+ * VBox Qt GUI - UIVMActivityToolWidget class declaration.
  */
 
 /*
@@ -15,51 +15,45 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_activity_overview_UIVMActivityListWidget_h
-#define FEQT_INCLUDED_SRC_activity_overview_UIVMActivityListWidget_h
+#ifndef FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h
+#define FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* Qt includes: */
-#include <QMainWindow>
+#include <QTabWidget>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class QAbstractButton;
-class QFrame;
-class QItemSelection;
-class QLabel;
-class QTableView;
-class QTreeWidgetItem;
-class QIDialogButtonBox;
 class UIActionPool;
 class QIToolBar;
-class UIActivityOverviewProxyModel;
-class UIActivityOverviewModel;
-class UIVMActivityOverviewHostStats;
-class UIVMActivityOverviewHostStatsWidget;
-class UIVMActivityOverviewTableView;
+class UIVMActivityMonitor;
+class UIVMActivityListWidget;
+class UIVirtualMachineItem;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
-class UIVMActivityListWidget : public QIWithRetranslateUI<QWidget>
+class UIVMActivityToolWidget : public QIWithRetranslateUI<QTabWidget>
 {
     Q_OBJECT;
 
 signals:
 
+    void sigSwitchToResourcesPane();
 
 public:
 
-    UIVMActivityListWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+    UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
     QMenu *menu() const;
 
     bool isCurrentTool() const;
     void setIsCurrentTool(bool fIsCurrentTool);
+
+    void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
 
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
@@ -78,17 +72,24 @@ private slots:
 
 private:
 
+    void setMachines(const QVector<QUuid> &machineIDs);
 
     /** @name Prepare/cleanup cascade.
       * @{ */
         void prepare();
-        void prepareWidgets();
-        void prepareHostStatsWidgets();
         void prepareToolBar();
         void prepareActions();
         void updateColumnsMenu();
         void loadSettings();
     /** @} */
+
+    void showVMActivityMonitor(CMachine &comMachine);
+    void showVMActivityList();
+    /** Remove tabs conaining machine monitors with ids @machineIdsToRemove. */
+    void removeTabs(const QVector<QUuid> &machineIdsToRemove);
+    /** Add new tabs for each QUuid in @machineIdsToAdd. Does not check for duplicates. */
+    void addTabs(const QVector<QUuid> &machineIdsToAdd);
+
 
     /** @name General variables.
       * @{ */
@@ -97,14 +98,12 @@ private:
         const bool    m_fShowToolbar;
     /** @} */
 
-    /** @name Misc members.
-      * @{ */
-        QIToolBar *m_pToolBar;
-        QMenu                              *m_pColumnVisibilityToggleMenu;
-    /** @} */
+    QIToolBar *m_pToolBar;
+
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
+    QVector<QUuid> m_machineIds;
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityListWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h */

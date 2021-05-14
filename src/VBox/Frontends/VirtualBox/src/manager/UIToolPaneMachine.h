@@ -38,7 +38,7 @@ class QVBoxLayout;
 class UIActionPool;
 class UIDetails;
 class UIErrorPane;
-class UIVMActivityMonitor;
+class UIVMActivityToolWidget;
 class UISnapshotPane;
 class UIVirtualMachineItem;
 class UIVMLogViewerWidget;
@@ -132,7 +132,7 @@ private:
     /** Holds the Logviewer pane instance. */
     UIVMLogViewerWidget *m_pPaneLogViewer;
     /** Holds the Performance Monitor pane instance. */
-    UIVMActivityMonitor *m_pPaneVMActivityMonitor;
+    UIVMActivityToolWidget *m_pPaneVMActivityMonitor;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;

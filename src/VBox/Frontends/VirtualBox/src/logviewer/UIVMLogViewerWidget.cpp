@@ -208,6 +208,7 @@ QMenu *UIVMLogViewerWidget::menu() const
     return m_pActionPool->action(UIActionIndex_M_LogWindow)->menu();
 }
 
+
 void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
     QVector<QUuid> selectedMachines;

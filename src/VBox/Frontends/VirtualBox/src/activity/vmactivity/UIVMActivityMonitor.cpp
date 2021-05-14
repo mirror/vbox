@@ -33,7 +33,6 @@
 #include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIVMActivityMonitor.h"
-#include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -880,12 +879,11 @@ bool UIMetric::autoUpdateMaximum() const
 *********************************************************************************************************************************/
 
 UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
-                                           const CMachine &machine, UIActionPool *pActionPool, bool fShowToolbar /* = false */)
+                                           const CMachine &machine, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_pMainLayout(0)
     , m_pTimer(0)
-    , m_pToolBar(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
     , m_strDiskMetricName("Disk Usage")
@@ -894,13 +892,10 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_strVMExitMetricName("VMExits")
     , m_iTimeStep(0)
     , m_enmEmbedding(enmEmbedding)
-    , m_fShowToolbar(fShowToolbar)
     , m_pActionPool(pActionPool)
 {
     prepareMetrics();
     prepareWidgets();
-    if (fShowToolbar)
-        prepareToolBar();
     prepareActions();
     retranslateUi();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitor::sltMachineStateChange);
@@ -930,6 +925,20 @@ void UIVMActivityMonitor::setMachine(const CMachine &comMachine)
         openSession();
         start();
     }
+}
+
+QUuid UIVMActivityMonitor::machineId() const
+{
+    if (m_comMachine.isNull())
+        return QUuid();
+    return m_comMachine.GetId();
+}
+
+QString UIVMActivityMonitor::machineName() const
+{
+    if (m_comMachine.isNull())
+        return QString();
+    return m_comMachine.GetName();
 }
 
 void UIVMActivityMonitor::openSession()
@@ -1250,42 +1259,12 @@ void UIVMActivityMonitor::prepareMetrics()
     m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 
-void UIVMActivityMonitor::prepareToolBar()
-{
-    /* Create toolbar: */
-    m_pToolBar = new QIToolBar(parentWidget());
-    AssertPtrReturnVoid(m_pToolBar);
-    {
-        /* Configure toolbar: */
-        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-#ifdef VBOX_WS_MAC
-        /* Check whether we are embedded into a stack: */
-        if (m_enmEmbedding == EmbedTo_Stack)
-        {
-            /* Add into layout: */
-            layout()->addWidget(m_pToolBar);
-        }
-#else
-        /* Add into layout: */
-        layout()->addWidget(m_pToolBar);
-#endif
-    }
-}
-
 void UIVMActivityMonitor::prepareActions()
 {
     QAction *pExportAction =
         m_pActionPool->action(UIActionIndex_M_Activity_S_Export);
     if (pExportAction)
         connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
-
-    QAction *pToResourcesAction =
-        m_pActionPool->action(UIActionIndex_M_Activity_S_ToVMActivityOverview);
-    if (pToResourcesAction)
-        connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityMonitor::sigSwitchToResourcesPane);
 }
 
 bool UIVMActivityMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
