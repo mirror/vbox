@@ -34,6 +34,7 @@ class QIToolBar;
 class UIVMActivityMonitor;
 class UIVMActivityListWidget;
 class UIVirtualMachineItem;
+class CMachine;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
 class UIVMActivityToolWidget : public QIWithRetranslateUI<QTabWidget>
