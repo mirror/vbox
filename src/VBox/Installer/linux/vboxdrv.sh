@@ -587,7 +587,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|stop_vms|restart|force-reload|status}"
+    echo "Usage: $0 {start|stop|stop_vms|restart|setup|cleanup|force-reload|status}"
     exit 1
 esac
 
