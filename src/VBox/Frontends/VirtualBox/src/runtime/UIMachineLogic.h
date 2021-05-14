@@ -267,7 +267,8 @@ private slots:
     /* "Machine" menu functionality: */
     void sltShowKeyboardSettings();
     void sltShowSoftKeyboard();
-    void sltCloseSoftKeyboard();
+    void sltCloseSoftKeyboard(bool fAsync = false);
+    void sltCloseSoftKeyboardDefault() { sltCloseSoftKeyboard(true); }
     void sltToggleMouseIntegration(bool fEnabled);
     void sltTypeCAD();
 #ifdef VBOX_WS_X11
@@ -280,7 +281,8 @@ private slots:
     void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
     void sltTakeSnapshot();
     void sltShowInformationDialog();
-    void sltCloseVMInformationDialog();
+    void sltCloseVMInformationDialog(bool fAsync = false);
+    void sltCloseVMInformationDialogDefault() { sltCloseVMInformationDialog(true); }
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
     void sltReset();
