@@ -47,10 +47,12 @@
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
-/** The test manifest file. */
+/** The test manifest file name. */
 #define AUDIOTEST_MANIFEST_FILE_STR "vkat_manifest.ini"
+/** The current test manifest version. */
 #define AUDIOTEST_MANIFEST_VER      1
 
+/** Test manifest header name. */
 #define AUDIOTEST_INI_SEC_HDR_STR   "header"
 
 
@@ -266,6 +268,14 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
     return RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
 }
 
+/**
+ * Writes string data to a test set manifest.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to write manifest for.
+ * @param   pszFormat           Format string to write.
+ * @param   args                Variable arguments for \a pszFormat.
+ */
 static int audioTestManifestWriteV(PAUDIOTESTSET pSet, const char *pszFormat, va_list args)
 {
     char *psz = NULL;
@@ -281,6 +291,15 @@ static int audioTestManifestWriteV(PAUDIOTESTSET pSet, const char *pszFormat, va
     return rc;
 }
 
+/**
+ * Writes a terminated string line to a test set manifest.
+ * Convenience function.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to write manifest for.
+ * @param   pszFormat           Format string to write.
+ * @param   args                Variable arguments for \a pszFormat.
+ */
 static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, ...)
 {
     va_list va;
@@ -298,6 +317,14 @@ static int audioTestManifestWriteLn(PAUDIOTESTSET pSet, const char *pszFormat, .
     return rc;
 }
 
+/**
+ * Writes a section entry to a test set manifest.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to write manifest for.
+ * @param   pszFormat           Format string of section to write.
+ * @param   args                Variable arguments for \a pszFormat.
+ */
 static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszFormat, ...)
 {
     va_list va;
@@ -318,11 +345,22 @@ static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszForm
     return rc;
 }
 
+/**
+ * Initializes an audio test set, internal function.
+ * @param   pSet                Test set to initialize.
+ */
 static void audioTestSetInitInternal(PAUDIOTESTSET pSet)
 {
     pSet->f.hFile = NIL_RTFILE;
 }
 
+/**
+ * Returns whether a test set's manifest file is open (and thus ready) or not.
+ *
+ * @returns \c true if open (and ready), or \c false if not.
+ * @retval  VERR_
+ * @param   pSet                Test set to return open status for.
+ */
 static bool audioTestManifestIsOpen(PAUDIOTESTSET pSet)
 {
     if (   pSet->enmMode == AUDIOTESTSETMODE_TEST
@@ -335,12 +373,22 @@ static bool audioTestManifestIsOpen(PAUDIOTESTSET pSet)
     return false;
 }
 
+/**
+ * Initializes an audio test error description.
+ *
+ * @param   pErr                Test error description to initialize.
+ */
 static void audioTestErrorDescInit(PAUDIOTESTERRORDESC pErr)
 {
     RTListInit(&pErr->List);
     pErr->cErrors = 0;
 }
 
+/**
+ * Destroys an audio test error description.
+ *
+ * @param   pErr                Test error description to destroy.
+ */
 void AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr)
 {
     if (!pErr)
@@ -360,6 +408,13 @@ void AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr)
     Assert(pErr->cErrors == 0);
 }
 
+/**
+ * Returns if an audio test error description contains any errors or not.
+ *
+ * @returns \c true if it contains errors, or \c false if not.
+ *
+ * @param   pErr                Test error description to return error status for.
+ */
 bool AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr)
 {
     if (pErr->cErrors)
@@ -371,12 +426,21 @@ bool AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr)
     return false;
 }
 
-static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *pszFormat, va_list args)
+/**
+ * Adds a single error entry to an audio test error description, va_list version.
+ *
+ * @returns VBox status code.
+ * @param   pErr                Test error description to add entry for.
+ * @param   rc                  Result code of entry to add.
+ * @param   pszDesc             Error description format string to add.
+ * @param   args                Optional format arguments of \a pszDesc to add.
+ */
+static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *pszDesc, va_list args)
 {
     PAUDIOTESTERRORENTRY pEntry = (PAUDIOTESTERRORENTRY)RTMemAlloc(sizeof(AUDIOTESTERRORENTRY));
     AssertReturn(pEntry, VERR_NO_MEMORY);
 
-    if (RTStrPrintf2V(pEntry->szDesc, sizeof(pEntry->szDesc), pszFormat, args) < 0)
+    if (RTStrPrintf2V(pEntry->szDesc, sizeof(pEntry->szDesc), pszDesc, args) < 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     pEntry->rc = rc;
@@ -388,12 +452,20 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *
     return VINF_SUCCESS;
 }
 
-static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, const char *pszFormat, ...)
+/**
+ * Adds a single error entry to an audio test error description, va_list version.
+ *
+ * @returns VBox status code.
+ * @param   pErr                Test error description to add entry for.
+ * @param   pszDesc             Error description format string to add.
+ * @param   ...                 Optional format arguments of \a pszDesc to add.
+ */
+static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, const char *pszDesc, ...)
 {
     va_list va;
-    va_start(va, pszFormat);
+    va_start(va, pszDesc);
 
-    int rc = audioTestErrorDescAddV(pErr, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszFormat, va);
+    int rc = audioTestErrorDescAddV(pErr, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszDesc, va);
 
     va_end(va);
     return rc;
@@ -412,16 +484,35 @@ static int audioTestErrorDescAddRc(PAUDIOTESTERRORDESC pErr, int rc, const char 
 }
 #endif
 
+/**
+ * Creates a new temporary directory with a specific (test) tag.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Where to return the path of the created directory on success.
+ * @param   cbPath              Size (in bytes) of \a pszPath.
+ * @param   pszTag              Tag name to use for directory creation.
+ */
 int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 {
-    int rc = RTPathTemp(pszPath, cbPath);
+    char szPath[RTPATH_MAX];
+
+    int rc = RTPathTemp(szPath, sizeof(szPath));
     AssertRCReturn(rc, rc);
-    rc = AudioTestPathCreate(pszPath, cbPath, pszTag);
+    rc = AudioTestPathCreate(szPath, sizeof(szPath), pszTag);
     AssertRCReturn(rc, rc);
 
-    return rc;
+    return RTStrCopy(pszPath, cbPath, szPath);
 }
 
+/**
+ * Creates a new audio test set.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to create.
+ * @param   pszPath             Absolute path to use for the test set's temporary directory.
+ *                              If NULL, the OS' temporary directory will be used.
+ * @param   pszTag              Tag name to use for this test set.
+ */
 int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
 {
     int rc;
@@ -494,6 +585,11 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
     return rc;
 }
 
+/**
+ * Destroys a test set.
+ *
+ * @param   pSet                Test set to destroy.
+ */
 void AudioTestSetDestroy(PAUDIOTESTSET pSet)
 {
     if (!pSet)
@@ -506,6 +602,13 @@ void AudioTestSetDestroy(PAUDIOTESTSET pSet)
     }
 }
 
+/**
+ * Opens an existing audio test set.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to open.
+ * @param   pszPath             Absolute path of the test set to open.
+ */
 int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath)
 {
     audioTestSetInitInternal(pSet);
@@ -531,11 +634,23 @@ int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath)
     return rc;
 }
 
+/**
+ * Closes an opened audio test set.
+ *
+ * @param   pSet                Test set to close.
+ */
 void AudioTestSetClose(PAUDIOTESTSET pSet)
 {
     AudioTestSetDestroy(pSet);
 }
 
+/**
+ * Packs an audio test so that it's ready for transmission.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to pack.
+ * @param   pszOutDir           Where to store the packed test set.
+ */
 int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir)
 {
     RT_NOREF(pSet, pszOutDir);
@@ -546,6 +661,14 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir)
     return VERR_NOT_IMPLEMENTED;
 }
 
+/**
+ * Unpacks a formerly packed audio test set.
+ *
+ * @returns VBox status code.
+ * @param   pszFile             Test set file to unpack.
+ * @param   pszOutDir           Directory where to unpack the test set into.
+ *                              If the directory does not exist it will be created.
+ */
 int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
 {
     RT_NOREF(pszFile, pszOutDir);
@@ -555,6 +678,17 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
     return VERR_NOT_IMPLEMENTED;
 }
 
+/**
+ * Verifies an opened audio test set.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to verify.
+ * @param   pszTag              Tag to use for verification purpose.
+ * @param   pErrDesc            Where to return the test verification errors.
+ *
+ * @note    Test verification errors have to be checked for errors, regardless of the
+ *          actual return code.
+ */
 int AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc)
 {
     AssertReturn(audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);

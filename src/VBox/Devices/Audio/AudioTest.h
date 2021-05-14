@@ -23,6 +23,7 @@
 # pragma once
 #endif
 
+/** Prefix for audio test (set) directories. */
 #define AUDIOTEST_PATH_PREFIX_STR "audio-test-"
 
 /**
@@ -119,7 +120,9 @@ typedef enum AUDIOTESTTYPE
     /** Invalid test type, do not use. */
     AUDIOTESTTYPE_INVALID = 0,
     /** Play a test tone. */
-    AUDIOTESTTYPE_TESTTONE
+    AUDIOTESTTYPE_TESTTONE,
+        /** The usual 32-bit hack. */
+    AUDIOTESTTYPE_32BIT_HACK = 0x7fffffff
 } AUDIOTESTTYPE;
 
 /**
@@ -187,7 +190,9 @@ typedef AUDIOTESTERRORENTRY *PAUDIOTESTERRORENTRY;
  */
 typedef struct AUDIOTESTERRORDESC
 {
+    /** List entries containing the (FIFO-style) errors of type AUDIOTESTERRORENTRY. */
     RTLISTANCHOR     List;
+    /** Number of errors in the list. */
     uint32_t         cErrors;
 } AUDIOTESTERRORDESC;
 /** Pointer to an audio test error description. */
