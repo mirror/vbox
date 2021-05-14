@@ -263,7 +263,7 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCapture(PPDMIHOSTAUDIO pInter
 /** @todo rate limit this?  */
 
     uint32_t cbWritten;
-    int rc = AudioTestToneWrite(&pStreamDbg->In, pvBuf, cbBuf, &cbWritten);
+    int rc = AudioTestToneGenerate(&pStreamDbg->In, pvBuf, cbBuf, &cbWritten);
     if (RT_SUCCESS(rc))
     {
         /*

@@ -33,6 +33,7 @@
 #include <iprt/system.h>
 #include <iprt/uuid.h>
 #include <iprt/vfs.h>
+#include <iprt/zip.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h> /* sin, M_PI */
@@ -109,12 +110,16 @@ double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps)
  * @param   cbBuf               Size (in bytes) of output buffer.
  * @param   pcbWritten          How many bytes were written on success.
  */
-int AudioTestToneWrite(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     /*
-     * Clear the buffer first so we don't need to thing about additional channels.
+     * Clear the buffer first so we don't need to think about additional channels.
      */
-    uint32_t cFrames = PDMAudioPropsBytesToFrames(&pTone->Props, cbBuf);
+    uint32_t cFrames   = PDMAudioPropsBytesToFrames(&pTone->Props, cbBuf);
+
+    /* Input cbBuf not necessarily is aligned to the frames, so re-calculate it. */
+    const uint32_t cbToWrite = PDMAudioPropsFramesToBytes(&pTone->Props, cFrames);
+
     PDMAudioPropsClearBuffer(&pTone->Props, pvBuf, cbBuf, cFrames);
 
     /*
@@ -205,7 +210,7 @@ int AudioTestToneWrite(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32
     pTone->uSample = iSrcFrame;
 
     if (pcbWritten)
-        *pcbWritten = PDMAudioPropsFramesToBytes(&pTone->Props, cFrames);
+        *pcbWritten = cbToWrite;
 
     return VINF_SUCCESS;
 }
@@ -224,7 +229,11 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
     /** @todo Make this a bit more sophisticated later, e.g. muting and prequel/sequel are not very balanced. */
 
     pToneParams->msPrequel      = RTRandU32Ex(0, RT_MS_5SEC);
+#ifdef DEBUG_andy
+    pToneParams->msDuration     = RTRandU32Ex(0, RT_MS_1SEC);
+#else
     pToneParams->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
+#endif
     pToneParams->msSequel       = RTRandU32Ex(0, RT_MS_5SEC);
     pToneParams->uVolumePercent = RTRandU32Ex(0, 100);
 
@@ -245,6 +254,8 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
  */
 int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
 {
+    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
+
     int rc;
 
     char szTag[RTUUID_STR_LENGTH + 1];
@@ -262,8 +273,8 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
         AssertRCReturn(rc, rc);
     }
 
-    char szName[128];
-    if (RTStrPrintf2(szName, sizeof(szName), "%s%s", AUDIOTEST_PATH_PREFIX_STR, szTag) < 0)
+    char szName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 4];
+    if (RTStrPrintf2(szName, sizeof(szName), "%s-%s", AUDIOTEST_PATH_PREFIX_STR, szTag) < 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     rc = RTPathAppend(pszPath, cbPath, szName);
@@ -364,6 +375,8 @@ static int audioTestManifestWriteSection(PAUDIOTESTSET pSet, const char *pszSect
 static void audioTestSetInitInternal(PAUDIOTESTSET pSet)
 {
     pSet->f.hFile = NIL_RTFILE;
+
+    RTListInit(&pSet->lstObj);
 }
 
 /**
@@ -509,6 +522,8 @@ static int audioTestErrorDescAddRc(PAUDIOTESTERRORDESC pErr, int rc, const char 
  */
 int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 {
+    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
+
     char szPath[RTPATH_MAX];
 
     int rc = RTPathTemp(szPath, sizeof(szPath));
@@ -530,6 +545,8 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
  */
 int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
 {
+    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
+
     int rc;
 
     audioTestSetInitInternal(pSet);
@@ -595,6 +612,9 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
         AssertRCReturn(rc, rc);
 
         pSet->enmMode = AUDIOTESTSETMODE_TEST;
+
+        rc = RTStrCopy(pSet->szTag, sizeof(pSet->szTag), pszTag);
+        AssertRCReturn(rc, rc);
     }
 
     return rc;
@@ -603,18 +623,44 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
 /**
  * Destroys a test set.
  *
+ * @returns VBox status code.
  * @param   pSet                Test set to destroy.
  */
-void AudioTestSetDestroy(PAUDIOTESTSET pSet)
+int AudioTestSetDestroy(PAUDIOTESTSET pSet)
 {
     if (!pSet)
-        return;
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    PAUDIOTESTOBJ pObj, pObjNext;
+    RTListForEachSafe(&pSet->lstObj, pObj, pObjNext, AUDIOTESTOBJ, Node)
+    {
+        rc = AudioTestSetObjClose(pObj);
+        if (RT_SUCCESS(rc))
+        {
+            RTListNodeRemove(&pObj->Node);
+            RTMemFree(pObj);
+
+            Assert(pSet->cObj);
+            pSet->cObj--;
+        }
+        else
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(pSet->cObj == 0);
 
     if (RTFileIsValid(pSet->f.hFile))
     {
         RTFileClose(pSet->f.hFile);
         pSet->f.hFile = NIL_RTFILE;
     }
+
+    return rc;
 }
 
 /**
@@ -660,20 +706,142 @@ void AudioTestSetClose(PAUDIOTESTSET pSet)
 }
 
 /**
+ * Physically wipes all related test set files off the disk.
+ *
+ * @param   pSet                Test set to wipe.
+ */
+void AudioTestSetWipe(PAUDIOTESTSET pSet)
+{
+    RT_NOREF(pSet);
+}
+
+/**
+ * Creates and registers a new audio test object to a test set.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to create and register new object for.
+ * @param   pszName             Name of new object to create.
+ * @param   ppObj               Where to return the pointer to the newly created object on success.
+ */
+int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
+    AssertPtrReturn(pObj, VERR_NO_MEMORY);
+
+    int rc = RTStrPrintf(pObj->szName, sizeof(pObj->szName), "%04RU32-%s", pSet->cObj, pszName);
+    AssertRCReturn(rc, rc);
+
+    /** @todo Generalize this function more once we have more object types. */
+
+    char szFilePath[RTPATH_MAX];
+    rc = RTPathJoin(szFilePath, sizeof(szFilePath), pSet->szPathAbs, pObj->szName);
+    AssertRCReturn(rc, rc);
+
+    rc = RTFileOpen(&pObj->File.hFile, szFilePath, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        pObj->enmType = AUDIOTESTOBJTYPE_FILE;
+
+        RTListAppend(&pSet->lstObj, &pObj->Node);
+        pSet->cObj++;
+
+        *ppObj = pObj;
+    }
+
+    if (RT_FAILURE(rc))
+        RTMemFree(pObj);
+
+    return rc;
+}
+
+/**
+ * Writes to a created audio test object.
+ *
+ * @returns VBox status code.
+ * @param   pObj                Audio test object to write to.
+ */
+int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf)
+{
+    /** @todo Generalize this function more once we have more object types. */
+    AssertReturn(pObj->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
+
+    return RTFileWrite(pObj->File.hFile, pvBuf, cbBuf, NULL);
+}
+
+/**
+ * Closes an opened audio test object.
+ *
+ * @returns VBox status code.
+ * @param   pObj                Audio test object to close.
+ */
+int AudioTestSetObjClose(PAUDIOTESTOBJ pObj)
+{
+    if (!pObj)
+        return VINF_SUCCESS;
+
+    /** @todo Generalize this function more once we have more object types. */
+    AssertReturn(pObj->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    if (RTFileIsValid(pObj->File.hFile))
+    {
+        rc = RTFileClose(pObj->File.hFile);
+        pObj->File.hFile = NIL_RTFILE;
+    }
+
+    return rc;
+}
+
+/**
  * Packs an audio test so that it's ready for transmission.
  *
  * @returns VBox status code.
  * @param   pSet                Test set to pack.
- * @param   pszOutDir           Where to store the packed test set.
+ * @param   pszOutDir           Directory where to store the packed test set.
+ * @param   pszFileName         Where to return the final name of the packed test set. Optional and can be NULL.
+ * @param   cbFileName          Size (in bytes) of \a pszFileName.
  */
-int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir)
+int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName)
 {
-    RT_NOREF(pSet, pszOutDir);
-
+    AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
     AssertReturn(audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
-    // RTZipTarCmd()
 
-    return VERR_NOT_IMPLEMENTED;
+    /** @todo Check and deny if \a pszOutDir is part of the set's path. */
+
+    char szOutName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 16];
+    int rc = RTStrPrintf(szOutName, sizeof(szOutName), "%s-%s.tar.gz", AUDIOTEST_PATH_PREFIX_STR, pSet->szTag);
+    AssertRCReturn(rc, rc);
+
+    char szOutPath[RTPATH_MAX];
+    rc = RTPathJoin(szOutPath, sizeof(szOutPath), pszOutDir, szOutName);
+    AssertRCReturn(rc, rc);
+
+    const char *apszArgs[10];
+    unsigned    cArgs = 0;
+
+    apszArgs[cArgs++] = "AudioTest";
+    apszArgs[cArgs++] = "--create";
+    apszArgs[cArgs++] = "--gzip";
+    apszArgs[cArgs++] = "--directory";
+    apszArgs[cArgs++] = pSet->szPathAbs;
+    apszArgs[cArgs++] = "--file";
+    apszArgs[cArgs++] = szOutPath;
+    apszArgs[cArgs++] = ".";
+
+    RTEXITCODE rcExit = RTZipTarCmd(cArgs, (char **)apszArgs);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pszFileName)
+            rc = RTStrCopy(pszFileName, cbFileName, szOutPath);
+    }
+
+    return rc;
 }
 
 /**

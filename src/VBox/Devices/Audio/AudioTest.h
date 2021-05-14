@@ -23,8 +23,14 @@
 # pragma once
 #endif
 
+/** @todo Some stuff here can be private-only to the implementation. */
+
+/** Maximum length in characters an audio test tag can have. */
+#define AUDIOTEST_TAG_MAX          64
+/** Maximum length in characters a single audio test error description can have. */
+#define AUDIOTEST_ERROR_DESC_MAX   128
 /** Prefix for audio test (set) directories. */
-#define AUDIOTEST_PATH_PREFIX_STR "audio-test-"
+#define AUDIOTEST_PATH_PREFIX_STR "vkat"
 
 /**
  * Enumeration for an audio test tone (wave) type.
@@ -130,8 +136,8 @@ typedef enum AUDIOTESTTYPE
  */
 typedef struct AUDIOTESTPARMS
 {
-    /** Specifies the test to run. */
-    uint32_t                idxTest;
+    /** Specifies the current test iteration. */
+    uint32_t                idxCurrent;
     /** How many iterations the test should be executed. */
     uint32_t                cIterations;
     /** Audio device to use. */
@@ -151,11 +157,39 @@ typedef struct AUDIOTESTPARMS
 /** Pointer to a test parameter structure. */
 typedef AUDIOTESTPARMS *PAUDIOTESTPARMS;
 
+typedef enum AUDIOTESTOBJTYPE
+{
+    AUDIOTESTOBJTYPE_UNKNOWN = 0,
+    AUDIOTESTOBJTYPE_FILE,
+    /** The usual 32-bit hack. */
+    AUDIOTESTOBJTYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTOBJTYPE;
+
+typedef struct AUDIOTESTOBJFILE
+{
+    RTFILE hFile;
+} AUDIOTESTOBJFILE;
+
+typedef struct AUDIOTESTOBJ
+{
+    RTLISTNODE           Node;
+    char                 szName[64];
+    AUDIOTESTOBJTYPE     enmType;
+    union
+    {
+        AUDIOTESTOBJFILE File;
+    };
+} AUDIOTESTOBJ;
+/** Pointer to an audio test object. */
+typedef AUDIOTESTOBJ *PAUDIOTESTOBJ;
+
 /**
  * Structure specifying an audio test set.
  */
 typedef struct AUDIOTESTSET
 {
+    /** The set's tag. */
+    char             szTag[AUDIOTEST_TAG_MAX];
     /** Absolute path where to store the test audio data. */
     char             szPathAbs[RTPATH_MAX];
     /** Current mode the test set is in. */
@@ -165,6 +199,8 @@ typedef struct AUDIOTESTSET
         RTFILE       hFile;
         RTINIFILE    hIniFile;
     } f;
+    uint32_t         cObj;
+    RTLISTANCHOR     lstObj;
 } AUDIOTESTSET;
 /** Pointer to an audio test set. */
 typedef AUDIOTESTSET *PAUDIOTESTSET;
@@ -179,7 +215,7 @@ typedef struct AUDIOTESTERRORENTRY
     /** Additional rc. */
     int              rc;
     /** Actual error description. */
-    char             szDesc[128];
+    char             szDesc[AUDIOTEST_ERROR_DESC_MAX];
 } AUDIOTESTERRORENTRY;
 /** Pointer to an audio test error description. */
 typedef AUDIOTESTERRORENTRY *PAUDIOTESTERRORENTRY;
@@ -200,18 +236,23 @@ typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
 
 
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
-int    AudioTestToneWrite(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
+int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 
 int    AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMPROPS pProps);
 
 int    AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszUUID);
 int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
 
+int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj);
+int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf);
+int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
+
 int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
-void   AudioTestSetDestroy(PAUDIOTESTSET pSet);
+int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
 int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 void   AudioTestSetClose(PAUDIOTESTSET pSet);
-int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir);
+void   AudioTestSetWipe(PAUDIOTESTSET pSet);
+int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc);
 
