@@ -761,6 +761,8 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
  *
  * @returns VBox status code.
  * @param   pObj                Audio test object to write to.
+ * @param   pvBuf               Pointer to data to write.
+ * @param   cbBuf               Size (in bytes) of \a pvBuf to write.
  */
 int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf)
 {
