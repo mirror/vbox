@@ -69,8 +69,6 @@ protected:
     virtual void retranslateUi() /* override */;
     virtual bool shouldBeMaximized() const /* override */;
     virtual void closeEvent(QCloseEvent *event) /* override */;
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-    virtual void moveEvent(QMoveEvent *pEvent) /* override */;
     bool event(QEvent *pEvent) /* override */;
 
 private slots:
@@ -134,6 +132,7 @@ private:
 
     UISoftKeyboardSettingsWidget  *m_pSettingsWidget;
     UISoftKeyboardStatusBarWidget *m_pStatusBarWidget;
+    int m_iGeometrySaveTimerId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
