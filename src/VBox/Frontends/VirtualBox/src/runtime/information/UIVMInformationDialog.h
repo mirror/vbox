@@ -67,8 +67,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
     virtual void closeEvent(QCloseEvent *pEvent) /* override */;
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-    virtual void moveEvent(QMoveEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) /* override */;
 
 private slots:
 
@@ -104,6 +103,7 @@ private:
     UIMachineWindow              *m_pMachineWindow;
     /** @} */
     bool m_fCloseEmitted;
+    int m_iGeometrySaveTimerId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIVMInformationDialog_h */

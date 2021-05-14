@@ -61,6 +61,7 @@ UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
     , m_pTabWidget(0)
     , m_pMachineWindow(pMachineWindow)
     , m_fCloseEmitted(false)
+    , m_iGeometrySaveTimerId(-1)
 {
     /* Prepare: */
     prepare();
@@ -110,16 +111,33 @@ void UIVMInformationDialog::closeEvent(QCloseEvent *pEvent)
     }
 }
 
-void UIVMInformationDialog::resizeEvent(QResizeEvent *pEvent)
+bool UIVMInformationDialog::event(QEvent *pEvent)
 {
-    saveDialogGeometry();
-    QMainWindowWithRestorableGeometryAndRetranslateUi::resizeEvent(pEvent);
-}
-
-void UIVMInformationDialog::moveEvent(QMoveEvent *pEvent)
-{
-    QMainWindowWithRestorableGeometryAndRetranslateUi::moveEvent(pEvent);
-    saveDialogGeometry();
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        case QEvent::Move:
+        {
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+            break;
+        }
+        case QEvent::Timer:
+        {
+            QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+            if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+            {
+                killTimer(m_iGeometrySaveTimerId);
+                m_iGeometrySaveTimerId = -1;
+                saveDialogGeometry();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
 }
 
 void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
