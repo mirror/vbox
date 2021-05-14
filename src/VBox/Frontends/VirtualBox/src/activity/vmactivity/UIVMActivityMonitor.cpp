@@ -908,6 +908,11 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
             this, &UIVMActivityMonitor::sltClearCOMData);
 }
 
+UIVMActivityMonitor::~UIVMActivityMonitor()
+{
+    sltClearCOMData();
+}
+
 void UIVMActivityMonitor::setMachine(const CMachine &comMachine)
 {
     reset();

@@ -314,6 +314,7 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
 
 UIGuestProcessControlWidget::~UIGuestProcessControlWidget()
 {
+    sltCleanupListener();
 }
 
 void UIGuestProcessControlWidget::retranslateUi()
@@ -392,8 +393,6 @@ void UIGuestProcessControlWidget::prepareConnections()
     }
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIGuestProcessControlWidget::sltSaveSettings);
-    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
-            this, &UIGuestProcessControlWidget::sltCleanupListener);
 }
 
 void UIGuestProcessControlWidget::sltGuestSessionsUpdated()

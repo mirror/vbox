@@ -128,6 +128,7 @@ public:
       * @param machine is machine reference. */
     UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
                         UIActionPool *pActionPool);
+    ~UIVMActivityMonitor();
     void setMachine(const CMachine &machine);
     QUuid machineId() const;
     QString machineName() const;
