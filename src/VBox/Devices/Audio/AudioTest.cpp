@@ -231,6 +231,18 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
     return VINF_SUCCESS;
 }
 
+/**
+ * Creates a new path (directory) for a specific audio test set tag.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             On input, specifies the absolute base path where to create the test set path.
+ *                              On output this specifies the absolute path created.
+ * @param   cbPath              Size (in bytes) of \a pszPath.
+ * @param   pszTag              Tag to use for path creation.
+ *
+ * @note    Can be used multiple times with the same tag; a sub directory with an ISO time string will be used
+ *          on each call.
+ */
 int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
 {
     int rc;
@@ -488,9 +500,12 @@ static int audioTestErrorDescAddRc(PAUDIOTESTERRORDESC pErr, int rc, const char 
  * Creates a new temporary directory with a specific (test) tag.
  *
  * @returns VBox status code.
- * @param   pszPath             Where to return the path of the created directory on success.
+ * @param   pszPath             Where to return the absolute path of the created directory on success.
  * @param   cbPath              Size (in bytes) of \a pszPath.
  * @param   pszTag              Tag name to use for directory creation.
+ *
+ * @note    Can be used multiple times with the same tag; a sub directory with an ISO time string will be used
+ *          on each call.
  */
 int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 {
@@ -533,7 +548,7 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
     if (RT_SUCCESS(rc))
     {
         char szManifest[RTPATH_MAX];
-        rc = RTStrCopy(szManifest, sizeof(szManifest), pszPath);
+        rc = RTStrCopy(szManifest, sizeof(szManifest), pSet->szPathAbs);
         AssertRCReturn(rc, rc);
 
         rc = RTPathAppend(szManifest, sizeof(szManifest), AUDIOTEST_MANIFEST_FILE_STR);
