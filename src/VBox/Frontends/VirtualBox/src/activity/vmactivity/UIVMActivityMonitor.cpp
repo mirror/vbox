@@ -1063,11 +1063,11 @@ void UIVMActivityMonitor::prepareWidgets()
     int iRow = 0;
     foreach (const QString &strMetricName, chartOrder)
     {
+        if (!m_metrics.contains(strMetricName))
+            continue;
         QHBoxLayout *pChartLayout = new QHBoxLayout;
         pChartLayout->setSpacing(0);
 
-        if (!m_metrics.contains(strMetricName))
-            continue;
         QLabel *pLabel = new QLabel(this);
         pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         pChartLayout->addWidget(pLabel);
