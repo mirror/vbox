@@ -18,7 +18,6 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QMenu>
-#include <QSplitter>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -295,7 +294,6 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
-    , m_pSplitter(0)
     , m_pTreeWidget(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
@@ -308,7 +306,6 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
     prepareConnections();
     prepareToolBar();
     initGuestSessionTree();
-    loadSettings();
     retranslateUi();
 }
 
@@ -337,28 +334,13 @@ void UIGuestProcessControlWidget::prepareObjects()
 
     /* Configure layout: */
     m_pMainLayout->setSpacing(0);
-
-    m_pSplitter = new QSplitter;
-
-    if (!m_pSplitter)
-        return;
-
-    m_pSplitter->setOrientation(Qt::Vertical);
-
-    m_pMainLayout->addWidget(m_pSplitter);
-
-
     m_pTreeWidget = new UIGuestControlTreeWidget;
 
     if (m_pTreeWidget)
     {
-        m_pSplitter->addWidget(m_pTreeWidget);
+        m_pMainLayout->addWidget(m_pTreeWidget);
         m_pTreeWidget->setColumnCount(3);
     }
-
-    m_pSplitter->setStretchFactor(0, 2);
-    m_pSplitter->setStretchFactor(1, 1);
-
     updateTreeWidget();
 }
 
@@ -391,8 +373,6 @@ void UIGuestProcessControlWidget::prepareConnections()
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
                 this, &UIGuestProcessControlWidget::sltGuestSessionUnregistered);
     }
-    connect(&uiCommon(), &UICommon::sigAskToCommitData,
-            this, &UIGuestProcessControlWidget::sltSaveSettings);
 }
 
 void UIGuestProcessControlWidget::sltGuestSessionsUpdated()
@@ -558,13 +538,6 @@ void UIGuestProcessControlWidget::sltGuestSessionUnregistered(CGuestSession gues
         delete selectedItem;
 }
 
-void UIGuestProcessControlWidget::sltSaveSettings()
-{
-    if (!m_pSplitter)
-        return;
-    gEDataManager->setGuestControlProcessControlSplitterHints(m_pSplitter->sizes());
-}
-
 void UIGuestProcessControlWidget::sltCleanupListener()
 {
     /* Unregister everything: */
@@ -580,17 +553,6 @@ void UIGuestProcessControlWidget::sltCleanupListener()
 
     /* Unregister event listener for CProgress event source: */
     comEventSource.UnregisterListener(m_comEventListener);
-}
-
-void UIGuestProcessControlWidget::loadSettings()
-{
-    if (!m_pSplitter)
-        return;
-    QList<int> splitterHints = gEDataManager->guestControlProcessControlSplitterHints();
-    if (splitterHints.size() != 2)
-        return;
-    if (splitterHints[0] != 0 && splitterHints[1] != 0)
-        m_pSplitter->setSizes(splitterHints);
 }
 
 #include "UIGuestProcessControlWidget.moc"

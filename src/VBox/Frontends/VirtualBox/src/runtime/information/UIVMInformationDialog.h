@@ -93,14 +93,14 @@ private:
 
     /** @name Widget variables.
      * @{ */
-    /** Holds the dialog tab-widget instance. */
-    QITabWidget                  *m_pTabWidget;
-    /** Holds the map of dialog tab instances. */
-    QMap<int, QWidget*>           m_tabs;
-    /** Holds the dialog button-box instance. */
-    QIDialogButtonBox            *m_pButtonBox;
-    /** Holds the machine-window reference. */
-    UIMachineWindow              *m_pMachineWindow;
+       /** Holds the dialog tab-widget instance. */
+       QITabWidget                  *m_pTabWidget;
+       /** Holds the map of dialog tab instances. */
+       QMap<int, QWidget*>           m_tabs;
+       /** Holds the dialog button-box instance. */
+       QIDialogButtonBox            *m_pButtonBox;
+       /** Holds the machine-window reference. */
+       UIMachineWindow              *m_pMachineWindow;
     /** @} */
     bool m_fCloseEmitted;
     int m_iGeometrySaveTimerId;

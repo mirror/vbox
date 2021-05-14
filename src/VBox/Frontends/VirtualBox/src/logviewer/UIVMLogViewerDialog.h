@@ -85,8 +85,7 @@ protected:
       * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
-        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-        virtual void moveEvent(QMoveEvent *pEvent) /* override */;
+        virtual bool event(QEvent *pEvent) /* override */;
     /** @} */
 
     /** @name Prepare/cleanup cascade.
@@ -122,6 +121,7 @@ private:
     UIActionPool *m_pActionPool;
     /** Holds the machine reference. */
     CMachine      m_comMachine;
+    int m_iGeometrySaveTimerId;
 };
 
 

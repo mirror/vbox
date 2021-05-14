@@ -64,6 +64,7 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *p
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
     , m_comMachine(comMachine)
+    , m_iGeometrySaveTimerId(-1)
 {
 }
 
@@ -93,16 +94,33 @@ void UIVMLogViewerDialog::retranslateUi()
     button(ButtonType_Help)->setToolTip(UIVMLogViewerWidget::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }
 
-void UIVMLogViewerDialog::resizeEvent(QResizeEvent *pEvent)
+bool UIVMLogViewerDialog::event(QEvent *pEvent)
 {
-    QIWithRetranslateUI<QIManagerDialog>::resizeEvent(pEvent);
-    saveDialogGeometry();
-}
-
-void UIVMLogViewerDialog::moveEvent(QMoveEvent *pEvent)
-{
-    QIWithRetranslateUI<QIManagerDialog>::moveEvent(pEvent);
-    saveDialogGeometry();
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        case QEvent::Move:
+        {
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+            break;
+        }
+        case QEvent::Timer:
+        {
+            QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+            if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+            {
+                killTimer(m_iGeometrySaveTimerId);
+                m_iGeometrySaveTimerId = -1;
+                saveDialogGeometry();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return QIWithRetranslateUI<QIManagerDialog>::event(pEvent);
 }
 
 void UIVMLogViewerDialog::configure()

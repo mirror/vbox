@@ -70,7 +70,6 @@ private slots:
     void sltTreeItemUpdated();
     void sltCloseSessionOrProcess();
     void sltShowProperties();
-    void sltSaveSettings();
     void sltCleanupListener();
 
 private:
@@ -82,11 +81,9 @@ private:
     void initGuestSessionTree();
     void updateTreeWidget();
     void addGuestSession(CGuestSession guestSession);
-    void loadSettings();
 
     CGuest                    m_comGuest;
     QVBoxLayout              *m_pMainLayout;
-    QSplitter                *m_pSplitter;
     UIGuestControlTreeWidget *m_pTreeWidget;
     const EmbedTo             m_enmEmbedding;
     QIToolBar                *m_pToolBar;
