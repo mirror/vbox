@@ -369,6 +369,11 @@ class UIVMActivityOverviewDelegate : public QItemDelegate
 
     Q_OBJECT;
 
+public:
+
+    UIVMActivityOverviewDelegate(QObject *pParent = 0)
+        : QItemDelegate(pParent){}
+
 protected:
 
     virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
@@ -1483,7 +1488,7 @@ void UIVMActivityOverviewWidget::prepareWidgets()
         m_pProxyModel->setSourceModel(m_pModel);
         m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
         m_pTableView->setModel(m_pProxyModel);
-        m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate);
+        m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
         m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableView->setShowGrid(false);
