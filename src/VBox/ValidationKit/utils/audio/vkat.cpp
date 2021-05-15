@@ -226,6 +226,46 @@ static struct
     },
 };
 
+/**
+ * Backends.
+ *
+ * @note The first backend in the array is the default one for the platform.
+ */
+static struct
+{
+    /** The driver registration structure. */
+    PCPDMDRVREG pDrvReg;
+    /** The backend name.
+     * Aliases are implemented by having multiple entries for the same backend.  */
+    const char *pszName;
+} const g_aBackends[] =
+{
+#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
+    {   &g_DrvHostALSAAudio,    "alsa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+    {   &g_DrvHostPulseAudio,   "pulseaudio" },
+    {   &g_DrvHostPulseAudio,   "pulse" },
+    {   &g_DrvHostPulseAudio,   "pa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+    {   &g_DrvHostOSSAudio,     "oss" },
+#endif
+#if defined(RT_OS_DARWIN)
+    {   &g_DrvHostCoreAudio,    "coreaudio" },
+    {   &g_DrvHostCoreAudio,    "core" },
+    {   &g_DrvHostCoreAudio,    "ca" },
+#endif
+#if defined(RT_OS_WINDOWS)
+    {   &g_DrvHostAudioWas,     "wasapi" },
+    {   &g_DrvHostAudioWas,     "was" },
+    {   &g_DrvHostDSound,       "directsound" },
+    {   &g_DrvHostDSound,       "dsound" },
+    {   &g_DrvHostDSound,       "ds" },
+#endif
+};
+AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
+
 /** The test handle. */
 static RTTEST       g_hTest;
 /** The current verbosity level. */
@@ -711,6 +751,11 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
     Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
     Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
+    Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
+    Cfg.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, 200);
+    Cfg.Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(pProps, 10);
+    Cfg.Device.cMsSchedulingHint    = 10;
+
     return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
 }
 
@@ -980,30 +1025,13 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
 
     const char *pszDevice  = NULL; /* Custom device to use. Can be NULL if not being used. */
     const char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
+    PCPDMDRVREG pDrvReg    = g_aBackends[0].pDrvReg;
 
-    /* The backend: */
-    PCPDMDRVREG pDrvReg;
-#if defined(RT_OS_WINDOWS)
-    pDrvReg = &g_DrvHostAudioWas;
-#elif defined(RT_OS_DARWIN)
-    pDrvReg = &g_DrvHostCoreAudio;
-#elif defined(RT_OS_SOLARIS)
-    pDrvReg = &g_DrvHostOSSAudio;
-#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_ALSA)
-    pDrvReg = &g_DrvHostALSAAudio;
-#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_PULSE)
-    pDrvReg = &g_DrvHostPulseAudio;
-#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_OSS)
-    pDrvReg = &g_DrvHostPulseAudio;
-#else
-# error "Port me!"
-#endif
-
-    RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 1, 0 /*fFlags*/);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
+    RTGETOPTUNION ValueUnion;
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (rc)
@@ -1019,30 +1047,13 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
 
             case 'b':
                 pDrvReg = NULL;
-#ifdef VBOX_WITH_AUDIO_PULSE
-                if (   !strcmp(ValueUnion.psz, "pulseaudio")
-                    || !strcmp(ValueUnion.psz, "pa"))
-                    pDrvReg = &g_DrvHostPulseAudio;
-#endif
-#ifdef VBOX_WITH_AUDIO_ALSA
-                if (   !strcmp(ValueUnion.psz, "alsa"))
-                    pDrvReg = &g_DrvHostALSAAudio;
-#endif
-#ifdef VBOX_WITH_AUDIO_OSS
-                if (   !strcmp(ValueUnion.psz, "oss"))
-                    pDrvReg = &g_DrvHostOSSAudio;
-#endif
-#if defined(RT_OS_DARWIN)
-                if (   !strcmp(ValueUnion.psz, "coreaudio"))
-                    pDrvReg = &g_DrvHostCoreAudio;
-#endif
-#if defined(RT_OS_WINDOWS)
-                if (        !strcmp(ValueUnion.psz, "wasapi"))
-                    pDrvReg = &g_DrvHostAudioWas;
-                else if (   !strcmp(ValueUnion.psz, "directsound")
-                         || !strcmp(ValueUnion.psz, "dsound")
-                    pDrvReg = &g_DrvHostDSound;
-#endif
+                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
+                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
+                    {
+                        pDrvReg = g_aBackends[i].pDrvReg;
+                        break;
+                    }
                 if (pDrvReg == NULL)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
                 break;
