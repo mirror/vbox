@@ -29,11 +29,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/buildconfig.h>
+#include <iprt/ctype.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
-#include <iprt/path.h>
 #include <iprt/message.h>
+#include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/rand.h>
 #include <iprt/stream.h>
@@ -53,21 +54,15 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Prototypes                                                                                                                   *
-*********************************************************************************************************************************/
-struct AUDIOTESTENV;
-struct AUDIOTESTDESC;
-struct AUDIOTESTPARMS;
-
-
-/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+struct AUDIOTESTENV;
+/** Pointer a audio test environment. */
+typedef AUDIOTESTENV *PAUDIOTESTENV;
+
+struct AUDIOTESTDESC;
+/** Pointer a audio test descriptor. */
+typedef AUDIOTESTDESC *PAUDIOTESTDESC;
 
 /**
  * Callback to set up the test parameters for a specific test.
@@ -78,15 +73,15 @@ struct AUDIOTESTPARMS;
  * @param   pszTest         Test name.
  * @param   pTstParmsAcq    The audio test parameters to set up.
  */
-typedef DECLCALLBACKTYPE(int, FNAUDIOTESTSETUP,(AUDIOTESTENV *pTstEnv, AUDIOTESTDESC *pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx));
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTSETUP,(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx));
 /** Pointer to an audio test setup callback. */
 typedef FNAUDIOTESTSETUP *PFNAUDIOTESTSETUP;
 
-typedef DECLCALLBACKTYPE(int, FNAUDIOTESTEXEC,(AUDIOTESTENV *pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms));
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTEXEC,(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms));
 /** Pointer to an audio test exec callback. */
 typedef FNAUDIOTESTEXEC *PFNAUDIOTESTEXEC;
 
-typedef DECLCALLBACKTYPE(int, FNAUDIOTESTDESTROY,(AUDIOTESTENV *pTstEnv, void *pvCtx));
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTDESTROY,(PAUDIOTESTENV pTstEnv, void *pvCtx));
 /** Pointer to an audio test destroy callback. */
 typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
 
@@ -106,13 +101,12 @@ typedef struct AUDIOTESTENV
     /** The host (backend) driver to use. */
     PPDMIHOSTAUDIO        pDrvAudio;
     /** The current (last) audio device enumeration to use. */
-    PDMAUDIOHOSTENUM      DevEnm;
+    PDMAUDIOHOSTENUM      DevEnum;
+    /** Audio stream. */
     AUDIOTESTSTREAM       aStreams[AUDIOTESTENV_MAX_STREAMS];
     /** The audio test set to use. */
     AUDIOTESTSET          Set;
 } AUDIOTESTENV;
-/** Pointer a audio test environment. */
-typedef AUDIOTESTENV *PAUDIOTESTENV;
 
 /**
  * Audio test descriptor.
@@ -130,16 +124,16 @@ typedef struct AUDIOTESTDESC
     /** The destruction callback. */
     PFNAUDIOTESTDESTROY     pfnDestroy;
 } AUDIOTESTDESC;
-/** Pointer a audio test descriptor. */
-typedef AUDIOTESTDESC *PAUDIOTESTDESC;
 
 
 /*********************************************************************************************************************************
-*   Forward declarations                                                                                                         *
+*   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
+static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv);
+static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv);
 
 
 /*********************************************************************************************************************************
@@ -176,8 +170,8 @@ enum
  */
 static const RTGETOPTDEF g_aCmdCommonOptions[] =
 {
-    { "--help",             'h',                          RTGETOPT_REQ_NOTHING },
-    { "--verbose",          'v',                          RTGETOPT_REQ_NOTHING }
+    { "--quiet",            'q',                          RTGETOPT_REQ_NOTHING },
+    { "--verbose",          'v',                          RTGETOPT_REQ_NOTHING },
 };
 
 /**
@@ -210,12 +204,34 @@ static const RTGETOPTDEF g_aCmdVerifyOptions[] =
     { "--tag",              VKAT_VERIFY_OPT_TAG,          RTGETOPT_REQ_STRING  }
 };
 
+/**
+ * Commands.
+ */
+static struct
+{
+    const char     *pszCommand;
+    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(int argc, char **argv));
+    PCRTGETOPTDEF   paOptions;
+    size_t          cOptions;
+    const char     *pszDesc;
+} const g_aCommands[] =
+{
+    {
+        "test",   audioTestMain,      g_aCmdTestOptions,      RT_ELEMENTS(g_aCmdTestOptions),
+        "Does some kind of testing, I guess..."
+    },
+    {
+        "verify", audioVerifyMain,    g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),
+        "Verfies something, I guess..."
+    },
+};
+
 /** The test handle. */
-static RTTEST g_hTest;
-/** The driver instance data. */
-PDMDRVINS g_DrvIns;
+static RTTEST       g_hTest;
 /** The current verbosity level. */
-unsigned  g_uVerbosity = 0;
+static unsigned     g_uVerbosity = 0;
+/** The driver instance data. */
+static PDMDRVINS    g_DrvIns;
 
 
 /*********************************************************************************************************************************
@@ -234,7 +250,7 @@ unsigned  g_uVerbosity = 0;
 static int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio, const char *pszTag)
 {
     pTstEnv->pDrvAudio = pDrvAudio;
-    PDMAudioHostEnumInit(&pTstEnv->DevEnm);
+    PDMAudioHostEnumInit(&pTstEnv->DevEnum);
 
     int rc = VINF_SUCCESS;
 
@@ -274,7 +290,7 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     if (!pTstEnv)
         return;
 
-    PDMAudioHostEnumDelete(&pTstEnv->DevEnm);
+    PDMAudioHostEnumDelete(&pTstEnv->DevEnum);
 
     for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)
     {
@@ -293,9 +309,7 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
  */
 static void audioTestParmsInit(PAUDIOTESTPARMS pTstParms)
 {
-    RT_BZERO(pTstParms, sizeof(AUDIOTESTPARMS));
-
-    return;
+    RT_ZERO(*pTstParms);
 }
 
 /**
@@ -312,22 +326,16 @@ static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
 }
 
 /**
- * Shows the application logo.
+ * Shows the logo.
  *
  * @param   pStream             Output stream to show logo on.
  */
-void showLogo(PRTSTREAM pStream)
+static void audioTestShowLogo(PRTSTREAM pStream)
 {
-    static bool s_fLogoShown = false; /* Show logo only once. */
-
-    if (!s_fLogoShown)
-    {
-        RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) "
-                     VBOX_VERSION_STRING " - r%s\n"
-                     "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                     "All rights reserved.\n\n", RTBldCfgRevisionStr());
-        s_fLogoShown = true;
-    }
+    RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) "
+                 VBOX_VERSION_STRING " - r%s\n"
+                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                 "All rights reserved.\n\n", RTBldCfgRevisionStr());
 }
 
 /**
@@ -335,42 +343,62 @@ void showLogo(PRTSTREAM pStream)
  */
 static void audioTestUsage(PRTSTREAM pStrm)
 {
-    char szExec[RTPATH_MAX];
-    RTStrmPrintf(pStrm, "usage: %s [options]\n",
-                 RTPathFilename(RTProcGetExecutablePath(szExec, sizeof(szExec))));
-    RTStrmPrintf(pStrm, "\n");
-    RTStrmPrintf(pStrm, "options: \n");
+    RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n",
+                 RTPathFilename(RTProcExecutablePath()));
+    RTStrmPrintf(pStrm,
+                 "\n"
+                 "Global Options:\n"
+                 "  -q, --quiet\n"
+                 "    Sets verbosity to zero.\n"
+                 "  -v, --verbose\n"
+                 "    Increase verbosity.\n"
+                 "  -V, --version\n"
+                 "    Displays version.\n"
+                 "  -h, -?, --help\n"
+                 "    Displays help.\n"
+                 );
 
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aCmdTestOptions); i++)
+    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_aCommands); iCmd++)
     {
-        const char *pszHelp;
-        switch (g_aCmdTestOptions[i].iShort)
+        RTStrmPrintf(pStrm,
+                     "\n"
+                     "Command '%s':\n"
+                     "    %s\n"
+                     "Options for '%s':\n",
+                     g_aCommands[iCmd].pszCommand, g_aCommands[iCmd].pszDesc, g_aCommands[iCmd].pszCommand);
+        PCRTGETOPTDEF const paOptions = g_aCommands[iCmd].paOptions;
+        for (unsigned i = 0; i < g_aCommands[iCmd].cOptions; i++)
         {
-            case 'h':
-                pszHelp = "Displays this help and exit";
-                break;
-            case 'd':
-                pszHelp = "Use the specified audio device";
-                break;
-            case 'e':
-                pszHelp = "Exclude the given test id from the list";
-                break;
-            case 'a':
-                pszHelp = "Exclude all tests from the list (useful to enable single tests later with --include)";
-                break;
-            case 'i':
-                pszHelp = "Include the given test id in the list";
-                break;
-            default:
-                pszHelp = "Option undocumented";
-                break;
+            if (RT_C_IS_PRINT(paOptions[i].iShort))
+                RTStrmPrintf(pStrm, "  -%c, %s\n", g_aCmdTestOptions[i].iShort, g_aCmdTestOptions[i].pszLong);
+            else
+                RTStrmPrintf(pStrm, "  %s\n", g_aCmdTestOptions[i].pszLong);
+
+            const char *pszHelp = NULL;
+            if (paOptions == g_aCmdTestOptions)
+            {
+                switch (g_aCmdTestOptions[i].iShort)
+                {
+                    case 'd':
+                        pszHelp = "Use the specified audio device";
+                        break;
+                    case 'e':
+                        pszHelp = "Exclude the given test id from the list";
+                        break;
+                    case 'a':
+                        pszHelp = "Exclude all tests from the list (useful to enable single tests later with --include)";
+                        break;
+                    case 'i':
+                        pszHelp = "Include the given test id in the list";
+                        break;
+                }
+            }
+            /** @todo Add help text for all options. */
+            if (pszHelp)
+                RTStrmPrintf(pStrm, "    %s\n", pszHelp);
         }
-        char szOpt[256];
-        RTStrPrintf(szOpt, sizeof(szOpt), "%s, -%c", g_aCmdTestOptions[i].pszLong, g_aCmdTestOptions[i].iShort);
-        RTStrmPrintf(pStrm, "  %-30s%s\n", szOpt, pszHelp);
     }
 
-    /** @todo Add all other options. */
 }
 
 /**
@@ -451,11 +479,11 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     if (ppDev)
         *ppDev = NULL;
 
-    int rc = pTstEnv->pDrvAudio->pfnGetDevices(pTstEnv->pDrvAudio, &pTstEnv->DevEnm);
+    int rc = pTstEnv->pDrvAudio->pfnGetDevices(pTstEnv->pDrvAudio, &pTstEnv->DevEnum);
     if (RT_SUCCESS(rc))
     {
         PPDMAUDIOHOSTDEV pDev;
-        RTListForEach(&pTstEnv->DevEnm.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
+        RTListForEach(&pTstEnv->DevEnum.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
         {
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s':\n", pDev->szName);
@@ -855,7 +883,7 @@ static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms
  * @param   argc                Number of argv arguments.
  * @param   argv                argv arguments.
  */
-int audioTestMain(int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
 {
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
@@ -863,15 +891,30 @@ int audioTestMain(int argc, char **argv)
     AUDIOTESTPARMS TstCust;
     audioTestParmsInit(&TstCust);
 
-    char *pszDevice  = NULL; /* Custom device to use. Can be NULL if not being used. */
-    char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
+    const char *pszDevice  = NULL; /* Custom device to use. Can be NULL if not being used. */
+    const char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
 
-    RT_ZERO(g_DrvIns);
-    const PDMDRVREG *pDrvReg = NULL;
+    /* The backend: */
+    PDMDRVREG const *pDrvReg;
+#if defined(RT_OS_WINDOWS)
+    pDrvReg = &g_DrvHostAudioWas;
+#elif defined(RT_OS_DARWIN)
+    pDrvReg = &g_DrvHostCoreAudio;
+#elif defined(RT_OS_SOLARIS)
+    pDrvReg = &g_DrvHostOSSAudio;
+#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_ALSA)
+    pDrvReg = &g_DrvHostALSAAudio;
+#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_PULSE)
+    pDrvReg = &g_DrvHostPulseAudio;
+#elif defined(RT_OS_LINUX) && defined(VBOX_WITH_AUDIO_OSS)
+    pDrvReg = &g_DrvHostPulseAudio;
+#else
+# error "Port me!"
+#endif
 
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 0, 0 /* fFlags */);
+    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 1, 0 /*fFlags*/);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
@@ -879,145 +922,106 @@ int audioTestMain(int argc, char **argv)
         switch (rc)
         {
             case 'h':
-            {
                 audioTestUsage(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
-            }
-
-            case 'e':
-            {
-                if (ValueUnion.u32 < RT_ELEMENTS(g_aTests))
-                    g_aTests[ValueUnion.u32].fExcluded = true;
-                else
-                {
-                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid test number passed to --exclude\n");
-                    RTTestErrorInc(g_hTest);
-                    return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
-                }
-                break;
-            }
 
             case 'a':
-            {
                 for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
                     g_aTests[i].fExcluded = true;
                 break;
-            }
 
             case 'b':
-            {
+                pDrvReg = NULL;
 #ifdef VBOX_WITH_AUDIO_PULSE
-                if (   !RTStrICmp(ValueUnion.psz, "pulseaudio")
-                    || !RTStrICmp(ValueUnion.psz, "pa"))
+                if (   !strcmp(ValueUnion.psz, "pulseaudio")
+                    || !strcmp(ValueUnion.psz, "pa"))
                     pDrvReg = &g_DrvHostPulseAudio;
 #endif
 #ifdef VBOX_WITH_AUDIO_ALSA
-                if (   !RTStrICmp(ValueUnion.psz, "alsa"))
+                if (   !strcmp(ValueUnion.psz, "alsa"))
                     pDrvReg = &g_DrvHostALSAAudio;
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
-                if (   !RTStrICmp(ValueUnion.psz, "oss"))
+                if (   !strcmp(ValueUnion.psz, "oss"))
                     pDrvReg = &g_DrvHostOSSAudio;
 #endif
 #if defined(RT_OS_DARWIN)
-                if (   !RTStrICmp(ValueUnion.psz, "coreaudio"))
+                if (   !strcmp(ValueUnion.psz, "coreaudio"))
                     pDrvReg = &g_DrvHostCoreAudio;
 #endif
 #if defined(RT_OS_WINDOWS)
-                if (        !RTStrICmp(ValueUnion.psz, "wasapi"))
+                if (        !strcmp(ValueUnion.psz, "wasapi"))
                     pDrvReg = &g_DrvHostAudioWas;
-                else if (   !RTStrICmp(ValueUnion.psz, "directsound")
-                         || !RTStrICmp(ValueUnion.psz, "dsound")
+                else if (   !strcmp(ValueUnion.psz, "directsound")
+                         || !strcmp(ValueUnion.psz, "dsound")
                     pDrvReg = &g_DrvHostDSound;
 #endif
                 if (pDrvReg == NULL)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid / unsupported backend '%s' specified\n", ValueUnion.psz);
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
                 break;
-            }
+
+            case 'e':
+                if (ValueUnion.u32 >= RT_ELEMENTS(g_aTests))
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --exclude", ValueUnion.u32);
+                g_aTests[ValueUnion.u32].fExcluded = true;
+                break;
 
             case 'i':
-            {
-                if (ValueUnion.u32 < RT_ELEMENTS(g_aTests))
-                    g_aTests[ValueUnion.u32].fExcluded = false;
-                else
-                {
-                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid test number passed to --include\n");
-                    RTTestErrorInc(g_hTest);
-                    return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
-                }
+                if (ValueUnion.u32 >= RT_ELEMENTS(g_aTests))
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --include", ValueUnion.u32);
+                g_aTests[ValueUnion.u32].fExcluded = false;
                 break;
-            }
 
             case VKAT_TEST_OPT_COUNT:
-            {
                 break;
-            }
 
             case VKAT_TEST_OPT_DEV:
-            {
-                pszDevice = RTStrDup(ValueUnion.psz);
+                pszDevice = ValueUnion.psz;
                 break;
-            }
 
             case VKAT_TEST_OPT_PAUSE:
-            {
                 break;
-            }
 
             case VKAT_TEST_OPT_OUTDIR:
-            {
                 rc = RTStrCopy(TstEnv.szPathOut, sizeof(TstEnv.szPathOut), ValueUnion.psz);
                 if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out dir invalid, rc=%Rrc\n", rc);
+                    return RTMsgErrorExitFailure("Failed to copy out directory: %Rrc", rc);
                 break;
-            }
 
             case VKAT_TEST_OPT_PCM_BIT:
-            {
+                /** @todo r=bird: the X suffix means: "fingers off!"   */
                 TstCust.TestTone.Props.cbSampleX = ValueUnion.u8 / 8 /* bit */;
                 break;
-            }
 
             case VKAT_TEST_OPT_PCM_CHAN:
-            {
+                /** @todo r=bird: the X suffix means: "fingers off!"   */
                 TstCust.TestTone.Props.cChannelsX = ValueUnion.u8;
                 break;
-            }
 
             case VKAT_TEST_OPT_PCM_HZ:
-            {
                 TstCust.TestTone.Props.uHz = ValueUnion.u32;
                 break;
-            }
 
             case VKAT_TEST_OPT_PCM_SIGNED:
-            {
                 TstCust.TestTone.Props.fSigned = ValueUnion.f;
                 break;
-            }
 
             case VKAT_TEST_OPT_TAG:
-            {
-                pszTag = RTStrDup(ValueUnion.psz);
+                pszTag = ValueUnion.psz;
                 break;
-            }
 
             case VKAT_TEST_OPT_TEMPDIR:
-            {
                 rc = RTStrCopy(TstEnv.szPathTemp, sizeof(TstEnv.szPathTemp), ValueUnion.psz);
                 if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Temp dir invalid, rc=%Rrc\n", rc);
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Temp dir invalid, rc=%Rrc", rc);
                 break;
-            }
 
             case VKAT_TEST_OPT_VOL:
-            {
                 TstCust.TestTone.uVolumePercent = ValueUnion.u8;
                 break;
-            }
 
             default:
-                break;
+                return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
 
@@ -1026,19 +1030,8 @@ int audioTestMain(int argc, char **argv)
      */
     RTTestBanner(g_hTest);
 
-    /* If no backend is specified, go with the default backend for that OS. */
-    if (pDrvReg == NULL)
-#if defined(RT_OS_WINDOWS)
-        pDrvReg = &g_DrvHostAudioWas;
-#elif defined(RT_OS_DARWIN)
-        pDrvReg = &g_DrvHostCoreAudio;
-#elif defined(RT_OS_SOLARIS)
-        pDrvReg = &g_DrvHostOSSAudio;
-#else
-        pDrvReg = &g_DrvHostALSAAudio;
-#endif
-
     PPDMIHOSTAUDIO pDrvAudio;
+    RT_ZERO(g_DrvIns);
     rc = audioTestDrvConstruct(pDrvReg, &g_DrvIns, &pDrvAudio);
     if (RT_SUCCESS(rc))
     {
@@ -1068,9 +1061,6 @@ int audioTestMain(int argc, char **argv)
 
     audioTestParmsDestroy(&TstCust);
 
-    RTStrFree(pszDevice);
-    RTStrFree(pszTag);
-
     if (RT_FAILURE(rc)) /* Let us know that something went wrong in case we forgot to mention it. */
         RTTestFailed(g_hTest, "Tested failed with %Rrc\n", rc);
 
@@ -1087,7 +1077,7 @@ int audioTestMain(int argc, char **argv)
  * @param   pszPath             Absolute path to test set.
  * @param   pszTag              Tag of test set to verify. Optional and can be NULL.
  */
-int audioVerifyOne(const char *pszPath, const char *pszTag)
+static int audioVerifyOne(const char *pszPath, const char *pszTag)
 {
     RTTestSubF(g_hTest, "Verifying test set (tag '%s') ...", pszTag ? pszTag : "default");
 
@@ -1104,7 +1094,9 @@ int audioVerifyOne(const char *pszPath, const char *pszTag)
                 /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
                 PAUDIOTESTERRORENTRY pErrEntry;
                 RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
+                {
                     RTTestFailed(g_hTest, pErrEntry->szDesc);
+                }
             }
             else
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful");
@@ -1131,88 +1123,52 @@ int audioVerifyOne(const char *pszPath, const char *pszTag)
  * @param   argc                Number of argv arguments.
  * @param   argv                argv arguments.
  */
-int audioVerifyMain(int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
 {
-    char *pszTag = NULL; /* Custom tag to use. Can be NULL if not being used. */
-
-    char szDirCur[RTPATH_MAX];
-    int rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
-        return RTEXITCODE_FAILURE;
-    }
-
     /*
-     * Process common options.
+     * Parse options and process arguments.
      */
-    RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdVerifyOptions, RT_ELEMENTS(g_aCmdVerifyOptions),
-                      0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdVerifyOptions, RT_ELEMENTS(g_aCmdVerifyOptions),
+                          1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
+    const char   *pszTag   = NULL; /* Custom tag to use. Can be NULL if not being used. */
+    unsigned      iTestSet = 0;
+    RTGETOPTUNION ValueUnion;
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (rc)
         {
             case VKAT_VERIFY_OPT_TAG:
-            {
-                pszTag = RTStrDup(ValueUnion.psz);
+                pszTag = ValueUnion.psz;
+                if (g_uVerbosity > 0)
+                    RTMsgInfo("Using tag '%s'\n", pszTag);
                 break;
-            }
 
             case VINF_GETOPT_NOT_OPTION:
-            {
-                Assert(GetState.iNext);
-                GetState.iNext--;
+                if (iTestSet == 0)
+                    RTTestBanner(g_hTest);
+                audioVerifyOne(ValueUnion.psz, pszTag);
+                iTestSet++;
                 break;
-            }
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
-
-        /* All flags / options processed? Bail out here.
-         * Processing the file / directory list comes down below. */
-        if (rc == VINF_GETOPT_NOT_OPTION)
-            break;
     }
 
-    if (pszTag)
-        RTMsgInfo("Using tag '%s'\n", pszTag);
-
     /*
-     * Start testing.
+     * If no paths given, default to the current directory.
      */
-    RTTestBanner(g_hTest);
-
-    /*
-     * Deal with test sets.
-     */
-    rc = RTGetOpt(&GetState, &ValueUnion);
-    do
+    if (iTestSet == 0)
     {
-        char const *pszPath;
-
-        if (rc == 0) /* Use current directory if no element specified. */
-            pszPath = szDirCur;
-        else
-            pszPath = ValueUnion.psz;
-
-        RTFSOBJINFO objInfo;
-        rc = RTPathQueryInfoEx(pszPath, &objInfo,
-                               RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
-        if (RT_SUCCESS(rc))
-        {
-            rc = audioVerifyOne(pszPath, pszTag);
-        }
-        else
-            RTTestFailed(g_hTest, "Cannot access path '%s', rc=%Rrc\n", pszPath, rc);
-
-    } while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0);
-
-    RTStrFree(pszTag);
+        if (iTestSet == 0)
+            RTTestBanner(g_hTest);
+        char szDirCur[RTPATH_MAX];
+        rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+        audioVerifyOne(RT_SUCCESS(rc) ? szDirCur : ".", pszTag);
+    }
 
     /*
      * Print summary and exit.
@@ -1225,82 +1181,61 @@ int main(int argc, char **argv)
     /*
      * Init IPRT and globals.
      */
-    int rc = RTTestInitAndCreate("AudioTest", &g_hTest);
-    if (rc)
-        return rc;
-
-    AssertReturn(argc > 0, false);
-
-    /* At least the operation mode must be there. */
-    if (argc < 2)
-    {
-        audioTestUsage(g_pStdOut);
-        return RTEXITCODE_SYNTAX;
-    }
+    RTEXITCODE rcExit = RTTestInitAndCreate("AudioTest", &g_hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
     /*
      * Process common options.
      */
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions, RT_ELEMENTS(g_aCmdCommonOptions), 1 /* idxFirst */, 0 /* fFlags */);
+    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
+                          RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (rc)
         {
-            case 'h':
-            {
-                showLogo(g_pStdOut);
-                audioTestUsage(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
-            }
+            case 'q':
+                g_uVerbosity = 0;
+                break;
 
             case 'v':
-            {
                 g_uVerbosity++;
                 break;
-            }
+
+            case 'V':
+                RTPrintf("v0.0.1\n");
+                return RTEXITCODE_SUCCESS;
+
+            case 'h':
+                audioTestShowLogo(g_pStdOut);
+                audioTestUsage(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                Assert(GetState.iNext);
-                GetState.iNext--;
+                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aCommands); i++)
+                    if (strcmp(ValueUnion.psz, g_aCommands[i].pszCommand) == 0)
+                    {
+                        audioTestShowLogo(g_pStdOut);
+                        int32_t iCurArg = GetState.iNext - 1;
+                        return g_aCommands[i].pfnHandler(argc - iCurArg, argv + iCurArg);
+                    }
+                RTMsgError("Unknown command '%s'!\n", ValueUnion.psz);
+                audioTestUsage(g_pStdErr);
+                return RTEXITCODE_SYNTAX;
             }
 
             default:
-                /* Ignore everything else here. */
-                break;
+                return RTGetOptPrintError(rc, &ValueUnion);
         }
-
-        /* All flags / options processed? Bail out here.
-         * Processing the file / directory list comes down below. */
-        if (rc == VINF_GETOPT_NOT_OPTION)
-            break;
     }
 
-    showLogo(g_pStdOut);
-
-    /* Get operation mode. */
-    const char *pszMode = argv[GetState.iNext++]; /** @todo Also do it busybox-like? */
-
-    argv += GetState.iNext;
-    Assert(argc >= GetState.iNext);
-    argc -= GetState.iNext;
-
-    if (!RTStrICmp(pszMode, "test"))
-    {
-        return audioTestMain(argc, argv);
-    }
-    else if (!RTStrICmp(pszMode, "verify"))
-    {
-        return audioVerifyMain(argc, argv);
-    }
-
-    RTStrmPrintf(g_pStdOut, "Must specify a mode first, either 'test' or 'verify'\n\n");
-
-    audioTestUsage(g_pStdOut);
+    RTMsgError("No command specified!\n");
+    audioTestUsage(g_pStdErr);
     return RTEXITCODE_SYNTAX;
 }
 

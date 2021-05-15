@@ -241,6 +241,42 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
 }
 
 /**
+ * Generates a tag.
+ *
+ * @returns VBox status code.
+ * @param   pszTag              The output buffer.
+ * @param   cbTag               The size of the output buffer.
+ *                              AUDIOTEST_TAG_MAX is a good size.
+ */
+int AudioTestGenTag(char *pszTag, size_t cbTag)
+{
+    RTUUID UUID;
+    int rc = RTUuidCreate(&UUID);
+    AssertRCReturn(rc, rc);
+    rc = RTUuidToStr(&UUID, pszTag, cbTag);
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+
+/**
+ * Return the tag to use in the given buffer, generating one if needed.
+ *
+ * @returns VBox status code.
+ * @param   pszTag              The output buffer.
+ * @param   cbTag               The size of the output buffer.
+ *                              AUDIOTEST_TAG_MAX is a good size.
+ * @param   pszTagUser          User specified tag, optional.
+ */
+int AudioTestCopyOrGenTag(char *pszTag, size_t cbTag, const char *pszTagUser)
+{
+    if (pszTagUser && *pszTagUser)
+        return RTStrCopy(pszTag, cbTag, pszTagUser);
+    return AudioTestGenTag(pszTag, cbTag);
+}
+
+
+/**
  * Creates a new path (directory) for a specific audio test set tag.
  *
  * @returns VBox status code.
@@ -254,24 +290,9 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
  */
 int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
 {
-    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
-
-    int rc;
-
-    char szTag[RTUUID_STR_LENGTH + 1];
-    if (pszTag)
-    {
-        rc = RTStrCopy(szTag, sizeof(szTag), pszTag);
-        AssertRCReturn(rc, rc);
-    }
-    else /* Create an UUID if no tag is specified. */
-    {
-        RTUUID UUID;
-        rc = RTUuidCreate(&UUID);
-        AssertRCReturn(rc, rc);
-        rc = RTUuidToStr(&UUID, szTag, sizeof(szTag));
-        AssertRCReturn(rc, rc);
-    }
+    char szTag[AUDIOTEST_TAG_MAX];
+    int rc = AudioTestCopyOrGenTag(szTag, sizeof(szTag), pszTag);
+    AssertRCReturn(rc, rc);
 
     char szName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 4];
     if (RTStrPrintf2(szName, sizeof(szName), "%s-%s", AUDIOTEST_PATH_PREFIX_STR, szTag) < 0)
@@ -522,7 +543,7 @@ static int audioTestErrorDescAddRc(PAUDIOTESTERRORDESC pErr, int rc, const char 
  */
 int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 {
-    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(pszTag && strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
 
     char szPath[RTPATH_MAX];
 
@@ -545,21 +566,20 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
  */
 int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
 {
-    AssertReturn(strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
-
-    int rc;
-
     audioTestSetInitInternal(pSet);
+
+    int rc = AudioTestCopyOrGenTag(pSet->szTag, sizeof(pSet->szTag), pszTag);
+    AssertRCReturn(rc, rc);
 
     if (pszPath)
     {
         rc = RTStrCopy(pSet->szPathAbs, sizeof(pSet->szPathAbs), pszPath);
         AssertRCReturn(rc, rc);
 
-        rc = AudioTestPathCreate(pSet->szPathAbs, sizeof(pSet->szPathAbs), pszTag);
+        rc = AudioTestPathCreate(pSet->szPathAbs, sizeof(pSet->szPathAbs), pSet->szTag);
     }
     else
-        rc = AudioTestPathCreateTemp(pSet->szPathAbs, sizeof(pSet->szPathAbs), pszTag);
+        rc = AudioTestPathCreateTemp(pSet->szPathAbs, sizeof(pSet->szPathAbs), pSet->szTag);
     AssertRCReturn(rc, rc);
 
     if (RT_SUCCESS(rc))
@@ -582,7 +602,7 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
         AssertRCReturn(rc, rc);
         rc = audioTestManifestWriteLn(pSet, "ver=%d", AUDIOTEST_MANIFEST_VER);
         AssertRCReturn(rc, rc);
-        rc = audioTestManifestWriteLn(pSet, "tag=%s", pszTag);
+        rc = audioTestManifestWriteLn(pSet, "tag=%s", pSet->szTag);
         AssertRCReturn(rc, rc);
 
         char szVal[64];
@@ -612,9 +632,6 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
         AssertRCReturn(rc, rc);
 
         pSet->enmMode = AUDIOTESTSETMODE_TEST;
-
-        rc = RTStrCopy(pSet->szTag, sizeof(pSet->szTag), pszTag);
-        AssertRCReturn(rc, rc);
     }
 
     return rc;
@@ -675,10 +692,7 @@ int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath)
     audioTestSetInitInternal(pSet);
 
     char szManifest[RTPATH_MAX];
-    int rc = RTStrCopy(szManifest, sizeof(szManifest), pszPath);
-    AssertRCReturn(rc, rc);
-
-    rc = RTPathAppend(szManifest, sizeof(szManifest), AUDIOTEST_MANIFEST_FILE_STR);
+    int rc = RTPathJoin(szManifest, sizeof(szManifest), pszPath, AUDIOTEST_MANIFEST_FILE_STR);
     AssertRCReturn(rc, rc);
 
     RTVFSFILE hVfsFile;
