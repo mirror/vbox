@@ -35,7 +35,7 @@
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
-#include "VBoxDDVKAT.h"
+#include "VBoxDD.h"
 
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
 # include <new> /* For bad_alloc. */
