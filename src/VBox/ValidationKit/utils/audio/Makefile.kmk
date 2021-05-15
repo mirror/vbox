@@ -45,7 +45,7 @@ VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 
 PROGRAMS += AudioTest
 AudioTest_TEMPLATE = VBoxValidationKitR3
-AudioTest_DEFS     = VBOX_AUDIO_VKAT
+AudioTest_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
 AudioTest_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/build
 AudioTest_SOURCES  = \
