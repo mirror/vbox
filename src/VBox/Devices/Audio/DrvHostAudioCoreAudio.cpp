@@ -38,11 +38,7 @@
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
-#ifdef VBOX_AUDIO_VKAT
-# include "VBoxDDVKAT.h"
-#else
-# include "VBoxDD.h"
-#endif
+#include "VBoxDD.h"
 
 #include <iprt/asm.h>
 #include <iprt/cdefs.h>

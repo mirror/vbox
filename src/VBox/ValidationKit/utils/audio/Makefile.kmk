@@ -41,11 +41,13 @@ endif
 #
 # The Validation Kit Audio Test (VKAT) utility.
 #
-VKAT_PATH_AUDIO=$(PATH_ROOT)/src/VBox/Devices/Audio
+VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 
 PROGRAMS += AudioTest
 AudioTest_TEMPLATE = VBoxValidationKitR3
-AudioTest_DEFS    += VBOX_AUDIO_VKAT
+AudioTest_DEFS     = VBOX_AUDIO_VKAT
+AudioTest_INCS     = \
+	$(PATH_ROOT)/src/VBox/Devices/build
 AudioTest_SOURCES  = \
 	vkat.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTest.cpp

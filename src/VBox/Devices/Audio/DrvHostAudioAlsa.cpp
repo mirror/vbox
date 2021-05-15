@@ -58,11 +58,7 @@
 #include <alsa/version.h>
 #include "DrvHostAudioAlsaStubs.h"
 
-#ifdef VBOX_AUDIO_VKAT
-# include "VBoxDDVKAT.h"
-#else
-# include "VBoxDD.h"
-#endif
+#include "VBoxDD.h"
 
 
 /*********************************************************************************************************************************

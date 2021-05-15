@@ -50,7 +50,7 @@
 
 #include "../../../Devices/Audio/AudioHlp.h"
 #include "../../../Devices/Audio/AudioTest.h"
-#include "../../../Devices/Audio/VBoxDDVKAT.h"
+#include "VBoxDD.h"
 
 
 /*********************************************************************************************************************************
@@ -230,8 +230,6 @@ static struct
 static RTTEST       g_hTest;
 /** The current verbosity level. */
 static unsigned     g_uVerbosity = 0;
-/** The driver instance data. */
-static PDMDRVINS    g_DrvIns;
 
 
 /*********************************************************************************************************************************
@@ -401,33 +399,125 @@ static void audioTestUsage(PRTSTREAM pStrm)
 
 }
 
+/** @name Driver Helper Fakes / Stubs
+ * @{  */
+
+VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
+{
+    if (pNode != NULL)
+    {
+        PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
+        if (g_uVerbosity > 2)
+            RTPrintf("debug: CFGMR3QueryString([%s], %s, %p, %#x)\n", pDrvReg->szName, pszName, pszString, cchString);
+
+        if (   (   strcmp(pDrvReg->szName, "PulseAudio") == 0
+                || strcmp(pDrvReg->szName, "HostAudioWas") == 0)
+            && strcmp(pszName, "VmName") == 0)
+            return RTStrCopy(pszString, cchString, "vkat");
+
+        if (   strcmp(pDrvReg->szName, "HostAudioWas") == 0
+            && strcmp(pszName, "VmUuid") == 0)
+            return RTStrCopy(pszString, cchString, "794c9192-d045-4f28-91ed-46253ac9998e");
+    }
+    else if (g_uVerbosity > 2)
+        RTPrintf("debug: CFGMR3QueryString(%p, %s, %p, %#x)\n", pNode, pszName, pszString, cchString);
+
+    return VERR_CFGM_VALUE_NOT_FOUND;
+}
+
+/* Fake stub. Will be removed when this moves into the driver helpers. */
+VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+{
+    if (g_uVerbosity > 2)
+        RTPrintf("debug: CFGMR3QueryStringDef(%p, %s, %p, %#x, %s)\n", pNode, pszName, pszString, cchString, pszDef);
+    return RTStrCopy(pszString, cchString, pszDef);
+}
+
+/* Fake stub. Will be removed when this moves into the driver helpers. */
+VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
+                                    const char *pszValidValues, const char *pszValidNodes,
+                                    const char *pszWho, uint32_t uInstance)
+{
+    RT_NOREF(pNode, pszNode, pszValidValues, pszValidNodes, pszWho, uInstance);
+    return VINF_SUCCESS;
+}
+
+/** @} */
+
+
 /**
  * Constructs a PDM audio driver instance.
  *
  * @returns VBox status code.
- * @param   pDrvReg             PDM driver registration record to use for construction.
- * @param   pDrvIns             Driver instance to use for construction.
- * @param   ppDrvAudio          Where to return the audio driver interface of type IHOSTAUDIO.
+ * @param   pDrvReg     PDM driver registration record to use for construction.
+ * @param   ppDrvIns    Where to return the driver instance structure.
+ * @param   ppDrvAudio  Where to return the audio driver interface of type IHOSTAUDIO.
  */
-static int audioTestDrvConstruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns, PPDMIHOSTAUDIO *ppDrvAudio)
+static int audioTestDrvConstruct(PCPDMDRVREG pDrvReg, PPPDMDRVINS ppDrvIns, PPDMIHOSTAUDIO *ppDrvAudio)
 {
-    AssertReturn(pDrvReg->cbInstance, VERR_INVALID_PARAMETER); /** @todo Very crude; improve. */
+    /* The destruct function must have valid data to work with. */
+    *ppDrvIns   = NULL;
+    *ppDrvAudio = NULL;
 
+    /*
+     * Check registration structure validation (doesn't need to be too
+     * thorough, PDM check it in detail on every VM startup).
+     */
+    AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing backend '%s' ...\n", pDrvReg->szName);
+    AssertPtrReturn(pDrvReg->pfnConstruct, VERR_INVALID_PARAMETER);
 
-    pDrvIns->pvInstanceData = RTMemAllocZ(pDrvReg->cbInstance);
-    AssertPtrReturn(pDrvIns->pvInstanceData, VERR_NO_MEMORY);
+    /*
+     * Initialize the driver helper the first time thru.
+     */
+    static PDMDRVHLPR3 s_DrvHlp;
+    if (s_DrvHlp.u32Version == 0)
+    {
+        s_DrvHlp.u32Version = PDM_DRVHLPR3_VERSION;
+        s_DrvHlp.u32TheEnd  = PDM_DRVHLPR3_VERSION;
+    }
 
-    int rc = pDrvReg->pfnConstruct(pDrvIns, NULL /* PCFGMNODE */, 0 /* fFlags */);
+    /*
+     * Create the instance data structure.
+     */
+    PPDMDRVINS pDrvIns = (PPDMDRVINS)RTMemAllocZVar(RT_UOFFSETOF_DYN(PDMDRVINS, achInstanceData[pDrvReg->cbInstance]));
+    RTTEST_CHECK_RET(g_hTest, pDrvIns, VERR_NO_MEMORY);
+
+    pDrvIns->u32Version       = PDM_DRVINS_VERSION;
+    pDrvIns->iInstance        = 0;
+    pDrvIns->pHlpR3           = &s_DrvHlp;
+    pDrvIns->pvInstanceDataR3 = &pDrvIns->achInstanceData[0];
+    pDrvIns->pReg             = pDrvReg;
+    pDrvIns->pCfg             = (PCFGMNODE)pDrvReg;
+    //pDrvIns->pUpBase          = NULL;
+    //pDrvIns->pDownBase        = NULL;
+
+    /*
+     * Invoke the constructor.
+     */
+    int rc = pDrvReg->pfnConstruct(pDrvIns, pDrvIns->pCfg, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         PPDMIHOSTAUDIO pDrvAudio = (PPDMIHOSTAUDIO)pDrvIns->IBase.pfnQueryInterface(&pDrvIns->IBase, PDMIHOSTAUDIO_IID);
-
-        pDrvAudio->pfnGetStatus(pDrvAudio, PDMAUDIODIR_OUT);
-
-        *ppDrvAudio = pDrvAudio;
+        if (pDrvAudio)
+        {
+            PDMAUDIOBACKENDSTS enmStatus = pDrvAudio->pfnGetStatus(pDrvAudio, PDMAUDIODIR_OUT);
+            if (enmStatus == PDMAUDIOBACKENDSTS_RUNNING)
+            {
+                *ppDrvAudio = pDrvAudio;
+                *ppDrvIns   = pDrvIns;
+                return VINF_SUCCESS;
+            }
+            RTTestFailed(g_hTest, "Expected backend status RUNNING, got %d instead", enmStatus);
+        }
+        else
+            RTTestFailed(g_hTest, "Failed to query PDMIHOSTAUDIO for '%s'", pDrvReg->szName);
     }
-
+    else
+        RTTestFailed(g_hTest, "Failed to construct audio driver '%s': %Rrc", pDrvReg->szName, rc);
+    if (pDrvReg->pfnDestruct)
+        pDrvReg->pfnDestruct(pDrvIns);
+    RTMemFree(pDrvIns);
     return rc;
 }
 
@@ -438,7 +528,7 @@ static int audioTestDrvConstruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns, P
  * @param   pDrvReg             PDM driver registration record to destruct.
  * @param   pDrvIns             Driver instance to destruct.
  */
-static int audioTestDrvDestruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns)
+static int audioTestDrvDestruct(PCPDMDRVREG pDrvReg, PPDMDRVINS pDrvIns)
 {
     if (!pDrvIns)
         return VINF_SUCCESS;
@@ -446,11 +536,8 @@ static int audioTestDrvDestruct(const PDMDRVREG *pDrvReg, PPDMDRVINS pDrvIns)
     if (pDrvReg->pfnDestruct)
         pDrvReg->pfnDestruct(pDrvIns);
 
-    if (pDrvIns->pvInstanceData)
-    {
-        RTMemFree(pDrvIns->pvInstanceData);
-        pDrvIns->pvInstanceData = NULL;
-    }
+    pDrvIns->u32Version = 0;
+    RTMemFree(pDrvIns);
 
     return VINF_SUCCESS;
 }
@@ -895,7 +982,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
     const char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
 
     /* The backend: */
-    PDMDRVREG const *pDrvReg;
+    PCPDMDRVREG pDrvReg;
 #if defined(RT_OS_WINDOWS)
     pDrvReg = &g_DrvHostAudioWas;
 #elif defined(RT_OS_DARWIN)
@@ -1030,9 +1117,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
      */
     RTTestBanner(g_hTest);
 
-    PPDMIHOSTAUDIO pDrvAudio;
-    RT_ZERO(g_DrvIns);
-    rc = audioTestDrvConstruct(pDrvReg, &g_DrvIns, &pDrvAudio);
+    PPDMIHOSTAUDIO pDrvAudio = NULL;
+    PPDMDRVINS     pDrvIns   = NULL;
+    rc = audioTestDrvConstruct(pDrvReg, &pDrvIns, &pDrvAudio);
     if (RT_SUCCESS(rc))
     {
         /* For now all tests have the same test environment. */
@@ -1056,8 +1143,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
 
             audioTestEnvDestroy(&TstEnv);
         }
-        audioTestDrvDestruct(pDrvReg, &g_DrvIns);
     }
+    audioTestDrvDestruct(pDrvReg, pDrvIns);
 
     audioTestParmsDestroy(&TstCust);
 
