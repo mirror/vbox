@@ -40,11 +40,24 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/formats/riff.h>
 
 #include <package-generated.h>
 #include "product-generated.h"
 
 #include <VBox/version.h>
+
+/**
+ * Internal driver instance data
+ * @note This must be put here as it's needed before pdmdrv.h is included.
+ */
+typedef struct PDMDRVINSINT
+{
+    /** The stack the drive belongs to. */
+    struct AUDIOTESTDRVSTACK *pStack;
+} PDMDRVINSINT;
+#define PDMDRVINSINT_DECLARED
+
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
@@ -126,14 +139,74 @@ typedef struct AUDIOTESTDESC
 } AUDIOTESTDESC;
 
 
+/**
+ * Audio driver stack.
+ *
+ * This can be just be backend driver alone or DrvAudio with a backend.
+ * @todo add automatic resampling via mixer so we can test more of the audio
+ *       stack used by the device emulations.
+ */
+typedef struct AUDIOTESTDRVSTACK
+{
+    /** The device registration record for the backend. */
+    PCPDMDRVREG             pDrvReg;
+    /** The backend driver instance. */
+    PPDMDRVINS              pDrvBackendIns;
+    /** The backend's audio interface. */
+    PPDMIHOSTAUDIO          pIHostAudio;
+
+    /** The DrvAudio instance. */
+    PPDMDRVINS              pDrvAudioIns;
+    /** This is NULL if we don't use DrvAudio. */
+    PPDMIAUDIOCONNECTOR     pIAudioConnector;
+} AUDIOTESTDRVSTACK;
+/** Pointer to an audio driver stack. */
+typedef AUDIOTESTDRVSTACK *PAUDIOTESTDRVSTACK;
+
+/**
+ * Backend-only stream structure.
+ */
+typedef struct AUDIOTESTDRVSTACKSTREAM
+{
+    /** The public stream data. */
+    PDMAUDIOSTREAM          Core;
+    /** The acquired config. */
+    PDMAUDIOSTREAMCFG       Cfg;
+    /** The backend data (variable size). */
+    PDMAUDIOBACKENDSTREAM   Backend;
+} AUDIOTESTDRVSTACKSTREAM;
+/** Pointer to a backend-only stream structure. */
+typedef AUDIOTESTDRVSTACKSTREAM *PAUDIOTESTDRVSTACKSTREAM;
+
+/**
+ * An open wave file.
+ */
+typedef struct AUDIOTESTWAVEFILE
+{
+    /** The file handle. */
+    RTFILE              hFile;
+    /** The absolute file offset of the first sample */
+    uint32_t            offSamples;
+    /** Number of bytes of samples. */
+    uint32_t            cbSamples;
+    /** The current read position relative to @a offSamples.  */
+    uint32_t            offCur;
+    /** The PCM properties for the file format.  */
+    PDMAUDIOPCMPROPS    Props;
+} AUDIOTESTWAVEFILE;
+/** Pointer to an open wave file. */
+typedef AUDIOTESTWAVEFILE *PAUDIOTESTWAVEFILE;
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
-static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv);
-static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv);
+
+static RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
+static RTEXITCODE audioTestVersion(void);
 
 
 /*********************************************************************************************************************************
@@ -205,28 +278,6 @@ static const RTGETOPTDEF g_aCmdVerifyOptions[] =
 };
 
 /**
- * Commands.
- */
-static struct
-{
-    const char     *pszCommand;
-    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(int argc, char **argv));
-    PCRTGETOPTDEF   paOptions;
-    size_t          cOptions;
-    const char     *pszDesc;
-} const g_aCommands[] =
-{
-    {
-        "test",   audioTestMain,      g_aCmdTestOptions,      RT_ELEMENTS(g_aCmdTestOptions),
-        "Does some kind of testing, I guess..."
-    },
-    {
-        "verify", audioVerifyMain,    g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),
-        "Verfies something, I guess..."
-    },
-};
-
-/**
  * Backends.
  *
  * @note The first backend in the array is the default one for the platform.
@@ -273,7 +324,780 @@ static unsigned     g_uVerbosity = 0;
 
 
 /*********************************************************************************************************************************
-*   Implementation                                                                                                               *
+*   Fake PDM driver handling.                                                                                                    *
+*********************************************************************************************************************************/
+
+/** @name Driver Helper Fakes / Stubs
+ * @{  */
+
+VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
+{
+    if (pNode != NULL)
+    {
+        PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
+        if (g_uVerbosity > 2)
+            RTPrintf("debug: CFGMR3QueryString([%s], %s, %p, %#x)\n", pDrvReg->szName, pszName, pszString, cchString);
+
+        if (   (   strcmp(pDrvReg->szName, "PulseAudio") == 0
+                || strcmp(pDrvReg->szName, "HostAudioWas") == 0)
+            && strcmp(pszName, "VmName") == 0)
+            return RTStrCopy(pszString, cchString, "vkat");
+
+        if (   strcmp(pDrvReg->szName, "HostAudioWas") == 0
+            && strcmp(pszName, "VmUuid") == 0)
+            return RTStrCopy(pszString, cchString, "794c9192-d045-4f28-91ed-46253ac9998e");
+    }
+    else if (g_uVerbosity > 2)
+        RTPrintf("debug: CFGMR3QueryString(%p, %s, %p, %#x)\n", pNode, pszName, pszString, cchString);
+
+    return VERR_CFGM_VALUE_NOT_FOUND;
+}
+
+/* Fake stub. Will be removed when this moves into the driver helpers. */
+VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+{
+    if (g_uVerbosity > 2)
+        RTPrintf("debug: CFGMR3QueryStringDef(%p, %s, %p, %#x, %s)\n", pNode, pszName, pszString, cchString, pszDef);
+    return RTStrCopy(pszString, cchString, pszDef);
+}
+
+/* Fake stub. Will be removed when this moves into the driver helpers. */
+VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
+                                    const char *pszValidValues, const char *pszValidNodes,
+                                    const char *pszWho, uint32_t uInstance)
+{
+    RT_NOREF(pNode, pszNode, pszValidValues, pszValidNodes, pszWho, uInstance);
+    return VINF_SUCCESS;
+}
+
+/** @} */
+
+/**
+ * Constructs a PDM audio driver instance.
+ *
+ * @returns VBox status code.
+ * @param   pDrvStack       The stack this is associated with.
+ * @param   pDrvReg         PDM driver registration record to use for construction.
+ * @param   pParentDrvIns   The parent driver (if any).
+ * @param   ppDrvIns        Where to return the driver instance structure.
+ */
+static int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, PPDMDRVINS pParentDrvIns,
+                                 PPPDMDRVINS ppDrvIns)
+{
+    /* The destruct function must have valid data to work with. */
+    *ppDrvIns   = NULL;
+
+    /*
+     * Check registration structure validation (doesn't need to be too
+     * thorough, PDM check it in detail on every VM startup).
+     */
+    AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing backend '%s' ...\n", pDrvReg->szName);
+    AssertPtrReturn(pDrvReg->pfnConstruct, VERR_INVALID_PARAMETER);
+
+    /*
+     * Initialize the driver helper the first time thru.
+     */
+    static PDMDRVHLPR3 s_DrvHlp;
+    if (s_DrvHlp.u32Version == 0)
+    {
+        s_DrvHlp.u32Version = PDM_DRVHLPR3_VERSION;
+        s_DrvHlp.u32TheEnd  = PDM_DRVHLPR3_VERSION;
+    }
+
+    /*
+     * Create the instance data structure.
+     */
+    PPDMDRVINS pDrvIns = (PPDMDRVINS)RTMemAllocZVar(RT_UOFFSETOF_DYN(PDMDRVINS, achInstanceData[pDrvReg->cbInstance]));
+    RTTEST_CHECK_RET(g_hTest, pDrvIns, VERR_NO_MEMORY);
+
+    pDrvIns->u32Version         = PDM_DRVINS_VERSION;
+    pDrvIns->iInstance          = 0;
+    pDrvIns->pHlpR3             = &s_DrvHlp;
+    pDrvIns->pvInstanceDataR3   = &pDrvIns->achInstanceData[0];
+    pDrvIns->pReg               = pDrvReg;
+    pDrvIns->pCfg               = (PCFGMNODE)pDrvReg;
+    pDrvIns->Internal.s.pStack  = pDrvStack;
+    pDrvIns->pUpBase            = NULL;
+    pDrvIns->pDownBase          = NULL;
+    if (pParentDrvIns)
+    {
+        Assert(pParentDrvIns->pDownBase == NULL);
+        pParentDrvIns->pDownBase = &pDrvIns->IBase;
+        pDrvIns->pUpBase         = &pParentDrvIns->IBase;
+    }
+
+    /*
+     * Invoke the constructor.
+     */
+    int rc = pDrvReg->pfnConstruct(pDrvIns, pDrvIns->pCfg, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDrvIns   = pDrvIns;
+        return VINF_SUCCESS;
+    }
+
+    RTTestFailed(g_hTest, "Failed to construct audio driver '%s': %Rrc", pDrvReg->szName, rc);
+    if (pDrvReg->pfnDestruct)
+        pDrvReg->pfnDestruct(pDrvIns);
+    RTMemFree(pDrvIns);
+    return rc;
+}
+
+/**
+ * Destructs a PDM audio driver instance.
+ *
+ * @param   pDrvIns             Driver instance to destruct.
+ */
+static void audioTestDrvDestruct(PPDMDRVINS pDrvIns)
+{
+    if (pDrvIns)
+    {
+        Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION);
+
+        if (pDrvIns->pReg->pfnDestruct)
+            pDrvIns->pReg->pfnDestruct(pDrvIns);
+
+        pDrvIns->u32Version = 0;
+        pDrvIns->pReg = NULL;
+        RTMemFree(pDrvIns);
+    }
+}
+
+/**
+ * Sends the PDM driver a power off notification.
+ *
+ * @param   pDrvIns             Driver instance to notify.
+ */
+static void audioTestDrvNotifyPowerOff(PPDMDRVINS pDrvIns)
+{
+    if (pDrvIns)
+    {
+        Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION);
+        if (pDrvIns->pReg->pfnPowerOff)
+            pDrvIns->pReg->pfnPowerOff(pDrvIns);
+    }
+}
+
+/**
+ * Deletes a driver stack.
+ *
+ * This will power off and destroy the drivers.
+ */
+static void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
+{
+    /*
+     * Do power off notifications (top to bottom).
+     */
+    audioTestDrvNotifyPowerOff(pDrvStack->pDrvAudioIns);
+    audioTestDrvNotifyPowerOff(pDrvStack->pDrvBackendIns);
+
+    /*
+     * Drivers are destroyed from bottom to top (closest to the device).
+     */
+    audioTestDrvDestruct(pDrvStack->pDrvBackendIns);
+    pDrvStack->pDrvBackendIns   = NULL;
+    pDrvStack->pIHostAudio      = NULL;
+
+    audioTestDrvDestruct(pDrvStack->pDrvAudioIns);
+    pDrvStack->pDrvAudioIns     = NULL;
+    pDrvStack->pIAudioConnector = NULL;
+}
+
+/**
+ * Initializes a driver stack.
+ * @returns VBox status code.
+ * @param   pDrvStack       The driver stack to initialize.
+ * @param   pDrvReg         The backend driver to use.
+ * @param   fWithDrvAudio   Whether to inlcude DrvAudio in the stack or not.
+ */
+static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
+{
+    int rc;
+    RT_ZERO(*pDrvStack);
+    pDrvStack->pDrvReg = pDrvReg;
+    if (!fWithDrvAudio)
+        rc = audioTestDrvConstruct(pDrvStack, pDrvReg, NULL /*pParentDrvIns*/, &pDrvStack->pDrvBackendIns);
+    else
+    {
+        rc = VERR_NOT_IMPLEMENTED;
+    }
+
+    /*
+     * Get the IHostAudio interface and check that the host driver is working.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        pDrvStack->pIHostAudio
+            = (PPDMIHOSTAUDIO)pDrvStack->pDrvBackendIns->IBase.pfnQueryInterface(&pDrvStack->pDrvBackendIns->IBase,
+                                                                                 PDMIHOSTAUDIO_IID);
+        if (pDrvStack->pIHostAudio)
+        {
+            PDMAUDIOBACKENDSTS enmStatus = pDrvStack->pIHostAudio->pfnGetStatus(pDrvStack->pIHostAudio, PDMAUDIODIR_OUT);
+            if (enmStatus == PDMAUDIOBACKENDSTS_RUNNING)
+                return VINF_SUCCESS;
+
+            RTTestFailed(g_hTest, "Expected backend status RUNNING, got %d instead", enmStatus);
+        }
+        else
+            RTTestFailed(g_hTest, "Failed to query PDMIHOSTAUDIO for '%s'", pDrvReg->szName);
+        audioTestDriverStackDelete(pDrvStack);
+    }
+
+    return rc;
+}
+
+/**
+ * Creates an output stream.
+ *
+ * @returns VBox status code.
+ * @param   pDrvStack           The audio driver stack to create it via.
+ * @param   pProps              The audio properties to use.
+ * @param   cMsBufferSize       The buffer size in milliseconds.
+ * @param   cMsPreBuffer        The pre-buffering amount in milliseconds.
+ * @param   cMsSchedulingHint   The scheduling hint in milliseconds.
+ * @param   ppStream            Where to return the stream pointer on success.
+ */
+static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
+                                                  uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                                  PPDMAUDIOSTREAM *ppStream)
+{
+    *ppStream = NULL;
+
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        rc = VERR_NOT_IMPLEMENTED;
+    }
+    else
+    {
+        /*
+         * Calculate the stream config.
+         */
+        PDMAUDIOSTREAMCFG CfgReq;
+        rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
+        AssertRC(rc);
+        CfgReq.enmDir                       = PDMAUDIODIR_OUT;
+        CfgReq.u.enmDst                     = PDMAUDIOPLAYBACKDST_UNKNOWN;
+        CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+        CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
+                                            ? 10 : cMsSchedulingHint;
+        CfgReq.Backend.cFramesBufferSize    = PDMAudioPropsMilliToFrames(pProps,
+                                                                         cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
+                                                                         ? 300 : cMsBufferSize);
+        if (cMsPreBuffer == UINT32_MAX)
+            CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize * 2 / 3;
+        else
+            CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
+        if (CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16)
+        {
+            RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
+                         CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
+            CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
+                                               ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
+        }
+
+        static uint32_t s_idxStream = 0;
+        uint32_t const idxStream = s_idxStream++;
+        RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "out-%u", idxStream);
+
+        /*
+         * Get the config so we can see how big the PDMAUDIOBACKENDSTREAM
+         * structure actually is for this backend.
+         */
+        PDMAUDIOBACKENDCFG BackendCfg;
+        rc = pDrvStack->pIHostAudio->pfnGetConfig(pDrvStack->pIHostAudio, &BackendCfg);
+        if (RT_SUCCESS(rc))
+        {
+            if (BackendCfg.cbStream >= sizeof(PDMAUDIOBACKENDSTREAM))
+            {
+                /*
+                 * Allocate and initialize the stream.
+                 */
+                uint32_t const cbStream = sizeof(AUDIOTESTDRVSTACKSTREAM) - sizeof(PDMAUDIOBACKENDSTREAM) + BackendCfg.cbStream;
+                PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)RTMemAllocZVar(cbStream);
+                if (pStreamAt)
+                {
+                    pStreamAt->Core.uMagic     = PDMAUDIOSTREAM_MAGIC;
+                    pStreamAt->Core.enmDir     = PDMAUDIODIR_OUT;
+                    pStreamAt->Core.cbBackend  = cbStream;
+                    pStreamAt->Core.Props      = CfgReq.Props;
+                    RTStrPrintf(pStreamAt->Core.szName, sizeof(pStreamAt->Core.szName), "out-%u", idxStream);
+
+                    pStreamAt->Backend.uMagic  = PDMAUDIOBACKENDSTREAM_MAGIC;
+                    pStreamAt->Backend.pStream = &pStreamAt->Core;
+
+                    /*
+                     * Call the backend to create the stream.
+                     */
+                    pStreamAt->Cfg = CfgReq;
+
+                    rc = pDrvStack->pIHostAudio->pfnStreamCreate(pDrvStack->pIHostAudio, &pStreamAt->Backend,
+                                                                 &CfgReq, &pStreamAt->Cfg);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pStreamAt->Core.Props = pStreamAt->Cfg.Props;
+                        if (g_uVerbosity > 1)
+                        {
+                            char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
+                            RTMsgInfo("Created backend stream: %s\n",
+                                      PDMAudioStrmCfgToString(&pStreamAt->Cfg, szTmp, sizeof(szTmp)));
+                        }
+
+                        /* Return if stream is ready: */
+                        if (rc == VINF_SUCCESS)
+                        {
+                            *ppStream = &pStreamAt->Core;
+                            return VINF_SUCCESS;
+                        }
+                        if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
+                        {
+                            /*
+                             * Do async init right here and now.
+                             */
+                            rc = pDrvStack->pIHostAudio->pfnStreamInitAsync(pDrvStack->pIHostAudio, &pStreamAt->Backend,
+                                                                            false /*fDestroyed*/);
+                            if (RT_SUCCESS(rc))
+                            {
+                                *ppStream = &pStreamAt->Core;
+                                return VINF_SUCCESS;
+                            }
+
+                            RTTestFailed(g_hTest, "pfnStreamInitAsync failed: %Rrc\n", rc);
+                        }
+                        else
+                        {
+                            RTTestFailed(g_hTest, "pfnStreamCreate returned unexpected info status: %Rrc", rc);
+                            rc = VERR_IPE_UNEXPECTED_INFO_STATUS;
+                        }
+                        pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend);
+                    }
+                    else
+                        RTTestFailed(g_hTest, "pfnStreamCreate failed: %Rrc\n", rc);
+                }
+                else
+                {
+                    RTTestFailed(g_hTest, "Out of memory!\n");
+                    rc = VERR_NO_MEMORY;
+                }
+            }
+            else
+            {
+                RTTestFailed(g_hTest, "cbStream=%#x is too small, min %#zx!\n", BackendCfg.cbStream, sizeof(PDMAUDIOBACKENDSTREAM));
+                rc = VERR_OUT_OF_RANGE;
+            }
+        }
+        else
+            RTTestFailed(g_hTest, "pfnGetConfig failed: %Rrc\n", rc);
+    }
+    return rc;
+}
+
+/**
+ * Destroys a stream.
+ */
+static void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
+{
+    if (pStream)
+    {
+        if (pDrvStack->pIAudioConnector)
+        {
+            int rc = pDrvStack->pIAudioConnector->pfnStreamDestroy(pDrvStack->pIAudioConnector, pStream);
+            if (RT_FAILURE(rc))
+                RTTestFailed(g_hTest, "pfnStreamDestroy failed: %Rrc", rc);
+        }
+        else
+        {
+            PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+            int rc = pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend);
+            if (RT_SUCCESS(rc))
+            {
+                pStreamAt->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
+                pStreamAt->Backend.uMagic = ~PDMAUDIOBACKENDSTREAM_MAGIC;
+                RTMemFree(pStreamAt);
+            }
+            else
+                RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamDestroy failed: %Rrc", rc);
+        }
+    }
+}
+
+/**
+ * Enables a stream.
+ */
+static int audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
+{
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        rc = pDrvStack->pIAudioConnector->pfnStreamControl(pDrvStack->pIAudioConnector, pStream, PDMAUDIOSTREAMCMD_ENABLE);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamControl/ENABLE failed: %Rrc", rc);
+    }
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_ENABLE);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamControl/ENABLE failed: %Rrc", rc);
+    }
+    return rc;
+}
+
+/**
+ * Drains an output stream.
+ */
+static int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, bool fSync)
+{
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        /*
+         * Issue the drain request.
+         */
+        rc = pDrvStack->pIAudioConnector->pfnStreamControl(pDrvStack->pIAudioConnector, pStream, PDMAUDIOSTREAMCMD_DRAIN);
+        if (RT_SUCCESS(rc) && fSync)
+        {
+            /*
+             * This is a synchronous drain, so wait for the driver to change state to inactive.
+             */
+            PDMAUDIOSTREAMSTATE enmState;
+            while (   (enmState = pDrvStack->pIAudioConnector->pfnStreamGetState(pDrvStack->pIAudioConnector, pStream))
+                   >= PDMAUDIOSTREAMSTATE_ENABLED)
+            {
+                RTThreadSleep(2);
+                rc = pDrvStack->pIAudioConnector->pfnStreamIterate(pDrvStack->pIAudioConnector, pStream);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestFailed(g_hTest, "pfnStreamIterate/DRAIN failed: %Rrc", rc);
+                    break;
+                }
+            }
+            if (enmState != PDMAUDIOSTREAMSTATE_INACTIVE)
+            {
+                RTTestFailed(g_hTest, "Stream state not INACTIVE after draing: %s", PDMAudioStreamStateGetName(enmState));
+                rc = VERR_AUDIO_STREAM_NOT_READY;
+            }
+        }
+        else if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamControl/ENABLE failed: %Rrc", rc);
+    }
+    else
+    {
+        /*
+         * Issue the drain request.
+         */
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_DRAIN);
+        if (RT_SUCCESS(rc) && fSync)
+        {
+            /*
+             * This is a synchronous drain, so wait for the driver to change state to inactive.
+             */
+            PDMHOSTAUDIOSTREAMSTATE enmHostState;
+            while (   (enmHostState = pDrvStack->pIHostAudio->pfnStreamGetState(pDrvStack->pIHostAudio, &pStreamAt->Backend))
+                   == PDMHOSTAUDIOSTREAMSTATE_DRAINING)
+            {
+                RTThreadSleep(2);
+                uint32_t cbWritten = UINT32_MAX;
+                rc = pDrvStack->pIHostAudio->pfnStreamPlay(pDrvStack->pIHostAudio, &pStreamAt->Backend,
+                                                           NULL /*pvBuf*/, 0 /*cbBuf*/, &cbWritten);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestFailed(g_hTest, "pfnStreamPlay/DRAIN failed: %Rrc", rc);
+                    break;
+                }
+                if (cbWritten != 0)
+                {
+                    RTTestFailed(g_hTest, "pfnStreamPlay/DRAIN did not set cbWritten to zero: %#x", cbWritten);
+                    rc = VERR_MISSING;
+                    break;
+                }
+            }
+            if (enmHostState != PDMHOSTAUDIOSTREAMSTATE_OKAY)
+            {
+                RTTestFailed(g_hTest, "Stream state not OKAY after draing: %s", PDMHostAudioStreamStateGetName(enmHostState));
+                rc = VERR_AUDIO_STREAM_NOT_READY;
+            }
+        }
+        else if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamControl/ENABLE failed: %Rrc", rc);
+    }
+    return rc;
+}
+
+/**
+ * Checks if the stream is okay.
+ * @returns true if okay, false if not.
+ */
+static bool audioTestDriverStackStreamIsOkay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
+{
+    /*
+     * Get the stream status and check if it means is okay or not.
+     */
+    bool fRc = false;
+    if (pDrvStack->pIAudioConnector)
+    {
+        PDMAUDIOSTREAMSTATE enmState = pDrvStack->pIAudioConnector->pfnStreamGetState(pDrvStack->pIAudioConnector, pStream);
+        switch (enmState)
+        {
+            case PDMAUDIOSTREAMSTATE_NOT_WORKING:
+            case PDMAUDIOSTREAMSTATE_NEED_REINIT:
+                break;
+            case PDMAUDIOSTREAMSTATE_INACTIVE:
+            case PDMAUDIOSTREAMSTATE_ENABLED:
+            case PDMAUDIOSTREAMSTATE_ENABLED_READABLE:
+            case PDMAUDIOSTREAMSTATE_ENABLED_WRITABLE:
+                fRc = true;
+                break;
+            /* no default */
+            case PDMAUDIOSTREAMSTATE_INVALID:
+            case PDMAUDIOSTREAMSTATE_END:
+            case PDMAUDIOSTREAMSTATE_32BIT_HACK:
+                break;
+        }
+    }
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt    = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        PDMHOSTAUDIOSTREAMSTATE  enmHostState = pDrvStack->pIHostAudio->pfnStreamGetState(pDrvStack->pIHostAudio,
+                                                                                          &pStreamAt->Backend);
+        switch (enmHostState)
+        {
+            case PDMHOSTAUDIOSTREAMSTATE_INITIALIZING:
+            case PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING:
+                break;
+            case PDMHOSTAUDIOSTREAMSTATE_OKAY:
+            case PDMHOSTAUDIOSTREAMSTATE_DRAINING:
+            case PDMHOSTAUDIOSTREAMSTATE_INACTIVE:
+                fRc = true;
+                break;
+            /* no default */
+            case PDMHOSTAUDIOSTREAMSTATE_INVALID:
+            case PDMHOSTAUDIOSTREAMSTATE_END:
+            case PDMHOSTAUDIOSTREAMSTATE_32BIT_HACK:
+                break;
+        }
+    }
+    return fRc;
+}
+
+/**
+ * Gets the number of bytes it's currently possible to write to the stream.
+ */
+static uint32_t audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
+{
+    uint32_t cbWritable;
+    if (pDrvStack->pIAudioConnector)
+        cbWritable = pDrvStack->pIAudioConnector->pfnStreamGetWritable(pDrvStack->pIAudioConnector, pStream);
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt    = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        cbWritable = pDrvStack->pIHostAudio->pfnStreamGetWritable(pDrvStack->pIHostAudio, &pStreamAt->Backend);
+    }
+    return cbWritable;
+}
+
+/**
+ * Tries to play the @a cbBuf bytes of samples in @a pvBuf.
+ */
+static int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
+                                          void const *pvBuf, uint32_t cbBuf, uint32_t *pcbPlayed)
+{
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        rc = pDrvStack->pIAudioConnector->pfnStreamPlay(pDrvStack->pIAudioConnector, pStream, pvBuf, cbBuf, pcbPlayed);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamPlay(,,,%#x) failed: %Rrc", cbBuf, rc);
+    }
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        rc = pDrvStack->pIHostAudio->pfnStreamPlay(pDrvStack->pIHostAudio, &pStreamAt->Backend, pvBuf, cbBuf, pcbPlayed);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamPlay(,,,%#x) failed: %Rrc", cbBuf, rc);
+    }
+    return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   WAVE File Reader.                                                                                                            *
+*********************************************************************************************************************************/
+/**
+ * Opens a wave-file for reading.
+ *
+ * @returns VBox status code.
+ * @param   pszFile     The file to open.
+ * @param   pWaveFile   The open wave file structure to fill in on success.
+ */
+static int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
+{
+    RT_ZERO(pWaveFile->Props);
+    pWaveFile->hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&pWaveFile->hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return rc;
+    uint64_t cbFile = 0;
+    rc = RTFileQuerySize(pWaveFile->hFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        union
+        {
+            uint8_t                 ab[512];
+            struct
+            {
+                RTRIFFHDR           Hdr;
+                RTRIFFWAVEFMTCHUNK  Fmt;
+            } Wave;
+            RTRIFFLIST              List;
+            RTRIFFWAVEDATACHUNK     Data;
+        } uBuf;
+
+        rc = RTFileRead(pWaveFile->hFile, &uBuf.Wave, sizeof(uBuf.Wave), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VERR_VFS_UNKNOWN_FORMAT;
+            if (   uBuf.Wave.Hdr.uMagic    == RTRIFFHDR_MAGIC
+                && uBuf.Wave.Hdr.uFileType == RTRIFF_FILE_TYPE_WAVE
+                && uBuf.Wave.Fmt.Chunk.uMagic == RTRIFFWAVEFMT_MAGIC
+                && uBuf.Wave.Fmt.Chunk.cbChunk >= sizeof(uBuf.Wave.Fmt.Data))
+            {
+                if (uBuf.Wave.Hdr.cbFile != cbFile - sizeof(RTRIFFCHUNK))
+                    RTMsgWarning("%s: File size mismatch: %#x, actual %#RX64 (ignored)",
+                                 pszFile, uBuf.Wave.Hdr.cbFile, cbFile - sizeof(RTRIFFCHUNK));
+                rc = VERR_VFS_BOGUS_FORMAT;
+                if (uBuf.Wave.Fmt.Data.uFormatTag != RTRIFFWAVEFMT_TAG_PCM)
+                    RTMsgError("%s: Unsupported uFormatTag value: %u (expected 1)", pszFile, uBuf.Wave.Fmt.Data.uFormatTag);
+                else if (   uBuf.Wave.Fmt.Data.cBitsPerSample != 8
+                         && uBuf.Wave.Fmt.Data.cBitsPerSample != 16
+                         && uBuf.Wave.Fmt.Data.cBitsPerSample != 32)
+                    RTMsgError("%s: Unsupported cBitsPerSample value: %u", pszFile, uBuf.Wave.Fmt.Data.cBitsPerSample);
+                else if (   uBuf.Wave.Fmt.Data.cChannels < 1
+                         || uBuf.Wave.Fmt.Data.cChannels >= 16)
+                    RTMsgError("%s: Unsupported cChannels value: %u (expected 1..15)", pszFile, uBuf.Wave.Fmt.Data.cChannels);
+                else if (   uBuf.Wave.Fmt.Data.uHz < 4096
+                         || uBuf.Wave.Fmt.Data.uHz > 768000)
+                    RTMsgError("%s: Unsupported uHz value: %u (expected 4096..768000)", pszFile, uBuf.Wave.Fmt.Data.uHz);
+                else if (uBuf.Wave.Fmt.Data.cbFrame != uBuf.Wave.Fmt.Data.cChannels * uBuf.Wave.Fmt.Data.cBitsPerSample / 8)
+                    RTMsgError("%s: Invalid cbFrame value: %u (expected %u)", pszFile, uBuf.Wave.Fmt.Data.cbFrame,
+                               uBuf.Wave.Fmt.Data.cChannels * uBuf.Wave.Fmt.Data.cBitsPerSample / 8);
+                else if (uBuf.Wave.Fmt.Data.cbRate != uBuf.Wave.Fmt.Data.cbFrame * uBuf.Wave.Fmt.Data.uHz)
+                    RTMsgError("%s: Invalid cbRate value: %u (expected %u)", pszFile, uBuf.Wave.Fmt.Data.cbRate,
+                               uBuf.Wave.Fmt.Data.cbFrame * uBuf.Wave.Fmt.Data.uHz);
+                else
+                {
+                    /*
+                     * Copy out the data we need from the file format structure.
+                     */
+                    PDMAudioPropsInit(&pWaveFile->Props, uBuf.Wave.Fmt.Data.cBitsPerSample / 8, true /*fSigned*/,
+                                      uBuf.Wave.Fmt.Data.cChannels, uBuf.Wave.Fmt.Data.uHz);
+                    pWaveFile->offSamples = sizeof(RTRIFFHDR) + sizeof(RTRIFFCHUNK) + uBuf.Wave.Fmt.Chunk.cbChunk;
+
+                    /*
+                     * Find the 'data' chunk with the audio samples.
+                     *
+                     * There can be INFO lists both preceeding this and succeeding
+                     * it, containing IART and other things we can ignored.  Thus
+                     * we read a list header here rather than just a chunk header,
+                     * since it doesn't matter if we read 4 bytes extra as
+                     * AudioTestWaveFileRead uses RTFileReadAt anyway.
+                     */
+                    rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* HACK ALERT: Skip one INFO list and hope we find a data chunk following it: */
+                        if (   uBuf.List.uMagic    == RTRIFFLIST_MAGIC
+                            && uBuf.List.uListType ==  RTRIFFLIST_TYPE_INFO
+                            && uBuf.List.cbChunk   <= (uint32_t)cbFile - pWaveFile->offSamples - sizeof(RTRIFFCHUNK))
+                        {
+                            pWaveFile->offSamples += sizeof(RTRIFFCHUNK) + uBuf.List.cbChunk;
+                            rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
+                        }
+
+                        pWaveFile->offSamples += sizeof(uBuf.Data.Chunk);
+                        pWaveFile->cbSamples   = (uint32_t)cbFile - pWaveFile->offSamples;
+
+                        rc = VERR_VFS_BOGUS_FORMAT;
+                        if (   uBuf.Data.Chunk.uMagic == RTRIFFWAVEDATACHUNK_MAGIC
+                            && uBuf.Data.Chunk.cbChunk <= pWaveFile->cbSamples
+                            && PDMAudioPropsIsSizeAligned(&pWaveFile->Props, uBuf.Data.Chunk.cbChunk))
+                        {
+                            pWaveFile->cbSamples = uBuf.Data.Chunk.cbChunk;
+                            /*
+                             * We're good!
+                             */
+                            pWaveFile->offCur = 0;
+                            return VINF_SUCCESS;
+                        }
+
+                        RTMsgError("%s: Bad data header: uMagic=%#x (expected %#x), cbChunk=%#x (max %#RX64, align %u)",
+                                   pszFile, uBuf.Data.Chunk.uMagic, RTRIFFWAVEDATACHUNK_MAGIC,
+                                   uBuf.Data.Chunk.cbChunk, pWaveFile->cbSamples, PDMAudioPropsFrameSize(&pWaveFile->Props));
+                    }
+                    else
+                        RTMsgError("%s: Failed to read data header: %Rrc", pszFile, rc);
+                }
+            }
+            else
+                RTMsgError("%s: Bad file header: uMagic=%#x (vs. %#x), uFileType=%#x (vs %#x), uFmtMagic=%#x (vs %#x) cbFmtChunk=%#x (min %#x)",
+                           pszFile, uBuf.Wave.Hdr.uMagic, RTRIFFHDR_MAGIC, uBuf.Wave.Hdr.uFileType, RTRIFF_FILE_TYPE_WAVE,
+                           uBuf.Wave.Fmt.Chunk.uMagic, RTRIFFWAVEFMT_MAGIC,
+                           uBuf.Wave.Fmt.Chunk.cbChunk, sizeof(uBuf.Wave.Fmt.Data));
+        }
+        else
+            RTMsgError("%s: Failed to read file header: %Rrc", pszFile, rc);
+    }
+    else
+        RTMsgError("%s: Failed to query file size: %Rrc", pszFile, rc);
+
+    RTFileClose(pWaveFile->hFile);
+    pWaveFile->hFile = NIL_RTFILE;
+    return rc;
+}
+
+/**
+ * Closes a wave file.
+ */
+static void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
+{
+    RTFileClose(pWaveFile->hFile);
+    pWaveFile->hFile = NIL_RTFILE;
+}
+
+/**
+ * Reads samples from a wave file.
+ *
+ * @returns VBox status code.  See RTVfsFileRead for EOF status handling.
+ * @param   pWaveFile   The file to read from.
+ * @param   pvBuf       Where to put the samples.
+ * @param   cbBuf       How much to read at most.
+ * @param   pcbRead     Where to return the actual number of bytes read,
+ *                      optional.
+ */
+static int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    int rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offCur, pvBuf, cbBuf, pcbRead);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbRead)
+        {
+            pWaveFile->offCur += *pcbRead;
+            if (cbBuf > *pcbRead)
+                rc = VINF_EOF;
+            else if (!cbBuf && pWaveFile->offCur == pWaveFile->cbSamples)
+                rc = VINF_EOF;
+        }
+        else
+            pWaveFile->offCur += cbBuf;
+    }
+    return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   Implementation of Something                                                                                                  *
 *********************************************************************************************************************************/
 
 /**
@@ -363,224 +1187,10 @@ static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
     return;
 }
 
-/**
- * Shows the logo.
- *
- * @param   pStream             Output stream to show logo on.
- */
-static void audioTestShowLogo(PRTSTREAM pStream)
-{
-    RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) "
-                 VBOX_VERSION_STRING " - r%s\n"
-                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                 "All rights reserved.\n\n", RTBldCfgRevisionStr());
-}
 
-/**
- * Shows tool usage text.
- */
-static void audioTestUsage(PRTSTREAM pStrm)
-{
-    RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n",
-                 RTPathFilename(RTProcExecutablePath()));
-    RTStrmPrintf(pStrm,
-                 "\n"
-                 "Global Options:\n"
-                 "  -q, --quiet\n"
-                 "    Sets verbosity to zero.\n"
-                 "  -v, --verbose\n"
-                 "    Increase verbosity.\n"
-                 "  -V, --version\n"
-                 "    Displays version.\n"
-                 "  -h, -?, --help\n"
-                 "    Displays help.\n"
-                 );
-
-    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_aCommands); iCmd++)
-    {
-        RTStrmPrintf(pStrm,
-                     "\n"
-                     "Command '%s':\n"
-                     "    %s\n"
-                     "Options for '%s':\n",
-                     g_aCommands[iCmd].pszCommand, g_aCommands[iCmd].pszDesc, g_aCommands[iCmd].pszCommand);
-        PCRTGETOPTDEF const paOptions = g_aCommands[iCmd].paOptions;
-        for (unsigned i = 0; i < g_aCommands[iCmd].cOptions; i++)
-        {
-            if (RT_C_IS_PRINT(paOptions[i].iShort))
-                RTStrmPrintf(pStrm, "  -%c, %s\n", g_aCmdTestOptions[i].iShort, g_aCmdTestOptions[i].pszLong);
-            else
-                RTStrmPrintf(pStrm, "  %s\n", g_aCmdTestOptions[i].pszLong);
-
-            const char *pszHelp = NULL;
-            if (paOptions == g_aCmdTestOptions)
-            {
-                switch (g_aCmdTestOptions[i].iShort)
-                {
-                    case 'd':
-                        pszHelp = "Use the specified audio device";
-                        break;
-                    case 'e':
-                        pszHelp = "Exclude the given test id from the list";
-                        break;
-                    case 'a':
-                        pszHelp = "Exclude all tests from the list (useful to enable single tests later with --include)";
-                        break;
-                    case 'i':
-                        pszHelp = "Include the given test id in the list";
-                        break;
-                }
-            }
-            /** @todo Add help text for all options. */
-            if (pszHelp)
-                RTStrmPrintf(pStrm, "    %s\n", pszHelp);
-        }
-    }
-
-}
-
-/** @name Driver Helper Fakes / Stubs
- * @{  */
-
-VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
-{
-    if (pNode != NULL)
-    {
-        PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
-        if (g_uVerbosity > 2)
-            RTPrintf("debug: CFGMR3QueryString([%s], %s, %p, %#x)\n", pDrvReg->szName, pszName, pszString, cchString);
-
-        if (   (   strcmp(pDrvReg->szName, "PulseAudio") == 0
-                || strcmp(pDrvReg->szName, "HostAudioWas") == 0)
-            && strcmp(pszName, "VmName") == 0)
-            return RTStrCopy(pszString, cchString, "vkat");
-
-        if (   strcmp(pDrvReg->szName, "HostAudioWas") == 0
-            && strcmp(pszName, "VmUuid") == 0)
-            return RTStrCopy(pszString, cchString, "794c9192-d045-4f28-91ed-46253ac9998e");
-    }
-    else if (g_uVerbosity > 2)
-        RTPrintf("debug: CFGMR3QueryString(%p, %s, %p, %#x)\n", pNode, pszName, pszString, cchString);
-
-    return VERR_CFGM_VALUE_NOT_FOUND;
-}
-
-/* Fake stub. Will be removed when this moves into the driver helpers. */
-VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
-{
-    if (g_uVerbosity > 2)
-        RTPrintf("debug: CFGMR3QueryStringDef(%p, %s, %p, %#x, %s)\n", pNode, pszName, pszString, cchString, pszDef);
-    return RTStrCopy(pszString, cchString, pszDef);
-}
-
-/* Fake stub. Will be removed when this moves into the driver helpers. */
-VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
-                                    const char *pszValidValues, const char *pszValidNodes,
-                                    const char *pszWho, uint32_t uInstance)
-{
-    RT_NOREF(pNode, pszNode, pszValidValues, pszValidNodes, pszWho, uInstance);
-    return VINF_SUCCESS;
-}
-
-/** @} */
-
-
-/**
- * Constructs a PDM audio driver instance.
- *
- * @returns VBox status code.
- * @param   pDrvReg     PDM driver registration record to use for construction.
- * @param   ppDrvIns    Where to return the driver instance structure.
- * @param   ppDrvAudio  Where to return the audio driver interface of type IHOSTAUDIO.
- */
-static int audioTestDrvConstruct(PCPDMDRVREG pDrvReg, PPPDMDRVINS ppDrvIns, PPDMIHOSTAUDIO *ppDrvAudio)
-{
-    /* The destruct function must have valid data to work with. */
-    *ppDrvIns   = NULL;
-    *ppDrvAudio = NULL;
-
-    /*
-     * Check registration structure validation (doesn't need to be too
-     * thorough, PDM check it in detail on every VM startup).
-     */
-    AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing backend '%s' ...\n", pDrvReg->szName);
-    AssertPtrReturn(pDrvReg->pfnConstruct, VERR_INVALID_PARAMETER);
-
-    /*
-     * Initialize the driver helper the first time thru.
-     */
-    static PDMDRVHLPR3 s_DrvHlp;
-    if (s_DrvHlp.u32Version == 0)
-    {
-        s_DrvHlp.u32Version = PDM_DRVHLPR3_VERSION;
-        s_DrvHlp.u32TheEnd  = PDM_DRVHLPR3_VERSION;
-    }
-
-    /*
-     * Create the instance data structure.
-     */
-    PPDMDRVINS pDrvIns = (PPDMDRVINS)RTMemAllocZVar(RT_UOFFSETOF_DYN(PDMDRVINS, achInstanceData[pDrvReg->cbInstance]));
-    RTTEST_CHECK_RET(g_hTest, pDrvIns, VERR_NO_MEMORY);
-
-    pDrvIns->u32Version       = PDM_DRVINS_VERSION;
-    pDrvIns->iInstance        = 0;
-    pDrvIns->pHlpR3           = &s_DrvHlp;
-    pDrvIns->pvInstanceDataR3 = &pDrvIns->achInstanceData[0];
-    pDrvIns->pReg             = pDrvReg;
-    pDrvIns->pCfg             = (PCFGMNODE)pDrvReg;
-    //pDrvIns->pUpBase          = NULL;
-    //pDrvIns->pDownBase        = NULL;
-
-    /*
-     * Invoke the constructor.
-     */
-    int rc = pDrvReg->pfnConstruct(pDrvIns, pDrvIns->pCfg, 0 /*fFlags*/);
-    if (RT_SUCCESS(rc))
-    {
-        PPDMIHOSTAUDIO pDrvAudio = (PPDMIHOSTAUDIO)pDrvIns->IBase.pfnQueryInterface(&pDrvIns->IBase, PDMIHOSTAUDIO_IID);
-        if (pDrvAudio)
-        {
-            PDMAUDIOBACKENDSTS enmStatus = pDrvAudio->pfnGetStatus(pDrvAudio, PDMAUDIODIR_OUT);
-            if (enmStatus == PDMAUDIOBACKENDSTS_RUNNING)
-            {
-                *ppDrvAudio = pDrvAudio;
-                *ppDrvIns   = pDrvIns;
-                return VINF_SUCCESS;
-            }
-            RTTestFailed(g_hTest, "Expected backend status RUNNING, got %d instead", enmStatus);
-        }
-        else
-            RTTestFailed(g_hTest, "Failed to query PDMIHOSTAUDIO for '%s'", pDrvReg->szName);
-    }
-    else
-        RTTestFailed(g_hTest, "Failed to construct audio driver '%s': %Rrc", pDrvReg->szName, rc);
-    if (pDrvReg->pfnDestruct)
-        pDrvReg->pfnDestruct(pDrvIns);
-    RTMemFree(pDrvIns);
-    return rc;
-}
-
-/**
- * Destructs a PDM audio driver instance.
- *
- * @returns VBox status code.
- * @param   pDrvReg             PDM driver registration record to destruct.
- * @param   pDrvIns             Driver instance to destruct.
- */
-static int audioTestDrvDestruct(PCPDMDRVREG pDrvReg, PPDMDRVINS pDrvIns)
-{
-    if (!pDrvIns)
-        return VINF_SUCCESS;
-
-    if (pDrvReg->pfnDestruct)
-        pDrvReg->pfnDestruct(pDrvIns);
-
-    pDrvIns->u32Version = 0;
-    RTMemFree(pDrvIns);
-
-    return VINF_SUCCESS;
-}
+/*********************************************************************************************************************************
+*   Some other stuff, you name it.                                                                                               *
+*********************************************************************************************************************************/
 
 /**
  * Enumerates audio devices and optionally searches for a specific device.
@@ -1008,6 +1618,19 @@ static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms
     return rc;
 }
 
+/** Option help for the 'test' command.   */
+static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'd':   return "Use the specified audio device";
+        case 'e':   return "Exclude the given test id from the list";
+        case 'a':   return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'i':   return "Include the given test id in the list";
+    }
+    return NULL;
+}
+
 /**
  * Main (entry) function for the testing functionality of VKAT.
  *
@@ -1036,10 +1659,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
     {
         switch (rc)
         {
-            case 'h':
-                audioTestUsage(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
-
             case 'a':
                 for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
                     g_aTests[i].fExcluded = true;
@@ -1118,6 +1737,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
                 TstCust.TestTone.uVolumePercent = ValueUnion.u8;
                 break;
 
+            case 'V':
+                return audioTestVersion();
+            case 'h':
+                return audioTestUsage(g_pStdOut);
+
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
@@ -1128,13 +1752,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
      */
     RTTestBanner(g_hTest);
 
-    PPDMIHOSTAUDIO pDrvAudio = NULL;
-    PPDMDRVINS     pDrvIns   = NULL;
-    rc = audioTestDrvConstruct(pDrvReg, &pDrvIns, &pDrvAudio);
+    AUDIOTESTDRVSTACK DrvStack;
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
     if (RT_SUCCESS(rc))
     {
         /* For now all tests have the same test environment. */
-        rc = audioTestEnvInit(&TstEnv, pDrvAudio, pszTag);
+        /** @todo bake the DrvStack into the test env make make it more flexible so
+         *        we can also test with/without DrvAudio (need option above). */
+        rc = audioTestEnvInit(&TstEnv, DrvStack.pIHostAudio, pszTag);
         if (RT_SUCCESS(rc))
         {
             PPDMAUDIOHOSTDEV pDev;
@@ -1154,8 +1779,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
 
             audioTestEnvDestroy(&TstEnv);
         }
+        audioTestDriverStackDelete(&DrvStack);
     }
-    audioTestDrvDestruct(pDrvReg, pDrvIns);
 
     audioTestParmsDestroy(&TstCust);
 
@@ -1167,6 +1792,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
      */
     return RTTestSummaryAndDestroy(g_hTest);
 }
+
+
+/*********************************************************************************************************************************
+*   Command: verify                                                                                                              *
+*********************************************************************************************************************************/
 
 /**
  * Verifies one single test set.
@@ -1251,6 +1881,11 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
                 iTestSet++;
                 break;
 
+            case 'V':
+                return audioTestVersion();
+            case 'h':
+                return audioTestUsage(g_pStdOut);
+
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
@@ -1272,6 +1907,330 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
      * Print summary and exit.
      */
     return RTTestSummaryAndDestroy(g_hTest);
+}
+
+
+/*********************************************************************************************************************************
+*   Command: play                                                                                                                *
+*********************************************************************************************************************************/
+/**
+ * Command line parameters for test mode.
+ */
+static const RTGETOPTDEF g_aCmdPlayOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+};
+
+/** the 'play' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * Worker for audioTestCmdPlayHandler that plays one file.
+ */
+static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uint32_t cMsBufferSize,
+                                   uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint)
+{
+    /*
+     * First we must open the file and determin the format.
+     */
+    AUDIOTESTWAVEFILE WaveFile;
+    int rc = AudioTestWaveFileOpen(pszFile, &WaveFile);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Failed to open '%s': %Rrc", pszFile, rc);
+
+    if (g_uVerbosity > 0)
+    {
+        char szTmp[128];
+        RTMsgInfo("Opened '%s' for playing\n", pszFile);
+        RTMsgInfo("Format: %s\n", PDMAudioPropsToString(&WaveFile.Props, szTmp, sizeof(szTmp)));
+        RTMsgInfo("Size:   %'RU32 bytes / %#RX32 / %'RU32 frames / %'RU64 ns\n",
+                  WaveFile.cbSamples, WaveFile.cbSamples,
+                  PDMAudioPropsBytesToFrames(&WaveFile.Props, WaveFile.cbSamples),
+                  PDMAudioPropsBytesToNano(&WaveFile.Props, WaveFile.cbSamples));
+    }
+
+    /*
+     * Construct the driver stack.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
+    AUDIOTESTDRVSTACK   DrvStack;
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Open a stream for the output.
+         */
+        PPDMAUDIOSTREAM pStream = NULL;
+        rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &WaveFile.Props, cMsBufferSize,
+                                                    cMsPreBuffer, cMsSchedulingHint, &pStream);
+        if (RT_SUCCESS(rc))
+        {
+            rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
+            if (RT_SUCCESS(rc))
+            {
+                uint64_t const nsStarted = RTTimeNanoTS();
+
+                /*
+                 * Transfer data as quickly as we're allowed.
+                 */
+                for (;;)
+                {
+                    /* Read a chunk from the wave file. */
+                    uint8_t  abSamples[16384];
+                    size_t   cbSamples = 0;
+                    rc = AudioTestWaveFileRead(&WaveFile, abSamples, sizeof(abSamples), &cbSamples);
+                    if (RT_SUCCESS(rc) && cbSamples > 0)
+                    {
+                        /* Transfer the data to the audio stream. */
+                        for (uint32_t offSamples = 0; offSamples < cbSamples;)
+                        {
+                            uint32_t const cbCanWrite = audioTestDriverStackStreamGetWritable(&DrvStack, pStream);
+                            if (cbCanWrite > 0)
+                            {
+                                uint32_t const cbToPlay = RT_MIN(cbCanWrite, (uint32_t)cbSamples - offSamples);
+                                uint32_t       cbPlayed = 0;
+                                rc = audioTestDriverStackStreamPlay(&DrvStack, pStream, &abSamples[offSamples],
+                                                                    cbToPlay, &cbPlayed);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    if (cbPlayed)
+                                        offSamples += cbPlayed;
+                                    else
+                                    {
+                                        rcExit = RTMsgErrorExitFailure("Played zero out of %#x bytes - %#x bytes reported playable!\n",
+                                                                       cbToPlay, cbCanWrite);
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    rcExit = RTMsgErrorExitFailure("Failed to play %#x bytes: %Rrc\n", cbToPlay, rc);
+                                    break;
+                                }
+                            }
+                            else if (audioTestDriverStackStreamIsOkay(&DrvStack, pStream))
+                                RTThreadSleep(RT_MIN(RT_MAX(1, cMsSchedulingHint), 256));
+                            else
+                            {
+                                rcExit = RTMsgErrorExitFailure("Stream is not okay!\n");
+                                break;
+                            }
+                        }
+                    }
+                    else if (RT_SUCCESS(rc) && cbSamples == 0)
+                    {
+                        rcExit = RTEXITCODE_SUCCESS;
+                        break;
+                    }
+                    else
+                    {
+                        rcExit = RTMsgErrorExitFailure("Error reading wav file '%s': %Rrc", pszFile, rc);
+                        break;
+                    }
+                }
+
+                /*
+                 * Drain the stream.
+                 */
+                if (rcExit == RTEXITCODE_SUCCESS)
+                {
+                    if (g_uVerbosity > 0)
+                        RTMsgInfo("%'RU64 ns: Draining...\n", RTTimeNanoTS() - nsStarted);
+                    rc = audioTestDriverStackStreamDrain(&DrvStack, pStream, true /*fSync*/);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (g_uVerbosity > 0)
+                            RTMsgInfo("%'RU64 ns: Done\n", RTTimeNanoTS() - nsStarted);
+                    }
+                    else
+                        rcExit = RTMsgErrorExitFailure("Draining failed: %Rrc", rc);
+                }
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
+            audioTestDriverStackStreamDestroy(&DrvStack, pStream);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
+        audioTestDriverStackDelete(&DrvStack);
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
+    AudioTestWaveFileClose(&WaveFile);
+    return rcExit;
+}
+
+/**
+ * The 'play' command handler.
+ *
+ * @returns Program exit code.
+ * @param   argc                Number of argv arguments.
+ * @param   argv                argv arguments.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
+{
+    /*
+     * Parse arguments.
+     */
+    /* Option values: */
+    PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
+    uint32_t    cMsBufferSize     = UINT32_MAX;
+    uint32_t    cMsPreBuffer      = UINT32_MAX;
+    uint32_t    cMsSchedulingHint = UINT32_MAX;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdPlayOptions, RT_ELEMENTS(g_aCmdPlayOptions),
+                          1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = NULL;
+                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
+                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
+                    {
+                        pDrvReg = g_aBackends[i].pDrvReg;
+                        break;
+                    }
+                if (pDrvReg == NULL)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            case 'V':
+                return audioTestVersion();
+            case 'h':
+                return audioTestUsage(g_pStdOut);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Commands.
+ */
+static struct
+{
+    /** The command name. */
+    const char     *pszCommand;
+    /** The command handler.   */
+    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(int argc, char **argv));
+
+    /** Command description.   */
+    const char     *pszDesc;
+    /** Options array.  */
+    PCRTGETOPTDEF   paOptions;
+    /** Number of options in the option array. */
+    size_t          cOptions;
+    /** Gets help for an option. */
+    DECLCALLBACKMEMBER(const char *, pfnOptionHelp,(PCRTGETOPTDEF pOpt));
+} const g_aCommands[] =
+{
+    {
+        "test",     audioTestMain,
+        "Does some kind of testing, I guess...",
+        g_aCmdTestOptions,      RT_ELEMENTS(g_aCmdTestOptions),     audioTestCmdTestHelp
+    },
+    {
+        "verify",   audioVerifyMain,
+        "Verfies something, I guess...",
+        g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),   NULL,
+    },
+    {
+        "play",     audioTestCmdPlayHandler,
+        "Plays one or more wave files.",
+        g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
+    },
+};
+
+/**
+ * Shows tool usage text.
+ */
+static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
+{
+    RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n",
+                 RTPathFilename(RTProcExecutablePath()));
+    RTStrmPrintf(pStrm,
+                 "\n"
+                 "Global Options:\n"
+                 "  -q, --quiet\n"
+                 "    Sets verbosity to zero.\n"
+                 "  -v, --verbose\n"
+                 "    Increase verbosity.\n"
+                 "  -V, --version\n"
+                 "    Displays version.\n"
+                 "  -h, -?, --help\n"
+                 "    Displays help.\n"
+                 );
+
+    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_aCommands); iCmd++)
+    {
+        RTStrmPrintf(pStrm,
+                     "\n"
+                     "Command '%s':\n"
+                     "    %s\n"
+                     "Options for '%s':\n",
+                     g_aCommands[iCmd].pszCommand, g_aCommands[iCmd].pszDesc, g_aCommands[iCmd].pszCommand);
+        PCRTGETOPTDEF const paOptions = g_aCommands[iCmd].paOptions;
+        for (unsigned i = 0; i < g_aCommands[iCmd].cOptions; i++)
+        {
+            if (RT_C_IS_PRINT(paOptions[i].iShort))
+                RTStrmPrintf(pStrm, "  -%c, %s\n", g_aCmdTestOptions[i].iShort, g_aCmdTestOptions[i].pszLong);
+            else
+                RTStrmPrintf(pStrm, "  %s\n", g_aCmdTestOptions[i].pszLong);
+
+            const char *pszHelp = NULL;
+            if (g_aCommands[i].pfnOptionHelp)
+                pszHelp = g_aCommands[i].pfnOptionHelp(&paOptions[i]);
+            if (pszHelp)
+                RTStrmPrintf(pStrm, "    %s\n", pszHelp);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Shows tool version.
+ */
+static RTEXITCODE audioTestVersion(void)
+{
+    RTPrintf("v0.0.1\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Shows the logo.
+ *
+ * @param   pStream             Output stream to show logo on.
+ */
+static void audioTestShowLogo(PRTSTREAM pStream)
+{
+    RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) Version " VBOX_VERSION_STRING " - r%s\n"
+                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                 "All rights reserved.\n\n", RTBldCfgRevisionStr());
 }
 
 int main(int argc, char **argv)
@@ -1305,13 +2264,11 @@ int main(int argc, char **argv)
                 break;
 
             case 'V':
-                RTPrintf("v0.0.1\n");
-                return RTEXITCODE_SUCCESS;
+                return audioTestVersion();
 
             case 'h':
                 audioTestShowLogo(g_pStdOut);
-                audioTestUsage(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
+                return audioTestUsage(g_pStdOut);
 
             case VINF_GETOPT_NOT_OPTION:
             {
