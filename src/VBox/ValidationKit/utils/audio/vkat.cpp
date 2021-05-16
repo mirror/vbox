@@ -328,7 +328,18 @@ static unsigned     g_uVerbosity = 0;
 *********************************************************************************************************************************/
 
 /** @name Driver Helper Fakes / Stubs
+ *
+ * @note The VMM functions defined here will turn into driver helpers before
+ *       long, as the drivers aren't supposed to import directly from the VMM in
+ *       the future.
+ *
  * @{  */
+
+VMMR3DECL(PCFGMNODE)    CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
+{
+    RT_NOREF(pNode, pszPath);
+    return NULL;
+}
 
 VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
@@ -353,7 +364,6 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
-/* Fake stub. Will be removed when this moves into the driver helpers. */
 VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
     if (g_uVerbosity > 2)
@@ -361,7 +371,24 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
     return RTStrCopy(pszString, cchString, pszDef);
 }
 
-/* Fake stub. Will be removed when this moves into the driver helpers. */
+VMMR3DECL(int)          CFGMR3QueryBoolDef(     PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
+{
+    RT_NOREF(pNode, pszName, pf);
+    return fDef;
+}
+
+VMMR3DECL(int)          CFGMR3QueryU8(          PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
+{
+    RT_NOREF(pNode, pszName, pu8);
+    return VERR_CFGM_VALUE_NOT_FOUND;
+}
+
+VMMR3DECL(int)          CFGMR3QueryU32(         PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
+{
+    RT_NOREF(pNode, pszName, pu32);
+    return VERR_CFGM_VALUE_NOT_FOUND;
+}
+
 VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
                                     const char *pszValidValues, const char *pszValidNodes,
                                     const char *pszWho, uint32_t uInstance)

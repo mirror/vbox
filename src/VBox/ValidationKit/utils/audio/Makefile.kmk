@@ -50,7 +50,12 @@ AudioTest_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/build
 AudioTest_SOURCES  = \
 	vkat.cpp \
-	$(VKAT_PATH_AUDIO)/AudioTest.cpp
+	$(VKAT_PATH_AUDIO)/AudioTest.cpp \
+	$(VKAT_PATH_AUDIO)/DrvAudio.cpp \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioNull.cpp \
+	$(VKAT_PATH_AUDIO)/AudioMixer.cpp \
+	$(VKAT_PATH_AUDIO)/AudioMixBuffer.cpp \
+	$(VKAT_PATH_AUDIO)/AudioHlp.cpp
 
 ifdef VBOX_WITH_AUDIO_PULSE
  AudioTest_DEFS    += VBOX_WITH_AUDIO_PULSE
