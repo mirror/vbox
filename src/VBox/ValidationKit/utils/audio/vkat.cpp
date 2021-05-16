@@ -39,6 +39,7 @@
 #include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include <iprt/test.h>
 #include <iprt/formats/riff.h>
 
@@ -205,6 +206,9 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 
+static int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg,
+                                 PPDMDRVINS pParentDrvIns, PPPDMDRVINS ppDrvIns);
+
 static RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
 static RTEXITCODE audioTestVersion(void);
 
@@ -324,10 +328,10 @@ static unsigned     g_uVerbosity = 0;
 
 
 /*********************************************************************************************************************************
-*   Fake PDM driver handling.                                                                                                    *
+*   Fake PDM Driver Handling.                                                                                                    *
 *********************************************************************************************************************************/
 
-/** @name Driver Helper Fakes / Stubs
+/** @name Driver Fakes/Stubs
  *
  * @note The VMM functions defined here will turn into driver helpers before
  *       long, as the drivers aren't supposed to import directly from the VMM in
@@ -335,7 +339,7 @@ static unsigned     g_uVerbosity = 0;
  *
  * @{  */
 
-VMMR3DECL(PCFGMNODE)    CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
+VMMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
 {
     RT_NOREF(pNode, pszPath);
     return NULL;
@@ -371,19 +375,19 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
     return RTStrCopy(pszString, cchString, pszDef);
 }
 
-VMMR3DECL(int)          CFGMR3QueryBoolDef(     PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
+VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
     RT_NOREF(pNode, pszName, pf);
     return fDef;
 }
 
-VMMR3DECL(int)          CFGMR3QueryU8(          PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
+VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
     RT_NOREF(pNode, pszName, pu8);
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
-VMMR3DECL(int)          CFGMR3QueryU32(         PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
+VMMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
 {
     RT_NOREF(pNode, pszName, pu32);
     return VERR_CFGM_VALUE_NOT_FOUND;
@@ -398,6 +402,164 @@ VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
 }
 
 /** @} */
+
+/** @name Driver Helper Fakes
+ * @{ */
+
+static DECLCALLBACK(int) audioTestDrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface)
+{
+    /* DrvAudio must be allowed to attach the backend driver (paranoid
+       backend drivers may call us to check that nothing is attached). */
+    if (strcmp(pDrvIns->pReg->szName, "AUDIO") == 0)
+    {
+        PAUDIOTESTDRVSTACK pDrvStack = pDrvIns->Internal.s.pStack;
+        AssertReturn(pDrvStack->pDrvBackendIns == NULL, VERR_PDM_DRIVER_ALREADY_ATTACHED);
+
+        if (g_uVerbosity > 1)
+            RTMsgInfo("Attaching backend '%s' to DrvAudio...\n", pDrvStack->pDrvReg->szName);
+        int rc = audioTestDrvConstruct(pDrvStack, pDrvStack->pDrvReg, pDrvIns, &pDrvStack->pDrvBackendIns);
+        if (RT_SUCCESS(rc))
+        {
+            if (ppBaseInterface)
+                *ppBaseInterface = &pDrvStack->pDrvBackendIns->IBase;
+        }
+        else
+            RTMsgError("Failed to attach backend: %Rrc", rc);
+        return rc;
+    }
+    RT_NOREF(fFlags);
+    return VERR_PDM_NO_ATTACHED_DRIVER;
+}
+
+static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
+                                                        STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
+                                                        const char *pszName, ...)
+{
+    RT_NOREF(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName);
+}
+
+static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
+                                                        STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
+                                                        const char *pszName, va_list args)
+{
+    RT_NOREF(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+}
+
+static DECLCALLBACK(int) audioTestDrvHlp_STAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
+{
+    RT_NOREF(pDrvIns, pvSample);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) audioTestDrvHlp_STAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
+{
+    RT_NOREF(pDrvIns, pszPrefix);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Get the driver helpers.
+ */
+static const PDMDRVHLPR3 *audioTestFakeGetDrvHlp(void)
+{
+    /*
+     * Note! No initializer for s_DrvHlp (also why it's not a file global).
+     *       We do not want to have to update this code every time PDMDRVHLPR3
+     *       grows new entries or are otherwise modified.  Only when the
+     *       entries used by the audio driver changes do we want to change
+     *       our code.
+     */
+    static PDMDRVHLPR3 s_DrvHlp;
+    if (s_DrvHlp.u32Version != PDM_DRVHLPR3_VERSION)
+    {
+        s_DrvHlp.u32Version                     = PDM_DRVHLPR3_VERSION;
+        s_DrvHlp.u32TheEnd                      = PDM_DRVHLPR3_VERSION;
+        s_DrvHlp.pfnAttach                      = audioTestDrvHlp_Attach;
+        s_DrvHlp.pfnSTAMRegisterF               = audioTestDrvHlp_STAMRegisterF;
+        s_DrvHlp.pfnSTAMRegisterV               = audioTestDrvHlp_STAMRegisterV;
+        s_DrvHlp.pfnSTAMDeregister              = audioTestDrvHlp_STAMDeregister;
+        s_DrvHlp.pfnSTAMDeregisterByPrefix      = audioTestDrvHlp_STAMDeregisterByPrefix;
+    }
+    return &s_DrvHlp;
+}
+
+/** @} */
+
+
+/**
+ * Implementation of PDMIBASE::pfnQueryInterface for a fake device above
+ * DrvAudio.
+ */
+static DECLCALLBACK(void *) audioTestFakeDeviceIBaseQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, pInterface);
+    RTMsgWarning("audioTestFakeDeviceIBaseQueryInterface: Unknown interface: %s\n", pszIID);
+    return NULL;
+}
+
+/** IBase interface for a fake device above DrvAudio. */
+static PDMIBASE g_AudioTestFakeDeviceIBase =  { audioTestFakeDeviceIBaseQueryInterface };
+
+
+static DECLCALLBACK(int) audioTestIHostAudioPort_DoOnWorkerThread(PPDMIHOSTAUDIOPORT pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                                  uintptr_t uUser, void *pvUser)
+{
+    RT_NOREF(pInterface, pStream, uUser, pvUser);
+    RTMsgWarning("audioTestIHostAudioPort_DoOnWorkerThread was called\n");
+    return VERR_NOT_IMPLEMENTED;
+}
+
+DECLCALLBACK(void) audioTestIHostAudioPort_NotifyDeviceChanged(PPDMIHOSTAUDIOPORT pInterface, PDMAUDIODIR enmDir, void *pvUser)
+{
+    RT_NOREF(pInterface, enmDir, pvUser);
+    RTMsgWarning("audioTestIHostAudioPort_NotifyDeviceChanged was called\n");
+}
+
+static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwitch(PPDMIHOSTAUDIOPORT pInterface,
+                                                                                    PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    RTMsgWarning("audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwitch was called\n");
+}
+
+static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyDeviceChanged(PPDMIHOSTAUDIOPORT pInterface,
+                                                                            PPDMAUDIOBACKENDSTREAM pStream, bool fReInit)
+{
+    RT_NOREF(pInterface, pStream, fReInit);
+    RTMsgWarning("audioTestIHostAudioPort_StreamNotifyDeviceChanged was called\n");
+}
+
+static DECLCALLBACK(void) audioTestIHostAudioPort_NotifyDevicesChanged(PPDMIHOSTAUDIOPORT pInterface)
+{
+    RT_NOREF(pInterface);
+    RTMsgWarning("audioTestIHostAudioPort_NotifyDevicesChanged was called\n");
+}
+
+static PDMIHOSTAUDIOPORT g_AudioTestIHostAudioPort =
+{
+    audioTestIHostAudioPort_DoOnWorkerThread,
+    audioTestIHostAudioPort_NotifyDeviceChanged,
+    audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwitch,
+    audioTestIHostAudioPort_StreamNotifyDeviceChanged,
+    audioTestIHostAudioPort_NotifyDevicesChanged,
+};
+
+/**
+ * Implementation of PDMIBASE::pfnQueryInterface for a fake DrvAudio above a
+ * backend.
+ */
+static DECLCALLBACK(void *) audioTestFakeDrvAudioIBaseQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, pInterface);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIOPORT, &g_AudioTestIHostAudioPort);
+    RTMsgWarning("audioTestFakeDrvAudioIBaseQueryInterface: Unknown interface: %s\n", pszIID);
+    return NULL;
+}
+
+/** IBase interface for a fake DrvAudio above a lonesome backend. */
+static PDMIBASE g_AudioTestFakeDrvAudioIBase =  { audioTestFakeDrvAudioIBaseQueryInterface };
+
+
 
 /**
  * Constructs a PDM audio driver instance.
@@ -419,18 +581,8 @@ static int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvR
      * thorough, PDM check it in detail on every VM startup).
      */
     AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing backend '%s' ...\n", pDrvReg->szName);
+    RTMsgInfo("Initializing backend '%s' ...\n", pDrvReg->szName);
     AssertPtrReturn(pDrvReg->pfnConstruct, VERR_INVALID_PARAMETER);
-
-    /*
-     * Initialize the driver helper the first time thru.
-     */
-    static PDMDRVHLPR3 s_DrvHlp;
-    if (s_DrvHlp.u32Version == 0)
-    {
-        s_DrvHlp.u32Version = PDM_DRVHLPR3_VERSION;
-        s_DrvHlp.u32TheEnd  = PDM_DRVHLPR3_VERSION;
-    }
 
     /*
      * Create the instance data structure.
@@ -440,7 +592,7 @@ static int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvR
 
     pDrvIns->u32Version         = PDM_DRVINS_VERSION;
     pDrvIns->iInstance          = 0;
-    pDrvIns->pHlpR3             = &s_DrvHlp;
+    pDrvIns->pHlpR3             = audioTestFakeGetDrvHlp();
     pDrvIns->pvInstanceDataR3   = &pDrvIns->achInstanceData[0];
     pDrvIns->pReg               = pDrvReg;
     pDrvIns->pCfg               = (PCFGMNODE)pDrvReg;
@@ -453,6 +605,10 @@ static int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvR
         pParentDrvIns->pDownBase = &pDrvIns->IBase;
         pDrvIns->pUpBase         = &pParentDrvIns->IBase;
     }
+    else if (strcmp(pDrvReg->szName, "AUDIO") == 0)
+        pDrvIns->pUpBase         = &g_AudioTestFakeDeviceIBase;
+    else
+        pDrvIns->pUpBase         = &g_AudioTestFakeDrvAudioIBase;
 
     /*
      * Invoke the constructor.
@@ -533,6 +689,7 @@ static void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
 
 /**
  * Initializes a driver stack.
+ *
  * @returns VBox status code.
  * @param   pDrvStack       The driver stack to initialize.
  * @param   pDrvReg         The backend driver to use.
@@ -540,14 +697,39 @@ static void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
  */
 static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
 {
-    int rc;
     RT_ZERO(*pDrvStack);
     pDrvStack->pDrvReg = pDrvReg;
+
+    int rc;
     if (!fWithDrvAudio)
         rc = audioTestDrvConstruct(pDrvStack, pDrvReg, NULL /*pParentDrvIns*/, &pDrvStack->pDrvBackendIns);
     else
     {
-        rc = VERR_NOT_IMPLEMENTED;
+        rc = audioTestDrvConstruct(pDrvStack, &g_DrvAUDIO, NULL /*pParentDrvIns*/, &pDrvStack->pDrvAudioIns);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(pDrvStack->pDrvAudioIns);
+            PPDMIBASE const pIBase = &pDrvStack->pDrvAudioIns->IBase;
+            pDrvStack->pIAudioConnector = (PPDMIAUDIOCONNECTOR)pIBase->pfnQueryInterface(pIBase, PDMIAUDIOCONNECTOR_IID);
+            if (pDrvStack->pIAudioConnector)
+            {
+                /* Both input and output is disabled by default. Fix that: */
+                rc = pDrvStack->pIAudioConnector->pfnEnable(pDrvStack->pIAudioConnector, PDMAUDIODIR_OUT, true);
+                if (RT_SUCCESS(rc))
+                    rc = pDrvStack->pIAudioConnector->pfnEnable(pDrvStack->pIAudioConnector, PDMAUDIODIR_IN, true);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestFailed(g_hTest, "Failed to enabled input and output: %Rrc", rc);
+                    audioTestDriverStackDelete(pDrvStack);
+                }
+            }
+            else
+            {
+                RTTestFailed(g_hTest, "Failed to query PDMIAUDIOCONNECTOR");
+                audioTestDriverStackDelete(pDrvStack);
+                rc = VERR_PDM_MISSING_INTERFACE;
+            }
+        }
     }
 
     /*
@@ -555,9 +737,8 @@ static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pD
      */
     if (RT_SUCCESS(rc))
     {
-        pDrvStack->pIHostAudio
-            = (PPDMIHOSTAUDIO)pDrvStack->pDrvBackendIns->IBase.pfnQueryInterface(&pDrvStack->pDrvBackendIns->IBase,
-                                                                                 PDMIHOSTAUDIO_IID);
+        PPDMIBASE const pIBase = &pDrvStack->pDrvBackendIns->IBase;
+        pDrvStack->pIHostAudio = (PPDMIHOSTAUDIO)pIBase->pfnQueryInterface(pIBase, PDMIHOSTAUDIO_IID);
         if (pDrvStack->pIHostAudio)
         {
             PDMAUDIOBACKENDSTS enmStatus = pDrvStack->pIHostAudio->pfnGetStatus(pDrvStack->pIHostAudio, PDMAUDIODIR_OUT);
@@ -589,45 +770,61 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                                                   uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
                                                   PPDMAUDIOSTREAM *ppStream)
 {
+    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
     *ppStream = NULL;
 
-    int rc;
+    /*
+     * Calculate the stream config.
+     */
+    PDMAUDIOSTREAMCFG CfgReq;
+    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
+    AssertRC(rc);
+    CfgReq.enmDir                       = PDMAUDIODIR_OUT;
+    CfgReq.u.enmDst                     = PDMAUDIOPLAYBACKDST_FRONT;
+    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+    CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
+                                        ? 10 : cMsSchedulingHint;
+    if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
+        CfgReq.Backend.cFramesBufferSize = 0; /* DrvAudio picks the default */
+    else
+        CfgReq.Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(pProps,
+                                                                      cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
+                                                                      ? 300 : cMsBufferSize);
+    if (cMsPreBuffer == UINT32_MAX)
+        CfgReq.Backend.cFramesPreBuffering = pDrvStack->pIAudioConnector ? UINT32_MAX /*DrvAudo picks the default */
+                                           : CfgReq.Backend.cFramesBufferSize * 2 / 3;
+    else
+        CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
+    if (   CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16
+        && !pDrvStack->pIAudioConnector /*DrvAudio deals with it*/ )
+    {
+        RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
+                     CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
+        CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
+            ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
+    }
+
+    static uint32_t s_idxStream = 0;
+    uint32_t const idxStream = s_idxStream++;
+    RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "out-%u", idxStream);
+
     if (pDrvStack->pIAudioConnector)
     {
-        rc = VERR_NOT_IMPLEMENTED;
+        /*
+         * DrvAudio does most of the work here.
+         */
+        PDMAUDIOSTREAMCFG CfgGst = CfgReq;
+        rc = pDrvStack->pIAudioConnector->pfnStreamCreate(pDrvStack->pIAudioConnector, PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF,
+                                                          &CfgReq, &CfgGst, ppStream);
+        if (RT_SUCCESS(rc))
+        {
+            RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(&CfgReq, szTmp, sizeof(szTmp)));
+            return rc;
+        }
+        RTTestFailed(g_hTest, "pfnStreamCreate failed: %Rrc", rc);
     }
     else
     {
-        /*
-         * Calculate the stream config.
-         */
-        PDMAUDIOSTREAMCFG CfgReq;
-        rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
-        AssertRC(rc);
-        CfgReq.enmDir                       = PDMAUDIODIR_OUT;
-        CfgReq.u.enmDst                     = PDMAUDIOPLAYBACKDST_UNKNOWN;
-        CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
-        CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
-                                            ? 10 : cMsSchedulingHint;
-        CfgReq.Backend.cFramesBufferSize    = PDMAudioPropsMilliToFrames(pProps,
-                                                                         cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
-                                                                         ? 300 : cMsBufferSize);
-        if (cMsPreBuffer == UINT32_MAX)
-            CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize * 2 / 3;
-        else
-            CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
-        if (CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16)
-        {
-            RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
-                         CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
-            CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
-                                               ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
-        }
-
-        static uint32_t s_idxStream = 0;
-        uint32_t const idxStream = s_idxStream++;
-        RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "out-%u", idxStream);
-
         /*
          * Get the config so we can see how big the PDMAUDIOBACKENDSTREAM
          * structure actually is for this backend.
@@ -665,11 +862,8 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                     {
                         pStreamAt->Core.Props = pStreamAt->Cfg.Props;
                         if (g_uVerbosity > 1)
-                        {
-                            char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
                             RTMsgInfo("Created backend stream: %s\n",
                                       PDMAudioStrmCfgToString(&pStreamAt->Cfg, szTmp, sizeof(szTmp)));
-                        }
 
                         /* Return if stream is ready: */
                         if (rc == VINF_SUCCESS)
@@ -1940,29 +2134,12 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
 /*********************************************************************************************************************************
 *   Command: play                                                                                                                *
 *********************************************************************************************************************************/
-/**
- * Command line parameters for test mode.
- */
-static const RTGETOPTDEF g_aCmdPlayOptions[] =
-{
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-};
-
-/** the 'play' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        default:  return NULL;
-    }
-}
 
 /**
  * Worker for audioTestCmdPlayHandler that plays one file.
  */
 static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uint32_t cMsBufferSize,
-                                   uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint)
+                                   uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint, bool fWithDrvAudio)
 {
     /*
      * First we must open the file and determin the format.
@@ -1988,7 +2165,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
      */
     RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
     AUDIOTESTDRVSTACK   DrvStack;
-    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, fWithDrvAudio);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2095,6 +2272,26 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
 }
 
 /**
+ * Command line parameters for test mode.
+ */
+static const RTGETOPTDEF g_aCmdPlayOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+};
+
+/** the 'play' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        default:  return NULL;
+    }
+}
+
+/**
  * The 'play' command handler.
  *
  * @returns Program exit code.
@@ -2103,20 +2300,20 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
  */
 static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
 {
-    /*
-     * Parse arguments.
-     */
     /* Option values: */
     PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
     uint32_t    cMsBufferSize     = UINT32_MAX;
     uint32_t    cMsPreBuffer      = UINT32_MAX;
     uint32_t    cMsSchedulingHint = UINT32_MAX;
+    bool        fWithDrvAudio     = false;
 
+    /* Init option state: */
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdPlayOptions, RT_ELEMENTS(g_aCmdPlayOptions),
                           1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
+    /* Argument processing loop: */
     RTGETOPTUNION ValueUnion;
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -2135,9 +2332,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
                 break;
 
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
             {
-                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint);
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, cMsBufferSize, cMsPreBuffer,
+                                                     cMsSchedulingHint, fWithDrvAudio);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
