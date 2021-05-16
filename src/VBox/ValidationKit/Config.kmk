@@ -49,6 +49,7 @@ ifn1of ($(KBUILD_TARGET), darwin solaris win)
  TEMPLATE_VBoxValidationKitR3Base_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
  TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -static, $(TEMPLATE_VBoxR3Static_LDFLAGS))
 endif
+TEMPLATE_VBoxValidationKitR3Base_DEFS = $(filter-out VBOX_WITH_DTRACE,$(TEMPLATE_VBoxR3Static_DEFS))
 TEMPLATE_VBoxValidationKitR3Base_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
 if1of ($(KBUILD_TARGET), linux)
  if $(VBOX_GCC_VERSION_CXX) < 40800
