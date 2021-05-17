@@ -183,7 +183,7 @@ define def_vbox_validationkit_common_files
   	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vts_shutdown$(TMP_SUFF_EXE) \
   	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vts_tar$(TMP_SUFF_EXE) \
   	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/xmmsaving$(TMP_SUFF_EXE)
-  ifn1of ($(os), os2 solaris) ## must match utils/audio/Makefile.kmk
+  ifn1of ($(os), os2 freebsd netbsd openbsd) ## must match utils/audio/Makefile.kmk
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/AudioTest$(TMP_SUFF_EXE)
   endif

@@ -43,7 +43,7 @@ endif
 #
 VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 
-ifn1of ($(KBUILD_TARGET), os2)
+ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
 PROGRAMS += AudioTest
 endif
 AudioTest_TEMPLATE = VBoxValidationKitR3
