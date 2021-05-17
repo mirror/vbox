@@ -558,6 +558,20 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 }
 
 /**
+ * Returns the absolute path of a given audio test set object.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set the object contains.
+ * @param   pszPathAbs          Where to return the absolute path on success.
+ * @param   cbPathAbs           Size (in bytes) of \a pszPathAbs.
+ * @param   pszObjName          Name of the object to create absolute path for.
+ */
+DECLINLINE(int) audioTestSetGetObjPath(PAUDIOTESTSET pSet, char *pszPathAbs, size_t cbPathAbs, const char *pszObjName)
+{
+    return RTPathJoin(pszPathAbs, cbPathAbs, pSet->szPathAbs, pszObjName);
+}
+
+/**
  * Creates a new audio test set.
  *
  * @returns VBox status code.
@@ -724,11 +738,44 @@ void AudioTestSetClose(PAUDIOTESTSET pSet)
 /**
  * Physically wipes all related test set files off the disk.
  *
+ * @returns VBox status code.
  * @param   pSet                Test set to wipe.
  */
-void AudioTestSetWipe(PAUDIOTESTSET pSet)
+int AudioTestSetWipe(PAUDIOTESTSET pSet)
 {
-    RT_NOREF(pSet);
+    AssertPtrReturn(pSet, VERR_INVALID_POINTER);
+
+    int rc;
+    char szFilePath[RTPATH_MAX];
+
+    PAUDIOTESTOBJ pObj;
+    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJ, Node)
+    {
+        int rc2 = AudioTestSetObjClose(pObj);
+        if (RT_SUCCESS(rc2))
+        {
+            rc2 = audioTestSetGetObjPath(pSet, szFilePath, sizeof(szFilePath), pObj->szName);
+            if (RT_SUCCESS(rc2))
+                rc2 = RTFileDelete(szFilePath);
+        }
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+        /* Keep going. */
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathJoin(szFilePath, sizeof(szFilePath), pSet->szPathAbs, AUDIOTEST_MANIFEST_FILE_STR);
+        if (RT_SUCCESS(rc))
+            rc = RTFileDelete(szFilePath);
+    }
+
+    /* Remove the (hopefully now empty) directory. Otherwise let this fail. */
+    if (RT_SUCCESS(rc))
+        rc = RTDirRemove(pSet->szPathAbs);
+
+    return rc;
 }
 
 /**
@@ -751,19 +798,20 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
 
     /** @todo Generalize this function more once we have more object types. */
 
-    char szFilePath[RTPATH_MAX];
-    int rc = RTPathJoin(szFilePath, sizeof(szFilePath), pSet->szPathAbs, pObj->szName);
-    AssertRCReturn(rc, rc);
-
-    rc = RTFileOpen(&pObj->File.hFile, szFilePath, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    char szObjPathAbs[RTPATH_MAX];
+    int rc = audioTestSetGetObjPath(pSet, szObjPathAbs, sizeof(szObjPathAbs), pObj->szName);
     if (RT_SUCCESS(rc))
     {
-        pObj->enmType = AUDIOTESTOBJTYPE_FILE;
+        rc = RTFileOpen(&pObj->File.hFile, szObjPathAbs, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            pObj->enmType = AUDIOTESTOBJTYPE_FILE;
 
-        RTListAppend(&pSet->lstObj, &pObj->Node);
-        pSet->cObj++;
+            RTListAppend(&pSet->lstObj, &pObj->Node);
+            pSet->cObj++;
 
-        *ppObj = pObj;
+            *ppObj = pObj;
+        }
     }
 
     if (RT_FAILURE(rc))

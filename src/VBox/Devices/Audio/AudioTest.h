@@ -270,7 +270,7 @@ int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *p
 int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
 int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 void   AudioTestSetClose(PAUDIOTESTSET pSet);
-void   AudioTestSetWipe(PAUDIOTESTSET pSet);
+int    AudioTestSetWipe(PAUDIOTESTSET pSet);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc);

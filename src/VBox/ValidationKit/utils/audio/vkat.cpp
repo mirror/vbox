@@ -1876,7 +1876,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
 
             /* Clean up. */
-            AudioTestSetWipe(&TstEnv.Set);
+            int rc2 = AudioTestSetWipe(&TstEnv.Set);
+            AssertRC(rc2); /* Annoying, but not test-critical. */
 
             audioTestEnvDestroy(&TstEnv);
         }
