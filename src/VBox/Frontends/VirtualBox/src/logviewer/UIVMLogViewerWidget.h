@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QKeySequence>
 #include <QPair>
+#include <QPointer>
 #include <QWidget>
 
 /* GUI includes: */
@@ -206,8 +207,8 @@ private:
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
-    /** Hold sthe action-pool reference. */
-    UIActionPool *m_pActionPool;
+    /** Holds the action-pool reference. Wrapped around with QPointer  to avoid use-after-delete case during vm window close.*/
+    QPointer<UIActionPool> m_pActionPool;
     /** Holds whether we should create/show toolbar. */
     const bool    m_fShowToolbar;
     QVector<QUuid> m_machines;

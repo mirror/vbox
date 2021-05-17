@@ -1048,6 +1048,8 @@ void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
 {
     if (!panel)
         return;
+    if (!m_pActionPool)
+        return;
     if (panel->isVisible())
         panel->setVisible(false);
     QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
