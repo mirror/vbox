@@ -1070,14 +1070,14 @@ int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBu
     {
         if (pcbRead)
         {
-            pWaveFile->offCur += *pcbRead;
+            pWaveFile->offCur += (uint32_t)*pcbRead;
             if (cbBuf > *pcbRead)
                 rc = VINF_EOF;
             else if (!cbBuf && pWaveFile->offCur == pWaveFile->cbSamples)
                 rc = VINF_EOF;
         }
         else
-            pWaveFile->offCur += cbBuf;
+            pWaveFile->offCur += (uint32_t)cbBuf;
     }
     return rc;
 }

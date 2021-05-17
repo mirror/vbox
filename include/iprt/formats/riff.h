@@ -152,7 +152,7 @@ typedef struct RTRIFFWAVEDATACHUNK
     /** Chunk header with RTRIFFWAVEFMT_MAGIC as magic. */
     RTRIFFCHUNK     Chunk;
     /** Variable sized sample data. */
-    uint8_t         abData[RT_FLEXIBLE_ARRAY_IN_UNION];
+    uint8_t         abData[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } RTRIFFWAVEDATACHUNK;
 
 /** Magic value for RTRIFFWAVEFMT::uMagic ('data'). */
