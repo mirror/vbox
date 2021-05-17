@@ -350,7 +350,6 @@
     GEN_CHECK_OFF(IOM, pTreesR0);
 
     GEN_CHECK_SIZE(IOMCPU);
-    GEN_CHECK_OFF(IOMCPU, DisState);
     GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite);
     GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite.IOPort);
     GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite.u32Value);

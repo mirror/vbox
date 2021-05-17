@@ -317,10 +317,6 @@ typedef IOMMMIOSTATSENTRY *PIOMMMIOSTATSENTRY;
  */
 typedef struct IOMCPU
 {
-    /** For saving stack space, the disassembler state is allocated here instead of
-     * on the stack. */
-    DISCPUSTATE                     DisState;
-
     /**
      * Pending I/O port write commit (VINF_IOM_R3_IOPORT_COMMIT_WRITE).
      *
