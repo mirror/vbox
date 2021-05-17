@@ -205,9 +205,11 @@ Controller" */
 #ifdef IOAPIC_WITH_PDM_CRITSECT
 # define IOAPIC_LOCK(a_pDevIns, a_pThis, a_pThisCC, rcBusy)  (a_pThisCC)->pIoApicHlp->pfnLock((a_pDevIns), (rcBusy))
 # define IOAPIC_UNLOCK(a_pDevIns, a_pThis, a_pThisCC)        (a_pThisCC)->pIoApicHlp->pfnUnlock((a_pDevIns))
+# define IOAPIC_LOCK_IS_OWNER(a_pDevIns, a_pThis, a_pThisCC) (a_pThisCC)->pIoApicHlp->pfnLockIsOwner((a_pDevIns))
 #else
 # define IOAPIC_LOCK(a_pDevIns, a_pThis, a_pThisCC, rcBusy)  PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (rcBusy))
 # define IOAPIC_UNLOCK(a_pDevIns, a_pThis, a_pThisCC)        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect)
+# define IOAPIC_LOCK_IS_OWNER(a_pDevIns, a_pThis, a_pThisCC) PDMDevHlpCritSectIsOwner((a_pDevIns), &(a_pThis)->CritSect)
 #endif
 
 
@@ -1605,6 +1607,11 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     IoApicReg.u32TheEnd    = PDM_IOAPICREG_VERSION;
     rc = PDMDevHlpIoApicRegister(pDevIns, &IoApicReg, &pThisCC->pIoApicHlp);
     AssertRCReturn(rc, rc);
+    AssertPtr(pThisCC->pIoApicHlp->pfnApicBusDeliver);
+    AssertPtr(pThisCC->pIoApicHlp->pfnLock);
+    AssertPtr(pThisCC->pIoApicHlp->pfnUnlock);
+    AssertPtr(pThisCC->pIoApicHlp->pfnIsLockOwner);
+    AssertPtr(pThisCC->pIoApicHlp->pfnIommuMsiRemap);
 
     /*
      * Register MMIO region.
@@ -1695,6 +1702,11 @@ static DECLCALLBACK(int) ioapicRZConstruct(PPDMDEVINS pDevIns)
     IoApicReg.u32TheEnd    = PDM_IOAPICREG_VERSION;
     rc = PDMDevHlpIoApicSetUpContext(pDevIns, &IoApicReg, &pThisCC->pIoApicHlp);
     AssertRCReturn(rc, rc);
+    AssertPtr(pThisCC->pIoApicHlp->pfnApicBusDeliver);
+    AssertPtr(pThisCC->pIoApicHlp->pfnLock);
+    AssertPtr(pThisCC->pIoApicHlp->pfnUnlock);
+    AssertPtr(pThisCC->pIoApicHlp->pfnIsLockOwner);
+    AssertPtr(pThisCC->pIoApicHlp->pfnIommuMsiRemap);
 
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ioapicMmioWrite, ioapicMmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
