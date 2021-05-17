@@ -804,7 +804,7 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->pQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #elif defined(VMSVGA3D_D3D11)
     /** @todo */
-#define VMSVGA3DQUERY_EXISTS(p) (false)
+#define VMSVGA3DQUERY_EXISTS(p) ((p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #else
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->idQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #endif
@@ -1251,12 +1251,6 @@ static SSMFIELD const g_aVMSVGA3DSTATEFields[] =
 };
 #endif /* VMSVGA3D_INCL_STRUCTURE_DESCRIPTORS */
 
-int vmsvga3dBackDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
-int vmsvga3dBackDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
-
-int vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,
-                                    SVGASignedRect destRect, SVGA3dSurfaceImageId srcImage,
-                                    SVGASignedRect srcRect, uint32_t cRects, SVGASignedRect *paRects);
 
 #ifdef VMSVGA3D_DIRECT3D
 D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format);
@@ -1334,21 +1328,6 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 int vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype,
                             uint32_t val1, uint32_t val2, uint32_t val3, uint32_t val4);
 
-
-
-/* Command implementation workers. */
-void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface);
-int  vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
-                                   PVMSVGA3DSURFACE pDstSurface, uint32_t uDstFace, uint32_t uDstMipmap, SVGA3dBox const *pDstBox,
-                                   PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcFace, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
-                                   SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext);
-int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
-                                   PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,
-                                   SVGAGuestPtr GuestPtr, uint32_t cbGuestPitch, SVGA3dTransferType transfer,
-                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox);
-
-int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
-                               PVMSVGA3DSURFACE pSurface);
 
 DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DCONTEXT *ppContext)
 {
@@ -1457,12 +1436,6 @@ DECLINLINE(GLenum) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
     return Face;
 }
 #endif
-
-int vmsvga3dOcclusionQueryCreate(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
-int vmsvga3dOcclusionQueryDelete(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
-int vmsvga3dOcclusionQueryBegin(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
-int vmsvga3dOcclusionQueryEnd(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
-int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels);
 
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                  const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix);

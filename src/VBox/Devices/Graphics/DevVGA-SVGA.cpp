@@ -422,6 +422,9 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
                                 uint32_t uVersion, uint32_t uPass);
 static int vmsvgaR3SaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
 static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, RTGCPHYS GCPhysCB, SVGACBContext CBCtx);
+# ifdef VBOX_WITH_VMSVGA3D
+static void vmsvga3dR3Free3dInterfaces(PVGASTATECC pThisCC);
+# endif
 #endif /* IN_RING3 */
 
 
@@ -3887,7 +3890,8 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             if (pThis->svga.f3DEnabled)
             {
                 /* The 3d subsystem must be reset from the fifo thread. */
-                vmsvga3dReset(pThisCC);
+                PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+                pSVGAState->pFuncs3D->pfnReset(pThisCC);
             }
 # endif
             break;
@@ -3907,7 +3911,8 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             if (pThis->svga.f3DEnabled)
             {
                 /* The 3d subsystem must be shut down from the fifo thread. */
-                vmsvga3dTerminate(pThisCC);
+                PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+                pSVGAState->pFuncs3D->pfnTerminate(pThisCC);
             }
 # endif
             break;
@@ -3933,7 +3938,16 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             vmsvgaR3LoadExecFifo(pDevIns->pHlpR3, pThis, pThisCC, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
+            {
+                /* The following RT_OS_DARWIN code was in vmsvga3dLoadExec and therefore must be executed before each vmsvga3dLoadExec invocation. */
+#  ifndef RT_OS_DARWIN /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA.cpp */
+                /* Must initialize now as the recreation calls below rely on an initialized 3d subsystem. */
+                PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+                pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
+#  endif
+
                 vmsvga3dLoadExec(pDevIns, pThis, pThisCC, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+            }
 # endif
             break;
         }
@@ -5552,7 +5566,7 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
     }
 
 #  ifdef RT_OS_DARWIN  /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA3d-shared.h. */
-    vmsvga3dPowerOn(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC));
+    pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
 #  endif
 
     VMSVGA_STATE_LOAD LoadState;
@@ -5703,8 +5717,10 @@ int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pThis          The shared VGA/VMSVGA instance data.
  * @param   pSVGAState     Pointer to the structure. It is not deallocated.
  */
-static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+static void vmsvgaR3StateTerm(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+
 # ifndef VMSVGA_USE_EMT_HALT_CODE
     if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
     {
@@ -5744,12 +5760,7 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
-    RTMemFree(pSVGAState->pFuncsMap);
-    pSVGAState->pFuncsMap = NULL;
-    RTMemFree(pSVGAState->pFuncsGBO);
-    pSVGAState->pFuncsGBO = NULL;
-    RTMemFree(pSVGAState->pFuncsDX);
-    pSVGAState->pFuncsDX = NULL;
+    vmsvga3dR3Free3dInterfaces(pThisCC);
 # endif
 }
 
@@ -5786,6 +5797,30 @@ static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE
 }
 
 # ifdef VBOX_WITH_VMSVGA3D
+static void vmsvga3dR3Free3dInterfaces(PVGASTATECC pThisCC)
+{
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+
+    RTMemFree(pSVGAState->pFuncsMap);
+    pSVGAState->pFuncsMap = NULL;
+    RTMemFree(pSVGAState->pFuncsGBO);
+    pSVGAState->pFuncsGBO = NULL;
+    RTMemFree(pSVGAState->pFuncsDX);
+    pSVGAState->pFuncsDX = NULL;
+    RTMemFree(pSVGAState->pFuncsVGPU9);
+    pSVGAState->pFuncsVGPU9 = NULL;
+    RTMemFree(pSVGAState->pFuncs3D);
+    pSVGAState->pFuncs3D = NULL;
+}
+
+/* This structure is used only by vmsvgaR3Init3dInterfaces */
+typedef struct VMSVGA3DINTERFACE
+{
+    char const *pcszName;
+    uint32_t cbFuncs;
+    void **ppvFuncs;
+} VMSVGA3DINTERFACE;
+
 /**
  * Initializes the optional host 3D backend interfaces.
  *
@@ -5796,36 +5831,45 @@ static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
 {
     PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
 
-    int rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_DX, NULL, sizeof(VMSVGA3DBACKENDFUNCSDX));
-    if (RT_SUCCESS(rc))
+#define ENTRY_3D_INTERFACE(a_Name, a_Field) { VMSVGA3D_BACKEND_INTERFACE_NAME_##a_Name, sizeof(VMSVGA3DBACKENDFUNCS##a_Name), (void **)&pSVGAState->a_Field }
+    VMSVGA3DINTERFACE a3dInterface[] =
     {
-        pSVGAState->pFuncsDX = (VMSVGA3DBACKENDFUNCSDX *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSDX));
-        AssertReturn(pSVGAState->pFuncsDX, VERR_NO_MEMORY);
+        ENTRY_3D_INTERFACE(3D,    pFuncs3D),
+        ENTRY_3D_INTERFACE(VGPU9, pFuncsVGPU9),
+        ENTRY_3D_INTERFACE(DX,    pFuncsDX),
+        ENTRY_3D_INTERFACE(MAP,   pFuncsMap),
+        ENTRY_3D_INTERFACE(GBO,   pFuncsGBO),
+    };
+#undef ENTRY_3D_INTERFACE
 
-        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_DX, pSVGAState->pFuncsDX, sizeof(VMSVGA3DBACKENDFUNCSDX));
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < RT_ELEMENTS(a3dInterface); ++i)
+    {
+        VMSVGA3DINTERFACE *p = &a3dInterface[i];
+
+        int rc2 = vmsvga3dQueryInterface(pThisCC, p->pcszName, NULL, p->cbFuncs);
+        if (RT_SUCCESS(rc2))
+        {
+            *p->ppvFuncs = RTMemAllocZ(p->cbFuncs);
+            AssertBreakStmt(*p->ppvFuncs, rc = VERR_NO_MEMORY);
+
+            vmsvga3dQueryInterface(pThisCC, p->pcszName, *p->ppvFuncs, p->cbFuncs);
+        }
     }
 
-    rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_MAP, NULL, sizeof(VMSVGA3DBACKENDFUNCSMAP));
     if (RT_SUCCESS(rc))
     {
-        pSVGAState->pFuncsMap = (VMSVGA3DBACKENDFUNCSMAP *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSMAP));
-        AssertReturn(pSVGAState->pFuncsMap, VERR_NO_MEMORY);
+        /* 3D interface is required. */
+        if (pSVGAState->pFuncs3D)
+            return VINF_SUCCESS;
 
-        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_MAP, pSVGAState->pFuncsMap, sizeof(VMSVGA3DBACKENDFUNCSMAP));
+        rc = VERR_NOT_SUPPORTED;
     }
 
-    rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_GBO, NULL, sizeof(VMSVGA3DBACKENDFUNCSGBO));
-    if (RT_SUCCESS(rc))
-    {
-        pSVGAState->pFuncsGBO = (VMSVGA3DBACKENDFUNCSGBO *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSGBO));
-        AssertReturn(pSVGAState->pFuncsGBO, VERR_NO_MEMORY);
-
-        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_GBO, pSVGAState->pFuncsGBO, sizeof(VMSVGA3DBACKENDFUNCSGBO));
-    }
-
-    return VINF_SUCCESS;
+    vmsvga3dR3Free3dInterfaces(pThisCC);
+    return rc;
 }
-# endif
+# endif /* VBOX_WITH_VMSVGA3D */
 
 /**
  * Initializes the host capabilities: device and FIFO.
@@ -5836,6 +5880,10 @@ static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
  */
 static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
+# ifdef VBOX_WITH_VMSVGA3D
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+# endif
+
     /* Device caps. */
     pThis->svga.u32DeviceCaps = SVGA_CAP_GMR
                               | SVGA_CAP_GMR2
@@ -5858,7 +5906,6 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
                                   ;
 
 # ifdef VBOX_WITH_VMSVGA3D
-        PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
         if (pSVGAState->pFuncsGBO)
            pThis->svga.u32DeviceCaps |= SVGA_CAP_GBOBJECTS;     /* Enable guest-backed objects and surfaces. */
         if (pSVGAState->pFuncsDX)
@@ -5867,7 +5914,8 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
-    pThis->svga.u32DeviceCaps |= SVGA_CAP_3D;
+    if (pSVGAState->pFuncs3D)
+        pThis->svga.u32DeviceCaps |= SVGA_CAP_3D;
 # endif
 
     /* Clear the FIFO. */
@@ -5992,16 +6040,10 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     ASMAtomicWriteBool(&pThis->svga.fBadGuest, false);
 
-    vmsvgaR3StateTerm(pThis, pThisCC->svga.pSvgaR3State);
+    vmsvgaR3StateTerm(pThis, pThisCC);
     vmsvgaR3StateInit(pDevIns, pThis, pThisCC->svga.pSvgaR3State);
 
     RT_BZERO(pThisCC->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
-
-# ifdef VBOX_WITH_VMSVGA3D
-    /* Device capabilities depend on this. */
-    if (pThis->svga.f3DEnabled)
-        vmsvgaR3Init3dInterfaces(pThisCC);
-# endif
 
     /* Initialize FIFO and register capabilities. */
     vmsvgaR3InitCaps(pThis, pThisCC);
@@ -6055,7 +6097,7 @@ int vmsvgaR3Destruct(PPDMDEVINS pDevIns)
      */
     if (pThisCC->svga.pSvgaR3State)
     {
-        vmsvgaR3StateTerm(pThis, pThisCC->svga.pSvgaR3State);
+        vmsvgaR3StateTerm(pThis, pThisCC);
 
         RTMemFree(pThisCC->svga.pSvgaR3State);
         pThisCC->svga.pSvgaR3State = NULL;
@@ -6144,13 +6186,12 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
-        rc = vmsvga3dInit(pDevIns, pThis, pThisCC);
+        /* Load a 3D backend. */
+        rc = vmsvgaR3Init3dInterfaces(pThisCC);
         if (RT_SUCCESS(rc))
-        {
-            /* Device capabilities depend on this. */
-            vmsvgaR3Init3dInterfaces(pThisCC);
-        }
-        else
+            rc = pSVGAState->pFuncs3D->pfnInit(pDevIns, pThis, pThisCC);
+
+        if (RT_FAILURE(rc))
         {
             LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
             pThis->svga.f3DEnabled = false;
@@ -6455,7 +6496,8 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
     PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     if (pThis->svga.f3DEnabled)
     {
-        int rc = vmsvga3dPowerOn(pDevIns, pThis, pThisCC);
+        PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+        int rc = pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
         if (RT_SUCCESS(rc))
         {
             /* Initialize FIFO 3D capabilities. */

@@ -70,12 +70,8 @@ void vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTAT
 
 
 /* DevVGA-SVGA3d-ogl.cpp & DevVGA-SVGA3d-win.cpp: */
-int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC);
-int vmsvga3dPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC);
 int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
-int vmsvga3dTerminate(PVGASTATECC pThisCC);
-int vmsvga3dReset(PVGASTATECC pThisCC);
 void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport);
 int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t *pu32Val);
 
@@ -120,9 +116,10 @@ int vmsvga3dShaderDestroy(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA
 int vmsvga3dShaderSet(PVGASTATECC pThisCC, struct VMSVGA3DCONTEXT *pContext, uint32_t cid, SVGA3dShaderType type, uint32_t shid);
 int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype, uint32_t cRegisters, uint32_t *pValues);
 
+int vmsvga3dQueryCreate(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type);
 int vmsvga3dQueryBegin(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type);
-int vmsvga3dQueryEnd(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
-int vmsvga3dQueryWait(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
+int vmsvga3dQueryEnd(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type);
+int vmsvga3dQueryWait(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, PVGASTATE pThis, SVGAGuestPtr const *pGuestResult);
 
 int vmsvga3dSurfaceInvalidate(PVGASTATECC pThisCC, uint32_t sid, uint32_t face, uint32_t mipmap);
 
@@ -263,6 +260,75 @@ const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType);
 #endif
 
 
+/*
+ * Backend interfaces.
+ */
+typedef struct VMSVGA3DSURFACE *PVMSVGA3DSURFACE;
+typedef struct VMSVGA3DMIPMAPLEVEL *PVMSVGA3DMIPMAPLEVEL;
+typedef struct VMSVGA3DCONTEXT *PVMSVGA3DCONTEXT;
+
+/* Essential 3D backend function. */
+#define VMSVGA3D_BACKEND_INTERFACE_NAME_3D "3D"
+typedef struct
+{
+    DECLCALLBACKMEMBER(int,  pfnInit,                     (PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC));
+    DECLCALLBACKMEMBER(int,  pfnPowerOn,                  (PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC));
+    DECLCALLBACKMEMBER(int,  pfnTerminate,                (PVGASTATECC pThisCC));
+    DECLCALLBACKMEMBER(int,  pfnReset,                    (PVGASTATECC pThisCC));
+    DECLCALLBACKMEMBER(int,  pfnQueryCaps,                (PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t *pu32Val));
+    DECLCALLBACKMEMBER(int,  pfnChangeMode,               (PVGASTATECC pThisCC));
+    DECLCALLBACKMEMBER(int,  pfnCreateTexture,            (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface));
+    DECLCALLBACKMEMBER(void, pfnSurfaceDestroy,           (PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface));
+    DECLCALLBACKMEMBER(int,  pfnSurfaceCopy,              (PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src, uint32_t cCopyBoxes, SVGA3dCopyBox *pBox));
+    DECLCALLBACKMEMBER(int,  pfnSurfaceDMACopyBox,        (PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
+                                                           PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,
+                                                           SVGAGuestPtr GuestPtr, uint32_t cbGuestPitch, SVGA3dTransferType transfer,
+                                                           SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox));
+    DECLCALLBACKMEMBER(int,  pfnSurfaceStretchBlt,        (PVGASTATE pThis, PVMSVGA3DSTATE pState,
+                                                           PVMSVGA3DSURFACE pDstSurface, uint32_t uDstFace, uint32_t uDstMipmap, SVGA3dBox const *pDstBox,
+                                                           PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcFace, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
+                                                           SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext));
+    DECLCALLBACKMEMBER(void, pfnUpdateHostScreenViewport, (PVGASTATECC pThisCC, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport));
+    /** @todo HW accelerated screen output probably needs a separate interface. */
+    DECLCALLBACKMEMBER(int,  pfnDefineScreen,             (PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen));
+    DECLCALLBACKMEMBER(int,  pfnDestroyScreen,            (PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen));
+    DECLCALLBACKMEMBER(int,  pfnSurfaceBlitToScreen,      (PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,
+                                                           SVGASignedRect destRect, SVGA3dSurfaceImageId srcImage,
+                                                           SVGASignedRect srcRect, uint32_t cRects, SVGASignedRect *paRects));
+} VMSVGA3DBACKENDFUNCS3D;
+
+/* VGPU9 3D */
+#define VMSVGA3D_BACKEND_INTERFACE_NAME_VGPU9 "VGPU9"
+typedef struct
+{
+    DECLCALLBACKMEMBER(int,  pfnContextDefine,            (PVGASTATECC pThisCC, uint32_t cid));
+    DECLCALLBACKMEMBER(int,  pfnContextDestroy,           (PVGASTATECC pThisCC, uint32_t cid));
+    DECLCALLBACKMEMBER(int,  pfnSetTransform,             (PVGASTATECC pThisCC, uint32_t cid, SVGA3dTransformType type, float matrix[16]));
+    DECLCALLBACKMEMBER(int,  pfnSetZRange,                (PVGASTATECC pThisCC, uint32_t cid, SVGA3dZRange zRange));
+    DECLCALLBACKMEMBER(int,  pfnSetRenderState,           (PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderStates, SVGA3dRenderState *pRenderState));
+    DECLCALLBACKMEMBER(int,  pfnSetRenderTarget,          (PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTargetType type, SVGA3dSurfaceImageId target));
+    DECLCALLBACKMEMBER(int,  pfnSetTextureState,          (PVGASTATECC pThisCC, uint32_t cid, uint32_t cTextureStates, SVGA3dTextureState *pTextureState));
+    DECLCALLBACKMEMBER(int,  pfnSetMaterial,              (PVGASTATECC pThisCC, uint32_t cid, SVGA3dFace face, SVGA3dMaterial *pMaterial));
+    DECLCALLBACKMEMBER(int,  pfnSetLightData,             (PVGASTATECC pThisCC, uint32_t cid, uint32_t index, SVGA3dLightData *pData));
+    DECLCALLBACKMEMBER(int,  pfnSetLightEnabled,          (PVGASTATECC pThisCC, uint32_t cid, uint32_t index, uint32_t enabled));
+    DECLCALLBACKMEMBER(int,  pfnSetViewPort,              (PVGASTATECC pThisCC, uint32_t cid, SVGA3dRect *pRect));
+    DECLCALLBACKMEMBER(int,  pfnSetClipPlane,             (PVGASTATECC pThisCC, uint32_t cid,  uint32_t index, float plane[4]));
+    DECLCALLBACKMEMBER(int,  pfnCommandClear,             (PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clearFlag, uint32_t color, float depth, uint32_t stencil, uint32_t cRects, SVGA3dRect *pRect));
+    DECLCALLBACKMEMBER(int,  pfnDrawPrimitives,           (PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl, uint32_t numRanges, SVGA3dPrimitiveRange *pNumRange, uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor));
+    DECLCALLBACKMEMBER(int,  pfnSetScissorRect,           (PVGASTATECC pThisCC, uint32_t cid, SVGA3dRect *pRect));
+    DECLCALLBACKMEMBER(int,  pfnGenerateMipmaps,          (PVGASTATECC pThisCC, uint32_t sid, SVGA3dTextureFilter filter));
+    DECLCALLBACKMEMBER(int,  pfnShaderDefine,             (PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3dShaderType type, uint32_t cbData, uint32_t *pShaderData));
+    DECLCALLBACKMEMBER(int,  pfnShaderDestroy,            (PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3dShaderType type));
+    DECLCALLBACKMEMBER(int,  pfnShaderSet,                (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t cid, SVGA3dShaderType type, uint32_t shid));
+    DECLCALLBACKMEMBER(int,  pfnShaderSetConst,           (PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype, uint32_t cRegisters, uint32_t *pValues));
+    DECLCALLBACKMEMBER(int,  pfnOcclusionQueryCreate,     (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext));
+    DECLCALLBACKMEMBER(int,  pfnOcclusionQueryDelete,     (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext));
+    DECLCALLBACKMEMBER(int,  pfnOcclusionQueryBegin,      (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext));
+    DECLCALLBACKMEMBER(int,  pfnOcclusionQueryEnd,        (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext));
+    DECLCALLBACKMEMBER(int,  pfnOcclusionQueryGetData,    (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels));
+} VMSVGA3DBACKENDFUNCSVGPU9;
+
+/* Support for Guest-Backed Objects. */
 #define VMSVGA3D_BACKEND_INTERFACE_NAME_GBO "GBO"
 typedef struct
 {

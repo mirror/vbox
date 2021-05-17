@@ -232,11 +232,6 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
     uint32_t       cContexts, cSurfaces;
     LogFlow(("vmsvga3dLoadExec:\n"));
 
-#ifndef RT_OS_DARWIN /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA.cpp */
-    /* Must initialize now as the recreation calls below rely on an initialized 3d subsystem. */
-    vmsvga3dPowerOn(pDevIns, pThis, pThisCC);
-#endif
-
     /* Get the generic 3d state first. */
     rc = pHlp->pfnSSMGetStructEx(pSSM, pState, sizeof(*pState), 0, g_aVMSVGA3DSTATEFields, NULL);
     AssertRCReturn(rc, rc);
@@ -268,6 +263,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                 pContext = &pState->SharedCtx;
                 if (pContext->id != VMSVGA3D_SHARED_CTX_ID)
                 {
+                    /** @todo Separate backend */
                     rc = vmsvga3dContextDefineOgl(pThisCC, VMSVGA3D_SHARED_CTX_ID, VMSVGA3D_DEF_CTX_F_SHARED_CTX);
                     AssertRCReturn(rc, rc);
                 }
@@ -444,7 +440,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                         RT_FALL_THRU();
                     case VMSVGA3DQUERYSTATE_SIGNALED:
                         /* Create the query object. */
-                        vmsvga3dOcclusionQueryCreate(pState, pContext);
+                        vmsvga3dQueryCreate(pThisCC, cid, SVGA3D_QUERYTYPE_OCCLUSION);
 
                         /* Update result and state. */
                         pContext->occlusion.enmQueryState = query.enmQueryState;
@@ -583,7 +579,6 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
 
 static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM, PVMSVGA3DCONTEXT pContext)
 {
-    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     uint32_t cid = pContext->id;
 
     /* Save the id first. */
@@ -686,16 +681,18 @@ static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHAND
             pContext->occlusion.enmQueryState = VMSVGA3DQUERYSTATE_NULL;
         }
 
-        switch (pContext->occlusion.enmQueryState)
+        /* Save the current query state, because code below can change it. */
+        VMSVGA3DQUERYSTATE const enmQueryState = pContext->occlusion.enmQueryState;
+        switch (enmQueryState)
         {
             case VMSVGA3DQUERYSTATE_BUILDING:
                 /* Stop collecting data. Fetch partial result. Save result. */
-                vmsvga3dOcclusionQueryEnd(pState, pContext);
+                vmsvga3dQueryEnd(pThisCC, cid, SVGA3D_QUERYTYPE_OCCLUSION);
                 RT_FALL_THRU();
             case VMSVGA3DQUERYSTATE_ISSUED:
                 /* Fetch result. Save result. */
                 pContext->occlusion.u32QueryResult = 0;
-                vmsvga3dOcclusionQueryGetData(pState, pContext, &pContext->occlusion.u32QueryResult);
+                vmsvga3dQueryWait(pThisCC, cid, SVGA3D_QUERYTYPE_OCCLUSION, NULL, NULL);
                 RT_FALL_THRU();
             case VMSVGA3DQUERYSTATE_SIGNALED:
                 /* Save result. Nothing to do here. */
@@ -709,6 +706,9 @@ static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHAND
                 pContext->occlusion.u32QueryResult = 0;
                 break;
         }
+
+        /* Restore the current actual state. */
+        pContext->occlusion.enmQueryState = enmQueryState;
 
         rc = pHlp->pfnSSMPutStructEx(pSSM, &pContext->occlusion, sizeof(pContext->occlusion), 0, g_aVMSVGA3DQUERYFields, NULL);
         AssertRCReturn(rc, rc);

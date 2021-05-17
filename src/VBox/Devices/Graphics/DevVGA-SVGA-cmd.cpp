@@ -417,6 +417,7 @@ vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
 }
 
 
+#ifdef VBOX_WITH_VMSVGA3D
 static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, bool fWriteProtected, PVMSVGAGBO pGbo)
 {
     ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
@@ -940,7 +941,6 @@ void *vmsvgaR3MobBackingStorePtr(PVMSVGAMOB pMob, uint32_t off)
 }
 
 
-#ifdef VBOX_WITH_VMSVGA3D
 int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dSurfaceImageId const *pImageId, SVGA3dBox const *pBox)
 {
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -4170,7 +4170,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3Cmd3dEndQuery);
 
-        vmsvga3dQueryEnd(pThisCC, pCmd->cid, pCmd->type, pCmd->guestResult);
+        vmsvga3dQueryEnd(pThisCC, pCmd->cid, pCmd->type);
         break;
     }
 
@@ -4180,7 +4180,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3Cmd3dWaitForQuery);
 
-        vmsvga3dQueryWait(pThis, pThisCC, pCmd->cid, pCmd->type, pCmd->guestResult);
+        vmsvga3dQueryWait(pThisCC, pCmd->cid, pCmd->type, pThis, &pCmd->guestResult);
         break;
     }
 
