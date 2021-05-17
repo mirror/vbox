@@ -293,8 +293,8 @@ static const char *drvHostWasStreamStatusString(PDRVHOSTAUDIOWASSTREAM pStreamWa
 {
     static RTSTRTUPLE const s_aEnable[2] =
     {
-        RT_STR_TUPLE("DISABLED"),
-        RT_STR_TUPLE("ENABLED ")
+        { RT_STR_TUPLE("DISABLED") },
+        { RT_STR_TUPLE("ENABLED ") },
     };
     PCRTSTRTUPLE pTuple = &s_aEnable[pStreamWas->fEnabled];
     memcpy(pStreamWas->szStatus, pTuple->psz, pTuple->cch);
@@ -302,8 +302,8 @@ static const char *drvHostWasStreamStatusString(PDRVHOSTAUDIOWASSTREAM pStreamWa
 
     static RTSTRTUPLE const s_aStarted[2] =
     {
-        RT_STR_TUPLE(" STOPPED"),
-        RT_STR_TUPLE(" STARTED")
+        { RT_STR_TUPLE(" STOPPED") },
+        { RT_STR_TUPLE(" STARTED") },
     };
     pTuple = &s_aStarted[pStreamWas->fStarted];
     memcpy(&pStreamWas->szStatus[off], pTuple->psz, pTuple->cch);
@@ -311,13 +311,14 @@ static const char *drvHostWasStreamStatusString(PDRVHOSTAUDIOWASSTREAM pStreamWa
 
     static RTSTRTUPLE const s_aDraining[2] =
     {
-        RT_STR_TUPLE(""),
-        RT_STR_TUPLE(" DRAINING")
+        { RT_STR_TUPLE("")          },
+        { RT_STR_TUPLE(" DRAINING") },
     };
     pTuple = &s_aDraining[pStreamWas->fDraining];
     memcpy(&pStreamWas->szStatus[off], pTuple->psz, pTuple->cch);
     off += pTuple->cch;
 
+    Assert(off < sizeof(pStreamCA->szStatus));
     pStreamWas->szStatus[off] = '\0';
     return pStreamWas->szStatus;
 }
@@ -2125,7 +2126,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDisable(PPDMIHOSTAUDIO pInterfa
     RTCritSectEnter(&pStreamWas->CritSect);
 
     /*
-     * We will not stop a draining output stream, otherwise the actions are the same here.
+     * Always try stop it (draining or no).
      */
     pStreamWas->fEnabled         = false;
     pStreamWas->fRestartOnResume = false;
@@ -2249,35 +2250,33 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamDrain(PPDMIHOSTAUDIO pInterface
     {
         if (!pStreamWas->fDraining)
         {
-            if (pStreamWas->fStarted)
-            {
-                uint64_t const msNow           = RTTimeMilliTS();
-                uint64_t       msDrainDeadline = 0;
-                UINT32         cFramesPending  = 0;
-                HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
-                if (SUCCEEDED(hrc))
-                    msDrainDeadline = msNow
-                                    + PDMAudioPropsFramesToMilli(&pStreamWas->Cfg.Props,
-                                                                 RT_MIN(cFramesPending,
-                                                                        pStreamWas->Cfg.Backend.cFramesBufferSize * 2))
-                                    + 1 /*fudge*/;
-                else
-                {
-                    msDrainDeadline = msNow;
-                    LogRelMax(64, ("WasAPI: GetCurrentPadding fail on '%s' when starting draining: %Rhrc\n",
-                                   pStreamWas->Cfg.szName, hrc));
-                }
-                pStreamWas->msDrainDeadline = msDrainDeadline;
-                pStreamWas->fDraining       = true;
-            }
+            uint64_t const msNow           = RTTimeMilliTS();
+            uint64_t       msDrainDeadline = 0;
+            UINT32         cFramesPending  = 0;
+            HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
+            if (SUCCEEDED(hrc))
+                msDrainDeadline = msNow
+                                + PDMAudioPropsFramesToMilli(&pStreamWas->Cfg.Props,
+                                                             RT_MIN(cFramesPending,
+                                                                    pStreamWas->Cfg.Backend.cFramesBufferSize * 2))
+                                + 1 /*fudge*/;
             else
-                LogFlowFunc(("Drain requested for '%s', but not started playback...\n", pStreamWas->Cfg.szName));
+            {
+                msDrainDeadline = msNow;
+                LogRelMax(64, ("WasAPI: GetCurrentPadding fail on '%s' when starting draining: %Rhrc\n",
+                               pStreamWas->Cfg.szName, hrc));
+            }
+            pStreamWas->msDrainDeadline = msDrainDeadline;
+            pStreamWas->fDraining       = true;
         }
         else
             LogFlowFunc(("Already draining '%s' ...\n", pStreamWas->Cfg.szName));
     }
     else
+    {
+        LogFlowFunc(("Drain requested for '%s', but not started playback...\n", pStreamWas->Cfg.szName));
         AssertStmt(!pStreamWas->fDraining, pStreamWas->fDraining = false);
+    }
     RTCritSectLeave(&pStreamWas->CritSect);
 
     LogFlowFunc(("returns %Rrc {%s}\n", rc, drvHostWasStreamStatusString(pStreamWas)));
@@ -2625,9 +2624,9 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
         LogFlowFunc(("Suppressing %Rrc to report %#x bytes written\n", rc, cbWritten));
         rc = VINF_SUCCESS;
     }
-    LogFlowFunc(("@%#RX64: cbWritten=%RU32 cMsDelta=%RU64 (%RU64 -> %RU64) {%s}\n", pStreamWas->offInternal, cbWritten,
+    LogFlowFunc(("@%#RX64: rc=%Rrc cbWritten=%RU32 cMsDelta=%RU64 (%RU64 -> %RU64) {%s}\n", pStreamWas->offInternal, rc, cbWritten,
                  msPrev ? msNow - msPrev : 0, msPrev, pStreamWas->msLastTransfer, drvHostWasStreamStatusString(pStreamWas) ));
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -2773,7 +2772,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
         LogFlowFunc(("Suppressing %Rrc to report %#x bytes read\n", rc, cbRead));
         rc = VINF_SUCCESS;
     }
-    LogFlowFunc(("@%#RX64: cbRead=%RU32 cMsDelta=%RU64 (%RU64 -> %RU64) {%s}\n", pStreamWas->offInternal, cbRead,
+    LogFlowFunc(("@%#RX64: rc=%Rrc cbRead=%RU32 cMsDelta=%RU64 (%RU64 -> %RU64) {%s}\n", pStreamWas->offInternal, rc, cbRead,
                  msPrev ? msNow - msPrev : 0, msPrev, pStreamWas->msLastTransfer, drvHostWasStreamStatusString(pStreamWas) ));
     return rc;
 }
