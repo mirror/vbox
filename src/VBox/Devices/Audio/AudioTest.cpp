@@ -939,6 +939,7 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
                 RTRIFFWAVEFMTCHUNK  Fmt;
             } Wave;
             RTRIFFLIST              List;
+            RTRIFFCHUNK             Chunk;
             RTRIFFWAVEDATACHUNK     Data;
         } uBuf;
 
@@ -994,12 +995,21 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
                     rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
                     if (RT_SUCCESS(rc))
                     {
+                        /** @todo Use a loop here?   */
                         /* HACK ALERT: Skip one INFO list and hope we find a data chunk following it: */
                         if (   uBuf.List.uMagic    == RTRIFFLIST_MAGIC
                             && uBuf.List.uListType ==  RTRIFFLIST_TYPE_INFO
                             && uBuf.List.cbChunk   <= (uint32_t)cbFile - pWaveFile->offSamples - sizeof(RTRIFFCHUNK))
                         {
                             pWaveFile->offSamples += sizeof(RTRIFFCHUNK) + uBuf.List.cbChunk;
+                            rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
+                        }
+
+                        /* HACK ALERT: Skip PAD chunk found in some apple wav files */
+                        if (   uBuf.Chunk.uMagic    == RTRIFFPADCHUNK_MAGIC
+                            && uBuf.Chunk.cbChunk   <= (uint32_t)cbFile - pWaveFile->offSamples - sizeof(RTRIFFCHUNK))
+                        {
+                            pWaveFile->offSamples += sizeof(RTRIFFCHUNK) + uBuf.Chunk.cbChunk;
                             rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
                         }
 
@@ -1012,6 +1022,7 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
                             && PDMAudioPropsIsSizeAligned(&pWaveFile->Props, uBuf.Data.Chunk.cbChunk))
                         {
                             pWaveFile->cbSamples = uBuf.Data.Chunk.cbChunk;
+
                             /*
                              * We're good!
                              */
