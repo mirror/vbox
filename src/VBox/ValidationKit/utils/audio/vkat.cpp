@@ -2238,8 +2238,8 @@ static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                 RTStrmPrintf(pStrm, "  %s\n", g_aCmdTestOptions[i].pszLong);
 
             const char *pszHelp = NULL;
-            if (g_aCommands[i].pfnOptionHelp)
-                pszHelp = g_aCommands[i].pfnOptionHelp(&paOptions[i]);
+            if (g_aCommands[iCmd].pfnOptionHelp)
+                pszHelp = g_aCommands[iCmd].pfnOptionHelp(&paOptions[i]);
             if (pszHelp)
                 RTStrmPrintf(pStrm, "    %s\n", pszHelp);
         }
