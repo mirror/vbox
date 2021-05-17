@@ -36,6 +36,7 @@ using namespace com;
 #include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/semaphore.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
@@ -751,6 +752,159 @@ static void hideSetUidRootFromAppKit()
 #endif /* RT_OS_DARWIN */
 
 
+#ifdef RT_OS_WINDOWS
+
+#define MAIN_WND_CLASS L"VirtualBox Headless Interface"
+
+HINSTANCE g_hInstance = NULL;
+HWND g_hWindow = NULL;
+RTSEMEVENT g_hCanQuit;
+
+static DECLCALLBACK(int) windowsMessageMonitor(RTTHREAD ThreadSelf, void *pvUser);
+static int createWindow();
+static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static void destroyWindow();
+
+
+static DECLCALLBACK(int)
+windowsMessageMonitor(RTTHREAD ThreadSelf, void *pvUser)
+{
+    RT_NOREF(ThreadSelf, pvUser);
+    int rc;
+
+    rc = createWindow();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RTSemEventCreate(&g_hCanQuit);
+
+    MSG msg;
+    BOOL b;
+    while ((b = ::GetMessage(&msg, 0, 0, 0)) > 0)
+    {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+    }
+
+    if (b < 0)
+        LogRel(("VBoxHeadless: GetMessage failed\n"));
+    LogRel(("VBoxHeadless: stopping windows message loop\n"));
+
+    destroyWindow();
+    return VINF_SUCCESS;
+}
+
+
+static int
+createWindow()
+{
+    /* program instance handle */
+    g_hInstance = (HINSTANCE)::GetModuleHandle(NULL);
+    if (g_hInstance == NULL)
+    {
+        LogRel(("VBoxHeadless: failed to obtain module handle\n"));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /* window class */
+    WNDCLASS wc;
+    RT_ZERO(wc);
+
+    wc.style = CS_NOCLOSE;
+    wc.lpfnWndProc = WinMainWndProc;
+    wc.hInstance = g_hInstance;
+    wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+    wc.lpszClassName = MAIN_WND_CLASS;
+
+    ATOM atomWindowClass = ::RegisterClass(&wc);
+    if (atomWindowClass == 0)
+    {
+        LogRel(("VBoxHeadless: failed to register window class\n"));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /* secret window, secret garden */
+    g_hWindow = ::CreateWindowEx(0, MAIN_WND_CLASS, MAIN_WND_CLASS, 0,
+                                 0, 0, 1, 1, NULL, NULL, g_hInstance, NULL);
+    if (g_hWindow == NULL)
+    {
+        LogRel(("VBoxHeadless: failed to create window\n"));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static void
+destroyWindow()
+{
+    if (g_hWindow == NULL)
+        return;
+
+    ::DestroyWindow(g_hWindow);
+    g_hWindow = NULL;
+
+    if (g_hInstance == NULL)
+        return;
+
+    ::UnregisterClass(MAIN_WND_CLASS, g_hInstance);
+    g_hInstance = NULL;
+}
+
+
+static LRESULT CALLBACK
+WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    int rc;
+
+    LRESULT lResult = 0;
+    switch (msg)
+    {
+        case WM_QUERYENDSESSION:
+            if (lParam != 0)
+                LogRel(("VBoxHeadless: WM_QUERYENDSESSION (0x%08lx)\n", (unsigned long)lParam));
+            else
+                LogRel(("VBoxHeadless: WM_QUERYENDSESSION\n"));
+
+            /* tell the user what we are doing */
+            ::ShutdownBlockReasonCreate(hwnd, L"Waiting for VM to terminate");
+
+            /* tell the VM to save state/power off */
+            g_fTerminateFE = true;
+            gEventQ->interruptEventQueueProcessing();
+
+            /* do not block windows session termination */
+            lResult = TRUE;
+            break;
+
+        case WM_ENDSESSION:
+            if (g_hCanQuit != NIL_RTSEMEVENT)
+            {
+                LogRel(("VBoxHeadless: WM_ENDSESSION: waiting for VM termination...\n"));
+
+                rc = RTSemEventWait(g_hCanQuit, RT_INDEFINITE_WAIT);
+                if (RT_SUCCESS(rc))
+                    LogRel(("VBoxHeadless: WM_ENDSESSION: done\n"));
+                else
+                    LogRel(("VBoxHeadless: WM_ENDSESSION: failed to wait for VM termination: %Rrc\n", rc));
+            }
+            else
+            {
+                LogRel(("VBoxHeadless: WM_ENDSESSION: cannot wait for VM termination\n"));
+            }
+            lResult = TRUE;
+            break;
+
+        default:
+            lResult = ::DefWindowProc(hwnd, msg, wParam, lParam);
+            break;
+    }
+    return lResult;
+}
+#endif /* RT_OS_WINDOWS */
+
+
 /*
  * Simplified version of showProgress() borrowed from VBoxManage.
  */
@@ -1074,6 +1228,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     HRESULT rc;
+    int irc;
 
     rc = com::Initialize();
 #ifdef VBOX_WITH_XPCOM
@@ -1418,6 +1573,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         sigaction(SIGUSR2, &sa, NULL);
 #endif
 
+#ifdef RT_OS_WINDOWS
+        /*
+         * Spawn windows message pump to monitor session events.
+         */
+        RTTHREAD hThrMsg;
+        irc = RTThreadCreate(&hThrMsg,
+                            windowsMessageMonitor, NULL,
+                            0, /* :cbStack */
+                            RTTHREADTYPE_MSG_PUMP, 0,
+                            "MSG");
+        if (RT_FAILURE(irc))    /* not fatal */
+            LogRel(("VBoxHeadless: failed to start windows message monitor: %Rrc\n", irc));
+#endif /* RT_OS_WINDOWS */
+
 
         /*
          * Pump vbox events forever
@@ -1425,7 +1594,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LogRel(("VBoxHeadless: starting event loop\n"));
         for (;;)
         {
-            int irc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
+            irc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
 
             /*
              * interruptEventQueueProcessing from another thread is
@@ -1566,8 +1735,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     com::Shutdown();
 
-    LogFlow(("VBoxHeadless FINISHED.\n"));
+#ifdef RT_OS_WINDOWS
+    /* tell the session monitor it can ack WM_ENDSESSION */
+    if (g_hCanQuit != NIL_RTSEMEVENT)
+    {
+        RTSemEventSignal(g_hCanQuit);
+    }
 
+    /* tell the session monitor to quit */
+    if (g_hWindow != NULL)
+    {
+        ::PostMessage(g_hWindow, WM_QUIT, 0, 0);
+    }
+#endif
+
+    LogRel(("VBoxHeadless: exiting\n"));
     return FAILED(rc) ? 1 : 0;
 }
 
