@@ -67,6 +67,27 @@ typedef struct PDMDRVINSINT
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** For use in the option switch to handle common options. */
+#define AUDIO_TEST_COMMON_OPTION_CASES() \
+            case 'q': \
+                g_uVerbosity = 0; \
+                break; \
+            \
+            case 'v': \
+                g_uVerbosity++; \
+                break; \
+            \
+            case 'V': \
+                return audioTestVersion(); \
+            \
+            case 'h': \
+                return audioTestUsage(g_pStdOut)
+
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 struct AUDIOTESTENV;
@@ -1671,11 +1692,10 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 /**
  * Main (entry) function for the testing functionality of VKAT.
  *
- * @returns RTEXITCODE
- * @param   argc                Number of argv arguments.
- * @param   argv                argv arguments.
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
  */
-static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 {
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
@@ -1687,12 +1707,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
     const char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg    = g_aBackends[0].pDrvReg;
 
-    RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdTestOptions, RT_ELEMENTS(g_aCmdTestOptions), 1, 0 /*fFlags*/);
-    AssertRCReturn(rc, RTEXITCODE_INIT);
-
+    int           rc;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)))
     {
         switch (rc)
         {
@@ -1774,10 +1791,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(int argc, char **argv)
                 TstCust.TestTone.uVolumePercent = ValueUnion.u8;
                 break;
 
-            case 'V':
-                return audioTestVersion();
-            case 'h':
-                return audioTestUsage(g_pStdOut);
+            AUDIO_TEST_COMMON_OPTION_CASES();
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -1884,24 +1898,20 @@ static int audioVerifyOne(const char *pszPath, const char *pszTag)
 /**
  * Main (entry) function for the verification functionality of VKAT.
  *
- * @returns RTEXITCODE
- * @param   argc                Number of argv arguments.
- * @param   argv                argv arguments.
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
  */
-static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 {
     /*
      * Parse options and process arguments.
      */
-    RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdVerifyOptions, RT_ELEMENTS(g_aCmdVerifyOptions),
-                          1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_INIT);
-
     const char   *pszTag   = NULL; /* Custom tag to use. Can be NULL if not being used. */
     unsigned      iTestSet = 0;
+
+    int           rc;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)))
     {
         switch (rc)
         {
@@ -1918,10 +1928,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(int argc, char **argv)
                 iTestSet++;
                 break;
 
-            case 'V':
-                return audioTestVersion();
-            case 'h':
-                return audioTestUsage(g_pStdOut);
+            AUDIO_TEST_COMMON_OPTION_CASES();
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -2111,10 +2118,9 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
  * The 'play' command handler.
  *
  * @returns Program exit code.
- * @param   argc                Number of argv arguments.
- * @param   argv                argv arguments.
+ * @param   pGetState   RTGetOpt state.
  */
-static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
 {
     /* Option values: */
     PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
@@ -2123,15 +2129,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
     uint32_t    cMsSchedulingHint = UINT32_MAX;
     bool        fWithDrvAudio     = false;
 
-    /* Init option state: */
-    RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdPlayOptions, RT_ELEMENTS(g_aCmdPlayOptions),
-                          1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_INIT);
-
     /* Argument processing loop: */
+    int           rc;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
     {
         switch (rc)
         {
@@ -2161,10 +2162,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(int argc, char **argv)
                 break;
             }
 
-            case 'V':
-                return audioTestVersion();
-            case 'h':
-                return audioTestUsage(g_pStdOut);
+            AUDIO_TEST_COMMON_OPTION_CASES();
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -2182,7 +2180,7 @@ static struct
     /** The command name. */
     const char     *pszCommand;
     /** The command handler.   */
-    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(int argc, char **argv));
+    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(PRTGETOPTSTATE pGetState));
 
     /** Command description.   */
     const char     *pszDesc;
@@ -2290,12 +2288,12 @@ int main(int argc, char **argv)
     /*
      * Process common options.
      */
-    RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
                           RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
+    RTGETOPTUNION ValueUnion;
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (rc)
@@ -2320,9 +2318,26 @@ int main(int argc, char **argv)
                 for (uintptr_t i = 0; i < RT_ELEMENTS(g_aCommands); i++)
                     if (strcmp(ValueUnion.psz, g_aCommands[i].pszCommand) == 0)
                     {
-                        audioTestShowLogo(g_pStdOut);
-                        int32_t iCurArg = GetState.iNext - 1;
-                        return g_aCommands[i].pfnHandler(argc - iCurArg, argv + iCurArg);
+                        size_t const cCombinedOptions  = g_aCommands[i].cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
+                        PRTGETOPTDEF paCombinedOptions = (PRTGETOPTDEF)RTMemAlloc(cCombinedOptions * sizeof(RTGETOPTDEF));
+                        if (paCombinedOptions)
+                        {
+                            memcpy(paCombinedOptions, g_aCmdCommonOptions, sizeof(g_aCmdCommonOptions));
+                            memcpy(&paCombinedOptions[RT_ELEMENTS(g_aCmdCommonOptions)],
+                                   g_aCommands[i].paOptions, g_aCommands[i].cOptions * sizeof(RTGETOPTDEF));
+
+                            rc = RTGetOptInit(&GetState, argc, argv, paCombinedOptions, cCombinedOptions,
+                                              GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+                            if (RT_SUCCESS(rc))
+                            {
+
+                                rcExit = g_aCommands[i].pfnHandler(&GetState);
+                                RTMemFree(paCombinedOptions);
+                                return rcExit;
+                            }
+                            return RTMsgErrorExitFailure("RTGetOptInit failed for '%s': %Rrc", ValueUnion.psz, rc);
+                        }
+                        return RTMsgErrorExitFailure("Out of memory!");
                     }
                 RTMsgError("Unknown command '%s'!\n", ValueUnion.psz);
                 audioTestUsage(g_pStdErr);
