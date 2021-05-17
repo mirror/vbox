@@ -573,6 +573,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
     AssertPtrNullReturn(ppStream, VERR_INVALID_POINTER);
     Assert(pSink->AIO.pDevIns == pDevIns); RT_NOREF(pDevIns); /* we'll probably be adding more statistics */
+    AssertReturn(pCfg->enmDir == pSink->enmDir, VERR_MISMATCH);
 
     /*
      * Check status and get the host driver config.
@@ -610,8 +611,9 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                              PDMAudioPropsSampleBits(&pCfg->Props), PDMAudioPropsChannels(&pCfg->Props), pCfg->Props.uHz));
 
                 /*
-                 * Initialize the host-side configuration for the stream to be created.
-                 * Always use the sink's PCM audio format as the host side when creating a stream for it.
+                 * Initialize the host-side configuration for the stream to be created,
+                 * this is the sink format & direction with the src/dir, layout, name
+                 * and device specific config copied from the guest side config (pCfg).
                  */
                 AssertMsg(AudioHlpPcmPropsAreValid(&pSink->PCMProps),
                           ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
@@ -619,21 +621,10 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                 PDMAUDIOSTREAMCFG CfgHost;
                 rc = PDMAudioStrmCfgInitWithProps(&CfgHost, &pSink->PCMProps);
                 AssertRC(rc); /* cannot fail */
-
-                /* Apply the sink's direction for the configuration to use to create the stream. */
-                if (pSink->enmDir == PDMAUDIODIR_IN)
-                {
-                    CfgHost.enmDir      = PDMAUDIODIR_IN;
-                    CfgHost.u.enmSrc    = pCfg->u.enmSrc;
-                    CfgHost.enmLayout   = pCfg->enmLayout;
-                }
-                else
-                {
-                    CfgHost.enmDir      = PDMAUDIODIR_OUT;
-                    CfgHost.u.enmDst    = pCfg->u.enmDst;
-                    CfgHost.enmLayout   = pCfg->enmLayout;
-                }
-
+                CfgHost.enmDir    = pSink->enmDir;
+                CfgHost.u         = pCfg->u;
+                CfgHost.enmLayout = pCfg->enmLayout;
+                CfgHost.Device    = pCfg->Device;
                 RTStrCopy(CfgHost.szName, sizeof(CfgHost.szName), pCfg->szName);
 
                 /*
