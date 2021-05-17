@@ -745,7 +745,7 @@ int AudioTestSetWipe(PAUDIOTESTSET pSet)
 {
     AssertPtrReturn(pSet, VERR_INVALID_POINTER);
 
-    int rc;
+    int rc = VINF_SUCCESS;
     char szFilePath[RTPATH_MAX];
 
     PAUDIOTESTOBJ pObj;
