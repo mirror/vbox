@@ -25,8 +25,10 @@
 #include <iprt/errcore.h>
 #include <iprt/semaphore.h>
 
-#import <AVFoundation/AVFoundation.h>
-#import <AVFoundation/AVMediaFormat.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+# import <AVFoundation/AVFoundation.h>
+# import <AVFoundation/AVMediaFormat.h>
+#endif
 #import <Foundation/NSException.h>
 
 
@@ -48,16 +50,21 @@
  * but as we build against an older SDK where this is not available we have to duplicate
  * AVAuthorizationStatus and do everything dynmically during runtime, sigh...
  */
-typedef enum AVAuthorizationStatus: NSInteger
+typedef enum AVAuthorizationStatus
+# if RT_CPLUSPLUS_PREREQ(201100)
+    : NSInteger
+# endif
 {
     AVAuthorizationStatusNotDetermined = 0,
     AVAuthorizationStatusRestricted    = 1,
     AVAuthorizationStatusDenied        = 2,
-    AVAuthorizationStatusAuthorized    = 3,
+    AVAuthorizationStatusAuthorized    = 3
 } AVAuthorizationStatus;
 
 #endif
 
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 /** @todo need some better fix/whatever for AudioTest */
 
 /**
  * Requests camera permissions for Mojave and onwards.
@@ -71,20 +78,26 @@ static int coreAudioInputPermissionRequest(void)
     if (RT_SUCCESS(rc))
     {
         /* Perform auth request. */
-        [AVCaptureDevice performSelector: @selector(requestAccessForMediaType: completionHandler:) withObject: (id)AVMediaTypeAudio withObject: (id)^(BOOL granted) {
-            if (!granted) {
+        [AVCaptureDevice performSelector: @selector(requestAccessForMediaType: completionHandler:)
+                              withObject: (id)AVMediaTypeAudio
+                              withObject: (id)^(BOOL granted)
+        {
+            if (!granted)
+            {
                 LogRel(("CoreAudio: Access denied!\n"));
                 rc = VERR_ACCESS_DENIED;
             }
             RTSemEventSignal(hEvt);
         }];
 
-        rc = RTSemEventWait(hEvt, 10 * RT_MS_1SEC);
+        rc = RTSemEventWait(hEvt, RT_MS_10SEC);
         RTSemEventDestroy(hEvt);
     }
 
     return rc;
 }
+
+#endif
 
 /**
  * Checks permission for capturing devices on Mojave and onwards.
@@ -101,11 +114,14 @@ DECLHIDDEN(int) coreAudioInputPermissionCheck(void)
          * Because we build with an older SDK where the authorization APIs are not available
          * (introduced with Mojave 10.14) we have to resort to resolving the APIs dynamically.
          */
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 /** @todo need some better fix/whatever for AudioTest */
         LogRel(("CoreAudio: macOS 10.14+ detected, checking audio input permissions\n"));
 
         if ([AVCaptureDevice respondsToSelector:@selector(authorizationStatusForMediaType:)])
         {
-            AVAuthorizationStatus enmAuthSts = (AVAuthorizationStatus)(NSInteger)[AVCaptureDevice performSelector: @selector(authorizationStatusForMediaType:) withObject: (id)AVMediaTypeAudio];
+            AVAuthorizationStatus enmAuthSts
+                = (AVAuthorizationStatus)(NSInteger)[AVCaptureDevice performSelector: @selector(authorizationStatusForMediaType:)
+                                                                          withObject: (id)AVMediaTypeAudio];
             if (enmAuthSts == AVAuthorizationStatusNotDetermined)
                 rc = coreAudioInputPermissionRequest();
             else if (   enmAuthSts == AVAuthorizationStatusRestricted
@@ -115,6 +131,9 @@ DECLHIDDEN(int) coreAudioInputPermissionCheck(void)
                 rc = VERR_ACCESS_DENIED;
             }
         }
+#else
+        LogRel(("CoreAudio: WARNING! macOS 10.14+ detected.  Audio input probably wont work as this app was compiled using a too old SDK.\n"));
+#endif
     }
 
     return rc;
