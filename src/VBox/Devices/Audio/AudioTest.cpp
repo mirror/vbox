@@ -930,19 +930,16 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
     rc = RTFileQuerySize(pWaveFile->hFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        struct
+        union
         {
-            union
+            uint8_t                 ab[512];
+            struct
             {
-                uint8_t                 ab[512];
-                struct
-                {
-                    RTRIFFHDR           Hdr;
-                    RTRIFFWAVEFMTCHUNK  Fmt;
-                } Wave;
-                RTRIFFLIST              List;
-                RTRIFFWAVEDATACHUNK     Data;
-            };
+                RTRIFFHDR           Hdr;
+                RTRIFFWAVEFMTCHUNK  Fmt;
+            } Wave;
+            RTRIFFLIST              List;
+            RTRIFFWAVEDATACHUNK     Data;
         } uBuf;
 
         rc = RTFileRead(pWaveFile->hFile, &uBuf.Wave, sizeof(uBuf.Wave), NULL);
