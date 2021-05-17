@@ -140,6 +140,15 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMIOAPICHLP,pfnLockIsOwner} */
+static DECLCALLBACK(bool) pdmR3IoApicHlp_LockIsOwner(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3IoApicHlp_LockIsOwner: caller='%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return pdmLockIsOwner(pDevIns->Internal.s.pVMR3);
+}
+
+
 /** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
 static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
@@ -166,6 +175,7 @@ const PDMIOAPICHLP g_pdmR3DevIoApicHlp =
     pdmR3IoApicHlp_ApicBusDeliver,
     pdmR3IoApicHlp_Lock,
     pdmR3IoApicHlp_Unlock,
+    pdmR3IoApicHlp_LockIsOwner,
     pdmR3IoApicHlp_IommuMsiRemap,
     PDM_IOAPICHLP_VERSION /* the end */
 };

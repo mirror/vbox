@@ -1528,6 +1528,14 @@ static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMIOAPICHLP,pfnUnlock} */
+static DECLCALLBACK(bool) pdmR0IoApicHlp_LockIsOwner(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return pdmLockIsOwner(pDevIns->Internal.s.pGVM);
+}
+
+
 /** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
 static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
@@ -1560,6 +1568,7 @@ extern DECLEXPORT(const PDMIOAPICHLP) g_pdmR0IoApicHlp =
     pdmR0IoApicHlp_ApicBusDeliver,
     pdmR0IoApicHlp_Lock,
     pdmR0IoApicHlp_Unlock,
+    pdmR0IoApicHlp_LockIsOwner,
     pdmR0IoApicHlp_IommuMsiRemap,
     PDM_IOAPICHLP_VERSION
 };

@@ -1510,7 +1510,7 @@ typedef struct PDMIOMMUHLPR0
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
-     * Check whether the threads owns the PDM lock.
+     * Check whether the calling thread owns the PDM lock.
      *
      * @returns @c true if the PDM lock is owned, @c false otherwise.
      * @param   pDevIns         The PCI device instance.
@@ -1934,6 +1934,13 @@ typedef struct PDMIOAPICHLP
     DECLCALLBACKMEMBER(void, pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
+     * Checks if the calling thread owns the PDM lock.
+     *
+     * @param   pDevIns         The IOAPIC device instance.
+     */
+    DECLCALLBACKMEMBER(bool, pfnIsLockOwner,(PPDMDEVINS pDevIns));
+
+    /**
      * Private interface between the IOAPIC and IOMMU.
      *
      * @returns status code.
@@ -1954,7 +1961,7 @@ typedef PDMIOAPICHLP * PPDMIOAPICHLP;
 typedef const PDMIOAPICHLP * PCPDMIOAPICHLP;
 
 /** Current PDMIOAPICHLP version number. */
-#define PDM_IOAPICHLP_VERSION                   PDM_VERSION_MAKE(0xfff0, 2, 1)
+#define PDM_IOAPICHLP_VERSION                   PDM_VERSION_MAKE(0xfff0, 3, 1)
 
 
 /**
