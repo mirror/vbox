@@ -587,6 +587,7 @@ VMM_INT_DECL(int) TMCpuTickSetLastSeen(PVMCPUCC pVCpu, uint64_t u64LastSeenTick)
     VMCPU_ASSERT_EMT(pVCpu);
 
     LogFlow(("TMCpuTickSetLastSeen %RX64\n", u64LastSeenTick));
+    /** @todo deal with wraparound!   */
     if (pVCpu->tm.s.u64TSCLastSeen < u64LastSeenTick)
         pVCpu->tm.s.u64TSCLastSeen = u64LastSeenTick;
     return VINF_SUCCESS;
