@@ -322,8 +322,6 @@ private:
       * @{ */
         /** Paints background using specified @a pPainter and certain @a pOptions. */
         void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
-        /** Paints frame using passed @a pPainter and certain @a pOptions. */
-        void paintFrame(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
         /** Paints element info using specified @a pPainter and certain @a pOptions. */
         void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
 

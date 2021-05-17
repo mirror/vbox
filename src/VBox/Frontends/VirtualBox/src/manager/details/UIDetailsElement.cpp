@@ -299,8 +299,6 @@ void UIDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem 
 
     /* Paint background: */
     paintBackground(pPainter, pOptions);
-    /* Paint frame: */
-    paintFrame(pPainter, pOptions);
     /* Paint element info: */
     paintElementInfo(pPainter, pOptions);
 }
@@ -1496,33 +1494,6 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
         gradientHovered.setColorAt(1, hcTone2);
         pPainter->fillRect(headRect, gradientHovered);
     }
-
-    /* Restore painter: */
-    pPainter->restore();
-}
-
-void UIDetailsElement::paintFrame(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
-{
-    /* Save painter: */
-    pPainter->save();
-
-    /* Prepare variables: */
-    const int iMargin = data(ElementData_Margin).toInt();
-    const int iHeadHeight = 2 * iMargin + m_iMinimumHeaderHeight;
-    const QRect optionRect = pOptions->rect;
-    const QRect rectangle = m_fAnimationRunning
-                          ? QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeadHeight + m_iAdditionalHeight))
-                          : optionRect;
-
-    /* Paint frame: */
-    const QColor frameColor = QApplication::palette().color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultToneStart);
-    QPen pen(frameColor);
-    pen.setWidth(0);
-    pPainter->setPen(pen);
-    pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight());
-    pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight());
-    pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
-    pPainter->drawLine(rectangle.topRight(),   rectangle.bottomRight());
 
     /* Restore painter: */
     pPainter->restore();
