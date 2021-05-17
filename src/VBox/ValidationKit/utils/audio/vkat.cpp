@@ -827,10 +827,14 @@ static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pD
  * @param   cMsPreBuffer        The pre-buffering amount in milliseconds.
  * @param   cMsSchedulingHint   The scheduling hint in milliseconds.
  * @param   ppStream            Where to return the stream pointer on success.
+ * @param   pCfgAcq             Where to return the actual (well, not
+ *                              necessarily when using DrvAudio, but probably
+ *                              the same) stream config on success (not used as
+ *                              input).
  */
 static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
                                                   uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                                                  PPDMAUDIOSTREAM *ppStream)
+                                                  PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
     *ppStream = NULL;
@@ -880,6 +884,8 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                                                           &CfgReq, &CfgGst, ppStream);
         if (RT_SUCCESS(rc))
         {
+            *pCfgAcq = CfgReq; /** @todo PDMIAUDIOCONNECTOR::pfnStreamCreate only does one utterly pointless change to the two configs (enmLayout) from what I can tell... */
+            pCfgAcq->Props = (*ppStream)->Props;
             RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(&CfgReq, szTmp, sizeof(szTmp)));
             return rc;
         }
@@ -931,6 +937,7 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                         if (rc == VINF_SUCCESS)
                         {
                             *ppStream = &pStreamAt->Core;
+                            *pCfgAcq  = pStreamAt->Cfg;
                             return VINF_SUCCESS;
                         }
                         if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
@@ -943,6 +950,7 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                             if (RT_SUCCESS(rc))
                             {
                                 *ppStream = &pStreamAt->Core;
+                                *pCfgAcq  = pStreamAt->Cfg;
                                 return VINF_SUCCESS;
                             }
 
@@ -2048,9 +2056,10 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
         /*
          * Open a stream for the output.
          */
-        PPDMAUDIOSTREAM pStream = NULL;
+        PDMAUDIOSTREAMCFG CfgAcq;
+        PPDMAUDIOSTREAM   pStream = NULL;
         rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &WaveFile.Props, cMsBufferSize,
-                                                    cMsPreBuffer, cMsSchedulingHint, &pStream);
+                                                    cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
@@ -2097,7 +2106,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
                                 }
                             }
                             else if (audioTestDriverStackStreamIsOkay(&DrvStack, pStream))
-                                RTThreadSleep(RT_MIN(RT_MAX(1, cMsSchedulingHint), 256));
+                                RTThreadSleep(RT_MIN(RT_MAX(1, CfgAcq.Device.cMsSchedulingHint), 256));
                             else
                             {
                                 rcExit = RTMsgErrorExitFailure("Stream is not okay!\n");
