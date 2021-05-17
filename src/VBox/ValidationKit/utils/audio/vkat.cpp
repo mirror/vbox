@@ -126,47 +126,6 @@ typedef DECLCALLBACKTYPE(int, FNAUDIOTESTDESTROY,(PAUDIOTESTENV pTstEnv, void *p
 /** Pointer to an audio test destroy callback. */
 typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
 
-/** Maximum audio streams a test environment can handle. */
-#define AUDIOTESTENV_MAX_STREAMS 8
-
-/**
- * Audio test environment parameters.
- * Not necessarily bound to a specific test (can be reused).
- */
-typedef struct AUDIOTESTENV
-{
-    /** Output path for storing the test environment's final test files. */
-    char                  szPathOut[RTPATH_MAX];
-    /** Temporary path for this test environment. */
-    char                  szPathTemp[RTPATH_MAX];
-    /** The host (backend) driver to use. */
-    PPDMIHOSTAUDIO        pDrvAudio;
-    /** The current (last) audio device enumeration to use. */
-    PDMAUDIOHOSTENUM      DevEnum;
-    /** Audio stream. */
-    AUDIOTESTSTREAM       aStreams[AUDIOTESTENV_MAX_STREAMS];
-    /** The audio test set to use. */
-    AUDIOTESTSET          Set;
-} AUDIOTESTENV;
-
-/**
- * Audio test descriptor.
- */
-typedef struct AUDIOTESTDESC
-{
-    /** (Sort of) Descriptive test name. */
-    const char             *pszName;
-    /** Flag whether the test is excluded. */
-    bool                    fExcluded;
-    /** The setup callback. */
-    PFNAUDIOTESTSETUP       pfnSetup;
-    /** The exec callback. */
-    PFNAUDIOTESTEXEC        pfnExec;
-    /** The destruction callback. */
-    PFNAUDIOTESTDESTROY     pfnDestroy;
-} AUDIOTESTDESC;
-
-
 /**
  * Audio driver stack.
  *
@@ -205,6 +164,46 @@ typedef struct AUDIOTESTDRVSTACKSTREAM
 } AUDIOTESTDRVSTACKSTREAM;
 /** Pointer to a backend-only stream structure. */
 typedef AUDIOTESTDRVSTACKSTREAM *PAUDIOTESTDRVSTACKSTREAM;
+
+/** Maximum audio streams a test environment can handle. */
+#define AUDIOTESTENV_MAX_STREAMS 8
+
+/**
+ * Audio test environment parameters.
+ * Not necessarily bound to a specific test (can be reused).
+ */
+typedef struct AUDIOTESTENV
+{
+    /** Output path for storing the test environment's final test files. */
+    char                  szPathOut[RTPATH_MAX];
+    /** Temporary path for this test environment. */
+    char                  szPathTemp[RTPATH_MAX];
+    /** The audio test driver stack. */
+    AUDIOTESTDRVSTACK     DrvStack;
+    /** The current (last) audio device enumeration to use. */
+    PDMAUDIOHOSTENUM      DevEnum;
+    /** Audio stream. */
+    AUDIOTESTSTREAM       aStreams[AUDIOTESTENV_MAX_STREAMS];
+    /** The audio test set to use. */
+    AUDIOTESTSET          Set;
+} AUDIOTESTENV;
+
+/**
+ * Audio test descriptor.
+ */
+typedef struct AUDIOTESTDESC
+{
+    /** (Sort of) Descriptive test name. */
+    const char             *pszName;
+    /** Flag whether the test is excluded. */
+    bool                    fExcluded;
+    /** The setup callback. */
+    PFNAUDIOTESTSETUP       pfnSetup;
+    /** The exec callback. */
+    PFNAUDIOTESTEXEC        pfnExec;
+    /** The destruction callback. */
+    PFNAUDIOTESTDESTROY     pfnDestroy;
+} AUDIOTESTDESC;
 
 
 /*********************************************************************************************************************************
@@ -276,6 +275,7 @@ static const RTGETOPTDEF g_aCmdCommonOptions[] =
 static const RTGETOPTDEF g_aCmdTestOptions[] =
 {
     { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--drvaudio",         'd',                          RTGETOPT_REQ_NOTHING },
     { "--exclude",          'e',                          RTGETOPT_REQ_UINT32  },
     { "--exclude-all",      'a',                          RTGETOPT_REQ_NOTHING },
     { "--include",          'i',                          RTGETOPT_REQ_UINT32  },
@@ -410,6 +410,8 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
         if (   strcmp(pDrvReg->szName, "AUDIO") == 0
             && strcmp(pszName, "DebugPathOut") == 0)
             pszRet = g_pszDrvAudioDebug;
+
+        AssertPtrReturn(pszRet, VERR_INVALID_POINTER);
 
         int rc = RTStrCopy(pszString, cchString, pszRet);
 
@@ -754,7 +756,7 @@ static void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
  * @returns VBox status code.
  * @param   pDrvStack       The driver stack to initialize.
  * @param   pDrvReg         The backend driver to use.
- * @param   fWithDrvAudio   Whether to inlcude DrvAudio in the stack or not.
+ * @param   fWithDrvAudio   Whether to include DrvAudio in the stack or not.
  */
 static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
 {
@@ -1212,17 +1214,17 @@ static int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDI
  * Initializes an audio test environment.
  *
  * @param   pTstEnv             Audio test environment to initialize.
- * @param   pDrvAudio           Audio driver to use.
- * @param   pszPathOut          Output path to use. If NULL, the system's temp directory will be used.
- * @param   pszPathTemp         Temporary path to use. If NULL, the system's temp directory will be used.
+ * @param   pDrvReg             Audio driver to use.
+ * @param   fWithDrvAudio       Whether to include DrvAudio in the stack or not.
  * @param   pszTag              Tag name to use. If NULL, a generated UUID will be used.
  */
-static int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio, const char *pszTag)
+static int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszTag)
 {
-    pTstEnv->pDrvAudio = pDrvAudio;
     PDMAudioHostEnumInit(&pTstEnv->DevEnum);
 
-    int rc = VINF_SUCCESS;
+    int rc = audioTestDriverStackInit(&pTstEnv->DrvStack, pDrvReg, fWithDrvAudio);
+    if (RT_FAILURE(rc))
+        return rc;
 
     char szPathTemp[RTPATH_MAX];
     if (   !strlen(pTstEnv->szPathTemp)
@@ -1247,6 +1249,9 @@ static int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PPDMIHOSTAUDIO pDrvAudio, con
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
     }
 
+    if (RT_FAILURE(rc))
+        audioTestDriverStackDelete(&pTstEnv->DrvStack);
+
     return rc;
 }
 
@@ -1270,6 +1275,7 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     }
 
     AudioTestSetDestroy(&pTstEnv->Set);
+    audioTestDriverStackDelete(&pTstEnv->DrvStack);
 }
 
 /**
@@ -1313,7 +1319,7 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
 {
     RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev ? pszDev : "<Default>");
 
-    if (!pTstEnv->pDrvAudio->pfnGetDevices)
+    if (!pTstEnv->DrvStack.pIHostAudio->pfnGetDevices)
     {
         RTTestSkipped(g_hTest, "Backend does not support device enumeration, skipping");
         return VINF_NOT_SUPPORTED;
@@ -1324,7 +1330,7 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     if (ppDev)
         *ppDev = NULL;
 
-    int rc = pTstEnv->pDrvAudio->pfnGetDevices(pTstEnv->pDrvAudio, &pTstEnv->DevEnum);
+    int rc = pTstEnv->DrvStack.pIHostAudio->pfnGetDevices(pTstEnv->DrvStack.pIHostAudio, &pTstEnv->DevEnum);
     if (RT_SUCCESS(rc))
     {
         PPDMAUDIOHOSTDEV pDev;
@@ -1412,13 +1418,13 @@ static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream
     int rc = PDMAudioStrmCfgCopy(&CfgAcq, pCfg);
     AssertRC(rc); /* Cannot fail. */
 
-    rc = pTstEnv->pDrvAudio->pfnStreamCreate(pTstEnv->pDrvAudio, &pStream->Backend, pCfg, &CfgAcq);
+    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCreate(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, pCfg, &CfgAcq);
     if (RT_FAILURE(rc))
         return rc;
 
     /* Do the async init in a synchronous way for now here. */
     if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
-        rc = pTstEnv->pDrvAudio->pfnStreamInitAsync(pTstEnv->pDrvAudio, &pStream->Backend, false /* fDestroyed */);
+        rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamInitAsync(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, false /* fDestroyed */);
 
     if (RT_SUCCESS(rc))
         pStream->fCreated = true;
@@ -1443,7 +1449,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 
     /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
 
-    int rc = pTstEnv->pDrvAudio->pfnStreamDestroy(pTstEnv->pDrvAudio, &pStream->Backend);
+    int rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamDestroy(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend);
     if (RT_SUCCESS(rc))
         RT_BZERO(pStream, sizeof(PDMAUDIOBACKENDSTREAM));
 
@@ -1502,7 +1508,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->pDrvAudio->pfnStreamGetState(pTstEnv->pDrvAudio, &pStream->Backend);
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend);
     if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
     {
         uint32_t cbBuf;
@@ -1522,7 +1528,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t cbWritten;
-                    rc = pTstEnv->pDrvAudio->pfnStreamPlay(pTstEnv->pDrvAudio, &pStream->Backend, abBuf, cbBuf, &cbWritten);
+                    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamPlay(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, abBuf, cbBuf, &cbWritten);
                 }
             }
 
@@ -1731,10 +1737,11 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'd':   return "Use the specified audio device";
-        case 'e':   return "Exclude the given test id from the list";
-        case 'a':   return "Exclude all tests from the list (useful to enable single tests later with --include)";
-        case 'i':   return "Include the given test id in the list";
+        case 'd':                 return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case VKAT_TEST_OPT_DEV:   return "Use the specified audio device";
+        case 'e':                 return "Exclude the given test id from the list";
+        case 'a':                 return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'i':                 return "Include the given test id in the list";
     }
     return NULL;
 }
@@ -1753,9 +1760,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     AUDIOTESTPARMS TstCust;
     audioTestParmsInit(&TstCust);
 
-    const char *pszDevice  = NULL; /* Custom device to use. Can be NULL if not being used. */
-    const char *pszTag     = NULL; /* Custom tag to use. Can be NULL if not being used. */
-    PCPDMDRVREG pDrvReg    = g_aBackends[0].pDrvReg;
+    const char *pszDevice     = NULL; /* Custom device to use. Can be NULL if not being used. */
+    const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
+    PCPDMDRVREG pDrvReg       = g_aBackends[0].pDrvReg;
+    bool        fWithDrvAudio = false;
 
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -1779,6 +1787,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                     }
                 if (pDrvReg == NULL)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
                 break;
 
             case 'e':
@@ -1853,35 +1865,27 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
      */
     RTTestBanner(g_hTest);
 
-    AUDIOTESTDRVSTACK DrvStack;
-    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    /* For now all tests have the same test environment. */
+    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio, pszTag);
     if (RT_SUCCESS(rc))
     {
-        /* For now all tests have the same test environment. */
-        /** @todo bake the DrvStack into the test env make make it more flexible so
-         *        we can also test with/without DrvAudio (need option above). */
-        rc = audioTestEnvInit(&TstEnv, DrvStack.pIHostAudio, pszTag);
+        PPDMAUDIOHOSTDEV pDev;
+        rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
         if (RT_SUCCESS(rc))
-        {
-            PPDMAUDIOHOSTDEV pDev;
-            rc = audioTestDevicesEnumerateAndCheck(&TstEnv, pszDevice, &pDev);
-            if (RT_SUCCESS(rc))
-                audioTestWorker(&TstEnv, &TstCust);
+            audioTestWorker(&TstEnv, &TstCust);
 
-            /* Before destroying the test environment, pack up the test set so
-             * that it's ready for transmission. */
-            char szFileOut[RTPATH_MAX];
-            rc = AudioTestSetPack(&TstEnv.Set, TstEnv.szPathOut, szFileOut, sizeof(szFileOut));
-            if (RT_SUCCESS(rc))
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
+        /* Before destroying the test environment, pack up the test set so
+         * that it's ready for transmission. */
+        char szFileOut[RTPATH_MAX];
+        rc = AudioTestSetPack(&TstEnv.Set, TstEnv.szPathOut, szFileOut, sizeof(szFileOut));
+        if (RT_SUCCESS(rc))
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
 
-            /* Clean up. */
-            int rc2 = AudioTestSetWipe(&TstEnv.Set);
-            AssertRC(rc2); /* Annoying, but not test-critical. */
+        /* Clean up. */
+        int rc2 = AudioTestSetWipe(&TstEnv.Set);
+        AssertRC(rc2); /* Annoying, but not test-critical. */
 
-            audioTestEnvDestroy(&TstEnv);
-        }
-        audioTestDriverStackDelete(&DrvStack);
+        audioTestEnvDestroy(&TstEnv);
     }
 
     audioTestParmsDestroy(&TstCust);
