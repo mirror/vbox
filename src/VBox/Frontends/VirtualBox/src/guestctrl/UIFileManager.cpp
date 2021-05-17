@@ -734,6 +734,8 @@ void UIFileManager::loadOptions()
 
 void UIFileManager::hidePanel(UIDialogPanel* panel)
 {
+    if (!m_pActionPool)
+        return;
     if (panel && panel->isVisible())
         panel->setVisible(false);
     QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);

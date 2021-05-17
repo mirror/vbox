@@ -1046,9 +1046,7 @@ void UIVMLogViewerWidget::resetHighlighthing()
 
 void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
 {
-    if (!panel)
-        return;
-    if (!m_pActionPool)
+    if (!panel || !m_pActionPool)
         return;
     if (panel->isVisible())
         panel->setVisible(false);
