@@ -217,26 +217,19 @@ void UIDetailsElement::updateLayout()
                    iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
     m_pButton->setPos(iButtonX, iButtonY);
 
-    /* If closed: */
-    if (isClosed())
-    {
-        /* Hide text-pane if still visible: */
-        if (m_pTextPane->isVisible())
-            m_pTextPane->hide();
-    }
-    /* If opened: */
-    else
-    {
-        /* Layout text-pane: */
-        int iTextPaneX = 2 * iMargin;
-        int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
-        m_pTextPane->setPos(iTextPaneX, iTextPaneY);
-        m_pTextPane->resize(size.width() - 4 * iMargin,
-                            size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
-        /* Show text-pane if still invisible and animation finished: */
-        if (!m_pTextPane->isVisible() && !isAnimationRunning())
-            m_pTextPane->show();
-    }
+    /* If closed or animation running => hide: */
+    if ((isClosed() || isAnimationRunning()) && m_pTextPane->isVisible())
+        m_pTextPane->hide();
+    /* If opened and animation isn't running => show: */
+    else if (!isClosed() && !isAnimationRunning() && !m_pTextPane->isVisible())
+        m_pTextPane->show();
+
+    /* Layout text-pane: */
+    int iTextPaneX = 2 * iMargin;
+    int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
+    m_pTextPane->setPos(iTextPaneX, iTextPaneY);
+    m_pTextPane->resize(size.width() - 4 * iMargin,
+                        size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
 }
 
 int UIDetailsElement::minimumWidthHint() const
@@ -443,7 +436,7 @@ int UIDetailsElement::minimumHeightHintForElement(bool fClosed) const
     }
 
     /* Additional height during animation: */
-    if (m_fAnimationRunning)
+    if (m_fAnimationRunning && isClosed())
         iMinimumHeightHint += m_iAdditionalHeight;
 
     /* Return value: */
@@ -469,8 +462,11 @@ void UIDetailsElement::sltElementToggleStart()
     /* Setup animation: */
     updateAnimationParameters();
 
-    /* Invert toggle-state: */
-    m_fClosed = !m_fClosed;
+    /* Invert toggle-state instantly only for closed elements.
+     * Opened element being closed should remain opened
+     * until animation is fully finished. */
+    if (m_fClosed)
+        m_fClosed = !m_fClosed;
 }
 
 void UIDetailsElement::sltElementToggleFinish(bool fToggled)

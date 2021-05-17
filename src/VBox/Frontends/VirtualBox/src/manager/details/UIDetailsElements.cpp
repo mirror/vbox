@@ -144,12 +144,12 @@ void UIDetailsElementPreview::updateLayout()
     UIDetailsElement::updateLayout();
 
     /* Show/hide preview: */
-    if (isClosed() && m_pPreview->isVisible())
+    if ((isClosed() || isAnimationRunning()) && m_pPreview->isVisible())
         m_pPreview->hide();
-    if (isOpened() && !m_pPreview->isVisible() && !isAnimationRunning())
+    if (!isClosed() && !isAnimationRunning() && !m_pPreview->isVisible())
         m_pPreview->show();
 
-    /* And update preview layout itself: */
+    /* Layout Preview: */
     const int iMargin = data(ElementData_Margin).toInt();
     m_pPreview->setPos(iMargin, 2 * iMargin + minimumHeaderHeight());
     m_pPreview->resize(m_pPreview->minimumSizeHint());
