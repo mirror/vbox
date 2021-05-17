@@ -96,8 +96,12 @@ AudioTest_LDFLAGS.darwin = \
 	-framework CoreAudio \
 	-framework AudioUnit \
 	-framework AudioToolbox \
-	-framework AVFoundation \
 	-framework Foundation
+ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
+ AudioTest_LDFLAGS.darwin += \
+ 	-framework AVFoundation
+endif
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
