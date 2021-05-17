@@ -70,7 +70,7 @@ typedef struct PDMDRVINSINT
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** For use in the option switch to handle common options. */
-#define AUDIO_TEST_COMMON_OPTION_CASES() \
+#define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion) \
             case 'q': \
                 g_uVerbosity = 0; \
                 break; \
@@ -83,8 +83,15 @@ typedef struct PDMDRVINSINT
                 return audioTestVersion(); \
             \
             case 'h': \
-                return audioTestUsage(g_pStdOut)
-
+                return audioTestUsage(g_pStdOut); \
+            \
+            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE: \
+                g_fDrvAudioDebug = true; \
+                break; \
+            \
+            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH: \
+                g_pszDrvAudioDebug = (a_ValueUnion).psz; \
+                break
 
 
 /*********************************************************************************************************************************
@@ -218,7 +225,16 @@ static RTEXITCODE audioTestVersion(void);
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Enumeration of test ("test") command line parameters.
+ * Common long options values.
+ */
+enum
+{
+    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE = 256,
+    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH
+};
+
+/**
+ * Long option values for the 'test' command.
  */
 enum
 {
@@ -236,7 +252,7 @@ enum
 };
 
 /**
- * Enumeration of verification ("verify") command line parameters.
+ * Long option values for the 'verify' command.
  */
 enum
 {
@@ -248,8 +264,10 @@ enum
  */
 static const RTGETOPTDEF g_aCmdCommonOptions[] =
 {
-    { "--quiet",            'q',                          RTGETOPT_REQ_NOTHING },
-    { "--verbose",          'v',                          RTGETOPT_REQ_NOTHING },
+    { "--quiet",            'q',                                        RTGETOPT_REQ_NOTHING },
+    { "--verbose",          'v',                                        RTGETOPT_REQ_NOTHING },
+    { "--debug-audio",      AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE,      RTGETOPT_REQ_NOTHING },
+    { "--debug-audio-path", AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH,        RTGETOPT_REQ_STRING  },
 };
 
 /**
@@ -326,6 +344,10 @@ AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 static RTTEST       g_hTest;
 /** The current verbosity level. */
 static unsigned     g_uVerbosity = 0;
+/** DrvAudio: Enable debug (or not). */
+static bool         g_fDrvAudioDebug = 0;
+/** DrvAudio: The debug output path. */
+static const char  *g_pszDrvAudioDebug = NULL;
 
 
 /*********************************************************************************************************************************
@@ -381,6 +403,22 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
 
 VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
+    PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
+    if (RT_VALID_PTR(pDrvReg))
+    {
+        const char *pszRet = pszDef;
+        if (   strcmp(pDrvReg->szName, "AUDIO") == 0
+            && strcmp(pszName, "DebugPathOut") == 0)
+            pszRet = g_pszDrvAudioDebug;
+
+        int rc = RTStrCopy(pszString, cchString, pszRet);
+
+        if (g_uVerbosity > 2)
+            RTPrintf("debug: CFGMR3QueryStringDef([%s], %s, %p, %#x, %s) -> '%s' + %Rrc\n",
+                     pDrvReg->szName, pszName, pszString, cchString, pszDef, pszRet, rc);
+        return rc;
+    }
+
     if (g_uVerbosity > 2)
         RTPrintf("debug: CFGMR3QueryStringDef(%p, %s, %p, %#x, %s)\n", pNode, pszName, pszString, cchString, pszDef);
     return RTStrCopy(pszString, cchString, pszDef);
@@ -388,8 +426,20 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
 
 VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
-    RT_NOREF(pNode, pszName, pf);
-    return fDef;
+    PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
+    if (RT_VALID_PTR(pDrvReg))
+    {
+        *pf = fDef;
+        if (   strcmp(pDrvReg->szName, "AUDIO") == 0
+            && strcmp(pszName, "DebugEnabled") == 0)
+            *pf = g_fDrvAudioDebug;
+
+        if (g_uVerbosity > 2)
+            RTPrintf("debug: CFGMR3QueryBoolDef([%s], %s, %p, %RTbool) -> %RTbool\n", pDrvReg->szName, pszName, pf, fDef, *pf);
+        return VINF_SUCCESS;
+    }
+    *pf = fDef;
+    return VINF_SUCCESS;
 }
 
 VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
@@ -1791,7 +1841,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 TstCust.TestTone.uVolumePercent = ValueUnion.u8;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES();
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -1928,7 +1978,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
                 iTestSet++;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES();
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -2162,7 +2212,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 break;
             }
 
-            AUDIO_TEST_COMMON_OPTION_CASES();
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -2219,6 +2269,10 @@ static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
     RTStrmPrintf(pStrm,
                  "\n"
                  "Global Options:\n"
+                 "  --debug-audio\n"
+                 "    Enables DrvAudio debugging.\n"
+                 "  --debug-audio-path=<path>\n"
+                 "    Tells DrvAudio where to put its debug output (wav-files).\n"
                  "  -q, --quiet\n"
                  "    Sets verbosity to zero.\n"
                  "  -v, --verbose\n"
