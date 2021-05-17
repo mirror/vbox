@@ -1610,7 +1610,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     AssertPtr(pThisCC->pIoApicHlp->pfnApicBusDeliver);
     AssertPtr(pThisCC->pIoApicHlp->pfnLock);
     AssertPtr(pThisCC->pIoApicHlp->pfnUnlock);
-    AssertPtr(pThisCC->pIoApicHlp->pfnIsLockOwner);
+    AssertPtr(pThisCC->pIoApicHlp->pfnLockIsOwner);
     AssertPtr(pThisCC->pIoApicHlp->pfnIommuMsiRemap);
 
     /*
@@ -1705,7 +1705,7 @@ static DECLCALLBACK(int) ioapicRZConstruct(PPDMDEVINS pDevIns)
     AssertPtr(pThisCC->pIoApicHlp->pfnApicBusDeliver);
     AssertPtr(pThisCC->pIoApicHlp->pfnLock);
     AssertPtr(pThisCC->pIoApicHlp->pfnUnlock);
-    AssertPtr(pThisCC->pIoApicHlp->pfnIsLockOwner);
+    AssertPtr(pThisCC->pIoApicHlp->pfnLockIsOwner);
     AssertPtr(pThisCC->pIoApicHlp->pfnIommuMsiRemap);
 
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ioapicMmioWrite, ioapicMmioRead, NULL /*pvUser*/);
