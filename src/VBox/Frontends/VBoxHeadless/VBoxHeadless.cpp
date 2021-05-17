@@ -862,10 +862,12 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
         case WM_QUERYENDSESSION:
-            if (lParam != 0)
-                LogRel(("VBoxHeadless: WM_QUERYENDSESSION (0x%08lx)\n", (unsigned long)lParam));
-            else
-                LogRel(("VBoxHeadless: WM_QUERYENDSESSION\n"));
+            LogRel(("VBoxHeadless: WM_QUERYENDSESSION:%s%s%s%s (0x%08lx)\n",
+                    lParam == 0                  ? " shutdown" : "",
+                    lParam & ENDSESSION_CRITICAL ? " critical" : "",
+                    lParam & ENDSESSION_LOGOFF   ? " logoff"   : "",
+                    lParam & ENDSESSION_CLOSEAPP ? " close"    : "",
+                    (unsigned long)lParam));
 
             /* tell the user what we are doing */
             ::ShutdownBlockReasonCreate(hwnd, L"Waiting for VM to terminate");
@@ -901,6 +903,62 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
     }
     return lResult;
+}
+
+
+static const char * const ctrl_event_names[] = {
+    "CTRL_C_EVENT",
+    "CTRL_BREAK_EVENT",
+    "CTRL_CLOSE_EVENT",
+    /* reserved, not used */
+    "<console control event 3>",
+    "<console control event 4>",
+    /* not sent to processes that load gdi32.dll or user32.dll */
+    "CTRL_LOGOFF_EVENT",
+    "CTRL_SHUTDOWN_EVENT",
+};
+
+
+BOOL WINAPI
+ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
+{
+    const char *signame;
+    char namebuf[48];
+    int rc;
+
+    if (dwCtrlType < RT_ELEMENTS(ctrl_event_names))
+        signame = ctrl_event_names[dwCtrlType];
+    else
+    {
+        /* should not happen, but be prepared */
+        RTStrPrintf(namebuf, sizeof(namebuf),
+                    "<console control event %lu>", (unsigned long)dwCtrlType);
+        signame = namebuf;
+    }
+    LogRel(("VBoxHeadless: got %s\n", signame));
+    RTMsgInfo("Got %s\n", signame);
+    RTMsgInfo("");
+
+    /* tell the VM to save state/power off */
+    g_fTerminateFE = true;
+    gEventQ->interruptEventQueueProcessing();
+
+    /*
+     * We don't need to wait for Ctrl-C / Ctrl-Break, but we must wait
+     * for Close, or we will be killed before the VM is saved.
+     */
+    if (g_hCanQuit != NIL_RTSEMEVENT)
+    {
+        LogRel(("VBoxHeadless: waiting for VM termination...\n"));
+
+        rc = RTSemEventWait(g_hCanQuit, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
+            LogRel(("VBoxHeadless: Failed to wait for VM termination: %Rrc\n", rc));
+    }
+
+    /* tell the system we handled it */
+    LogRel(("VBoxHeadless: ConsoleCtrlHandler: return\n"));
+    return TRUE;
 }
 #endif /* RT_OS_WINDOWS */
 
@@ -1575,6 +1633,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 #ifdef RT_OS_WINDOWS
         /*
+         * Register windows console signal handler to react to Ctrl-C,
+         * Ctrl-Break, Close.
+         */
+        ::SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+
+        /*
          * Spawn windows message pump to monitor session events.
          */
         RTTHREAD hThrMsg;
@@ -1664,17 +1728,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         consoleListener->getWrapped()->ignorePowerOffEvents(true);
 
         ComPtr<IProgress> pProgress;
-#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
         if (!machine.isNull())
             CHECK_ERROR_BREAK(machine, SaveState(pProgress.asOutParam()));
         else
-#endif
             CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
 
         rc = showProgress(pProgress);
         if (FAILED(rc))
         {
-            RTPrintf("VBoxHeadless: ERROR: Failed to power down VM!");
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
                 com::GluePrintRCMessage(rc);
