@@ -1123,13 +1123,24 @@ void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
  */
 int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
+    bool fEofAdjusted;
+    if (pWaveFile->offCur + cbBuf <= pWaveFile->cbSamples)
+        fEofAdjusted = false;
+    else if (pcbRead)
+    {
+        fEofAdjusted = true;
+        cbBuf = pWaveFile->cbSamples - pWaveFile->offCur;
+    }
+    else
+        return VERR_EOF;
+
     int rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples + pWaveFile->offCur, pvBuf, cbBuf, pcbRead);
     if (RT_SUCCESS(rc))
     {
         if (pcbRead)
         {
             pWaveFile->offCur += (uint32_t)*pcbRead;
-            if (cbBuf > *pcbRead)
+            if (fEofAdjusted || cbBuf > *pcbRead)
                 rc = VINF_EOF;
             else if (!cbBuf && pWaveFile->offCur == pWaveFile->cbSamples)
                 rc = VINF_EOF;
