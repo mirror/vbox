@@ -6818,6 +6818,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("IOMMU helper end-version mismatch; got %#x expected %#x"),
                                    pThisR3->CTX_SUFF(pIommuHlp)->u32TheEnd, PDM_IOMMUHLPR3_VERSION);
+    AssertPtr(pThisR3->pIommuHlpR3->pfnLock);
+    AssertPtr(pThisR3->pIommuHlpR3->pfnUnlock);
+    AssertPtr(pThisR3->pIommuHlpR3->pfnLockIsOwner);
+    AssertPtr(pThisR3->pIommuHlpR3->pfnSendMsi);
 
     /*
      * We will use PDM's critical section (via helpers) for the IOMMU device.
@@ -7173,10 +7177,10 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp), VERR_IOMMU_IPE_1);
     AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32Version == CTX_MID(PDM_IOMMUHLP,_VERSION), VERR_VERSION_MISMATCH);
     AssertReturn(pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd  == CTX_MID(PDM_IOMMUHLP,_VERSION), VERR_VERSION_MISMATCH);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock,        VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock,      VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnLockIsOwner, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi,     VERR_INVALID_POINTER);
+    AssertPtr(pThisCC->CTX_SUFF(pIommuHlp)->pfnLock);
+    AssertPtr(pThisCC->CTX_SUFF(pIommuHlp)->pfnUnlock);
+    AssertPtr(pThisCC->CTX_SUFF(pIommuHlp)->pfnLockIsOwner);
+    AssertPtr(pThisCC->CTX_SUFF(pIommuHlp)->pfnSendMsi);
     return VINF_SUCCESS;
 }
 #endif
