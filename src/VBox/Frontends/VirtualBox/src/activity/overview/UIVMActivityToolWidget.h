@@ -71,6 +71,8 @@ protected:
 
 private slots:
 
+    void sltExportToFile();
+    void sltCurrentTabChanged(int iIndex);
 
 private:
 
@@ -85,13 +87,11 @@ private:
         void loadSettings();
     /** @} */
 
-    void showVMActivityMonitor(CMachine &comMachine);
-    void showVMActivityList();
     /** Remove tabs conaining machine monitors with ids @machineIdsToRemove. */
     void removeTabs(const QVector<QUuid> &machineIdsToRemove);
     /** Add new tabs for each QUuid in @machineIdsToAdd. Does not check for duplicates. */
     void addTabs(const QVector<QUuid> &machineIdsToAdd);
-
+    void setExportActionEnabled(bool fEnabled);
 
     /** @name General variables.
       * @{ */
@@ -105,6 +105,7 @@ private:
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
     QVector<QUuid> m_machineIds;
+    QAction *m_pExportToFileAction;
 };
 
 

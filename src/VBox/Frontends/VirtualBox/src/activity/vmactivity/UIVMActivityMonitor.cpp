@@ -29,7 +29,6 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
-#include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIVMActivityMonitor.h"
@@ -879,7 +878,7 @@ bool UIMetric::autoUpdateMaximum() const
 *********************************************************************************************************************************/
 
 UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
-                                           const CMachine &machine, UIActionPool *pActionPool)
+                                           const CMachine &machine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_pMainLayout(0)
@@ -892,7 +891,6 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_strVMExitMetricName("VMExits")
     , m_iTimeStep(0)
     , m_enmEmbedding(enmEmbedding)
-    , m_pActionPool(pActionPool)
 {
     prepareMetrics();
     prepareWidgets();
@@ -1266,10 +1264,6 @@ void UIVMActivityMonitor::prepareMetrics()
 
 void UIVMActivityMonitor::prepareActions()
 {
-    QAction *pExportAction =
-        m_pActionPool->action(UIActionIndex_M_Activity_S_Export);
-    if (pExportAction)
-        connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
 }
 
 bool UIVMActivityMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)

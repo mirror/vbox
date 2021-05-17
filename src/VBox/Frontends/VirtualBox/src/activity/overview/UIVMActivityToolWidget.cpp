@@ -59,17 +59,6 @@
 #include <iprt/cidr.h>
 
 
-class UIVMActivityListWidget : public QWidget
-{
-
-    Q_OBJECT;
-public:
-
-    UIVMActivityListWidget(QWidget *pParent = 0)
-        : QWidget(pParent)
-    {
-    }
-};
 /*********************************************************************************************************************************
 *   Class UIVMActivityToolWidget implementation.                                                                             *
 *********************************************************************************************************************************/
@@ -81,8 +70,12 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
+    , m_pExportToFileAction(0)
 {
     prepare();
+    prepareActions();
+    prepareToolBar();
+    sltCurrentTabChanged(0);
 }
 
 QMenu *UIVMActivityToolWidget::menu() const
@@ -112,6 +105,10 @@ void UIVMActivityToolWidget::showEvent(QShowEvent *pEvent)
 void UIVMActivityToolWidget::prepare()
 {
     setTabBarAutoHide(true);
+    setLayout(new QHBoxLayout);
+
+    connect(this, &UIVMActivityToolWidget::currentChanged,
+            this, &UIVMActivityToolWidget::sltCurrentTabChanged);
 }
 
 void UIVMActivityToolWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
@@ -147,7 +144,6 @@ void UIVMActivityToolWidget::setMachines(const QVector<QUuid> &machineIds)
     show();
 }
 
-
 void UIVMActivityToolWidget::prepareActions()
 {
     QAction *pToResourcesAction =
@@ -155,6 +151,10 @@ void UIVMActivityToolWidget::prepareActions()
     if (pToResourcesAction)
         connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityToolWidget::sigSwitchToResourcesPane);
 
+    m_pExportToFileAction =
+        m_pActionPool->action(UIActionIndex_M_Activity_S_Export);
+    if (m_pExportToFileAction)
+        connect(m_pExportToFileAction, &QAction::triggered, this, &UIVMActivityToolWidget::sltExportToFile);
 }
 
 void UIVMActivityToolWidget::prepareToolBar()
@@ -186,32 +186,6 @@ void UIVMActivityToolWidget::loadSettings()
 {
 }
 
-void UIVMActivityToolWidget::showVMActivityMonitor(CMachine &comMachine)
-{
-    if (comMachine.isNull())
-        return;
-    // if (!m_pActivityMonitor)
-    // {
-    //     m_pActivityMonitor = new UIVMActivityMonitor(m_enmEmbedding, this,
-    //                                                  comMachine, m_pActionPool, false /* Show toolbar */);
-    //     addWidget(m_pActivityMonitor);
-    // }
-    // else
-    //     m_pActivityMonitor->setMachine(comMachine);
-
-    // setCurrentWidget(m_pActivityMonitor);
-}
-
-void UIVMActivityToolWidget::showVMActivityList()
-{
-    // if (!m_pActivityList)
-    // {
-    //     m_pActivityList = new UIVMActivityListWidget(this);
-    //     addWidget(m_pActivityList);
-    // }
-    // setCurrentWidget(m_pActivityList);
-}
-
 void UIVMActivityToolWidget::removeTabs(const QVector<QUuid> &machineIdsToRemove)
 {
     QVector<UIVMActivityMonitor*> removeList;
@@ -240,8 +214,33 @@ void UIVMActivityToolWidget::addTabs(const QVector<QUuid> &machineIdsToAdd)
         CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
         if (comMachine.isNull())
             continue;
-        addTab(new UIVMActivityMonitor(m_enmEmbedding, this, comMachine, m_pActionPool), comMachine.GetName());
+        addTab(new UIVMActivityMonitor(m_enmEmbedding, this, comMachine), comMachine.GetName());
     }
 }
 
-#include "UIVMActivityToolWidget.moc"
+void UIVMActivityToolWidget::sltExportToFile()
+{
+    UIVMActivityMonitor *pActivityMonitor = qobject_cast<UIVMActivityMonitor*>(currentWidget());
+    if (pActivityMonitor)
+        pActivityMonitor->sltExportMetricsToFile();
+}
+
+void UIVMActivityToolWidget::sltCurrentTabChanged(int iIndex)
+{
+    Q_UNUSED(iIndex);
+    UIVMActivityMonitor *pActivityMonitor = qobject_cast<UIVMActivityMonitor*>(currentWidget());
+    if (pActivityMonitor)
+    {
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(pActivityMonitor->machineId().toString());
+        if (!comMachine.isNull())
+        {
+            setExportActionEnabled(comMachine.GetState() == KMachineState_Running);
+        }
+    }
+}
+
+void UIVMActivityToolWidget::setExportActionEnabled(bool fEnabled)
+{
+    if (m_pExportToFileAction)
+        m_pExportToFileAction->setEnabled(fEnabled);
+}

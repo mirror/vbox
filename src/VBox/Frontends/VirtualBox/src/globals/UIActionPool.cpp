@@ -2310,7 +2310,7 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'To VM Activity Oveview' action class. */
+/** Simple action extension, used as 'To VM Activity Overview' action class. */
 class UIActionMenuSelectorActivityToVMActivityOverview : public UIActionSimple
 {
     Q_OBJECT;

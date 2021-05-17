@@ -227,8 +227,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Performance Monitor tab: */
         UIVMActivityMonitor *pVMActivityMonitorWidget =
-            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachineWindow->machine(),
-                                     m_pMachineWindow->uisession()->actionPool());
+            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachineWindow->machine());
         if (pVMActivityMonitorWidget)
         {
             connect(m_pMachineWindow->uisession(), &UISession::sigAdditionsStateChange,

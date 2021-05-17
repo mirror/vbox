@@ -44,7 +44,6 @@
 class QTimer;
 class QVBoxLayout;
 class QLabel;
-class UIActionPool;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
@@ -126,8 +125,7 @@ public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
-    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
-                        UIActionPool *pActionPool);
+    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
     ~UIVMActivityMonitor();
     void setMachine(const CMachine &machine);
     QUuid machineId() const;
@@ -139,6 +137,7 @@ public:
       * @{ */
         void sltGuestAdditionsStateChange();
     /** @} */
+        void sltExportMetricsToFile();
 
 protected:
 
@@ -151,7 +150,6 @@ private slots:
     void sltTimeout();
     /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
     void sltMachineStateChange(const QUuid &uId);
-    void sltExportMetricsToFile();
     void sltCreateContextMenu(const QPoint &point);
     void sltClearCOMData();
 
@@ -250,7 +248,6 @@ private:
     /** @} */
     quint64 m_iTimeStep;
     EmbedTo m_enmEmbedding;
-    UIActionPool *m_pActionPool;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */
