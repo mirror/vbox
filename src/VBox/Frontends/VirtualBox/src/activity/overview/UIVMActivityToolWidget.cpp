@@ -26,6 +26,7 @@
 #include <QPushButton>
 #include <QTableView>
 #include <QTimer>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QSortFilterProxyModel>
 
