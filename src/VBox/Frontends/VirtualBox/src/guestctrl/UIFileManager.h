@@ -95,6 +95,8 @@ public:
     ~UIFileManager();
     QMenu *menu() const;
 
+    void setDialogBeingClosed(bool fFlag);
+
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
     QIToolBar *toolbar() const { return m_pToolBar; }
@@ -166,6 +168,7 @@ private:
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
+    void                      savePanelVisibility();
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
     QVBoxLayout              *m_pMainLayout;
@@ -189,6 +192,7 @@ private:
     UIFileManagerLogPanel              *m_pLogPanel;
     UIFileManagerSessionPanel          *m_pSessionPanel;
     UIFileManagerOperationsPanel       *m_pOperationsPanel;
+    bool                                m_fDialogBeingClosed;
     friend class UIFileManagerOptionsPanel;
     friend class UIFileManagerDialog;
 };

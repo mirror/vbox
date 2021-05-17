@@ -70,6 +70,7 @@ public:
       * @param  pActionPool    Passes the action-pool reference.
       * @param  comGuest       Passes the com-guest reference. */
     UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
+    ~UIFileManagerDialog();
 
 protected:
 

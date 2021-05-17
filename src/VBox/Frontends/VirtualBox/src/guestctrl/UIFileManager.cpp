@@ -126,6 +126,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_pLogPanel(0)
     , m_pSessionPanel(0)
     , m_pOperationsPanel(0)
+    , m_fDialogBeingClosed(false)
 {
     loadOptions();
     prepareGuestListener();
@@ -140,8 +141,12 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
 
 UIFileManager::~UIFileManager()
 {
-    saveOptions();
     UIFileManagerOptions::destroy();
+}
+
+void UIFileManager::setDialogBeingClosed(bool fFlag)
+{
+    m_fDialogBeingClosed = fFlag;
 }
 
 QMenu *UIFileManager::menu() const
@@ -522,6 +527,7 @@ void UIFileManager::sltHandleOptionsUpdated()
         m_pGuestFileTable->optionsUpdated();
     if (m_pHostFileTable)
         m_pHostFileTable->optionsUpdated();
+    saveOptions();
 }
 
 void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
@@ -678,11 +684,6 @@ QStringList UIFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const
 
 void UIFileManager::saveOptions()
 {
-    /* Save a list of currently visible panels: */
-    QStringList strNameList;
-    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
-        strNameList.append(pPanel->panelName());
-    gEDataManager->setFileManagerVisiblePanels(strNameList);
     /* Save the options: */
     UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
     if (pOptions)
@@ -750,6 +751,7 @@ void UIFileManager::hidePanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.removeAll(panel);
     manageEscapeShortCut();
+    savePanelVisibility();
 }
 
 void UIFileManager::showPanel(UIDialogPanel* panel)
@@ -765,6 +767,7 @@ void UIFileManager::showPanel(UIDialogPanel* panel)
     if (!m_visiblePanelsList.contains(panel))
         m_visiblePanelsList.push_back(panel);
     manageEscapeShortCut();
+    savePanelVisibility();
 }
 
 void UIFileManager::manageEscapeShortCut()
@@ -791,6 +794,17 @@ void UIFileManager::appendLog(const QString &strLog, FileManagerLogType eLogType
     if (!m_pLogPanel)
         return;
     m_pLogPanel->appendLog(strLog, eLogType);
+}
+
+void UIFileManager::savePanelVisibility()
+{
+    if (m_fDialogBeingClosed)
+        return;
+    /* Save a list of currently visible panels: */
+    QStringList strNameList;
+    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
+        strNameList.append(pPanel->panelName());
+    gEDataManager->setFileManagerVisiblePanels(strNameList);
 }
 
 #include "UIFileManager.moc"
