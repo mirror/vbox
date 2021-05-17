@@ -77,6 +77,17 @@ ifdef VBOX_WITH_AUDIO_OSS
  	$(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
 endif
 
+ifeq ($(KBUILD_TARGET),win)
+  AudioTest_SOURCES += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioDSound.cpp \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioWasApi.cpp
+ ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+   AudioTest_DEFS    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+   AudioTest_SOURCES += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioDSoundMMNotifClient.cpp
+ endif
+endif
+
 AudioTest_SOURCES.darwin = \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioCoreAudio.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioCoreAudioAuth.mm
@@ -88,4 +99,3 @@ AudioTest_LDFLAGS.darwin = \
 	-framework Foundation
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

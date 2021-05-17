@@ -793,7 +793,7 @@ endif
 VBOX_WITH_AUDIO_VRDE = 1
 ifdef VBOX_WITH_VALIDATIONKIT
  # Enable more platforms later.
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64)
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.amd64)
   VBOX_WITH_AUDIO_VALIDATIONKIT = 1
  endif
 endif

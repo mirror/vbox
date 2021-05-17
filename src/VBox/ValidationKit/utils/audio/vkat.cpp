@@ -296,7 +296,7 @@ static struct
     {   &g_DrvHostAudioWas,     "was" },
     {   &g_DrvHostDSound,       "directsound" },
     {   &g_DrvHostDSound,       "dsound" },
-    {   &g_DrvHostDSound,       "ds" },
+    {   &g_DrvHostDSound,       "ds" }
 #endif
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
@@ -346,6 +346,16 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
         RTPrintf("debug: CFGMR3QueryString(%p, %s, %p, %#x)\n", pNode, pszName, pszString, cchString);
 
     return VERR_CFGM_VALUE_NOT_FOUND;
+}
+
+VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
+{
+    char szStr[128];
+    int rc = CFGMR3QueryString(pNode, pszName, szStr, sizeof(szStr));
+    if (RT_SUCCESS(rc))
+        *ppszString = RTStrDup(szStr);
+
+    return rc;
 }
 
 VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
