@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QTabWidget>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
