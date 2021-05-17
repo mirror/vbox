@@ -22,16 +22,6 @@
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 /*#define INITGUID - defined in VBoxhostAudioDSound.cpp already */
 #include <VBox/log.h>
-
-/* Should fix warning in include\ks.h. */
-#ifndef _WIN64
-# ifdef RT_ARCH_X86
-#  define _WIN64 1
-# else
-#  define _WIN64 0
-# endif
-#endif
-
 #include <iprt/win/windows.h>
 #include <Mmdeviceapi.h>
 #include <iprt/win/audioclient.h>
@@ -3158,3 +3148,4 @@ const PDMDRVREG g_DrvHostAudioWas =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+

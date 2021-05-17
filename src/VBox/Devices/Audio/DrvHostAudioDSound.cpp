@@ -24,7 +24,7 @@
 #include <VBox/log.h>
 #include <iprt/win/windows.h>
 #include <dsound.h>
-#include <Mmdeviceapi.h>
+#include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
 
 #include <iprt/alloc.h>

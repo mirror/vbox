@@ -23,17 +23,7 @@
 
 #include <iprt/critsect.h>
 #include <iprt/win/windows.h>
-
-/* Should fix warning in include\ks.h. */
-#ifndef _WIN64
-# ifdef RT_ARCH_X86
-#  define _WIN64 1
-# else
-#  define _WIN64 0
-# endif
-#endif
-
-#include <Mmdeviceapi.h>
+#include <mmdeviceapi.h>
 
 #include <VBox/vmm/pdmaudioifs.h>
 
@@ -82,5 +72,6 @@ private:
     IFACEMETHODIMP_(ULONG) AddRef();
     /** @} */
 };
+
 #endif /* !VBOX_INCLUDED_SRC_Audio_DrvHostAudioDSoundMMNotifClient_h */
 

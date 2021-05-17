@@ -31,7 +31,8 @@
 
 #ifdef _MSC_VER
 # pragma warning(push)
-# pragma warning(disable: 4201)
+# pragma warning(disable:4201)
+# pragma warning(disable:4668) /* ks.h(1978): warning C4668: '_WIN64' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'  [SDK 7.1] */
 # if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
 #  pragma warning(disable: 4091) /* v7.1\include\ksmedia.h(4356): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-KSEVENT_DYNAMIC_FORMAT_CHANGE>' when no variable is declared */
 # endif
