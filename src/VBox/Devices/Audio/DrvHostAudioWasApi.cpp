@@ -318,7 +318,7 @@ static const char *drvHostWasStreamStatusString(PDRVHOSTAUDIOWASSTREAM pStreamWa
     memcpy(&pStreamWas->szStatus[off], pTuple->psz, pTuple->cch);
     off += pTuple->cch;
 
-    Assert(off < sizeof(pStreamCA->szStatus));
+    Assert(off < sizeof(pStreamWas->szStatus));
     pStreamWas->szStatus[off] = '\0';
     return pStreamWas->szStatus;
 }
