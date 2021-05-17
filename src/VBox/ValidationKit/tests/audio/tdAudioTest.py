@@ -3,7 +3,7 @@
 
 """
 AudioTest test driver which invokes the AudioTest (VKAT) binary to
-perform the actual audio tests. 
+perform the actual audio tests.
 
 The generated test set archive on the guest will be downloaded by TXS
 to the host for later audio comparison / verification.
@@ -49,7 +49,7 @@ from testdriver import vboxtestvms
 
 # pylint: disable=unnecessary-semicolon
 
-class tdAudioTest(vbox.TestDriver):                             
+class tdAudioTest(vbox.TestDriver):
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
@@ -82,7 +82,7 @@ class tdAudioTest(vbox.TestDriver):
 
         if not fSkip:
             reporter.testStart('Waiting for TXS');
-            sPathAutoTestExe = '${CDROM}/vboxvalidationkit/${OS/ARCH}/AudioTest${EXESUFF}';        
+            sPathAutoTestExe = '${CDROM}/vboxvalidationkit/${OS/ARCH}/AudioTest${EXESUFF}';
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
                                                                     fCdWait = True,
                                                                     cMsTimeout = 3 * 60 * 1000,
@@ -90,12 +90,12 @@ class tdAudioTest(vbox.TestDriver):
             reporter.testDone();
             if oSession is not None and oTxsSession is not None:
                 self.addTask(oTxsSession);
-                
+
                 sPathTemp      = self.getGuestTempDir(oTestVm);
                 sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-out');
-                sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-temp');          
+                sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-temp');
                 reporter.log("Audio test temp path is '%s'" % (sPathAudioOut));
-                reporter.log("Audio test output path is '%s'" % (sPathAudioTemp));  
+                reporter.log("Audio test output path is '%s'" % (sPathAudioTemp));
                 sTag           = uuid.uuid4();
                 reporter.log("Audio test tag is %s'" % (sTag));
 
@@ -105,8 +105,8 @@ class tdAudioTest(vbox.TestDriver):
                                       (self.getGuestSystemShell(oTestVm),
                                        sPathAutoTestExe, '-vvv', 'test', '--tag ' + sTag,
                                        '--tempdir ' + sPathAudioTemp, '--outdir ' + sPathAudioOut));
-                reporter.testDone()                                      
-                
+                reporter.testDone()
+
                 if fRc:
                     sFileAudioTestArchive = oTestVm.pathJoin(sPathTemp, 'vkat-%s.tar.gz' % (sTag));
                     fRc = self.txsDownloadFiles(oSession, oTxsSession,
@@ -121,7 +121,7 @@ class tdAudioTest(vbox.TestDriver):
 
             return fRc;
 
-        reporter.log('Audio testing skipped, not implemented/available for that OS yet.');            
+        reporter.log('Audio testing skipped, not implemented/available for that OS yet.');
         return True;
 
     #
