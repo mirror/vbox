@@ -31,21 +31,18 @@ include $(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 #
 include $(PATH_SUB_CURRENT)/TestExecServ/Makefile.kmk
+include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
 include $(PATH_SUB_CURRENT)/cpu/Makefile.kmk
 include $(PATH_SUB_CURRENT)/fs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/misc/Makefile.kmk
 include $(PATH_SUB_CURRENT)/network/Makefile.kmk
-include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
-include $(PATH_SUB_CURRENT)/storage/Makefile.kmk
 ifeq ($(KBUILD_TARGET),win)
  include $(PATH_SUB_CURRENT)/nt/Makefile.kmk
 endif
+include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
+include $(PATH_SUB_CURRENT)/storage/Makefile.kmk
 ifeq ($(KBUILD_TARGET),linux)
  include $(PATH_SUB_CURRENT)/usb/Makefile.kmk
-endif
-
-ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
- include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
 endif
 
 #

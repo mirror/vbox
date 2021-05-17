@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Utility to play sine wave to Default Audio Device.
 #
-if 0 # Disabled for now; does not work without WinMM.dll.
+if 0 # Disabled for now; does not work without WinMM.dll import validator files.
  PROGRAMS.win += ntPlayToneWaveX
  ntPlayToneWaveX_TEMPLATE = VBoxValidationKitR3
  ntPlayToneWaveX_SOURCES  = ntPlayToneWaveX.cpp
@@ -43,7 +43,9 @@ endif
 #
 VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 
+ifn1of ($(KBUILD_TARGET), os2 solaris)
 PROGRAMS += AudioTest
+endif
 AudioTest_TEMPLATE = VBoxValidationKitR3
 AudioTest_VBOX_IMPORT_CHECKER.win.x86 = nt4
 AudioTest_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
@@ -78,15 +80,13 @@ ifdef VBOX_WITH_AUDIO_OSS
  	$(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
 endif
 
-ifeq ($(KBUILD_TARGET),win)
-  AudioTest_SOURCES += \
+AudioTest_SOURCES.win += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioDSound.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioWasApi.cpp
- ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-   AudioTest_DEFS    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-   AudioTest_SOURCES += \
-	$(VKAT_PATH_AUDIO)/DrvHostAudioDSoundMMNotifClient.cpp
- endif
+ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+ AudioTest_DEFS.win    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+ AudioTest_SOURCES.win += \
+ 	$(VKAT_PATH_AUDIO)/DrvHostAudioDSoundMMNotifClient.cpp
 endif
 
 AudioTest_SOURCES.darwin = \
@@ -100,3 +100,4 @@ AudioTest_LDFLAGS.darwin = \
 	-framework Foundation
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
