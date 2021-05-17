@@ -1938,7 +1938,7 @@ typedef struct PDMIOAPICHLP
      *
      * @param   pDevIns         The IOAPIC device instance.
      */
-    DECLCALLBACKMEMBER(bool, pfnIsLockOwner,(PPDMDEVINS pDevIns));
+    DECLCALLBACKMEMBER(bool, pfnLockIsOwner,(PPDMDEVINS pDevIns));
 
     /**
      * Private interface between the IOAPIC and IOMMU.
