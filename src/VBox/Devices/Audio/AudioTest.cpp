@@ -1075,7 +1075,7 @@ void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
  */
 int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    int rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offCur, pvBuf, cbBuf, pcbRead);
+    int rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples + pWaveFile->offCur, pvBuf, cbBuf, pcbRead);
     if (RT_SUCCESS(rc))
     {
         if (pcbRead)
