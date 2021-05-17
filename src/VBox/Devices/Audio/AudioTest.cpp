@@ -27,8 +27,10 @@
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/formats/riff.h>
 #include <iprt/inifile.h>
 #include <iprt/list.h>
+#include <iprt/message.h> /** @todo Get rid of this once we have own log hooks. */
 #include <iprt/rand.h>
 #include <iprt/system.h>
 #include <iprt/uuid.h>
@@ -904,5 +906,179 @@ int AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDE
 
     /* Only return critical stuff not related to actual testing here. */
     return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   WAVE File Reader.                                                                                                            *
+*********************************************************************************************************************************/
+/**
+ * Opens a wave (.WAV) file for reading.
+ *
+ * @returns VBox status code.
+ * @param   pszFile     The file to open.
+ * @param   pWaveFile   The open wave file structure to fill in on success.
+ */
+int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile)
+{
+    RT_ZERO(pWaveFile->Props);
+    pWaveFile->hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&pWaveFile->hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return rc;
+    uint64_t cbFile = 0;
+    rc = RTFileQuerySize(pWaveFile->hFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        union
+        {
+            uint8_t                 ab[512];
+            struct
+            {
+                RTRIFFHDR           Hdr;
+                RTRIFFWAVEFMTCHUNK  Fmt;
+            } Wave;
+            RTRIFFLIST              List;
+            RTRIFFWAVEDATACHUNK     Data;
+        } uBuf;
+
+        rc = RTFileRead(pWaveFile->hFile, &uBuf.Wave, sizeof(uBuf.Wave), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VERR_VFS_UNKNOWN_FORMAT;
+            if (   uBuf.Wave.Hdr.uMagic    == RTRIFFHDR_MAGIC
+                && uBuf.Wave.Hdr.uFileType == RTRIFF_FILE_TYPE_WAVE
+                && uBuf.Wave.Fmt.Chunk.uMagic == RTRIFFWAVEFMT_MAGIC
+                && uBuf.Wave.Fmt.Chunk.cbChunk >= sizeof(uBuf.Wave.Fmt.Data))
+            {
+                if (uBuf.Wave.Hdr.cbFile != cbFile - sizeof(RTRIFFCHUNK))
+                    RTMsgWarning("%s: File size mismatch: %#x, actual %#RX64 (ignored)",
+                                 pszFile, uBuf.Wave.Hdr.cbFile, cbFile - sizeof(RTRIFFCHUNK));
+                rc = VERR_VFS_BOGUS_FORMAT;
+                if (uBuf.Wave.Fmt.Data.uFormatTag != RTRIFFWAVEFMT_TAG_PCM)
+                    RTMsgError("%s: Unsupported uFormatTag value: %u (expected 1)", pszFile, uBuf.Wave.Fmt.Data.uFormatTag);
+                else if (   uBuf.Wave.Fmt.Data.cBitsPerSample != 8
+                         && uBuf.Wave.Fmt.Data.cBitsPerSample != 16
+                         && uBuf.Wave.Fmt.Data.cBitsPerSample != 32)
+                    RTMsgError("%s: Unsupported cBitsPerSample value: %u", pszFile, uBuf.Wave.Fmt.Data.cBitsPerSample);
+                else if (   uBuf.Wave.Fmt.Data.cChannels < 1
+                         || uBuf.Wave.Fmt.Data.cChannels >= 16)
+                    RTMsgError("%s: Unsupported cChannels value: %u (expected 1..15)", pszFile, uBuf.Wave.Fmt.Data.cChannels);
+                else if (   uBuf.Wave.Fmt.Data.uHz < 4096
+                         || uBuf.Wave.Fmt.Data.uHz > 768000)
+                    RTMsgError("%s: Unsupported uHz value: %u (expected 4096..768000)", pszFile, uBuf.Wave.Fmt.Data.uHz);
+                else if (uBuf.Wave.Fmt.Data.cbFrame != uBuf.Wave.Fmt.Data.cChannels * uBuf.Wave.Fmt.Data.cBitsPerSample / 8)
+                    RTMsgError("%s: Invalid cbFrame value: %u (expected %u)", pszFile, uBuf.Wave.Fmt.Data.cbFrame,
+                               uBuf.Wave.Fmt.Data.cChannels * uBuf.Wave.Fmt.Data.cBitsPerSample / 8);
+                else if (uBuf.Wave.Fmt.Data.cbRate != uBuf.Wave.Fmt.Data.cbFrame * uBuf.Wave.Fmt.Data.uHz)
+                    RTMsgError("%s: Invalid cbRate value: %u (expected %u)", pszFile, uBuf.Wave.Fmt.Data.cbRate,
+                               uBuf.Wave.Fmt.Data.cbFrame * uBuf.Wave.Fmt.Data.uHz);
+                else
+                {
+                    /*
+                     * Copy out the data we need from the file format structure.
+                     */
+                    PDMAudioPropsInit(&pWaveFile->Props, uBuf.Wave.Fmt.Data.cBitsPerSample / 8, true /*fSigned*/,
+                                      uBuf.Wave.Fmt.Data.cChannels, uBuf.Wave.Fmt.Data.uHz);
+                    pWaveFile->offSamples = sizeof(RTRIFFHDR) + sizeof(RTRIFFCHUNK) + uBuf.Wave.Fmt.Chunk.cbChunk;
+
+                    /*
+                     * Find the 'data' chunk with the audio samples.
+                     *
+                     * There can be INFO lists both preceeding this and succeeding
+                     * it, containing IART and other things we can ignored.  Thus
+                     * we read a list header here rather than just a chunk header,
+                     * since it doesn't matter if we read 4 bytes extra as
+                     * AudioTestWaveFileRead uses RTFileReadAt anyway.
+                     */
+                    rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* HACK ALERT: Skip one INFO list and hope we find a data chunk following it: */
+                        if (   uBuf.List.uMagic    == RTRIFFLIST_MAGIC
+                            && uBuf.List.uListType ==  RTRIFFLIST_TYPE_INFO
+                            && uBuf.List.cbChunk   <= (uint32_t)cbFile - pWaveFile->offSamples - sizeof(RTRIFFCHUNK))
+                        {
+                            pWaveFile->offSamples += sizeof(RTRIFFCHUNK) + uBuf.List.cbChunk;
+                            rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offSamples, &uBuf, sizeof(uBuf.List), NULL);
+                        }
+
+                        pWaveFile->offSamples += sizeof(uBuf.Data.Chunk);
+                        pWaveFile->cbSamples   = (uint32_t)cbFile - pWaveFile->offSamples;
+
+                        rc = VERR_VFS_BOGUS_FORMAT;
+                        if (   uBuf.Data.Chunk.uMagic == RTRIFFWAVEDATACHUNK_MAGIC
+                            && uBuf.Data.Chunk.cbChunk <= pWaveFile->cbSamples
+                            && PDMAudioPropsIsSizeAligned(&pWaveFile->Props, uBuf.Data.Chunk.cbChunk))
+                        {
+                            pWaveFile->cbSamples = uBuf.Data.Chunk.cbChunk;
+                            /*
+                             * We're good!
+                             */
+                            pWaveFile->offCur = 0;
+                            return VINF_SUCCESS;
+                        }
+
+                        RTMsgError("%s: Bad data header: uMagic=%#x (expected %#x), cbChunk=%#x (max %#RX64, align %u)",
+                                   pszFile, uBuf.Data.Chunk.uMagic, RTRIFFWAVEDATACHUNK_MAGIC,
+                                   uBuf.Data.Chunk.cbChunk, pWaveFile->cbSamples, PDMAudioPropsFrameSize(&pWaveFile->Props));
+                    }
+                    else
+                        RTMsgError("%s: Failed to read data header: %Rrc", pszFile, rc);
+                }
+            }
+            else
+                RTMsgError("%s: Bad file header: uMagic=%#x (vs. %#x), uFileType=%#x (vs %#x), uFmtMagic=%#x (vs %#x) cbFmtChunk=%#x (min %#x)",
+                           pszFile, uBuf.Wave.Hdr.uMagic, RTRIFFHDR_MAGIC, uBuf.Wave.Hdr.uFileType, RTRIFF_FILE_TYPE_WAVE,
+                           uBuf.Wave.Fmt.Chunk.uMagic, RTRIFFWAVEFMT_MAGIC,
+                           uBuf.Wave.Fmt.Chunk.cbChunk, sizeof(uBuf.Wave.Fmt.Data));
+        }
+        else
+            RTMsgError("%s: Failed to read file header: %Rrc", pszFile, rc);
+    }
+    else
+        RTMsgError("%s: Failed to query file size: %Rrc", pszFile, rc);
+
+    RTFileClose(pWaveFile->hFile);
+    pWaveFile->hFile = NIL_RTFILE;
+    return rc;
+}
+
+/**
+ * Closes a wave file.
+ */
+void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
+{
+    RTFileClose(pWaveFile->hFile);
+    pWaveFile->hFile = NIL_RTFILE;
+}
+
+/**
+ * Reads samples from a wave file.
+ *
+ * @returns VBox status code.  See RTVfsFileRead for EOF status handling.
+ * @param   pWaveFile   The file to read from.
+ * @param   pvBuf       Where to put the samples.
+ * @param   cbBuf       How much to read at most.
+ * @param   pcbRead     Where to return the actual number of bytes read,
+ *                      optional.
+ */
+int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    int rc = RTFileReadAt(pWaveFile->hFile, pWaveFile->offCur, pvBuf, cbBuf, pcbRead);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbRead)
+        {
+            pWaveFile->offCur += *pcbRead;
+            if (cbBuf > *pcbRead)
+                rc = VINF_EOF;
+            else if (!cbBuf && pWaveFile->offCur == pWaveFile->cbSamples)
+                rc = VINF_EOF;
+        }
+        else
+            pWaveFile->offCur += cbBuf;
+    }
+    return rc;
 }
 

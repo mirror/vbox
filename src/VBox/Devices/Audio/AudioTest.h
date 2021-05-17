@@ -234,6 +234,25 @@ typedef struct AUDIOTESTERRORDESC
 /** Pointer to an audio test error description. */
 typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
 
+/**
+ * An open wave (.WAV) file.
+ */
+typedef struct AUDIOTESTWAVEFILE
+{
+    /** The file handle. */
+    RTFILE              hFile;
+    /** The absolute file offset of the first sample */
+    uint32_t            offSamples;
+    /** Number of bytes of samples. */
+    uint32_t            cbSamples;
+    /** The current read position relative to @a offSamples.  */
+    uint32_t            offCur;
+    /** The PCM properties for the file format.  */
+    PDMAUDIOPCMPROPS    Props;
+} AUDIOTESTWAVEFILE;
+/** Pointer to an open wave file. */
+typedef AUDIOTESTWAVEFILE *PAUDIOTESTWAVEFILE;
+
 
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
@@ -258,6 +277,10 @@ int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRO
 
 bool   AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr);
 void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
+
+int    AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile);
+int    AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+void   AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTest_h */
 
