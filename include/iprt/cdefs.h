@@ -2797,7 +2797,7 @@
  *
  * @note    Use RT_UOFFSETOF() to calculate the structure size.
  *
- * @note    Never to a sizeof() on the structure or member!
+ * @note    Never do a sizeof() on the structure or member!
  *
  * @note    The member must be the last one.
  *
@@ -2816,6 +2816,7 @@
 # define RT_FLEXIBLE_ARRAY
 # if defined(__cplusplus) && defined(_MSC_VER)
 #  pragma warning(disable:4200) /* -wd4200 does not work with VS2010 */
+#  pragma warning(disable:4815) /* -wd4815 does not work with VS2019 */
 # endif
 #elif defined(__STDC_VERSION__)
 # if __STDC_VERSION__ >= 1999901L
