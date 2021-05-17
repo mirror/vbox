@@ -2243,9 +2243,9 @@ static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
         for (unsigned i = 0; i < g_aCommands[iCmd].cOptions; i++)
         {
             if (RT_C_IS_PRINT(paOptions[i].iShort))
-                RTStrmPrintf(pStrm, "  -%c, %s\n", g_aCmdTestOptions[i].iShort, g_aCmdTestOptions[i].pszLong);
+                RTStrmPrintf(pStrm, "  -%c, %s\n", paOptions[i].iShort, paOptions[i].pszLong);
             else
-                RTStrmPrintf(pStrm, "  %s\n", g_aCmdTestOptions[i].pszLong);
+                RTStrmPrintf(pStrm, "  %s\n", paOptions[i].pszLong);
 
             const char *pszHelp = NULL;
             if (g_aCommands[iCmd].pfnOptionHelp)
