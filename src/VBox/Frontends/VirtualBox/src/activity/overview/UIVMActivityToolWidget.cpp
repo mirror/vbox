@@ -16,32 +16,16 @@
  */
 
 /* Qt includes: */
-#include <QAbstractTableModel>
-#include <QCheckBox>
-#include <QHeaderView>
-#include <QItemDelegate>
-#include <QLabel>
-#include <QMenuBar>
-#include <QPainter>
-#include <QPushButton>
-#include <QTableView>
-#include <QTimer>
-#include <QVBoxLayout>
-#include <QSortFilterProxyModel>
+#include <QHBoxLayout>
+#include <QStyle>
 
 /* GUI includes: */
-#include "QIDialogButtonBox.h"
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
-#include "UIConverter.h"
-#include "UIExtraDataDefs.h"
-#include "UIExtraDataManager.h"
-#include "UIIconPool.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityToolWidget.h"
 #include "UIMessageCenter.h"
 #include "QIToolBar.h"
-#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
 
 #ifdef VBOX_WS_MAC
@@ -50,18 +34,8 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CConsole.h"
 #include "CMachine.h"
-#include "CMachineDebugger.h"
-#include "CPerformanceMetric.h"
 
-/* Other VBox includes: */
-#include <iprt/cidr.h>
-
-
-/*********************************************************************************************************************************
-*   Class UIVMActivityToolWidget implementation.                                                                             *
-*********************************************************************************************************************************/
 
 UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                  bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
