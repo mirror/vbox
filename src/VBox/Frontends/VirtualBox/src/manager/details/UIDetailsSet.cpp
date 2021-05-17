@@ -143,6 +143,103 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
         emit sigBuildDone();
 }
 
+void UIDetailsSet::updateLayout()
+{
+    /* Prepare variables: */
+    const int iMargin = data(SetData_Margin).toInt();
+    const int iSpacing = data(SetData_Spacing).toInt();
+    const int iMaximumWidth = geometry().width();
+    const UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
+    const int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
+    const int iPreviewHeight = pPreviewElement ? pPreviewElement->minimumHeightHint() : 0;
+    int iVerticalIndent = iMargin;
+
+    /* Calculate Preview group elements: */
+    QList<DetailsElementType> inGroup;
+    QList<DetailsElementType> outGroup;
+    int iAdditionalGroupHeight = 0;
+    int iAdditionalPreviewHeight = 0;
+    enumerateLayoutItems(inGroup, outGroup, iAdditionalGroupHeight, iAdditionalPreviewHeight);
+
+    /* Layout all the elements: */
+    foreach (UIDetailsItem *pItem, items())
+    {
+        /* Skip hidden: */
+        if (!pItem->isVisible())
+            continue;
+
+        /* For each particular element: */
+        UIDetailsElement *pElement = pItem->toElement();
+        const DetailsElementType enmElementType = pElement->elementType();
+        switch (enmElementType)
+        {
+            case DetailsElementType_General:
+            case DetailsElementType_System:
+            case DetailsElementType_Display:
+            case DetailsElementType_Storage:
+            case DetailsElementType_Audio:
+            case DetailsElementType_Network:
+            case DetailsElementType_Serial:
+            case DetailsElementType_USB:
+            case DetailsElementType_SF:
+            case DetailsElementType_UI:
+            case DetailsElementType_Description:
+            {
+                /* Move element: */
+                pElement->setPos(0, iVerticalIndent);
+
+                /* Calculate required width: */
+                int iWidth = iMaximumWidth;
+                if (inGroup.contains(enmElementType))
+                    iWidth -= (iSpacing + iPreviewWidth);
+                /* Resize element to required width (separately from height): */
+                if (pElement->geometry().width() != iWidth)
+                    pElement->resize(iWidth, pElement->geometry().height());
+
+                /* Calculate required height: */
+                int iHeight = pElement->minimumHeightHint();
+                if (   !inGroup.isEmpty()
+                    && inGroup.last() == enmElementType)
+                {
+                    if (!pElement->isAnimationRunning() && !pElement->isClosed())
+                        iHeight += iAdditionalGroupHeight;
+                    else
+                        iVerticalIndent += iAdditionalGroupHeight;
+                }
+                /* Resize element to required height (separately from width): */
+                if (pElement->geometry().height() != iHeight)
+                    pElement->resize(pElement->geometry().width(), iHeight);
+
+                /* Layout element content: */
+                pItem->updateLayout();
+                /* Advance indent: */
+                iVerticalIndent += (iHeight + iSpacing);
+
+                break;
+            }
+            case DetailsElementType_Preview:
+            {
+                /* Move element: */
+                pElement->setPos(iMaximumWidth - iPreviewWidth, iMargin);
+
+                /* Calculate required size: */
+                int iWidth = iPreviewWidth;
+                int iHeight = iPreviewHeight;
+                if (!pElement->isAnimationRunning() && !pElement->isClosed())
+                    iHeight += iAdditionalPreviewHeight;
+                /* Resize element to required size: */
+                pElement->resize(iWidth, iHeight);
+
+                /* Layout element content: */
+                pItem->updateLayout();
+
+                break;
+            }
+            default: AssertFailed(); break; /* Shut up, MSC! */
+        }
+    }
+}
+
 void UIDetailsSet::sltBuildStep(const QUuid &uStepId, int iStepNumber)
 {
     /* Cleanup build-step: */
@@ -331,103 +428,6 @@ UIDetailsElement *UIDetailsSet::element(DetailsElementType enmElementType) const
     if (pItem)
         return pItem->toElement();
     return 0;
-}
-
-void UIDetailsSet::updateLayout()
-{
-    /* Prepare variables: */
-    const int iMargin = data(SetData_Margin).toInt();
-    const int iSpacing = data(SetData_Spacing).toInt();
-    const int iMaximumWidth = geometry().width();
-    const UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
-    const int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
-    const int iPreviewHeight = pPreviewElement ? pPreviewElement->minimumHeightHint() : 0;
-    int iVerticalIndent = iMargin;
-
-    /* Calculate Preview group elements: */
-    QList<DetailsElementType> inGroup;
-    QList<DetailsElementType> outGroup;
-    int iAdditionalGroupHeight = 0;
-    int iAdditionalPreviewHeight = 0;
-    enumerateLayoutItems(inGroup, outGroup, iAdditionalGroupHeight, iAdditionalPreviewHeight);
-
-    /* Layout all the elements: */
-    foreach (UIDetailsItem *pItem, items())
-    {
-        /* Skip hidden: */
-        if (!pItem->isVisible())
-            continue;
-
-        /* For each particular element: */
-        UIDetailsElement *pElement = pItem->toElement();
-        const DetailsElementType enmElementType = pElement->elementType();
-        switch (enmElementType)
-        {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
-            {
-                /* Move element: */
-                pElement->setPos(0, iVerticalIndent);
-
-                /* Calculate required width: */
-                int iWidth = iMaximumWidth;
-                if (inGroup.contains(enmElementType))
-                    iWidth -= (iSpacing + iPreviewWidth);
-                /* Resize element to required width (separately from height): */
-                if (pElement->geometry().width() != iWidth)
-                    pElement->resize(iWidth, pElement->geometry().height());
-
-                /* Calculate required height: */
-                int iHeight = pElement->minimumHeightHint();
-                if (   !inGroup.isEmpty()
-                    && inGroup.last() == enmElementType)
-                {
-                    if (!pElement->isAnimationRunning() && !pElement->isClosed())
-                        iHeight += iAdditionalGroupHeight;
-                    else
-                        iVerticalIndent += iAdditionalGroupHeight;
-                }
-                /* Resize element to required height (separately from width): */
-                if (pElement->geometry().height() != iHeight)
-                    pElement->resize(pElement->geometry().width(), iHeight);
-
-                /* Layout element content: */
-                pItem->updateLayout();
-                /* Advance indent: */
-                iVerticalIndent += (iHeight + iSpacing);
-
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                /* Move element: */
-                pElement->setPos(iMaximumWidth - iPreviewWidth, iMargin);
-
-                /* Calculate required size: */
-                int iWidth = iPreviewWidth;
-                int iHeight = iPreviewHeight;
-                if (!pElement->isAnimationRunning() && !pElement->isClosed())
-                    iHeight += iAdditionalPreviewHeight;
-                /* Resize element to required size: */
-                pElement->resize(iWidth, iHeight);
-
-                /* Layout element content: */
-                pItem->updateLayout();
-
-                break;
-            }
-            default: AssertFailed(); break; /* Shut up, MSC! */
-        }
-    }
 }
 
 int UIDetailsSet::minimumWidthHint() const
