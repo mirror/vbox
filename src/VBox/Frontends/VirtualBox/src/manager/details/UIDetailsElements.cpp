@@ -138,6 +138,23 @@ UIDetailsElementPreview::UIDetailsElementPreview(UIDetailsSet *pParent, bool fOp
     retranslateUi();
 }
 
+void UIDetailsElementPreview::updateLayout()
+{
+    /* Call to base-class: */
+    UIDetailsElement::updateLayout();
+
+    /* Show/hide preview: */
+    if (isClosed() && m_pPreview->isVisible())
+        m_pPreview->hide();
+    if (isOpened() && !m_pPreview->isVisible() && !isAnimationRunning())
+        m_pPreview->show();
+
+    /* And update preview layout itself: */
+    const int iMargin = data(ElementData_Margin).toInt();
+    m_pPreview->setPos(iMargin, 2 * iMargin + minimumHeaderHeight());
+    m_pPreview->resize(m_pPreview->minimumSizeHint());
+}
+
 void UIDetailsElementPreview::sltPreviewSizeHintChanged()
 {
     /* Recursively update size-hints: */
@@ -199,23 +216,6 @@ int UIDetailsElementPreview::minimumHeightHintForElement(bool fClosed) const
 
     /* Return result: */
     return iProposedHeight;
-}
-
-void UIDetailsElementPreview::updateLayout()
-{
-    /* Call to base-class: */
-    UIDetailsElement::updateLayout();
-
-    /* Show/hide preview: */
-    if (isClosed() && m_pPreview->isVisible())
-        m_pPreview->hide();
-    if (isOpened() && !m_pPreview->isVisible() && !isAnimationRunning())
-        m_pPreview->show();
-
-    /* And update preview layout itself: */
-    const int iMargin = data(ElementData_Margin).toInt();
-    m_pPreview->setPos(iMargin, 2 * iMargin + minimumHeaderHeight());
-    m_pPreview->resize(m_pPreview->minimumSizeHint());
 }
 
 void UIDetailsElementPreview::updateAppearance()

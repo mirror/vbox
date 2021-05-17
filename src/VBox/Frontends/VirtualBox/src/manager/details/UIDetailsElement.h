@@ -111,6 +111,9 @@ public:
 
     /** @name Layout stuff.
       * @{ */
+        /** Updates layout. */
+        virtual void updateLayout() /* override */;
+
         /** Returns minimum width-hint. */
         virtual int minimumWidthHint() const /* override */;
         /** Returns minimum height-hint. */
@@ -196,9 +199,6 @@ protected:
 
     /** @name Layout stuff.
       * @{ */
-        /** Updates layout. */
-        virtual void updateLayout() /* override */;
-
         /** Returns minimum width-hint for @a fClosed element. */
         virtual int minimumHeightHintForElement(bool fClosed) const;
 

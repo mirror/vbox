@@ -90,6 +90,9 @@ public:
       * @param fOpened brings whether the details-element should be opened. */
     UIDetailsElementPreview(UIDetailsSet *pParent, bool fOpened);
 
+    /** Updates layout. */
+    virtual void updateLayout() /* override */;
+
 private slots:
 
     /** Handles preview size-hint changes. */
@@ -106,8 +109,6 @@ private:
       * @param fClosed allows to specify whether the hint should
       *                be calculated for the closed element. */
     int minimumHeightHintForElement(bool fClosed) const;
-    /** Updates layout. */
-    void updateLayout();
 
     /** Updates appearance. */
     void updateAppearance();

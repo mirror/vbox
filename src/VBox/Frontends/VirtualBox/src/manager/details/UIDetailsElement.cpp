@@ -203,6 +203,42 @@ void UIDetailsElement::updateAppearance()
 #endif
 }
 
+void UIDetailsElement::updateLayout()
+{
+    /* Prepare variables: */
+    QSize size = geometry().size().toSize();
+    int iMargin = data(ElementData_Margin).toInt();
+
+    /* Layout button: */
+    int iButtonWidth = m_buttonSize.width();
+    int iButtonHeight = m_buttonSize.height();
+    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
+    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
+                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
+    m_pButton->setPos(iButtonX, iButtonY);
+
+    /* If closed: */
+    if (isClosed())
+    {
+        /* Hide text-pane if still visible: */
+        if (m_pTextPane->isVisible())
+            m_pTextPane->hide();
+    }
+    /* If opened: */
+    else
+    {
+        /* Layout text-pane: */
+        int iTextPaneX = 2 * iMargin;
+        int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
+        m_pTextPane->setPos(iTextPaneX, iTextPaneY);
+        m_pTextPane->resize(size.width() - 4 * iMargin,
+                            size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
+        /* Show text-pane if still invisible and animation finished: */
+        if (!m_pTextPane->isVisible() && !isAnimationRunning())
+            m_pTextPane->show();
+    }
+}
+
 int UIDetailsElement::minimumWidthHint() const
 {
     /* Prepare variables: */
@@ -384,42 +420,6 @@ bool UIDetailsElement::hasItems(UIDetailsItemType) const
 void UIDetailsElement::clearItems(UIDetailsItemType)
 {
     AssertMsgFailed(("Details element do NOT support children!"));
-}
-
-void UIDetailsElement::updateLayout()
-{
-    /* Prepare variables: */
-    QSize size = geometry().size().toSize();
-    int iMargin = data(ElementData_Margin).toInt();
-
-    /* Layout button: */
-    int iButtonWidth = m_buttonSize.width();
-    int iButtonHeight = m_buttonSize.height();
-    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
-    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
-                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
-    m_pButton->setPos(iButtonX, iButtonY);
-
-    /* If closed: */
-    if (isClosed())
-    {
-        /* Hide text-pane if still visible: */
-        if (m_pTextPane->isVisible())
-            m_pTextPane->hide();
-    }
-    /* If opened: */
-    else
-    {
-        /* Layout text-pane: */
-        int iTextPaneX = 2 * iMargin;
-        int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
-        m_pTextPane->setPos(iTextPaneX, iTextPaneY);
-        m_pTextPane->resize(size.width() - 4 * iMargin,
-                            size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
-        /* Show text-pane if still invisible and animation finished: */
-        if (!m_pTextPane->isVisible() && !isAnimationRunning())
-            m_pTextPane->show();
-    }
 }
 
 int UIDetailsElement::minimumHeightHintForElement(bool fClosed) const
