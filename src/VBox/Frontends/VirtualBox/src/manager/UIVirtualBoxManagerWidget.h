@@ -279,10 +279,10 @@ private slots:
         /** Handles signal about Tools-pane index change. */
         void sltHandleToolsPaneIndexChange();
 
-        /** Handles signal requesting switch to Performance pane of machine with @a uMachineId. */
-        void sltSwitchToMachinePerformancePane(const QUuid &uMachineId);
+        /** Handles signal requesting switch to Activity pane of machine with @a uMachineId. */
+        void sltSwitchToMachineActivityPane(const QUuid &uMachineId);
         /** Handles signal requesting switch to Resources pane. */
-        void sltSwitchToResourcesPane();
+        void sltSwitchToActivityOverviewPane();
     /** @} */
 
 private:

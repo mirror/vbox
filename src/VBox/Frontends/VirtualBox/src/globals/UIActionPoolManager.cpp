@@ -3445,15 +3445,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Switch to Machine Performance' action class. */
-class UIActionMenuManagerVMActivityOverviewSwitchToMachinePerformance : public UIActionSimple
+/** Simple action extension, used as 'Switch to Machine Activity' action class. */
+class UIActionMenuManagerVMActivityOverviewSwitchToMachineActivity : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuManagerVMActivityOverviewSwitchToMachinePerformance(UIActionPool *pParent)
+    UIActionMenuManagerVMActivityOverviewSwitchToMachineActivity(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/resources_monitor_jump_to_vm_32px.png",          ":/resources_monitor_jump_to_vm_16px.png",
                          ":/resources_monitor_jump_to_vm_disabled_32px.png", ":/resources_monitor_jump_to_vm_disabled_16px.png")
@@ -3466,7 +3466,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("VMActivityOverviewSwitchToMachinePerformance");
+        return QString("VMActivityOverviewSwitchToMachineActivity");
     }
 
     /** Handles translation event. */
@@ -3651,7 +3651,7 @@ void UIActionPoolManager::preparePool()
     /* VM Activity Overview actions: */
     m_pool[UIActionIndexMN_M_VMActivityOverview] = new UIActionMenuVMActivityOverview(this);
     m_pool[UIActionIndexMN_M_VMActivityOverview_M_Columns] = new UIActionMenuManagerVMActivityOverviewColumns(this);
-    m_pool[UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance] = new UIActionMenuManagerVMActivityOverviewSwitchToMachinePerformance(this);
+    m_pool[UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachineActivity] = new UIActionMenuManagerVMActivityOverviewSwitchToMachineActivity(this);
 
     /* 'File' action groups: */
     m_groupPool[UIActionIndexMN_M_File_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_File_M_Tools));
@@ -4495,7 +4495,7 @@ void UIActionPoolManager::updateMenuVMActivityOverviewWrapper(UIMenu *pMenu)
     /* Clear contents: */
     pMenu->clear();
     addAction(pMenu, action(UIActionIndexMN_M_VMActivityOverview_M_Columns));
-    addAction(pMenu, action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance));
+    addAction(pMenu, action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachineActivity));
 }
 
 void UIActionPoolManager::updateMenuSnapshot()

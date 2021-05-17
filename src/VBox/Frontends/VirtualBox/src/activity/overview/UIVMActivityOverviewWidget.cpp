@@ -1540,7 +1540,7 @@ void UIVMActivityOverviewWidget::prepareActions()
 {
     updateColumnsMenu();
     m_pVMActivityMonitorAction =
-        m_pActionPool->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance);
+        m_pActionPool->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachineActivity);
 
     if (m_pVMActivityMonitorAction)
         connect(m_pVMActivityMonitorAction, &QAction::triggered, this, &UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor);
@@ -1676,7 +1676,7 @@ void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
     const QUuid uMachineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
     if (uMachineId.isNull())
         return;
-    emit sigSwitchToMachinePerformancePane(uMachineId);
+    emit sigSwitchToMachineActivityPane(uMachineId);
 }
 
 void UIVMActivityOverviewWidget::sltNotRunningVMVisibility(bool fShow)

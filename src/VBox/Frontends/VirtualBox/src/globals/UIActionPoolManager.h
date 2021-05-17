@@ -192,7 +192,7 @@ enum UIActionIndexMN
     /* VM VM Activity Overview actions: */
     UIActionIndexMN_M_VMActivityOverview,
     UIActionIndexMN_M_VMActivityOverview_M_Columns,
-    UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance,
+    UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachineActivity,
 
     /* Maximum index: */
     UIActionIndexMN_Max

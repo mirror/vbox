@@ -61,8 +61,8 @@ signals:
     /** Notifies listeners about current Snapshot pane item change. */
     void sigCurrentSnapshotItemChange();
 
-    /** Notifies listeners about request to switch to Resources pane. */
-    void sigSwitchToResourcesPane();
+    /** Notifies listeners about request to switch to Activity Overview pane. */
+    void sigSwitchToActivityOverviewPane();
 
 public:
 

@@ -44,7 +44,7 @@ class UIVMActivityToolWidget : public QIWithRetranslateUI<QTabWidget>
 
 signals:
 
-    void sigSwitchToResourcesPane();
+    void sigSwitchToActivityOverviewPane();
 
 public:
 

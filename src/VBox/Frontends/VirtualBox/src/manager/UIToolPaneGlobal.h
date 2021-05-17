@@ -49,8 +49,8 @@ class UIToolPaneGlobal : public QWidget
 
 signals:
 
-    /** Notifies listeners about request to switch to Performance pane of machine with @a uMachineId. */
-    void sigSwitchToMachinePerformancePane(const QUuid &uMachineId);
+    /** Notifies listeners about request to switch to Activity pane of machine with @a uMachineId. */
+    void sigSwitchToMachineActivityPane(const QUuid &uMachineId);
 
 public:
 

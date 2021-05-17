@@ -531,7 +531,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
     }
 }
 
-void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &uMachineId)
+void UIVirtualBoxManagerWidget::sltSwitchToMachineActivityPane(const QUuid &uMachineId)
 {
     AssertPtrReturnVoid(m_pPaneChooser);
     AssertPtrReturnVoid(m_pPaneTools);
@@ -539,7 +539,7 @@ void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &u
     m_pPaneTools->setToolsType(UIToolType_VMActivity);
 }
 
-void UIVirtualBoxManagerWidget::sltSwitchToResourcesPane()
+void UIVirtualBoxManagerWidget::sltSwitchToActivityOverviewPane()
 {
     AssertPtrReturnVoid(m_pPaneChooser);
     AssertPtrReturnVoid(m_pPaneTools);
@@ -642,8 +642,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         {
                             if (m_pPaneChooser->isGlobalItemSelected())
                                 m_pPaneToolsGlobal->setActive(true);
-                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane,
-                                    this, &UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane);
+                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchToMachineActivityPane,
+                                    this, &UIVirtualBoxManagerWidget::sltSwitchToMachineActivityPane);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsGlobal);
@@ -657,8 +657,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                                 m_pPaneToolsMachine->setActive(true);
                             connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigCurrentSnapshotItemChange,
                                     this, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange);
-                            connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigSwitchToResourcesPane,
-                                    this, &UIVirtualBoxManagerWidget::sltSwitchToResourcesPane);
+                            connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigSwitchToActivityOverviewPane,
+                                    this, &UIVirtualBoxManagerWidget::sltSwitchToActivityOverviewPane);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsMachine);
@@ -872,7 +872,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 case UIToolType_VMActivityOverview:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_M_Columns));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachineActivity));
                     QToolButton *pButton =
                         qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_M_Columns)));
                     if (pButton)

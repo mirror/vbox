@@ -215,8 +215,8 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneVMActivityOverview->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
-                    connect(m_pPaneVMActivityOverview, &UIVMActivityOverviewWidget::sigSwitchToMachinePerformancePane,
-                            this, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane);
+                    connect(m_pPaneVMActivityOverview, &UIVMActivityOverviewWidget::sigSwitchToMachineActivityPane,
+                            this, &UIToolPaneGlobal::sigSwitchToMachineActivityPane);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneVMActivityOverview);

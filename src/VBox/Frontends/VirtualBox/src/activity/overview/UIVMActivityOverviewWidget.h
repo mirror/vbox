@@ -51,7 +51,7 @@ class UIVMActivityOverviewWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigSwitchToMachinePerformancePane(const QUuid &uMachineId);
+    void sigSwitchToMachineActivityPane(const QUuid &uMachineId);
 
 public:
 

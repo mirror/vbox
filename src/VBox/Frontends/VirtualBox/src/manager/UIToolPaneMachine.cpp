@@ -207,8 +207,8 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 m_pLayout->addWidget(m_pPaneVMActivityMonitor);
                 m_pLayout->setCurrentWidget(m_pPaneVMActivityMonitor);
 
-                connect(m_pPaneVMActivityMonitor, &UIVMActivityToolWidget::sigSwitchToResourcesPane,
-                        this, &UIToolPaneMachine::sigSwitchToResourcesPane);
+                connect(m_pPaneVMActivityMonitor, &UIVMActivityToolWidget::sigSwitchToActivityOverviewPane,
+                        this, &UIToolPaneMachine::sigSwitchToActivityOverviewPane);
                 break;
             }
             default:
