@@ -179,19 +179,6 @@ private:
         UIDetailsElement *createElement(DetailsElementType enmElementType, bool fOpen);
     /** @} */
 
-    /** @name Layout stuff.
-      * @{ */
-        /** Enumerates item being placed into layout.
-          * @param  inGroup   Will contain a list of items in preview group.
-          * @param  outGroup  Will contain a list of items ouside of preview group.
-          * @param  iAdditionalGroupHeight    Will have additional group height.
-          * @param  iAdditionalPreviewHeight  Will have additional preview height. */
-        void enumerateLayoutItems(QList<DetailsElementType> &inGroup,
-                                  QList<DetailsElementType> &outGroup,
-                                  int &iAdditionalGroupHeight,
-                                  int &iAdditionalPreviewHeight) const;
-    /** @} */
-
     /** @name Painting stuff.
       * @{ */
         /** Paints background using specified @a pPainter and certain @a pOptions. */
@@ -231,6 +218,14 @@ private:
       * @{ */
         /** Holds the map of generated detail elements. */
         QMap<int, UIDetailsItem*>  m_elements;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Holds the list of elements in the Preview group. */
+        QList<DetailsElementType>  m_listPreviewGroup;
+        /** Holds the list of elements in the Outside group. */
+        QList<DetailsElementType>  m_listOutsideGroup;
     /** @} */
 };
 
