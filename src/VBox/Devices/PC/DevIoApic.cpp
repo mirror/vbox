@@ -264,6 +264,10 @@ typedef struct IOAPIC
     uint32_t                uIrr;
     /** The I/O APIC chipset type. */
     IOAPICTYPE              enmType;
+    /** The I/O APIC PCI address. */
+    PCIBDF                  uPciAddress;
+    /** Padding. */
+    uint32_t                uPadding0;
 
 #ifndef IOAPIC_WITH_PDM_CRITSECT
     /** The critsect for updating to the RTEs. */
@@ -615,7 +619,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
     ioapicGetMsiFromRte(u64Rte, pThis->enmType, &MsiIn);
 
     MSIMSG MsiOut;
-    int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
+    int const rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, pThis->uPciAddress, &MsiIn, &MsiOut);
     if (   rcRemap == VERR_IOMMU_NOT_PRESENT
         || rcRemap == VERR_IOMMU_CANNOT_CALL_SELF)
     { /* likely - assuming majority of VMs don't have IOMMU configured. */ }
@@ -1514,7 +1518,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|ChipType", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|ChipType|PCIAddress", "");
 
     /* The number of CPUs is currently unused, but left in CFGM and saved-state in case an ID of 0
        upsets some guest which we haven't yet been tested. */
@@ -1528,6 +1532,10 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ChipType", &szChipType[0], sizeof(szChipType), "ICH9");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query string value \"ChipType\""));
+
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "PCIAddress", &pThis->uPciAddress, NIL_PCIBDF);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query 32-bit integer \"PCIAddress\""));
 
     if (!strcmp(szChipType, "ICH9"))
     {

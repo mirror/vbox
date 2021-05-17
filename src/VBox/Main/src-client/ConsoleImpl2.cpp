@@ -831,6 +831,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     hrc = pMachine->COMGETTER(ParavirtDebug)(strParavirtDebug.asOutParam());                H();
 
     BOOL fIOAPIC;
+    uint32_t uIoApicPciAddress = NIL_PCIBDF;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
 
     ChipsetType_T chipsetType;
@@ -867,7 +868,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     if (iommuType == IommuType_AMD)
     {
-#ifndef VBOX_WITH_IOMMU_AMD
+#ifdef VBOX_WITH_IOMMU_AMD
+        /*
+         * Reserve the specific PCI address of the "SB I/O APIC" when using
+         * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
+         */
+        uIoApicPciAddress = VBOX_PCI_BDF_SB_IOAPIC;
+#else
         LogRel(("WARNING! AMD IOMMU not supported, IOMMU disabled.\n"));
         iommuType = IommuType_None;
 #endif
@@ -875,7 +882,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     if (iommuType == IommuType_Intel)
     {
-#ifndef VBOX_WITH_IOMMU_INTEL
+#ifdef VBOX_WITH_IOMMU_INTEL
+        /*
+         * Reserve a unique PCI address for the I/O APIC when using
+         * an Intel IOMMU. For convenience we use the same address as
+         * we do on AMD, see @bugref{9967#c13}.
+         */
+        uIoApicPciAddress = VBOX_PCI_BDF_SB_IOAPIC;
+#else
         LogRel(("WARNING! Intel IOMMU not supported, IOMMU disabled.\n"));
         iommuType = IommuType_None;
 #endif
@@ -1599,11 +1613,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                         H();
 
-                /*
-                 * Reserve the specific PCI address of the "SB I/O APIC" when using
-                 * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
-                 */
-                PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
+                PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
             else if (iommuType == IommuType_Intel)
@@ -1615,12 +1625,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 hrc = pBusMgr->assignPCIDevice("iommu-intel", pInst);                       H();
 
-                /*
-                 * Reserve a specific PCI address for the I/O APIC when using
-                 * an Intel IOMMU. For convenience we use the same address as
-                 * we do on AMD, see @bugref{9967#c13}.
-                 */
-                PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
+                PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
         }
@@ -1768,7 +1773,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
                 if (iommuType == IommuType_Intel)
+                {
                     InsertConfigString(pCfg, "ChipType", "DMAR");
+                    InsertConfigInteger(pCfg, "PCIAddress", uIoApicPciAddress);
+                }
+                else if (iommuType == IommuType_AMD)
+                    InsertConfigInteger(pCfg, "PCIAddress", uIoApicPciAddress);
             }
         }
 
