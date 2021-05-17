@@ -409,7 +409,12 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
         const char *pszRet = pszDef;
         if (   strcmp(pDrvReg->szName, "AUDIO") == 0
             && strcmp(pszName, "DebugPathOut") == 0)
-            pszRet = g_pszDrvAudioDebug;
+        {
+            /* Don't set pszRet to NULL if g_pszDrvAudioDebug is not set (via "--debug-audio-path");
+             * instead, just return the default assigned from above. */
+            if (g_pszDrvAudioDebug)
+                pszRet = g_pszDrvAudioDebug;
+        }
 
         AssertPtrReturn(pszRet, VERR_INVALID_POINTER);
 
