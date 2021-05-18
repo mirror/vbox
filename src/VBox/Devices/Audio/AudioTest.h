@@ -157,24 +157,45 @@ typedef struct AUDIOTESTPARMS
 /** Pointer to a test parameter structure. */
 typedef AUDIOTESTPARMS *PAUDIOTESTPARMS;
 
+/**
+ * Enumeration for an audio test object type.
+ */
 typedef enum AUDIOTESTOBJTYPE
 {
+    /** Unknown / invalid, do not use. */
     AUDIOTESTOBJTYPE_UNKNOWN = 0,
+    /** The test object is a file. */
     AUDIOTESTOBJTYPE_FILE,
     /** The usual 32-bit hack. */
     AUDIOTESTOBJTYPE_32BIT_HACK = 0x7fffffff
 } AUDIOTESTOBJTYPE;
 
+/**
+ * Structure for keeping an audio test object file.
+ */
 typedef struct AUDIOTESTOBJFILE
 {
     RTFILE hFile;
 } AUDIOTESTOBJFILE;
+/** Pointer to an audio test object file. */
+typedef AUDIOTESTOBJFILE *PAUDIOTESTOBJFILE;
 
+/**
+ * Structure for keeping a single audio test object.
+ *
+ * A test object is data which is needed in order to perform and verify one or
+ * more audio test case(s).
+ */
 typedef struct AUDIOTESTOBJ
 {
+    /** List node. */
     RTLISTNODE           Node;
+    /** Name of the test object.
+     *  Must not contain a path and has to be able to serialize to disk. */
     char                 szName[64];
+    /** The object type. */
     AUDIOTESTOBJTYPE     enmType;
+    /** Union for holding the object type-specific data. */
     union
     {
         AUDIOTESTOBJFILE File;
@@ -182,6 +203,20 @@ typedef struct AUDIOTESTOBJ
 } AUDIOTESTOBJ;
 /** Pointer to an audio test object. */
 typedef AUDIOTESTOBJ *PAUDIOTESTOBJ;
+
+struct AUDIOTESTSET;
+
+typedef struct AUDIOTESTENTRY
+{
+    /** List node. */
+    RTLISTNODE           Node;
+    AUDIOTESTSET        *pParent;
+    char                 szDesc[64];
+    AUDIOTESTPARMS       Parms;
+    int                  rc;
+} AUDIOTESTENTRY;
+/** Pointer to an audio test entry. */
+typedef AUDIOTESTENTRY *PAUDIOTESTENTRY;
 
 /**
  * Structure specifying an audio test set.
@@ -199,8 +234,21 @@ typedef struct AUDIOTESTSET
         RTFILE       hFile;
         RTINIFILE    hIniFile;
     } f;
+    /** Number of test objects in lstObj. */
     uint32_t         cObj;
+    /** List containing PAUDIOTESTOBJ test object entries. */
     RTLISTANCHOR     lstObj;
+    /** Number of performed tests.
+     *  Not necessarily bound to the test object entries above. */
+    uint32_t         cTests;
+    /** Absolute offset (in bytes) where to write the "test_count" value later. */
+    uint64_t         offTestCount;
+    /** List containing PAUDIOTESTENTRY test entries. */
+    RTLISTANCHOR     lstTest;
+    /** Number of tests currently running. */
+    uint32_t         cTestsRunning;
+    /** Number of total (test) failures. */
+    uint32_t         cTotalFailures;
 } AUDIOTESTSET;
 /** Pointer to an audio test set. */
 typedef AUDIOTESTSET *PAUDIOTESTSET;
@@ -266,10 +314,14 @@ int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName,
 int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf);
 int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
 
+int    AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry);
+int    AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr);
+int    AudioTestSetTestDone(PAUDIOTESTENTRY pEntry);
+
 int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
 int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
 int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
-void   AudioTestSetClose(PAUDIOTESTSET pSet);
+int    AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetWipe(PAUDIOTESTSET pSet);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);

@@ -1214,7 +1214,7 @@ static int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDI
 
 
 /*********************************************************************************************************************************
-*   Implementation of Something                                                                                                  *
+*   Implementation of audio test environment handling                                                                            *
 *********************************************************************************************************************************/
 
 /**
@@ -1310,7 +1310,7 @@ static void audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms)
 
 
 /*********************************************************************************************************************************
-*   Some other stuff, you name it.                                                                                               *
+*   Device enumeration + handling.                                                                                               *
 *********************************************************************************************************************************/
 
 /**
@@ -1612,14 +1612,31 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
-        AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->TestTone.Props);
-        rc = audioTestCreateStreamDefaultOut(pTstEnv, pStream, &pTstParms->TestTone.Props);
+        PAUDIOTESTENTRY pTst;
+        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Playing test tone", pTstParms, &pTst);
         if (RT_SUCCESS(rc))
-            rc = audioTestPlayTone(pTstEnv, pStream, &pTstParms->TestTone);
+        {
+            AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->TestTone.Props);
+            rc = audioTestCreateStreamDefaultOut(pTstEnv, pStream, &pTstParms->TestTone.Props);
+            if (RT_SUCCESS(rc))
+            {
+                rc = audioTestPlayTone(pTstEnv, pStream, &pTstParms->TestTone);
+            }
 
-        int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+            int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+
+            if (RT_SUCCESS(rc))
+            {
+               AudioTestSetTestDone(pTst);
+            }
+            else
+                AudioTestSetTestFailed(pTst, rc, "Playing test tone failed");
+        }
+
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "Playing tone failed\n");
     }
 
     return rc;
@@ -1888,10 +1905,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         if (RT_SUCCESS(rc))
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
 
+#ifndef DEBUG_andy
         /* Clean up. */
         int rc2 = AudioTestSetWipe(&TstEnv.Set);
         AssertRC(rc2); /* Annoying, but not test-critical. */
-
+#endif
         audioTestEnvDestroy(&TstEnv);
     }
 
