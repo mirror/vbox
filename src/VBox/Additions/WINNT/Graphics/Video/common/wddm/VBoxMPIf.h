@@ -565,8 +565,11 @@ typedef struct VBOXDISPIFESCAPE_GAFENCEUNREF
     uint32_t u32FenceHandle;
 } VBOXDISPIFESCAPE_GAFENCEUNREF;
 
-#include <VBoxGaHWInfo.h>
 #endif /* VBOX_WITH_MESA3D */
+
+#if defined(VBOX_WITH_MESA3D) || defined(VBOX_WITH_VMSVGA3D_DX)
+#include <VBoxGaHWInfo.h>
+#endif
 
 #define VBOXWDDM_QAI_CAP_3D     0x00000001 /* 3D is enabled in the VM settings. */
 #define VBOXWDDM_QAI_CAP_DXVA   0x00000002 /* DXVA is not disabled in the guest registry. */
@@ -590,7 +593,7 @@ typedef struct VBOXWDDM_QAI
             /* VBOXVIDEO_HWTYPE_VBOX */
             uint32_t    u32VBox3DCaps;   /* CR_VBOX_CAP_* */
         } vbox;
-#ifdef VBOX_WITH_MESA3D
+#if defined(VBOX_WITH_MESA3D) || defined(VBOX_WITH_VMSVGA3D_DX)
         struct
         {
             /* VBOXVIDEO_HWTYPE_VMSVGA */
