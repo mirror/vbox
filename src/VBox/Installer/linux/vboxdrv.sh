@@ -305,6 +305,17 @@ module_available()
     echo "1"
 }
 
+# Check if required modules are installed in the system and versions match.
+setup_complete()
+{
+    [ "$(module_available vboxdrv)"    = "1" ] || return
+    [ "$(module_available vboxnetflt)" = "1" ] || return
+    [ "$(module_available vboxnetadp)" = "1" ] || return
+
+    # All modules are in place.
+    echo "1"
+}
+
 start()
 {
     begin_msg "Starting VirtualBox services" console
@@ -320,15 +331,16 @@ start()
 See the documenatation for your Linux distribution." console
         fi
     fi
+
+    # Check if system already has matching modules installed.
+    [ "$(setup_complete)" = "1" ] || setup
+
     if ! running vboxdrv; then
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
         fi
         if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
-            setup
-            if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
-                failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
-            fi
+            failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
         fi
         sleep .2
     fi
