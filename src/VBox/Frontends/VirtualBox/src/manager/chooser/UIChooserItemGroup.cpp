@@ -1655,6 +1655,10 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     if (isRoot())
         return;
 
+    /* Only selected item should have a frame: */
+    if (!model()->selectedItems().contains(this))
+        return;
+
     /* Save painter: */
     pPainter->save();
 
@@ -1679,6 +1683,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
         topRect.setBottom(topRect.top() + iFullHeaderHeight - 1);
 
     /* Draw borders: */
+    pPainter->drawLine(rectangle.topLeft(), rectangle.topRight());
     if (node()->hasNodes() && nodeToGroupType()->isOpened())
         pPainter->drawLine(topRect.bottomLeft() + QPoint(iParentIndent, 0), topRect.bottomRight() + QPoint(1, 0));
     else
@@ -1702,10 +1707,29 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     const int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
 
-    /* Configure painter color: */
-    pPainter->setPen(QApplication::palette().color(QPalette::Active,
-                                                   model()->selectedItems().contains(this) ?
-                                                   QPalette::HighlightedText : QPalette::ButtonText));
+    /* Selected item foreground: */
+    if (model()->selectedItems().contains(this))
+    {
+        /* Prepare palette: */
+        const QPalette pal = QApplication::palette();
+
+        /* Get background color: */
+        const QColor background = pal.color(QPalette::Active, QPalette::Highlight).darker(headerDarkness());
+
+        /* Get foreground color: */
+        const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
+        const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
+        const QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
+        const QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+
+        /* Gather foreground color for background one: */
+        double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
+        //printf("luminance = %f\n", dLuminance);
+        if (dLuminance > 0.5)
+            pPainter->setPen(darkText);
+        else
+            pPainter->setPen(lightText);
+    }
 
     /* Paint name: */
     int iNameX = iMarginHL;
