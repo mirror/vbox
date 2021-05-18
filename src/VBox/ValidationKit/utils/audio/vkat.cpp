@@ -1066,7 +1066,7 @@ static int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUD
             }
             if (enmState != PDMAUDIOSTREAMSTATE_INACTIVE)
             {
-                RTTestFailed(g_hTest, "Stream state not INACTIVE after draing: %s", PDMAudioStreamStateGetName(enmState));
+                RTTestFailed(g_hTest, "Stream state not INACTIVE after draining: %s", PDMAudioStreamStateGetName(enmState));
                 rc = VERR_AUDIO_STREAM_NOT_READY;
             }
         }
@@ -1107,7 +1107,7 @@ static int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUD
             }
             if (enmHostState != PDMHOSTAUDIOSTREAMSTATE_OKAY)
             {
-                RTTestFailed(g_hTest, "Stream state not OKAY after draing: %s", PDMHostAudioStreamStateGetName(enmHostState));
+                RTTestFailed(g_hTest, "Stream state not OKAY after draining: %s", PDMHostAudioStreamStateGetName(enmHostState));
                 rc = VERR_AUDIO_STREAM_NOT_READY;
             }
         }
@@ -1588,8 +1588,11 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
 {
     RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
 
+    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE;
+
     PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
+    pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
 #ifdef DEBUG_andy
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 1);
 #endif
