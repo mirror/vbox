@@ -26,11 +26,11 @@
 /** @todo Some stuff here can be private-only to the implementation. */
 
 /** Maximum length in characters an audio test tag can have. */
-#define AUDIOTEST_TAG_MAX          64
+#define AUDIOTEST_TAG_MAX               64
 /** Maximum length in characters a single audio test error description can have. */
-#define AUDIOTEST_ERROR_DESC_MAX   128
+#define AUDIOTEST_ERROR_DESC_MAX        128
 /** Prefix for audio test (set) directories. */
-#define AUDIOTEST_PATH_PREFIX_STR "vkat"
+#define AUDIOTEST_PATH_PREFIX_STR       "vkat"
 
 /**
  * Enumeration for an audio test tone (wave) type.
@@ -323,6 +323,7 @@ int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
 int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 int    AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetWipe(PAUDIOTESTSET pSet);
+bool   AudioTestSetIsPacked(const char *pszPath);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 int    AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc);

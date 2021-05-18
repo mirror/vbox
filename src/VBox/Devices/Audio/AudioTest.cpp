@@ -54,6 +54,9 @@
 #define AUDIOTEST_MANIFEST_FILE_STR "vkat_manifest.ini"
 /** The current test manifest version. */
 #define AUDIOTEST_MANIFEST_VER      1
+/** Audio test archive default suffix.
+ *  According to IPRT terminology this always contains the dot. */
+#define AUDIOTEST_ARCHIVE_SUFF_STR  ".tar.gz"
 
 /** Test manifest header name. */
 #define AUDIOTEST_INI_SEC_HDR_STR   "header"
@@ -778,17 +781,17 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
     if (!pSet)
         return VINF_SUCCESS;
 
+    if (!RTFileIsValid(pSet->f.hFile))
+        return VINF_SUCCESS;
+
     /* Update number of ran tests. */
     int rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cTests);
     AssertRCReturn(rc, rc);
 
-    if (RTFileIsValid(pSet->f.hFile))
-    {
-        RTFileClose(pSet->f.hFile);
-        pSet->f.hFile = NIL_RTFILE;
-    }
+    RTFileClose(pSet->f.hFile);
+    pSet->f.hFile = NIL_RTFILE;
 
     return rc;
 }
@@ -1032,7 +1035,8 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
     char szOutName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 16];
-    if (RTStrPrintf2(szOutName, sizeof(szOutName), "%s-%s.tar.gz", AUDIOTEST_PATH_PREFIX_STR, pSet->szTag) <= 0)
+    if (RTStrPrintf2(szOutName, sizeof(szOutName), "%s-%s%s",
+                     AUDIOTEST_PATH_PREFIX_STR, pSet->szTag, AUDIOTEST_ARCHIVE_SUFF_STR) <= 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     char szOutPath[RTPATH_MAX];
@@ -1065,20 +1069,55 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
 }
 
 /**
+ * Returns whether a test set archive is packed (as .tar.gz by default) or
+ * a plain directory.
+ *
+ * @returns \c true if packed (as .tar.gz), or \c false if not (directory).
+ * @param   pszPath             Path to return packed staus for.
+ */
+bool AudioTestSetIsPacked(const char *pszPath)
+{
+    /** @todo Improve this, good enough for now. */
+    return (RTStrIStr(pszPath, AUDIOTEST_ARCHIVE_SUFF_STR) != NULL);
+}
+
+/**
  * Unpacks a formerly packed audio test set.
  *
  * @returns VBox status code.
- * @param   pszFile             Test set file to unpack.
+ * @param   pszFile             Test set file to unpack. Must contain the absolute path.
  * @param   pszOutDir           Directory where to unpack the test set into.
  *                              If the directory does not exist it will be created.
  */
 int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
 {
-    RT_NOREF(pszFile, pszOutDir);
+    AssertReturn(pszFile && pszOutDir, VERR_INVALID_PARAMETER);
 
-    // RTZipTarCmd()
+    int rc = VINF_SUCCESS;
 
-    return VERR_NOT_IMPLEMENTED;
+    if (!RTDirExists(pszOutDir))
+    {
+        rc = RTDirCreateFullPath(pszOutDir, 0755);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    const char *apszArgs[8];
+    unsigned    cArgs = 0;
+
+    apszArgs[cArgs++] = "AudioTest";
+    apszArgs[cArgs++] = "--extract";
+    apszArgs[cArgs++] = "--gunzip";
+    apszArgs[cArgs++] = "--directory";
+    apszArgs[cArgs++] = pszOutDir;
+    apszArgs[cArgs++] = "--file";
+    apszArgs[cArgs++] = pszFile;
+
+    RTEXITCODE rcExit = RTZipTarCmd(cArgs, (char **)apszArgs);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+
+    return rc;
 }
 
 /**

@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
+#include <iprt/dir.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
@@ -1941,10 +1942,46 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
  */
 static int audioVerifyOne(const char *pszPath, const char *pszTag)
 {
-    RTTestSubF(g_hTest, "Verifying test set (tag '%s') ...", pszTag ? pszTag : "default");
+    RTTestSubF(g_hTest, "Verifying test set ...");
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pszTag ? pszTag : "default");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Opening archive '%s'\n", pszPath);
+
+    int rc = VINF_SUCCESS;
+
+    char szPathExtracted[RTPATH_MAX];
+    const bool fPacked = AudioTestSetIsPacked(pszPath);
+    if (fPacked)
+    {
+        char szPathTemp[RTPATH_MAX];
+        rc = RTPathTemp(szPathTemp, sizeof(szPathTemp));
+        if (RT_SUCCESS(rc))
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using temporary directory '%s'\n", szPathTemp);
+
+            rc = RTPathJoin(szPathExtracted, sizeof(szPathExtracted), szPathTemp, "vkat-XXXX");
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTDirCreateTemp(szPathExtracted, 0755);
+                if (RT_SUCCESS(rc))
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unpacking archive to '%s'\n", szPathExtracted);
+                    rc = AudioTestSetUnpack(pszPath, szPathExtracted);
+                    if (RT_SUCCESS(rc))
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Archive successfully unpacked\n");
+                }
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "Unable to open / unpack test set archive: %Rrc", rc);
+        return rc;
+    }
 
     AUDIOTESTSET tstSet;
-    int rc = AudioTestSetOpen(&tstSet, pszPath);
+    rc = AudioTestSetOpen(&tstSet, fPacked ? szPathExtracted : pszPath);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTERRORDESC errDesc;
@@ -2026,8 +2063,10 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
         if (iTestSet == 0)
             RTTestBanner(g_hTest);
         char szDirCur[RTPATH_MAX];
-        rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
-        audioVerifyOne(RT_SUCCESS(rc) ? szDirCur : ".", pszTag);
+        int rc2 = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+        if (RT_FAILURE(rc2))
+            RTTestFailed(g_hTest, "Failed to retrieve current directory: %Rrc", rc2);
+        rc = audioVerifyOne(RT_SUCCESS(rc2) ? szDirCur : ".", pszTag);
     }
 
     /*
@@ -2278,12 +2317,12 @@ static struct
 {
     {
         "test",     audioTestMain,
-        "Does some kind of testing, I guess...",
+        "Runs audio tests and creates an audio test set.",
         g_aCmdTestOptions,      RT_ELEMENTS(g_aCmdTestOptions),     audioTestCmdTestHelp
     },
     {
         "verify",   audioVerifyMain,
-        "Verfies something, I guess...",
+        "Verifies a formerly created audio test set.",
         g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),   NULL,
     },
     {
