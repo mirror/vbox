@@ -1465,7 +1465,91 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 }
 
 /**
- * Creates an audio default output test stream.
+ * Creates an audio default input (recording) test stream.
+ * Convenience function.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for creating the stream.
+ * @param   pStream             Audio stream to create.
+ * @param   pProps              PCM properties to use for creation.
+ */
+static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
+{
+    PDMAUDIOSTREAMCFG Cfg;
+    int rc = PDMAudioStrmCfgInitWithProps(&Cfg, pProps);
+    AssertRC(rc); /* Cannot fail. */
+
+    Cfg.enmDir      = PDMAUDIODIR_IN;
+    Cfg.u.enmSrc    = PDMAUDIORECSRC_LINE; /* Note: HDA does not have a separate Mic-In enabled yet, so got for Line-In here. */
+    Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
+    Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
+    Cfg.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, 200);
+    Cfg.Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(pProps, 10);
+    Cfg.Device.cMsSchedulingHint    = 10;
+
+    return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
+}
+
+/**
+ * Records a test tone from a specific audio test stream.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for running the test.
+ * @param   pStream             Stream to use for recording the tone.
+ * @param   pParms              Tone parameters to use.
+ *
+ * @note    Blocking function.
+ */
+static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+{
+    const char *pcszPathOut = pTstEnv->Set.szPathAbs;
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (for %RU32ms)\n", pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
+
+    /** @todo Use .WAV here? */
+    PAUDIOTESTOBJ pObj;
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
+    AssertRCReturn(rc, rc);
+
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend);
+    if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
+    {
+        uint8_t  abBuf[_4K];
+
+        const uint64_t tsStartMs     = RTTimeMilliTS();
+        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Chose a random scheduling (in ms). */
+
+        do
+        {
+            uint32_t cbRead = 0;
+            rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCapture(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, abBuf, sizeof(abBuf), &cbRead);
+            if (RT_SUCCESS(rc))
+                rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
+
+            if (RT_FAILURE(rc))
+                break;
+
+            if (RTTimeMilliTS() - tsStartMs >= pParms->msDuration)
+                break;
+
+            RTThreadSleep(cSchedulingMs);
+
+        } while (RT_SUCCESS(rc));
+    }
+    else
+        rc = VERR_AUDIO_STREAM_NOT_READY;
+
+    int rc2 = AudioTestSetObjClose(pObj);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
+}
+
+/**
+ * Creates an audio default output (playback) test stream.
  * Convenience function.
  *
  * @returns VBox status code.
@@ -1656,6 +1740,78 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
     return VINF_SUCCESS;
 }
 
+/**
+ * @copydoc FNAUDIOTESTSETUP
+ */
+static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
+{
+    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
+
+    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE;
+
+    PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+
+    pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
+    pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
+    pTstParmsAcq->idxCurrent  = 0;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @copydoc FNAUDIOTESTEXEC
+ */
+static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms)
+{
+    RT_NOREF(pvCtx);
+
+    int rc = VINF_SUCCESS;
+
+    PAUDIOTESTSTREAM pStream = &pTstEnv->aStreams[0];
+
+    for (uint32_t i = 0; i < pTstParms->cIterations; i++)
+    {
+        PAUDIOTESTENTRY pTst;
+        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", pTstParms, &pTst);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo  For now we're (re-)creating the recording stream for each iteration. Change that to be random. */
+            rc = audioTestCreateStreamDefaultIn(pTstEnv, pStream, &pTstParms->TestTone.Props);
+            if (RT_SUCCESS(rc))
+            {
+                pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_10SEC); /** @todo Record even longer? */
+
+                rc = audioTestRecordTone(pTstEnv, pStream, &pTstParms->TestTone);
+            }
+
+            int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+
+            if (RT_SUCCESS(rc))
+            {
+               AudioTestSetTestDone(pTst);
+            }
+            else
+                AudioTestSetTestFailed(pTst, rc, "Recording test tone failed");
+        }
+
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "Recording tone failed\n");
+    }
+
+    return rc;
+}
+
+/**
+ * @copydoc FNAUDIOTESTDESTROY
+ */
+static DECLCALLBACK(int) audioTestRecordToneDestroy(PAUDIOTESTENV pTstEnv, void *pvCtx)
+{
+    RT_NOREF(pTstEnv, pvCtx);
+
+    return VINF_SUCCESS;
+}
 
 /*********************************************************************************************************************************
 *   Test execution                                                                                                               *
@@ -1664,7 +1820,8 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
 static AUDIOTESTDESC g_aTests[] =
 {
     /* pszTest      fExcluded      pfnSetup */
-    { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy }
+    { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy },
+    { "RecordTone", false,         audioTestRecordToneSetup,     audioTestRecordToneExec,    audioTestRecordToneDestroy }
 };
 
 /**
