@@ -156,6 +156,13 @@ module_build_log()
         >> "${LOG}"
 }
 
+# Detect VirtualBox version info or report error on error.
+VBOX_VERSION=$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f1)
+VBOX_REVISION="r$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f2)"
+if test -z "$VBOX_VERSION" -o "$VBOX_REVISION" = "r"; then
+    failure 'Cannot detect VirtualBox version'
+fi
+
 ## Output the vboxdrv part of our udev rule.  This is redirected to the right file.
 udev_write_vboxdrv() {
     VBOXDRV_GRP="$1"
@@ -265,6 +272,37 @@ cleanup_usb()
 
     # Remove our USB device tree
     rm -rf /dev/vboxusb
+}
+
+# Returns module version if module is available or empty string.
+module_version()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f2
+}
+
+# Returns module revision if module is available in the system or empty string.
+module_revision()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
+}
+
+# Returns "1" if module is available in the system and its version and revision
+# number do match to current VirtualBox installation. Or empty string otherwise.
+module_available()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    [ "$VBOX_VERSION" = "$(module_version $mod)" ] || return
+    [ "$VBOX_REVISION" = "$(module_revision $mod)" ] || return
+
+    echo "1"
 }
 
 start()
