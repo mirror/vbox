@@ -293,6 +293,7 @@ bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-wc32-I8RS.asm \
 	bs3-wc32-U8RS.asm \
 	bs3-wc32-U8LS.asm \
+	bs3-wc32-U8M.asm \
        bs3-c32-Trap32Generic.asm
 
 # The 64-bit BS3Kit library.
