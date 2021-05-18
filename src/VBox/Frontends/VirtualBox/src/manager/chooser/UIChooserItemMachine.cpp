@@ -33,9 +33,6 @@
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
-/* Other VBox includes: */
-#include "iprt/cpp/utils.h"
-
 
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent, UIChooserNodeMachine *pNode)
     : UIChooserItem(pParent, pNode, 0, 100)
@@ -896,7 +893,7 @@ void UIChooserItemMachine::updateStateTextSize()
     }
 }
 
-void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rectangle) const
+void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rectangle)
 {
     /* Save painter: */
     pPainter->save();
@@ -905,7 +902,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     const QPalette pal = QApplication::palette();
 
     /* Selected-item background: */
-    if (model()->selectedItems().contains(unconst(this)))
+    if (model()->selectedItems().contains(this))
     {
         /* Prepare color: */
         QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
@@ -998,7 +995,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         if (dragTokenPlace() == UIChooserItemDragToken_Up)
         {
             /* Selected-item background: */
-            if (model()->selectedItems().contains(unconst(this)))
+            if (model()->selectedItems().contains(this))
                 backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
             /* Default background: */
             else
@@ -1011,7 +1008,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         else if (dragTokenPlace() == UIChooserItemDragToken_Down)
         {
             /* Selected-item background: */
-            if (model()->selectedItems().contains(unconst(this)))
+            if (model()->selectedItems().contains(this))
                 backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
             /* Default background: */
             else
@@ -1034,10 +1031,10 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     pPainter->restore();
 }
 
-void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle) const
+void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle)
 {
     /* Only selected and/or hovered item should have a frame: */
-    if (!model()->selectedItems().contains(unconst(this)) && !isHovered())
+    if (!model()->selectedItems().contains(this) && !isHovered())
         return;
 
     /* Save painter: */
@@ -1048,7 +1045,7 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     QColor strokeColor;
 
     /* Selected-item frame: */
-    if (model()->selectedItems().contains(unconst(this)))
+    if (model()->selectedItems().contains(this))
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
     /* Hovered-item frame: */
     else if (isHovered())
@@ -1070,7 +1067,7 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     pPainter->restore();
 }
 
-void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rectangle) const
+void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rectangle)
 {
     /* Prepare variables: */
     const int iFullWidth = rectangle.width();
@@ -1083,14 +1080,14 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Selected or hovered item foreground: */
-    if (model()->selectedItems().contains(unconst(this)) || isHovered())
+    if (model()->selectedItems().contains(this) || isHovered())
     {
         /* Prepare palette: */
         const QPalette pal = QApplication::palette();
 
         /* Get background color: */
         const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
-        const QColor background = model()->selectedItems().contains(unconst(this))
+        const QColor background = model()->selectedItems().contains(this)
                                 ? highlight.lighter(m_iHighlightLightnessMin)
                                 : highlight.lighter(m_iHoverLightnessMin);
 

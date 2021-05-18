@@ -209,11 +209,11 @@ private:
     /** @name Painting stuff.
       * @{ */
         /** Paints background using specified @a pPainter and certain @a rectangle. */
-        void paintBackground(QPainter *pPainter, const QRect &rectangle) const;
+        void paintBackground(QPainter *pPainter, const QRect &rectangle);
         /** Paints frame using specified @a pPainter and certain @a rect. */
-        void paintFrame(QPainter *pPainter, const QRect &rectangle) const;
+        void paintFrame(QPainter *pPainter, const QRect &rectangle);
         /** Paints global info using specified @a pPainter and certain @a pOptions. */
-        void paintGlobalInfo(QPainter *pPainter, const QRect &rectangle) const;
+        void paintGlobalInfo(QPainter *pPainter, const QRect &rectangle);
     /** @} */
 
     /** @name Item stuff.
