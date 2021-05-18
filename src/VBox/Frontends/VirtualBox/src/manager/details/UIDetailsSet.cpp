@@ -496,48 +496,46 @@ int UIDetailsSet::minimumWidthHint() const
 
     /* Prepare variables: */
     const int iSpacing = data(SetData_Spacing).toInt();
-    int iMinimumWidthHint = 0;
+    int iMinimumWidthHintPreview = 0;
+    int iMinimumWidthHintInGroup = 0;
+    int iMinimumWidthHintOutGroup = 0;
 
     /* Take into account all the elements: */
     foreach (UIDetailsItem *pItem, items())
     {
-        /* Skip hidden: */
+        /* Make sure item exists: */
+        AssertPtrReturn(pItem, 0);
+        /* Skip item if hidden: */
         if (!pItem->isVisible())
             continue;
 
-        /* For each particular element: */
+        /* Acquire element type: */
         UIDetailsElement *pElement = pItem->toElement();
-        switch (pElement->elementType())
+        AssertPtrReturn(pElement, 0);
+        DetailsElementType enmElementType = pElement->elementType();
+
+        /* Calculate corresponding hints: */
+        if (enmElementType == DetailsElementType_Preview)
+            iMinimumWidthHintPreview = pItem->minimumWidthHint();
+        else
         {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
-            {
-                iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                UIDetailsItem *pGeneralItem = element(DetailsElementType_General);
-                UIDetailsItem *pSystemItem = element(DetailsElementType_System);
-                int iGeneralElementWidth = pGeneralItem ? pGeneralItem->minimumWidthHint() : 0;
-                int iSystemElementWidth = pSystemItem ? pSystemItem->minimumWidthHint() : 0;
-                int iFirstColumnWidth = qMax(iGeneralElementWidth, iSystemElementWidth);
-                iMinimumWidthHint = qMax(iMinimumWidthHint, iFirstColumnWidth + iSpacing + pItem->minimumWidthHint());
-                break;
-            }
-            default: AssertFailed(); break; /* Shut up, MSC! */
+            if (m_listPreviewGroup.contains(enmElementType))
+                iMinimumWidthHintInGroup = qMax(iMinimumWidthHintInGroup, pItem->minimumWidthHint());
+            else if (m_listOutsideGroup.contains(enmElementType))
+                iMinimumWidthHintOutGroup = qMax(iMinimumWidthHintOutGroup, pItem->minimumWidthHint());
         }
     }
 
+    /* Append minimum width of Preview and Preview group: */
+    int iMinimumWidthHint = 0;
+    if (iMinimumWidthHintPreview)
+        iMinimumWidthHint += iMinimumWidthHintPreview;
+    if (iMinimumWidthHintInGroup)
+        iMinimumWidthHint += iMinimumWidthHintInGroup;
+    if (iMinimumWidthHintPreview && iMinimumWidthHintInGroup)
+        iMinimumWidthHint += iSpacing;
+    /* Compare with minimum width of Outside group: */
+    iMinimumWidthHint = qMax(iMinimumWidthHint, iMinimumWidthHintOutGroup);
     /* Return result: */
     return iMinimumWidthHint;
 }
@@ -551,11 +549,11 @@ int UIDetailsSet::minimumHeightHint() const
     /* Prepare variables: */
     const int iMargin = data(SetData_Margin).toInt();
     const int iSpacing = data(SetData_Spacing).toInt();
-
-    /* Take into account all the elements: */
     int iMinimumHeightHintPreview = 0;
     int iMinimumHeightHintInGroup = 0;
     int iMinimumHeightHintOutGroup = 0;
+
+    /* Take into account all the elements: */
     foreach (UIDetailsItem *pItem, items())
     {
         /* Make sure item exists: */
@@ -584,7 +582,7 @@ int UIDetailsSet::minimumHeightHint() const
     iMinimumHeightHintInGroup -= iSpacing;
     iMinimumHeightHintOutGroup -= iSpacing;
 
-    /* Append maximum height of Preview and Preview group: */
+    /* Append minimum height of Preview and Preview group: */
     int iMinimumHeightHint = qMax(iMinimumHeightHintPreview, iMinimumHeightHintInGroup);
     /* Add spacing if necessary: */
     if (!m_listPreviewGroup.isEmpty() && !m_listOutsideGroup.isEmpty())
