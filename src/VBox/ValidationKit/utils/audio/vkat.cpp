@@ -1950,6 +1950,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = g_aBackends[0].pDrvReg;
     bool        fWithDrvAudio = false;
+    uint8_t     cPcmSampleBit = 0;
+    uint8_t     cPcmChannels  = 0;
+    uint32_t    uPcmHz        = 0;
+    bool        fPcmSigned    = true;
 
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -1992,14 +1996,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_COUNT:
-                break;
+                return RTMsgErrorExitFailure("Not yet implemented!");
 
             case VKAT_TEST_OPT_DEV:
                 pszDevice = ValueUnion.psz;
                 break;
 
             case VKAT_TEST_OPT_PAUSE:
-                break;
+                return RTMsgErrorExitFailure("Not yet implemented!");
 
             case VKAT_TEST_OPT_OUTDIR:
                 rc = RTStrCopy(TstEnv.szPathOut, sizeof(TstEnv.szPathOut), ValueUnion.psz);
@@ -2008,21 +2012,19 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_PCM_BIT:
-                /** @todo r=bird: the X suffix means: "fingers off!"   */
-                TstCust.TestTone.Props.cbSampleX = ValueUnion.u8 / 8 /* bit */;
+                cPcmSampleBit = ValueUnion.u8;
                 break;
 
             case VKAT_TEST_OPT_PCM_CHAN:
-                /** @todo r=bird: the X suffix means: "fingers off!"   */
-                TstCust.TestTone.Props.cChannelsX = ValueUnion.u8;
+                cPcmChannels = ValueUnion.u8;
                 break;
 
             case VKAT_TEST_OPT_PCM_HZ:
-                TstCust.TestTone.Props.uHz = ValueUnion.u32;
+                uPcmHz = ValueUnion.u32;
                 break;
 
             case VKAT_TEST_OPT_PCM_SIGNED:
-                TstCust.TestTone.Props.fSigned = ValueUnion.f;
+                fPcmSigned = ValueUnion.f;
                 break;
 
             case VKAT_TEST_OPT_TAG:
@@ -2050,6 +2052,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
      * Start testing.
      */
     RTTestBanner(g_hTest);
+
+    /* Initialize the custom test parameters with sensible defaults if nothing else is given. */
+    PDMAudioPropsInit(&TstCust.TestTone.Props,
+                      cPcmSampleBit ? cPcmSampleBit / 8 : 2 /* 16-bit */, fPcmSigned, cPcmChannels ? cPcmChannels : 2,
+                      uPcmHz ? uPcmHz : 44100);
 
     /* For now all tests have the same test environment. */
     rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio, pszTag);
