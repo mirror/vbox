@@ -382,6 +382,20 @@ bs3-timers-1_SOURCES = \
 #	$$(bs3-timers-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 #	$$(bs3-timers-1_0_OUTDIR)/bs3-timers-1-asm.o16
 
+# Timing
+MISCBINS += bs3-timing-1
+bs3-timing-1_TEMPLATE = VBoxBS3KitImg
+bs3-timing-1_INCS  = .
+bs3-timing-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-timing-1-template.c
+bs3-timing-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timing-1-template.c
+ ifeq ($(KBUILD_HOST),win)
+bs3-timing-1_DEFS += HAVE_OMF_CONVERTER
+ endif
+bs3-timing-1_SOURCES = \
+	bs3kit/bs3-first-rm.asm \
+	bs3-timing-1.c \
+	bs3-timing-1-32.c32
+
 endif # VBOX_WITH_BS3KIT
 
 

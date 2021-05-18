@@ -1,0 +1,139 @@
+/* $Id$ */
+/** @file
+ * BS3Kit - bs3-timinig-1, 32-bit C code.
+ */
+
+/*
+ * Copyright (C) 2007-2021 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <bs3kit.h>
+#include <iprt/asm-amd64-x86.h>
+#include <iprt/asm-math.h>
+
+
+static void bs3Timing1_Tsc_One(void)
+{
+    uint64_t const nsStart     = Bs3TestNow();
+    uint64_t const uTscStart   = ASMReadTSC();
+    uint64_t const nsDeadline  = nsStart + RT_NS_10SEC;
+    uint64_t       cNsElapsed;
+    uint64_t       cTicksElapsed;
+    uint64_t       cTicksMin   = UINT64_MAX;
+    uint64_t       cTicksMax   = 0;
+    uint64_t       cTicksSum   = 0;
+    uint64_t       cBelow512   = 0;
+    uint64_t       cBelow1K    = 0;
+    uint64_t       cBelow4K    = 0;
+    uint64_t       cAbove512K  = 0;
+    uint64_t       cAbove1M    = 0;
+    uint64_t       cAbove10M   = 0;
+    uint64_t       cTotalLoops = 0;
+
+    /*
+     * Test loop.
+     */
+    do
+    {
+        unsigned cLoops = 100000 + 1;
+        cTotalLoops += cLoops - 1;
+        while (--cLoops != 0)
+        {
+            uint64_t uTscPrev  = ASMReadTSC();
+            uint64_t uTscNow   = ASMReadTSC();
+            uint64_t cTicks    = uTscNow - uTscPrev;
+
+            /* min/max/avg */
+            cTicksSum += cTicks;
+            if (cTicks < cTicksMin)
+                cTicksMin = cTicks;
+            if (cTicks > cTicksMax)
+                cTicksMax = cTicks;
+
+            /* range. */
+            if (cTicks < _4K)
+            {
+                cBelow4K++;
+                if (cTicks < _1K)
+                {
+                    cBelow1K++;
+                    if (cTicks < 512)
+                        cBelow512++;
+                }
+            }
+            else if (cTicks >= _512K)
+            {
+                cAbove512K++;
+                if (cTicks >= _1M)
+                {
+                    cAbove1M++;
+                    if (cTicks >= 10*_1M)
+                        cAbove10M++;
+                }
+            }
+        }
+    } while ((cNsElapsed = Bs3TestNow()) < nsDeadline);
+    cTicksElapsed  = ASMReadTSC();
+    cTicksElapsed -= uTscStart;
+    cNsElapsed    -= nsStart;
+
+    /*
+     * Report results.
+     *
+     * Note! in 32-bit and 16-bit mode, values 4G or higher gets formatted as
+     *       hexadecimal to avoid 64-bit division.
+     */
+
+    Bs3TestPrintf("%'14RU64 loops in %'RU64 ns / %'RU64 ticks\n", cTotalLoops, cNsElapsed, cTicksElapsed);
+
+    /* Report results in ticks. */
+    Bs3TestPrintf("average %RU64 ticks, min %'RU64, max %'RU64\n",
+                  cTicksSum / cTotalLoops, cTicksMin, cTicksMax);
+    Bs3TestPrintf("%'14RU64 below 512\n", cBelow512);
+    Bs3TestPrintf("%'14RU64 below 1K\n", cBelow1K);
+    Bs3TestPrintf("%'14RU64 below 4K\n", cBelow4K);
+    Bs3TestPrintf("%'14RU64 inbetween\n", cTotalLoops - cBelow4K - cAbove512K);
+    Bs3TestPrintf("%'14RU64 above 512K\n", cAbove512K);
+    Bs3TestPrintf("%'14RU64 above 1M\n", cAbove1M);
+    Bs3TestPrintf("%'14RU64 above 10M\n", cAbove10M);
+
+    /* results in nanoseconds */
+    if (cNsElapsed && cTicksElapsed)
+    {
+        /* Missing ??U8M and the assembly bugger. */
+        //uint64_t const uFreq = ASMMultU64ByU32DivByU32(cTicksElapsed, RT_NS_1SEC, cNsElapsed);
+        //uint64_t const uFreq = cTicksElapsed * (uint64_t)RT_NS_1SEC / cNsElapsed;
+        uint64_t const uFreq = cTicksElapsed / cNsElapsed;
+        Bs3TestPrintf("%RU64 Hz\n", uFreq);
+    }
+}
+
+BS3_DECL(void) bs3Timing1_Tsc_pe32(void)
+{
+    Bs3TestPrintf("bs3Timing1_Tsc_pe32\n");
+    bs3Timing1_Tsc_One();
+}
+
+/* P.S. don't forget: VBoxManage setextradata bs3-timing-1 VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled 1 */
+
