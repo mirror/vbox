@@ -702,7 +702,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_GetConfig(PPDMIHOSTAUDIO pInterface, P
      */
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Core Audio");
     pBackendCfg->cbStream       = sizeof(COREAUDIOSTREAM);
-    pBackendCfg->fFlags         = 0;
+    pBackendCfg->fFlags         = PDMAUDIOBACKEND_F_ASYNC_STREAM_DESTROY;
     /* For Core Audio we provide one stream per device for now. */
     pBackendCfg->cMaxStreamsIn  = PDMAudioHostEnumCountMatching(&pThis->Devices, PDMAUDIODIR_IN);
     pBackendCfg->cMaxStreamsOut = PDMAudioHostEnumCountMatching(&pThis->Devices, PDMAUDIODIR_OUT);
@@ -1636,16 +1636,6 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamInitAsync}
- */
-static DECLCALLBACK(int) drvHostAudioCaHA_StreamInitAsync(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, bool fDestroyed)
-{
-    RT_NOREF(pInterface, pStream, fDestroyed);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
 static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -1706,8 +1696,8 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
 
         if (pStreamCA->hAudioQueue)
         {
-            LogFlowFunc(("Disposing of the queue ...\n", orc));
-            orc = AudioQueueDispose(pStreamCA->hAudioQueue, TRUE /*inImmediate/synchronously*/);
+            LogFlowFunc(("Disposing of the queue ...\n"));
+            orc = AudioQueueDispose(pStreamCA->hAudioQueue, TRUE /*inImmediate/synchronously*/); /* may take some time */
             LogFlowFunc(("AudioQueueDispose -> %#x (%d)\n", orc, orc));
             AssertMsg(orc == noErr, ("AudioQueueDispose -> orc=%#x\n", orc));
             pStreamCA->hAudioQueue = NULL;
@@ -2642,7 +2632,7 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvHostAudioCaHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamInitAsync            = drvHostAudioCaHA_StreamInitAsync;
+    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioCaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHostAudioCaHA_StreamControl;

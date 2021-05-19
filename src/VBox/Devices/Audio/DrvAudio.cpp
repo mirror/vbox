@@ -2062,6 +2062,33 @@ static uint32_t drvAudioStreamReleaseInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM p
 
 
 /**
+ * Asynchronous worker for drvAudioStreamDestroy.
+ *
+ * Does DISABLE and releases reference, possibly destroying the stream.
+ *
+ * @param   pThis       Pointer to the DrvAudio instance data.
+ * @param   pStreamEx   The stream.  One reference for us to release.
+ */
+static DECLCALLBACK(void) drvAudioStreamDestroyAsync(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+{
+    LogFlow(("pThis=%p pStreamEx=%p (%s)\n", pThis, pStreamEx, pStreamEx->Core.szName));
+
+    /** @todo r=bird: This isn't doing the trick for core audio, as the big
+     *        simple-minded critsect is held while the often very slow
+     *        AudioQueueDestroy call is made, blocking creation and manipulation
+     *        of new streams.  Sigh^3. */
+
+    /** @todo can we somehow drain it instead? */
+    int rc2 = drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
+    LogFlow(("DISABLE done: %Rrc\n", rc2));
+    AssertRC(rc2);
+
+    drvAudioStreamReleaseInternal(pThis, pStreamEx, true /*fMayDestroy*/);
+    LogFlow(("returning\n"));
+}
+
+
+/**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamDestroy}
  */
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
@@ -2120,12 +2147,25 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                 pStreamEx->hReqInitAsync = NIL_RTREQ;
             }
 
-            /* We don't really care about the status here as we'll release a reference regardless of the state. */
-            /** @todo can we somehow drain it instead? */
-            int rc2 = drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
-            AssertRC(rc2);
-
-            drvAudioStreamReleaseInternal(pThis, pStreamEx, true /*fMayDestroy*/);
+            /*
+             * Now, if the backend requests asynchronous disabling and destruction
+             * push the disabling and destroying over to a worker thread.
+             *
+             * This is a general offloading feature that all backends should make use of,
+             * however it's rather precarious on macs where stopping an already draining
+             * stream may take 8-10ms which naturally isn't something we should be doing
+             * on an EMT.
+             */
+            if (!(pThis->BackendCfg.fFlags & PDMAUDIOBACKEND_F_ASYNC_STREAM_DESTROY))
+                drvAudioStreamDestroyAsync(pThis, pStreamEx);
+            else
+            {
+                int rc2 = RTReqPoolCallEx(pThis->hReqPool, 0 /*cMillies*/, NULL /*phReq*/,
+                                          RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                                          (PFNRT)drvAudioStreamDestroyAsync, 2, pThis, pStreamEx);
+                LogFlowFunc(("hReqInitAsync=%p rc2=%Rrc\n", pStreamEx->hReqInitAsync, rc2));
+                AssertRCStmt(rc2, drvAudioStreamDestroyAsync(pThis, pStreamEx));
+            }
         }
         else
             AssertLogRelMsgFailedStmt(("%p cRefs=%#x\n", pStreamEx, pStreamEx->cRefs), rc = VERR_CALLER_NO_REFERENCE);
@@ -4386,7 +4426,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     if (   pThis->hReqPool == NIL_RTREQPOOL
         && (   pIHostDrvAudio->pfnStreamInitAsync
             || pIHostDrvAudio->pfnDoOnWorkerThread
-            || (pThis->BackendCfg.fFlags & PDMAUDIOBACKEND_F_ASYNC_HINT) ))
+            || (pThis->BackendCfg.fFlags & (PDMAUDIOBACKEND_F_ASYNC_HINT | PDMAUDIOBACKEND_F_ASYNC_STREAM_DESTROY)) ))
     {
         char szName[16];
         RTStrPrintf(szName, sizeof(szName), "Aud%uWr", pThis->pDrvIns->iInstance);
