@@ -317,27 +317,30 @@ static struct
 } const g_aBackends[] =
 {
 #if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
-    {   &g_DrvHostALSAAudio,    "alsa" },
+    {   &g_DrvHostALSAAudio,          "alsa" },
 #endif
 #ifdef VBOX_WITH_AUDIO_PULSE
-    {   &g_DrvHostPulseAudio,   "pulseaudio" },
-    {   &g_DrvHostPulseAudio,   "pulse" },
-    {   &g_DrvHostPulseAudio,   "pa" },
+    {   &g_DrvHostPulseAudio,         "pulseaudio" },
+    {   &g_DrvHostPulseAudio,         "pulse" },
+    {   &g_DrvHostPulseAudio,         "pa" },
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
-    {   &g_DrvHostOSSAudio,     "oss" },
+    {   &g_DrvHostOSSAudio,           "oss" },
 #endif
 #if defined(RT_OS_DARWIN)
-    {   &g_DrvHostCoreAudio,    "coreaudio" },
-    {   &g_DrvHostCoreAudio,    "core" },
-    {   &g_DrvHostCoreAudio,    "ca" },
+    {   &g_DrvHostCoreAudio,          "coreaudio" },
+    {   &g_DrvHostCoreAudio,          "core" },
+    {   &g_DrvHostCoreAudio,          "ca" },
 #endif
 #if defined(RT_OS_WINDOWS)
-    {   &g_DrvHostAudioWas,     "wasapi" },
-    {   &g_DrvHostAudioWas,     "was" },
-    {   &g_DrvHostDSound,       "directsound" },
-    {   &g_DrvHostDSound,       "dsound" },
-    {   &g_DrvHostDSound,       "ds" }
+    {   &g_DrvHostAudioWas,           "wasapi" },
+    {   &g_DrvHostAudioWas,           "was" },
+    {   &g_DrvHostDSound,             "directsound" },
+    {   &g_DrvHostDSound,             "dsound" },
+    {   &g_DrvHostDSound,             "ds" },
+#endif
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+    {   &g_DrvHostValidationKitAudio, "valkit" }
 #endif
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
