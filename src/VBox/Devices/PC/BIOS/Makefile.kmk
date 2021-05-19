@@ -66,6 +66,8 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	scsi.c \
  	ahci.c \
  	virtio.c \
+ 	buslogic.c \
+ 	lsilogic.c \
  	apm.c \
  	pcibios.c \
  	pciutil.c \
