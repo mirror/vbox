@@ -46,24 +46,13 @@
 #include <iprt/mem.h>
 
 #include <iprt/uuid.h>
+#include <iprt/timer.h>
 
 #include <CoreAudio/CoreAudio.h>
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioConverter.h>
 #include <AudioToolbox/AudioToolbox.h>
-
-
-
-/* Enables utilizing the Core Audio converter unit for converting
- * input / output from/to our requested formats. That might be more
- * performant than using our own routines later down the road. */
-/** @todo Needs more investigation and testing first before enabling. */
-//# define VBOX_WITH_AUDIO_CA_CONVERTER
-
-/** @todo
- * - Maybe make sure the threads are immediately stopped if playing/recording stops.
- */
 
 
 /*********************************************************************************************************************************
@@ -73,6 +62,21 @@
 #define COREAUDIO_MAX_BUFFERS       1024
 /** The minimum number of queue buffers. */
 #define COREAUDIO_MIN_BUFFERS       4
+
+/** Enables the worker thread.
+ * This saves CoreAudio from creating an additional thread upon queue
+ * creation.  (It does not help with the slow AudioQueueDispose fun.)  */
+#define CORE_AUDIO_WITH_WORKER_THREAD
+#if 0
+/** Enables the AudioQueueDispose breakpoint timer (debugging help). */
+# define CORE_AUDIO_WITH_BREAKPOINT_TIMER
+#endif
+
+/* Enables utilizing the Core Audio converter unit for converting
+ * input / output from/to our requested formats. That might be more
+ * performant than using our own routines later down the road. */
+/** @todo Needs more investigation and testing first before enabling. */
+//# define VBOX_WITH_AUDIO_CA_CONVERTER
 
 
 /*********************************************************************************************************************************
@@ -283,8 +287,30 @@ typedef struct DRVHOSTCOREAUDIO
     bool                    fRegisteredDefaultInputListener;
     /** Indicates whether we've registered default output device change listener. */
     bool                    fRegisteredDefaultOutputListener;
+
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+    /** @name Worker Thread For Queue callbacks and stuff.
+     * @{ */
+    /** The worker thread. */
+    RTTHREAD                hThread;
+    /** The runloop of the worker thread. */
+    CFRunLoopRef            hThreadRunLoop;
+    /** The message port we use to talk to the thread.
+     * @note While we don't currently use the port, it is necessary to prevent
+     *       the thread from spinning or stopping prematurely because of
+     *       CFRunLoopRunInMode returning kCFRunLoopRunFinished. */
+    CFMachPortRef           hThreadPort;
+    /** Runloop source for hThreadPort. */
+    CFRunLoopSourceRef      hThreadPortSrc;
+    /** @} */
+#endif
+
     /** Critical section to serialize access. */
     RTCRITSECT              CritSect;
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+    /** Timder for debugging AudioQueueDispose slowness. */
+    RTTIMERLR               hBreakpointTimer;
+#endif
 } DRVHOSTCOREAUDIO;
 
 
@@ -799,6 +825,65 @@ static OSStatus drvHostAudioCaDefaultDeviceChangedCallback(AudioObjectID idObjec
 
     return noErr;
 }
+
+
+/*********************************************************************************************************************************
+*   Worker Thread                                                                                                                *
+*********************************************************************************************************************************/
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+
+/**
+ * Message handling callback for CFMachPort.
+ */
+static void drvHostAudioCaThreadPortCallback(CFMachPortRef hPort, void *pvMsg, CFIndex cbMsg, void *pvUser)
+{
+    RT_NOREF(hPort, pvMsg, cbMsg, pvUser);
+    LogFunc(("hPort=%p pvMsg=%p cbMsg=%#x pvUser=%p\n", hPort, pvMsg, cbMsg, pvUser));
+}
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD, Worker thread for buffer callbacks.}
+ */
+static DECLCALLBACK(int) drvHostAudioCaThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    PDRVHOSTCOREAUDIO pThis = (PDRVHOSTCOREAUDIO)pvUser;
+
+    /*
+     * Get the runloop, add the mach port to it and signal the constructor thread that we're ready.
+     */
+    pThis->hThreadRunLoop = CFRunLoopGetCurrent();
+    CFRetain(pThis->hThreadRunLoop);
+
+    CFRunLoopAddSource(pThis->hThreadRunLoop, pThis->hThreadPortSrc, kCFRunLoopDefaultMode);
+
+    int rc = RTThreadUserSignal(hThreadSelf);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Do work.
+     */
+    for (;;)
+    {
+        SInt32 rcRunLoop = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 30.0, TRUE);
+        Log8Func(("CFRunLoopRunInMode -> %d\n", rcRunLoop));
+        Assert(rcRunLoop != kCFRunLoopRunFinished);
+        if (rcRunLoop != kCFRunLoopRunStopped && rcRunLoop != kCFRunLoopRunFinished)
+        { /* likely */ }
+        else
+            break;
+    }
+
+    /*
+     * Clean up.
+     */
+    CFRunLoopRemoveSource(pThis->hThreadRunLoop, pThis->hThreadPortSrc, kCFRunLoopDefaultMode);
+    LogFunc(("The thread quits!\n"));
+    return VINF_SUCCESS;
+}
+
+#endif /* CORE_AUDIO_WITH_WORKER_THREAD */
+
 
 
 /*********************************************************************************************************************************
@@ -1614,13 +1699,20 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
              * Documentation says the callbacks will be run on some core audio
              * related thread if we don't specify a runloop here.  That's simpler.
              */
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+            CFRunLoopRef const hRunLoop     = pThis->hThreadRunLoop;
+            CFStringRef  const hRunLoopMode = kCFRunLoopDefaultMode;
+#else
+            CFRunLoopRef const hRunLoop     = NULL;
+            CFStringRef  const hRunLoopMode = NULL;
+#endif
             OSStatus orc;
             if (pCfgReq->enmDir == PDMAUDIODIR_OUT)
                 orc = AudioQueueNewOutput(&pStreamCA->BasicStreamDesc, drvHostAudioCaOutputQueueBufferCallback, pStreamCA,
-                                          NULL /*hRunLoop*/, NULL /*pStrRlMode*/, 0 /*fFlags - MBZ*/, &pStreamCA->hAudioQueue);
+                                          hRunLoop, hRunLoopMode, 0 /*fFlags - MBZ*/, &pStreamCA->hAudioQueue);
             else
                 orc = AudioQueueNewInput(&pStreamCA->BasicStreamDesc, drvHostAudioCaInputQueueBufferCallback, pStreamCA,
-                                         NULL /*hRunLoop*/, NULL /*pStrRlMode*/, 0 /*fFlags - MBZ*/, &pStreamCA->hAudioQueue);
+                                         hRunLoop, hRunLoopMode, 0 /*fFlags - MBZ*/, &pStreamCA->hAudioQueue);
             if (orc == noErr)
             {
                 /*
@@ -1745,6 +1837,16 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamInitAsync}
+ */
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamInitAsync(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, bool fDestroyed)
+{
+    RT_NOREF(pInterface, pStream, fDestroyed);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
 static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -1782,6 +1884,13 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
         /*
          * Free the queue buffers and the queue.
          */
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+        LogRel(("Queue-destruction timer starting...\n"));
+        PDRVHOSTCOREAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
+        RTTimerLRStart(pThis->hBreakpointTimer, RT_NS_100MS);
+        uint64_t nsStart = RTTimeNanoTS();
+#endif
+
         if (pStreamCA->paBuffers)
         {
             LogFlowFunc(("Freeing %u buffers ...\n", pStreamCA->cBuffers));
@@ -1805,6 +1914,11 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
             pStreamCA->hAudioQueue = NULL;
         }
 
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+        RTTimerLRStop(pThis->hBreakpointTimer);
+        LogRel(("Queue-destruction: %'RU64\n", RTTimeNanoTS() - nsStart));
+#endif
+
         /*
          * Release the device and delete the critsect.
          */
@@ -1823,6 +1937,18 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
     LogFunc(("returns\n"));
     return VINF_SUCCESS;
 }
+
+
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+/** @callback_method_impl{FNRTTIMERLR, For debugging things that takes too long.} */
+static DECLCALLBACK(void) drvHostAudioCaBreakpointTimer(RTTIMERLR hTimer, void *pvUser, uint64_t iTick)
+{
+    LogFlowFunc(("Queue-destruction timeout! iTick=%RU64\n", iTick));
+    RT_NOREF(hTimer, pvUser, iTick);
+    RTLogFlush(NULL);
+    RT_BREAKPOINT();
+}
+#endif
 
 
 /**
@@ -2637,6 +2763,48 @@ static DECLCALLBACK(void) drvHostAudioCaDestruct(PPDMDRVINS pDrvIns)
 
     drvHostAudioCaRemoveDefaultDeviceListners(pThis);
 
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+    if (pThis->hThread != NIL_RTTHREAD)
+    {
+        for (unsigned iLoop = 0; iLoop < 60; iLoop++)
+        {
+            if (pThis->hThreadRunLoop)
+                CFRunLoopStop(pThis->hThreadRunLoop);
+            if (iLoop > 10)
+                RTThreadPoke(pThis->hThread);
+            int rc = RTThreadWait(pThis->hThread, 500 /*ms*/, NULL /*prcThread*/);
+            if (RT_SUCCESS(rc))
+                break;
+            AssertMsgBreak(rc == VERR_TIMEOUT, ("RTThreadWait -> %Rrc\n",rc));
+        }
+        pThis->hThread = NIL_RTTHREAD;
+    }
+    if (pThis->hThreadPortSrc)
+    {
+        CFRelease(pThis->hThreadPortSrc);
+        pThis->hThreadPortSrc = NULL;
+    }
+    if (pThis->hThreadPort)
+    {
+        CFMachPortInvalidate(pThis->hThreadPort);
+        CFRelease(pThis->hThreadPort);
+        pThis->hThreadPort = NULL;
+    }
+    if (pThis->hThreadRunLoop)
+    {
+        CFRelease(pThis->hThreadRunLoop);
+        pThis->hThreadRunLoop = NULL;
+    }
+#endif
+
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+    if (pThis->hBreakpointTimer != NIL_RTTIMERLR)
+    {
+        RTTimerLRDestroy(pThis->hBreakpointTimer);
+        pThis->hBreakpointTimer = NIL_RTTIMERLR;
+    }
+#endif
+
     int rc2 = RTCritSectDelete(&pThis->CritSect);
     AssertRC(rc2);
 
@@ -2659,6 +2827,12 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
      * Init the static parts.
      */
     pThis->pDrvIns                   = pDrvIns;
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+    pThis->hThread                   = NIL_RTTHREAD;
+#endif
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+    pThis->hBreakpointTimer          = NIL_RTTIMERLR;
+#endif 
     PDMAudioHostEnumInit(&pThis->Devices);
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAudioCaQueryInterface;
@@ -2669,7 +2843,7 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
     pThis->IHostAudio.pfnStreamCreate               = drvHostAudioCaHA_StreamCreate;
-    pThis->IHostAudio.pfnStreamInitAsync            = NULL;
+    pThis->IHostAudio.pfnStreamInitAsync            = drvHostAudioCaHA_StreamInitAsync;
     pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioCaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHostAudioCaHA_StreamControl;
@@ -2682,6 +2856,33 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
+
+#ifdef CORE_AUDIO_WITH_WORKER_THREAD
+    /*
+     * Create worker thread for running callbacks on.
+     */
+    CFMachPortContext PortCtx = { .version = 0, .info = pThis, .retain = NULL, .release = NULL, .copyDescription = NULL };
+    pThis->hThreadPort = CFMachPortCreate(NULL /*allocator*/, drvHostAudioCaThreadPortCallback, &PortCtx, NULL);
+    AssertLogRelReturn(pThis->hThreadPort != NULL, VERR_NO_MEMORY);
+
+    pThis->hThreadPortSrc = CFMachPortCreateRunLoopSource(NULL, pThis->hThreadPort, 0 /*order*/);
+    AssertLogRelReturn(pThis->hThreadPortSrc != NULL, VERR_NO_MEMORY);
+
+    rc = RTThreadCreateF(&pThis->hThread, drvHostAudioCaThread, pThis, 0, RTTHREADTYPE_IO,
+                         RTTHREADFLAGS_WAITABLE, "CaAud-%u", pDrvIns->iInstance);
+    AssertLogRelMsgReturn(RT_SUCCESS(rc), ("RTThreadCreateF failed: %Rrc\n", rc), rc);
+
+    RTThreadUserWait(pThis->hThread, RT_MS_10SEC);
+    AssertLogRel(pThis->hThreadRunLoop);
+#endif
+
+#ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
+    /*
+     * Create a IPRT timer.  The TM timers won't necessarily work as EMT is probably busy.
+     */
+    rc = RTTimerLRCreateEx(&pThis->hBreakpointTimer, 0 /*no interval*/, 0, drvHostAudioCaBreakpointTimer, pThis);
+    AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Enumerate audio devices.
