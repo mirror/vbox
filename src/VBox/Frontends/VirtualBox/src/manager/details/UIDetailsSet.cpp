@@ -296,6 +296,10 @@ void UIDetailsSet::updateLayout()
         /* Layout element content: */
         pPreviewElement->updateLayout();
     }
+
+    /* Set layout update procedure cause hints to be invalidated,
+     * so we have to update geometry to recalculate them: */
+    updateGeometry();
 }
 
 void UIDetailsSet::sltBuildStep(const QUuid &uStepId, int iStepNumber)
@@ -579,8 +583,10 @@ int UIDetailsSet::minimumHeightHint() const
         }
     }
     /* Minus last spacing: */
-    iMinimumHeightHintInGroup -= iSpacing;
-    iMinimumHeightHintOutGroup -= iSpacing;
+    if (iMinimumHeightHintInGroup > 0)
+        iMinimumHeightHintInGroup -= iSpacing;
+    if (iMinimumHeightHintOutGroup > 0)
+        iMinimumHeightHintOutGroup -= iSpacing;
 
     /* Append minimum height of Preview and Preview group: */
     int iMinimumHeightHint = qMax(iMinimumHeightHintPreview, iMinimumHeightHintInGroup);
