@@ -108,6 +108,10 @@ if "$(VBOX_NEWER_VCC_TOOL_STEM)" >= "VCC141"
 VBOX_MESA3D_VCC_DISABLED_WARNINGS          += \
 	-wd4458 -wd4477 -wd4774 -wd4456 -wd4777 -wd4459 -wd4457
 endif
+# -wd5039: pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception
+# -wd5204: class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
+VBOX_MESA3D_VCC_DISABLED_WARNINGS          += \
+	-wd5039 -wd5204
 
 TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS.win   += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
 TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS.win += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
