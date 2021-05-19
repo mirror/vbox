@@ -1065,15 +1065,16 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
 # error "Implement me!"
 #else
         PAUDMIXSTREAM pStreamRecSource = pSink->In.pStreamRecSource;
-        if (!pStreamRecSource)
-        {
-            Log3Func(("[%s] No recording source specified, skipping ...\n", pSink->pszName));
-        }
-        else
+        if (   pStreamRecSource
+            && (pStreamRecSource->fStatus & AUDMIXSTREAM_STATUS_CAN_READ))
         {
             AssertPtr(pStreamRecSource->pConn);
             cbReadable = pStreamRecSource->pConn->pfnStreamGetReadable(pStreamRecSource->pConn, pStreamRecSource->pStream);
         }
+        else if (!pStreamRecSource)
+            Log3Func(("[%s] No recording source specified, skipping ...\n", pSink->pszName));
+        else
+            Log3Func(("[%s] The recording source is not readable!\n", pSink->pszName));
 #endif
     }
 
@@ -2421,7 +2422,7 @@ uint64_t AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf,
         uint32_t cbRead = 0;
         int rc = AudioMixerSinkRead(pSink, abBuf, RT_MIN(cbToTransfer, sizeof(abBuf)), &cbRead);
         AssertRCBreak(rc);
-        AssertMsg(cbRead > 0, ("Nothing read from sink, even if %#RX32 bytes were (still) announced\n", cbToTransfer));
+        AssertMsgBreak(cbRead > 0, ("Nothing read from sink, even if %#RX32 bytes were (still) announced\n", cbToTransfer));
 
         /* Write it to the internal DMA buffer. */
         uint32_t off = 0;
