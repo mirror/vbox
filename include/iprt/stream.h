@@ -40,8 +40,10 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+#ifndef IPRT_INCLUDED_message_h
 /** Pointer to a stream. */
 typedef struct RTSTREAM *PRTSTREAM;
+#endif
 
 /** Pointer to the standard input stream. */
 extern RTDATADECL(PRTSTREAM)    g_pStdIn;

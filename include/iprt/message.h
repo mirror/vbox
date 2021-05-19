@@ -288,7 +288,9 @@ typedef struct RTMSGREFENTRY
 typedef RTMSGREFENTRY const *PCRTMSGREFENTRY;
 
 
+#ifndef IPRT_INCLUDED_stream_h
 typedef struct RTSTREAM *PRTSTREAM;
+#endif
 
 
 /**
