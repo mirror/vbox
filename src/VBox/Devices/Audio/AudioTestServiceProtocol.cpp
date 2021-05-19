@@ -49,6 +49,7 @@ DECLINLINE(void) atsProtocolPktHdrH2N(PATSPKTHDR pPktHdr)
 }
 
 
+#if 0 /* Unused */
 /**
  * Converts a ATS packet header from network to host byte order.
  *
@@ -62,7 +63,6 @@ DECLINLINE(void) atsProtocolPktHdrN2H(PATSPKTHDR pPktHdr)
 }
 
 
-#if 0 /* Unused */
 /**
  * Converts a ATS status header from host to network byte order.
  *
