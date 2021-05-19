@@ -237,6 +237,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        ../../../Runtime/common/asm/ASMSetXcr0.asm \
        ../../../Runtime/common/asm/ASMSetFlags.asm \
        ../../../Runtime/common/asm/ASMGetFlags.asm \
+       ../../../Runtime/common/asm/ASMMultU64ByU32DivByU32.asm \
 
 # The 16-bit BS3Kit library.
 LIBRARIES += bs3kit-common-16
