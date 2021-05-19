@@ -396,6 +396,9 @@ bs3-timing-1_SOURCES = \
 	bs3-timing-1.c \
 	bs3-timing-1-32.c32
 
+PROGRAMS += bs3-timing-1-exe
+bs3-timing-1-exe_TEMPLATE = VBoxR3Static
+bs3-timing-1-exe_SOURCES  = bs3-timing-1-exe.c
 endif # VBOX_WITH_BS3KIT
 
 
