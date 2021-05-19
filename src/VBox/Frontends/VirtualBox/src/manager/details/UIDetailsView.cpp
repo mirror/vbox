@@ -154,6 +154,12 @@ void UIDetailsView::prepare()
     /* Install Details-view accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIDetailsView::pFactory);
 
+    /* Prepare palette: */
+    QPalette pal = QApplication::palette();
+    pal.setColor(QPalette::Active, QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
+    pal.setColor(QPalette::Inactive, QPalette::Base, pal.color(QPalette::Inactive, QPalette::Window));
+    setPalette(pal);
+
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
