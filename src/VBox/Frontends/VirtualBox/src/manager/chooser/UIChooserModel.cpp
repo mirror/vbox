@@ -1053,22 +1053,19 @@ void UIChooserModel::lookFor(const QString &strLookupText)
 
 void UIChooserModel::updateLayout()
 {
-    if (!view() || !root())
-        return;
-
     /* Initialize variables: */
+    AssertPtrReturnVoid(view());
+    AssertPtrReturnVoid(root());
     const QSize viewportSize = view()->size();
     const int iViewportWidth = viewportSize.width();
-    const int iViewportHeight = viewportSize.height();
+    const int iViewportHeight = root()->minimumSizeHint().toSize().height();
 
-    /* Set root-item position: */
+    /* Move root: */
     root()->setPos(0, 0);
-    /* Set root-item size: */
+    /* Resize root: */
     root()->resize(iViewportWidth, iViewportHeight);
-    /* Relayout root-item: */
+    /* Layout root content: */
     root()->updateLayout();
-    /* Make sure root-item is shown: */
-    root()->show();
 }
 
 void UIChooserModel::setGlobalItemHeightHint(int iHint)

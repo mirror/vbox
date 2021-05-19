@@ -90,16 +90,19 @@ UIDetailsItem *UIDetailsModel::root() const
 
 void UIDetailsModel::updateLayout()
 {
-    /* Prepare variables: */
-    const QSize viewportSize = paintDevice()->viewport()->size();
-    const QSize rootSize = viewportSize.expandedTo(m_pRoot->minimumSizeHint().toSize());
+    /* Initialize variables: */
+    AssertPtrReturnVoid(view());
+    AssertPtrReturnVoid(root());
+    const QSize viewportSize = view()->size();
+    const int iViewportWidth = viewportSize.width();
+    const int iViewportHeight = root()->minimumSizeHint().toSize().height();
 
     /* Move root: */
-    m_pRoot->setPos(0, 0);
+    root()->setPos(0, 0);
     /* Resize root: */
-    m_pRoot->resize(rootSize);
+    root()->resize(iViewportWidth, iViewportHeight);
     /* Layout root content: */
-    m_pRoot->updateLayout();
+    root()->updateLayout();
 }
 
 void UIDetailsModel::setItems(const QList<UIVirtualMachineItem*> &items)
