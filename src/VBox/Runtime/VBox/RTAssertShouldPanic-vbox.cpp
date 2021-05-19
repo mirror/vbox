@@ -39,6 +39,7 @@
 #if defined(DOXYGEN_RUNNING) \
  || (   !defined(VBOX_RTASSERT_WITH_GDB) \
      && !defined(IN_GUEST) \
+     && !defined(IN_RT_STATIC) /* valkit too big, sorry */ \
      && !defined(RT_OS_OS2) \
      && !defined(RT_OS_WINDOWS))
 # define VBOX_RTASSERT_WITH_GDB
