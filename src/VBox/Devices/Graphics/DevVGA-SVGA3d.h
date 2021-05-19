@@ -263,6 +263,8 @@ const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType);
 /*
  * Backend interfaces.
  */
+bool vmsvga3dIsLegacyBackend(PVGASTATECC pThisCC);
+
 typedef struct VMSVGA3DSURFACE *PVMSVGA3DSURFACE;
 typedef struct VMSVGA3DMIPMAPLEVEL *PVMSVGA3DMIPMAPLEVEL;
 typedef struct VMSVGA3DCONTEXT *PVMSVGA3DCONTEXT;
@@ -295,6 +297,8 @@ typedef struct
     DECLCALLBACKMEMBER(int,  pfnSurfaceBlitToScreen,      (PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,
                                                            SVGASignedRect destRect, SVGA3dSurfaceImageId srcImage,
                                                            SVGASignedRect srcRect, uint32_t cRects, SVGASignedRect *paRects));
+    /* Various helpers. */
+    DECLCALLBACKMEMBER(int,  pfnSurfaceUpdateHeapBuffers, (PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface));
 } VMSVGA3DBACKENDFUNCS3D;
 
 /* VGPU9 3D */
@@ -471,7 +475,11 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXBindShaderIface,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
 } VMSVGA3DBACKENDFUNCSDX;
 
-int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs);
+typedef struct VMSVGA3DBACKENDDESC
+{
+    char const *pszName;
+    DECLCALLBACKMEMBER(int, pfnQueryInterface, (PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs));
+} VMSVGA3DBACKENDDESC;
 
 #ifdef VMSVGA3D_DX
 /* Helpers. */

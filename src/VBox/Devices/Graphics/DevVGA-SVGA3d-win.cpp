@@ -170,6 +170,22 @@ static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryDelete(PVGASTATECC pThisCC, P
 static DECLCALLBACK(int) vmsvga3dBackCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface);
 
 
+DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    D3DCUBEMAP_FACES Face;
+    switch (iFace)
+    {
+        case 0: Face = D3DCUBEMAP_FACE_POSITIVE_X; break;
+        case 1: Face = D3DCUBEMAP_FACE_NEGATIVE_X; break;
+        case 2: Face = D3DCUBEMAP_FACE_POSITIVE_Y; break;
+        case 3: Face = D3DCUBEMAP_FACE_NEGATIVE_Y; break;
+        case 4: Face = D3DCUBEMAP_FACE_POSITIVE_Z; break;
+        default:
+        case 5: Face = D3DCUBEMAP_FACE_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+
 static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     RT_NOREF(pDevIns, pThis);
@@ -6183,7 +6199,197 @@ static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps, D3DADAPTER_IDENTIFIER9 const *pai
     RTLogRelSetBuffering(fBufferingSaved);
 }
 
-int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
+/**
+ * Worker for vmsvga3dUpdateHeapBuffersForSurfaces.
+ *
+ * This will allocate heap buffers if necessary, thus increasing the memory
+ * usage of the process.
+ *
+ * @todo Would be interesting to share this code with the saved state code.
+ *
+ * @returns VBox status code.
+ * @param   pThisCC             The VGA/VMSVGA context.
+ * @param   pSurface            The surface to refresh the heap buffers for.
+ */
+static DECLCALLBACK(int) vmsvga3dBackSurfaceUpdateHeapBuffers(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface)
+{
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
+    AssertReturn(pState, VERR_INVALID_STATE);
+
+    /*
+     * Currently we've got trouble retreving bit for DEPTHSTENCIL
+     * surfaces both for OpenGL and D3D, so skip these here (don't
+     * wast memory on them).
+     */
+    uint32_t const fSwitchFlags = pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
+    if (   fSwitchFlags != SVGA3D_SURFACE_HINT_DEPTHSTENCIL
+        && fSwitchFlags != (SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE))
+    {
+
+        /*
+         * Work thru each mipmap level for each face.
+         */
+        for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
+        {
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iFace * pSurface->cLevels];
+            for (uint32_t i = 0; i < pSurface->cLevels; i++, pMipmapLevel++)
+            {
+                if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
+                {
+                    Assert(pMipmapLevel->cbSurface);
+                    Assert(pMipmapLevel->cbSurface == pMipmapLevel->cbSurfacePlane * pMipmapLevel->mipmapSize.depth);
+
+                    /*
+                     * Make sure we've got surface memory buffer.
+                     */
+                    uint8_t *pbDst = (uint8_t *)pMipmapLevel->pSurfaceData;
+                    if (!pbDst)
+                    {
+                        pMipmapLevel->pSurfaceData = pbDst = (uint8_t *)RTMemAllocZ(pMipmapLevel->cbSurface);
+                        AssertReturn(pbDst, VERR_NO_MEMORY);
+                    }
+
+                    /*
+                     * D3D specifics.
+                     */
+                    Assert(pSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_NONE);
+
+                    HRESULT hr;
+                    switch (pSurface->enmD3DResType)
+                    {
+                        case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
+                            AssertFailed(); /// @todo
+                            break;
+
+                        case VMSVGA3D_D3DRESTYPE_SURFACE:
+                        case VMSVGA3D_D3DRESTYPE_TEXTURE:
+                        case VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE:
+                        {
+                            /*
+                             * Lock the buffer and make it accessible to memcpy.
+                             */
+                            D3DLOCKED_RECT LockedRect;
+                            if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
+                            {
+                                hr = pSurface->u.pCubeTexture->LockRect(vmsvga3dCubemapFaceFromIndex(iFace),
+                                                                        i, /* texture level */
+                                                                        &LockedRect,
+                                                                        NULL,
+                                                                        D3DLOCK_READONLY);
+                            }
+                            else if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE)
+                            {
+                                if (pSurface->bounce.pTexture)
+                                {
+                                    if (   !pSurface->fDirty
+                                        && RT_BOOL(fSwitchFlags & SVGA3D_SURFACE_HINT_RENDERTARGET))
+                                    {
+                                        /** @todo stricter checks for associated context */
+                                        uint32_t cid = pSurface->idAssociatedContext;
+                                        PVMSVGA3DCONTEXT pContext;
+                                        int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+                                        AssertRCReturn(rc, rc);
+
+                                        IDirect3DSurface9 *pDst = NULL;
+                                        hr = pSurface->bounce.pTexture->GetSurfaceLevel(i, &pDst);
+                                        AssertMsgReturn(hr == D3D_OK, ("GetSurfaceLevel failed with %#x\n", hr), VERR_INTERNAL_ERROR);
+
+                                        IDirect3DSurface9 *pSrc = NULL;
+                                        hr = pSurface->u.pTexture->GetSurfaceLevel(i, &pSrc);
+                                        AssertMsgReturn(hr == D3D_OK, ("GetSurfaceLevel failed with %#x\n", hr), VERR_INTERNAL_ERROR);
+
+                                        hr = pContext->pDevice->GetRenderTargetData(pSrc, pDst);
+                                        AssertMsgReturn(hr == D3D_OK, ("GetRenderTargetData failed with %#x\n", hr), VERR_INTERNAL_ERROR);
+
+                                        pSrc->Release();
+                                        pDst->Release();
+                                    }
+
+                                    hr = pSurface->bounce.pTexture->LockRect(i, /* texture level */
+                                                                             &LockedRect,
+                                                                             NULL,
+                                                                             D3DLOCK_READONLY);
+                                }
+                                else
+                                    hr = pSurface->u.pTexture->LockRect(i, /* texture level */
+                                                                        &LockedRect,
+                                                                        NULL,
+                                                                        D3DLOCK_READONLY);
+                            }
+                            else
+                                hr = pSurface->u.pSurface->LockRect(&LockedRect,
+                                                                    NULL,
+                                                                    D3DLOCK_READONLY);
+                            AssertMsgReturn(hr == D3D_OK, ("LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+                            /*
+                             * Copy the data.  Take care in case the pitch differs.
+                             */
+                            if (pMipmapLevel->cbSurfacePitch == (uint32_t)LockedRect.Pitch)
+                                memcpy(pbDst, LockedRect.pBits, pMipmapLevel->cbSurface);
+                            else
+                                for (uint32_t j = 0; j < pMipmapLevel->cBlocksY; j++)
+                                    memcpy(pbDst + j * pMipmapLevel->cbSurfacePitch,
+                                           (uint8_t *)LockedRect.pBits + j * LockedRect.Pitch,
+                                           pMipmapLevel->cbSurfacePitch);
+
+                            /*
+                             * Release the buffer.
+                             */
+                            if (fSwitchFlags & SVGA3D_SURFACE_HINT_TEXTURE)
+                            {
+                                if (pSurface->bounce.pTexture)
+                                {
+                                    hr = pSurface->bounce.pTexture->UnlockRect(i);
+                                    AssertMsgReturn(hr == D3D_OK, ("UnlockRect failed with %#x\n", hr), VERR_INTERNAL_ERROR);
+                                }
+                                else
+                                    hr = pSurface->u.pTexture->UnlockRect(i);
+                            }
+                            else
+                                hr = pSurface->u.pSurface->UnlockRect();
+                            AssertMsgReturn(hr == D3D_OK, ("UnlockRect failed with %#x\n", hr), VERR_INTERNAL_ERROR);
+                            break;
+                        }
+
+                        case VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER:
+                        case VMSVGA3D_D3DRESTYPE_INDEX_BUFFER:
+                        {
+                            /* Current type of the buffer. */
+                            const bool fVertex = (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER);
+
+                            void *pvD3DData = NULL;
+                            if (fVertex)
+                                hr = pSurface->u.pVertexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
+                            else
+                                hr = pSurface->u.pIndexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
+                            AssertMsgReturn(hr == D3D_OK, ("Lock %s failed with %x\n", fVertex ? "vertex" : "index", hr), VERR_INTERNAL_ERROR);
+
+                            memcpy(pbDst, pvD3DData, pMipmapLevel->cbSurface);
+
+                            if (fVertex)
+                                hr = pSurface->u.pVertexBuffer->Unlock();
+                            else
+                                hr = pSurface->u.pIndexBuffer->Unlock();
+                            AssertMsg(hr == D3D_OK, ("Unlock %s failed with %x\n", fVertex ? "vertex" : "index", hr));
+                            break;
+                        }
+
+                        default:
+                            AssertMsgFailed(("flags %#x, type %d\n", fSwitchFlags, pSurface->enmD3DResType));
+                    }
+
+                }
+                /* else: There is no data in hardware yet, so whatever we got is already current. */
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
 {
     RT_NOREF(pThisCC);
 
@@ -6210,6 +6416,7 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDefineScreen             = vmsvga3dBackDefineScreen;
                 p->pfnDestroyScreen            = vmsvga3dBackDestroyScreen;
                 p->pfnSurfaceBlitToScreen      = vmsvga3dBackSurfaceBlitToScreen;
+                p->pfnSurfaceUpdateHeapBuffers = vmsvga3dBackSurfaceUpdateHeapBuffers;
             }
         }
         else
@@ -6262,3 +6469,10 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
         rc = VERR_NOT_IMPLEMENTED;
     return rc;
 }
+
+
+extern VMSVGA3DBACKENDDESC const g_BackendLegacy =
+{
+    "LEGACY",
+    vmsvga3dBackQueryInterface
+};

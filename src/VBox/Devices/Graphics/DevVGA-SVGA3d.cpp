@@ -93,18 +93,9 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
         vmsvga3dSurfaceDestroy(pThisCC, sid);
 
     RT_ZERO(*pSurface);
-    pSurface->id = SVGA3D_INVALID_ID; /* Keep this value until the surface init completes */
-#ifdef VMSVGA3D_OPENGL
-    pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
-    pSurface->oglId.buffer          = OPENGL_INVALID_ID;
-#elif defined(VMSVGA3D_D3D11)
+    // pSurface->pBackendSurface    = NULL;
+    pSurface->id                    = SVGA3D_INVALID_ID; /* Keep this value until the surface init completes */
     pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
-    // pSurface->pBackendSurface       = NULL;
-#else /* VMSVGA3D_DIRECT3D */
-    pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
-    pSurface->hSharedObject         = NULL;
-    pSurface->pSharedObjectTree     = NULL;
-#endif
 
     /** @todo This 'switch' and the surfaceFlags tweaks should not be necessary.
      * The actual surface type will be figured out when the surface is actually used later.
@@ -277,33 +268,37 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
 
     AssertLogRelRCReturnStmt(rc, RTMemFree(pSurface->paMipmapLevels), rc);
 
+    if (vmsvga3dIsLegacyBackend(pThisCC))
+    {
 #ifdef VMSVGA3D_DIRECT3D
-    /* Translate the format and usage flags to D3D. */
-    pSurface->d3dfmtRequested   = vmsvga3dSurfaceFormat2D3D(format);
-    pSurface->formatD3D         = D3D9GetActualFormat(pState, pSurface->d3dfmtRequested);
-    pSurface->multiSampleTypeD3D= vmsvga3dMultipeSampleCount2D3D(multisampleCount);
-    pSurface->fUsageD3D         = 0;
-    if (surfaceFlags & SVGA3D_SURFACE_HINT_DYNAMIC)
-        pSurface->fUsageD3D |= D3DUSAGE_DYNAMIC;
-    if (surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET)
-        pSurface->fUsageD3D |= D3DUSAGE_RENDERTARGET;
-    if (surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)
-        pSurface->fUsageD3D |= D3DUSAGE_DEPTHSTENCIL;
-    if (surfaceFlags & SVGA3D_SURFACE_HINT_WRITEONLY)
-        pSurface->fUsageD3D |= D3DUSAGE_WRITEONLY;
-    if (surfaceFlags & SVGA3D_SURFACE_AUTOGENMIPMAPS)
-        pSurface->fUsageD3D |= D3DUSAGE_AUTOGENMIPMAP;
-    pSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
-    /* pSurface->u.pSurface = NULL; */
-    /* pSurface->bounce.pTexture = NULL; */
-    /* pSurface->emulated.pTexture = NULL; */
-#elif defined(VMSVGA3D_D3D11)
-    /* Nothing, because all backend specific data reside in pSurface->pBackendSurface. */
+        /* pSurface->hSharedObject = NULL; */
+        /* pSurface->pSharedObjectTree = NULL; */
+        /* Translate the format and usage flags to D3D. */
+        pSurface->d3dfmtRequested   = vmsvga3dSurfaceFormat2D3D(format);
+        pSurface->formatD3D         = D3D9GetActualFormat(pState, pSurface->d3dfmtRequested);
+        pSurface->multiSampleTypeD3D= vmsvga3dMultipeSampleCount2D3D(multisampleCount);
+        pSurface->fUsageD3D         = 0;
+        if (surfaceFlags & SVGA3D_SURFACE_HINT_DYNAMIC)
+            pSurface->fUsageD3D |= D3DUSAGE_DYNAMIC;
+        if (surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET)
+            pSurface->fUsageD3D |= D3DUSAGE_RENDERTARGET;
+        if (surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)
+            pSurface->fUsageD3D |= D3DUSAGE_DEPTHSTENCIL;
+        if (surfaceFlags & SVGA3D_SURFACE_HINT_WRITEONLY)
+            pSurface->fUsageD3D |= D3DUSAGE_WRITEONLY;
+        if (surfaceFlags & SVGA3D_SURFACE_AUTOGENMIPMAPS)
+            pSurface->fUsageD3D |= D3DUSAGE_AUTOGENMIPMAP;
+        pSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
+        /* pSurface->u.pSurface = NULL; */
+        /* pSurface->bounce.pTexture = NULL; */
+        /* pSurface->emulated.pTexture = NULL; */
 #else
-    /* pSurface->fEmulated = false; */
-    /* pSurface->idEmulated = OPENGL_INVALID_ID; */
-    vmsvga3dSurfaceFormat2OGL(pSurface, format);
+        /* pSurface->oglId.buffer = OPENGL_INVALID_ID; */
+        /* pSurface->fEmulated = false; */
+        /* pSurface->idEmulated = OPENGL_INVALID_ID; */
+        vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif
+    }
 
 #ifdef LOG_ENABLED
     SVGA3dSurfaceAllFlags const f = surfaceFlags;
@@ -558,13 +553,11 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGuestImage gues
          */
         AssertReturn(pMipLevel->pSurfaceData, VERR_INTERNAL_ERROR);
     }
-    else
+    else if (vmsvga3dIsLegacyBackend(pThisCC))
     {
 #ifdef VMSVGA3D_DIRECT3D
         /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
         vmsvga3dSurfaceFlush(pSurface);
-#elif defined(VMSVGA3D_D3D11)
-        /** @todo */
 #else /* VMSVGA3D_OPENGL */
         pContext = &pState->SharedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
@@ -1165,6 +1158,39 @@ void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VM
     pSvgaR3State->pFuncs3D->pfnUpdateHostScreenViewport(pThisCC, idScreen, pOldViewport);
 }
 
+/**
+ * Updates the heap buffers for all surfaces or one specific one.
+ *
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
+ * @param   sid         The surface ID, UINT32_MAX if all.
+ * @thread  VMSVGAFIFO
+ */
+void vmsvga3dUpdateHeapBuffersForSurfaces(PVGASTATECC pThisCC, uint32_t sid)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    AssertReturnVoid(pSvgaR3State->pFuncs3D);
+
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
+    AssertReturnVoid(pState);
+
+    if (sid == UINT32_MAX)
+    {
+        uint32_t cSurfaces = pState->cSurfaces;
+        for (sid = 0; sid < cSurfaces; sid++)
+        {
+            PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
+            if (pSurface && pSurface->id == sid)
+                pSvgaR3State->pFuncs3D->pfnSurfaceUpdateHeapBuffers(pThisCC, pSurface);
+        }
+    }
+    else if (sid < pState->cSurfaces)
+    {
+        PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
+        if (pSurface && pSurface->id == sid)
+            pSvgaR3State->pFuncs3D->pfnSurfaceUpdateHeapBuffers(pThisCC, pSurface);
+    }
+}
+
 
 /*
  *
@@ -1310,5 +1336,16 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     AssertReturn(pSvgaR3State->pFuncsVGPU9, VERR_NOT_IMPLEMENTED);
     return pSvgaR3State->pFuncsVGPU9->pfnShaderSetConst(pThisCC, cid, reg, type, ctype, cRegisters, pValues);
+}
+
+/*
+ * Whether a legacy 3D backend is used.
+ * The new DX context can be built together with the legacy D3D9 or OpenGL backend.
+ * The actual backend is selected at the VM startup.
+ */
+bool vmsvga3dIsLegacyBackend(PVGASTATECC pThisCC)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    return pSvgaR3State->pFuncsDX == NULL;
 }
 

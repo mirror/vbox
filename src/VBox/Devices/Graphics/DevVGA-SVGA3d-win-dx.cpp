@@ -189,6 +189,23 @@ typedef struct VMSVGA3DBACKEND
 static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface);
 
 
+DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    D3D11_TEXTURECUBE_FACE Face;
+    switch (iFace)
+    {
+        case 0: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_X; break;
+        case 1: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_X; break;
+        case 2: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Y; break;
+        case 3: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Y; break;
+        case 4: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Z; break;
+        default:
+        case 5: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+
+
 static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
 {
     /* Ensure that correct headers are used.
@@ -3095,6 +3112,15 @@ static DECLCALLBACK(void) vmsvga3dBackUpdateHostScreenViewport(PVGASTATECC pThis
     /** @todo Scroll the screen content without requiring the guest to redraw. */
 }
 
+
+static DECLCALLBACK(int) vmsvga3dBackSurfaceUpdateHeapBuffers(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface)
+{
+    /** @todo */
+    RT_NOREF(pThisCC, pSurface);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /**
  * Create a new 3d context
  *
@@ -5780,7 +5806,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShaderIface(PVGASTATECC pThisCC, PVMS
 }
 
 
-int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
+static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
 {
     RT_NOREF(pThisCC);
 
@@ -5977,6 +6003,7 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDefineScreen             = vmsvga3dBackDefineScreen;
                 p->pfnDestroyScreen            = vmsvga3dBackDestroyScreen;
                 p->pfnSurfaceBlitToScreen      = vmsvga3dBackSurfaceBlitToScreen;
+                p->pfnSurfaceUpdateHeapBuffers = vmsvga3dBackSurfaceUpdateHeapBuffers;
             }
         }
         else
@@ -5989,3 +6016,10 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
         rc = VERR_NOT_IMPLEMENTED;
     return rc;
 }
+
+
+extern VMSVGA3DBACKENDDESC const g_BackendDX =
+{
+    "DX",
+    vmsvga3dBackQueryInterface
+};

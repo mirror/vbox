@@ -151,11 +151,7 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
     struct VMSVGA3DSURFACEPreMipLevels
     {
         uint32_t            id;
-#ifdef VMSVGA3D_OPENGL
-        uint32_t            idWeakContextAssociation;
-#else
         uint32_t            idAssociatedContext;
-#endif
         uint32_t            surfaceFlags;
         SVGA3dSurfaceFormat format;
 #ifdef VMSVGA3D_OPENGL
@@ -173,11 +169,7 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
     static SSMFIELD const s_aVMSVGA3DSURFACEFieldsPreMipLevels[] =
     {
         SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, id),
-#ifdef VMSVGA3D_OPENGL
-        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, idWeakContextAssociation),
-#else
         SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, idAssociatedContext),
-#endif
         SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, surfaceFlags),
         SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, format),
 #ifdef VMSVGA3D_OPENGL
@@ -201,11 +193,7 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
     if (RT_SUCCESS(rc))
     {
         pSurface->id                       = surfacePreMipLevels.id;
-#ifdef VMSVGA3D_OPENGL
-        pSurface->idWeakContextAssociation = surfacePreMipLevels.idWeakContextAssociation;
-#else
         pSurface->idAssociatedContext      = surfacePreMipLevels.idAssociatedContext;
-#endif
         pSurface->surfaceFlags             = surfacePreMipLevels.surfaceFlags;
         pSurface->format                   = surfacePreMipLevels.format;
 #ifdef VMSVGA3D_OPENGL
@@ -802,7 +790,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                             AssertRCReturn(rc, rc);
                         }
                     }
-                    else
+                    else if (vmsvga3dIsLegacyBackend(pThisCC))
                     {
 #ifdef VMSVGA3D_DIRECT3D
                         void            *pData;
@@ -955,8 +943,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                         }
 
                         RTMemFree(pData);
-#elif defined(VMSVGA3D_D3D11)
-                        /** @todo */
+
 #elif defined(VMSVGA3D_OPENGL)
                         void *pData = NULL;
 
@@ -1049,6 +1036,15 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
 #else
 #error "Unexpected 3d backend"
 #endif
+                    }
+                    else
+                    {
+                        /** @todo DX backend. */
+                        Assert(!vmsvga3dIsLegacyBackend(pThisCC));
+
+                        /* No data follows */
+                        rc = pHlp->pfnSSMPutBool(pSSM, false);
+                        AssertRCReturn(rc, rc);
                     }
                 }
             }

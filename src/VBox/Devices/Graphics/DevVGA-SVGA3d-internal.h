@@ -28,10 +28,10 @@
 # error "VMSVGA3D_INCL_INTERNALS is only for ring-3 code"
 #endif
 #ifdef VMSVGA3D_OPENGL
-# if defined(VMSVGA3D_DIRECT3D) || defined(VMSVGA3D_D3D11)
+# if defined(VMSVGA3D_DIRECT3D)
 #  error "Both VMSVGA3D_DIRECT3D and VMSVGA3D_OPENGL cannot be defined at the same time."
 # endif
-#elif !defined(VMSVGA3D_DIRECT3D) && !defined(VMSVGA3D_D3D11)
+#elif !defined(VMSVGA3D_DIRECT3D)
 # error "Either VMSVGA3D_OPENGL or VMSVGA3D_DIRECT3D must be defined."
 #endif
 
@@ -50,8 +50,6 @@
 # ifdef VMSVGA3D_DIRECT3D
 #  include <d3d9.h>
 #  include <iprt/avl.h>
-# elif defined(VMSVGA3D_D3D11)
-#  include <d3d11.h>
 # else
 #  include <GL/gl.h>
 #  include "vmsvga_glext/wglext.h"
@@ -551,13 +549,15 @@ typedef struct VMSVGA3DSURFACE
 {
     PVMSVGA3DBACKENDSURFACE pBackendSurface;
 
-    uint32_t                id;
-#ifdef VMSVGA3D_OPENGL
-    uint32_t                idWeakContextAssociation;
-#else
+    uint32_t                id; /** @todo sid */
+    /* Which context created the corresponding resource.
+     * SVGA_ID_INVALID means that resource has not been created yet, or has been created by the shared context.
+     * A resource has been created if VMSVGA3DSURFACE_HAS_HW_SURFACE is true.
+     *
+     */
     uint32_t                idAssociatedContext;
-#endif
-    SVGA3dSurface1Flags     surfaceFlags; /* @todo SVGA3dSurfaceAllFlags as an union. */
+
+    SVGA3dSurface1Flags     surfaceFlags; /** @todo SVGA3dSurfaceAllFlags as an union. */
     SVGA3dSurfaceFormat     format;
 #ifdef VMSVGA3D_OPENGL
     GLint                   internalFormatGL;
@@ -644,11 +644,7 @@ typedef VMSVGA3DSURFACE *PVMSVGA3DSURFACE;
 static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 {
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, id),
-# ifdef VMSVGA3D_OPENGL
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idWeakContextAssociation),
-# else
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContext),
-# endif
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, surfaceFlags),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, format),
 # ifdef VMSVGA3D_OPENGL
@@ -678,11 +674,9 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
  * @param   a_pSurface      The VMSVGA3d surface.
  */
 #ifdef VMSVGA3D_DIRECT3D
-# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->u.pSurface != NULL)
-#elif defined(VMSVGA3D_D3D11)
-# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->pBackendSurface != NULL)
+# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->pBackendSurface != NULL || (a_pSurface)->u.pSurface != NULL)
 #else
-# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->oglId.texture != OPENGL_INVALID_ID)
+# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->pBackendSurface != NULL || (a_pSurface)->oglId.texture != OPENGL_INVALID_ID)
 #endif
 
 /** @def VMSVGA3DSURFACE_NEEDS_DATA
@@ -695,9 +689,6 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 # define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
    (   (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER \
     || (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER)
-#elif defined(VMSVGA3D_D3D11)
-  /** @todo */
-# define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) (false)
 #else
 # define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
     ((a_pSurface)->enmOGLResType == VMSVGA3D_OGLRESTYPE_BUFFER)
@@ -716,8 +707,6 @@ typedef struct VMSVGA3DSHADER
 #ifdef VMSVGA3D_DIRECT3D
         IDirect3DVertexShader9     *pVertexShader;
         IDirect3DPixelShader9      *pPixelShader;
-#elif defined(VMSVGA3D_D3D11)
-        /* Nothing */
 #else
         void                       *pVertexShader;
         void                       *pPixelShader;
@@ -772,8 +761,6 @@ typedef struct VMSVGA3DQUERY
 {
 #ifdef VMSVGA3D_DIRECT3D
     IDirect3DQuery9    *pQuery;
-#elif defined(VMSVGA3D_D3D11)
-    /** @todo */
 #else /* VMSVGA3D_OPENGL */
     GLuint              idQuery;
 #endif
@@ -789,8 +776,6 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
 {
 #ifdef VMSVGA3D_DIRECT3D
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DQUERY, pQuery),
-#elif defined(VMSVGA3D_D3D11)
-    /** @todo */
 #else /* VMSVGA3D_OPENGL */
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DQUERY, idQuery),
 #endif
@@ -802,9 +787,6 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
 
 #ifdef VMSVGA3D_DIRECT3D
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->pQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
-#elif defined(VMSVGA3D_D3D11)
-    /** @todo */
-#define VMSVGA3DQUERY_EXISTS(p) ((p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #else
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->idQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #endif
@@ -814,6 +796,8 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
  */
 typedef struct VMSVGA3DCONTEXT
 {
+    /** @todo Legacy contexts with DX backend. */
+
     uint32_t                id;
 #ifdef RT_OS_WINDOWS
 # ifdef VMSVGA3D_DIRECT3D
@@ -822,8 +806,6 @@ typedef struct VMSVGA3DCONTEXT
 #  else
     IDirect3DDevice9Ex     *pDevice;
 #  endif
-# elif defined(VMSVGA3D_D3D11)
-    /** @todo Legacy contexts with DX backend. */
 # else
     /* Device context of the context window. */
     HDC                     hdc;
@@ -922,8 +904,6 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 # ifdef RT_OS_WINDOWS
 #  ifdef VMSVGA3D_DIRECT3D
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DCONTEXT, pDevice),
-#  elif defined(VMSVGA3D_D3D11)
-    /** @todo */
 #  else
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, hdc),
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, hglrc),
@@ -1044,6 +1024,9 @@ typedef struct VMSVGA3DBACKEND *PVMSVGA3DBACKEND;
  */
 typedef struct VMSVGA3DSTATE
 {
+    /** Backend specific data. */
+    PVMSVGA3DBACKEND        pBackend;
+
     /** The size of papContexts. */
     uint32_t                cContexts;
     /** The size of papSurfaces. */
@@ -1076,8 +1059,6 @@ typedef struct VMSVGA3DSTATE
     bool                    fSupportedFormatUYVY : 1;
     bool                    fSupportedFormatYUY2 : 1;
     bool                    fSupportedFormatA8B8G8R8 : 1;
-# elif defined(VMSVGA3D_D3D11)
-    PVMSVGA3DBACKEND        pBackend;
 # endif
     /** Window Thread. */
     R3PTRTYPE(RTTHREAD)     pWindowThread;
@@ -1387,66 +1368,16 @@ DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, ui
     return VINF_SUCCESS;
 }
 
-#ifdef VMSVGA3D_DIRECT3D
-DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
-{
-    D3DCUBEMAP_FACES Face;
-    switch (iFace)
-    {
-        case 0: Face = D3DCUBEMAP_FACE_POSITIVE_X; break;
-        case 1: Face = D3DCUBEMAP_FACE_NEGATIVE_X; break;
-        case 2: Face = D3DCUBEMAP_FACE_POSITIVE_Y; break;
-        case 3: Face = D3DCUBEMAP_FACE_NEGATIVE_Y; break;
-        case 4: Face = D3DCUBEMAP_FACE_POSITIVE_Z; break;
-        default:
-        case 5: Face = D3DCUBEMAP_FACE_NEGATIVE_Z; break;
-    }
-    return Face;
-}
-#elif defined(VMSVGA3D_D3D11)
-DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
-{
-    D3D11_TEXTURECUBE_FACE Face;
-    switch (iFace)
-    {
-        case 0: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_X; break;
-        case 1: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_X; break;
-        case 2: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Y; break;
-        case 3: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Y; break;
-        case 4: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Z; break;
-        default:
-        case 5: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Z; break;
-    }
-    return Face;
-}
-#else /* VMSVGA3D_OPENGL */
-DECLINLINE(GLenum) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
-{
-    GLint Face;
-    switch (iFace)
-    {
-        case 0: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; break;
-        case 1: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_X; break;
-        case 2: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Y; break;
-        case 3: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y; break;
-        case 4: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Z; break;
-        default:
-        case 5: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; break;
-    }
-    return Face;
-}
-#endif
-
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                  const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix);
 
-#if defined(VMSVGA3D_DIRECT3D) || defined(VMSVGA3D_D3D11)
+#if defined(RT_OS_WINDOWS)
 #define D3D_RELEASE(ptr) do { \
-    if (ptr)                  \
-    {                         \
-        (ptr)->Release();     \
-        (ptr) = 0;            \
-    }                         \
+    if (ptr) \
+    { \
+        (ptr)->Release(); \
+        (ptr) = 0; \
+    } \
 } while (0)
 #endif
 

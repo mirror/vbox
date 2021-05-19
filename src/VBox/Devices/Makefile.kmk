@@ -329,22 +329,20 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    VBoxDD_SOURCES       += \
        Graphics/DevVGA-SVGA3d-dx.cpp \
        Graphics/DevVGA-SVGA3d-dx-shader.cpp
+   if "$(KBUILD_TARGET)" == "win"
+    VBoxDD_SOURCES      += \
+       Graphics/DevVGA-SVGA3d-win-dx.cpp
+   endif
   endif
   VBoxDD_SOURCES       += \
        Graphics/svgadump/svga_dump.c
   if  "$(KBUILD_TARGET)" == "win" && !defined(VBOX_WITH_VMSVGA3D_USE_OPENGL)
-   ifdef VBOX_WITH_VMSVGA3D_DX
-    VBoxDD_DEFS          += VMSVGA3D_D3D11
-    VBoxDD_SOURCES       += \
-        Graphics/DevVGA-SVGA3d-win-dx.cpp
-   else
     VBoxDD_DEFS          += VMSVGA3D_DIRECT3D
     VBoxDD_SOURCES       += \
         Graphics/DevVGA-SVGA3d-win.cpp \
         Graphics/DevVGA-SVGA3d-win-d3d9.cpp
     VBoxDD_LIBS.win      += d3d9.lib $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
     VBoxDD_LDFLAGS.win   += /DELAYLOAD:d3d9.dll
-   endif
   else
    VBoxDD_DEFS          += VMSVGA3D_OPENGL
    VBoxDD_SOURCES       += \

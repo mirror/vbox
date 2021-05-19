@@ -826,6 +826,23 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
 }
 
 
+DECLINLINE(GLenum) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    GLint Face;
+    switch (iFace)
+    {
+        case 0: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; break;
+        case 1: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_X; break;
+        case 2: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Y; break;
+        case 3: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y; break;
+        case 4: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Z; break;
+        default:
+        case 5: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+
+
 /* We must delay window creation until the PowerOn phase. Init is too early and will cause failures. */
 static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
@@ -5360,7 +5377,6 @@ static DECLCALLBACK(int) vmsvga3dBackSetRenderTarget(PVGASTATECC pThisCC, uint32
 
             pContext = pState->papContexts[cid];
             VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-            pRenderTarget->idWeakContextAssociation = cid;
         }
 
         pState->ext.glBindRenderbuffer(GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
@@ -7733,7 +7749,127 @@ static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryGetData(PVGASTATECC pThisCC, 
     return VINF_SUCCESS;
 }
 
-int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
+/**
+ * Worker for vmsvga3dUpdateHeapBuffersForSurfaces.
+ *
+ * This will allocate heap buffers if necessary, thus increasing the memory
+ * usage of the process.
+ *
+ * @todo Would be interesting to share this code with the saved state code.
+ *
+ * @returns VBox status code.
+ * @param   pThisCC             The VGA/VMSVGA context.
+ * @param   pSurface            The surface to refresh the heap buffers for.
+ */
+static DECLCALLBACK(int) vmsvga3dBackSurfaceUpdateHeapBuffers(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface)
+{
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
+    AssertReturn(pState, VERR_INVALID_STATE);
+
+    /*
+     * Currently we've got trouble retreving bit for DEPTHSTENCIL
+     * surfaces both for OpenGL and D3D, so skip these here (don't
+     * wast memory on them).
+     */
+    uint32_t const fSwitchFlags = pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
+    if (   fSwitchFlags != SVGA3D_SURFACE_HINT_DEPTHSTENCIL
+        && fSwitchFlags != (SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE))
+    {
+        /*
+         * Change OpenGL context to the one the surface is associated with.
+         */
+        PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+
+        /*
+         * Work thru each mipmap level for each face.
+         */
+        for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
+        {
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iFace * pSurface->cLevels];
+            for (uint32_t i = 0; i < pSurface->cLevels; i++, pMipmapLevel++)
+            {
+                if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
+                {
+                    Assert(pMipmapLevel->cbSurface);
+                    Assert(pMipmapLevel->cbSurface == pMipmapLevel->cbSurfacePlane * pMipmapLevel->mipmapSize.depth);
+
+                    /*
+                     * Make sure we've got surface memory buffer.
+                     */
+                    uint8_t *pbDst = (uint8_t *)pMipmapLevel->pSurfaceData;
+                    if (!pbDst)
+                    {
+                        pMipmapLevel->pSurfaceData = pbDst = (uint8_t *)RTMemAllocZ(pMipmapLevel->cbSurface);
+                        AssertReturn(pbDst, VERR_NO_MEMORY);
+                    }
+
+                    /*
+                     * OpenGL specifics.
+                     */
+                    switch (pSurface->enmOGLResType)
+                    {
+                        case VMSVGA3D_OGLRESTYPE_TEXTURE:
+                        {
+                            GLint activeTexture;
+                            glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+                            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                            glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
+                            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                            /* Set row length and alignment of the output data. */
+                            VMSVGAPACKPARAMS SavedParams;
+                            vmsvga3dOglSetPackParams(pState, pContext, pSurface, &SavedParams);
+
+                            glGetTexImage(GL_TEXTURE_2D,
+                                          i,
+                                          pSurface->formatGL,
+                                          pSurface->typeGL,
+                                          pbDst);
+                            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                            vmsvga3dOglRestorePackParams(pState, pContext, pSurface, &SavedParams);
+
+                            /* Restore the old active texture. */
+                            glBindTexture(GL_TEXTURE_2D, activeTexture);
+                            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                            break;
+                        }
+
+                        case VMSVGA3D_OGLRESTYPE_BUFFER:
+                        {
+                            pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pSurface->oglId.buffer);
+                            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                            void *pvSrc = pState->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+                            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                            if (RT_VALID_PTR(pvSrc))
+                                memcpy(pbDst, pvSrc, pMipmapLevel->cbSurface);
+                            else
+                                AssertPtr(pvSrc);
+
+                            pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
+                            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                            pState->ext.glBindBuffer(GL_ARRAY_BUFFER, 0);
+                            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                            break;
+                        }
+
+                        default:
+                            AssertMsgFailed(("%#x\n", fSwitchFlags));
+                    }
+                }
+                /* else: There is no data in hardware yet, so whatever we got is already current. */
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
 {
     RT_NOREF(pThisCC);
 
@@ -7760,6 +7896,7 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDefineScreen             = vmsvga3dBackDefineScreen;
                 p->pfnDestroyScreen            = vmsvga3dBackDestroyScreen;
                 p->pfnSurfaceBlitToScreen      = vmsvga3dBackSurfaceBlitToScreen;
+                p->pfnSurfaceUpdateHeapBuffers = vmsvga3dBackSurfaceUpdateHeapBuffers;
             }
         }
         else
@@ -7812,3 +7949,10 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
         rc = VERR_NOT_IMPLEMENTED;
     return rc;
 }
+
+
+extern VMSVGA3DBACKENDDESC const g_BackendLegacy =
+{
+    "LEGACY",
+    vmsvga3dBackQueryInterface
+};

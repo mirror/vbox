@@ -5822,14 +5822,23 @@ typedef struct VMSVGA3DINTERFACE
     void **ppvFuncs;
 } VMSVGA3DINTERFACE;
 
+extern VMSVGA3DBACKENDDESC const g_BackendLegacy;
+#ifdef VMSVGA3D_DX
+extern VMSVGA3DBACKENDDESC const g_BackendDX;
+#endif
+
 /**
  * Initializes the optional host 3D backend interfaces.
  *
  * @returns VBox status code.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  */
-static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
+static int vmsvgaR3Init3dInterfaces(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
+#ifndef VMSVGA3D_DX
+    RT_NOREF(pThis);
+#endif
+
     PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
 
 #define ENTRY_3D_INTERFACE(a_Name, a_Field) { VMSVGA3D_BACKEND_INTERFACE_NAME_##a_Name, sizeof(VMSVGA3DBACKENDFUNCS##a_Name), (void **)&pSVGAState->a_Field }
@@ -5843,18 +5852,26 @@ static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
     };
 #undef ENTRY_3D_INTERFACE
 
+    VMSVGA3DBACKENDDESC const *pBackend = NULL;
+#ifdef VMSVGA3D_DX
+    if (pThis->fVMSVGA10)
+        pBackend = &g_BackendDX;
+    else
+#endif
+        pBackend = &g_BackendLegacy;
+
     int rc = VINF_SUCCESS;
     for (uint32_t i = 0; i < RT_ELEMENTS(a3dInterface); ++i)
     {
         VMSVGA3DINTERFACE *p = &a3dInterface[i];
 
-        int rc2 = vmsvga3dQueryInterface(pThisCC, p->pcszName, NULL, p->cbFuncs);
+        int rc2 = pBackend->pfnQueryInterface(pThisCC, p->pcszName, NULL, p->cbFuncs);
         if (RT_SUCCESS(rc2))
         {
             *p->ppvFuncs = RTMemAllocZ(p->cbFuncs);
             AssertBreakStmt(*p->ppvFuncs, rc = VERR_NO_MEMORY);
 
-            vmsvga3dQueryInterface(pThisCC, p->pcszName, *p->ppvFuncs, p->cbFuncs);
+            pBackend->pfnQueryInterface(pThisCC, p->pcszName, *p->ppvFuncs, p->cbFuncs);
         }
     }
 
@@ -6188,7 +6205,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     if (pThis->svga.f3DEnabled)
     {
         /* Load a 3D backend. */
-        rc = vmsvgaR3Init3dInterfaces(pThisCC);
+        rc = vmsvgaR3Init3dInterfaces(pThis, pThisCC);
         if (RT_SUCCESS(rc))
             rc = pSVGAState->pFuncs3D->pfnInit(pDevIns, pThis, pThisCC);
 

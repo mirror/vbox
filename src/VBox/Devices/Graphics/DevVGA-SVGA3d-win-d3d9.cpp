@@ -31,6 +31,22 @@ typedef enum D3D9TextureType
     D3D9TextureType_Emulated
 } D3D9TextureType;
 
+DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    D3DCUBEMAP_FACES Face;
+    switch (iFace)
+    {
+        case 0: Face = D3DCUBEMAP_FACE_POSITIVE_X; break;
+        case 1: Face = D3DCUBEMAP_FACE_NEGATIVE_X; break;
+        case 2: Face = D3DCUBEMAP_FACE_POSITIVE_Y; break;
+        case 3: Face = D3DCUBEMAP_FACE_NEGATIVE_Y; break;
+        case 4: Face = D3DCUBEMAP_FACE_POSITIVE_Z; break;
+        default:
+        case 5: Face = D3DCUBEMAP_FACE_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+
 IDirect3DTexture9 *D3D9GetTexture(PVMSVGA3DSURFACE pSurface,
                                   D3D9TextureType enmType)
 {
