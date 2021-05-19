@@ -64,6 +64,7 @@ typedef struct PDMDRVINSINT
 
 #include "../../../Devices/Audio/AudioHlp.h"
 #include "../../../Devices/Audio/AudioTest.h"
+#include "../../../Devices/Audio/AudioTestService.h"
 #include "VBoxDD.h"
 
 
@@ -2459,6 +2460,96 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * Command line parameters for self-test mode.
+ */
+static const RTGETOPTDEF g_aCmdSelftestOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+};
+
+/** the 'selftest' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * Main function for performing the self-tests.
+ *
+ * @returns VBox status code.
+ */
+static int audioTestDoSelftest(void)
+{
+    int rc = atsInit();
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_SUCCESS(rc))
+            rc = atsStart();
+    }
+
+    return rc;
+}
+
+/**
+ * The 'selftest' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
+{
+    /* Option values: */
+    PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
+    bool        fWithDrvAudio     = false;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = NULL;
+                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
+                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
+                    {
+                        pDrvReg = g_aBackends[i].pDrvReg;
+                        break;
+                    }
+                if (pDrvReg == NULL)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                break;
+            }
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    rc = audioTestDoSelftest();
+
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
 
 /**
  * Commands.
@@ -2495,6 +2586,11 @@ static struct
         "Plays one or more wave files.",
         g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
     },
+    {
+        "selftest", audioTestCmdSelftestHandler,
+        "Performs self-tests.",
+        g_aCmdSelftestOptions,  RT_ELEMENTS(g_aCmdSelftestOptions), audioTestCmdSelftestHelp,
+    }
 };
 
 /**

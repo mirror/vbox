@@ -60,6 +60,13 @@ AudioTest_SOURCES  = \
 	$(VKAT_PATH_AUDIO)/AudioMixBuffer.cpp \
 	$(VKAT_PATH_AUDIO)/AudioHlp.cpp
 
+# Self-test stuff.
+AudioTest_SOURCES  += \
+	$(VKAT_PATH_AUDIO)/DrvHostAudioValidationKit.cpp \
+	$(VKAT_PATH_AUDIO)/AudioTestService.cpp \
+	$(VKAT_PATH_AUDIO)/AudioTestServiceProtocol.cpp \
+	$(VKAT_PATH_AUDIO)/AudioTestServiceTcp.cpp
+
 ifdef VBOX_WITH_AUDIO_PULSE
  AudioTest_DEFS    += VBOX_WITH_AUDIO_PULSE
  AudioTest_SOURCES += \

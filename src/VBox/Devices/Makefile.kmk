@@ -651,7 +651,10 @@ endif
 
  if defined(VBOX_WITH_AUDIO_DEBUG) || defined(VBOX_WITH_AUDIO_VALIDATIONKIT)
   VBoxDD_SOURCES += \
- 	Audio/AudioTest.cpp
+ 	Audio/AudioTest.cpp \
+ 	Audio/AudioTestService.cpp \
+ 	Audio/AudioTestServiceTcp.cpp \
+ 	Audio/AudioTestServiceProtocol.cpp
  endif
 
  ifdef VBOX_WITH_AUDIO_DEBUG

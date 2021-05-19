@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2020 Oracle Corporation
+ * Copyright (C) 2016-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,8 +30,10 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
-#include "AudioHlp.h"
 #include "VBoxDD.h"
+#include "AudioHlp.h"
+#include "AudioTest.h"
+#include "AudioTestService.h"
 
 
 /*********************************************************************************************************************************
