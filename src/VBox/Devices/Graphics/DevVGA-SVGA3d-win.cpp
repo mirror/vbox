@@ -223,10 +223,6 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
     if (pState->pD3D9)
         return VINF_SUCCESS;    /* already initialized (load state) */
 
-#ifdef VBOX_VMSVGA3D_WITH_WINE_OPENGL
-    pState->pD3D9 = Direct3DCreate9(D3D_SDK_VERSION);
-    AssertReturn(pState->pD3D9, VERR_INTERNAL_ERROR);
-#else
     /* Direct3DCreate9Ex was introduced in Vista, so resolve it dynamically. */
     typedef HRESULT (WINAPI *PFNDIRECT3DCREATE9EX)(UINT, IDirect3D9Ex **);
     PFNDIRECT3DCREATE9EX pfnDirect3dCreate9Ex = (PFNDIRECT3DCREATE9EX)RTLdrGetSystemSymbol("d3d9.dll", "Direct3DCreate9Ex");
@@ -235,7 +231,7 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
                                    "vmsvga3d: Unable to locate Direct3DCreate9Ex. This feature requires Vista and later.");
     hr = pfnDirect3dCreate9Ex(D3D_SDK_VERSION, &pState->pD3D9);
     AssertReturn(hr == D3D_OK, VERR_INTERNAL_ERROR);
-#endif
+
     D3DADAPTER_IDENTIFIER9 ai9;
     hr = pState->pD3D9->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &ai9);
     AssertReturnStmt(hr == D3D_OK, D3D_RELEASE(pState->pD3D9), VERR_INTERNAL_ERROR);
@@ -1338,7 +1334,7 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
 static int vmsvga3dSurfaceTrackUsage(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface)
 {
     RT_NOREF(pState);
-#ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
+
     Assert(pSurface->id != SVGA3D_INVALID_ID);
 
     /* Nothing to do if this surface hasn't been shared. */
@@ -1371,7 +1367,6 @@ static int vmsvga3dSurfaceTrackUsage(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pCo
 
     hr = pSurface->pQuery->Issue(D3DISSUE_END);
     AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceTrackUsage: Issue failed with %x\n", hr), VERR_INTERNAL_ERROR);
-#endif /* !VBOX_VMSVGA3D_WITH_WINE_OPENGL */
 
     return VINF_SUCCESS;
 }
@@ -1398,7 +1393,6 @@ static int vmsvga3dSurfaceTrackUsageById(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT
 /* Wait for all drawing, that uses this surface, to finish. */
 int vmsvga3dSurfaceFlush(PVMSVGA3DSURFACE pSurface)
 {
-#ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     HRESULT hr;
 
     if (!pSurface->pQuery)
@@ -1420,7 +1414,6 @@ int vmsvga3dSurfaceFlush(PVMSVGA3DSURFACE pSurface)
     D3D_RELEASE(pSurface->pQuery);
 
     AssertMsgReturn(hr == S_OK, ("vmsvga3dSurfaceFinishDrawing: GetData failed with %x\n", hr), VERR_INTERNAL_ERROR);
-#endif /* !VBOX_VMSVGA3D_WITH_WINE_OPENGL */
 
     return VINF_SUCCESS;
 }
@@ -1443,7 +1436,6 @@ int vmsvga3dGetD3DSurface(PVMSVGA3DSTATE pState,
     else
        pTexture = pSurface->u.pTexture;
 
-#ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     if (pSurface->idAssociatedContext != pContext->id)
     {
         AssertMsgReturn(!fLockable,
@@ -1468,9 +1460,6 @@ int vmsvga3dGetD3DSurface(PVMSVGA3DSTATE pState,
                             pSurface->id, pSurface->idAssociatedContext, pContext->id));
         }
     }
-#else
-    RT_NOREF(pContext);
-#endif
 
     if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
     {
@@ -2669,13 +2658,6 @@ static DECLCALLBACK(int) vmsvga3dBackContextDefine(PVGASTATECC pThisCC, uint32_t
     AssertRCReturn(rc, rc);
     hr = Params.hrc;
 
-#elif defined(VBOX_VMSVGA3D_WITH_WINE_OPENGL)
-    hr = pState->pD3D9->CreateDevice(D3DADAPTER_DEFAULT,
-                                     D3DDEVTYPE_HAL,
-                                     pContext->hwnd,
-                                     D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING, //D3DCREATE_HARDWARE_VERTEXPROCESSING,
-                                     &PresParam,
-                                     &pContext->pDevice);
 #else
     /** @todo Docs indicates that we should be using
      * D3DCREATE_HARDWARE_VERTEXPROCESSING with W10 1607 and higher.
@@ -2863,7 +2845,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VM
 
 static int vmsvga3dContextTrackUsage(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
 {
-#ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
 
@@ -2876,7 +2857,7 @@ static int vmsvga3dContextTrackUsage(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pCont
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aRenderTargets); ++i)
         if (pContext->state.aRenderTargets[i] != SVGA3D_INVALID_ID)
             vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->state.aRenderTargets[i]);
-#endif
+
     return VINF_SUCCESS;
 }
 
@@ -3042,14 +3023,10 @@ static DECLCALLBACK(int) vmsvga3dBackChangeMode(PVGASTATECC pThisCC)
             /** @todo consider using D3DPRESENT_DONOTWAIT so we don't wait for the GPU during Present calls. */
             PresParam.PresentationInterval          = D3DPRESENT_INTERVAL_IMMEDIATE;;
 
-#ifdef VBOX_VMSVGA3D_WITH_WINE_OPENGL
-            hr = pContext->pDevice->Reset(&PresParam);
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dChangeMode: Reset failed with %x\n", hr), VERR_INTERNAL_ERROR);
-#else
             /* ResetEx does not trash the device state */
             hr = pContext->pDevice->ResetEx(&PresParam, NULL);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dChangeMode: Reset failed with %x\n", hr), VERR_INTERNAL_ERROR);
-#endif
+
             Log(("vmsvga3dChangeMode: Backbuffer (%d,%d) count=%d format=%x\n", PresParam.BackBufferWidth, PresParam.BackBufferHeight, PresParam.BackBufferCount, PresParam.BackBufferFormat));
 
             /* ResetEx changes the viewport; restore it again. */
@@ -4439,7 +4416,6 @@ static DECLCALLBACK(int) vmsvga3dBackSetTextureState(PVGASTATECC pThisCC, uint32
                              || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE,
                              VERR_INVALID_PARAMETER);
 
-#ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
                 if (pSurface->idAssociatedContext != cid)
                 {
                     LogFunc(("Using texture sid=%u created for another context (%d vs %d)\n", sid, pSurface->idAssociatedContext, cid));
@@ -4450,7 +4426,6 @@ static DECLCALLBACK(int) vmsvga3dBackSetTextureState(PVGASTATECC pThisCC, uint32
                     hr = pContext->pDevice->SetTexture(d3dSampler, pSharedSurface->u.pTexture);
                 }
                 else
-#endif
                     hr = pContext->pDevice->SetTexture(d3dSampler, pSurface->u.pTexture);
 
                 AssertMsgReturn(hr == D3D_OK, ("SetTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
