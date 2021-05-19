@@ -339,9 +339,7 @@ static struct
     {   &g_DrvHostDSound,             "dsound" },
     {   &g_DrvHostDSound,             "ds" },
 #endif
-#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
     {   &g_DrvHostValidationKitAudio, "valkit" }
-#endif
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
