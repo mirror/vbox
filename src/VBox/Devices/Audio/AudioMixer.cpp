@@ -139,8 +139,8 @@ static const char *dbgAudioMixerSinkStatusToStr(uint32_t fStatus, char pszDst[AU
     {
         { RT_STR_TUPLE("RUNNING "),         AUDMIXSINK_STS_RUNNING },
         { RT_STR_TUPLE("DRAINING "),        AUDMIXSINK_STS_DRAINING },
-        { RT_STR_TUPLE("DRAINED_DMA"),      AUDMIXSINK_STS_DRAINED_DMA },
-        { RT_STR_TUPLE("DRAINED_MIXBUF"),   AUDMIXSINK_STS_DRAINED_MIXBUF },
+        { RT_STR_TUPLE("DRAINED_DMA "),     AUDMIXSINK_STS_DRAINED_DMA },
+        { RT_STR_TUPLE("DRAINED_MIXBUF "),  AUDMIXSINK_STS_DRAINED_MIXBUF },
         { RT_STR_TUPLE("DIRTY "),           AUDMIXSINK_STS_DIRTY },
     };
     char *psz = pszDst;
