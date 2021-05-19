@@ -704,7 +704,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
  *
  * @returns VBox status code.
  */
-int atsMainThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread, pvUser);
 
