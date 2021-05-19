@@ -370,7 +370,7 @@ static int atsReplyFailureV(PATSCLIENT pClient, PCATSPKTHDR pPktHdr, const char 
                                     sizeof(uPkt) - sizeof(ATSPKTSTS),
                                     pszDetailFmt, va);
     uPkt.Hdr.rcReq = rcReq;
-    uPkt.Hdr.cchStsMsg = cchDetail;
+    uPkt.Hdr.cchStsMsg = (uint32_t)cchDetail;
     return atsReplyInternal(pClient, &uPkt.Hdr, pszOpcode, cchDetail + 1);
 }
 
