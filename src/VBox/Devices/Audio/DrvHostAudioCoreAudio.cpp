@@ -44,15 +44,13 @@
 #include <iprt/cdefs.h>
 #include <iprt/circbuf.h>
 #include <iprt/mem.h>
-
 #include <iprt/uuid.h>
 #include <iprt/timer.h>
 
 #include <CoreAudio/CoreAudio.h>
 #include <CoreServices/CoreServices.h>
+#include <AudioToolbox/AudioQueue.h>
 #include <AudioUnit/AudioUnit.h>
-#include <AudioToolbox/AudioConverter.h>
-#include <AudioToolbox/AudioToolbox.h>
 
 
 /*********************************************************************************************************************************
@@ -71,12 +69,6 @@
 /** Enables the AudioQueueDispose breakpoint timer (debugging help). */
 # define CORE_AUDIO_WITH_BREAKPOINT_TIMER
 #endif
-
-/* Enables utilizing the Core Audio converter unit for converting
- * input / output from/to our requested formats. That might be more
- * performant than using our own routines later down the road. */
-/** @todo Needs more investigation and testing first before enabling. */
-//# define VBOX_WITH_AUDIO_CA_CONVERTER
 
 
 /*********************************************************************************************************************************
@@ -129,31 +121,6 @@ typedef enum COREAUDIOINITSTATE
 } COREAUDIOINITSTATE;
 
 
-#ifdef VBOX_WITH_AUDIO_CA_CONVERTER
-/**
- * Context data for the audio format converter.
- */
-typedef struct COREAUDIOCONVCBCTX
-{
-    /** Pointer to the stream this context is bound to. */
-    PCOREAUDIOSTREAM             pStream; /**< @todo r=bird: It's part of the COREAUDIOSTREAM structure! You don't need this. */
-    /** Source stream description. */
-    AudioStreamBasicDescription  asbdSrc;
-    /** Destination stream description. */
-    AudioStreamBasicDescription  asbdDst;
-    /** Pointer to native buffer list used for rendering the source audio data into. */
-    AudioBufferList             *pBufLstSrc;
-    /** Total packet conversion count. */
-    UInt32                       uPacketCnt;
-    /** Current packet conversion index. */
-    UInt32                       uPacketIdx;
-    /** Error count, for limiting the logging. */
-    UInt32                       cErrors;
-} COREAUDIOCONVCBCTX;
-/** Pointer to the context of a conversion callback. */
-typedef COREAUDIOCONVCBCTX *PCOREAUDIOCONVCBCTX;
-#endif /* VBOX_WITH_AUDIO_CA_CONVERTER */
-
 /**
  * Core audio buffer tracker.
  *
@@ -186,24 +153,6 @@ typedef struct COREAUDIOSTREAM
 
     /** The stream's acquired configuration. */
     PDMAUDIOSTREAMCFG           Cfg;
-    /** Direction specific data. */
-    union
-    {
-        struct
-        {
-#if 0 /* Unused */
-            /** The ratio between the device & the stream sample rate. */
-            Float64             sampleRatio;
-#endif
-#ifdef VBOX_WITH_AUDIO_CA_CONVERTER
-            /** The audio converter if necessary. NULL if no converter is being used. */
-            AudioConverterRef   ConverterRef;
-            /** Callback context for the audio converter. */
-            COREAUDIOCONVCBCTX  convCbCtx;
-#endif
-        } In;
-        //struct {}      Out;
-    };
     /** List node for the device's stream list. */
     RTLISTNODE                  Node;
     /** The acquired (final) audio format for this stream.
@@ -312,15 +261,6 @@ typedef struct DRVHOSTCOREAUDIO
     RTTIMERLR               hBreakpointTimer;
 #endif
 } DRVHOSTCOREAUDIO;
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-#ifdef VBOX_WITH_AUDIO_CA_CONVERTER
-/** Error code which indicates "End of data" */
-static const OSStatus g_rcCoreAudioConverterEOFDErr = 0x656F6664; /* 'eofd' */
-#endif
 
 
 /*********************************************************************************************************************************
@@ -492,147 +432,6 @@ static AudioDeviceID drvHostAudioCaDeviceUIDtoID(const char* pszUID)
     return kAudioDeviceUnknown;
 }
 #endif /* unused */
-
-
-#ifdef VBOX_WITH_AUDIO_CA_CONVERTER
-
-/**
- * Initializes a conversion callback context.
- *
- * @return  IPRT status code.
- * @param   pConvCbCtx          Conversion callback context to initialize.
- * @param   pStream             Pointer to stream to use.
- * @param   pASBDSrc            Input (source) stream description to use.
- * @param   pASBDDst            Output (destination) stream description to use.
- */
-static int drvHostAudioCaInitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx, PCOREAUDIOSTREAM pStream,
-                                       AudioStreamBasicDescription *pASBDSrc, AudioStreamBasicDescription *pASBDDst)
-{
-    AssertPtrReturn(pConvCbCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pASBDSrc,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pASBDDst,   VERR_INVALID_POINTER);
-
-# ifdef DEBUG
-    drvHostAudioCaPrintASBD("CbCtx: Src", pASBDSrc);
-    drvHostAudioCaPrintASBD("CbCtx: Dst", pASBDDst);
-# endif
-
-    pConvCbCtx->pStream = pStream;
-
-    memcpy(&pConvCbCtx->asbdSrc, pASBDSrc, sizeof(AudioStreamBasicDescription));
-    memcpy(&pConvCbCtx->asbdDst, pASBDDst, sizeof(AudioStreamBasicDescription));
-
-    pConvCbCtx->pBufLstSrc = NULL;
-    pConvCbCtx->cErrors    = 0;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Uninitializes a conversion callback context.
- *
- * @return  IPRT status code.
- * @param   pConvCbCtx          Conversion callback context to uninitialize.
- */
-static void drvHostAudioCaUninitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx)
-{
-    AssertPtrReturnVoid(pConvCbCtx);
-
-    pConvCbCtx->pStream = NULL;
-
-    RT_ZERO(pConvCbCtx->asbdSrc);
-    RT_ZERO(pConvCbCtx->asbdDst);
-
-    pConvCbCtx->pBufLstSrc = NULL;
-    pConvCbCtx->cErrors    = 0;
-}
-
-/* Callback to convert audio input data from one format to another. */
-static OSStatus drvHostAudioCaConverterCb(AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
-                                          AudioBufferList *ioData, AudioStreamPacketDescription **ppASPD, void *pvUser)
-{
-    RT_NOREF(inAudioConverter);
-
-    AssertPtrReturn(ioNumberDataPackets, g_rcCoreAudioConverterEOFDErr);
-    AssertPtrReturn(ioData,              g_rcCoreAudioConverterEOFDErr);
-
-    PCOREAUDIOCONVCBCTX pConvCbCtx = (PCOREAUDIOCONVCBCTX)pvUser;
-    AssertPtr(pConvCbCtx);
-
-    /* Initialize values. */
-    ioData->mBuffers[0].mNumberChannels = 0;
-    ioData->mBuffers[0].mDataByteSize   = 0;
-    ioData->mBuffers[0].mData           = NULL;
-
-    if (ppASPD)
-    {
-        Log3Func(("Handling packet description not implemented\n"));
-    }
-    else
-    {
-        /** @todo Check converter ID? */
-
-        /** @todo Handled non-interleaved data by going through the full buffer list,
-         *        not only through the first buffer like we do now. */
-        Log3Func(("ioNumberDataPackets=%RU32\n", *ioNumberDataPackets));
-
-        UInt32 cNumberDataPackets = *ioNumberDataPackets;
-        Assert(pConvCbCtx->uPacketIdx + cNumberDataPackets <= pConvCbCtx->uPacketCnt);
-
-        if (cNumberDataPackets)
-        {
-            AssertPtr(pConvCbCtx->pBufLstSrc);
-            Assert(pConvCbCtx->pBufLstSrc->mNumberBuffers == 1); /* Only one buffer for the source supported atm. */
-
-            AudioStreamBasicDescription *pSrcASBD = &pConvCbCtx->asbdSrc;
-            AudioBuffer                 *pSrcBuf  = &pConvCbCtx->pBufLstSrc->mBuffers[0];
-
-            size_t cbOff   = pConvCbCtx->uPacketIdx * pSrcASBD->mBytesPerPacket;
-
-            cNumberDataPackets = RT_MIN((pSrcBuf->mDataByteSize - cbOff) / pSrcASBD->mBytesPerPacket,
-                                        cNumberDataPackets);
-
-            void  *pvAvail = (uint8_t *)pSrcBuf->mData + cbOff;
-            size_t cbAvail = RT_MIN(pSrcBuf->mDataByteSize - cbOff, cNumberDataPackets * pSrcASBD->mBytesPerPacket);
-
-            Log3Func(("cNumberDataPackets=%RU32, cbOff=%zu, cbAvail=%zu\n", cNumberDataPackets, cbOff, cbAvail));
-
-            /* Set input data for the converter to use.
-             * Note: For VBR (Variable Bit Rates) or interleaved data handling we need multiple buffers here. */
-            ioData->mNumberBuffers = 1;
-
-            ioData->mBuffers[0].mNumberChannels = pSrcBuf->mNumberChannels;
-            ioData->mBuffers[0].mDataByteSize   = cbAvail;
-            ioData->mBuffers[0].mData           = pvAvail;
-
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            RTFILE fh;
-            int rc = RTFileOpen(&fh,VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "caConverterCbInput.pcm",
-                                RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-            if (RT_SUCCESS(rc))
-            {
-                RTFileWrite(fh, pvAvail, cbAvail, NULL);
-                RTFileClose(fh);
-            }
-            else
-                AssertFailed();
-# endif
-            pConvCbCtx->uPacketIdx += cNumberDataPackets;
-            Assert(pConvCbCtx->uPacketIdx <= pConvCbCtx->uPacketCnt);
-
-            *ioNumberDataPackets = cNumberDataPackets;
-        }
-    }
-
-    Log3Func(("%RU32 / %RU32 -> ioNumberDataPackets=%RU32\n",
-              pConvCbCtx->uPacketIdx, pConvCbCtx->uPacketCnt, *ioNumberDataPackets));
-
-    return noErr;
-}
-
-#endif /* VBOX_WITH_AUDIO_CA_CONVERTER */
 
 
 /*********************************************************************************************************************************
@@ -2832,7 +2631,7 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
 #endif
 #ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
     pThis->hBreakpointTimer          = NIL_RTTIMERLR;
-#endif 
+#endif
     PDMAudioHostEnumInit(&pThis->Devices);
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostAudioCaQueryInterface;
