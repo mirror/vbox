@@ -47,6 +47,8 @@
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGroup *pNode)
     : UIChooserItem(0, pNode)
     , m_pScene(pScene)
+    , m_iBackgroundDarknessStart(115)
+    , m_iBackgroundDarknessFinal(150)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -67,6 +69,8 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGroup *pNode)
     : UIChooserItem(pParent, pNode)
     , m_pScene(0)
+    , m_iBackgroundDarknessStart(115)
+    , m_iBackgroundDarknessFinal(150)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -1587,8 +1591,21 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     /* Save painter: */
     pPainter->save();
 
-    /* Non-root-item: */
-    if (!isRoot())
+    /* Root-item: */
+    if (isRoot())
+    {
+        /* Acquire background color: */
+        const QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
+
+        /* Paint default background: */
+        QColor bcTone1 = backgroundColor.darker(m_iBackgroundDarknessStart);
+        QColor bcTone2 = backgroundColor.darker(m_iBackgroundDarknessFinal);
+        QLinearGradient gradientDefault(rect.topRight(), rect.bottomLeft());
+        gradientDefault.setColorAt(0, bcTone1);
+        gradientDefault.setColorAt(1, bcTone2);
+        pPainter->fillRect(rect, gradientDefault);
+    }
+    else
     {
         /* Prepare color: */
         const QColor headerColor = QApplication::palette().color(QPalette::Active,

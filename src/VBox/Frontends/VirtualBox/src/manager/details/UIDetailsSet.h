@@ -212,6 +212,11 @@ private:
         QList<DetailsElementType>  m_types;
         /** Holds the generated set ID. */
         QUuid                      m_uSetId;
+
+        /** Holds the start background darkness. */
+        int  m_iBackgroundDarknessStart;
+        /** Holds the final background darkness. */
+        int  m_iBackgroundDarknessFinal;
     /** @} */
 
     /** @name Children stuff.
