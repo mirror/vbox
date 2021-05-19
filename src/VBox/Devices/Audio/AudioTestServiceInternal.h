@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_SRC_AudioTestServiceInternal_h
-#define VBOX_INCLUDED_SRC_AudioTestServiceInternal_h
+#ifndef VBOX_INCLUDED_SRC_Audio_AudioTestServiceInternal_h
+#define VBOX_INCLUDED_SRC_Audio_AudioTestServiceInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -212,5 +212,5 @@ extern ATSTRANSPORT const g_TcpTransport;
 
 RT_C_DECLS_END
 
-#endif /* !VBOX_INCLUDED_SRC_AudioTestServiceInternal_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceInternal_h */
 

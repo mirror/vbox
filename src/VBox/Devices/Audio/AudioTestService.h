@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_SRC_AudioTestService_h
-#define VBOX_INCLUDED_SRC_AudioTestService_h
+#ifndef VBOX_INCLUDED_SRC_Audio_AudioTestService_h
+#define VBOX_INCLUDED_SRC_Audio_AudioTestService_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -36,5 +36,5 @@
 int atsInit(void);
 int atsStart(void);
 
-#endif /* !VBOX_INCLUDED_SRC_AudioTestService_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestService_h */
 

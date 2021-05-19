@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_SRC_AudioTestServiceProtocol_h
-#define VBOX_INCLUDED_SRC_AudioTestServiceProtocol_h
+#ifndef VBOX_INCLUDED_SRC_Audio_AudioTestServiceProtocol_h
+#define VBOX_INCLUDED_SRC_Audio_AudioTestServiceProtocol_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -219,4 +219,4 @@ DECLHIDDEN(void) atsProtocolRepN2H(PATSPKTHDR pPktHdr);
 
 RT_C_DECLS_END
 
-#endif /* !VBOX_INCLUDED_SRC_AudioTestServiceProtocol_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceProtocol_h */
