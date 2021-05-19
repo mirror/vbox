@@ -156,15 +156,12 @@ module_build_log()
         >> "${LOG}"
 }
 
-# Detect VirtualBox version info or report error.
-VBOX_VERSION="$($VBOXMANAGE -v 2>/dev/null | cut -d r -f1)"
-VBOX_REVISION="r$($VBOXMANAGE -v 2>/dev/null | cut -d r -f2)"
-fail_msg "diagnostics: cut:  $(which cut) $([ -x $(which cut) ] && echo 1)"
-fail_msg "diagnostics: VBOXMANAGE:  $VBOXMANAGE $([ -x $VBOXMANAGE ] && echo 1)"
-fail_msg "diagnostics: VBOX_VERSION = .$VBOX_VERSION."
-fail_msg "diagnostics: VBOX_REVISION = .$VBOX_REVISION."
-[ -n "${VBOX_VERSION}" ] || failure 'Cannot detect VirtualBox version number'
-[ "${VBOX_REVISION}" != "r" ] || failure 'Cannot detect VirtualBox revision number'
+# Detect VirtualBox version info or report error on error.
+VBOX_VERSION=$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f1)
+VBOX_REVISION="r$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f2)"
+if test -z "$VBOX_VERSION" -o "$VBOX_REVISION" = "r"; then
+    failure 'Cannot detect VirtualBox version'
+fi
 
 ## Output the vboxdrv part of our udev rule.  This is redirected to the right file.
 udev_write_vboxdrv() {
