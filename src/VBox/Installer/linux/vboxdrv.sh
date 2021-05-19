@@ -159,6 +159,10 @@ module_build_log()
 # Detect VirtualBox version info or report error on error.
 VBOX_VERSION=$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f1)
 VBOX_REVISION="r$($VBOXMANAGE -v 2>/dev/null | cut -d 'r' -f2)"
+echo "diagnostics: cut: " $(which cut) $([ -x "$(which cut)" ] && echo 1)
+echo "diagnostics: VBOXMANAGE: " $VBOXMANAGE $([ -x "$VBOXMANAGE" ] && echo 1)
+echo "diagnostics: VBOX_VERSION =" .$VBOX_VERSION.
+echo "diagnostics: VBOX_REVISION =" .$VBOX_REVISION.
 if test -z "$VBOX_VERSION" -o "$VBOX_REVISION" = "r"; then
     failure 'Cannot detect VirtualBox version'
 fi
