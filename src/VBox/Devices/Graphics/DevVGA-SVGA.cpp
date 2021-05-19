@@ -422,9 +422,6 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
                                 uint32_t uVersion, uint32_t uPass);
 static int vmsvgaR3SaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
 static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, RTGCPHYS GCPhysCB, SVGACBContext CBCtx);
-# ifdef VBOX_WITH_VMSVGA3D
-static void vmsvga3dR3Free3dInterfaces(PVGASTATECC pThisCC);
-# endif
 #endif /* IN_RING3 */
 
 
@@ -5759,10 +5756,6 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVGASTATECC pThisCC)
         RTCritSectLeave(&pSVGAState->CritSectCmdBuf);
         RTCritSectDelete(&pSVGAState->CritSectCmdBuf);
     }
-
-# ifdef VBOX_WITH_VMSVGA3D
-    vmsvga3dR3Free3dInterfaces(pThisCC);
-# endif
 }
 
 /**
@@ -5833,7 +5826,7 @@ extern VMSVGA3DBACKENDDESC const g_BackendDX;
  * @returns VBox status code.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  */
-static int vmsvgaR3Init3dInterfaces(PVGASTATE pThis, PVGASTATECC pThisCC)
+static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
 #ifndef VMSVGA3D_DX
     RT_NOREF(pThis);
@@ -5879,9 +5872,13 @@ static int vmsvgaR3Init3dInterfaces(PVGASTATE pThis, PVGASTATECC pThisCC)
     {
         /* 3D interface is required. */
         if (pSVGAState->pFuncs3D)
-            return VINF_SUCCESS;
-
-        rc = VERR_NOT_SUPPORTED;
+        {
+            rc = pSVGAState->pFuncs3D->pfnInit(pDevIns, pThis, pThisCC);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
 
     vmsvga3dR3Free3dInterfaces(pThisCC);
@@ -6117,6 +6114,10 @@ int vmsvgaR3Destruct(PPDMDEVINS pDevIns)
     {
         vmsvgaR3StateTerm(pThis, pThisCC);
 
+# ifdef VBOX_WITH_VMSVGA3D
+        vmsvga3dR3Free3dInterfaces(pThisCC);
+# endif
+
         RTMemFree(pThisCC->svga.pSvgaR3State);
         pThisCC->svga.pSvgaR3State = NULL;
     }
@@ -6205,10 +6206,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     if (pThis->svga.f3DEnabled)
     {
         /* Load a 3D backend. */
-        rc = vmsvgaR3Init3dInterfaces(pThis, pThisCC);
-        if (RT_SUCCESS(rc))
-            rc = pSVGAState->pFuncs3D->pfnInit(pDevIns, pThis, pThisCC);
-
+        rc = vmsvgaR3Init3dInterfaces(pDevIns, pThis, pThisCC);
         if (RT_FAILURE(rc))
         {
             LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
