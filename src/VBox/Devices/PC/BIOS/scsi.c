@@ -233,7 +233,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
  * @param   device_id   ID of the device to access.
  * @param   cmdlen      Length of the CDB.
  * @param   cmdbuf      The CDB buffer.
- * @param   before      How much to skip before reading into the provided data buffer.
+ * @param   skip_b      How much to skip before reading into the provided data buffer.
  * @param   length      How much to transfer.
  * @param   inout       Read/Write direction indicator.
  * @param   buffer      Data buffer to store the data from the device in.
@@ -296,7 +296,8 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
  * Enumerate attached devices.
  *
  * @returns nothing.
- * @param   io_base    The I/O base port of the controller.
+ * @param   hba_seg    Segement of the HBA controller block.
+ * @param   idx_hba    The HBA driver index used for accessing the enumerated devices.
  */
 static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
 {
