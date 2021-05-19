@@ -345,7 +345,7 @@ static void bs3Timing1_Tsc_Driver(unsigned cLoops, unsigned cSecs, unsigned uVer
 BS3_DECL(void) bs3Timing1_Tsc_pe32(void)
 {
     Bs3TestPrintf("bs3Timing1_Tsc_pe32\n");
-    bs3Timing1_Tsc_Driver(5, 10 /*sec*/, 1 /*uVerbosity*/, 18);
+    bs3Timing1_Tsc_Driver(60, 10 /*sec*/, 1 /*uVerbosity*/, 17);
 }
 #endif
 
