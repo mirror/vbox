@@ -98,7 +98,7 @@ public:
       * @param  iDefaultValue  Brings default value for hovering animation.
       * @param  iHoveredValue  Brings hovered value for hovering animation. */
     UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
-                  int iDefaultValue = 100, int iHoveredValue = 90);
+                  int iDefaultValue = 0, int iHoveredValue = 100);
 
     /** @name Item stuff.
       * @{ */

@@ -30,7 +30,7 @@
 
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode)
-    : UIChooserItem(pParent, pNode, 0, 100)
+    : UIChooserItem(pParent, pNode)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
