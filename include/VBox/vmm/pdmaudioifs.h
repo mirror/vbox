@@ -230,6 +230,7 @@
 #endif
 
 #include <iprt/assertcompile.h>
+#include <iprt/critsect.h>
 #include <iprt/circbuf.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
@@ -994,6 +995,17 @@ typedef enum PDMAUDIOSTREAMSTATE
  */
 typedef struct PDMAUDIOSTREAM
 {
+    /** Critical section protecting the stream.
+     *
+     * When not otherwise stated, DrvAudio will enter this before calling the
+     * backend.   The backend and device/mixer can normally safely enter it prior to
+     * a DrvAudio call, however not to pfnStreamDestroy, pfnStreamRelease or
+     * anything that may access the stream list.
+     *
+     * @note Lock ordering:
+     *          - After DRVAUDIO::CritSectGlobals.
+     *          - Before DRVAUDIO::CritSectHotPlug. */
+    RTCRITSECT              CritSect;
     /** Magic value (PDMAUDIOSTREAM_MAGIC). */
     uint32_t                uMagic;
     /** Audio direction of this stream. */
@@ -1016,7 +1028,7 @@ typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 typedef struct PDMAUDIOSTREAM const *PCPDMAUDIOSTREAM;
 
 /** Magic value for PDMAUDIOSTREAM. */
-#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 4, 0)
+#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 5, 0)
 
 
 
@@ -1237,7 +1249,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "2c2bdfcd-7a2b-4739-9663-07ee9e8fe079"
+#define PDMIAUDIOCONNECTOR_IID                  "04ad443a-d860-443a-afc9-98bbad4b1341"
 
 
 /**
@@ -1419,7 +1431,7 @@ typedef struct PDMIHOSTAUDIO
      * This is mainly to avoid the need for a list of streams in the backend.
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   pStream             Pointer to audio stream.
+     * @param   pStream             Pointer to audio stream (locked).
      * @param   pvUser              Backend specific parameter from the call to
      *                              PDMIHOSTAUDIOPORT::pfnNotifyDeviceChanged.
      */
@@ -1515,7 +1527,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "a5650399-be78-4e82-8115-e34a4450378c"
+#define PDMIHOSTAUDIO_IID                           "8c68a5a9-6c46-43c2-9d4e-e1bd13d2b97d"
 
 
 /** Pointer to a audio notify from host interface. */
@@ -1600,7 +1612,7 @@ typedef struct PDMIHOSTAUDIOPORT
 } PDMIHOSTAUDIOPORT;
 
 /** PDMIHOSTAUDIOPORT interface ID. */
-#define PDMIHOSTAUDIOPORT_IID                    "c752404b-1ccb-4fc0-aa60-eb76ae130e0f"
+#define PDMIHOSTAUDIOPORT_IID                    "cd006383-7be1-4dbe-a69e-21236413cf30"
 
 /** @} */
 
