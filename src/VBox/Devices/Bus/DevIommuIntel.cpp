@@ -660,17 +660,17 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
  * Returns whether the interrupt remapping fault is qualified or not.
  *
  * @returns @c true if qualified, @c false otherwise.
- * @param   enmIrFault  The interrupt remapping fault condition.
+ * @param   enmIntrFault    The interrupt remapping fault condition.
  */
-static bool vtdIrFaultIsQualified(VTD_IR_FAULT_T enmIrFault)
+static bool vtdIrFaultIsQualified(VTDINTRFAULT enmIntrFault)
 {
-    switch (enmIrFault)
+    switch (enmIntrFault)
     {
-        case kIrf_Irte_Not_Present:
-        case kIrf_Irte_Present_Rsvd:
-        case kIrf_Irte_Present_Invalid:
-        case kIrf_Pid_Read_Failed:
-        case kIrf_Pid_Rsvd:
+        case VTDINTRFAULT_IRTE_NOT_PRESENT:
+        case VTDINTRFAULT_IRTE_PRESENT_RSVD:
+        case VTDINTRFAULT_IRTE_PRESENT_INVALID:
+        case VTDINTRFAULT_PID_READ_FAILED:
+        case VTDINTRFAULT_PID_RSVD:
             return true;
         default:
             return false;
@@ -1238,13 +1238,13 @@ static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
 /**
  * Records an interrupt request fault.
  *
- * @param   pDevIns     The IOMMU device instance.
- * @param   enmDiag     The diagnostic reason.
- * @param   enmIrFault  The interrupt fault reason.
- * @param   idDevice    The device ID (bus, device, function).
- * @param   idxIntr     The interrupt index.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   enmDiag         The diagnostic reason.
+ * @param   enmIntrFault    The interrupt fault reason.
+ * @param   idDevice        The device ID (bus, device, function).
+ * @param   idxIntr         The interrupt index.
  */
-static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT_T enmIrFault, uint16_t idDevice,
+static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDINTRFAULT enmIntrFault, uint16_t idDevice,
                               uint16_t idxIntr)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
@@ -1262,7 +1262,7 @@ static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT
     {
         /* Update the fault recording registers with the fault information. */
         uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID, idDevice)
-                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIrFault)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIntrFault)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,   1);
         uint64_t const uFrcdLo = (uint64_t)idxIntr << 48;
         dmarRegWriteRaw64(pThis, DMAR_MMIO_OFF_FRCD_HI_REG, uFrcdHi);
@@ -1285,20 +1285,20 @@ static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT
  * Qualified faults are those that can be suppressed by software using the FPD bit
  * in the IRTE.
  *
- * @param   pDevIns     The IOMMU device instance.
- * @param   enmDiag     The diagnostic reason.
- * @param   enmIrFault  The interrupt fault reason.
- * @param   idDevice    The device ID (bus, device, function).
- * @param   idxIntr     The interrupt index.
- * @param   pIrte       The IRTE that caused this fault.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   enmDiag         The diagnostic reason.
+ * @param   enmIntrFault    The interrupt fault reason.
+ * @param   idDevice        The device ID (bus, device, function).
+ * @param   idxIntr         The interrupt index.
+ * @param   pIrte           The IRTE that caused this fault.
  */
-static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IR_FAULT_T enmIrFault, uint16_t idDevice,
+static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDINTRFAULT enmIntrFault, uint16_t idDevice,
                                        uint16_t idxIntr, PCVTD_IRTE_T pIrte)
 {
-    Assert(vtdIrFaultIsQualified(enmIrFault));
+    Assert(vtdIrFaultIsQualified(enmIntrFault));
     Assert(pIrte);
     if (!(pIrte->au64[0] & VTD_BF_0_IRTE_FPD_MASK))
-        return dmarIrFaultRecord(pDevIns, enmDiag, enmIrFault, idDevice, idxIntr);
+        return dmarIrFaultRecord(pDevIns, enmDiag, enmIntrFault, idDevice, idxIntr);
 }
 
 
@@ -1309,7 +1309,7 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
  * @param   enmIqei     The IQE information.
  * @param   enmDiag     The diagnostic reason.
  */
-static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD_IQEI_T enmIqei)
+static void dmarIqeFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIQEI enmIqei)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
@@ -1538,7 +1538,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     {
         /* Hardware treats bit 4 as RsvdZ in this situation, so clear it. */
         dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4), 0 /* fOrMask */);
-        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, kIqei_QueueTailNotAligned);
+        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, VTDIQEI_QUEUE_TAIL_MISALIGNED);
     }
     return VINF_SUCCESS;
 }
@@ -1569,7 +1569,7 @@ static VBOXSTRICTRC dmarIqaRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
         if (fSupports256BitDw)
         { /* likely */ }
         else
-            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_256_Invalid, kIqei_InvalidDescriptorWidth);
+            dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dw_256_Invalid, VTDIQEI_INVALID_DESCRIPTOR_WIDTH);
     }
     /* else: 128-bit descriptor width is validated lazily, see explanation in dmarR3InvQueueProcessRequests. */
 
@@ -1700,8 +1700,10 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
 
     DMAR_LOCK(pDevIns, pThisCC);
-    uint32_t const uGstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint32_t const uGstsReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint64_t const uRtaddrReg = pThis->uRtaddrReg;
     DMAR_UNLOCK(pDevIns, pThisCC);
+
 
     if (uGstsReg & VTD_BF_GSTS_REG_TES_MASK)
     {
@@ -1709,6 +1711,19 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
         else
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+
+        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+        switch (fTtm)
+        {
+            case VTD_TTM_LEGACY_MODE:
+            case VTD_TTM_ABORT_DMA_MODE:
+            {
+                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
+                {
+
+                }
+            }
+        }
 
         return VERR_NOT_IMPLEMENTED;
     }
@@ -1883,28 +1898,29 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                                 dmarIrRemapFromIrte(fExtIntrMode, &Irte, pMsiIn, pMsiOut);
                                 return VINF_SUCCESS;
                             }
-                            dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Mode_Invalid, kIrf_Irte_Present_Rsvd,
-                                                       idDevice, idxIntr, &Irte);
+                            dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Mode_Invalid,
+                                                       VTDINTRFAULT_IRTE_PRESENT_RSVD, idDevice, idxIntr, &Irte);
                         }
                         else
-                            dmarIrFaultRecordQualified(pDevIns, enmIrDiag, kIrf_Irte_Present_Rsvd, idDevice, idxIntr, &Irte);
+                            dmarIrFaultRecordQualified(pDevIns, enmIrDiag, VTDINTRFAULT_IRTE_PRESENT_RSVD, idDevice, idxIntr,
+                                                       &Irte);
                     }
                     else
-                        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, kIrf_Irte_Present_Rsvd, idDevice,
+                        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, VTDINTRFAULT_IRTE_PRESENT_RSVD, idDevice,
                                                    idxIntr, &Irte);
                 }
                 else
-                    dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, kIrf_Irte_Not_Present, idDevice,
-                                               idxIntr, &Irte);
+                    dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, VTDINTRFAULT_IRTE_NOT_PRESENT,
+                                               idDevice, idxIntr, &Irte);
             }
             else
-                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, kIrf_Irte_Read_Failed, idDevice, idxIntr);
+                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, VTDINTRFAULT_IRTE_READ_FAILED, idDevice, idxIntr);
         }
         else
-            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, kIrf_Intr_Index_Invalid, idDevice, idxIntr);
+            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, VTDINTRFAULT_INTR_INDEX_INVALID, idDevice, idxIntr);
     }
     else
-        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, kIrf_Remappable_Intr_Rsvd, idDevice, 0 /* idxIntr */);
+        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, VTDINTRFAULT_REMAPPABLE_INTR_RSVD, idDevice, 0 /* idxIntr */);
     return VERR_IOMMU_INTR_REMAP_DENIED;
 }
 
@@ -1948,7 +1964,7 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
             if (    (uIrtaReg & VTD_BF_IRTA_REG_EIME_MASK)
                 || !(uGstsReg & VTD_BF_GSTS_REG_CFIS_MASK))
             {
-                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Cfi_Blocked, kIrf_Cfi_Blocked, idDevice, 0 /* idxIntr */);
+                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Cfi_Blocked, VTDINTRFAULT_CFI_BLOCKED, idDevice, 0 /* idxIntr */);
                 return VERR_IOMMU_INTR_REMAP_DENIED;
             }
 
@@ -2146,7 +2162,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
         || fDw != VTD_IQA_REG_DW_128_BIT)
     { /* likely */ }
     else
-        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_IqaReg_Dw_128_Invalid, kIqei_InvalidDescriptorWidth);
+        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_IqaReg_Dw_128_Invalid, VTDIQEI_INVALID_DESCRIPTOR_WIDTH);
 #endif
 
     /*
@@ -2168,7 +2184,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
                     || fDw == VTD_IQA_REG_DW_256_BIT)
                 { /* likely */  }
                 else
-                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_Invalid, kIqei_InvalidDescriptorType);
+                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_Invalid, VTDIQEI_INVALID_DESCRIPTOR_TYPE);
 
                 /* Validate reserved bits. */
                 uint64_t const fValidMask0 = !(pThis->fExtCapReg & VTD_BF_ECAP_REG_PDS_MASK)
@@ -2178,7 +2194,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
                     && !(uQword1 & ~VTD_INV_WAIT_DSC_1_VALID_MASK))
                 { /* likely */ }
                 else
-                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd, kIqei_RsvdFieldViolation);
+                    DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd, VTDIQEI_RSVD_FIELD_VIOLATION);
 
                 if (fDw == VTD_IQA_REG_DW_256_BIT)
                 {
@@ -2186,7 +2202,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
                         && !puDscQwords[3])
                     { /* likely */ }
                     else
-                        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd, kIqei_RsvdFieldViolation);
+                        DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd, VTDIQEI_RSVD_FIELD_VIOLATION);
                 }
 
                 /* Perform status write (this must be done prior to generating the completion interrupt). */
@@ -2223,7 +2239,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
             {
                 /* Stop processing further requests. */
                 LogFunc(("Invalid descriptor type: %#x\n", fDscType));
-                DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Dsc_Type_Invalid, kIqei_InvalidDescriptorType);
+                DMAR_IQE_FAULT_RECORD_RET(kDmarDiag_Iqei_Dsc_Type_Invalid, VTDIQEI_INVALID_DESCRIPTOR_TYPE);
             }
         }
     }
@@ -2365,16 +2381,16 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                         continue;
                     }
                     else
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, kIqei_FetchDescriptorError);
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, VTDIQEI_FETCH_DESCRIPTOR_ERR);
                 }
                 else
                 {
                     if (fTtm == VTD_TTM_RSVD)
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Ttm_Rsvd, kIqei_InvalidTtm);
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_Iqei_Ttm_Rsvd, VTDIQEI_INVALID_TTM);
                     else
                     {
                         Assert(offQueueTail >= cbQueue);
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, kIqei_InvalidTailPointer);
+                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Invalid, VTDIQEI_INVALID_TAIL_PTR);
                     }
                 }
             }

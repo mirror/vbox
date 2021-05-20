@@ -1554,17 +1554,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQERCD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_IQERCD_REG_RW_MASK                                  UINT64_C(0)
 
 /** Invalidation Queue Error Information. */
-typedef enum VTD_IQEI_T
+typedef enum VTDIQEI
 {
-    kIqei_InfoNotAvailable = 0,
-    kIqei_InvalidTailPointer,
-    kIqei_FetchDescriptorError,
-    kIqei_InvalidDescriptorType,
-    kIqei_RsvdFieldViolation,
-    kIqei_InvalidDescriptorWidth,
-    kIqei_QueueTailNotAligned,
-    kIqei_InvalidTtm
-} VTD_IQEI_T;
+    VTDIQEI_INFO_NOT_AVAILABLE,
+    VTDIQEI_INVALID_TAIL_PTR,
+    VTDIQEI_FETCH_DESCRIPTOR_ERR,
+    VTDIQEI_INVALID_DESCRIPTOR_TYPE,
+    VTDIQEI_RSVD_FIELD_VIOLATION,
+    VTDIQEI_INVALID_DESCRIPTOR_WIDTH,
+    VTDIQEI_QUEUE_TAIL_MISALIGNED,
+    VTDIQEI_INVALID_TTM
+} VTDIQEI;
 /** @} */
 
 
@@ -2297,31 +2297,145 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_REMAPPABLE_MSI_DATA_, UINT32_C(0), UINT32_MAX
 /** @name Interrupt Remapping Fault Conditions.
  * In accordance with the Intel spec.
  * @{ */
-typedef enum VTD_IR_FAULT_T
+typedef enum VTDINTRFAULT
 {
     /** Reserved bits invalid in remappable interrupt. */
-    kIrf_Remappable_Intr_Rsvd = 0x20,
+    VTDINTRFAULT_REMAPPABLE_INTR_RSVD = 0x20,
     /** Interrupt index for remappable interrupt exceeds table size or referenced
      *  address above host address width (HAW) */
-    kIrf_Intr_Index_Invalid = 0x21,
+    VTDINTRFAULT_INTR_INDEX_INVALID = 0x21,
     /** The IRTE is not present.  */
-    kIrf_Irte_Not_Present = 0x22,
+    VTDINTRFAULT_IRTE_NOT_PRESENT = 0x22,
     /** Reading IRTE from memory failed. */
-    kIrf_Irte_Read_Failed = 0x23,
+    VTDINTRFAULT_IRTE_READ_FAILED = 0x23,
     /** IRTE reserved bits invalid for an IRTE with Present bit set. */
-    kIrf_Irte_Present_Rsvd = 0x24,
-    /** Compatibility format interrupt (CFI) blocked due to EIME is enabled or CFIs
-     *  disabled. */
-    kIrf_Cfi_Blocked = 0x25,
+    VTDINTRFAULT_IRTE_PRESENT_RSVD = 0x24,
+    /** Compatibility format interrupt (CFI) blocked due to EIME being enabled or CFIs
+     *  were disabled. */
+    VTDINTRFAULT_CFI_BLOCKED = 0x25,
     /** IRTE SID, SVT, SQ bits invalid for an IRTE with Present bit set. */
-    kIrf_Irte_Present_Invalid = 0x26,
+    VTDINTRFAULT_IRTE_PRESENT_INVALID = 0x26,
     /** Reading posted interrupt descriptor (PID) failed. */
-    kIrf_Pid_Read_Failed = 0x27,
+    VTDINTRFAULT_PID_READ_FAILED = 0x27,
     /** PID reserved bits invalid. */
-    kIrf_Pid_Rsvd = 0x28,
+    VTDINTRFAULT_PID_RSVD = 0x28,
     /** Untranslated interrupt requested (without PASID) is invalid. */
-    kIrf_Ir_Without_Pasid_Invalid = 0x29
-} VTD_IR_FAULT_T;
+    VTDINTRFAULT_IR_WITHOUT_PASID_INVALID = 0x29
+} VTDINTRFAULT;
+/** @} */
+
+
+/** @name Address Translation Fault Conditions.
+ * In accordance with the Intel spec.
+ * @{ */
+typedef enum VTDADDRFAULT
+{
+    /* Legacy root table faults (LRT). */
+    VTDADDRFAULT_LRT_1   = 0x8,
+    VTDADDRFAULT_LRT_2   = 0x1,
+    VTDADDRFAULT_LRT_3   = 0xa,
+
+    /* Legacy Context-Table Faults (LCT). */
+    VTDADDRFAULT_LCT_1   = 0x9,
+    VTDADDRFAULT_LCT_2   = 0x2,
+    VTDADDRFAULT_LCT_3   = 0xb,
+    VTDADDRFAULT_LCT_4_0 = 0x3,
+    VTDADDRFAULT_LCT_4_1 = 0x3,
+    VTDADDRFAULT_LCT_4_2 = 0x3,
+    VTDADDRFAULT_LCT_4_3 = 0x3,
+    VTDADDRFAULT_LCT_5   = 0xd,
+
+    /* Legacy Second-Level Table Faults (LSL). */
+    VTDADDRFAULT_LSL_1   = 0x7,
+    VTDADDRFAULT_LSL_2   = 0xc,
+
+    /* Legacy General Faults (LGN). */
+    VTDADDRFAULT_LGN_1_0 = 0x4,
+    VTDADDRFAULT_LGN_1_1 = 0x4,
+    VTDADDRFAULT_LGN_1_2 = 0x4,
+    VTDADDRFAULT_LGN_1_3 = 0x4,
+    VTDADDRFAULT_LGN_2   = 0x5,
+    VTDADDRFAULT_LGN_3   = 0x6,
+    VTDADDRFAULT_LGN_4   = 0xe,
+
+    /* Root-Table Address Register Faults (RTA). */
+    VTDADDRFAULT_RTA_1_0 = 0x30,
+    VTDADDRFAULT_RTA_1_1 = 0x30,
+    VTDADDRFAULT_RTA_1_2 = 0x30,
+    VTDADDRFAULT_RTA_1_3 = 0x30,
+    VTDADDRFAULT_RTA_2   = 0x31,
+    VTDADDRFAULT_RTA_3   = 0x32,
+    VTDADDRFAULT_RTA_4   = 0x33,
+
+    /* Scalable-Mode Root-Table Faults (SRT). */
+    VTDADDRFAULT_SRT_1   = 0x38,
+    VTDADDRFAULT_SRT_2   = 0x39,
+    VTDADDRFAULT_SRT_3   = 0x3a,
+
+    /* Scalable-Mode Context-Table Faults (SCT). */
+    VTDADDRFAULT_SCT_1   = 0x40,
+    VTDADDRFAULT_SCT_2   = 0x41,
+    VTDADDRFAULT_SCT_3   = 0x42,
+    VTDADDRFAULT_SCT_4_0 = 0x43,
+    VTDADDRFAULT_SCT_4_1 = 0x43,
+    VTDADDRFAULT_SCT_4_2 = 0x43,
+    VTDADDRFAULT_SCT_5   = 0x44,
+    VTDADDRFAULT_SCT_6   = 0x45,
+    VTDADDRFAULT_SCT_7   = 0x46,
+    VTDADDRFAULT_SCT_8   = 0x47,
+    VTDADDRFAULT_SCT_9   = 0x48,
+
+    /* Scalable-Mode PASID-Directory Faults (SPD). */
+    VTDADDRFAULT_SPD_1   = 0x50,
+    VTDADDRFAULT_SPD_2   = 0x51,
+    VTDADDRFAULT_SPD_3   = 0x52,
+
+    /* Scalable-Mode PASID-Table Faults (SPT). */
+    VTDADDRFAULT_SPT_1   = 0x58,
+    VTDADDRFAULT_SPT_2   = 0x59,
+    VTDADDRFAULT_SPT_3   = 0x5a,
+    VTDADDRFAULT_SPT_4_0 = 0x5b,
+    VTDADDRFAULT_SPT_4_1 = 0x5b,
+    VTDADDRFAULT_SPT_4_2 = 0x5b,
+    VTDADDRFAULT_SPT_4_3 = 0x5b,
+    VTDADDRFAULT_SPT_4_4 = 0x5b,
+    VTDADDRFAULT_SPT_5   = 0x5c,
+    VTDADDRFAULT_SPT_6   = 0x5d,
+
+    /* Scalable-Mode First-Level Table Faults (SFL). */
+    VTDADDRFAULT_SFL_1   = 0x70,
+    VTDADDRFAULT_SFL_2   = 0x71,
+    VTDADDRFAULT_SFL_3   = 0x72,
+    VTDADDRFAULT_SFL_4   = 0x73,
+    VTDADDRFAULT_SFL_5   = 0x74,
+    VTDADDRFAULT_SFL_6   = 0x75,
+    VTDADDRFAULT_SFL_7   = 0x76,
+    VTDADDRFAULT_SFL_8   = 0x77,
+    VTDADDRFAULT_SFL_9   = 0x90,
+    VTDADDRFAULT_SFL_10  = 0x91,
+
+    /* Scalable-Mode Second-Level Table Faults (SSL). */
+    VTDADDRFAULT_SSL_1   = 0x78,
+    VTDADDRFAULT_SSL_2   = 0x79,
+    VTDADDRFAULT_SSL_3   = 0x7a,
+    VTDADDRFAULT_SSL_4   = 0x7b,
+    VTDADDRFAULT_SSL_5   = 0x7c,
+    VTDADDRFAULT_SSL_6   = 0x7d,
+
+    /* Scalable-Mode General Faults (SGN). */
+    VTDADDRFAULT_SGN_1   = 0x80,
+    VTDADDRFAULT_SGN_2   = 0x81,
+    VTDADDRFAULT_SGN_3   = 0x82,
+    VTDADDRFAULT_SGN_4_0 = 0x83,
+    VTDADDRFAULT_SGN_4_1 = 0x83,
+    VTDADDRFAULT_SGN_4_2 = 0x83,
+    VTDADDRFAULT_SGN_5   = 0x84,
+    VTDADDRFAULT_SGN_6   = 0x85,
+    VTDADDRFAULT_SGN_7   = 0x86,
+    VTDADDRFAULT_SGN_8   = 0x87,
+    VTDADDRFAULT_SGN_9   = 0x88,
+    VTDADDRFAULT_SGN_10  = 0x89
+} VTDATFAULT;
 /** @} */
 
 
