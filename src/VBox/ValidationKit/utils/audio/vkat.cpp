@@ -65,6 +65,7 @@ typedef struct PDMDRVINSINT
 #include "../../../Devices/Audio/AudioHlp.h"
 #include "../../../Devices/Audio/AudioTest.h"
 #include "../../../Devices/Audio/AudioTestService.h"
+#include "../../../Devices/Audio/AudioTestServiceClient.h"
 #include "VBoxDD.h"
 
 
@@ -2482,18 +2483,43 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
 }
 
 /**
+ * Tests the Audio Test Service (ATS).
+ *
+ * @returns VBox status code.
+ */
+static int audioTestDoSelftestSvc(void)
+{
+    int rc = AudioTestSvcInit();
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_SUCCESS(rc))
+        {
+            rc = AudioTestSvcStart();
+            if (RT_SUCCESS(rc))
+            {
+                ATSCLIENT Conn;
+                rc = AudioTestSvcClientConnect(&Conn);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = AudioTestSvcClientClose(&Conn);
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
+/**
  * Main function for performing the self-tests.
  *
  * @returns VBox status code.
  */
 static int audioTestDoSelftest(void)
 {
-    int rc = atsInit();
-    if (RT_SUCCESS(rc))
-    {
-        if (RT_SUCCESS(rc))
-            rc = atsStart();
-    }
+    int rc = audioTestDoSelftestSvc();
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Self-test failed with: %Rrc", rc);
 
     return rc;
 }
@@ -2546,9 +2572,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
         }
     }
 
-    rc = audioTestDoSelftest();
-
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    audioTestDoSelftest();
+        /*
+     * Print summary and exit.
+     */
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 
 

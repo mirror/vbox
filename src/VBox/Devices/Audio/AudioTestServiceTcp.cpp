@@ -39,8 +39,9 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** The default server port. */
-#define ATS_TCP_DEF_BIND_PORT                   6042
+/** The default server port.
+ *  Note: Do not choose/use 6042, as the Validation Kit TxsService already might use that port. */
+#define ATS_TCP_DEF_BIND_PORT                   6052
 /** The default server bind address. */
 #define ATS_TCP_DEF_BIND_ADDRESS                ""
 

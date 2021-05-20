@@ -23,9 +23,8 @@
 
 #include "AudioTestServiceInternal.h"
 
-
-int atsInit(void);
-int atsStart(void);
+int AudioTestSvcInit(void);
+int AudioTestSvcStart(void);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestService_h */
 

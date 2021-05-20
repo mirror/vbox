@@ -66,6 +66,7 @@ AudioTest_DEFS     += VBOX_WITH_AUDIO_VALIDATIONKIT
 AudioTest_SOURCES  += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioValidationKit.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTestService.cpp \
+	$(VKAT_PATH_AUDIO)/AudioTestServiceClient.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTestServiceProtocol.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTestServiceTcp.cpp
 
