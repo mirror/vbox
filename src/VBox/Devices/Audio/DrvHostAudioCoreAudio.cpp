@@ -1512,6 +1512,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
             else
                 orc = AudioQueueNewInput(&pStreamCA->BasicStreamDesc, drvHostAudioCaInputQueueBufferCallback, pStreamCA,
                                          hRunLoop, hRunLoopMode, 0 /*fFlags - MBZ*/, &pStreamCA->hAudioQueue);
+            LogFlowFunc(("AudioQueueNew%s -> %#x\n", pCfgReq->enmDir == PDMAUDIODIR_OUT ? "Output" : "Input", orc));
             if (orc == noErr)
             {
                 /*
@@ -1519,6 +1520,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                  */
                 UInt32 uSize = sizeof(pDev->UUID);
                 orc = AudioQueueSetProperty(pStreamCA->hAudioQueue, kAudioQueueProperty_CurrentDevice, &pDev->UUID, uSize);
+                LogFlowFunc(("AudioQueueSetProperty -> %#x\n", orc));
                 if (orc == noErr)
                 {
                     /*
@@ -1564,8 +1566,9 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                     {
                         pStreamCA->cBuffers = cQueueBuffers;
 
-                        cFramesBufferSize = 0;
                         const size_t cbQueueBuffer = PDMAudioPropsFramesToBytes(&pStreamCA->Cfg.Props, cFramesQueueBuffer);
+                        LogFlowFunc(("Allocating %u, each %#x bytes / %u frames\n", cQueueBuffers, cbQueueBuffer, cFramesQueueBuffer));
+                        cFramesBufferSize = 0;
                         for (uint32_t iBuf = 0; iBuf < cQueueBuffers; iBuf++)
                         {
                             AudioQueueBufferRef pBuf = NULL;
@@ -1643,6 +1646,10 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamCA, VERR_INVALID_POINTER);
+    LogFunc(("%p: %s\n", pStreamCA, pStreamCA->Cfg.szName));
+#ifdef LOG_ENABLED
+    uint64_t const nsStart = RTTimeNanoTS();
+#endif
 
     /*
      * Never mind if the status isn't INIT (it should always be, though).
@@ -1672,6 +1679,9 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
 
         /*
          * Free the queue buffers and the queue.
+         *
+         * This may take a while.  The AudioQueueReset call seems to helps
+         * reducing time stuck in AudioQueueDispose.
          */
 #ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
         LogRel(("Queue-destruction timer starting...\n"));
@@ -1679,6 +1689,14 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
         RTTimerLRStart(pThis->hBreakpointTimer, RT_NS_100MS);
         uint64_t nsStart = RTTimeNanoTS();
 #endif
+
+        /* Resetting the queue helps prevent AudioQueueDispose from taking a long time. */
+        if (pStreamCA->hAudioQueue)
+        {
+            LogFlowFunc(("Calling AudioQueueReset ...\n"));
+            orc = AudioQueueReset(pStreamCA->hAudioQueue);
+            LogFlowFunc(("AudioQueueReset -> %#x\n", orc));
+        }
 
         if (pStreamCA->paBuffers)
         {
@@ -1723,7 +1741,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
     else
         LogFunc(("Wrong stream init state for %p: %d - leaking it\n", pStream, enmInitState));
 
-    LogFunc(("returns\n"));
+    LogFunc(("returns (took %'RU64 ns)\n", RTTimeNanoTS() - nsStart));
     return VINF_SUCCESS;
 }
 
@@ -1836,6 +1854,13 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDisable(PPDMIHOSTAUDIO pInterfac
     int rc = VINF_SUCCESS;
     if (pStreamCA->fStarted)
     {
+#if 0
+        OSStatus orc2 = AudioQueueReset(pStreamCA->hAudioQueue);
+        LogFlowFunc(("AudioQueueReset(%s) returns %#x (%d)\n", pStreamCA->Cfg.szName, orc2, orc2)); RT_NOREF(orc2);
+        orc2 = AudioQueueFlush(pStreamCA->hAudioQueue);
+        LogFlowFunc(("AudioQueueFlush(%s) returns %#x (%d)\n", pStreamCA->Cfg.szName, orc2, orc2)); RT_NOREF(orc2);
+#endif
+
         OSStatus orc = AudioQueueStop(pStreamCA->hAudioQueue, TRUE /*inImmediate*/);
         LogFlowFunc(("AudioQueueStop(%s,TRUE) returns %#x (%d)\n", pStreamCA->Cfg.szName, orc, orc));
         if (orc != noErr)
