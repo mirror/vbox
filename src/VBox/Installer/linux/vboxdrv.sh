@@ -355,7 +355,7 @@ start()
         else
             begin_msg "You must sign these kernel modules before using VirtualBox:
   $MODULE_LIST
-See the documenatation for your Linux distribution." console
+See the documentation for your Linux distribution." console
         fi
     fi
 
