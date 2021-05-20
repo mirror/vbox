@@ -562,8 +562,7 @@ endif
  ifdef VBOX_WITH_BUSLOGIC
   VBoxDD_DEFS           += VBOX_WITH_BUSLOGIC
   VBoxDD_SOURCES        += \
- 	Storage/DevBusLogic.cpp \
- 	Storage/VBoxSCSI.cpp
+ 	Storage/DevBusLogic.cpp
  endif
 
  ifdef VBOX_WITH_LSILOGIC
