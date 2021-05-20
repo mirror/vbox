@@ -273,6 +273,15 @@ cleanup_usb()
     rm -rf /dev/vboxusb
 }
 
+# Returns path to module file as seen by modinfo(8) or empty string.
+module_path()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^filename:" | tr -s ' ' | cut -d " " -f2
+}
+
 # Returns module version if module is available or empty string.
 module_version()
 {
@@ -291,15 +300,34 @@ module_revision()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
 }
 
-# Returns "1" if module is available in the system and its version and revision
-# number do match to current VirtualBox installation. Or empty string otherwise.
+# Returns "1" if externally built module is available in the system and its
+# version and revision number do match to current VirtualBox installation.
+# Or empty string otherwise.
 module_available()
 {
     mod="$1"
     [ -n "$mod" ] || return
 
-    [ "$VBOX_VERSION" = "$(module_version $mod)" ] || return
-    [ "$VBOX_REVISION" = "$(module_revision $mod)" ] || return
+    [ "$VBOX_VERSION" = "$(module_version "$mod")" ] || return
+    [ "$VBOX_REVISION" = "$(module_revision "$mod")" ] || return
+
+    # Check if module belongs to VirtualBox installation.
+    #
+    # We have a convention that only modules from /lib/modules/*/misc
+    # belong to us. Modules from other locations are treated as
+    # externally built.
+    mod_path="$(module_path "$mod")"
+
+    # If module path points to a symbolic link, resolve actual file location.
+    [ -L "$mod_path" ] && mod_path="$(readlink -e -- "$mod_path")"
+
+    # File exists?
+    [ -f "$mod_path" ] || return
+
+    # Extract last component of module path and check whether it is located
+    # outside of /lib/modules/*/misc.
+    mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
+    [ "$mod_dir" != "misc" ] || return
 
     echo "1"
 }
@@ -331,10 +359,11 @@ See the documenatation for your Linux distribution." console
         fi
     fi
 
-    # Check if system already has matching modules installed.
-    [ "$(setup_complete)" = "1" ] || setup
-
     if ! running vboxdrv; then
+
+        # Check if system already has matching modules installed.
+        [ "$(setup_complete)" = "1" ] || setup
+
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
         fi
