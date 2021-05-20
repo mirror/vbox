@@ -76,6 +76,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/scsi.h>
+#include <VBox/version.h>
 
 typedef enum VBOXSCSISTATE
 {
@@ -156,6 +157,46 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
 
 DECLHIDDEN(int) vboxscsiR3LoadExec(PCPDMDEVHLPR3 pHlp, PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM);
 DECLHIDDEN(int) vboxscsiR3SaveExec(PCPDMDEVHLPR3 pHlp, PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM);
+
+/**
+ * Helper shared by the LsiLogic and BusLogic device emulations to load legacy saved states
+ * before the removal of the VBoxSCSI interface.
+ *
+ * @returns VBox status code.
+ * @param   pHlp                Pointer to the Ring-3 device helper table.
+ * @param   pSSM                The SSM handle to operate on.
+ */
+DECLINLINE(int) vboxscsiR3LoadExecLegacy(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
+{
+    pHlp->pfnSSMSkip(pSSM, 4);
+
+    /*
+     * The CDB buffer was increased with r104155 in trunk (backported to 5.0
+     * in r104311) without bumping the SSM state versions which leaves us
+     * with broken saved state restoring for older VirtualBox releases
+     * (up to 5.0.10).
+     */
+    if (   (   pHlp->pfnSSMHandleRevision(pSSM) < 104311
+            && pHlp->pfnSSMHandleVersion(pSSM)  < VBOX_FULL_VERSION_MAKE(5, 0, 12))
+        || (   pHlp->pfnSSMHandleRevision(pSSM) < 104155
+            && pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 0, 51)))
+        pHlp->pfnSSMSkip(pSSM, 12);
+    else
+        pHlp->pfnSSMSkip(pSSM, 20);
+
+    pHlp->pfnSSMSkip(pSSM, 1); /*iCDB*/
+    uint32_t cbBufLeft, iBuf;
+    pHlp->pfnSSMGetU32(pSSM, &cbBufLeft);
+    pHlp->pfnSSMGetU32(pSSM, &iBuf);
+    pHlp->pfnSSMSkip(pSSM, 2); /*fBusy, enmState*/
+
+    if (cbBufLeft + iBuf)
+        pHlp->pfnSSMSkip(pSSM, cbBufLeft + iBuf);
+
+    return VINF_SUCCESS;
+}
+
+
 RT_C_DECLS_END
 #endif /* IN_RING3 */
 
