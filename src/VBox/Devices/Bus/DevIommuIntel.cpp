@@ -262,10 +262,8 @@ typedef struct DMAR
 
     /** The event semaphore the invalidation-queue thread waits on. */
     SUPSEMEVENT                 hEvtInvQueue;
-    /** Whether the invalidation-queue thread has been signaled. */
-    bool volatile               fInvQueueThreadSignaled;
     /** Padding. */
-    bool                        afPadding0[3];
+    uint32_t                    uPadding0;
     /** Error diagnostic. */
     DMARDIAG                    enmDiag;
     /** The MMIO handle. */
@@ -1057,10 +1055,9 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
     if (    dmarInvQueueCanProcessRequests(pThis)
-        && !dmarInvQueueIsEmpty(pThis)
-        && !ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, true))
+        && !dmarInvQueueIsEmpty(pThis))
     {
-        Log4Func(("Signaling the invalidation-queue thread\n"));
+        Log4Func(("Signaling the invalidation-queue thread!!\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtInvQueue);
     }
 }
@@ -2270,14 +2267,11 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
         /*
          * Sleep until we are woken up.
          */
-        bool const fSignaled = ASMAtomicXchgBool(&pThis->fInvQueueThreadSignaled, false);
-        if (!fSignaled)
         {
             int const rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtInvQueue, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
-            ASMAtomicWriteBool(&pThis->fInvQueueThreadSignaled, false);
         }
 
         DMAR_LOCK(pDevIns, pThisR3);
