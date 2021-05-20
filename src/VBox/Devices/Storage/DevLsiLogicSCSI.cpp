@@ -2214,7 +2214,6 @@ static void lsilogicR3DumpSCSIIORequest(PMptSCSIIORequest pSCSIIORequest)
  *
  * @returns nothing.
  * @param   pDevIns     The device instance.
- * @param   pThisCC     Pointer to the ring-3 LsiLogic device state.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   pReq        The request to complete.
  * @param   rcReq       Status code of the request.
