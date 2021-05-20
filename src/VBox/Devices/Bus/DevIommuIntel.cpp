@@ -1057,7 +1057,7 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
     if (    dmarInvQueueCanProcessRequests(pThis)
         && !dmarInvQueueIsEmpty(pThis))
     {
-        Log4Func(("Signaling the invalidation-queue thread!!\n"));
+        Log4Func(("Signaling the invalidation-queue thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtInvQueue);
     }
 }
