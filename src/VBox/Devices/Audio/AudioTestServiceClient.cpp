@@ -187,7 +187,7 @@ DECLINLINE (void) audioTestSvcClientReqHdrInit(PATSPKTHDR pReqHdr, size_t cbReq,
 
     memcpy(pReqHdr->achOpcode, pszOp, sizeof(pReqHdr->achOpcode));
     pReqHdr->uCrc32 = 0; /** @todo Do CRC-32 calculation. */
-    pReqHdr->cb     = cbReq + cbPayload;
+    pReqHdr->cb     = (uint32_t)cbReq + (uint32_t)cbPayload;
 }
 
 static int audioTestSvcClientDoGreet(PATSCLIENT pClient)
