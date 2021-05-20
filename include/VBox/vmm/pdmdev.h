@@ -1524,7 +1524,7 @@ typedef struct PDMIOMMUHLPR0
      * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLR0CALLBACKMEMBER(int,   pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
+    DECLR0CALLBACKMEMBER(void,  pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1535,7 +1535,7 @@ typedef PDMIOMMUHLPR0 *PPDMIOMMUHLPR0;
 typedef const PDMIOMMUHLPR0 *PCPDMIOMMUHLPR0;
 
 /** Current PDMIOMMUHLPR0 version number. */
-#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 4, 0)
+#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 5, 0)
 
 
 /**
@@ -1578,7 +1578,7 @@ typedef struct PDMIOMMUHLPRC
      * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLRCCALLBACKMEMBER(int,   pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
+    DECLRCCALLBACKMEMBER(void,  pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1589,7 +1589,7 @@ typedef PDMIOMMUHLPRC *PPDMIOMMUHLPRC;
 typedef const PDMIOMMUHLPRC *PCPDMIOMMUHLPRC;
 
 /** Current PDMIOMMUHLPRC version number. */
-#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 4, 0)
+#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 5, 0)
 
 
 /**
@@ -1632,7 +1632,7 @@ typedef struct PDMIOMMUHLPR3
      * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLR3CALLBACKMEMBER(int,   pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(void,  pfnSendMsi,(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1643,7 +1643,7 @@ typedef PDMIOMMUHLPR3 *PPDMIOMMUHLPR3;
 typedef const PDMIOMMUHLPR3 *PCPDMIOMMUHLPR3;
 
 /** Current PDMIOMMUHLPR3 version number. */
-#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 4, 0)
+#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 5, 0)
 
 
 /**

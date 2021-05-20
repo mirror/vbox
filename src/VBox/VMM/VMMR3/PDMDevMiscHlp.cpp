@@ -298,11 +298,11 @@ static DECLCALLBACK(bool) pdmR3IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMIOMMUHLPR3,pfnSendMsi} */
-static DECLCALLBACK(int) pdmR3IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
+static DECLCALLBACK(void) pdmR3IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlowFunc(("caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
-    return PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, NIL_PCIBDF, pMsi, uTagSrc);
+    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, NIL_PCIBDF, pMsi, uTagSrc);
 }
 
 

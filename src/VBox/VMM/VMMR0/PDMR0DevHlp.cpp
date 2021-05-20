@@ -1625,13 +1625,16 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, PCIBDF uB
 }
 
 
-/** @interface_method_impl{PDMPCIHLPR0,pfnIoApicSendMsi} */
-static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
+/**
+ * Helper for sending an MSI via the I/O APIC.
+ *
+ * @param   pDevIns     PCI device instance.
+ * @param   uBusDevFn   The bus:device:function of the device initiating the MSI.
+ * @param   pMsi        The MSI to send.
+ * @param   uTagSrc     The IRQ tag and source (for tracing).
+ */
+static void pdmR0IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    Assert(PCIBDF_IS_VALID(uBusDevFn));
-    Log4(("pdmR0PciHlp_IoApicSendMsi: uBusDevFn=%#x Msi=(Addr:%#RX64 Data:%#RX32) uTagSrc=%#x\n", uBusDevFn, pMsi->Addr.u64,
-          pMsi->Data.u32, uTagSrc));
     PGVM pGVM = pDevIns->Internal.s.pGVM;
     if (pGVM->pdm.s.IoApic.pDevInsR0)
         pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, uBusDevFn, pMsi, uTagSrc);
@@ -1652,6 +1655,17 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF u
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
+}
+
+
+/** @interface_method_impl{PDMPCIHLPR0,pfnIoApicSendMsi} */
+static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    Assert(PCIBDF_IS_VALID(uBusDevFn));
+    Log4(("pdmR0PciHlp_IoApicSendMsi: uBusDevFn=%#x Msi=(Addr:%#RX64 Data:%#RX32) uTagSrc=%#x\n", uBusDevFn, pMsi->Addr.u64,
+          pMsi->Data.u32, uTagSrc));
+    pdmR0IoApicSendMsi(pDevIns, uBusDevFn, pMsi, uTagSrc);
 }
 
 
@@ -1730,19 +1744,10 @@ static DECLCALLBACK(bool) pdmR0IommuHlp_LockIsOwner(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMIOMMUHLPR0,pfnSendMsi} */
-static DECLCALLBACK(int) pdmR0IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
+static DECLCALLBACK(void) pdmR0IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    if (pGVM->pdm.s.IoApic.pDevInsR0)
-    {
-        Assert(pGVM->pdm.s.IoApic.pfnSendMsiR0);
-        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, NIL_PCIBDF, pMsi, uTagSrc);
-        return VINF_SUCCESS;
-    }
-
-    /** @todo Implement this. */
-    AssertMsgFailedReturn(("Queue PDM task for sending the MSI in ring-3"), VERR_IOMMU_IPE_5);
+    pdmR0IoApicSendMsi(pDevIns, NIL_PCIBDF, pMsi, uTagSrc);
 }
 
 

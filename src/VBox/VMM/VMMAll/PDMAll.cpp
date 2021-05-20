@@ -223,9 +223,16 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
  *                      Cannot be NIL_PCIBDF.
  * @param   pMsi        The MSI to send.
  * @param   uTagSrc     The IRQ tag and source tracer ID.
+ *
+ * @remarks Atm, don't call this from ring-0. Use the respective R0 device helpers
+ *          instead.
  */
 VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
+    /** @todo We should somehow move/make this to ring-3 only, as in ring-0, the helper
+     *        code handles queuing the MSI to be sent from ring-3 when I/O APIC isn't
+     *        available in R0. When this TODO is done, remove the remark in the doxygen
+     *        above. */
     Assert(PCIBDF_IS_VALID(uBusDevFn));
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
