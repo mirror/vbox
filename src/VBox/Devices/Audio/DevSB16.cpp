@@ -1746,22 +1746,19 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
  * @returns Pointer to driver stream if found, or NULL if not found.
  * @param   pDrv                Driver to retrieve driver stream for.
  * @param   enmDir              Stream direction to retrieve.
- * @param   dstSrc              Stream destination / source to retrieve.
+ * @param   enmPath             Stream destination / source to retrieve.
  */
-static PSB16DRIVERSTREAM sb16GetDrvStream(PSB16DRIVER pDrv, PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
+static PSB16DRIVERSTREAM sb16GetDrvStream(PSB16DRIVER pDrv, PDMAUDIODIR enmDir, PDMAUDIOPATH enmPath)
 {
     PSB16DRIVERSTREAM pDrvStream = NULL;
 
-    if (enmDir == PDMAUDIODIR_IN)
-        return NULL; /** @todo Recording not implemented yet. */
-
     if (enmDir == PDMAUDIODIR_OUT)
     {
-        LogFunc(("enmDst=%RU32\n", dstSrc.enmDst));
+        LogFunc(("enmPath=%d\n", enmPath));
 
-        switch (dstSrc.enmDst)
+        switch (enmPath)
         {
-            case PDMAUDIOPLAYBACKDST_FRONT:
+            case PDMAUDIOPATH_OUT_FRONT:
                 pDrvStream = &pDrv->Out;
                 break;
             default:
@@ -1770,7 +1767,7 @@ static PSB16DRIVERSTREAM sb16GetDrvStream(PSB16DRIVER pDrv, PDMAUDIODIR enmDir, 
         }
     }
     else
-        AssertFailed();
+        Assert(enmDir == PDMAUDIODIR_IN /** @todo Recording not implemented yet. */);
 
     return pDrvStream;
 }
@@ -1799,7 +1796,7 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
 
     int rc;
 
-    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, pStreamCfg->enmDir, pStreamCfg->u);
+    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, pStreamCfg->enmDir, pStreamCfg->enmPath);
     if (pDrvStream)
     {
         AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
@@ -1867,13 +1864,13 @@ static int sb16AddDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSINK p
  * @param   pDevIns     The device instance.
  * @param   pMixSink    Mixer sink to remove audio streams from.
  * @param   enmDir      Stream direction to remove.
- * @param   dstSrc      Stream destination / source to remove.
+ * @param   enmPath     Stream destination / source to remove.
  * @param   pDrv        Driver stream to remove.
  */
 static void sb16RemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir,
-                                PDMAUDIODSTSRCUNION dstSrc, PSB16DRIVER pDrv)
+                                PDMAUDIOPATH enmPath, PSB16DRIVER pDrv)
 {
-    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, enmDir, dstSrc);
+    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, enmDir, enmPath);
     if (pDrvStream)
     {
         if (pDrvStream->pMixStrm)
@@ -1895,17 +1892,17 @@ static void sb16RemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PDMAUD
  * @param   pThis       The SB16 state.
  * @param   pMixSink    Mixer sink to remove audio streams from.
  * @param   enmDir      Stream direction to remove.
- * @param   dstSrc      Stream destination / source to remove.
+ * @param   enmPath     Stream destination / source to remove.
  */
 static void sb16RemoveDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSINK pMixSink,
-                                 PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
+                                 PDMAUDIODIR enmDir, PDMAUDIOPATH enmPath)
 {
     AssertPtrReturnVoid(pMixSink);
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        sb16RemoveDrvStream(pDevIns, pMixSink, enmDir, dstSrc, pDrv);
+        sb16RemoveDrvStream(pDevIns, pMixSink, enmDir, enmPath, pDrv);
     }
 }
 
@@ -2208,7 +2205,7 @@ static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream)
         case SB16_IDX_OUT:
         {
             pStream->Cfg.enmDir    = PDMAUDIODIR_OUT;
-            pStream->Cfg.u.enmDst  = PDMAUDIOPLAYBACKDST_FRONT;
+            pStream->Cfg.enmPath   = PDMAUDIOPATH_OUT_FRONT;
             pStream->Cfg.enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             PDMAudioPropsInit(&pStream->Cfg.Props, 1 /* 8-bit */, false /* fSigned */, 1 /* Mono */, 11025 /* uHz */);
@@ -2251,23 +2248,15 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
 
     AssertReturn(PDMAudioPropsAreValid(&pStream->Cfg.Props), VERR_INVALID_PARAMETER);
 
-    PDMAUDIODSTSRCUNION dstSrc;
-    PDMAUDIODIR         enmDir;
-
     switch (pStream->uIdx)
     {
         case SB16_IDX_OUT:
-        {
             pStream->Cfg.enmDir      = PDMAUDIODIR_OUT;
-            pStream->Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
+            pStream->Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
             pStream->Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             RTStrCopy(pStream->Cfg.szName, sizeof(pStream->Cfg.szName), "Output");
-
-            dstSrc.enmDst = PDMAUDIOPLAYBACKDST_FRONT;
-            enmDir        = PDMAUDIODIR_OUT;
             break;
-        }
 
         default:
             AssertFailed();
@@ -2300,7 +2289,7 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
     AssertPtrReturn(pMixerSink, VERR_INVALID_POINTER);
 
     sb16RemoveDrvStreams(pDevIns, pThis,
-                         sb16StreamIndexToSink(pThis, pStream->uIdx), pStream->Cfg.enmDir, pStream->Cfg.u);
+                         sb16StreamIndexToSink(pThis, pStream->uIdx), pStream->Cfg.enmDir, pStream->Cfg.enmPath);
 
     rc = sb16AddDrvStreams(pDevIns, pThis, pMixerSink, &pStream->Cfg);
     if (RT_SUCCESS(rc))

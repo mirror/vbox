@@ -486,67 +486,61 @@ typedef PDMAUDIOFRAME *PPDMAUDIOFRAME;
 /** Pointer to a const single (stereo) audio frame. */
 typedef PDMAUDIOFRAME const *PCPDMAUDIOFRAME;
 
-/**
- * Audio playback destinations.
- */
-typedef enum PDMAUDIOPLAYBACKDST
-{
-    /** Invalid zero value as per usual (guards against using unintialized values). */
-    PDMAUDIOPLAYBACKDST_INVALID = 0,
-    /** Unknown destination. */
-    PDMAUDIOPLAYBACKDST_UNKNOWN,
-    /** Front channel. */
-    PDMAUDIOPLAYBACKDST_FRONT,
-    /** Center / LFE (Subwoofer) channel. */
-    PDMAUDIOPLAYBACKDST_CENTER_LFE,
-    /** Rear channel. */
-    PDMAUDIOPLAYBACKDST_REAR,
-    /** End of valid values. */
-    PDMAUDIOPLAYBACKDST_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOPLAYBACKDST_32BIT_HACK = 0x7fffffff
-} PDMAUDIOPLAYBACKDST;
 
 /**
- * Audio recording sources.
+ * Audio path: input sources and playback destinations.
  *
- * @note Because this is almost exclusively used in PDMAUDIODSTSRCUNION where it
- *       overlaps with PDMAUDIOPLAYBACKDST, the values starts at 64 instead of 0.
+ * Think of this as the name of the socket you plug the virtual audio stream
+ * jack into.
+ *
+ * @note Not quite sure what the purpose of this type is.  It used to be two
+ * separate enums (PDMAUDIOPLAYBACKDST & PDMAUDIORECSRC) without overlapping
+ * values and most commonly used in a union (PDMAUDIODSTSRCUNION).  The output
+ * values were designated "channel" (e.g. "Front channel"), whereas this was not
+ * done to the input ones.  So, I'm (bird) a little confused what the actual
+ * meaning was.
  */
-typedef enum PDMAUDIORECSRC
+typedef enum PDMAUDIOPATH
 {
-    /** Unknown recording source. */
-    PDMAUDIORECSRC_UNKNOWN = 64,
-    /** Microphone-In. */
-    PDMAUDIORECSRC_MIC,
-    /** CD. */
-    PDMAUDIORECSRC_CD,
-    /** Video-In. */
-    PDMAUDIORECSRC_VIDEO,
-    /** AUX. */
-    PDMAUDIORECSRC_AUX,
-    /** Line-In. */
-    PDMAUDIORECSRC_LINE,
-    /** Phone-In. */
-    PDMAUDIORECSRC_PHONE,
-    /** End of valid values. */
-    PDMAUDIORECSRC_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIORECSRC_32BIT_HACK = 0x7fffffff
-} PDMAUDIORECSRC;
+    /** Customary invalid zero value. */
+    PDMAUDIOPATH_INVALID = 0,
 
-/**
- * Union for keeping an audio stream destination or source.
- */
-typedef union PDMAUDIODSTSRCUNION
-{
-    /** Desired playback destination (for an output stream). */
-    PDMAUDIOPLAYBACKDST enmDst;
-    /** Desired recording source (for an input stream). */
-    PDMAUDIORECSRC      enmSrc;
-} PDMAUDIODSTSRCUNION;
-/** Pointer to an audio stream src/dst union. */
-typedef PDMAUDIODSTSRCUNION *PPDMAUDIODSTSRCUNION;
+    /** Unknown path / Doesn't care. */
+    PDMAUDIOPATH_UNKNOWN,
+
+    /** First output value. */
+    PDMAUDIOPATH_OUT_FIRST,
+    /** Output: Front. */
+    PDMAUDIOPATH_OUT_FRONT = PDMAUDIOPATH_OUT_FIRST,
+    /** Output: Center / LFE (Subwoofer). */
+    PDMAUDIOPATH_OUT_CENTER_LFE,
+    /** Output: Rear. */
+    PDMAUDIOPATH_OUT_REAR,
+    /** Last output value (inclusive)   */
+    PDMAUDIOPATH_OUT_END = PDMAUDIOPATH_OUT_REAR,
+
+    /** First input value. */
+    PDMAUDIOPATH_IN_FIRST,
+    /** Input: Microphone. */
+    PDMAUDIOPATH_IN_MIC = PDMAUDIOPATH_IN_FIRST,
+    /** Input: CD. */
+    PDMAUDIOPATH_IN_CD,
+    /** Input: Video-In. */
+    PDMAUDIOPATH_IN_VIDEO,
+    /** Input: AUX. */
+    PDMAUDIOPATH_IN_AUX,
+    /** Input: Line-In. */
+    PDMAUDIOPATH_IN_LINE,
+    /** Input: Phone-In. */
+    PDMAUDIOPATH_IN_PHONE,
+    /** Last intput value (inclusive). */
+    PDMAUDIOPATH_IN_LAST = PDMAUDIOPATH_IN_PHONE,
+
+    /** End of valid values. */
+    PDMAUDIOPATH_END,
+    /** Hack to blow the typ up to 32 bits. */
+    PDMAUDIOPATH_32BIT_HACK = 0x7fffffff
+} PDMAUDIOPATH;
 
 /**
  * Audio stream (data) layout.
@@ -755,8 +749,8 @@ typedef struct PDMAUDIOSTREAMCFG
 {
     /** Direction of the stream. */
     PDMAUDIODIR             enmDir;
-    /** Destination / source indicator, depending on enmDir. */
-    PDMAUDIODSTSRCUNION     u;
+    /** Destination / source path. */
+    PDMAUDIOPATH            enmPath;
     /** The stream's PCM properties. */
     PDMAUDIOPCMPROPS        Props;
     /** The stream's audio data layout.
@@ -1249,7 +1243,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "69d01cd1-df73-48db-86f4-2f97519ac585"
+#define PDMIAUDIOCONNECTOR_IID                  "ff9cabf0-4138-4c3a-aa99-28bf7a6feae7"
 
 
 /**
@@ -1530,7 +1524,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "cd27862d-9aa2-4270-876e-7d660b87ecd3"
+#define PDMIHOSTAUDIO_IID                           "ad56b303-0c1f-4b79-9bd1-4ec04ae08c4f"
 
 
 /** Pointer to a audio notify from host interface. */
@@ -1615,7 +1609,7 @@ typedef struct PDMIHOSTAUDIOPORT
 } PDMIHOSTAUDIOPORT;
 
 /** PDMIHOSTAUDIOPORT interface ID. */
-#define PDMIHOSTAUDIOPORT_IID                    "cd006383-7be1-4dbe-a69e-21236413cf30"
+#define PDMIHOSTAUDIOPORT_IID                    "9f91ec59-95ba-4925-92dc-e75be1c63352"
 
 /** @} */
 

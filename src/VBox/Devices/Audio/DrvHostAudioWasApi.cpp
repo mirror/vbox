@@ -1766,9 +1766,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     Assert(PDMAudioStrmCfgEquals(pCfgReq, pCfgAcq));
 
     const char * const pszStreamType = pCfgReq->enmDir == PDMAUDIODIR_IN ? "capture" : "playback"; RT_NOREF(pszStreamType);
-    LogFlowFunc(("enmSrc/Dst=%s '%s'\n",
-                 pCfgReq->enmDir == PDMAUDIODIR_IN ? PDMAudioRecSrcGetName(pCfgReq->u.enmSrc)
-                 : PDMAudioPlaybackDstGetName(pCfgReq->u.enmDst), pCfgReq->szName));
+    LogFlowFunc(("enmPath=%s '%s'\n", PDMAudioPathGetName(pCfgReq->enmPath), pCfgReq->szName));
 #if defined(RTLOG_REL_ENABLED) || defined(LOG_ENABLED)
     char szTmp[64];
 #endif

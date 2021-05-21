@@ -106,51 +106,35 @@ DECLINLINE(const char *) PDMAudioMixerCtlGetName(PDMAUDIOMIXERCTL enmMixerCtl)
 }
 
 /**
- * Gets the name of a playback destination enum value.
+ * Gets the name of a path enum value.
  *
  * @returns Pointer to read-only name, "bad" if invalid input.
- * @param   enmPlaybackDst      The playback destination value.
+ * @param   enmPath     The path value to name.
  */
-DECLINLINE(const char *) PDMAudioPlaybackDstGetName(PDMAUDIOPLAYBACKDST enmPlaybackDst)
+DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
 {
-    switch (enmPlaybackDst)
+    switch (enmPath)
     {
-        case PDMAUDIOPLAYBACKDST_UNKNOWN:    return "Unknown";
-        case PDMAUDIOPLAYBACKDST_FRONT:      return "Front";
-        case PDMAUDIOPLAYBACKDST_CENTER_LFE: return "Center / LFE";
-        case PDMAUDIOPLAYBACKDST_REAR:       return "Rear";
-        /* no default */
-        case PDMAUDIOPLAYBACKDST_INVALID:
-        case PDMAUDIOPLAYBACKDST_END:
-        case PDMAUDIOPLAYBACKDST_32BIT_HACK:
-            break;
-    }
-    AssertMsgFailedReturn(("Invalid playback destination %ld\n", enmPlaybackDst), "bad");
-}
+        case PDMAUDIOPATH_UNKNOWN:          return "Unknown";
 
-/**
- * Gets the name of a recording source enum value.
- *
- * @returns Pointer to read-only name, "bad" if invalid input.
- * @param   enmRecSrc       The recording source value.
- */
-DECLINLINE(const char *) PDMAudioRecSrcGetName(PDMAUDIORECSRC enmRecSrc)
-{
-    switch (enmRecSrc)
-    {
-        case PDMAUDIORECSRC_UNKNOWN: return "Unknown";
-        case PDMAUDIORECSRC_MIC:     return "Microphone In";
-        case PDMAUDIORECSRC_CD:      return "CD";
-        case PDMAUDIORECSRC_VIDEO:   return "Video";
-        case PDMAUDIORECSRC_AUX:     return "AUX";
-        case PDMAUDIORECSRC_LINE:    return "Line In";
-        case PDMAUDIORECSRC_PHONE:   return "Phone";
+        case PDMAUDIOPATH_OUT_FRONT:        return "Front";
+        case PDMAUDIOPATH_OUT_CENTER_LFE:   return "Center / LFE";
+        case PDMAUDIOPATH_OUT_REAR:         return "Rear";
+
+        case PDMAUDIOPATH_IN_MIC:           return "Microphone In";
+        case PDMAUDIOPATH_IN_CD:            return "CD";
+        case PDMAUDIOPATH_IN_VIDEO:         return "Video";
+        case PDMAUDIOPATH_IN_AUX:           return "AUX";
+        case PDMAUDIOPATH_IN_LINE:          return "Line In";
+        case PDMAUDIOPATH_IN_PHONE:         return "Phone";
+
         /* no default */
-        case PDMAUDIORECSRC_END:
-        case PDMAUDIORECSRC_32BIT_HACK:
+        case PDMAUDIOPATH_INVALID:
+        case PDMAUDIOPATH_END:
+        case PDMAUDIOPATH_32BIT_HACK:
             break;
     }
-    AssertMsgFailedReturn(("Invalid recording source %ld\n", enmRecSrc), "bad");
+    AssertMsgFailedReturn(("Unknown enmPath=%d\n", enmPath), "bad");
 }
 
 /**
@@ -953,7 +937,7 @@ DECLINLINE(bool) PDMAudioStrmCfgEquals(PCPDMAUDIOSTREAMCFG pCfg1, PCPDMAUDIOSTRE
         return pCfg1 != NULL;
     if (PDMAudioPropsAreEqual(&pCfg1->Props, &pCfg2->Props))
         return pCfg1->enmDir    == pCfg2->enmDir
-            && pCfg1->u.enmDst  == pCfg2->u.enmDst
+            && pCfg1->enmPath   == pCfg2->enmPath
             && pCfg1->enmLayout == pCfg2->enmLayout
             && pCfg1->Device.cMsSchedulingHint == pCfg2->Device.cMsSchedulingHint
             && pCfg1->Backend.cFramesPeriod == pCfg2->Backend.cFramesPeriod

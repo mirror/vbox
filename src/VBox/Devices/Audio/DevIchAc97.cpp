@@ -658,7 +658,7 @@ static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PA
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 
 static void               ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
-                                                         PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc);
+                                                         PDMAUDIODIR enmDir, PDMAUDIOPATH enmPath);
 
 DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 DECLINLINE(void)          ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint64_t cTicksToDeadline);
@@ -1149,11 +1149,9 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
     /*
      * Destroy all sinks.
      */
-    PDMAUDIODSTSRCUNION dstSrc; /** @todo r=bird: this is just impractical. combine the two enums into one, they already have no overlapping values. */
     if (pThisCC->pSinkLineIn)
     {
-        dstSrc.enmSrc = PDMAUDIORECSRC_LINE;
-        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkLineIn, PDMAUDIODIR_IN, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkLineIn, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_LINE);
 
         AudioMixerSinkDestroy(pThisCC->pSinkLineIn, pDevIns);
         pThisCC->pSinkLineIn = NULL;
@@ -1161,8 +1159,7 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
 
     if (pThisCC->pSinkMicIn)
     {
-        dstSrc.enmSrc = PDMAUDIORECSRC_MIC;
-        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkMicIn, PDMAUDIODIR_IN, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkMicIn, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_MIC);
 
         AudioMixerSinkDestroy(pThisCC->pSinkMicIn, pDevIns);
         pThisCC->pSinkMicIn = NULL;
@@ -1170,8 +1167,7 @@ static void ichac97R3StreamsDestroy(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97S
 
     if (pThisCC->pSinkOut)
     {
-        dstSrc.enmDst = PDMAUDIOPLAYBACKDST_FRONT;
-        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkOut, PDMAUDIODIR_OUT, dstSrc);
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pThisCC->pSinkOut, PDMAUDIODIR_OUT, PDMAUDIOPATH_OUT_FRONT);
 
         AudioMixerSinkDestroy(pThisCC->pSinkOut, pDevIns);
         pThisCC->pSinkOut = NULL;
@@ -1433,24 +1429,24 @@ static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
  * Retrieves a specific driver stream of a AC'97 driver.
  *
  * @returns Pointer to driver stream if found, or NULL if not found.
- * @param   pDrv                Driver to retrieve driver stream for.
- * @param   enmDir              Stream direction to retrieve.
- * @param   dstSrc              Stream destination / source to retrieve.
+ * @param   pDrv        Driver to retrieve driver stream for.
+ * @param   enmDir      Stream direction to retrieve.
+ * @param   enmPath     Stream destination / source to retrieve.
  */
-static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
+static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODIR enmDir, PDMAUDIOPATH enmPath)
 {
     PAC97DRIVERSTREAM pDrvStream = NULL;
 
     if (enmDir == PDMAUDIODIR_IN)
     {
-        LogFunc(("enmRecSource=%d\n", dstSrc.enmSrc));
+        LogFunc(("enmRecSource=%d\n", enmPath));
 
-        switch (dstSrc.enmSrc)
+        switch (enmPath)
         {
-            case PDMAUDIORECSRC_LINE:
+            case PDMAUDIOPATH_IN_LINE:
                 pDrvStream = &pDrv->LineIn;
                 break;
-            case PDMAUDIORECSRC_MIC:
+            case PDMAUDIOPATH_IN_MIC:
                 pDrvStream = &pDrv->MicIn;
                 break;
             default:
@@ -1460,11 +1456,11 @@ static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODI
     }
     else if (enmDir == PDMAUDIODIR_OUT)
     {
-        LogFunc(("enmPlaybackDest=%d\n", dstSrc.enmDst));
+        LogFunc(("enmPlaybackDst=%d\n", enmPath));
 
-        switch (dstSrc.enmDst)
+        switch (enmPath)
         {
-            case PDMAUDIOPLAYBACKDST_FRONT:
+            case PDMAUDIOPATH_OUT_FRONT:
                 pDrvStream = &pDrv->Out;
                 break;
             default:
@@ -1502,7 +1498,7 @@ static int ichac97R3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, 
 
     int rc;
 
-    PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pDrv, pStreamCfg->enmDir, pStreamCfg->u);
+    PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pDrv, pStreamCfg->enmDir, pStreamCfg->enmPath);
     if (pDrvStream)
     {
         AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
@@ -1677,13 +1673,13 @@ static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
  * @param   pDevIns     The device instance.
  * @param   pMixSink    Mixer sink to remove audio streams from.
  * @param   enmDir      Stream direction to remove.
- * @param   dstSrc      Stream destination / source to remove.
+ * @param   enmPath     Stream destination / source to remove.
  * @param   pDrv        Driver stream to remove.
  */
 static void ichac97R3MixerRemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir,
-                                          PDMAUDIODSTSRCUNION dstSrc, PAC97DRIVER pDrv)
+                                          PDMAUDIOPATH enmPath, PAC97DRIVER pDrv)
 {
-    PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pDrv, enmDir, dstSrc);
+    PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pDrv, enmDir, enmPath);
     if (pDrvStream)
     {
         if (pDrvStream->pMixStrm)
@@ -1703,17 +1699,17 @@ static void ichac97R3MixerRemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSi
  * @param   pThisCC     The ring-3 AC'97 state.
  * @param   pMixSink    Mixer sink to remove audio streams from.
  * @param   enmDir      Stream direction to remove.
- * @param   dstSrc      Stream destination / source to remove.
+ * @param   enmPath     Stream destination / source to remove.
  */
 static void ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink,
-                                           PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
+                                           PDMAUDIODIR enmDir, PDMAUDIOPATH enmPath)
 {
     AssertPtrReturnVoid(pMixSink);
 
     PAC97DRIVER pDrv;
     RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        ichac97R3MixerRemoveDrvStream(pDevIns, pMixSink, enmDir, dstSrc, pDrv);
+        ichac97R3MixerRemoveDrvStream(pDevIns, pMixSink, enmDir, enmPath, pDrv);
     }
 }
 
@@ -1792,7 +1788,7 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
             PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
                               ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
-            Cfg.u.enmSrc    = PDMAUDIORECSRC_LINE;
+            Cfg.enmPath     = PDMAUDIOPATH_IN_LINE;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Line-In");
 
@@ -1805,7 +1801,7 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
             PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
                               ichac97MixerGet(pThis, AC97_MIC_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
-            Cfg.u.enmSrc    = PDMAUDIORECSRC_MIC;
+            Cfg.enmPath     = PDMAUDIOPATH_IN_MIC;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Mic-In");
 
@@ -1818,7 +1814,7 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
             PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
                               ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_OUT;
-            Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
+            Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
             Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Output");
 
@@ -1876,7 +1872,7 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
                 {
                     pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
 
-                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
+                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
                     rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
                     if (RT_SUCCESS(rc))
                         rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
@@ -2181,22 +2177,22 @@ static int ichac97R3MixerSetGain(PAC97STATE pThis, PAC97STATER3 pThisCC, int ind
  * @returns PDM audio recording source.
  * @param   uIdx                AC'97 index to convert.
  */
-static PDMAUDIORECSRC ichac97R3IdxToRecSource(uint8_t uIdx)
+static PDMAUDIOPATH ichac97R3IdxToRecSource(uint8_t uIdx)
 {
     switch (uIdx)
     {
-        case AC97_REC_MIC:     return PDMAUDIORECSRC_MIC;
-        case AC97_REC_CD:      return PDMAUDIORECSRC_CD;
-        case AC97_REC_VIDEO:   return PDMAUDIORECSRC_VIDEO;
-        case AC97_REC_AUX:     return PDMAUDIORECSRC_AUX;
-        case AC97_REC_LINE_IN: return PDMAUDIORECSRC_LINE;
-        case AC97_REC_PHONE:   return PDMAUDIORECSRC_PHONE;
+        case AC97_REC_MIC:     return PDMAUDIOPATH_IN_MIC;
+        case AC97_REC_CD:      return PDMAUDIOPATH_IN_CD;
+        case AC97_REC_VIDEO:   return PDMAUDIOPATH_IN_VIDEO;
+        case AC97_REC_AUX:     return PDMAUDIOPATH_IN_AUX;
+        case AC97_REC_LINE_IN: return PDMAUDIOPATH_IN_LINE;
+        case AC97_REC_PHONE:   return PDMAUDIOPATH_IN_PHONE;
         default:
             break;
     }
 
     LogFlowFunc(("Unknown record source %d, using MIC\n", uIdx));
-    return PDMAUDIORECSRC_MIC;
+    return PDMAUDIOPATH_IN_MIC;
 }
 
 /**
@@ -2205,21 +2201,18 @@ static PDMAUDIORECSRC ichac97R3IdxToRecSource(uint8_t uIdx)
  * @returns AC'97 recording source index.
  * @param   enmRecSrc           PDM audio recording source to convert.
  */
-static uint8_t ichac97R3RecSourceToIdx(PDMAUDIORECSRC enmRecSrc)
+static uint8_t ichac97R3RecSourceToIdx(PDMAUDIOPATH enmRecSrc)
 {
     switch (enmRecSrc)
     {
-        case PDMAUDIORECSRC_MIC:     return AC97_REC_MIC;
-        case PDMAUDIORECSRC_CD:      return AC97_REC_CD;
-        case PDMAUDIORECSRC_VIDEO:   return AC97_REC_VIDEO;
-        case PDMAUDIORECSRC_AUX:     return AC97_REC_AUX;
-        case PDMAUDIORECSRC_LINE:    return AC97_REC_LINE_IN;
-        case PDMAUDIORECSRC_PHONE:   return AC97_REC_PHONE;
-        /* no default */
-        case PDMAUDIORECSRC_UNKNOWN:
-        case PDMAUDIORECSRC_END:
-        case PDMAUDIORECSRC_32BIT_HACK:
-            break;
+        case PDMAUDIOPATH_IN_MIC:    return AC97_REC_MIC;
+        case PDMAUDIOPATH_IN_CD:     return AC97_REC_CD;
+        case PDMAUDIOPATH_IN_VIDEO:  return AC97_REC_VIDEO;
+        case PDMAUDIOPATH_IN_AUX:    return AC97_REC_AUX;
+        case PDMAUDIOPATH_IN_LINE:   return AC97_REC_LINE_IN;
+        case PDMAUDIOPATH_IN_PHONE:  return AC97_REC_PHONE;
+        default:
+            AssertMsgFailedBreak(("%d\n", enmRecSrc));
     }
 
     LogFlowFunc(("Unknown audio recording source %d using MIC\n", enmRecSrc));
@@ -2260,13 +2253,13 @@ static void ichac97R3MixerRecordSelect(PAC97STATE pThis, uint32_t val)
     uint8_t rs = val & AC97_REC_MASK;
     uint8_t ls = (val >> 8) & AC97_REC_MASK;
 
-    const PDMAUDIORECSRC ars = ichac97R3IdxToRecSource(rs);
-    const PDMAUDIORECSRC als = ichac97R3IdxToRecSource(ls);
+    PDMAUDIOPATH const ars = ichac97R3IdxToRecSource(rs);
+    PDMAUDIOPATH const als = ichac97R3IdxToRecSource(ls);
 
     rs = ichac97R3RecSourceToIdx(ars);
     ls = ichac97R3RecSourceToIdx(als);
 
-    LogRel(("AC97: Record select to left=%s, right=%s\n", PDMAudioRecSrcGetName(ars), PDMAudioRecSrcGetName(als)));
+    LogRel(("AC97: Record select to left=%s, right=%s\n", PDMAudioPathGetName(ars), PDMAudioPathGetName(als)));
 
     ichac97MixerSet(pThis, AC97_Record_Select, rs | (ls << 8));
 }
@@ -3670,7 +3663,6 @@ static void ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
 /** @todo r=bird: This looks completely wrong.  What if the detatched devices wasn't the recording source
  * and we pick a different one here?  I also don't get why we need to do this in revese order, given that
  * the primary device is first.  I guess this code isn't really tested. */
-    PDMAUDIODSTSRCUNION dstSrc;
     PAC97DRIVER pDrvCur;
     RTListForEachReverse(&pThisCC->lstDrv, pDrvCur, AC97DRIVER, Node)
     {
@@ -3682,8 +3674,7 @@ static void ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
         if (RT_FAILURE(rc2))
             continue;
 
-        dstSrc.enmSrc = PDMAUDIORECSRC_MIC;
-        PAC97DRIVERSTREAM pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, dstSrc);
+        PAC97DRIVERSTREAM pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_MIC);
         if (   pDrvStrm
             && pDrvStrm->pMixStrm)
         {
@@ -3692,8 +3683,7 @@ static void ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
                 LogRel2(("AC97: Set new recording source for 'Mic In' to '%s'\n", Cfg.szName));
         }
 
-        dstSrc.enmSrc = PDMAUDIORECSRC_LINE;
-        pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, dstSrc);
+        pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_LINE);
         if (   pDrvStrm
             && pDrvStrm->pMixStrm)
         {

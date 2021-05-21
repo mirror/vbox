@@ -408,7 +408,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
     AssertPtrReturn(pCfgReq,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,   VERR_INVALID_POINTER);
 
-    if (pCfgReq->u.enmDst != PDMAUDIOPLAYBACKDST_FRONT)
+    if (pCfgReq->enmPath != PDMAUDIOPATH_OUT_FRONT)
     {
         LogRel2(("Recording: Support for surround audio not implemented yet\n"));
         AssertFailed();

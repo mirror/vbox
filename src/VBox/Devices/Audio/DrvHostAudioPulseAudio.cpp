@@ -1037,10 +1037,7 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
      * Prepare name, sample spec and the stream instance data.
      */
     char szName[256];
-    RTStrPrintf(szName, sizeof(szName), "VirtualBox %s [%s]",
-                pCfgReq->enmDir == PDMAUDIODIR_IN
-                ? PDMAudioRecSrcGetName(pCfgReq->u.enmSrc) : PDMAudioPlaybackDstGetName(pCfgReq->u.enmDst),
-                pThis->szStreamName);
+    RTStrPrintf(szName, sizeof(szName), "VirtualBox %s [%s]", PDMAudioPathGetName(pCfgReq->enmPath), pThis->szStreamName);
 
     pStreamPA->pDrv                = pThis;
     pStreamPA->pDrainOp            = NULL;

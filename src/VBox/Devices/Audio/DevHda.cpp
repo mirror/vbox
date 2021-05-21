@@ -1673,7 +1673,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
 
-            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_FRONT;
+            pCfg->enmPath           = PDMAUDIOPATH_OUT_FRONT;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             /// @todo PDMAudioPropsSetChannels(&pCfg->Props, 2); ?
 
@@ -1686,7 +1686,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
 
-            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_CENTER_LFE;
+            pCfg->enmPath           = PDMAUDIOPATH_OUT_CENTER_LFE;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             PDMAudioPropsSetChannels(&pCfg->Props, fUseCenter && fUseLFE ? 2 : 1);
 
@@ -1698,7 +1698,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
 
-            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_REAR;
+            pCfg->enmPath           = PDMAUDIOPATH_OUT_REAR;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             PDMAudioPropsSetChannels(&pCfg->Props, 2);
 
@@ -1725,16 +1725,16 @@ static int hdaR3AddStreamIn(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
     AssertReturn(pCfg->enmDir == PDMAUDIODIR_IN, VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmSrc));
+    LogFlowFunc(("Stream=%s enmPath=%ld\n", pCfg->szName, pCfg->enmPath));
 
     int rc;
-    switch (pCfg->u.enmSrc)
+    switch (pCfg->enmPath)
     {
-        case PDMAUDIORECSRC_LINE:
+        case PDMAUDIOPATH_IN_LINE:
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        case PDMAUDIORECSRC_MIC:
+        case PDMAUDIOPATH_IN_MIC:
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
             break;
 # endif
@@ -1802,34 +1802,33 @@ static int hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
     {
         case PDMAUDIODIR_IN:
         {
-            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmSrc));
+            LogFlowFunc(("Stream=%s enmPath=%d (src)\n", pCfg->szName, pCfg->enmPath));
 
-            switch (pCfg->u.enmSrc)
+            switch (pCfg->enmPath)
             {
-                case PDMAUDIORECSRC_UNKNOWN: break;
-                case PDMAUDIORECSRC_LINE:    enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
+                case PDMAUDIOPATH_UNKNOWN:  break;
+                case PDMAUDIOPATH_IN_LINE:  enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                case PDMAUDIORECSRC_MIC:     enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
+                case PDMAUDIOPATH_IN_MIC:   enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
 # endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
                     break;
             }
-
             break;
         }
 
         case PDMAUDIODIR_OUT:
         {
-            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmDst));
+            LogFlowFunc(("Stream=%s, enmPath=%d (dst)\n", pCfg->szName, pCfg->enmPath));
 
-            switch (pCfg->u.enmDst)
+            switch (pCfg->enmPath)
             {
-                case PDMAUDIOPLAYBACKDST_UNKNOWN:    break;
-                case PDMAUDIOPLAYBACKDST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
+                case PDMAUDIOPATH_UNKNOWN:          break;
+                case PDMAUDIOPATH_OUT_FRONT:        enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-                case PDMAUDIOPLAYBACKDST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
-                case PDMAUDIOPLAYBACKDST_REAR:       enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
+                case PDMAUDIOPATH_OUT_CENTER_LFE:   enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
+                case PDMAUDIOPATH_OUT_REAR:         enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
 # endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
@@ -2280,40 +2279,40 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
     PHDADRIVERSTREAM pDrvStream = NULL;
     if (pCfg->enmDir == PDMAUDIODIR_IN)
     {
-        LogFunc(("enmSrc=%d\n", pCfg->u.enmSrc));
-        switch (pCfg->u.enmSrc)
+        LogFunc(("enmPath=%d (src)\n", pCfg->enmPath));
+        switch (pCfg->enmPath)
         {
-            case PDMAUDIORECSRC_LINE:
+            case PDMAUDIOPATH_IN_LINE:
                 pDrvStream = &pDrv->LineIn;
                 break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            case PDMAUDIORECSRC_MIC:
+            case PDMAUDIOPATH_IN_MIC:
                 pDrvStream = &pDrv->MicIn;
                 break;
 # endif
             default:
-                LogFunc(("returns VERR_NOT_SUPPORTED - enmSrc=%d\n", pCfg->u.enmSrc));
+                LogFunc(("returns VERR_NOT_SUPPORTED - enmPath=%d\n", pCfg->enmPath));
                 return VERR_NOT_SUPPORTED;
         }
     }
     else if (pCfg->enmDir == PDMAUDIODIR_OUT)
     {
-        LogFunc(("enmDst=%d %s\n", pCfg->u.enmDst, PDMAudioPlaybackDstGetName(pCfg->u.enmDst)));
-        switch (pCfg->u.enmDst)
+        LogFunc(("enmDst=%d %s (dst)\n", pCfg->enmPath, PDMAudioPathGetName(pCfg->enmPath)));
+        switch (pCfg->enmPath)
         {
-            case PDMAUDIOPLAYBACKDST_FRONT:
+            case PDMAUDIOPATH_OUT_FRONT:
                 pDrvStream = &pDrv->Front;
                 break;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            case PDMAUDIOPLAYBACKDST_CENTER_LFE:
+            case PDMAUDIOPATH_OUT_CENTER_LFE:
                 pDrvStream = &pDrv->CenterLFE;
                 break;
-            case PDMAUDIOPLAYBACKDST_REAR:
+            case PDMAUDIOPATH_OUT_REAR:
                 pDrvStream = &pDrv->Rear;
                 break;
 # endif
             default:
-                LogFunc(("returns VERR_NOT_SUPPORTED - enmDst=%d %s\n", pCfg->u.enmDst, PDMAudioPlaybackDstGetName(pCfg->u.enmDst)));
+                LogFunc(("returns VERR_NOT_SUPPORTED - enmPath=%d %s\n", pCfg->enmPath, PDMAudioPathGetName(pCfg->enmPath)));
                 return VERR_NOT_SUPPORTED;
         }
     }
@@ -4450,7 +4449,7 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     PDMAUDIOSTREAMCFG Cfg;
                     RT_ZERO(Cfg);
                     Cfg.enmDir                        = PDMAUDIODIR_OUT;
-                    Cfg.u.enmDst                      = PDMAUDIOPLAYBACKDST_FRONT;
+                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
                     Cfg.enmLayout                     = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
                     Cfg.Device.cMsSchedulingHint      = 10;
                     Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
