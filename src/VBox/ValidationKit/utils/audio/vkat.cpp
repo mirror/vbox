@@ -2586,7 +2586,8 @@ static int audioTestDoSelftestSvc(PCPDMDRVREG pDrvReg)
                         if (RT_SUCCESS(rc))
                         {
                             /* Do the bare minimum here to get a test tone out. */
-                            AUDIOTESTTONEPARMS ToneParms = { 0 };
+                            AUDIOTESTTONEPARMS ToneParms;
+                            RT_ZERO(ToneParms);
                             ToneParms.msDuration = 2000;
                             memcpy(&ToneParms.Props, &CfgAcq.Props, sizeof(PDMAUDIOPCMPROPS));
 
