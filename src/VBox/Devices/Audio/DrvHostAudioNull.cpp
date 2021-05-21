@@ -98,9 +98,10 @@ static DECLCALLBACK(int) drvHostNullAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostNullAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostNullAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                          bool fImmediate)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF(pInterface, pStream, fImmediate);
     return VINF_SUCCESS;
 }
 

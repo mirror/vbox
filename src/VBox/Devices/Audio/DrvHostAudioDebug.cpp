@@ -131,9 +131,10 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterf
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostDebugAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostDebugAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                           bool fImmediate)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, fImmediate);
     PDEBUGAUDIOSTREAM pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 

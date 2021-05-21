@@ -219,9 +219,10 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                            bool fImmediate)
 {
-    RT_NOREF(pInterface); //PDRVHOSTVAKITAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+    RT_NOREF(pInterface, fImmediate);
     PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 

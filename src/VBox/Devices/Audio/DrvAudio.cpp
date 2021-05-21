@@ -169,7 +169,9 @@ typedef struct DRVAUDIOSTREAM
     bool                    fNoMixBufs;
     /** Set if pfnStreamCreate returned VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED. */
     bool                    fNeedAsyncInit;
-    bool                    afPadding[2];
+    /** The fImmediate parameter value for pfnStreamDestroy. */
+    bool                    fDestroyImmediate;
+    bool                    fPadding;
 
     /** Number of (re-)tries while re-initializing the stream. */
     uint32_t                cTriesReInit;
@@ -1802,15 +1804,16 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
             if (RT_SUCCESS(rc))
             {
                 PPDMAUDIOBACKENDSTREAM pBackend = (PPDMAUDIOBACKENDSTREAM)(pStreamEx + 1);
-                pBackend->uMagic            = PDMAUDIOBACKENDSTREAM_MAGIC;
-                pBackend->pStream           = &pStreamEx->Core;
+                pBackend->uMagic                = PDMAUDIOBACKENDSTREAM_MAGIC;
+                pBackend->pStream               = &pStreamEx->Core;
 
-                pStreamEx->pBackend         = pBackend;
-                pStreamEx->Core.enmDir      = pCfgHost->enmDir;
-                pStreamEx->Core.cbBackend   = (uint32_t)cbHstStrm;
-                pStreamEx->fNoMixBufs       = RT_BOOL(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF);
-                pStreamEx->hReqInitAsync    = NIL_RTREQ;
-                pStreamEx->uMagic           = DRVAUDIOSTREAM_MAGIC;
+                pStreamEx->pBackend             = pBackend;
+                pStreamEx->Core.enmDir          = pCfgHost->enmDir;
+                pStreamEx->Core.cbBackend       = (uint32_t)cbHstStrm;
+                pStreamEx->fNoMixBufs           = RT_BOOL(fFlags & PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF);
+                pStreamEx->fDestroyImmediate    = true;
+                pStreamEx->hReqInitAsync        = NIL_RTREQ;
+                pStreamEx->uMagic               = DRVAUDIOSTREAM_MAGIC;
 
                 /* Make a unqiue stream name including the host (backend) driver name. */
                 AssertPtr(pThis->pHostDrvAudio);
@@ -1970,7 +1973,7 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
          * It can be NULL if we were called in drvAudioDestruct, for example. */
         RTCritSectRwEnterShared(&pThis->CritSectHotPlug); /** @todo needed? */
         if (pThis->pHostDrvAudio)
-            rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStreamEx->pBackend);
+            rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStreamEx->pBackend, pStreamEx->fDestroyImmediate);
         RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
 
         pStreamEx->fStatus &= ~(PDMAUDIOSTREAM_STS_BACKEND_CREATED | PDMAUDIOSTREAM_STS_BACKEND_READY);
@@ -2003,9 +2006,9 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
     /*
      * ...
      */
-    int rc = drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
-    if (RT_SUCCESS(rc))
-        rc = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
+    if (pStreamEx->fDestroyImmediate)
+        drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
+    int rc = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
 
     /* Destroy mixing buffers. */
     AudioMixBufDestroy(&pStreamEx->Guest.MixBuf);
@@ -2136,22 +2139,26 @@ static uint32_t drvAudioStreamReleaseInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM p
  *
  * @param   pThis       Pointer to the DrvAudio instance data.
  * @param   pStreamEx   The stream.  One reference for us to release.
+ * @param   fImmediate  How to treat draining streams.
  */
-static DECLCALLBACK(void) drvAudioStreamDestroyAsync(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx)
+static DECLCALLBACK(void) drvAudioStreamDestroyAsync(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, bool fImmediate)
 {
-    LogFlowFunc(("pThis=%p pStreamEx=%p (%s)\n", pThis, pStreamEx, pStreamEx->Core.szName));
+    LogFlowFunc(("pThis=%p pStreamEx=%p (%s) fImmediate=%RTbool\n", pThis, pStreamEx, pStreamEx->Core.szName, fImmediate));
 #ifdef LOG_ENABLED
     uint64_t const nsStart = RTTimeNanoTS();
 #endif
-
     RTCritSectEnter(&pStreamEx->Core.CritSect);
 
-    /** @todo can we somehow drain it instead?
-     * Would need to know if the destroying is happening at runtime or when powering
-     * off the VM, as we don't care for draining the latter case. */
-    int rc2 = drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
-    LogFlowFunc(("DISABLE done: %Rrc\n", rc2));
-    AssertRC(rc2);
+    pStreamEx->fDestroyImmediate = fImmediate; /* Do NOT adjust for draining status, just pass it as-is. CoreAudio needs this. */
+
+    if (!fImmediate && (pStreamEx->fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE))
+        LogFlowFunc(("No DISABLE\n"));
+    else
+    {
+        int rc2 = drvAudioStreamControlInternal(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
+        LogFlowFunc(("DISABLE done: %Rrc\n", rc2));
+        AssertRC(rc2);
+    }
 
     RTCritSectLeave(&pStreamEx->Core.CritSect);
 
@@ -2164,7 +2171,7 @@ static DECLCALLBACK(void) drvAudioStreamDestroyAsync(PDRVAUDIO pThis, PDRVAUDIOS
 /**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, bool fImmediate)
 {
     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
     AssertPtr(pThis);
@@ -2175,7 +2182,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
 
     PDRVAUDIOSTREAM pStreamEx = (PDRVAUDIOSTREAM)pStream;   /* Note! Do not touch pStream after this! */
     AssertPtrReturn(pStreamEx, VERR_INVALID_POINTER);
-    LogFlowFunc(("ENTER - %p %s\n", pStreamEx, pStreamEx->Core.szName));
+    LogFlowFunc(("ENTER - %p (%s) fImmediate=%RTbool\n", pStreamEx, pStreamEx->Core.szName, fImmediate));
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pStreamEx->uMagic == DRVAUDIOSTREAM_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pStreamEx->pBackend && pStreamEx->pBackend->uMagic == PDMAUDIOBACKENDSTREAM_MAGIC, VERR_INVALID_MAGIC);
@@ -2232,14 +2239,14 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
              * on an EMT.
              */
             if (!(pThis->BackendCfg.fFlags & PDMAUDIOBACKEND_F_ASYNC_STREAM_DESTROY))
-                drvAudioStreamDestroyAsync(pThis, pStreamEx);
+                drvAudioStreamDestroyAsync(pThis, pStreamEx, fImmediate);
             else
             {
                 int rc2 = RTReqPoolCallEx(pThis->hReqPool, 0 /*cMillies*/, NULL /*phReq*/,
                                           RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                                          (PFNRT)drvAudioStreamDestroyAsync, 2, pThis, pStreamEx);
+                                          (PFNRT)drvAudioStreamDestroyAsync, 3, pThis, pStreamEx, fImmediate);
                 LogFlowFunc(("hReqInitAsync=%p rc2=%Rrc\n", pStreamEx->hReqInitAsync, rc2));
-                AssertRCStmt(rc2, drvAudioStreamDestroyAsync(pThis, pStreamEx));
+                AssertRCStmt(rc2, drvAudioStreamDestroyAsync(pThis, pStreamEx, fImmediate));
             }
         }
         else

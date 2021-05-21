@@ -1641,12 +1641,13 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                        bool fImmediate)
 {
     RT_NOREF(pInterface);
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamCA, VERR_INVALID_POINTER);
-    LogFunc(("%p: %s\n", pStreamCA, pStreamCA->Cfg.szName));
+    LogFunc(("%p: %s fImmediate=%RTbool\n", pStreamCA, pStreamCA->Cfg.szName, fImmediate));
 #ifdef LOG_ENABLED
     uint64_t const nsStart = RTTimeNanoTS();
 #endif
@@ -1667,7 +1668,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
         ASMAtomicWriteU32(&pStreamCA->enmInitState, COREAUDIOINITSTATE_IN_UNINIT);
         if (pStreamCA->hAudioQueue)
         {
-            orc = AudioQueueStop(pStreamCA->hAudioQueue, TRUE /*inImmediate/synchronously*/);
+            orc = AudioQueueStop(pStreamCA->hAudioQueue, fImmediate ? TRUE : FALSE /*inImmediate/synchronously*/);
             LogFlowFunc(("AudioQueueStop -> %#x\n", orc));
         }
 
@@ -1690,15 +1691,16 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
         uint64_t nsStart = RTTimeNanoTS();
 #endif
 
-        /* Resetting the queue helps prevent AudioQueueDispose from taking a long time. */
-        if (pStreamCA->hAudioQueue)
+#if 0 /* This seems to work even when doing a non-immediate stop&dispose. However, it doesn't make sense conceptually. */
+        if (pStreamCA->hAudioQueue /*&& fImmediate*/)
         {
             LogFlowFunc(("Calling AudioQueueReset ...\n"));
             orc = AudioQueueReset(pStreamCA->hAudioQueue);
             LogFlowFunc(("AudioQueueReset -> %#x\n", orc));
         }
+#endif
 
-        if (pStreamCA->paBuffers)
+        if (pStreamCA->paBuffers && fImmediate)
         {
             LogFlowFunc(("Freeing %u buffers ...\n", pStreamCA->cBuffers));
             for (uint32_t iBuf = 0; iBuf < pStreamCA->cBuffers; iBuf++)
@@ -1707,19 +1709,24 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
                 AssertMsg(orc == noErr, ("AudioQueueFreeBuffer(#%u) -> orc=%#x\n", iBuf, orc));
                 pStreamCA->paBuffers[iBuf].pBuf = NULL;
             }
-            RTMemFree(pStreamCA->paBuffers);
-            pStreamCA->paBuffers = NULL;
         }
-        pStreamCA->cBuffers = 0;
 
         if (pStreamCA->hAudioQueue)
         {
             LogFlowFunc(("Disposing of the queue ...\n"));
-            orc = AudioQueueDispose(pStreamCA->hAudioQueue, TRUE /*inImmediate/synchronously*/); /* may take some time */
+            orc = AudioQueueDispose(pStreamCA->hAudioQueue, fImmediate ? TRUE : FALSE /*inImmediate/synchronously*/); /* may take some time */
             LogFlowFunc(("AudioQueueDispose -> %#x (%d)\n", orc, orc));
             AssertMsg(orc == noErr, ("AudioQueueDispose -> orc=%#x\n", orc));
             pStreamCA->hAudioQueue = NULL;
         }
+
+        /* We should get no further buffer callbacks at this point according to the docs. */
+        if (pStreamCA->paBuffers)
+        {
+            RTMemFree(pStreamCA->paBuffers);
+            pStreamCA->paBuffers = NULL;
+        }
+        pStreamCA->cBuffers = 0;
 
 #ifdef CORE_AUDIO_WITH_BREAKPOINT_TIMER
         RTTimerLRStop(pThis->hBreakpointTimer);

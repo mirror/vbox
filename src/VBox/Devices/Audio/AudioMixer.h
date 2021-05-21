@@ -323,7 +323,7 @@ int         AudioMixerSinkLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkTryLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkUnlock(PAUDMIXSINK pSink);
 
-void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
+void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */
 

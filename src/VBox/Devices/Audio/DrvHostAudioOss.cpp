@@ -429,9 +429,10 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostOssAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostOssAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                         bool fImmediate)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, fImmediate);
     POSSAUDIOSTREAM pStreamOSS = (POSSAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
 

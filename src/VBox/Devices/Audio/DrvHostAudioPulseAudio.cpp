@@ -1160,11 +1160,13 @@ static void drvHostAudioPaStreamCancelAndReleaseOperations(PPULSEAUDIOSTREAM pSt
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostAudioPaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAudioPaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                        bool fImmediate)
 {
     PDRVHOSTPULSEAUDIO pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTPULSEAUDIO, IHostAudio);
     PPULSEAUDIOSTREAM  pStreamPA = (PPULSEAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamPA, VERR_INVALID_POINTER);
+    RT_NOREF(fImmediate);
 
     if (pStreamPA->pStream)
     {

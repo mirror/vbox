@@ -788,11 +788,13 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                          bool fImmediate)
 {
     RT_NOREF(pInterface);
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamALSA, VERR_INVALID_POINTER);
+    RT_NOREF(fImmediate);
 
     /** @todo r=bird: It's not like we can do much with a bad status... Check
      *        what the caller does... */

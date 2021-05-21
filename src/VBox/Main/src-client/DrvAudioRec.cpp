@@ -525,11 +525,13 @@ static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                          bool fImmediate)
 {
     PDRVAUDIORECORDING pThis     = RT_FROM_CPP_MEMBER(pInterface, DRVAUDIORECORDING, IHostAudio);
     PAVRECSTREAM       pStreamAV = (PAVRECSTREAM)pStream;
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    RT_NOREF(fImmediate);
 
     int rc = VINF_SUCCESS;
     if (pStreamAV->Cfg.enmDir == PDMAUDIODIR_OUT)

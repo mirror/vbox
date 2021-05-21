@@ -922,8 +922,11 @@ typedef struct HDACODECR3
      * @return  VBox status code.
      * @param   pDevIns             The device instance.
      * @param   enmMixerCtl         Mixer control to remove.
+     * @param   fImmediate          Whether the backend should be allowed to
+     *                              finished draining (@c false) or if it must be
+     *                              destroyed immediately (@c true).
      */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate));
     /**
      * Controls an input / output converter widget, that is, which converter is
      * connected to which stream (and channel).
@@ -951,7 +954,7 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
 void hdaR3CodecPowerOff(PHDACODECR3 pThisCC);
 int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
-int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl);
+int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate);
 
 int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM);
 void hdaCodecDestruct(PHDACODEC pThis);

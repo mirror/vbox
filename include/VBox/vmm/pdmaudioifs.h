@@ -1120,8 +1120,13 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
+     * @param   fImmediate      Whether to immdiately stop and destroy a draining
+     *                          stream (@c true), or to allow it to complete
+     *                          draining first (@c false) if that's feasable.
+     *                          The latter depends on the draining stage and what
+     *                          the backend is capable of.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, bool fImmediate));
 
     /**
      * Re-initializes the stream in response to PDMAUDIOSTREAM_STS_NEED_REINIT.
@@ -1249,7 +1254,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "04ad443a-d860-443a-afc9-98bbad4b1341"
+#define PDMIAUDIOCONNECTOR_IID                  "69d01cd1-df73-48db-86f4-2f97519ac585"
 
 
 /**
@@ -1419,10 +1424,13 @@ typedef struct PDMIHOSTAUDIO
      * Destroys an audio stream.
      *
      * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
+     * @param   pInterface  Pointer to the interface containing the called function.
+     * @param   pStream     Pointer to audio stream.
+     * @param   fImmediate  Whether to immdiately stop and destroy a draining
+     *                      stream (@c true), or to allow it to complete
+     *                      draining first (@c false) if that's feasable.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, bool fImmediate));
 
     /**
      * Called from PDMIHOSTAUDIOPORT::pfnNotifyDeviceChanged so the backend can start
@@ -1527,7 +1535,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "8c68a5a9-6c46-43c2-9d4e-e1bd13d2b97d"
+#define PDMIHOSTAUDIO_IID                           "cd27862d-9aa2-4270-876e-7d660b87ecd3"
 
 
 /** Pointer to a audio notify from host interface. */

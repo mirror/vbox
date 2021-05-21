@@ -1785,6 +1785,8 @@ static int hdaR3AddStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 /**
  * Removes an audio stream from the device setup using the given configuration.
  *
+ * Used by hdaRegWriteSDCTL().
+ *
  * @returns VBox status code.
  * @param   pThisCC             The ring-3 HDA device state.
  * @param   pCfg                Stream configuration to use for removing a stream.
@@ -1844,7 +1846,7 @@ static int hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
     if (   RT_SUCCESS(rc)
         && enmMixerCtl != PDMAUDIOMIXERCTL_UNKNOWN)
     {
-        rc = hdaR3CodecRemoveStream(pThisCC->pCodec, enmMixerCtl);
+        rc = hdaR3CodecRemoveStream(pThisCC->pCodec, enmMixerCtl, false /*fImmediate*/);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2213,7 +2215,7 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
             AudioMixerSinkSetRecordingSource(pThisCC->SinkLineIn.pMixSink, NULL);
 
         AudioMixerSinkRemoveStream(pThisCC->SinkLineIn.pMixSink, pDrv->LineIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->LineIn.pMixStrm = NULL;
     }
 
@@ -2224,7 +2226,7 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
             AudioMixerSinkSetRecordingSource(&pThisCC->SinkMicIn.pMixSink, NULL);
 
         AudioMixerSinkRemoveStream(pThisCC->SinkMicIn.pMixSink, pDrv->MicIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->MicIn.pMixStrm = NULL;
     }
 # endif
@@ -2232,7 +2234,7 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
     if (pDrv->Front.pMixStrm)
     {
         AudioMixerSinkRemoveStream(pThisCC->SinkFront.pMixSink, pDrv->Front.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->Front.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->Front.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->Front.pMixStrm = NULL;
     }
 
@@ -2240,14 +2242,14 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
     if (pDrv->CenterLFE.pMixStrm)
     {
         AudioMixerSinkRemoveStream(pThisCC->SinkCenterLFE.pMixSink, pDrv->CenterLFE.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->CenterLFE.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->CenterLFE.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->CenterLFE.pMixStrm = NULL;
     }
 
     if (pDrv->Rear.pMixStrm)
     {
         AudioMixerSinkRemoveStream(pThisCC->SinkRear.pMixSink, pDrv->Rear.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->Rear.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->Rear.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->Rear.pMixStrm = NULL;
     }
 # endif
@@ -2366,7 +2368,7 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
                 AudioMixerSinkRemoveStream(pMixSink, pMixStrm);
         }
         if (RT_FAILURE(rc))
-            AudioMixerStreamDestroy(pMixStrm, pDevIns);
+            AudioMixerStreamDestroy(pMixStrm, pDevIns, true /*fImmediate*/);
     }
 
     if (RT_SUCCESS(rc))
@@ -2439,7 +2441,7 @@ static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCT
 /**
  * @interface_method_impl{HDACODECR3,pfnCbMixerRemoveStream}
  */
-static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl)
+static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     int         rc;
@@ -2491,7 +2493,7 @@ static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXE
             if (pMixStream)
             {
                 AudioMixerSinkRemoveStream(pSink->pMixSink, pMixStream);
-                AudioMixerStreamDestroy(pMixStream, pDevIns);
+                AudioMixerStreamDestroy(pMixStream, pDevIns, fImmediate);
 
                 pMixStream = NULL;
             }

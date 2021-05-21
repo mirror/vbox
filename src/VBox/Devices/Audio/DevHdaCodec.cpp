@@ -2470,11 +2470,11 @@ int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMA
     return rc;
 }
 
-int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl)
+int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
     AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
 
-    int rc = pThisCC->pfnCbMixerRemoveStream(pThisCC->pDevIns, enmMixerCtl);
+    int rc = pThisCC->pfnCbMixerRemoveStream(pThisCC->pDevIns, enmMixerCtl, fImmediate);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2571,20 +2571,20 @@ void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
 
     LogRel2(("HDA: Powering off codec ...\n"));
 
-    int rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_FRONT);
+    int rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_FRONT, true /*fImmediate*/);
     AssertRC(rc2);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_CENTER_LFE);
+    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_CENTER_LFE, true /*fImmediate*/);
     AssertRC(rc2);
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_REAR);
+    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_REAR, true /*fImmediate*/);
     AssertRC(rc2);
 #endif
 
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_MIC_IN);
+    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_MIC_IN, true /*fImmediate*/);
     AssertRC(rc2);
 #endif
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_LINE_IN);
+    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_LINE_IN, true /*fImmediate*/);
     AssertRC(rc2);
 }
 

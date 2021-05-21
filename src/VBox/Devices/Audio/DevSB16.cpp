@@ -1814,7 +1814,7 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
             if (RT_SUCCESS(rc))
                 pDrvStream->pMixStrm = pMixStrm;
             else
-                AudioMixerStreamDestroy(pMixStrm, pDevIns);
+                AudioMixerStreamDestroy(pMixStrm, pDevIns, true /*fImmediate*/);
         }
     }
     else
@@ -1882,7 +1882,7 @@ static void sb16RemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PDMAUD
 
             AudioMixerSinkRemoveStream(pMixSink, pDrvStream->pMixStrm);
 
-            AudioMixerStreamDestroy(pDrvStream->pMixStrm, pDevIns);
+            AudioMixerStreamDestroy(pDrvStream->pMixStrm, pDevIns, false /*fImmediate*/);
             pDrvStream->pMixStrm = NULL;
         }
     }
@@ -1904,7 +1904,9 @@ static void sb16RemoveDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSI
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
         sb16RemoveDrvStream(pDevIns, pMixSink, enmDir, dstSrc, pDrv);
+    }
 }
 
 /**
@@ -1952,7 +1954,7 @@ static void sb16RemoveDrv(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv
     if (pDrv->Out.pMixStrm)
     {
         AudioMixerSinkRemoveStream(pThis->pSinkOut, pDrv->Out.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->Out.pMixStrm, pDevIns);
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->Out.pMixStrm = NULL;
     }
 

@@ -111,7 +111,7 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink);
 static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 
 static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd);
-static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns);
+static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
 static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
 
 
@@ -662,7 +662,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                         return VINF_SUCCESS;
                     }
 
-                    rc = pConn->pfnStreamDestroy(pConn, pStream);
+                    rc = pConn->pfnStreamDestroy(pConn, pStream, true /*fImmediate*/);
                 }
 
                 /*
@@ -999,7 +999,7 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
     RTListForEachSafe(&pSink->lstStreams, pStream, pStreamNext, AUDMIXSTREAM, Node)
     {
         audioMixerSinkRemoveStreamInternal(pSink, pStream);
-        audioMixerStreamDestroyInternal(pStream, pDevIns); /* (Unlike the other two, this frees the stream structure.) */
+        audioMixerStreamDestroyInternal(pStream, pDevIns, true /*fImmediate*/); /* (Unlike the other two, this frees the stream structure.) */
     }
 
     if (   pSink->pParent
@@ -2734,8 +2734,11 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
  *
  * @param   pMixStream  Mixer stream to destroy.
  * @param   pDevIns     The device instance the statistics are registered with.
+ * @param   fImmediate  How to handle still draining streams, whether to let
+ *                      them complete (@c false) or destroy them immediately (@c
+ *                      true).
  */
-static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns)
+static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns, bool fImmediate)
 {
     AssertPtrReturnVoid(pMixStream);
 
@@ -2747,7 +2750,7 @@ static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream, PPDMDEVINS
         if (pMixStream->pStream)
         {
             pMixStream->pConn->pfnStreamRelease(pMixStream->pConn, pMixStream->pStream);
-            pMixStream->pConn->pfnStreamDestroy(pMixStream->pConn, pMixStream->pStream);
+            pMixStream->pConn->pfnStreamDestroy(pMixStream->pConn, pMixStream->pStream, fImmediate);
 
             pMixStream->pStream = NULL;
         }
@@ -2775,10 +2778,13 @@ static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream, PPDMDEVINS
 /**
  * Destroys a mixer stream.
  *
- * @param   pMixStream      Mixer stream to destroy.
- * @param   pDevIns         The device instance statistics are registered with.
+ * @param   pMixStream  Mixer stream to destroy.
+ * @param   pDevIns     The device instance statistics are registered with.
+ * @param   fImmediate  How to handle still draining streams, whether to let
+ *                      them complete (@c false) or destroy them immediately (@c
+ *                      true).
  */
-void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns)
+void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns, bool fImmediate)
 {
     if (!pMixStream)
         return;
@@ -2810,7 +2816,7 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream, PPDMDEVINS pDevIns)
 
     if (RT_SUCCESS(rc2))
     {
-        audioMixerStreamDestroyInternal(pMixStream, pDevIns);
+        audioMixerStreamDestroyInternal(pMixStream, pDevIns, fImmediate);
         pMixStream = NULL;
     }
 
