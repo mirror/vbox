@@ -2678,7 +2678,12 @@ static DECLCALLBACK(int) drvHostAudioCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     /*
      * Create worker thread for running callbacks on.
      */
-    CFMachPortContext PortCtx = { .version = 0, .info = pThis, .retain = NULL, .release = NULL, .copyDescription = NULL };
+    CFMachPortContext PortCtx;
+    PortCtx.version         = 0;
+    PortCtx.info            = pThis;
+    PortCtx.retain          = NULL;
+    PortCtx.release         = NULL;
+    PortCtx.copyDescription = NULL;
     pThis->hThreadPort = CFMachPortCreate(NULL /*allocator*/, drvHostAudioCaThreadPortCallback, &PortCtx, NULL);
     AssertLogRelReturn(pThis->hThreadPort != NULL, VERR_NO_MEMORY);
 
