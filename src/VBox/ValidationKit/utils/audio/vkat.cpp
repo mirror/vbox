@@ -2507,6 +2507,10 @@ static int audioTestDoSelftestSvc(void)
             if (RT_SUCCESS(rc))
                 rc = rc2;
         }
+
+        int rc2 = AudioTestSvcDestroy(&Srv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     return rc;

@@ -601,21 +601,16 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
     unsigned    cClientsMax = 0;
     unsigned    cClientsCur = 0;
     PATSCLIENTINST *papClients  = NULL;
-    RTPOLLSET   hPollSet;
-
-    int rc = RTPollSetCreate(&hPollSet);
-    if (RT_FAILURE(rc))
-        return rc;
 
     /* Add the pipe to the poll set. */
-    rc = RTPollSetAddPipe(hPollSet, pThis->hPipeR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, 0);
+    int rc = RTPollSetAddPipe(pThis->hPollSet, pThis->hPipeR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, 0);
     if (RT_SUCCESS(rc))
     {
         while (!pThis->fTerminate)
         {
             uint32_t fEvts;
             uint32_t uId;
-            rc = RTPoll(hPollSet, RT_INDEFINITE_WAIT, &fEvts, &uId);
+            rc = RTPoll(pThis->hPollSet, RT_INDEFINITE_WAIT, &fEvts, &uId);
             if (RT_SUCCESS(rc))
             {
                 if (uId == 0)
@@ -656,7 +651,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                                    && papClients[idxSlt] != NULL)
                                 idxSlt++;
 
-                            rc = pThis->pTransport->pfnPollSetAdd(hPollSet, pIt->pTransportClient, idxSlt + 1);
+                            rc = pThis->pTransport->pfnPollSetAdd(pThis->hPollSet, pIt->pTransportClient, idxSlt + 1);
                             if (RT_SUCCESS(rc))
                             {
                                 cClientsCur++;
@@ -688,7 +683,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                         || RT_FAILURE(rc))
                     {
                         /* Close connection and remove client from array. */
-                        rc = pThis->pTransport->pfnPollSetRemove(hPollSet, pClient->pTransportClient, uId);
+                        rc = pThis->pTransport->pfnPollSetRemove(pThis->hPollSet, pClient->pTransportClient, uId);
                         AssertRC(rc);
 
                         pThis->pTransport->pfnNotifyBye(pClient->pTransportClient);
@@ -700,8 +695,6 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
             }
         }
     }
-
-    RTPollSetDestroy(hPollSet);
 
     return rc;
 }
@@ -770,6 +763,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
  *  */
 int AudioTestSvcInit(PATSSERVER pThis)
 {
+    pThis->fStarted   = false;
     pThis->fTerminate = false;
     RTListInit(&pThis->LstClientsNew);
 
@@ -787,22 +781,30 @@ int AudioTestSvcInit(PATSSERVER pThis)
         rc = RTCritSectInit(&pThis->CritSectClients);
         if (RT_SUCCESS(rc))
         {
-            rc = RTPipeCreate(&pThis->hPipeR, &pThis->hPipeW, 0);
+            rc = RTPollSetCreate(&pThis->hPollSet);
             if (RT_SUCCESS(rc))
             {
-                /* Spin off the thread serving connections. */
-                rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-                                    "AUDTSTSRVC");
+                rc = RTPipeCreate(&pThis->hPipeR, &pThis->hPipeW, 0);
                 if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-                else
-                    RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
+                {
+                    /* Spin off the thread serving connections. */
+                    rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                                        "AUDTSTSRVC");
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    else
+                        RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
 
-                RTPipeClose(pThis->hPipeR);
-                RTPipeClose(pThis->hPipeW);
+                    RTPipeClose(pThis->hPipeR);
+                    RTPipeClose(pThis->hPipeW);
+                }
+                else
+                    RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+
+                RTPollSetDestroy(pThis->hPollSet);
             }
             else
-                RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+                RTMsgError("Creating pollset failed with %Rrc\n", rc);
 
             RTCritSectDelete(&pThis->CritSectClients);
         }
@@ -824,8 +826,10 @@ int AudioTestSvcInit(PATSSERVER pThis)
 int AudioTestSvcStart(PATSSERVER pThis)
 {
     /* Spin off the main thread. */
-    int rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+    int rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                             "AUDTSTSRVM");
+    if (RT_SUCCESS(rc))
+        pThis->fStarted = true;
 
     return rc;
 }
@@ -838,7 +842,97 @@ int AudioTestSvcStart(PATSSERVER pThis)
  */
 int AudioTestSvcShutdown(PATSSERVER pThis)
 {
-    RT_NOREF(pThis);
-    return 0;
+    if (!pThis->fStarted)
+        return VINF_SUCCESS;
+
+    ASMAtomicXchgBool(&pThis->fTerminate, true);
+
+    if (pThis->pTransport)
+        pThis->pTransport->pfnTerm();
+
+    size_t cbWritten;
+    int rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);
+    AssertRCReturn(rc, rc);
+
+    /* First close serving thread. */
+    int rcThread;
+    rc = RTThreadWait(pThis->hThreadServing, RT_MS_30SEC, &rcThread);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rcThread;
+        if (RT_SUCCESS(rc))
+        {
+            /* Close the main thread last. */
+            rc = RTThreadWait(pThis->hThreadMain, RT_MS_30SEC, &rcThread);
+            if (RT_SUCCESS(rc))
+                rc = rcThread;
+
+            if (rc == VERR_TCP_SERVER_DESTROYED)
+                rc = VINF_SUCCESS;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        pThis->fStarted = false;
+
+    return rc;
+}
+
+/**
+ * Destroys an ATS instance, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pThis               ATS instance to destroy.
+ */
+static int audioTestSvcDestroyInternal(PATSSERVER pThis)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pThis->hPipeR != NIL_RTPIPE)
+    {
+        rc = RTPipeClose(pThis->hPipeR);
+        AssertRCReturn(rc, rc);
+        pThis->hPipeR = NIL_RTPIPE;
+    }
+
+    if (pThis->hPipeW != NIL_RTPIPE)
+    {
+        rc = RTPipeClose(pThis->hPipeW);
+        AssertRCReturn(rc, rc);
+        pThis->hPipeW = NIL_RTPIPE;
+    }
+
+    RTPollSetDestroy(pThis->hPollSet);
+    pThis->hPollSet = NIL_RTPOLLSET;
+
+    pThis->pTransport = NULL;
+
+    PATSCLIENTINST pIt, pItNext;
+    RTListForEachSafe(&pThis->LstClientsNew, pIt, pItNext, ATSCLIENTINST, NdLst)
+    {
+        RTListNodeRemove(&pIt->NdLst);
+
+        RTMemFree(pIt);
+        pIt = NULL;
+    }
+
+    if (RTCritSectIsInitialized(&pThis->CritSectClients))
+    {
+        rc = RTCritSectDelete(&pThis->CritSectClients);
+        AssertRCReturn(rc, rc);
+    }
+
+    return rc;
+}
+
+/**
+ * Destroys an ATS instance.
+ *
+ * @returns VBox status code.
+ * @param   pThis               ATS instance to destroy.
+ */
+int AudioTestSvcDestroy(PATSSERVER pThis)
+{
+    return audioTestSvcDestroyInternal(pThis);
 }
 

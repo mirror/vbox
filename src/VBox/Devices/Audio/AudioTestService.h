@@ -31,9 +31,12 @@ typedef struct ATSSERVER
 {
     /** The selected transport layer. */
     PCATSTRANSPORT       pTransport;
-    /** Whether to terminate or not.
-     * @todo implement signals and stuff.  */
+    /** Whether server is in started state or not. */
+    bool volatile        fStarted;
+    /** Whether to terminate or not. */
     bool volatile        fTerminate;
+    /** The main thread's poll set to handle new clients. */
+    RTPOLLSET            hPollSet;
     /** Pipe for communicating with the serving thread about new clients. - read end */
     RTPIPE               hPipeR;
     /** Pipe for communicating with the serving thread about new clients. - write end */
@@ -52,6 +55,7 @@ typedef ATSSERVER *PATSSERVER;
 
 
 int AudioTestSvcInit(PATSSERVER pThis);
+int AudioTestSvcDestroy(PATSSERVER pThis);
 int AudioTestSvcStart(PATSSERVER pThis);
 int AudioTestSvcShutdown(PATSSERVER pThis);
 
