@@ -850,7 +850,7 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
     int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
     AssertRC(rc);
     CfgReq.enmDir                       = PDMAUDIODIR_OUT;
-    CfgReq.u.enmDst                     = PDMAUDIOPLAYBACKDST_FRONT;
+    CfgReq.enmPath                      = PDMAUDIOPATH_OUT_FRONT;
     CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
     CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
                                         ? 10 : cMsSchedulingHint;
@@ -1483,7 +1483,7 @@ static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREA
     AssertRC(rc); /* Cannot fail. */
 
     Cfg.enmDir      = PDMAUDIODIR_IN;
-    Cfg.u.enmSrc    = PDMAUDIORECSRC_LINE; /* Note: HDA does not have a separate Mic-In enabled yet, so got for Line-In here. */
+    Cfg.enmPath     = PDMAUDIOPATH_IN_LINE; /* Note: HDA does not have a separate Mic-In enabled yet, so go for Line-In here. */
     Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
@@ -1567,7 +1567,7 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
     AssertRC(rc); /* Cannot fail. */
 
     Cfg.enmDir      = PDMAUDIODIR_OUT;
-    Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;
+    Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
     Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
