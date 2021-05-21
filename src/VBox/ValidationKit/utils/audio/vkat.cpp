@@ -2489,21 +2489,23 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
  */
 static int audioTestDoSelftestSvc(void)
 {
-    int rc = AudioTestSvcInit();
+    ATSSERVER Srv;
+    int rc = AudioTestSvcInit(&Srv);
     if (RT_SUCCESS(rc))
     {
+        rc = AudioTestSvcStart(&Srv);
         if (RT_SUCCESS(rc))
         {
-            rc = AudioTestSvcStart();
+            ATSCLIENT Conn;
+            rc = AudioTestSvcClientConnect(&Conn, NULL);
             if (RT_SUCCESS(rc))
             {
-                ATSCLIENT Conn;
-                rc = AudioTestSvcClientConnect(&Conn);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = AudioTestSvcClientClose(&Conn);
-                }
+                rc = AudioTestSvcClientClose(&Conn);
             }
+
+            int rc2 = AudioTestSvcShutdown(&Srv);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
     }
 

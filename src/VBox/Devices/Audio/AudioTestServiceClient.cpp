@@ -212,12 +212,12 @@ static int audioTestSvcClientDoBye(PATSCLIENT pClient)
     return rc;
 }
 
-int AudioTestSvcClientConnect(PATSCLIENT pClient)
+int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr)
 {
     audioTestSvcClientConnInit(pClient);
 
     /* For simplicity we always run on the same port, localhost only. */
-    int rc = RTTcpClientConnect("127.0.0.1", 6052, &pClient->hSock);
+    int rc = RTTcpClientConnect(pszAddr ? pszAddr : "127.0.0.1", 6052, &pClient->hSock);
     if (RT_SUCCESS(rc))
     {
         rc = audioTestSvcClientDoGreet(pClient);

@@ -23,8 +23,37 @@
 
 #include "AudioTestServiceInternal.h"
 
-int AudioTestSvcInit(void);
-int AudioTestSvcStart(void);
+
+/**
+ * Structure for keeping an Audio Test Server (ATS) instance.
+ */
+typedef struct ATSSERVER
+{
+    /** The selected transport layer. */
+    PCATSTRANSPORT       pTransport;
+    /** Whether to terminate or not.
+     * @todo implement signals and stuff.  */
+    bool volatile        fTerminate;
+    /** Pipe for communicating with the serving thread about new clients. - read end */
+    RTPIPE               hPipeR;
+    /** Pipe for communicating with the serving thread about new clients. - write end */
+    RTPIPE               hPipeW;
+    /** Main thread waiting for connections. */
+    RTTHREAD             hThreadMain;
+    /** Thread serving connected clients. */
+    RTTHREAD             hThreadServing;
+    /** Critical section protecting the list of new clients. */
+    RTCRITSECT           CritSectClients;
+    /** List of new clients waiting to be picked up by the client worker thread. */
+    RTLISTANCHOR         LstClientsNew;
+} ATSSERVER;
+/** Pointer to an Audio Test Server (ATS) instance. */
+typedef ATSSERVER *PATSSERVER;
+
+
+int AudioTestSvcInit(PATSSERVER pThis);
+int AudioTestSvcStart(PATSSERVER pThis);
+int AudioTestSvcShutdown(PATSSERVER pThis);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestService_h */
 

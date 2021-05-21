@@ -130,12 +130,9 @@ typedef struct ATSPKTREQTONEPLAY
     /** Embedded packet header. */
     ATSPKTHDR          Hdr;
     AUDIOTESTTONEPARMS Parms;
-        /** Packet opcode, an unterminated ASCII string.  */
-    uint8_t            achOpcode[8];
-    /** Packet opcode, an unterminated ASCII string.  */
-    uint8_t            au8Padding[2];
+    uint8_t            au8Padding[8];
 } ATSPKTREQTONEPLAY;
-//AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
+AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
 typedef ATSPKTREQTONEPLAY *PATSPKTREQTONEPLAY;
 

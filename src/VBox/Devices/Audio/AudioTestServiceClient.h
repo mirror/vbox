@@ -29,7 +29,7 @@ typedef struct ATSCLIENT
 } ATSCLIENT;
 typedef ATSCLIENT *PATSCLIENT;
 
-int AudioTestSvcClientConnect(PATSCLIENT pClient);
+int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr);
 int AudioTestSvcClientClose(PATSCLIENT pClient);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceClient_h */
