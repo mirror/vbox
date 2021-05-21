@@ -129,13 +129,15 @@ typedef enum COREAUDIOINITSTATE
  * queued bufferes, it will be queued.
  *
  * For input buffer we'll be using offRead to track how much we've read.
+ *
+ * The queued/not-queued state is stored in the first bit of
+ * AudioQueueBuffer::mUserData.  While bits 8 and up holds the index into
+ * COREAUDIOSTREAM::paBuffers.
  */
 typedef struct COREAUDIOBUF
 {
     /** The buffer. */
     AudioQueueBufferRef     pBuf;
-    /** Set if the buffer is queued. */
-    bool volatile           fQueued;
     /** The buffer read offset (input only). */
     uint32_t                offRead;
 } COREAUDIOBUF;
@@ -1346,6 +1348,32 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioCaHA_GetStatus(PPDMIHOSTAUDI
 
 
 /**
+ * Marks the given buffer as queued or not-queued.
+ *
+ * @returns Old queued value.
+ * @param   pAudioBuffer    The buffer.
+ * @param   fQueued         The new queued state.
+ */
+DECLINLINE(bool) drvHostAudioCaSetBufferQueued(AudioQueueBufferRef pAudioBuffer, bool fQueued)
+{
+    if (fQueued)
+        return ASMAtomicBitTestAndSet(&pAudioBuffer->mUserData, 0);
+    return ASMAtomicBitTestAndClear(&pAudioBuffer->mUserData, 0);
+}
+
+
+/**
+ * Gets the queued state of the buffer.
+ * @returns true if queued, false if not.
+ * @param   pAudioBuffer    The buffer.
+ */
+DECLINLINE(bool) drvHostAudioCaIsBufferQueued(AudioQueueBufferRef pAudioBuffer)
+{
+    return ((uintptr_t)pAudioBuffer->mUserData & 1) == 1;
+}
+
+
+/**
  * Output audio queue buffer callback.
  *
  * Called whenever an audio queue is done processing a buffer.  This routine
@@ -1360,19 +1388,23 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioCaHA_GetStatus(PPDMIHOSTAUDI
  */
 static void drvHostAudioCaOutputQueueBufferCallback(void *pvUser, AudioQueueRef hAudioQueue, AudioQueueBufferRef pAudioBuffer)
 {
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pvUser;
     AssertPtr(pStreamCA);
     Assert(pStreamCA->hAudioQueue == hAudioQueue);
-    RT_NOREF(hAudioQueue);
 
-    uintptr_t idxBuf = (uintptr_t)pAudioBuffer->mUserData;
+    uintptr_t idxBuf = (uintptr_t)pAudioBuffer->mUserData >> 8;
     Log4Func(("Got back buffer #%zu (%p)\n", idxBuf, pAudioBuffer));
     AssertReturnVoid(   idxBuf < pStreamCA->cBuffers
                      && pStreamCA->paBuffers[idxBuf].pBuf == pAudioBuffer);
+#endif
 
     pAudioBuffer->mAudioDataByteSize = 0;
-    bool fWasQueued = ASMAtomicXchgBool(&pStreamCA->paBuffers[idxBuf].fQueued, false);
+    bool fWasQueued = drvHostAudioCaSetBufferQueued(pAudioBuffer, false /*fQueued*/);
+    Assert(!drvHostAudioCaIsBufferQueued(pAudioBuffer));
     Assert(fWasQueued); RT_NOREF(fWasQueued);
+
+    RT_NOREF(pvUser, hAudioQueue);
 }
 
 
@@ -1394,18 +1426,22 @@ static void drvHostAudioCaInputQueueBufferCallback(void *pvUser, AudioQueueRef h
                                                    AudioQueueBufferRef pAudioBuffer, const AudioTimeStamp *pAudioTS,
                                                    UInt32 cPacketDesc, const AudioStreamPacketDescription *paPacketDesc)
 {
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     PCOREAUDIOSTREAM pStreamCA = (PCOREAUDIOSTREAM)pvUser;
     AssertPtr(pStreamCA);
     Assert(pStreamCA->hAudioQueue == hAudioQueue);
-    RT_NOREF(hAudioQueue, pAudioTS, cPacketDesc, paPacketDesc);
 
-    uintptr_t idxBuf = (uintptr_t)pAudioBuffer->mUserData;
+    uintptr_t idxBuf = (uintptr_t)pAudioBuffer->mUserData >> 8;
     Log4Func(("Got back buffer #%zu (%p) with %#x bytes\n", idxBuf, pAudioBuffer, pAudioBuffer->mAudioDataByteSize));
     AssertReturnVoid(   idxBuf < pStreamCA->cBuffers
                      && pStreamCA->paBuffers[idxBuf].pBuf == pAudioBuffer);
+#endif
 
-    bool fWasQueued = ASMAtomicXchgBool(&pStreamCA->paBuffers[idxBuf].fQueued, false);
+    bool fWasQueued = drvHostAudioCaSetBufferQueued(pAudioBuffer, false /*fQueued*/);
+    Assert(!drvHostAudioCaIsBufferQueued(pAudioBuffer));
     Assert(fWasQueued); RT_NOREF(fWasQueued);
+
+    RT_NOREF(pvUser, hAudioQueue, pAudioTS, cPacketDesc, paPacketDesc);
 }
 
 
@@ -1567,7 +1603,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                             orc = AudioQueueAllocateBuffer(pStreamCA->hAudioQueue, cbQueueBuffer, &pBuf);
                             if (RT_LIKELY(orc == noErr))
                             {
-                                pBuf->mUserData = (void *)(uintptr_t)iBuf;
+                                pBuf->mUserData = (void *)(uintptr_t)(iBuf << 8); /* bit zero is the queued-indicator. */
                                 pStreamCA->paBuffers[iBuf].pBuf = pBuf;
                                 cFramesBufferSize += PDMAudioPropsBytesToFrames(&pStreamCA->Cfg.Props,
                                                                                 pBuf->mAudioDataBytesCapacity);
@@ -1777,7 +1813,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamEnable(PPDMIHOSTAUDIO pInterface
         LogRelMax(64, ("CoreAudio: Stream reset failed when enabling '%s': %#x (%d)\n", pStreamCA->Cfg.szName, orc, orc));
     Assert(orc == noErr);
     for (uint32_t iBuf = 0; iBuf < pStreamCA->cBuffers; iBuf++)
-        Assert(!pStreamCA->paBuffers[iBuf].fQueued);
+        Assert(!drvHostAudioCaIsBufferQueued(pStreamCA->paBuffers[iBuf].pBuf));
 
     pStreamCA->offInternal      = 0;
     pStreamCA->fDraining        = false;
@@ -1799,12 +1835,12 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamEnable(PPDMIHOSTAUDIO pInterface
 
             RT_BZERO(pBuf->mAudioData, pBuf->mAudioDataBytesCapacity);
             pBuf->mAudioDataByteSize = 0;
-            ASMAtomicWriteBool(&pStreamCA->paBuffers[iBuf].fQueued, true);
+            drvHostAudioCaSetBufferQueued(pBuf, true /*fQueued*/);
 
             orc = AudioQueueEnqueueBuffer(pStreamCA->hAudioQueue, pBuf, 0 /*inNumPacketDescs*/, NULL /*inPacketDescs*/);
             AssertLogRelMsgBreakStmt(orc == noErr, ("CoreAudio: AudioQueueEnqueueBuffer(#%u) -> %#x (%d) - stream '%s'\n",
                                                     iBuf, orc, orc, pStreamCA->Cfg.szName),
-                                     pStreamCA->paBuffers[iBuf].fQueued = false);
+                                     drvHostAudioCaSetBufferQueued(pBuf, false /*fQueued*/));
         }
 
         /* Start the stream. */
@@ -2054,17 +2090,17 @@ static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetReadable(PPDMIHOSTAUDIO 
         uint32_t const      cBuffers  = pStreamCA->cBuffers;
         uint32_t const      idxStart  = pStreamCA->idxBuffer;
         uint32_t            idxBuffer = idxStart;
+        AudioQueueBufferRef pBuf;
 
         if (   cBuffers > 0
-            && !paBuffers[idxBuffer].fQueued)
+            && !drvHostAudioCaIsBufferQueued(pBuf = paBuffers[idxBuffer].pBuf))
         {
             do
             {
-                AudioQueueBufferRef const pBuf    = paBuffers[idxBuffer].pBuf;
-                uint32_t const            cbTotal = pBuf->mAudioDataBytesCapacity;
-                uint32_t                  cbFill  = pBuf->mAudioDataByteSize;
+                uint32_t const  cbTotal = pBuf->mAudioDataBytesCapacity;
+                uint32_t        cbFill  = pBuf->mAudioDataByteSize;
                 AssertStmt(cbFill <= cbTotal, cbFill = cbTotal);
-                uint32_t                  off     = paBuffers[idxBuffer].offRead;
+                uint32_t        off     = paBuffers[idxBuffer].offRead;
                 AssertStmt(off < cbFill, off = cbFill);
 
                 cbReadable += cbFill - off;
@@ -2075,7 +2111,7 @@ static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetReadable(PPDMIHOSTAUDIO 
                 { /* likely */ }
                 else
                     idxBuffer = 0;
-            } while (idxBuffer != idxStart && !paBuffers[idxBuffer].fQueued);
+            } while (idxBuffer != idxStart && !drvHostAudioCaIsBufferQueued(pBuf = paBuffers[idxBuffer].pBuf));
         }
 
         RTCritSectLeave(&pStreamCA->CritSect);
@@ -2103,15 +2139,15 @@ static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetWritable(PPDMIHOSTAUDIO 
         uint32_t const      cBuffers  = pStreamCA->cBuffers;
         uint32_t const      idxStart  = pStreamCA->idxBuffer;
         uint32_t            idxBuffer = idxStart;
+        AudioQueueBufferRef pBuf;
 
         if (   cBuffers > 0
-            && !paBuffers[idxBuffer].fQueued)
+            && !drvHostAudioCaIsBufferQueued(pBuf = paBuffers[idxBuffer].pBuf))
         {
             do
             {
-                AudioQueueBufferRef const pBuf    = paBuffers[idxBuffer].pBuf;
-                uint32_t const            cbTotal = pBuf->mAudioDataBytesCapacity;
-                uint32_t                  cbUsed  = pBuf->mAudioDataByteSize;
+                uint32_t const  cbTotal = pBuf->mAudioDataBytesCapacity;
+                uint32_t        cbUsed  = pBuf->mAudioDataByteSize;
                 AssertStmt(cbUsed <= cbTotal, paBuffers[idxBuffer].pBuf->mAudioDataByteSize = cbUsed = cbTotal);
 
                 cbWritable += cbTotal - cbUsed;
@@ -2122,7 +2158,7 @@ static DECLCALLBACK(uint32_t) drvHostAudioCaHA_StreamGetWritable(PPDMIHOSTAUDIO 
                 { /* likely */ }
                 else
                     idxBuffer = 0;
-            } while (idxBuffer != idxStart && !paBuffers[idxBuffer].fQueued);
+            } while (idxBuffer != idxStart && !drvHostAudioCaIsBufferQueued(pBuf = paBuffers[idxBuffer].pBuf));
         }
 
         RTCritSectLeave(&pStreamCA->CritSect);
@@ -2155,14 +2191,14 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioCaHA_StreamGetState(PPD
             PCOREAUDIOBUF const paBuffers = pStreamCA->paBuffers;
             uintptr_t           idxBuffer = pStreamCA->cBuffers;
             while (idxBuffer-- > 0)
-                if (!paBuffers[idxBuffer].fQueued)
+                if (!drvHostAudioCaIsBufferQueued(paBuffers[idxBuffer].pBuf))
                 { /* likely */ }
                 else
                 {
 #ifdef LOG_ENABLED
                     uint32_t cQueued = 1;
                     while (idxBuffer-- > 0)
-                        cQueued += paBuffers[idxBuffer].fQueued;
+                        cQueued += drvHostAudioCaIsBufferQueued(paBuffers[idxBuffer].pBuf);
                     LogFunc(("Still done draining '%s': %u queued buffers\n", pStreamCA->Cfg.szName, cQueued));
 #endif
                     RTCritSectLeave(&pStreamCA->CritSect);
@@ -2228,7 +2264,8 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
         /*
          * Check out how much we can put into the current buffer.
          */
-        if (!paBuffers[idxBuffer].fQueued)
+        AudioQueueBufferRef const pBuf = paBuffers[idxBuffer].pBuf;
+        if (!drvHostAudioCaIsBufferQueued(pBuf))
         { /* likely */ }
         else
         {
@@ -2237,12 +2274,11 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
             break;
         }
 
-        AudioQueueBufferRef const pBuf    = paBuffers[idxBuffer].pBuf;
         AssertPtrBreakStmt(pBuf, rc = VERR_INTERNAL_ERROR_2);
-        uint32_t const            cbTotal = pBuf->mAudioDataBytesCapacity;
-        uint32_t                  cbUsed  = pBuf->mAudioDataByteSize;
+        uint32_t const  cbTotal = pBuf->mAudioDataBytesCapacity;
+        uint32_t        cbUsed  = pBuf->mAudioDataByteSize;
         AssertStmt(cbUsed < cbTotal, cbUsed = cbTotal);
-        uint32_t const            cbAvail = cbTotal - cbUsed;
+        uint32_t const  cbAvail = cbTotal - cbUsed;
 
         /*
          * Copy over the data.
@@ -2266,7 +2302,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
         pBuf->mAudioDataByteSize = cbTotal;
         cbWritten               += cbAvail;
         pStreamCA->offInternal  += cbAvail;
-        ASMAtomicWriteBool(&paBuffers[idxBuffer].fQueued, true);
+        drvHostAudioCaSetBufferQueued(pBuf, true /*fQueued*/);
 
         OSStatus orc = AudioQueueEnqueueBuffer(pStreamCA->hAudioQueue, pBuf, 0 /*inNumPacketDesc*/, NULL /*inPacketDescs*/);
         if (orc == noErr)
@@ -2275,7 +2311,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
         {
             LogRelMax(256, ("CoreAudio: AudioQueueEnqueueBuffer('%s', #%u) failed: %#x (%d)\n",
                             pStreamCA->Cfg.szName, idxBuffer, orc, orc));
-            ASMAtomicWriteBool(&paBuffers[idxBuffer].fQueued, false);
+            drvHostAudioCaSetBufferQueued(pBuf, false /*fQueued*/);
             pBuf->mAudioDataByteSize -= PDMAudioPropsFramesToBytes(&pStreamCA->Cfg.Props, 1); /* avoid assertions above */
             rc = VERR_AUDIO_STREAM_NOT_READY;
             break;
@@ -2400,7 +2436,8 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
         /*
          * Check out how much we can read from the current buffer (if anything at all).
          */
-        if (!paBuffers[idxBuffer].fQueued)
+        AudioQueueBufferRef const pBuf = paBuffers[idxBuffer].pBuf;
+        if (!drvHostAudioCaIsBufferQueued(pBuf))
         { /* likely */ }
         else
         {
@@ -2409,13 +2446,12 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
             break;
         }
 
-        AudioQueueBufferRef const pBuf    = paBuffers[idxBuffer].pBuf;
         AssertPtrBreakStmt(pBuf, rc = VERR_INTERNAL_ERROR_2);
-        uint32_t const            cbTotal = pBuf->mAudioDataBytesCapacity;
-        uint32_t                  cbValid = pBuf->mAudioDataByteSize;
+        uint32_t const  cbTotal = pBuf->mAudioDataBytesCapacity;
+        uint32_t        cbValid = pBuf->mAudioDataByteSize;
         AssertStmt(cbValid < cbTotal, cbValid = cbTotal);
-        uint32_t                  offRead = paBuffers[idxBuffer].offRead;
-        uint32_t const            cbLeft  = cbValid - offRead;
+        uint32_t        offRead = paBuffers[idxBuffer].offRead;
+        uint32_t const  cbLeft  = cbValid - offRead;
 
         /*
          * Copy over the data.
@@ -2440,7 +2476,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
         RT_BZERO(pBuf->mAudioData, cbTotal); /* paranoia */
         paBuffers[idxBuffer].offRead = 0;
         pBuf->mAudioDataByteSize     = 0;
-        ASMAtomicWriteBool(&paBuffers[idxBuffer].fQueued, true);
+        drvHostAudioCaSetBufferQueued(pBuf, true /*fQueued*/);
 
         OSStatus orc = AudioQueueEnqueueBuffer(pStreamCA->hAudioQueue, pBuf, 0 /*inNumPacketDesc*/, NULL /*inPacketDescs*/);
         if (orc == noErr)
@@ -2449,7 +2485,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
         {
             LogRelMax(256, ("CoreAudio: AudioQueueEnqueueBuffer('%s', #%u) failed: %#x (%d)\n",
                             pStreamCA->Cfg.szName, idxBuffer, orc, orc));
-            ASMAtomicWriteBool(&paBuffers[idxBuffer].fQueued, false);
+            drvHostAudioCaSetBufferQueued(pBuf, false /*fQueued*/);
             rc = VERR_AUDIO_STREAM_NOT_READY;
             break;
         }
