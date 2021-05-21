@@ -770,6 +770,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
+ * @param   pCallbacks          The callbacks table to use.
  *  */
 int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
 {
