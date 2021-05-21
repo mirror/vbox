@@ -79,6 +79,10 @@ static void HandleSignal(int sig);
 static IConsole *gConsole = NULL;
 static NativeEventQueue *gEventQ = NULL;
 
+/* keep this handy for messages */
+static com::Utf8Str g_strVMName;
+static com::Utf8Str g_strVMUUID;
+
 /* flag whether frontend should terminate */
 static volatile bool g_fTerminateFE = false;
 
@@ -887,7 +891,9 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 break;
 
             /* tell the user what we are doing */
-            ::ShutdownBlockReasonCreate(hwnd, L"Waiting for VM to terminate");
+            ::ShutdownBlockReasonCreate(hwnd,
+                com::BstrFmt("%s saving state",
+                             g_strVMName.c_str()).raw());
 
             /* tell the VM to save state/power off */
             g_fTerminateFE = true;
@@ -1376,14 +1382,22 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
-        Bstr id;
-        rc = m->COMGETTER(Id)(id.asOutParam());
+        Bstr bstrVMId;
+        rc = m->COMGETTER(Id)(bstrVMId.asOutParam());
         AssertComRC(rc);
         if (FAILED(rc))
             break;
+        g_strVMUUID = bstrVMId;
+
+        Bstr bstrVMName;
+        rc = m->COMGETTER(Name)(bstrVMName.asOutParam());
+        AssertComRC(rc);
+        if (FAILED(rc))
+            break;
+        g_strVMName = bstrVMName;
 
         Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
-              Utf8Str(id).c_str()));
+             g_strVMUUID.c_str()));
 
         // set session name
         CHECK_ERROR_BREAK(session, COMSETTER(Name)(Bstr("headless").raw()));
