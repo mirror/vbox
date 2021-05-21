@@ -1375,8 +1375,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             LogError("Invalid machine name or UUID!\n", rc);
             break;
         }
+
         Bstr id;
-        m->COMGETTER(Id)(id.asOutParam());
+        rc = m->COMGETTER(Id)(id.asOutParam());
         AssertComRC(rc);
         if (FAILED(rc))
             break;
