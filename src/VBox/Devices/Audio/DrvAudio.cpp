@@ -1932,7 +1932,6 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
      * Give back the stream count, we couldn't use it after all.
      */
     RTCritSectRwEnterExcl(&pThis->CritSectGlobals);
-    Assert(*pcFreeStreams >= 0);
     *pcFreeStreams += 1;
     RTCritSectRwLeaveExcl(&pThis->CritSectGlobals);
 
