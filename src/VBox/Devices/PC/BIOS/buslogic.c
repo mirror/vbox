@@ -31,8 +31,10 @@
 # define DBG_BUSLOGIC(...)
 #endif
 
-#define BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND     0x02
-#define BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX 0x81
+#define BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND        0x02
+#define BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX    0x81
+#define BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT 0x25
+
 
 #define RT_BIT(bit) (1 << (bit))
 
@@ -274,6 +276,8 @@ typedef struct
     SGE32            aSge[3];
     /** I/O base of device. */
     uint16_t         u16IoBase;
+    /** The sink buf. */
+    void __far       *pvSinkBuf;
 } buslogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -354,8 +358,8 @@ int buslogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
 }
 
 int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_a,
-                            uint16_t skip_b)
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
+                            uint16_t skip_a)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
     int i;
@@ -378,7 +382,7 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     if (skip_b)
     {
         buslogic->aSge[idxSge].cbSegment = skip_b;
-        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = 0; /* See ahci.c:sink_buf_phys */
+        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buslogic->pvSinkBuf);
         idxSge++;
     }
 
@@ -390,7 +394,7 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     if (skip_a)
     {
         buslogic->aSge[idxSge].cbSegment = skip_a;
-        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = 0; /* See ahci.c:sink_buf_phys */
+        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buslogic->pvSinkBuf);
         idxSge++;
     }
 
@@ -419,24 +423,35 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
  */
 static int buslogic_scsi_hba_init(buslogic_t __far *buslogic)
 {
+    int rc;
+    uint8_t bIrqOff = 0;
     ReqInitExtMbx       ReqInitMbx;
 
     /* Hard reset. */
     outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_CONTROL, BL_CTRL_RHARD);
     while (!(inb(buslogic->u16IoBase + BUSLOGIC_REGISTER_STATUS) & BL_STAT_HARDY));
 
-    /* Initialize mailbox. */
-    ReqInitMbx.cMailbox = 1;
-    ReqInitMbx.uMailboxBaseAddress = buslogic_addr_to_phys(&buslogic->MbxOut32);
-    return buslogic_cmd(buslogic, BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX,
-                        (unsigned char __far *)&ReqInitMbx, sizeof(ReqInitMbx),
-                        NULL, 0);
+    /* Disable interrupts. */
+    rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT,
+                      (unsigned char __far *)&bIrqOff, sizeof(bIrqOff),
+                      NULL, 0);
+    if (!rc)
+    {
+        /* Initialize mailbox. */
+        ReqInitMbx.cMailbox = 1;
+        ReqInitMbx.uMailboxBaseAddress = buslogic_addr_to_phys(&buslogic->MbxOut32);
+        rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX,
+                          (unsigned char __far *)&ReqInitMbx, sizeof(ReqInitMbx),
+                          NULL, 0);
+    }
+
+    return rc;
 }
 
 /**
  * Init the BusLogic SCSI driver and detect attached disks.
  */
-int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
+int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
     uint32_t u32Bar;
@@ -456,6 +471,7 @@ int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 
         DBG_BUSLOGIC("I/O base: 0x%x\n", u16IoBase);
         buslogic->u16IoBase = u16IoBase;
+        buslogic->pvSinkBuf = pvSinkBuf;
         return buslogic_scsi_hba_init(buslogic);
     }
     else

@@ -208,8 +208,8 @@ typedef struct
     uint8_t          u8Bus;
     /** Device/Function number. */
     uint8_t          u8DevFn;
-    /** Saved high bits of EAX. */
-    uint16_t         saved_eax_hi;
+    /** The sink buf. */
+    void __far       *pvSinkBuf;
     /** The current executed command structure. */
     virtio_scsi_req_hdr_t ScsiReqHdr;
     virtio_scsi_req_sts_t ScsiReqSts;
@@ -434,8 +434,8 @@ int virtio_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aC
 }
 
 int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_a,
-                            uint16_t skip_b)
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
+                            uint16_t skip_a)
 {
     virtio_t __far *virtio = (virtio_t __far *)pvHba;
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
@@ -469,7 +469,7 @@ int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCD
     /* Prepend a sinkhole if data is skipped upfront. */
     if (skip_b)
     {
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = 0; /* See ahci.c:sink_buf_phys */
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(virtio->pvSinkBuf);
         virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
         virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_b;
         virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
@@ -490,7 +490,7 @@ int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCD
         virtio->Queue.aDescTbl[idxDesc - 1].fFlags  |= VIRTIO_Q_DESC_F_NEXT;
         virtio->Queue.aDescTbl[idxDesc - 1].idxNext = idxDesc;
 
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = 0; /* See ahci.c:sink_buf_phys */
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(virtio->pvSinkBuf);
         virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
         virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_a;
         virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
@@ -661,7 +661,7 @@ static int virtio_scsi_hba_init(virtio_t __far *virtio, uint8_t u8Bus, uint8_t u
 /**
  * Init the VirtIO SCSI driver and detect attached disks.
  */
-int virtio_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
+int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     virtio_t __far *virtio = (virtio_t __far *)pvHba;
     uint8_t     u8PciCapOff;
@@ -714,6 +714,7 @@ int virtio_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
         /* Enable PCI memory, I/O, bus mastering access in command register. */
         pci_write_config_word(u8Bus, u8DevFn, 4, 0x7);
 
+        virtio->pvSinkBuf = pvSinkBuf;
         return virtio_scsi_hba_init(virtio, u8Bus, u8DevFn, u8PciCapOffVirtIo);
     }
     else

@@ -288,8 +288,8 @@ typedef struct
     uint8_t            abReply[128];
     /** I/O base of device. */
     uint16_t           u16IoBase;
-    /** Saved high bits of EAX. */
-    uint16_t           saved_eax_hi;
+    /** The sink buf. */
+    void __far         *pvSinkBuf;
 } lsilogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -425,8 +425,8 @@ int lsilogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
 }
 
 int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                              uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_a,
-                              uint16_t skip_b)
+                              uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
+                              uint16_t skip_a)
 {
     lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
     int i;
@@ -458,7 +458,7 @@ int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
         lsilogic->aSge[idxSge].u2ElementType           = 0x01; /* Simple type */
         lsilogic->aSge[idxSge].fEndOfBuffer            = 0;
         lsilogic->aSge[idxSge].fLastElement            = 0;
-        lsilogic->aSge[idxSge].u32DataBufferAddressLow = 0; /* See ahci.c:sink_buf_phys */
+        lsilogic->aSge[idxSge].u32DataBufferAddressLow = lsilogic_addr_to_phys(lsilogic->pvSinkBuf);
 
         idxSge++;
     }
@@ -478,7 +478,7 @@ int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     /* Append a sinkhole if data is skipped at the end. */
     if (skip_a)
     {
-        lsilogic->aSge[idxSge].u24Length               = length;
+        lsilogic->aSge[idxSge].u24Length               = skip_a;
         lsilogic->aSge[idxSge].fEndOfList              = 1;
         lsilogic->aSge[idxSge].f64BitAddress           = 0;
         lsilogic->aSge[idxSge].fBufferContainsData     = 0;
@@ -486,7 +486,7 @@ int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
         lsilogic->aSge[idxSge].u2ElementType           = 0x01; /* Simple type */
         lsilogic->aSge[idxSge].fEndOfBuffer            = 1;
         lsilogic->aSge[idxSge].fLastElement            = 1;
-        lsilogic->aSge[idxSge].u32DataBufferAddressLow = 0; /* See ahci.c:sink_buf_phys */
+        lsilogic->aSge[idxSge].u32DataBufferAddressLow = lsilogic_addr_to_phys(lsilogic->pvSinkBuf);
         idxSge++;
     }
 
@@ -535,7 +535,7 @@ static int lsilogic_scsi_hba_init(lsilogic_t __far *lsilogic)
 /**
  * Init the LsiLogic SCSI driver and detect attached disks.
  */
-int lsilogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
+int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
     uint32_t u32Bar;
@@ -555,6 +555,7 @@ int lsilogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 
         DBG_LSILOGIC("I/O base: 0x%x\n", u16IoBase);
         lsilogic->u16IoBase = u16IoBase;
+        lsilogic->pvSinkBuf = pvSinkBuf;
         return lsilogic_scsi_hba_init(lsilogic);
     }
     else

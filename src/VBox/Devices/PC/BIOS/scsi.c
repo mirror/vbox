@@ -34,7 +34,7 @@
 
 #define VBOX_SCSI_NO_HBA 0xffff
 
-typedef int (* scsi_hba_init)(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
+typedef int (* scsi_hba_init)(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
 typedef int (* scsi_hba_cmd_data_out)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 typedef int (* scsi_hba_cmd_data_in)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
@@ -111,6 +111,29 @@ static uint16_t scsi_hba_mem_alloc(void)
     write_word(0x00, 0x0413, base_mem_kb);
 
     return hba_seg;
+}
+
+/**
+ * Allocates 1K of conventional memory.
+ */
+static uint16_t scsi_sink_buf_alloc(void)
+{
+    uint16_t    base_mem_kb;
+    uint16_t    sink_seg;
+
+    base_mem_kb = read_word(0x00, 0x0413);
+
+    DBG_SCSI("SCSI: %dK of base mem\n", base_mem_kb);
+
+    if (base_mem_kb == 0)
+        return 0;
+
+    base_mem_kb -= 2; /* Allocate 2K block. */
+    sink_seg = (((uint32_t)base_mem_kb * 1024) >> 4); /* Calculate start segment. */
+
+    write_word(0x00, 0x0413, base_mem_kb);
+
+    return sink_seg;
 }
 
 /**
@@ -520,6 +543,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
 void BIOSCALL scsi_init(void)
 {
     int i;
+    uint16_t sink_seg = 0;
     bio_dsk_t __far     *bios_dsk;
 
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
@@ -537,11 +561,18 @@ void BIOSCALL scsi_init(void)
             if (hba_seg == 0) /* No point in trying the rest if we are out of memory. */
                 break;
 
+            if (!sink_seg) /* Allocate a sink buffer for throwing away data when accessing CD/DVD drives. */
+            {
+                sink_seg = scsi_sink_buf_alloc();
+                if (!sink_seg)
+                    break;
+            }
+
             u8Bus = (busdevfn & 0xff00) >> 8;
             u8DevFn = busdevfn & 0x00ff;
 
             DBG_SCSI("SCSI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
-            rc = hbaacc[i].init(hba_seg :> 0, u8Bus, u8DevFn);
+            rc = hbaacc[i].init(hba_seg :> 0, sink_seg :> 0, u8Bus, u8DevFn);
             if (!rc)
                 scsi_enumerate_attached_devices(hba_seg, i);
             /** @todo Free memory on error. */
