@@ -869,6 +869,23 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     lParam & ENDSESSION_CLOSEAPP ? " close"    : "",
                     (unsigned long)lParam));
 
+            /* do not block windows session termination */
+            lResult = TRUE;
+            break;
+
+        case WM_ENDSESSION:
+            lResult = 0;
+            LogRel(("WM_ENDSESSION:%s%s%s%s%s (%s/0x%08lx)\n",
+                    lParam == 0                  ? " shutdown"  : "",
+                    lParam & ENDSESSION_CRITICAL ? " critical"  : "",
+                    lParam & ENDSESSION_LOGOFF   ? " logoff"    : "",
+                    lParam & ENDSESSION_CLOSEAPP ? " close"     : "",
+                    wParam == FALSE              ? " cancelled" : "",
+                    wParam ? "TRUE" : "FALSE",
+                    (unsigned long)lParam));
+            if (wParam == FALSE)
+                break;
+
             /* tell the user what we are doing */
             ::ShutdownBlockReasonCreate(hwnd, L"Waiting for VM to terminate");
 
@@ -876,11 +893,6 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             g_fTerminateFE = true;
             gEventQ->interruptEventQueueProcessing();
 
-            /* do not block windows session termination */
-            lResult = TRUE;
-            break;
-
-        case WM_ENDSESSION:
             if (g_hCanQuit != NIL_RTSEMEVENT)
             {
                 LogRel(("VBoxHeadless: WM_ENDSESSION: waiting for VM termination...\n"));
@@ -895,7 +907,6 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 LogRel(("VBoxHeadless: WM_ENDSESSION: cannot wait for VM termination\n"));
             }
-            lResult = TRUE;
             break;
 
         default:
