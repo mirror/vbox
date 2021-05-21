@@ -307,11 +307,6 @@ typedef enum PDMAUDIODIR
     PDMAUDIODIR_32BIT_HACK = 0x7fffffff
 } PDMAUDIODIR;
 
-/** Device latency spec in milliseconds (ms). */
-typedef uint32_t PDMAUDIODEVLATSPECMS;
-
-/** Device latency spec in seconds (s). */
-typedef uint32_t PDMAUDIODEVLATSPECSEC;
 
 /** @name PDMAUDIOHOSTDEV_F_XXX
  * @{  */
