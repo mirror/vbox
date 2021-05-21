@@ -25,12 +25,34 @@
 
 
 /**
+ * Structure for keeping an Audio Test Server (ATS) callback table.
+ */
+typedef struct ATSCALLBACKS
+{
+    /**
+     * Plays a test tone.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pStreamCfg      Audio stream configuration to use for stream to play tone on.
+     * @param   pToneParms      Tone parameters to use for playback.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTonePlay, (void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms));
+    /** Pointer to opaque user-provided context data. */
+    void const *pvUser;
+} ATSCALLBACKS;
+/** Pointer to a const ATS callbacks table. */
+typedef const struct ATSCALLBACKS *PCATSCALLBACKS;
+
+/**
  * Structure for keeping an Audio Test Server (ATS) instance.
  */
 typedef struct ATSSERVER
 {
     /** The selected transport layer. */
     PCATSTRANSPORT       pTransport;
+    /** The callbacks table. */
+    ATSCALLBACKS         Callbacks;
     /** Whether server is in started state or not. */
     bool volatile        fStarted;
     /** Whether to terminate or not. */
@@ -54,7 +76,7 @@ typedef struct ATSSERVER
 typedef ATSSERVER *PATSSERVER;
 
 
-int AudioTestSvcInit(PATSSERVER pThis);
+int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks);
 int AudioTestSvcDestroy(PATSSERVER pThis);
 int AudioTestSvcStart(PATSSERVER pThis);
 int AudioTestSvcShutdown(PATSSERVER pThis);

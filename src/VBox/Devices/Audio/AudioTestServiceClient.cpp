@@ -226,6 +226,22 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr)
     return rc;
 }
 
+int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+{
+    ATSPKTREQTONEPLAY Req;
+
+    memcpy(&Req.StreamCfg, pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
+    memcpy(&Req.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+
+    audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_PLAY, 0);
+
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    if (RT_SUCCESS(rc))
+        rc = audioTestSvcClientRecvAck(pClient);
+
+    return rc;
+}
+
 int AudioTestSvcClientClose(PATSCLIENT pClient)
 {
     int rc = audioTestSvcClientDoBye(pClient);

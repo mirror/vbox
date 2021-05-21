@@ -535,6 +535,16 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR p
     if (pClient->enmState != ATSCLIENTSTATE_READY)
         return atsReplyInvalidState(pThis, pClient, pPktHdr);
 
+    if (!pThis->Callbacks.pfnTonePlay)
+        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Playing tones not supported");
+
+    PATSPKTREQTONEPLAY pReq = (PATSPKTREQTONEPLAY)pPktHdr;
+    rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->StreamCfg, &pReq->ToneParms);
+
+    int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
     return rc;
 }
 
@@ -563,7 +573,7 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
         rc = atsDoHowdy(pThis, pClient, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_BYE))
         rc = atsDoBye(pThis, pClient, pPktHdr);
-    /* Gadget API. */
+    /* Audio testing: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_PLAY))
         rc = atsDoTonePlay(pThis, pClient, pPktHdr);
     /* Misc: */
@@ -761,8 +771,10 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
  *  */
-int AudioTestSvcInit(PATSSERVER pThis)
+int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
 {
+    memcpy(&pThis->Callbacks, pCallbacks, sizeof(ATSCALLBACKS));
+
     pThis->fStarted   = false;
     pThis->fTerminate = false;
     RTListInit(&pThis->LstClientsNew);

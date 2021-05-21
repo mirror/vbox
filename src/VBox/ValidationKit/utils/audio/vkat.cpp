@@ -2483,34 +2483,131 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
 }
 
 /**
- * Tests the Audio Test Service (ATS).
- *
- * @returns VBox status code.
+ * Structure for keeping a user context for the test service callbacks.
  */
-static int audioTestDoSelftestSvc(void)
+typedef struct ATSCALLBACKCTX
 {
-    ATSSERVER Srv;
-    int rc = AudioTestSvcInit(&Srv);
-    if (RT_SUCCESS(rc))
+    /** Driver stack to use. */
+    PAUDIOTESTDRVSTACK pDrvStack;
+    /** Audio stream to use. */
+    PPDMAUDIOSTREAM    pStream;
+} ATSCALLBACKCTX;
+typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
+
+/**
+ * Note: Called within server (client serving) thread.
+ */
+static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+{
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    AUDIOTESTTONE TstTone;
+    AudioTestToneInitRandom(&TstTone, &pStreamCfg->Props);
+
+    int rc;
+
+    if (audioTestDriverStackStreamIsOkay(pCtx->pDrvStack, pCtx->pStream))
     {
-        rc = AudioTestSvcStart(&Srv);
-        if (RT_SUCCESS(rc))
+        uint32_t cbBuf;
+        uint8_t  abBuf[_4K];
+
+        const uint64_t tsStartMs     = RTTimeMilliTS();
+        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Chose a random scheduling (in ms). */
+        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pCtx->pStream->Props, cSchedulingMs);
+
+        do
         {
-            ATSCLIENT Conn;
-            rc = AudioTestSvcClientConnect(&Conn, NULL);
+            rc = AudioTestToneGenerate(&TstTone, abBuf, RT_MIN(cbPerMs, sizeof(abBuf)), &cbBuf);
             if (RT_SUCCESS(rc))
             {
-                rc = AudioTestSvcClientClose(&Conn);
+                uint32_t cbWritten;
+                rc = audioTestDriverStackStreamPlay(pCtx->pDrvStack, pCtx->pStream, abBuf, cbBuf, &cbWritten);
             }
 
-            int rc2 = AudioTestSvcShutdown(&Srv);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
+            if (RTTimeMilliTS() - tsStartMs >= pToneParms->msDuration)
+                break;
 
-        int rc2 = AudioTestSvcDestroy(&Srv);
+            if (RT_FAILURE(rc))
+                break;
+
+            RTThreadSleep(cSchedulingMs);
+
+        } while (RT_SUCCESS(rc));
+    }
+    else
+        rc = VERR_AUDIO_STREAM_NOT_READY;
+
+    return rc;
+}
+
+/**
+ * Tests the Audio Test Service (ATS).
+ *
+ * @param   pDrvReg             Backend driver to use.
+ * @returns VBox status code.
+ */
+static int audioTestDoSelftestSvc(PCPDMDRVREG pDrvReg)
+{
+    AUDIOTESTDRVSTACK DrvStack;
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, true /* fWithDrvAudio */);
+    if (RT_SUCCESS(rc))
+    {
+        PDMAUDIOPCMPROPS  Props;
+        PDMAudioPropsInit(&Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+
+        PDMAUDIOSTREAMCFG CfgAcq;
+        PPDMAUDIOSTREAM   pStream = NULL;
+        rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &Props,
+                                                    UINT32_MAX /* cMsBufferSize */,
+                                                    UINT32_MAX /* cMsPreBuffer */,
+                                                    UINT32_MAX /* cMsSchedulingHint */, &pStream, &CfgAcq);
         if (RT_SUCCESS(rc))
-            rc = rc2;
+        {
+            rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
+            if (RT_SUCCESS(rc))
+            {
+                ATSCALLBACKCTX Ctx;
+                Ctx.pDrvStack = &DrvStack;
+                Ctx.pStream   = pStream;
+
+                ATSCALLBACKS Callbacks;
+                Callbacks.pfnTonePlay = audioTestSvcTonePlayCallback;
+                Callbacks.pvUser      = &Ctx;
+
+                ATSSERVER Srv;
+                rc = AudioTestSvcInit(&Srv, &Callbacks);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = AudioTestSvcStart(&Srv);
+                    if (RT_SUCCESS(rc))
+                    {
+                        ATSCLIENT Conn;
+                        rc = AudioTestSvcClientConnect(&Conn, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* Do the bare minimum here to get a test tone out. */
+                            AUDIOTESTTONEPARMS ToneParms = { 0 };
+                            ToneParms.msDuration = 2000;
+                            memcpy(&ToneParms.Props, &CfgAcq.Props, sizeof(PDMAUDIOPCMPROPS));
+
+                            rc = AudioTestSvcClientTonePlay(&Conn, &CfgAcq, &ToneParms);
+
+                            int rc2 = AudioTestSvcClientClose(&Conn);
+                            if (RT_SUCCESS(rc))
+                                rc = rc2;
+                        }
+
+                        int rc2 = AudioTestSvcShutdown(&Srv);
+                        if (RT_SUCCESS(rc))
+                            rc = rc2;
+                    }
+
+                    int rc2 = AudioTestSvcDestroy(&Srv);
+                    if (RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+            }
+        }
     }
 
     return rc;
@@ -2520,10 +2617,11 @@ static int audioTestDoSelftestSvc(void)
  * Main function for performing the self-tests.
  *
  * @returns VBox status code.
+ * @param   pDrvReg             Backend driver to use.
  */
-static int audioTestDoSelftest(void)
+static int audioTestDoSelftest(PCPDMDRVREG pDrvReg)
 {
-    int rc = audioTestDoSelftestSvc();
+    int rc = audioTestDoSelftestSvc(pDrvReg);
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Self-test failed with: %Rrc", rc);
 
@@ -2578,7 +2676,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
         }
     }
 
-    audioTestDoSelftest();
+    audioTestDoSelftest(pDrvReg);
         /*
      * Print summary and exit.
      */

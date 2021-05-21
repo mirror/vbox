@@ -129,8 +129,11 @@ typedef struct ATSPKTREQTONEPLAY
 {
     /** Embedded packet header. */
     ATSPKTHDR          Hdr;
-    AUDIOTESTTONEPARMS Parms;
-    uint8_t            au8Padding[8];
+    /** Stream configuration to use for playing the tone.
+     *  Note: Depending on the actual implementation this configuration might or might not be available / supported. */
+    PDMAUDIOSTREAMCFG  StreamCfg;
+    /** Test tone parameters for playback. */
+    AUDIOTESTTONEPARMS ToneParms;
 } ATSPKTREQTONEPLAY;
 AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
