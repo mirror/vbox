@@ -1339,6 +1339,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
+/**
+ * VT-d FRCD type requests (FRCD_REG::T2).
+ * In accordance with the Intel spec.
+ */
+typedef enum VTDREQTYPE
+{
+    VTDREQTYPE_WRITE = 0,
+    VTDREQTYPE_PAGE,
+    VTDREQTYPE_READ,
+    VTDREQTYPE_ATOMIC_OP,
+} VTDREQTYPE;
+
+
 /** @name Advanced Fault Log Register (AFLOG_REG).
  * In accordance with the Intel spec.
  * @{ */
@@ -2322,6 +2335,7 @@ typedef enum VTDINTRFAULT
     /** Untranslated interrupt requested (without PASID) is invalid. */
     VTDINTRFAULT_IR_WITHOUT_PASID_INVALID = 0x29
 } VTDINTRFAULT;
+AssertCompileSize(VTDINTRFAULT, 4);
 /** @} */
 
 
@@ -2435,7 +2449,8 @@ typedef enum VTDADDRFAULT
     VTDADDRFAULT_SGN_8   = 0x87,
     VTDADDRFAULT_SGN_9   = 0x88,
     VTDADDRFAULT_SGN_10  = 0x89
-} VTDATFAULT;
+} VTDADDRFAULT;
+AssertCompileSize(VTDADDRFAULT, 4);
 /** @} */
 
 
