@@ -166,23 +166,6 @@ typedef struct COREAUDIOSTREAM
     /** The array of buffer. */
     PCOREAUDIOBUF               paBuffers;
 
-    /** The audio unit for this stream. */
-    struct
-    {
-        /** Pointer to the device this audio unit is bound to.
-         *  Can be NULL if not bound to a device (anymore). */
-        PCOREAUDIODEVICEDATA    pDevice;
-#if 0 /* not used */
-        /** The actual audio unit object. */
-        AudioUnit                   hAudioUnit;
-        /** Stream description for using with VBox:
-         *  - When using this audio unit for input (capturing), this format states
-         *    the unit's output format.
-         *  - When using this audio unit for output (playback), this format states
-         *    the unit's input format. */
-        AudioStreamBasicDescription StreamFmt;
-#endif
-    } Unit;
     /** Initialization status tracker, actually COREAUDIOINITSTATE.
      * Used when some of the device parameters or the device itself is changed
      * during the runtime. */
@@ -1458,15 +1441,25 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     /*
      * Do we have a device for the requested stream direction?
      */
-    PCOREAUDIODEVICEDATA pDev = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pDefaultDevIn : pThis->pDefaultDevOut;
+    RTCritSectEnter(&pThis->CritSect);
+    CFStringRef hDevUidStr = NULL;
+    {
+        PCOREAUDIODEVICEDATA pDev = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pDefaultDevIn : pThis->pDefaultDevOut;
+        if (pDev)
+        {
+            Assert(pDev->Core.cbSelf == sizeof(*pDev));
+            hDevUidStr = pDev->UUID;
+            CFRetain(pDev->UUID);
+        }
+    }
+    RTCritSectLeave(&pThis->CritSect);
+
 #ifdef LOG_ENABLED
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
 #endif
-    LogFunc(("pDev=%p *pCfgReq: %s\n", pDev, PDMAudioStrmCfgToString(pCfgReq, szTmp, sizeof(szTmp)) ));
-    if (pDev)
+    LogFunc(("hDevUidStr=%p *pCfgReq: %s\n", hDevUidStr, PDMAudioStrmCfgToString(pCfgReq, szTmp, sizeof(szTmp)) ));
+    if (hDevUidStr)
     {
-        Assert(pDev->Core.cbSelf == sizeof(*pDev));
-
         /*
          * Basic structure init.
          */
@@ -1476,7 +1469,6 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
         pStreamCA->fRestartOnResume = false;
         pStreamCA->offInternal      = 0;
         pStreamCA->idxBuffer        = 0;
-        pStreamCA->Unit.pDevice     = pDev;   /** @todo r=bird: How do we protect this against enumeration releasing pDefaultDevOut/In. */
         pStreamCA->enmInitState     = COREAUDIOINITSTATE_IN_INIT;
 
         rc = RTCritSectInit(&pStreamCA->CritSect);
@@ -1518,8 +1510,8 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                 /*
                  * Assign device to the queue.
                  */
-                UInt32 uSize = sizeof(pDev->UUID);
-                orc = AudioQueueSetProperty(pStreamCA->hAudioQueue, kAudioQueueProperty_CurrentDevice, &pDev->UUID, uSize);
+                UInt32 uSize = sizeof(hDevUidStr);
+                orc = AudioQueueSetProperty(pStreamCA->hAudioQueue, kAudioQueueProperty_CurrentDevice, &hDevUidStr, uSize);
                 LogFlowFunc(("AudioQueueSetProperty -> %#x\n", orc));
                 if (orc == noErr)
                 {
@@ -1609,8 +1601,10 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                             ASMAtomicWriteU32(&pStreamCA->enmInitState, COREAUDIOINITSTATE_INIT);
 
                             LogFunc(("returns VINF_SUCCESS\n"));
+                            CFRelease(hDevUidStr);
                             return VINF_SUCCESS;
                         }
+
                         RTMemFree(pStreamCA->paBuffers);
                     }
                     else
@@ -1626,6 +1620,7 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
         }
         else
             LogRel(("CoreAudio: Failed to initialize critical section for stream: %Rrc\n", rc));
+        CFRelease(hDevUidStr);
     }
     else
     {
@@ -1734,15 +1729,10 @@ static DECLCALLBACK(int) drvHostAudioCaHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
 #endif
 
         /*
-         * Release the device and delete the critsect.
+         * Delete the critsect and we're done.
          */
-        pStreamCA->Unit.pDevice = NULL; /** @todo This bugger must be refcounted! */
-
         RTCritSectDelete(&pStreamCA->CritSect);
 
-        /*
-         * Done.
-         */
         ASMAtomicWriteU32(&pStreamCA->enmInitState, COREAUDIOINITSTATE_UNINIT);
     }
     else
