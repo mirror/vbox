@@ -333,6 +333,8 @@ DECLINLINE(int) audioTestManifestWriteData(PAUDIOTESTSET pSet, const void *pvDat
  */
 static int audioTestManifestWriteV(PAUDIOTESTSET pSet, const char *pszFormat, va_list args)
 {
+    /** @todo r=bird: Use RTStrmOpen + RTStrmPrintf instead of this slow
+     *        do-it-all-yourself stuff. */
     char *psz = NULL;
     if (RTStrAPrintfV(&psz, pszFormat, args) == -1)
         return VERR_NO_MEMORY;
@@ -395,14 +397,7 @@ static int audioTestManifestWriteSectionHdr(PAUDIOTESTSET pSet, const char *pszS
     va_start(va, pszSection);
 
     /** @todo Keep it as simple as possible for now. Improve this later. */
-    int rc = audioTestManifestWrite(pSet, "[");
-    AssertRC(rc);
-
-    rc = audioTestManifestWriteV(pSet, pszSection, va);
-    AssertRC(rc);
-
-    rc = audioTestManifestWrite(pSet, "]\n");
-    AssertRC(rc);
+    int rc = audioTestManifestWrite(pSet, "[%N]", pszSection, &va);
 
     va_end(va);
 
@@ -603,8 +598,8 @@ DECLINLINE(int) audioTestSetGetObjPath(PAUDIOTESTSET pSet, char *pszPathAbs, siz
  *
  * @returns VBox status code.
  * @param   pSet                Test set to create.
- * @param   pszPath             Absolute path to use for the test set's temporary directory.
- *                              If NULL, the OS' temporary directory will be used.
+ * @param   pszPath             Where to store the set set data.  If NULL, the
+ *                              temporary directory will be used.
  * @param   pszTag              Tag name to use for this test set.
  */
 int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag)
@@ -614,9 +609,12 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
     int rc = AudioTestCopyOrGenTag(pSet->szTag, sizeof(pSet->szTag), pszTag);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Test set directory.
+     */
     if (pszPath)
     {
-        rc = RTStrCopy(pSet->szPathAbs, sizeof(pSet->szPathAbs), pszPath);
+        rc = RTPathAbs(pszPath, pSet->szPathAbs, sizeof(pSet->szPathAbs));
         AssertRCReturn(rc, rc);
 
         rc = AudioTestPathCreate(pSet->szPathAbs, sizeof(pSet->szPathAbs), pSet->szTag);
@@ -625,62 +623,54 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
         rc = AudioTestPathCreateTemp(pSet->szPathAbs, sizeof(pSet->szPathAbs), pSet->szTag);
     AssertRCReturn(rc, rc);
 
-    if (RT_SUCCESS(rc))
-    {
-        char szManifest[RTPATH_MAX];
-        rc = RTStrCopy(szManifest, sizeof(szManifest), pSet->szPathAbs);
-        AssertRCReturn(rc, rc);
+    /*
+     * Create the manifest file.
+     */
+    char szTmp[RTPATH_MAX];
+    rc = RTPathJoin(szTmp, sizeof(szTmp), pSet->szPathAbs, AUDIOTEST_MANIFEST_FILE_STR);
+    AssertRCReturn(rc, rc);
 
-        rc = RTPathAppend(szManifest, sizeof(szManifest), AUDIOTEST_MANIFEST_FILE_STR);
-        AssertRCReturn(rc, rc);
+    rc = RTFileOpen(&pSet->f.hFile, szTmp, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    AssertRCReturn(rc, rc);
 
-        rc = RTFileOpen(&pSet->f.hFile, szManifest,
-                        RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
-        AssertRCReturn(rc, rc);
+    rc = audioTestManifestWriteSectionHdr(pSet, "header");
+    AssertRCReturn(rc, rc);
 
-        rc = audioTestManifestWriteSectionHdr(pSet, "header");
-        AssertRCReturn(rc, rc);
+    rc = audioTestManifestWrite(pSet, "magic=vkat_ini\n"); /* VKAT Manifest, .INI-style. */
+    AssertRCReturn(rc, rc);
+    rc = audioTestManifestWrite(pSet, "ver=%d\n", AUDIOTEST_MANIFEST_VER);
+    AssertRCReturn(rc, rc);
+    rc = audioTestManifestWrite(pSet, "tag=%s\n", pSet->szTag);
+    AssertRCReturn(rc, rc);
 
-        rc = audioTestManifestWrite(pSet, "magic=vkat_ini\n"); /* VKAT Manifest, .INI-style. */
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "ver=%d\n", AUDIOTEST_MANIFEST_VER);
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "tag=%s\n", pSet->szTag);
-        AssertRCReturn(rc, rc);
+    AssertCompile(sizeof(szTmp) > RTTIME_STR_LEN);
+    RTTIMESPEC Now;
+    rc = audioTestManifestWrite(pSet, "date_created=%s\n", RTTimeSpecToString(RTTimeNow(&Now), szTmp, sizeof(szTmp)));
+    AssertRCReturn(rc, rc);
 
-        char szVal[64];
-        RTTIMESPEC time;
-        if (!RTTimeSpecToString(RTTimeNow(&time), szVal, sizeof(szVal)))
-            AssertFailedReturn(VERR_BUFFER_OVERFLOW);
+    RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp)); /* do NOT return on failure. */
+    rc = audioTestManifestWrite(pSet, "os_product=%s\n", szTmp);
+    AssertRCReturn(rc, rc);
 
-        rc = audioTestManifestWrite(pSet, "date_created=%s\n", szVal);
-        AssertRCReturn(rc, rc);
+    RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp)); /* do NOT return on failure. */
+    rc = audioTestManifestWrite(pSet, "os_rel=%s\n", szTmp);
+    AssertRCReturn(rc, rc);
 
-        rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szVal, sizeof(szVal));
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "os_product=%s\n", szVal);
-        AssertRCReturn(rc, rc);
-        rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szVal, sizeof(szVal));
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "os_rel=%s\n", szVal);
-        AssertRCReturn(rc, rc);
-        rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szVal, sizeof(szVal));
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "os_ver=%s\n", szVal);
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "vbox_ver=%s r%u %s (%s %s)\n",
-                                      VBOX_VERSION_STRING, RTBldCfgRevision(),
-                                      RTBldCfgTargetDotArch(), __DATE__, __TIME__);
-        AssertRCReturn(rc, rc);
+    RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp)); /* do NOT return on failure. */
+    rc = audioTestManifestWrite(pSet, "os_ver=%s\n", szTmp);
+    AssertRCReturn(rc, rc);
 
-        rc = audioTestManifestWrite(pSet, "test_count=");
-        AssertRCReturn(rc, rc);
-        pSet->offTestCount = audioTestManifestGetOffsetAbs(pSet);
-        rc = audioTestManifestWrite(pSet, "0000\n"); /* A bit messy, but does the trick for now. */
-        AssertRCReturn(rc, rc);
+    rc = audioTestManifestWrite(pSet, "vbox_ver=%s r%u %s (%s %s)\n",
+                                VBOX_VERSION_STRING, RTBldCfgRevision(), RTBldCfgTargetDotArch(), __DATE__, __TIME__);
+    AssertRCReturn(rc, rc);
 
-        pSet->enmMode = AUDIOTESTSETMODE_TEST;
-    }
+    rc = audioTestManifestWrite(pSet, "test_count=");
+    AssertRCReturn(rc, rc);
+    pSet->offTestCount = audioTestManifestGetOffsetAbs(pSet);
+    rc = audioTestManifestWrite(pSet, "0000\n"); /* A bit messy, but does the trick for now. */
+    AssertRCReturn(rc, rc);
+
+    pSet->enmMode = AUDIOTESTSETMODE_TEST;
 
     return rc;
 }
