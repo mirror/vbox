@@ -326,6 +326,8 @@ typedef enum PDMAUDIODIR
 #define PDMAUDIOHOSTDEV_F_LOCKED            RT_BIT_32(5)
 /** The device is present but not in an alive state (dead). */
 #define PDMAUDIOHOSTDEV_F_DEAD              RT_BIT_32(6)
+/** Set if the PDMAUDIOHOSTDEV::pszId is allocated. */
+#define PDMAUDIOHOSTDEV_F_ID_ALLOC          RT_BIT_32(30)
 /** Set if the extra backend specific data cannot be duplicated. */
 #define PDMAUDIOHOSTDEV_F_NO_DUP            RT_BIT_32(31)
 /** @} */
@@ -376,9 +378,11 @@ typedef struct PDMAUDIOHOSTDEV
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
     uint8_t             abAlignment[ARCH_BITS == 32 ? 2 + 12 : 2];
-    /** Device identifier, OS specific, can be NULL.  It it isn't, it'll point to
-     *  the non-public part (or into szName if creative). */
-    const char         *pszId;
+    /** Device identifier, OS specific, can be NULL.
+     * This can either point into some non-public part of this structure or to a
+     * RTStrAlloc allocation.  PDMAUDIOHOSTDEV_F_ID_ALLOC is set in the latter
+     * case. */
+    char               *pszId;
     /** Friendly name of the device, if any. Could be truncated. */
     char                szName[64];
 } PDMAUDIOHOSTDEV;

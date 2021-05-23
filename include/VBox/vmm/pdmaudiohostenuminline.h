@@ -93,6 +93,12 @@ DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
         pDev->uMagic = ~PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = 0;
 
+        if (pDev->fFlags & PDMAUDIOHOSTDEV_F_ID_ALLOC)
+        {
+            RTStrFree(pDev->pszId);
+            pDev->pszId = NULL;
+        }
+
         RTMemFree(pDev);
     }
 }
@@ -119,6 +125,12 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PCPDMAUDIOHOSTDEV pDev, bool fOn
         memcpy(pDevDup, pDev, cbToDup);
         RTListInit(&pDevDup->ListEntry);
         pDevDup->cbSelf = cbToDup;
+        if (pDev->pszId)
+        {
+            pDevDup->fFlags |= PDMAUDIOHOSTDEV_F_ID_ALLOC;
+            pDevDup->pszId   = RTStrDup(pDev->pszId);
+            AssertReturnStmt(pDevDup->pszId, RTMemFree(pDevDup), NULL);
+        }
     }
 
     return pDevDup;
@@ -321,7 +333,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
 
 /** The max string length for all PDMAUDIOHOSTDEV_F_XXX.
  * @sa PDMAudioHostDevFlagsToString */
-#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN    sizeof("DEFAULT_OUT DEFAULT_IN HOTPLUG BUGGY IGNORE LOCKED DEAD NO_DUP ")
+#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN sizeof("DEFAULT_OUT DEFAULT_IN HOTPLUG BUGGY IGNORE LOCKED DEAD ID_ALLOC NO_DUP ")
 
 /**
  * Converts an audio device flags to a string.
@@ -338,12 +350,13 @@ DECLINLINE(const char *) PDMAudioHostDevFlagsToString(char pszDst[PDMAUDIOHOSTDE
     {
         { RT_STR_TUPLE("DEFAULT_OUT "), PDMAUDIOHOSTDEV_F_DEFAULT_OUT },
         { RT_STR_TUPLE("DEFAULT_IN "),  PDMAUDIOHOSTDEV_F_DEFAULT_IN },
-        { RT_STR_TUPLE("HOTPLUG "), PDMAUDIOHOSTDEV_F_HOTPLUG },
-        { RT_STR_TUPLE("BUGGY "),   PDMAUDIOHOSTDEV_F_BUGGY   },
-        { RT_STR_TUPLE("IGNORE "),  PDMAUDIOHOSTDEV_F_IGNORE  },
-        { RT_STR_TUPLE("LOCKED "),  PDMAUDIOHOSTDEV_F_LOCKED  },
-        { RT_STR_TUPLE("DEAD "),    PDMAUDIOHOSTDEV_F_DEAD    },
-        { RT_STR_TUPLE("NO_DUP "),  PDMAUDIOHOSTDEV_F_NO_DUP  },
+        { RT_STR_TUPLE("HOTPLUG "),     PDMAUDIOHOSTDEV_F_HOTPLUG },
+        { RT_STR_TUPLE("BUGGY "),       PDMAUDIOHOSTDEV_F_BUGGY   },
+        { RT_STR_TUPLE("IGNORE "),      PDMAUDIOHOSTDEV_F_IGNORE  },
+        { RT_STR_TUPLE("LOCKED "),      PDMAUDIOHOSTDEV_F_LOCKED  },
+        { RT_STR_TUPLE("DEAD "),        PDMAUDIOHOSTDEV_F_DEAD    },
+        { RT_STR_TUPLE("ID_ALLOC "),    PDMAUDIOHOSTDEV_F_ID_ALLOC  },
+        { RT_STR_TUPLE("NO_DUP "),      PDMAUDIOHOSTDEV_F_NO_DUP  },
     };
     size_t offDst = 0;
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
