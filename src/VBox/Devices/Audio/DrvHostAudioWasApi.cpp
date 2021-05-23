@@ -1501,8 +1501,10 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                     PDRVHOSTAUDIOWASDEV pDev = (PDRVHOSTAUDIOWASDEV)PDMAudioHostDevAlloc(cbDev);
                     if (pDev)
                     {
-                        pDev->Core.enmUsage = enmType == eRender ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN;
-                        pDev->Core.enmType  = PDMAUDIODEVICETYPE_BUILTIN;
+                        pDev->Core.enmType    = PDMAUDIODEVICETYPE_BUILTIN;
+                        pDev->Core.enmUsage   = enmType == eRender ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN;
+                        if (fDefault)
+                            pDev->Core.fFlags = enmType == eRender ? PDMAUDIOHOSTDEV_F_DEFAULT_OUT : PDMAUDIOHOSTDEV_F_DEFAULT_IN;
                         if (enmType == eRender)
                             pDev->Core.cMaxOutputChannels = pFormat->nChannels;
                         else

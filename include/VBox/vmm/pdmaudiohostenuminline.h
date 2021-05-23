@@ -90,7 +90,6 @@ DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
     if (pDev)
     {
         Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
-        Assert(pDev->cRefCount == 0);
         pDev->uMagic = ~PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = 0;
 
@@ -191,7 +190,7 @@ DECLINLINE(void) PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIOHOST
 /**
  * Appends copies of matching host device entries from one to another enumeration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pDstDevEnm      The target to append copies of matching device to.
  * @param   pSrcDevEnm      The source to copy matching devices from.
  * @param   enmUsage        The usage to match for copying.
@@ -226,6 +225,37 @@ DECLINLINE(int) PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOS
 }
 
 /**
+ * Moves all the device entries from one enumeration to another, destroying the
+ * former.
+ *
+ * @returns VBox status code.
+ * @param   pDstDevEnm          The target to put move @a pSrcDevEnm to.  This
+ *                              does not need to be initialized, but if it is it
+ *                              must not have any device entries.
+ * @param   pSrcDevEnm          The source to move from.  This will be empty
+ *                              upon successful return.
+ */
+DECLINLINE(int) PDMAudioHostEnumMove(PPDMAUDIOHOSTENUM pDstDevEnm, PPDMAUDIOHOSTENUM pSrcDevEnm)
+{
+    AssertPtrReturn(pDstDevEnm, VERR_INVALID_POINTER);
+    AssertReturn(pDstDevEnm->uMagic != PDMAUDIOHOSTENUM_MAGIC || pDstDevEnm->cDevices == 0, VERR_WRONG_ORDER);
+
+    AssertPtrReturn(pSrcDevEnm, VERR_INVALID_POINTER);
+    AssertReturn(pSrcDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, VERR_WRONG_ORDER);
+
+    pDstDevEnm->uMagic   = PDMAUDIOHOSTENUM_MAGIC;
+    RTListInit(&pDstDevEnm->LstDevices);
+    pDstDevEnm->cDevices = pSrcDevEnm->cDevices;
+    if (pSrcDevEnm->cDevices)
+    {
+        PPDMAUDIOHOSTDEV pCur;
+        while ((pCur = RTListRemoveFirst(&pSrcDevEnm->LstDevices, PDMAUDIOHOSTDEV, ListEntry)) != NULL)
+            RTListAppend(&pDstDevEnm->LstDevices, &pCur->ListEntry);
+    }
+    return VINF_SUCCESS;
+}
+
+/**
  * Get the default device with the given usage.
  *
  * This assumes that only one default device per usage is set, if there should
@@ -235,21 +265,27 @@ DECLINLINE(int) PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOS
  * @param   pDevEnm     Device enumeration to get default device for.
  * @param   enmUsage    Usage to get default device for.
  *                      Pass PDMAUDIODIR_INVALID to get the first device with
- *                      PDMAUDIOHOSTDEV_F_DEFAULT set.
+ *                      either PDMAUDIOHOSTDEV_F_DEFAULT_OUT or
+ *                      PDMAUDIOHOSTDEV_F_DEFAULT_IN set.
  */
 DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage)
 {
     AssertPtrReturn(pDevEnm, NULL);
     AssertReturn(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, NULL);
 
+    Assert(enmUsage == PDMAUDIODIR_IN || enmUsage == PDMAUDIODIR_OUT || enmUsage == PDMAUDIODIR_INVALID);
+    uint32_t const fFlags = enmUsage == PDMAUDIODIR_IN      ? PDMAUDIOHOSTDEV_F_DEFAULT_IN
+                          : enmUsage == PDMAUDIODIR_OUT     ? PDMAUDIOHOSTDEV_F_DEFAULT_OUT
+                          : enmUsage == PDMAUDIODIR_INVALID ? PDMAUDIOHOSTDEV_F_DEFAULT_IN | PDMAUDIOHOSTDEV_F_DEFAULT_OUT
+                          : 0;
+
     PPDMAUDIOHOSTDEV pDev;
     RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
     {
-        if (pDev->fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
+        if (pDev->fFlags & fFlags)
         {
-            if (   enmUsage == pDev->enmUsage
-                || enmUsage == PDMAUDIODIR_INVALID)
-                return pDev;
+            Assert(pDev->enmUsage == enmUsage || pDev->enmUsage == PDMAUDIODIR_DUPLEX || enmUsage == PDMAUDIODIR_INVALID);
+            return pDev;
         }
     }
 
@@ -285,7 +321,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
 
 /** The max string length for all PDMAUDIOHOSTDEV_F_XXX.
  * @sa PDMAudioHostDevFlagsToString */
-#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN    (7 * 8)
+#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN    sizeof("DEFAULT_OUT DEFAULT_IN HOTPLUG BUGGY IGNORE LOCKED DEAD NO_DUP ")
 
 /**
  * Converts an audio device flags to a string.
@@ -300,7 +336,8 @@ DECLINLINE(const char *) PDMAudioHostDevFlagsToString(char pszDst[PDMAUDIOHOSTDE
 {
     static const struct { const char *pszMnemonic; uint32_t cchMnemonic; uint32_t fFlag; } s_aFlags[] =
     {
-        { RT_STR_TUPLE("DEFAULT "), PDMAUDIOHOSTDEV_F_DEFAULT },
+        { RT_STR_TUPLE("DEFAULT_OUT "), PDMAUDIOHOSTDEV_F_DEFAULT_OUT },
+        { RT_STR_TUPLE("DEFAULT_IN "),  PDMAUDIOHOSTDEV_F_DEFAULT_IN },
         { RT_STR_TUPLE("HOTPLUG "), PDMAUDIOHOSTDEV_F_HOTPLUG },
         { RT_STR_TUPLE("BUGGY "),   PDMAUDIOHOSTDEV_F_BUGGY   },
         { RT_STR_TUPLE("IGNORE "),  PDMAUDIOHOSTDEV_F_IGNORE  },

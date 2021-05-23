@@ -412,8 +412,10 @@ static void drvHostAudioPaEnumAddDevice(PPULSEAUDIOENUMCBCTX pCbCtx, PDMAUDIODIR
         pDev->Core.enmUsage           = enmDir;
         pDev->Core.enmType            = RTStrIStr(pszDesc, "built-in") != NULL
                                       ? PDMAUDIODEVICETYPE_BUILTIN : PDMAUDIODEVICETYPE_UNKNOWN;
-        pDev->Core.fFlags             = RTStrCmp(pszName, pszDefaultName) == 0
-                                      ? PDMAUDIOHOSTDEV_F_DEFAULT  : PDMAUDIOHOSTDEV_F_NONE;
+        if (RTStrCmp(pszName, pszDefaultName) != 0)
+            pDev->Core.fFlags         = PDMAUDIOHOSTDEV_F_NONE;
+        else
+            pDev->Core.fFlags         = enmDir == PDMAUDIODIR_IN ? PDMAUDIOHOSTDEV_F_DEFAULT_IN : PDMAUDIOHOSTDEV_F_DEFAULT_OUT;
         pDev->Core.cMaxInputChannels  = cChannelsInput;
         pDev->Core.cMaxOutputChannels = cChannelsOutput;
         RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName),

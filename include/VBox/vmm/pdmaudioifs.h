@@ -312,18 +312,20 @@ typedef enum PDMAUDIODIR
  * @{  */
 /** No flags set. */
 #define PDMAUDIOHOSTDEV_F_NONE              UINT32_C(0)
-/** The device marks the default device within the host OS. */
-#define PDMAUDIOHOSTDEV_F_DEFAULT           RT_BIT_32(0)
+/** The default input (capture/recording) device (for the user). */
+#define PDMAUDIOHOSTDEV_F_DEFAULT_IN        RT_BIT_32(0)
+/** The default output (playback) device (for the user). */
+#define PDMAUDIOHOSTDEV_F_DEFAULT_OUT       RT_BIT_32(1)
 /** The device can be removed at any time and we have to deal with it. */
-#define PDMAUDIOHOSTDEV_F_HOTPLUG           RT_BIT_32(1)
+#define PDMAUDIOHOSTDEV_F_HOTPLUG           RT_BIT_32(2)
 /** The device is known to be buggy and needs special treatment. */
-#define PDMAUDIOHOSTDEV_F_BUGGY             RT_BIT_32(2)
+#define PDMAUDIOHOSTDEV_F_BUGGY             RT_BIT_32(3)
 /** Ignore the device, no matter what. */
-#define PDMAUDIOHOSTDEV_F_IGNORE            RT_BIT_32(3)
+#define PDMAUDIOHOSTDEV_F_IGNORE            RT_BIT_32(4)
 /** The device is present but marked as locked by some other application. */
-#define PDMAUDIOHOSTDEV_F_LOCKED            RT_BIT_32(4)
+#define PDMAUDIOHOSTDEV_F_LOCKED            RT_BIT_32(5)
 /** The device is present but not in an alive state (dead). */
-#define PDMAUDIOHOSTDEV_F_DEAD              RT_BIT_32(5)
+#define PDMAUDIOHOSTDEV_F_DEAD              RT_BIT_32(6)
 /** Set if the extra backend specific data cannot be duplicated. */
 #define PDMAUDIOHOSTDEV_F_NO_DUP            RT_BIT_32(31)
 /** @} */
@@ -369,26 +371,14 @@ typedef struct PDMAUDIOHOSTDEV
     PDMAUDIODIR         enmUsage;
     /** Device flags, PDMAUDIOHOSTDEV_F_XXX. */
     uint32_t            fFlags;
-    /** Reference count indicating how many audio streams currently are relying on this device. */
-    uint8_t             cRefCount;
     /** Maximum number of input audio channels the device supports. */
     uint8_t             cMaxInputChannels;
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
-    uint8_t             bAlignment;
-    /** Device type union, based on enmType. */
-    union
-    {
-        /** USB type specifics. */
-        struct
-        {
-            /** Vendor ID. */
-            uint16_t    idVendor;
-            /** Product ID. */
-            uint16_t    idProduct;
-        } USB;
-        uint64_t        uPadding[ARCH_BITS >= 64 ? 3 : 4];
-    } Type;
+    uint8_t             abAlignment[ARCH_BITS == 32 ? 2 + 12 : 2];
+    /** Device identifier, OS specific, can be NULL.  It it isn't, it'll point to
+     *  the non-public part (or into szName if creative). */
+    const char         *pszId;
     /** Friendly name of the device, if any. Could be truncated. */
     char                szName[64];
 } PDMAUDIOHOSTDEV;
@@ -399,7 +389,7 @@ typedef PDMAUDIOHOSTDEV *PPDMAUDIOHOSTDEV;
 typedef PDMAUDIOHOSTDEV const *PCPDMAUDIOHOSTDEV;
 
 /** Magic value for PDMAUDIOHOSTDEV.  */
-#define PDMAUDIOHOSTDEV_MAGIC       PDM_VERSION_MAKE(0xa0d0, 1, 0)
+#define PDMAUDIOHOSTDEV_MAGIC       PDM_VERSION_MAKE(0xa0d0, 2, 0)
 
 
 /**
@@ -1524,7 +1514,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "ad56b303-0c1f-4b79-9bd1-4ec04ae08c4f"
+#define PDMIHOSTAUDIO_IID                           "a6b33abc-1393-4548-92ab-a308d54de1e8"
 
 
 /** Pointer to a audio notify from host interface. */

@@ -716,19 +716,21 @@ static DECLCALLBACK(int) drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool 
         if (RT_SUCCESS(rc))
         {
             if (fLog)
+            {
                 LogRel(("Audio: Found %RU16 devices for driver '%s'\n", DevEnum.cDevices, pThis->BackendCfg.szName));
 
-            PPDMAUDIOHOSTDEV pDev;
-            RTListForEach(&DevEnum.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
-            {
-                if (fLog)
+                PPDMAUDIOHOSTDEV pDev;
+                RTListForEach(&DevEnum.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
                 {
                     char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
-                    LogRel(("Audio: Device '%s':\n", pDev->szName));
-                    LogRel(("Audio:   Usage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage)));
-                    LogRel(("Audio:   Flags           = %s\n",   PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags)));
-                    LogRel(("Audio:   Input channels  = %RU8\n", pDev->cMaxInputChannels));
-                    LogRel(("Audio:   Output channels = %RU8\n", pDev->cMaxOutputChannels));
+                    LogRel(("Audio: Device '%s'%s%s%s:\n"
+                            "Audio:   Usage           = %s\n"
+                            "Audio:   Flags           = %s\n"
+                            "Audio:   Input channels  = %RU8\n"
+                            "Audio:   Output channels = %RU8\n",
+                            pDev->szName, pDev->pszId ? " (ID '" : "", pDev->pszId ? pDev->pszId : "", pDev->pszId ? "')" : "",
+                            PDMAudioDirGetName(pDev->enmUsage), PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags),
+                            pDev->cMaxInputChannels, pDev->cMaxOutputChannels));
                 }
             }
 
