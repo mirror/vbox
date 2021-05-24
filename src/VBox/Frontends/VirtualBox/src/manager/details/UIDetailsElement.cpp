@@ -87,17 +87,8 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     : UIDetailsItem(pParent)
     , m_pSet(pParent)
     , m_enmType(enmType)
-#ifdef VBOX_WS_MAC
-    , m_iDefaultToneStart(145)
-    , m_iDefaultToneFinal(155)
-    , m_iHoverToneStart(115)
-    , m_iHoverToneFinal(125)
-#else
-    , m_iDefaultToneStart(160)
-    , m_iDefaultToneFinal(190)
-    , m_iHoverToneStart(160)
-    , m_iHoverToneFinal(190)
-#endif
+    , m_iDefaultDarknessStart(100)
+    , m_iDefaultDarknessFinal(105)
     , m_fHovered(false)
     , m_fNameHovered(false)
     , m_pHoveringMachine(0)
@@ -105,7 +96,7 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     , m_pHoveringAnimationBackward(0)
     , m_iAnimationDuration(300)
     , m_iDefaultValue(0)
-    , m_iHoveredValue(255)
+    , m_iHoveredValue(100)
     , m_iAnimatedValue(m_iDefaultValue)
     , m_pButton(0)
     , m_fClosed(!fOpened)
@@ -1464,27 +1455,26 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
                          ? QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeadHeight + m_iAdditionalHeight))
                          : optionRect;
 
-    /* Acquire palette: */
-    const QPalette pal = QApplication::palette();
+    /* Acquire background color: */
+    QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
 
     /* Paint default background: */
-    const QColor defaultColor = pal.color(QPalette::Active, QPalette::Mid);
-    const QColor dcTone1 = defaultColor.lighter(m_iDefaultToneFinal);
-    const QColor dcTone2 = defaultColor.lighter(m_iDefaultToneStart);
-    QLinearGradient gradientDefault(fullRect.topLeft(), fullRect.bottomLeft());
-    gradientDefault.setColorAt(0, dcTone1);
-    gradientDefault.setColorAt(1, dcTone2);
+    QLinearGradient gradientDefault(fullRect.topLeft(), fullRect.bottomRight());
+    gradientDefault.setColorAt(0, backgroundColor.darker(m_iDefaultDarknessStart));
+    gradientDefault.setColorAt(1, backgroundColor.darker(m_iDefaultDarknessFinal));
     pPainter->fillRect(fullRect, gradientDefault);
 
     /* If element is hovered: */
-    if (m_fHovered)
+    if (animatedValue())
     {
+        /* Acquire header color: */
+        QColor headColor = backgroundColor.lighter(130);
+
         /* Paint hovered background: */
-        const QColor hoveredColor = pal.color(QPalette::Active, QPalette::Highlight);
-        QColor hcTone1 = hoveredColor.lighter(m_iHoverToneFinal);
-        QColor hcTone2 = hoveredColor.lighter(m_iHoverToneStart);
-        hcTone1.setAlpha(m_iAnimatedValue);
-        hcTone2.setAlpha(m_iAnimatedValue);
+        QColor hcTone1 = headColor;
+        QColor hcTone2 = headColor;
+        hcTone1.setAlpha(255 * animatedValue() / 100);
+        hcTone2.setAlpha(0);
         QLinearGradient gradientHovered(headRect.topLeft(), headRect.bottomLeft());
         gradientHovered.setColorAt(0, hcTone1);
         gradientHovered.setColorAt(1, hcTone2);

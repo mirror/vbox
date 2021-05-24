@@ -350,14 +350,10 @@ private:
         /** Holds the text font. */
         QFont  m_textFont;
 
-        /** Holds the start default tone. */
-        int m_iDefaultToneStart;
-        /** Holds the final default tone. */
-        int m_iDefaultToneFinal;
-        /** Holds the start hover tone. */
-        int m_iHoverToneStart;
-        /** Holds the final hover tone. */
-        int m_iHoverToneFinal;
+        /** Holds the start default darkness. */
+        int m_iDefaultDarknessStart;
+        /** Holds the final default darkness. */
+        int m_iDefaultDarknessFinal;
 
         /** Holds whether element is hovered. */
         bool                m_fHovered;
