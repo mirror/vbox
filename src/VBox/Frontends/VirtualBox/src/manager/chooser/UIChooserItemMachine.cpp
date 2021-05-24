@@ -544,21 +544,28 @@ void UIChooserItemMachine::sltHandleWindowRemapped()
 void UIChooserItemMachine::prepare()
 {
     /* Color tones: */
-#ifdef VBOX_WS_MAC
-    m_iDefaultLightnessStart = 155;
-    m_iDefaultLightnessFinal = 145;
+#if defined(VBOX_WS_MAC)
+    m_iDefaultLightnessStart = 120;
+    m_iDefaultLightnessFinal = 110;
     m_iHoverLightnessStart = 125;
     m_iHoverLightnessFinal = 115;
     m_iHighlightLightnessStart = 115;
     m_iHighlightLightnessFinal = 105;
-#else /* VBOX_WS_MAC */
-    m_iDefaultLightnessStart = 190;
-    m_iDefaultLightnessFinal = 160;
+#elif defined(VBOX_WS_WIN)
+    m_iDefaultLightnessStart = 120;
+    m_iDefaultLightnessFinal = 110;
     m_iHoverLightnessStart = 190;
     m_iHoverLightnessFinal = 160;
     m_iHighlightLightnessStart = 160;
     m_iHighlightLightnessFinal = 130;
-#endif /* !VBOX_WS_MAC */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    m_iDefaultLightnessStart = 110;
+    m_iDefaultLightnessFinal = 100;
+    m_iHoverLightnessStart = 190;
+    m_iHoverLightnessFinal = 160;
+    m_iHighlightLightnessStart = 160;
+    m_iHighlightLightnessFinal = 130;
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Fonts: */
     m_nameFont = font();
@@ -976,7 +983,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     else
     {
         /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Window);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessStart));

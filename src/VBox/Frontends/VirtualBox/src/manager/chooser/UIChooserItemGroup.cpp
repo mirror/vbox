@@ -49,8 +49,9 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
     , m_pScene(pScene)
     , m_iRootBackgroundDarknessStart(0)
     , m_iRootBackgroundDarknessFinal(0)
+    , m_iItemBackgroundDarknessStart(0)
+    , m_iItemBackgroundDarknessFinal(0)
     , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
@@ -71,8 +72,9 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGrou
     , m_pScene(0)
     , m_iRootBackgroundDarknessStart(0)
     , m_iRootBackgroundDarknessFinal(0)
+    , m_iItemBackgroundDarknessStart(0)
+    , m_iItemBackgroundDarknessFinal(0)
     , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
@@ -1047,7 +1049,8 @@ void UIChooserItemGroup::prepare()
     /* Color tones: */
     m_iRootBackgroundDarknessStart = 115;
     m_iRootBackgroundDarknessFinal = 150;
-    m_iHeaderDarkness = 110;
+    m_iItemBackgroundDarknessStart = 100;
+    m_iItemBackgroundDarknessFinal = 105;
 
     /* Prepare self: */
     m_nameFont = font();
@@ -1610,36 +1613,38 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     }
     else
     {
-        /* Prepare color: */
-        const QColor backgroundColor = QApplication::palette().color(QPalette::Active,
-                                                                     model()->selectedItems().contains(this) ?
-                                                                     QPalette::Highlight : QPalette::Window);
+        /* Acquire background color: */
+        const QColor backgroundColor = model()->selectedItems().contains(this)
+                                     ? QApplication::palette().color(QPalette::Active, QPalette::Highlight)
+                                     : QApplication::palette().color(QPalette::Active, QPalette::Window);
 
-        /* Prepare variables: */
-        const int iMarginV = data(GroupItemData_MarginV).toInt();
-        const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
+        /* Paint default background: */
+        QLinearGradient gradientDefault(rect.topRight(), rect.bottomLeft());
+        gradientDefault.setColorAt(0, backgroundColor.darker(m_iItemBackgroundDarknessStart));
+        gradientDefault.setColorAt(1, backgroundColor.darker(m_iItemBackgroundDarknessFinal));
+        pPainter->fillRect(rect, gradientDefault);
 
-        /* Calculate top rectangle: */
-        QRect tRect = rect;
-        if (nodeToGroupType()->isOpened())
-            tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
-
-        /* Prepare top gradient: */
-        QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(1, backgroundColor.lighter(100 + (double)animatedValue() / 100 * 30));
-        tGradient.setColorAt(0, backgroundColor);
-
-        /* Fill top rectangle: */
-        pPainter->fillRect(tRect, tGradient);
-
-        /* Calculate bottom rectangle: */
-        if (nodeToGroupType()->isOpened())
+        /* If element is hovered: */
+        if (animatedValue())
         {
-            QRect bRect = rect;
-            bRect.setTop(bRect.top() + iFullHeaderHeight);
+            /* Calculate header rectangle: */
+            const int iMarginV = data(GroupItemData_MarginV).toInt();
+            const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
+            QRect headRect = rect;
+            headRect.setHeight(iFullHeaderHeight);
 
-            /* Fill top rectangle: */
-            pPainter->fillRect(bRect, backgroundColor);
+            /* Acquire header color: */
+            QColor headColor = backgroundColor.lighter(130);
+
+            /* Paint hovered background: */
+            QColor hcTone1 = headColor;
+            QColor hcTone2 = headColor;
+            hcTone1.setAlpha(255 * animatedValue() / 100);
+            hcTone2.setAlpha(0);
+            QLinearGradient gradientHovered(headRect.topLeft(), headRect.bottomLeft());
+            gradientHovered.setColorAt(0, hcTone1);
+            gradientHovered.setColorAt(1, hcTone2);
+            pPainter->fillRect(headRect, gradientHovered);
         }
 
         /* Paint drag token UP? */
@@ -1688,7 +1693,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
     /* Prepare color: */
-    const QColor frameColor = QApplication::palette().color(QPalette::Active, QPalette::Highlight).darker(headerDarkness() + 10);
+    const QColor frameColor = QApplication::palette().color(QPalette::Active, QPalette::Highlight).darker(110);
 
     /* Create/assign pen: */
     QPen pen(frameColor);
@@ -1732,7 +1737,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         const QPalette pal = QApplication::palette();
 
         /* Get background color: */
-        const QColor background = pal.color(QPalette::Active, QPalette::Highlight).darker(headerDarkness());
+        const QColor background = pal.color(QPalette::Active, QPalette::Highlight);
 
         /* Get foreground color: */
         const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);

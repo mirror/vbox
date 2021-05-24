@@ -31,8 +31,10 @@
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode)
     : UIChooserItem(pParent, pNode)
-    , m_iDefaultLightnessStart(0)
-    , m_iDefaultLightnessFinal(0)
+#ifdef VBOX_WS_MAC
+    , m_iDefaultDarknessStart(0)
+    , m_iDefaultDarknessFinal(0)
+#endif
     , m_iHoverLightnessStart(0)
     , m_iHoverLightnessFinal(0)
     , m_iHighlightLightnessStart(0)
@@ -327,21 +329,24 @@ void UIChooserItemGlobal::sltHandleWindowRemapped()
 void UIChooserItemGlobal::prepare()
 {
     /* Color tones: */
-#ifdef VBOX_WS_MAC
-    m_iDefaultLightnessStart = 130;
-    m_iDefaultLightnessFinal = 125;
+#if defined(VBOX_WS_MAC)
+    m_iDefaultDarknessStart = 105;
+    m_iDefaultDarknessFinal = 115;
     m_iHoverLightnessStart = 125;
     m_iHoverLightnessFinal = 115;
     m_iHighlightLightnessStart = 115;
     m_iHighlightLightnessFinal = 105;
-#else /* VBOX_WS_MAC */
-    m_iDefaultLightnessStart = 190;
-    m_iDefaultLightnessFinal = 160;
+#elif defined(VBOX_WS_WIN)
     m_iHoverLightnessStart = 190;
     m_iHoverLightnessFinal = 160;
     m_iHighlightLightnessStart = 160;
     m_iHighlightLightnessFinal = 130;
-#endif /* !VBOX_WS_MAC */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    m_iHoverLightnessStart = 190;
+    m_iHoverLightnessFinal = 160;
+    m_iHighlightLightnessStart = 160;
+    m_iHighlightLightnessFinal = 130;
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Fonts: */
     m_nameFont = font();
@@ -633,17 +638,15 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     {
 #ifdef VBOX_WS_MAC
         /* Prepare color: */
-        const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Window);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessStart));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessFinal));
+        bgGrad.setColorAt(0, backgroundColor.darker(m_iDefaultDarknessStart));
+        bgGrad.setColorAt(1, backgroundColor.darker(m_iDefaultDarknessFinal));
         pPainter->fillRect(rectangle, bgGrad);
 #else
-        /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
-        /* Draw gradient: */
-        pPainter->fillRect(rectangle, backgroundColor);
+        /* Draw simple background: */
+        pPainter->fillRect(rectangle, pal.color(QPalette::Active, QPalette::Window));
 #endif
     }
 

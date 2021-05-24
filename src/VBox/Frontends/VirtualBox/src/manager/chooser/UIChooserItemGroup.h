@@ -254,9 +254,6 @@ private:
         /** Returns abstractly stored data value for certain @a iKey. */
         QVariant data(int iKey) const;
 
-        /** Returns item's header darkness. */
-        int headerDarkness() const { return m_iHeaderDarkness; }
-
         /** Returns additional height. */
         int additionalHeight() const;
         /** Defines @a iAdditionalHeight. */
@@ -327,11 +324,13 @@ private:
         int  m_iRootBackgroundDarknessStart;
         /** Holds root final background darkness. */
         int  m_iRootBackgroundDarknessFinal;
+        /** Holds item start background darkness. */
+        int  m_iItemBackgroundDarknessStart;
+        /** Holds item final background darkness. */
+        int  m_iItemBackgroundDarknessFinal;
 
         /** Holds aditional height. */
         int  m_iAdditionalHeight;
-        /** Holds the header darkness. */
-        int  m_iHeaderDarkness;
 
         /** Holds group children pixmap. */
         QPixmap  m_groupsPixmap;
