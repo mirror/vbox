@@ -2224,10 +2224,12 @@ void UIVirtualBoxManager::prepareMenuBar()
     {
         /* Make sure menu-bar fills own solid background: */
         menuBar()->setAutoFillBackground(true);
-        QPalette pal = QApplication::palette();
-        const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
-        pal.setColor(QPalette::Active, QPalette::Button, color);
-        menuBar()->setPalette(pal);
+# ifdef VBOX_WS_WIN
+        // WORKAROUND:
+        // On Windows we have to override Windows Vista style with style-sheet:
+        menuBar()->setStyleSheet(QString("QMenuBar { background-color: %1; }")
+                                        .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb)));
+# endif
     }
 #endif
 

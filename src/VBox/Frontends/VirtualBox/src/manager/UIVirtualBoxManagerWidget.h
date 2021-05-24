@@ -291,8 +291,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares palette. */
-        void preparePalette();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares connections. */

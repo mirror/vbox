@@ -550,7 +550,6 @@ void UIVirtualBoxManagerWidget::sltSwitchToActivityOverviewPane()
 void UIVirtualBoxManagerWidget::prepare()
 {
     /* Prepare everything: */
-    preparePalette();
     prepareWidgets();
     prepareConnections();
 
@@ -562,19 +561,6 @@ void UIVirtualBoxManagerWidget::prepare()
 
     /* Make sure current Chooser-pane index fetched: */
     sltHandleChooserPaneIndexChange();
-}
-
-void UIVirtualBoxManagerWidget::preparePalette()
-{
-    setAutoFillBackground(true);
-    QPalette pal = QApplication::palette();
-#ifdef VBOX_WS_MAC
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
-#else
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
-#endif
-    pal.setColor(QPalette::Window, color);
-    setPalette(pal);
 }
 
 void UIVirtualBoxManagerWidget::prepareWidgets()
@@ -695,7 +681,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             }
 
             /* Adjust splitter colors according to main widgets it splits: */
-            m_pSplitter->configureColor(QApplication::palette().color(QPalette::Active, QPalette::Midlight).darker(110));
+            m_pSplitter->configureColor(QApplication::palette().color(QPalette::Active, QPalette::Window).darker(130));
             /* Set the initial distribution. The right site is bigger. */
             m_pSplitter->setStretchFactor(0, 2);
             m_pSplitter->setStretchFactor(1, 3);
