@@ -636,8 +636,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultDarknessFinal));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultDarknessStart));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessFinal));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessStart));
         pPainter->fillRect(rectangle, bgGrad);
 #else
         /* Prepare color: */
