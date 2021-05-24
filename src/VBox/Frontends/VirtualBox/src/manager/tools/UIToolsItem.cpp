@@ -867,8 +867,12 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
         /* Get foreground color: */
         const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
         const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
-        const QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
-        const QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+        QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
+        QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+        if (lightText.black() > 128)
+            lightText = QColor(Qt::white);
+        if (darkText.black() < 128)
+            darkText = QColor(Qt::black);
 
         /* Gather foreground color for background one: */
         double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
