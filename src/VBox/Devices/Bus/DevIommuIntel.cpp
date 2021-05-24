@@ -396,6 +396,32 @@ typedef enum DMAREVENTTYPE
 } DMAREVENTTYPE;
 
 
+/**
+ * DMA address map.
+ * This structure holds information about a DMA address translation.
+ */
+typedef struct DMARADDRMAP
+{
+    /** The device ID (bus, device, function). */
+    uint16_t        idDevice;
+    uint16_t        uPadding0;
+    /** The DMA remapping operation request type. */
+    VTDREQTYPE      enmReqType;
+    /** The DMA address being accessed. */
+    uint64_t        uDmaAddr;
+    /** The size of the DMA access (in bytes). */
+    size_t          cbDma;
+    /** The translated system-physical address (HPA). */
+    RTGCPHYS        GCPhysSpa;
+    /** The size of the contiguous translated region (in bytes). */
+    size_t          cbContiguous;
+} DMARADDRMAP;
+/** Pointer to a DMA address map. */
+typedef DMARADDRMAP *PDMARADDRMAP;
+/** Pointer to a const DMA address map. */
+typedef DMARADDRMAP const *PCDMARADDRMAP;
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -680,7 +706,7 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 
 
 /**
- * Returns whether the interrupt remapping fault is qualified or not.
+ * Returns whether the interrupt remapping (IR) fault is qualified or not.
  *
  * @returns @c true if qualified, @c false otherwise.
  * @param   enmIrFault      The interrupt remapping fault condition.
@@ -1299,11 +1325,11 @@ static void dmarPrimaryFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, uint64_
 /**
  * Records an interrupt request fault.
  *
- * @param   pDevIns         The IOMMU device instance.
- * @param   enmDiag         The diagnostic reason.
- * @param   enmIrFault    The interrupt fault reason.
- * @param   idDevice        The device ID (bus, device, function).
- * @param   idxIntr         The interrupt index.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   enmDiag     The diagnostic reason.
+ * @param   enmIrFault  The interrupt fault reason.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   idxIntr     The interrupt index.
  */
 static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT enmIrFault, uint16_t idDevice, uint16_t idxIntr)
 {
@@ -1321,12 +1347,12 @@ static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT e
  * Qualified faults are those that can be suppressed by software using the FPD bit
  * in the IRTE.
  *
- * @param   pDevIns         The IOMMU device instance.
- * @param   enmDiag         The diagnostic reason.
- * @param   enmIrFault    The interrupt fault reason.
- * @param   idDevice        The device ID (bus, device, function).
- * @param   idxIntr         The interrupt index.
- * @param   pIrte           The IRTE that caused this fault.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   enmDiag     The diagnostic reason.
+ * @param   enmIrFault  The interrupt fault reason.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   idxIntr     The interrupt index.
+ * @param   pIrte       The IRTE that caused this fault.
  */
 static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT enmIrFault, uint16_t idDevice,
                                        uint16_t idxIntr, PCVTD_IRTE_T pIrte)
@@ -1751,7 +1777,7 @@ static VBOXSTRICTRC dmarFrcdHiRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint
 
 
 /**
- * Performs a PCI target abort for a DMA remapping operation.
+ * Performs a PCI target abort for a DMA remapping (DR) operation.
  *
  * @param   pDevIns     The IOMMU device instance.
  */
@@ -1767,52 +1793,55 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
- * Validates the table translation mode for a DMA remapping operation.
+ * Handles remapping of DMA address requests in legacy mode.
  *
- * @returns @c true if the TTM is valid, @c false otherwise.
+ * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
- * @param   idDevice        The device ID (bus, device, function).
- * @param   uIova           The I/O virtual address being accessed.
- * @param   enmReqType      The type of the request (for fault recording).
+ * @param   pAddrRemap      The DMA address remap info.
  */
-static bool dmarDrIsTtmValid(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint16_t idDevice, uint64_t uIova, VTDREQTYPE enmReqType)
+static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
 {
-    bool fValid = true;
-    PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
-    uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
-    switch (fTtm)
+    RT_NOREF3(pDevIns, uRtaddrReg, pAddrRemap);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Handles remapping of DMA address requests in scalable mode.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   pAddrRemap      The DMA address remap info.
+ */
+static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
+{
+    PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
     {
-        case VTD_TTM_LEGACY_MODE:
-            break;
-
-        case VTD_TTM_SCALABLE_MODE:
-        {
-            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
-                break;
-            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, idDevice, uIova, enmReqType);
-            fValid = false;
-            break;
-        }
-
-        case VTD_TTM_ABORT_DMA_MODE:
-        {
-            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
-                dmarDrTargetAbort(pDevIns);
-            else
-                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDATFAULT_RTA_1_1, idDevice, uIova, enmReqType);
-            fValid = false;
-            break;
-        }
-
-        default:
-        {
-            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDATFAULT_RTA_1_2, idDevice, uIova, enmReqType);
-            fValid = false;
-            break;
-        }
+        RT_NOREF1(uRtaddrReg);
+        return VERR_NOT_IMPLEMENTED;
     }
-    return fValid;
+
+    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                      pAddrRemap->enmReqType);
+    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+}
+
+
+/**
+ * Reads a root entry from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   idDevice        The device ID (bus, device, function).
+ * @param   pRootEntry      Where to store the read root entry.
+ */
+static int dmarDrReadRootEntry(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint8_t idxEntry, PVTD_ROOT_ENTRY_T pRootEntry)
+{
+    size_t const   cbEntry     = sizeof(*pRootEntry);
+    RTGCPHYS const GCPhysEntry = (uRtaddrReg & VTD_BF_RTADDR_REG_RTA_MASK) + (idxEntry * cbEntry);
+    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysEntry, pRootEntry, cbEntry);
 }
 
 
@@ -1884,11 +1913,51 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
         }
 
-        bool const fTtmValid = dmarDrIsTtmValid(pDevIns, uRtaddrReg, idDevice, uIova, enmReqType);
-        if (!fTtmValid)
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        DMARADDRMAP AddrRemap;
+        AddrRemap.idDevice     = idDevice;
+        AddrRemap.enmReqType   = enmReqType;
+        AddrRemap.uDmaAddr     = uIova;
+        AddrRemap.cbDma        = cbIova;
+        AddrRemap.GCPhysSpa    = NIL_RTGCPHYS;
+        AddrRemap.cbContiguous = 0;
 
-        return VERR_NOT_IMPLEMENTED;
+        int rc;
+        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+        switch (fTtm)
+        {
+            case VTD_TTM_LEGACY_MODE:
+            {
+                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
+                break;
+            }
+
+            case VTD_TTM_SCALABLE_MODE:
+            {
+                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
+                break;
+            }
+
+            case VTD_TTM_ABORT_DMA_MODE:
+            {
+                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
+                    dmarDrTargetAbort(pDevIns);
+                else
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDATFAULT_RTA_1_1, idDevice, uIova, enmReqType);
+                break;
+            }
+
+            default:
+            {
+                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDATFAULT_RTA_1_2, idDevice, uIova, enmReqType);
+                break;
+            }
+        }
+
+        *pcbContiguous = AddrRemap.cbContiguous;
+        *pGCPhysSpa    = AddrRemap.GCPhysSpa;
+        return rc;
     }
 
     *pGCPhysSpa    = uIova;

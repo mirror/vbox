@@ -1340,7 +1340,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /**
- * VT-d faulted request types (FRCD_REG::T2).
+ * VT-d faulted address translation request types (FRCD_REG::T2).
  * In accordance with the Intel spec.
  */
 typedef enum VTDREQTYPE
