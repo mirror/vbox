@@ -328,6 +328,8 @@ private:
         int  m_iItemBackgroundDarknessStart;
         /** Holds item final background darkness. */
         int  m_iItemBackgroundDarknessFinal;
+        /** Holds item header highlight lightness. */
+        int  m_iHighlightLightness;
 
         /** Holds aditional height. */
         int  m_iAdditionalHeight;

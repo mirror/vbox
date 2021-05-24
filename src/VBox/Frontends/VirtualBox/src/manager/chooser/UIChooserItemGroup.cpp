@@ -51,6 +51,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
     , m_iRootBackgroundDarknessFinal(0)
     , m_iItemBackgroundDarknessStart(0)
     , m_iItemBackgroundDarknessFinal(0)
+    , m_iHighlightLightness(0)
     , m_iAdditionalHeight(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
@@ -74,6 +75,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGrou
     , m_iRootBackgroundDarknessFinal(0)
     , m_iItemBackgroundDarknessStart(0)
     , m_iItemBackgroundDarknessFinal(0)
+    , m_iHighlightLightness(0)
     , m_iAdditionalHeight(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
@@ -1051,6 +1053,13 @@ void UIChooserItemGroup::prepare()
     m_iRootBackgroundDarknessFinal = 150;
     m_iItemBackgroundDarknessStart = 100;
     m_iItemBackgroundDarknessFinal = 105;
+#if defined(VBOX_WS_MAC)
+    m_iHighlightLightness = 105;
+#elif defined(VBOX_WS_WIN)
+    m_iHighlightLightness = 190;
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    m_iHighlightLightness = 105;
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Prepare self: */
     m_nameFont = font();
@@ -1615,7 +1624,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     {
         /* Acquire background color: */
         const QColor backgroundColor = model()->selectedItems().contains(this)
-                                     ? QApplication::palette().color(QPalette::Active, QPalette::Highlight)
+                                     ? QApplication::palette().color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightness)
                                      : QApplication::palette().color(QPalette::Active, QPalette::Window);
 
         /* Paint default background: */
@@ -1693,7 +1702,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
     /* Prepare color: */
-    const QColor frameColor = QApplication::palette().color(QPalette::Active, QPalette::Highlight).darker(110);
+    const QColor frameColor = QApplication::palette().color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightness - 40);
 
     /* Create/assign pen: */
     QPen pen(frameColor);
@@ -1737,7 +1746,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         const QPalette pal = QApplication::palette();
 
         /* Get background color: */
-        const QColor background = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor background = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightness);
 
         /* Get foreground color: */
         const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);

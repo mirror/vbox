@@ -337,15 +337,15 @@ void UIChooserItemGlobal::prepare()
     m_iHighlightLightnessStart = 115;
     m_iHighlightLightnessFinal = 105;
 #elif defined(VBOX_WS_WIN)
-    m_iHoverLightnessStart = 190;
-    m_iHoverLightnessFinal = 160;
-    m_iHighlightLightnessStart = 160;
-    m_iHighlightLightnessFinal = 130;
+    m_iHoverLightnessStart = 220;
+    m_iHoverLightnessFinal = 210;
+    m_iHighlightLightnessStart = 190;
+    m_iHighlightLightnessFinal = 180;
 #else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
-    m_iHoverLightnessStart = 190;
-    m_iHoverLightnessFinal = 160;
-    m_iHighlightLightnessStart = 160;
-    m_iHighlightLightnessFinal = 130;
+    m_iHoverLightnessStart = 125;
+    m_iHoverLightnessFinal = 115;
+    m_iHighlightLightnessStart = 110;
+    m_iHighlightLightnessFinal = 100;
 #endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Fonts: */
