@@ -153,21 +153,39 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
  */
 typedef enum
 {
+    /* No error, this must be zero! */
     kDmarDiag_None = 0,
+
+    /* Address Translation Faults. */
+    kDmarDiag_Atf_Rta_1_1,
+    kDmarDiag_Atf_Rta_1_2,
+    kDmarDiag_Atf_Rta_1_3,
+
+    /* CCMD_REG faults. */
     kDmarDiag_CcmdReg_NotSupported,
     kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_Ttm_Invalid,
+
+    /* IQA_REG faults. */
     kDmarDiag_IqaReg_Dsc_Fetch_Error,
     kDmarDiag_IqaReg_Dw_128_Invalid,
     kDmarDiag_IqaReg_Dw_256_Invalid,
+
+    /* Invalidation Queue Error Info. */
     kDmarDiag_Iqei_Dsc_Type_Invalid,
     kDmarDiag_Iqei_Inv_Wait_Dsc_0_1_Rsvd,
     kDmarDiag_Iqei_Inv_Wait_Dsc_2_3_Rsvd,
     kDmarDiag_Iqei_Inv_Wait_Dsc_Invalid,
     kDmarDiag_Iqei_Ttm_Rsvd,
+
+    /* IQT_REG faults. */
     kDmarDiag_IqtReg_Qt_Invalid,
     kDmarDiag_IqtReg_Qt_NotAligned,
+
+    /* Compatibility Format Interrupt Faults. */
     kDmarDiag_Ir_Cfi_Blocked,
+
+    /* Remappable Format Interrupt Faults. */
     kDmarDiag_Ir_Rfi_Intr_Index_Invalid,
     kDmarDiag_Ir_Rfi_Irte_Mode_Invalid,
     kDmarDiag_Ir_Rfi_Irte_Not_Present,
@@ -177,9 +195,11 @@ typedef enum
     kDmarDiag_Ir_Rfi_Irte_Svt_Masked,
     kDmarDiag_Ir_Rfi_Irte_Svt_Rsvd,
     kDmarDiag_Ir_Rfi_Rsvd,
+
     /* Member for determining array index limit. */
     kDmarDiag_End,
-    /* Type size hack. */
+
+    /* Usual 32-bit type size hack. */
     kDmarDiag_32Bit_Hack = 0x7fffffff
 } DMARDIAG;
 AssertCompileSize(DMARDIAG, 4);
@@ -193,6 +213,9 @@ AssertCompileSize(DMARDIAG, 4);
 static const char *const g_apszDmarDiagDesc[] =
 {
     DMARDIAG_DESC(None                      ),
+    DMARDIAG_DESC(Atf_Rta_1_1               ),
+    DMARDIAG_DESC(Atf_Rta_1_2               ),
+    DMARDIAG_DESC(Atf_Rta_1_3               ),
     DMARDIAG_DESC(CcmdReg_NotSupported      ),
     DMARDIAG_DESC(CcmdReg_Qi_Enabled        ),
     DMARDIAG_DESC(CcmdReg_Ttm_Invalid       ),
@@ -1317,7 +1340,7 @@ static void dmarIntrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, V
 
 
 /**
- * Records an address translation fault.
+ * Records an address translation fault (extensive version).
  *
  * @param   pDevIns         The IOMMU device instance.
  * @param   enmDiag         The diagnostic reason.
@@ -1329,16 +1352,17 @@ static void dmarIntrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, V
  *                          when device-TLB is supported).
  * @param   fHasPasid       Whether the faulted request has a PASID TLP prefix.
  * @param   uPasid          The PASID value when a PASID TLP prefix is present.
- * @param   fExec           Execute permission was requested by the faulted request.
- * @param   fPriv           Supervisor privilege permission was requested by the
- *                          faulted request.
+ * @param   fReqAttr        The attributes of the faulted requested
+ *                          (VTD_REQ_ATTR_XXX).
  */
-static void dmarAddrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDADDRFAULT enmAddrFault, uint16_t idDevice,
-                                uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint8_t uAddrType, bool fHasPasid, uint32_t uPasid,
-                                bool fExec, bool fPriv)
+static void dmarAddrFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDADDRFAULT enmAddrFault, uint16_t idDevice,
+                                  uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint8_t uAddrType, bool fHasPasid, uint32_t uPasid,
+                                  uint8_t fReqAttr)
 {
     uint8_t const fType1 = enmReqType & RT_BIT(1);
     uint8_t const fType2 = enmReqType & RT_BIT(0);
+    uint8_t const fExec = fReqAttr & VTD_REQ_ATTR_EXE;
+    uint8_t const fPriv = fReqAttr & VTD_REQ_ATTR_PRIV;
     uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID,  idDevice)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T2,   fType2)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PP,   fHasPasid)
@@ -1351,6 +1375,27 @@ static void dmarAddrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDADDRFAU
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,    1);
     uint64_t const uFrcdLo = uFaultAddr & X86_PAGE_BASE_MASK;
     dmarPrimaryFaultRecord(pDevIns, enmDiag, uFrcdHi, uFrcdLo);
+}
+
+
+/**
+ * Records an address translation fault.
+ *
+ * This is to be used when Device-TLB, and PASIDs are not supported or for requests
+ * where the device-TLB and PASID is not relevant/present.
+ *
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   enmDiag         The diagnostic reason.
+ * @param   enmAddrFault    The address translation fault reason.
+ * @param   idDevice        The device ID (bus, device, function).
+ * @param   uFaultAddr      The page address of the faulted request.
+ * @param   enmReqType      The type of the faulted request.
+ */
+static void dmarAddrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDADDRFAULT enmAddrFault, uint16_t idDevice,
+                                  uint64_t uFaultAddr, VTDREQTYPE enmReqType)
+{
+    dmarAddrFaultRecordEx(pDevIns, enmDiag, enmAddrFault, idDevice, uFaultAddr, enmReqType, 0 /* uAddrType */,
+                          false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
 }
 
 
@@ -1708,6 +1753,72 @@ static VBOXSTRICTRC dmarFrcdHiRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint
 
 
 /**
+ * Performs a PCI target abort for a DMA operation.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void dmarDmaTargetAbort(PPDMDEVINS pDevIns)
+{
+    /** @todo r=ramshankar: I don't know for sure if a PCI target abort is caused or not
+     *        as the Intel VT-d spec. is vague. Wording seems to suggest it does, but
+     *        who knows. */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    uint16_t const u16Status = PDMPciDevGetStatus(pPciDev) | VBOX_PCI_STATUS_SIG_TARGET_ABORT;
+    PDMPciDevSetStatus(pPciDev, u16Status);
+}
+
+
+/**
+ * Validates the table translation mode for a DMA request.
+ *
+ * @returns @c true if the TTM is valid, @c false otherwise.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   idDevice        The device ID (bus, device, function).
+ * @param   uIova           The I/O virtual address being accessed.
+ * @param   enmReqType      The type of the request (for fault recording).
+ */
+static bool dmarDmaIsTtmValid(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint16_t idDevice, uint64_t uIova, VTDREQTYPE enmReqType)
+{
+    bool fValid = true;
+    PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+    uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+    switch (fTtm)
+    {
+        case VTD_TTM_LEGACY_MODE:
+            break;
+
+        case VTD_TTM_SCALABLE_MODE:
+        {
+            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
+                break;
+            dmarAddrFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDADDRFAULT_RTA_1_3, idDevice, uIova, enmReqType);
+            fValid = false;
+            break;
+        }
+
+        case VTD_TTM_ABORT_DMA_MODE:
+        {
+            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
+                dmarDmaTargetAbort(pDevIns);
+            else
+                dmarAddrFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDADDRFAULT_RTA_1_1, idDevice, uIova, enmReqType);
+            fValid = false;
+            break;
+        }
+
+        default:
+        {
+            dmarAddrFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDADDRFAULT_RTA_1_2, idDevice, uIova, enmReqType);
+            fValid = false;
+            break;
+        }
+    }
+    return fValid;
+}
+
+
+/**
  * Memory access bulk (one or more 4K pages) request from a device.
  *
  * @returns VBox status code.
@@ -1746,7 +1857,12 @@ static DECLCALLBACK(int) iommuIntelMemBulkAccess(PPDMDEVINS pDevIns, uint16_t id
 static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                              uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
-    RT_NOREF6(idDevice, uIova, cbIova, fFlags, pGCPhysSpa, pcbContiguous);
+    /* Validate. */
+    AssertPtr(pDevIns);
+    AssertPtr(pGCPhysSpa);
+    AssertPtr(pcbContiguous);
+    Assert(cbIova > 0);         /** @todo Are we going to support ZLR (zero-length reads to write-only pages)? */
+    Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
@@ -1761,26 +1877,18 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         VTDREQTYPE enmReqType;
         if (fFlags & PDMIOMMU_MEM_F_READ)
         {
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
             enmReqType = VTDREQTYPE_READ;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
         }
         else
         {
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
             enmReqType = VTDREQTYPE_WRITE;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
         }
 
-        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
-        switch (fTtm)
-        {
-            case VTD_TTM_LEGACY_MODE:
-            case VTD_TTM_ABORT_DMA_MODE:
-            {
-                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
-                {
-                }
-            }
-        }
+        bool fTtmValid = dmarDmaIsTtmValid(pDevIns, uRtaddrReg, idDevice, uIova, enmReqType);
+        if (!fTtmValid)
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 
         return VERR_NOT_IMPLEMENTED;
     }

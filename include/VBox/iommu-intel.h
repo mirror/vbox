@@ -1340,16 +1340,27 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /**
- * VT-d FRCD type requests (FRCD_REG::T2).
+ * VT-d faulted request types (FRCD_REG::T2).
  * In accordance with the Intel spec.
  */
 typedef enum VTDREQTYPE
 {
-    VTDREQTYPE_WRITE = 0,
-    VTDREQTYPE_PAGE,
-    VTDREQTYPE_READ,
-    VTDREQTYPE_ATOMIC_OP
+    VTDREQTYPE_WRITE = 0,   /**< Memory access write request. */
+    VTDREQTYPE_PAGE,        /**< Page translation request. */
+    VTDREQTYPE_READ,        /**< Memory access read request. */
+    VTDREQTYPE_ATOMIC_OP    /**< Memory access atomic operation. */
 } VTDREQTYPE;
+
+
+/** @name VT-d faulted request attributes (FRCD_REG::EXE, FRCD_REG::PRIV).
+ * In accordance with the Intel spec.
+ * @{
+ */
+/** Supervisory privilege was requested. */
+#define VTD_REQ_ATTR_PRIV                                       RT_BIT(0)
+/** Execute permission was requested. */
+#define VTD_REQ_ATTR_EXE                                        RT_BIT(1)
+/** @} */
 
 
 /** @name Advanced Fault Log Register (AFLOG_REG).
