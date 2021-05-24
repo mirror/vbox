@@ -1804,7 +1804,7 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
- * @param   idxRootEntry    The root entry index to read.
+ * @param   idxRootEntry    The index of the root entry to read.
  * @param   pRootEntry      Where to store the read root entry.
  */
 static int dmarDrReadRootEntry(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint8_t idxRootEntry, PVTD_ROOT_ENTRY_T pRootEntry)
@@ -1815,6 +1815,15 @@ static int dmarDrReadRootEntry(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint8_t 
 }
 
 
+/**
+ * Reads a context entry from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   GCPhysCtxTable  The physical address of the context table.
+ * @param   idxCtxEntry     The index of the context entry to read.
+ * @param   pRootEntry      Where to store the read context entry.
+ */
 static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8_t idxCtxEntry, PVTD_CONTEXT_ENTRY_T pCtxEntry)
 {
     size_t const   cbCtxEntry     = sizeof(*pCtxEntry);
