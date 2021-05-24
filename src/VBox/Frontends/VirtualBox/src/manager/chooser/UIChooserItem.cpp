@@ -227,7 +227,7 @@ void UIChooserDisabledItemEffect::draw(QPainter *pPainter)
 *********************************************************************************************************************************/
 
 UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
-                             int iDefaultValue /* = 100 */, int iHoveredValue /* = 90 */)
+                             int iDefaultValue /* = 0 */, int iHoveredValue /* = 100 */)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_pParent(pParent)
     , m_pNode(pNode)

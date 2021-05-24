@@ -323,10 +323,10 @@ private:
         /** Holds the cached machine children info. */
         QString  m_strInfoMachines;
 
-        /** Holds the start background darkness. */
-        int  m_iBackgroundDarknessStart;
-        /** Holds the final background darkness. */
-        int  m_iBackgroundDarknessFinal;
+        /** Holds root start background darkness. */
+        int  m_iRootBackgroundDarknessStart;
+        /** Holds root final background darkness. */
+        int  m_iRootBackgroundDarknessFinal;
 
         /** Holds aditional height. */
         int  m_iAdditionalHeight;

@@ -31,12 +31,12 @@
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode)
     : UIChooserItem(pParent, pNode)
-    , m_iDefaultLightnessMin(0)
-    , m_iDefaultLightnessMax(0)
-    , m_iHoverLightnessMin(0)
-    , m_iHoverLightnessMax(0)
-    , m_iHighlightLightnessMin(0)
-    , m_iHighlightLightnessMax(0)
+    , m_iDefaultLightnessStart(0)
+    , m_iDefaultLightnessFinal(0)
+    , m_iHoverLightnessStart(0)
+    , m_iHoverLightnessFinal(0)
+    , m_iHighlightLightnessStart(0)
+    , m_iHighlightLightnessFinal(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
     , m_iHeightHint(0)
@@ -326,21 +326,21 @@ void UIChooserItemGlobal::sltHandleWindowRemapped()
 
 void UIChooserItemGlobal::prepare()
 {
-    /* Colors: */
+    /* Color tones: */
 #ifdef VBOX_WS_MAC
-    m_iHighlightLightnessMin = 105;
-    m_iHighlightLightnessMax = 115;
-    m_iHoverLightnessMin = 115;
-    m_iHoverLightnessMax = 125;
-    m_iDefaultLightnessMin = 125;
-    m_iDefaultLightnessMax = 130;
+    m_iDefaultLightnessStart = 125;
+    m_iDefaultLightnessFinal = 130;
+    m_iHoverLightnessStart = 115;
+    m_iHoverLightnessFinal = 125;
+    m_iHighlightLightnessStart = 105;
+    m_iHighlightLightnessFinal = 115;
 #else /* VBOX_WS_MAC */
-    m_iHighlightLightnessMin = 130;
-    m_iHighlightLightnessMax = 160;
-    m_iHoverLightnessMin = 160;
-    m_iHoverLightnessMax = 190;
-    m_iDefaultLightnessMin = 160;
-    m_iDefaultLightnessMax = 190;
+    m_iDefaultLightnessStart = 160;
+    m_iDefaultLightnessFinal = 190;
+    m_iHoverLightnessStart = 160;
+    m_iHoverLightnessFinal = 190;
+    m_iHighlightLightnessStart = 130;
+    m_iHighlightLightnessFinal = 160;
 #endif /* !VBOX_WS_MAC */
 
     /* Fonts: */
@@ -564,8 +564,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessFinal));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessStart));
         pPainter->fillRect(rectangle, bgGrad);
 
         if (isHovered())
@@ -601,8 +601,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessFinal));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessStart));
         pPainter->fillRect(rectangle, bgGrad);
 
         /* Prepare color: */
@@ -636,8 +636,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultDarknessFinal));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultDarknessStart));
         pPainter->fillRect(rectangle, bgGrad);
 #else
         /* Prepare color: */
@@ -666,10 +666,10 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
     /* Selected-item frame: */
     if (model()->selectedItems().contains(this))
-        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessStart - 40);
     /* Hovered-item frame: */
     else if (isHovered())
-        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessStart - 40);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);
@@ -704,8 +704,8 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
         /* Get background color: */
         const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         const QColor background = model()->selectedItems().contains(this)
-                                ? highlight.lighter(m_iHighlightLightnessMin)
-                                : highlight.lighter(m_iHoverLightnessMin);
+                                ? highlight.lighter(m_iHighlightLightnessStart)
+                                : highlight.lighter(m_iHoverLightnessStart);
 
         /* Get foreground color: */
         const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);

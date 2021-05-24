@@ -47,10 +47,10 @@
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGroup *pNode)
     : UIChooserItem(0, pNode)
     , m_pScene(pScene)
-    , m_iBackgroundDarknessStart(115)
-    , m_iBackgroundDarknessFinal(150)
+    , m_iRootBackgroundDarknessStart(0)
+    , m_iRootBackgroundDarknessFinal(0)
     , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(110)
+    , m_iHeaderDarkness(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
@@ -69,10 +69,10 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGroup *pNode)
     : UIChooserItem(pParent, pNode)
     , m_pScene(0)
-    , m_iBackgroundDarknessStart(115)
-    , m_iBackgroundDarknessFinal(150)
+    , m_iRootBackgroundDarknessStart(0)
+    , m_iRootBackgroundDarknessFinal(0)
     , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(110)
+    , m_iHeaderDarkness(0)
     , m_pToggleButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
@@ -1044,6 +1044,11 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
 
 void UIChooserItemGroup::prepare()
 {
+    /* Color tones: */
+    m_iRootBackgroundDarknessStart = 115;
+    m_iRootBackgroundDarknessFinal = 150;
+    m_iHeaderDarkness = 110;
+
     /* Prepare self: */
     m_nameFont = font();
     m_nameFont.setWeight(QFont::Bold);
@@ -1598,19 +1603,17 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         const QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
 
         /* Paint default background: */
-        QColor bcTone1 = backgroundColor.darker(m_iBackgroundDarknessStart);
-        QColor bcTone2 = backgroundColor.darker(m_iBackgroundDarknessFinal);
         QLinearGradient gradientDefault(rect.topRight(), rect.bottomLeft());
-        gradientDefault.setColorAt(0, bcTone1);
-        gradientDefault.setColorAt(1, bcTone2);
+        gradientDefault.setColorAt(0, backgroundColor.darker(m_iRootBackgroundDarknessStart));
+        gradientDefault.setColorAt(1, backgroundColor.darker(m_iRootBackgroundDarknessFinal));
         pPainter->fillRect(rect, gradientDefault);
     }
     else
     {
         /* Prepare color: */
-        const QColor headerColor = QApplication::palette().color(QPalette::Active,
-                                                                 model()->selectedItems().contains(this) ?
-                                                                 QPalette::Highlight : QPalette::Window);
+        const QColor backgroundColor = QApplication::palette().color(QPalette::Active,
+                                                                     model()->selectedItems().contains(this) ?
+                                                                     QPalette::Highlight : QPalette::Window);
 
         /* Prepare variables: */
         const int iMarginV = data(GroupItemData_MarginV).toInt();
@@ -1623,8 +1626,8 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(1, headerColor.lighter(100 + (double)animatedValue() / 100 * 30));
-        tGradient.setColorAt(0, headerColor);
+        tGradient.setColorAt(1, backgroundColor.lighter(100 + (double)animatedValue() / 100 * 30));
+        tGradient.setColorAt(0, backgroundColor);
 
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
@@ -1636,7 +1639,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             bRect.setTop(bRect.top() + iFullHeaderHeight);
 
             /* Fill top rectangle: */
-            pPainter->fillRect(bRect, headerColor);
+            pPainter->fillRect(bRect, backgroundColor);
         }
 
         /* Paint drag token UP? */
@@ -1656,8 +1659,8 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
                 dragTokenGradient.setStart(dragTokenRect.topLeft());
                 dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
             }
-            dragTokenGradient.setColorAt(0, headerColor.darker(dragTokenDarkness()));
-            dragTokenGradient.setColorAt(1, headerColor.darker(dragTokenDarkness() + 40));
+            dragTokenGradient.setColorAt(0, backgroundColor.darker(dragTokenDarkness()));
+            dragTokenGradient.setColorAt(1, backgroundColor.darker(dragTokenDarkness() + 40));
             pPainter->fillRect(dragTokenRect, dragTokenGradient);
         }
     }

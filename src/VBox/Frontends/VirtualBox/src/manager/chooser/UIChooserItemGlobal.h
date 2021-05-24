@@ -218,18 +218,18 @@ private:
 
     /** @name Item stuff.
       * @{ */
-        /** Holds item minimum default lightness. */
-        int  m_iDefaultLightnessMin;
-        /** Holds item maximum default lightness. */
-        int  m_iDefaultLightnessMax;
-        /** Holds item minimum hover lightness. */
-        int  m_iHoverLightnessMin;
-        /** Holds item maximum hover lightness. */
-        int  m_iHoverLightnessMax;
-        /** Holds item minimum highlight lightness. */
-        int  m_iHighlightLightnessMin;
-        /** Holds item maximum highlight lightness. */
-        int  m_iHighlightLightnessMax;
+        /** Holds item start default lightness. */
+        int  m_iDefaultLightnessStart;
+        /** Holds item final default lightness. */
+        int  m_iDefaultLightnessFinal;
+        /** Holds item start hover lightness. */
+        int  m_iHoverLightnessStart;
+        /** Holds item final hover lightness. */
+        int  m_iHoverLightnessFinal;
+        /** Holds item start highlight lightness. */
+        int  m_iHighlightLightnessStart;
+        /** Holds item final highlight lightness. */
+        int  m_iHighlightLightnessFinal;
 
         /** Holds item pixmap. */
         QPixmap  m_pixmap;
