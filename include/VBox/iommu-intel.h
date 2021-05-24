@@ -150,6 +150,11 @@ typedef struct VTD_ROOT_ENTRY_T
 typedef VTD_ROOT_ENTRY_T *PVTD_ROOT_ENTRY_T;
 /** Pointer to a const root entry. */
 typedef VTD_ROOT_ENTRY_T const *PCVTD_ROOT_ENTRY_T;
+
+/* Root Entry: Qword 0 valid mask. */
+#define VTD_ROOT_ENTRY_0_VALID_MASK                             (VTD_BF_0_ROOT_ENTRY_P_MASK | VTD_BF_0_ROOT_ENTRY_CTP_MASK)
+/* Root Entry: Qword 1 valid mask. */
+#define VTD_ROOT_ENTRY_1_VALID_MASK                             UINT64_C(0)
 /** @} */
 
 

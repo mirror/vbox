@@ -157,6 +157,9 @@ typedef enum
     kDmarDiag_None = 0,
 
     /* Address Translation Faults. */
+    kDmarDiag_Atf_Lrt_1,
+    kDmarDiag_Atf_Lrt_2,
+    kDmarDiag_Atf_Lrt_3,
     kDmarDiag_Atf_Rta_1_1,
     kDmarDiag_Atf_Rta_1_2,
     kDmarDiag_Atf_Rta_1_3,
@@ -213,6 +216,9 @@ AssertCompileSize(DMARDIAG, 4);
 static const char *const g_apszDmarDiagDesc[] =
 {
     DMARDIAG_DESC(None                      ),
+    DMARDIAG_DESC(Atf_Lrt_1                 ),
+    DMARDIAG_DESC(Atf_Lrt_2                 ),
+    DMARDIAG_DESC(Atf_Lrt_3                 ),
     DMARDIAG_DESC(Atf_Rta_1_1               ),
     DMARDIAG_DESC(Atf_Rta_1_2               ),
     DMARDIAG_DESC(Atf_Rta_1_3               ),
@@ -1793,6 +1799,31 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
+ * Reads a root entry from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   idxRootEntry    The root entry index to read.
+ * @param   pRootEntry      Where to store the read root entry.
+ */
+static int dmarDrReadRootEntry(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint8_t idxRootEntry, PVTD_ROOT_ENTRY_T pRootEntry)
+{
+    size_t const   cbRootEntry     = sizeof(*pRootEntry);
+    RTGCPHYS const GCPhysRootEntry = (uRtaddrReg & VTD_BF_RTADDR_REG_RTA_MASK) + (idxRootEntry * cbRootEntry);
+    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysRootEntry, pRootEntry, cbRootEntry);
+}
+
+
+static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8_t idxCtxEntry, PVTD_CONTEXT_ENTRY_T pCtxEntry)
+{
+    size_t const   cbCtxEntry     = sizeof(*pCtxEntry);
+    RTGCPHYS const GCPhysCtxEntry = GCPhysCtxTable + (idxCtxEntry * cbCtxEntry);
+    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysCtxEntry, pCtxEntry, cbCtxEntry);
+}
+
+
+/**
  * Handles remapping of DMA address requests in legacy mode.
  *
  * @returns VBox status code.
@@ -1802,8 +1833,39 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  */
 static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
 {
-    RT_NOREF3(pDevIns, uRtaddrReg, pAddrRemap);
-    return VERR_NOT_IMPLEMENTED;
+    uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->idDevice);
+    VTD_ROOT_ENTRY_T RootEntry;
+    int rc = dmarDrReadRootEntry(pDevIns, uRtaddrReg, idxRootEntry, &RootEntry);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t const uRootEntryQword0 = RootEntry.au64[0];
+        uint64_t const uRootEntryQword1 = RootEntry.au64[1];
+        bool const fPresent = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_P);
+        if (fPresent)
+        {
+            if (   !(uRootEntryQword0 & ~VTD_ROOT_ENTRY_0_VALID_MASK)
+                && !(uRootEntryQword1 & ~VTD_ROOT_ENTRY_1_VALID_MASK))
+            {
+                RTGCPHYS const GCPhysCtxTable = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_CTP);
+                uint8_t const idxCtxEntry = RT_LO_U8(pAddrRemap->idDevice);
+                VTD_CONTEXT_ENTRY_T CtxEntry;
+                rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
+
+                /** @todo Handle context entry validation and processing. */
+                return VERR_NOT_IMPLEMENTED;
+            }
+            else
+                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_3, VTDATFAULT_LRT_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                                  pAddrRemap->enmReqType);
+        }
+        else
+            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_2, VTDATFAULT_LRT_2, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                              pAddrRemap->enmReqType);
+    }
+    else
+        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_1, VTDATFAULT_LRT_1, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                          pAddrRemap->enmReqType);
+    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
 
@@ -1827,21 +1889,6 @@ static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, 
     dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
                       pAddrRemap->enmReqType);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-}
-
-
-/**
- * Reads a root entry from guest memory.
- *
- * @returns VBox status code.
- * @param   idDevice        The device ID (bus, device, function).
- * @param   pRootEntry      Where to store the read root entry.
- */
-static int dmarDrReadRootEntry(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, uint8_t idxEntry, PVTD_ROOT_ENTRY_T pRootEntry)
-{
-    size_t const   cbEntry     = sizeof(*pRootEntry);
-    RTGCPHYS const GCPhysEntry = (uRtaddrReg & VTD_BF_RTADDR_REG_RTA_MASK) + (idxEntry * cbEntry);
-    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysEntry, pRootEntry, cbEntry);
 }
 
 
