@@ -441,21 +441,28 @@ void UIToolsItem::prepare()
     QAccessible::installFactory(UIAccessibilityInterfaceForUIToolsItem::pFactory);
 
     /* Prepare color tones: */
-#ifdef VBOX_WS_MAC
-    m_iDefaultLightnessStart = 115;
-    m_iDefaultLightnessFinal = 105;
+#if defined(VBOX_WS_MAC)
+    m_iDefaultLightnessStart = 120;
+    m_iDefaultLightnessFinal = 110;
     m_iHoverLightnessStart = 125;
     m_iHoverLightnessFinal = 115;
     m_iHighlightLightnessStart = 155;
     m_iHighlightLightnessFinal = 145;
-#else /* VBOX_WS_MAC */
-    m_iHighlightLightnessStart = 160;
-    m_iHighlightLightnessFinal = 130;
-    m_iHoverLightnessStart = 190;
-    m_iHoverLightnessFinal = 160;
+#elif defined(VBOX_WS_WIN)
     m_iDefaultLightnessStart = 190;
     m_iDefaultLightnessFinal = 160;
-#endif /* !VBOX_WS_MAC */
+    m_iHoverLightnessStart = 190;
+    m_iHoverLightnessFinal = 160;
+    m_iHighlightLightnessStart = 160;
+    m_iHighlightLightnessFinal = 130;
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    m_iDefaultLightnessStart = 190;
+    m_iDefaultLightnessFinal = 160;
+    m_iHoverLightnessStart = 190;
+    m_iHoverLightnessFinal = 160;
+    m_iHighlightLightnessStart = 160;
+    m_iHighlightLightnessFinal = 130;
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Prepare fonts: */
     m_nameFont = font();
@@ -716,7 +723,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
         /* Prepare color: */
         const QColor backgroundColor = isEnabled()
                                      ? pal.color(QPalette::Active, QPalette::Highlight)
-                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
+                                     : pal.color(QPalette::Disabled, QPalette::Window);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessStart));
@@ -755,7 +762,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
         /* Prepare color: */
         const QColor backgroundColor = isEnabled()
                                      ? pal.color(QPalette::Active, QPalette::Highlight)
-                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
+                                     : pal.color(QPalette::Disabled, QPalette::Window);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessStart));
@@ -793,8 +800,8 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
     {
         /* Prepare color: */
         const QColor backgroundColor = isEnabled()
-                                     ? pal.color(QPalette::Active, QPalette::Mid)
-                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
+                                     ? pal.color(QPalette::Active, QPalette::Window)
+                                     : pal.color(QPalette::Disabled, QPalette::Window);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessStart));
@@ -827,7 +834,7 @@ void UIToolsItem::paintFrame(QPainter *pPainter, const QRect &rectangle) const
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessStart - 40);
     /* Default frame: */
     else
-        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultLightnessStart);
+        strokeColor = pal.color(QPalette::Active, QPalette::Window).lighter(m_iDefaultLightnessStart);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);
