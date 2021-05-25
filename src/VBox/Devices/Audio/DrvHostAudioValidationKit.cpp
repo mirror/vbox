@@ -42,7 +42,7 @@
 /**
  * Structure for keeping a Validation Kit input/output stream.
  */
-typedef struct VAKITAUDIOSTREAM
+typedef struct VALKITAUDIOSTREAM
 {
     /** Common part. */
     PDMAUDIOBACKENDSTREAM   Core;
@@ -71,9 +71,9 @@ typedef struct VAKITAUDIOSTREAM
             uint32_t        cbPlayBuffer;
         } Out;
     };
-} VAKITAUDIOSTREAM;
+} VALKITAUDIOSTREAM;
 /** Pointer to a Validation Kit stream. */
-typedef VAKITAUDIOSTREAM *PVAKITAUDIOSTREAM;
+typedef VALKITAUDIOSTREAM *PVALKITAUDIOSTREAM;
 
 /**
  * Test tone-specific instance data.
@@ -112,7 +112,7 @@ typedef VALKITTESTDATA *PVALKITTESTDATA;
  * Validation Kit audio driver instance data.
  * @implements PDMIAUDIOCONNECTOR
  */
-typedef struct DRVHOSTVAKITAUDIO
+typedef struct DRVHOSTVALKITAUDIO
 {
     /** Pointer to the driver instance structure. */
     PPDMDRVINS          pDrvIns;
@@ -128,9 +128,9 @@ typedef struct DRVHOSTVAKITAUDIO
     RTCRITSECT          CritSect;
     /** The Audio Test Service (ATS) instance. */
     ATSSERVER           Srv;
-} DRVHOSTVAKITAUDIO;
+} DRVHOSTVALKITAUDIO;
 /** Pointer to a Validation Kit host audio driver instance. */
-typedef DRVHOSTVAKITAUDIO *PDRVHOSTVAKITAUDIO;
+typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 
 
 /**
@@ -138,7 +138,7 @@ typedef DRVHOSTVAKITAUDIO *PDRVHOSTVAKITAUDIO;
  */
 static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
 {
-    PDRVHOSTVAKITAUDIO pThis = (PDRVHOSTVAKITAUDIO)pvUser;
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
     AssertPtrReturn(pTestData, VERR_NO_MEMORY);
@@ -170,7 +170,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_GetConfig(PPDMIHOSTAUDIO pInterfac
      * Fill in the config structure.
      */
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit");
-    pBackendCfg->cbStream       = sizeof(VAKITAUDIOSTREAM);
+    pBackendCfg->cbStream       = sizeof(VALKITAUDIOSTREAM);
     pBackendCfg->fFlags         = 0;
     pBackendCfg->cMaxStreamsOut = 1; /* Output (Playback). */
     pBackendCfg->cMaxStreamsIn  = 1; /* Input (Recording). */
@@ -191,7 +191,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostValKitAudioHA_GetStatus(PPDMIHOST
 }
 
 
-static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVAKITAUDIO pThis, PVAKITAUDIOSTREAM pStreamDbg,
+static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVALKITAUDIO pThis, PVALKITAUDIOSTREAM pStreamDbg,
                                             PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pThis, pStreamDbg, pCfgReq, pCfgAcq);
@@ -200,7 +200,7 @@ static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVAKITAUDIO pThis, PVAKITAUDI
 }
 
 
-static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pThis, PVAKITAUDIOSTREAM pStreamDbg,
+static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVALKITAUDIO pThis, PVALKITAUDIOSTREAM pStreamDbg,
                                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pThis, pCfgAcq);
@@ -267,8 +267,8 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pThis, PVAKITAUD
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTVAKITAUDIO pThis       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
-    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    PDRVHOSTVALKITAUDIO pThis       = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
@@ -290,7 +290,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
                                                             bool fImmediate)
 {
     RT_NOREF(pInterface, fImmediate);
-    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 
     if (   pStreamDbg->Cfg.enmDir == PDMAUDIODIR_OUT
@@ -337,7 +337,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDisableOrPauseOrDrain(PPDMIH
                                                                           PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    PVAKITAUDIOSTREAM pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    PVALKITAUDIOSTREAM pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 
     if (pStreamDbg->pFileTiming)
@@ -418,8 +418,8 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostValKitAudioHA_StreamGetState
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                          const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    PDRVHOSTVAKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
-    PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
+    PDRVHOSTVALKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     RT_NOREF(pThis);
 
     uint64_t cNsSinceStart;
@@ -464,7 +464,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 {
     RT_NOREF(pStream);
 
-    PDRVHOSTVAKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+    PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
 
     int rc = VINF_SUCCESS;
 
@@ -523,7 +523,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 static DECLCALLBACK(void *) drvHostValKitAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS         pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTVAKITAUDIO pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTVAKITAUDIO);
+    PDRVHOSTVALKITAUDIO pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTVALKITAUDIO);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
@@ -540,7 +540,7 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
 {
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVHOSTVAKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVAKITAUDIO);
+    PDRVHOSTVALKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVALKITAUDIO);
     LogRel(("Audio: Initializing VALKIT driver\n"));
 
     /*
@@ -596,7 +596,7 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
 static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVHOSTVAKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVAKITAUDIO);
+    PDRVHOSTVALKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVALKITAUDIO);
 
     LogRel(("Audio: Validation Kit: Shutting down Audio Test Service (ATS) ...\n"));
 
@@ -650,7 +650,7 @@ const PDMDRVREG g_DrvHostValidationKitAudio =
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
-    sizeof(DRVHOSTVAKITAUDIO),
+    sizeof(DRVHOSTVALKITAUDIO),
     /* pfnConstruct */
     drvHostValKitAudioConstruct,
     /* pfnDestruct */
