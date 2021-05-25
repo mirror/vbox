@@ -52,6 +52,10 @@
 #include <AudioToolbox/AudioQueue.h>
 #include <AudioUnit/AudioUnit.h>
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090 /* possibly 1080 */
+# define kAudioHardwarePropertyTranslateUIDToDevice (AudioObjectPropertySelector)'uidd'
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -519,6 +523,8 @@ static AudioObjectID drvHstAudCaDeviceUidToId(CFStringRef hStrUid, const char *p
         Log9Func(("%s device UID '%s' -> %RU32\n", pszWhat, pszUid, idDevice));
         return idDevice;
     }
+    /** @todo test on < 10.9, see which status code and do a fallback using the
+     *        enumeration code.  */
     LogRelMax(64, ("CoreAudio: Failed to translate %s device UID '%s' to audio device ID: %#x\n", pszWhat, pszUid, orc));
     return kAudioDeviceUnknown;
 }
