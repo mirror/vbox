@@ -1520,7 +1520,14 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                             RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
                             RTStrFree(pszName);
 
-                            PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
+                            rc = RTUtf16ToUtf8(pDev->wszDevId, &pDev->Core.pszId);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_ID_ALLOC;
+                                PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
+                            }
+                            else
+                                PDMAudioHostDevFree(&pDev->Core);
                         }
                         else
                             PDMAudioHostDevFree(&pDev->Core);
@@ -2968,10 +2975,6 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Validate and read the configuration.
      */
-    /** @todo We need a UUID for the session, while Pulse want some kind of name
-     *        when creating the streams.  "StreamName" is confusing and a little
-     *        misleading though, unless used only for Pulse.  Simply "VmName"
-     *        would be a lot better and more generic.  */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|VmUuid", "");
     /** @todo make it possible to override the default device selection. */
 
