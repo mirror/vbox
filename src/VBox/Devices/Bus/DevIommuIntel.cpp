@@ -143,6 +143,15 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** The current saved state version. */
 #define DMAR_SAVED_STATE_VERSION                    1
 
+/** @name DMAR_IO_PERM_XXX: DMAR I/O permissions.
+ * These are not according to the spec. other than the value of the READ and WRITE
+ * permissions. */
+#define DMAR_IO_PERM_READ                           RT_BIT(0)
+#define DMAR_IO_PERM_WRITE                          RT_BIT(1)
+#define DMAR_IO_PERM_EXECUTE                        RT_BIT(2)
+#define DMAR_IO_PERM_SUPERVISOR                     RT_BIT(3)
+/** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -417,7 +426,6 @@ typedef enum DMAREVENTTYPE
     DMAREVENTTYPE_FAULT
 } DMAREVENTTYPE;
 
-
 /**
  * DMA address map.
  * This structure holds information about a DMA address translation.
@@ -433,6 +441,7 @@ typedef struct DMARADDRMAP
     uint64_t        uDmaAddr;
     /** The size of the DMA access (in bytes). */
     size_t          cbDma;
+
     /** The translated system-physical address (HPA). */
     RTGCPHYS        GCPhysSpa;
     /** The size of the contiguous translated region (in bytes). */
@@ -1889,9 +1898,10 @@ static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   enmAddrType     The PCI memory request address type.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
+static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PCIADDRTYPE enmAddrType, PDMARADDRMAP pAddrRemap)
 {
     uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->idDevice);
     VTD_ROOT_ENTRY_T RootEntry;
@@ -1920,12 +1930,50 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                         if (   !(uCtxEntryQword0 & ~VTD_CONTEXT_ENTRY_0_VALID_MASK)
                             && !(uCtxEntryQword1 & ~VTD_CONTEXT_ENTRY_1_VALID_MASK))
                         {
-                            /** @todo Handle context entry validation and processing. */
-                            return VERR_NOT_IMPLEMENTED;
+                            PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+                            uint8_t const fTt = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_TT);
+                            switch (fTt)
+                            {
+                                case 0:
+                                {
+                                    if (enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                    {
+                                        /** @todo perform second-level translation. */
+                                        return VERR_NOT_IMPLEMENTED;
+                                    }
+                                    Log4Func(("Translation type blocks translated and translation requests\n"));
+                                    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                                }
+
+                                case 2:
+                                {
+                                    if (pThis->fExtCapReg & VTD_BF_ECAP_REG_PT_MASK)
+                                    {
+                                        pAddrRemap->GCPhysSpa    = pAddrRemap->uDmaAddr;
+                                        pAddrRemap->cbContiguous = pAddrRemap->cbDma;
+                                        return VINF_SUCCESS;
+                                    }
+                                    RT_FALL_THRU();
+                                }
+
+                                case 1:
+                                {
+                                    Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_DT_MASK));
+                                    RT_FALL_THRU();
+                                }
+
+                                default:
+                                {
+                                    dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_4_2, VTDATFAULT_LCT_4_2,
+                                                               pAddrRemap->idDevice, pAddrRemap->uDmaAddr, pAddrRemap->enmReqType,
+                                                               uCtxEntryQword0);
+                                    break;
+                                }
+                            }
                         }
                         else
                             dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_3, VTDATFAULT_LCT_3, pAddrRemap->idDevice,
-                                                       pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
+                                                   pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
                     }
                     else
                         dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_2, VTDATFAULT_LCT_2, pAddrRemap->idDevice,
@@ -1956,10 +2004,12 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   enmAddrType     The PCI memory request address type.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
+static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PCIADDRTYPE enmAddrType, PDMARADDRMAP pAddrRemap)
 {
+    RT_NOREF(enmAddrType);
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
     {
@@ -2055,13 +2105,13 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         {
             case VTD_TTM_LEGACY_MODE:
             {
-                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
+                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, PCIADDRTYPE_UNTRANSLATED, &AddrRemap);
                 break;
             }
 
             case VTD_TTM_SCALABLE_MODE:
             {
-                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
+                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, PCIADDRTYPE_UNTRANSLATED, &AddrRemap);
                 break;
             }
 
