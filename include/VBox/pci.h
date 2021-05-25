@@ -229,6 +229,23 @@ typedef enum PCIADDRESSSPACE
 } PCIADDRESSSPACE;
 
 
+/**
+ * PCI Memory Request with Address Type.
+ * In accordance with the PCI ATS spec.
+ * See PCI ATS spec. 2.1."Memory Requests with Address Type".
+ */
+typedef enum PCIADDRTYPE
+{
+    /** Untranslated request. */
+    PCIADDRTYPE_UNTRANSLATED = 0x0,
+    /** Translation request. */
+    PCIADDRTYPE_TRANSLATION,
+    /** Translated requested.   */
+    PCIADDRTYPE_TRANSLATED,
+    /** Reserved. */
+    PCIADDRTYPE_RSVD
+} PCIADDRTYPE;
+
 
 /** @name PCI Configuration Space Registers
  * @{ */
