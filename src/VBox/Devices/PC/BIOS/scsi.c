@@ -34,7 +34,9 @@
 
 #define VBOX_SCSI_NO_HBA 0xffff
 
-typedef int (* scsi_hba_init)(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
+#define VBOX_SCSI_SINK_BUF_KB 16
+
+typedef int (* scsi_hba_init)(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
 typedef int (* scsi_hba_cmd_data_out)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 typedef int (* scsi_hba_cmd_data_in)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
@@ -128,7 +130,7 @@ static uint16_t scsi_sink_buf_alloc(void)
     if (base_mem_kb == 0)
         return 0;
 
-    base_mem_kb -= 2; /* Allocate 2K block. */
+    base_mem_kb -= VBOX_SCSI_SINK_BUF_KB;
     sink_seg = (((uint32_t)base_mem_kb * 1024) >> 4); /* Calculate start segment. */
 
     write_word(0x00, 0x0413, base_mem_kb);
@@ -572,7 +574,7 @@ void BIOSCALL scsi_init(void)
             u8DevFn = busdevfn & 0x00ff;
 
             DBG_SCSI("SCSI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
-            rc = hbaacc[i].init(hba_seg :> 0, sink_seg :> 0, u8Bus, u8DevFn);
+            rc = hbaacc[i].init(hba_seg :> 0, sink_seg :> 0, VBOX_SCSI_SINK_BUF_KB * 1024, u8Bus, u8DevFn);
             if (!rc)
                 scsi_enumerate_attached_devices(hba_seg, i);
             /** @todo Free memory on error. */

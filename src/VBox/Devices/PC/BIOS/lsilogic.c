@@ -535,7 +535,7 @@ static int lsilogic_scsi_hba_init(lsilogic_t __far *lsilogic)
 /**
  * Init the LsiLogic SCSI driver and detect attached disks.
  */
-int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
     uint32_t u32Bar;

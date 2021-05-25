@@ -661,7 +661,7 @@ static int virtio_scsi_hba_init(virtio_t __far *virtio, uint8_t u8Bus, uint8_t u
 /**
  * Init the VirtIO SCSI driver and detect attached disks.
  */
-int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     virtio_t __far *virtio = (virtio_t __far *)pvHba;
     uint8_t     u8PciCapOff;

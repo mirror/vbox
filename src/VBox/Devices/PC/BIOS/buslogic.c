@@ -31,9 +31,8 @@
 # define DBG_BUSLOGIC(...)
 #endif
 
-#define BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND        0x02
-#define BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX    0x81
 #define BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT 0x25
+#define BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND           0x83
 
 
 #define RT_BIT(bit) (1 << (bit))
@@ -66,218 +65,44 @@
 # define BL_INTR_RSTS   RT_BIT(3)   /* SCSI Bus Reset State. */
 # define BL_INTR_INTV   RT_BIT(7)   /* Interrupt Valid. */
 
-/** Structure for the INITIALIZE EXTENDED MAILBOX request. */
-#pragma pack(1)
-typedef struct ReqInitExtMbx
-{
-    /** Number of mailboxes in guest memory. */
-    uint8_t  cMailbox;
-    /** Physical address of the first mailbox. */
-    uint32_t uMailboxBaseAddress;
-} ReqInitExtMbx;
-#pragma pack()
-
 /**
- * Structure of a mailbox in guest memory.
- * The incoming and outgoing mailbox have the same size
- * but the incoming one has some more fields defined which
- * are marked as reserved in the outgoing one.
- * The last field is also different from the type.
- * For outgoing mailboxes it is the action and
- * for incoming ones the completion status code for the task.
- * We use one structure for both types.
+ * The structure for the "Execute SCSI Command" command.
  */
-typedef struct Mailbox32
+typedef struct ESCMD
 {
-    /** Physical address of the CCB structure in the guest memory. */
-    volatile uint32_t u32PhysAddrCCB;
-    /** Type specific data. */
-    union
-    {
-        /** For outgoing mailboxes. */
-        struct
-        {
-            /** Reserved */
-            uint8_t uReserved[3];
-            /** Action code. */
-            uint8_t uActionCode;
-        } out;
-        /** For incoming mailboxes. */
-        struct
-        {
-            /** The host adapter status after finishing the request. */
-            volatile uint8_t  uHostAdapterStatus;
-            /** The status of the device which executed the request after executing it. */
-            volatile uint8_t  uTargetDeviceStatus;
-            /** Reserved. */
-            volatile uint8_t  uReserved;
-            /** The completion status code of the request. */
-            volatile uint8_t uCompletionCode;
-        } in;
-    } u;
-} Mailbox32, *PMailbox32;
-
-/**
- * Action codes for outgoing mailboxes.
- */
-enum BUSLOGIC_MAILBOX_OUTGOING_ACTION
-{
-    BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE = 0x00,
-    BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND = 0x01,
-    BUSLOGIC_MAILBOX_OUTGOING_ACTION_ABORT_COMMAND = 0x02
-};
-
-/**
- * Completion codes for incoming mailboxes.
- */
-enum BUSLOGIC_MAILBOX_INCOMING_COMPLETION
-{
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE = 0x00,
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR = 0x01,
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED = 0x02,
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED_NOT_FOUND = 0x03,
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR = 0x04,
-    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_INVALID_CCB = 0x05
-};
-
-/**
- * Host adapter status for incoming mailboxes.
- */
-enum BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS
-{
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED = 0x00,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_LINKED_CMD_COMPLETED = 0x0a,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_LINKED_CMD_COMPLETED_WITH_FLAG = 0x0b,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_DATA_UNDERUN = 0x0c,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT = 0x11,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_DATA_OVERRUN = 0x12,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_UNEXPECTED_BUS_FREE = 0x13,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_BUS_PHASE_REQUESTED = 0x14,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_OUTGOING_MAILBOX_ACTION_CODE = 0x15,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_OPERATION_CODE = 0x16,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_LINKED_CCB_HAS_INVALID_LUN = 0x17,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_PARAMETER = 0x1a,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_AUTO_REQUEST_SENSE_FAILED = 0x1b,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_TAGGED_QUEUING_MESSAGE_REJECTED = 0x1c,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_UNSUPPORTED_MESSAGE_RECEIVED = 0x1d,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_HOST_ADAPTER_HARDWARE_FAILED = 0x20,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_TARGET_FAILED_RESPONSE_TO_ATN = 0x21,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_HOST_ADAPTER_ASSERTED_RST = 0x22,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_OTHER_DEVICE_ASSERTED_RST = 0x23,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_TARGET_DEVICE_RECONNECTED_IMPROPERLY = 0x24,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_HOST_ADAPTER_ASSERTED_BUS_DEVICE_RESET = 0x25,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_ABORT_QUEUE_GENERATED = 0x26,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_HOST_ADAPTER_SOFTWARE_ERROR = 0x27,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_HOST_ADAPTER_HARDWARE_TIMEOUT_ERROR = 0x30,
-    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_PARITY_ERROR_DETECTED = 0x34
-};
-
-/**
- * Device status codes for incoming mailboxes.
- */
-enum BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS
-{
-    BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD = 0x00,
-    BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION = 0x02,
-    BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_DEVICE_BUSY = 0x08
-};
-
-/**
- * Opcode types for CCB.
- */
-enum BUSLOGIC_CCB_OPCODE
-{
-    BUSLOGIC_CCB_OPCODE_INITIATOR_CCB = 0x00,
-    BUSLOGIC_CCB_OPCODE_TARGET_CCB = 0x01,
-    BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER = 0x02,
-    BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH = 0x03,
-    BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER = 0x04,
-    BUSLOGIC_CCB_OPCODE_BUS_DEVICE_RESET = 0x81
-};
-
-/**
- * Data transfer direction.
- */
-enum BUSLOGIC_CCB_DIRECTION
-{
-    BUSLOGIC_CCB_DIRECTION_UNKNOWN = 0x00,
-    BUSLOGIC_CCB_DIRECTION_IN      = 0x01,
-    BUSLOGIC_CCB_DIRECTION_OUT     = 0x02,
-    BUSLOGIC_CCB_DIRECTION_NO_DATA = 0x03
-};
-
-/**
- * The command control block for a SCSI request.
- */
-typedef struct CCB32
-{
-    /** Opcode. */
-    uint8_t       uOpcode;
-    /** Reserved */
-    unsigned char uReserved1 :      3;
-    /** Data direction for the request. */
-    unsigned char uDataDirection :  2;
-    /** Whether the request is tag queued. */
-    unsigned char fTagQueued :      1;
-    /** Queue tag mode. */
-    unsigned char uQueueTag :       2;
-    /** Length of the SCSI CDB. */
-    uint8_t       cbCDB;
-    /** Sense data length. */
-    uint8_t       cbSenseData;
     /** Data length. */
-    uint32_t      cbData;
-    /** Data pointer.
-     *  This points to the data region or a scatter gather list based on the opcode.
-     */
-    uint32_t      u32PhysAddrData;
-    /** Reserved. */
-    uint8_t       uReserved2[2];
-    /** Host adapter status. */
-    uint8_t       uHostAdapterStatus;
-    /** Device adapter status. */
-    uint8_t       uDeviceStatus;
+    uint32_t        cbData;
+    /** Data pointer. */
+    uint32_t        u32PhysAddrData;
     /** The device the request is sent to. */
-    uint8_t       uTargetId;
-    /**The LUN in the device. */
-    unsigned char uLogicalUnit : 5;
-    /** Legacy tag. */
-    unsigned char fLegacyTagEnable : 1;
-    /** Legacy queue tag. */
-    unsigned char uLegacyQueueTag : 2;
-    /** The SCSI CDB.  (A CDB can be 12 bytes long.) */
-    uint8_t       abCDB[12];
-    /** Reserved. */
-    uint8_t       uReserved3[6];
-    /** Sense data pointer. */
-    uint32_t      u32PhysAddrSenseData;
-} CCB32, *PCCB32;
-
-/** 32-bit scatter-gather list entry. */
-typedef struct SGE32
-{
-    uint32_t   cbSegment;
-    uint32_t   u32PhysAddrSegmentBase;
-} SGE32, *PSGE32;
-
+    uint8_t         uTargetId;
+    /** The LUN in the device. */
+    uint8_t         uLogicalUnit;
+    /** Reserved */
+    unsigned char   uReserved1 : 3;
+    /** Data direction for the request. */
+    unsigned char   uDataDirection : 2;
+    /** Reserved */
+    unsigned char   uReserved2 : 3;
+    /** Length of the SCSI CDB. */
+    uint8_t         cbCDB;
+    /** The SCSI CDB.  (A CDB can be 12 bytes long.)   */
+    uint8_t         abCDB[16];
+} ESCMD, *PESCMD;
 
 /**
  * BusLogic-SCSI controller data.
  */
 typedef struct
 {
-    /** Outgoing mailbox - must come first because of alignment reasons. */
-    Mailbox32        MbxOut32;
-    /** Incoming mailbox. */
-    Mailbox32        MbxIn32;
-    /** Command control block. */
-    CCB32            Ccb32;
-    /** List of scatter gather entries. */
-    SGE32            aSge[3];
+    /** The execute SCSI command. */
+    ESCMD            EsCmd;
     /** I/O base of device. */
     uint16_t         u16IoBase;
     /** The sink buf. */
     void __far       *pvSinkBuf;
+    /** Size of the sink buffer in bytes. */
+    uint16_t         cbSinkBuf;
 } buslogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -320,41 +145,29 @@ int buslogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
                                uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
+    uint8_t abReply[4];
     int i;
+    int rc;
 
-    buslogic->MbxIn32.u.in.uCompletionCode = BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE;
+    _fmemset(&buslogic->EsCmd, 0, sizeof(buslogic->EsCmd));
+    _fmemset(abReply, 0, sizeof(abReply));
 
-    _fmemset(&buslogic->Ccb32, 0, sizeof(buslogic->Ccb32));
+    buslogic->EsCmd.cbData = length;
+    buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buffer);
+    buslogic->EsCmd.uTargetId       = idTgt;
+    buslogic->EsCmd.uLogicalUnit    = 0;
+    buslogic->EsCmd.uDataDirection  = 0;
+    buslogic->EsCmd.cbCDB           = cbCDB;
 
-    buslogic->Ccb32.uOpcode         = BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER;
-    buslogic->Ccb32.uDataDirection  = BUSLOGIC_CCB_DIRECTION_OUT;
-    buslogic->Ccb32.cbCDB           = cbCDB;
-    buslogic->Ccb32.cbSenseData     = 0;
-    buslogic->Ccb32.cbData          = sizeof(buslogic->aSge[0]);
-    buslogic->Ccb32.u32PhysAddrData = buslogic_addr_to_phys(&buslogic->aSge[0]);
-    buslogic->Ccb32.uTargetId       = idTgt;
     for (i = 0; i < cbCDB; i++)
-        buslogic->Ccb32.abCDB[i] = aCDB[i];
+        buslogic->EsCmd.abCDB[i] = aCDB[i];
 
-    buslogic->aSge[0].cbSegment = length;
-    buslogic->aSge[0].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buffer);
+    rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND, (uint8_t __far *)&buslogic->EsCmd,
+                      sizeof(buslogic->EsCmd) - sizeof(buslogic->EsCmd.abCDB) + cbCDB, &abReply[0], sizeof(abReply));
+    if (!rc)
+        rc = abReply[2];
 
-    /* Send it off. */
-    buslogic->MbxOut32.u32PhysAddrCCB    = buslogic_addr_to_phys(&buslogic->Ccb32);
-    buslogic->MbxOut32.u.out.uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND;
-    outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_COMMAND, BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND);
-
-    /* Wait for it to finish. */
-    while (!(inb(buslogic->u16IoBase + BUSLOGIC_REGISTER_INTERRUPT) & BL_INTR_IMBL));
-
-    /* Clear interrupt status. */
-    outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_CONTROL, BL_CTRL_RINT);
-
-    /* Check mailbox status. */
-    if (buslogic->MbxIn32.u.in.uCompletionCode != BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR)
-        return 4;
-
-    return 0;
+    return rc;
 }
 
 int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
@@ -362,60 +175,53 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
                             uint16_t skip_a)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
+    uint8_t abReply[4];
     int i;
-    uint8_t idxSge = 0;
+    int rc;
 
-    buslogic->MbxIn32.u.in.uCompletionCode = BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE;
+    DBG_BUSLOGIC("buslogic_scsi_cmd_data_in:\n");
 
-    _fmemset(&buslogic->Ccb32, 0, sizeof(buslogic->Ccb32));
+    if (   (   skip_b
+            || skip_a)
+        && skip_b + length + skip_a > buslogic->cbSinkBuf) /* Sink buffer is only 16KB at the moment. */
+        return 1;
 
-    buslogic->Ccb32.uOpcode         = BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER;
-    buslogic->Ccb32.uDataDirection  = BUSLOGIC_CCB_DIRECTION_IN;
-    buslogic->Ccb32.cbCDB           = cbCDB;
-    buslogic->Ccb32.cbSenseData     = 0;
-    buslogic->Ccb32.u32PhysAddrData = buslogic_addr_to_phys(&buslogic->aSge[0]);
-    buslogic->Ccb32.uTargetId       = idTgt;
+    _fmemset(&buslogic->EsCmd, 0, sizeof(buslogic->EsCmd));
+    _fmemset(abReply, 0, sizeof(abReply));
+
+    if (!skip_b && !skip_a)
+    {
+        buslogic->EsCmd.cbData = length;
+        buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buffer);
+    }
+    else
+    {
+        buslogic->EsCmd.cbData = length + skip_b + skip_a;
+        buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buslogic->pvSinkBuf); /* Requires the sink buffer because there is no S/G variant. */
+    }
+    buslogic->EsCmd.uTargetId       = idTgt;
+    buslogic->EsCmd.uLogicalUnit    = 0;
+    buslogic->EsCmd.uDataDirection  = 0;
+    buslogic->EsCmd.cbCDB           = cbCDB;
+
     for (i = 0; i < cbCDB; i++)
-        buslogic->Ccb32.abCDB[i] = aCDB[i];
+        buslogic->EsCmd.abCDB[i] = aCDB[i];
 
-    /* Prepend a sinkhole if data is skipped upfront. */
-    if (skip_b)
+    rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND, (uint8_t __far *)&buslogic->EsCmd,
+                      sizeof(buslogic->EsCmd) - sizeof(buslogic->EsCmd.abCDB) + cbCDB, &abReply[0], sizeof(abReply));
+    if (!rc)
     {
-        buslogic->aSge[idxSge].cbSegment = skip_b;
-        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buslogic->pvSinkBuf);
-        idxSge++;
+        /* Copy the data over from the sink buffer. */
+        if (abReply[2] == 0)
+        {
+            if (skip_b || skip_a)
+                _fmemcpy(buffer, (const uint8_t __far *)buslogic->pvSinkBuf + skip_b, length);
+        }
+        else
+            rc = abReply[2];
     }
 
-    buslogic->aSge[idxSge].cbSegment = length;
-    buslogic->aSge[idxSge].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buffer);
-    idxSge++;
-
-    /* Append a sinkhole if data is skipped at the end. */
-    if (skip_a)
-    {
-        buslogic->aSge[idxSge].cbSegment = skip_a;
-        buslogic->aSge[idxSge].u32PhysAddrSegmentBase = buslogic_addr_to_phys(buslogic->pvSinkBuf);
-        idxSge++;
-    }
-
-    buslogic->Ccb32.cbData = idxSge * sizeof(buslogic->aSge[0]);
-
-    /* Send it off. */
-    buslogic->MbxOut32.u32PhysAddrCCB    = buslogic_addr_to_phys(&buslogic->Ccb32);
-    buslogic->MbxOut32.u.out.uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND;
-    outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_COMMAND, BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND);
-
-    /* Wait for it to finish. */
-    while (!(inb(buslogic->u16IoBase + BUSLOGIC_REGISTER_INTERRUPT) & BL_INTR_IMBL));
-
-    /* Clear interrupt status. */
-    outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_CONTROL, BL_CTRL_RINT);
-
-    /* Check mailbox status. */
-    if (buslogic->MbxIn32.u.in.uCompletionCode != BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR)
-        return 4;
-
-    return 0;
+    return rc;
 }
 
 /**
@@ -423,35 +229,22 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
  */
 static int buslogic_scsi_hba_init(buslogic_t __far *buslogic)
 {
-    int rc;
     uint8_t bIrqOff = 0;
-    ReqInitExtMbx       ReqInitMbx;
 
     /* Hard reset. */
     outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_CONTROL, BL_CTRL_RHARD);
     while (!(inb(buslogic->u16IoBase + BUSLOGIC_REGISTER_STATUS) & BL_STAT_HARDY));
 
     /* Disable interrupts. */
-    rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT,
-                      (unsigned char __far *)&bIrqOff, sizeof(bIrqOff),
-                      NULL, 0);
-    if (!rc)
-    {
-        /* Initialize mailbox. */
-        ReqInitMbx.cMailbox = 1;
-        ReqInitMbx.uMailboxBaseAddress = buslogic_addr_to_phys(&buslogic->MbxOut32);
-        rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX,
-                          (unsigned char __far *)&ReqInitMbx, sizeof(ReqInitMbx),
-                          NULL, 0);
-    }
-
-    return rc;
+    return buslogic_cmd(buslogic, BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT,
+                        (unsigned char __far *)&bIrqOff, sizeof(bIrqOff),
+                        NULL, 0);
 }
 
 /**
  * Init the BusLogic SCSI driver and detect attached disks.
  */
-int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
     uint32_t u32Bar;
@@ -472,6 +265,7 @@ int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint8_t u8Bus, 
         DBG_BUSLOGIC("I/O base: 0x%x\n", u16IoBase);
         buslogic->u16IoBase = u16IoBase;
         buslogic->pvSinkBuf = pvSinkBuf;
+        buslogic->cbSinkBuf = cbSinkBuf;
         return buslogic_scsi_hba_init(buslogic);
     }
     else
