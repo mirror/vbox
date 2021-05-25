@@ -134,6 +134,10 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** DMAR implementation's minor version number (exposed to software). */
 #define DMAR_VER_MINOR                              0
 
+/** Number of domain supported (0=16, 1=64, 2=256, 3=1K, 4=4K, 5=16K, 6=64K,
+ *  7=Reserved). */
+#define DMAR_ND                                     6
+
 /** Release log prefix string. */
 #define DMAR_LOG_PFX                                "Intel-IOMMU"
 /** The current saved state version. */
@@ -157,6 +161,12 @@ typedef enum
     kDmarDiag_None = 0,
 
     /* Address Translation Faults. */
+    kDmarDiag_Atf_Lct_1,
+    kDmarDiag_Atf_Lct_2,
+    kDmarDiag_Atf_Lct_3,
+    kDmarDiag_Atf_Lct_4_1,
+    kDmarDiag_Atf_Lct_4_2,
+    kDmarDiag_Atf_Lct_4_3,
     kDmarDiag_Atf_Lrt_1,
     kDmarDiag_Atf_Lrt_2,
     kDmarDiag_Atf_Lrt_3,
@@ -216,6 +226,12 @@ AssertCompileSize(DMARDIAG, 4);
 static const char *const g_apszDmarDiagDesc[] =
 {
     DMARDIAG_DESC(None                      ),
+    DMARDIAG_DESC(Atf_Lct_1                 ),
+    DMARDIAG_DESC(Atf_Lct_2                 ),
+    DMARDIAG_DESC(Atf_Lct_3                 ),
+    DMARDIAG_DESC(Atf_Lct_4_1               ),
+    DMARDIAG_DESC(Atf_Lct_4_2               ),
+    DMARDIAG_DESC(Atf_Lct_4_3               ),
     DMARDIAG_DESC(Atf_Lrt_1                 ),
     DMARDIAG_DESC(Atf_Lrt_2                 ),
     DMARDIAG_DESC(Atf_Lrt_3                 ),
@@ -670,6 +686,10 @@ static uint8_t const *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
 
 /* Masks arrays must be identical in size (even bounds checking code assumes this). */
 AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
+
+/** Array of valid domain-ID bits. */
+static uint16_t const g_auNdMask[] = { 0xf, 0x3f, 0xff, 0x3ff, 0xfff, 0x3fff, 0xffff, 0 };
+AssertCompile(RT_ELEMENTS(g_auNdMask) >= DMAR_ND);
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -1430,6 +1450,37 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT e
 
 
 /**
+ * Records a qualified address translation fault.
+ *
+ * Qualified faults are those that can be suppressed by software using the FPD bit
+ * in the contex entry, scalable-mode context entry etc.
+ *
+ * This is to be used when Device-TLB, and PASIDs are not supported or for requests
+ * where the device-TLB and PASID is not relevant/present.
+ *
+ * @param   pDevIns             The IOMMU device instance.
+ * @param   enmDiag             The diagnostic reason.
+ * @param   enmAtFault          The address translation fault reason.
+ * @param   idDevice            The device ID (bus, device, function).
+ * @param   uFaultAddr          The page address of the faulted request.
+ * @param   enmReqType          The type of the faulted request.
+ * @param   uPagingEntryQw0     The first qword of the paging entry.
+ */
+static void dmarAtFaultQualifiedRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, uint16_t idDevice,
+                                       uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint64_t uPagingEntryQw0)
+{
+    AssertCompile(    VTD_BF_0_CONTEXT_ENTRY_FPD_MASK       == 0x2
+                   && VTD_BF_0_SM_CONTEXT_ENTRY_FPD_MASK    == 0x2
+                   && VTD_BF_0_SM_CONTEXT_ENTRY_FPD_MASK    == 0x2
+                   && VTD_BF_SM_PASID_DIR_ENTRY_FPD_MASK    == 0x2
+                   && VTD_BF_0_SM_PASID_TBL_ENTRY_FPD_MASK  == 0x2);
+    if (!(uPagingEntryQw0 & VTD_BF_0_CONTEXT_ENTRY_FPD_MASK))
+        dmarAtFaultRecordEx(pDevIns, enmDiag, enmAtFault, idDevice, uFaultAddr, enmReqType, 0 /* uAddrType */,
+                            false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
+}
+
+
+/**
  * Records an IQE fault.
  *
  * @param   pDevIns     The IOMMU device instance.
@@ -1849,8 +1900,8 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
     {
         uint64_t const uRootEntryQword0 = RootEntry.au64[0];
         uint64_t const uRootEntryQword1 = RootEntry.au64[1];
-        bool const fPresent = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_P);
-        if (fPresent)
+        bool const fRootEntryPresent = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_P);
+        if (fRootEntryPresent)
         {
             if (   !(uRootEntryQword0 & ~VTD_ROOT_ENTRY_0_VALID_MASK)
                 && !(uRootEntryQword1 & ~VTD_ROOT_ENTRY_1_VALID_MASK))
@@ -1859,9 +1910,30 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                 uint8_t const idxCtxEntry = RT_LO_U8(pAddrRemap->idDevice);
                 VTD_CONTEXT_ENTRY_T CtxEntry;
                 rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
-
-                /** @todo Handle context entry validation and processing. */
-                return VERR_NOT_IMPLEMENTED;
+                if (RT_SUCCESS(rc))
+                {
+                    uint64_t const uCtxEntryQword0 = CtxEntry.au64[0];
+                    uint64_t const uCtxEntryQword1 = CtxEntry.au64[1];
+                    bool const fCtxEntryPresent = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_P);
+                    if (fCtxEntryPresent)
+                    {
+                        if (   !(uCtxEntryQword0 & ~VTD_CONTEXT_ENTRY_0_VALID_MASK)
+                            && !(uCtxEntryQword1 & ~VTD_CONTEXT_ENTRY_1_VALID_MASK))
+                        {
+                            /** @todo Handle context entry validation and processing. */
+                            return VERR_NOT_IMPLEMENTED;
+                        }
+                        else
+                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_3, pAddrRemap->idDevice,
+                                                       pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
+                    }
+                    else
+                        dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_2, pAddrRemap->idDevice,
+                                                   pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
+                }
+                else
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_1, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                                      pAddrRemap->enmReqType);
             }
             else
                 dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_3, VTDATFAULT_LRT_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
@@ -3048,14 +3120,14 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t const fMamv    = (fSl2gp ? X86_PAGE_1G_SHIFT       /* Maximum address mask value (for 2nd-level invalidations). */
                                          : X86_PAGE_2M_SHIFT)
                                - X86_PAGE_4K_SHIFT;
-        uint8_t const fNd      = 2;                                /* Number of domains supported (0=16, 1=64, 2=256, 3=1K, 4=4K,
-                                                                      5=16K, 6=64K, 7=Reserved). */
+        uint8_t const fNd      = DMAR_ND;                          /* Number of domains supported. */
         uint8_t const fPsi     = 1;                                /* Page selective invalidation. */
         uint8_t const uMgaw    = cGstPhysAddrBits - 1;             /* Maximum guest address width. */
         uint8_t const uSagaw   = vtdCapRegGetSagaw(uMgaw);         /* Supported adjust guest address width. */
         uint16_t const offFro  = DMAR_MMIO_OFF_FRCD_LO_REG >> 4;   /* MMIO offset of FRCD registers. */
         uint8_t const fEsrtps  = 1;                                /* Enhanced SRTPS (auto invalidate cache on SRTP). */
         uint8_t const fEsirtps = 1;                                /* Enhanced SIRTPS (auto invalidate cache on SIRTP). */
+        AssertCompile(DMAR_ND <= 6);
 
         pThis->fCapReg = RT_BF_MAKE(VTD_BF_CAP_REG_ND,      fNd)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,     0)     /* Advanced fault logging not supported. */

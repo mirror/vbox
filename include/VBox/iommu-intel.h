@@ -249,6 +249,16 @@ typedef struct VTD_CONTEXT_ENTRY_T
 typedef VTD_CONTEXT_ENTRY_T *PVTD_CONTEXT_ENTRY_T;
 /** Pointer to a const context entry. */
 typedef VTD_CONTEXT_ENTRY_T const *PCVTD_CONTEXT_ENTRY_T;
+
+/* Context Entry: Qword 0 valid mask. */
+#define VTD_CONTEXT_ENTRY_0_VALID_MASK                          (  VTD_BF_0_CONTEXT_ENTRY_P_MASK \
+                                                                 | VTD_BF_0_CONTEXT_ENTRY_FPD_MASK \
+                                                                 | VTD_BF_0_CONTEXT_ENTRY_TT_MASK \
+                                                                 | VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK)
+/* Context Entry: Qword 1 valid mask. */
+#define VTD_CONTEXT_ENTRY_1_VALID_MASK                          (  VTD_BF_1_CONTEXT_ENTRY_AW_MASK \
+                                                                 | VTD_BF_1_CONTEXT_ENTRY_IGN_6_3_MASK \
+                                                                 | VTD_BF_1_CONTEXT_ENTRY_DID_MASK)
 /** @} */
 
 
@@ -294,7 +304,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_SM_CONTEXT_ENTRY_, UINT64_C(0), UINT64_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_SM_CONTEXT_ENTRY_, UINT64_C(0), UINT64_MAX,
                             (RID_PASID, RID_PRIV, RSVD_63_21));
 
-/** Context Entry. */
+/** Scalable-mode Context Entry. */
 typedef struct VTD_SM_CONTEXT_ENTRY_T
 {
     /** The qwords in the scalable-mode context entry. */
