@@ -405,6 +405,12 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
     return rc;
 }
 
+VMMR3DECL(void) MMR3HeapFree(void *pv)
+{
+    /* counterpart to CFGMR3QueryStringAlloc */
+    RTStrFree((char *)pv);
+}
+
 VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
     PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
@@ -818,6 +824,22 @@ static int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pD
         audioTestDriverStackDelete(pDrvStack);
     }
 
+    return rc;
+}
+
+/**
+ * Wrapper around PDMIHOSTAUDIO::pfnSetDevice.
+ */
+static int audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId)
+{
+    int rc;
+    if (   pDrvStack->pIHostAudio
+        && pDrvStack->pIHostAudio->pfnSetDevice)
+        rc = pDrvStack->pIHostAudio->pfnSetDevice(pDrvStack->pIHostAudio, enmDir, pszDevId);
+    else if (!pszDevId || *pszDevId)
+        rc = VINF_SUCCESS;
+    else
+        rc = VERR_INVALID_FUNCTION;
     return rc;
 }
 
@@ -2254,7 +2276,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 /**
  * Worker for audioTestCmdPlayHandler that plays one file.
  */
-static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uint32_t cMsBufferSize,
+static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
                                    uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint, bool fWithDrvAudio)
 {
     /*
@@ -2285,101 +2307,110 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
     if (RT_SUCCESS(rc))
     {
         /*
-         * Open a stream for the output.
+         * Set the output device if one is specified.
          */
-        PDMAUDIOSTREAMCFG CfgAcq;
-        PPDMAUDIOSTREAM   pStream = NULL;
-        rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &WaveFile.Props, cMsBufferSize,
-                                                    cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
+        rc = audioTestDriverStackSetDevice(&DrvStack, PDMAUDIODIR_OUT, pszDevId);
         if (RT_SUCCESS(rc))
         {
-            rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
+            /*
+             * Open a stream for the output.
+             */
+            PDMAUDIOSTREAMCFG CfgAcq;
+            PPDMAUDIOSTREAM   pStream = NULL;
+            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &WaveFile.Props, cMsBufferSize,
+                                                        cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
             if (RT_SUCCESS(rc))
             {
-                uint64_t const nsStarted = RTTimeNanoTS();
-
-                /*
-                 * Transfer data as quickly as we're allowed.
-                 */
-                for (;;)
+                rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
+                if (RT_SUCCESS(rc))
                 {
-                    /* Read a chunk from the wave file. */
-                    uint8_t  abSamples[16384];
-                    size_t   cbSamples = 0;
-                    rc = AudioTestWaveFileRead(&WaveFile, abSamples, sizeof(abSamples), &cbSamples);
-                    if (RT_SUCCESS(rc) && cbSamples > 0)
+                    uint64_t const nsStarted = RTTimeNanoTS();
+
+                    /*
+                     * Transfer data as quickly as we're allowed.
+                     */
+                    for (;;)
                     {
-                        /* Transfer the data to the audio stream. */
-                        for (uint32_t offSamples = 0; offSamples < cbSamples;)
+                        /* Read a chunk from the wave file. */
+                        uint8_t  abSamples[16384];
+                        size_t   cbSamples = 0;
+                        rc = AudioTestWaveFileRead(&WaveFile, abSamples, sizeof(abSamples), &cbSamples);
+                        if (RT_SUCCESS(rc) && cbSamples > 0)
                         {
-                            uint32_t const cbCanWrite = audioTestDriverStackStreamGetWritable(&DrvStack, pStream);
-                            if (cbCanWrite > 0)
+                            /* Transfer the data to the audio stream. */
+                            for (uint32_t offSamples = 0; offSamples < cbSamples;)
                             {
-                                uint32_t const cbToPlay = RT_MIN(cbCanWrite, (uint32_t)cbSamples - offSamples);
-                                uint32_t       cbPlayed = 0;
-                                rc = audioTestDriverStackStreamPlay(&DrvStack, pStream, &abSamples[offSamples],
-                                                                    cbToPlay, &cbPlayed);
-                                if (RT_SUCCESS(rc))
+                                uint32_t const cbCanWrite = audioTestDriverStackStreamGetWritable(&DrvStack, pStream);
+                                if (cbCanWrite > 0)
                                 {
-                                    if (cbPlayed)
-                                        offSamples += cbPlayed;
+                                    uint32_t const cbToPlay = RT_MIN(cbCanWrite, (uint32_t)cbSamples - offSamples);
+                                    uint32_t       cbPlayed = 0;
+                                    rc = audioTestDriverStackStreamPlay(&DrvStack, pStream, &abSamples[offSamples],
+                                                                        cbToPlay, &cbPlayed);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        if (cbPlayed)
+                                            offSamples += cbPlayed;
+                                        else
+                                        {
+                                            rcExit = RTMsgErrorExitFailure("Played zero out of %#x bytes - %#x bytes reported playable!\n",
+                                                                           cbToPlay, cbCanWrite);
+                                            break;
+                                        }
+                                    }
                                     else
                                     {
-                                        rcExit = RTMsgErrorExitFailure("Played zero out of %#x bytes - %#x bytes reported playable!\n",
-                                                                       cbToPlay, cbCanWrite);
+                                        rcExit = RTMsgErrorExitFailure("Failed to play %#x bytes: %Rrc\n", cbToPlay, rc);
                                         break;
                                     }
                                 }
+                                else if (audioTestDriverStackStreamIsOkay(&DrvStack, pStream))
+                                    RTThreadSleep(RT_MIN(RT_MAX(1, CfgAcq.Device.cMsSchedulingHint), 256));
                                 else
                                 {
-                                    rcExit = RTMsgErrorExitFailure("Failed to play %#x bytes: %Rrc\n", cbToPlay, rc);
+                                    rcExit = RTMsgErrorExitFailure("Stream is not okay!\n");
                                     break;
                                 }
                             }
-                            else if (audioTestDriverStackStreamIsOkay(&DrvStack, pStream))
-                                RTThreadSleep(RT_MIN(RT_MAX(1, CfgAcq.Device.cMsSchedulingHint), 256));
-                            else
-                            {
-                                rcExit = RTMsgErrorExitFailure("Stream is not okay!\n");
-                                break;
-                            }
+                        }
+                        else if (RT_SUCCESS(rc) && cbSamples == 0)
+                        {
+                            rcExit = RTEXITCODE_SUCCESS;
+                            break;
+                        }
+                        else
+                        {
+                            rcExit = RTMsgErrorExitFailure("Error reading wav file '%s': %Rrc", pszFile, rc);
+                            break;
                         }
                     }
-                    else if (RT_SUCCESS(rc) && cbSamples == 0)
-                    {
-                        rcExit = RTEXITCODE_SUCCESS;
-                        break;
-                    }
-                    else
-                    {
-                        rcExit = RTMsgErrorExitFailure("Error reading wav file '%s': %Rrc", pszFile, rc);
-                        break;
-                    }
-                }
 
-                /*
-                 * Drain the stream.
-                 */
-                if (rcExit == RTEXITCODE_SUCCESS)
-                {
-                    if (g_uVerbosity > 0)
-                        RTMsgInfo("%'RU64 ns: Draining...\n", RTTimeNanoTS() - nsStarted);
-                    rc = audioTestDriverStackStreamDrain(&DrvStack, pStream, true /*fSync*/);
-                    if (RT_SUCCESS(rc))
+                    /*
+                     * Drain the stream.
+                     */
+                    if (rcExit == RTEXITCODE_SUCCESS)
                     {
                         if (g_uVerbosity > 0)
-                            RTMsgInfo("%'RU64 ns: Done\n", RTTimeNanoTS() - nsStarted);
+                            RTMsgInfo("%'RU64 ns: Draining...\n", RTTimeNanoTS() - nsStarted);
+                        rc = audioTestDriverStackStreamDrain(&DrvStack, pStream, true /*fSync*/);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (g_uVerbosity > 0)
+                                RTMsgInfo("%'RU64 ns: Done\n", RTTimeNanoTS() - nsStarted);
+                        }
+                        else
+                            rcExit = RTMsgErrorExitFailure("Draining failed: %Rrc", rc);
                     }
-                    else
-                        rcExit = RTMsgErrorExitFailure("Draining failed: %Rrc", rc);
                 }
+                else
+                    rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
+                audioTestDriverStackStreamDestroy(&DrvStack, pStream);
             }
             else
-                rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
-            audioTestDriverStackStreamDestroy(&DrvStack, pStream);
+                rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
         }
         else
-            rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
+            rcExit = RTMsgErrorExitFailure("Failed to set output device to '%s': %Rrc", pszDevId, rc);
         audioTestDriverStackDelete(&DrvStack);
     }
     else
@@ -2394,6 +2425,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, uin
 static const RTGETOPTDEF g_aCmdPlayOptions[] =
 {
     { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
 };
 
@@ -2404,6 +2436,7 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
     {
         case 'b': return "The audio backend to use.";
         case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'o': return "The ID of the output device to use.";
         default:  return NULL;
     }
 }
@@ -2421,6 +2454,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     uint32_t    cMsBufferSize     = UINT32_MAX;
     uint32_t    cMsPreBuffer      = UINT32_MAX;
     uint32_t    cMsSchedulingHint = UINT32_MAX;
+    const char *pszDevId          = NULL;
     bool        fWithDrvAudio     = false;
 
     /* Argument processing loop: */
@@ -2447,9 +2481,13 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 fWithDrvAudio = true;
                 break;
 
+            case 'o':
+                pszDevId = ValueUnion.psz;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
             {
-                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, cMsBufferSize, cMsPreBuffer,
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
                                                      cMsSchedulingHint, fWithDrvAudio);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
