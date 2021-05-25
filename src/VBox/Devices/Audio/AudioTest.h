@@ -91,19 +91,6 @@ typedef struct AUDIOTESTTONEPARMS
 typedef AUDIOTESTTONEPARMS *PAUDIOTESTTONEPARMS;
 
 /**
- * Structure for keeping an audio test audio stream.
- */
-typedef struct AUDIOTESTSTREAM
-{
-    /** Created flag to avoid double destruction in backends. */
-    bool                  fCreated;
-    /** Backend-specific stream data. */
-    PDMAUDIOBACKENDSTREAM Backend;
-} AUDIOTESTSTREAM;
-/** Pointer to audio test stream. */
-typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
-
-/**
  * Enumeration for the test set mode.
  */
 typedef enum AUDIOTESTSETMODE

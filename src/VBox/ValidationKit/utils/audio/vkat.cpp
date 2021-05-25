@@ -176,23 +176,38 @@ typedef AUDIOTESTDRVSTACKSTREAM *PAUDIOTESTDRVSTACKSTREAM;
 #define AUDIOTESTENV_MAX_STREAMS 8
 
 /**
+ * Structure for keeping an audio test audio stream.
+ */
+typedef struct AUDIOTESTSTREAM
+{
+    /** The PDM stream. */
+    PPDMAUDIOSTREAM         pStream;
+    /** The backend stream. */
+    PPDMAUDIOBACKENDSTREAM  pBackend;
+    /** The stream config. */
+    PDMAUDIOSTREAMCFG       Cfg;
+} AUDIOTESTSTREAM;
+/** Pointer to audio test stream. */
+typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
+
+/**
  * Audio test environment parameters.
  * Not necessarily bound to a specific test (can be reused).
  */
 typedef struct AUDIOTESTENV
 {
     /** Output path for storing the test environment's final test files. */
-    char                  szPathOut[RTPATH_MAX];
+    char                    szPathOut[RTPATH_MAX];
     /** Temporary path for this test environment. */
-    char                  szPathTemp[RTPATH_MAX];
+    char                    szPathTemp[RTPATH_MAX];
     /** The audio test driver stack. */
-    AUDIOTESTDRVSTACK     DrvStack;
+    AUDIOTESTDRVSTACK       DrvStack;
     /** The current (last) audio device enumeration to use. */
-    PDMAUDIOHOSTENUM      DevEnum;
+    PDMAUDIOHOSTENUM        DevEnum;
     /** Audio stream. */
-    AUDIOTESTSTREAM       aStreams[AUDIOTESTENV_MAX_STREAMS];
+    AUDIOTESTSTREAM         aStreams[AUDIOTESTENV_MAX_STREAMS];
     /** The audio test set to use. */
-    AUDIOTESTSET          Set;
+    AUDIOTESTSET            Set;
 } AUDIOTESTENV;
 
 /**
@@ -848,75 +863,37 @@ static int audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIOD
 }
 
 /**
- * Creates an output stream.
+ * Common stream creation code.
  *
  * @returns VBox status code.
  * @param   pDrvStack           The audio driver stack to create it via.
- * @param   pProps              The audio properties to use.
- * @param   cMsBufferSize       The buffer size in milliseconds.
- * @param   cMsPreBuffer        The pre-buffering amount in milliseconds.
- * @param   cMsSchedulingHint   The scheduling hint in milliseconds.
+ * @param   pCfgReq             The requested config.
  * @param   ppStream            Where to return the stream pointer on success.
  * @param   pCfgAcq             Where to return the actual (well, not
  *                              necessarily when using DrvAudio, but probably
  *                              the same) stream config on success (not used as
  *                              input).
  */
-static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
-                                                  uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                                                  PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAMCFG pCfgReq,
+                                            PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
+    int  rc;
     *ppStream = NULL;
-
-    /*
-     * Calculate the stream config.
-     */
-    PDMAUDIOSTREAMCFG CfgReq;
-    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
-    AssertRC(rc);
-    CfgReq.enmDir                       = PDMAUDIODIR_OUT;
-    CfgReq.enmPath                      = PDMAUDIOPATH_OUT_FRONT;
-    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
-    CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
-                                        ? 10 : cMsSchedulingHint;
-    if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
-        CfgReq.Backend.cFramesBufferSize = 0; /* DrvAudio picks the default */
-    else
-        CfgReq.Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(pProps,
-                                                                      cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
-                                                                      ? 300 : cMsBufferSize);
-    if (cMsPreBuffer == UINT32_MAX)
-        CfgReq.Backend.cFramesPreBuffering = pDrvStack->pIAudioConnector ? UINT32_MAX /*DrvAudo picks the default */
-                                           : CfgReq.Backend.cFramesBufferSize * 2 / 3;
-    else
-        CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
-    if (   CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16
-        && !pDrvStack->pIAudioConnector /*DrvAudio deals with it*/ )
-    {
-        RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
-                     CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
-        CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
-            ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
-    }
-
-    static uint32_t s_idxStream = 0;
-    uint32_t const idxStream = s_idxStream++;
-    RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "out-%u", idxStream);
 
     if (pDrvStack->pIAudioConnector)
     {
         /*
          * DrvAudio does most of the work here.
          */
-        PDMAUDIOSTREAMCFG CfgGst = CfgReq;
+        PDMAUDIOSTREAMCFG CfgGst = *pCfgReq;
         rc = pDrvStack->pIAudioConnector->pfnStreamCreate(pDrvStack->pIAudioConnector, PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF,
-                                                          &CfgReq, &CfgGst, ppStream);
+                                                          pCfgReq, &CfgGst, ppStream);
         if (RT_SUCCESS(rc))
         {
-            *pCfgAcq = CfgReq; /** @todo PDMIAUDIOCONNECTOR::pfnStreamCreate only does one utterly pointless change to the two configs (enmLayout) from what I can tell... */
+            *pCfgAcq = *pCfgReq; /** @todo PDMIAUDIOCONNECTOR::pfnStreamCreate only does one utterly pointless change to the two configs (enmLayout) from what I can tell... */
             pCfgAcq->Props = (*ppStream)->Props;
-            RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(&CfgReq, szTmp, sizeof(szTmp)));
+            RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(pCfgReq, szTmp, sizeof(szTmp)));
             return rc;
         }
         RTTestFailed(g_hTest, "pfnStreamCreate failed: %Rrc", rc);
@@ -943,8 +920,8 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                     pStreamAt->Core.uMagic     = PDMAUDIOSTREAM_MAGIC;
                     pStreamAt->Core.enmDir     = PDMAUDIODIR_OUT;
                     pStreamAt->Core.cbBackend  = cbStream;
-                    pStreamAt->Core.Props      = CfgReq.Props;
-                    RTStrPrintf(pStreamAt->Core.szName, sizeof(pStreamAt->Core.szName), "out-%u", idxStream);
+                    pStreamAt->Core.Props      = pCfgReq->Props;
+                    RTStrPrintf(pStreamAt->Core.szName, sizeof(pStreamAt->Core.szName), pCfgReq->szName);
 
                     pStreamAt->Backend.uMagic  = PDMAUDIOBACKENDSTREAM_MAGIC;
                     pStreamAt->Backend.pStream = &pStreamAt->Core;
@@ -952,10 +929,10 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
                     /*
                      * Call the backend to create the stream.
                      */
-                    pStreamAt->Cfg = CfgReq;
+                    pStreamAt->Cfg = *pCfgReq;
 
                     rc = pDrvStack->pIHostAudio->pfnStreamCreate(pDrvStack->pIHostAudio, &pStreamAt->Backend,
-                                                                 &CfgReq, &pStreamAt->Cfg);
+                                                                 pCfgReq, &pStreamAt->Cfg);
                     if (RT_SUCCESS(rc))
                     {
                         pStreamAt->Core.Props = pStreamAt->Cfg.Props;
@@ -1012,6 +989,126 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
             RTTestFailed(g_hTest, "pfnGetConfig failed: %Rrc\n", rc);
     }
     return rc;
+}
+
+/**
+ * Creates an output stream.
+ *
+ * @returns VBox status code.
+ * @param   pDrvStack           The audio driver stack to create it via.
+ * @param   pProps              The audio properties to use.
+ * @param   cMsBufferSize       The buffer size in milliseconds.
+ * @param   cMsPreBuffer        The pre-buffering amount in milliseconds.
+ * @param   cMsSchedulingHint   The scheduling hint in milliseconds.
+ * @param   ppStream            Where to return the stream pointer on success.
+ * @param   pCfgAcq             Where to return the actual (well, not
+ *                              necessarily when using DrvAudio, but probably
+ *                              the same) stream config on success (not used as
+ *                              input).
+ */
+static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
+                                                  uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                                  PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    /*
+     * Calculate the stream config.
+     */
+    PDMAUDIOSTREAMCFG CfgReq;
+    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
+    AssertRC(rc);
+    CfgReq.enmDir                       = PDMAUDIODIR_OUT;
+    CfgReq.enmPath                      = PDMAUDIOPATH_OUT_FRONT;
+    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+    CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
+                                        ? 10 : cMsSchedulingHint;
+    if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
+        CfgReq.Backend.cFramesBufferSize = 0; /* DrvAudio picks the default */
+    else
+        CfgReq.Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(pProps,
+                                                                      cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
+                                                                      ? 300 : cMsBufferSize);
+    if (cMsPreBuffer == UINT32_MAX)
+        CfgReq.Backend.cFramesPreBuffering = pDrvStack->pIAudioConnector ? UINT32_MAX /*DrvAudo picks the default */
+                                           : CfgReq.Backend.cFramesBufferSize * 2 / 3;
+    else
+        CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
+    if (   CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16
+        && !pDrvStack->pIAudioConnector /*DrvAudio deals with it*/ )
+    {
+        RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
+                     CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
+        CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
+            ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
+    }
+
+    static uint32_t s_idxStream = 0;
+    uint32_t const idxStream = s_idxStream++;
+    RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "out-%u", idxStream);
+
+    /*
+     * Call common code to do the actual work.
+     */
+    return audioTestDriverStackStreamCreate(pDrvStack, &CfgReq, ppStream, pCfgAcq);
+}
+
+/**
+ * Creates an input stream.
+ *
+ * @returns VBox status code.
+ * @param   pDrvStack           The audio driver stack to create it via.
+ * @param   pProps              The audio properties to use.
+ * @param   cMsBufferSize       The buffer size in milliseconds.
+ * @param   cMsPreBuffer        The pre-buffering amount in milliseconds.
+ * @param   cMsSchedulingHint   The scheduling hint in milliseconds.
+ * @param   ppStream            Where to return the stream pointer on success.
+ * @param   pCfgAcq             Where to return the actual (well, not
+ *                              necessarily when using DrvAudio, but probably
+ *                              the same) stream config on success (not used as
+ *                              input).
+ */
+static int audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
+                                                 uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                                 PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    /*
+     * Calculate the stream config.
+     */
+    PDMAUDIOSTREAMCFG CfgReq;
+    int rc = PDMAudioStrmCfgInitWithProps(&CfgReq, pProps);
+    AssertRC(rc);
+    CfgReq.enmDir                       = PDMAUDIODIR_IN;
+    CfgReq.enmPath                      = PDMAUDIOPATH_IN_LINE;
+    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
+    CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
+                                        ? 10 : cMsSchedulingHint;
+    if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
+        CfgReq.Backend.cFramesBufferSize = 0; /* DrvAudio picks the default */
+    else
+        CfgReq.Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(pProps,
+                                                                      cMsBufferSize == UINT32_MAX || cMsBufferSize == 0
+                                                                      ? 300 : cMsBufferSize);
+    if (cMsPreBuffer == UINT32_MAX)
+        CfgReq.Backend.cFramesPreBuffering = pDrvStack->pIAudioConnector ? UINT32_MAX /*DrvAudio picks the default */
+                                           : CfgReq.Backend.cFramesBufferSize / 2;
+    else
+        CfgReq.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, cMsPreBuffer);
+    if (   CfgReq.Backend.cFramesPreBuffering >= CfgReq.Backend.cFramesBufferSize + 16 /** @todo way to little */
+        && !pDrvStack->pIAudioConnector /*DrvAudio deals with it*/ )
+    {
+        RTMsgWarning("Cannot pre-buffer %#x frames with only %#x frames of buffer!",
+                     CfgReq.Backend.cFramesPreBuffering, CfgReq.Backend.cFramesBufferSize);
+        CfgReq.Backend.cFramesPreBuffering = CfgReq.Backend.cFramesBufferSize > 16
+            ? CfgReq.Backend.cFramesBufferSize - 16 : 0;
+    }
+
+    static uint32_t s_idxStream = 0;
+    uint32_t const idxStream = s_idxStream++;
+    RTStrPrintf(CfgReq.szName, sizeof(CfgReq.szName), "in-%u", idxStream);
+
+    /*
+     * Call common code to do the actual work.
+     */
+    return audioTestDriverStackStreamCreate(pDrvStack, &CfgReq, ppStream, pCfgAcq);
 }
 
 /**
@@ -1444,35 +1541,6 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
 }
 
 /**
- * Creates an audio test stream.
- *
- * @returns VBox status code.
- * @param   pTstEnv             Test environment to use for creating the stream.
- * @param   pStream             Audio stream to create.
- * @param   pCfg                Stream configuration to use for creation.
- */
-static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg)
-{
-    PDMAUDIOSTREAMCFG CfgAcq;
-
-    int rc = PDMAudioStrmCfgCopy(&CfgAcq, pCfg);
-    AssertRC(rc); /* Cannot fail. */
-
-    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCreate(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, pCfg, &CfgAcq);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Do the async init in a synchronous way for now here. */
-    if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
-        rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamInitAsync(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, false /* fDestroyed */);
-
-    if (RT_SUCCESS(rc))
-        pStream->fCreated = true;
-
-    return rc;
-}
-
-/**
  * Destroys an audio test stream.
  *
  * @returns VBox status code.
@@ -1481,17 +1549,15 @@ static int audioTestStreamCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream
  */
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream)
 {
-    if (!pStream)
-        return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    if (pStream && pStream->pStream)
+    {
+        /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
 
-    if (!pStream->fCreated)
-        return VINF_SUCCESS;
-
-    /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
-
-    int rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamDestroy(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, true /*fImmediate*/);
-    if (RT_SUCCESS(rc))
-        RT_BZERO(pStream, sizeof(PDMAUDIOBACKENDSTREAM));
+        audioTestDriverStackStreamDestroy(&pTstEnv->DrvStack, pStream->pStream);
+        pStream->pStream  = NULL;
+        pStream->pBackend = NULL;
+    }
 
     return rc;
 }
@@ -1507,20 +1573,12 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
  */
 static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
-    PDMAUDIOSTREAMCFG Cfg;
-    int rc = PDMAudioStrmCfgInitWithProps(&Cfg, pProps);
-    AssertRC(rc); /* Cannot fail. */
-
-    Cfg.enmDir      = PDMAUDIODIR_IN;
-    Cfg.enmPath     = PDMAUDIOPATH_IN_LINE; /* Note: HDA does not have a separate Mic-In enabled yet, so go for Line-In here. */
-    Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-    Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
-    Cfg.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, 200);
-    Cfg.Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(pProps, 10);
-    Cfg.Device.cMsSchedulingHint    = 10;
-
-    return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
+    pStream->pBackend = NULL;
+    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 150 /*cMsPreBuffer*/,
+                                                   10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
+    if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
+        pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
+    return rc;
 }
 
 /**
@@ -1545,7 +1603,8 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend);
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio,
+                                                                                        pStream->pBackend);
     if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
     {
         uint8_t  abBuf[_4K];
@@ -1556,7 +1615,8 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
         do
         {
             uint32_t cbRead = 0;
-            rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCapture(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, abBuf, sizeof(abBuf), &cbRead);
+            rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCapture(pTstEnv->DrvStack.pIHostAudio, pStream->pBackend, abBuf,
+                                                                 sizeof(abBuf), &cbRead);
             if (RT_SUCCESS(rc))
                 rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
 
@@ -1591,20 +1651,12 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
  */
 static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
-    PDMAUDIOSTREAMCFG Cfg;
-    int rc = PDMAudioStrmCfgInitWithProps(&Cfg, pProps);
-    AssertRC(rc); /* Cannot fail. */
-
-    Cfg.enmDir      = PDMAUDIODIR_OUT;
-    Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
-    Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-    Cfg.Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(pProps, 300);
-    Cfg.Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(pProps, 200);
-    Cfg.Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(pProps, 10);
-    Cfg.Device.cMsSchedulingHint    = 10;
-
-    return audioTestStreamCreate(pTstEnv, pStream, &Cfg);
+    pStream->pBackend = NULL;
+    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 200 /*cMsPreBuffer*/,
+                                                   10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
+    if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
+        pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
+    return rc;
 }
 
 /**
@@ -1632,7 +1684,8 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend);
+    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio,
+                                                                                        pStream->pBackend);
     if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
     {
         uint32_t cbBuf;
@@ -1652,7 +1705,8 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t cbWritten;
-                    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamPlay(pTstEnv->DrvStack.pIHostAudio, &pStream->Backend, abBuf, cbBuf, &cbWritten);
+                    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamPlay(pTstEnv->DrvStack.pIHostAudio, pStream->pBackend,
+                                                                      abBuf, cbBuf, &cbWritten);
                 }
             }
 
@@ -2108,6 +2162,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
 #ifndef DEBUG_andy
         /* Clean up. */
+        AudioTestSetClose(&TstEnv.Set); /* wipe fails on windows if the manifest file is open*/
+
         int rc2 = AudioTestSetWipe(&TstEnv.Set);
         AssertRC(rc2); /* Annoying, but not test-critical. */
 #endif
