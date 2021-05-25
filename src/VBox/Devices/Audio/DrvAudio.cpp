@@ -2212,6 +2212,12 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
             {
                 Assert(pStreamEx->cRefs >= 2);
                 int rc2 = RTReqCancel(pStreamEx->hReqInitAsync);
+
+                RTReqRelease(pStreamEx->hReqInitAsync);
+                pStreamEx->hReqInitAsync = NIL_RTREQ;
+
+                RTCritSectLeave(&pStreamEx->Core.CritSect); /* (exit before releasing the stream to avoid assertion) */
+
                 if (RT_SUCCESS(rc2))
                 {
                     LogFlowFunc(("Successfully cancelled pending pfnStreamInitAsync call (hReqInitAsync=%p).\n",
@@ -2224,12 +2230,9 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                                  pStreamEx->hReqInitAsync, rc2));
                     Assert(rc2 == VERR_RT_REQUEST_STATE);
                 }
-
-                RTReqRelease(pStreamEx->hReqInitAsync);
-                pStreamEx->hReqInitAsync = NIL_RTREQ;
             }
-
-            RTCritSectLeave(&pStreamEx->Core.CritSect);
+            else
+                RTCritSectLeave(&pStreamEx->Core.CritSect);
 
             /*
              * Now, if the backend requests asynchronous disabling and destruction
@@ -4130,12 +4133,12 @@ static DECLCALLBACK(int) drvAudioHostPort_DoOnWorkerThread(PPDMIHOSTAUDIOPORT pI
     int rc = RTCritSectRwEnterShared(&pThis->CritSectHotPlug);
     AssertRCReturn(rc, rc);
 
-    AssertPtr(pThis->hReqPool != NIL_RTREQPOOL);
+    Assert(pThis->hReqPool != NIL_RTREQPOOL);
     AssertPtr(pThis->pHostDrvAudio);
     if (   pThis->hReqPool != NIL_RTREQPOOL
         && pThis->pHostDrvAudio != NULL)
     {
-        Assert(pThis->pHostDrvAudio->pfnDoOnWorkerThread);
+        AssertPtr(pThis->pHostDrvAudio->pfnDoOnWorkerThread);
         if (pThis->pHostDrvAudio->pfnDoOnWorkerThread)
         {
             /*
@@ -4149,7 +4152,6 @@ static DECLCALLBACK(int) drvAudioHostPort_DoOnWorkerThread(PPDMIHOSTAUDIOPORT pI
             }
             else
             {
-
                 uint32_t cRefs = drvAudioStreamRetainInternal(pStreamEx);
                 if (cRefs != UINT32_MAX)
                 {
