@@ -3019,8 +3019,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
 
 #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/VaKit/Enabled", &strTmp);
-            const bool fVaKitEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/VaKit/Enabled", &strTmp); /* Deprecated; do not use! */
+            if (strTmp.isEmpty())
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/ValKit/Enabled", &strTmp);
+            const bool fValKitEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
 #endif
             /** @todo Implement an audio device class, similar to the audio backend class, to construct the common stuff
              *        without duplicating (more) code. */
@@ -3145,63 +3147,74 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * The audio driver.
              */
-            AudioDriverType_T enmAudioDriver;
-            hrc = audioAdapter->COMGETTER(AudioDriver)(&enmAudioDriver);                    H();
-            const char *pszAudioDriver;
-            switch (enmAudioDriver)
+            const char *pszAudioDriver = NULL;
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+            if (fValKitEnabled)
             {
-                case AudioDriverType_Null:
-                    pszAudioDriver = "NullAudio";
-                    break;
+                pszAudioDriver = "ValidationKitAudio";
+                LogRel(("Audio: ValidationKit driver active\n"));
+            }
+#endif
+            /* If nothing else was selected before, ask the API. */
+            if (pszAudioDriver == NULL)
+            {
+                AudioDriverType_T enmAudioDriver;
+                hrc = audioAdapter->COMGETTER(AudioDriver)(&enmAudioDriver);                    H();
+                switch (enmAudioDriver)
+                {
+                    case AudioDriverType_Null:
+                        pszAudioDriver = "NullAudio";
+                        break;
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_WINMM
-                case AudioDriverType_WinMM:
+                    case AudioDriverType_WinMM:
 #  error "Port WinMM audio backend!" /** @todo Still needed? */
-                    break;
+                        break;
 # endif
-                case AudioDriverType_DirectSound:
-                    /* Use the windows audio session (WAS) API rather than Direct Sound on windows
-                       versions we've tested it on (currently W10+).  Since Vista, Direct Sound has
-                       been emulated on top of WAS according to the docs, so better use WAS directly. */
-                    pszAudioDriver = "DSoundAudio";
-                    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(10,0,0))
-                        pszAudioDriver = "HostAudioWas";
-                    break;
+                    case AudioDriverType_DirectSound:
+                        /* Use the windows audio session (WAS) API rather than Direct Sound on windows
+                           versions we've tested it on (currently W10+).  Since Vista, Direct Sound has
+                           been emulated on top of WAS according to the docs, so better use WAS directly. */
+                        pszAudioDriver = "DSoundAudio";
+                        if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(10,0,0))
+                            pszAudioDriver = "HostAudioWas";
+                        break;
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_SOLARIS
-                case AudioDriverType_SolAudio:
-                    /* Should not happen, as the Solaris Audio backend is not around anymore.
-                     * Remove this sometime later. */
-                    LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
-                    LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
+                    case AudioDriverType_SolAudio:
+                        /* Should not happen, as the Solaris Audio backend is not around anymore.
+                         * Remove this sometime later. */
+                        LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
+                        LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
 
-                    /* Manually set backend to OSS for now. */
-                    pszAudioDriver = "OSSAudio";
-                    break;
+                        /* Manually set backend to OSS for now. */
+                        pszAudioDriver = "OSSAudio";
+                        break;
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
-                case AudioDriverType_OSS:
-                    pszAudioDriver = "OSSAudio";
-                    break;
+                    case AudioDriverType_OSS:
+                        pszAudioDriver = "OSSAudio";
+                        break;
 #endif
 #ifdef VBOX_WITH_AUDIO_ALSA
-                case AudioDriverType_ALSA:
-                    pszAudioDriver = "ALSAAudio";
-                    break;
+                    case AudioDriverType_ALSA:
+                        pszAudioDriver = "ALSAAudio";
+                        break;
 #endif
 #ifdef VBOX_WITH_AUDIO_PULSE
-                case AudioDriverType_Pulse:
-                    pszAudioDriver = "PulseAudio";
-                    break;
+                    case AudioDriverType_Pulse:
+                        pszAudioDriver = "PulseAudio";
+                        break;
 #endif
 #ifdef RT_OS_DARWIN
-                case AudioDriverType_CoreAudio:
-                    pszAudioDriver = "CoreAudio";
-                    break;
+                    case AudioDriverType_CoreAudio:
+                        pszAudioDriver = "CoreAudio";
+                        break;
 #endif
-                default:
-                    pszAudioDriver = "oops";
-                    AssertFailedBreak();
+                    default:
+                        pszAudioDriver = "oops";
+                        AssertFailedBreak();
+                }
             }
 
             unsigned idxAudioLun = 0;
@@ -3252,20 +3265,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 if (RT_FAILURE(rc))
                     LogRel(("Audio: Setting debug logging failed, rc=%Rrc\n", rc));
             }
-
-#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
-            if (fVaKitEnabled)
-            {
-                /*
-                 * The ValidationKit backend.
-                 */
-                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-                i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "ValidationKitAudio");
-                idxAudioLun++;
-
-                LogRel(("Audio: ValidationKit driver active\n"));
-            }
-#endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
         }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
