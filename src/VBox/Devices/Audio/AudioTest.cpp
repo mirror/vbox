@@ -311,6 +311,11 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
     if (!RTTimeSpecToString(RTTimeNow(&time), szTime, sizeof(szTime)))
         return VERR_BUFFER_UNDERFLOW;
 
+    /* Colons aren't allowed in windows filenames, so change to dashes. */
+    char *pszColon;
+    while ((pszColon = strchr(szTime, ':')) != NULL)
+        *pszColon = '-';
+
     rc = RTPathAppend(pszPath, cbPath, szTime);
     AssertRCReturn(rc, rc);
 
