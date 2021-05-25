@@ -1562,12 +1562,12 @@ static void hdaR3StreamPullFromMixer(PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
 #ifdef LOG_ENABLED
     uint64_t const offWriteOld = pStreamR3->State.offWrite;
 #endif
-    pStreamR3->State.offWrite = AudioMixerSinkTransferFromCircBuf(pSink,
-                                                                  pStreamR3->State.pCircBuf,
-                                                                  pStreamR3->State.offWrite,
-                                                                  pStreamR3->u8SD,
-                                                                  pStreamR3->Dbg.Runtime.fEnabled
-                                                                  ? pStreamR3->Dbg.Runtime.pFileStream : NULL);
+    pStreamR3->State.offWrite = AudioMixerSinkTransferToCircBuf(pSink,
+                                                                pStreamR3->State.pCircBuf,
+                                                                pStreamR3->State.offWrite,
+                                                                pStreamR3->u8SD,
+                                                                pStreamR3->Dbg.Runtime.fEnabled
+                                                                ? pStreamR3->Dbg.Runtime.pFileStream : NULL);
 
     Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64\n", pStreamR3->u8SD,
               pStreamR3->State.offWrite - offWriteOld, pStreamR3->State.offWrite));
