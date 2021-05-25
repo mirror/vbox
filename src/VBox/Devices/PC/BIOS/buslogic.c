@@ -229,16 +229,11 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
  */
 static int buslogic_scsi_hba_init(buslogic_t __far *buslogic)
 {
-    uint8_t bIrqOff = 0;
-
     /* Hard reset. */
     outb(buslogic->u16IoBase + BUSLOGIC_REGISTER_CONTROL, BL_CTRL_RHARD);
     while (!(inb(buslogic->u16IoBase + BUSLOGIC_REGISTER_STATUS) & BL_STAT_HARDY));
 
-    /* Disable interrupts. */
-    return buslogic_cmd(buslogic, BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT,
-                        (unsigned char __far *)&bIrqOff, sizeof(bIrqOff),
-                        NULL, 0);
+    return 0;
 }
 
 /**
