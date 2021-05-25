@@ -48,6 +48,10 @@
 
 #include <VBox/version.h>
 
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h> /* for CoInitializeEx */
+#endif
+
 /**
  * Internal driver instance data
  * @note This must be put here as it's needed before pdmdrv.h is included.
@@ -2847,6 +2851,12 @@ int main(int argc, char **argv)
     RTEXITCODE rcExit = RTTestInitAndCreate("AudioTest", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
+
+#ifdef RT_OS_WINDOWS
+    HRESULT hrc = CoInitializeEx(NULL /*pReserved*/, COINIT_MULTITHREADED | COINIT_SPEED_OVER_MEMORY | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hrc))
+        RTMsgWarning("CoInitializeEx failed: %#x", hrc);
+#endif
 
     /*
      * Process common options.
