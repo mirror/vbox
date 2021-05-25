@@ -182,6 +182,8 @@ typedef struct DSOUNDDEV
     PDMAUDIOHOSTDEV  Core;
     /** The GUID if handy. */
     GUID            Guid;
+    /** The GUID as a string (empty if default). */
+    char            szGuid[RTUUID_STR_LENGTH];
 } DSOUNDDEV;
 /** Pointer to a DirectSound device entry. */
 typedef DSOUNDDEV *PDSOUNDDEV;
@@ -813,8 +815,15 @@ static BOOL CALLBACK drvHostDSoundEnumOldStylePlaybackCallback(LPGUID pGUID, LPC
             RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
             RTStrFree(pszName);
 
-            if (pGUID) /* pGUID == NULL means default device. */
+            if (!pGUID)
+                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT_OUT;
+            else
+            {
                 memcpy(&pDev->Guid, pGUID, sizeof(pDev->Guid));
+                rc = RTUuidToStr((PCRTUUID)pGUID, pDev->szGuid, sizeof(pDev->szGuid));
+                AssertRC(rc);
+            }
+            pDev->Core.pszId = &pDev->szGuid[0];
 
             PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
 
@@ -871,8 +880,15 @@ static BOOL CALLBACK drvHostDSoundEnumOldStyleCaptureCallback(LPGUID pGUID, LPCW
             RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
             RTStrFree(pszName);
 
-            if (pGUID) /* pGUID == NULL means default capture device. */
+            if (!pGUID)
+                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT_IN;
+            else
+            {
                 memcpy(&pDev->Guid, pGUID, sizeof(pDev->Guid));
+                rc = RTUuidToStr((PCRTUUID)pGUID, pDev->szGuid, sizeof(pDev->szGuid));
+                AssertRC(rc);
+            }
+            pDev->Core.pszId = &pDev->szGuid[0];
 
             PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
 
@@ -1039,16 +1055,22 @@ static int drvHostDSoundEnumNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pD
                     {
                         pDev->Core.enmUsage = enmType == eRender ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN;
                         pDev->Core.enmType  = PDMAUDIODEVICETYPE_BUILTIN;
+                        if (fDefault)
+                            pDev->Core.fFlags |= enmType == eRender
+                                                 ? PDMAUDIOHOSTDEV_F_DEFAULT_OUT : PDMAUDIOHOSTDEV_F_DEFAULT_IN;
                         if (enmType == eRender)
                             pDev->Core.cMaxOutputChannels = pFormat->nChannels;
                         else
                             pDev->Core.cMaxInputChannels  = pFormat->nChannels;
 
-                        RT_NOREF(fDefault);
                         //if (fDefault)
-                            hrc = UuidFromStringW(VarGUID.pwszVal, &pDev->Guid);
-                        if (SUCCEEDED(hrc))
+                            rc = RTUuidFromUtf16((PRTUUID)&pDev->Guid, VarGUID.pwszVal);
+                        if (RT_SUCCESS(rc))
                         {
+                            rc = RTUuidToStr((PCRTUUID)&pDev->Guid, pDev->szGuid, sizeof(pDev->szGuid));
+                            AssertRC(rc);
+                            pDev->Core.pszId = &pDev->szGuid[0];
+
                             char *pszName;
                             rc = RTUtf16ToUtf8(VarName.pwszVal, &pszName);
                             if (RT_SUCCESS(rc))
@@ -1063,7 +1085,7 @@ static int drvHostDSoundEnumNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pD
                         }
                         else
                         {
-                            LogFunc(("UuidFromStringW(%ls): %Rhrc\n", VarGUID.pwszVal, hrc));
+                            LogFunc(("RTUuidFromUtf16(%ls): %Rrc\n", VarGUID.pwszVal, rc));
                             PDMAudioHostDevFree(&pDev->Core);
                         }
                     }
