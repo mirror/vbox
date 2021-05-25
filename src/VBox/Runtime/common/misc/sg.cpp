@@ -346,6 +346,56 @@ RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbC
 }
 
 
+RTDECL(size_t) RTSgBufCopyToFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYTO pfnCopyTo, void *pvUser)
+{
+    AssertPtrReturn(pSgBuf, 0);
+    AssertPtrReturn(pfnCopyTo, 0);
+
+    size_t cbLeft = cbCopy;
+
+    while (cbLeft)
+    {
+        size_t cbThisCopy = cbLeft;
+        void *pvSrc = rtSgBufGet(pSgBuf, &cbThisCopy);
+
+        if (!cbThisCopy)
+            break;
+
+        size_t cbThisCopied = pfnCopyTo(pSgBuf, pvSrc, cbThisCopy, pvUser);
+        cbLeft -= cbThisCopied;
+        if (cbThisCopied < cbThisCopy)
+            break;
+    }
+
+    return cbCopy - cbLeft;
+}
+
+
+RTDECL(size_t) RTSgBufCopyFromFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYFROM pfnCopyFrom, void *pvUser)
+{
+    AssertPtrReturn(pSgBuf, 0);
+    AssertPtrReturn(pfnCopyFrom, 0);
+
+    size_t cbLeft = cbCopy;
+
+    while (cbLeft)
+    {
+        size_t cbThisCopy = cbLeft;
+        void *pvDst = rtSgBufGet(pSgBuf, &cbThisCopy);
+
+        if (!cbThisCopy)
+            break;
+
+        size_t cbThisCopied = pfnCopyFrom(pSgBuf, pvDst, cbThisCopy, pvUser);
+        cbLeft -= cbThisCopied;
+        if (cbThisCopied < cbThisCopy)
+            break;
+    }
+
+    return cbCopy - cbLeft;
+}
+
+
 RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
 {
     AssertPtrReturn(pSgBuf, 0);
