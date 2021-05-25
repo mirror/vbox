@@ -36,6 +36,14 @@
 
 void UIWizard::prepare()
 {
+    // WORKAROUND:
+    // In Qt 5.15 setting fusion application style leaves wizard style undetermined (unset).
+    // But there is no "unset" enum value, so it's kinda 0, which means QWizard::ClassicStyle.
+    // But by the fact wizard doesn't get rendered as QWizard::ClassicStyle, layout is broken.
+    // So, we are forcing QWizard::ClassicStyle ourselves ..
+    if (wizardStyle() == QWizard::ClassicStyle)
+        setWizardStyle(QWizard::ClassicStyle);
+
     /* Translate wizard: */
     retranslateUi();
     /* Translate wizard pages: */
