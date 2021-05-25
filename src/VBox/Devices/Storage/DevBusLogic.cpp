@@ -335,7 +335,7 @@ typedef struct BUSLOGIC
     /** Geometry register - Readonly. */
     volatile uint8_t                regGeometry;
     /** Pending (delayed) interrupt. */
-    uint8_t                         uPendingIntr;
+    volatile uint8_t                uPendingIntr;
 
     /** Command code the guest issued. */
     uint8_t                         uOperationCode;
@@ -394,6 +394,8 @@ typedef struct BUSLOGIC
     volatile uint32_t               cMailboxesReady;
     /** Whether a notification to R3 was sent. */
     volatile bool                   fNotificationSent;
+    /** Flag whether a BIOS request is pending. */
+    volatile bool                   fBiosReqPending;
 
     /** Whether strict round robin is enabled. */
     bool                            fStrictRoundRobinMode;
@@ -994,6 +996,23 @@ typedef struct BUSLOGICREQ
     /** SCSI status code. */
     uint8_t                        u8ScsiSts;
 } BUSLOGICREQ;
+
+/**
+ * S/G buffer copy arguments.
+ */
+typedef struct BUSLOGICCOPYARGS
+{
+    /** Pointer to the shared BusLogic instance data. */
+    PBUSLOGIC                       pThis;
+    /** Pointer to the device instance data. */
+    PPDMDEVINS                      pDevIns;
+    /** Pointer to the SCSI command buffer. */
+    PESCMD                          pCmd;
+    /** Number of bytes copied already. */
+    size_t                          cbCopied;
+} BUSLOGICCOPYARGS;
+/** Pointer to BUSLOGICCOPYARGS. */
+typedef BUSLOGICCOPYARGS *PBUSLOGICCOPYARGS;
 
 #ifdef IN_RING3
 /**
@@ -1884,6 +1903,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
     int rc = VINF_SUCCESS;
     bool fSuppressIrq = false;
     bool fSuppressCMDC = false;
+    bool fCmdComplete  = true;
 
     LogFlowFunc(("pThis=%#p\n", pThis));
     AssertMsg(pThis->uOperationCode != 0xff, ("There is no command to execute\n"));
@@ -2020,15 +2040,18 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
 
                 /* Second pass - process received data. */
                 Log(("Execute SCSI cmd: received %u bytes\n", pThis->aCommandBuffer[0]));
-
                 pCmd = (PESCMD)pThis->aCommandBuffer;
                 Log(("Addr %08X, cbData %08X, cbCDB=%u\n", pCmd->u32PhysAddrData, pCmd->cbData, pCmd->cbCDB));
+
+                if (!ASMAtomicXchgBool(&pThis->fBiosReqPending, true))
+                {
+                    /* Wake up the worker thread. */
+                    int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
+                    AssertRC(rc2);
+                }
+
+                fCmdComplete = false;
             }
-            // This is currently a dummy - just fails every command.
-            pThis->cbReplyParametersLeft = 4;
-            pThis->aReplyBuffer[0] = pThis->aReplyBuffer[1] = 0;
-            pThis->aReplyBuffer[2] = 0x11;      /* HBA status (timeout). */
-            pThis->aReplyBuffer[3] = 0;         /* Device status. */
             break;
 
         case BUSLOGICCOMMAND_INQUIRE_HOST_ADAPTER_MODEL_NUMBER:
@@ -2423,11 +2446,14 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
         pThis->regStatus |= BL_STAT_CMDINV;
     }
 
-    /* Set the data in ready bit in the status register in case the command has a reply. */
-    if (pThis->cbReplyParametersLeft)
-        pThis->regStatus |= BL_STAT_DIRRDY;
-    else if (!pThis->cbCommandParametersLeft)
-        buslogicCommandComplete(pDevIns, pThis, fSuppressIrq, fSuppressCMDC);
+    if (fCmdComplete)
+    {
+        /* Set the data in ready bit in the status register in case the command has a reply. */
+        if (pThis->cbReplyParametersLeft)
+            pThis->regStatus |= BL_STAT_DIRRDY;
+        else if (!pThis->cbCommandParametersLeft)
+            buslogicCommandComplete(pDevIns, pThis, fSuppressIrq, fSuppressCMDC);
+    }
 
     return rc;
 }
@@ -2874,6 +2900,22 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pThis, uint8
     return rc;
 }
 
+/**
+ * Completes a request initiated by the BIOS through the BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND command.
+ *
+ * @returns nothing.
+ * @param   pThis       Pointer to the shared BusLogic instance data.
+ * @param   u8ScsiSts   The SCSI status code.
+ */
+static void buslogicR3ReqCompleteBios(PBUSLOGIC pThis, uint8_t u8ScsiSts)
+{
+    pThis->cbReplyParametersLeft = 4;
+    pThis->aReplyBuffer[0] = pThis->aReplyBuffer[1] = 0;
+    pThis->aReplyBuffer[2] = u8ScsiSts;
+    pThis->aReplyBuffer[3] = 0;
+
+    pThis->regStatus |= BL_STAT_DIRRDY;
+}
 
 static int buslogicR3ReqComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pThisCC, PBUSLOGICREQ pReq, int rcReq)
 {
@@ -2884,53 +2926,62 @@ static int buslogicR3ReqComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICC
     ASMAtomicDecU32(&pTgtDev->cOutstandingRequests);
     LogFlowFunc(("after decrement %u\n", pTgtDev->cOutstandingRequests));
 
-    if (pReq->pbSenseBuffer)
-        buslogicR3SenseBufferFree(pReq, (pReq->u8ScsiSts != SCSI_STATUS_OK));
-
-    /* Update residual data length. */
-    if (   (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
-        || (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+    if (pReq->fBIOS)
     {
-        size_t cbResidual = 0;
-        int rc = pTgtDev->pDrvMediaEx->pfnIoReqQueryResidual(pTgtDev->pDrvMediaEx, pReq->hIoReq, &cbResidual);
-        AssertRC(rc); Assert(cbResidual == (uint32_t)cbResidual);
-
-        if (pReq->fIs24Bit)
-            U32_TO_LEN(pReq->CCBGuest.o.acbData, (uint32_t)cbResidual);
-        else
-            pReq->CCBGuest.n.cbData = (uint32_t)cbResidual;
+        uint8_t u8ScsiSts = pReq->u8ScsiSts;
+        pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
+        buslogicR3ReqCompleteBios(pThis, u8ScsiSts);
     }
-
-    /*
-     * Save vital things from the request and free it before posting completion
-     * to avoid that the guest submits a new request with the same ID as the still
-     * allocated one.
-     */
-#ifdef LOG_ENABLED
-    bool fIs24Bit = pReq->fIs24Bit;
-#endif
-    uint8_t u8ScsiSts = pReq->u8ScsiSts;
-    RTGCPHYS GCPhysAddrCCB = pReq->GCPhysAddrCCB;
-    CCBU CCBGuest;
-    memcpy(&CCBGuest, &pReq->CCBGuest, sizeof(CCBU));
-
-    pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
-    if (u8ScsiSts == SCSI_STATUS_OK)
-        buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
-                                      BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
-                                      BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
-                                      BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
-    else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
-        buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
-                                      BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
-                                      BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION,
-                                      BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
     else
-        AssertMsgFailed(("invalid completion status %u\n", u8ScsiSts));
+    {
+        if (pReq->pbSenseBuffer)
+            buslogicR3SenseBufferFree(pReq, (pReq->u8ScsiSts != SCSI_STATUS_OK));
+
+        /* Update residual data length. */
+        if (   (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
+            || (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+        {
+            size_t cbResidual = 0;
+            int rc = pTgtDev->pDrvMediaEx->pfnIoReqQueryResidual(pTgtDev->pDrvMediaEx, pReq->hIoReq, &cbResidual);
+            AssertRC(rc); Assert(cbResidual == (uint32_t)cbResidual);
+
+            if (pReq->fIs24Bit)
+                U32_TO_LEN(pReq->CCBGuest.o.acbData, (uint32_t)cbResidual);
+            else
+                pReq->CCBGuest.n.cbData = (uint32_t)cbResidual;
+        }
+
+        /*
+         * Save vital things from the request and free it before posting completion
+         * to avoid that the guest submits a new request with the same ID as the still
+         * allocated one.
+         */
+#ifdef LOG_ENABLED
+        bool fIs24Bit = pReq->fIs24Bit;
+#endif
+        uint8_t u8ScsiSts = pReq->u8ScsiSts;
+        RTGCPHYS GCPhysAddrCCB = pReq->GCPhysAddrCCB;
+        CCBU CCBGuest;
+        memcpy(&CCBGuest, &pReq->CCBGuest, sizeof(CCBU));
+
+        pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
+        if (u8ScsiSts == SCSI_STATUS_OK)
+            buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
+                                          BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
+                                          BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                          BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
+        else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
+            buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
+                                          BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
+                                          BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION,
+                                          BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
+        else
+            AssertMsgFailed(("invalid completion status %u\n", u8ScsiSts));
 
 #ifdef LOG_ENABLED
-    buslogicR3DumpCCBInfo(&CCBGuest, fIs24Bit);
+        buslogicR3DumpCCBInfo(&CCBGuest, fIs24Bit);
 #endif
+    }
 
     if (pTgtDev->cOutstandingRequests == 0 && pThisCC->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -2958,6 +3009,17 @@ static DECLCALLBACK(int) buslogicR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(size_t) buslogicR3CopySgToGuestBios(PCRTSGBUF pSgBuf, const void *pvSrc, size_t cbSrc, void *pvUser)
+{
+    PBUSLOGICCOPYARGS pArgs = (PBUSLOGICCOPYARGS)pvUser;
+    size_t cbThisCopy = RT_MIN(cbSrc, pArgs->pCmd->cbData - pArgs->cbCopied);
+    RT_NOREF(pSgBuf);
+
+    blPhysWriteUser(pArgs->pDevIns, pArgs->pThis, pArgs->pCmd->u32PhysAddrData + pArgs->cbCopied, pvSrc, cbThisCopy);
+    pArgs->cbCopied += cbThisCopy;
+    return cbThisCopy;
+}
+
 /**
  * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
  */
@@ -2970,8 +3032,33 @@ static DECLCALLBACK(int) buslogicR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
     PBUSLOGICREQ    pReq    = (PBUSLOGICREQ)pvIoReqAlloc;
     RT_NOREF(hIoReq);
 
-    size_t cbCopied = buslogicR3CopySgBufToGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offDst, cbCopy);
+    size_t cbCopied = 0;
+    if (RT_LIKELY(!pReq->fBIOS))
+        cbCopied = buslogicR3CopySgBufToGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offDst, cbCopy);
+    else
+    {
+        BUSLOGICCOPYARGS Args;
+        PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+        PESCMD pCmd = (PESCMD)pThis->aCommandBuffer;
+
+        Args.pCmd     = pCmd;
+        Args.pThis    = pThis;
+        Args.pDevIns  = pDevIns;
+        Args.cbCopied = 0;
+        cbCopied = RTSgBufCopyToFn(pSgBuf, RT_MIN(pCmd->cbData, cbCopy), buslogicR3CopySgToGuestBios, &Args);
+    }
     return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
+}
+
+static DECLCALLBACK(size_t) buslogicR3CopySgFromGuestBios(PCRTSGBUF pSgBuf, void *pvDst, size_t cbDst, void *pvUser)
+{
+    PBUSLOGICCOPYARGS pArgs = (PBUSLOGICCOPYARGS)pvUser;
+    size_t cbThisCopy = RT_MIN(cbDst, pArgs->pCmd->cbData - pArgs->cbCopied);
+    RT_NOREF(pSgBuf);
+
+    blPhysReadUser(pArgs->pDevIns, pArgs->pThis, pArgs->pCmd->u32PhysAddrData + pArgs->cbCopied, pvDst, cbThisCopy);
+    pArgs->cbCopied += cbThisCopy;
+    return cbThisCopy;
 }
 
 /**
@@ -2986,7 +3073,22 @@ static DECLCALLBACK(int) buslogicR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
     PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
     PBUSLOGICREQ    pReq    = (PBUSLOGICREQ)pvIoReqAlloc;
 
-    size_t cbCopied = buslogicR3CopySgBufFromGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offSrc, cbCopy);
+    size_t cbCopied = 0;
+    if (RT_LIKELY(!pReq->fBIOS))
+        cbCopied = buslogicR3CopySgBufFromGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offSrc, cbCopy);
+    else
+    {
+        BUSLOGICCOPYARGS Args;
+        PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+        PESCMD pCmd = (PESCMD)pThis->aCommandBuffer;
+
+        Args.pCmd     = pCmd;
+        Args.pThis    = pThis;
+        Args.pDevIns  = pDevIns;
+        Args.cbCopied = 0;
+        cbCopied = RTSgBufCopyFromFn(pSgBuf, RT_MIN(pCmd->cbData, cbCopy), buslogicR3CopySgFromGuestBios, &Args);
+    }
+
     return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
 }
 
@@ -3268,6 +3370,66 @@ static int buslogicR3ProcessMailboxNext(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBU
 
     return rc;
 }
+
+/**
+ * Processes a SCSI request issued by the BIOS with the BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND command.
+ *
+ * @returns nothing.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the shared BusLogic instance data.
+ * @param   pThisCC     Pointer to the ring-3 BusLogic instance data.
+ */
+static void buslogicR3ProcessBiosReq(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pThisCC)
+{
+    PESCMD pCmd = (PESCMD)pThis->aCommandBuffer;
+
+    if (RT_LIKELY(   pCmd->uTargetId < RT_ELEMENTS(pThisCC->aDeviceStates)
+                  && pCmd->cbCDB <= 16))
+    {
+        PBUSLOGICDEVICE pTgtDev = &pThisCC->aDeviceStates[pCmd->uTargetId];
+
+        /* Check if device is present on bus. If not return error immediately and don't process this further. */
+        if (RT_LIKELY(pTgtDev->fPresent))
+        {
+            PDMMEDIAEXIOREQ hIoReq;
+            PBUSLOGICREQ pReq;
+            int rc = pTgtDev->pDrvMediaEx->pfnIoReqAlloc(pTgtDev->pDrvMediaEx, &hIoReq, (void **)&pReq,
+                                                         0, PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
+            if (RT_SUCCESS(rc))
+            {
+                pReq->pTargetDevice = pTgtDev;
+                pReq->GCPhysAddrCCB = 0;
+                pReq->fBIOS         = true;
+                pReq->hIoReq        = hIoReq;
+                pReq->fIs24Bit      = false;
+
+                uint32_t uLun = pCmd->uLogicalUnit;
+
+                PDMMEDIAEXIOREQSCSITXDIR enmXferDir = PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN;
+
+                if (pCmd->uDataDirection == 2)
+                    enmXferDir = PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE;
+                else if (pCmd->uDataDirection == 1)
+                    enmXferDir = PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE;
+
+                ASMAtomicIncU32(&pTgtDev->cOutstandingRequests);
+                rc = pTgtDev->pDrvMediaEx->pfnIoReqSendScsiCmd(pTgtDev->pDrvMediaEx, pReq->hIoReq, uLun,
+                                                               &pCmd->abCDB[0], pCmd->cbCDB,
+                                                               enmXferDir, NULL, pCmd->cbData, NULL, 0 /*cbSense*/, NULL,
+                                                               &pReq->u8ScsiSts, 30 * RT_MS_1SEC);
+                if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
+                    buslogicR3ReqComplete(pDevIns, pThis, pThisCC, pReq, rc);
+            }
+            else
+                buslogicR3ReqCompleteBios(pThis, SCSI_STATUS_CHECK_CONDITION);
+        }
+        else
+            buslogicR3ReqCompleteBios(pThis, SCSI_STATUS_CHECK_CONDITION);
+    }
+    else
+        buslogicR3ReqCompleteBios(pThis, SCSI_STATUS_CHECK_CONDITION);
+}
+
 
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
@@ -3601,15 +3763,18 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
         ASMAtomicWriteBool(&pThisCC->fWrkThreadSleeping, false);
 
+        if (ASMAtomicXchgBool(&pThis->fBiosReqPending, false))
+            buslogicR3ProcessBiosReq(pDevIns, pThis, pThisCC);
 
-        ASMAtomicXchgU32(&pThis->cMailboxesReady, 0); /** @todo Actually not required anymore but to stay compatible with older saved states. */
-
-        /* Process mailboxes. */
-        do
+        if (ASMAtomicXchgU32(&pThis->cMailboxesReady, 0))
         {
-            rc = buslogicR3ProcessMailboxNext(pDevIns, pThis, pThisCC);
-            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
-        } while (RT_SUCCESS(rc));
+            /* Process mailboxes. */
+            do
+            {
+                rc = buslogicR3ProcessMailboxNext(pDevIns, pThis, pThisCC);
+                AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
+            } while (RT_SUCCESS(rc));
+        }
     } /* While running */
 
     return VINF_SUCCESS;
