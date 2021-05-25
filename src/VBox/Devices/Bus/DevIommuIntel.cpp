@@ -1924,11 +1924,11 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                             return VERR_NOT_IMPLEMENTED;
                         }
                         else
-                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_3, pAddrRemap->idDevice,
+                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_3, VTDATFAULT_LCT_3, pAddrRemap->idDevice,
                                                        pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
                     }
                     else
-                        dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_2, pAddrRemap->idDevice,
+                        dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_2, VTDATFAULT_LCT_2, pAddrRemap->idDevice,
                                                    pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
                 }
                 else
