@@ -40,7 +40,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * Structure for keeping a validation kit input/output stream.
+ * Structure for keeping a Validation Kit input/output stream.
  */
 typedef struct VAKITAUDIOSTREAM
 {
@@ -72,11 +72,44 @@ typedef struct VAKITAUDIOSTREAM
         } Out;
     };
 } VAKITAUDIOSTREAM;
-/** Pointer to a validation kit stream. */
+/** Pointer to a Validation Kit stream. */
 typedef VAKITAUDIOSTREAM *PVAKITAUDIOSTREAM;
 
 /**
- * Validation kit audio driver instance data.
+ * Test tone-specific instance data.
+ */
+typedef struct VALKITTESTTONEDATA
+{
+    /** How many ns to write. */
+    uint64_t           nsToWrite;
+    /** How many ns already written. */
+    uint64_t           nsWritten;
+    /** The test tone instance to use. */
+    AUDIOTESTTONE      Tone;
+    /** The test tone parameters to use. */
+    AUDIOTESTTONEPARMS ToneParms;
+} VALKITTESTTONEDATA;
+
+/**
+ * Structure keeping a single Validation Kit test.
+ */
+typedef struct VALKITTESTDATA
+{
+    /** The list node. */
+    RTLISTNODE             Node;
+    /** Stream configuration to use for this test. */
+    PDMAUDIOSTREAMCFG      StreamCfg;
+    union
+    {
+        /** Test tone-specific data. */
+        VALKITTESTTONEDATA TestTone;
+    } t;
+} VALKITTESTDATA;
+/** Pointer to Validation Kit test data. */
+typedef VALKITTESTDATA *PVALKITTESTDATA;
+
+/**
+ * Validation Kit audio driver instance data.
  * @implements PDMIAUDIOCONNECTOR
  */
 typedef struct DRVHOSTVAKITAUDIO
@@ -85,11 +118,45 @@ typedef struct DRVHOSTVAKITAUDIO
     PPDMDRVINS          pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO       IHostAudio;
+    /** Number of tests in \a lstTestsRec. */
+    uint32_t            cTestsRec;
+    /** List keeping the recording tests (FIFO). */
+    RTLISTANCHOR        lstTestsRec;
+    /** Pointer to current recording test being processed. */
+    PVALKITTESTDATA     pTestRecCur;
+    /** Critical section for serializing access across threads. */
+    RTCRITSECT          CritSect;
+    /** The Audio Test Service (ATS) instance. */
+    ATSSERVER           Srv;
 } DRVHOSTVAKITAUDIO;
-/** Pointer to a validation kit host audio driver instance. */
+/** Pointer to a Validation Kit host audio driver instance. */
 typedef DRVHOSTVAKITAUDIO *PDRVHOSTVAKITAUDIO;
 
 
+/**
+ * Note: Called within server (client serving) thread.
+ */
+static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+{
+    PDRVHOSTVAKITAUDIO pThis = (PDRVHOSTVAKITAUDIO)pvUser;
+
+    PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
+    AssertPtrReturn(pTestData, VERR_NO_MEMORY);
+
+    memcpy(&pTestData->StreamCfg,            pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
+    memcpy(&pTestData->t.TestTone.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
+    }
+
+    return VINF_SUCCESS;
+}
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
@@ -105,8 +172,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_GetConfig(PPDMIHOSTAUDIO pInterfac
     RTStrCopy(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit");
     pBackendCfg->cbStream       = sizeof(VAKITAUDIOSTREAM);
     pBackendCfg->fFlags         = 0;
-    pBackendCfg->cMaxStreamsOut = 1; /* Output */
-    pBackendCfg->cMaxStreamsIn  = 0; /* No input supported yet. */
+    pBackendCfg->cMaxStreamsOut = 1; /* Output (Playback). */
+    pBackendCfg->cMaxStreamsIn  = 1; /* Input (Recording). */
 
     return VINF_SUCCESS;
 }
@@ -395,10 +462,57 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                             void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
+    RT_NOREF(pStream);
 
-    /* Never capture anything. */
-    *pcbRead = 0;
+    PDRVHOSTVAKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
+
+    int rc = VINF_SUCCESS;
+
+    if (pThis->pTestRecCur == NULL)
+    {
+        rc = RTCritSectEnter(&pThis->CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pTestRecCur = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
+
+            int rc2 = RTCritSectLeave(&pThis->CritSect);
+            AssertRC(rc2);
+        }
+    }
+
+    if (pThis->pTestRecCur == NULL) /* Empty list? */
+    {
+        *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
+
+    PVALKITTESTDATA pTst = pThis->pTestRecCur;
+
+    uint32_t cbToWrite = PDMAudioPropsNanoToBytes(&pTst->StreamCfg.Props,
+                                                  (pTst->t.TestTone.nsToWrite - pTst->t.TestTone.nsWritten));
+    uint32_t cbRead = 0;
+    if (cbToWrite)
+        rc = AudioTestToneGenerate(&pTst->t.TestTone.Tone, pvBuf, RT_MIN(cbToWrite, cbBuf), &cbRead);
+
+    const uint32_t nsWritten    = PDMAudioPropsBytesToNano(&pTst->StreamCfg.Props, cbRead);
+    pTst->t.TestTone.nsWritten += nsWritten;
+    Assert(pTst->t.TestTone.nsWritten <= pTst->t.TestTone.nsToWrite);
+
+    const bool fComplete = pTst->t.TestTone.nsToWrite == pTst->t.TestTone.nsWritten;
+
+    if (fComplete)
+    {
+        RTListNodeRemove(&pTst->Node);
+
+        RTMemFree(pTst);
+        pTst = NULL;
+
+        Assert(pThis->cTestsRec);
+        pThis->cTestsRec--;
+    }
+
+    *pcbRead = cbRead;
+
     return VINF_SUCCESS;
 }
 
@@ -438,7 +552,6 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHostValKitAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = NULL;
-    pThis->IHostAudio.pfnSetDevice                  = NULL;
     pThis->IHostAudio.pfnGetStatus                  = drvHostValKitAudioHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
@@ -454,7 +567,65 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->IHostAudio.pfnStreamPlay                 = drvHostValKitAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostValKitAudioHA_StreamCapture;
 
-    return VINF_SUCCESS;
+    RTListInit(&pThis->lstTestsRec);
+    pThis->cTestsRec = 0;
+
+    ATSCALLBACKS Callbacks;
+    Callbacks.pfnTonePlay = drvHostValKitAudioSvcTonePlayCallback;
+    Callbacks.pvUser      = pThis;
+
+    LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) ...\n"));
+
+    int rc = AudioTestSvcInit(&pThis->Srv, &Callbacks);
+    if (RT_SUCCESS(rc))
+        rc = AudioTestSvcStart(&pThis->Srv);
+
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) failed, rc=%Rrc\n", rc));
+    }
+    else
+        LogRel(("Audio: Validation Kit: Audio Test Service (ATS) running\n"));
+
+    if (RT_SUCCESS(rc))
+        rc = RTCritSectInit(&pThis->CritSect);
+
+    return rc;
+}
+
+static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVHOSTVAKITAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTVAKITAUDIO);
+
+    LogRel(("Audio: Validation Kit: Shutting down Audio Test Service (ATS) ...\n"));
+
+    int rc = AudioTestSvcShutdown(&pThis->Srv);
+    if (RT_SUCCESS(rc))
+        rc = AudioTestSvcDestroy(&pThis->Srv);
+
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service complete\n"));
+
+        PVALKITTESTDATA pData, pDataNext;
+        RTListForEachSafe(&pThis->lstTestsRec, pData, pDataNext, VALKITTESTDATA, Node)
+        {
+            RTListNodeRemove(&pData->Node);
+
+            RTMemFree(pData);
+
+            Assert(pThis->cTestsRec);
+            pThis->cTestsRec--;
+        }
+
+        Assert(pThis->cTestsRec == 0);
+    }
+    else
+        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service failed, rc=%Rrc\n", rc));
+
+    rc = RTCritSectDelete(&pThis->CritSect);
+    AssertRC(rc);
 }
 
 /**
@@ -483,7 +654,7 @@ const PDMDRVREG g_DrvHostValidationKitAudio =
     /* pfnConstruct */
     drvHostValKitAudioConstruct,
     /* pfnDestruct */
-    NULL,
+    drvHostValKitAudioDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
