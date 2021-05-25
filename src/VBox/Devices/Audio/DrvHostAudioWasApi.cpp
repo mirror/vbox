@@ -2829,7 +2829,12 @@ static DECLCALLBACK(void) drvHostAudioWasPowerOff(PPDMDRVINS pDrvIns)
         {
             rc = pThis->pIHostAudioPort->pfnDoOnWorkerThread(pThis->pIHostAudioPort, NULL/*pStream*/,
                                                              DRVHOSTAUDIOWAS_DO_PURGE_CACHE, NULL /*pvUser*/);
-            AssertRC(rc);
+            if (RT_FAILURE(rc))
+            {
+                LogFunc(("pfnDoOnWorkerThread/DRVHOSTAUDIOWAS_DO_PURGE_CACHE failed: %Rrc\n", rc));
+                RTSemEventMultiDestroy(pThis->hEvtCachePurge);
+                pThis->hEvtCachePurge = NIL_RTSEMEVENTMULTI;
+            }
         }
     }
 #endif
