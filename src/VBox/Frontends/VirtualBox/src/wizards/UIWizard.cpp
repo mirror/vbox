@@ -19,6 +19,7 @@
 #include <QAbstractButton>
 #include <QLayout>
 #include <QStyle>
+#include <QWindow>
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -496,15 +497,13 @@ int UIWizard::proposedWatermarkHeight()
 
 void UIWizard::assignWatermarkHelper()
 {
-    /* Calculate metric and ratio: */
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-    const double dRatio = (double)iIconMetric / 32;
     /* Load pixmap to icon first: */
     QIcon icon = UIIconPool::iconSet(m_strWatermarkName);
-    QSize size = icon.availableSizes().value(0, QSize(145, 290));
-    size *= dRatio;
-    /* Create initial watermark: */
-    QPixmap pixWaterMark(icon.pixmap(size));
+    /* Create initial watermark pixmap.
+     * For HiDPI support parent-widget's device pixel ratio is to be taken into account: */
+    QPixmap pixWaterMark(  parentWidget()
+                         ? icon.pixmap(parentWidget()->windowHandle(), QSize(145, 290))
+                         : icon.pixmap(QSize(145, 290)));
     /* Convert watermark to image which
      * allows to manage pixel data directly: */
     QImage imgWatermark = pixWaterMark.toImage();
@@ -539,6 +538,10 @@ void UIWizard::assignWatermarkHelper()
     }
     /* Convert processed image to pixmap and assign it to wizard's watermark. */
     QPixmap pixWatermarkNew = QPixmap::fromImage(imgWatermarkNew);
+    /* For HiDPI support parent-widget's device pixel ratio is to be taken into account: */
+    const double dRatio = parentWidget()->windowHandle()->devicePixelRatio();
+    pixWatermarkNew.setDevicePixelRatio(dRatio);
+    /* Assign watermark finally: */
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
 #endif /* !VBOX_WS_MAC */
