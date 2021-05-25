@@ -317,6 +317,7 @@ static DECLCALLBACK(int) drvHostDebugAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHostDebugAudioHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = NULL;
+    pThis->IHostAudio.pfnSetDevice                  = NULL;
     pThis->IHostAudio.pfnGetStatus                  = drvHostDebugAudioHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;

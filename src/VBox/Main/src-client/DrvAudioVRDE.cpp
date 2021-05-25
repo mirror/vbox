@@ -789,6 +789,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvAudioVrdeHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = NULL;
+    pThis->IHostAudio.pfnSetDevice                  = NULL;
     pThis->IHostAudio.pfnGetStatus                  = drvAudioVrdeHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;

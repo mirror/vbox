@@ -97,13 +97,13 @@ typedef COREAUDIODEVICEDATA *PCOREAUDIODEVICEDATA;
 
 
 /**
- * Default audio device information.
+ * Audio device information.
  *
  * We do not use COREAUDIODEVICEDATA here as it contains lots more than what we
  * need and care to query.  We also don't want to depend on DrvAudio making
  * PDMIHOSTAUDIO::pfnGetDevices callbacks to keep this information up to date.
  */
-typedef struct DRVHSTAUDCADEFAULTDEV
+typedef struct DRVHSTAUDCADEVICE
 {
     /** The audio device ID. kAudioDeviceUnknown if not available. */
     AudioObjectID       idDevice;
@@ -111,9 +111,11 @@ typedef struct DRVHSTAUDCADEFAULTDEV
     bool                fRegisteredListeners;
     /** The UID string (must release).  NULL if not available. */
     CFStringRef         hStrUid;
-} DRVHSTAUDCADEFAULTDEV;
+    /** The UID string for a specific device, NULL if we're using the default device. */
+    char               *pszSpecific;
+} DRVHSTAUDCADEVICE;
 /** Pointer to info about a default device. */
-typedef DRVHSTAUDCADEFAULTDEV *PDRVHSTAUDCADEFAULTDEV;
+typedef DRVHSTAUDCADEVICE *PDRVHSTAUDCADEVICE;
 
 
 /**
@@ -220,10 +222,10 @@ typedef struct DRVHOSTCOREAUDIO
     PPDMDRVINS              pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO           IHostAudio;
-    /** The default input device. */
-    DRVHSTAUDCADEFAULTDEV   DefaultInput;
-    /** The default output device. */
-    DRVHSTAUDCADEFAULTDEV   DefaultOutput;
+    /** The input device. */
+    DRVHSTAUDCADEVICE       InputDevice;
+    /** The output device. */
+    DRVHSTAUDCADEVICE       OutputDevice;
     /** Upwards notification interface. */
     PPDMIHOSTAUDIOPORT      pIHostAudioPort;
     /** Indicates whether we've registered default input device change listener. */
@@ -260,8 +262,7 @@ typedef struct DRVHOSTCOREAUDIO
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAUDCADEFAULTDEV pDefaultDev,
-                                              bool fInput, bool fNotify);
+static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAUDCADEVICE pDevice, bool fInput, bool fNotify);
 
 /* DrvHostAudioCoreAudioAuth.mm: */
 DECLHIDDEN(int) coreAudioInputPermissionCheck(void);
@@ -494,6 +495,36 @@ static uint32_t drvHstAudCaEnumCountChannels(AudioObjectID idObject, AudioObject
 
 
 /**
+ * Translates a UID to an audio device ID.
+ *
+ * @returns Audio device ID on success, kAudioDeviceUnknown on failure.
+ * @param   hStrUid     The UID string to convert.
+ * @param   pszUid      The C-string vresion of @a hStrUid.
+ * @param   pszWhat     What we're converting (for logging).
+ */
+static AudioObjectID drvHstAudCaDeviceUidToId(CFStringRef hStrUid, const char *pszUid, const char *pszWhat)
+{
+    AudioObjectPropertyAddress const PropAddr =
+    {
+        /*.mSelector = */   kAudioHardwarePropertyTranslateUIDToDevice,
+        /*.mScope = */      kAudioObjectPropertyScopeGlobal,
+        /*.mElement = */    kAudioObjectPropertyElementMaster
+    };
+    AudioObjectID idDevice = 0;
+    UInt32        cb       = sizeof(idDevice);
+    OSStatus      orc      = AudioObjectGetPropertyData(kAudioObjectSystemObject, &PropAddr,
+                                                        sizeof(hStrUid), &hStrUid, &cb, &idDevice);
+    if (orc == noErr)
+    {
+        Log9Func(("%s device UID '%s' -> %RU32\n", pszWhat, pszUid, idDevice));
+        return idDevice;
+    }
+    LogRelMax(64, ("CoreAudio: Failed to translate %s device UID '%s' to audio device ID: %#x\n", pszWhat, pszUid, orc));
+    return kAudioDeviceUnknown;
+}
+
+
+/**
  * Copies a CFString to a buffer (UTF-8).
  *
  * @returns VBox status code.  In the case of a buffer overflow, the buffer will
@@ -643,7 +674,7 @@ static OSStatus drvHstAudCaDeviceIsAliveChangedCallback(AudioObjectID idObject, 
 
     for (unsigned i = 0; i < 2; i++)
     {
-        if (idObject == (i == 0 ? pThis->DefaultInput.idDevice : pThis->DefaultOutput.idDevice))
+        if (idObject == (i == 0 ? pThis->InputDevice.idDevice : pThis->OutputDevice.idDevice))
         {
             AudioObjectPropertyAddress const PropAddr =
             {
@@ -706,8 +737,8 @@ static OSStatus drvHstAudCaDefaultDeviceChangedCallback(AudioObjectID idObject, 
     /*
      * Update the default devices and notify parent driver if anything actually changed.
      */
-    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->DefaultOutput, false /*fInput*/, true /*fNotify*/);
-    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->DefaultInput,   true /*fInput*/, true /*fNotify*/);
+    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->OutputDevice, false /*fInput*/, true /*fNotify*/);
+    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->InputDevice,   true /*fInput*/, true /*fNotify*/);
 
     return noErr;
 }
@@ -804,14 +835,19 @@ static void drvHstAudCaDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, AudioO
  * Updates the default device for one direction.
  *
  * @param   pThis       The core audio driver instance data.
- * @param   pDefaultDev The default device to update.
+ * @param   pDevice     The device information to update.
  * @param   fInput      Set if input device, clear if output.
  * @param   fNotify     Whether to notify the parent driver if something
  *                      changed.
  */
-static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAUDCADEFAULTDEV pDefaultDev,
-                                              bool fInput, bool fNotify)
+static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAUDCADEVICE pDevice, bool fInput, bool fNotify)
 {
+    /*
+     * Skip if there is a specific device we should use for this direction.
+     */
+    if (pDevice->pszSpecific)
+        return;
+
     /*
      * Get the information before we enter the critical section.
      *
@@ -855,24 +891,24 @@ static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAU
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        if (idDefaultDev != pDefaultDev->idDevice)
+        if (idDefaultDev != pDevice->idDevice)
         {
             if (idDefaultDev != kAudioDeviceUnknown)
             {
                 LogRel(("CoreAudio: Default %s device: %u (was %u), ID '%s'\n",
-                        fInput ? "input" : "output", idDefaultDev, pDefaultDev->idDevice, szUid));
+                        fInput ? "input" : "output", idDefaultDev, pDevice->idDevice, szUid));
                 pIHostAudioPort = fNotify ? pThis->pIHostAudioPort : NULL; /* (only if there is a new device) */
             }
             else
-                LogRel(("CoreAudio: Default %s device is gone (was %u)\n", fInput ? "input" : "output", pDefaultDev->idDevice));
+                LogRel(("CoreAudio: Default %s device is gone (was %u)\n", fInput ? "input" : "output", pDevice->idDevice));
 
-            if (pDefaultDev->hStrUid)
-                CFRelease(pDefaultDev->hStrUid);
-            if (pDefaultDev->fRegisteredListeners)
-                drvHstAudCaDeviceUnregisterCallbacks(pThis, pDefaultDev->idDevice);
-            pDefaultDev->hStrUid              = hStrUid;
-            pDefaultDev->idDevice             = idDefaultDev;
-            pDefaultDev->fRegisteredListeners = drvHstAudCaDeviceRegisterCallbacks(pThis, pDefaultDev->idDevice);
+            if (pDevice->hStrUid)
+                CFRelease(pDevice->hStrUid);
+            if (pDevice->fRegisteredListeners)
+                drvHstAudCaDeviceUnregisterCallbacks(pThis, pDevice->idDevice);
+            pDevice->hStrUid              = hStrUid;
+            pDevice->idDevice             = idDefaultDev;
+            pDevice->fRegisteredListeners = drvHstAudCaDeviceRegisterCallbacks(pThis, pDevice->idDevice);
             hStrUid = NULL;
         }
         RTCritSectLeave(&pThis->CritSect);
@@ -889,6 +925,128 @@ static void drvHstAudCaUpdateOneDefaultDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAU
         LogFlowFunc(("Notifying parent driver about %s default device change...\n", fInput ? "input" : "output"));
         pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, fInput ? PDMAUDIODIR_IN : PDMAUDIODIR_OUT, NULL /*pvUser*/);
     }
+}
+
+
+/**
+ * Sets the device to use in one or the other direction (@a fInput).
+ *
+ * @returns VBox status code.
+ * @param   pThis       The core audio driver instance data.
+ * @param   pDevice     The device info structure to update.
+ * @param   fInput      Set if input, clear if output.
+ * @param   fNotify     Whether to notify the parent driver if something
+ *                      changed.
+ * @param   pszUid      The UID string for the device to use.  NULL or empty
+ *                      string if default should be used.
+ */
+static int drvHstAudCaSetDevice(PDRVHOSTCOREAUDIO pThis, PDRVHSTAUDCADEVICE pDevice, bool fInput, bool fNotify,
+                                const char *pszUid)
+{
+    if (!pszUid || !*pszUid)
+    {
+        /*
+         * Use default.  Always refresh the given default device.
+         */
+        int rc = RTCritSectEnter(&pThis->CritSect);
+        AssertRCReturn(rc, rc);
+
+        if (pDevice->pszSpecific)
+        {
+            LogRel(("CoreAudio: Changing %s device from '%s' to default.\n", fInput ? "input" : "output", pDevice->pszSpecific));
+            RTStrFree(pDevice->pszSpecific);
+            pDevice->pszSpecific = NULL;
+        }
+
+        RTCritSectLeave(&pThis->CritSect);
+
+        drvHstAudCaUpdateOneDefaultDevice(pThis, pDevice, fInput, fNotify);
+    }
+    else
+    {
+        /*
+         * Use device specified by pszUid.  If not change, search for the device
+         * again if idDevice is unknown.
+         */
+        int rc = RTCritSectEnter(&pThis->CritSect);
+        AssertRCReturn(rc, rc);
+
+        bool fSkip = false;
+        bool fSame = false;
+        if (pDevice->pszSpecific)
+        {
+            if (strcmp(pszUid, pDevice->pszSpecific) != 0)
+            {
+                LogRel(("CoreAudio: Changing %s device from '%s' to '%s'.\n",
+                        fInput ? "input" : "output", pDevice->pszSpecific, pszUid));
+                RTStrFree(pDevice->pszSpecific);
+                pDevice->pszSpecific = NULL;
+            }
+            else
+            {
+                fSkip = pDevice->idDevice != kAudioDeviceUnknown;
+                fSame = true;
+            }
+        }
+        else
+            LogRel(("CoreAudio: Changing %s device from default to '%s'.\n", fInput ? "input" : "output", pszUid));
+
+        /*
+         * Allocate and swap the strings. This is the bit that might fail.
+         */
+        if (!fSame)
+        {
+            CFStringRef hStrUid     = CFStringCreateWithBytes(NULL /*allocator*/, (UInt8 const *)pszUid, (CFIndex)strlen(pszUid),
+                                                              kCFStringEncodingUTF8, false /*isExternalRepresentation*/);
+            char       *pszSpecific = RTStrDup(pszUid);
+            if (hStrUid && pszSpecific)
+            {
+                if (pDevice->hStrUid)
+                    CFRelease(pDevice->hStrUid);
+                pDevice->hStrUid = hStrUid;
+                RTStrFree(pDevice->pszSpecific);
+                pDevice->pszSpecific = pszSpecific;
+            }
+            else
+            {
+                RTCritSectLeave(&pThis->CritSect);
+
+                LogFunc(("returns VERR_NO_STR_MEMORY!\n"));
+                if (hStrUid)
+                    CFRelease(hStrUid);
+                RTStrFree(pszSpecific);
+                return VERR_NO_STR_MEMORY;
+            }
+
+            if (pDevice->fRegisteredListeners)
+            {
+                drvHstAudCaDeviceUnregisterCallbacks(pThis, pDevice->idDevice);
+                pDevice->fRegisteredListeners = false;
+            }
+        }
+
+        /*
+         * Locate the device ID corresponding to the UID string.
+         */
+        if (!fSkip)
+        {
+            pDevice->idDevice             = drvHstAudCaDeviceUidToId(pDevice->hStrUid, pszUid, fInput ? "input" : "output");
+            pDevice->fRegisteredListeners = drvHstAudCaDeviceRegisterCallbacks(pThis, pDevice->idDevice);
+        }
+
+        PPDMIHOSTAUDIOPORT pIHostAudioPort = fNotify && !fSame ? pThis->pIHostAudioPort : NULL;
+        RTCritSectLeave(&pThis->CritSect);
+
+        /*
+         * Notify parent driver to trigger a re-init of any associated streams.
+         */
+        if (pIHostAudioPort)
+        {
+            LogFlowFunc(("Notifying parent driver about %s device change...\n", fInput ? "input" : "output"));
+            pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, fInput ? PDMAUDIODIR_IN : PDMAUDIODIR_OUT, NULL /*pvUser*/);
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -1158,6 +1316,32 @@ static DECLCALLBACK(int) drvHstAudCaHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPD
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetDevice}
+ */
+static DECLCALLBACK(int) drvHstAudCaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir, const char *pszId)
+{
+    PDRVHOSTCOREAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTCOREAUDIO, IHostAudio);
+    AssertPtrNullReturn(pszId, VERR_INVALID_POINTER);
+    if (pszId && !*pszId)
+        pszId = NULL;
+    AssertMsgReturn(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX,
+                    ("enmDir=%d\n", enmDir, pszId), VERR_INVALID_PARAMETER);
+
+    /*
+     * Make the change.
+     */
+    int rc = VINF_SUCCESS;
+    if (enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_DUPLEX)
+        rc = drvHstAudCaSetDevice(pThis, &pThis->InputDevice, true /*fInput*/, true /*fNotify*/, pszId);
+    if (enmDir == PDMAUDIODIR_OUT || (enmDir == PDMAUDIODIR_DUPLEX && RT_SUCCESS(rc)))
+        rc = drvHstAudCaSetDevice(pThis, &pThis->OutputDevice, false /*fInput*/, true /*fNotify*/, pszId);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHstAudCaHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -1354,7 +1538,7 @@ static DECLCALLBACK(int) drvHstAudCaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
      * Do we have a device for the requested stream direction?
      */
     RTCritSectEnter(&pThis->CritSect);
-    CFStringRef hDevUidStr = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->DefaultInput.hStrUid : pThis->DefaultOutput.hStrUid;
+    CFStringRef hDevUidStr = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->InputDevice.hStrUid : pThis->OutputDevice.hStrUid;
     if (hDevUidStr)
         CFRetain(hDevUidStr);
     RTCritSectLeave(&pThis->CritSect);
@@ -2462,11 +2646,11 @@ static void drvHstAudCaRemoveDefaultDeviceListners(PDRVHOSTCOREAUDIO pThis)
      */
     RTCritSectEnter(&pThis->CritSect);
 
-    drvHstAudCaDeviceUnregisterCallbacks(pThis, pThis->DefaultInput.idDevice);
-    pThis->DefaultInput.idDevice  = kAudioDeviceUnknown;
+    drvHstAudCaDeviceUnregisterCallbacks(pThis, pThis->InputDevice.idDevice);
+    pThis->InputDevice.idDevice  = kAudioDeviceUnknown;
 
-    drvHstAudCaDeviceUnregisterCallbacks(pThis, pThis->DefaultOutput.idDevice);
-    pThis->DefaultOutput.idDevice = kAudioDeviceUnknown;
+    drvHstAudCaDeviceUnregisterCallbacks(pThis, pThis->OutputDevice.idDevice);
+    pThis->OutputDevice.idDevice = kAudioDeviceUnknown;
 
     RTCritSectLeave(&pThis->CritSect);
 
@@ -2573,6 +2757,7 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHstAudCaHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = drvHstAudCaHA_GetDevices;
+    pThis->IHostAudio.pfnSetDevice                  = drvHstAudCaHA_SetDevice;
     pThis->IHostAudio.pfnGetStatus                  = drvHstAudCaHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
@@ -2594,14 +2779,26 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Validate and read configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "", "");
-    /** @todo (bird) Add OutputDeviceID and InputDeviceID, interpret them as
-     * PDMAUDIOHOSTDEV::pszId values.  This should be done for all other devices
-     * where it is possible to use something other than the default devices
-     * (e.g. not OSS).
-     *
-     * Also, add an optional pfnSetDevice method that does the same only at
-     * runtime. */
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "InputDeviceID|OutputDeviceID", "");
+
+    char *pszTmp = NULL;
+    rc = CFGMR3QueryStringAlloc(pCfg, "InputDeviceID", &pszTmp);
+    if (RT_SUCCESS(rc))
+    {
+        rc = drvHstAudCaSetDevice(pThis, &pThis->InputDevice, true /*fInput*/, false /*fNotify*/, pszTmp);
+        MMR3HeapFree(pszTmp);
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND && rc != VERR_CFGM_NO_PARENT)
+        return PDMDRV_SET_ERROR(pDrvIns, rc, "Failed to query 'InputDeviceID'");
+
+    rc = CFGMR3QueryStringAlloc(pCfg, "OutputDeviceID", &pszTmp);
+    if (RT_SUCCESS(rc))
+    {
+        rc = drvHstAudCaSetDevice(pThis, &pThis->OutputDevice, false /*fInput*/, false /*fNotify*/, pszTmp);
+        MMR3HeapFree(pszTmp);
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND && rc != VERR_CFGM_NO_PARENT)
+        return PDMDRV_SET_ERROR(pDrvIns, rc, "Failed to query 'OutputDeviceID'");
 
     /*
      * Query the notification interface from the driver/device above us.
@@ -2644,8 +2841,8 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Determin the default devices.
      */
-    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->DefaultOutput, false /*fInput*/, false /*fNotifty*/);
-    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->DefaultInput,   true /*fInput*/, false /*fNotifty*/);
+    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->OutputDevice, false /*fInput*/, false /*fNotifty*/);
+    drvHstAudCaUpdateOneDefaultDevice(pThis, &pThis->InputDevice,   true /*fInput*/, false /*fNotifty*/);
 
     /*
      * Register callbacks for default device input and output changes.

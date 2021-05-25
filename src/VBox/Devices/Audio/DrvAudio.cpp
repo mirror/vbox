@@ -4551,6 +4551,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrReturn(pIHostDrvAudio, VERR_INVALID_POINTER);
     AssertPtrReturn(pIHostDrvAudio->pfnGetConfig, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnGetDevices, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pIHostDrvAudio->pfnSetDevice, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnGetStatus, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnDoOnWorkerThread, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnStreamConfigHint, VERR_INVALID_POINTER);

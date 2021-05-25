@@ -378,10 +378,11 @@ typedef struct PDMAUDIOHOSTDEV
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
     uint8_t             abAlignment[ARCH_BITS == 32 ? 2 + 12 : 2];
-    /** Device identifier, OS specific, can be NULL.
+    /** Backend specific device identifier, can be NULL, used to select device.
      * This can either point into some non-public part of this structure or to a
      * RTStrAlloc allocation.  PDMAUDIOHOSTDEV_F_ID_ALLOC is set in the latter
-     * case. */
+     * case.
+     * @sa PDMIHOSTAUDIO::pfnSetDevice */
     char               *pszId;
     /** Friendly name of the device, if any. Could be truncated. */
     char                szName[64];
@@ -1316,6 +1317,19 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnGetDevices, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum));
 
     /**
+     * Changes the output or input device.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   enmDir          The direction to set the device for: PDMAUDIODIR_IN,
+     *                          PDMAUDIODIR_OUT or PDMAUDIODIR_DUPLEX (both the
+     *                          previous).
+     * @param   pszId           The PDMAUDIOHOSTDEV::pszId value of the device to
+     *                          use, or NULL / empty string for the default device.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetDevice, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir, const char *pszId));
+
+    /**
      * Returns the current status from the audio backend (optional).
      *
      * @returns PDMAUDIOBACKENDSTS enum.
@@ -1518,7 +1532,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "a6b33abc-1393-4548-92ab-a308d54de1e8"
+#define PDMIHOSTAUDIO_IID                           "da3c9d33-e532-415b-9156-db31521f59ef"
 
 
 /** Pointer to a audio notify from host interface. */
