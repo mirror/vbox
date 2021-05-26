@@ -4275,8 +4275,8 @@ static const char *tmR3GetTSCModeNameEx(TMTSCMODE enmMode)
 {
     switch (enmMode)
     {
-        case TMTSCMODE_REAL_TSC_OFFSET:    return "RealTscOffset";
-        case TMTSCMODE_VIRT_TSC_EMULATED:  return "VirtTscEmulated";
+        case TMTSCMODE_REAL_TSC_OFFSET:    return "RealTSCOffset";
+        case TMTSCMODE_VIRT_TSC_EMULATED:  return "VirtTSCEmulated";
         case TMTSCMODE_DYNAMIC:            return "Dynamic";
         case TMTSCMODE_NATIVE_API:         return "NativeApi";
         default:                           return "???";
