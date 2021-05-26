@@ -39,6 +39,7 @@
 #include <QTranslator>
 #ifdef VBOX_WS_WIN
 # include <QEventLoop>
+# include <QStyleFactory>
 #endif
 #ifdef VBOX_WS_X11
 # include <QScreen>
@@ -721,6 +722,54 @@ QString UICommon::systemLanguageId()
 #endif
     return QLocale::system().name();
 }
+
+#ifdef VBOX_WS_WIN
+/* static */
+void UICommon::loadColorTheme()
+{
+    /* Load saved color theme: */
+    UIColorThemeType enmColorTheme = gEDataManager->colorTheme();
+
+    /* Check whether we have dark system theme requested: */
+    if (enmColorTheme == UIColorThemeType_Auto)
+    {
+        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                           QSettings::NativeFormat);
+        if (settings.value("AppsUseLightTheme") == 0)
+            enmColorTheme = UIColorThemeType_Dark;
+    }
+
+    /* Check whether dark theme was requested by any means: */
+    if (enmColorTheme == UIColorThemeType_Dark)
+    {
+        qApp->setStyle(QStyleFactory::create("Fusion"));
+        QPalette darkPalette;
+        QColor windowColor1 = QColor(59, 60, 61);
+        QColor windowColor2 = QColor(63, 64, 65);
+        QColor baseColor1 = QColor(46, 47, 48);
+        QColor baseColor2 = QColor(56, 57, 58);
+        QColor disabledColor = QColor(113, 114, 115);
+        darkPalette.setColor(QPalette::Window, windowColor1);
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, disabledColor);
+        darkPalette.setColor(QPalette::Base, baseColor1);
+        darkPalette.setColor(QPalette::AlternateBase, baseColor2);
+        darkPalette.setColor(QPalette::PlaceholderText, disabledColor);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Disabled, QPalette::Text, disabledColor);
+        darkPalette.setColor(QPalette::Button, windowColor2);
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledColor);
+        darkPalette.setColor(QPalette::BrightText, Qt::red);
+        darkPalette.setColor(QPalette::Link, QColor(179, 214, 242));
+        darkPalette.setColor(QPalette::Highlight, QColor(29, 84, 92));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::white);
+        darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, disabledColor);
+        qApp->setPalette(darkPalette);
+        qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2b2b2b; border: 1px solid #737373; }");
+    }
+}
+#endif /* VBOX_WS_WIN */
 
 /* static */
 void UICommon::loadLanguage(const QString &strLangId)
@@ -4145,6 +4194,11 @@ void UICommon::prepare()
     /* Prepare thread-pool instances: */
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
     m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
+
+#ifdef VBOX_WS_WIN
+    /* Load color theme: */
+    loadColorTheme();
+#endif
 
     /* Load translation based on the user settings: */
     QString sLanguageId = gEDataManager->languageId();

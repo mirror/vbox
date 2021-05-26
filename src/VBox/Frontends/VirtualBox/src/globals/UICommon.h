@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -314,6 +314,11 @@ public:
         static QString languageId();
         /** Returns the system language ID. */
         static QString systemLanguageId();
+
+#ifdef VBOX_WS_WIN
+        /** Loads the color theme. */
+        static void loadColorTheme();
+#endif
 
         /** Loads the language by language ID.
           * @param  strLangId  Brings the language ID in in form of xx_YY.
