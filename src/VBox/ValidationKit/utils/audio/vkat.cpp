@@ -281,6 +281,14 @@ enum
 };
 
 /**
+ * Long option values for the 'selftest' command.
+ */
+enum
+{
+    VKAT_SELFTEST_OPT_ATS_HOST = 900
+};
+
+/**
  * Common command line parameters.
  */
 static const RTGETOPTDEF g_aCmdCommonOptions[] =
@@ -2568,6 +2576,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
  */
 static const RTGETOPTDEF g_aCmdSelftestOptions[] =
 {
+    { "--ats-host",         VKAT_SELFTEST_OPT_ATS_HOST,   RTGETOPT_REQ_STRING },
     { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
 };
@@ -2644,15 +2653,18 @@ static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PPDMAU
 /**
  * Tests the Audio Test Service (ATS).
  *
- * @param   pDrvReg             Backend driver to use.
  * @returns VBox status code.
+ * @param   pDrvReg             Backend driver to use.
+ * @param   pszAdr              Address of ATS server to connect to.
+ *                              If NULL, an own (local) ATS server will be created.
  */
-static int audioTestDoSelftestSvc(PCPDMDRVREG pDrvReg)
+static int audioTestDoSelftestAts(PCPDMDRVREG pDrvReg, const char *pszAdr)
 {
     AUDIOTESTDRVSTACK DrvStack;
     int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, true /* fWithDrvAudio */);
     if (RT_SUCCESS(rc))
     {
+        /** @todo Make stream parameters configurable. */
         PDMAUDIOPCMPROPS  Props;
         PDMAudioPropsInit(&Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
@@ -2675,42 +2687,65 @@ static int audioTestDoSelftestSvc(PCPDMDRVREG pDrvReg)
                 Callbacks.pfnTonePlay = audioTestSvcTonePlayCallback;
                 Callbacks.pvUser      = &Ctx;
 
+                /* Start an own ATS instance if no address to connect was specified. */
                 ATSSERVER Srv;
-                rc = AudioTestSvcInit(&Srv, &Callbacks);
-                if (RT_SUCCESS(rc))
+                if (pszAdr == NULL)
                 {
-                    rc = AudioTestSvcStart(&Srv);
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Starting ATS ...\n");
+
+                    rc = AudioTestSvcInit(&Srv, &Callbacks);
                     if (RT_SUCCESS(rc))
                     {
-                        ATSCLIENT Conn;
-                        rc = AudioTestSvcClientConnect(&Conn, NULL);
+                        rc = AudioTestSvcStart(&Srv);
                         if (RT_SUCCESS(rc))
-                        {
-                            /* Do the bare minimum here to get a test tone out. */
-                            AUDIOTESTTONEPARMS ToneParms;
-                            RT_ZERO(ToneParms);
-                            ToneParms.msDuration = 2000;
-                            memcpy(&ToneParms.Props, &CfgAcq.Props, sizeof(PDMAUDIOPCMPROPS));
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "ATS running\n");
+                    }
+                }
+                else
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to ATS at '%s' ...\n", pszAdr);
 
-                            rc = AudioTestSvcClientTonePlay(&Conn, &CfgAcq, &ToneParms);
+                if (RT_SUCCESS(rc))
+                {
+                    ATSCLIENT Conn;
+                    rc = AudioTestSvcClientConnect(&Conn, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to ATS, testing ...\n");
 
-                            int rc2 = AudioTestSvcClientClose(&Conn);
-                            if (RT_SUCCESS(rc))
-                                rc = rc2;
-                        }
+                        /* Do the bare minimum here to get a test tone out. */
+                        AUDIOTESTTONEPARMS ToneParms;
+                        RT_ZERO(ToneParms);
+                        ToneParms.msDuration = RTRandU32Ex(250, 1000 * 5);
+                        memcpy(&ToneParms.Props, &CfgAcq.Props, sizeof(PDMAUDIOPCMPROPS));
 
-                        int rc2 = AudioTestSvcShutdown(&Srv);
+                        rc = AudioTestSvcClientTonePlay(&Conn, &CfgAcq, &ToneParms);
+
+                        int rc2 = AudioTestSvcClientClose(&Conn);
                         if (RT_SUCCESS(rc))
                             rc = rc2;
                     }
+                    else
+                        RTTestFailed(g_hTest, "Connecting to ATS failed, rc=%Rrc\n", rc);
 
-                    int rc2 = AudioTestSvcDestroy(&Srv);
+                    int rc2 = AudioTestSvcShutdown(&Srv);
                     if (RT_SUCCESS(rc))
                         rc = rc2;
+                }
+
+                if (pszAdr == NULL)
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Shutting down ATS ...\n");
+
+                    int rc2 = AudioTestSvcDestroy(&Srv);
+                        if (RT_SUCCESS(rc))
+                            rc = rc2;
                 }
             }
         }
     }
+
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Testing ATS failed with %Rrc\n", rc);
 
     return rc;
 }
@@ -2720,10 +2755,12 @@ static int audioTestDoSelftestSvc(PCPDMDRVREG pDrvReg)
  *
  * @returns VBox status code.
  * @param   pDrvReg             Backend driver to use.
+ * @param   pszAtsAdr           Address of ATS server to connect to.
+ *                              If NULL, an own (local) ATS server will be created.
  */
-static int audioTestDoSelftest(PCPDMDRVREG pDrvReg)
+static int audioTestDoSelftest(PCPDMDRVREG pDrvReg, const char *pszAtsAdr)
 {
-    int rc = audioTestDoSelftestSvc(pDrvReg);
+    int rc = audioTestDoSelftestAts(pDrvReg, pszAtsAdr);
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Self-test failed with: %Rrc", rc);
 
@@ -2741,6 +2778,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
     /* Option values: */
     PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
     bool        fWithDrvAudio     = false;
+    char       *pszAtsAddr        = NULL;
 
     /* Argument processing loop: */
     int           rc;
@@ -2749,7 +2787,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
     {
         switch (rc)
         {
+            case VKAT_SELFTEST_OPT_ATS_HOST:
+            {
+                pszAtsAddr = RTStrDup(ValueUnion.psz);
+                break;
+            }
+
             case 'b':
+            {
                 pDrvReg = NULL;
                 for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
                     if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
@@ -2761,10 +2806,13 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
                 if (pDrvReg == NULL)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
                 break;
+            }
 
             case 'd':
+            {
                 fWithDrvAudio = true;
                 break;
+            }
 
             case VINF_GETOPT_NOT_OPTION:
             {
@@ -2778,8 +2826,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
         }
     }
 
-    audioTestDoSelftest(pDrvReg);
-        /*
+    audioTestDoSelftest(pDrvReg, pszAtsAddr);
+
+    RTStrFree(pszAtsAddr);
+
+    /*
      * Print summary and exit.
      */
     return RTTestSummaryAndDestroy(g_hTest);
