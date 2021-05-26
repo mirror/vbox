@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * AudioTestServiceClient - Audio test execution server, Client helpers.
+ * AudioTestServiceClient - Audio Test Service (ATS), Client helpers.
  *
  * Note: Only does TCP/IP as transport layer for now.
  */
@@ -33,22 +33,35 @@
 
 /** @todo Use common defines between server protocol and this client. */
 
+/**
+ * A generic ATS reply, used by the client
+ * to process the incoming packets.
+ */
 typedef struct ATSSRVREPLY
 {
     char   szOp[8];
     void  *pvPayload;
     size_t cbPayload;
-
 } ATSSRVREPLY;
+/** Pointer to a generic ATS reply. */
 typedef struct ATSSRVREPLY *PATSSRVREPLY;
 
 
-static void audioTestSvcClientConnInit(PATSCLIENT pClient)
+/**
+ * Initializes an ATS client, internal version.
+ *
+ * @param   pClient             Client to initialize.
+ */
+static void audioTestSvcClientInit(PATSCLIENT pClient)
 {
     pClient->cbHdr = 0;
     pClient->hSock = NIL_RTSOCKET;
 }
 
+/**
+ * Free's an ATS server reply.
+ * @param   pReply              Reply to free. The pointer is invalid afterwards.
+ */
 static void audioTestSvcClientReplyFree(PATSSRVREPLY pReply)
 {
     if (!pReply)
@@ -64,6 +77,14 @@ static void audioTestSvcClientReplyFree(PATSSRVREPLY pReply)
     pReply->cbPayload = 0;
 }
 
+/**
+ * Receives a reply from an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to receive reply for.
+ * @param   pReply              Where to store the reply.
+ * @param   fNoDataOk           If it's okay that the reply is not expected to have any payload.
+ */
 static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, bool fNoDataOk)
 {
     int rc;
@@ -144,6 +165,13 @@ static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, 
     return rc;
 }
 
+/**
+ * Receives a reply for an ATS server and checks if it is an acknowledge (success) one.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NET_PROTOCOL_ERROR if the reply indicates a failure.
+ * @param   pClient             Client to receive reply for.
+ */
 static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
 {
     ATSSRVREPLY Reply;
@@ -161,11 +189,30 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
     return rc;
 }
 
+/**
+ * Sends data over the transport to the server.
+ * For now only TCP/IP is implemented.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to send data for.
+ * @param   pvData              Pointer to data to send.
+ * @param   cbData              Size (in bytes) of \a pvData to send.
+ */
 static int audioTestSvcClientSend(PATSCLIENT pClient, const void *pvData, size_t cbData)
 {
     return RTTcpWrite(pClient->hSock, pvData, cbData);
 }
 
+/**
+ * Sends a message plus optional payload to an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to send message for.
+ * @param   pvHdr               Pointer to header data to send.
+ * @param   cbHdr               Size (in bytes) of \a pvHdr to send.
+ * @param   pvPayload           Pointer to payload to send. Optional.
+ * @param   cbPayload           Size (in bytes) of \a pvPayload to send. Set to 0 if no payload needed.
+ */
 static int audioTestSvcClientSendMsg(PATSCLIENT pClient,
                                      void *pvHdr, size_t cbHdr, const void *pvPayload, size_t cbPayload)
 {
@@ -179,6 +226,15 @@ static int audioTestSvcClientSendMsg(PATSCLIENT pClient,
     return rc;
 }
 
+/**
+ * Initializes a client request header.
+ *
+ * @returns VBox status code.
+ * @param   pReqHdr             Request header to initialize.
+ * @param   cbReq               Size (in bytes) the request will have (does *not* include payload).
+ * @param   pszOp               Operation to perform with the request.
+ * @param   cbPayload           Size (in bytes) of payload that will follow the header. Optional and can be 0.
+ */
 DECLINLINE (void) audioTestSvcClientReqHdrInit(PATSPKTHDR pReqHdr, size_t cbReq, const char *pszOp, size_t cbPayload)
 {
     AssertReturnVoid(strlen(pszOp) >= 2);
@@ -190,6 +246,12 @@ DECLINLINE (void) audioTestSvcClientReqHdrInit(PATSPKTHDR pReqHdr, size_t cbReq,
     pReqHdr->cb     = (uint32_t)cbReq + (uint32_t)cbPayload;
 }
 
+/**
+ * Sends a greeting command (handshake) to an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to send command for.
+ */
 static int audioTestSvcClientDoGreet(PATSCLIENT pClient)
 {
     ATSPKTREQHOWDY Req;
@@ -201,6 +263,12 @@ static int audioTestSvcClientDoGreet(PATSCLIENT pClient)
     return rc;
 }
 
+/**
+ * Sends a disconnect command to an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to send command for.
+ */
 static int audioTestSvcClientDoBye(PATSCLIENT pClient)
 {
     ATSPKTHDR Hdr;
@@ -212,9 +280,17 @@ static int audioTestSvcClientDoBye(PATSCLIENT pClient)
     return rc;
 }
 
+/**
+ * Connects to an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to connect.
+ * @param   pszAddr             Address to connect to. If NULL, 127.0.0.1 (localhost) will be used.
+ * @note    The port (6052) is hardcoded for simplicity for now.
+ */
 int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr)
 {
-    audioTestSvcClientConnInit(pClient);
+    audioTestSvcClientInit(pClient);
 
     /* For simplicity we always run on the same port, localhost only. */
     int rc = RTTcpClientConnect(pszAddr ? pszAddr : "127.0.0.1", 6052, &pClient->hSock);
@@ -226,6 +302,15 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr)
     return rc;
 }
 
+/**
+ * Tells the server to play a (test) tone.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to issue command for.
+ * @param   pStreamCfg          Audio stream configuration to use.
+ * @param   pToneParms          Tone parameters to use.
+ * @note    How (and if) the server plays a tone depends on the actual implementation side.
+ */
 int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
 {
     ATSPKTREQTONEPLAY Req;
@@ -242,6 +327,12 @@ int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg
     return rc;
 }
 
+/**
+ * Disconnects from an ATS server.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to disconnect.
+ */
 int AudioTestSvcClientClose(PATSCLIENT pClient)
 {
     int rc = audioTestSvcClientDoBye(pClient);
