@@ -85,15 +85,27 @@ static const double s_aAudioTestToneFreqsHz[] =
 };
 
 /**
+ * Returns a random test tone frequency.
+ */
+DECLINLINE(double) audioTestGetRandomFreq(void)
+{
+    return s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
+}
+
+/**
  * Initializes a test tone with a specific frequency (in Hz).
  *
- * @returns Randomly picked frequency (in Hz).
+ * @returns Used tone frequency (in Hz).
  * @param   pTone               Pointer to test tone to initialize.
  * @param   pProps              PCM properties to use for the test tone.
  * @param   dbFreq              Frequency (in Hz) to initialize tone with.
+ *                              When set to 0.0, a random frequency will be chosen.
  */
-void AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
+double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
 {
+    if (dbFreq == 0.0)
+        dbFreq = audioTestGetRandomFreq();
+
     /* Pick a frequency from our selection, so that every time a recording starts
      * we'll hopfully generate a different note. */
     pTone->rdFreqHz = dbFreq;
@@ -103,23 +115,23 @@ void AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double db
     memcpy(&pTone->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
 
     pTone->enmType = AUDIOTESTTONETYPE_SINE; /* Only type implemented so far. */
+
+    return dbFreq;
 }
 
 /**
  * Initializes a test tone by picking a random but well-known frequency (in Hz).
  *
- * @returns Randomly picked frequency (in Hz).
+ * @returns Randomly picked tone frequency (in Hz).
  * @param   pTone               Pointer to test tone to initialize.
  * @param   pProps              PCM properties to use for the test tone.
  */
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps)
 {
-    AudioTestToneInit(pTone, pProps,
-                      /* Pick a frequency from our selection, so that every time a recording starts
-                       * we'll hopfully generate a different note. */
-                      s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)]);
-
-    return pTone->rdFreqHz;
+    return AudioTestToneInit(pTone, pProps,
+                             /* Pick a frequency from our selection, so that every time a recording starts
+                              * we'll hopfully generate a different note. */
+                             0.0);
 }
 
 /**
