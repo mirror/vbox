@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2310,6 +2310,16 @@ void UIExtraDataManager::setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogTyp
     }
     /* Save result: */
     setExtraDataStringList(GUI_RestrictedDialogs, result, uID);
+}
+
+UIColorThemeType UIExtraDataManager::colorTheme()
+{
+    return gpConverter->fromInternalString<UIColorThemeType>(extraDataString(GUI_ColorTheme));
+}
+
+void UIExtraDataManager::setColorTheme(const UIColorThemeType &enmType)
+{
+    setExtraDataString(GUI_ColorTheme, gpConverter->toInternalString(enmType));
 }
 
 QStringList UIExtraDataManager::suppressedMessages(const QUuid &uID /* = GlobalID */)

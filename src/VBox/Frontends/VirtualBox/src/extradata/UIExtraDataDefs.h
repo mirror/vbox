@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,9 @@ namespace UIExtraDataDefs
       * @{ */
         /** Holds restricted dialogs. */
         SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedDialogs;
+
+        /** Holds the color theme type. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_ColorTheme;
     /** @} */
 
     /** @name Messaging
@@ -876,6 +879,16 @@ enum WizardMode
     WizardMode_Basic,
     WizardMode_Expert
 };
+
+
+/** Common UI: Color Theme types. */
+enum UIColorThemeType
+{
+    UIColorThemeType_Auto,
+    UIColorThemeType_Light,
+    UIColorThemeType_Dark,
+};
+Q_DECLARE_METATYPE(UIColorThemeType);
 
 
 /** Tool item classes. */

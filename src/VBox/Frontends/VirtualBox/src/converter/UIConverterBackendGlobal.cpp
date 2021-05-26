@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,6 +58,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>() {
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>() { return true; }
+template<> bool canConvert<UIColorThemeType>() { return true; }
 template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
@@ -1503,6 +1504,57 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternal
         return UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIColorThemeType: */
+template<> QString toString(const UIColorThemeType &colorThemeType)
+{
+    QString strResult;
+    switch (colorThemeType)
+    {
+        case UIColorThemeType_Auto:  strResult = QApplication::translate("UICommon", "Follow System Settings", "color theme"); break;
+        case UIColorThemeType_Light: strResult = QApplication::translate("UICommon", "Light", "color theme"); break;
+        case UIColorThemeType_Dark:  strResult = QApplication::translate("UICommon", "Dark", "color theme"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for color theme type=%d", colorThemeType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIColorThemeType: */
+template<> QString toInternalString(const UIColorThemeType &colorThemeType)
+{
+    QString strResult;
+    switch (colorThemeType)
+    {
+        case UIColorThemeType_Auto:  break;
+        case UIColorThemeType_Light: strResult = "Light"; break;
+        case UIColorThemeType_Dark:  strResult = "Dark"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for color theme type=%d", colorThemeType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIColorThemeType <= QString: */
+template<> UIColorThemeType fromInternalString<UIColorThemeType>(const QString &strColorThemeType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys; QList<UIColorThemeType> values;
+    keys << "Light";  values << UIColorThemeType_Light;
+    keys << "Dark";   values << UIColorThemeType_Dark;
+    /* Auto type for unknown words: */
+    if (!keys.contains(strColorThemeType, Qt::CaseInsensitive))
+        return UIColorThemeType_Auto;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strColorThemeType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIToolType: */

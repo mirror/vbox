@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -161,6 +161,11 @@ public:
         UIExtraDataMetaDefs::DialogType restrictedDialogTypes(const QUuid &uID);
         /** Defines a list of restricted dialogs. */
         void setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogType enmTypes, const QUuid &uID);
+
+        /** Returns color theme type. */
+        UIColorThemeType colorTheme();
+        /** Defines color theme @a enmType. */
+        void setColorTheme(const UIColorThemeType &enmType);
     /** @} */
 
     /** @name Messaging
