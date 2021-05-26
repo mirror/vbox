@@ -44,6 +44,7 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
     , m_strHelpFilePath(strHelpFilePath)
     , m_pWidget(0)
     , m_pCenterWidget(pCenterWidget)
+    , m_iGeometrySaveTimerId(-1)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
@@ -51,11 +52,6 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
     statusBar()->show();
     loadSettings();
     retranslateUi();
-}
-
-UIHelpBrowserDialog::~UIHelpBrowserDialog()
-{
-    saveSettings();
 }
 
 void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
@@ -73,6 +69,35 @@ void UIHelpBrowserDialog::retranslateUi()
 #ifdef VBOX_WITH_QHELP_VIEWER
     setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
 #endif
+}
+
+bool UIHelpBrowserDialog::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        case QEvent::Move:
+        {
+            if (m_iGeometrySaveTimerId != -1)
+                killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = startTimer(300);
+            break;
+        }
+        case QEvent::Timer:
+        {
+            QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+            if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+            {
+                killTimer(m_iGeometrySaveTimerId);
+                m_iGeometrySaveTimerId = -1;
+                saveDialogGeometry();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >::event(pEvent);
 }
 
 
@@ -107,7 +132,7 @@ void UIHelpBrowserDialog::loadSettings()
     restoreGeometry(geo);
 }
 
-void UIHelpBrowserDialog::saveSettings()
+void UIHelpBrowserDialog::saveDialogGeometry()
 {
     const QRect geo = currentGeometry();
     gEDataManager->setHelpBrowserDialogGeometry(geo, isCurrentlyMaximized());
