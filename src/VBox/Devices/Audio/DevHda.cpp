@@ -2210,9 +2210,6 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
 
     if (pDrv->LineIn.pMixStrm)
     {
-        if (AudioMixerSinkGetRecordingSource(pThisCC->SinkLineIn.pMixSink) == pDrv->LineIn.pMixStrm)
-            AudioMixerSinkSetRecordingSource(pThisCC->SinkLineIn.pMixSink, NULL);
-
         AudioMixerSinkRemoveStream(pThisCC->SinkLineIn.pMixSink, pDrv->LineIn.pMixStrm);
         AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->LineIn.pMixStrm = NULL;
@@ -2221,9 +2218,6 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     if (pDrv->MicIn.pMixStrm)
     {
-        if (AudioMixerSinkGetRecordingSource(pThisCC->SinkMicIn.pMixSink) == pDrv->MicIn.pMixStrm)
-            AudioMixerSinkSetRecordingSource(&pThisCC->SinkMicIn.pMixSink, NULL);
-
         AudioMixerSinkRemoveStream(pThisCC->SinkMicIn.pMixSink, pDrv->MicIn.pMixStrm);
         AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->MicIn.pMixStrm = NULL;
@@ -2334,38 +2328,6 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
     {
         rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
         LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, StreamCfg.szName, rc));
-        if (RT_SUCCESS(rc))
-        {
-            /* If this is an input stream, always set the latest (added) stream
-             * as the recording source. */
-            /** @todo Make the recording source dynamic (CFGM?). */
-            if (StreamCfg.enmDir == PDMAUDIODIR_IN)
-            {
-                PDMAUDIOBACKENDCFG Cfg;
-                rc = pDrv->pConnector->pfnGetConfig(pDrv->pConnector, &Cfg);
-                if (RT_SUCCESS(rc))
-                {
-                    if (Cfg.cMaxStreamsIn) /* At least one input source available? */
-                    {
-                        rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
-                        LogFlowFunc(("LUN#%RU8: Recording source for '%s' -> '%s', rc=%Rrc\n",
-                                     pDrv->uLUN, StreamCfg.szName, Cfg.szName, rc));
-
-                        if (RT_SUCCESS(rc))
-                            LogRel(("HDA: Set recording source for '%s' to '%s'\n",
-                                    StreamCfg.szName, Cfg.szName));
-                    }
-                    else
-                        LogRel(("HDA: Backend '%s' currently is not offering any recording source for '%s'\n",
-                                Cfg.szName, StreamCfg.szName));
-                }
-                else if (RT_FAILURE(rc))
-                    LogFunc(("LUN#%RU8: Unable to retrieve backend configuration for '%s', rc=%Rrc\n",
-                             pDrv->uLUN, StreamCfg.szName, rc));
-            }
-            if (RT_FAILURE(rc))
-                AudioMixerSinkRemoveStream(pMixSink, pMixStrm);
-        }
         if (RT_FAILURE(rc))
             AudioMixerStreamDestroy(pMixStrm, pDevIns, true /*fImmediate*/);
     }
@@ -4517,47 +4479,9 @@ static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
  */
 static void hdaR3DetachInternal(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 {
-    /* First, remove the driver from our list and destory it's associated streams.
-     * This also will un-set the driver as a recording source (if associated). */
+    /* Remove the driver from our list and destory it's associated streams.
+       This also will un-set the driver as a recording source (if associated). */
     hdaR3MixerRemoveDrv(pDevIns, pThisCC, pDrv);
-
-    /* Next, search backwards for a capable (attached) driver which now will be the
-     * new recording source. */
-/** @todo r=bird: This looks completely wrong.  What if the detatched devices wasn't the recording source
- * and we pick a different one here?  I also don't get why we need to do this in revese order, given that
- * the primary device is first.  I guess this code isn't really tested. */
-    PHDADRIVER pDrvCur;
-    RTListForEachReverse(&pThisCC->lstDrv, pDrvCur, HDADRIVER, Node)
-    {
-        if (!pDrvCur->pConnector)
-            continue;
-
-        PDMAUDIOBACKENDCFG Cfg;
-        int rc2 = pDrvCur->pConnector->pfnGetConfig(pDrvCur->pConnector, &Cfg);
-        if (RT_FAILURE(rc2))
-            continue;
-
-        PHDADRIVERSTREAM pDrvStrm;
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        pDrvStrm = &pDrvCur->MicIn;
-        if (   pDrvStrm
-            && pDrvStrm->pMixStrm)
-        {
-            rc2 = AudioMixerSinkSetRecordingSource(pThisCC->SinkMicIn.pMixSink, pDrvStrm->pMixStrm);
-            if (RT_SUCCESS(rc2))
-                LogRel2(("HDA: Set new recording source for 'Mic In' to '%s'\n", Cfg.szName));
-        }
-# endif
-        pDrvStrm = &pDrvCur->LineIn;
-        if (   pDrvStrm
-            && pDrvStrm->pMixStrm)
-        {
-            rc2 = AudioMixerSinkSetRecordingSource(pThisCC->SinkLineIn.pMixSink, pDrvStrm->pMixStrm);
-            if (RT_SUCCESS(rc2))
-                LogRel2(("HDA: Set new recording source for 'Line In' to '%s'\n", Cfg.szName));
-        }
-    }
-
     LogFunc(("LUN#%u detached\n", pDrv->uLUN));
 }
 

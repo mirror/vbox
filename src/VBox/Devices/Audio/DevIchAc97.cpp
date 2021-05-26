@@ -1510,37 +1510,6 @@ static int ichac97R3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, 
         {
             rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
             LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-            if (RT_SUCCESS(rc))
-            {
-                /* If this is an input stream, always set the latest (added) stream
-                 * as the recording source. */
-                /** @todo Make the recording source dynamic (CFGM?). */
-                if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
-                {
-                    PDMAUDIOBACKENDCFG Cfg;
-                    rc = pDrv->pConnector->pfnGetConfig(pDrv->pConnector, &Cfg);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (Cfg.cMaxStreamsIn) /* At least one input source available? */
-                        {
-                            rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
-                            LogFlowFunc(("LUN#%RU8: Recording source for '%s' -> '%s', rc=%Rrc\n",
-                                         pDrv->uLUN, pStreamCfg->szName, Cfg.szName, rc));
-
-                            if (RT_SUCCESS(rc))
-                                LogRel2(("AC97: Set recording source for '%s' to '%s'\n", pStreamCfg->szName, Cfg.szName));
-                        }
-                        else
-                            LogRel(("AC97: Backend '%s' currently is not offering any recording source for '%s'\n",
-                                    Cfg.szName, pStreamCfg->szName));
-                    }
-                    else if (RT_FAILURE(rc))
-                        LogFunc(("LUN#%RU8: Unable to retrieve backend configuratio for '%s', rc=%Rrc\n",
-                                 pDrv->uLUN, pStreamCfg->szName, rc));
-                }
-                if (RT_FAILURE(rc))
-                    AudioMixerSinkRemoveStream(pMixSink, pMixStrm);
-            }
             if (RT_FAILURE(rc))
                 AudioMixerStreamDestroy(pMixStrm, pDevIns, true /*fImmediate*/);
         }
@@ -1639,9 +1608,6 @@ static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
 {
     if (pDrv->MicIn.pMixStrm)
     {
-        if (AudioMixerSinkGetRecordingSource(pThisCC->pSinkMicIn) == pDrv->MicIn.pMixStrm)
-            AudioMixerSinkSetRecordingSource(pThisCC->pSinkMicIn, NULL);
-
         AudioMixerSinkRemoveStream(pThisCC->pSinkMicIn,  pDrv->MicIn.pMixStrm);
         AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->MicIn.pMixStrm = NULL;
@@ -1649,9 +1615,6 @@ static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PA
 
     if (pDrv->LineIn.pMixStrm)
     {
-        if (AudioMixerSinkGetRecordingSource(pThisCC->pSinkLineIn) == pDrv->LineIn.pMixStrm)
-            AudioMixerSinkSetRecordingSource(pThisCC->pSinkLineIn, NULL);
-
         AudioMixerSinkRemoveStream(pThisCC->pSinkLineIn, pDrv->LineIn.pMixStrm);
         AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns, true /*fImmediate*/);
         pDrv->LineIn.pMixStrm = NULL;
@@ -3654,45 +3617,9 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
  */
 static void ichac97R3DetachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
 {
-    /* First, remove the driver from our list and destory it's associated streams.
-     * This also will un-set the driver as a recording source (if associated). */
+    /* Remove the driver from our list and destory it's associated streams.
+       This also will un-set the driver as a recording source (if associated). */
     ichac97R3MixerRemoveDrv(pDevIns, pThisCC, pDrv);
-
-    /* Next, search backwards for a capable (attached) driver which now will be the
-     * new recording source. */
-/** @todo r=bird: This looks completely wrong.  What if the detatched devices wasn't the recording source
- * and we pick a different one here?  I also don't get why we need to do this in revese order, given that
- * the primary device is first.  I guess this code isn't really tested. */
-    PAC97DRIVER pDrvCur;
-    RTListForEachReverse(&pThisCC->lstDrv, pDrvCur, AC97DRIVER, Node)
-    {
-        if (!pDrvCur->pConnector)
-            continue;
-
-        PDMAUDIOBACKENDCFG Cfg;
-        int rc2 = pDrvCur->pConnector->pfnGetConfig(pDrvCur->pConnector, &Cfg);
-        if (RT_FAILURE(rc2))
-            continue;
-
-        PAC97DRIVERSTREAM pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_MIC);
-        if (   pDrvStrm
-            && pDrvStrm->pMixStrm)
-        {
-            rc2 = AudioMixerSinkSetRecordingSource(pThisCC->pSinkMicIn, pDrvStrm->pMixStrm);
-            if (RT_SUCCESS(rc2))
-                LogRel2(("AC97: Set new recording source for 'Mic In' to '%s'\n", Cfg.szName));
-        }
-
-        pDrvStrm = ichac97R3MixerGetDrvStream(pDrvCur, PDMAUDIODIR_IN, PDMAUDIOPATH_IN_LINE);
-        if (   pDrvStrm
-            && pDrvStrm->pMixStrm)
-        {
-            rc2 = AudioMixerSinkSetRecordingSource(pThisCC->pSinkLineIn, pDrvStrm->pMixStrm);
-            if (RT_SUCCESS(rc2))
-                LogRel2(("AC97: Set new recording source for 'Line In' to '%s'\n", Cfg.szName));
-        }
-    }
-
     LogFunc(("Detached LUN#%u\n", pDrv->uLUN));
 }
 

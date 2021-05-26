@@ -105,8 +105,13 @@ typedef struct AUDMIXSTREAM
     PPDMIAUDIOCONNECTOR     pConn;
     /** Pointer to PDM audio stream this mixer stream handles. */
     PPDMAUDIOSTREAM         pStream;
-    /** Mixing buffer peeking state & config. */
-    AUDIOMIXBUFPEEKSTATE    PeekState;
+    union
+    {
+        /** Output: Mixing buffer peeking state & config. */
+        AUDIOMIXBUFPEEKSTATE    PeekState;
+        /** Input:  Mixing buffer writing state & config. */
+        AUDIOMIXBUFWRITESTATE   WriteState;
+    };
     /** Last read (recording) / written (playback) timestamp (in ns). */
     uint64_t                tsLastReadWrittenNs;
     /** The streams's critical section. */
@@ -195,12 +200,9 @@ typedef struct AUDMIXSINK
     {
         struct
         {
-            /** The current recording source. Can be NULL if not set. */
-            PAUDMIXSTREAM  pStreamRecSource;
+            /** The sink's peek state. */
+            AUDIOMIXBUFPEEKSTATE    State;
         } In;
-        /*struct
-        {
-        } Out; */
     };
     struct
     {
@@ -299,18 +301,15 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
 PDMAUDIODIR   AudioMixerSinkGetDir(PAUDMIXSINK pSink);
-PAUDMIXSTREAM AudioMixerSinkGetRecordingSource(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
 bool AudioMixerSinkIsActive(PAUDMIXSINK pSink);
-int AudioMixerSinkRead(PAUDMIXSINK pSink, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 void AudioMixerSinkReset(PAUDMIXSINK pSink);
 int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps);
-int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
+int AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t cbDmaPeriod);
 
 int         AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
 int         AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
