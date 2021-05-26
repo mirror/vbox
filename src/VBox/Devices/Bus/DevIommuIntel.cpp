@@ -418,14 +418,16 @@ typedef enum DMAREVENTTYPE
 } DMAREVENTTYPE;
 
 /**
- * DMA address map.
- * This structure holds information about a DMA address translation.
+ * DMA Address Remapping Information.
  */
 typedef struct DMARADDRMAP
 {
     /** The device ID (bus, device, function). */
     uint16_t                idDevice;
-    uint16_t                uPadding0;
+    /** The extended attributes of the request (VTD_REQ_ATTR_XXX). */
+    uint8_t                 fReqAttr;
+    /** Padding. */
+    uint8_t                 bPadding;
     /** The PASID if present, can be NIL_PCIPASID. */
     PCIPASID                Pasid;
     /* The address type of the memory request. */
@@ -437,14 +439,16 @@ typedef struct DMARADDRMAP
     /** The size of the DMA access (in bytes). */
     size_t                  cbDma;
 
+    /** @todo Might have to split the result fields below into a separate structure and
+     *        store extra info like cPageShift, permissions and attributes. */
     /** The translated system-physical address (HPA). */
     RTGCPHYS                GCPhysSpa;
     /** The size of the contiguous translated region (in bytes). */
     size_t                  cbContiguous;
 } DMARADDRMAP;
-/** Pointer to a DMA address map. */
+/** Pointer to a DMA address remapping object. */
 typedef DMARADDRMAP *PDMARADDRMAP;
-/** Pointer to a const DMA address map. */
+/** Pointer to a const DMA address remapping object. */
 typedef DMARADDRMAP const *PCDMARADDRMAP;
 
 
@@ -1395,61 +1399,31 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
 
 
 /**
- * Records an address translation fault (extensive version).
+ * Records an address translation fault.
  *
  * @param   pDevIns     The IOMMU device instance.
  * @param   enmDiag     The diagnostic reason.
  * @param   enmAtFault  The address translation fault reason.
- * @param   idDevice    The device ID (bus, device, function).
- * @param   uFaultAddr  The page address of the faulted request.
- * @param   enmReqType  The type of the faulted request.
- * @param   uAddrType   The address type of the faulted request (only applicable
- *                      when device-TLB is supported).
- * @param   fHasPasid   Whether the faulted request has a PASID TLP prefix.
- * @param   uPasid      The PASID value when a PASID TLP prefix is present.
- * @param   fReqAttr    The attributes of the faulted requested (VTD_REQ_ATTR_XXX).
+ * @param   pAddrRemap  The DMA address remap info.
  */
-static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, uint16_t idDevice,
-                                uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint8_t uAddrType, bool fHasPasid,
-                                uint32_t uPasid, uint8_t fReqAttr)
+static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARADDRMAP pAddrRemap)
 {
-    uint8_t const fType1 = enmReqType & RT_BIT(1);
-    uint8_t const fType2 = enmReqType & RT_BIT(0);
-    uint8_t const fExec = fReqAttr & VTD_REQ_ATTR_EXE;
-    uint8_t const fPriv = fReqAttr & VTD_REQ_ATTR_PRIV;
-    uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID,  idDevice)
+    uint8_t const fType1 = pAddrRemap->enmReqType & RT_BIT(1);
+    uint8_t const fType2 = pAddrRemap->enmReqType & RT_BIT(0);
+    uint8_t const fExec  = pAddrRemap->fReqAttr & VTD_REQ_ATTR_EXE;
+    uint8_t const fPriv  = pAddrRemap->fReqAttr & VTD_REQ_ATTR_PRIV;
+    uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID,  pAddrRemap->idDevice)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T2,   fType2)
-                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PP,   fHasPasid)
+                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PP,   PCIPASID_IS_VALID(pAddrRemap->Pasid))
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_EXE,  fExec)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PRIV, fPriv)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,   enmAtFault)
-                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PV,   uPasid)
-                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_AT,   uAddrType)
+                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PV,   PCIPASID_VAL(pAddrRemap->Pasid))
+                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_AT,   pAddrRemap->enmAddrType)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T1,   fType1)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,    1);
-    uint64_t const uFrcdLo = uFaultAddr & X86_PAGE_BASE_MASK;
+    uint64_t const uFrcdLo = pAddrRemap->uDmaAddr & X86_PAGE_BASE_MASK;
     dmarPrimaryFaultRecord(pDevIns, enmDiag, uFrcdHi, uFrcdLo);
-}
-
-
-/**
- * Records an address translation fault.
- *
- * This is to be used when Device-TLB, and PASIDs are not supported or for requests
- * where the device-TLB and PASID is not relevant/present.
- *
- * @param   pDevIns     The IOMMU device instance.
- * @param   enmDiag     The diagnostic reason.
- * @param   enmAtFault  The address translation fault reason.
- * @param   idDevice    The device ID (bus, device, function).
- * @param   uFaultAddr  The page address of the faulted request.
- * @param   enmReqType  The type of the faulted request.
- */
-static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, uint16_t idDevice,
-                              uint64_t uFaultAddr, VTDREQTYPE enmReqType)
-{
-    dmarAtFaultRecordEx(pDevIns, enmDiag, enmAtFault, idDevice, uFaultAddr, enmReqType, 0 /* uAddrType */,
-                        false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
 }
 
 
@@ -1465,13 +1439,11 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT e
  * @param   pDevIns             The IOMMU device instance.
  * @param   enmDiag             The diagnostic reason.
  * @param   enmAtFault          The address translation fault reason.
- * @param   idDevice            The device ID (bus, device, function).
- * @param   uFaultAddr          The page address of the faulted request.
- * @param   enmReqType          The type of the faulted request.
+ * @param   pAddrRemap          The DMA address remap info.
  * @param   uPagingEntryQw0     The first qword of the paging entry.
  */
-static void dmarAtFaultQualifiedRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, uint16_t idDevice,
-                                       uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint64_t uPagingEntryQw0)
+static void dmarAtFaultQualifiedRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARADDRMAP pAddrRemap,
+                                       uint64_t uPagingEntryQw0)
 {
     AssertCompile(    VTD_BF_0_CONTEXT_ENTRY_FPD_MASK       == 0x2
                    && VTD_BF_0_SM_CONTEXT_ENTRY_FPD_MASK    == 0x2
@@ -1479,8 +1451,7 @@ static void dmarAtFaultQualifiedRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
                    && VTD_BF_SM_PASID_DIR_ENTRY_FPD_MASK    == 0x2
                    && VTD_BF_0_SM_PASID_TBL_ENTRY_FPD_MASK  == 0x2);
     if (!(uPagingEntryQw0 & VTD_BF_0_CONTEXT_ENTRY_FPD_MASK))
-        dmarAtFaultRecordEx(pDevIns, enmDiag, enmAtFault, idDevice, uFaultAddr, enmReqType, 0 /* uAddrType */,
-                            false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
+        dmarAtFaultRecord(pDevIns, enmDiag, enmAtFault, pAddrRemap);
 }
 
 
@@ -1958,36 +1929,31 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
 
                                 default:
                                 {
-                                    dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_4_2, VTDATFAULT_LCT_4_2,
-                                                               pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                                                               pAddrRemap->enmReqType, uCtxEntryQword0);
+                                    dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_4_2, VTDATFAULT_LCT_4_2, pAddrRemap,
+                                                               uCtxEntryQword0);
                                     break;
                                 }
                             }
                         }
                         else
-                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_3, VTDATFAULT_LCT_3, pAddrRemap->idDevice,
-                                                   pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
+                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_3, VTDATFAULT_LCT_3, pAddrRemap,
+                                                       uCtxEntryQword0);
                     }
                     else
-                        dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_2, VTDATFAULT_LCT_2, pAddrRemap->idDevice,
-                                                   pAddrRemap->uDmaAddr, pAddrRemap->enmReqType, uCtxEntryQword0);
+                        dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_2, VTDATFAULT_LCT_2, pAddrRemap,
+                                                   uCtxEntryQword0);
                 }
                 else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_1, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                                      pAddrRemap->enmReqType);
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_1, pAddrRemap);
             }
             else
-                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_3, VTDATFAULT_LRT_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                                  pAddrRemap->enmReqType);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_3, VTDATFAULT_LRT_3, pAddrRemap);
         }
         else
-            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_2, VTDATFAULT_LRT_2, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                              pAddrRemap->enmReqType);
+            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_2, VTDATFAULT_LRT_2, pAddrRemap);
     }
     else
-        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_1, VTDATFAULT_LRT_1, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                          pAddrRemap->enmReqType);
+        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_1, VTDATFAULT_LRT_1, pAddrRemap);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -2009,8 +1975,7 @@ static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, 
         return VERR_NOT_IMPLEMENTED;
     }
 
-    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
-                      pAddrRemap->enmReqType);
+    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, pAddrRemap);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -2115,14 +2080,14 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
                 if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
                     dmarDrTargetAbort(pDevIns);
                 else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDATFAULT_RTA_1_1, idDevice, uIova, enmReqType);
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDATFAULT_RTA_1_1, &AddrRemap);
                 break;
             }
 
             default:
             {
                 rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDATFAULT_RTA_1_2, idDevice, uIova, enmReqType);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDATFAULT_RTA_1_2, &AddrRemap);
                 break;
             }
         }

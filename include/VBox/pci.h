@@ -666,10 +666,14 @@ typedef enum PCIADDRTYPE
  * present.
  */
 typedef uint32_t PCIPASID;
-/** PCIPASID: Invalid or not present. */
-#define PCIPASID_F_INVALID          RT_BIT(31)
+/** PCIPASID: Valid. */
+#define PCIPASID_F_VALID            RT_BIT(31)
 /** Nil PCIPASID value. */
-#define NIL_PCIPASID                PCIPASID_F_INVALID
+#define NIL_PCIPASID                UINT32_C(0)
+/** Returns whether the PCI PASID is valid. */
+#define PCIPASID_IS_VALID(a)        (((a) & PCIPASID_F_VALID) != 0)
+/** Returns the PASID value of a PCI PASID. */
+#define PCIPASID_VAL(a)             ((a) & UINT32_C(0xfffff))
 
 
 #if defined(__cplusplus) && defined(IN_RING3)
