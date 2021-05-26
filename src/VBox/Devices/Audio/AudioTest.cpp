@@ -85,6 +85,27 @@ static const double s_aAudioTestToneFreqsHz[] =
 };
 
 /**
+ * Initializes a test tone with a specific frequency (in Hz).
+ *
+ * @returns Randomly picked frequency (in Hz).
+ * @param   pTone               Pointer to test tone to initialize.
+ * @param   pProps              PCM properties to use for the test tone.
+ * @þaram   dbFreq              Frequency (in Hz) to initialize tone with.
+ */
+void AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
+{
+    /* Pick a frequency from our selection, so that every time a recording starts
+     * we'll hopfully generate a different note. */
+    pTone->rdFreqHz = dbFreq;
+    pTone->rdFixed  = 2.0 * M_PI * pTone->rdFreqHz / PDMAudioPropsHz(pProps);
+    pTone->uSample  = 0;
+
+    memcpy(&pTone->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
+
+    pTone->enmType = AUDIOTESTTONETYPE_SINE; /* Only type implemented so far. */
+}
+
+/**
  * Initializes a test tone by picking a random but well-known frequency (in Hz).
  *
  * @returns Randomly picked frequency (in Hz).
@@ -93,15 +114,10 @@ static const double s_aAudioTestToneFreqsHz[] =
  */
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps)
 {
-    /* Pick a frequency from our selection, so that every time a recording starts
-     * we'll hopfully generate a different note. */
-    pTone->rdFreqHz = s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
-    pTone->rdFixed  = 2.0 * M_PI * pTone->rdFreqHz / PDMAudioPropsHz(pProps);
-    pTone->uSample  = 0;
-
-    memcpy(&pTone->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
-
-    pTone->enmType = AUDIOTESTTONETYPE_SINE; /* Only type implemented so far. */
+    AudioTestToneInit(pTone, pProps,
+                      /* Pick a frequency from our selection, so that every time a recording starts
+                       * we'll hopfully generate a different note. */
+                      s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)]);
 
     return pTone->rdFreqHz;
 }

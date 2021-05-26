@@ -292,6 +292,7 @@ typedef struct AUDIOTESTWAVEFILE
 typedef AUDIOTESTWAVEFILE *PAUDIOTESTWAVEFILE;
 
 
+void   AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq);
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 
