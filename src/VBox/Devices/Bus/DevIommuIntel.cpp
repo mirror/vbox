@@ -729,13 +729,20 @@ static uint8_t vtdCapRegGetSagawBits(uint8_t uSagaw)
  */
 static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 {
-    switch (uMgaw + 1)
-    {
-        case 39:    return 1;
-        case 48:    return 2;
-        case 57:    return 3;
-    }
-    return 0;
+    /*
+     * It doesn't make sense to me that a CPU (or IOMMU hardware) will support 5-level paging
+     * but not 4 or 3 level paging. So smaller page-table levels are always OR'ed in.
+     *
+     * The values below (57, 48, 39 bits) represents the levels of page-table walks for
+     * 4KB base page size.
+     * See Intel VT-d spec. 10.4.2 "Capability Register".
+     */
+    ++uMgaw;
+    uint8_t const fSagaw = uMgaw >= 57 ? RT_BIT(3) | RT_BIT(2) | RT_BIT(1)
+                         : uMgaw >= 48 ? RT_BIT(2) | RT_BIT(1)
+                         : uMgaw >= 39 ? RT_BIT(1)
+                         : 0;
+    return fSagaw;
 }
 
 
