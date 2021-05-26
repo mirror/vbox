@@ -742,8 +742,6 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
         return;
     AssertPtrReturnVoid(pvBuf);
 
-    Assert(pProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
-
     /*
      * Decide how much needs clearing.
      */
@@ -768,22 +766,78 @@ DECLINLINE(void) PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf
 
             case 2: /* 16 bit */
             {
-                uint16_t *pu16Dst = (uint16_t *)pvBuf;
-                size_t    cLeft   = cbToClear / sizeof(uint16_t);
-                while (cLeft-- > 0)
-                    *pu16Dst++ = 0x80;
+                uint16_t       *pu16Dst   = (uint16_t *)pvBuf;
+                uint16_t const  u16Offset = !pProps->fSwapEndian ? UINT16_C(0x8000) : UINT16_C(0x80);
+                cbBuf /= sizeof(*pu16Dst);
+                while (cbBuf-- > 0)
+                    *pu16Dst++ = u16Offset;
                 break;
             }
 
-            /** @todo Add 24 bit? */
-
             case 4: /* 32 bit */
-                ASMMemFill32(pvBuf, cbToClear & ~(size_t)3, 0x80);
+                ASMMemFill32(pvBuf, cbToClear & ~(size_t)(sizeof(uint32_t) - 1),
+                             !pProps->fSwapEndian ? UINT32_C(0x80000000) : UINT32_C(0x80));
                 break;
 
             default:
                 AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pProps->cbSampleX));
         }
+    }
+}
+
+/**
+ * Checks if the given buffer is silence.
+ *
+ * @param   pProps      The PCM properties to use checking the buffer.
+ * @param   pvBuf       The buffer to check.
+ * @param   cbBuf       The number of bytes to check (must be frame aligned).
+ */
+DECLINLINE(bool) PDMAudioPropsIsBufferSilence(PCPDMAUDIOPCMPROPS pProps, void const *pvBuf, size_t cbBuf)
+{
+    /*
+     * Validate input
+     */
+    AssertPtrReturn(pProps, false);
+    if (!cbBuf)
+        return false;
+    AssertPtrReturn(pvBuf, false);
+
+    /*
+     * Do the job.
+     */
+    if (pProps->fSigned)
+        return ASMMemIsZero(pvBuf, cbBuf);
+
+    switch (pProps->cbSampleX)
+    {
+        case 1: /* 8 bit */
+            return ASMMemIsAllU8(pvBuf, cbBuf, 0x80);
+
+        case 2: /* 16 bit */
+        {
+            uint16_t const *pu16      = (uint16_t const *)pvBuf;
+            uint16_t const  u16Offset = !pProps->fSwapEndian ? UINT16_C(0x8000) : UINT16_C(0x80);
+            cbBuf /= sizeof(*pu16);
+            while (cbBuf-- > 0)
+                if (*pu16 != u16Offset)
+                    return false;
+            return true;
+        }
+
+        case 4: /* 32 bit */
+        {
+            uint32_t const *pu32      = (uint32_t const *)pvBuf;
+            uint32_t const  u32Offset = !pProps->fSwapEndian ? UINT32_C(0x80000000) : UINT32_C(0x80);
+            cbBuf /= sizeof(*pu32);
+            while (cbBuf-- > 0)
+                if (*pu32 != u32Offset)
+                    return false;
+            return true;
+        }
+
+        default:
+            AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pProps->cbSampleX));
+            return false;
     }
 }
 
