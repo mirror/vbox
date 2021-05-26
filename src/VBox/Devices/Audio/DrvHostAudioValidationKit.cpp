@@ -80,14 +80,14 @@ typedef VALKITAUDIOSTREAM *PVALKITAUDIOSTREAM;
  */
 typedef struct VALKITTESTTONEDATA
 {
-    /** How many ns to write. */
-    uint64_t           nsToWrite;
-    /** How many ns already written. */
-    uint64_t           nsWritten;
+    /** How many bytes to write. */
+    uint64_t           cbToWrite;
+    /** How many bytes already written. */
+    uint64_t           cbWritten;
     /** The test tone instance to use. */
     AUDIOTESTTONE      Tone;
     /** The test tone parameters to use. */
-    AUDIOTESTTONEPARMS ToneParms;
+    AUDIOTESTTONEPARMS Parms;
 } VALKITTESTTONEDATA;
 
 /**
@@ -104,6 +104,8 @@ typedef struct VALKITTESTDATA
         /** Test tone-specific data. */
         VALKITTESTTONEDATA TestTone;
     } t;
+    /** Time stamp (real, in ms) when test started. */
+    uint64_t               msStartedTS;
 } VALKITTESTDATA;
 /** Pointer to Validation Kit test data. */
 typedef VALKITTESTDATA *PVALKITTESTDATA;
@@ -143,13 +145,19 @@ static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUse
     PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
     AssertPtrReturn(pTestData, VERR_NO_MEMORY);
 
-    memcpy(&pTestData->StreamCfg,            pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
-    memcpy(&pTestData->t.TestTone.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+    memcpy(&pTestData->StreamCfg,        pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
+    memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
+    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pStreamCfg->Props, 8000 /* Hz */); /** @todo BUGBUG Fix this! */
+
+    pTestData->t.TestTone.cbToWrite = PDMAudioPropsMilliToBytes(&pStreamCfg->Props,
+                                                                pTestData->t.TestTone.Parms.msDuration);
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
+
+        pThis->cTestsRec++;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
@@ -466,18 +474,13 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
 
-    int rc = VINF_SUCCESS;
-
-    if (pThis->pTestRecCur == NULL)
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        rc = RTCritSectEnter(&pThis->CritSect);
-        if (RT_SUCCESS(rc))
-        {
-            pThis->pTestRecCur = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
+        pThis->pTestRecCur = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
 
-            int rc2 = RTCritSectLeave(&pThis->CritSect);
-            AssertRC(rc2);
-        }
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
     }
 
     if (pThis->pTestRecCur == NULL) /* Empty list? */
@@ -488,27 +491,44 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     PVALKITTESTDATA pTst = pThis->pTestRecCur;
 
-    uint32_t cbToWrite = PDMAudioPropsNanoToBytes(&pTst->StreamCfg.Props,
-                                                  (pTst->t.TestTone.nsToWrite - pTst->t.TestTone.nsWritten));
-    uint32_t cbRead = 0;
+    if (pTst->t.TestTone.cbWritten == 0)
+    {
+        pTst->msStartedTS = RTTimeMilliTS();
+
+        LogRel(("Audio: Validation Kit: Injecting input tone (%RU16Hz, %RU32ms)\n",
+                (uint16_t)pTst->t.TestTone.Tone.rdFreqHz,
+                pTst->t.TestTone.Parms.msDuration));
+    }
+
+    uint32_t cbToWrite = pTst->t.TestTone.cbToWrite - pTst->t.TestTone.cbWritten;
+    uint32_t cbRead    = 0;
     if (cbToWrite)
         rc = AudioTestToneGenerate(&pTst->t.TestTone.Tone, pvBuf, RT_MIN(cbToWrite, cbBuf), &cbRead);
 
-    const uint32_t nsWritten    = PDMAudioPropsBytesToNano(&pTst->StreamCfg.Props, cbRead);
-    pTst->t.TestTone.nsWritten += nsWritten;
-    Assert(pTst->t.TestTone.nsWritten <= pTst->t.TestTone.nsToWrite);
+    pTst->t.TestTone.cbWritten += cbRead;
+    Assert(pTst->t.TestTone.cbWritten <= pTst->t.TestTone.cbToWrite);
 
-    const bool fComplete = pTst->t.TestTone.nsToWrite == pTst->t.TestTone.nsWritten;
+    const bool fComplete = pTst->t.TestTone.cbToWrite == pTst->t.TestTone.cbWritten;
 
     if (fComplete)
     {
-        RTListNodeRemove(&pTst->Node);
+        LogRel(("Audio: Validation Kit: Injection done (took %RU32ms)\n",
+                RTTimeMilliTS() - pTst->msStartedTS));
 
-        RTMemFree(pTst);
-        pTst = NULL;
+        rc = RTCritSectEnter(&pThis->CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            RTListNodeRemove(&pTst->Node);
 
-        Assert(pThis->cTestsRec);
-        pThis->cTestsRec--;
+            RTMemFree(pTst);
+            pTst = NULL;
+
+            Assert(pThis->cTestsRec);
+            pThis->cTestsRec--;
+
+            int rc2 = RTCritSectLeave(&pThis->CritSect);
+            AssertRC(rc2);
+        }
     }
 
     *pcbRead = cbRead;
