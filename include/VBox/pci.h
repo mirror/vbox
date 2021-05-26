@@ -659,6 +659,19 @@ typedef enum PCIADDRTYPE
 #define VBOX_PCI_BDF_SB_IOAPIC      PCIBDF_MAKE(VBOX_PCI_BUS_SB_IOAPIC, \
                                                 VBOX_PCI_DEVFN_MAKE(VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC))
 
+/**
+ * A PCI PASID (Process Address Space ID).
+ *
+ * A PASID is 20 bits wide. We use bit 31 to indicate the PASID is invalid or not
+ * present.
+ */
+typedef uint32_t PCIPASID;
+/** PCIPASID: Invalid or not present. */
+#define PCIPASID_F_INVALID          RT_BIT(31)
+/** Nil PCIPASID value. */
+#define NIL_PCIPASID                PCIPASID_F_INVALID
+
+
 #if defined(__cplusplus) && defined(IN_RING3)
 /* For RTStrPrintf(). */
 # include <iprt/string.h>

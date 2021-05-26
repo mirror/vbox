@@ -143,15 +143,6 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 /** The current saved state version. */
 #define DMAR_SAVED_STATE_VERSION                    1
 
-/** @name DMAR_IO_PERM_XXX: DMAR I/O permissions.
- * These are not according to the spec. other than the value of the READ and WRITE
- * permissions. */
-#define DMAR_IO_PERM_READ                           RT_BIT(0)
-#define DMAR_IO_PERM_WRITE                          RT_BIT(1)
-#define DMAR_IO_PERM_EXECUTE                        RT_BIT(2)
-#define DMAR_IO_PERM_SUPERVISOR                     RT_BIT(3)
-/** @} */
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -433,19 +424,23 @@ typedef enum DMAREVENTTYPE
 typedef struct DMARADDRMAP
 {
     /** The device ID (bus, device, function). */
-    uint16_t        idDevice;
-    uint16_t        uPadding0;
-    /** The DMA remapping operation request type. */
-    VTDREQTYPE      enmReqType;
+    uint16_t                idDevice;
+    uint16_t                uPadding0;
+    /** The PASID if present, can be NIL_PCIPASID. */
+    PCIPASID                Pasid;
+    /* The address type of the memory request. */
+    PCIADDRTYPE             enmAddrType;
+    /** The type of the translation request. */
+    VTDREQTYPE              enmReqType;
     /** The DMA address being accessed. */
-    uint64_t        uDmaAddr;
+    uint64_t                uDmaAddr;
     /** The size of the DMA access (in bytes). */
-    size_t          cbDma;
+    size_t                  cbDma;
 
     /** The translated system-physical address (HPA). */
-    RTGCPHYS        GCPhysSpa;
+    RTGCPHYS                GCPhysSpa;
     /** The size of the contiguous translated region (in bytes). */
-    size_t          cbContiguous;
+    size_t                  cbContiguous;
 } DMARADDRMAP;
 /** Pointer to a DMA address map. */
 typedef DMARADDRMAP *PDMARADDRMAP;
@@ -1415,8 +1410,8 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
  * @param   fReqAttr    The attributes of the faulted requested (VTD_REQ_ATTR_XXX).
  */
 static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, uint16_t idDevice,
-                                uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint8_t uAddrType, bool fHasPasid, uint32_t uPasid,
-                                uint8_t fReqAttr)
+                                uint64_t uFaultAddr, VTDREQTYPE enmReqType, uint8_t uAddrType, bool fHasPasid,
+                                uint32_t uPasid, uint8_t fReqAttr)
 {
     uint8_t const fType1 = enmReqType & RT_BIT(1);
     uint8_t const fType2 = enmReqType & RT_BIT(0);
@@ -1454,7 +1449,7 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT e
                               uint64_t uFaultAddr, VTDREQTYPE enmReqType)
 {
     dmarAtFaultRecordEx(pDevIns, enmDiag, enmAtFault, idDevice, uFaultAddr, enmReqType, 0 /* uAddrType */,
-                          false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
+                        false /* fHasPasid */, 0 /* uPasid */, 0 /* fReqAttr */);
 }
 
 
@@ -1898,10 +1893,9 @@ static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
- * @param   enmAddrType     The PCI memory request address type.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PCIADDRTYPE enmAddrType, PDMARADDRMAP pAddrRemap)
+static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
 {
     uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->idDevice);
     VTD_ROOT_ENTRY_T RootEntry;
@@ -1936,7 +1930,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PC
                             {
                                 case 0:
                                 {
-                                    if (enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                    if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
                                         /** @todo perform second-level translation. */
                                         return VERR_NOT_IMPLEMENTED;
@@ -1965,8 +1959,8 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PC
                                 default:
                                 {
                                     dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_4_2, VTDATFAULT_LCT_4_2,
-                                                               pAddrRemap->idDevice, pAddrRemap->uDmaAddr, pAddrRemap->enmReqType,
-                                                               uCtxEntryQword0);
+                                                               pAddrRemap->idDevice, pAddrRemap->uDmaAddr,
+                                                               pAddrRemap->enmReqType, uCtxEntryQword0);
                                     break;
                                 }
                             }
@@ -2004,12 +1998,10 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PC
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uRtaddrReg      The current RTADDR_REG value.
- * @param   enmAddrType     The PCI memory request address type.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PCIADDRTYPE enmAddrType, PDMARADDRMAP pAddrRemap)
+static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
 {
-    RT_NOREF(enmAddrType);
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
     {
@@ -2092,12 +2084,14 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         }
 
         DMARADDRMAP AddrRemap;
-        AddrRemap.idDevice     = idDevice;
-        AddrRemap.enmReqType   = enmReqType;
-        AddrRemap.uDmaAddr     = uIova;
-        AddrRemap.cbDma        = cbIova;
-        AddrRemap.GCPhysSpa    = NIL_RTGCPHYS;
-        AddrRemap.cbContiguous = 0;
+        AddrRemap.idDevice       = idDevice;
+        AddrRemap.Pasid          = NIL_PCIPASID;
+        AddrRemap.enmAddrType    = PCIADDRTYPE_UNTRANSLATED;
+        AddrRemap.enmReqType     = enmReqType;
+        AddrRemap.uDmaAddr       = uIova;
+        AddrRemap.cbDma          = cbIova;
+        AddrRemap.GCPhysSpa      = NIL_RTGCPHYS;
+        AddrRemap.cbContiguous   = 0;
 
         int rc;
         uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
@@ -2105,13 +2099,13 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         {
             case VTD_TTM_LEGACY_MODE:
             {
-                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, PCIADDRTYPE_UNTRANSLATED, &AddrRemap);
+                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
                 break;
             }
 
             case VTD_TTM_SCALABLE_MODE:
             {
-                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, PCIADDRTYPE_UNTRANSLATED, &AddrRemap);
+                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &AddrRemap);
                 break;
             }
 
