@@ -3246,9 +3246,27 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             if (fDebugEnabled)
             {
 #ifdef VBOX_WITH_AUDIO_DEBUG
-                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-                i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "DebugAudio");
-                idxAudioLun++;
+# ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+                /*
+                 * When both, ValidationKit and Debug mode (for audio) are enabled,
+                 * skip configuring the Debug audio driver, as both modes can
+                 * mess with the audio data and would lead to side effects.
+                 *
+                 * The ValidationKit audio driver has precedence over the Debug audio driver.
+                 */
+                if (fValKitEnabled)
+                {
+                    LogRel(("Audio: Warning: ValidationKit running and Debug mode enabled -- disabling Debug driver\n"));
+                }
+                else
+                {
+# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+                    InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+                    i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "DebugAudio");
+                    idxAudioLun++;
+# ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+                }
+# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
 #endif /* VBOX_WITH_AUDIO_DEBUG */
 
                 /*
