@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,36 +20,34 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QGraphicsWidget>
+#include <QLibraryInfo>
 #include <QLocale>
 #include <QMenu>
 #include <QMutex>
 #include <QPainter>
 #include <QProcess>
+#include <QProgressDialog>
+#include <QSessionManager>
+#include <QSettings>
 #include <QSpinBox>
 #include <QStandardPaths>
+#include <QStyleOptionSpinBox>
 #include <QThread>
 #include <QTimer>
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
-#include <QLibraryInfo>
-#include <QProgressDialog>
-#include <QSettings>
-#include <QStyleOptionSpinBox>
-#include <QSessionManager>
 #ifdef VBOX_WS_WIN
 # include <QEventLoop>
-#endif /* VBOX_WS_WIN */
+#endif
 #ifdef VBOX_WS_X11
+# include <QScreen>
 # include <QScrollBar>
 # include <QTextBrowser>
 # include <QX11Info>
-#endif /* VBOX_WS_X11 */
+#endif
 #ifdef VBOX_GUI_WITH_PIDFILE
 # include <QTextStream>
-#endif /* VBOX_GUI_WITH_PIDFILE */
-#ifdef VBOX_WS_X11
-# include <QScreen>
 #endif
 
 /* GUI includes: */
@@ -69,7 +67,7 @@
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
 # include "UIUpdateManager.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif
 #include "UIConverter.h"
 #include "UIMediumEnumerator.h"
 #include "UIMedium.h"
@@ -81,15 +79,15 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
-#ifdef VBOX_WS_X11
-# include "UIHostComboEditor.h"
-# include "VBoxX11Helper.h"
-#endif
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
-#endif /* VBOX_WS_MAC */
+#endif
+#ifdef VBOX_WS_X11
+# include "UIHostComboEditor.h"
+# include "VBoxX11Helper.h"
+#endif
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -129,7 +127,7 @@
 #include <iprt/stream.h>
 #ifdef VBOX_WS_X11
 # include <iprt/mem.h>
-#endif /* VBOX_WS_X11 */
+#endif
 #include <VBox/sup.h>
 #include <VBox/VBoxOGL.h>
 #include <VBox/vd.h>
@@ -150,7 +148,7 @@
 # include <math.h>
 #ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
-#endif /* VBOX_WS_MAC */
+#endif
 #ifdef VBOX_WS_X11
 // WORKAROUND:
 // typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
@@ -164,7 +162,7 @@
 # include <X11/Xutil.h>
 # include <X11/extensions/Xinerama.h>
 # define BOOL PRBool
-#endif /* VBOX_WS_X11 */
+#endif
 
 //#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 
