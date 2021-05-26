@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2020 Oracle Corporation
+# Copyright (C) 2006-2021 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -847,6 +847,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
 	src/settings/editors/UIBootOrderEditor.h \
+	src/settings/editors/UIColorThemeEditor.h \
 	src/settings/editors/UIDefaultMachineFolderEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
 	src/settings/editors/UIHostComboEditor.h \
@@ -1387,6 +1388,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
+	src/settings/editors/UIColorThemeEditor.cpp \
 	src/settings/editors/UIDefaultMachineFolderEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
 	src/settings/editors/UIHostComboEditor.cpp \
