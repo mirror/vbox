@@ -77,6 +77,9 @@ typedef struct AUDIOTESTTONEPARMS
 {
     /** The PCM properties. */
     PDMAUDIOPCMPROPS Props;
+    /** Tone frequency (in Hz) to use.
+     *  Will be later converted to a double value. */
+    uint16_t         uFreq;
     /** Prequel (in ms) to play silence. Optional and can be set to 0. */
     RTMSINTERVAL     msPrequel;
     /** Duration (in ms) to play the test tone. */

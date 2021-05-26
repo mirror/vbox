@@ -148,7 +148,7 @@ static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUse
     memcpy(&pTestData->StreamCfg,        pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
-    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pStreamCfg->Props, 8000 /* Hz */); /** @todo BUGBUG Fix this! */
+    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pStreamCfg->Props, pTestData->t.TestTone.Parms.uFreq);
 
     pTestData->t.TestTone.cbToWrite = PDMAudioPropsMilliToBytes(&pStreamCfg->Props,
                                                                 pTestData->t.TestTone.Parms.msDuration);
