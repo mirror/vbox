@@ -1660,8 +1660,8 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
     pStream->pBackend = NULL;
-    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 200 /*cMsPreBuffer*/,
-                                                   10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
+    int rc = audioTestDriverStackStreamCreateOutput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 200 /*cMsPreBuffer*/,
+                                                    10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
     if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
         pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
     return rc;
@@ -1692,9 +1692,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio,
-                                                                                        pStream->pBackend);
-    if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
+    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
     {
         uint32_t cbBuf;
         uint8_t  abBuf[_4K];
@@ -1713,8 +1711,8 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t cbWritten;
-                    rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamPlay(pTstEnv->DrvStack.pIHostAudio, pStream->pBackend,
-                                                                      abBuf, cbBuf, &cbWritten);
+                    rc = audioTestDriverStackStreamPlay(&pTstEnv->DrvStack, pStream->pStream,
+                                                        abBuf, cbBuf, &cbWritten);
                 }
             }
 
