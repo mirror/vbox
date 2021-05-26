@@ -90,7 +90,7 @@ static const double s_aAudioTestToneFreqsHz[] =
  * @returns Randomly picked frequency (in Hz).
  * @param   pTone               Pointer to test tone to initialize.
  * @param   pProps              PCM properties to use for the test tone.
- * @þaram   dbFreq              Frequency (in Hz) to initialize tone with.
+ * @param   dbFreq              Frequency (in Hz) to initialize tone with.
  */
 void AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
 {
