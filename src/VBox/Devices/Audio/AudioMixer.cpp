@@ -482,23 +482,6 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
 *   Mixer Sink implementation.                                                                                                   *
 *********************************************************************************************************************************/
 
-#ifdef VBOX_STRICT
-/**
- * Checks if @a pNeedle is in the list of streams associated with @a pSink.
- * @returns true / false.
- */
-static bool audioMixerSinkIsStreamInList(PAUDMIXSINK pSink, PAUDMIXSTREAM pNeedle)
-{
-    PAUDMIXSTREAM pStream;
-    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
-    {
-        if (pStream == pNeedle)
-            return true;
-    }
-    return false;
-}
-#endif /* VBOX_STRICT */
-
 /**
  * Adds an audio stream to a specific audio sink.
  *
