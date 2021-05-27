@@ -451,10 +451,12 @@ static void audioTestSetInitInternal(PAUDIOTESTSET pSet)
     pSet->cObj = 0;
 
     RTListInit(&pSet->lstTest);
-    pSet->cTests        = 0;
-    pSet->cTestsRunning = 0;
-    pSet->offTestCount  = 0;
-
+    pSet->cTests         = 0;
+    pSet->cTestsRunning  = 0;
+    pSet->offTestCount   = 0;
+    pSet->pTestCur       = NULL;
+    pSet->cObj           = 0;
+    pSet->offObjCount    = 0;
     pSet->cTotalFailures = 0;
 }
 
@@ -704,6 +706,12 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
     rc = audioTestManifestWrite(pSet, "0000\n"); /* A bit messy, but does the trick for now. */
     AssertRCReturn(rc, rc);
 
+    rc = audioTestManifestWrite(pSet, "obj_count=");
+    AssertRCReturn(rc, rc);
+    pSet->offObjCount = audioTestManifestGetOffsetAbs(pSet);
+    rc = audioTestManifestWrite(pSet, "0000\n"); /* A bit messy, but does the trick for now. */
+    AssertRCReturn(rc, rc);
+
     pSet->enmMode = AUDIOTESTSETMODE_TEST;
 
     return rc;
@@ -808,11 +816,55 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
     if (!RTFileIsValid(pSet->f.hFile))
         return VINF_SUCCESS;
 
-    /* Update number of ran tests. */
-    int rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
+    int rc;
+
+    /* Update number of bound test objects. */
+    PAUDIOTESTENTRY pTest;
+    RTListForEach(&pSet->lstTest, pTest, AUDIOTESTENTRY, Node)
+    {
+        rc = RTFileSeek(pSet->f.hFile, pTest->offObjCount, RTFILE_SEEK_BEGIN, NULL);
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWrite(pSet, "%04RU32", pTest->cObj);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Update number of ran tests.
+     */
+    rc = RTFileSeek(pSet->f.hFile, pSet->offObjCount, RTFILE_SEEK_BEGIN, NULL);
+    AssertRCReturn(rc, rc);
+    rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cObj);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Update number of ran tests.
+     */
+    rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cTests);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Serialize all registered test objects.
+     */
+    rc = RTFileSeek(pSet->f.hFile, 0, RTFILE_SEEK_END, NULL);
+    AssertRCReturn(rc, rc);
+
+    PAUDIOTESTOBJ pObj;
+    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJ, Node)
+    {
+        rc = audioTestManifestWrite(pSet, "\n");
+        AssertRCReturn(rc, rc);
+        char szUuid[64];
+        rc = RTUuidToStr(&pObj->Uuid, szUuid, sizeof(szUuid));
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWriteSectionHdr(pSet, "obj_%s", szUuid);
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWrite(pSet, "obj_type=%RU32\n", pObj->enmType);
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWrite(pSet, "obj_name=%s\n", pObj->szName);
+        AssertRCReturn(rc, rc);
+    }
 
     RTFileClose(pSet->f.hFile);
     pSet->f.hFile = NIL_RTFILE;
@@ -864,7 +916,7 @@ int AudioTestSetWipe(PAUDIOTESTSET pSet)
 }
 
 /**
- * Creates and registers a new audio test object to a test set.
+ * Creates and registers a new audio test object to the current running test.
  *
  * @returns VBox status code.
  * @param   pSet                Test set to create and register new object for.
@@ -873,6 +925,8 @@ int AudioTestSetWipe(PAUDIOTESTSET pSet)
  */
 int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj)
 {
+    AssertReturn(pSet->cTestsRunning == 1, VERR_WRONG_ORDER); /* No test nesting allowed. */
+
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
     PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
@@ -891,9 +945,23 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
         if (RT_SUCCESS(rc))
         {
             pObj->enmType = AUDIOTESTOBJTYPE_FILE;
+            pObj->cRefs   = 1; /* Currently only 1:1 mapping. */
 
             RTListAppend(&pSet->lstObj, &pObj->Node);
             pSet->cObj++;
+
+            /* Generate + set an UUID for the object and assign it to the current test. */
+            rc = RTUuidCreate(&pObj->Uuid);
+            AssertRCReturn(rc, rc);
+            char szUuid[64];
+            rc = RTUuidToStr(&pObj->Uuid, szUuid, sizeof(szUuid));
+            AssertRCReturn(rc, rc);
+
+            rc = audioTestManifestWrite(pSet, "obj%RU32_uuid=%s\n", pSet->pTestCur->cObj, szUuid);
+            AssertRCReturn(rc, rc);
+
+            AssertPtr(pSet->pTestCur);
+            pSet->pTestCur->cObj++;
 
             *ppObj = pObj;
         }
@@ -962,7 +1030,7 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     rc = audioTestManifestWrite(pSet, "\n");
     AssertRCReturn(rc, rc);
 
-    rc = audioTestManifestWriteSectionHdr(pSet, "test%04RU32", pSet->cTests);
+    rc = audioTestManifestWriteSectionHdr(pSet, "test_%04RU32", pSet->cTests);
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "test_desc=%s\n", pszDesc);
     AssertRCReturn(rc, rc);
@@ -971,6 +1039,12 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     rc = audioTestManifestWrite(pSet, "test_delay_ms=%RU32\n", pParms->msDelay);
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "audio_direction=%s\n", PDMAudioDirGetName(pParms->enmDir));
+    AssertRCReturn(rc, rc);
+
+    rc = audioTestManifestWrite(pSet, "obj_count=");
+    AssertRCReturn(rc, rc);
+    pEntry->offObjCount = audioTestManifestGetOffsetAbs(pSet);
+    rc = audioTestManifestWrite(pSet, "0000\n"); /* A bit messy, but does the trick for now. */
     AssertRCReturn(rc, rc);
 
     switch (pParms->enmType)
@@ -1008,6 +1082,7 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     RTListAppend(&pSet->lstTest, &pEntry->Node);
     pSet->cTests++;
     pSet->cTestsRunning++;
+    pSet->pTestCur = pEntry;
 
     *ppEntry = pEntry;
 
@@ -1027,6 +1102,7 @@ int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
     AssertRCReturn(rc2, rc2);
 
     pEntry->pParent->cTestsRunning--;
+    pEntry->pParent->pTestCur = NULL;
 
     return rc2;
 }
@@ -1040,6 +1116,7 @@ int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
     AssertRCReturn(rc2, rc2);
 
     pEntry->pParent->cTestsRunning--;
+    pEntry->pParent->pTestCur = NULL;
 
     return rc2;
 }

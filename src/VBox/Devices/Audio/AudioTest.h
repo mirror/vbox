@@ -184,6 +184,9 @@ typedef struct AUDIOTESTOBJ
 {
     /** List node. */
     RTLISTNODE           Node;
+    RTUUID               Uuid;
+    /** Number of references to this test object. */
+    uint32_t             cRefs;
     /** Name of the test object.
      *  Must not contain a path and has to be able to serialize to disk. */
     char                 szName[64];
@@ -207,6 +210,10 @@ typedef struct AUDIOTESTENTRY
     AUDIOTESTSET        *pParent;
     char                 szDesc[64];
     AUDIOTESTPARMS       Parms;
+    /** Number of test objects bound to this test. */
+    uint32_t             cObj;
+    /** Absolute offset (in bytes) where to write the "obj_count" value later. */
+    uint64_t             offObjCount;
     int                  rc;
 } AUDIOTESTENTRY;
 /** Pointer to an audio test entry. */
@@ -233,6 +240,8 @@ typedef struct AUDIOTESTSET
     } f;
     /** Number of test objects in lstObj. */
     uint32_t         cObj;
+    /** Absolute offset (in bytes) where to write the "obj_count" value later. */
+    uint64_t         offObjCount;
     /** List containing PAUDIOTESTOBJ test object entries. */
     RTLISTANCHOR     lstObj;
     /** Number of performed tests.
@@ -242,7 +251,10 @@ typedef struct AUDIOTESTSET
     uint64_t         offTestCount;
     /** List containing PAUDIOTESTENTRY test entries. */
     RTLISTANCHOR     lstTest;
-    /** Number of tests currently running. */
+    /** Current test running. Can be NULL if no test is running. */
+    PAUDIOTESTENTRY  pTestCur;
+    /** Number of tests currently running.
+     *  Currently we only allow one concurrent test running at a given time. */
     uint32_t         cTestsRunning;
     /** Number of total (test) failures. */
     uint32_t         cTotalFailures;
