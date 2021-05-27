@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,9 +35,9 @@ struct UIDataSettingsGlobalLanguage
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsGlobalLanguage &other) const
     {
-        return true
+        return    true
                && (m_strLanguageId == other.m_strLanguageId)
-               ;
+                  ;
     }
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -49,6 +49,10 @@ struct UIDataSettingsGlobalLanguage
     QString m_strLanguageId;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsLanguage implementation.                                                                               *
+*********************************************************************************************************************************/
 
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_pCache(0)
@@ -150,7 +154,8 @@ bool UIGlobalSettingsLanguage::saveData()
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */
-    if (fSuccess && m_pCache->wasChanged())
+    if (   fSuccess
+        && m_pCache->wasChanged())
     {
         /* Get old data from cache: */
         const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
@@ -158,8 +163,9 @@ bool UIGlobalSettingsLanguage::saveData()
         const UIDataSettingsGlobalLanguage &newData = m_pCache->data();
 
         /* Save new data from cache: */
-        if (newData.m_strLanguageId != oldData.m_strLanguageId)
-            gEDataManager->setLanguageId(newData.m_strLanguageId);
+        if (   fSuccess
+            && newData.m_strLanguageId != oldData.m_strLanguageId)
+            /* fSuccess = */ gEDataManager->setLanguageId(newData.m_strLanguageId);
     }
     /* Return result: */
     return fSuccess;

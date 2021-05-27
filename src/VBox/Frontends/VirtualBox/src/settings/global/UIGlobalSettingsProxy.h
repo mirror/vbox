@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2020 Oracle Corporation
+ * Copyright (C) 2011-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -83,8 +83,8 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Saves existing proxy data from the cache. */
-    bool saveProxyData();
+    /** Saves existing proxy data from cache. */
+    bool saveData();
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalProxy *m_pCache;

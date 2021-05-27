@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,11 +40,11 @@ struct UIDataSettingsGlobalDisplay
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsGlobalDisplay &other) const
     {
-        return true
+        return    true
                && (m_guiMaximumGuestScreenSizeValue == other.m_guiMaximumGuestScreenSizeValue)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
                && (m_scaleFactors == other.m_scaleFactors)
-               ;
+                  ;
     }
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -60,6 +60,10 @@ struct UIDataSettingsGlobalDisplay
     QList<double>                  m_scaleFactors;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsDisplay implementation.                                                                                *
+*********************************************************************************************************************************/
 
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
@@ -128,7 +132,7 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Update data and failing state: */
-    setFailed(!saveDisplayData());
+    setFailed(!saveData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -239,12 +243,13 @@ void UIGlobalSettingsDisplay::cleanup()
     m_pCache = 0;
 }
 
-bool UIGlobalSettingsDisplay::saveDisplayData()
+bool UIGlobalSettingsDisplay::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
     /* Save display settings from cache: */
-    if (fSuccess && m_pCache->wasChanged())
+    if (   fSuccess
+        && m_pCache->wasChanged())
     {
         /* Get old data from cache: */
         const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
@@ -252,15 +257,18 @@ bool UIGlobalSettingsDisplay::saveDisplayData()
         const UIDataSettingsGlobalDisplay &newData = m_pCache->data();
 
         /* Save maximum guest screen size and policy: */
-        if (fSuccess && newData.m_guiMaximumGuestScreenSizeValue != oldData.m_guiMaximumGuestScreenSizeValue)
-            gEDataManager->setMaxGuestScreenResolution(newData.m_guiMaximumGuestScreenSizeValue.m_enmPolicy,
-                                                       newData.m_guiMaximumGuestScreenSizeValue.m_size);
+        if (   fSuccess
+            && newData.m_guiMaximumGuestScreenSizeValue != oldData.m_guiMaximumGuestScreenSizeValue)
+            /* fSuccess = */ gEDataManager->setMaxGuestScreenResolution(newData.m_guiMaximumGuestScreenSizeValue.m_enmPolicy,
+                                                                        newData.m_guiMaximumGuestScreenSizeValue.m_size);
         /* Save whether hovered machine-window should be activated automatically: */
-        if (fSuccess && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
-            gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow);
+        if (   fSuccess
+            && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
+            /* fSuccess = */ gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow);
         /* Save guest-screen scale-factor: */
-        if (fSuccess && newData.m_scaleFactors != oldData.m_scaleFactors)
-            gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
+        if (   fSuccess
+            && newData.m_scaleFactors != oldData.m_scaleFactors)
+            /* fSuccess = */ gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
     }
     /* Return result: */
     return fSuccess;

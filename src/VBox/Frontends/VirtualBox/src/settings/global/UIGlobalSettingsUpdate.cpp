@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,6 +49,10 @@ struct UIDataSettingsGlobalUpdate
     VBoxUpdateData  m_guiUpdateData;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsUpdate implementation.                                                                                 *
+*********************************************************************************************************************************/
 
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     : m_pCache(0)
@@ -150,7 +154,8 @@ bool UIGlobalSettingsUpdate::saveData()
     /* Prepare result: */
     bool fSuccess = true;
     /* Save update settings from cache: */
-    if (fSuccess && m_pCache->wasChanged())
+    if (   fSuccess
+        && m_pCache->wasChanged())
     {
         /* Get old data from cache: */
         const UIDataSettingsGlobalUpdate &oldData = m_pCache->base();
@@ -160,7 +165,7 @@ bool UIGlobalSettingsUpdate::saveData()
         /* Save new data from cache: */
         if (   fSuccess
             && newData != oldData)
-            gEDataManager->setApplicationUpdateData(newData.m_guiUpdateData.data());
+            /* fSuccess = */ gEDataManager->setApplicationUpdateData(newData.m_guiUpdateData.data());
     }
     /* Return result: */
     return fSuccess;

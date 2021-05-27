@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,6 +58,10 @@ struct UIDataSettingsGlobalInput
     bool                         m_fAutoCapture;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsInput implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pCache(0)
@@ -233,7 +237,8 @@ bool UIGlobalSettingsInput::saveData()
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */
-    if (fSuccess && m_pCache->wasChanged())
+    if (   fSuccess
+        && m_pCache->wasChanged())
     {
         /* Get old data from cache: */
         const UIDataSettingsGlobalInput &oldData = m_pCache->base();
@@ -241,27 +246,34 @@ bool UIGlobalSettingsInput::saveData()
         const UIDataSettingsGlobalInput &newData = m_pCache->data();
 
         /* Save new host-combo shortcut from cache: */
-        const UIShortcutConfigurationItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString(), QString());
-        const int iHostComboItemBase = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(oldData.m_shortcuts, fakeHostComboItem);
-        const int iHostComboItemData = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(newData.m_shortcuts, fakeHostComboItem);
-        const QString strHostComboBase = iHostComboItemBase != -1 ? oldData.m_shortcuts.at(iHostComboItemBase).currentSequence() : QString();
-        const QString strHostComboData = iHostComboItemData != -1 ? newData.m_shortcuts.at(iHostComboItemData).currentSequence() : QString();
-        if (strHostComboData != strHostComboBase)
-            gEDataManager->setHostKeyCombination(strHostComboData);
+        if (fSuccess)
+        {
+            const UIShortcutConfigurationItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString(), QString());
+            const int iHostComboItemBase = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(oldData.m_shortcuts, fakeHostComboItem);
+            const int iHostComboItemData = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(newData.m_shortcuts, fakeHostComboItem);
+            const QString strHostComboBase = iHostComboItemBase != -1 ? oldData.m_shortcuts.at(iHostComboItemBase).currentSequence() : QString();
+            const QString strHostComboData = iHostComboItemData != -1 ? newData.m_shortcuts.at(iHostComboItemData).currentSequence() : QString();
+            if (strHostComboData != strHostComboBase)
+                /* fSuccess = */ gEDataManager->setHostKeyCombination(strHostComboData);
+        }
 
         /* Save other new shortcuts from cache: */
-        QMap<QString, QString> sequencesBase;
-        QMap<QString, QString> sequencesData;
-        foreach (const UIShortcutConfigurationItem &item, oldData.m_shortcuts)
-            sequencesBase.insert(item.key(), item.currentSequence());
-        foreach (const UIShortcutConfigurationItem &item, newData.m_shortcuts)
-            sequencesData.insert(item.key(), item.currentSequence());
-        if (sequencesData != sequencesBase)
-            gShortcutPool->setOverrides(sequencesData);
+        if (fSuccess)
+        {
+            QMap<QString, QString> sequencesBase;
+            QMap<QString, QString> sequencesData;
+            foreach (const UIShortcutConfigurationItem &item, oldData.m_shortcuts)
+                sequencesBase.insert(item.key(), item.currentSequence());
+            foreach (const UIShortcutConfigurationItem &item, newData.m_shortcuts)
+                sequencesData.insert(item.key(), item.currentSequence());
+            if (sequencesData != sequencesBase)
+                /* fSuccess = */ gShortcutPool->setOverrides(sequencesData);
+        }
 
         /* Save other new things from cache: */
-        if (newData.m_fAutoCapture != oldData.m_fAutoCapture)
-            gEDataManager->setAutoCaptureEnabled(newData.m_fAutoCapture);
+        if (   fSuccess
+            && newData.m_fAutoCapture != oldData.m_fAutoCapture)
+            /* fSuccess = */ gEDataManager->setAutoCaptureEnabled(newData.m_fAutoCapture);
     }
     /* Return result: */
     return fSuccess;

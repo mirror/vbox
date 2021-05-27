@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2020 Oracle Corporation
+ * Copyright (C) 2011-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,10 +47,10 @@ struct UIDataSettingsGlobalProxy
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsGlobalProxy &other) const
     {
-        return true
+        return    true
                && (m_enmProxyMode == other.m_enmProxyMode)
                && (m_strProxyHost == other.m_strProxyHost)
-               ;
+                  ;
     }
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -65,6 +65,10 @@ struct UIDataSettingsGlobalProxy
 };
 
 
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsProxy implementation.                                                                                  *
+*********************************************************************************************************************************/
+
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     : m_pCache(0)
     , m_pButtonGroup(0)
@@ -75,13 +79,11 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     , m_pLabelHost(0)
     , m_pEditorHost(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -93,15 +95,11 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old proxy data: */
-    UIDataSettingsGlobalProxy oldProxyData;
-
-    /* Gather old proxy data: */
-    oldProxyData.m_enmProxyMode = m_properties.GetProxyMode();
-    oldProxyData.m_strProxyHost = m_properties.GetProxyURL();
-
-    /* Cache old proxy data: */
-    m_pCache->cacheInitialData(oldProxyData);
+    /* Cache old data: */
+    UIDataSettingsGlobalProxy oldData;
+    oldData.m_enmProxyMode = m_properties.GetProxyMode();
+    oldData.m_strProxyHost = m_properties.GetProxyURL();
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -109,18 +107,16 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsProxy::getFromCache()
 {
-    /* Get old proxy data from the cache: */
-    const UIDataSettingsGlobalProxy &oldProxyData = m_pCache->base();
-
-    /* Load old proxy data from the cache: */
-    switch (oldProxyData.m_enmProxyMode)
+    /* Load old data from cache: */
+    const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
+    switch (oldData.m_enmProxyMode)
     {
         case KProxyMode_System:  m_pRadioButtonProxyAuto->setChecked(true); break;
         case KProxyMode_NoProxy: m_pRadioButtonProxyDisabled->setChecked(true); break;
         case KProxyMode_Manual:  m_pRadioButtonProxyEnabled->setChecked(true); break;
         case KProxyMode_Max:     break; /* (compiler warnings) */
     }
-    m_pEditorHost->setText(oldProxyData.m_strProxyHost);
+    m_pEditorHost->setText(oldData.m_strProxyHost);
     sltHandleProxyToggle();
 
     /* Revalidate: */
@@ -129,16 +125,15 @@ void UIGlobalSettingsProxy::getFromCache()
 
 void UIGlobalSettingsProxy::putToCache()
 {
-    /* Prepare new proxy data: */
-    UIDataSettingsGlobalProxy newProxyData = m_pCache->base();
+    /* Prepare new data: */
+    UIDataSettingsGlobalProxy newData = m_pCache->base();
 
-    /* Gather new proxy data: */
-    newProxyData.m_enmProxyMode = m_pRadioButtonProxyEnabled->isChecked()  ? KProxyMode_Manual
-                                : m_pRadioButtonProxyDisabled->isChecked() ? KProxyMode_NoProxy : KProxyMode_System;
-    newProxyData.m_strProxyHost = m_pEditorHost->text();
-
-    /* Cache new proxy data: */
-    m_pCache->cacheCurrentData(newProxyData);
+    /* Cache new data: */
+    newData.m_enmProxyMode = m_pRadioButtonProxyEnabled->isChecked()
+                           ? KProxyMode_Manual : m_pRadioButtonProxyDisabled->isChecked()
+                           ? KProxyMode_NoProxy : KProxyMode_System;
+    newData.m_strProxyHost = m_pEditorHost->text();
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
@@ -146,8 +141,8 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Update proxy data and failing state: */
-    setFailed(!saveProxyData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -334,27 +329,35 @@ void UIGlobalSettingsProxy::cleanup()
     m_pCache = 0;
 }
 
-bool UIGlobalSettingsProxy::saveProxyData()
+bool UIGlobalSettingsProxy::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save proxy settings from the cache: */
-    if (fSuccess && m_pCache->wasChanged())
+    /* Save settings from cache: */
+    if (   fSuccess
+        && m_pCache->wasChanged())
     {
-        /* Get old proxy data from the cache: */
-        //const UIDataSettingsGlobalProxy &oldProxyData = m_pCache->base();
-        /* Get new proxy data from the cache: */
-        const UIDataSettingsGlobalProxy &newProxyData = m_pCache->data();
+        /* Get old data from cache: */
+        //const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
+        /* Get new data from cache: */
+        const UIDataSettingsGlobalProxy &newData = m_pCache->data();
 
-        /* Save new proxy data from the cache: */
-        m_properties.SetProxyMode(newProxyData.m_enmProxyMode);
-        fSuccess &= m_properties.isOk();
-        m_properties.SetProxyURL(newProxyData.m_strProxyHost);
-        fSuccess &= m_properties.isOk();
+        /* Save new data from cache: */
+        if (fSuccess)
+        {
+            m_properties.SetProxyMode(newData.m_enmProxyMode);
+            fSuccess &= m_properties.isOk();
+        }
+        if (fSuccess)
+        {
+            m_properties.SetProxyURL(newData.m_strProxyHost);
+            fSuccess &= m_properties.isOk();
+        }
 
         /* Drop the old extra data setting if still around: */
-        if (fSuccess && !gEDataManager->proxySettings().isEmpty())
-            gEDataManager->setProxySettings(QString());
+        if (   fSuccess
+            && !gEDataManager->proxySettings().isEmpty())
+            /* fSuccess = */ gEDataManager->setProxySettings(QString());
     }
     /* Return result: */
     return fSuccess;
