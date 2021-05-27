@@ -906,6 +906,9 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
     RT_NOREF(papwszArgs);
     LogFlowFuncEnter();
 
+    /* Give this thread a name in the logs. */
+    RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, "service", NULL);
+
 #if 0
     for (size_t i = 0; i < cArgs; ++i)
         LogRel(("arg[%zu] = %ls\n", i, papwszArgs[i]));
