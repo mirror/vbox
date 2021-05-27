@@ -1921,6 +1921,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                     {
                                         if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry))
                                         {
+
                                             return VERR_NOT_IMPLEMENTED;
                                         }
                                         else
@@ -3142,10 +3143,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
         uint8_t const fFl1gp   = 1;                                /* First-Level 1GB pages support. */
         uint8_t const fFl5lp   = 1;                                /* First-level 5-level paging support (PML5E). */
-        uint8_t const fSl2mp   = fSlts & 1;                        /* Second-Level 2MB pages support. */
-        uint8_t const fSl2gp   = fSlts & 1;                        /* Second-Level 1GB pages support. */
-        uint8_t const fSllps   = fSl2mp                            /* Second-Level large page Support. */
-                               | ((fSl2mp & fFl1gp) & RT_BIT(1));
+        uint8_t const fSl2mp   = 1;                                /* Second-Level 2MB pages support. */
+        uint8_t const fSl2gp   = fSl2mp & 1;                       /* Second-Level 1GB pages support. */
+        uint8_t const fSllps   = fSl2mp | (fSl2gp << 1);           /* Second-Level large page Support. */
         uint8_t const fMamv    = (fSl2gp ? X86_PAGE_1G_SHIFT       /* Maximum address mask value (for 2nd-level invalidations). */
                                          : X86_PAGE_2M_SHIFT)
                                - X86_PAGE_4K_SHIFT;
