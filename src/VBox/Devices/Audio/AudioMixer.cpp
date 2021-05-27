@@ -515,13 +515,6 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
         audioMixerStreamCtlInternal(pStream, PDMAUDIOSTREAMCMD_ENABLE);
     }
 
-    if (pSink->enmDir != PDMAUDIODIR_OUT)
-    {
-        /* Apply the sink's combined volume to the stream. */
-        int rc2 = pStream->pConn->pfnStreamSetVolume(pStream->pConn, pStream->pStream, &pSink->VolumeCombined);
-        AssertRC(rc2);
-    }
-
     /* Save pointer to sink the stream is attached to. */
     pStream->pSink = pSink;
 
@@ -2523,20 +2516,7 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVolMa
     LogFlow(("-> fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
              pSink->VolumeCombined.fMuted, pSink->VolumeCombined.uLeft, pSink->VolumeCombined.uRight));
 
-    /*
-     * Input sinks must currently propagate the new volume settings to
-     * all the streams.  (For output sinks we do the volume control here.)
-     */
-    if (pSink->enmDir != PDMAUDIODIR_OUT)
-    {
-        PAUDMIXSTREAM pMixStream;
-        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
-        {
-            int rc2 = pMixStream->pConn->pfnStreamSetVolume(pMixStream->pConn, pMixStream->pStream, &pSink->VolumeCombined);
-            AssertRC(rc2);
-        }
-    }
-
+    AudioMixBufSetVolume(&pSink->MixBuf, &pSink->VolumeCombined);
     return VINF_SUCCESS;
 }
 

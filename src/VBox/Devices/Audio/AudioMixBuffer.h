@@ -328,7 +328,7 @@ int         AudioMixBufAcquireReadBlockEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPRO
 void AudioMixBufReleaseReadBlock(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
 uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufReset(PAUDIOMIXBUF pMixBuf);
-void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol);
+void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
 uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufUnlink(PAUDIOMIXBUF pMixBuf);

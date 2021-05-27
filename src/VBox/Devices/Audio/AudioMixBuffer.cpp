@@ -490,7 +490,7 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
  * Be careful what to pass in/out, as most of the macros are optimized for speed and
  * thus don't do any bounds checking!
  *
- * Note: Currently does not handle any endianness conversion yet!
+ * @note Currently does not handle any endianness conversion yet!
  */
 #define AUDMIXBUF_CONVERT(a_Name, a_Type, _aMin, _aMax, _aSigned, _aShift) \
     /* Clips a specific output value to a single sample value. */ \
@@ -512,6 +512,7 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
                 return (a_Type)  (iVal >> (32 - _aShift)); \
             return     (a_Type) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1)); \
         } \
+        AssertMsgFailed(("%RI64 (%#RX64)\n", iVal, iVal)); /* shouldn't be possible with current buffer operations */ \
         return iVal >= 0 ? _aMax : _aMin; \
     } \
     \
@@ -1203,7 +1204,7 @@ static PFNAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps)
  * @param   pVolDst                 Where to store the converted mixing buffer volume.
  * @param   pVolSrc                 Volume to convert.
  */
-static int audioMixBufConvVol(PAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
+static int audioMixBufConvVol(PAUDMIXBUFVOL pVolDst, PCPDMAUDIOVOLUME pVolSrc)
 {
     if (!pVolSrc->fMuted) /* Only change/convert the volume value if we're not muted. */
     {
@@ -2847,7 +2848,62 @@ void AudioMixBufAdvance(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 
 
 /**
- * Advances the write position of the buffer.
+ * Worker for audioMixAdjustVolume that adjust one contiguous chunk.
+ */
+static void audioMixAdjustVolumeWorker(PAUDIOMIXBUF pMixBuf, uint32_t off, uint32_t cFrames)
+{
+    PPDMAUDIOFRAME const    paFrames = pMixBuf->pFrames;
+    uint32_t const          uLeft    = pMixBuf->Volume.uLeft;
+    uint32_t const          uRight   = pMixBuf->Volume.uRight;
+    while (cFrames-- > 0)
+    {
+        paFrames[off].i64LSample = ASMMult2xS32RetS64(paFrames[off].i64LSample, uLeft)  >> AUDIOMIXBUF_VOL_SHIFT;
+        paFrames[off].i64RSample = ASMMult2xS32RetS64(paFrames[off].i64RSample, uRight) >> AUDIOMIXBUF_VOL_SHIFT;
+        off++;
+    }
+}
+
+
+/**
+ * Does volume adjustments for the given stretch of the buffer.
+ *
+ * @param   pMixBuf     The mixing buffer.
+ * @param   offFirst    Where to start (validated).
+ * @param   cFrames     How many frames (validated).
+ */
+static void audioMixAdjustVolume(PAUDIOMIXBUF pMixBuf, uint32_t offFirst, uint32_t cFrames)
+{
+    /* Caller has already validated these, so we don't need to repeat that in non-strict builds. */
+    Assert(offFirst < pMixBuf->cFrames);
+    Assert(cFrames <= pMixBuf->cFrames);
+
+    /*
+     * Muted?
+     */
+    if (pMixBuf->Volume.fMuted)
+    {
+        uint32_t const cFramesChunk1 = RT_MIN(pMixBuf->cFrames - offFirst, cFrames);
+        RT_BZERO(&pMixBuf->pFrames[offFirst], sizeof(pMixBuf->pFrames[0]) * cFramesChunk1);
+        if (cFramesChunk1 < cFrames)
+            RT_BZERO(&pMixBuf->pFrames[0], sizeof(pMixBuf->pFrames[0]) * (cFrames - cFramesChunk1));
+    }
+    /*
+     * Less than max volume?
+     */
+    else if (   pMixBuf->Volume.uLeft  != AUDIOMIXBUF_VOL_0DB
+             || pMixBuf->Volume.uRight != AUDIOMIXBUF_VOL_0DB)
+    {
+        /* first chunk */
+        uint32_t const cFramesChunk1 = RT_MIN(pMixBuf->cFrames - offFirst, cFrames);
+        audioMixAdjustVolumeWorker(pMixBuf, offFirst, cFramesChunk1);
+        if (cFramesChunk1 < cFrames)
+            audioMixAdjustVolumeWorker(pMixBuf, 0, cFrames - cFramesChunk1);
+    }
+}
+
+
+/**
+ * Adjust for volume settings and advances the write position of the buffer.
  *
  * For use after done peeking with AudioMixBufWrite(), AudioMixBufSilence(),
  * AudioMixBufBlend() and AudioMixBufBlendGap().
@@ -2862,6 +2918,9 @@ void AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
     AssertReturnVoid(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
 
     AssertStmt(cFrames <= pMixBuf->cFrames - pMixBuf->cUsed, cFrames = pMixBuf->cFrames - pMixBuf->cUsed);
+
+    audioMixAdjustVolume(pMixBuf, pMixBuf->offWrite, cFrames);
+
     pMixBuf->cUsed   += cFrames;
     pMixBuf->offWrite = (pMixBuf->offWrite + cFrames) % pMixBuf->cFrames;
     LogFlowFunc(("%s: Advanced %u frames: offWrite=%u cUsed=%u\n", pMixBuf->pszName, cFrames, pMixBuf->offWrite, pMixBuf->cUsed));
@@ -2874,14 +2933,14 @@ void AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
  * @param   pMixBuf                 Mixing buffer to set volume for.
  * @param   pVol                    Pointer to volume structure to set.
  */
-void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
+void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
 {
     AssertPtrReturnVoid(pMixBuf);
     AssertPtrReturnVoid(pVol);
 
     LogFlowFunc(("%s: lVol=%RU8, rVol=%RU8, fMuted=%RTbool\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted));
 
-    int rc2 = audioMixBufConvVol(&pMixBuf->Volume /* Dest */, pVol /* Source */);
+    int rc2 = audioMixBufConvVol(&pMixBuf->Volume, pVol);
     AssertRC(rc2);
 }
 
