@@ -134,7 +134,11 @@ typedef struct ATSPKTREQTONEPLAY
     PDMAUDIOSTREAMCFG  StreamCfg;
     /** Test tone parameters for playback. */
     AUDIOTESTTONEPARMS ToneParms;
+#if HC_ARCH_BITS == 64
     uint8_t            aPadding[4];
+#else
+    uint8_t            aPadding[6];
+#endif
 } ATSPKTREQTONEPLAY;
 AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
