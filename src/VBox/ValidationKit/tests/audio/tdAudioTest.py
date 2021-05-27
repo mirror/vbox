@@ -82,7 +82,7 @@ class tdAudioTest(vbox.TestDriver):
 
         if not fSkip:
             reporter.testStart('Waiting for TXS');
-            sPathAutoTestExe = '${CDROM}/vboxvalidationkit/${OS/ARCH}/AudioTest${EXESUFF}';
+            sPathAutoTestExe = '${CDROM}/vboxvalidationkit/${OS/ARCH}/vkat${EXESUFF}';
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
                                                                     fCdWait = True,
                                                                     cMsTimeout = 3 * 60 * 1000,
@@ -99,8 +99,8 @@ class tdAudioTest(vbox.TestDriver):
                 sTag           = uuid.uuid4();
                 reporter.log("Audio test tag is %s'" % (sTag));
 
-                reporter.testStart('Running AudioTest');
-                fRc = self.txsRunTest(oTxsSession, 'AudioTest', 5 * 60 * 1000,
+                reporter.testStart('Running vkat (Validation Kit Audio Test)');
+                fRc = self.txsRunTest(oTxsSession, 'vkat', 5 * 60 * 1000,
                                       self.getGuestSystemShell(oTestVm),
                                       (self.getGuestSystemShell(oTestVm),
                                        sPathAutoTestExe, '-vvv', 'test', '--tag ' + sTag,

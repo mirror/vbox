@@ -44,14 +44,14 @@ endif
 VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 
 ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
-PROGRAMS += AudioTest
+PROGRAMS += vkat
 endif
-AudioTest_TEMPLATE = VBoxValidationKitR3
-AudioTest_VBOX_IMPORT_CHECKER.win.x86 = nt4
-AudioTest_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
-AudioTest_INCS     = \
+vkat_TEMPLATE = VBoxValidationKitR3
+vkat_VBOX_IMPORT_CHECKER.win.x86 = nt4
+vkat_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
+vkat_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/build
-AudioTest_SOURCES  = \
+vkat_SOURCES  = \
 	vkat.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTest.cpp \
 	$(VKAT_PATH_AUDIO)/DrvAudio.cpp \
@@ -62,8 +62,8 @@ AudioTest_SOURCES  = \
 
 
 # Self-test stuff.
-AudioTest_DEFS     += VBOX_WITH_AUDIO_VALIDATIONKIT
-AudioTest_SOURCES  += \
+vkat_DEFS     += VBOX_WITH_AUDIO_VALIDATIONKIT
+vkat_SOURCES  += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioValidationKit.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTestService.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTestServiceClient.cpp \
@@ -71,47 +71,46 @@ AudioTest_SOURCES  += \
 	$(VKAT_PATH_AUDIO)/AudioTestServiceTcp.cpp
 
 ifdef VBOX_WITH_AUDIO_PULSE
- AudioTest_DEFS    += VBOX_WITH_AUDIO_PULSE
- AudioTest_SOURCES += \
+ vkat_DEFS    += VBOX_WITH_AUDIO_PULSE
+ vkat_SOURCES += \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudioStubs.cpp \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioPulseAudio.cpp
 endif
 
 ifdef VBOX_WITH_AUDIO_ALSA
- AudioTest_DEFS    += VBOX_WITH_AUDIO_ALSA
- AudioTest_SOURCES += \
+ vkat_DEFS    += VBOX_WITH_AUDIO_ALSA
+ vkat_SOURCES += \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsa.cpp \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioAlsaStubs.cpp
 endif
 
 ifdef VBOX_WITH_AUDIO_OSS
- AudioTest_DEFS    += VBOX_WITH_AUDIO_OSS
- AudioTest_SOURCES += \
+ vkat_DEFS    += VBOX_WITH_AUDIO_OSS
+ vkat_SOURCES += \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioOss.cpp
 endif
 
-AudioTest_SOURCES.win += \
+vkat_SOURCES.win += \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioDSound.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioWasApi.cpp
 ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
- AudioTest_DEFS.win    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
- AudioTest_SOURCES.win += \
+ vkat_DEFS.win    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+ vkat_SOURCES.win += \
  	$(VKAT_PATH_AUDIO)/DrvHostAudioDSoundMMNotifClient.cpp
 endif
 
-AudioTest_SOURCES.darwin = \
+vkat_SOURCES.darwin = \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioCoreAudio.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioCoreAudioAuth.mm
-AudioTest_LDFLAGS.darwin = \
+vkat_LDFLAGS.darwin = \
 	-framework CoreAudio \
 	-framework AudioUnit \
 	-framework AudioToolbox \
 	-framework Foundation
 ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
- AudioTest_LDFLAGS.darwin += \
+ vkat_LDFLAGS.darwin += \
  	-framework AVFoundation
 endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
