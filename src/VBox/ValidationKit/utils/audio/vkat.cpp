@@ -1347,6 +1347,29 @@ static int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDI
     return rc;
 }
 
+/**
+ * Tries to capture @a cbBuf bytes of samples in @a pvBuf.
+ */
+static int audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
+                                             void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured)
+{
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        rc = pDrvStack->pIAudioConnector->pfnStreamCapture(pDrvStack->pIAudioConnector, pStream, pcbCaptured);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamCapture(,,,%#x) failed: %Rrc", cbBuf, rc);
+    }
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        rc = pDrvStack->pIHostAudio->pfnStreamCapture(pDrvStack->pIHostAudio, &pStreamAt->Backend, pvBuf, cbBuf, pcbCaptured);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamCapture(,,,%#x) failed: %Rrc", cbBuf, rc);
+    }
+    return rc;
+}
+
 
 /*********************************************************************************************************************************
 *   Implementation of audio test environment handling                                                                            *
@@ -1608,23 +1631,20 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 
     /** @todo Use .WAV here? */
     PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-rec.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState = pTstEnv->DrvStack.pIHostAudio->pfnStreamGetState(pTstEnv->DrvStack.pIHostAudio,
-                                                                                        pStream->pBackend);
-    if (enmState == PDMHOSTAUDIOSTREAMSTATE_OKAY)
+    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
     {
-        uint8_t  abBuf[_4K];
+        uint8_t abBuf[_4K];
 
         const uint64_t tsStartMs     = RTTimeMilliTS();
-        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Chose a random scheduling (in ms). */
+        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
 
         do
         {
             uint32_t cbRead = 0;
-            rc = pTstEnv->DrvStack.pIHostAudio->pfnStreamCapture(pTstEnv->DrvStack.pIHostAudio, pStream->pBackend, abBuf,
-                                                                 sizeof(abBuf), &cbRead);
+            rc = audioTestDriverStackStreamCapture(&pTstEnv->DrvStack, pStream->pStream, (void *)abBuf, sizeof(abBuf), &cbRead);
             if (RT_SUCCESS(rc))
                 rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
 
@@ -1689,7 +1709,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
 
     /** @todo Use .WAV here? */
     PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone.pcm", &pObj);
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-play.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
     if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
@@ -1698,7 +1718,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
         uint8_t  abBuf[_4K];
 
         const uint64_t tsStartMs     = RTTimeMilliTS();
-        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Chose a random scheduling (in ms). */
+        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
         const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, cSchedulingMs);
 
         do
@@ -1770,10 +1790,11 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     PDMAudioPropsInit(&pTstParmsAcq->Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
-#ifdef DEBUG_andy
-    pTstParmsAcq->cIterations = RTRandU32Ex(1, 1);
-#endif
+#ifdef DEBUG
+    pTstParmsAcq->cIterations = 2;
+#else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
+#endif
     pTstParmsAcq->idxCurrent  = 0;
 
     return VINF_SUCCESS;
@@ -1846,7 +1867,11 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
+#ifdef DEBUG
+    pTstParmsAcq->cIterations = 2;
+#else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
+#endif
     pTstParmsAcq->idxCurrent  = 0;
 
     return VINF_SUCCESS;
