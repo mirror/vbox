@@ -903,7 +903,7 @@ static RTEXITCODE autostartStartVMs()
  */
 static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
 {
-    RT_NOREF(papwszArgs);
+    RT_NOREF(cArgs, papwszArgs);
     LogFlowFuncEnter();
 
     /* Give this thread a name in the logs. */
