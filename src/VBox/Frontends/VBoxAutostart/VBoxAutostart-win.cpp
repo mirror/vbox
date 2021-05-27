@@ -906,6 +906,11 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
     RT_NOREF(papwszArgs);
     LogFlowFuncEnter();
 
+#if 0
+    for (size_t i = 0; i < cArgs; ++i)
+        LogRel(("arg[%zu] = %ls\n", i, papwszArgs[i]));
+#endif
+
     /*
      * Register the control handler function for the service and report to SCM.
      */
@@ -916,53 +921,48 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
         DWORD err = ERROR_GEN_FAILURE;
         if (autostartSvcWinSetServiceStatus(SERVICE_START_PENDING, 3000, NO_ERROR))
         {
-            if (cArgs == 1)
+            /*
+             * Create the event semaphore we'll be waiting on and
+             * then instantiate the actual services.
+             */
+            int rc = RTSemEventMultiCreate(&g_hSupSvcWinEvent);
+            if (RT_SUCCESS(rc))
             {
                 /*
-                 * Create the event semaphore we'll be waiting on and
-                 * then instantiate the actual services.
+                 * Update the status and enter the work loop.
                  */
-                int rc = RTSemEventMultiCreate(&g_hSupSvcWinEvent);
-                if (RT_SUCCESS(rc))
+                if (autostartSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
                 {
-                    /*
-                     * Update the status and enter the work loop.
-                     */
-                    if (autostartSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
+                    LogFlow(("autostartSvcWinServiceMain: calling autostartStartVMs\n"));
+                    RTEXITCODE ec = autostartStartVMs();
+                    if (ec == RTEXITCODE_SUCCESS)
                     {
-                        LogFlow(("autostartSvcWinServiceMain: calling autostartStartVMs\n"));
-                        RTEXITCODE ec = autostartStartVMs();
-                        if (ec == RTEXITCODE_SUCCESS)
+                        LogFlow(("autostartSvcWinServiceMain: done string VMs\n"));
+                        err = NO_ERROR;
+                        rc = RTSemEventMultiWait(g_hSupSvcWinEvent, RT_INDEFINITE_WAIT);
+                        if (RT_SUCCESS(rc))
                         {
-                            LogFlow(("autostartSvcWinServiceMain: done string VMs\n"));
+                            LogFlow(("autostartSvcWinServiceMain: woke up\n"));
+                            /** @todo Autostop part. */
                             err = NO_ERROR;
-                            rc = RTSemEventMultiWait(g_hSupSvcWinEvent, RT_INDEFINITE_WAIT);
-                            if (RT_SUCCESS(rc))
-                            {
-                                LogFlow(("autostartSvcWinServiceMain: woke up\n"));
-                                /** @todo Autostop part. */
-                                err = NO_ERROR;
-                            }
-                            else
-                                autostartSvcLogError("RTSemEventWait failed, rc=%Rrc", rc);
                         }
-
-                        autostartShutdown();
-                    }
-                    else
-                    {
-                        err = GetLastError();
-                        autostartSvcLogError("SetServiceStatus failed, err=%u", err);
+                        else
+                            autostartSvcLogError("RTSemEventWait failed, rc=%Rrc", rc);
                     }
 
-                    RTSemEventMultiDestroy(g_hSupSvcWinEvent);
-                    g_hSupSvcWinEvent = NIL_RTSEMEVENTMULTI;
+                    autostartShutdown();
                 }
                 else
-                    autostartSvcLogError("RTSemEventMultiCreate failed, rc=%Rrc", rc);
+                {
+                    err = GetLastError();
+                    autostartSvcLogError("SetServiceStatus failed, err=%u", err);
+                }
+
+                RTSemEventMultiDestroy(g_hSupSvcWinEvent);
+                g_hSupSvcWinEvent = NIL_RTSEMEVENTMULTI;
             }
             else
-                autostartSvcLogTooManyArgsError("main", cArgs, NULL, 0);
+                autostartSvcLogError("RTSemEventMultiCreate failed, rc=%Rrc", rc);
         }
         else
         {
