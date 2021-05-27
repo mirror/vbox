@@ -1023,7 +1023,7 @@ int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
 
     int rc2 = audioTestManifestWrite(pEntry->pParent, "error_rc=%RI32\n", rc);
     AssertRCReturn(rc2, rc2);
-    rc2 = audioTestManifestWrite(pEntry->pParent, "error_desc=%s", pszErr);
+    rc2 = audioTestManifestWrite(pEntry->pParent, "error_desc=%s\n", pszErr);
     AssertRCReturn(rc2, rc2);
 
     pEntry->pParent->cTestsRunning--;
