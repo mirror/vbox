@@ -1313,6 +1313,13 @@ void UIHelpBrowserWidget::showHelpForKeyword(const QString &strKeyword)
         m_keywordList.append(strKeyword);
 }
 
+int UIHelpBrowserWidget::zoomPercentage() const
+{
+    if (m_pTabManager)
+        return m_pTabManager->zoomPercentage();
+    return 0;
+}
+
 bool UIHelpBrowserWidget::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
@@ -2062,6 +2069,7 @@ void UIHelpBrowserWidget::sltZoomPercentageChanged(int iPercentage)
 {
     if (m_pZoomMenuAction)
         m_pZoomMenuAction->setZoomPercentage(iPercentage);
+    emit sigZoomPercentageChanged(iPercentage);
 }
 
 

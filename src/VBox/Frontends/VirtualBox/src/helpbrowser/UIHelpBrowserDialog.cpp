@@ -19,6 +19,7 @@
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
+#include <QLabel>
 #include <QMenuBar>
 #include <QStatusBar>
 
@@ -45,11 +46,15 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
     , m_pWidget(0)
     , m_pCenterWidget(pCenterWidget)
     , m_iGeometrySaveTimerId(-1)
+    , m_pZoomLabel(0)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
-    prepareCentralWidget();
     statusBar()->show();
+    m_pZoomLabel = new QLabel;
+    statusBar()->addPermanentWidget(m_pZoomLabel);
+
+    prepareCentralWidget();
     loadSettings();
     retranslateUi();
 }
@@ -107,13 +112,15 @@ void UIHelpBrowserDialog::prepareCentralWidget()
     m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
     AssertPtrReturnVoid(m_pWidget);
     setCentralWidget((m_pWidget));
-
+    sltZoomPercentageChanged(m_pWidget->zoomPercentage());
     connect(m_pWidget, &UIHelpBrowserWidget::sigCloseDialog,
             this, &UIHelpBrowserDialog::close);
     connect(m_pWidget, &UIHelpBrowserWidget::sigLinkHighlighted,
-            this, &UIHelpBrowserDialog::sltHandleLinkHighlighted);
+            this, &UIHelpBrowserDialog::sltLinkHighlighted);
     connect(m_pWidget, &UIHelpBrowserWidget::sigStatusBarVisible,
-            this, &UIHelpBrowserDialog::sltHandleStatusBarVisibilityChange);
+            this, &UIHelpBrowserDialog::sltStatusBarVisibilityChange);
+    connect(m_pWidget, &UIHelpBrowserWidget::sigZoomPercentageChanged,
+            this, &UIHelpBrowserDialog::sltZoomPercentageChanged);
 
     const QList<QMenu*> menuList = m_pWidget->menus();
     foreach (QMenu *pMenu, menuList)
@@ -143,12 +150,18 @@ bool UIHelpBrowserDialog::shouldBeMaximized() const
     return gEDataManager->helpBrowserDialogShouldBeMaximized();
 }
 
-void UIHelpBrowserDialog::sltHandleLinkHighlighted(const QString& strLink)
+void UIHelpBrowserDialog::sltLinkHighlighted(const QString& strLink)
 {
     statusBar()->showMessage(strLink);
 }
 
-void UIHelpBrowserDialog::sltHandleStatusBarVisibilityChange(bool fVisible)
+void UIHelpBrowserDialog::sltStatusBarVisibilityChange(bool fVisible)
 {
     statusBar()->setVisible(fVisible);
+}
+
+void UIHelpBrowserDialog::sltZoomPercentageChanged(int iPercentage)
+{
+    if (m_pZoomLabel)
+        m_pZoomLabel->setText(QString("%1%").arg(QString::number(iPercentage)));
 }

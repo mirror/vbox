@@ -57,6 +57,7 @@ signals:
     void sigCloseDialog();
     void sigLinkHighlighted(const QString &strLink);
     void sigStatusBarVisible(bool fToggled);
+    void sigZoomPercentageChanged(int iPercentage);
 
 public:
 
@@ -67,6 +68,7 @@ public:
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
+    int zoomPercentage() const;
 
 protected:
 

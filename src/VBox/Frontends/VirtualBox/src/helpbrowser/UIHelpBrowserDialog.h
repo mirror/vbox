@@ -26,6 +26,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QLabel;
 class UIHelpBrowserWidget;
 
 class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >
@@ -57,8 +58,9 @@ protected:
 
 private slots:
 
-    void sltHandleLinkHighlighted(const QString& strLink);
-    void sltHandleStatusBarVisibilityChange(bool fVisible);
+    void sltLinkHighlighted(const QString& strLink);
+    void sltStatusBarVisibilityChange(bool fVisible);
+    void sltZoomPercentageChanged(int iPercentage);
 
 private:
 
@@ -66,6 +68,7 @@ private:
     UIHelpBrowserWidget *m_pWidget;
     QWidget *m_pCenterWidget;
     int m_iGeometrySaveTimerId;
+    QLabel *m_pZoomLabel;
 };
 
 
