@@ -305,6 +305,11 @@ typedef struct DMAR
     uint64_t                    fExtCapReg;
     /** @} */
 
+    /** Host-address width (HAW) mask. */
+    uint64_t                    fHawMask;
+    /** Maximum guest-address width (MGAW) mask. */
+    uint64_t                    fMgawMask;
+
     /** The event semaphore the invalidation-queue thread waits on. */
     SUPSEMEVENT                 hEvtInvQueue;
     /** Padding. */
@@ -704,21 +709,6 @@ AssertCompile(RT_ELEMENTS(g_auNdMask) >= DMAR_ND);
 /** @todo Add IOMMU struct size/alignment verification, see
  *        Devices/testcase/Makefile.kmk and
  *        Devices/testcase/tstDeviceStructSize[RC].cpp  */
-
-/**
- * Returns the number of supported adjusted guest-address width (SAGAW) in bits
- * given a CAP_REG.SAGAW value.
- *
- * @returns Number of SAGAW bits.
- * @param   uSagaw  The CAP_REG.SAGAW value.
- */
-static uint8_t vtdCapRegGetSagawBits(uint8_t uSagaw)
-{
-    if (RT_LIKELY(uSagaw > 0 && uSagaw < 4))
-        return 30 + (uSagaw * 9);
-    return 0;
-}
-
 
 /**
  * Returns the supported adjusted guest-address width (SAGAW) given the maximum
@@ -1832,6 +1822,24 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
+ * Checks whether the address width (AW) is supported by our hardware
+ * implementation for legacy mode address translation.
+ *
+ * @returns @c true if it's supported, @c false otherwise.
+ * @param   pThis       The shared DMAR device state.
+ * @param   pCtxEntry   The context entry.
+ */
+static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry)
+{
+    uint8_t const fAw     = RT_BF_GET(pCtxEntry->au64[1], VTD_BF_1_CONTEXT_ENTRY_AW);
+    uint8_t const fSagaw  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
+    uint8_t const fAwMask = RT_BIT(fAw);
+    Assert(!(fSagaw & ~(RT_BIT(1) | RT_BIT(2) | RT_BIT(3))));
+    return fAw < 4 ? RT_BOOL(fSagaw & fAwMask) : false;
+}
+
+
+/**
  * Reads a root entry from guest memory.
  *
  * @returns VBox status code.
@@ -1891,6 +1899,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                 RTGCPHYS const GCPhysCtxTable = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_CTP);
                 uint8_t const idxCtxEntry = RT_LO_U8(pAddrRemap->idDevice);
                 VTD_CONTEXT_ENTRY_T CtxEntry;
+                /* We don't verify bits 63:HAW of GCPhysCtxTable is 0 since reading from such an address should fail anyway. */
                 rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
                 if (RT_SUCCESS(rc))
                 {
@@ -1910,8 +1919,13 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                 {
                                     if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
-                                        /** @todo perform second-level translation. */
-                                        return VERR_NOT_IMPLEMENTED;
+                                        if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry))
+                                        {
+                                            return VERR_NOT_IMPLEMENTED;
+                                        }
+                                        else
+                                            dmarAtFaultQualifiedRecord(pDevIns, kDmarDiag_Atf_Lct_4_1, VTDATFAULT_LCT_4_1,
+                                                                       pAddrRemap, uCtxEntryQword0);
                                     }
                                     Log4Func(("Translation type blocks translated and translation requests\n"));
                                     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -2924,16 +2938,15 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     }
     pHlp->pfnPrintf(pHlp, " CAP_REG      = %#RX64\n", uCapReg);
     {
-        uint8_t const uSagaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW);
-        uint8_t const uMgaw  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
-        uint8_t const uNfr   = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
+        uint8_t const uMgaw = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_MGAW);
+        uint8_t const uNfr  = RT_BF_GET(uCapReg, VTD_BF_CAP_REG_NFR);
         pHlp->pfnPrintf(pHlp, "   ND           = %u\n",         RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ND));
         pHlp->pfnPrintf(pHlp, "   AFL          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_AFL));
         pHlp->pfnPrintf(pHlp, "   RWBF         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_RWBF));
         pHlp->pfnPrintf(pHlp, "   PLMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PLMR));
         pHlp->pfnPrintf(pHlp, "   PHMR         = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_PHMR));
         pHlp->pfnPrintf(pHlp, "   CM           = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_CM));
-        pHlp->pfnPrintf(pHlp, "   SAGAW        = %#x (%u bits)\n", uSagaw, vtdCapRegGetSagawBits(uSagaw));
+        pHlp->pfnPrintf(pHlp, "   SAGAW        = %#x\n",        RT_BF_GET(uCapReg, VTD_BF_CAP_REG_SAGAW));
         pHlp->pfnPrintf(pHlp, "   MGAW         = %#x (%u bits)\n", uMgaw, uMgaw + 1);
         pHlp->pfnPrintf(pHlp, "   ZLR          = %RTbool\n",    RT_BF_GET(uCapReg, VTD_BF_CAP_REG_ZLR));
         pHlp->pfnPrintf(pHlp, "   FRO          = %#x bytes\n",  RT_BF_GET(uCapReg, VTD_BF_CAP_REG_FRO));
@@ -3167,6 +3180,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESIRTPS, fEsirtps)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
+
+        pThis->fHawMask  = ~(UINT64_MAX << cGstPhysAddrBits);
+        pThis->fMgawMask = pThis->fHawMask;
     }
 
     /* ECAP_REG */
@@ -3423,14 +3439,14 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Log some of the features exposed to software.
      */
-    uint32_t const uVerReg         = pThis->uVerReg;
-    uint8_t const  cMaxGstAddrBits = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_MGAW) + 1;
-    uint8_t const  cSupGstAddrBits = vtdCapRegGetSagawBits(RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW));
-    uint16_t const offFrcd         = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
-    uint16_t const offIva          = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
-    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%u bits, FRO=%#x, IRO=%#x) mapped at %#RGp\n",
+    uint32_t const uVerReg   = pThis->uVerReg;
+    uint8_t const  cMgawBits = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const  fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
+    uint16_t const offFrcd   = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
+    uint16_t const offIva    = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
+    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Mask=%#RX64 FRO=%#x, IRO=%#x) mapped at %#RGp\n",
             DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
-            pThis->fCapReg, pThis->fExtCapReg, cMaxGstAddrBits, cSupGstAddrBits, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
+            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawMask, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
 
     return VINF_SUCCESS;
 }
