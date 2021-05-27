@@ -21,7 +21,6 @@
 #include <QDir>
 #include <QFont>
 #include <QMenu>
-#include <QPalette>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QScrollBar>

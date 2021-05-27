@@ -202,7 +202,7 @@ void UIVMLogViewerTextEdit::configure()
     setMouseTracking(true);
 
     /* Prepare modified standard palette: */
-    QPalette pal = style() ? style()->standardPalette() : QApplication::palette(); // fallback if no style exist.
+    QPalette pal = QApplication::palette();
     pal.setColor(QPalette::Inactive, QPalette::Highlight, pal.color(QPalette::Active, QPalette::Highlight));
     pal.setColor(QPalette::Inactive, QPalette::HighlightedText, pal.color(QPalette::Active, QPalette::HighlightedText));
     setPalette(pal);
