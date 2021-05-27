@@ -503,15 +503,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FLP_ENTRY_, UINT64_C(0), UINT64_MAX,
                             (P, RW, US, PWT, PCD, A, IGN_6, RSVD_7, IGN_9_8, EA, IGN_11, ADDR, IGN_62_52, XD));
 
 /** First-Level Paging Entry. */
-typedef struct VTD_FLP_ENTRY_T
-{
-    /** The first-level paging entry. */
-    uint64_t        u;
-} VTD_FLP_ENTRY_T;
-/** Pointer to a first-level paging entry. */
-typedef VTD_FLP_ENTRY_T *PVTD_FLP_ENTRY_T;
-/** Pointer to a const first-level paging entry. */
-typedef VTD_FLP_ENTRY_T const *PCVTD_FLP_ENTRY_T;
+typedef uint64_t VTD_FLP_ENTRY_T;
 /** @} */
 
 
@@ -557,16 +549,19 @@ typedef VTD_FLP_ENTRY_T const *PCVTD_FLP_ENTRY_T;
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SLP_ENTRY_, UINT64_C(0), UINT64_MAX,
                             (R, W, X, IGN_6_3, RSVD_7, A, IGN_10_9, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
 
+/** SL-PML5E: Valid mask. */
+#define VTD_SLP_PML5E_VALID_MASK                                (  VTD_BF_SLP_ENTRY_R_MASK | VTD_BF_SLP_ENTRY_W_MASK \
+                                                                 | VTD_BF_SLP_ENTRY_X_MASK | VTD_BF_SLP_ENTRY_IGN_6_3_MASK \
+                                                                 | VTD_BF_SLP_ENTRY_A_MASK | VTD_BF_SLP_ENTRY_IGN_10_9_MASK \
+                                                                 | VTD_BF_SLP_ENTRY_ADDR_MASK | VTD_BF_SLP_ENTRY_IGN_61_52_MASK \
+                                                                 | VTD_BF_SLP_ENTRY_IGN_63_MASK)
+
 /** Second-Level Paging Entry. */
-typedef struct VTD_SLP_ENTRY_T
-{
-    /** The second-level paging entry. */
-    uint64_t        u;
-} VTD_SLP_ENTRY_T;
+typedef uint64_t VTD_SLP_ENTRY_T;
 /** Pointer to a second-level paging entry. */
-typedef VTD_SLP_ENTRY_T *PVTD_SLP_ENTRY_T;
+typedef uint64_t *PVTD_SLP_ENTRY_T;
 /** Pointer to a const second-level paging entry. */
-typedef VTD_SLP_ENTRY_T const *PCVTD_SLP_ENTRY_T;
+typedef uint64_t const *CPVTD_SLP_ENTRY_T;
 /** @} */
 
 
