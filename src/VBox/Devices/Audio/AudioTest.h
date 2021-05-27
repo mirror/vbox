@@ -79,7 +79,7 @@ typedef struct AUDIOTESTTONEPARMS
     PDMAUDIOPCMPROPS Props;
     /** Tone frequency (in Hz) to use.
      *  Will be later converted to a double value. */
-    uint16_t         uFreq;
+    double           dbFreqHz;
     /** Prequel (in ms) to play silence. Optional and can be set to 0. */
     RTMSINTERVAL     msPrequel;
     /** Duration (in ms) to play the test tone. */
@@ -116,7 +116,9 @@ typedef enum AUDIOTESTTYPE
     /** Invalid test type, do not use. */
     AUDIOTESTTYPE_INVALID = 0,
     /** Play a test tone. */
-    AUDIOTESTTYPE_TESTTONE,
+    AUDIOTESTTYPE_TESTTONE_PLAY,
+    /** Record a test tone. */
+    AUDIOTESTTYPE_TESTTONE_RECORD,
         /** The usual 32-bit hack. */
     AUDIOTESTTYPE_32BIT_HACK = 0x7fffffff
 } AUDIOTESTTYPE;
@@ -130,6 +132,8 @@ typedef struct AUDIOTESTPARMS
     uint32_t                idxCurrent;
     /** How many iterations the test should be executed. */
     uint32_t                cIterations;
+    /** PCM audio stream properties to use. */
+    PDMAUDIOPCMPROPS        Props;
     /** Audio device to use. */
     PDMAUDIOHOSTDEV         Dev;
     /** How much to delay (wait, in ms) the test being executed. */

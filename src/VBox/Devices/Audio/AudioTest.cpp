@@ -87,7 +87,7 @@ static const double s_aAudioTestToneFreqsHz[] =
 /**
  * Returns a random test tone frequency.
  */
-DECLINLINE(double) audioTestGetRandomFreq(void)
+DECLINLINE(double) audioTestToneGetRandomFreq(void)
 {
     return s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
 }
@@ -104,10 +104,8 @@ DECLINLINE(double) audioTestGetRandomFreq(void)
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
 {
     if (dbFreq == 0.0)
-        dbFreq = audioTestGetRandomFreq();
+        dbFreq = audioTestToneGetRandomFreq();
 
-    /* Pick a frequency from our selection, so that every time a recording starts
-     * we'll hopfully generate a different note. */
     pTone->rdFreqHz = dbFreq;
     pTone->rdFixed  = 2.0 * M_PI * pTone->rdFreqHz / PDMAudioPropsHz(pProps);
     pTone->uSample  = 0;
@@ -261,6 +259,7 @@ int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMP
 
     /** @todo Make this a bit more sophisticated later, e.g. muting and prequel/sequel are not very balanced. */
 
+    pToneParams->dbFreqHz       = audioTestToneGetRandomFreq();
     pToneParams->msPrequel      = RTRandU32Ex(0, RT_MS_5SEC);
 #ifdef DEBUG_andy
     pToneParams->msDuration     = RTRandU32Ex(0, RT_MS_1SEC);
@@ -334,6 +333,7 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
     rc = RTPathAppend(pszPath, cbPath, szName);
     AssertRCReturn(rc, rc);
 
+#ifndef DEBUG /* Makes debugging easier to have a deterministic directory. */
     char szTime[64];
     RTTIMESPEC time;
     if (!RTTimeSpecToString(RTTimeNow(&time), szTime, sizeof(szTime)))
@@ -346,6 +346,7 @@ int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
 
     rc = RTPathAppend(pszPath, cbPath, szTime);
     AssertRCReturn(rc, rc);
+#endif
 
     return RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
 }
@@ -430,7 +431,7 @@ static int audioTestManifestWriteSectionHdr(PAUDIOTESTSET pSet, const char *pszS
     va_start(va, pszSection);
 
     /** @todo Keep it as simple as possible for now. Improve this later. */
-    int rc = audioTestManifestWrite(pSet, "[%N]", pszSection, &va);
+    int rc = audioTestManifestWrite(pSet, "[%N]\n", pszSection, &va);
 
     va_end(va);
 
@@ -967,8 +968,6 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "test_type=%RU32\n", pParms->enmType);
     AssertRCReturn(rc, rc);
-    rc = audioTestManifestWrite(pSet, "test_iterations=%RU32\n", pParms->cIterations);
-    AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "test_delay_ms=%RU32\n", pParms->msDelay);
     AssertRCReturn(rc, rc);
     rc = audioTestManifestWrite(pSet, "audio_direction=%s\n", PDMAudioDirGetName(pParms->enmDir));
@@ -976,8 +975,12 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
 
     switch (pParms->enmType)
     {
-        case AUDIOTESTTYPE_TESTTONE:
+        case AUDIOTESTTYPE_TESTTONE_PLAY:
+            RT_FALL_THROUGH();
+        case AUDIOTESTTYPE_TESTTONE_RECORD:
         {
+            rc = audioTestManifestWrite(pSet, "tone_freq_hz=%RU16\n", (uint16_t)pParms->TestTone.dbFreqHz);
+            AssertRCReturn(rc, rc);
             rc = audioTestManifestWrite(pSet, "tone_prequel_ms=%RU32\n", pParms->TestTone.msPrequel);
             AssertRCReturn(rc, rc);
             rc = audioTestManifestWrite(pSet, "tone_duration_ms=%RU32\n", pParms->TestTone.msDuration);

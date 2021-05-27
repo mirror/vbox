@@ -1680,11 +1680,11 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     AUDIOTESTTONE TstTone;
-    AudioTestToneInitRandom(&TstTone, &pParms->Props);
+    AudioTestToneInit(&TstTone, &pParms->Props, pParms->dbFreqHz);
 
     const char *pcszPathOut = pTstEnv->Set.szPathAbs;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms)\n", TstTone.rdFreqHz, pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
 
     /** @todo Use .WAV here? */
@@ -1765,9 +1765,9 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
 {
     RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
 
-    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE;
+    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_PLAY;
 
-    PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+    PDMAudioPropsInit(&pTstParmsAcq->Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
 #ifdef DEBUG_andy
@@ -1792,11 +1792,12 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
+        AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->Props);
+
         PAUDIOTESTENTRY pTst;
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Playing test tone", pTstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
-            AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->TestTone.Props);
             rc = audioTestCreateStreamDefaultOut(pTstEnv, pStream, &pTstParms->TestTone.Props);
             if (RT_SUCCESS(rc))
             {
@@ -1839,8 +1840,9 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
 {
     RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
 
-    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE;
+    pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
 
+    RT_ZERO(pTstParmsAcq->TestTone);
     PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
@@ -1863,6 +1865,8 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
+        pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_10SEC); /** @todo Record even longer? */
+
         PAUDIOTESTENTRY pTst;
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", pTstParms, &pTst);
         if (RT_SUCCESS(rc))
@@ -1870,11 +1874,7 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
             /** @todo  For now we're (re-)creating the recording stream for each iteration. Change that to be random. */
             rc = audioTestCreateStreamDefaultIn(pTstEnv, pStream, &pTstParms->TestTone.Props);
             if (RT_SUCCESS(rc))
-            {
-                pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_10SEC); /** @todo Record even longer? */
-
                 rc = audioTestRecordTone(pTstEnv, pStream, &pTstParms->TestTone);
-            }
 
             int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
             if (RT_SUCCESS(rc))
