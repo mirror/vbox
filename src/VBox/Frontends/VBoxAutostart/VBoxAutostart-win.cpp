@@ -38,6 +38,7 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
+#include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/errcore.h>
 #include <iprt/getopt.h>
@@ -79,6 +80,11 @@ static uint32_t volatile g_u32SupSvcWinStatus = SERVICE_STOPPED;
 static RTSEMEVENTMULTI g_hSupSvcWinEvent = NIL_RTSEMEVENTMULTI;
 /** The service name is used for send to service main. */
 static com::Bstr g_bstrServiceName;
+
+/** Logging parameters. */
+static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 10 files. */
+static uint32_t      g_uHistoryFileTime = 0;            /* No time limit, it's very low volume. */
+static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 
 
 /*********************************************************************************************************************************
@@ -288,6 +294,9 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
                             NULL);                   /* lpRawData */
     AssertMsg(fRc, ("%u\n", GetLastError())); NOREF(fRc);
     DeregisterEventSource(hEventLog);
+
+    /* write it to the release log too */
+    LogRel(("%s", pszMsg));
 }
 
 /**
@@ -978,12 +987,57 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
  */
 static int autostartSvcWinRunIt(int argc, char **argv)
 {
+    int rc;
+
     LogFlowFuncEnter();
 
     /*
-     * Initialize release logging.
+     * Initialize release logging, do this early.  This means command
+     * line options (like --logfile &c) can't be introduced to affect
+     * the log file parameters, but the user can't change them easily
+     * anyway and is better off using environment variables.
      */
-    /** @todo release logging of the system-wide service. */
+    do
+    {
+        char szLogFile[RTPATH_MAX];
+        rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile),
+                                           /* :fCreateDir */ false);
+        if (RT_FAILURE(rc))
+        {
+            autostartSvcLogError("Failed to get VirtualBox user home directory: %Rrc\n", rc);
+            break;
+        }
+
+        if (!RTDirExists(szLogFile)) /* vbox user home dir */
+        {
+            autostartSvcLogError("%s doesn't exist\n", szLogFile);
+            break;
+        }
+
+        rc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxAutostart.log");
+        if (RT_FAILURE(rc))
+        {
+            autostartSvcLogError("Failed to construct release log file name: %Rrc\n", rc);
+            break;
+        }
+
+        rc = com::VBoxLogRelCreate("Autostart",
+                                   szLogFile,
+                                     RTLOGFLAGS_PREFIX_THREAD
+                                   | RTLOGFLAGS_PREFIX_TIME_PROG,
+                                   "all",
+                                   "VBOXAUTOSTART_RELEASE_LOG",
+                                   RTLOGDEST_FILE,
+                                   UINT32_MAX /* cMaxEntriesPerGroup */,
+                                   g_cHistory,
+                                   g_uHistoryFileTime,
+                                   g_uHistoryFileSize,
+                                   NULL);
+        if (RT_FAILURE(rc))
+            autostartSvcLogError("Failed to create release log file: %Rrc\n", rc);
+    } while (0);
+
+
 
     /*
      * Parse the arguments.
@@ -1014,8 +1068,13 @@ static int autostartSvcWinRunIt(int argc, char **argv)
                     return RTEXITCODE_FAILURE;
                 }
                 break;
+
             default:
-                return autostartSvcDisplayGetOptError("runit", ch, &Value);
+                /**
+                 * @todo autostartSvcLogGetOptError is useless as it
+                 * is, should be change after RTGetOptPrintError.
+                 */
+                return autostartSvcLogError("RTGetOpt: %Rrc\n", ch);
         }
     }
 
@@ -1024,6 +1083,8 @@ static int autostartSvcWinRunIt(int argc, char **argv)
         autostartSvcLogError("runit failed, service name is missing");
         return RTEXITCODE_FAILURE;
     }
+
+    LogRel(("Starting service %ls\n", g_bstrServiceName.raw()));
 
     /*
      * Register the service with the service control manager
