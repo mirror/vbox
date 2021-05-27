@@ -1925,6 +1925,7 @@ template<> QString toInternalString(const GlobalSettingsPageType &globalSettings
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      strResult = "Proxy"; break;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+        case GlobalSettingsPageType_Interface:  strResult = "Interface"; break;
         default:
         {
             AssertMsgFailed(("No text for settings page type=%d", globalSettingsPageType));
@@ -1950,6 +1951,7 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     keys << "Proxy";      values << GlobalSettingsPageType_Proxy;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    keys << "Interface";  values << GlobalSettingsPageType_Interface;
     /* Invalid type for unknown words: */
     if (!keys.contains(strGlobalSettingsPageType, Qt::CaseInsensitive))
         return GlobalSettingsPageType_Invalid;
@@ -1972,6 +1974,7 @@ template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &type)
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      return UIIconPool::pixmap(":/proxy_warning_16px.png");
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+        case GlobalSettingsPageType_Interface:  return UIIconPool::pixmap(":/interface_warning_16px.png");
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();

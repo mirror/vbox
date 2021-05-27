@@ -831,6 +831,7 @@ enum GlobalSettingsPageType
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     GlobalSettingsPageType_Proxy,
 #endif
+    GlobalSettingsPageType_Interface,
     GlobalSettingsPageType_Max
 };
 Q_DECLARE_METATYPE(GlobalSettingsPageType);
