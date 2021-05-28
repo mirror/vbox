@@ -275,17 +275,12 @@ void    AudioMixBufBlendGap(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState,
 void    AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
 
 void AudioMixBufClear(PAUDIOMIXBUF pMixBuf);
-void AudioMixBufFinish(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear);
 uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf);
 bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf);
-int         AudioMixBufAcquireReadBlock(PAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames);
-int         AudioMixBufAcquireReadBlockEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pDstProps,
-                                          void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames);
-void AudioMixBufReleaseReadBlock(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
 uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufReset(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
