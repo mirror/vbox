@@ -2553,14 +2553,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  ifdef VBOX_WITH_EVEN_NEWER_XCODE
   VBOX_DARWIN_DEF_SDK_SDKS        := MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)
   VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MAX_ALLOWED=$(SDK_MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)_VERSION_VALUE)
-  # When using SDK 10.13 with quite new Xcode/clang there is (unfortunately)
-  # completely silent failure to detect the SDK version (2nd parameter to
-  # the -platform_version linker parameter normally emitted by the clang
-  # driver) which leads to non-working .dylib files because SIP assigns
-  # magic meaning to the pretty new SDK version information, rejecting such
-  # files as allegedly unsigned when the hardened runtime is enabled.
-  # Causes a warning from the linker, but better than broken .dylibs.
-  VBOX_DARWIN_DEF_SDK_LDFLAGS      = $(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT) $(if-expr "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.13",-Wl$(COMMA)-platform_version$(COMMA)macos$(COMMA)$(VBOX_DEF_MACOSX_VERSION_MIN)$(COMMA)$(VBOX_DEF_MACOSX_VERSION_MIN),)
+  VBOX_DARWIN_DEF_SDK_LDFLAGS      = $(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
   VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0 \
                                      MAC_OS_X_VERSION_MAX_ALLOWED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0
