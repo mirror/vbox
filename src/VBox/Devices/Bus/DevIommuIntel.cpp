@@ -1929,14 +1929,7 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
 static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, uint8_t uPagingLevel, PDMARADDRMAP pAddrRemap)
 {
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
-    static uint8_t const  s_acLevelShifts[] = { 12, 21, 30, 39, 48 };
-    static uint64_t const s_auLevelMasks[]  = { UINT64_C(0x00000000001ff000),
-                                                UINT64_C(0x000000003fe00000),
-                                                UINT64_C(0x0000007fc0000000),
-                                                UINT64_C(0x0000ff8000000000),
-                                                UINT64_C(0x01ff000000000000) };
-    AssertCompile(RT_ELEMENTS(s_acLevelShifts) == RT_ELEMENTS(s_auLevelMasks));
-    Assert(uPagingLevel >= 3 && uPagingLevel <= RT_ELEMENTS(s_auLevelMasks));
+    Assert(uPagingLevel >= 3 && uPagingLevel <= 5);
 
     /*
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
@@ -1949,7 +1942,8 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
     {
         /* Read the paging entry for the current level. */
         {
-            uint16_t const idxPte         = (uDmaAddr >> s_acLevelShifts[iLevel]) & UINT64_C(0x1ff);
+            uint8_t const  cShift         = 12 + ((iLevel - 1) * 9);
+            uint16_t const idxPte         = (uDmaAddr >> cShift) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
             RTGCPHYS const GCPhysPtEntity = (uPtEntity & fHawMask) | offPte;
             int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
