@@ -218,11 +218,5 @@ void        AudioMixBufBlendGap(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pSt
 void        AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
 /** @} */
 
-
-#ifdef DEBUG
-void AudioMixBufDbgPrint(PAUDIOMIXBUF pMixBuf);
-void AudioMixBufDbgPrintChain(PAUDIOMIXBUF pMixBuf);
-#endif
-
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixBuffer_h */
 

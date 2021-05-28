@@ -153,16 +153,70 @@ static uint32_t const s_aVolumeConv[256] =
 };
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-#ifdef DEBUG
-static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
-# ifdef UNUSED
-static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
-# endif
-#endif
 
+#ifdef VBOX_STRICT
+# ifdef UNUSED
+
+/**
+ * Prints a single mixing buffer.
+ * Internal helper function for debugging. Do not use directly.
+ *
+ * @returns VBox status code.
+ * @param   pMixBuf                 Mixing buffer to print.
+ * @param   pszFunc                 Function name to log this for.
+ * @param   uIdtLvl                 Indention level to use.
+ */
+static void audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl)
+{
+    Log(("%s: %*s %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
+         pszFunc, uIdtLvl * 4, "",
+         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
+}
+
+static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
+{
+    audioMixBufDbgPrintSingle(pMixBuf, pszFunc, 0 /* iIdtLevel */);
+}
+
+/**
+ * Validates a single mixing buffer.
+ *
+ * @return  @true if the buffer state is valid or @false if not.
+ * @param   pMixBuf                 Mixing buffer to validate.
+ */
+static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
+{
+    //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cFrames;
+    //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cFrames - pMixBuf->cUsed)) % pMixBuf->cFrames;
+
+    bool fValid = true;
+
+    AssertStmt(pMixBuf->offRead  <= pMixBuf->cFrames, fValid = false);
+    AssertStmt(pMixBuf->offWrite <= pMixBuf->cFrames, fValid = false);
+    AssertStmt(pMixBuf->cUsed    <= pMixBuf->cFrames, fValid = false);
+
+    if (pMixBuf->offWrite > pMixBuf->offRead)
+    {
+        if (pMixBuf->offWrite - pMixBuf->offRead != pMixBuf->cUsed)
+            fValid = false;
+    }
+    else if (pMixBuf->offWrite < pMixBuf->offRead)
+    {
+        if (pMixBuf->offWrite + pMixBuf->cFrames - pMixBuf->offRead != pMixBuf->cUsed)
+            fValid = false;
+    }
+
+    if (!fValid)
+    {
+        audioMixBufDbgPrintInternal(pMixBuf, __FUNCTION__);
+        AssertFailed();
+    }
+
+    return fValid;
+}
+
+# endif /* UNUSED */
+#endif /* VBOX_STRICT */
 
 
 /**
@@ -657,6 +711,161 @@ audioMixBufDecode1ChTo1ChRawBlend(int64_t *pi64Dst, void const *pvSrc, uint32_t 
 
 #undef AUDMIXBUF_MACRO_LOG
 
+/*
+ * Resampling core.
+ */
+/** @todo Separate down- and up-sampling, borrow filter code from RDP. */
+#define COPY_LAST_FRAME_1CH(a_pi64Dst, a_pi64Src, a_cChannels) do { \
+        (a_pi64Dst)[0] = (a_pi64Src)[0]; \
+    } while (0)
+#define COPY_LAST_FRAME_2CH(a_pi64Dst, a_pi64Src, a_cChannels) do { \
+        (a_pi64Dst)[0] = (a_pi64Src)[0]; \
+        (a_pi64Dst)[1] = (a_pi64Src)[1]; \
+    } while (0)
+
+#define INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_iCh) \
+        (a_pi64Dst)[a_iCh] = ((a_pi64Last)[a_iCh] * a_i64FactorLast + (a_pi64Src)[a_iCh] * a_i64FactorCur) >> 32
+#define INTERPOLATE_1CH(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 0); \
+    } while (0)
+#define INTERPOLATE_2CH(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 1); \
+    } while (0)
+
+#define AUDIOMIXBUF_RESAMPLE(a_cChannels, a_Suffix) \
+    /** @returns Number of destination frames written. */ \
+    static DECLCALLBACK(uint32_t) \
+    audioMixBufResample##a_cChannels##Ch##a_Suffix(int64_t *pi64Dst, uint32_t cDstFrames, \
+                                                   int64_t const *pi64Src, uint32_t cSrcFrames, uint32_t *pcSrcFramesRead, \
+                                                   PAUDIOSTREAMRATE pRate) \
+    { \
+        Log5(("Src: %RU32 L %RU32;  Dst: %RU32 L%RU32; uDstInc=%#RX64\n", \
+              pRate->offSrc, cSrcFrames, RT_HI_U32(pRate->offDst), cDstFrames, pRate->uDstInc)); \
+        int64_t * const       pi64DstStart = pi64Dst; \
+        int64_t const * const pi64SrcStart = pi64Src; \
+        \
+        int64_t ai64LastFrame[a_cChannels]; \
+        COPY_LAST_FRAME_##a_cChannels##CH(ai64LastFrame, pRate->SrcLast.ai64Samples, a_cChannels); \
+        \
+        while (cDstFrames > 0 && cSrcFrames > 0) \
+        { \
+            int32_t const cSrcNeeded = RT_HI_U32(pRate->offDst) - pRate->offSrc + 1; \
+            if (cSrcNeeded > 0) \
+            { \
+                if ((uint32_t)cSrcNeeded + 1 < cSrcFrames) \
+                { \
+                    pRate->offSrc += (uint32_t)cSrcNeeded; \
+                    cSrcFrames    -= (uint32_t)cSrcNeeded; \
+                    pi64Src       += (uint32_t)cSrcNeeded * a_cChannels; \
+                    COPY_LAST_FRAME_##a_cChannels##CH(ai64LastFrame, &pi64Src[-a_cChannels], a_cChannels); \
+                } \
+                else \
+                { \
+                    pi64Src       += cSrcFrames * a_cChannels; \
+                    pRate->offSrc += cSrcFrames; \
+                    COPY_LAST_FRAME_##a_cChannels##CH(pRate->SrcLast.ai64Samples, &pi64Src[-a_cChannels], a_cChannels); \
+                    *pcSrcFramesRead = (pi64Src - pi64SrcStart) / a_cChannels; \
+                    return (pi64Dst - pi64DstStart) / a_cChannels; \
+                } \
+            } \
+            \
+            /* Interpolate. */ \
+            int64_t const offFactorCur  = pRate->offDst & UINT32_MAX; \
+            int64_t const offFactorLast = (int64_t)_4G - offFactorCur; \
+            INTERPOLATE_##a_cChannels##CH(pi64Dst, pi64Src, ai64LastFrame, offFactorCur, offFactorLast, a_cChannels); \
+            \
+            /* Advance. */ \
+            pRate->offDst += pRate->uDstInc; \
+            pi64Dst       += a_cChannels; \
+            cDstFrames    -= 1; \
+        } \
+        \
+        COPY_LAST_FRAME_##a_cChannels##CH(pRate->SrcLast.ai64Samples, ai64LastFrame, a_cChannels); \
+        *pcSrcFramesRead = (pi64Src - pi64SrcStart) / a_cChannels; \
+        return (pi64Dst - pi64DstStart) / a_cChannels; \
+    }
+
+AUDIOMIXBUF_RESAMPLE(1,Generic)
+AUDIOMIXBUF_RESAMPLE(2,Generic)
+
+
+/**
+ * Resets the resampling state unconditionally.
+ *
+ * @param   pRate   The state to reset.
+ */
+static void audioMixBufRateResetAlways(PAUDIOSTREAMRATE pRate)
+{
+    pRate->offDst = 0;
+    pRate->offSrc = 0;
+    for (uintptr_t i = 0; i < RT_ELEMENTS(pRate->SrcLast.ai64Samples); i++)
+        pRate->SrcLast.ai64Samples[0] = 0;
+}
+
+
+/**
+ * Resets the resampling state.
+ *
+ * @param   pRate   The state to reset.
+ */
+DECLINLINE(void) audioMixBufRateReset(PAUDIOSTREAMRATE pRate)
+{
+    if (pRate->offDst == 0)
+    { /* likely */ }
+    else
+    {
+        Assert(!pRate->fNoConversionNeeded);
+        audioMixBufRateResetAlways(pRate);
+    }
+}
+
+
+/**
+ * Initializes the frame rate converter state.
+ *
+ * @returns VBox status code.
+ * @param   pRate       The state to initialize.
+ * @param   uSrcHz      The source frame rate.
+ * @param   uDstHz      The destination frame rate.
+ * @param   cChannels   The number of channels in a frame.
+ */
+DECLINLINE(int) audioMixBufRateInit(PAUDIOSTREAMRATE pRate, uint32_t uSrcHz, uint32_t uDstHz, uint8_t cChannels)
+{
+    /*
+     * Do we need to set up frequency conversion?
+     *
+     * Some examples to get an idea of what uDstInc holds:
+     *   44100 to 44100 -> (44100<<32) / 44100 = 0x01'00000000 (4294967296)
+     *   22050 to 44100 -> (22050<<32) / 44100 = 0x00'80000000 (2147483648)
+     *   44100 to 22050 -> (44100<<32) / 22050 = 0x02'00000000 (8589934592)
+     *   44100 to 48000 -> (44100<<32) / 48000 = 0x00'EB333333 (3946001203.2)
+     *   48000 to 44100 -> (48000<<32) / 44100 = 0x01'16A3B35F (4674794335.7823129251700680272109)
+     */
+    audioMixBufRateResetAlways(pRate);
+    if (uSrcHz == uDstHz)
+    {
+        pRate->fNoConversionNeeded = true;
+        pRate->uDstInc             = RT_BIT_64(32);
+        pRate->pfnResample         = NULL;
+    }
+    else
+    {
+        pRate->fNoConversionNeeded = false;
+        pRate->uDstInc             = ((uint64_t)uSrcHz << 32) / uDstHz;
+        AssertReturn(uSrcHz != 0, VERR_INVALID_PARAMETER);
+        switch (cChannels)
+        {
+            case 1: pRate->pfnResample = audioMixBufResample1ChGeneric; break;
+            case 2: pRate->pfnResample = audioMixBufResample2ChGeneric; break;
+            default:
+                AssertMsgFailedReturn(("resampling %u changes is not implemented yet\n", cChannels), VERR_OUT_OF_RANGE);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Initializes a mixing buffer.
  *
@@ -857,6 +1066,7 @@ DECLINLINE(uint32_t) audioMixBufFreeInternal(PCAUDIOMIXBUF pMixBuf)
     return cFramesFree;
 }
 
+
 /**
  * Gets the free buffer space in frames.
  *
@@ -869,6 +1079,7 @@ uint32_t AudioMixBufFree(PCAUDIOMIXBUF pMixBuf)
     Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     return audioMixBufFreeInternal(pMixBuf);
 }
+
 
 /**
  * Gets the free buffer space in bytes.
@@ -929,251 +1140,6 @@ uint32_t AudioMixBufWritePos(PCAUDIOMIXBUF pMixBuf)
     Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     return pMixBuf->offWrite;
 }
-
-#ifdef DEBUG
-
-/**
- * Prints a single mixing buffer.
- * Internal helper function for debugging. Do not use directly.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to print.
- * @param   pszFunc                 Function name to log this for.
- * @param   uIdtLvl                 Indention level to use.
- */
-static void audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl)
-{
-    Log(("%s: %*s %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
-         pszFunc, uIdtLvl * 4, "",
-         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
-}
-
-# ifdef UNUSED
-/**
- * Validates a single mixing buffer.
- *
- * @return  @true if the buffer state is valid or @false if not.
- * @param   pMixBuf                 Mixing buffer to validate.
- */
-static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
-{
-    //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cFrames;
-    //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cFrames - pMixBuf->cUsed)) % pMixBuf->cFrames;
-
-    bool fValid = true;
-
-    AssertStmt(pMixBuf->offRead  <= pMixBuf->cFrames, fValid = false);
-    AssertStmt(pMixBuf->offWrite <= pMixBuf->cFrames, fValid = false);
-    AssertStmt(pMixBuf->cUsed    <= pMixBuf->cFrames, fValid = false);
-
-    if (pMixBuf->offWrite > pMixBuf->offRead)
-    {
-        if (pMixBuf->offWrite - pMixBuf->offRead != pMixBuf->cUsed)
-            fValid = false;
-    }
-    else if (pMixBuf->offWrite < pMixBuf->offRead)
-    {
-        if (pMixBuf->offWrite + pMixBuf->cFrames - pMixBuf->offRead != pMixBuf->cUsed)
-            fValid = false;
-    }
-
-    if (!fValid)
-    {
-        audioMixBufDbgPrintInternal(pMixBuf, __FUNCTION__);
-        AssertFailed();
-    }
-
-    return fValid;
-}
-# endif
-
-/**
- * Prints statistics and status of the full chain of a mixing buffer to the logger,
- * starting from the top root mixing buffer.
- * For debug versions only.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to print.
- */
-void AudioMixBufDbgPrintChain(PAUDIOMIXBUF pMixBuf)
-{
-    audioMixBufDbgPrintSingle(pMixBuf, __FUNCTION__, 0 /* uIdtLvl */);
-}
-
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
-{
-    audioMixBufDbgPrintSingle(pMixBuf, pszFunc, 0 /* iIdtLevel */);
-}
-
-/**
- * Prints statistics and status of a mixing buffer to the logger.
- * For debug versions only.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to print.
- */
-void AudioMixBufDbgPrint(PAUDIOMIXBUF pMixBuf)
-{
-    audioMixBufDbgPrintInternal(pMixBuf, __FUNCTION__);
-}
-
-#endif /* DEBUG */
-
-
-/*
- * Resampling core.
- */
-/** @todo Separate down- and up-sampling, borrow filter code from RDP. */
-#define COPY_LAST_FRAME_1CH(a_pi64Dst, a_pi64Src, a_cChannels) do { \
-        (a_pi64Dst)[0] = (a_pi64Src)[0]; \
-    } while (0)
-#define COPY_LAST_FRAME_2CH(a_pi64Dst, a_pi64Src, a_cChannels) do { \
-        (a_pi64Dst)[0] = (a_pi64Src)[0]; \
-        (a_pi64Dst)[1] = (a_pi64Src)[1]; \
-    } while (0)
-
-#define INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_iCh) \
-        (a_pi64Dst)[a_iCh] = ((a_pi64Last)[a_iCh] * a_i64FactorLast + (a_pi64Src)[a_iCh] * a_i64FactorCur) >> 32
-#define INTERPOLATE_1CH(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
-        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 0); \
-    } while (0)
-#define INTERPOLATE_2CH(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
-        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 0); \
-        INTERPOLATE_ONE(a_pi64Dst, a_pi64Src, a_pi64Last, a_i64FactorCur, a_i64FactorLast, 1); \
-    } while (0)
-
-#define AUDIOMIXBUF_RESAMPLE(a_cChannels, a_Suffix) \
-    /** @returns Number of destination frames written. */ \
-    static DECLCALLBACK(uint32_t) \
-    audioMixBufResample##a_cChannels##Ch##a_Suffix(int64_t *pi64Dst, uint32_t cDstFrames, \
-                                                   int64_t const *pi64Src, uint32_t cSrcFrames, uint32_t *pcSrcFramesRead, \
-                                                   PAUDIOSTREAMRATE pRate) \
-    { \
-        Log5(("Src: %RU32 L %RU32;  Dst: %RU32 L%RU32; uDstInc=%#RX64\n", \
-              pRate->offSrc, cSrcFrames, RT_HI_U32(pRate->offDst), cDstFrames, pRate->uDstInc)); \
-        int64_t * const       pi64DstStart = pi64Dst; \
-        int64_t const * const pi64SrcStart = pi64Src; \
-        \
-        int64_t ai64LastFrame[a_cChannels]; \
-        COPY_LAST_FRAME_##a_cChannels##CH(ai64LastFrame, pRate->SrcLast.ai64Samples, a_cChannels); \
-        \
-        while (cDstFrames > 0 && cSrcFrames > 0) \
-        { \
-            int32_t const cSrcNeeded = RT_HI_U32(pRate->offDst) - pRate->offSrc + 1; \
-            if (cSrcNeeded > 0) \
-            { \
-                if ((uint32_t)cSrcNeeded + 1 < cSrcFrames) \
-                { \
-                    pRate->offSrc += (uint32_t)cSrcNeeded; \
-                    cSrcFrames    -= (uint32_t)cSrcNeeded; \
-                    pi64Src       += (uint32_t)cSrcNeeded * a_cChannels; \
-                    COPY_LAST_FRAME_##a_cChannels##CH(ai64LastFrame, &pi64Src[-a_cChannels], a_cChannels); \
-                } \
-                else \
-                { \
-                    pi64Src       += cSrcFrames * a_cChannels; \
-                    pRate->offSrc += cSrcFrames; \
-                    COPY_LAST_FRAME_##a_cChannels##CH(pRate->SrcLast.ai64Samples, &pi64Src[-a_cChannels], a_cChannels); \
-                    *pcSrcFramesRead = (pi64Src - pi64SrcStart) / a_cChannels; \
-                    return (pi64Dst - pi64DstStart) / a_cChannels; \
-                } \
-            } \
-            \
-            /* Interpolate. */ \
-            int64_t const offFactorCur  = pRate->offDst & UINT32_MAX; \
-            int64_t const offFactorLast = (int64_t)_4G - offFactorCur; \
-            INTERPOLATE_##a_cChannels##CH(pi64Dst, pi64Src, ai64LastFrame, offFactorCur, offFactorLast, a_cChannels); \
-            \
-            /* Advance. */ \
-            pRate->offDst += pRate->uDstInc; \
-            pi64Dst       += a_cChannels; \
-            cDstFrames    -= 1; \
-        } \
-        \
-        COPY_LAST_FRAME_##a_cChannels##CH(pRate->SrcLast.ai64Samples, ai64LastFrame, a_cChannels); \
-        *pcSrcFramesRead = (pi64Src - pi64SrcStart) / a_cChannels; \
-        return (pi64Dst - pi64DstStart) / a_cChannels; \
-    }
-
-AUDIOMIXBUF_RESAMPLE(1,Generic)
-AUDIOMIXBUF_RESAMPLE(2,Generic)
-
-
-/**
- * Resets the resampling state unconditionally.
- *
- * @param   pRate   The state to reset.
- */
-static void audioMixBufRateResetAlways(PAUDIOSTREAMRATE pRate)
-{
-    pRate->offDst = 0;
-    pRate->offSrc = 0;
-    for (uintptr_t i = 0; i < RT_ELEMENTS(pRate->SrcLast.ai64Samples); i++)
-        pRate->SrcLast.ai64Samples[0] = 0;
-}
-
-
-/**
- * Resets the resampling state.
- *
- * @param   pRate   The state to reset.
- */
-DECLINLINE(void) audioMixBufRateReset(PAUDIOSTREAMRATE pRate)
-{
-    if (pRate->offDst == 0)
-    { /* likely */ }
-    else
-    {
-        Assert(!pRate->fNoConversionNeeded);
-        audioMixBufRateResetAlways(pRate);
-    }
-}
-
-
-/**
- * Initializes the frame rate converter state.
- *
- * @returns VBox status code.
- * @param   pRate       The state to initialize.
- * @param   uSrcHz      The source frame rate.
- * @param   uDstHz      The destination frame rate.
- * @param   cChannels   The number of channels in a frame.
- */
-DECLINLINE(int) audioMixBufRateInit(PAUDIOSTREAMRATE pRate, uint32_t uSrcHz, uint32_t uDstHz, uint8_t cChannels)
-{
-    /*
-     * Do we need to set up frequency conversion?
-     *
-     * Some examples to get an idea of what uDstInc holds:
-     *   44100 to 44100 -> (44100<<32) / 44100 = 0x01'00000000 (4294967296)
-     *   22050 to 44100 -> (22050<<32) / 44100 = 0x00'80000000 (2147483648)
-     *   44100 to 22050 -> (44100<<32) / 22050 = 0x02'00000000 (8589934592)
-     *   44100 to 48000 -> (44100<<32) / 48000 = 0x00'EB333333 (3946001203.2)
-     *   48000 to 44100 -> (48000<<32) / 44100 = 0x01'16A3B35F (4674794335.7823129251700680272109)
-     */
-    audioMixBufRateResetAlways(pRate);
-    if (uSrcHz == uDstHz)
-    {
-        pRate->fNoConversionNeeded = true;
-        pRate->uDstInc             = RT_BIT_64(32);
-        pRate->pfnResample         = NULL;
-    }
-    else
-    {
-        pRate->fNoConversionNeeded = false;
-        pRate->uDstInc             = ((uint64_t)uSrcHz << 32) / uDstHz;
-        AssertReturn(uSrcHz != 0, VERR_INVALID_PARAMETER);
-        switch (cChannels)
-        {
-            case 1: pRate->pfnResample = audioMixBufResample1ChGeneric; break;
-            case 2: pRate->pfnResample = audioMixBufResample2ChGeneric; break;
-            default:
-                AssertMsgFailedReturn(("resampling %u changes is not implemented yet\n", cChannels), VERR_OUT_OF_RANGE);
-        }
-    }
-    return VINF_SUCCESS;
-}
-
 
 
 /**
