@@ -923,7 +923,8 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
 /**
  * Destroys (uninitializes) a mixing buffer.
  *
- * @param   pMixBuf                 Mixing buffer to destroy.
+ * @param   pMixBuf     The mixing buffer.  Uninitialized mixer buffers will be
+ *                      quietly ignored.  As will NULL.
  */
 void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
 {
@@ -932,7 +933,7 @@ void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
 
     /* Ignore calls for an uninitialized (zeroed) or already destroyed instance.  Happens a lot. */
     if (   pMixBuf->uMagic == 0
-        || pMixBuf->uMagic == ~AUDIOMIXBUF_MAGIC)
+        || pMixBuf->uMagic == AUDIOMIXBUF_MAGIC_DEAD)
     {
         Assert(!pMixBuf->pszName);
         Assert(!pMixBuf->pFrames);
@@ -968,12 +969,17 @@ void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
  *
  * This will reset the read and write offsets to zero.
  *
- * @param   pMixBuf             The mixing buffer.
+ * @param   pMixBuf     The mixing buffer.  Uninitialized mixer buffers will be
+ *                      quietly ignored.
  */
 void AudioMixBufDrop(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturnVoid(pMixBuf);
-    AssertReturnVoid(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+
+    /* Ignore uninitialized (zeroed) mixer sink buffers (happens with AC'97 during VM construction). */
+    if (   pMixBuf->uMagic == 0
+        || pMixBuf->uMagic == AUDIOMIXBUF_MAGIC_DEAD)
+        return;
 
     AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
 
