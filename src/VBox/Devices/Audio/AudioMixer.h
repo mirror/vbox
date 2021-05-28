@@ -43,8 +43,8 @@ typedef struct AUDIOMIXER
 {
     /** Magic value (AUDIOMIXER_MAGIC). */
     uintptr_t               uMagic;
-    /** The mixer's name. */
-    char                   *pszName;
+    /** The mixer's name (allocated after this structure). */
+    char const             *pszName;
     /** The master volume of this mixer. */
     PDMAUDIOVOLUME          VolMaster;
     /** List of audio mixer sinks (AUDMIXSINK). */
@@ -269,34 +269,24 @@ typedef struct AUDMIXSINK
  * - For output sinks this means that there is data in the sink which has not
  *   been played yet.
  * - For input sinks this means that there is data in the sink which has been
- *   recorded but not transferred to the destination yet. */
+ *   recorded but not transferred to the destination yet.
+ * @todo This isn't used for *anything* at the moment. Remove? */
 #define AUDMIXSINK_STS_DIRTY                 RT_BIT(4)
 /** @} */
 
 
-/**
- * Audio mixer operation.
- */
-typedef enum AUDMIXOP
-{
-    /** Invalid operation, do not use. */
-    AUDMIXOP_INVALID = 0,
-    /** Copy data from A to B, overwriting data in B. */
-    AUDMIXOP_COPY,
-    /** Blend data from A with (existing) data in B. */
-    AUDMIXOP_BLEND,
-    /** The usual 32-bit hack. */
-    AUDMIXOP_32BIT_HACK = 0x7fffffff
-} AUDMIXOP;
-
-
-int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
-int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
+/** @name Audio mixer methods
+ * @{ */
+int         AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
 void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
+int         AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
+/** @} */
 
+/** @name Audio mixer sink methods
+ * @{ */
 int     AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int     AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg,
                                    PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream);
@@ -326,8 +316,12 @@ uint64_t    AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircB
 int         AudioMixerSinkLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkTryLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkUnlock(PAUDMIXSINK pSink);
+/** @} */
 
+/** @name Audio mixer stream methods
+ * @{ */
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */
 

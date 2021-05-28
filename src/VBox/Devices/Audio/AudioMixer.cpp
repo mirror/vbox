@@ -159,91 +159,32 @@ static const char *dbgAudioMixerSinkStatusToStr(uint32_t fStatus, char pszDst[AU
     return pszDst;
 }
 
-/**
- * Creates an audio sink and attaches it to the given mixer.
- *
- * @returns VBox status code.
- * @param   pMixer      Mixer to attach created sink to.
- * @param   pszName     Name of the sink to create.
- * @param   enmDir      Direction of the sink to create.
- * @param   pDevIns     The device instance to register statistics under.
- * @param   ppSink      Pointer which returns the created sink on success.
- */
-int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink)
-{
-    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    /* ppSink is optional. */
-
-    int rc = RTCritSectEnter(&pMixer->CritSect);
-    AssertRCReturn(rc, rc);
-
-    PAUDMIXSINK pSink = (PAUDMIXSINK)RTMemAllocZ(sizeof(AUDMIXSINK));
-    if (pSink)
-    {
-        rc = audioMixerSinkInit(pSink, pMixer, pszName, enmDir, pDevIns);
-        if (RT_SUCCESS(rc))
-        {
-            rc = audioMixerAddSinkInternal(pMixer, pSink);
-            if (RT_SUCCESS(rc))
-            {
-                RTCritSectLeave(&pMixer->CritSect);
-
-                char szPrefix[128];
-                RTStrPrintf(szPrefix, sizeof(szPrefix), "MixerSink-%s/", pSink->pszName);
-                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                                       "Sink mixer buffer size in frames.",         "%sMixBufSize", szPrefix);
-                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                                       "Sink mixer buffer fill size in frames.",    "%sMixBufUsed", szPrefix);
-                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->cStreams, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                                       "Number of streams attached to the sink.",   "%sStreams", szPrefix);
-
-                if (ppSink)
-                    *ppSink = pSink;
-                return VINF_SUCCESS;
-            }
-        }
-
-        audioMixerSinkDestroyInternal(pSink, pDevIns);
-
-        RTMemFree(pSink);
-        pSink = NULL;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    RTCritSectLeave(&pMixer->CritSect);
-    return rc;
-}
 
 /**
  * Creates an audio mixer.
  *
  * @returns VBox status code.
- * @param   pcszName            Name of the audio mixer.
- * @param   fFlags              Creation flags - AUDMIXER_FLAGS_XXX.
- * @param   ppMixer             Pointer which returns the created mixer object.
+ * @param   pszName     Name of the audio mixer.
+ * @param   fFlags      Creation flags - AUDMIXER_FLAGS_XXX.
+ * @param   ppMixer     Pointer which returns the created mixer object.
  */
-int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
+int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 {
-    AssertPtrReturn(pcszName, VERR_INVALID_POINTER);
-    AssertReturn   (!(fFlags & ~AUDMIXER_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    size_t const cchName = strlen(pszName);
+    AssertReturn(cchName > 0 && cchName < 128, VERR_INVALID_NAME);
+    AssertReturn  (!(fFlags & ~AUDMIXER_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-
-    PAUDIOMIXER pMixer = (PAUDIOMIXER)RTMemAllocZ(sizeof(AUDIOMIXER));
+    int         rc;
+    PAUDIOMIXER pMixer = (PAUDIOMIXER)RTMemAllocZ(sizeof(AUDIOMIXER) + cchName + 1);
     if (pMixer)
     {
-        pMixer->pszName = RTStrDup(pcszName);
-        if (!pMixer->pszName)
-            rc = VERR_NO_MEMORY;
-
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&pMixer->CritSect);
-
+        rc = RTCritSectInit(&pMixer->CritSect);
         if (RT_SUCCESS(rc))
         {
+            pMixer->pszName = (const char *)memcpy(pMixer + 1, pszName, cchName + 1);
+
             pMixer->cSinks = 0;
             RTListInit(&pMixer->lstSinks);
 
@@ -259,18 +200,53 @@ int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer
             pMixer->VolMaster.uRight = PDMAUDIO_VOLUME_MAX;
 
             LogFlowFunc(("Created mixer '%s'\n", pMixer->pszName));
-
             *ppMixer = pMixer;
+            return VINF_SUCCESS;
         }
-        else
-            RTMemFree(pMixer); /** @todo leaks pszName due to badly structured code */
+        RTMemFree(pMixer);
     }
     else
         rc = VERR_NO_MEMORY;
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+
+/**
+ * Destroys an audio mixer.
+ *
+ * @param   pMixer      Audio mixer to destroy.  NULL is ignored.
+ * @param   pDevIns     The device instance the statistics are associated with.
+ */
+void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns)
+{
+    if (!pMixer)
+        return;
+    AssertPtrReturnVoid(pMixer);
+    AssertReturnVoid(pMixer->uMagic == AUDIOMIXER_MAGIC);
+
+    int rc2 = RTCritSectEnter(&pMixer->CritSect);
+    AssertRCReturnVoid(rc2);
+
+    LogFlowFunc(("Destroying %s ...\n", pMixer->pszName));
+    pMixer->uMagic = AUDIOMIXER_MAGIC_DEAD;
+
+    PAUDMIXSINK pSink, pSinkNext;
+    RTListForEachSafe(&pMixer->lstSinks, pSink, pSinkNext, AUDMIXSINK, Node)
+    {
+        audioMixerSinkDestroyInternal(pSink, pDevIns);
+        audioMixerRemoveSinkInternal(pMixer, pSink);
+        RTMemFree(pSink);
+    }
+    Assert(pMixer->cSinks == 0);
+
+    rc2 = RTCritSectLeave(&pMixer->CritSect);
+    AssertRC(rc2);
+
+    RTCritSectDelete(&pMixer->CritSect);
+    RTMemFree(pMixer);
+}
+
 
 /**
  * Helper function for the internal debugger to print the mixer's current
@@ -302,47 +278,6 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
 
     rc2 = RTCritSectLeave(&pMixer->CritSect);
     AssertRC(rc2);
-}
-
-/**
- * Destroys an audio mixer.
- *
- * @param   pMixer      Audio mixer to destroy.
- * @param   pDevIns     The device instance the statistics are associated with.
- */
-void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns)
-{
-    if (!pMixer)
-        return;
-    AssertPtr(pMixer);
-    Assert(pMixer->uMagic == AUDIOMIXER_MAGIC);
-
-    int rc2 = RTCritSectEnter(&pMixer->CritSect);
-    AssertRC(rc2);
-
-    LogFlowFunc(("Destroying %s ...\n", pMixer->pszName));
-    pMixer->uMagic = AUDIOMIXER_MAGIC_DEAD;
-
-    PAUDMIXSINK pSink, pSinkNext;
-    RTListForEachSafe(&pMixer->lstSinks, pSink, pSinkNext, AUDMIXSINK, Node)
-    {
-        audioMixerSinkDestroyInternal(pSink, pDevIns);
-        audioMixerRemoveSinkInternal(pMixer, pSink);
-        RTMemFree(pSink);
-    }
-
-    Assert(pMixer->cSinks == 0);
-
-    RTStrFree(pMixer->pszName);
-    pMixer->pszName = NULL;
-
-    rc2 = RTCritSectLeave(&pMixer->CritSect);
-    AssertRC(rc2);
-
-    RTCritSectDelete(&pMixer->CritSect);
-
-    RTMemFree(pMixer);
-    pMixer = NULL;
 }
 
 /**
@@ -481,6 +416,64 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
 /*********************************************************************************************************************************
 *   Mixer Sink implementation.                                                                                                   *
 *********************************************************************************************************************************/
+
+/**
+ * Creates an audio sink and attaches it to the given mixer.
+ *
+ * @returns VBox status code.
+ * @param   pMixer      Mixer to attach created sink to.
+ * @param   pszName     Name of the sink to create.
+ * @param   enmDir      Direction of the sink to create.
+ * @param   pDevIns     The device instance to register statistics under.
+ * @param   ppSink      Pointer which returns the created sink on success.
+ */
+int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    /* ppSink is optional. */
+
+    int rc = RTCritSectEnter(&pMixer->CritSect);
+    AssertRCReturn(rc, rc);
+
+    PAUDMIXSINK pSink = (PAUDMIXSINK)RTMemAllocZ(sizeof(AUDMIXSINK));
+    if (pSink)
+    {
+        rc = audioMixerSinkInit(pSink, pMixer, pszName, enmDir, pDevIns);
+        if (RT_SUCCESS(rc))
+        {
+            rc = audioMixerAddSinkInternal(pMixer, pSink);
+            if (RT_SUCCESS(rc))
+            {
+                RTCritSectLeave(&pMixer->CritSect);
+
+                char szPrefix[128];
+                RTStrPrintf(szPrefix, sizeof(szPrefix), "MixerSink-%s/", pSink->pszName);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cFrames, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Sink mixer buffer size in frames.",         "%sMixBufSize", szPrefix);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->MixBuf.cUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Sink mixer buffer fill size in frames.",    "%sMixBufUsed", szPrefix);
+                PDMDevHlpSTAMRegisterF(pDevIns, &pSink->cStreams, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                                       "Number of streams attached to the sink.",   "%sStreams", szPrefix);
+
+                if (ppSink)
+                    *ppSink = pSink;
+                return VINF_SUCCESS;
+            }
+        }
+
+        audioMixerSinkDestroyInternal(pSink, pDevIns);
+
+        RTMemFree(pSink);
+        pSink = NULL;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    RTCritSectLeave(&pMixer->CritSect);
+    return rc;
+}
+
 
 /**
  * Adds an audio stream to a specific audio sink.
@@ -871,13 +864,13 @@ int AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming)
  * @returns VBox status code.
  * @param   pSink           Sink to initialize.
  * @param   pMixer          Mixer the sink is assigned to.
- * @param   pcszName        Name of the sink.
+ * @param   pszName         Name of the sink.
  * @param   enmDir          Direction of the sink.
  * @param   pDevIns         The device instance.
  */
-static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns)
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns)
 {
-    pSink->pszName = RTStrDup(pcszName);
+    pSink->pszName = RTStrDup(pszName);
     if (!pSink->pszName)
         return VERR_NO_MEMORY;
 
