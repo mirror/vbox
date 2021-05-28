@@ -729,6 +729,23 @@ void UIHelpViewer::keyPressEvent(QKeyEvent *pEvent)
 {
     if (pEvent && pEvent->key() == Qt::Key_Escape)
         clearOverlay();
+    if (pEvent && pEvent->modifiers() &Qt::ControlModifier)
+    {
+        switch (pEvent->key())
+        {
+            case Qt::Key_Equal:
+                zoom(ZoomOperation_In);
+                break;
+            case Qt::Key_Minus:
+                zoom(ZoomOperation_Out);
+                break;
+            case Qt::Key_0:
+                zoom(ZoomOperation_Reset);
+                break;
+            default:
+                break;
+        }
+    }
     QIWithRetranslateUI<QTextBrowser>::keyPressEvent(pEvent);
 }
 
