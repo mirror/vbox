@@ -201,6 +201,12 @@ NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
         pSvgaInfo->au32Regs[i] = SVGARegRead(pSvga, i);
     }
 
+    for (i = 0; i < RT_ELEMENTS(pSvgaInfo->au32Caps); ++i)
+    {
+        SVGARegWrite(pSvga, SVGA_REG_DEV_CAP, i);
+        pSvgaInfo->au32Caps[i] = SVGARegRead(pSvga, SVGA_REG_DEV_CAP);
+    }
+
     /* Beginning of FIFO. */
     memcpy(pSvgaInfo->au32Fifo, (void *)&pSvga->pu32FIFO[0], sizeof(pSvgaInfo->au32Fifo));
 
