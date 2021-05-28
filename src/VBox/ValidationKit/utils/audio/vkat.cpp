@@ -1356,7 +1356,7 @@ static int audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMA
     int rc;
     if (pDrvStack->pIAudioConnector)
     {
-        rc = pDrvStack->pIAudioConnector->pfnStreamCapture(pDrvStack->pIAudioConnector, pStream, pcbCaptured);
+        rc = pDrvStack->pIAudioConnector->pfnStreamCapture(pDrvStack->pIAudioConnector, pStream, pvBuf, cbBuf, pcbCaptured);
         if (RT_FAILURE(rc))
             RTTestFailed(g_hTest, "pfnStreamCapture(,,,%#x) failed: %Rrc", cbBuf, rc);
     }
