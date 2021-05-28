@@ -610,8 +610,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                  * to use this mixer code too.
                  */
                 PPDMAUDIOSTREAM pStream;
-                rc = pConn->pfnStreamCreate(pConn, pSink->enmDir == PDMAUDIODIR_OUT ? PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF : 0,
-                                            &CfgHost, pCfg, &pStream);
+                rc = pConn->pfnStreamCreate(pConn, 0 /*fFlags*/, &CfgHost, pCfg, &pStream);
                 if (RT_SUCCESS(rc))
                 {
                     pMixStream->cFramesBackendBuffer = CfgHost.Backend.cFramesBufferSize;
@@ -1444,8 +1443,6 @@ static uint32_t audioMixerSinkUpdateInputCalcFramesToTransfer(PAUDMIXSINK pSink,
         {
             PPDMIAUDIOCONNECTOR const pIConnector = pMixStream->pConn;
             PPDMAUDIOSTREAM const     pStream     = pMixStream->pStream;
-            uint32_t                  cIgnored    = 0;
-            pIConnector->pfnStreamCapture(pIConnector, pStream, &cIgnored);
             pIConnector->pfnStreamIterate(pIConnector, pStream);
 
             uint32_t const cbReadable = pIConnector->pfnStreamGetReadable(pIConnector, pStream);
@@ -1460,7 +1457,7 @@ static uint32_t audioMixerSinkUpdateInputCalcFramesToTransfer(PAUDMIXSINK pSink,
             }
             if (cFramesToRead > cFrames && !pMixStream->fUnreliable)
             {
-                Log4Func(("%s: cFramesToRead %u -> %u; %s (%u bytes writable)\n",
+                Log4Func(("%s: cFramesToRead %u -> %u; %s (%u bytes readable)\n",
                           pSink->pszName, cFramesToRead, cFrames, pMixStream->pszName, cbReadable));
                 cFramesToRead = cFrames;
             }
@@ -1605,7 +1602,7 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
                         uint32_t       cbSrcRead   = 0;
                         if (cbSrcToRead > 0)
                         {
-                            int rc2 = pIConnector->pfnStreamRead(pIConnector, pStream, pvBuf, cbSrcToRead, &cbSrcRead);
+                            int rc2 = pIConnector->pfnStreamCapture(pIConnector, pStream, pvBuf, cbSrcToRead, &cbSrcRead);
                             Log3Func(("%s: %#x L %#x => %#x bytes; rc2=%Rrc %s\n",
                                       pSink->pszName, offSrc, cbSrcToRead, cbSrcRead, rc2, pMixStream->pszName));
 

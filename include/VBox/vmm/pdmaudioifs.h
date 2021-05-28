@@ -962,7 +962,8 @@ typedef enum PDMAUDIOSTREAMSTATE
 
 /** @name PDMAUDIOSTREAM_CREATE_F_XXX
  * @{ */
-/** Does not need any mixing buffers, the device takes care of all conversion. */
+/** Does not need any mixing buffers, the device takes care of all conversion.
+ * @note this is now default and assumed always set. */
 #define PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF       RT_BIT_32(0)
 /** @} */
 
@@ -1159,24 +1160,6 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Returns the number of readable data (in bytes) of a specific audio input stream.
-     *
-     * @returns Number of bytes of readable data.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pStream         Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetReadable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
-
-    /**
-     * Returns the number of writable data (in bytes) of a specific audio output stream.
-     *
-     * @returns Number of bytes writable data.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pStream         Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
-
-    /**
      * Returns the state of a specific audio stream (destilled status).
      *
      * @returns PDMAUDIOSTREAMSTATE value.
@@ -1187,17 +1170,16 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTATE, pfnStreamGetState, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Sets the audio volume of a specific audio stream.
+     * Returns the number of bytes that can be written to an audio output stream.
      *
-     * @returns VBox status code.
+     * @returns Number of bytes writable data.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
-     * @param   pVol            Pointer to audio volume structure to set the stream's audio volume to.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Plays (writes to) an audio (output) stream.
+     * Plays (writes to) an audio output stream.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -1210,7 +1192,16 @@ typedef struct PDMIAUDIOCONNECTOR
                                               const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
-     * Reads PCM audio data from the host (input).
+     * Returns the number of bytes that can be read from an input stream.
+     *
+     * @returns Number of bytes of readable data.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetReadable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+
+    /**
+     * Captures (reads) samples from an audio input stream.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -1219,26 +1210,12 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   cbBuf           Number of bytes to read.
      * @param   pcbRead         Bytes of audio data read. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamRead, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
-                                              void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
-
-    /**
-     * Captures (transfers) available audio frames from the host backend.
-     *
-     * Only works with input streams.
-     *
-     * @returns VBox status code.
-     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   pStream              Pointer to audio stream.
-     * @param   pcFramesCaptured     Number of frames captured. Optional.
-     */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
-                                                 uint32_t *pcFramesCaptured));
-
+                                                 void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "ff9cabf0-4138-4c3a-aa99-28bf7a6feae7"
+#define PDMIAUDIOCONNECTOR_IID                  "36fee65e-cbb3-4bb7-a028-e88e6acc1c46"
 
 
 /**
