@@ -160,8 +160,8 @@ typedef struct AUDMIXSINK
     PDMAUDIODIR             enmDir;
     /** Pointer to mixer object this sink is bound to. */
     PAUDIOMIXER             pParent;
-    /** Name of this sink. */
-    char                   *pszName;
+    /** Name of this sink (allocated after this structure). */
+    char const             *pszName;
     /** The sink's PCM format (i.e. the guest device side). */
     PDMAUDIOPCMPROPS        PCMProps;
     /** Sink status bits - AUDMIXSINK_STS_XXX. */
@@ -278,10 +278,9 @@ typedef struct AUDMIXSINK
 /** @name Audio mixer methods
  * @{ */
 int         AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer);
-void AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
-void AudioMixerInvalidate(PAUDIOMIXER pMixer);
-int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
-void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
+void        AudioMixerDestroy(PAUDIOMIXER pMixer, PPDMDEVINS pDevIns);
+void        AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
+int         AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PCPDMAUDIOVOLUME pVol);
 int         AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR enmDir, PPDMDEVINS pDevIns, PAUDMIXSINK *ppSink);
 /** @} */
 
