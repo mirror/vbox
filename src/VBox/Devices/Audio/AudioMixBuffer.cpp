@@ -64,7 +64,9 @@
 
 #ifdef DEBUG
 static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
+# ifdef UNUSED
 static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
+# endif
 #endif
 
 /*
@@ -1066,6 +1068,7 @@ static void audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc,
          pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
 }
 
+# ifdef UNUSED
 /**
  * Validates a single mixing buffer.
  *
@@ -1102,6 +1105,7 @@ static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
 
     return fValid;
 }
+# endif
 
 /**
  * Prints statistics and status of the full chain of a mixing buffer to the logger,
