@@ -411,7 +411,8 @@ static void sb16DmaCmd8(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStrea
         pStream->Cfg.Props.uHz = (1000000 + (tmp / 2)) / tmp;
     }
 
-    unsigned cShiftChannels = pStream->Cfg.Props.cChannelsX >= 2 ? 1 : 0;
+    /** @todo r=bird: Use '(pThis->mixer_regs[0x0e] & 2) == 0 ? 1 : 2' like below? */
+    unsigned cShiftChannels = PDMAudioPropsChannels(&pStream->Cfg.Props) >= 2 ? 1 : 0;
 
     if (dma_len != -1)
     {
@@ -454,17 +455,17 @@ static void sb16DmaCmd(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream
     pStream->fifo       = (cmd >> 1) & 1;
     pStream->dma_auto   = (cmd >> 2) & 1;
 
-    pStream->Cfg.Props.fSigned    = RT_BOOL((d0 >> 4) & 1); /** @todo Use RT_BIT? */
-    pStream->Cfg.Props.cChannelsX = (d0 >> 5) & 1 ? 2 : 1;
+    pStream->Cfg.Props.fSigned = RT_BOOL(d0 & RT_BIT_32(4));
+    PDMAudioPropsSetChannels(&pStream->Cfg.Props, 1 + ((d0 >> 5) & 1));
 
     switch (cmd >> 4)
     {
         case 11:
-            pStream->Cfg.Props.cbSampleX = 2 /* 16 bit */;
+            PDMAudioPropsSetSampleSize(&pStream->Cfg.Props, 2 /*16-bit*/);
             break;
 
         case 12:
-            pStream->Cfg.Props.cbSampleX = 1 /* 8 bit */;
+            PDMAudioPropsSetSampleSize(&pStream->Cfg.Props, 1 /*8-bit*/);
             break;
 
         default:
@@ -485,7 +486,7 @@ static void sb16DmaCmd(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream
     }
 
     pStream->cbDmaBlockSize = dma_len + 1;
-    pStream->cbDmaBlockSize <<= ((pStream->Cfg.Props.cbSampleX == 2) ? 1 : 0);
+    pStream->cbDmaBlockSize <<= PDMAudioPropsSampleSize(&pStream->Cfg.Props) == 2 ? 1 : 0;
     if (!pStream->dma_auto)
     {
         /*
@@ -494,7 +495,7 @@ static void sb16DmaCmd(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream
          * setsound.exe with single transfer mode wouldn't work without it
          * wonders of SB16 yet again.
          */
-        pStream->cbDmaBlockSize <<= pStream->Cfg.Props.cChannelsX == 2 ? 1 : 0;
+        pStream->cbDmaBlockSize <<= PDMAudioPropsSampleSize(&pStream->Cfg.Props) == 2 ? 1 : 0;
     }
 
     pStream->cbDmaLeft = pStream->cbDmaBlockSize;
@@ -822,24 +823,19 @@ static void sb16DspCmdComplete(PPDMDEVINS pDevIns, PSB16STATE pThis)
         switch (pThis->cmd)
         {
             case 0x04:
-            {
                 pThis->csp_mode = sb16DspGetData(pThis);
                 pThis->csp_reg83r = 0;
                 pThis->csp_reg83w = 0;
                 LogFlowFunc(("CSP command 0x04: mode=%#x\n", pThis->csp_mode));
                 break;
-            }
 
             case 0x05:
-            {
                 pThis->csp_param = sb16DspGetData(pThis);
                 pThis->csp_value = sb16DspGetData(pThis);
                 LogFlowFunc(("CSP command 0x05: param=%#x value=%#x\n", pThis->csp_param, pThis->csp_value));
                 break;
-            }
 
             case 0x0e:
-            {
                 v0 = sb16DspGetData(pThis);
                 v1 = sb16DspGetData(pThis);
                 LogFlowFunc(("write CSP register %d <- %#x\n", v1, v0));
@@ -852,10 +848,8 @@ static void sb16DspCmdComplete(PPDMDEVINS pDevIns, PSB16STATE pThis)
                 else
                     pThis->csp_regs[v1] = v0;
                 break;
-            }
 
             case 0x0f:
-            {
                 v0 = sb16DspGetData(pThis);
                 LogFlowFunc(("read CSP register %#x -> %#x, mode=%#x\n", v0, pThis->csp_regs[v0], pThis->csp_mode));
                 if (v0 == 0x83)
@@ -867,7 +861,6 @@ static void sb16DspCmdComplete(PPDMDEVINS pDevIns, PSB16STATE pThis)
                 else
                     sb16DspSeData(pThis, pThis->csp_regs[v0]);
                 break;
-            }
 
             case 0x10:
                 v0 = sb16DspGetData(pThis);
@@ -894,50 +887,37 @@ static void sb16DspCmdComplete(PPDMDEVINS pDevIns, PSB16STATE pThis)
                 RT_FALL_THROUGH(); /** @todo BUGBUG FT2 sets output freq with this, go figure. */
 
             case 0x41: /* Sets the output rate (in Hz). */
-            {
                 pStream->Cfg.Props.uHz = sb16DspGetHiLo(pThis);
                 LogFlowFunc(("set freq to %RU16Hz\n", pStream->Cfg.Props.uHz));
                 break;
-            }
 
             case 0x48:
-            {
                 pStream->cbDmaBlockSize = sb16DspGetLoHi(pThis) + 1;
                 LogFlowFunc(("set dma block len %d\n", pStream->cbDmaBlockSize));
                 break;
-            }
 
             case 0x74:
-                RT_FALL_THROUGH();
             case 0x75:
-                RT_FALL_THROUGH();
             case 0x76:
-                RT_FALL_THROUGH();
             case 0x77:
                 /* ADPCM stuff, ignore. */
                 break;
 
             case 0x80: /* Sets the IRQ. */
-            {
                 sb16StreamTransferScheduleNext(pThis, pStream, sb16DspGetLoHi(pThis) + 1);
                 break;
-            }
 
             case 0xe0:
-            {
                 v0 = sb16DspGetData(pThis);
                 pThis->dsp_out_data_len = 0;
                 LogFlowFunc(("E0=%#x\n", v0));
                 sb16DspSeData(pThis, ~v0);
                 break;
-            }
 
             case 0xe2:
-            {
                 v0 = sb16DspGetData(pThis);
                 LogFlowFunc(("E2=%#x\n", v0));
                 break;
-            }
 
             case 0xe4:
                 pThis->test_reg = sb16DspGetData(pThis);
@@ -2208,7 +2188,6 @@ static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream)
 
             PDMAudioPropsInit(&pStream->Cfg.Props, 1 /* 8-bit */, false /* fSigned */, 1 /* Mono */, 11025 /* uHz */);
             RTStrCopy(pStream->Cfg.szName, sizeof(pStream->Cfg.szName), "Output");
-
             break;
         }
 
@@ -2237,14 +2216,7 @@ static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream)
 static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream)
 {
     LogFlowFuncEnter();
-
-    PDMAudioPropsInit(&pStream->Cfg.Props,
-                      pStream->Cfg.Props.cbSampleX,
-                      pStream->Cfg.Props.fSigned,
-                      pStream->Cfg.Props.cChannelsX,
-                      pStream->Cfg.Props.uHz);
-
-    AssertReturn(PDMAudioPropsAreValid(&pStream->Cfg.Props), VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(PDMAudioPropsAreValid(&pStream->Cfg.Props), VERR_INTERNAL_ERROR_5);
 
     switch (pStream->uIdx)
     {
@@ -2437,7 +2409,7 @@ static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
  */
 static int sb16Save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
-    /** Currently the saved state only contains the one-and-only output stream. */
+    /* The saved state only contains the one-and-only output stream. */
     PSB16STREAM pStream = &pThis->aStreams[SB16_IDX_OUT];
 
     pHlp->pfnSSMPutS32(pSSM, pStream->HwCfgRuntime.uIrq);
@@ -2448,16 +2420,15 @@ static int sb16Save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
     pHlp->pfnSSMPutS32(pSSM, pThis->dsp_in_idx);
     pHlp->pfnSSMPutS32(pSSM, pThis->dsp_out_data_len);
 
-    /** Currently the saved state only contains the one-and-only output stream. */
-    pHlp->pfnSSMPutS32(pSSM, pStream->Cfg.Props.cChannelsX >= 2 ? 1 : 0);
-    pHlp->pfnSSMPutS32(pSSM, pStream->Cfg.Props.fSigned         ? 1 : 0);
-    pHlp->pfnSSMPutS32(pSSM, pStream->Cfg.Props.cbSampleX * 8 /* Convert bytes to bits */);
+    pHlp->pfnSSMPutS32(pSSM, PDMAudioPropsChannels(&pStream->Cfg.Props) >= 2 ? 1 : 0);
+    pHlp->pfnSSMPutS32(pSSM, PDMAudioPropsIsSigned(&pStream->Cfg.Props)      ? 1 : 0);
+    pHlp->pfnSSMPutS32(pSSM, PDMAudioPropsSampleBits(&pStream->Cfg.Props));
     pHlp->pfnSSMPutU32(pSSM, 0); /* Legacy; was PDMAUDIOFMT, unused now. */
 
     pHlp->pfnSSMPutS32(pSSM, pStream->dma_auto);
     pHlp->pfnSSMPutS32(pSSM, pStream->cbDmaBlockSize);
     pHlp->pfnSSMPutS32(pSSM, pStream->fifo);
-    pHlp->pfnSSMPutS32(pSSM, pStream->Cfg.Props.uHz);
+    pHlp->pfnSSMPutS32(pSSM, PDMAudioPropsHz(&pStream->Cfg.Props));
     pHlp->pfnSSMPutS32(pSSM, pStream->time_const);
     pHlp->pfnSSMPutS32(pSSM, 0); /* Legacy; was speaker control (on/off) for output stream. */
     pHlp->pfnSSMPutS32(pSSM, pThis->dsp_in_needed_bytes);
@@ -2486,9 +2457,9 @@ static int sb16Save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
     pHlp->pfnSSMPutS32(pSSM, pStream->cbDmaLeft);
     pHlp->pfnSSMPutS32(pSSM, pStream->State.fEnabled ? 1 : 0);
     /* The stream's bitrate. Needed for backwards (legacy) compatibility. */
-    pHlp->pfnSSMPutS32(pSSM, AudioHlpCalcBitrate(pThis->aStreams[SB16_IDX_OUT].Cfg.Props.cbSampleX * 8,
-                                                 pThis->aStreams[SB16_IDX_OUT].Cfg.Props.uHz,
-                                                 pThis->aStreams[SB16_IDX_OUT].Cfg.Props.cChannelsX));
+    pHlp->pfnSSMPutS32(pSSM, AudioHlpCalcBitrate(PDMAudioPropsSampleBits(&pThis->aStreams[SB16_IDX_OUT].Cfg.Props),
+                                                 PDMAudioPropsHz(&pThis->aStreams[SB16_IDX_OUT].Cfg.Props),
+                                                 PDMAudioPropsChannels(&pThis->aStreams[SB16_IDX_OUT].Cfg.Props)));
     /* Block size alignment, superfluous and thus not saved anymore. Needed for backwards (legacy) compatibility. */
     pHlp->pfnSSMPutS32(pSSM, 0);
 
@@ -2514,34 +2485,37 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    PSB16STREAM pStream = &pThis->aStreams[SB16_IDX_OUT]; /* The saved state only contains the one-and-only output stream. */
+    int rc;
 
-    /** Currently the saved state only contains the one-and-only output stream. */
-    PSB16STREAM pStream = &pThis->aStreams[SB16_IDX_OUT];
-
-    int32_t s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uIrq = s32Tmp;                        /* IRQ. */
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uDmaChanLow = s32Tmp;                 /* Low (8-bit) DMA channel. */
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->HwCfgRuntime.uDmaChanHigh = s32Tmp;                /* High (16-bit) DMA channel. */
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Used I/O port. */
-    pStream->HwCfgRuntime.uPort = s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* DSP version running. */
-    pStream->HwCfgRuntime.uVer  = s32Tmp;
+    int32_t i32Tmp;
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);
+    pStream->HwCfgRuntime.uIrq = i32Tmp;                        /* IRQ. */
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);
+    pStream->HwCfgRuntime.uDmaChanLow = i32Tmp;                 /* Low (8-bit) DMA channel. */
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);
+    pStream->HwCfgRuntime.uDmaChanHigh = i32Tmp;                /* High (16-bit) DMA channel. */
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                          /* Used I/O port. */
+    pStream->HwCfgRuntime.uPort = i32Tmp;
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                          /* DSP version running. */
+    pStream->HwCfgRuntime.uVer  = i32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_in_idx);
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_out_data_len);
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: Numer of channels. */
-    pStream->Cfg.Props.cChannelsX = (uint8_t)s32Tmp;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: Signed format bit. */
-    pStream->Cfg.Props.fSigned    = s32Tmp == 0 ? false : true;
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);
-    pStream->Cfg.Props.cbSampleX  = s32Tmp / 8;                 /* Convert bits to bytes. */
+
+    rc = pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                     /* Output stream: Numer of channels. */
+    AssertRCReturn(rc, rc);
+    PDMAudioPropsSetChannels(&pStream->Cfg.Props, i32Tmp);
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                          /* Output stream: Signed format bit. */
+    pStream->Cfg.Props.fSigned = i32Tmp != 0;
+    rc = pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                     /* Output stream: Sample size in bits. */
+    AssertRCReturn(rc, rc);
+    PDMAudioPropsSetSampleSize(&pStream->Cfg.Props, i32Tmp / 8);
+
     pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was PDMAUDIOFMT, unused now. */
     pHlp->pfnSSMGetS32(pSSM, &pStream->dma_auto);
     pHlp->pfnSSMGetS32(pSSM, &pThis->aStreams[SB16_IDX_OUT].cbDmaBlockSize);
     pHlp->pfnSSMGetS32(pSSM, &pStream->fifo);
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp); pStream->Cfg.Props.uHz = s32Tmp;
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp); pStream->Cfg.Props.uHz = i32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &pStream->time_const);
     pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was speaker (on / off) for output stream. */
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_in_needed_bytes);
@@ -2568,13 +2542,13 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 
     pHlp->pfnSSMGetS32(pSSM, &pThis->nzero);
     pHlp->pfnSSMGetS32(pSSM, &pStream->cbDmaLeft);
-    pHlp->pfnSSMGetS32(pSSM, &s32Tmp);                          /* Output stream: DMA currently running bit. */
-    const bool fStreamEnabled = s32Tmp == 0 ? false: true;
+    pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                          /* Output stream: DMA currently running bit. */
+    const bool fStreamEnabled = i32Tmp != 0;
     pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was the output stream's current bitrate (in bytes). */
     pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was the output stream's DMA block alignment. */
 
     int32_t mixer_nreg = 0;
-    int rc = pHlp->pfnSSMGetS32(pSSM, &mixer_nreg);
+    rc = pHlp->pfnSSMGetS32(pSSM, &mixer_nreg);
     AssertRCReturn(rc, rc);
     pThis->mixer_nreg = (uint8_t)mixer_nreg;
     rc = pHlp->pfnSSMGetMem(pSSM, pThis->mixer_regs, 256);
