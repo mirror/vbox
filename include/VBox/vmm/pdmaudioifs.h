@@ -248,7 +248,7 @@ RT_C_DECLS_BEGIN
  */
 
 /** The maximum number of channels PDM supports. */
-#define PDMAUDIO_MAX_CHANNELS   16
+#define PDMAUDIO_MAX_CHANNELS   12
 
 /**
  * Audio direction.
