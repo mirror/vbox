@@ -181,7 +181,7 @@ typedef struct AUDIOMIXBUF
 
 
 int         AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-void        AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf);
+void        AudioMixBufTerm(PAUDIOMIXBUF pMixBuf);
 void        AudioMixBufDrop(PAUDIOMIXBUF pMixBuf);
 void        AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
 

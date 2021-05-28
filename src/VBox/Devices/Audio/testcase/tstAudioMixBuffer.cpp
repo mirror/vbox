@@ -317,7 +317,7 @@ static void tstSimple(RTTEST hTest)
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cFramesWrittenAbs);
     RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 0);
 
-    AudioMixBufDestroy(&mb);
+    AudioMixBufTerm(&mb);
 }
 
 #if 0 /* obsolete */
@@ -673,7 +673,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
                       ("iSrcFrame=%#x -> %#x..%#x; iDstFrame=%#x (delta %d)\n",
                        iSrcFrame, cDstMinExpect, cDstMaxExpect, iDstFrame, (cDstMinExpect + cDstMaxExpect) / 2 - iDstFrame));
 
-    AudioMixBufDestroy(&MixBuf);
+    AudioMixBufTerm(&MixBuf);
 }
 
 

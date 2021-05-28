@@ -34,6 +34,8 @@
 
 /** Pointer to an audio mixer sink. */
 typedef struct AUDMIXSINK *PAUDMIXSINK;
+/** Pointer to a const audio mixer sink. */
+typedef struct AUDMIXSINK const *PCAUDMIXSINK;
 
 
 /**
@@ -286,24 +288,18 @@ int         AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUD
 
 /** @name Audio mixer sink methods
  * @{ */
-int     AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
-int     AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg,
-                                   PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream);
-int     AudioMixerSinkStart(PAUDMIXSINK pSink);
-int     AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming);
-void AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
-uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
-uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
-PDMAUDIODIR   AudioMixerSinkGetDir(PAUDMIXSINK pSink);
-uint32_t AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
-bool AudioMixerSinkIsActive(PAUDMIXSINK pSink);
-void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
-void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
-void AudioMixerSinkReset(PAUDMIXSINK pSink);
-int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps);
-int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
-int AudioMixerSinkWrite(PAUDMIXSINK pSink, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-int AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t cbDmaPeriod);
+int         AudioMixerSinkStart(PAUDMIXSINK pSink);
+int         AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming);
+void        AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
+uint32_t    AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
+uint32_t    AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
+PDMAUDIODIR AudioMixerSinkGetDir(PCAUDMIXSINK pSink);
+uint32_t    AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
+bool        AudioMixerSinkIsActive(PAUDMIXSINK pSink);
+void        AudioMixerSinkReset(PAUDMIXSINK pSink);
+int         AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps);
+int         AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVol);
+int         AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t cbDmaPeriod);
 
 int         AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
 int         AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
@@ -315,11 +311,17 @@ uint64_t    AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircB
 int         AudioMixerSinkLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkTryLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkUnlock(PAUDMIXSINK pSink);
+
+int         AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg,
+                                       PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream);
+int         AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
+void        AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
+void        AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 /** @} */
 
 /** @name Audio mixer stream methods
  * @{ */
-void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
+void        AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */

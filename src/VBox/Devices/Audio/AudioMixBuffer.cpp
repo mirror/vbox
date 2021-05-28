@@ -921,12 +921,12 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
 }
 
 /**
- * Destroys (uninitializes) a mixing buffer.
+ * Terminates (uninitializes) a mixing buffer.
  *
  * @param   pMixBuf     The mixing buffer.  Uninitialized mixer buffers will be
  *                      quietly ignored.  As will NULL.
  */
-void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
+void AudioMixBufTerm(PAUDIOMIXBUF pMixBuf)
 {
     if (!pMixBuf)
         return;
