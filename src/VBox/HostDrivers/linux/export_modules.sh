@@ -31,7 +31,8 @@ MY_DIR="${TARGET%/[!/]*}"
 
 # What this script does:
 usage_msg="\
-Usage: `basename ${0}` --file <path>|--folder <path> [--without-hardening]
+Usage: `basename ${0}` --file <path>|--folder <path> \
+    [--override-svn-rev <rev>] [--extra-version-string <string>] [--without-hardening]
 
 Exports the VirtualBox host kernel modules to the tar.gz archive or folder in \
 <path>, optionally adjusting the Make files to build them without hardening.
@@ -66,6 +67,12 @@ while test -n "${1}"; do
         shift 2 ;;
     --folder)
         FOLDER="${2}"
+        shift 2 ;;
+    --override-svn-rev)
+        OVERRIDE_SVN_REV="${2}"
+        shift 2 ;;
+    --extra-version-string)
+        EXTRA_VERSION_STRING="${2}"
         shift 2 ;;
     --without-hardening)
         unset VBOX_WITH_HARDENING
@@ -103,7 +110,10 @@ VBOX_VERSION_STRING=$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
 VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
 VBOX_SVN_CONFIG_REV=`sed -e 's/^ *VBOX_SVN_REV_CONFIG_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`
 VBOX_SVN_VERSION_REV=`sed -e 's/^ *VBOX_SVN_REV_VERSION_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Version.kmk`
-if [ "$VBOX_SVN_CONFIG_REV" -gt "$VBOX_SVN_VERSION_REV" ]; then
+
+if [ -n "$OVERRIDE_SVN_REV" ]; then
+    VBOX_SVN_REV=$OVERRIDE_SVN_REV
+elif [ "$VBOX_SVN_CONFIG_REV" -gt "$VBOX_SVN_VERSION_REV" ]; then
     VBOX_SVN_REV=$VBOX_SVN_CONFIG_REV
 else
     VBOX_SVN_REV=$VBOX_SVN_VERSION_REV
@@ -135,6 +145,7 @@ echo "#define VBOX_VERSION_BUILD $VBOX_VERSION_BUILD" >> $PATH_TMP/version-gener
 echo "#define VBOX_VERSION_STRING_RAW \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_STRING\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_API_VERSION_STRING \"${VBOX_VERSION_MAJOR}_${VBOX_VERSION_MINOR}\"" >> $PATH_TMP/version-generated.h
+[ -n "$EXTRA_VERSION_STRING" ] && echo "#define VBOX_EXTRA_VERSION_STRING \" ${EXTRA_VERSION_STRING}\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_PRIVATE_BUILD_DESC \"Private build with export_modules\"" >> $PATH_TMP/version-generated.h
 echo "" >> $PATH_TMP/version-generated.h
 echo "#endif" >> $PATH_TMP/version-generated.h

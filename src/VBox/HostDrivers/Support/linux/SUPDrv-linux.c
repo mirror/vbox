@@ -92,6 +92,11 @@
                                        VBOX_VERSION_BUILD)
 #define VBoxDrvLinuxIOCtl RT_CONCAT(VBoxDrvLinuxIOCtl_,VBoxDrvLinuxVersion)
 
+/* Once externally provided, this string will be printed into kernel log on
+ * module start together with the rest of versioning information. */
+#ifndef VBOX_EXTRA_VERSION_STRING
+# define VBOX_EXTRA_VERSION_STRING ""
+#endif
 
 
 /*********************************************************************************************************************************
@@ -360,7 +365,9 @@ static int __init VBoxDrvLinuxInit(void)
                                SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
                         printk(KERN_DEBUG "vboxdrv: Successfully loaded version "
-                                VBOX_VERSION_STRING " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ")\n");
+                                VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV)
+                                VBOX_EXTRA_VERSION_STRING
+                                " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ")\n");
                         return rc;
                     }
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
