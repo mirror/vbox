@@ -24,7 +24,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  TESTING  += $(tstAudioMixBuffer_0_OUTDIR)/tstAudioMixBuffer.run
 
  tstAudioMixBuffer_TEMPLATE = VBOXR3TSTEXE
- tstAudioMixBuffer_DEFS = TESTCASE
+ tstAudioMixBuffer_DEFS = TESTCASE VBOX_AUDIO_MIX_BUFFER_TESTCASE
  tstAudioMixBuffer_DEFS.debug  = VBOX_WITH_EF_WRAPS
  tstAudioMixBuffer_SOURCES = \
 	tstAudioMixBuffer.cpp \

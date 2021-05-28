@@ -14,7 +14,39 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/** @page pg_audio_mix_buffer   Audio Mixer Buffer
+ *
+ * @section sec_audio_mix_buffer_volume     Soft Volume Control
+ *
+ * The external code supplies an 8-bit volume (attenuation) value in the
+ * 0 .. 255 range. This represents 0 to -96dB attenuation where an input
+ * value of 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
+ *
+ * Each step thus corresponds to 96 / 256 or 0.375dB. Every 6dB (16 steps)
+ * represents doubling the sample value.
+ *
+ * For internal use, the volume control needs to be converted to a 16-bit
+ * (sort of) exponential value between 1 and 65536. This is used with fixed
+ * point arithmetic such that 65536 means 1.0 and 1 means 1/65536.
+ *
+ * For actual volume calculation, 33.31 fixed point is used. Maximum (or
+ * unattenuated) volume is represented as 0x40000000; conveniently, this
+ * value fits into a uint32_t.
+ *
+ * To enable fast processing, the maximum volume must be a power of two
+ * and must not have a sign when converted to int32_t. While 0x80000000
+ * violates these constraints, 0x40000000 does not.
+ */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_AUDIO_MIXER_BUFFER
+#if defined(VBOX_AUDIO_MIX_BUFFER_TESTCASE) && !defined(RT_STRICT)
+# define RT_STRICT /* Run the testcase with assertions because the main functions doesn't return on invalid input. */
+#endif
 #include <VBox/log.h>
 
 #if 0
@@ -50,6 +82,10 @@
 
 #include "AudioMixBuffer.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifndef VBOX_AUDIO_TESTCASE
 # ifdef DEBUG
 #  define AUDMIXBUF_LOG(x) LogFlowFunc(x)
@@ -62,39 +98,26 @@
 # define AUDMIXBUF_LOG_ENABLED
 #endif
 
-#ifdef DEBUG
-static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
-# ifdef UNUSED
-static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
-# endif
-#endif
 
-/*
- *   Soft Volume Control
- *
- * The external code supplies an 8-bit volume (attenuation) value in the
- * 0 .. 255 range. This represents 0 to -96dB attenuation where an input
- * value of 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
- *
- * Each step thus corresponds to 96 / 256 or 0.375dB. Every 6dB (16 steps)
- * represents doubling the sample value.
- *
- * For internal use, the volume control needs to be converted to a 16-bit
- * (sort of) exponential value between 1 and 65536. This is used with fixed
- * point arithmetic such that 65536 means 1.0 and 1 means 1/65536.
- *
- * For actual volume calculation, 33.31 fixed point is used. Maximum (or
- * unattenuated) volume is represented as 0x40000000; conveniently, this
- * value fits into a uint32_t.
- *
- * To enable fast processing, the maximum volume must be a power of two
- * and must not have a sign when converted to int32_t. While 0x80000000
- * violates these constraints, 0x40000000 does not.
+/** Bit shift for fixed point conversion.
+ * @sa @ref sec_audio_mix_buffer_volume */
+#define AUDIOMIXBUF_VOL_SHIFT       30
+
+/** Internal representation of 0dB volume (1.0 in fixed point).
+ * @sa @ref sec_audio_mix_buffer_volume */
+#define AUDIOMIXBUF_VOL_0DB         (1 << AUDIOMIXBUF_VOL_SHIFT)
+AssertCompile(AUDIOMIXBUF_VOL_0DB <= 0x40000000);   /* Must always hold. */
+AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only attenuation is used. */
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Logarithmic/exponential volume conversion table.
+ * @sa @ref sec_audio_mix_buffer_volume
  */
-
-
-/** Logarithmic/exponential volume conversion table. */
-static uint32_t const s_aVolumeConv[256] = {
+static uint32_t const s_aVolumeConv[256] =
+{
         1,     1,     1,     1,     1,     1,     1,     1, /*   7 */
         1,     2,     2,     2,     2,     2,     2,     2, /*  15 */
         2,     2,     2,     2,     2,     3,     3,     3, /*  23 */
@@ -129,14 +152,17 @@ static uint32_t const s_aVolumeConv[256] = {
     48393, 50535, 52773, 55109, 57549, 60097, 62757, 65536, /* 255 */
 };
 
-/* Bit shift for fixed point conversion. */
-#define AUDIOMIXBUF_VOL_SHIFT       30
 
-/* Internal representation of 0dB volume (1.0 in fixed point). */
-#define AUDIOMIXBUF_VOL_0DB         (1 << AUDIOMIXBUF_VOL_SHIFT)
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+#ifdef DEBUG
+static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
+# ifdef UNUSED
+static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
+# endif
+#endif
 
-AssertCompile(AUDIOMIXBUF_VOL_0DB <= 0x40000000);   /* Must always hold. */
-AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only attenuation is used. */
 
 
 /**
@@ -474,25 +500,6 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
 /*
  * Manually coded signed 64-bit conversion.
  */
-#if 0
-DECLCALLBACK(uint32_t) audioMixBufConvFromS64Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
-                                                    PCAUDMIXBUFCONVOPTS pOpts)
-{
-    _aType const *pSrc = (_aType const *)pvSrc;
-    uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType));
-    AUDMIXBUF_MACRO_LOG(("cFrames=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n",
-                         pOpts->cFrames, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight));
-    for (uint32_t i = 0; i < cFrames; i++)
-    {
-        paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uLeft ) >> AUDIOMIXBUF_VOL_SHIFT; \
-        paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
-        paDst++;
-    }
-
-    return cFrames;
-}
-#endif
-
 
 /* Encoders for peek: */
 
@@ -746,53 +753,114 @@ void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
     pMixBuf->cFrames = 0;
 }
 
+
 /**
- * Returns the maximum amount of audio frames this buffer can hold.
+ * Drops all the frames in the given mixing buffer
  *
- * @return  uint32_t                Size (in audio frames) the mixing buffer can hold.
- * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
+ * This will reset the read and write offsets to zero.
+ *
+ * @param   pMixBuf             The mixing buffer.
  */
-uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf)
+void AudioMixBufDrop(PAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturnVoid(pMixBuf);
+    AssertReturnVoid(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+
+    AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
+
+    pMixBuf->offRead  = 0;
+    pMixBuf->offWrite = 0;
+    pMixBuf->cMixed   = 0;
+    pMixBuf->cUsed    = 0;
+}
+
+
+/**
+ * Gets the maximum number of audio frames this buffer can hold.
+ *
+ * @returns Number of frames.
+ * @param   pMixBuf     The mixing buffer.
+ */
+uint32_t AudioMixBufSize(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     return pMixBuf->cFrames;
 }
 
+
 /**
- * Returns the maximum amount of bytes this buffer can hold.
+ * Gets the maximum number of bytes this buffer can hold.
  *
- * @return  uint32_t                Size (in bytes) the mixing buffer can hold.
- * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
+ * @returns Number of bytes.
+ * @param   pMixBuf     The mixing buffer.
  */
-uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufSizeBytes(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
+    AssertReturn(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC, 0);
     return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
 }
 
-/**
- * Returns the current write position of a mixing buffer.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to return position for.
- */
-uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
 
-    return pMixBuf->offWrite;
+/**
+ * Worker for AudioMixBufUsed and AudioMixBufUsedBytes.
+ */
+DECLINLINE(uint32_t) audioMixBufUsedInternal(PCAUDIOMIXBUF pMixBuf)
+{
+    uint32_t const cFrames = pMixBuf->cFrames;
+    uint32_t       cUsed   = pMixBuf->cUsed;
+    AssertStmt(cUsed <= cFrames, cUsed = cFrames);
+    return cUsed;
 }
 
+
 /**
- * Returns the size (in audio frames) of free audio buffer space.
+ * Get the number of used (readable) frames in the buffer.
  *
- * @return  uint32_t                Size (in audio frames) of free audio buffer space.
- * @param   pMixBuf                 Mixing buffer to return free size for.
+ * @returns Number of frames.
+ * @param   pMixBuf     The mixing buffer.
  */
-uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufUsed(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return audioMixBufUsedInternal(pMixBuf);
+}
 
+
+/**
+ * Get the number of (readable) bytes in the buffer.
+ *
+ * @returns Number of bytes.
+ * @param   pMixBuf     The mixing buffer.
+ */
+uint32_t AudioMixBufUsedBytes(PCAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return AUDIOMIXBUF_F2B(pMixBuf, audioMixBufUsedInternal(pMixBuf));
+}
+
+
+/**
+ * Get the number of readable frames in the buffer.
+ *
+ * @returns Number of frames.
+ * @param   pMixBuf     The mixing buffer.
+ * @todo Exactly same as AudioMixBufUsed.
+ */
+uint32_t AudioMixBufLive(PCAUDIOMIXBUF pMixBuf)
+{
+    return AudioMixBufUsed(pMixBuf);
+}
+
+
+/**
+ * Worker for AudioMixBufFree and AudioMixBufFreeBytes.
+ */
+DECLINLINE(uint32_t) audioMixBufFreeInternal(PCAUDIOMIXBUF pMixBuf)
+{
     uint32_t const cFrames = pMixBuf->cFrames;
     uint32_t       cUsed   = pMixBuf->cUsed;
     AssertStmt(cUsed <= cFrames, cUsed = cFrames);
@@ -803,14 +871,29 @@ uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
 }
 
 /**
- * Returns the size (in bytes) of free audio buffer space.
+ * Gets the free buffer space in frames.
  *
- * @return  uint32_t                Size (in bytes) of free audio buffer space.
- * @param   pMixBuf                 Mixing buffer to return free size for.
+ * @return  Number of frames.
+ * @param   pMixBuf     The mixing buffer.
  */
-uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufFree(PCAUDIOMIXBUF pMixBuf)
 {
-    return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
+    AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return audioMixBufFreeInternal(pMixBuf);
+}
+
+/**
+ * Gets the free buffer space in bytes.
+ *
+ * @return  Number of bytes.
+ * @param   pMixBuf     The mixing buffer.
+ */
+uint32_t AudioMixBufFreeBytes(PCAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return AUDIOMIXBUF_F2B(pMixBuf, audioMixBufFreeInternal(pMixBuf));
 }
 
 
@@ -824,30 +907,40 @@ uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
 bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, true);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     return pMixBuf->cUsed == 0;
 }
 
+
 /**
- * Returns number of available live frames, that is, frames that
- * have been written into the mixing buffer but not have been processed yet.
+ * Get the current read position.
  *
- * For a parent buffer, this simply returns the currently used number of frames
- * in the buffer.
+ * This is for the testcase.
  *
- * For a child buffer, this returns the number of frames which have been mixed
- * to the parent and were not processed by the parent yet.
- *
- * @return  uint32_t                Number of live frames available.
- * @param   pMixBuf                 Mixing buffer to return value for.
+ * @returns Frame number.
+ * @param   pMixBuf     The mixing buffer.
  */
-uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufReadPos(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return pMixBuf->offRead;
+}
 
-    uint32_t const cFrames = pMixBuf->cFrames;
-    uint32_t       cAvail  = pMixBuf->cUsed;
-    AssertStmt(cAvail <= cFrames, cAvail = cFrames);
-    return cAvail;
+
+/**
+ * Gets the current write position.
+ *
+ * This is for the testcase.
+ *
+ * @returns Frame number.
+ * @param   pMixBuf     The mixing buffer.
+ */
+uint32_t AudioMixBufWritePos(PCAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    return pMixBuf->offWrite;
 }
 
 #ifdef DEBUG
@@ -938,65 +1031,6 @@ void AudioMixBufDbgPrint(PAUDIOMIXBUF pMixBuf)
 }
 
 #endif /* DEBUG */
-
-/**
- * Returns the total number of audio frames used.
- *
- * @return  uint32_t
- * @param   pMixBuf
- */
-uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-    return pMixBuf->cUsed;
-}
-
-/**
- * Returns the total number of bytes used.
- *
- * @return  uint32_t
- * @param   pMixBuf
- */
-uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-    return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cUsed);
-}
-
-
-/**
- * Returns the current read position of a mixing buffer.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to return position for.
- */
-uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-
-    return pMixBuf->offRead;
-}
-
-
-/**
- * Drops all the frames in the given mixing buffer
- *
- * This will reset the read and write offsets to zero.
- *
- * @param   pMixBuf             The mixing buffer.
- */
-void AudioMixBufDrop(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturnVoid(pMixBuf);
-    AssertReturnVoid(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
-
-    AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
-
-    pMixBuf->offRead  = 0;
-    pMixBuf->offWrite = 0;
-    pMixBuf->cMixed   = 0;
-    pMixBuf->cUsed    = 0;
-}
 
 
 /*
