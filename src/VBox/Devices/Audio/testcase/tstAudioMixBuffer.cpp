@@ -306,6 +306,7 @@ static int tstSingle(RTTEST hTest)
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
 
+#if 0 /* obsolete */
 static int tstParentChild(RTTEST hTest)
 {
     RTTestSub(hTest, "2 Children -> Parent (AudioMixBufWriteAt)");
@@ -446,8 +447,10 @@ static int tstParentChild(RTTEST hTest)
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
+#endif
 
 
+#if 0 /** @todo rewrite to non-parent/child setup */
 static void tstDownsampling(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
 {
     RTTestSubF(hTest, "Downsampling %u to %u Hz (S16)", uFromHz, uToHz);
@@ -546,6 +549,7 @@ static void tstDownsampling(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
     AudioMixBufDestroy(&Parent);
     AudioMixBufDestroy(&Child);
 }
+#endif
 
 
 static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
@@ -653,6 +657,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
 }
 
 
+#if 0 /** @todo rewrite to non-parent/child setup */
 /* Test 8-bit sample conversion (8-bit -> internal -> 8-bit). */
 static int tstConversion8(RTTEST hTest)
 {
@@ -755,7 +760,9 @@ static int tstConversion8(RTTEST hTest)
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
+#endif
 
+#if 0 /** @todo rewrite to non-parent/child setup */
 /* Test 16-bit sample conversion (16-bit -> internal -> 16-bit). */
 static int tstConversion16(RTTEST hTest)
 {
@@ -848,7 +855,9 @@ static int tstConversion16(RTTEST hTest)
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
+#endif
 
+#if 0 /** @todo rewrite to non-parent/child setup */
 /* Test volume control. */
 static int tstVolume(RTTEST hTest)
 {
@@ -964,6 +973,7 @@ static int tstVolume(RTTEST hTest)
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -980,14 +990,16 @@ int main(int argc, char **argv)
 
     tstBasics(hTest);
     tstSingle(hTest);
-    tstParentChild(hTest);
-    tstConversion8(hTest);
-    tstConversion16(hTest);
-    tstVolume(hTest);
+    //tstParentChild(hTest);
+    //tstConversion8(hTest);
+    //tstConversion16(hTest);
+    //tstVolume(hTest);
+#if 0 /** @todo rewrite to non-parent/child setup */
     tstDownsampling(hTest, 44100, 22050);
     tstDownsampling(hTest, 48000, 44100);
     tstDownsampling(hTest, 48000, 22050);
     tstDownsampling(hTest, 48000, 11000);
+#endif
     tstNewPeek(hTest, 48000, 48000);
     tstNewPeek(hTest, 48000, 11000);
     tstNewPeek(hTest, 48000, 44100);

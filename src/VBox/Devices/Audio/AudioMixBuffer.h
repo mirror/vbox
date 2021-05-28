@@ -219,12 +219,6 @@ typedef struct AUDIOMIXBUF
     /** How much audio frames are currently being used in this buffer.
      * @note This also is known as the distance in ring buffer terms. */
     uint32_t                    cUsed;
-    /** Number of children mix buffers kept in lstChildren. */
-    uint32_t                    cChildren;
-    /** List of children mix buffers to keep in sync with (if being a parent buffer). */
-    RTLISTANCHOR                lstChildren;
-    /** Pointer to parent buffer (if any). */
-    PAUDIOMIXBUF                pParent;
     /** Intermediate structure for buffer conversion tasks. */
     PAUDIOSTREAMRATE            pRate;
     /** Internal representation of current volume used for mixing. */
@@ -314,12 +308,8 @@ void AudioMixBufClear(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufFinish(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear);
 uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf);
-bool AudioMixBufIsEmpty(PAUDIOMIXBUF pMixBuf);
-int AudioMixBufLinkTo(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUF pParent);
+bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf);
-int AudioMixBufMixToParent(PAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed);
-int AudioMixBufMixToParentEx(PAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed);
-int AudioMixBufPeekMutable(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToRead, PPDMAUDIOFRAME *ppvSamples, uint32_t *pcFramesRead);
 uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf);
 int         AudioMixBufAcquireReadBlock(PAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, uint32_t *pcAcquiredFrames);
@@ -331,7 +321,6 @@ void AudioMixBufReset(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
 uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf);
-void AudioMixBufUnlink(PAUDIOMIXBUF pMixBuf);
 int         AudioMixBufWriteAt(PAUDIOMIXBUF pMixBuf, uint32_t offSamples, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten);
 int         AudioMixBufWriteAtEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps, uint32_t offFrames,
                                  const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten);

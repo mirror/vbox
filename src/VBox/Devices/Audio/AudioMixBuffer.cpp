@@ -63,8 +63,8 @@
 #endif
 
 #ifdef DEBUG
-DECLINLINE(void)        audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
-DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
+static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc);
+static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf);
 #endif
 
 /*
@@ -138,59 +138,6 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
 
 
 /**
- * Returns a mutable pointer to the mixing buffer's audio frame buffer for writing raw
- * audio frames.
- *
- * @returns VBox status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
- * @param   pMixBuf                 Mixing buffer to acquire audio frames from.
- * @param   cFrames                 Number of requested audio frames to write.
- * @param   ppvFrames               Returns a mutable pointer to the buffer's audio frame data.
- * @param   pcFramesToWrite         Number of available audio frames to write.
- *
- * @remark  This function is not thread safe!
- */
-/** @todo r=bird: This isn't a 'ing Peek function, it's a Read function!
- *        Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaarg!!!!!!!!!!!!!!!!!!! */
-int AudioMixBufPeekMutable(PAUDIOMIXBUF pMixBuf, uint32_t cFrames,
-                           PPDMAUDIOFRAME *ppvFrames, uint32_t *pcFramesToWrite)
-{
-    AssertPtrReturn(pMixBuf,         VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvFrames,       VERR_INVALID_POINTER);
-    AssertPtrReturn(pcFramesToWrite, VERR_INVALID_POINTER);
-
-    int rc;
-
-    if (!cFrames)
-    {
-        *pcFramesToWrite = 0;
-        return VINF_SUCCESS;
-    }
-
-    uint32_t cFramesToWrite;
-    if (pMixBuf->offWrite + cFrames > pMixBuf->cFrames)
-    {
-        cFramesToWrite = pMixBuf->cFrames - pMixBuf->offWrite;
-        rc = VINF_TRY_AGAIN;
-    }
-    else
-    {
-        cFramesToWrite = cFrames;
-        rc = VINF_SUCCESS;
-    }
-
-    *ppvFrames = &pMixBuf->pFrames[pMixBuf->offWrite];
-    AssertPtr(ppvFrames);
-
-    pMixBuf->offWrite = (pMixBuf->offWrite + cFramesToWrite) % pMixBuf->cFrames;
-    Assert(pMixBuf->offWrite <= pMixBuf->cFrames);
-    pMixBuf->cUsed += RT_MIN(cFramesToWrite, pMixBuf->cUsed);
-
-    *pcFramesToWrite = cFramesToWrite;
-
-    return rc;
-}
-
-/**
  * Clears the entire frame buffer.
  *
  * @param   pMixBuf                 Mixing buffer to clear.
@@ -218,17 +165,6 @@ void AudioMixBufFinish(PAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
                    pMixBuf->pszName, pMixBuf->offRead, pMixBuf->cUsed));
 
     AssertStmt(cFramesToClear <= pMixBuf->cFrames, cFramesToClear = pMixBuf->cFrames);
-
-/** @todo r=bird: Why isn't this done when reading/releaseing ? */
-    PAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
-    {
-        AUDMIXBUF_LOG(("\t%s: cMixed=%RU32 -> %RU32\n",
-                       pIter->pszName, pIter->cMixed, pIter->cMixed - cFramesToClear));
-
-        pIter->cMixed -= RT_MIN(pIter->cMixed, cFramesToClear);
-        /* Note: Do not increment pIter->cUsed here, as this gets done when reading from that buffer using AudioMixBufReadXXX. */
-    }
 
 /** @todo r=bird: waste of time? */
     uint32_t cClearOff;
@@ -289,8 +225,6 @@ void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
     Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     pMixBuf->uMagic = ~AUDIOMIXBUF_MAGIC;
 
-    AudioMixBufUnlink(pMixBuf);
-
     if (pMixBuf->pszName)
     {
         AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
@@ -326,24 +260,10 @@ uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-    uint32_t cFrames, cFramesFree;
-    if (pMixBuf->pParent)
-    {
-        /*
-         * As a linked child buffer we want to know how many frames
-         * already have been consumed by the parent.
-         */
-        cFrames = pMixBuf->pParent->cFrames;
-
-        Assert(pMixBuf->cMixed <= cFrames);
-        cFramesFree = cFrames - pMixBuf->cMixed;
-    }
-    else /* As a parent. */
-    {
-        cFrames     = pMixBuf->cFrames;
-        Assert(cFrames >= pMixBuf->cUsed);
-        cFramesFree = pMixBuf->cFrames - pMixBuf->cUsed;
-    }
+    uint32_t const cFrames = pMixBuf->cFrames;
+    uint32_t       cUsed   = pMixBuf->cUsed;
+    AssertStmt(cUsed <= cFrames, cUsed = cFrames);
+    uint32_t const cFramesFree = cFrames - cUsed;
 
     AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cFramesFree, cFrames));
     return cFramesFree;
@@ -1238,10 +1158,6 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
     Assert(PDMAudioPropsAreValid(pProps));
 
     pMixBuf->uMagic  = AUDIOMIXBUF_MAGIC;
-    pMixBuf->pParent = NULL;
-
-    RTListInit(&pMixBuf->lstChildren);
-    pMixBuf->cChildren = 0;
 
     pMixBuf->pFrames = NULL;
     pMixBuf->cFrames = 0;
@@ -1287,143 +1203,16 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
 }
 
 /**
- * Returns @c true if there are any audio frames available for processing,
- * @c false if not.
+ * Checks if the buffer is empty.
  *
- * @return  bool                    @c true if there are any audio frames available for processing, @c false if not.
- * @param   pMixBuf                 Mixing buffer to return value for.
+ * @retval  true if empty buffer.
+ * @retval  false if not empty and there are frames to be processed.
+ * @param   pMixBuf     The mixing buffer.
  */
-bool AudioMixBufIsEmpty(PAUDIOMIXBUF pMixBuf)
+bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, true);
-
-    if (pMixBuf->pParent)
-        return (pMixBuf->cMixed == 0);
-    return (pMixBuf->cUsed == 0);
-}
-
-/**
- * Calculates the frequency (sample rate) ratio of mixing buffer A in relation to mixing buffer B.
- *
- * @returns Calculated frequency ratio.
- * @param   pMixBufA            First mixing buffer.
- * @param   pMixBufB            Second mixing buffer.
- */
-static int64_t audioMixBufCalcFreqRatio(PAUDIOMIXBUF pMixBufA, PAUDIOMIXBUF pMixBufB)
-{
-    int64_t iRatio = (int64_t)((uint64_t)PDMAudioPropsHz(&pMixBufA->Props) << 32) / PDMAudioPropsHz(&pMixBufB->Props);
-    AssertStmt(iRatio, iRatio = RT_BIT_64(32) /*1:1*/);
-    return iRatio;
-}
-
-/**
- * Links an audio mixing buffer to a parent mixing buffer.
- *
- * A parent mixing buffer can have multiple children mixing buffers [1:N],
- * whereas a child only can have one parent mixing buffer [N:1].
- *
- * The mixing direction always goes from the child/children buffer(s) to the
- * parent buffer.
- *
- * For guest audio output the host backend "owns" the parent mixing buffer, the
- * device emulation "owns" the child/children.
- *
- * The audio format of each mixing buffer can vary; the internal mixing code
- * then will automatically do the (needed) conversion.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to link parent to.
- * @param   pParent                 Parent mixing buffer to use for linking.
- *
- * @remark  Circular linking is not allowed.
- */
-int AudioMixBufLinkTo(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUF pParent)
-{
-    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertPtrReturn(pParent, VERR_INVALID_POINTER);
-
-    AssertMsgReturn(AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->uAudioFmt),
-                    ("Parent frame frequency (Hz) not set\n"), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->uAudioFmt),
-                    ("Buffer sample frequency (Hz) not set\n"), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pMixBuf != pParent,
-                    ("Circular linking not allowed\n"), VERR_INVALID_PARAMETER);
-
-    if (pMixBuf->pParent) /* Already linked? */
-    {
-        AUDMIXBUF_LOG(("%s: Already linked to parent '%s'\n",
-                       pMixBuf->pszName, pMixBuf->pParent->pszName));
-        return VERR_ACCESS_DENIED;
-    }
-
-    RTListAppend(&pParent->lstChildren, &pMixBuf->Node);
-    pParent->cChildren++;
-
-    /* Set the parent. */
-    pMixBuf->pParent = pParent;
-
-    /* Calculate the frequency ratios. */
-    pMixBuf->iFreqRatio = audioMixBufCalcFreqRatio(pParent, pMixBuf);
-
-    int rc = VINF_SUCCESS;
-#if 0
-    uint32_t cFrames = (uint32_t)RT_MIN(  ((uint64_t)pParent->cFrames << 32)
-                                         / pMixBuf->iFreqRatio, _64K /* 64K frames max. */);
-    if (!cFrames)
-        cFrames = pParent->cFrames;
-
-    int rc = VINF_SUCCESS;
-
-    if (cFrames != pMixBuf->cFrames)
-    {
-        AUDMIXBUF_LOG(("%s: Reallocating frames %RU32 -> %RU32\n",
-                       pMixBuf->pszName, pMixBuf->cFrames, cFrames));
-
-        uint32_t cbSamples = cFrames * sizeof(PDMAUDIOSAMPLE);
-        Assert(cbSamples);
-        pMixBuf->pSamples = (PPDMAUDIOSAMPLE)RTMemRealloc(pMixBuf->pSamples, cbSamples);
-        if (!pMixBuf->pSamples)
-            rc = VERR_NO_MEMORY;
-
-        if (RT_SUCCESS(rc))
-        {
-            pMixBuf->cFrames = cFrames;
-
-            /* Make sure to zero the reallocated buffer so that it can be
-             * used properly when blending with another buffer later. */
-            RT_BZERO(pMixBuf->pSamples, cbSamples);
-        }
-    }
-#endif
-
-    if (RT_SUCCESS(rc))
-    {
-        if (!pMixBuf->pRate)
-        {
-            pMixBuf->pRate = (PAUDIOSTREAMRATE)RTMemAllocZ(sizeof(AUDIOSTREAMRATE));
-            AssertReturn(pMixBuf->pRate, VERR_NO_MEMORY);
-        }
-        else
-            RT_BZERO(pMixBuf->pRate, sizeof(AUDIOSTREAMRATE));
-
-        /*
-         * Some examples to get an idea of what uDstInc holds:
-         *   44100 to 44100 -> (44100<<32) / 44100 = 0x01'00000000 (4294967296)
-         *   22050 to 44100 -> (22050<<32) / 44100 = 0x00'80000000 (2147483648)
-         *   44100 to 22050 -> (44100<<32) / 22050 = 0x02'00000000 (8589934592)
-         *   44100 to 48000 -> (44100<<32) / 48000 = 0x00'EB333333 (3946001203.2)
-         *   48000 to 44100 -> (48000<<32) / 44100 = 0x01'16A3B35F (4674794335.7823129251700680272109)
-         *
-         * Note! The iFreqRatio is the same but with the frequencies switched.
-         */
-        pMixBuf->pRate->uDstInc = ((uint64_t)PDMAudioPropsHz(&pMixBuf->Props) << 32) / PDMAudioPropsHz(&pParent->Props);
-
-        AUDMIXBUF_LOG(("%RU32 Hz vs parent %RU32 Hz => iFreqRatio=0x%'RX64 uDstInc=0x%'RX64; cFrames=%RU32 (%RU32 parent); name: %s, parent: %s\n",
-                       PDMAudioPropsHz(&pMixBuf->Props), PDMAudioPropsHz(&pParent->Props), pMixBuf->iFreqRatio,
-                       pMixBuf->pRate->uDstInc, pMixBuf->cFrames, pParent->cFrames, pMixBuf->pszName, pMixBuf->pParent->pszName));
-    }
-
-    return rc;
+    return pMixBuf->cUsed == 0;
 }
 
 /**
@@ -1443,244 +1232,10 @@ uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-#ifdef RT_STRICT
-    uint32_t cFrames;
-#endif
-    uint32_t cAvail;
-    if (pMixBuf->pParent) /* Is this a child buffer? */
-    {
-#ifdef RT_STRICT
-        /* Use the frame count from the parent, as
-         * pMixBuf->cMixed specifies the frame count
-         * in parent frames. */
-        cFrames = pMixBuf->pParent->cFrames;
-#endif
-        cAvail   = pMixBuf->cMixed;
-    }
-    else
-    {
-#ifdef RT_STRICT
-        cFrames = pMixBuf->cFrames;
-#endif
-        cAvail   = pMixBuf->cUsed;
-    }
-
-    Assert(cAvail <= cFrames);
+    uint32_t const cFrames = pMixBuf->cFrames;
+    uint32_t       cAvail  = pMixBuf->cUsed;
+    AssertStmt(cAvail <= cFrames, cAvail = cFrames);
     return cAvail;
-}
-
-/**
- * Mixes audio frames from a source mixing buffer to a destination mixing buffer.
- *
- * @returns VBox status code.
- *          VERR_BUFFER_UNDERFLOW if the source did not have enough audio data.
- *          VERR_BUFFER_OVERFLOW if the destination did not have enough space to store the converted source audio data.
- *
- * @param   pDst                    Destination mixing buffer.
- * @param   pSrc                    Source mixing buffer.
- * @param   cSrcOff                 Offset of source audio frames to mix.
- * @param   cSrcFrames              Number of source audio frames to mix.
- * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
- */
-static int audioMixBufMixTo(PAUDIOMIXBUF pDst, PAUDIOMIXBUF pSrc, uint32_t cSrcOff, uint32_t cSrcFrames,
-                            uint32_t *pcSrcMixed)
-{
-    AssertPtrReturn(pDst,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pSrc,  VERR_INVALID_POINTER);
-    /* pcSrcMixed is optional. */
-
-    AssertMsgReturn(pDst == pSrc->pParent, ("Source buffer '%s' is not a child of destination '%s'\n",
-                                            pSrc->pszName, pDst->pszName), VERR_INVALID_PARAMETER);
-    uint32_t cReadTotal    = 0;
-    uint32_t cWrittenTotal = 0;
-
-    Assert(pSrc->cMixed <= pDst->cFrames);
-
-    Assert(pSrc->cUsed >= pDst->cMixed);
-    Assert(pDst->cUsed <= pDst->cFrames);
-
-    uint32_t offSrcRead  = cSrcOff;
-
-    uint32_t offDstWrite = pDst->offWrite;
-    uint32_t cDstMixed   = pSrc->cMixed;
-
-    uint32_t cSrcAvail   = RT_MIN(cSrcFrames, pSrc->cUsed);
-    uint32_t cDstAvail   = pDst->cFrames - pDst->cUsed; /** @todo Use pDst->cMixed later? */
-
-    AUDMIXBUF_LOG(("%s (%RU32 available) -> %s (%RU32 available)\n",
-                   pSrc->pszName, cSrcAvail, pDst->pszName, cDstAvail));
-#ifdef DEBUG
-    audioMixBufDbgPrintInternal(pDst, __FUNCTION__);
-#endif
-
-    if (!cSrcAvail)
-        return VERR_BUFFER_UNDERFLOW;
-
-    if (!cDstAvail)
-        return VERR_BUFFER_OVERFLOW;
-
-    uint32_t cSrcToRead = 0;
-    uint32_t cSrcRead;
-
-    uint32_t cDstToWrite;
-    uint32_t cDstWritten;
-
-    int rc = VINF_SUCCESS;
-
-    while (cSrcAvail && cDstAvail)
-    {
-        cSrcToRead  = RT_MIN(cSrcAvail, pSrc->cFrames - offSrcRead);
-        cDstToWrite = RT_MIN(cDstAvail, pDst->cFrames - offDstWrite);
-
-        AUDMIXBUF_LOG(("  Src: %RU32 @ %RU32 -> reading %RU32\n", cSrcAvail, offSrcRead, cSrcToRead));
-        AUDMIXBUF_LOG(("  Dst: %RU32 @ %RU32 -> writing %RU32\n", cDstAvail, offDstWrite, cDstToWrite));
-
-        if (   !cDstToWrite
-            || !cSrcToRead)
-        {
-            break;
-        }
-
-        cDstWritten = cSrcRead = 0;
-
-        Assert(offSrcRead < pSrc->cFrames);
-        Assert(offSrcRead + cSrcToRead <= pSrc->cFrames);
-
-        Assert(offDstWrite < pDst->cFrames);
-        Assert(offDstWrite + cDstToWrite <= pDst->cFrames);
-
-        audioMixBufOpAssign(pDst->pFrames + offDstWrite, cDstToWrite,
-                            pSrc->pFrames + offSrcRead,  cSrcToRead,
-                            pSrc->pRate, &cDstWritten, &cSrcRead);
-
-        cReadTotal    += cSrcRead;
-        cWrittenTotal += cDstWritten;
-
-        offSrcRead     = (offSrcRead  + cSrcRead)    % pSrc->cFrames;
-        offDstWrite    = (offDstWrite + cDstWritten) % pDst->cFrames;
-
-        cDstMixed     += cDstWritten;
-
-        Assert(cSrcAvail >= cSrcRead);
-        cSrcAvail        -= cSrcRead;
-
-        Assert(cDstAvail >= cDstWritten);
-        cDstAvail        -= cDstWritten;
-
-        AUDMIXBUF_LOG(("  %RU32 read (%RU32 left @ %RU32), %RU32 written (%RU32 left @ %RU32)\n",
-                       cSrcRead, cSrcAvail, offSrcRead,
-                       cDstWritten, cDstAvail, offDstWrite));
-    }
-
-    pSrc->offRead     = offSrcRead;
-    Assert(pSrc->cUsed >= cReadTotal);
-    pSrc->cUsed      -= RT_MIN(pSrc->cUsed, cReadTotal);
-
-    /* Note: Always count in parent frames, as the rate can differ! */
-    pSrc->cMixed      = RT_MIN(cDstMixed, pDst->cFrames);
-
-    pDst->offWrite    = offDstWrite;
-    Assert(pDst->offWrite <= pDst->cFrames);
-    Assert((pDst->cUsed + cWrittenTotal) <= pDst->cFrames);
-    pDst->cUsed      += cWrittenTotal;
-
-    /* If there are more used frames than fitting in the destination buffer,
-     * adjust the values accordingly.
-     *
-     * This can happen if this routine has been called too often without
-     * actually processing the destination buffer in between. */
-    if (pDst->cUsed > pDst->cFrames)
-    {
-        LogFunc(("%s: Warning: Destination buffer used %RU32 / %RU32 frames\n", pDst->pszName, pDst->cUsed, pDst->cFrames));
-        pDst->offWrite     = 0;
-        pDst->cUsed        = pDst->cFrames;
-
-        rc = VERR_BUFFER_OVERFLOW;
-    }
-
-#ifdef DEBUG
-    audioMixBufDbgValidate(pSrc);
-    audioMixBufDbgValidate(pDst);
-
-    Assert(pSrc->cMixed <= pDst->cFrames);
-#endif
-
-#ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-    uint32_t offRead = pDst->offRead;
-
-    uint32_t cLeft = cWrittenTotal;
-    while (cLeft)
-    {
-        uint8_t auBuf[256];
-        RT_ZERO(auBuf);
-
-        Assert(sizeof(auBuf) >= 4);
-        Assert(sizeof(auBuf) % 4 == 0);
-
-        uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2F(pDst, sizeof(auBuf)), RT_MIN(cLeft, pDst->cFrames - offRead));
-        Assert(cToRead <= pDst->cUsed);
-
-        AUDMIXBUFCONVOPTS convOpts;
-        RT_ZERO(convOpts);
-        convOpts.cFrames = cToRead;
-
-        pDst->pfnConvTo(auBuf, pDst->pFrames + offRead, &convOpts);
-
-        RTFILE fh;
-        int rc2 = RTFileOpen(&fh, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_mixto.pcm",
-                             RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc2))
-        {
-            RTFileWrite(fh, auBuf, AUDIOMIXBUF_F2B(pDst, cToRead), NULL);
-            RTFileClose(fh);
-        }
-
-        offRead  = (offRead + cToRead) % pDst->cFrames;
-        cLeft   -= cToRead;
-    }
-#endif /* AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA */
-
-#ifdef DEBUG
-    audioMixBufDbgPrintInternal(pDst, __FUNCTION__);
-#endif
-
-    if (pcSrcMixed)
-        *pcSrcMixed = cReadTotal;
-
-    AUDMIXBUF_LOG(("cReadTotal=%RU32, cWrittenTotal=%RU32, cSrcMixed=%RU32, cDstUsed=%RU32, rc=%Rrc\n",
-                   cReadTotal, cWrittenTotal, pSrc->cMixed, pDst->cUsed, rc));
-    return rc;
-}
-
-/**
- * Mixes audio frames down to the parent mixing buffer, extended version.
- *
- * @returns VBox status code. See audioMixBufMixTo() for a more detailed explanation.
- * @param   pMixBuf                 Source mixing buffer to mix to its parent.
- * @param   cSrcOffset              Offset (in frames) of source mixing buffer.
- * @param   cSrcFrames              Number of source audio frames to mix to its parent.
- * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
- */
-int AudioMixBufMixToParentEx(PAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
-{
-    AssertMsgReturn(VALID_PTR(pMixBuf->pParent),
-                    ("Buffer is not linked to a parent buffer\n"),
-                    VERR_INVALID_PARAMETER);
-
-    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, cSrcOffset, cSrcFrames, pcSrcMixed);
-}
-
-/**
- * Mixes audio frames down to the parent mixing buffer.
- *
- * @returns VBox status code. See audioMixBufMixTo() for a more detailed explanation.
- * @param   pMixBuf                 Source mixing buffer to mix to its parent.
- * @param   cSrcFrames              Number of source audio frames to mix to its parent.
- * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
- */
-int AudioMixBufMixToParent(PAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
-{
-    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, pMixBuf->offRead, cSrcFrames, pcSrcMixed);
 }
 
 #ifdef DEBUG
@@ -1692,13 +1247,12 @@ int AudioMixBufMixToParent(PAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *
  * @returns VBox status code.
  * @param   pMixBuf                 Mixing buffer to print.
  * @param   pszFunc                 Function name to log this for.
- * @param   fIsParent               Whether this is a parent buffer or not.
  * @param   uIdtLvl                 Indention level to use.
  */
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, bool fIsParent, uint16_t uIdtLvl)
+static void audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl)
 {
-    Log(("%s: %*s[%s] %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
-         pszFunc, uIdtLvl * 4, "", fIsParent ? "PARENT" : "CHILD",
+    Log(("%s: %*s %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
+         pszFunc, uIdtLvl * 4, "",
          pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
 }
 
@@ -1708,7 +1262,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const ch
  * @return  @true if the buffer state is valid or @false if not.
  * @param   pMixBuf                 Mixing buffer to validate.
  */
-DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
+static bool audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
 {
     //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cFrames;
     //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cFrames - pMixBuf->cUsed)) % pMixBuf->cFrames;
@@ -1740,50 +1294,6 @@ DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PAUDIOMIXBUF pMixBuf)
 }
 
 /**
- * Internal helper function for audioMixBufPrintChain().
- * Do not use directly.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to print.
- * @param   pszFunc                 Function name to print the chain for.
- * @param   uIdtLvl                 Indention level to use.
- * @param   pcChildren              Pointer to children counter.
- */
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainHelper(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl,
-                                                       size_t *pcChildren)
-{
-    PAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
-    {
-        audioMixBufDbgPrintSingle(pIter, pszFunc, false /* ifIsParent */, uIdtLvl + 1);
-        *pcChildren++;
-    }
-}
-
-DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
-{
-    PAUDIOMIXBUF pParent = pMixBuf->pParent;
-    while (pParent)
-    {
-        if (!pParent->pParent)
-            break;
-
-        pParent = pParent->pParent;
-    }
-
-    if (!pParent)
-        pParent = pMixBuf;
-
-    audioMixBufDbgPrintSingle(pParent, pszFunc, true /* fIsParent */, 0 /* uIdtLvl */);
-
-    /* Recursively iterate children. */
-    size_t cChildren = 0;
-    audioMixBufDbgPrintChainHelper(pParent, pszFunc, 0 /* uIdtLvl */, &cChildren);
-
-    Log(("%s: Children: %zu\n", pszFunc, cChildren));
-}
-
-/**
  * Prints statistics and status of the full chain of a mixing buffer to the logger,
  * starting from the top root mixing buffer.
  * For debug versions only.
@@ -1793,24 +1303,12 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintChainInternal(PAUDIOMIXBUF pMixBuf, c
  */
 void AudioMixBufDbgPrintChain(PAUDIOMIXBUF pMixBuf)
 {
-    audioMixBufDbgPrintChainInternal(pMixBuf, __FUNCTION__);
+    audioMixBufDbgPrintSingle(pMixBuf, __FUNCTION__, 0 /* uIdtLvl */);
 }
 
 DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
 {
-    PAUDIOMIXBUF pParent = pMixBuf;
-    if (pMixBuf->pParent)
-        pParent = pMixBuf->pParent;
-
-    audioMixBufDbgPrintSingle(pMixBuf, pszFunc, pParent == pMixBuf /* fIsParent */, 0 /* iIdtLevel */);
-
-    PAUDIOMIXBUF pIter;
-    RTListForEach(&pMixBuf->lstChildren, pIter, AUDIOMIXBUF, Node)
-    {
-        if (pIter == pMixBuf)
-            continue;
-        audioMixBufDbgPrintSingle(pIter, pszFunc, false /* fIsParent */, 1 /* iIdtLevel */);
-    }
+    audioMixBufDbgPrintSingle(pMixBuf, pszFunc, 0 /* iIdtLevel */);
 }
 
 /**
@@ -2966,67 +2464,6 @@ uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
-}
-
-/**
- * Unlinks a mixing buffer from its parent, if any.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to unlink from parent.
- */
-void AudioMixBufUnlink(PAUDIOMIXBUF pMixBuf)
-{
-    if (!pMixBuf || !pMixBuf->pszName)
-        return;
-
-    AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
-
-    if (pMixBuf->pParent) /* IS this a children buffer? */
-    {
-        AUDMIXBUF_LOG(("%s: Unlinking from parent \"%s\"\n",
-                       pMixBuf->pszName, pMixBuf->pParent->pszName));
-
-        RTListNodeRemove(&pMixBuf->Node);
-
-        /* Decrease the paren't children count. */
-        Assert(pMixBuf->pParent->cChildren);
-        pMixBuf->pParent->cChildren--;
-
-        /* Make sure to reset the parent mixing buffer each time it gets linked
-         * to a new child. */
-        AudioMixBufReset(pMixBuf->pParent);
-        pMixBuf->pParent = NULL;
-    }
-
-    PAUDIOMIXBUF pChild, pChildNext;
-    RTListForEachSafe(&pMixBuf->lstChildren, pChild, pChildNext, AUDIOMIXBUF, Node)
-    {
-        AUDMIXBUF_LOG(("\tUnlinking \"%s\"\n", pChild->pszName));
-
-        AudioMixBufReset(pChild);
-
-        Assert(pChild->pParent == pMixBuf);
-        pChild->pParent = NULL;
-
-        RTListNodeRemove(&pChild->Node);
-
-        /* Decrease the children count. */
-        Assert(pMixBuf->cChildren);
-        pMixBuf->cChildren--;
-    }
-
-    Assert(RTListIsEmpty(&pMixBuf->lstChildren));
-    Assert(pMixBuf->cChildren == 0);
-
-    AudioMixBufReset(pMixBuf);
-
-    if (pMixBuf->pRate)
-    {
-        pMixBuf->pRate->offDst = pMixBuf->pRate->offSrc = 0;
-        pMixBuf->pRate->uDstInc = 0;
-    }
-
-    pMixBuf->iFreqRatio = 1; /* Prevent division by zero. */
 }
 
 /**
