@@ -256,6 +256,9 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
 
 DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
 {
+    /* write it to the release log too */
+    LogRel(("%s", pszMsg));
+
     HANDLE hEventLog = RegisterEventSourceA(NULL /* local computer */, "VBoxAutostartSvc");
     AssertReturnVoid(hEventLog != NULL);
     WORD wType = 0;
@@ -294,9 +297,6 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
                             NULL);                   /* lpRawData */
     AssertMsg(fRc, ("%u\n", GetLastError())); NOREF(fRc);
     DeregisterEventSource(hEventLog);
-
-    /* write it to the release log too */
-    LogRel(("%s", pszMsg));
 }
 
 /**
@@ -703,7 +703,9 @@ static bool autostartSvcWinSetServiceStatus(DWORD dwStatus, int iWaitHint, DWORD
             SvcStatus.dwControlsAccepted = 0;
             break;
         default:
-            SvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+            SvcStatus.dwControlsAccepted
+                = SERVICE_ACCEPT_STOP
+                | SERVICE_ACCEPT_SHUTDOWN;
             break;
     }
 
@@ -737,6 +739,10 @@ static bool autostartSvcWinSetServiceStatus(DWORD dwStatus, int iWaitHint, DWORD
 static DWORD WINAPI
 autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID pvEventData, LPVOID pvContext) RT_NOTHROW_DEF
 {
+    RT_NOREF(dwEventType);
+    RT_NOREF(pvEventData);
+    RT_NOREF(pvContext);
+
     LogFlow(("autostartSvcWinServiceCtrlHandlerEx: dwControl=%#x dwEventType=%#x pvEventData=%p\n",
              dwControl, dwEventType, pvEventData));
 
@@ -753,12 +759,19 @@ autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID p
         /*
          * Request to stop the service.
          */
+        case SERVICE_CONTROL_SHUTDOWN:
         case SERVICE_CONTROL_STOP:
         {
+            if (dwControl == SERVICE_CONTROL_SHUTDOWN)
+                LogRel(("SERVICE_CONTROL_SHUTDOWN\n"));
+            else
+                LogRel(("SERVICE_CONTROL_STOP\n"));
+
             /*
              * Check if the real services can be stopped and then tell them to stop.
              */
             autostartSvcWinSetServiceStatus(SERVICE_STOP_PENDING, 3000, NO_ERROR);
+
             /*
              * Notify the main thread that we're done, it will wait for the
              * VMs to stop, and set the windows service status to SERVICE_STOPPED
@@ -771,28 +784,17 @@ autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID p
             return NO_ERROR;
         }
 
-        case SERVICE_CONTROL_PAUSE:
-        case SERVICE_CONTROL_CONTINUE:
-        case SERVICE_CONTROL_SHUTDOWN:
-        case SERVICE_CONTROL_PARAMCHANGE:
-        case SERVICE_CONTROL_NETBINDADD:
-        case SERVICE_CONTROL_NETBINDREMOVE:
-        case SERVICE_CONTROL_NETBINDENABLE:
-        case SERVICE_CONTROL_NETBINDDISABLE:
-        case SERVICE_CONTROL_DEVICEEVENT:
-        case SERVICE_CONTROL_HARDWAREPROFILECHANGE:
-        case SERVICE_CONTROL_POWEREVENT:
-        case SERVICE_CONTROL_SESSIONCHANGE:
-#ifdef SERVICE_CONTROL_PRESHUTDOWN /* vista */
-        case SERVICE_CONTROL_PRESHUTDOWN:
-#endif
         default:
+            /*
+             * We only expect to receive controls we explicitly listed
+             * in SERVICE_STATUS::dwControlsAccepted.  Logged in hex
+             * b/c WinSvc.h defines them in hex
+             */
+            LogRel(("Unexpected service control message 0x%RX64\n",
+                    (uint64_t)dwControl));
             return ERROR_CALL_NOT_IMPLEMENTED;
     }
 
-    NOREF(dwEventType);
-    NOREF(pvEventData);
-    NOREF(pvContext);
     /* not reached */
 }
 
