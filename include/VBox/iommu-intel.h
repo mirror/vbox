@@ -250,15 +250,24 @@ typedef VTD_CONTEXT_ENTRY_T *PVTD_CONTEXT_ENTRY_T;
 /** Pointer to a const context entry. */
 typedef VTD_CONTEXT_ENTRY_T const *PCVTD_CONTEXT_ENTRY_T;
 
-/* Context Entry: Qword 0 valid mask. */
+/** Context Entry: Qword 0 valid mask. */
 #define VTD_CONTEXT_ENTRY_0_VALID_MASK                          (  VTD_BF_0_CONTEXT_ENTRY_P_MASK \
                                                                  | VTD_BF_0_CONTEXT_ENTRY_FPD_MASK \
                                                                  | VTD_BF_0_CONTEXT_ENTRY_TT_MASK \
                                                                  | VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK)
-/* Context Entry: Qword 1 valid mask. */
+/** Context Entry: Qword 1 valid mask. */
 #define VTD_CONTEXT_ENTRY_1_VALID_MASK                          (  VTD_BF_1_CONTEXT_ENTRY_AW_MASK \
                                                                  | VTD_BF_1_CONTEXT_ENTRY_IGN_6_3_MASK \
                                                                  | VTD_BF_1_CONTEXT_ENTRY_DID_MASK)
+
+/** Translation Type: Untranslated requests uses second-level paging. */
+#define VTD_TT_UNTRANSLATED_SLP                                 0
+/** Translation Type: Untranslated requests requires device-TLB support. */
+#define VTD_TT_UNTRANSLATED_DEV_TLB                             1
+/** Translation Type: Untranslated requests are pass-through. */
+#define VTD_TT_UNTRANSLATED_PT                                  2
+/** Translation Type: Reserved. */
+#define VTD_TT_RSVD                                             3
 /** @} */
 
 

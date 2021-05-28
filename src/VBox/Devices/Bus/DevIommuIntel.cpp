@@ -167,9 +167,12 @@ typedef enum
     kDmarDiag_Atf_Lct_4_1,
     kDmarDiag_Atf_Lct_4_2,
     kDmarDiag_Atf_Lct_4_3,
+    kDmarDiag_Atf_Lct_5,
     kDmarDiag_Atf_Lrt_1,
     kDmarDiag_Atf_Lrt_2,
     kDmarDiag_Atf_Lrt_3,
+    kDmarDiag_Atf_Lsl_1,
+    kDmarDiag_Atf_Lsl_2,
     kDmarDiag_Atf_Rta_1_1,
     kDmarDiag_Atf_Rta_1_2,
     kDmarDiag_Atf_Rta_1_3,
@@ -232,9 +235,12 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Atf_Lct_4_1               ),
     DMARDIAG_DESC(Atf_Lct_4_2               ),
     DMARDIAG_DESC(Atf_Lct_4_3               ),
+    DMARDIAG_DESC(Atf_Lct_5                 ),
     DMARDIAG_DESC(Atf_Lrt_1                 ),
     DMARDIAG_DESC(Atf_Lrt_2                 ),
     DMARDIAG_DESC(Atf_Lrt_3                 ),
+    DMARDIAG_DESC(Atf_Lsl_1                 ),
+    DMARDIAG_DESC(Atf_Lsl_2                 ),
     DMARDIAG_DESC(Atf_Rta_1_1               ),
     DMARDIAG_DESC(Atf_Rta_1_2               ),
     DMARDIAG_DESC(Atf_Rta_1_3               ),
@@ -307,8 +313,11 @@ typedef struct DMAR
 
     /** Host-address width (HAW) valid mask. */
     uint64_t                    fHawMask;
-    /** Maximum guest-address width (MGAW) valid mask. */
+    /** Maximum guest-address width (MGAW) valid mask (remove if it turns out we
+     *  don't need this). */
     uint64_t                    fMgawMask;
+    /** Maximum supported paging level (3, 4 or 5). */
+    uint8_t                     uMaxPagingLevel;
 
     /** The event semaphore the invalidation-queue thread waits on. */
     SUPSEMEVENT                 hEvtInvQueue;
@@ -439,6 +448,9 @@ typedef struct DMARADDRMAP
     PCIADDRTYPE             enmAddrType;
     /** The type of the translation request. */
     VTDREQTYPE              enmReqType;
+    /** The table translation mode (VTD_TTM_XXX). */
+    uint8_t                 fTtm;
+    uint8_t                 uPadding[7];
     /** The DMA address being accessed. */
     uint64_t                uDmaAddr;
     /** The size of the DMA access (in bytes). */
@@ -722,11 +734,13 @@ AssertCompile(RT_ELEMENTS(g_auNdMask) >= DMAR_ND);
 static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
 {
     /*
-     * It doesn't make sense to me that a CPU (or IOMMU hardware) will support 5-level paging
-     * but not 4 or 3 level paging. So smaller page-table levels are always OR'ed in.
+     * It doesn't make sense to me that a CPU (or IOMMU hardware) will ever support
+     * 5-level paging but not 4 or 3-level paging. So smaller page-table levels
+     * are always OR'ed in below.
      *
-     * The values below (57, 48, 39 bits) represents the levels of page-table walks for
-     * 4KB base page size.
+     * The bit values below (57, 48, 39 bits) represents the levels of page-table walks
+     * for 4KB base page size (5-level, 4-level and 3-level paging respectively).
+     *
      * See Intel VT-d spec. 10.4.2 "Capability Register".
      */
     ++uMgaw;
@@ -735,6 +749,23 @@ static uint8_t vtdCapRegGetSagaw(uint8_t uMgaw)
                          : uMgaw >= 39 ? RT_BIT(1)
                          : 0;
     return fSagaw;
+}
+
+
+/**
+ * Returns the maximum supported paging level given the supported adjusted
+ * guest-address width (SAGAW) field.
+ *
+ * @returns The highest paging level supported, 0 if invalid.
+ * @param   fSagaw      The CAP_REG.SAGAW value.
+ */
+static uint8_t vtdCapRegGetMaxPagingLevel(uint8_t fSagaw)
+{
+    uint8_t const cMaxPagingLevel = fSagaw & RT_BIT(3) ? 5
+                                  : fSagaw & RT_BIT(2) ? 4
+                                  : fSagaw & RT_BIT(1) ? 3
+                                  : 0;
+    return cMaxPagingLevel;
 }
 
 
@@ -1807,16 +1838,32 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  * implementation for legacy mode address translation.
  *
  * @returns @c true if it's supported, @c false otherwise.
- * @param   pThis       The shared DMAR device state.
- * @param   pCtxEntry   The context entry.
+ * @param   pThis               The shared DMAR device state.
+ * @param   pCtxEntry           The context entry.
+ * @param   puPagingLevel       Where to store the paging level.
  */
-static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry)
+static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry, uint8_t *puPagingLevel)
 {
+    uint8_t const fTt     = RT_BF_GET(pCtxEntry->au64[0], VTD_BF_0_CONTEXT_ENTRY_TT);
     uint8_t const fAw     = RT_BF_GET(pCtxEntry->au64[1], VTD_BF_1_CONTEXT_ENTRY_AW);
-    uint8_t const fSagaw  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     uint8_t const fAwMask = RT_BIT(fAw);
+    uint8_t const fSagaw  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     Assert(!(fSagaw & ~(RT_BIT(1) | RT_BIT(2) | RT_BIT(3))));
-    return fAw < 4 ? RT_BOOL(fSagaw & fAwMask) : false;
+
+    *puPagingLevel = fAw + 2;
+
+    /* With pass-through, the address width must be the largest AGAW supported by hardware. */
+    if (fTt == VTD_TT_UNTRANSLATED_PT)
+    {
+        Assert(pThis->uMaxPagingLevel >= 3 && pThis->uMaxPagingLevel <= 5); /* Paranoia. */
+        return *puPagingLevel == pThis->uMaxPagingLevel;
+    }
+
+    /* The address width must be any of the ones supported by hardware. */
+    if (fAw < 4)
+        return (fSagaw & fAwMask) != 0;
+
+    return false;
 }
 
 
@@ -1874,14 +1921,56 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
  * Performs second level translation.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   SlpEntry    The second-level paging entry.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   SlpEntry        The second-level paging entry.
+ * @param   uPagingLevel    The paging level.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, PDMARADDRMAP pAddrRemap)
+static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, uint8_t uPagingLevel, PDMARADDRMAP pAddrRemap)
 {
-    RT_NOREF3(pDevIns, SlpEntry, pAddrRemap);
-    /** @todo Implement me */
+    PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+    static uint8_t const  s_acLevelShifts[] = { 12, 21, 30, 39, 48 };
+    static uint64_t const s_auLevelMasks[]  = { UINT64_C(0x00000000001ff000),
+                                                UINT64_C(0x000000003fe00000),
+                                                UINT64_C(0x0000007fc0000000),
+                                                UINT64_C(0x0000ff8000000000),
+                                                UINT64_C(0x01ff000000000000) };
+    AssertCompile(RT_ELEMENTS(s_acLevelShifts) == RT_ELEMENTS(s_auLevelMasks));
+    Assert(uPagingLevel >= 3 && uPagingLevel <= RT_ELEMENTS(s_auLevelMasks));
+
+    /*
+     * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
+     * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
+     */
+    uint64_t       uPtEntity = SlpEntry;
+    uint64_t const uDmaAddr  = pAddrRemap->uDmaAddr;
+    uint64_t const fHawMask  = pThis->fHawMask;
+    for (int8_t iLevel = uPagingLevel - 1; iLevel >= 0; iLevel--)
+    {
+        /* Read the paging entry for the current level. */
+        {
+            uint16_t const idxPte         = (uDmaAddr >> s_acLevelShifts[iLevel]) & UINT64_C(0x1ff);
+            uint64_t const offPte         = idxPte << 3;
+            RTGCPHYS const GCPhysPtEntity = (uPtEntity & fHawMask) | offPte;
+            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                /** @todo If this function is going to be used for scalable-mode second-level
+                 *        translation, we need to report different error codes. The TTM is
+                 *        available in pAddrRemap->fTtm, but how cleanly we can handle this is
+                 *        something to be decided later. For now we just use legacy mode error
+                 *        codes below. Asserted below. */
+                Assert(pAddrRemap->fTtm == VTD_TTM_LEGACY_MODE);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lsl_1, VTDATFAULT_LSL_1, pAddrRemap);
+                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            }
+        }
+
+        /** @todo validate page table entity. */
+        /** @todo once we reach the level 1, compute final address with page offset.   */
+    }
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1896,6 +1985,8 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
  */
 static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
 {
+    Assert(pAddrRemap->fTtm == VTD_TTM_LEGACY_MODE);    /* Paranoia. */
+
     /* Read the root-entry from guest memory. */
     uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->idDevice);
     VTD_ROOT_ENTRY_T RootEntry;
@@ -1938,7 +2029,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                             uint8_t const fTt = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_TT);
                             switch (fTt)
                             {
-                                case 0:
+                                case VTD_TT_UNTRANSLATED_SLP:
                                 {
                                     /*
                                      * Untranslated requests are translated using second-level paging structures referenced
@@ -1946,8 +2037,9 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                      */
                                     if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
-                                        /* Validate the address width. */
-                                        if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry))
+                                        /* Validate the address width and get the paging level. */
+                                        uint8_t uPagingLevel;
+                                        if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, &uPagingLevel))
                                         {
                                             /* Read the SLPTPTR from guest memory. */
                                             RTGCPHYS const GCPhysSlptPtr = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
@@ -1959,38 +2051,46 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                                 pAddrRemap->idDomain = RT_BF_GET(uCtxEntryQword1, VTD_BF_1_CONTEXT_ENTRY_DID);
 
                                                 /* Finally... perform second-level translation. */
-                                                return dmarDrSecondLevelTranslate(pDevIns, SlpEntry, pAddrRemap);
+                                                return dmarDrSecondLevelTranslate(pDevIns, SlpEntry, uPagingLevel, pAddrRemap);
                                             }
                                             dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_3, VTDATFAULT_LCT_4_3, pAddrRemap);
                                         }
                                         else
                                             dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_1, VTDATFAULT_LCT_4_1, pAddrRemap);
                                     }
-
-                                    Log4Func(("Translation type blocks translated and translation requests\n"));
-                                    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                                    else
+                                        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pAddrRemap);
+                                    break;
                                 }
 
-                                case 2:
+                                case VTD_TT_UNTRANSLATED_PT:
                                 {
                                     /*
-                                     * Untranslated requests are processed as pass-through (PT) if pass-through is supported.
+                                     * Untranslated requests are processed as pass-through (PT) if PT is supported.
                                      * Translated and translation requests are blocked. If PT isn't supported this TT value
                                      * is reserved which I assume raises a fault (hence fallthru below).
                                      */
-                                    if (   (pThis->fExtCapReg & VTD_BF_ECAP_REG_PT_MASK)
-                                        && (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED))
+                                    if (pThis->fExtCapReg & VTD_BF_ECAP_REG_PT_MASK)
                                     {
-                                        pAddrRemap->GCPhysSpa    = pAddrRemap->uDmaAddr;
-                                        pAddrRemap->cbContiguous = pAddrRemap->cbDma;
-                                        return VINF_SUCCESS;
+                                        if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                        {
+                                            /** @todo Check AW == maximum SAGAW bit? */
+                                            pAddrRemap->GCPhysSpa    = pAddrRemap->uDmaAddr;
+                                            pAddrRemap->cbContiguous = pAddrRemap->cbDma;
+                                            return VINF_SUCCESS;
+                                        }
+                                        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pAddrRemap);
+                                        break;
                                     }
                                     RT_FALL_THRU();
                                 }
 
-                                case 1:
+                                case VTD_TT_UNTRANSLATED_DEV_TLB:
                                 {
-                                    /* We don't support device-TLBs, so this TT value is treated as reserved. */
+                                    /*
+                                     * Untranslated, translated and translation requests are supported but requires
+                                     * device-TLB support. We don't support device-TLBs, so it's treated as reserved.
+                                     */
                                     Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_DT_MASK));
                                     RT_FALL_THRU();
                                 }
@@ -2114,18 +2214,19 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
         }
 
+        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
         DMARADDRMAP AddrRemap;
         AddrRemap.idDevice       = idDevice;
         AddrRemap.Pasid          = NIL_PCIPASID;
         AddrRemap.enmAddrType    = PCIADDRTYPE_UNTRANSLATED;
         AddrRemap.enmReqType     = enmReqType;
+        AddrRemap.fTtm           = fTtm;
         AddrRemap.uDmaAddr       = uIova;
         AddrRemap.cbDma          = cbIova;
         AddrRemap.GCPhysSpa      = NIL_RTGCPHYS;
         AddrRemap.cbContiguous   = 0;
 
         int rc;
-        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
         switch (fTtm)
         {
             case VTD_TTM_LEGACY_MODE:
@@ -3196,7 +3297,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint8_t const fNd      = DMAR_ND;                          /* Number of domains supported. */
         uint8_t const fPsi     = 1;                                /* Page selective invalidation. */
         uint8_t const uMgaw    = cGstPhysAddrBits - 1;             /* Maximum guest address width. */
-        uint8_t const uSagaw   = vtdCapRegGetSagaw(uMgaw);         /* Supported adjust guest address width. */
+        uint8_t const fSagaw   = vtdCapRegGetSagaw(uMgaw);         /* Supported adjust guest address width. */
         uint16_t const offFro  = DMAR_MMIO_OFF_FRCD_LO_REG >> 4;   /* MMIO offset of FRCD registers. */
         uint8_t const fEsrtps  = 1;                                /* Enhanced SRTPS (auto invalidate cache on SRTP). */
         uint8_t const fEsirtps = 1;                                /* Enhanced SIRTPS (auto invalidate cache on SIRTP). */
@@ -3208,7 +3309,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,    0)     /* Protected Low-Memory Region not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,    0)     /* Protected High-Memory Region not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /* Software should invalidate on mapping structure changes. */
-                       | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & uSagaw)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & fSagaw)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,    uMgaw)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,     1)     /** @todo Figure out if/how to support zero-length reads. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,     offFro)
@@ -3225,8 +3326,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
-        pThis->fHawMask  = ~(UINT64_MAX << cGstPhysAddrBits);
-        pThis->fMgawMask = pThis->fHawMask;
+        pThis->fHawMask        = ~(UINT64_MAX << cGstPhysAddrBits) & UINT64_C(0xfffffffffffff000);
+        pThis->fMgawMask       = pThis->fHawMask;
+        pThis->uMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
     }
 
     /* ECAP_REG */
