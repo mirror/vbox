@@ -1617,7 +1617,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
      */
 
     /** @todo Make the following configurable through mixer API and/or CFGM? */
-    switch (PDMAudioPropsGetChannels(&pCfg->Props))
+    switch (PDMAudioPropsChannels(&pCfg->Props))
     {
         case 3:  /* 2.1: Front (Stereo) + LFE. */
         {
@@ -1656,7 +1656,8 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
     if (rc == VERR_NOT_SUPPORTED)
     {
-        LogRel2(("HDA: Warning: Unsupported channel count (%RU8), falling back to stereo channels (2)\n", pCfg->Props.cChannelsX));
+        LogRel2(("HDA: Warning: Unsupported channel count (%RU8), falling back to stereo channels (2)\n",
+                 PDMAudioPropsChannels(&pCfg->Props) ));
 
         /* Fall back to 2 channels (see below in fUseFront block). */
         rc = VINF_SUCCESS;
