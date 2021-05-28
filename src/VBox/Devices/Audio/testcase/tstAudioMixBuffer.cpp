@@ -271,16 +271,18 @@ static void tstSimple(RTTEST hTest)
     uint32_t cToWrite = AudioMixBufSize(&mb) - cFramesWrittenAbs - 1; /* -1 as padding plus -2 frames for above. */
     for (uint32_t i = 0; i < cToWrite; i++)
     {
-        RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&mb, &aFrames16, sizeof(aFrames16), &cFramesWritten));
+        AudioMixBufWrite(&mb, &WrState, &aFrames16[0], sizeof(aFrames16), 0 /*offDstFrame*/, 1, &cFramesWritten);
         RTTESTI_CHECK(cFramesWritten == 1);
+        AudioMixBufCommit(&mb, cFramesWritten);
     }
     RTTESTI_CHECK(!AudioMixBufIsEmpty(&mb));
     RTTESTI_CHECK(AudioMixBufFree(&mb) == 1);
     RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_F2B(&mb, 1U));
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cToWrite + cFramesWrittenAbs /* + last absolute write */);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&mb, &aFrames16, sizeof(aFrames16), &cFramesWritten));
+    AudioMixBufWrite(&mb, &WrState, &aFrames16[0], sizeof(aFrames16), 0 /*offDstFrame*/, 1, &cFramesWritten);
     RTTESTI_CHECK(cFramesWritten == 1);
+    AudioMixBufCommit(&mb, cFramesWritten);
     RTTESTI_CHECK(AudioMixBufFree(&mb) == 0);
     RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_F2B(&mb, 0U));
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize);
@@ -571,6 +573,10 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
     AUDIOMIXBUF MixBuf;
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&MixBuf, "NewPeekMixBuf", &CfgSrc, cFrames));
 
+    /* Write state (source). */
+    AUDIOMIXBUFWRITESTATE WriteState;
+    RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInitWriteState(&MixBuf, &WriteState, &CfgSrc));
+
     /* Peek state (destination) is uToHz 2ch S16 */
     PDMAUDIOPCMPROPS const CfgDst = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uToHz, false /*fSwap*/);
     RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgDst));
@@ -606,10 +612,12 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
             aSrcFrames[j].r = aSrcFrames[j].l = 32760 /*Amplitude*/ * sin(rdFixed * iSrcFrame);
 
         uint32_t cSrcFramesWritten = UINT32_MAX / 2;
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteCirc(&MixBuf, &aSrcFrames, cSrcFrames * sizeof(aSrcFrames[0]), &cSrcFramesWritten));
+        AudioMixBufWrite(&MixBuf, &WriteState, &aSrcFrames[0], cSrcFrames * sizeof(aSrcFrames[0]),
+                         0 /*offDstFrame*/, cSrcFrames, &cSrcFramesWritten);
         RTTESTI_CHECK_MSG_BREAK(cSrcFrames == cSrcFramesWritten,
                                 ("cSrcFrames=%RU32 vs cSrcFramesWritten=%RU32 cLiveFrames=%RU32\n",
                                  cSrcFrames, cSrcFramesWritten, AudioMixBufLive(&MixBuf)));
+        AudioMixBufCommit(&MixBuf, cSrcFrames);
 
         /*
          * Read out all the frames using the peek function.
