@@ -350,7 +350,7 @@ static uint16_t cdemu_read(uint8_t device, uint32_t lba, uint16_t nbsectors, voi
         if (error != 0)
             return error;
         dst       += xfer_sect * 2048L;
-        nbsectors -= xfer_sect;
+        nbsectors -= xfer_sect * 4;
         slba      += xfer_sect;
     }
 
