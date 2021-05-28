@@ -140,20 +140,6 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
 
 
 /**
- * Clears the entire frame buffer.
- *
- * @param   pMixBuf                 Mixing buffer to clear.
- *
- */
-void AudioMixBufClear(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturnVoid(pMixBuf);
-
-    if (pMixBuf->cFrames)
-        RT_BZERO(pMixBuf->pFrames, pMixBuf->cFrames * sizeof(PDMAUDIOFRAME));
-}
-
-/**
  * Destroys (uninitializes) a mixing buffer.
  *
  * @param   pMixBuf                 Mixing buffer to destroy.
@@ -978,30 +964,11 @@ uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf)
     return pMixBuf->offRead;
 }
 
-/**
- * Resets a mixing buffer.
- *
- * @param   pMixBuf                 Mixing buffer to reset.
- */
-void AudioMixBufReset(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturnVoid(pMixBuf);
-
-    AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
-
-    pMixBuf->offRead  = 0;
-    pMixBuf->offWrite = 0;
-    pMixBuf->cMixed   = 0;
-    pMixBuf->cUsed    = 0;
-
-    AudioMixBufClear(pMixBuf);
-}
-
 
 /**
- * Drops all the frames in the given mixing buffer.
+ * Drops all the frames in the given mixing buffer
  *
- * Similar to AudioMixBufReset, only it doesn't bother clearing the buffer.
+ * This will reset the read and write offsets to zero.
  *
  * @param   pMixBuf             The mixing buffer.
  */

@@ -1258,7 +1258,7 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
 
     LogFunc(("[%s]\n", pSink->pszName));
 
-    AudioMixBufReset(&pSink->MixBuf);
+    AudioMixBufDrop(&pSink->MixBuf);
 
     /* Update last updated timestamp. */
     pSink->tsLastUpdatedMs = 0;

@@ -267,7 +267,7 @@ static void tstSimple(RTTEST hTest)
     /*
      * Writes and reads (used to be circular).
      */
-    AudioMixBufReset(&mb);
+    AudioMixBufDrop(&mb);
 
     cFramesWrittenAbs = AudioMixBufUsed(&mb);
 
