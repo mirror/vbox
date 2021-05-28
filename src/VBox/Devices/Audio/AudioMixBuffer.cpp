@@ -357,68 +357,6 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
         return iVal >= 0 ? _aMax : _aMin; \
     } \
     \
-    DECLCALLBACK(uint32_t) audioMixBufConvFrom##a_Name##Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
-                                                               PCAUDMIXBUFCONVOPTS pOpts) \
-    { \
-        a_Type const *pSrc = (a_Type const *)pvSrc; \
-        uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(a_Type)); \
-        AUDMIXBUF_MACRO_LOG(("cFrames=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             pOpts->cFrames, sizeof(a_Type), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
-        for (uint32_t i = 0; i < cFrames; i++) \
-        { \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##a_Name(*pSrc++), pOpts->From.Volume.uLeft ) >> AUDIOMIXBUF_VOL_SHIFT; \
-            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##a_Name(*pSrc++), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
-            paDst++; \
-        } \
-        \
-        return cFrames; \
-    } \
-    \
-    DECLCALLBACK(uint32_t) audioMixBufConvFrom##a_Name##Mono(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
-                                                             PCAUDMIXBUFCONVOPTS pOpts) \
-    { \
-        a_Type const *pSrc = (a_Type const *)pvSrc; \
-        const uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(a_Type)); \
-        AUDMIXBUF_MACRO_LOG(("cFrames=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             cFrames, sizeof(a_Type), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
-        for (uint32_t i = 0; i < cFrames; i++) \
-        { \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##a_Name(*pSrc), pOpts->From.Volume.uLeft)  >> AUDIOMIXBUF_VOL_SHIFT; \
-            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##a_Name(*pSrc), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
-            pSrc++; \
-            paDst++; \
-        } \
-        \
-        return cFrames; \
-    } \
-    \
-    DECLCALLBACK(void) audioMixBufConvTo##a_Name##Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts) \
-    { \
-        PCPDMAUDIOFRAME pSrc = paSrc; \
-        a_Type *pDst = (a_Type *)pvDst; \
-        uint32_t cFrames = pOpts->cFrames; \
-        while (cFrames--) \
-        { \
-            AUDMIXBUF_MACRO_LOG(("%p: l=%RI64, r=%RI64\n", pSrc, pSrc->i64LSample, pSrc->i64RSample)); \
-            pDst[0] = audioMixBufClipTo##a_Name(pSrc->i64LSample); \
-            pDst[1] = audioMixBufClipTo##a_Name(pSrc->i64RSample); \
-            AUDMIXBUF_MACRO_LOG(("\t-> l=%RI16, r=%RI16\n", pDst[0], pDst[1])); \
-            pDst += 2; \
-            pSrc++; \
-        } \
-    } \
-    \
-    DECLCALLBACK(void) audioMixBufConvTo##a_Name##Mono(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts) \
-    { \
-        PCPDMAUDIOFRAME pSrc = paSrc; \
-        a_Type *pDst = (a_Type *)pvDst; \
-        uint32_t cFrames = pOpts->cFrames; \
-        while (cFrames--) \
-        { \
-            *pDst++ = audioMixBufClipTo##a_Name((pSrc->i64LSample + pSrc->i64RSample) / 2); \
-            pSrc++; \
-        } \
-    } \
     /* Encoders for peek: */ \
     \
     /* 2ch -> 2ch */ \
@@ -642,11 +580,6 @@ DECLCALLBACK(uint32_t) audioMixBufConvFromS64Stereo(PPDMAUDIOFRAME paDst, const 
 }
 #endif
 
-DECLCALLBACK(void) audioMixBufConvToRawS64Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts)
-{
-    AssertCompile(sizeof(paSrc[0]) == sizeof(int64_t) * 2);
-    memcpy(pvDst, paSrc, sizeof(int64_t) * 2 * pOpts->cFrames);
-}
 
 /* Encoders for peek: */
 
@@ -805,132 +738,6 @@ audioMixBufDecode1ChTo1ChRawBlend(int64_t *pi64Dst, void const *pvSrc, uint32_t 
 #undef AUDMIXBUF_MACRO_LOG
 
 /**
- * Looks up the matching conversion function for converting audio frames from a
- * source format.
- *
- * @returns Pointer to matching conversion function, NULL if not supported.
- * @param   pProps  The audio format to find a "from" converter for.
- */
-static PFNAUDIOMIXBUFCONVFROM audioMixBufConvFromLookup(PCPDMAUDIOPCMPROPS pProps)
-{
-    if (PDMAudioPropsIsSigned(pProps))
-    {
-        switch (PDMAudioPropsChannels(pProps))
-        {
-            case 2:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvFromS8Stereo;
-                    case 2:  return audioMixBufConvFromS16Stereo;
-                    case 4:  return audioMixBufConvFromS32Stereo;
-                    //case 8:  return pProps->fRaw ? audioMixBufConvToRawS64Stereo : NULL;
-                    default: return NULL;
-                }
-
-            case 1:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvFromS8Mono;
-                    case 2:  return audioMixBufConvFromS16Mono;
-                    case 4:  return audioMixBufConvFromS32Mono;
-                    default: return NULL;
-                }
-            default:
-                return NULL;
-        }
-    }
-    else /* Unsigned */
-    {
-        switch (PDMAudioPropsChannels(pProps))
-        {
-            case 2:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvFromU8Stereo;
-                    case 2:  return audioMixBufConvFromU16Stereo;
-                    case 4:  return audioMixBufConvFromU32Stereo;
-                    default: return NULL;
-                }
-
-            case 1:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvFromU8Mono;
-                    case 2:  return audioMixBufConvFromU16Mono;
-                    case 4:  return audioMixBufConvFromU32Mono;
-                    default: return NULL;
-                }
-            default:
-                return NULL;
-        }
-    }
-    /* not reached */
-}
-
-/**
- * Looks up the matching conversion function for converting audio frames to a
- * destination format.
- *
- * @returns Pointer to matching conversion function, NULL if not supported.
- * @param   pProps  The audio format to find a "to" converter for.
- */
-static PFNAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PCPDMAUDIOPCMPROPS pProps)
-{
-    if (PDMAudioPropsIsSigned(pProps))
-    {
-        switch (PDMAudioPropsChannels(pProps))
-        {
-            case 2:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvToS8Stereo;
-                    case 2:  return audioMixBufConvToS16Stereo;
-                    case 4:  return audioMixBufConvToS32Stereo;
-                    case 8:  return pProps->fRaw ? audioMixBufConvToRawS64Stereo : NULL;
-                    default: return NULL;
-                }
-
-            case 1:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvToS8Mono;
-                    case 2:  return audioMixBufConvToS16Mono;
-                    case 4:  return audioMixBufConvToS32Mono;
-                    default: return NULL;
-                }
-            default:
-                return NULL;
-        }
-    }
-    else /* Unsigned */
-    {
-        switch (PDMAudioPropsChannels(pProps))
-        {
-            case 2:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvToU8Stereo;
-                    case 2:  return audioMixBufConvToU16Stereo;
-                    case 4:  return audioMixBufConvToU32Stereo;
-                    default: return NULL;
-                }
-
-            case 1:
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:  return audioMixBufConvToU8Mono;
-                    case 2:  return audioMixBufConvToU16Mono;
-                    case 4:  return audioMixBufConvToU32Mono;
-                    default: return NULL;
-                }
-            default:
-                return NULL;
-        }
-    }
-    /* not reached */
-}
-
-/**
  * Converts a PDM audio volume to an internal mixing buffer volume.
  *
  * @returns VBox status code.
@@ -990,8 +797,6 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
     pMixBuf->iFreqRatio = 1 << 20;
 
     pMixBuf->Props       = *pProps;
-    pMixBuf->pfnConvFrom = audioMixBufConvFromLookup(pProps);
-    pMixBuf->pfnConvTo   = audioMixBufConvToLookup(pProps);
 
     pMixBuf->pszName = RTStrDup(pszName);
     if (pMixBuf->pszName)

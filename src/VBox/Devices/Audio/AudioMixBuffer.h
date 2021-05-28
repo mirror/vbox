@@ -85,54 +85,6 @@ typedef struct AUDMIXBUFVOL
 /** Pointer to mixing buffer volument parameters. */
 typedef AUDMIXBUFVOL *PAUDMIXBUFVOL;
 
-/*
- * Frame conversion parameters for the audioMixBufConvFromXXX / audioMixBufConvToXXX functions.
- */
-typedef struct AUDMIXBUFCONVOPTS
-{
-    /** Number of audio frames to convert. */
-    uint32_t        cFrames;
-    union
-    {
-        struct
-        {
-            /** Volume to use for conversion. */
-            AUDMIXBUFVOL Volume;
-        } From;
-    } RT_UNION_NM(u);
-} AUDMIXBUFCONVOPTS;
-/** Pointer to conversion parameters for the audio mixer.   */
-typedef AUDMIXBUFCONVOPTS *PAUDMIXBUFCONVOPTS;
-/** Pointer to const conversion parameters for the audio mixer.   */
-typedef AUDMIXBUFCONVOPTS const *PCAUDMIXBUFCONVOPTS;
-
-/**
- * Convertion-from function used by the audio buffer mixer.
- *
- * @returns Number of audio frames returned.
- * @param   paDst           Where to return the converted frames.
- * @param   pvSrc           The source frame bytes.
- * @param   cbSrc           Number of bytes to convert.
- * @param   pOpts           Conversion options.
- * @todo r=bird: The @a paDst size is presumable given in @a pOpts->cFrames?
- */
-typedef DECLCALLBACKTYPE(uint32_t, FNAUDIOMIXBUFCONVFROM,(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
-                                                          PCAUDMIXBUFCONVOPTS pOpts));
-/** Pointer to a convertion-from function used by the audio buffer mixer. */
-typedef FNAUDIOMIXBUFCONVFROM *PFNAUDIOMIXBUFCONVFROM;
-
-/**
- * Convertion-to function used by the audio buffer mixer.
- *
- * @param   pvDst           Output buffer.
- * @param   paSrc           The input frames.
- * @param   pOpts           Conversion options.
- * @todo r=bird: The @a paSrc size is presumable given in @a pOpts->cFrames and
- *       this implicitly gives the pvDst size too, right?
- */
-typedef DECLCALLBACKTYPE(void, FNAUDIOMIXBUFCONVTO,(void *pvDst, PCPDMAUDIOFRAME paSrc, PCAUDMIXBUFCONVOPTS pOpts));
-/** Pointer to a convertion-to function used by the audio buffer mixer. */
-typedef FNAUDIOMIXBUFCONVTO *PFNAUDIOMIXBUFCONVTO;
 
 /** Pointer to audio mixing buffer.  */
 typedef struct AUDIOMIXBUF *PAUDIOMIXBUF;
@@ -221,10 +173,6 @@ typedef struct AUDIOMIXBUF
      *       Couldn't we just have different conversion fuctions and save the
      *       extra copying? */
     PDMAUDIOPCMPROPS            Props;
-    /** Standard conversion-to function for set uAudioFmt. */
-    PFNAUDIOMIXBUFCONVTO        pfnConvTo;
-    /** Standard conversion-from function for set uAudioFmt. */
-    PFNAUDIOMIXBUFCONVFROM      pfnConvFrom;
 
     /** Ratio of the associated parent stream's frequency by this stream's
      * frequency (1<<32), represented as a signed 64 bit integer.
