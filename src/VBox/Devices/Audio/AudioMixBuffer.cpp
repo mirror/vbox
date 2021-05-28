@@ -140,79 +140,6 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
 
 
 /**
- * Destroys (uninitializes) a mixing buffer.
- *
- * @param   pMixBuf                 Mixing buffer to destroy.
- */
-void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
-{
-    if (!pMixBuf)
-        return;
-
-    /* Ignore calls for an uninitialized (zeroed) or already destroyed instance.  Happens a lot. */
-    if (   pMixBuf->uMagic == 0
-        || pMixBuf->uMagic == ~AUDIOMIXBUF_MAGIC)
-    {
-        Assert(!pMixBuf->pszName);
-        Assert(!pMixBuf->pFrames);
-        Assert(!pMixBuf->cFrames);
-        return;
-    }
-
-    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
-    pMixBuf->uMagic = ~AUDIOMIXBUF_MAGIC;
-
-    if (pMixBuf->pszName)
-    {
-        AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
-
-        RTStrFree(pMixBuf->pszName);
-        pMixBuf->pszName = NULL;
-    }
-
-    if (pMixBuf->pFrames)
-    {
-        Assert(pMixBuf->cFrames);
-
-        RTMemFree(pMixBuf->pFrames);
-        pMixBuf->pFrames = NULL;
-    }
-
-    pMixBuf->cFrames = 0;
-}
-
-/**
- * Returns the size (in audio frames) of free audio buffer space.
- *
- * @return  uint32_t                Size (in audio frames) of free audio buffer space.
- * @param   pMixBuf                 Mixing buffer to return free size for.
- */
-uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-
-    uint32_t const cFrames = pMixBuf->cFrames;
-    uint32_t       cUsed   = pMixBuf->cUsed;
-    AssertStmt(cUsed <= cFrames, cUsed = cFrames);
-    uint32_t const cFramesFree = cFrames - cUsed;
-
-    AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cFramesFree, cFrames));
-    return cFramesFree;
-}
-
-/**
- * Returns the size (in bytes) of free audio buffer space.
- *
- * @return  uint32_t                Size (in bytes) of free audio buffer space.
- * @param   pMixBuf                 Mixing buffer to return free size for.
- */
-uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
-{
-    return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
-}
-
-
-/**
  * Merges @a i64Src into the value stored at @a pi64Dst.
  *
  * @param   pi64Dst     The value to merge @a i64Src into.
@@ -724,30 +651,6 @@ audioMixBufDecode1ChTo1ChRawBlend(int64_t *pi64Dst, void const *pvSrc, uint32_t 
 #undef AUDMIXBUF_MACRO_LOG
 
 /**
- * Converts a PDM audio volume to an internal mixing buffer volume.
- *
- * @returns VBox status code.
- * @param   pVolDst                 Where to store the converted mixing buffer volume.
- * @param   pVolSrc                 Volume to convert.
- */
-static int audioMixBufConvVol(PAUDMIXBUFVOL pVolDst, PCPDMAUDIOVOLUME pVolSrc)
-{
-    if (!pVolSrc->fMuted) /* Only change/convert the volume value if we're not muted. */
-    {
-        uint8_t uVolL = pVolSrc->uLeft  & 0xFF;
-        uint8_t uVolR = pVolSrc->uRight & 0xFF;
-
-        /** @todo Ensure that the input is in the correct range/initialized! */
-        pVolDst->uLeft  = s_aVolumeConv[uVolL] * (AUDIOMIXBUF_VOL_0DB >> 16);
-        pVolDst->uRight = s_aVolumeConv[uVolR] * (AUDIOMIXBUF_VOL_0DB >> 16);
-    }
-
-    pVolDst->fMuted = pVolSrc->fMuted;
-
-    return VINF_SUCCESS;
-}
-
-/**
  * Initializes a mixing buffer.
  *
  * @returns VBox status code.
@@ -800,6 +703,116 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
     pMixBuf->uMagic = AUDIOMIXBUF_MAGIC_DEAD;
     return VERR_NO_MEMORY;
 }
+
+/**
+ * Destroys (uninitializes) a mixing buffer.
+ *
+ * @param   pMixBuf                 Mixing buffer to destroy.
+ */
+void AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf)
+{
+    if (!pMixBuf)
+        return;
+
+    /* Ignore calls for an uninitialized (zeroed) or already destroyed instance.  Happens a lot. */
+    if (   pMixBuf->uMagic == 0
+        || pMixBuf->uMagic == ~AUDIOMIXBUF_MAGIC)
+    {
+        Assert(!pMixBuf->pszName);
+        Assert(!pMixBuf->pFrames);
+        Assert(!pMixBuf->cFrames);
+        return;
+    }
+
+    Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
+    pMixBuf->uMagic = ~AUDIOMIXBUF_MAGIC;
+
+    if (pMixBuf->pszName)
+    {
+        AUDMIXBUF_LOG(("%s\n", pMixBuf->pszName));
+
+        RTStrFree(pMixBuf->pszName);
+        pMixBuf->pszName = NULL;
+    }
+
+    if (pMixBuf->pFrames)
+    {
+        Assert(pMixBuf->cFrames);
+
+        RTMemFree(pMixBuf->pFrames);
+        pMixBuf->pFrames = NULL;
+    }
+
+    pMixBuf->cFrames = 0;
+}
+
+/**
+ * Returns the maximum amount of audio frames this buffer can hold.
+ *
+ * @return  uint32_t                Size (in audio frames) the mixing buffer can hold.
+ * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
+ */
+uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    return pMixBuf->cFrames;
+}
+
+/**
+ * Returns the maximum amount of bytes this buffer can hold.
+ *
+ * @return  uint32_t                Size (in bytes) the mixing buffer can hold.
+ * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
+ */
+uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
+}
+
+/**
+ * Returns the current write position of a mixing buffer.
+ *
+ * @returns VBox status code.
+ * @param   pMixBuf                 Mixing buffer to return position for.
+ */
+uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+
+    return pMixBuf->offWrite;
+}
+
+/**
+ * Returns the size (in audio frames) of free audio buffer space.
+ *
+ * @return  uint32_t                Size (in audio frames) of free audio buffer space.
+ * @param   pMixBuf                 Mixing buffer to return free size for.
+ */
+uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+
+    uint32_t const cFrames = pMixBuf->cFrames;
+    uint32_t       cUsed   = pMixBuf->cUsed;
+    AssertStmt(cUsed <= cFrames, cUsed = cFrames);
+    uint32_t const cFramesFree = cFrames - cUsed;
+
+    AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cFramesFree, cFrames));
+    return cFramesFree;
+}
+
+/**
+ * Returns the size (in bytes) of free audio buffer space.
+ *
+ * @return  uint32_t                Size (in bytes) of free audio buffer space.
+ * @param   pMixBuf                 Mixing buffer to return free size for.
+ */
+uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
+{
+    return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
+}
+
 
 /**
  * Checks if the buffer is empty.
@@ -1874,7 +1887,7 @@ static void audioMixAdjustVolume(PAUDIOMIXBUF pMixBuf, uint32_t offFirst, uint32
  *
  * @param   pMixBuf     The mixing buffer.
  * @param   cFrames     Number of frames to advance.
- * @sa      AudioMixBufAdvance
+ * @sa      AudioMixBufAdvance, AudioMixBufSetVolume
  */
 void AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 {
@@ -1892,10 +1905,12 @@ void AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 
 
 /**
- * Sets the overall (master) volume.
+ * Sets the volume.
  *
- * @param   pMixBuf                 Mixing buffer to set volume for.
- * @param   pVol                    Pointer to volume structure to set.
+ * The volume adjustments are applied by AudioMixBufCommit().
+ *
+ * @param   pMixBuf     Mixing buffer to set volume for.
+ * @param   pVol        Pointer to volume structure to set.
  */
 void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
 {
@@ -1904,44 +1919,21 @@ void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
 
     LogFlowFunc(("%s: lVol=%RU8, rVol=%RU8, fMuted=%RTbool\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted));
 
-    int rc2 = audioMixBufConvVol(&pMixBuf->Volume, pVol);
-    AssertRC(rc2);
-}
-
-/**
- * Returns the maximum amount of audio frames this buffer can hold.
- *
- * @return  uint32_t                Size (in audio frames) the mixing buffer can hold.
- * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
- */
-uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-    return pMixBuf->cFrames;
-}
-
-/**
- * Returns the maximum amount of bytes this buffer can hold.
- *
- * @return  uint32_t                Size (in bytes) the mixing buffer can hold.
- * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
- */
-uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-    return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
-}
-
-/**
- * Returns the current write position of a mixing buffer.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to return position for.
- */
-uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-
-    return pMixBuf->offWrite;
+    /*
+     * Convert PDM audio volume to the internal format.
+     */
+    if (!pVol->fMuted)
+    {
+        pMixBuf->Volume.fMuted = false;
+        AssertCompileSize(pVol->uLeft, sizeof(uint8_t));
+        pMixBuf->Volume.uLeft  = s_aVolumeConv[pVol->uLeft ] * (AUDIOMIXBUF_VOL_0DB >> 16);
+        pMixBuf->Volume.uRight = s_aVolumeConv[pVol->uRight] * (AUDIOMIXBUF_VOL_0DB >> 16);
+    }
+    else
+    {
+        pMixBuf->Volume.fMuted = true;
+        pMixBuf->Volume.uLeft  = 0;
+        pMixBuf->Volume.uRight = 0;
+    }
 }
 
