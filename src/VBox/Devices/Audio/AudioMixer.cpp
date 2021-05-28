@@ -760,7 +760,7 @@ static uint64_t audioMixerSinkDrainDeadline(PAUDMIXSINK pSink, uint32_t cbDmaLef
      * to nanoseconds and apply a fudge factor to get a generous deadline.
      */
     uint32_t const cFramesDmaAndMixBuf = PDMAudioPropsBytesToFrames(&pSink->MixBuf.Props, cbDmaLeftToDrain)
-                                       + AudioMixBufLive(&pSink->MixBuf);
+                                       + AudioMixBufUsed(&pSink->MixBuf);
     uint64_t const cNsToDrainMax       = PDMAudioPropsFramesToNano(&pSink->MixBuf.Props, cFramesDmaAndMixBuf + cFramesStreamMax);
     uint64_t const nsDeadline          = cNsToDrainMax * 2;
     LogFlowFunc(("%s: cFramesStreamMax=%#x cFramesDmaAndMixBuf=%#x -> cNsToDrainMax=%RU64 -> %RU64\n",
@@ -1030,7 +1030,7 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
 
     if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
     {
-        uint32_t const cFrames = AudioMixBufLive(&pSink->MixBuf);
+        uint32_t const cFrames = AudioMixBufUsed(&pSink->MixBuf);
         cbReadable = PDMAudioPropsFramesToBytes(&pSink->PCMProps, cFrames);
     }
 
@@ -1716,7 +1716,7 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
  */
 static uint32_t audioMixerSinkUpdateOutputCalcFramesToRead(PAUDMIXSINK pSink, uint32_t *pcWritableStreams)
 {
-    uint32_t      cFramesToRead    = AudioMixBufLive(&pSink->MixBuf); /* (to read from the mixing buffer) */
+    uint32_t      cFramesToRead    = AudioMixBufUsed(&pSink->MixBuf); /* (to read from the mixing buffer) */
     uint32_t      cWritableStreams = 0;
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -1783,7 +1783,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         || cWritableStreams <= 1
         || AudioMixBufFree(&pSink->MixBuf) > 2)
         Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x\n", pSink->pszName,
-                  AudioMixBufLive(&pSink->MixBuf), cFramesToRead, cWritableStreams));
+                  AudioMixBufUsed(&pSink->MixBuf), cFramesToRead, cWritableStreams));
     else
     {
         Log3Func(("%s: MixBuf is full but one or more streams only want zero frames.  Try disregarding those...\n", pSink->pszName));
@@ -1829,7 +1829,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
         }
 
         Log3Func(("%s: cLiveFrames=%#x cFramesToRead=%#x cWritableStreams=%#x cMarkedUnreliable=%#x cReliableStreams=%#x\n",
-                  pSink->pszName, AudioMixBufLive(&pSink->MixBuf), cFramesToRead,
+                  pSink->pszName, AudioMixBufUsed(&pSink->MixBuf), cFramesToRead,
                   cWritableStreams, cMarkedUnreliable, cReliableStreams));
     }
 

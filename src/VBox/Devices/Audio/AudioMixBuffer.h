@@ -191,7 +191,6 @@ uint32_t    AudioMixBufSize(PCAUDIOMIXBUF pMixBuf);
 uint32_t    AudioMixBufSizeBytes(PCAUDIOMIXBUF pMixBuf);
 uint32_t    AudioMixBufUsed(PCAUDIOMIXBUF pMixBuf);
 uint32_t    AudioMixBufUsedBytes(PCAUDIOMIXBUF pMixBuf);
-uint32_t    AudioMixBufLive(PCAUDIOMIXBUF pMixBuf);
 uint32_t    AudioMixBufFree(PCAUDIOMIXBUF pMixBuf);
 uint32_t    AudioMixBufFreeBytes(PCAUDIOMIXBUF pMixBuf);
 bool        AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf);

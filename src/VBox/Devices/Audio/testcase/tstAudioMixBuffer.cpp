@@ -624,7 +624,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
                          0 /*offDstFrame*/, cSrcFrames, &cSrcFramesWritten);
         RTTESTI_CHECK_MSG_BREAK(cSrcFrames == cSrcFramesWritten,
                                 ("cSrcFrames=%RU32 vs cSrcFramesWritten=%RU32 cLiveFrames=%RU32\n",
-                                 cSrcFrames, cSrcFramesWritten, AudioMixBufLive(&MixBuf)));
+                                 cSrcFrames, cSrcFramesWritten, AudioMixBufUsed(&MixBuf)));
         AudioMixBufCommit(&MixBuf, cSrcFrames);
 
         /*
@@ -663,7 +663,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
          * Then advance.
          */
         AudioMixBufAdvance(&MixBuf, cSrcFrames);
-        RTTESTI_CHECK(AudioMixBufLive(&MixBuf) == 0);
+        RTTESTI_CHECK(AudioMixBufUsed(&MixBuf) == 0);
     }
 
     /** @todo this is a bit lax...   */

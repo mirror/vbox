@@ -844,19 +844,6 @@ uint32_t AudioMixBufUsedBytes(PCAUDIOMIXBUF pMixBuf)
 
 
 /**
- * Get the number of readable frames in the buffer.
- *
- * @returns Number of frames.
- * @param   pMixBuf     The mixing buffer.
- * @todo Exactly same as AudioMixBufUsed.
- */
-uint32_t AudioMixBufLive(PCAUDIOMIXBUF pMixBuf)
-{
-    return AudioMixBufUsed(pMixBuf);
-}
-
-
-/**
  * Worker for AudioMixBufFree and AudioMixBufFreeBytes.
  */
 DECLINLINE(uint32_t) audioMixBufFreeInternal(PCAUDIOMIXBUF pMixBuf)
