@@ -239,10 +239,16 @@
 #include <VBox/vmm/pdmcommon.h>
 #include <VBox/vmm/stam.h>
 
+RT_C_DECLS_BEGIN
+
+
 /** @defgroup grp_pdm_ifs_audio     PDM Audio Interfaces
  * @ingroup grp_pdm_interfaces
  * @{
  */
+
+/** The maximum number of channels PDM supports. */
+#define PDMAUDIO_MAX_CHANNELS   16
 
 /**
  * Audio direction.
@@ -1560,6 +1566,8 @@ typedef struct PDMIHOSTAUDIOPORT
 #define PDMIHOSTAUDIOPORT_IID                    "9f91ec59-95ba-4925-92dc-e75be1c63352"
 
 /** @} */
+
+RT_C_DECLS_END
 
 #endif /* !VBOX_INCLUDED_vmm_pdmaudioifs_h */
 
