@@ -252,15 +252,6 @@
 # endif
 #endif
 
-/** PDM audio driver instance flags. */
-typedef uint32_t PDMAUDIODRVFLAGS;
-
-/** No flags set. */
-#define PDMAUDIODRVFLAGS_NONE       0
-/** Marks a primary audio driver which is critical
- *  when running the VM. */
-#define PDMAUDIODRVFLAGS_PRIMARY    RT_BIT(0)
-
 /**
  * Audio format in signed or unsigned variants.
  */
@@ -697,7 +688,12 @@ typedef struct PDMAUDIOPCMPROPS
     bool        fSigned : 1;
     /** Whether the endianness is swapped or not. */
     bool        fSwapEndian : 1;
-    /** Raw mixer frames, only applicable for signed 64-bit samples. */
+    /** Raw mixer frames, only applicable for signed 64-bit samples.
+     * The raw mixer samples are really just signed 32-bit samples stored as 64-bit
+     * integers without any change in the value.
+     *
+     * @todo Get rid of this, only VRDE needs it an it should use the common
+     *       mixer code rather than cooking its own stuff. */
     bool        fRaw : 1;
     /** Sample frequency in Hertz (Hz). */
     uint32_t    uHz;

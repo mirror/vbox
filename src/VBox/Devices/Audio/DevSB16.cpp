@@ -146,14 +146,12 @@ typedef struct SB16DRIVER
     R3PTRTYPE(PPDMIAUDIOCONNECTOR)  pConnector;
     /** Stream for output. */
     SB16DRIVERSTREAM                Out;
-    /** Driver flags. */
-    PDMAUDIODRVFLAGS                fFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                         uLUN;
     /** Whether this driver is in an attached state or not. */
     bool                            fAttached;
     /** The LUN description. */
-    char                            szDesc[2+48];
+    char                            szDesc[48 - 2];
 } SB16DRIVER;
 /** Pointer to the per-LUN data. */
 typedef SB16DRIVER *PSB16DRIVER;
@@ -2693,15 +2691,6 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, PSB16DRIVER *ppDr
             pDrv->pSB16State = pThis;
             pDrv->uLUN       = uLUN;
 
-            /*
-             * For now we always set the driver at LUN 0 as our primary
-             * host backend. This might change in the future.
-             */
-            if (pDrv->uLUN == 0)
-                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
-
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
             {
@@ -2711,7 +2700,7 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, PSB16DRIVER *ppDr
 
             if (ppDrv)
                 *ppDrv = pDrv;
-            LogFunc(("LUN#%u: VINF_SUCCESS\n", uLUN));
+            LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", uLUN, pDrv->pConnector));
             return VINF_SUCCESS;
         }
         rc = VERR_PDM_MISSING_INTERFACE_BELOW;

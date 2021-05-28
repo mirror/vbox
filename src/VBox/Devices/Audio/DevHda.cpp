@@ -221,13 +221,11 @@ typedef struct HDADRIVER
     R3PTRTYPE(PHDASTATE)               pHDAStateShared;
     /** Pointer to the ring-3 HDA device state. */
     R3PTRTYPE(PHDASTATER3)             pHDAStateR3;
-    /** Driver flags. */
-    PDMAUDIODRVFLAGS                   fFlags;
-    uint8_t                            u32Padding0[2];
     /** LUN to which this driver has been assigned. */
     uint8_t                            uLUN;
     /** Whether this driver is in an attached state or not. */
     bool                               fAttached;
+    uint8_t                            u32Padding0[6];
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -4379,16 +4377,6 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                 pDrv->pHDAStateShared   = pThis;
                 pDrv->pHDAStateR3       = pThisCC;
                 pDrv->uLUN              = uLUN;
-                AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN#%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
-
-                /*
-                 * For now we always set the driver at LUN 0 as our primary
-                 * host backend. This might change in the future.
-                 */
-                if (pDrv->uLUN == 0)
-                    pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-                LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
 
                 /* Attach to driver list if not attached yet. */
                 if (!pDrv->fAttached)
@@ -4421,7 +4409,7 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
                 }
 
-                LogFunc(("LUN#%u: VINF_SUCCESS\n", uLUN));
+                LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", uLUN, pDrv->pConnector));
                 return VINF_SUCCESS;
             }
 

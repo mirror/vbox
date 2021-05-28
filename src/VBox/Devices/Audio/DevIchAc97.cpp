@@ -456,13 +456,11 @@ typedef struct AC97DRIVER
 {
     /** Node for storing this driver in our device driver list of AC97STATE. */
     RTLISTNODER3                    Node;
-    /** Driver flags. */
-    PDMAUDIODRVFLAGS                fFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                         uLUN;
     /** Whether this driver is in an attached state or not. */
     bool                            fAttached;
-    uint8_t                         abPadding[2];
+    uint8_t                         abPadding[6];
     /** Pointer to the description string passed to PDMDevHlpDriverAttach(). */
     R3PTRTYPE(char *)               pszDesc;
     /** Pointer to attached driver base interface. */
@@ -3536,20 +3534,11 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
         {
             pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
             AssertPtr(pDrv->pConnector);
-            if (pDrv->pConnector)
+            if (RT_VALID_PTR(pDrv->pConnector))
             {
                 pDrv->pDrvBase   = pDrvBase;
                 pDrv->uLUN       = iLun;
                 pDrv->pszDesc    = pszDesc;
-
-                /*
-                 * For now we always set the driver at LUN 0 as our primary
-                 * host backend. This might change in the future.
-                 */
-                if (iLun == 0)
-                    pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
-
-                LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", iLun, pDrv->pConnector, pDrv->fFlags));
 
                 /* Attach to driver list if not attached yet. */
                 if (!pDrv->fAttached)
@@ -3560,7 +3549,7 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
 
                 if (ppDrv)
                     *ppDrv = pDrv;
-                LogFunc(("LUN#%u: VINF_SUCCESS\n", iLun));
+                LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", iLun, pDrv->pConnector));
                 return VINF_SUCCESS;
             }
             RTMemFree(pDrv);
