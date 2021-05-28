@@ -142,15 +142,10 @@ typedef struct AUDIOMIXBUF
 {
     /** Magic value (AUDIOMIXBUF_MAGIC). */
     uint32_t                    uMagic;
-    uint8_t                     abPadding[4];
-    /* ???Undocumented??? */
-    RTLISTNODE                  Node;
-    /** Name of the buffer. */
-    char                       *pszName;
-    /** Frame buffer. */
-    PPDMAUDIOFRAME              pFrames;
     /** Size of the frame buffer (in audio frames). */
     uint32_t                    cFrames;
+    /** Frame buffer. */
+    PPDMAUDIOFRAME              pFrames;
     /** The current read position (in frames). */
     uint32_t                    offRead;
     /** The current write position (in frames). */
@@ -164,25 +159,13 @@ typedef struct AUDIOMIXBUF
     /** How much audio frames are currently being used in this buffer.
      * @note This also is known as the distance in ring buffer terms. */
     uint32_t                    cUsed;
+    /** Audio properties for the buffer content - for frequency and channel count.
+     * (This is the guest side PCM properties.) */
+    PDMAUDIOPCMPROPS            Props;
     /** Internal representation of current volume used for mixing. */
     AUDMIXBUFVOL                Volume;
-    /** Audio input properties.
-     * @note There is only one set of audio properties here because we have one
-     *       mixer buffer for the guest side and a separate one for the host side.
-     * @todo r=bird: Why exactly do we need to use separate mixer buffers?
-     *       Couldn't we just have different conversion fuctions and save the
-     *       extra copying? */
-    PDMAUDIOPCMPROPS            Props;
-
-    /** Ratio of the associated parent stream's frequency by this stream's
-     * frequency (1<<32), represented as a signed 64 bit integer.
-     *
-     * For example, if the parent stream has a frequency of 44 khZ, and this
-     * stream has a frequency of 11 kHz, the ration then would be
-     * (44/11 * (1 << 32)).
-     *
-     * Currently this does not get changed once assigned. */
-    int64_t                     iFreqRatio;
+    /** Name of the buffer. */
+    char                       *pszName;
 } AUDIOMIXBUF;
 
 /** Magic value for AUDIOMIXBUF (Antonio Lucio Vivaldi). */
@@ -195,13 +178,6 @@ typedef struct AUDIOMIXBUF
 /** Converts bytes to (audio) frames.
  * @note Does *not* take the conversion ratio into account. */
 #define AUDIOMIXBUF_B2F(a_pMixBuf, a_cb)        PDMAUDIOPCMPROPS_B2F(&(a_pMixBuf)->Props, a_cb)
-
-/** Converts frames to bytes, respecting the conversion ratio to
- *  a linked buffer. */
-#define AUDIOMIXBUF_F2B_RATIO(a_pMixBuf, a_cFrames) AUDIOMIXBUF_F2B(a_pMixBuf, AUDIOMIXBUF_F2F_RATIO(a_pMixBuf, a_cFrames))
-/** Converts number of frames according to the buffer's ratio.
- * @todo r=bird: Why the *signed* cast?  */
-#define AUDIOMIXBUF_F2F_RATIO(a_pMixBuf, a_cFrames) (((int64_t)(a_cFrames) << 32) / (a_pMixBuf)->iFreqRatio)
 
 
 int     AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);

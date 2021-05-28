@@ -792,10 +792,6 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
     pMixBuf->Volume.uLeft  = AUDIOMIXBUF_VOL_0DB;
     pMixBuf->Volume.uRight = AUDIOMIXBUF_VOL_0DB;
 
-    /* Prevent division by zero.
-     * Do a 1:1 conversion according to AUDIOMIXBUF_S2B_RATIO. */
-    pMixBuf->iFreqRatio = 1 << 20;
-
     pMixBuf->Props       = *pProps;
 
     pMixBuf->pszName = RTStrDup(pszName);
