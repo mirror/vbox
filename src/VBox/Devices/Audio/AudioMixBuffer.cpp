@@ -852,17 +852,6 @@ audioMixBufDecode1ChTo1ChRawBlend(int64_t *pi64Dst, void const *pvSrc, uint32_t 
 
 #undef AUDMIXBUF_MACRO_LOG
 
-/** Dummy conversion used when the source is muted. */
-static DECLCALLBACK(uint32_t)
-audioMixBufConvFromSilence(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, PCAUDMIXBUFCONVOPTS pOpts)
-{
-    RT_NOREF(cbSrc, pvSrc);
-
-    /* Internally zero always corresponds to silence. */
-    RT_BZERO(paDst, pOpts->cFrames * sizeof(paDst[0]));
-    return pOpts->cFrames;
-}
-
 /**
  * Looks up the matching conversion function for converting audio frames from a
  * source format.
