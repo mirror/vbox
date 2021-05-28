@@ -116,7 +116,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
          * @todo r=uwe I'm not reindenting this whole burnt offering
          * to mistinterpreted Dijkstra's "single exit" commandment
          * just to add this log, hence a bit of duplicate logic here.
-         */ 
+         */
         if (SUCCEEDED(rc) && listVM.empty())
             LogRel(("No VMs configured for autostart\n"));
 
