@@ -184,6 +184,19 @@ int     AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCM
 void    AudioMixBufDestroy(PAUDIOMIXBUF pMixBuf);
 void    AudioMixBufDrop(PAUDIOMIXBUF pMixBuf);
 
+uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf);
+bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf);
+uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf);
+
+void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
+
 int     AudioMixBufInitPeekState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFPEEKSTATE pState, PCPDMAUDIOPCMPROPS pDstProps);
 void    AudioMixBufPeek(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxSrcFrames, uint32_t *pcSrcFramesPeeked,
                         PAUDIOMIXBUFPEEKSTATE pState, void *pvDst, uint32_t cbDst, uint32_t *pcbDstPeeked);
@@ -197,18 +210,6 @@ void    AudioMixBufBlend(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, co
                          uint32_t offDstFrame, uint32_t cMaxDstFrames, uint32_t *pcDstFramesBlended);
 void    AudioMixBufBlendGap(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, uint32_t cFrames);
 void    AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
-
-uint32_t AudioMixBufFree(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf);
-bool AudioMixBufIsEmpty(PCAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufLive(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufUsed(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufUsedBytes(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufReadPos(PAUDIOMIXBUF pMixBuf);
-void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
-uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf);
-uint32_t AudioMixBufWritePos(PAUDIOMIXBUF pMixBuf);
 
 #ifdef DEBUG
 void AudioMixBufDbgPrint(PAUDIOMIXBUF pMixBuf);
