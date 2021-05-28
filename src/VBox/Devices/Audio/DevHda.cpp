@@ -2707,7 +2707,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, R
                      ASMDivU64ByU32RetU32(pStreamDbg->cbWrittenTotal, pStreamDbg->cWritesTotal)));
 #  endif
 
-#  ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+#  ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
             if (pThis->fDebugEnabled)
             {
                 RTFILE fh;

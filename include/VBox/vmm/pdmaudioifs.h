@@ -244,14 +244,6 @@
  * @{
  */
 
-#ifndef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
-# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
-
 /**
  * Audio direction.
  */

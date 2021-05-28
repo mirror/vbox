@@ -2606,7 +2606,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCapture(PPDMIHOSTAUDIO pInterface
                      drvHostDSoundStreamStatusString(pStreamDS) ));
     }
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
     if (cbRead)
     {
         RTFILE hFile;

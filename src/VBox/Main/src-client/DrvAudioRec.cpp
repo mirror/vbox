@@ -705,7 +705,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
         Assert(cbSrc == pCodec->Opus.cbFrame);
 
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
         RTFILE fh;
         RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
@@ -1197,7 +1197,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     pThis->pDrvAudio = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
     AssertMsgReturn(pThis->pDrvAudio, ("Configuration error: No upper interface specified!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.webm");
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.pcm");
 #endif

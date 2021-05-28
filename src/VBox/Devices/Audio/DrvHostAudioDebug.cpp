@@ -333,7 +333,7 @@ static DECLCALLBACK(int) drvHostDebugAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     pThis->IHostAudio.pfnStreamPlay                 = drvHostDebugAudioHA_StreamPlay;
     pThis->IHostAudio.pfnStreamCapture              = drvHostDebugAudioHA_StreamCapture;
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "AudioDebugOutput.pcm");
 #endif
 
