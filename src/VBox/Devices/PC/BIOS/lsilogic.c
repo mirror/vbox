@@ -283,13 +283,11 @@ typedef struct
     /** The SCSI I/O request structure. */
     MptSCSIIORequest   ScsiIoReq;
     /** S/G elements being used, must come after the I/O request structure. */
-    MptSGEntrySimple32 aSge[3];
+    MptSGEntrySimple32 Sge;
     /** The reply frame used for address replies. */
     uint8_t            abReply[128];
     /** I/O base of device. */
     uint16_t           u16IoBase;
-    /** The sink buf. */
-    void __far         *pvSinkBuf;
 } lsilogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -411,26 +409,24 @@ int lsilogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
     for (i = 0; i < cbCDB; i++)
         lsilogic->ScsiIoReq.au8CDB[i] = aCDB[i];
 
-    lsilogic->aSge[0].u24Length               = length;
-    lsilogic->aSge[0].fEndOfList              = 1;
-    lsilogic->aSge[0].f64BitAddress           = 0;
-    lsilogic->aSge[0].fBufferContainsData     = 0;
-    lsilogic->aSge[0].fLocalAddress           = 0;
-    lsilogic->aSge[0].u2ElementType           = 0x01; /* Simple type */
-    lsilogic->aSge[0].fEndOfBuffer            = 1;
-    lsilogic->aSge[0].fLastElement            = 1;
-    lsilogic->aSge[0].u32DataBufferAddressLow = lsilogic_addr_to_phys(buffer);
+    lsilogic->Sge.u24Length               = length;
+    lsilogic->Sge.fEndOfList              = 1;
+    lsilogic->Sge.f64BitAddress           = 0;
+    lsilogic->Sge.fBufferContainsData     = 0;
+    lsilogic->Sge.fLocalAddress           = 0;
+    lsilogic->Sge.u2ElementType           = 0x01; /* Simple type */
+    lsilogic->Sge.fEndOfBuffer            = 1;
+    lsilogic->Sge.fLastElement            = 1;
+    lsilogic->Sge.u32DataBufferAddressLow = lsilogic_addr_to_phys(buffer);
 
     return lsilogic_scsi_cmd_exec(lsilogic);
 }
 
 int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                              uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                              uint16_t skip_a)
+                              uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
     int i;
-    uint8_t idxSge = 0;
 
     _fmemset(&lsilogic->ScsiIoReq, 0, sizeof(lsilogic->ScsiIoReq));
 
@@ -442,53 +438,19 @@ int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     lsilogic->ScsiIoReq.u8SenseBufferLength = 0;
     lsilogic->ScsiIoReq.u32MessageContext   = 0xcafe;
     lsilogic->ScsiIoReq.u32Control          = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ << 24;
+    lsilogic->ScsiIoReq.u32DataLength       = length;
     for (i = 0; i < cbCDB; i++)
         lsilogic->ScsiIoReq.au8CDB[i] = aCDB[i];
 
-    lsilogic->ScsiIoReq.u32DataLength = skip_a + length + skip_b;
-
-    /* Prepend a sinkhole if data is skipped upfront. */
-    if (skip_b)
-    {
-        lsilogic->aSge[idxSge].u24Length               = skip_b;
-        lsilogic->aSge[idxSge].fEndOfList              = 0;
-        lsilogic->aSge[idxSge].f64BitAddress           = 0;
-        lsilogic->aSge[idxSge].fBufferContainsData     = 0;
-        lsilogic->aSge[idxSge].fLocalAddress           = 0;
-        lsilogic->aSge[idxSge].u2ElementType           = 0x01; /* Simple type */
-        lsilogic->aSge[idxSge].fEndOfBuffer            = 0;
-        lsilogic->aSge[idxSge].fLastElement            = 0;
-        lsilogic->aSge[idxSge].u32DataBufferAddressLow = lsilogic_addr_to_phys(lsilogic->pvSinkBuf);
-
-        idxSge++;
-    }
-
-    lsilogic->aSge[idxSge].u24Length               = length;
-    lsilogic->aSge[idxSge].fEndOfList              = skip_a ? 0 : 1;
-    lsilogic->aSge[idxSge].f64BitAddress           = 0;
-    lsilogic->aSge[idxSge].fBufferContainsData     = 0;
-    lsilogic->aSge[idxSge].fLocalAddress           = 0;
-    lsilogic->aSge[idxSge].u2ElementType           = 0x01; /* Simple type */
-    lsilogic->aSge[idxSge].fEndOfBuffer            = skip_a ? 0 : 1;
-    lsilogic->aSge[idxSge].fLastElement            = skip_a ? 0 : 1;
-    lsilogic->aSge[idxSge].u32DataBufferAddressLow = lsilogic_addr_to_phys(buffer);
-
-    idxSge++;
-
-    /* Append a sinkhole if data is skipped at the end. */
-    if (skip_a)
-    {
-        lsilogic->aSge[idxSge].u24Length               = skip_a;
-        lsilogic->aSge[idxSge].fEndOfList              = 1;
-        lsilogic->aSge[idxSge].f64BitAddress           = 0;
-        lsilogic->aSge[idxSge].fBufferContainsData     = 0;
-        lsilogic->aSge[idxSge].fLocalAddress           = 0;
-        lsilogic->aSge[idxSge].u2ElementType           = 0x01; /* Simple type */
-        lsilogic->aSge[idxSge].fEndOfBuffer            = 1;
-        lsilogic->aSge[idxSge].fLastElement            = 1;
-        lsilogic->aSge[idxSge].u32DataBufferAddressLow = lsilogic_addr_to_phys(lsilogic->pvSinkBuf);
-        idxSge++;
-    }
+    lsilogic->Sge.u24Length                 = length;
+    lsilogic->Sge.fEndOfList                = 1;
+    lsilogic->Sge.f64BitAddress             = 0;
+    lsilogic->Sge.fBufferContainsData       = 0;
+    lsilogic->Sge.fLocalAddress             = 0;
+    lsilogic->Sge.u2ElementType             = 0x01; /* Simple type */
+    lsilogic->Sge.fEndOfBuffer              = 1;
+    lsilogic->Sge.fLastElement              = 1;
+    lsilogic->Sge.u32DataBufferAddressLow   = lsilogic_addr_to_phys(buffer);
 
     return lsilogic_scsi_cmd_exec(lsilogic);
 }
@@ -535,7 +497,7 @@ static int lsilogic_scsi_hba_init(lsilogic_t __far *lsilogic)
 /**
  * Init the LsiLogic SCSI driver and detect attached disks.
  */
-int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int lsilogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 {
     lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
     uint32_t u32Bar;
@@ -555,7 +517,6 @@ int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSink
 
         DBG_LSILOGIC("I/O base: 0x%x\n", u16IoBase);
         lsilogic->u16IoBase = u16IoBase;
-        lsilogic->pvSinkBuf = pvSinkBuf;
         return lsilogic_scsi_hba_init(lsilogic);
     }
     else

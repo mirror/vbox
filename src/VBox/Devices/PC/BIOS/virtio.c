@@ -102,8 +102,8 @@ typedef struct
  */
 typedef struct
 {
-    /** The descriptor table, using 5 max. */
-    virtio_q_desc_t      aDescTbl[5];
+    /** The descriptor table, using 3 max. */
+    virtio_q_desc_t      aDescTbl[3];
     /** Available ring. */
     virtio_q_avail_t     AvailRing;
     /** Used ring. */
@@ -208,8 +208,6 @@ typedef struct
     uint8_t          u8Bus;
     /** Device/Function number. */
     uint8_t          u8DevFn;
-    /** The sink buf. */
-    void __far       *pvSinkBuf;
     /** The current executed command structure. */
     virtio_scsi_req_hdr_t ScsiReqHdr;
     virtio_scsi_req_sts_t ScsiReqSts;
@@ -434,12 +432,10 @@ int virtio_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aC
 }
 
 int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                            uint16_t skip_a)
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     virtio_t __far *virtio = (virtio_t __far *)pvHba;
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
-    uint8_t idxDesc = 0;
 
     _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
     _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
@@ -451,51 +447,24 @@ int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCD
     _fmemcpy(&virtio->ScsiReqHdr.abCdb[0], aCDB, cbCDB);
 
     /* Fill in the descriptors. */
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqHdr);
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[idxDesc].cbBuf         = sizeof(virtio->ScsiReqHdr);
-    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_NEXT;
-    virtio->Queue.aDescTbl[idxDesc].idxNext       = 1;
-    idxDesc++;
+    virtio->Queue.aDescTbl[0].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[0].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[0].cbBuf         = sizeof(virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[0].fFlags        = VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[0].idxNext       = 1;
 
     /* No data out buffer, the status comes right after this in the next descriptor. */
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[idxDesc].cbBuf         = sizeof(virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
-    virtio->Queue.aDescTbl[idxDesc].idxNext       = 2;
-    idxDesc++;
+    virtio->Queue.aDescTbl[1].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[1].idxNext       = 2;
 
-    /* Prepend a sinkhole if data is skipped upfront. */
-    if (skip_b)
-    {
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(virtio->pvSinkBuf);
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
-        virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_b;
-        virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
-        virtio->Queue.aDescTbl[idxDesc].idxNext       = idxDesc + 1;
-        idxDesc++;
-    }
-
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(buffer);
-    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[idxDesc].cbBuf         = length;
-    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
-    virtio->Queue.aDescTbl[idxDesc].idxNext       = skip_a ? idxDesc + 1 : 0;
-    idxDesc++;
-
-    /* Append a sinkhole if data is skipped at the end. */
-    if (skip_a)
-    {
-        virtio->Queue.aDescTbl[idxDesc - 1].fFlags  |= VIRTIO_Q_DESC_F_NEXT;
-        virtio->Queue.aDescTbl[idxDesc - 1].idxNext = idxDesc;
-
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(virtio->pvSinkBuf);
-        virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
-        virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_a;
-        virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
-        virtio->Queue.aDescTbl[idxDesc].idxNext       = 0;
-    }
+    virtio->Queue.aDescTbl[2].GCPhysBufLow  = virtio_addr_to_phys(buffer);
+    virtio->Queue.aDescTbl[2].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[2].cbBuf         = length;
+    virtio->Queue.aDescTbl[2].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
+    virtio->Queue.aDescTbl[2].idxNext       = 0;
 
     /* Put it into the queue, the index is supposed to be free-running and clipped to the ring size
      * internally. The free running index is what the driver sees. */
@@ -661,7 +630,7 @@ static int virtio_scsi_hba_init(virtio_t __far *virtio, uint8_t u8Bus, uint8_t u
 /**
  * Init the VirtIO SCSI driver and detect attached disks.
  */
-int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int virtio_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 {
     virtio_t __far *virtio = (virtio_t __far *)pvHba;
     uint8_t     u8PciCapOff;
@@ -713,8 +682,6 @@ int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBu
 
         /* Enable PCI memory, I/O, bus mastering access in command register. */
         pci_write_config_word(u8Bus, u8DevFn, 4, 0x7);
-
-        virtio->pvSinkBuf = pvSinkBuf;
         return virtio_scsi_hba_init(virtio, u8Bus, u8DevFn, u8PciCapOffVirtIo);
     }
     else

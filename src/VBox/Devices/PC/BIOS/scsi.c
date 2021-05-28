@@ -34,14 +34,11 @@
 
 #define VBOX_SCSI_NO_HBA 0xffff
 
-#define VBOX_SCSI_SINK_BUF_KB 16
-
-typedef int (* scsi_hba_init)(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
+typedef int (* scsi_hba_init)(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 typedef int (* scsi_hba_cmd_data_out)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 typedef int (* scsi_hba_cmd_data_in)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_a,
-                                     uint16_t skip_b);
+                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 
 typedef struct
 {
@@ -116,29 +113,6 @@ static uint16_t scsi_hba_mem_alloc(void)
 }
 
 /**
- * Allocates 1K of conventional memory.
- */
-static uint16_t scsi_sink_buf_alloc(void)
-{
-    uint16_t    base_mem_kb;
-    uint16_t    sink_seg;
-
-    base_mem_kb = read_word(0x00, 0x0413);
-
-    DBG_SCSI("SCSI: %dK of base mem\n", base_mem_kb);
-
-    if (base_mem_kb == 0)
-        return 0;
-
-    base_mem_kb -= VBOX_SCSI_SINK_BUF_KB;
-    sink_seg = (((uint32_t)base_mem_kb * 1024) >> 4); /* Calculate start segment. */
-
-    write_word(0x00, 0x0413, base_mem_kb);
-
-    return sink_seg;
-}
-
-/**
  * Read sectors from an attached SCSI device.
  *
  * @returns status code.
@@ -180,7 +154,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
              count, device_id, bios_dsk->scsidev[device_id].target_id);
 
     rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, target_id, (void __far *)&cdb, 16,
-                                     bios_dsk->drqp.buffer, (count * 512L), 0, 0);
+                                     bios_dsk->drqp.buffer, (count * 512L));
     if (!rc)
     {
         bios_dsk->drqp.trsfsectors = count;
@@ -258,13 +232,12 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
  * @param   device_id   ID of the device to access.
  * @param   cmdlen      Length of the CDB.
  * @param   cmdbuf      The CDB buffer.
- * @param   skip_b      How much to skip before reading into the provided data buffer.
  * @param   length      How much to transfer.
  * @param   inout       Read/Write direction indicator.
  * @param   buffer      Data buffer to store the data from the device in.
  */
 uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                         uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer)
+                         uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     uint8_t         rc;
@@ -279,18 +252,11 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
         return 1;
     }
 
-    /* The skip length must be even. */
-    if (skip_b & 1) {
-        DBG_SCSI("%s: skip must be even (%04x)\n", __func__, skip_b);
-        return 1;
-    }
-
     /* Convert to SCSI specific device number. */
     device_id = VBOX_GET_SCSI_DEVICE(device_id);
 
-    DBG_SCSI("%s: reading %lu bytes, skip %u/%u, device %d, target %d\n", __func__,
-             length, bios_dsk->drqp.skip_b, bios_dsk->drqp.skip_a,
-             device_id, bios_dsk->scsidev[device_id].target_id);
+    DBG_SCSI("%s: reading %lu bytes, device %d, target %d\n", __func__,
+             length, device_id, bios_dsk->scsidev[device_id].target_id);
     DBG_SCSI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
@@ -307,7 +273,7 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
              length, device_id, bios_dsk->scsidev[device_id].target_id);
 
     rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, target_id, (void __far *)cmdbuf, cmdlen,
-                                     bios_dsk->drqp.buffer, length, skip_b, bios_dsk->drqp.skip_a);
+                                     bios_dsk->drqp.buffer, length);
     if (!rc)
         bios_dsk->drqp.trsfbytes = length;
 
@@ -346,7 +312,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
         aCDB[4] = 5; /* Allocation length. */
         aCDB[5] = 0;
 
-        rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, i, aCDB, 6, buffer, 5, 0, 0);
+        rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, i, aCDB, 6, buffer, 5);
         if (rc != 0)
         {
             DBG_SCSI("%s: SCSI_INQUIRY failed\n", __func__); /* Not a fatal error if the device doesn't exist. */
@@ -376,7 +342,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
                 aCDB[1] = SCSI_READ_CAP_16;
                 aCDB[13] = 32; /* Allocation length. */
 
-                rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, i, aCDB, 16, buffer, 32, 0, 0);
+                rc = hbaacc[idx_hba].cmd_data_in(hba_seg :> 0, i, aCDB, 16, buffer, 32);
                 if (rc != 0)
                     BX_PANIC("%s: SCSI_READ_CAPACITY failed\n", __func__);
 
@@ -545,7 +511,6 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
 void BIOSCALL scsi_init(void)
 {
     int i;
-    uint16_t sink_seg = 0;
     bio_dsk_t __far     *bios_dsk;
 
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
@@ -563,18 +528,11 @@ void BIOSCALL scsi_init(void)
             if (hba_seg == 0) /* No point in trying the rest if we are out of memory. */
                 break;
 
-            if (!sink_seg) /* Allocate a sink buffer for throwing away data when accessing CD/DVD drives. */
-            {
-                sink_seg = scsi_sink_buf_alloc();
-                if (!sink_seg)
-                    break;
-            }
-
             u8Bus = (busdevfn & 0xff00) >> 8;
             u8DevFn = busdevfn & 0x00ff;
 
             DBG_SCSI("SCSI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
-            rc = hbaacc[i].init(hba_seg :> 0, sink_seg :> 0, VBOX_SCSI_SINK_BUF_KB * 1024, u8Bus, u8DevFn);
+            rc = hbaacc[i].init(hba_seg :> 0, u8Bus, u8DevFn);
             if (!rc)
                 scsi_enumerate_attached_devices(hba_seg, i);
             /** @todo Free memory on error. */

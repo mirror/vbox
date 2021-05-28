@@ -99,10 +99,6 @@ typedef struct
     ESCMD            EsCmd;
     /** I/O base of device. */
     uint16_t         u16IoBase;
-    /** The sink buf. */
-    void __far       *pvSinkBuf;
-    /** Size of the sink buffer in bytes. */
-    uint16_t         cbSinkBuf;
 } buslogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -171,8 +167,7 @@ int buslogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
 }
 
 int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                            uint16_t skip_a)
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
     uint8_t abReply[4];
@@ -181,24 +176,11 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
 
     DBG_BUSLOGIC("buslogic_scsi_cmd_data_in:\n");
 
-    if (   (   skip_b
-            || skip_a)
-        && skip_b + length + skip_a > buslogic->cbSinkBuf) /* Sink buffer is only 16KB at the moment. */
-        return 1;
-
     _fmemset(&buslogic->EsCmd, 0, sizeof(buslogic->EsCmd));
     _fmemset(abReply, 0, sizeof(abReply));
 
-    if (!skip_b && !skip_a)
-    {
-        buslogic->EsCmd.cbData = length;
-        buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buffer);
-    }
-    else
-    {
-        buslogic->EsCmd.cbData = length + skip_b + skip_a;
-        buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buslogic->pvSinkBuf); /* Requires the sink buffer because there is no S/G variant. */
-    }
+    buslogic->EsCmd.cbData          = length;
+    buslogic->EsCmd.u32PhysAddrData = buslogic_addr_to_phys(buffer);
     buslogic->EsCmd.uTargetId       = idTgt;
     buslogic->EsCmd.uLogicalUnit    = 0;
     buslogic->EsCmd.uDataDirection  = 0;
@@ -210,16 +192,7 @@ int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     rc = buslogic_cmd(buslogic, BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND, (uint8_t __far *)&buslogic->EsCmd,
                       sizeof(buslogic->EsCmd) - sizeof(buslogic->EsCmd.abCDB) + cbCDB, &abReply[0], sizeof(abReply));
     if (!rc)
-    {
-        /* Copy the data over from the sink buffer. */
-        if (abReply[2] == 0)
-        {
-            if (skip_b || skip_a)
-                _fmemcpy(buffer, (const uint8_t __far *)buslogic->pvSinkBuf + skip_b, length);
-        }
-        else
-            rc = abReply[2];
-    }
+        rc = abReply[2];
 
     return rc;
 }
@@ -239,7 +212,7 @@ static int buslogic_scsi_hba_init(buslogic_t __far *buslogic)
 /**
  * Init the BusLogic SCSI driver and detect attached disks.
  */
-int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn)
+int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 {
     buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
     uint32_t u32Bar;
@@ -259,8 +232,6 @@ int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSink
 
         DBG_BUSLOGIC("I/O base: 0x%x\n", u16IoBase);
         buslogic->u16IoBase = u16IoBase;
-        buslogic->pvSinkBuf = pvSinkBuf;
-        buslogic->cbSinkBuf = cbSinkBuf;
         return buslogic_scsi_hba_init(buslogic);
     }
     else

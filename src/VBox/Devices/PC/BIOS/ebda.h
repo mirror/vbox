@@ -241,16 +241,14 @@ typedef struct {
     uint16_t    sector;             /* Starting sector (CHS only). */
     uint16_t    trsfsectors;        /* Actual sectors transferred. */
     uint32_t    trsfbytes;          /* Actual bytes transferred. */
-    uint16_t    skip_b;             /* Bytes to skip before transfer. */
-    uint16_t    skip_a;             /* Bytes to skip after transfer. */
 } disk_req_t;
 
 extern uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                                uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+                                uint32_t length, uint8_t inout, char __far *buffer);
 extern uint16_t scsi_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
-                                uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+                                uint32_t length, uint8_t inout, char __far *buffer);
 extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
-                               uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+                               uint32_t length, uint8_t inout, char __far *buffer);
 
 extern uint16_t ata_soft_reset(uint16_t device);
 

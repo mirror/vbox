@@ -106,8 +106,6 @@ typedef struct
     uint8_t         cur_port;
     /** Current PRD index (for pre/post skip). */
     uint8_t         cur_prd;
-    /** Physical address of the sink buffer (for pre/post skip). */
-    uint32_t        sink_buf_phys;
     /** Saved high bits of EAX. */
     uint16_t        saved_eax_hi;
     /** VDS EDDS DMA buffer descriptor structure. */
@@ -367,20 +365,13 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     /* Lock memory needed for DMA. */
     ahci->edds.num_avail = NUM_EDDS_SG;
-    DBG_AHCI("AHCI: S/G list for %lu bytes (skip %u)\n",
-             (uint32_t)n_sect * sectsz, bios_dsk->drqp.skip_a);
+    DBG_AHCI("AHCI: S/G list for %lu bytes\n", (uint32_t)n_sect * sectsz);
     vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, (uint32_t)n_sect * sectsz);
 
     /* Set up the PRDT. */
     ahci->aPrdt[ahci->cur_prd].len       = ahci->edds.u.sg[0].size - 1;
     ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->edds.u.sg[0].phys_addr;
     ++ahci->cur_prd;
-
-    if (bios_dsk->drqp.skip_a) {
-        ahci->aPrdt[ahci->cur_prd].len       = bios_dsk->drqp.skip_a - 1;
-        ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->sink_buf_phys;
-        ++ahci->cur_prd;
-    }
 
 #if DEBUG_AHCI
     {
@@ -574,7 +565,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 #define ATA_DATA_OUT     0x02
 
 uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                         uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer)
+                         uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     ahci_t __far    *ahci;
@@ -585,18 +576,11 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
         return 1;
     }
 
-    /* The skip length must be even. */
-    if (skip_b & 1) {
-        DBG_AHCI("%s: skip must be even (%04x)\n", __func__, skip_b);
-        return 1;
-    }
-
     /* Convert to AHCI specific device number. */
     device_id = VBOX_GET_AHCI_DEVICE(device_id);
 
-    DBG_AHCI("%s: reading %lu bytes, skip %u/%u, device %d, port %d\n", __func__,
-             length, bios_dsk->drqp.skip_b, bios_dsk->drqp.skip_a,
-             device_id, bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: reading %lu bytes, device %d, port %d\n", __func__,
+             length, device_id, bios_dsk->ahcidev[device_id].port);
     DBG_AHCI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
@@ -617,13 +601,6 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     /// @todo clear in calling code?
     bios_dsk->drqp.trsfsectors = 0;
     bios_dsk->drqp.trsfbytes   = 0;
-
-    /* Set up a PRD entry to throw away the beginning of the transfer. */
-    if (bios_dsk->drqp.skip_b) {
-        ahci->aPrdt[0].len       = bios_dsk->drqp.skip_b - 1;
-        ahci->aPrdt[0].phys_addr = ahci->sink_buf_phys;
-        ahci->cur_prd++;
-    }
 
     ahci_cmd_data(bios_dsk, ATA_CMD_PACKET);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
@@ -897,11 +874,6 @@ static int ahci_hba_init(uint16_t io_base)
     ahci = ahci_seg :> 0;
     ahci->cur_port = 0xff;
     ahci->iobase   = io_base;
-
-    /* Physical address of memory used for throwing away ATAPI data when reading 512-byte
-     * blocks from 2048-byte CD sectors.
-     */
-    ahci->sink_buf_phys = 0xCC000;  /// @todo find some better place!
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(io_base, AHCI_REG_GHC, AHCI_GHC_HR);

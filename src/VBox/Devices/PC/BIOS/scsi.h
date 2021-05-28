@@ -56,26 +56,23 @@ typedef struct {
 ct_assert(sizeof(cdb_rw10) == 10);
 ct_assert(sizeof(cdb_rw16) == 16);
 
-extern int lsilogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
+extern int lsilogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 extern int lsilogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 extern int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                                     uint16_t skip_a);
+                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 
-extern int buslogic_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
+extern int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 extern int buslogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 extern int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                                     uint16_t skip_a);
+                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 
-extern int virtio_scsi_init(void __far *pvHba, void __far *pvSinkBuf, uint16_t cbSinkBuf, uint8_t u8Bus, uint8_t u8DevFn);
+extern int virtio_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 extern int virtio_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 extern int virtio_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                                   uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_b,
-                                   uint16_t skip_a);
+                                   uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 
 #endif /* !VBOX_INCLUDED_SRC_PC_BIOS_scsi_h */
 

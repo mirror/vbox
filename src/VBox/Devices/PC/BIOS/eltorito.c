@@ -110,7 +110,7 @@ ct_assert(sizeof(cdb_atapi) == 12);
 
 /* Generic ATAPI/SCSI CD-ROM access routine signature. */
 typedef uint16_t (* cd_pkt_func)(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                                 uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+                                 uint32_t length, uint8_t inout, char __far *buffer);
 
 /* Pointers to HW specific CD-ROM access routines. */
 cd_pkt_func     pktacc[DSKTYP_CNT] = {
@@ -306,10 +306,8 @@ static uint16_t atapi_read(uint8_t device, uint32_t lba, uint16_t nbsectors, voi
 
     bios_dsk->drqp.nsect   = nbsectors;
     bios_dsk->drqp.sect_sz = 2048L;
-    bios_dsk->drqp.skip_b  = 0;
-    bios_dsk->drqp.skip_a  = 0;
 
-    return pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, 0, nbsectors*2048L, ATA_DATA_IN, buf);
+    return pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, nbsectors*2048L, ATA_DATA_IN, buf);
 }
 
 static uint16_t cdemu_read(uint8_t device, uint32_t lba, uint16_t nbsectors, void __far *buf)
