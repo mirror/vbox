@@ -253,31 +253,6 @@
 #endif
 
 /**
- * Audio format in signed or unsigned variants.
- */
-typedef enum PDMAUDIOFMT
-{
-    /** Invalid format, do not use. */
-    PDMAUDIOFMT_INVALID = 0,
-    /** 8-bit, unsigned. */
-    PDMAUDIOFMT_U8,
-    /** 8-bit, signed. */
-    PDMAUDIOFMT_S8,
-    /** 16-bit, unsigned. */
-    PDMAUDIOFMT_U16,
-    /** 16-bit, signed. */
-    PDMAUDIOFMT_S16,
-    /** 32-bit, unsigned. */
-    PDMAUDIOFMT_U32,
-    /** 32-bit, signed. */
-    PDMAUDIOFMT_S32,
-    /** End of valid values. */
-    PDMAUDIOFMT_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOFMT_32BIT_HACK = 0x7fffffff
-} PDMAUDIOFMT;
-
-/**
  * Audio direction.
  */
 typedef enum PDMAUDIODIR

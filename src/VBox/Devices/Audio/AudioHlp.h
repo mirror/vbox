@@ -45,11 +45,6 @@ bool     AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 bool    AudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
-/** @name Audio string-ify methods.
- * @{ */
-PDMAUDIOFMT AudioHlpStrToAudFmt(const char *pszFmt);
-/** @}  */
-
 
 /** @name AUDIOHLPFILE_FLAGS_XXX
  * @{ */
