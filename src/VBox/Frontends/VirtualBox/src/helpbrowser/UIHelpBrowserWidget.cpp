@@ -1429,7 +1429,10 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Bookmarks, m_pBookmarksWidget, QString());
+    /* Dont insert the index widget since we only have automatically generated indexes: */
+#if 0
     m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
+#endif
 
     m_pSplitter->addWidget(m_pTabManager);
     m_pSplitter->setStretchFactor(0,0);
@@ -1478,7 +1481,6 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     m_pSearchContainerWidget = new QWidget;
     m_pTabWidget->insertTab(HelpBrowserTabs_Search, m_pSearchContainerWidget, QString());
     m_pTabWidget->setTabPosition(QTabWidget::South);
-
 
     m_pSearchEngine = m_pHelpEngine->searchEngine();
     AssertReturnVoid(m_pSearchEngine);
