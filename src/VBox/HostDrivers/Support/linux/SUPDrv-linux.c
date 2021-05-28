@@ -753,6 +753,7 @@ int VBOXCALL SUPDrvLinuxIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
 EXPORT_SYMBOL(SUPDrvLinuxIDC);
 
 
+# if RTLNX_VER_MAX(5,12,0)
 /**
  * Used by native wrapper modules, forwarding to supdrvLdrRegisterWrappedModule
  * with device extension prepended to the argument list.
@@ -760,7 +761,7 @@ EXPORT_SYMBOL(SUPDrvLinuxIDC);
 SUPR0DECL(int)  SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo,
                                                     const char *pszLnxModName, void **phMod)
 {
-#if RTLNX_VER_MIN(2,6,30)
+# if RTLNX_VER_MIN(2,6,30)
     /* Locate the module structure for the caller so can later reference
        and dereference it to prevent unloading while it is being used.
 
@@ -787,12 +788,13 @@ SUPR0DECL(int)  SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrapp
         return VERR_MODULE_NOT_FOUND;
     }
     return VERR_INTERRUPTED;
-#else
+# else
     printk("vboxdrv: wrapper modules are not supported on 2.6.29 and earlier. sorry.\n");
     return VERR_NOT_SUPPORTED;
-#endif
+# endif
 }
 EXPORT_SYMBOL(SUPDrvLinuxLdrRegisterWrappedModule);
+#endif /* < 5.12.0 */
 
 
 /**
