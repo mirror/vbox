@@ -682,7 +682,7 @@ DECLINLINE(uint32_t) PDMAudioPropsMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64
 /**
  * Converts nanoseconds to frames.
  *
- * @returns Number of frames
+ * @returns Number of frames.
  * @param   pProps      The PCM properties to use.
  * @param   cNs         The number of nanoseconds to convert.
  *
@@ -706,6 +706,32 @@ DECLINLINE(uint32_t) PDMAudioPropsNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64
 }
 
 /**
+ * Converts nanoseconds to frames, 64-bit return.
+ *
+ * @returns Number of frames (64-bit).
+ * @param   pProps      The PCM properties to use.
+ * @param   cNs         The number of nanoseconds to convert.
+ *
+ * @note    The result is floored!
+ */
+DECLINLINE(uint64_t) PDMAudioPropsNanoToFrames64(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
+{
+    AssertPtrReturn(pProps, 0);
+
+    uint32_t const uHz = pProps->uHz;
+    uint64_t cFrames;
+    if (cNs < RT_NS_1SEC)
+        cFrames = 0;
+    else
+    {
+        cFrames = cNs / RT_NS_1SEC * uHz;
+        cNs %= RT_NS_1SEC;
+    }
+    cFrames += ASMMult2xU32RetU64(uHz, (uint32_t)cNs) / RT_NS_1SEC;
+    return cFrames;
+}
+
+/**
  * Converts nanoseconds to bytes.
  *
  * @returns Number of bytes (frame aligned).
@@ -715,6 +741,20 @@ DECLINLINE(uint32_t) PDMAudioPropsNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64
  * @note    The result is rounded rather than floored (hysterical raisins).
  */
 DECLINLINE(uint32_t) PDMAudioPropsNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
+{
+    return PDMAUDIOPCMPROPS_F2B(pProps, PDMAudioPropsNanoToFrames(pProps, cNs));
+}
+
+/**
+ * Converts nanoseconds to bytes, 64-bit version.
+ *
+ * @returns Number of bytes (frame aligned), 64-bit.
+ * @param   pProps      The PCM properties to use.
+ * @param   cNs         The number of nanoseconds to convert.
+ *
+ * @note    The result is floored.
+ */
+DECLINLINE(uint64_t) PDMAudioPropsNanoToBytes64(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
 {
     return PDMAUDIOPCMPROPS_F2B(pProps, PDMAudioPropsNanoToFrames(pProps, cNs));
 }
