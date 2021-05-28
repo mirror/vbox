@@ -291,9 +291,6 @@ void AudioMixBufReset(PAUDIOMIXBUF pMixBuf);
 void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol);
 uint32_t AudioMixBufSize(PAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf);
-int         AudioMixBufWriteAt(PAUDIOMIXBUF pMixBuf, uint32_t offSamples, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten);
-int         AudioMixBufWriteAtEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps, uint32_t offFrames,
-                                 const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten);
 int         AudioMixBufWriteCirc(PAUDIOMIXBUF pMixBuf, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten);
 int         AudioMixBufWriteCircEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
                                    const void *pvBuf,uint32_t cbBuf, uint32_t *pcWritten);

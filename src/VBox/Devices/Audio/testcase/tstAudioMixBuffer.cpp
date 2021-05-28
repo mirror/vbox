@@ -158,12 +158,12 @@ static void tstBasics(RTTEST hTest)
     memset(pbPage, 0x42, PAGE_SIZE);
     PDMAudioPropsClearBuffer(&Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE / 4);
     for (uint32_t off = 0; off < PAGE_SIZE; off += 2)
-        RTTESTI_CHECK_MSG(pbPage[off] == 0x80 && pbPage[off + 1] == 0, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
+        RTTESTI_CHECK_MSG(pbPage[off] == 0 && pbPage[off + 1] == 0x80, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
 
     memset(pbPage, 0x42, PAGE_SIZE);
     PDMAudioPropsClearBuffer(&Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE / 8);
     for (uint32_t off = 0; off < PAGE_SIZE; off += 4)
-        RTTESTI_CHECK(pbPage[off] == 0x80 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0);
+        RTTESTI_CHECK(pbPage[off] == 0 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0x80);
 
 
     RTTestDisableAssertions(hTest);
@@ -174,21 +174,21 @@ static void tstBasics(RTTEST hTest)
     memset(pbPage, 0x42, PAGE_SIZE);
     PDMAudioPropsClearBuffer(&Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
     for (uint32_t off = 0; off < PAGE_SIZE; off += 2)
-        RTTESTI_CHECK_MSG(pbPage[off] == 0x80 && pbPage[off + 1] == 0, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
+        RTTESTI_CHECK_MSG(pbPage[off] == 0 && pbPage[off + 1] == 0x80, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
 
     memset(pbPage, 0x42, PAGE_SIZE);
     PDMAudioPropsClearBuffer(&Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
     for (uint32_t off = 0; off < PAGE_SIZE; off += 4)
-        RTTESTI_CHECK(pbPage[off] == 0x80 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0);
+        RTTESTI_CHECK(pbPage[off] == 0 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0x80);
     RTTestRestoreAssertions(hTest);
 
     RTTestGuardedFree(hTest, pbPage);
 }
 
 
-static int tstSingle(RTTEST hTest)
+static void tstSimple(RTTEST hTest)
 {
-    RTTestSub(hTest, "Single buffer");
+    RTTestSub(hTest, "Simple");
 
     /* 44100Hz, 2 Channels, S16 */
     PDMAUDIOPCMPROPS config = PDMAUDIOPCMPROPS_INITIALIZER(
@@ -207,47 +207,57 @@ static int tstSingle(RTTEST hTest)
      * General stuff.
      */
     AUDIOMIXBUF mb;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&mb, "Single", &config, cBufSize));
+    RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&mb, "Single", &config, cBufSize));
     RTTESTI_CHECK(AudioMixBufSize(&mb) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_B2F(&mb, AudioMixBufSizeBytes(&mb)) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_F2B(&mb, AudioMixBufSize(&mb)) == AudioMixBufSizeBytes(&mb));
     RTTESTI_CHECK(AudioMixBufFree(&mb) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_F2B(&mb, AudioMixBufFree(&mb)) == AudioMixBufFreeBytes(&mb));
 
+    AUDIOMIXBUFWRITESTATE WrState;
+    RTTESTI_CHECK_RC(AudioMixBufInitWriteState(&mb, &WrState, &config), VINF_SUCCESS);
+
     /*
-     * Absolute writes.
+     * A few writes (used to be the weird absolute writes).
      */
     uint32_t cFramesRead  = 0, cFramesWritten = 0, cFramesWrittenAbs = 0;
-    int8_t  aFrames8 [2] = { 0x12, 0x34 };
     int16_t aFrames16[2] = { 0xAA, 0xBB };
     int32_t aFrames32[2] = { 0xCC, 0xDD };
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, &aFrames8, sizeof(aFrames8), &cFramesWritten));
-    RTTESTI_CHECK(cFramesWritten == 0 /* Frames */);
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == 0);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, &aFrames16, sizeof(aFrames16), &cFramesWritten));
+    AudioMixBufWrite(&mb, &WrState, &aFrames16, sizeof(aFrames16), 0 /*offDstFrame*/, cBufSize / 4, &cFramesWritten);
     RTTESTI_CHECK(cFramesWritten == 1 /* Frames */);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 0);
+    AudioMixBufCommit(&mb, cFramesWritten);
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == 1);
-
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 2 /* Offset */, &aFrames32, sizeof(aFrames32), &cFramesWritten));
-    RTTESTI_CHECK(cFramesWritten == 2 /* Frames */);
-    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 2);
-
-    /* Beyond buffer. */
-    RTTESTI_CHECK_RC(AudioMixBufWriteAt(&mb, AudioMixBufSize(&mb) + 1, &aFrames16, sizeof(aFrames16),
-                                        &cFramesWritten), VERR_BUFFER_OVERFLOW);
-
-    /* Offset wrap-around: When writing as much (or more) frames the mixing buffer can hold. */
-    uint32_t  cbSamples = cBufSize * sizeof(int16_t) * 2 /* Channels */;
-    RTTESTI_CHECK(cbSamples);
-    uint16_t *paSamples = (uint16_t *)RTMemAlloc(cbSamples);
-    RTTESTI_CHECK(paSamples);
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, paSamples, cbSamples, &cFramesWritten));
-    RTTESTI_CHECK(cFramesWritten == cBufSize /* Frames */);
-    RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize);
     RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 0);
-    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 0);
+    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 1);
+
+    AudioMixBufWrite(&mb, &WrState, &aFrames32, sizeof(aFrames32), 0 /*offDstFrame*/, cBufSize / 4, &cFramesWritten);
+    RTTESTI_CHECK(cFramesWritten == 2 /* Frames */);
+    AudioMixBufCommit(&mb, cFramesWritten);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 3);
+    RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 0);
+    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 3);
+
+    /* Pretend we read the frames.*/
+    AudioMixBufAdvance(&mb, 3);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 0);
+    RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 3);
+    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 3);
+
+    /* Fill up the buffer completely and check wraps. */
+
+    uint32_t  cbSamples = PDMAudioPropsFramesToBytes(&config, cBufSize);
+    uint16_t *paSamples = (uint16_t *)RTMemAlloc(cbSamples);
+    RTTESTI_CHECK_RETV(paSamples);
+    AudioMixBufWrite(&mb, &WrState, paSamples, cbSamples, 0 /*offDstFrame*/, cBufSize, &cFramesWritten);
+    RTTESTI_CHECK(cFramesWritten == cBufSize);
+    AudioMixBufCommit(&mb, cFramesWritten);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize);
+    RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 3);
+    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 3);
     RTMemFree(paSamples);
     cbSamples = 0;
 
@@ -255,10 +265,6 @@ static int tstSingle(RTTEST hTest)
      * Circular writes.
      */
     AudioMixBufReset(&mb);
-
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 2 /* Offset */, &aFrames32, sizeof(aFrames32), &cFramesWritten));
-    RTTESTI_CHECK(cFramesWritten == 2 /* Frames */);
-    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 2);
 
     cFramesWrittenAbs = AudioMixBufUsed(&mb);
 
@@ -302,8 +308,6 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cFramesWrittenAbs);
 
     AudioMixBufDestroy(&mb);
-
-    return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
 
 #if 0 /* obsolete */
@@ -989,7 +993,7 @@ int main(int argc, char **argv)
     RTTestBanner(hTest);
 
     tstBasics(hTest);
-    tstSingle(hTest);
+    tstSimple(hTest);
     //tstParentChild(hTest);
     //tstConversion8(hTest);
     //tstConversion16(hTest);

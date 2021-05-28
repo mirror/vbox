@@ -1335,6 +1335,8 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps)
              */
             if (pSink->enmDir == PDMAUDIODIR_IN)
                 rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pSink->In.State, &pSink->PCMProps);
+            else
+                rc = AudioMixBufInitWriteState(&pSink->MixBuf, &pSink->Out.State, &pSink->PCMProps);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1377,7 +1379,8 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps)
                 }
             }
             else
-                LogFunc(("AudioMixBufInitPeekState failed: %Rrc\n", rc));
+                LogFunc(("%s failed: %Rrc\n",
+                         pSink->enmDir == PDMAUDIODIR_IN ? "AudioMixBufInitPeekState" : "AudioMixBufInitWriteState", rc));
         }
         else
             LogFunc(("AudioMixBufInit failed: %Rrc\n", rc));
@@ -2282,7 +2285,7 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
         RTCircBufAcquireReadBlock(pCircBuf, cbToTransfer, &pvSrcBuf, &cbSrcBuf);
 
         uint32_t cbWritten = 0;
-        int rc = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
+        int rc = AudioMixerSinkWrite(pSink, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
         AssertRC(rc);
         Assert(cbWritten <= cbSrcBuf);
 
@@ -2522,58 +2525,43 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVolMa
  *
  * @returns VBox status code.
  * @param   pSink               Sink to write data to.
- * @param   enmOp               Mixer operation to use when writing data to the sink.
  * @param   pvBuf               Buffer containing the audio data to write.
  * @param   cbBuf               Size (in bytes) of the buffer containing the audio data.
  * @param   pcbWritten          Number of bytes written. Optional.
  */
-int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+int AudioMixerSinkWrite(PAUDMIXSINK pSink, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
-    RT_NOREF(enmOp);
+    AssertReturn(pSink->uMagic == AUDMIXSINK_MAGIC, VERR_INVALID_MAGIC);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn   (cbBuf, VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
+    AssertMsgReturn(pSink->enmDir == PDMAUDIODIR_OUT, ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName),
+                    VERR_ACCESS_DENIED);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     AssertRCReturn(rc, rc);
 
-    AssertMsg(pSink->fStatus & AUDMIXSINK_STS_RUNNING,
-              ("%s: Can't write to a sink which is not running (anymore) (status 0x%x)\n", pSink->pszName, pSink->fStatus));
-    AssertMsg(pSink->enmDir == PDMAUDIODIR_OUT,
-              ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
+    AssertMsgReturnStmt(pSink->fStatus & AUDMIXSINK_STS_RUNNING,
+                        ("%s: Can't write to a sink which is not running (anymore) (status 0x%x)\n", pSink->pszName, pSink->fStatus),
+                        RTCritSectLeave(&pSink->CritSect), VERR_INVALID_STATE);
 
-    uint32_t cbWritten = 0;
-    uint32_t cbToWrite = AudioMixBufFreeBytes(&pSink->MixBuf);
+    uint32_t cFrames   = AudioMixBufFree(&pSink->MixBuf);
+    uint32_t cbToWrite = PDMAudioPropsFramesToBytes(&pSink->PCMProps, cFrames);
     cbToWrite = RT_MIN(cbToWrite, cbBuf);
-    while (cbToWrite > 0)
-    {
-        /* Write the data to the mixer sink's own mixing buffer.
-           Here the audio data is transformed into the mixer sink's format. */
-        uint32_t cFramesWritten = 0;
-        rc = AudioMixBufWriteCirc(&pSink->MixBuf, (uint8_t const*)pvBuf + cbWritten, cbToWrite, &cFramesWritten);
-        if (RT_SUCCESS(rc))
-        {
-            const uint32_t cbWrittenChunk = PDMAudioPropsFramesToBytes(&pSink->PCMProps, cFramesWritten);
-            Assert(cbToWrite >= cbWrittenChunk);
-            cbToWrite -= cbWrittenChunk;
-            cbWritten += cbWrittenChunk;
-        }
-        else
-            break;
-    }
-
-    Log3Func(("[%s] cbBuf=%RU32 -> cbWritten=%RU32\n", pSink->pszName, cbBuf, cbWritten));
+    AudioMixBufWrite(&pSink->MixBuf, &pSink->Out.State, pvBuf, cbToWrite, 0 /*offDstFrame*/, cFrames, &cFrames);
+    Assert(cbToWrite == PDMAudioPropsFramesToBytes(&pSink->PCMProps, cFrames));
+    AudioMixBufCommit(&pSink->MixBuf, cFrames);
+    if (pcbWritten)
+        *pcbWritten = cbToWrite;
 
     /* Update the sink's last written time stamp. */
     pSink->tsLastReadWrittenNs = RTTimeNanoTS();
 
-    if (pcbWritten)
-        *pcbWritten = cbWritten;
+    Log3Func(("[%s] cbBuf=%#x -> cbWritten=%#x\n", pSink->pszName, cbBuf, cbToWrite));
 
     RTCritSectLeave(&pSink->CritSect);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

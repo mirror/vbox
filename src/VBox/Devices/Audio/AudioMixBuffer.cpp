@@ -273,30 +273,6 @@ uint32_t AudioMixBufFreeBytes(PAUDIOMIXBUF pMixBuf)
     return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
 }
 
-/**
- * Allocates the internal audio frame buffer.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Mixing buffer to allocate frame buffer for.
- * @param   cFrames                 Number of audio frames to allocate.
- */
-static int audioMixBufAlloc(PAUDIOMIXBUF pMixBuf, uint32_t cFrames)
-{
-    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertReturn(cFrames, VERR_INVALID_PARAMETER);
-
-    AUDMIXBUF_LOG(("%s: cFrames=%RU32\n", pMixBuf->pszName, cFrames));
-
-    size_t cbFrames = cFrames * sizeof(PDMAUDIOFRAME);
-    pMixBuf->pFrames = (PPDMAUDIOFRAME)RTMemAllocZ(cbFrames);
-    if (pMixBuf->pFrames)
-    {
-        pMixBuf->cFrames = cFrames;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
-}
-
 
 /**
  * Merges @a i64Src into the value stored at @a pi64Dst.
@@ -1077,16 +1053,24 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
     pMixBuf->pfnConvTo   = audioMixBufConvToLookup(pProps);
 
     pMixBuf->pszName = RTStrDup(pszName);
-    if (!pMixBuf->pszName)
-        return VERR_NO_MEMORY;
-
-
+    if (pMixBuf->pszName)
+    {
+        pMixBuf->pFrames = (PPDMAUDIOFRAME)RTMemAllocZ(cFrames * sizeof(PDMAUDIOFRAME));
+        if (pMixBuf->pFrames)
+        {
+            pMixBuf->cFrames = cFrames;
 #ifdef AUDMIXBUF_LOG_ENABLED
-    char szTmp[PDMAUDIOPROPSTOSTRING_MAX];
-    AUDMIXBUF_LOG(("%s: %s\n", pMixBuf->pszName, PDMAudioPropsToString(pProps, szTmp, sizeof(szTmp))));
+            char szTmp[PDMAUDIOPROPSTOSTRING_MAX];
+            AUDMIXBUF_LOG(("%s: %s - cFrames=%#x (%d)\n",
+                           pMixBuf->pszName, PDMAudioPropsToString(pProps, szTmp, sizeof(szTmp)), cFrames, cFrames));
 #endif
-
-    return audioMixBufAlloc(pMixBuf, cFrames);
+            return VINF_SUCCESS;
+        }
+        RTStrFree(pMixBuf->pszName);
+        pMixBuf->pszName = NULL;
+    }
+    pMixBuf->uMagic = AUDIOMIXBUF_MAGIC_DEAD;
+    return VERR_NO_MEMORY;
 }
 
 /**
@@ -2351,129 +2335,6 @@ uint32_t AudioMixBufSizeBytes(PAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
-}
-
-/**
- * Writes audio frames at a specific offset.
- * The sample format being written must match the format of the mixing buffer.
- *
- * @returns VBox status code.
- * @param   pMixBuf                 Pointer to mixing buffer to write to.
- * @param   offFrames               Offset (in frames) starting to write at.
- * @param   pvBuf                   Pointer to audio buffer to be written.
- * @param   cbBuf                   Size (in bytes) of audio buffer.
- * @param   pcWritten               Returns number of audio frames written. Optional.
- */
-int AudioMixBufWriteAt(PAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
-{
-    return AudioMixBufWriteAtEx(pMixBuf, &pMixBuf->Props, offFrames, pvBuf, cbBuf, pcWritten);
-}
-
-/**
- * Writes audio frames at a specific offset.
- *
- * Note that this operation also modifies the current read and write position
- * to \a offFrames + written frames on success.
- *
- * The audio sample format to be written can be different from the audio format
- * the mixing buffer operates on.
- *
- * @returns VBox status code.
- * @param   pMixBuf     Pointer to mixing buffer to write to.
- * @param   pSrcProps   The source format.
- * @param   offFrames   Offset (in frames) starting to write at.
- * @param   pvBuf       Pointer to audio buffer to be written.
- * @param   cbBuf       Size (in bytes) of audio buffer.
- * @param   pcWritten   Returns number of audio frames written. Optional.
- */
-int AudioMixBufWriteAtEx(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOPCMPROPS pSrcProps,
-                         uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
-{
-    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
-    /* pcbWritten is optional. */
-
-    if (offFrames >= pMixBuf->cFrames)
-    {
-        if (pcWritten)
-            *pcWritten = 0;
-        return VERR_BUFFER_OVERFLOW;
-    }
-
-    /*
-     * Adjust cToWrite so we don't overflow our buffers.
-     */
-    uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), pMixBuf->cFrames - offFrames);
-
-#ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-    /*
-     * Now that we know how much we'll be converting we can log it.
-     */
-    RTFILE hFile;
-    int rc2 = RTFileOpen(&hFile, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writeat.pcm",
-                         RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc2))
-    {
-        RTFileWrite(hFile, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), NULL);
-        RTFileClose(hFile);
-    }
-#endif
-
-    /*
-     * Pick the conversion function and do the conversion.
-     */
-    PFNAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
-    if (!pMixBuf->Volume.fMuted)
-    {
-        if (PDMAudioPropsAreEqual(&pMixBuf->Props, pSrcProps))
-            pfnConvFrom = pMixBuf->pfnConvFrom;
-        else
-            pfnConvFrom = audioMixBufConvFromLookup(pSrcProps);
-        AssertReturn(pfnConvFrom, VERR_NOT_SUPPORTED);
-    }
-    else
-        pfnConvFrom = &audioMixBufConvFromSilence;
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t cWritten;
-    if (cToWrite)
-    {
-        AUDMIXBUFCONVOPTS convOpts;
-
-        convOpts.cFrames            = cToWrite;
-        convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
-        convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
-        convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
-
-        cWritten = pfnConvFrom(pMixBuf->pFrames + offFrames, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), &convOpts);
-    }
-    else
-        cWritten = 0;
-
-    AUDMIXBUF_LOG(("%s: offFrames=%RU32, cbBuf=%RU32, cToWrite=%RU32 (%zu bytes), cWritten=%RU32 (%zu bytes), rc=%Rrc\n",
-                   pMixBuf->pszName, offFrames, cbBuf,
-                   cToWrite, AUDIOMIXBUF_F2B(pMixBuf, cToWrite),
-                   cWritten, AUDIOMIXBUF_F2B(pMixBuf, cWritten), rc));
-
-    if (RT_SUCCESS(rc))
-    {
-        pMixBuf->offRead  = offFrames % pMixBuf->cFrames;
-        pMixBuf->offWrite = (offFrames + cWritten) % pMixBuf->cFrames;
-        pMixBuf->cUsed    = cWritten;
-        pMixBuf->cMixed   = 0;
-
-#ifdef DEBUG
-        audioMixBufDbgValidate(pMixBuf);
-#endif
-        if (pcWritten)
-            *pcWritten = cWritten;
-    }
-    else
-        AUDMIXBUF_LOG(("%s: Failed with %Rrc\n", pMixBuf->pszName, rc));
-
-    return rc;
 }
 
 /**
