@@ -303,6 +303,7 @@ typedef struct {
     uint16_t    load_segment;
     uint16_t    sector_count;
     chs_t       vdevice;        /* Virtual device geometry. */
+    uint8_t __far *ptr_unaligned; /* Bounce buffer for sector unaligned reads. */
 } cdemu_t;
 #endif
 
