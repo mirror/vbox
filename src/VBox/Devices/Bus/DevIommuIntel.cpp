@@ -311,11 +311,10 @@ typedef struct DMAR
     uint64_t                    fExtCapReg;
     /** @} */
 
-    /** Host-address width (HAW) valid mask. */
-    uint64_t                    fHawMask;
-    /** Maximum guest-address width (MGAW) valid mask (remove if it turns out we
-     *  don't need this). */
-    uint64_t                    fMgawMask;
+    /** Host-address width (HAW) base address mask. */
+    uint64_t                    fHawBaseMask;
+    /** Maximum guest-address width (MGAW) base address mask. */
+    uint64_t                    fMgawBaseMask;
     /** Maximum supported paging level (3, 4 or 5). */
     uint8_t                     uMaxPagingLevel;
 
@@ -1935,17 +1934,18 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t       uPtEntity = SlpEntry;
-    uint64_t const uDmaAddr  = pAddrRemap->uDmaAddr;
-    uint64_t const fHawMask  = pThis->fHawMask;
+    uint64_t       uPtEntity    = SlpEntry;
+    uint64_t const uDmaAddr     = pAddrRemap->uDmaAddr & pThis->fMgawBaseMask;
+    uint64_t const fHawBaseMask = pThis->fHawBaseMask;
     for (int8_t iLevel = uPagingLevel - 1; iLevel >= 0; iLevel--)
     {
         /* Read the paging entry for the current level. */
         {
-            uint8_t const  cShift         = 12 + ((iLevel - 1) * 9);
-            uint16_t const idxPte         = (uDmaAddr >> cShift) & UINT64_C(0x1ff);
+            uint8_t const  cLevelShift    = 12 + ((iLevel - 1) * 9);
+            uint16_t const idxPte         = (uDmaAddr >> cLevelShift) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
-            RTGCPHYS const GCPhysPtEntity = (uPtEntity & fHawMask) | offPte;
+            /** @todo if we validate 63:HAW (since hardware treats it as reserved and we should fault if that's the case, we might not need to & fHawbaseMask here. */
+            RTGCPHYS const GCPhysPtEntity = (uPtEntity & fHawBaseMask) | offPte;
             int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
             if (RT_SUCCESS(rc))
             { /* likely */ }
@@ -1955,7 +1955,7 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
                  *        translation, we need to report different error codes. The TTM is
                  *        available in pAddrRemap->fTtm, but how cleanly we can handle this is
                  *        something to be decided later. For now we just use legacy mode error
-                 *        codes below. Asserted below. */
+                 *        codes. Asserted as such below. */
                 Assert(pAddrRemap->fTtm == VTD_TTM_LEGACY_MODE);
                 dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lsl_1, VTDATFAULT_LSL_1, pAddrRemap);
                 return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -3320,8 +3320,8 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
-        pThis->fHawMask        = ~(UINT64_MAX << cGstPhysAddrBits) & UINT64_C(0xfffffffffffff000);
-        pThis->fMgawMask       = pThis->fHawMask;
+        pThis->fHawBaseMask    = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
+        pThis->fMgawBaseMask   = pThis->fHawBaseMask;
         pThis->uMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
     }
 
@@ -3584,9 +3584,10 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     uint8_t const  fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     uint16_t const offFrcd   = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
     uint16_t const offIva    = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
-    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Mask=%#RX64 FRO=%#x, IRO=%#x) mapped at %#RGp\n",
+    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW=%#RX64 MGAW=%#RX64 FRO=%#x IRO=%#x) mapped at %#RGp\n",
             DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
-            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawMask, offFrcd, offIva, DMAR_MMIO_BASE_PHYSADDR));
+            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask, pThis->fMgawBaseMask, offFrcd, offIva,
+            DMAR_MMIO_BASE_PHYSADDR));
 
     return VINF_SUCCESS;
 }
