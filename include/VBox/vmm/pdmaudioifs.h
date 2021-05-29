@@ -682,8 +682,8 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
  * @{ */
 /** Initializer for PDMAUDIOPCMPROPS. */
 #define PDMAUDIOPCMPROPS_INITIALIZER(a_cbSample, a_fSigned, a_cChannels, a_uHz, a_fSwapEndian) \
-    { (a_cbSample) * (a_cChannels), PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), a_cbSample, a_cChannels, \
-      a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz }
+    { (uint8_t)((a_cbSample) * (a_cChannels)), PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), \
+      (uint8_t)(a_cbSample), (uint8_t)(a_cChannels), a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
  * @note Does only support mono/stereo channels for now, for non-stereo/mono we
  *       returns a special value which the two conversion functions detect
