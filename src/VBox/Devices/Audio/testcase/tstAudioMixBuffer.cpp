@@ -444,7 +444,7 @@ static void tstConversion(RTTEST hTest, uint8_t cSrcBits, bool fSrcSigned, uint8
     RTTESTI_CHECK_RC_RETV(AudioMixBufInit(&MixBuf, "FormatOutputConversion", &CfgSrc, cMixBufFrames), VINF_SUCCESS);
     AUDIOMIXBUFWRITESTATE   WriteState;
     RTTESTI_CHECK_RC_RETV(AudioMixBufInitWriteState(&MixBuf, &WriteState, &CfgSrc), VINF_SUCCESS);
-    AUDIOMIXBUFWRITESTATE   WriteStateIgnZero = WriteState;
+    AUDIOMIXBUFWRITESTATE   WriteStateIgnZero = WriteState; RT_NOREF(WriteStateIgnZero);
     AUDIOMIXBUFPEEKSTATE    PeekState;
     RTTESTI_CHECK_RC_RETV(AudioMixBufInitPeekState(&MixBuf, &PeekState, &CfgDst), VINF_SUCCESS);
 
