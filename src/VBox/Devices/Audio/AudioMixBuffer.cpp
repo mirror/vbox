@@ -168,9 +168,9 @@ static uint32_t const s_aVolumeConv[256] =
  */
 static void audioMixBufDbgPrintSingle(PAUDIOMIXBUF pMixBuf, const char *pszFunc, uint16_t uIdtLvl)
 {
-    Log(("%s: %*s %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
+    Log(("%s: %*s %s: offRead=%RU32, offWrite=%RU32 -> %RU32/%RU32\n",
          pszFunc, uIdtLvl * 4, "",
-         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
+         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cUsed, pMixBuf->cFrames));
 }
 
 static void audioMixBufDbgPrintInternal(PAUDIOMIXBUF pMixBuf, const char *pszFunc)
@@ -230,7 +230,7 @@ DECL_FORCE_INLINE(void) audioMixBufBlendSample(int64_t *pi64Dst, int64_t i64Src)
     if (i64Src)
     {
         int64_t const i64Dst = *pi64Dst;
-        if (!pi64Dst)
+        if (!i64Dst)
             *pi64Dst = i64Src;
         else
             *pi64Dst = (i64Dst + i64Src) / 2;
@@ -272,20 +272,8 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
         case 2:
             while (cFrames-- > 0)
             {
-                int64_t const i64DstL = pi64Dst[0];
-                int64_t const i64SrcL = pi64Src[0];
-                if (!i64DstL)
-                    pi64Dst[0] = i64SrcL;
-                else if (!i64SrcL)
-                    pi64Dst[0] = (i64DstL + i64SrcL) / 2;
-
-                int64_t const i64DstR = pi64Dst[1];
-                int64_t const i64SrcR = pi64Src[1];
-                if (!i64DstR)
-                    pi64Dst[1] = i64SrcR;
-                else if (!i64SrcR)
-                    pi64Dst[1] = (i64DstR + i64SrcR) / 2;
-
+                audioMixBufBlendSample(&pi64Dst[0], pi64Dst[0]);
+                audioMixBufBlendSample(&pi64Dst[1], pi64Dst[1]);
                 pi64Dst += 2;
                 pi64Src += 2;
             }
@@ -297,12 +285,7 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
         case 1:
             while (cFrames-- > 0)
             {
-                int64_t const i64Dst = *pi64Dst;
-                int64_t const i64Src = *pi64Src;
-                if (!i64Dst)
-                    *pi64Dst = i64Src;
-                else if (!i64Src)
-                    *pi64Dst = (i64Dst + i64Src) / 2;
+                audioMixBufBlendSample(pi64Dst, pi64Dst[0]);
                 pi64Dst++;
                 pi64Src++;
             }
@@ -889,7 +872,6 @@ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROP
 
     pMixBuf->offRead  = 0;
     pMixBuf->offWrite = 0;
-    pMixBuf->cMixed   = 0;
     pMixBuf->cUsed    = 0;
 
     /* Set initial volume to max. */
@@ -985,7 +967,6 @@ void AudioMixBufDrop(PAUDIOMIXBUF pMixBuf)
 
     pMixBuf->offRead  = 0;
     pMixBuf->offWrite = 0;
-    pMixBuf->cMixed   = 0;
     pMixBuf->cUsed    = 0;
 }
 
@@ -1579,6 +1560,7 @@ void AudioMixBufWrite(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
     Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     AssertPtr(pState);
     AssertPtr(pState->pfnDecode);
+    AssertPtr(pState->pfnDecodeBlend);
     Assert(pState->cDstChannels == PDMAudioPropsChannels(&pMixBuf->Props));
     Assert(cMaxDstFrames > 0);
     Assert(cMaxDstFrames <= pMixBuf->cFrames - pMixBuf->cUsed);
@@ -1726,7 +1708,7 @@ void AudioMixBufBlend(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
  * @param   offFrame    Where to start writing silence relative to the current
  *                      write position.
  * @param   cFrames     Number of frames of silence.
- * @sa      AudioMixBufSilence
+ * @sa      AudioMixBufWrite
  *
  * @note    Does not advance the write position, please call AudioMixBufCommit()
  *          to do that.
@@ -1740,11 +1722,15 @@ void AudioMixBufSilence(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, uin
     Assert(pMixBuf->uMagic == AUDIOMIXBUF_MAGIC);
     AssertPtr(pState);
     AssertPtr(pState->pfnDecode);
+    AssertPtr(pState->pfnDecodeBlend);
     Assert(pState->cDstChannels == PDMAudioPropsChannels(&pMixBuf->Props));
     Assert(cFrames > 0);
-    Assert(cFrames <= pMixBuf->cFrames);
-    Assert(offFrame <= pMixBuf->cFrames);
-    Assert(offFrame + cFrames <= pMixBuf->cUsed);
+#ifdef VBOX_STRICT
+    uint32_t const cMixBufFree = pMixBuf->cFrames - pMixBuf->cUsed;
+#endif
+    Assert(cFrames <= cMixBufFree);
+    Assert(offFrame < cMixBufFree);
+    Assert(offFrame + cFrames <= cMixBufFree);
 
     /*
      * Make start frame absolute.
