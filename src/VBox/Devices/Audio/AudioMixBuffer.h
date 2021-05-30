@@ -49,16 +49,15 @@ typedef struct AUDIOSTREAMRATE
      *  Needed for interpolation. */
     union
     {
-        int64_t         ai64Samples[2];
-        PDMAUDIOFRAME   Frame;
+        int32_t     ai32Samples[PDMAUDIO_MAX_CHANNELS];
     } SrcLast;
 
     /**
      * Resampling function.
      * @returns Number of destination frames written.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnResample, (int64_t *pi64Dst, uint32_t cDstFrames,
-                                                 int64_t const *pi64Src, uint32_t cSrcFrames, uint32_t *pcSrcFramesRead,
+    DECLR3CALLBACKMEMBER(uint32_t, pfnResample, (int32_t *pi32Dst, uint32_t cDstFrames,
+                                                 int32_t const *pi32Src, uint32_t cSrcFrames, uint32_t *pcSrcFramesRead,
                                                  struct AUDIOSTREAMRATE *pRate));
 
 } AUDIOSTREAMRATE;
@@ -75,12 +74,10 @@ typedef struct AUDMIXBUFVOL
 {
     /** Set to @c true if this stream is muted, @c false if not. */
     bool            fMuted;
-    /** Left volume to apply during conversion.
-     * Pass 0 to convert the original values. May not apply to all conversion functions. */
-    uint32_t        uLeft;
-    /** Right volume to apply during conversion.
-     * Pass 0 to convert the original values. May not apply to all conversion functions. */
-    uint32_t        uRight;
+    /** Set if all (relevant) channels are at max. */
+    bool            fAllMax;
+    /** The per-channels values. */
+    uint32_t        auChannels[PDMAUDIO_MAX_CHANNELS];
 } AUDMIXBUFVOL;
 /** Pointer to mixing buffer volument parameters. */
 typedef AUDMIXBUFVOL *PAUDMIXBUFVOL;
@@ -98,7 +95,7 @@ typedef struct AUDIOMIXBUF const *PCAUDIOMIXBUF;
 typedef struct AUDIOMIXBUFPEEKSTATE
 {
     /** Encodes @a cFrames from @a paSrc to @a pvDst. */
-    DECLR3CALLBACKMEMBER(void,  pfnEncode,(void *pvDst, int64_t const *paSrc, uint32_t cFrames, struct AUDIOMIXBUFPEEKSTATE *pState));
+    DECLR3CALLBACKMEMBER(void,  pfnEncode,(void *pvDst, int32_t const *paSrc, uint32_t cFrames, struct AUDIOMIXBUFPEEKSTATE *pState));
     /** Sample rate conversion state (only used when needed). */
     AUDIOSTREAMRATE             Rate;
     /** Source (mixer) channels. */
@@ -119,9 +116,9 @@ typedef AUDIOMIXBUFPEEKSTATE *PAUDIOMIXBUFPEEKSTATE;
 typedef struct AUDIOMIXBUFWRITESTATE
 {
     /** Encodes @a cFrames from @a pvSrc to @a paDst. */
-    DECLR3CALLBACKMEMBER(void,  pfnDecode,(int64_t *paDst, const void *pvSrc, uint32_t cFrames, struct AUDIOMIXBUFWRITESTATE *pState));
+    DECLR3CALLBACKMEMBER(void,  pfnDecode,(int32_t *paDst, const void *pvSrc, uint32_t cFrames, struct AUDIOMIXBUFWRITESTATE *pState));
     /** Encodes @a cFrames from @a pvSrc blending into @a paDst. */
-    DECLR3CALLBACKMEMBER(void,  pfnDecodeBlend,(int64_t *paDst, const void *pvSrc, uint32_t cFrames, struct AUDIOMIXBUFWRITESTATE *pState));
+    DECLR3CALLBACKMEMBER(void,  pfnDecodeBlend,(int32_t *paDst, const void *pvSrc, uint32_t cFrames, struct AUDIOMIXBUFWRITESTATE *pState));
     /** Sample rate conversion state (only used when needed). */
     AUDIOSTREAMRATE             Rate;
     /** Destination (mixer) channels. */
@@ -144,8 +141,15 @@ typedef struct AUDIOMIXBUF
     uint32_t                    uMagic;
     /** Size of the frame buffer (in audio frames). */
     uint32_t                    cFrames;
-    /** Frame buffer. */
-    PPDMAUDIOFRAME              pFrames;
+    /** The frame buffer.
+     * This is a two dimensional array consisting of cFrames rows and
+     * cChannels columns. */
+    int32_t                    *pi32Samples;
+    /** The number of channels. */
+    uint8_t                     cChannels;
+    /** The frame size (row size if you like). */
+    uint8_t                     cbFrame;
+    uint8_t                     abPadding[2];
     /** The current read position (in frames). */
     uint32_t                    offRead;
     /** The current write position (in frames). */
