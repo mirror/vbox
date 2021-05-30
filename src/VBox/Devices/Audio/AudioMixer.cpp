@@ -2270,7 +2270,6 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                 AssertRC(rc); /* cannot fail */
                 CfgHost.enmDir    = pSink->enmDir;
                 CfgHost.enmPath   = pCfg->enmPath;
-                CfgHost.enmLayout = pCfg->enmLayout;
                 CfgHost.Device    = pCfg->Device;
                 RTStrCopy(CfgHost.szName, sizeof(CfgHost.szName), pCfg->szName);
 

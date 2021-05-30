@@ -157,6 +157,7 @@ typedef struct HDASTREAMSTATE
     /** Current loop number within the current scheduling step.  */
     uint32_t                idxScheduleLoop;
 
+    uint64_t                u64Padding;
     /** Buffer descriptors and additional timer scheduling state.
      * (Same as HDABDLEDESC, with more sensible naming.)  */
     struct

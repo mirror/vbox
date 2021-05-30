@@ -1561,19 +1561,16 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
  * @param   pThis       Pointer to driver instance.
  * @param   pStreamEx   Stream to initialize.
  * @param   pCfgHost    Stream configuration to use for the host side (backend).
+ *                      This will be adjusted.
  * @param   pCfgGuest   Stream configuration to use for the guest side.
  */
 static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
-                                      PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest)
+                                      PPDMAUDIOSTREAMCFG pCfgHost, PCPDMAUDIOSTREAMCFG pCfgGuest)
 {
     /*
      * Init host stream.
      */
     pStreamEx->Core.uMagic = PDMAUDIOSTREAM_MAGIC;
-
-    /* Set the host's default audio data layout. */
-/** @todo r=bird: Why, oh why? OTOH, the layout stuff is non-sense anyway. */
-    pCfgHost->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
 #ifdef LOG_ENABLED
     LogFunc(("[%s] Requested host format:\n", pStreamEx->Core.szName));
@@ -1664,8 +1661,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
     rc = PDMAudioStrmCfgCopy(&pStreamEx->Host.Cfg, &CfgHostAcq);
     AssertRC(rc);
 
-    /* Set the guests's default audio data layout. */
-    pCfgGuest->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED; /** @todo r=bird: WTF DO WE DO THIS?  It's input and probably should've been const... */
     rc = PDMAudioStrmCfgCopy(&pStreamEx->Guest.Cfg, pCfgGuest);
     AssertRC(rc);
 

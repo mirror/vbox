@@ -2184,7 +2184,6 @@ static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream)
         {
             pStream->Cfg.enmDir    = PDMAUDIODIR_OUT;
             pStream->Cfg.enmPath   = PDMAUDIOPATH_OUT_FRONT;
-            pStream->Cfg.enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             PDMAudioPropsInit(&pStream->Cfg.Props, 1 /* 8-bit */, false /* fSigned */, 1 /* Mono */, 11025 /* uHz */);
             RTStrCopy(pStream->Cfg.szName, sizeof(pStream->Cfg.szName), "Output");
@@ -2223,7 +2222,6 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
         case SB16_IDX_OUT:
             pStream->Cfg.enmDir      = PDMAUDIODIR_OUT;
             pStream->Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
-            pStream->Cfg.enmLayout   = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             RTStrCopy(pStream->Cfg.szName, sizeof(pStream->Cfg.szName), "Output");
             break;

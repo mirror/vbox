@@ -29,15 +29,13 @@ typedef struct HDASTREAMMAP
     /** The guest stream properties that is being mapped from/to.
      * The host properties are found in HDASTREAMSTATE::Cfg::Props.  */
     PDMAUDIOPCMPROPS                GuestProps;
-    /** The stream's layout. */
-    PDMAUDIOSTREAMLAYOUT            enmLayout;
     /** The guest side frame size in bytes. */
     uint8_t                         cbGuestFrame;
     /** Set if mapping is needed. */
     bool                            fMappingNeeded;
     /** Number of mappings in paMappings. */
     uint8_t                         cMappings;
-    uint8_t                         aPadding[1];
+    uint8_t                         aPadding[1+4];
     /** Array of stream mappings.
      *  Note: The mappings *must* be layed out in an increasing order, e.g.
      *        how the data appears in the given data block. */

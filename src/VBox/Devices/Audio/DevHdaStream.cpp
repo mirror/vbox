@@ -547,8 +547,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
 #  error "Implement me!"
 # else
-            pCfg->enmPath   = PDMAUDIOPATH_IN_LINE;
-            pCfg->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->enmPath = PDMAUDIOPATH_IN_LINE;
             RTStrCopy(pCfg->szName, sizeof(pCfg->szName), "Line In");
 # endif
             break;

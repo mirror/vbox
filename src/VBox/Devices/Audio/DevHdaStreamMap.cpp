@@ -348,7 +348,6 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, uint8_t cHostChannels, PPDMAUDIOPCMPR
                      PDMAudioPropsChannels(pProps), PDMAudioPropsSampleSize(pProps), pMap->cbGuestFrame));
 
             Assert(pMap->cbGuestFrame); /* Frame size must not be 0. */
-            pMap->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
             return VINF_SUCCESS;
         }
     }
@@ -384,8 +383,6 @@ void hdaR3StreamMapDestroy(PHDASTREAMMAP pMap)
 void hdaR3StreamMapReset(PHDASTREAMMAP pMap)
 {
     AssertPtrReturnVoid(pMap);
-
-    pMap->enmLayout = PDMAUDIOSTREAMLAYOUT_UNKNOWN;
 
     if (pMap->paMappings)
     {

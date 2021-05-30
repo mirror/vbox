@@ -502,38 +502,6 @@ typedef enum PDMAUDIOPATH
 } PDMAUDIOPATH;
 
 /**
- * Audio stream (data) layout.
- */
-typedef enum PDMAUDIOSTREAMLAYOUT
-{
-    /** Invalid zero value as per usual (guards against using unintialized values). */
-    PDMAUDIOSTREAMLAYOUT_INVALID = 0,
-    /** Unknown access type; do not use (hdaR3StreamMapReset uses it). */
-    PDMAUDIOSTREAMLAYOUT_UNKNOWN,
-    /** Non-interleaved access, that is, consecutive access to the data.
-     * @todo r=bird: For plain stereo this is actually interleaves left/right.  What
-     *       I guess non-interleaved means, is that there are no additional
-     *       information interleaved next to the interleaved stereo.
-     *       https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio */
-    PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED,
-    /** Interleaved access, where the data can be mixed together with data of other audio streams. */
-    PDMAUDIOSTREAMLAYOUT_INTERLEAVED,
-    /** Complex layout, which does not fit into the interleaved / non-interleaved layouts. */
-    PDMAUDIOSTREAMLAYOUT_COMPLEX,
-    /** Raw (pass through) data, with no data layout processing done.
-     *
-     *  This means that this stream will operate on PDMAUDIOFRAME data
-     *  directly. Don't use this if you don't have to.
-     *
-     * @deprecated Replaced by S64 (signed, 64-bit sample size).  */
-    PDMAUDIOSTREAMLAYOUT_RAW,
-    /** End of valid values. */
-    PDMAUDIOSTREAMLAYOUT_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
-} PDMAUDIOSTREAMLAYOUT;
-
-/**
  * Stream channel data block.
  */
 typedef struct PDMAUDIOSTREAMCHANNELDATA
@@ -717,21 +685,6 @@ typedef struct PDMAUDIOSTREAMCFG
     PDMAUDIOPATH            enmPath;
     /** The stream's PCM properties. */
     PDMAUDIOPCMPROPS        Props;
-    /** The stream's audio data layout.
-     *  This indicates how the audio data buffers to/from the backend is being layouted.
-     *
-     *  Currently, the following layouts are supported by the audio connector:
-     *
-     *  PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED:
-     *      One stream at once. The consecutive audio data is exactly in the format and frame width
-     *      like defined in the PCM properties. This is the default.
-     *
-     *  PDMAUDIOSTREAMLAYOUT_RAW:
-     *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
-     *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done.
-     *
-     * @todo r=bird: See PDMAUDIOSTREAMLAYOUT comments. */
-    PDMAUDIOSTREAMLAYOUT    enmLayout;
     /** Device emulation-specific data needed for the audio connector. */
     struct
     {
@@ -759,7 +712,6 @@ typedef struct PDMAUDIOSTREAMCFG
          *  0 if not set / available by the backend. UINT32_MAX if not defined (yet). */
         uint32_t            cFramesPreBuffering;
     } Backend;
-    uint32_t                u32Padding;
     /** Friendly name of the stream. */
     char                    szName[64];
 } PDMAUDIOSTREAMCFG;
@@ -1184,7 +1136,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "36fee65e-cbb3-4bb7-a028-e88e6acc1c46"
+#define PDMIAUDIOCONNECTOR_IID                  "ae82616d-0da7-489a-aa4c-3e74d112ca9c"
 
 
 /**
@@ -1478,7 +1430,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "da3c9d33-e532-415b-9156-db31521f59ef"
+#define PDMIHOSTAUDIO_IID                           "b942d1cd-ffbf-490b-a296-74f30884bbd6"
 
 
 /** Pointer to a audio notify from host interface. */
@@ -1563,7 +1515,7 @@ typedef struct PDMIHOSTAUDIOPORT
 } PDMIHOSTAUDIOPORT;
 
 /** PDMIHOSTAUDIOPORT interface ID. */
-#define PDMIHOSTAUDIOPORT_IID                    "9f91ec59-95ba-4925-92dc-e75be1c63352"
+#define PDMIHOSTAUDIOPORT_IID                    "d42144e9-867e-4d1c-86d4-acb92b47f013"
 
 /** @} */
 

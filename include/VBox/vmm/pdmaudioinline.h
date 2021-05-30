@@ -945,7 +945,6 @@ DECLINLINE(bool) PDMAudioStrmCfgEquals(PCPDMAUDIOSTREAMCFG pCfg1, PCPDMAUDIOSTRE
     if (PDMAudioPropsAreEqual(&pCfg1->Props, &pCfg2->Props))
         return pCfg1->enmDir    == pCfg2->enmDir
             && pCfg1->enmPath   == pCfg2->enmPath
-            && pCfg1->enmLayout == pCfg2->enmLayout
             && pCfg1->Device.cMsSchedulingHint == pCfg2->Device.cMsSchedulingHint
             && pCfg1->Backend.cFramesPeriod == pCfg2->Backend.cFramesPeriod
             && pCfg1->Backend.cFramesBufferSize == pCfg2->Backend.cFramesBufferSize
@@ -979,10 +978,7 @@ DECLINLINE(void) PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 DECLINLINE(bool) PDMAudioStrmCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, false);
-    AssertMsgReturn(pCfg->enmDir    >= PDMAUDIODIR_UNKNOWN          && pCfg->enmDir    < PDMAUDIODIR_END,
-                    ("%d\n", pCfg->enmDir), false);
-    AssertMsgReturn(pCfg->enmLayout >= PDMAUDIOSTREAMLAYOUT_UNKNOWN && pCfg->enmLayout < PDMAUDIOSTREAMLAYOUT_END,
-                    ("%d\n", pCfg->enmLayout), false);
+    AssertMsgReturn(pCfg->enmDir >= PDMAUDIODIR_UNKNOWN && pCfg->enmDir < PDMAUDIODIR_END, ("%d\n", pCfg->enmDir), false);
     return PDMAudioPropsAreValid(&pCfg->Props);
 }
 

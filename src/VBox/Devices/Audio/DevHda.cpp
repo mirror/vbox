@@ -1672,8 +1672,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
 
-            pCfg->enmPath           = PDMAUDIOPATH_OUT_FRONT;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->enmPath = PDMAUDIOPATH_OUT_FRONT;
             /// @todo PDMAudioPropsSetChannels(&pCfg->Props, 2); ?
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
@@ -1685,8 +1684,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
 
-            pCfg->enmPath           = PDMAUDIOPATH_OUT_CENTER_LFE;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->enmPath = PDMAUDIOPATH_OUT_CENTER_LFE;
             PDMAudioPropsSetChannels(&pCfg->Props, fUseCenter && fUseLFE ? 2 : 1);
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
@@ -1697,8 +1695,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
 
-            pCfg->enmPath           = PDMAUDIOPATH_OUT_REAR;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->enmPath = PDMAUDIOPATH_OUT_REAR;
             PDMAudioPropsSetChannels(&pCfg->Props, 2);
 
             rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
@@ -4401,7 +4398,6 @@ static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     RT_ZERO(Cfg);
                     Cfg.enmDir                        = PDMAUDIODIR_OUT;
                     Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
-                    Cfg.enmLayout                     = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
                     Cfg.Device.cMsSchedulingHint      = 10;
                     Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
                     PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
