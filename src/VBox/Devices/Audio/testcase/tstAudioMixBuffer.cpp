@@ -756,123 +756,106 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
     AudioMixBufTerm(&MixBuf);
 }
 
-#if 0 /** @todo rewrite to non-parent/child setup */
 /* Test volume control. */
-static int tstVolume(RTTEST hTest)
+static void tstVolume(RTTEST hTest)
 {
     RTTestSub(hTest, "Volume control (44.1kHz S16 2ch)");
-    uint32_t         cBufSize = 256;
+    uint32_t const cBufSize = 256;
 
-    /* Same for parent/child. */
-    /* 44100Hz, 2 Channels, S16 */
-    PDMAUDIOPCMPROPS cfg = PDMAUDIOPCMPROPS_INITIALIZER(
+    /*
+     * Configure a mixbuf where we read and write 44.1kHz S16 2ch.
+     */
+    PDMAUDIOPCMPROPS const Cfg = PDMAUDIOPCMPROPS_INITIALIZER(
         2,                                                                  /* Bytes */
         true,                                                               /* Signed */
         2,                                                                  /* Channels */
         44100,                                                              /* Hz */
         false                                                               /* Swap Endian */
     );
+    AUDIOMIXBUF MixBuf;
+    RTTESTI_CHECK_RC_RETV(AudioMixBufInit(&MixBuf, "Volume", &Cfg, cBufSize), VINF_SUCCESS);
 
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg));
+    AUDIOMIXBUFWRITESTATE WriteState;
+    RTTESTI_CHECK_RC_RETV(AudioMixBufInitWriteState(&MixBuf, &WriteState, &Cfg), VINF_SUCCESS);
 
-    PDMAUDIOVOLUME vol = { false, 0, 0 };   /* Not muted. */
-    AUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg, cBufSize));
-
-    AUDIOMIXBUF child;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg, cBufSize));
-    RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
-
-    /* A few 16-bit signed samples. */
-    int16_t     aFrames16S[16] = { INT16_MIN, INT16_MIN + 1, -128, -64, -4, -1, 0, 1,
-                                   2, 255, 256, INT16_MAX / 2, INT16_MAX - 2, INT16_MAX - 1, INT16_MAX, 0 };
+    AUDIOMIXBUFPEEKSTATE PeekState;
+    RTTESTI_CHECK_RC_RETV(AudioMixBufInitPeekState(&MixBuf, &PeekState, &Cfg), VINF_SUCCESS);
 
     /*
-     * Writing + mixing from child -> parent.
+     * A few 16-bit signed test samples.
      */
-    uint32_t    cbBuf = 256;
-    char        achBuf[256];
-    uint32_t    cFramesRead, cFramesWritten, cFramesMixed;
-
-    uint32_t cFramesChild  = 8;
-    uint32_t cFramesParent = cFramesChild;
-    uint32_t cFramesTotalRead;
-    int16_t *pSrc16;
-    int16_t *pDst16;
-
-    /**** Volume control test ****/
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Volume control test %uHz %uch \n", cfg.uHz, PDMAudioPropsChannels(&cfg));
-
-    /* 1) Full volume/0dB attenuation (255). */
-    vol.uLeft = vol.uRight = 255;
-    AudioMixBufSetVolume(&child, &vol);
-
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&child, &aFrames16S, sizeof(aFrames16S), &cFramesWritten));
-    RTTESTI_CHECK_MSG(cFramesWritten == cFramesChild, ("Child: Expected %RU32 written frames, got %RU32\n", cFramesChild, cFramesWritten));
-    RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, cFramesWritten, &cFramesMixed));
-
-    cFramesTotalRead = 0;
-    for (;;)
+    static int16_t const s_aFrames16S[16] =
     {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
-        if (!cFramesRead)
-            break;
-        cFramesTotalRead += cFramesRead;
-        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
-        AudioMixBufFinish(&parent, cFramesRead);
-    }
-    RTTESTI_CHECK_MSG(cFramesTotalRead == cFramesParent, ("Parent: Expected %RU32 mixed frames, got %RU32\n", cFramesParent, cFramesTotalRead));
+        INT16_MIN,  INT16_MIN + 1, -128,           -64,            -4,            -1,         0, 1,
+                2,            255,  256, INT16_MAX / 2, INT16_MAX - 2, INT16_MAX - 1, INT16_MAX, 0,
+    };
+
+    /*
+     * 1) Full volume/0dB attenuation (255).
+     */
+    PDMAUDIOVOLUME Vol;
+    Vol.fMuted = false;
+    Vol.uLeft  = 255;
+    Vol.uRight = 255;
+    AudioMixBufSetVolume(&MixBuf, &Vol);
+
+    /* Write all the test frames to the mixer buffer: */
+    uint32_t cFramesWritten;
+    AudioMixBufWrite(&MixBuf, &WriteState, &s_aFrames16S[0], sizeof(s_aFrames16S), 0 /*offDstFrame*/, cBufSize, &cFramesWritten);
+    RTTESTI_CHECK(cFramesWritten == RT_ELEMENTS(s_aFrames16S) / 2);
+    AudioMixBufCommit(&MixBuf, cFramesWritten);
+
+    /* Read them back.  We should get them back just like we wrote them. */
+    uint16_t au16Buf[cBufSize * 2];
+    uint32_t cFramesPeeked;
+    uint32_t cbPeeked;
+    AudioMixBufPeek(&MixBuf, 0 /*offSrcFrame*/, cFramesWritten, &cFramesPeeked, &PeekState, au16Buf, sizeof(au16Buf), &cbPeeked);
+    RTTESTI_CHECK(cFramesPeeked == cFramesWritten);
+    RTTESTI_CHECK(cbPeeked == PDMAudioPropsFramesToBytes(&Cfg, cFramesPeeked));
+    AudioMixBufAdvance(&MixBuf, cFramesPeeked);
 
     /* Check that at 0dB the frames came out unharmed. */
-    pSrc16 = &aFrames16S[0];
-    pDst16 = (int16_t *)achBuf;
+    if (memcmp(au16Buf, s_aFrames16S, sizeof(s_aFrames16S)) != 0)
+        RTTestFailed(hTest,
+                     "0dB test failed\n"
+                     "mismatch: %.*Rhxs\n"
+                     "expected: %.*Rhxs\n",
+                     sizeof(s_aFrames16S), au16Buf, sizeof(s_aFrames16S), s_aFrames16S);
 
-    for (unsigned i = 0; i < cFramesParent * 2 /* stereo */; ++i)
-    {
-        RTTESTI_CHECK_MSG(*pSrc16 == *pDst16, ("index %u: Dst=%d, Src=%d\n", i, *pDst16, *pSrc16));
-        ++pSrc16;
-        ++pDst16;
-    }
-    AudioMixBufReset(&child);
+    /*
+     * 2) Half volume/-6dB attenuation (16 steps down).
+     */
+    Vol.uLeft  = 255 - 16;
+    Vol.uRight = 255 - 16;
+    AudioMixBufSetVolume(&MixBuf, &Vol);
 
-    /* 2) Half volume/-6dB attenuation (16 steps down). */
-    vol.uLeft = vol.uRight = 255 - 16;
-    AudioMixBufSetVolume(&child, &vol);
+    /* Write all the test frames to the mixer buffer: */
+    AudioMixBufWrite(&MixBuf, &WriteState, &s_aFrames16S[0], sizeof(s_aFrames16S), 0 /*offDstFrame*/, cBufSize, &cFramesWritten);
+    RTTESTI_CHECK(cFramesWritten == RT_ELEMENTS(s_aFrames16S) / 2);
+    AudioMixBufCommit(&MixBuf, cFramesWritten);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&child, &aFrames16S, sizeof(aFrames16S), &cFramesWritten));
-    RTTESTI_CHECK_MSG(cFramesWritten == cFramesChild, ("Child: Expected %RU32 written frames, got %RU32\n", cFramesChild, cFramesWritten));
-    RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, cFramesWritten, &cFramesMixed));
-
-    cFramesTotalRead = 0;
-    for (;;)
-    {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
-        if (!cFramesRead)
-            break;
-        cFramesTotalRead += cFramesRead;
-        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
-        AudioMixBufFinish(&parent, cFramesRead);
-    }
-    RTTESTI_CHECK_MSG(cFramesTotalRead == cFramesParent, ("Parent: Expected %RU32 mixed frames, got %RU32\n", cFramesParent, cFramesTotalRead));
+    /* Read them back.  We should get them back just like we wrote them. */
+    AudioMixBufPeek(&MixBuf, 0 /*offSrcFrame*/, cFramesWritten, &cFramesPeeked, &PeekState, au16Buf, sizeof(au16Buf), &cbPeeked);
+    RTTESTI_CHECK(cFramesPeeked == cFramesWritten);
+    RTTESTI_CHECK(cbPeeked == PDMAudioPropsFramesToBytes(&Cfg, cFramesPeeked));
+    AudioMixBufAdvance(&MixBuf, cFramesPeeked);
 
     /* Check that at -6dB the sample values are halved. */
-    pSrc16 = &aFrames16S[0];
-    pDst16 = (int16_t *)achBuf;
+    int16_t ai16Expect[sizeof(s_aFrames16S) / 2];
+    memcpy(ai16Expect, s_aFrames16S, sizeof(ai16Expect));
+    for (uintptr_t i = 0; i < RT_ELEMENTS(ai16Expect); i++)
+        ai16Expect[i] >>= 1; /* /= 2 - not the same for signed numbers; */
+    if (memcmp(au16Buf, ai16Expect, sizeof(ai16Expect)) != 0)
+        RTTestFailed(hTest,
+                     "-6dB test failed\n"
+                     "mismatch: %.*Rhxs\n"
+                     "expected: %.*Rhxs\n"
+                     "wrote:    %.*Rhxs\n",
+                     sizeof(ai16Expect), au16Buf, sizeof(ai16Expect), ai16Expect, sizeof(s_aFrames16S), s_aFrames16S);
 
-    for (unsigned i = 0; i < cFramesParent * 2 /* stereo */; ++i)
-    {
-        /* Watch out! For negative values, x >> 1 is not the same as x / 2. */
-        RTTESTI_CHECK_MSG(*pSrc16 >> 1 == *pDst16, ("index %u: Dst=%d, Src=%d\n", i, *pDst16, *pSrc16));
-        ++pSrc16;
-        ++pDst16;
-    }
-
-    AudioMixBufDestroy(&parent);
-    AudioMixBufDestroy(&child);
-
-    return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
+    AudioMixBufTerm(&MixBuf);
 }
-#endif
+
 
 int main(int argc, char **argv)
 {
@@ -918,7 +901,7 @@ int main(int argc, char **argv)
     //tstNewPeek(hTest, 11000, 48000);
     //tstNewPeek(hTest, 22050, 44100);
 
-    //tstVolume(hTest);
+    tstVolume(hTest);
 
     /*
      * Summary

@@ -1838,8 +1838,11 @@ static void audioMixAdjustVolume(PAUDIOMIXBUF pMixBuf, uint32_t offFirst, uint32
      */
     if (pMixBuf->Volume.fMuted)
     {
+        /* first chunk */
         uint32_t const cFramesChunk1 = RT_MIN(pMixBuf->cFrames - offFirst, cFrames);
         RT_BZERO(&pMixBuf->pFrames[offFirst], sizeof(pMixBuf->pFrames[0]) * cFramesChunk1);
+
+        /* second chunk */
         if (cFramesChunk1 < cFrames)
             RT_BZERO(&pMixBuf->pFrames[0], sizeof(pMixBuf->pFrames[0]) * (cFrames - cFramesChunk1));
     }
@@ -1852,6 +1855,8 @@ static void audioMixAdjustVolume(PAUDIOMIXBUF pMixBuf, uint32_t offFirst, uint32
         /* first chunk */
         uint32_t const cFramesChunk1 = RT_MIN(pMixBuf->cFrames - offFirst, cFrames);
         audioMixAdjustVolumeWorker(pMixBuf, offFirst, cFramesChunk1);
+
+        /* second chunk */
         if (cFramesChunk1 < cFrames)
             audioMixAdjustVolumeWorker(pMixBuf, 0, cFrames - cFramesChunk1);
     }
