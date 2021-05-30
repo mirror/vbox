@@ -1026,7 +1026,6 @@ static int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, 
     AssertRC(rc);
     CfgReq.enmDir                       = PDMAUDIODIR_OUT;
     CfgReq.enmPath                      = PDMAUDIOPATH_OUT_FRONT;
-    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
     CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
                                         ? 10 : cMsSchedulingHint;
     if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
@@ -1086,7 +1085,6 @@ static int audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, P
     AssertRC(rc);
     CfgReq.enmDir                       = PDMAUDIODIR_IN;
     CfgReq.enmPath                      = PDMAUDIOPATH_IN_LINE;
-    CfgReq.enmLayout                    = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
     CfgReq.Device.cMsSchedulingHint     = cMsSchedulingHint == UINT32_MAX || cMsSchedulingHint == 0
                                         ? 10 : cMsSchedulingHint;
     if (pDrvStack->pIAudioConnector && (cMsBufferSize == UINT32_MAX || cMsBufferSize == 0))
