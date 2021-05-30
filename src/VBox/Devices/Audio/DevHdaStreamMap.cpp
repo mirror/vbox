@@ -294,8 +294,8 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps, uin
         if (pMap->paMappings)
         {
             PPDMAUDIOSTREAMMAP pMapLR = &pMap->paMappings[0];
-            pMapLR->aenmIDs[0]  = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
-            pMapLR->aenmIDs[1]  = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
+            pMapLR->aenmIDs[0]  = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pMapLR->aenmIDs[1]  = PDMAUDIOCHANNELID_FRONT_RIGHT;
             pMapLR->cbFrame     = PDMAudioPropsFrameSize(pProps);
             pMapLR->cbStep      = PDMAudioPropsSampleSize(pProps) * 2 /* Front left + Front right channels */;
             pMapLR->offFirst    = 0;

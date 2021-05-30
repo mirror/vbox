@@ -143,6 +143,134 @@ DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
 *********************************************************************************************************************************/
 
 /**
+ * Assigns default channel IDs according to the channel count.
+ *
+ * The assignments are taken from the standard speaker channel layouts table
+ * in the wikipedia article on surround sound:
+ *      https://en.wikipedia.org/wiki/Surround_sound#Standard_speaker_channels
+ */
+DECLINLINE(void) PDMAudioPropsSetDefaultChannelIds(PPDMAUDIOPCMPROPS pProps)
+{
+    unsigned cChannels = pProps->cChannelsX;
+    switch (cChannels)
+    {
+        case 1:
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_MONO;
+            break;
+        case 2:
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            break;
+        case 3: /* 2.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_LFE;
+            break;
+        case 4: /* 4.0 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            break;
+        case 5: /* 4.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_CENTER;
+            break;
+        case 6: /* 5.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            break;
+        case 7: /* 6.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_REAR_CENTER;
+            break;
+        case 8: /* 7.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER;
+            pProps->aidChannels[7] = PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER;
+            break;
+        case 9: /* 9.0 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_SIDE_LEFT;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_SIDE_RIGHT;
+            pProps->aidChannels[7] = PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT;
+            pProps->aidChannels[8] = PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT;
+            break;
+        case 10: /* 9.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_SIDE_LEFT;
+            pProps->aidChannels[7] = PDMAUDIOCHANNELID_SIDE_RIGHT;
+            pProps->aidChannels[8] = PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT;
+            pProps->aidChannels[9] = PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT;
+            break;
+        case 11: /* 11.0 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER;
+            pProps->aidChannels[7] = PDMAUDIOCHANNELID_SIDE_LEFT;
+            pProps->aidChannels[8] = PDMAUDIOCHANNELID_SIDE_RIGHT;
+            pProps->aidChannels[9] = PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT;
+            pProps->aidChannels[10]= PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT;
+            break;
+        default:
+            AssertFailed();
+            cChannels = 12;
+            RT_FALL_THROUGH();
+        case 12: /* 11.1 */
+            pProps->aidChannels[0] = PDMAUDIOCHANNELID_FRONT_LEFT;
+            pProps->aidChannels[1] = PDMAUDIOCHANNELID_FRONT_RIGHT;
+            pProps->aidChannels[2] = PDMAUDIOCHANNELID_FRONT_CENTER;
+            pProps->aidChannels[3] = PDMAUDIOCHANNELID_LFE;
+            pProps->aidChannels[4] = PDMAUDIOCHANNELID_REAR_LEFT;
+            pProps->aidChannels[5] = PDMAUDIOCHANNELID_REAR_RIGHT;
+            pProps->aidChannels[6] = PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER;
+            pProps->aidChannels[7] = PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER;
+            pProps->aidChannels[8] = PDMAUDIOCHANNELID_SIDE_LEFT;
+            pProps->aidChannels[9] = PDMAUDIOCHANNELID_SIDE_RIGHT;
+            pProps->aidChannels[10]= PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT;
+            pProps->aidChannels[11]= PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT;
+            break;
+        case 0:
+            break;
+    }
+    AssertCompile(RT_ELEMENTS(pProps->aidChannels) >= 12);
+
+    while (cChannels < RT_ELEMENTS(pProps->aidChannels))
+        pProps->aidChannels[cChannels++] = PDMAUDIOCHANNELID_INVALID;
+}
+
+
+/**
  * Initialize PCM audio properties.
  */
 DECLINLINE(void) PDMAudioPropsInit(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample, bool fSigned, uint8_t cChannels, uint32_t uHz)
@@ -159,6 +287,8 @@ DECLINLINE(void) PDMAudioPropsInit(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample, b
     Assert(pProps->cbFrame    == (uint32_t)cbSample * cChannels);
     Assert(pProps->cbSampleX  == cbSample);
     Assert(pProps->cChannelsX == cChannels);
+
+    PDMAudioPropsSetDefaultChannelIds(pProps);
 }
 
 /**
@@ -184,10 +314,14 @@ DECLINLINE(void) PDMAudioPropsInitEx(PPDMAUDIOPCMPROPS pProps, uint8_t cbSample,
     Assert(pProps->cbFrame    == (uint32_t)cbSample * cChannels);
     Assert(pProps->cbSampleX  == cbSample);
     Assert(pProps->cChannelsX == cChannels);
+
+    PDMAudioPropsSetDefaultChannelIds(pProps);
 }
 
 /**
  * Modifies the channel count.
+ *
+ * @note    This will reset the channel IDs to defaults.
  *
  * @param   pProps              The PCM properties to update.
  * @param   cChannels           The new channel count.
@@ -198,6 +332,8 @@ DECLINLINE(void) PDMAudioPropsSetChannels(PPDMAUDIOPCMPROPS pProps, uint8_t cCha
     pProps->cChannelsX  = cChannels;
     pProps->cbFrame     = pProps->cbSampleX * cChannels;
     pProps->cShiftX     = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSampleX, cChannels);
+
+    PDMAudioPropsSetDefaultChannelIds(pProps);
 }
 
 /**

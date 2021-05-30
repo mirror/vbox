@@ -524,49 +524,62 @@ typedef PDMAUDIOSTREAMCHANNELDATA  *PPDMAUDIOSTREAMCHANNELDATA;
 
 /**
  * Standard speaker channel IDs.
- *
- * This can cover up to 11.0 surround sound.
- *
- * @note Any of those channels can be marked / used as the LFE channel (played
- *       through the subwoofer).
  */
-typedef enum PDMAUDIOSTREAMCHANNELID
+typedef enum PDMAUDIOCHANNELID
 {
     /** Invalid zero value as per usual (guards against using unintialized values). */
-    PDMAUDIOSTREAMCHANNELID_INVALID = 0,
-    /** Unknown / not set channel ID. */
-    PDMAUDIOSTREAMCHANNELID_UNKNOWN,
+    PDMAUDIOCHANNELID_INVALID = 0,
+
+    /** Unused channel - fill with zero when encoding, ignore when decoding. */
+    PDMAUDIOCHANNELID_UNUSED_ZERO,
+    /** Unused channel - fill with silence when encoding, ignore when decoding. */
+    PDMAUDIOCHANNELID_UNUSED_SILENCE,
+
+    /** Unknown channel ID (unable to map to PDM terms). */
+    PDMAUDIOCHANNELID_UNKNOWN,
+
     /** Front left channel. */
-    PDMAUDIOSTREAMCHANNELID_FRONT_LEFT,
+    PDMAUDIOCHANNELID_FRONT_LEFT,
     /** Front right channel. */
-    PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT,
+    PDMAUDIOCHANNELID_FRONT_RIGHT,
     /** Front center channel. */
-    PDMAUDIOSTREAMCHANNELID_FRONT_CENTER,
+    PDMAUDIOCHANNELID_FRONT_CENTER,
+    /** Mono channel (alias for front center). */
+    PDMAUDIOCHANNELID_MONO = PDMAUDIOCHANNELID_FRONT_CENTER,
     /** Low frequency effects (subwoofer) channel. */
-    PDMAUDIOSTREAMCHANNELID_LFE,
+    PDMAUDIOCHANNELID_LFE,
     /** Rear left channel. */
-    PDMAUDIOSTREAMCHANNELID_REAR_LEFT,
+    PDMAUDIOCHANNELID_REAR_LEFT,
     /** Rear right channel. */
-    PDMAUDIOSTREAMCHANNELID_REAR_RIGHT,
+    PDMAUDIOCHANNELID_REAR_RIGHT,
     /** Front left of center channel. */
-    PDMAUDIOSTREAMCHANNELID_FRONT_LEFT_OF_CENTER,
+    PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER,
     /** Front right of center channel. */
-    PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT_OF_CENTER,
+    PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER,
     /** Rear center channel. */
-    PDMAUDIOSTREAMCHANNELID_REAR_CENTER,
+    PDMAUDIOCHANNELID_REAR_CENTER,
     /** Side left channel. */
-    PDMAUDIOSTREAMCHANNELID_SIDE_LEFT,
+    PDMAUDIOCHANNELID_SIDE_LEFT,
     /** Side right channel. */
-    PDMAUDIOSTREAMCHANNELID_SIDE_RIGHT,
-    /** Left height channel. */
-    PDMAUDIOSTREAMCHANNELID_LEFT_HEIGHT,
-    /** Right height channel. */
-    PDMAUDIOSTREAMCHANNELID_RIGHT_HEIGHT,
+    PDMAUDIOCHANNELID_SIDE_RIGHT,
+    /** Front left height channel. */
+    PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT,
+    /** Front center height channel. */
+    PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT,
+    /** Front right height channel. */
+    PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT,
+    /** Rear left height channel. */
+    PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT,
+    /** Rear center height channel. */
+    PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT,
+    /** Rear right height channel. */
+    PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT,
+
     /** End of valid values. */
-    PDMAUDIOSTREAMCHANNELID_END,
+    PDMAUDIOCHANNELID_END,
     /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOSTREAMCHANNELID_32BIT_HACK = 0x7fffffff
-} PDMAUDIOSTREAMCHANNELID;
+    PDMAUDIOCHANNELID_32BIT_HACK = 0x7fffffff
+} PDMAUDIOCHANNELID;
 
 /**
  * Mappings channels onto an audio stream.
@@ -580,7 +593,7 @@ typedef struct PDMAUDIOSTREAMMAP
 {
     /** Array of channel IDs being handled.
      * @note The first (zero-based) index specifies the leftmost channel. */
-    PDMAUDIOSTREAMCHANNELID     aenmIDs[2];
+    PDMAUDIOCHANNELID           aenmIDs[2];
     /** Step size (in bytes) to the channel's next frame. */
     uint32_t                    cbStep;
     /** Frame size (in bytes) of this channel. */
@@ -598,7 +611,7 @@ typedef struct PDMAUDIOSTREAMMAP
      * struct PDMAUDIOCHANNELDESC
      * {
      *     uint8_t      off;    //< Stream offset in bytes.
-     *     uint8_t      id;     //< PDMAUDIOSTREAMCHANNELID
+     *     uint8_t      id;     //< PDMAUDIOCHANNELID
      * };
      *
      * And I'd baked it into PDMAUDIOPCMPROPS as a fixed sized array with 16 entries
@@ -638,8 +651,13 @@ typedef struct PDMAUDIOPCMPROPS
     bool        fRaw : 1;
     /** Sample frequency in Hertz (Hz). */
     uint32_t    uHz;
+    /** PDMAUDIOCHANNELID mappings for each channel.
+     * This ASSUMES all channels uses the same sample size. */
+    uint8_t     aidChannels[PDMAUDIO_MAX_CHANNELS];
+    /** Padding the structure up to 32 bytes. */
+    uint32_t    auPadding[3];
 } PDMAUDIOPCMPROPS;
-AssertCompileSize(PDMAUDIOPCMPROPS, 8);
+AssertCompileSize(PDMAUDIOPCMPROPS, 32);
 AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
 /** Pointer to audio stream properties. */
 typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
@@ -648,10 +666,30 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
 
 /** @name Macros for use with PDMAUDIOPCMPROPS
  * @{ */
-/** Initializer for PDMAUDIOPCMPROPS. */
+/** Initializer for PDMAUDIOPCMPROPS.
+ * @note The default channel mapping here is very simple and doesn't always
+ *       match that of PDMAudioPropsInit and PDMAudioPropsInitEx. */
 #define PDMAUDIOPCMPROPS_INITIALIZER(a_cbSample, a_fSigned, a_cChannels, a_uHz, a_fSwapEndian) \
-    { (uint8_t)((a_cbSample) * (a_cChannels)), PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), \
-      (uint8_t)(a_cbSample), (uint8_t)(a_cChannels), a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz }
+    { \
+        (uint8_t)((a_cbSample) * (a_cChannels)), PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), \
+        (uint8_t)(a_cbSample), (uint8_t)(a_cChannels), a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz, \
+        /*aidChannels =*/ { \
+            (a_cChannels) >   1 ? PDMAUDIOCHANNELID_FRONT_LEFT              : PDMAUDIOCHANNELID_MONO, \
+            (a_cChannels) >=  2 ? PDMAUDIOCHANNELID_FRONT_RIGHT             : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  3 ? PDMAUDIOCHANNELID_FRONT_CENTER            : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  4 ? PDMAUDIOCHANNELID_LFE                     : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  5 ? PDMAUDIOCHANNELID_REAR_LEFT               : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  6 ? PDMAUDIOCHANNELID_REAR_RIGHT              : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  7 ? PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER    : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  8 ? PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER   : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >=  9 ? PDMAUDIOCHANNELID_REAR_CENTER             : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >= 10 ? PDMAUDIOCHANNELID_SIDE_LEFT               : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >= 11 ? PDMAUDIOCHANNELID_SIDE_RIGHT              : PDMAUDIOCHANNELID_INVALID, \
+            (a_cChannels) >= 12 ? PDMAUDIOCHANNELID_UNKNOWN                 : PDMAUDIOCHANNELID_INVALID, \
+         }, \
+         /* auPadding = */ { 0, 0, 0 } \
+    }
+
 /** Calculates the cShift value of given sample bits and audio channels.
  * @note Does only support mono/stereo channels for now, for non-stereo/mono we
  *       returns a special value which the two conversion functions detect
