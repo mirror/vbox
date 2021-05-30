@@ -468,14 +468,12 @@ static void tstConversion(RTTEST hTest, uint8_t cSrcBits, bool fSrcSigned, uint8
                     RTTESTI_CHECK(cFrames == cSrcFramesToWrite);
                     break;
 
-#if 0 /** @todo doesn't work for some U64 variations */
                 case 1: /* zero & blend */
                     AudioMixBufSilence(&MixBuf, &WriteStateIgnZero, 0 /*offFrame*/, cSrcFramesToWrite);
                     iSrcTestSample = tstFillBuf(&CfgSrc, pvSrcTestSamples, iSrcTestSample, pbSrcBuf, cSrcFramesToWrite);
                     AudioMixBufBlend(&MixBuf, &WriteState, pbSrcBuf, cbSrcToWrite, 0 /*offDstFrame*/, cSrcFramesToWrite, &cFrames);
                     RTTESTI_CHECK(cFrames == cSrcFramesToWrite);
                     break;
-#endif
 
                 case 2: /* blend same equal data twice */
                 {

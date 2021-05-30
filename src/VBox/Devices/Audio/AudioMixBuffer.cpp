@@ -272,8 +272,8 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
         case 2:
             while (cFrames-- > 0)
             {
-                audioMixBufBlendSample(&pi64Dst[0], pi64Dst[0]);
-                audioMixBufBlendSample(&pi64Dst[1], pi64Dst[1]);
+                audioMixBufBlendSample(&pi64Dst[0], pi64Src[0]);
+                audioMixBufBlendSample(&pi64Dst[1], pi64Src[1]);
                 pi64Dst += 2;
                 pi64Src += 2;
             }
@@ -285,7 +285,7 @@ static void audioMixBufBlendBuffer(int64_t *pi64Dst, int64_t const *pi64Src, uin
         case 1:
             while (cFrames-- > 0)
             {
-                audioMixBufBlendSample(pi64Dst, pi64Dst[0]);
+                audioMixBufBlendSample(pi64Dst, pi64Src[0]);
                 pi64Dst++;
                 pi64Src++;
             }
@@ -1740,15 +1740,15 @@ void AudioMixBufSilence(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, uin
     /*
      * First chunk.
      */
-    uint32_t cChunk = RT_MIN(pMixBuf->cFrames - offFrame, cFrames);
-    RT_BZERO(&pMixBuf->pFrames[offFrame], cChunk * sizeof(pMixBuf->pFrames[0]));
-    cFrames -= cChunk;
+    uint32_t const cFramesChunk1 = RT_MIN(pMixBuf->cFrames - offFrame, cFrames);
+    RT_BZERO(&pMixBuf->pFrames[offFrame], cFramesChunk1 * sizeof(pMixBuf->pFrames[0]));
 
     /*
      * Second chunk, if needed.
      */
-    if (cFrames > 0)
+    if (cFrames > cFramesChunk1)
     {
+        cFrames -= cFramesChunk1;
         AssertStmt(cFrames <= pMixBuf->cFrames, cFrames = pMixBuf->cFrames);
         RT_BZERO(&pMixBuf->pFrames[0], cFrames * sizeof(pMixBuf->pFrames[0]));
     }
