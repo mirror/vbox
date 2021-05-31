@@ -138,7 +138,7 @@ static DECLCALLBACK(void) RT_CONCAT(audioMixBufDecodeGeneric,a_Name)(int32_t *pi
         {
             int8_t idxSrc = pState->aidxChannelMap[idxDst];
             if (idxSrc >= 0)
-                pi32Dst[idxDst] = RT_CONCAT(audioMixBufSampleTo,a_Name)(pSrc[idxSrc]);
+                pi32Dst[idxDst] = RT_CONCAT(audioMixBufSampleFrom,a_Name)(pSrc[idxSrc]);
             else if (idxSrc != -2)
                 pi32Dst[idxDst] = (a_fSigned) ? 0 : (a_Max >> 1);
             else
@@ -226,7 +226,7 @@ static DECLCALLBACK(void) RT_CONCAT3(audioMixBufDecodeGeneric,a_Name,Blend)(int3
         {
             int8_t idxSrc = pState->aidxChannelMap[idxDst];
             if (idxSrc >= 0)
-                audioMixBufBlendSample(&pi32Dst[idxDst], RT_CONCAT(audioMixBufSampleTo,a_Name)(pSrc[idxSrc]));
+                audioMixBufBlendSample(&pi32Dst[idxDst], RT_CONCAT(audioMixBufSampleFrom,a_Name)(pSrc[idxSrc]));
         }
         pi32Dst += cDstChannels;
         pSrc    += cSrcChannels;
