@@ -47,6 +47,7 @@
 #include "product-generated.h"
 
 #include <VBox/version.h>
+#include <VBox/log.h>
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h> /* for CoInitializeEx */
@@ -80,10 +81,14 @@ typedef struct PDMDRVINSINT
 #define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion) \
             case 'q': \
                 g_uVerbosity = 0; \
+                if (g_pRelLogger) \
+                    RTLogGroupSettings(g_pRelLogger, "all=0 all.e"); \
                 break; \
             \
             case 'v': \
                 g_uVerbosity++; \
+                if (g_pRelLogger) \
+                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0"); \
                 break; \
             \
             case 'V': \
@@ -373,6 +378,8 @@ AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
 /** The test handle. */
 static RTTEST       g_hTest;
+/** The release logger. */
+static PRTLOGGER    g_pRelLogger = NULL;
 /** The current verbosity level. */
 static unsigned     g_uVerbosity = 0;
 /** DrvAudio: Enable debug (or not). */
@@ -2402,10 +2409,11 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
     /*
      * First we must open the file and determin the format.
      */
+    RTERRINFOSTATIC ErrInfo;
     AUDIOTESTWAVEFILE WaveFile;
-    int rc = AudioTestWaveFileOpen(pszFile, &WaveFile);
+    int rc = AudioTestWaveFileOpen(pszFile, &WaveFile, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("Failed to open '%s': %Rrc", pszFile, rc);
+        return RTMsgErrorExitFailure("Failed to open '%s': %Rrc%#RTeim", pszFile, rc, &ErrInfo.Core);
 
     if (g_uVerbosity > 0)
     {
@@ -3018,11 +3026,22 @@ int main(int argc, char **argv)
 #endif
 
     /*
+     * Configure release logging to go to stderr.
+     */
+    static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
+    int rc = RTLogCreate(&g_pRelLogger, RTLOGFLAGS_PREFIX_THREAD, "all.e.l", "VKAT_RELEASE_LOG",
+                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, "vkat-release.log");
+    if (RT_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(g_pRelLogger);
+    else
+        RTMsgWarning("Failed to create release logger: %Rrc", rc);
+
+    /*
      * Process common options.
      */
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
-                          RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
+    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
+                      RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
     RTGETOPTUNION ValueUnion;
@@ -3032,10 +3051,14 @@ int main(int argc, char **argv)
         {
             case 'q':
                 g_uVerbosity = 0;
+                if (g_pRelLogger)
+                    RTLogGroupSettings(g_pRelLogger, "all=0 all.e");
                 break;
 
             case 'v':
                 g_uVerbosity++;
+                if (g_pRelLogger)
+                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0");
                 break;
 
             case 'V':

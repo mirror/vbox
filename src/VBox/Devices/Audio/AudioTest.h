@@ -341,7 +341,7 @@ int    AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTER
 bool   AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr);
 void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
 
-int    AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile);
+int    AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRTERRINFO pErrInfo);
 int    AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead);
 void   AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile);
 
