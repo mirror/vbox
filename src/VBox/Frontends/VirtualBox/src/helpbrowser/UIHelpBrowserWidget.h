@@ -109,6 +109,7 @@ private slots:
     void sltFindInPageWidgetVisibilityChanged(bool fVisible);
     void sltFindNextInPage();
     void sltFindPreviousInPage();
+    void sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
 
 private:
 

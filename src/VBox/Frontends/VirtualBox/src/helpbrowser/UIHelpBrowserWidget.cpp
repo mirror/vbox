@@ -189,6 +189,7 @@ signals:
     void sigLinkHighlighted(const QString &strLink);
     void sigZoomPercentageChanged(int iPercentage);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
+    void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
 
 public:
 
@@ -268,6 +269,7 @@ signals:
     void sigZoomPercentageChanged(int iPercentage);
     void sigCopyAvailableChanged(bool fAvailable);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
+    void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
 
 public:
 
@@ -838,6 +840,7 @@ void UIHelpBrowserTab::sltHistoryChanged()
         m_pForwardAction->setEnabled(m_pContentViewer->isForwardAvailable());
 
     emit sigTitleUpdate(m_pContentViewer->historyTitle(0));
+    emit sigHistoryChanged(m_pContentViewer->isBackwardAvailable(), m_pContentViewer->isForwardAvailable());
 }
 
 void UIHelpBrowserTab::sltAddressBarIndexChanged(int iIndex)
@@ -925,6 +928,10 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sltCopyAvailableChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigFindInPageWidgetVisibilityChanged,
             this, &UIHelpBrowserTabManager::sigFindInPageWidgetVisibilityChanged);
+    connect(pTabWidget, &UIHelpBrowserTab::sigHistoryChanged,
+            this, &UIHelpBrowserTabManager::sigHistoryChanged);
+
+
 
     pTabWidget->setZoomPercentage(zoomPercentage());
     pTabWidget->setHelpFileList(m_helpFileList);
@@ -1463,10 +1470,12 @@ void UIHelpBrowserWidget::prepareActions()
     m_pBackwardAction = new QAction(this);
     connect(m_pBackwardAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigGoBackward);
+    m_pBackwardAction->setEnabled(false);
 
     m_pForwardAction = new QAction(this);
     connect(m_pForwardAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigGoForward);
+    m_pForwardAction->setEnabled(false);
 
     m_pHomeAction = new QAction(this);
     connect(m_pHomeAction, &QAction::triggered,
@@ -1551,6 +1560,9 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltCopyAvailableChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigFindInPageWidgetVisibilityChanged,
             this, &UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigHistoryChanged,
+            this, &UIHelpBrowserWidget::sltHistoryChanged);
+
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHelpEngineSetupFinished);
@@ -1876,6 +1888,14 @@ void UIHelpBrowserWidget::sltFindPreviousInPage()
 {
     if (m_pTabManager)
         m_pTabManager->findPrevious();
+}
+
+void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable)
+{
+    if (m_pBackwardAction)
+        m_pBackwardAction->setEnabled(fBackwardAvailable);
+    if (m_pForwardAction)
+        m_pForwardAction->setEnabled(fForwardAvailable);
 }
 
 void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)
