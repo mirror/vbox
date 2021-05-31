@@ -482,13 +482,14 @@ uint16_t cdrom_boot(void)
     BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n",
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
 
+    /* Now that we know El Torito emulation is in use, allocate buffer. */
+    cdemu->ptr_unaligned = cdemu_bounce_buf_alloc() :> 0;
+    if (cdemu->ptr_unaligned == NULL)
+        return 13;
+
     /* Read the disk image's boot sector into memory. */
     error = cdemu_read(device, 0, nbsectors, MK_FP(boot_segment,0));
     if (error != 0)
-        return 13;
-
-    cdemu->ptr_unaligned = cdemu_bounce_buf_alloc() :> 0;
-    if (cdemu->ptr_unaligned == NULL)
         return 14;
 
     BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n",
