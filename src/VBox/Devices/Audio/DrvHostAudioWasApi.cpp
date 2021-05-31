@@ -975,13 +975,18 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
 
     /*
      * If the format is supported, go ahead and initialize the client instance.
+     *
+     * The docs talks about AUDCLNT_E_UNSUPPORTED_FORMAT being success too, but
+     * that doesn't seem to be the case (at least not for mixing up the
+     * WAVEFORMATEX::wFormatTag values).  Seems that is the standard return code
+     * if there is anything it doesn't grok.
      */
-    if (SUCCEEDED(hrc) || hrc == AUDCLNT_E_UNSUPPORTED_FORMAT)
+    if (SUCCEEDED(hrc))
     {
-        if (hrc == S_OK || hrc == AUDCLNT_E_UNSUPPORTED_FORMAT)
-            Log8Func(("IsFormatSupport(,%s,) -> S_OK + %p: requested format is supported\n", pDevCfg->szProps, pClosestMatch));
+        if (hrc == S_OK)
+            Log8Func(("IsFormatSupported(,%s,) -> S_OK + %p: requested format is supported\n", pDevCfg->szProps, pClosestMatch));
         else
-            Log8Func(("IsFormatSupport(,%s,) -> %Rhrc + %p: %uch S%u %uHz\n", pDevCfg->szProps, hrc, pClosestMatch,
+            Log8Func(("IsFormatSupported(,%s,) -> %Rhrc + %p: %uch S%u %uHz\n", pDevCfg->szProps, hrc, pClosestMatch,
                       pClosestMatch ? pClosestMatch->nChannels : 0, pClosestMatch ? pClosestMatch->wBitsPerSample : 0,
                       pClosestMatch ? pClosestMatch->nSamplesPerSec : 0));
 
@@ -1069,7 +1074,7 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
             LogRelMax(64, ("WasAPI: IAudioClient::Initialize(%s) failed: %Rhrc\n", pDevCfg->szProps, hrc));
     }
     else
-        LogRelMax(64,("WasAPI: IAudioClient::IsFormatSupport(,%s,) failed: %Rhrc\n", pDevCfg->szProps, hrc));
+        LogRelMax(64,("WasAPI: IAudioClient::IsFormatSupported(,%s,) failed: %Rhrc\n", pDevCfg->szProps, hrc));
 
     pIAudioClient->Release();
     if (pClosestMatch)
