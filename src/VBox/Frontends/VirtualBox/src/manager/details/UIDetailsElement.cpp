@@ -1498,7 +1498,7 @@ void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGr
 
     /* Prepare color: */
     const QPalette pal = QApplication::palette();
-    const QColor buttonTextColor = pal.color(QPalette::Active, QPalette::ButtonText);
+    const QColor buttonTextColor = pal.color(QPalette::Active, QPalette::Text);
     const QColor linkTextColor = pal.color(QPalette::Active, QPalette::Link);
 
     /* Paint pixmap: */
