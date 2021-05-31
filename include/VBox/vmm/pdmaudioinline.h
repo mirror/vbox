@@ -475,7 +475,7 @@ DECLINLINE(uint32_t) PDMAudioPropsFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, u
 DECLINLINE(uint32_t) PDMAudioPropsRoundUpBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
-    uint32_t const cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    uint32_t const cbFrame = PDMAudioPropsFrameSize(pProps);
     AssertReturn(cbFrame, 0);
     return PDMAUDIOPCMPROPS_F2B(pProps, PDMAUDIOPCMPROPS_B2F(pProps, cb + cbFrame - 1));
 }
@@ -490,7 +490,7 @@ DECLINLINE(uint32_t) PDMAudioPropsRoundUpBytesToFrame(PCPDMAUDIOPCMPROPS pProps,
 DECLINLINE(bool) PDMAudioPropsIsSizeAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, false);
-    uint32_t const cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    uint32_t const cbFrame = PDMAudioPropsFrameSize(pProps);
     AssertReturn(cbFrame, false);
     return cb % cbFrame == 0;
 }
@@ -525,7 +525,7 @@ DECLINLINE(uint64_t) PDMAudioPropsBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32
     uint32_t const uHz = pProps->uHz;
     if (uHz)
     {
-        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        const unsigned cbFrame = PDMAudioPropsFrameSize(pProps);
         if (cbFrame)
         {
             /* Round cb up to closest frame size: */
@@ -555,7 +555,7 @@ DECLINLINE(uint64_t) PDMAudioPropsBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32
     uint32_t const uHz = pProps->uHz;
     if (uHz)
     {
-        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        const unsigned cbFrame = PDMAudioPropsFrameSize(pProps);
         if (cbFrame)
         {
             /* Round cb up to closest frame size: */
@@ -585,7 +585,7 @@ DECLINLINE(uint64_t) PDMAudioPropsBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_
     uint32_t const uHz = pProps->uHz;
     if (uHz)
     {
-        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        const unsigned cbFrame = PDMAudioPropsFrameSize(pProps);
         if (cbFrame)
         {
             /* Round cb up to closest frame size: */
@@ -593,6 +593,36 @@ DECLINLINE(uint64_t) PDMAudioPropsBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_
 
             /* Convert to nanoseconds. */
             return (cb * (uint64_t)RT_NS_1SEC + uHz - 1) / uHz;
+        }
+    }
+    return 0;
+}
+
+/**
+ * Converts bytes to nanoseconds, 64-bit version.
+ *
+ * @return  Number nanoseconds @a cb takes to play or record.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The number of bytes to convert (64-bit).
+ *
+ * @note    Rounds up the result.
+ */
+DECLINLINE(uint64_t) PDMAudioPropsBytesToNano64(PCPDMAUDIOPCMPROPS pProps, uint64_t cb)
+{
+    AssertPtrReturn(pProps, 0);
+
+    /* Check parameters to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+    {
+        const unsigned cbFrame = PDMAudioPropsFrameSize(pProps);
+        if (cbFrame)
+        {
+            /* Round cb up to closest frame size: */
+            cb = (cb + cbFrame - 1) / cbFrame;
+
+            /* Convert to nanoseconds. */
+            return (cb * RT_NS_1SEC + uHz - 1) / uHz;
         }
     }
     return 0;
