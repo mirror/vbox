@@ -213,18 +213,18 @@ public:
 public slots:
 
     void sltFindInPageAction(bool fToggled);
-
-private slots:
-
     void sltHomeAction();
     void sltForwardAction();
     void sltBackwardAction();
+    void sltAddBookmarkAction();
+    void sltReloadPageAction();
+
+private slots:
+
     void sltHistoryChanged();
     void sltAddressBarIndexChanged(int index);
-    void sltAddBookmarkAction();
     void sltAnchorClicked(const QUrl &link);
     void sltFindInPageWidgetVisibilityChanged(bool  fVisible);
-    void sltReloadPageAction();
 
 private:
 
@@ -302,10 +302,15 @@ public slots:
     void sltCloseCurrentTab();
     void sltCloseOtherTabs();
     void sltZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
+    void sltHomeAction();
+    void sltAddBookmarkAction();
+    void sltForwardAction();
+    void sltBackwardAction();
+    void sltReloadPageAction();
 
 private slots:
 
-    void slttabTitleChange(const QString &strTitle);
+    void sltTabTitleChange(const QString &strTitle);
     void sltOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sltTabClose(int iTabIndex);
     void sltContextMenuTabClose();
@@ -548,6 +553,7 @@ UIHelpBrowserTab::UIHelpBrowserTab(const QHelpEngine  *pHelpEngine, const QUrl &
     , m_pBackwardAction(0)
     , m_pAddBookmarkAction(0)
     , m_pFindInPageAction(0)
+    , m_pReloadPageAction(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pAddressBar(0)
@@ -767,9 +773,10 @@ void UIHelpBrowserTab::setActionTextAndToolTip(QAction *pAction, const QString &
 void UIHelpBrowserTab::retranslateUi()
 {
     setActionTextAndToolTip(m_pHomeAction, tr("Home"), tr("Return to Start Page"));
-    setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Navigate to Previous Page"));
-    setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Navigate to Next Page"));
-    setActionTextAndToolTip(m_pAddBookmarkAction, tr("Bookmark"), tr("Add a New Bookmark"));
+    setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Go Back to Previous Page"));
+    setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Go Froward to Next Page"));
+    setActionTextAndToolTip(m_pAddBookmarkAction, tr("Add Bookmark"), tr("Add a New Bookmark"));
+    setActionTextAndToolTip(m_pReloadPageAction, tr("Reload"), tr("Reload the Current Page"));
     setActionTextAndToolTip(m_pFindInPageAction, tr("Find in Page"), tr("Find a String in the Current Page"));
 }
 
@@ -905,7 +912,7 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
     connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
             this, &UIHelpBrowserTabManager::sigSourceChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigTitleUpdate,
-            this, &UIHelpBrowserTabManager::slttabTitleChange);
+            this, &UIHelpBrowserTabManager::sltTabTitleChange);
     connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
             this, &UIHelpBrowserTabManager::sltOpenLinkInNewTab);
     connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
@@ -1126,7 +1133,7 @@ void UIHelpBrowserTabManager::findPrevious()
         pTab->findPrevious();
 }
 
-void UIHelpBrowserTabManager::slttabTitleChange(const QString &strTitle)
+void UIHelpBrowserTabManager::sltTabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
     {
@@ -1232,6 +1239,41 @@ void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
     menu.exec(tabBar()->mapToGlobal(pos));
 }
 
+void UIHelpBrowserTabManager::sltHomeAction()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltHomeAction();
+}
+
+void UIHelpBrowserTabManager::sltAddBookmarkAction()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltAddBookmarkAction();
+}
+
+void UIHelpBrowserTabManager::sltForwardAction()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltForwardAction();
+}
+
+void UIHelpBrowserTabManager::sltBackwardAction()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltBackwardAction();
+}
+
+void UIHelpBrowserTabManager::sltReloadPageAction()
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (pTab)
+        pTab->sltReloadPageAction();
+}
+
 void UIHelpBrowserTabManager::prepare()
 {
     setTabsClosable(true);
@@ -1276,6 +1318,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pEditMenu(0)
     , m_pViewMenu(0)
     , m_pTabsMenu(0)
+    , m_pNavigationMenu(0)
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
     , m_pContentModel(0)
@@ -1293,6 +1336,11 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pFindInPageAction(0)
     , m_pFindNextInPageAction(0)
     , m_pFindPreviousInPageAction(0)
+    , m_pBackwardAction(0)
+    , m_pForwardAction(0)
+    , m_pHomeAction(0)
+    , m_pReloadPageAction(0)
+    , m_pAddBookmarkAction(0)
     , m_pZoomMenuAction(0)
     , m_fModelContentCreated(false)
     , m_fIndexingFinished(false)
@@ -1313,6 +1361,7 @@ QList<QMenu*> UIHelpBrowserWidget::menus() const
     menuList
         << m_pFileMenu
         << m_pEditMenu
+        << m_pNavigationMenu
         << m_pViewMenu
         << m_pTabsMenu;
     return menuList;
@@ -1351,6 +1400,7 @@ void UIHelpBrowserWidget::prepare()
     prepareActions();
     prepareMenu();
     prepareWidgets();
+    prepareConnections();
     prepareSearchWidgets();
     loadBookmarks();
     retranslateUi();
@@ -1410,9 +1460,41 @@ void UIHelpBrowserWidget::prepareActions()
             this, &UIHelpBrowserWidget::sigCloseDialog);
     m_pQuitAction->setShortcut(QString("Ctrl+Q"));
 
+    m_pBackwardAction = new QAction(this);
+    connect(m_pBackwardAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigGoBackward);
+
+    m_pForwardAction = new QAction(this);
+    connect(m_pForwardAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigGoForward);
+
+    m_pHomeAction = new QAction(this);
+    connect(m_pHomeAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigGoHome);
+
+    m_pReloadPageAction = new QAction(this);
+    connect(m_pReloadPageAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigReloadPage);
+
+    m_pAddBookmarkAction = new QAction(this);
+    connect(m_pAddBookmarkAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigAddBookmark);
+
     m_pZoomMenuAction = new UIZoomMenuAction(this);
     connect(m_pZoomMenuAction, &UIZoomMenuAction::sigZoomChanged,
             this, &UIHelpBrowserWidget::sltZoomActions);
+}
+
+void UIHelpBrowserWidget::prepareConnections()
+{
+    if (m_pTabManager)
+    {
+        connect(m_pHomeAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltHomeAction);
+        connect(m_pAddBookmarkAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltAddBookmarkAction);
+        connect(m_pForwardAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltForwardAction);
+        connect(m_pBackwardAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltBackwardAction);
+        connect(m_pReloadPageAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltReloadPageAction);
+    }
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -1555,33 +1637,31 @@ void UIHelpBrowserWidget::prepareMenu()
 {
     m_pFileMenu = new QMenu(tr("&File"), this);
     m_pEditMenu = new QMenu(tr("&Edit"), this);
+    m_pNavigationMenu = new QMenu(tr("&Navigation"), this);
     m_pViewMenu = new QMenu(tr("&View"), this);
     m_pTabsMenu = new QMenu(tr("&Tabs"), this);
 
-    AssertReturnVoid(m_pFileMenu && m_pViewMenu && m_pTabsMenu);
+    AssertReturnVoid(m_pFileMenu && m_pViewMenu &&
+                     m_pTabsMenu && m_pNavigationMenu);
 
-    if (m_pPrintAction)
-        m_pFileMenu->addAction(m_pPrintAction);
-    if (m_pQuitAction)
-        m_pFileMenu->addAction(m_pQuitAction);
+    addActionToMenu(m_pFileMenu, m_pPrintAction);
+    addActionToMenu(m_pFileMenu, m_pQuitAction);
 
-    if (m_pCopySelectedTextAction)
-        m_pEditMenu->addAction(m_pCopySelectedTextAction);
-    if(m_pFindInPageAction)
-        m_pEditMenu->addAction(m_pFindInPageAction);
-    if(m_pFindNextInPageAction)
-        m_pEditMenu->addAction(m_pFindNextInPageAction);
-    if(m_pFindPreviousInPageAction)
-        m_pEditMenu->addAction(m_pFindPreviousInPageAction);
+    addActionToMenu(m_pEditMenu, m_pCopySelectedTextAction);
+    addActionToMenu(m_pEditMenu, m_pFindInPageAction);
+    addActionToMenu(m_pEditMenu, m_pFindNextInPageAction);
+    addActionToMenu(m_pEditMenu, m_pFindPreviousInPageAction);
 
-    if (m_pZoomMenuAction)
-        m_pViewMenu->addAction(m_pZoomMenuAction);
-    if (m_pShowHideSideBarAction)
-        m_pViewMenu->addAction(m_pShowHideSideBarAction);
-    if (m_pShowHideToolBarAction)
-        m_pViewMenu->addAction(m_pShowHideToolBarAction);
-    if (m_pShowHideStatusBarAction)
-        m_pViewMenu->addAction(m_pShowHideStatusBarAction);
+    addActionToMenu(m_pViewMenu, m_pZoomMenuAction);
+    addActionToMenu(m_pViewMenu, m_pShowHideSideBarAction);
+    addActionToMenu(m_pViewMenu, m_pShowHideToolBarAction);
+    addActionToMenu(m_pViewMenu, m_pShowHideStatusBarAction);
+
+    addActionToMenu(m_pNavigationMenu, m_pBackwardAction);
+    addActionToMenu(m_pNavigationMenu, m_pForwardAction);
+    addActionToMenu(m_pNavigationMenu, m_pHomeAction);
+    addActionToMenu(m_pNavigationMenu, m_pReloadPageAction);
+    addActionToMenu(m_pNavigationMenu, m_pAddBookmarkAction);
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -1718,6 +1798,17 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pFindNextInPageAction->setText(tr("&Find Next"));
     if (m_pFindPreviousInPageAction)
         m_pFindPreviousInPageAction->setText(tr("&Find Previous"));
+
+    if (m_pBackwardAction)
+        m_pBackwardAction->setText(tr("Go Backward"));
+    if (m_pForwardAction)
+        m_pForwardAction->setText(tr("Go Forward"));
+    if (m_pHomeAction)
+        m_pHomeAction->setText(tr("Go to Start Page"));
+    if (m_pReloadPageAction)
+        m_pReloadPageAction->setText(tr("Reload Page"));
+    if (m_pAddBookmarkAction)
+        m_pAddBookmarkAction->setText(tr("Add Bookmark"));
 }
 
 
@@ -2089,6 +2180,12 @@ void UIHelpBrowserWidget::sltZoomPercentageChanged(int iPercentage)
     emit sigZoomPercentageChanged(iPercentage);
 }
 
+void UIHelpBrowserWidget::addActionToMenu(QMenu *pMenu, QAction *pAction)
+{
+    if (!pMenu || !pAction)
+        return;
+    pMenu->addAction(pAction);
+}
 
 #include "UIHelpBrowserWidget.moc"
 

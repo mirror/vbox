@@ -75,12 +75,12 @@ public:
     bool hasSelectedText() const;
     static const QPair<int, int> zoomPercentageMinMax;
     void toggleFindInPageWidget(bool fVisible);
-    void reload();
 
 public slots:
 
     void sltSelectPreviousMatch();
     void sltSelectNextMatch();
+    virtual void reload() /* overload */;
 
 protected:
 

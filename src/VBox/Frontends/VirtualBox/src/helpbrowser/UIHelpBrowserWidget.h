@@ -58,6 +58,11 @@ signals:
     void sigLinkHighlighted(const QString &strLink);
     void sigStatusBarVisible(bool fToggled);
     void sigZoomPercentageChanged(int iPercentage);
+    void sigGoBackward();
+    void sigGoForward();
+    void sigGoHome();
+    void sigReloadPage();
+    void sigAddBookmark();
 
 public:
 
@@ -113,6 +118,8 @@ private:
     void prepareSearchWidgets();
     void prepareToolBar();
     void prepareMenu();
+    void prepareConnections();
+
     void loadOptions();
     QStringList loadSavedUrlList();
     /** Bookmark list is save as url-title pairs. */
@@ -138,6 +145,7 @@ private:
     /** @} */
     /* Looks for Url for the keyword using QHelpEngine API and shows it in a new tab whne successful. */
     void findAndShowUrlForKeyword(const QString &strKeyword);
+    void addActionToMenu(QMenu *pMenu, QAction *pAction);
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
@@ -162,6 +170,7 @@ private:
     QMenu               *m_pEditMenu;
     QMenu               *m_pViewMenu;
     QMenu               *m_pTabsMenu;
+    QMenu               *m_pNavigationMenu;
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;
@@ -170,16 +179,22 @@ private:
     QHelpSearchResultWidget  *m_pSearchResultWidget;
     UIHelpBrowserTabManager  *m_pTabManager;
     UIBookmarksListContainer *m_pBookmarksWidget;
-    QWidget             *m_pSearchContainerWidget;
-    QAction             *m_pPrintAction;
-    QAction             *m_pQuitAction;
-    QAction             *m_pShowHideSideBarAction;
-    QAction             *m_pShowHideToolBarAction;
-    QAction             *m_pShowHideStatusBarAction;
-    QAction             *m_pCopySelectedTextAction;
-    QAction             *m_pFindInPageAction;
-    QAction             *m_pFindNextInPageAction;
-    QAction             *m_pFindPreviousInPageAction;
+    QWidget *m_pSearchContainerWidget;
+    QAction *m_pPrintAction;
+    QAction *m_pQuitAction;
+    QAction *m_pShowHideSideBarAction;
+    QAction *m_pShowHideToolBarAction;
+    QAction *m_pShowHideStatusBarAction;
+    QAction *m_pCopySelectedTextAction;
+    QAction *m_pFindInPageAction;
+    QAction *m_pFindNextInPageAction;
+    QAction *m_pFindPreviousInPageAction;
+    QAction *m_pBackwardAction;
+    QAction *m_pForwardAction;
+    QAction *m_pHomeAction;
+    QAction *m_pReloadPageAction;
+    QAction *m_pAddBookmarkAction;
+
     UIZoomMenuAction    *m_pZoomMenuAction;
 
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */

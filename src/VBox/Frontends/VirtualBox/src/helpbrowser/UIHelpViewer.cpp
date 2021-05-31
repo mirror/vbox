@@ -69,6 +69,7 @@ signals:
     void sigGoBackward();
     void sigGoForward();
     void sigGoHome();
+    void sigReloadPage();
     void sigAddBookmark();
 
 public:
@@ -83,6 +84,7 @@ private:
     QIToolButton *m_pBackwardButton;
     QIToolButton *m_pForwardButton;
     QIToolButton *m_pHomeButton;
+    QIToolButton *m_pReloadPageButton;
     QIToolButton *m_pAddBookmarkButton;
 };
 
@@ -134,6 +136,7 @@ UIContextMenuNavigationAction::UIContextMenuNavigationAction(QObject *pParent /*
     , m_pBackwardButton(0)
     , m_pForwardButton(0)
     , m_pHomeButton(0)
+    , m_pReloadPageButton(0)
     , m_pAddBookmarkButton(0)
 {
     prepare();
@@ -161,14 +164,18 @@ void UIContextMenuNavigationAction::prepare()
     m_pBackwardButton = new QIToolButton;
     m_pForwardButton = new QIToolButton;
     m_pHomeButton = new QIToolButton;
+    m_pReloadPageButton = new QIToolButton;
     m_pAddBookmarkButton = new QIToolButton;
 
     AssertReturnVoid(m_pBackwardButton &&
                      m_pForwardButton &&
-                     m_pHomeButton);
+                     m_pHomeButton &&
+                     m_pReloadPageButton);
+
     m_pForwardButton->setEnabled(false);
     m_pBackwardButton->setEnabled(false);
     m_pHomeButton->setIcon(UIIconPool::iconSet(":/help_browser_home_32px.png"));
+    m_pReloadPageButton->setIcon(UIIconPool::iconSet(":/help_browser_reload_32px.png"));
     m_pForwardButton->setIcon(UIIconPool::iconSet(":/help_browser_forward_32px.png", ":/help_browser_forward_disabled_32px.png"));
     m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"));
     m_pAddBookmarkButton->setIcon(UIIconPool::iconSet(":/help_browser_add_bookmark.png"));
@@ -176,6 +183,7 @@ void UIContextMenuNavigationAction::prepare()
     pMainLayout->addWidget(m_pBackwardButton);
     pMainLayout->addWidget(m_pForwardButton);
     pMainLayout->addWidget(m_pHomeButton);
+    pMainLayout->addWidget(m_pReloadPageButton);
     pMainLayout->addWidget(m_pAddBookmarkButton);
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -185,7 +193,11 @@ void UIContextMenuNavigationAction::prepare()
             this, &UIContextMenuNavigationAction::sigGoForward);
     connect(m_pHomeButton, &QIToolButton::pressed,
             this, &UIContextMenuNavigationAction::sigGoHome);
+    connect(m_pReloadPageButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigReloadPage);
     connect(m_pAddBookmarkButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigAddBookmark);
+    connect(m_pReloadPageButton, &QIToolButton::pressed,
             this, &UIContextMenuNavigationAction::sigAddBookmark);
 }
 
@@ -544,6 +556,8 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
             this, &UIHelpViewer::sigGoForward);
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoHome,
             this, &UIHelpViewer::sigGoHome);
+    connect(pNavigationActions, &UIContextMenuNavigationAction::sigReloadPage,
+            this, &UIHelpViewer::reload);
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigAddBookmark,
             this, &UIHelpViewer::sigAddBookmark);
 
