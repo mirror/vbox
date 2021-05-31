@@ -1470,7 +1470,7 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
                         }
 
                         RTErrInfoSetF(pErrInfo, rc, "Bad data header: uMagic=%#x (expected %#x), cbChunk=%#x (max %#RX64, align %u)",
-                                      pszFile, uBuf.Data.Chunk.uMagic, RTRIFFWAVEDATACHUNK_MAGIC,
+                                      uBuf.Data.Chunk.uMagic, RTRIFFWAVEDATACHUNK_MAGIC,
                                       uBuf.Data.Chunk.cbChunk, pWaveFile->cbSamples, PDMAudioPropsFrameSize(&pWaveFile->Props));
                     }
                     else
@@ -1479,7 +1479,7 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
             }
             else
                 RTErrInfoSetF(pErrInfo, rc, "Bad file header: uMagic=%#x (vs. %#x), uFileType=%#x (vs %#x), uFmtMagic=%#x (vs %#x) cbFmtChunk=%#x (min %#x)",
-                              pszFile, uBuf.Wave.Hdr.uMagic, RTRIFFHDR_MAGIC, uBuf.Wave.Hdr.uFileType, RTRIFF_FILE_TYPE_WAVE,
+                              uBuf.Wave.Hdr.uMagic, RTRIFFHDR_MAGIC, uBuf.Wave.Hdr.uFileType, RTRIFF_FILE_TYPE_WAVE,
                               uBuf.Wave.u.Fmt.Chunk.uMagic, RTRIFFWAVEFMT_MAGIC,
                               uBuf.Wave.u.Fmt.Chunk.cbChunk, sizeof(uBuf.Wave.u.Fmt.Data));
         }
