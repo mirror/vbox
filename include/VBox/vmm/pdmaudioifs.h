@@ -501,26 +501,6 @@ typedef enum PDMAUDIOPATH
     PDMAUDIOPATH_32BIT_HACK = 0x7fffffff
 } PDMAUDIOPATH;
 
-/**
- * Stream channel data block.
- */
-typedef struct PDMAUDIOSTREAMCHANNELDATA
-{
-    /** Circular buffer for the channel data. */
-    PRTCIRCBUF          pCircBuf;
-    /** Amount of audio data (in bytes) acquired for reading. */
-    size_t              cbAcq;
-    /** Channel data flags, PDMAUDIOSTREAMCHANNELDATA_FLAGS_XXX. */
-    uint32_t            fFlags;
-} PDMAUDIOSTREAMCHANNELDATA;
-/** Pointer to audio stream channel data buffer. */
-typedef PDMAUDIOSTREAMCHANNELDATA  *PPDMAUDIOSTREAMCHANNELDATA;
-
-/** @name PDMAUDIOSTREAMCHANNELDATA_FLAGS_XXX
- *  @{ */
-/** No stream channel data flags defined. */
-#define PDMAUDIOSTREAMCHANNELDATA_FLAGS_NONE      UINT32_C(0)
-/** @} */
 
 /**
  * Standard speaker channel IDs.
@@ -591,44 +571,6 @@ AssertCompile(PDMAUDIOCHANNELID_LFE - PDMAUDIOCHANNELID_FIRST_STANDARD == 3);
 AssertCompile(PDMAUDIOCHANNELID_REAR_CENTER - PDMAUDIOCHANNELID_FIRST_STANDARD == 8);
 AssertCompile(PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT - PDMAUDIOCHANNELID_FIRST_STANDARD == 17);
 
-/**
- * Mappings channels onto an audio stream.
- *
- * The mappings are either for a single (mono) or dual (stereo) channels onto an
- * audio stream (aka stream profile).  An audio stream consists of one or
- * multiple channels (e.g. 1 for mono, 2 for stereo), depending on the
- * configuration.
- */
-typedef struct PDMAUDIOSTREAMMAP
-{
-    /** Array of channel IDs being handled.
-     * @note The first (zero-based) index specifies the leftmost channel. */
-    PDMAUDIOCHANNELID           aenmIDs[2];
-    /** Step size (in bytes) to the channel's next frame. */
-    uint32_t                    cbStep;
-    /** Frame size (in bytes) of this channel. */
-    uint32_t                    cbFrame;
-    /** Byte offset to the first frame in the data block. */
-    uint32_t                    offFirst;
-    /** Byte offset to the next frame in the data block. */
-    uint32_t                    offNext;
-    /** Associated data buffer. */
-    PDMAUDIOSTREAMCHANNELDATA   Data;
-
-    /** @todo r=bird: I'd structure this very differently.
-     * I would've had an array of channel descriptors like this:
-     *
-     * struct PDMAUDIOCHANNELDESC
-     * {
-     *     uint8_t      off;    //< Stream offset in bytes.
-     *     uint8_t      id;     //< PDMAUDIOCHANNELID
-     * };
-     *
-     * And I'd baked it into PDMAUDIOPCMPROPS as a fixed sized array with 16 entries
-     * (max HDA channel count IIRC).  */
-} PDMAUDIOSTREAMMAP;
-/** Pointer to an audio stream channel mapping. */
-typedef PDMAUDIOSTREAMMAP *PPDMAUDIOSTREAMMAP;
 
 /**
  * Properties of audio streams for host/guest for in or out directions.
