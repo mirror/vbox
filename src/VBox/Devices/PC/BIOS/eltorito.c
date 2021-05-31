@@ -181,7 +181,6 @@ void BIOSCALL cdemu_init(void)
 
     // the only important data is this one for now
     cdemu->active = 0x00;
-    cdemu->ptr_unaligned = cdemu_bounce_buf_alloc() :> 0;
 }
 
 uint8_t BIOSCALL cdemu_isactive(void)
@@ -294,7 +293,7 @@ static uint16_t device_is_cdrom(uint8_t device)
     return 1;
 }
 
-static uint16_t atapi_read(uint8_t device, uint32_t lba, uint16_t nbsectors, void __far *buf)
+static uint16_t cdrom_read(uint8_t device, uint32_t lba, uint16_t nbsectors, void __far *buf)
 {
     uint16_t            ebda_seg=read_word(0x0040,0x000E);
     cdb_atapi           atapicmd;
@@ -331,7 +330,7 @@ static uint16_t cdemu_read(uint8_t device, uint32_t lba, uint16_t nbsectors, voi
     {
         uint16_t xfer_sect = MIN(nbsectors, 4 - before);
 
-        error = atapi_read(device, ilba + slba, 1, cdemu->ptr_unaligned);
+        error = cdrom_read(device, ilba + slba, 1, cdemu->ptr_unaligned);
         if (error != 0)
             return error;
 
@@ -346,7 +345,7 @@ static uint16_t cdemu_read(uint8_t device, uint32_t lba, uint16_t nbsectors, voi
     {
         uint16_t xfer_sect = nbsectors / 4;
 
-        error = atapi_read(device, ilba + slba, xfer_sect, dst);
+        error = cdrom_read(device, ilba + slba, xfer_sect, dst);
         if (error != 0)
             return error;
         dst       += xfer_sect * 2048L;
@@ -357,7 +356,7 @@ static uint16_t cdemu_read(uint8_t device, uint32_t lba, uint16_t nbsectors, voi
     // Now for the unaligned end.
     if (nbsectors)
     {
-        error = atapi_read(device, ilba + slba, 1, cdemu->ptr_unaligned);
+        error = cdrom_read(device, ilba + slba, 1, cdemu->ptr_unaligned);
         if (error != 0)
             return error;
 
@@ -403,7 +402,7 @@ uint16_t cdrom_boot(void)
     /* Read the Boot Record Volume Descriptor (BRVD). */
     for (read_try = 0; read_try <= 4; ++read_try)
     {
-        error = atapi_read(device, 0x11, 1, &buffer);
+        error = cdrom_read(device, 0x11, 1, &buffer);
         if (!error)
             break;
     }
@@ -427,7 +426,7 @@ uint16_t cdrom_boot(void)
     BX_DEBUG_ELTORITO("BRVD at LBA %lx\n", lba);
 
     /* Now we read the Boot Catalog. */
-    error = atapi_read(device, lba, 1, buffer);
+    error = cdrom_read(device, lba, 1, buffer);
     if (error != 0)
         return 7;
 
@@ -487,6 +486,10 @@ uint16_t cdrom_boot(void)
     error = cdemu_read(device, 0, nbsectors, MK_FP(boot_segment,0));
     if (error != 0)
         return 13;
+
+    cdemu->ptr_unaligned = cdemu_bounce_buf_alloc() :> 0;
+    if (cdemu->ptr_unaligned == NULL)
+        return 14;
 
     BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n",
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
@@ -892,7 +895,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         BX_DEBUG_INT13_CD("%s: read %u sectors @ LBA %lu to %04X:%04X\n",
                           __func__, count, lba, segment, offset);
 
-        status = atapi_read(device, lba, count, MK_FP(segment,offset));
+        status = cdrom_read(device, lba, count, MK_FP(segment,offset));
         count = (uint16_t)(bios_dsk->drqp.trsfbytes >> 11);
         i13x->count = count;
 
