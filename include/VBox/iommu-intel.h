@@ -516,55 +516,390 @@ typedef uint64_t VTD_FLP_ENTRY_T;
 /** @} */
 
 
-/** @name Second-Level Paging Entry.
+/** @name Second-Level PML5E.
  * In accordance with the Intel spec.
  * @{ */
 /** R: Read. */
-#define VTD_BF_SLP_ENTRY_R_SHIFT                                0
-#define VTD_BF_SLP_ENTRY_R_MASK                                 UINT64_C(0x0000000000000001)
+#define VTD_BF_SL_PML5E_R_SHIFT                                 0
+#define VTD_BF_SL_PML5E_R_MASK                                  UINT64_C(0x0000000000000001)
 /** W: Write. */
-#define VTD_BF_SLP_ENTRY_W_SHIFT                                1
-#define VTD_BF_SLP_ENTRY_W_MASK                                 UINT64_C(0x0000000000000002)
+#define VTD_BF_SL_PML5E_W_SHIFT                                 1
+#define VTD_BF_SL_PML5E_W_MASK                                  UINT64_C(0x0000000000000002)
 /** X: Execute. */
-#define VTD_BF_SLP_ENTRY_X_SHIFT                                2
-#define VTD_BF_SLP_ENTRY_X_MASK                                 UINT64_C(0x0000000000000004)
+#define VTD_BF_SL_PML5E_X_SHIFT                                 2
+#define VTD_BF_SL_PML5E_X_MASK                                  UINT64_C(0x0000000000000004)
 /** IGN: Ignored (bits 6:3). */
-#define VTD_BF_SLP_ENTRY_IGN_6_3_SHIFT                          3
-#define VTD_BF_SLP_ENTRY_IGN_6_3_MASK                           UINT64_C(0x0000000000000078)
+#define VTD_BF_SL_PML5E_IGN_6_3_SHIFT                           3
+#define VTD_BF_SL_PML5E_IGN_6_3_MASK                            UINT64_C(0x0000000000000078)
 /** R: Reserved (bit 7). */
-#define VTD_BF_SLP_ENTRY_RSVD_7_SHIFT                           7
-#define VTD_BF_SLP_ENTRY_RSVD_7_MASK                            UINT64_C(0x0000000000000080)
+#define VTD_BF_SL_PML5E_RSVD_7_SHIFT                            7
+#define VTD_BF_SL_PML5E_RSVD_7_MASK                             UINT64_C(0x0000000000000080)
 /** A: Accessed. */
-#define VTD_BF_SLP_ENTRY_A_SHIFT                                8
-#define VTD_BF_SLP_ENTRY_A_MASK                                 UINT64_C(0x0000000000000100)
+#define VTD_BF_SL_PML5E_A_SHIFT                                 8
+#define VTD_BF_SL_PML5E_A_MASK                                  UINT64_C(0x0000000000000100)
 /** IGN: Ignored (bits 10:9). */
-#define VTD_BF_SLP_ENTRY_IGN_10_9_SHIFT                         9
-#define VTD_BF_SLP_ENTRY_IGN_10_9_MASK                          UINT64_C(0x0000000000000600)
+#define VTD_BF_SL_PML5E_IGN_10_9_SHIFT                          9
+#define VTD_BF_SL_PML5E_IGN_10_9_MASK                           UINT64_C(0x0000000000000600)
 /** R: Reserved (bit 11). */
-#define VTD_BF_SLP_ENTRY_RSVD_11_SHIFT                          11
-#define VTD_BF_SLP_ENTRY_RSVD_11_MASK                           UINT64_C(0x0000000000000800)
+#define VTD_BF_SL_PML5E_RSVD_11_SHIFT                           11
+#define VTD_BF_SL_PML5E_RSVD_11_MASK                            UINT64_C(0x0000000000000800)
 /** ADDR: Address. */
-#define VTD_BF_SLP_ENTRY_ADDR_SHIFT                             12
-#define VTD_BF_SLP_ENTRY_ADDR_MASK                              UINT64_C(0x000ffffffffff000)
+#define VTD_BF_SL_PML5E_ADDR_SHIFT                              12
+#define VTD_BF_SL_PML5E_ADDR_MASK                               UINT64_C(0x000ffffffffff000)
 /** IGN: Ignored (bits 61:52). */
-#define VTD_BF_SLP_ENTRY_IGN_61_52_SHIFT                        52
-#define VTD_BF_SLP_ENTRY_IGN_61_52_MASK                         UINT64_C(0x3ff0000000000000)
+#define VTD_BF_SL_PML5E_IGN_61_52_SHIFT                         52
+#define VTD_BF_SL_PML5E_IGN_61_52_MASK                          UINT64_C(0x3ff0000000000000)
 /** R: Reserved (bit 62). */
-#define VTD_BF_SLP_ENTRY_RSVD_62_SHIFT                          62
-#define VTD_BF_SLP_ENTRY_RSVD_62_MASK                           UINT64_C(0x4000000000000000)
+#define VTD_BF_SL_PML5E_RSVD_62_SHIFT                           62
+#define VTD_BF_SL_PML5E_RSVD_62_MASK                            UINT64_C(0x4000000000000000)
 /** IGN: Ignored (bit 63). */
-#define VTD_BF_SLP_ENTRY_IGN_63_SHIFT                           63
-#define VTD_BF_SLP_ENTRY_IGN_63_MASK                            UINT64_C(0x8000000000000000)
-RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SLP_ENTRY_, UINT64_C(0), UINT64_MAX,
+#define VTD_BF_SL_PML5E_IGN_63_SHIFT                            63
+#define VTD_BF_SL_PML5E_IGN_63_MASK                             UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PML5E_, UINT64_C(0), UINT64_MAX,
                             (R, W, X, IGN_6_3, RSVD_7, A, IGN_10_9, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
 
-/** SL-PML5E: Valid mask. */
-#define VTD_SLP_PML5E_VALID_MASK                                (  VTD_BF_SLP_ENTRY_R_MASK | VTD_BF_SLP_ENTRY_W_MASK \
-                                                                 | VTD_BF_SLP_ENTRY_X_MASK | VTD_BF_SLP_ENTRY_IGN_6_3_MASK \
-                                                                 | VTD_BF_SLP_ENTRY_A_MASK | VTD_BF_SLP_ENTRY_IGN_10_9_MASK \
-                                                                 | VTD_BF_SLP_ENTRY_ADDR_MASK | VTD_BF_SLP_ENTRY_IGN_61_52_MASK \
-                                                                 | VTD_BF_SLP_ENTRY_IGN_63_MASK)
+/** Second-level PML5E valid mask. */
+#define VTD_SL_PML5E_VALID_MASK                                 (  VTD_BF_SL_PML5E_R_MASK | VTD_BF_SL_PML5E_W_MASK \
+                                                                 | VTD_BF_SL_PML5E_X_MASK | VTD_BF_SL_PML5E_IGN_6_3_MASK \
+                                                                 | VTD_BF_SL_PML5E_A_MASK | VTD_BF_SL_PML5E_IGN_10_9_MASK \
+                                                                 | VTD_BF_SL_PML5E_ADDR_MASK | VTD_BF_SL_PML5E_IGN_61_52_MASK \
+                                                                 | VTD_BF_SL_PML5E_IGN_63_MASK)
+/** @} */
 
+
+/** @name Second-Level PML4E.
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PML4E_R_SHIFT                                 0
+#define VTD_BF_SL_PML4E_R_MASK                                  UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PML4E_W_SHIFT                                 1
+#define VTD_BF_SL_PML4E_W_MASK                                  UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PML4E_X_SHIFT                                 2
+#define VTD_BF_SL_PML4E_X_MASK                                  UINT64_C(0x0000000000000004)
+/** IGN: Ignored (bits 6:3). */
+#define VTD_BF_SL_PML4E_IGN_6_3_SHIFT                           3
+#define VTD_BF_SL_PML4E_IGN_6_3_MASK                            UINT64_C(0x0000000000000078)
+/** R: Reserved (bit 7). */
+#define VTD_BF_SL_PML4E_RSVD_7_SHIFT                            7
+#define VTD_BF_SL_PML4E_RSVD_7_MASK                             UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PML4E_A_SHIFT                                 8
+#define VTD_BF_SL_PML4E_A_MASK                                  UINT64_C(0x0000000000000100)
+/** IGN: Ignored (bits 10:9). */
+#define VTD_BF_SL_PML4E_IGN_10_9_SHIFT                          9
+#define VTD_BF_SL_PML4E_IGN_10_9_MASK                           UINT64_C(0x0000000000000600)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PML4E_RSVD_11_SHIFT                           11
+#define VTD_BF_SL_PML4E_RSVD_11_MASK                            UINT64_C(0x0000000000000800)
+/** ADDR: Address. */
+#define VTD_BF_SL_PML4E_ADDR_SHIFT                              12
+#define VTD_BF_SL_PML4E_ADDR_MASK                               UINT64_C(0x000ffffffffff000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PML4E_IGN_61_52_SHIFT                         52
+#define VTD_BF_SL_PML4E_IGN_61_52_MASK                          UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PML4E_RSVD_62_SHIFT                           62
+#define VTD_BF_SL_PML4E_RSVD_62_MASK                            UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PML4E_IGN_63_SHIFT                            63
+#define VTD_BF_SL_PML4E_IGN_63_MASK                             UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PML4E_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, IGN_6_3, RSVD_7, A, IGN_10_9, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PML4E valid mask. */
+#define VTD_SL_PML4E_VALID_MASK                                 VTD_SL_PML5E_VALID_MASK
+/** @} */
+
+
+/** @name Second-Level PDPE (1GB Page).
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PDPE1G_R_SHIFT                                0
+#define VTD_BF_SL_PDPE1G_R_MASK                                 UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PDPE1G_W_SHIFT                                1
+#define VTD_BF_SL_PDPE1G_W_MASK                                 UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PDPE1G_X_SHIFT                                2
+#define VTD_BF_SL_PDPE1G_X_MASK                                 UINT64_C(0x0000000000000004)
+/** EMT: Extended Memory Type. */
+#define VTD_BF_SL_PDPE1G_EMT_SHIFT                              3
+#define VTD_BF_SL_PDPE1G_EMT_MASK                               UINT64_C(0x0000000000000038)
+/** IPAT: Ignore PAT (Page Attribute Table). */
+#define VTD_BF_SL_PDPE1G_IPAT_SHIFT                             6
+#define VTD_BF_SL_PDPE1G_IPAT_MASK                              UINT64_C(0x0000000000000040)
+/** PS: Page Size (MB1). */
+#define VTD_BF_SL_PDPE1G_PS_SHIFT                               7
+#define VTD_BF_SL_PDPE1G_PS_MASK                                UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PDPE1G_A_SHIFT                                8
+#define VTD_BF_SL_PDPE1G_A_MASK                                 UINT64_C(0x0000000000000100)
+/** D: Dirty. */
+#define VTD_BF_SL_PDPE1G_D_SHIFT                                9
+#define VTD_BF_SL_PDPE1G_D_MASK                                 UINT64_C(0x0000000000000200)
+/** IGN: Ignored (bit 10). */
+#define VTD_BF_SL_PDPE1G_IGN_10_SHIFT                           10
+#define VTD_BF_SL_PDPE1G_IGN_10_MASK                            UINT64_C(0x0000000000000400)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PDPE1G_RSVD_11_SHIFT                          11
+#define VTD_BF_SL_PDPE1G_RSVD_11_MASK                           UINT64_C(0x0000000000000800)
+/** R: Reserved (bits 29:12). */
+#define VTD_BF_SL_PDPE1G_RSVD_29_12_SHIFT                        12
+#define VTD_BF_SL_PDPE1G_RSVD_29_12_MASK                        UINT64_C(0x000000003ffff000)
+/** ADDR: Address of 1GB page. */
+#define VTD_BF_SL_PDPE1G_ADDR_SHIFT                             30
+#define VTD_BF_SL_PDPE1G_ADDR_MASK                              UINT64_C(0x000fffffc0000000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PDPE1G_IGN_61_52_SHIFT                        52
+#define VTD_BF_SL_PDPE1G_IGN_61_52_MASK                         UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PDPE1G_RSVD_62_SHIFT                          62
+#define VTD_BF_SL_PDPE1G_RSVD_62_MASK                           UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PDPE1G_IGN_63_SHIFT                           63
+#define VTD_BF_SL_PDPE1G_IGN_63_MASK                            UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PDPE1G_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, EMT, IPAT, PS, A, D, IGN_10, RSVD_11, RSVD_29_12, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PDPE (1GB Page) valid mask. */
+#define VTD_SL_PDPE1G_VALID_MASK                                (  VTD_BF_SL_PDPE1G_R_MASK | VTD_BF_SL_PDPE1G_W_MASK \
+                                                                 | VTD_BF_SL_PDPE1G_X_MASK | VTD_BF_SL_PDPE1G_EMT_MASK \
+                                                                 | VTD_BF_SL_PDPE1G_IPAT_MASK | VTD_BF_SL_PDPE1G_PS_MASK \
+                                                                 | VTD_BF_SL_PDPE1G_A_MASK | VTD_BF_SL_PDPE1G_D_MASK \
+                                                                 | VTD_BF_SL_PDPE1G_IGN_10_MASK | VTD_BF_SL_PDPE1G_ADDR_MASK \
+                                                                 | VTD_BF_SL_PDPE1G_IGN_61_52_MASK | VTD_BF_SL_PDPE1G_IGN_63_MASK)
+/** @} */
+
+
+/** @name Second-Level PDPE.
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PDPE_R_SHIFT                                  0
+#define VTD_BF_SL_PDPE_R_MASK                                   UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PDPE_W_SHIFT                                  1
+#define VTD_BF_SL_PDPE_W_MASK                                   UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PDPE_X_SHIFT                                  2
+#define VTD_BF_SL_PDPE_X_MASK                                   UINT64_C(0x0000000000000004)
+/** IGN: Ignored (bits 6:3). */
+#define VTD_BF_SL_PDPE_IGN_6_3_SHIFT                            3
+#define VTD_BF_SL_PDPE_IGN_6_3_MASK                             UINT64_C(0x0000000000000078)
+/** PS: Page Size (MBZ). */
+#define VTD_BF_SL_PDPE_PS_SHIFT                                 7
+#define VTD_BF_SL_PDPE_PS_MASK                                  UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PDPE_A_SHIFT                                  8
+#define VTD_BF_SL_PDPE_A_MASK                                   UINT64_C(0x0000000000000100)
+/** IGN: Ignored (bits 10:9). */
+#define VTD_BF_SL_PDPE_IGN_10_9_SHIFT                           9
+#define VTD_BF_SL_PDPE_IGN_10_9_MASK                            UINT64_C(0x0000000000000600)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PDPE_RSVD_11_SHIFT                            11
+#define VTD_BF_SL_PDPE_RSVD_11_MASK                             UINT64_C(0x0000000000000800)
+/** ADDR: Address of second-level PDT. */
+#define VTD_BF_SL_PDPE_ADDR_SHIFT                               12
+#define VTD_BF_SL_PDPE_ADDR_MASK                                UINT64_C(0x000ffffffffff000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PDPE_IGN_61_52_SHIFT                          52
+#define VTD_BF_SL_PDPE_IGN_61_52_MASK                           UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PDPE_RSVD_62_SHIFT                            62
+#define VTD_BF_SL_PDPE_RSVD_62_MASK                             UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PDPE_IGN_63_SHIFT                             63
+#define VTD_BF_SL_PDPE_IGN_63_MASK                              UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PDPE_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, IGN_6_3, PS, A, IGN_10_9, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PDPE valid mask. */
+#define VTD_SL_PDPE_VALID_MASK                                  (  VTD_BF_SL_PDPE_R_MASK | VTD_BF_SL_PDPE_W_MASK \
+                                                                 | VTD_BF_SL_PDPE_X_MASK | VTD_BF_SL_PDPE_IGN_6_3_MASK \
+                                                                 | VTD_BF_SL_PDPE_PS_MASK | VTD_BF_SL_PDPE_A_MASK \
+                                                                 | VTD_BF_SL_PDPE_IGN_10_9_MASK | VTD_BF_SL_PDPE_ADDR_MASK \
+                                                                 | VTD_BF_SL_PDPE_IGN_61_52_MASK | VTD_BF_SL_PDPE_IGN_63_MASK)
+/** @} */
+
+
+/** @name Second-Level PDE (2MB Page).
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PDE2M_R_SHIFT                                 0
+#define VTD_BF_SL_PDE2M_R_MASK                                  UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PDE2M_W_SHIFT                                 1
+#define VTD_BF_SL_PDE2M_W_MASK                                  UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PDE2M_X_SHIFT                                 2
+#define VTD_BF_SL_PDE2M_X_MASK                                  UINT64_C(0x0000000000000004)
+/** EMT: Extended Memory Type. */
+#define VTD_BF_SL_PDE2M_EMT_SHIFT                               3
+#define VTD_BF_SL_PDE2M_EMT_MASK                                UINT64_C(0x0000000000000038)
+/** IPAT: Ignore PAT (Page Attribute Table). */
+#define VTD_BF_SL_PDE2M_IPAT_SHIFT                              6
+#define VTD_BF_SL_PDE2M_IPAT_MASK                               UINT64_C(0x0000000000000040)
+/** PS: Page Size (MB1). */
+#define VTD_BF_SL_PDE2M_PS_SHIFT                                7
+#define VTD_BF_SL_PDE2M_PS_MASK                                 UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PDE2M_A_SHIFT                                 8
+#define VTD_BF_SL_PDE2M_A_MASK                                  UINT64_C(0x0000000000000100)
+/** D: Dirty. */
+#define VTD_BF_SL_PDE2M_D_SHIFT                                 9
+#define VTD_BF_SL_PDE2M_D_MASK                                  UINT64_C(0x0000000000000200)
+/** IGN: Ignored (bit 10). */
+#define VTD_BF_SL_PDE2M_IGN_10_SHIFT                            10
+#define VTD_BF_SL_PDE2M_IGN_10_MASK                             UINT64_C(0x0000000000000400)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PDE2M_RSVD_11_SHIFT                           11
+#define VTD_BF_SL_PDE2M_RSVD_11_MASK                            UINT64_C(0x0000000000000800)
+/** R: Reserved (bits 20:12). */
+#define VTD_BF_SL_PDE2M_RSVD_20_12_SHIFT                        12
+#define VTD_BF_SL_PDE2M_RSVD_20_12_MASK                         UINT64_C(0x00000000001ff000)
+/** ADDR: Address of 2MB page. */
+#define VTD_BF_SL_PDE2M_ADDR_SHIFT                              21
+#define VTD_BF_SL_PDE2M_ADDR_MASK                               UINT64_C(0x000fffffffe00000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PDE2M_IGN_61_52_SHIFT                         52
+#define VTD_BF_SL_PDE2M_IGN_61_52_MASK                          UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PDE2M_RSVD_62_SHIFT                           62
+#define VTD_BF_SL_PDE2M_RSVD_62_MASK                            UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PDE2M_IGN_63_SHIFT                            63
+#define VTD_BF_SL_PDE2M_IGN_63_MASK                             UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PDE2M_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, EMT, IPAT, PS, A, D, IGN_10, RSVD_11, RSVD_20_12, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PDE (2MB page) valid mask. */
+#define VTD_SL_PDE2M_VALID_MASK                                 (  VTD_BF_SL_PDE2M_R_MASK | VTD_BF_SL_PDE2M_W_MASK \
+                                                                 | VTD_BF_SL_PDE2M_X_MASK | VTD_BF_SL_PDE2M_EMT_MASK \
+                                                                 | VTD_BF_SL_PDE2M_IPAT_MASK | VTD_BF_SL_PDE2M_PS_MASK \
+                                                                 | VTD_BF_SL_PDE2M_A_MASK | VTD_BF_SL_PDE2M_D_MASK \
+                                                                 | VTD_BF_SL_PDE2M_IGN_10_MASK | VTD_BF_SL_PDE2M_ADDR_MASK \
+                                                                 | VTD_BF_SL_PDE2M_IGN_61_52_MASK | VTD_BF_SL_PDE2M_IGN_63_MASK)
+/** @} */
+
+
+/** @name Second-Level PDE.
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PDE_R_SHIFT                                   0
+#define VTD_BF_SL_PDE_R_MASK                                    UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PDE_W_SHIFT                                   1
+#define VTD_BF_SL_PDE_W_MASK                                    UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PDE_X_SHIFT                                   2
+#define VTD_BF_SL_PDE_X_MASK                                    UINT64_C(0x0000000000000004)
+/** IGN: Ignored (bits 6:3). */
+#define VTD_BF_SL_PDE_IGN_6_3_SHIFT                             3
+#define VTD_BF_SL_PDE_IGN_6_3_MASK                              UINT64_C(0x0000000000000078)
+/** PS: Page Size (MBZ). */
+#define VTD_BF_SL_PDE_PS_SHIFT                                  7
+#define VTD_BF_SL_PDE_PS_MASK                                   UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PDE_A_SHIFT                                   8
+#define VTD_BF_SL_PDE_A_MASK                                    UINT64_C(0x0000000000000100)
+/** IGN: Ignored (bits 10:9). */
+#define VTD_BF_SL_PDE_IGN_10_9_SHIFT                            9
+#define VTD_BF_SL_PDE_IGN_10_9_MASK                             UINT64_C(0x0000000000000600)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PDE_RSVD_11_SHIFT                             11
+#define VTD_BF_SL_PDE_RSVD_11_MASK                              UINT64_C(0x0000000000000800)
+/** ADDR: Address of second-level PT. */
+#define VTD_BF_SL_PDE_ADDR_SHIFT                                12
+#define VTD_BF_SL_PDE_ADDR_MASK                                 UINT64_C(0x000ffffffffff000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PDE_IGN_61_52_SHIFT                           52
+#define VTD_BF_SL_PDE_IGN_61_52_MASK                            UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PDE_RSVD_62_SHIFT                             62
+#define VTD_BF_SL_PDE_RSVD_62_MASK                              UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PDE_IGN_63_SHIFT                              63
+#define VTD_BF_SL_PDE_IGN_63_MASK                               UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PDE_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, IGN_6_3, PS, A, IGN_10_9, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PDE valid mask. */
+#define VTD_SL_PDE_VALID_MASK                                   (  VTD_BF_SL_PDE_R_MASK | VTD_BF_SL_PDE_W_MASK \
+                                                                 | VTD_BF_SL_PDE_X_MASK | VTD_BF_SL_PDE_IGN_6_3_MASK \
+                                                                 | VTD_BF_SL_PDE_PS_MASK | VTD_BF_SL_PDE_A_MASK \
+                                                                 | VTD_BF_SL_PDE_IGN_10_9_MASK | VTD_BF_SL_PDE_ADDR_MASK \
+                                                                 | VTD_BF_SL_PDE_IGN_61_52_MASK | VTD_BF_SL_PDE_IGN_63_MASK)
+/** @} */
+
+
+/** @name Second-Level PTE.
+ * In accordance with the Intel spec.
+ * @{ */
+/** R: Read. */
+#define VTD_BF_SL_PTE_R_SHIFT                                   0
+#define VTD_BF_SL_PTE_R_MASK                                    UINT64_C(0x0000000000000001)
+/** W: Write. */
+#define VTD_BF_SL_PTE_W_SHIFT                                   1
+#define VTD_BF_SL_PTE_W_MASK                                    UINT64_C(0x0000000000000002)
+/** X: Execute. */
+#define VTD_BF_SL_PTE_X_SHIFT                                   2
+#define VTD_BF_SL_PTE_X_MASK                                    UINT64_C(0x0000000000000004)
+/** EMT: Extended Memory Type. */
+#define VTD_BF_SL_PTE_EMT_SHIFT                                 3
+#define VTD_BF_SL_PTE_EMT_MASK                                  UINT64_C(0x0000000000000038)
+/** IPAT: Ignore PAT (Page Attribute Table). */
+#define VTD_BF_SL_PTE_IPAT_SHIFT                                6
+#define VTD_BF_SL_PTE_IPAT_MASK                                 UINT64_C(0x0000000000000040)
+/** IGN: Ignored (bit 7). */
+#define VTD_BF_SL_PTE_IGN_7_SHIFT                               7
+#define VTD_BF_SL_PTE_IGN_7_MASK                                UINT64_C(0x0000000000000080)
+/** A: Accessed. */
+#define VTD_BF_SL_PTE_A_SHIFT                                   8
+#define VTD_BF_SL_PTE_A_MASK                                    UINT64_C(0x0000000000000100)
+/** D: Dirty. */
+#define VTD_BF_SL_PTE_D_SHIFT                                   9
+#define VTD_BF_SL_PTE_D_MASK                                    UINT64_C(0x0000000000000200)
+/** IGN: Ignored (bit 10). */
+#define VTD_BF_SL_PTE_IGN_10_SHIFT                              10
+#define VTD_BF_SL_PTE_IGN_10_MASK                               UINT64_C(0x0000000000000400)
+/** R: Reserved (bit 11). */
+#define VTD_BF_SL_PTE_RSVD_11_SHIFT                             11
+#define VTD_BF_SL_PTE_RSVD_11_MASK                              UINT64_C(0x0000000000000800)
+/** ADDR: Address of 4K page. */
+#define VTD_BF_SL_PTE_ADDR_SHIFT                                12
+#define VTD_BF_SL_PTE_ADDR_MASK                                 UINT64_C(0x000ffffffffff000)
+/** IGN: Ignored (bits 61:52). */
+#define VTD_BF_SL_PTE_IGN_61_52_SHIFT                           52
+#define VTD_BF_SL_PTE_IGN_61_52_MASK                            UINT64_C(0x3ff0000000000000)
+/** R: Reserved (bit 62). */
+#define VTD_BF_SL_PTE_RSVD_62_SHIFT                             62
+#define VTD_BF_SL_PTE_RSVD_62_MASK                              UINT64_C(0x4000000000000000)
+/** IGN: Ignored (bit 63). */
+#define VTD_BF_SL_PTE_IGN_63_SHIFT                              63
+#define VTD_BF_SL_PTE_IGN_63_MASK                               UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PTE_, UINT64_C(0), UINT64_MAX,
+                            (R, W, X, EMT, IPAT, IGN_7, A, D, IGN_10, RSVD_11, ADDR, IGN_61_52, RSVD_62, IGN_63));
+
+/** Second-level PTE valid mask. */
+#define VTD_SL_PTE_VALID_MASK                                   (  VTD_BF_SL_PTE_R_MASK | VTD_BF_SL_PTE_W_MASK \
+                                                                 | VTD_BF_SL_PTE_X_MASK | VTD_BF_SL_PTE_EMT_MASK \
+                                                                 | VTD_BF_SL_PTE_IPAT_MASK | VTD_BF_SL_PTE_IGN_7_MASK \
+                                                                 | VTD_BF_SL_PTE_A_MASK | VTD_BF_SL_PTE_D_MASK \
+                                                                 | VTD_BF_SL_PTE_IGN_10_MASK | VTD_BF_SL_PTE_RSVD_11_MASK \
+                                                                 | VTD_BF_SL_PTE_ADDR_MASK | VTD_BF_SL_PTE_IGN_61_52_MASK \
+                                                                 | VTD_BF_SL_PTE_RSVD_62_MASK | VTD_BF_SL_PTE_IGN_63_MASK)
+/** @} */
+
+
+/** @name Second-Level Generic Paging Entry.
+ * In accordance with the Intel spec.
+ * @{ */
 /** Second-Level Paging Entry. */
 typedef uint64_t VTD_SLP_ENTRY_T;
 /** Pointer to a second-level paging entry. */
@@ -1369,17 +1704,6 @@ typedef enum VTDREQTYPE
     VTDREQTYPE_READ,        /**< Memory access read request. */
     VTDREQTYPE_ATOMIC_OP    /**< Memory access atomic operation. */
 } VTDREQTYPE;
-
-
-/** @name VT-d faulted request attributes (FRCD_REG::EXE, FRCD_REG::PRIV).
- * In accordance with the Intel spec.
- * @{
- */
-/** Supervisory privilege was requested. */
-#define VTD_REQ_ATTR_PRIV                                       RT_BIT(0)
-/** Execute permission was requested. */
-#define VTD_REQ_ATTR_EXE                                        RT_BIT(1)
-/** @} */
 
 
 /** @name Advanced Fault Log Register (AFLOG_REG).
