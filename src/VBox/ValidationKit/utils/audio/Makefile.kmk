@@ -50,7 +50,8 @@ vkat_TEMPLATE = VBoxValidationKitR3
 vkat_VBOX_IMPORT_CHECKER.win.x86 = nt4
 vkat_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
 vkat_INCS     = \
-	$(PATH_ROOT)/src/VBox/Devices/build
+	$(PATH_ROOT)/src/VBox/Devices/build \
+	$(PATH_ROOT)/src/VBox/Devices
 vkat_SOURCES  = \
 	vkat.cpp \
 	vkatDriverStack.cpp \

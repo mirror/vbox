@@ -67,12 +67,14 @@ typedef struct PDMDRVINSINT
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
 
-#include "../../../Devices/Audio/AudioHlp.h"
-#include "../../../Devices/Audio/AudioTest.h"
-#include "../../../Devices/Audio/AudioTestService.h"
-#include "../../../Devices/Audio/AudioTestServiceClient.h"
-#include "vkatInternal.h"
+#include "Audio/AudioHlp.h"
+#include "Audio/AudioTest.h"
+#include "Audio/AudioTestService.h"
+#include "Audio/AudioTestServiceClient.h"
+
 #include "VBoxDD.h"
+
+#include "vkatInternal.h"
 
 
 /*********************************************************************************************************************************
