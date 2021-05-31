@@ -84,10 +84,6 @@ typedef struct DRVAUDIOVRDE
 /** Pointer to the instance data for an VRDE audio driver. */
 typedef DRVAUDIOVRDE *PDRVAUDIOVRDE;
 
-/* Sanity. */
-AssertCompileSize(PDMAUDIOFRAME, sizeof(int64_t) * 2 /* st_sample_t using by VRDP server */);
-
-
 
 /*********************************************************************************************************************************
 *   Class AudioVRDE                                                                                                              *
@@ -587,7 +583,7 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pI
 
     /** @todo Find some sane value here. We probably need a VRDE API VRDE to specify this. */
     if (pDrv->cClients)
-        return _16K * sizeof(PDMAUDIOFRAME);
+        return _16K * sizeof(int64_t) * 2;
     return 0;
 }
 
@@ -630,35 +626,19 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
                                                             pProps->fSigned);
     Assert(uVrdpFormat == VRDE_AUDIO_FMT_MAKE(PDMAudioPropsHz(pProps), 2, 64, true));
 
-    /* We specified PDMAUDIOSTREAMLAYOUT_RAW (== S64), so
-       convert the buffer pointe and size accordingly:  */
-    PCPDMAUDIOFRAME paSampleBuf    = (PCPDMAUDIOFRAME)pvBuf;
-    uint32_t const  cFramesToWrite = cbBuf / sizeof(paSampleBuf[0]);
-    Assert(cFramesToWrite * sizeof(paSampleBuf[0]) == cbBuf);
-
     /** @todo r=bird: there was some incoherent mumbling about "using the
      *        internal counter to track if we (still) can write to the VRDP
      *        server or if need to wait another round (time slot)".  However it
      *        wasn't accessing any internal counter nor doing anything else
      *        sensible, so I've removed it. */
 
-    /*
-     * Call the VRDP server with the data.
-     */
-    uint32_t cFramesWritten = 0;
-    while (cFramesWritten < cFramesToWrite)
-    {
-        uint32_t const cFramesChunk = cFramesToWrite - cFramesWritten; /** @todo For now write all at once. */
+    uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->pStream->Props, cbBuf);
+    Assert(cFrames == cbBuf / (sizeof(uint64_t) * 2));
+    pDrv->pConsoleVRDPServer->SendAudioSamples(pvBuf, cFrames, uVrdpFormat);
 
-        /* Note: The VRDP server expects int64_t samples per channel, regardless
-                 of the actual  sample bits (e.g 8 or 16 bits). */
-        pDrv->pConsoleVRDPServer->SendAudioSamples(&paSampleBuf[cFramesWritten], cFramesChunk /* Frames */, uVrdpFormat);
-
-        cFramesWritten += cFramesChunk;
-    }
-
-    Log3Func(("cFramesWritten=%RU32\n", cFramesWritten));
-    *pcbWritten = cFramesWritten * sizeof(PDMAUDIOFRAME);
+    Log3Func(("cFramesWritten=%RU32\n", cFrames));
+    *pcbWritten = PDMAudioPropsFramesToBytes(&pStream->pStream->Props, cFrames);
+    Assert(*pcbWritten == cbBuf);
     return VINF_SUCCESS;
 }
 

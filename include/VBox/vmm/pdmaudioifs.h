@@ -418,35 +418,6 @@ typedef PDMAUDIOBACKENDCFG *PPDMAUDIOBACKENDCFG;
 
 
 /**
- * A single audio frame.
- *
- * Currently only two (2) channels, left and right, are supported.
- *
- * @note When changing this structure, make sure to also handle
- *       VRDP's input / output processing in DrvAudioVRDE, as VRDP
- *       expects audio data in st_sample_t format (historical reasons)
- *       which happens to be the same as PDMAUDIOFRAME for now.
- *
- * @todo r=bird: This is an internal AudioMixBuffer structure which should not
- *       be exposed here, I think.  Only used to some sizeof statements in VRDE.
- *       (The problem with exposing it, is that we would like to move away from
- *       stereo and instead to anything from 1 to 16 channels.  That means
- *       removing this structure entirely.)
- */
-typedef struct PDMAUDIOFRAME
-{
-    /** Left channel. */
-    int64_t         i64LSample;
-    /** Right channel. */
-    int64_t         i64RSample;
-} PDMAUDIOFRAME;
-/** Pointer to a single (stereo) audio frame. */
-typedef PDMAUDIOFRAME *PPDMAUDIOFRAME;
-/** Pointer to a const single (stereo) audio frame. */
-typedef PDMAUDIOFRAME const *PCPDMAUDIOFRAME;
-
-
-/**
  * Audio path: input sources and playback destinations.
  *
  * Think of this as the name of the socket you plug the virtual audio stream
@@ -911,8 +882,7 @@ typedef struct PDMAUDIOSTREAM
     /** Warnings shown already in the release log.
      *  See PDMAUDIOSTREAM_WARN_FLAGS_XXX. */
     uint32_t                fWarningsShown;
-    /** The stream properties (both sides when PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF
-     * is used, otherwise the guest side). */
+    /** The stream properties. */
     PDMAUDIOPCMPROPS        Props;
 
     /** Name of this stream. */
