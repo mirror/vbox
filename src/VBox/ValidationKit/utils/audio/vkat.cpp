@@ -1603,13 +1603,15 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                 rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
                 if (RT_SUCCESS(rc))
                 {
-                    uint64_t const  nsStarted = RTTimeNanoTS();
+                    uint32_t const  cbPreBuffer = PDMAudioPropsFramesToBytes(&pStream->Props, CfgAcq.Backend.cFramesPreBuffering);
+                    uint64_t const  nsStarted   = RTTimeNanoTS();
 
                     /*
                      * Transfer data as quickly as we're allowed.
                      */
                     uint8_t         abSamples[16384];
                     uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(&pStream->Props, sizeof(abSamples));
+                    uint64_t        offStream        = 0;
                     for (;;)
                     {
                         /* Read a chunk from the wave file. */
@@ -1617,6 +1619,15 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                         rc = AudioTestWaveFileRead(&WaveFile, abSamples, cbSamplesAligned, &cbSamples);
                         if (RT_SUCCESS(rc) && cbSamples > 0)
                         {
+                            /* Pace ourselves a little. */
+                            if (offStream >= cbPreBuffer)
+                            {
+                                uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(&pStream->Props, offStream);
+                                uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
+                                if (cNsWritten + RT_NS_10MS > cNsElapsed)
+                                    RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
+                            }
+
                             /* Transfer the data to the audio stream. */
                             for (uint32_t offSamples = 0; offSamples < cbSamples;)
                             {
@@ -1630,7 +1641,10 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                                     if (RT_SUCCESS(rc))
                                     {
                                         if (cbPlayed)
+                                        {
                                             offSamples += cbPlayed;
+                                            offStream  += cbPlayed;
+                                        }
                                         else
                                         {
                                             rcExit = RTMsgErrorExitFailure("Played zero out of %#x bytes - %#x bytes reported playable!\n",
