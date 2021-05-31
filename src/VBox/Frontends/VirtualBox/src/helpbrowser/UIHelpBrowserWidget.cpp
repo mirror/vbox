@@ -224,6 +224,7 @@ private slots:
     void sltAddBookmarkAction();
     void sltAnchorClicked(const QUrl &link);
     void sltFindInPageWidgetVisibilityChanged(bool  fVisible);
+    void sltReloadPageAction();
 
 private:
 
@@ -238,6 +239,7 @@ private:
     QAction     *m_pBackwardAction;
     QAction     *m_pAddBookmarkAction;
     QAction     *m_pFindInPageAction;
+    QAction     *m_pReloadPageAction;
 
     QVBoxLayout *m_pMainLayout;
     QIToolBar   *m_pToolBar;
@@ -715,6 +717,8 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
         new QAction(UIIconPool::iconSet(":/help_browser_add_bookmark.png"), QString(), this);
     m_pFindInPageAction =
         new QAction(UIIconPool::iconSet(":/help_browser_search.png"), QString(), this);
+    m_pReloadPageAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_reload_32px.png"), QString(), this);
 
     AssertReturnVoid(m_pHomeAction && m_pForwardAction &&
                      m_pBackwardAction && m_pAddBookmarkAction &&
@@ -726,6 +730,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltForwardAction);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltBackwardAction);
     connect(m_pFindInPageAction, &QAction::toggled, this, &UIHelpBrowserTab::sltFindInPageAction);
+    connect(m_pReloadPageAction, &QAction::triggered, this, &UIHelpBrowserTab::sltReloadPageAction);
 
     m_pForwardAction->setEnabled(false);
     m_pBackwardAction->setEnabled(false);
@@ -735,6 +740,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pToolBar->addAction(m_pBackwardAction);
     m_pToolBar->addAction(m_pForwardAction);
     m_pToolBar->addAction(m_pHomeAction);
+    m_pToolBar->addAction(m_pReloadPageAction);
     m_pToolBar->addAction(m_pAddBookmarkAction);
     m_pToolBar->addAction(m_pFindInPageAction);
 
@@ -790,6 +796,12 @@ void UIHelpBrowserTab::sltFindInPageAction(bool fToggled)
 {
     if (m_pContentViewer)
         m_pContentViewer->toggleFindInPageWidget(fToggled);
+}
+
+void UIHelpBrowserTab::sltReloadPageAction()
+{
+    if (m_pContentViewer)
+        m_pContentViewer->reload();
 }
 
 void UIHelpBrowserTab::sltHistoryChanged()

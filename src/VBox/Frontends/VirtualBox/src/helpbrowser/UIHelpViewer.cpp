@@ -435,6 +435,11 @@ void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
     emit sigFindInPageWidgetToogle(fVisible);
 }
 
+void UIHelpViewer::reload()
+{
+    setSource(source());
+}
+
 void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
 {
     clearOverlay();
