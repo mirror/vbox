@@ -48,29 +48,6 @@ typedef struct VALKITAUDIOSTREAM
     PDMAUDIOBACKENDSTREAM   Core;
     /** The stream's acquired configuration. */
     PDMAUDIOSTREAMCFG       Cfg;
-    /** Audio file to dump output to or read input from. */
-    PAUDIOHLPFILE           pFile;
-    /** Text file to store timing of audio buffers submittions. */
-    PRTSTREAM               pFileTiming;
-    /** Timestamp of the first play or record request. */
-    uint64_t                tsStarted;
-    /** Total number of frames played or recorded so far. */
-    uint32_t                cFramesSinceStarted;
-    union
-    {
-        struct
-        {
-            /** Timestamp of last captured samples. */
-            uint64_t        tsLastCaptured;
-        } In;
-        struct
-        {
-            /** Timestamp of last played samples. */
-            uint64_t        tsLastPlayed;
-            uint8_t        *pbPlayBuffer;
-            uint32_t        cbPlayBuffer;
-        } Out;
-    };
 } VALKITAUDIOSTREAM;
 /** Pointer to a Validation Kit stream. */
 typedef VALKITAUDIOSTREAM *PVALKITAUDIOSTREAM;
@@ -211,61 +188,9 @@ static int drvHostValKitAudioCreateStreamIn(PDRVHOSTVALKITAUDIO pThis, PVALKITAU
 static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVALKITAUDIO pThis, PVALKITAUDIOSTREAM pStreamDbg,
                                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pThis, pCfgAcq);
+    RT_NOREF(pThis, pStreamDbg, pCfgReq, pCfgAcq);
 
-    /* Use the test box scratch dir if we're running in such an
-       environment, otherwise just dump the output in the temp
-       directory. */
-    char szTemp[RTPATH_MAX];
-    int rc = RTEnvGetEx(RTENV_DEFAULT, "TESTBOX_PATH_SCRATCH", szTemp, sizeof(szTemp), NULL);
-    if (RT_FAILURE(rc))
-    {
-        rc = RTPathTemp(szTemp, sizeof(szTemp));
-        if (RT_SUCCESS(rc))
-            rc = RTPathAppend(szTemp, sizeof(szTemp), "VBoxAudioValKit");
-        AssertRCReturn(rc, rc);
-    }
-
-    /* Get down to things that may fail and need cleanup. */
-    pStreamDbg->tsStarted           = 0;
-    pStreamDbg->cFramesSinceStarted = 0;
-    pStreamDbg->Out.tsLastPlayed    = 0;
-    pStreamDbg->Out.cbPlayBuffer    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
-    pStreamDbg->Out.pbPlayBuffer    = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
-    AssertReturn(pStreamDbg->Out.pbPlayBuffer, VERR_NO_MEMORY);
-
-    rc = AudioHlpFileCreateAndOpenEx(&pStreamDbg->pFile, AUDIOHLPFILETYPE_WAV, szTemp, "ValKit",
-                                     pThis->pDrvIns->iInstance, AUDIOHLPFILENAME_FLAGS_NONE, AUDIOHLPFILE_FLAGS_NONE,
-                                     &pCfgReq->Props, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTPathAppend(szTemp, sizeof(szTemp), "ValKitTimings.txt");
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTStrmOpen(szTemp, "w", &pStreamDbg->pFileTiming);
-            if (RT_SUCCESS(rc))
-            {
-                RTStrmPrintf(pStreamDbg->pFileTiming, "# %uHz %uch %ubit\n",
-                             PDMAudioPropsHz(&pCfgReq->Props),
-                             PDMAudioPropsChannels(&pCfgReq->Props),
-                             PDMAudioPropsSampleBits(&pCfgReq->Props));
-                return VINF_SUCCESS;
-            }
-
-            LogRel(("ValKitAudio: Opening output file '%s' failed: %Rrc\n", szTemp, rc));
-        }
-        else
-            LogRel(("ValKitAudio: Constructing timing file path: %Rrc\n", rc));
-
-        AudioHlpFileDestroy(pStreamDbg->pFile);
-        pStreamDbg->pFile = NULL;
-    }
-    else
-        LogRel(("ValKitAudio: Creating output file 'ValKit' in '%s' failed: %Rrc\n", szTemp, rc));
-
-    RTMemFree(pStreamDbg->Out.pbPlayBuffer);
-    pStreamDbg->Out.pbPlayBuffer = NULL;
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -275,7 +200,7 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVALKITAUDIO pThis, PVALKITA
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTVALKITAUDIO pThis       = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PDRVHOSTVALKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
@@ -301,29 +226,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
     PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
 
-    if (   pStreamDbg->Cfg.enmDir == PDMAUDIODIR_OUT
-        && pStreamDbg->Out.pbPlayBuffer)
-    {
-        RTMemFree(pStreamDbg->Out.pbPlayBuffer);
-        pStreamDbg->Out.pbPlayBuffer = NULL;
-    }
-
-    if (pStreamDbg->pFile)
-    {
-        size_t cbDataSize = AudioHlpFileGetDataSize(pStreamDbg->pFile);
-        if (cbDataSize)
-            LogRel(("ValKitAudio: Created output file '%s' (%zu bytes)\n", pStreamDbg->pFile->szName, cbDataSize));
-
-        AudioHlpFileDestroy(pStreamDbg->pFile);
-        pStreamDbg->pFile = NULL;
-    }
-
-    if (pStreamDbg->pFileTiming)
-    {
-        RTStrmClose(pStreamDbg->pFileTiming);
-        pStreamDbg->pFileTiming = NULL;
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -347,9 +249,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDisableOrPauseOrDrain(PPDMIH
     RT_NOREF(pInterface);
     PVALKITAUDIOSTREAM pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
-
-    if (pStreamDbg->pFileTiming)
-        RTStrmFlush(pStreamDbg->pFileTiming);
 
     return VINF_SUCCESS;
 }
@@ -428,38 +327,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 {
     PDRVHOSTVALKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, pStreamDbg, pvBuf, cbBuf);
 
-    uint64_t cNsSinceStart;
-    if (pStreamDbg->tsStarted != 0)
-        cNsSinceStart = RTTimeNanoTS() - pStreamDbg->tsStarted;
-    else
-    {
-        pStreamDbg->tsStarted = RTTimeNanoTS();
-        cNsSinceStart = 0;
-    }
-
-    // Microseconds are used everythere below
-    uint32_t const cFrames = PDMAudioPropsBytesToFrames(&pStreamDbg->Cfg.Props, cbBuf);
-    RTStrmPrintf(pStreamDbg->pFileTiming, "%d %d %d %d\n",
-                 // Host time elapsed since Guest submitted the first buffer for playback:
-                 (uint32_t)(cNsSinceStart / 1000),
-                 // how long all the samples submitted previously were played:
-                 (uint32_t)(pStreamDbg->cFramesSinceStarted * 1.0E6 / pStreamDbg->Cfg.Props.uHz),
-                 // how long a new uSamplesReady samples should/will be played:
-                 (uint32_t)(cFrames * 1.0E6 / pStreamDbg->Cfg.Props.uHz),
-                 cFrames);
-
-    pStreamDbg->cFramesSinceStarted += cFrames;
-
-    /* Remember when samples were consumed. */
-    // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pThis->pDrvIns);
-
-    int rc2 = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
-    if (RT_FAILURE(rc2))
-        LogRel(("ValKitAudio: Writing output failed with %Rrc\n", rc2));
-
-    *pcbWritten = cbBuf;
+    *pcbWritten = 0;
     return VINF_SUCCESS;
 }
 

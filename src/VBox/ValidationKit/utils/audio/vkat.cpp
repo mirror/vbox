@@ -2215,26 +2215,19 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 *   Command: verify                                                                                                              *
 *********************************************************************************************************************************/
 
-/**
- * Verifies one single test set.
- *
- * @returns VBox status code.
- * @param   pszPath             Absolute path to test set.
- * @param   pszTag              Tag of test set to verify. Optional and can be NULL.
- */
-static int audioVerifyOne(const char *pszPath, const char *pszTag)
+static int audioVerifyOpenTestSet(const char *pszPathSet, PAUDIOTESTSET pSet)
 {
-    RTTestSubF(g_hTest, "Verifying test set ...");
-
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pszTag ? pszTag : "default");
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Opening archive '%s'\n", pszPath);
-
-    int rc = VINF_SUCCESS;
+    int rc;
 
     char szPathExtracted[RTPATH_MAX];
-    const bool fPacked = AudioTestSetIsPacked(pszPath);
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Opening test set '%s'\n", pszPathSet);
+
+    const bool fPacked = AudioTestSetIsPacked(pszPathSet);
     if (fPacked)
     {
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set is an archive and needs to be unpacked\n");
+
         char szPathTemp[RTPATH_MAX];
         rc = RTPathTemp(szPathTemp, sizeof(szPathTemp));
         if (RT_SUCCESS(rc))
@@ -2248,26 +2241,46 @@ static int audioVerifyOne(const char *pszPath, const char *pszTag)
                 if (RT_SUCCESS(rc))
                 {
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unpacking archive to '%s'\n", szPathExtracted);
-                    rc = AudioTestSetUnpack(pszPath, szPathExtracted);
+                    rc = AudioTestSetUnpack(pszPathSet, szPathExtracted);
                     if (RT_SUCCESS(rc))
                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Archive successfully unpacked\n");
                 }
             }
         }
     }
+    else
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+        rc = AudioTestSetOpen(pSet, fPacked ? szPathExtracted : pszPathSet);
 
     if (RT_FAILURE(rc))
-    {
         RTTestFailed(g_hTest, "Unable to open / unpack test set archive: %Rrc", rc);
-        return rc;
-    }
 
-    AUDIOTESTSET tstSet;
-    rc = AudioTestSetOpen(&tstSet, fPacked ? szPathExtracted : pszPath);
+    return rc;
+}
+
+/**
+ * Verifies one single test set.
+ *
+ * @returns VBox status code.
+ * @param   pszPathSetA         Absolute path to test set A.
+ * @param   pszPathSetB         Absolute path to test set B.
+ */
+static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
+{
+    RTTestSubF(g_hTest, "Verifying");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verifying test set '%s' with test set '%s'\n", pszPathSetA, pszPathSetB);
+
+    AUDIOTESTSET SetA, SetB;
+    int rc = audioVerifyOpenTestSet(pszPathSetA, &SetA);
+    if (RT_SUCCESS(rc))
+        rc = audioVerifyOpenTestSet(pszPathSetB, &SetB);
+
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTERRORDESC errDesc;
-        rc = AudioTestSetVerify(&tstSet, pszTag ? pszTag : "default", &errDesc);
+        rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
         if (RT_SUCCESS(rc))
         {
             if (AudioTestErrorDescFailed(&errDesc))
@@ -2275,22 +2288,19 @@ static int audioVerifyOne(const char *pszPath, const char *pszTag)
                 /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
                 PAUDIOTESTERRORENTRY pErrEntry;
                 RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
-                {
                     RTTestFailed(g_hTest, pErrEntry->szDesc);
-                }
             }
             else
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful");
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful\n");
 
             AudioTestErrorDescDestroy(&errDesc);
         }
         else
             RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
-
-        AudioTestSetClose(&tstSet);
     }
-    else
-        RTTestFailed(g_hTest, "Opening test set '%s' (tag '%s') failed, rc=%Rrc\n", pszPath, pszTag, rc);
+
+    AudioTestSetClose(&SetA);
+    AudioTestSetClose(&SetB);
 
     RTTestSubDone(g_hTest);
 
@@ -2308,8 +2318,9 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     /*
      * Parse options and process arguments.
      */
-    const char   *pszTag   = NULL; /* Custom tag to use. Can be NULL if not being used. */
-    unsigned      iTestSet = 0;
+    char     *pszSetA = NULL;
+    char     *pszSetB = NULL;
+    unsigned iTestSet = 0;
 
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -2318,17 +2329,21 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
         switch (rc)
         {
             case VKAT_VERIFY_OPT_TAG:
-                pszTag = ValueUnion.psz;
-                if (g_uVerbosity > 0)
-                    RTMsgInfo("Using tag '%s'\n", pszTag);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
+            {
+                char **ppszSet = iTestSet == 0 ? &pszSetA : &pszSetB;
+
                 if (iTestSet == 0)
                     RTTestBanner(g_hTest);
-                audioVerifyOne(ValueUnion.psz, pszTag);
+
+                *ppszSet = RTStrDup(ValueUnion.psz);
+                AssertPtrReturn(*ppszSet, RTEXITCODE_FAILURE);
+
                 iTestSet++;
                 break;
+            }
 
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
@@ -2337,19 +2352,35 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
         }
     }
 
+    if (!iTestSet)
+        return RTMsgErrorExitFailure("At least one test set must be specified");
+
+    if (iTestSet > 2)
+        return RTMsgErrorExitFailure("Only two test sets can be verified at one time");
+
     /*
-     * If no paths given, default to the current directory.
+     * If only test set A is given, default to the current directory
+     * for test set B.
      */
-    if (iTestSet == 0)
+    if (iTestSet == 1)
     {
-        if (iTestSet == 0)
-            RTTestBanner(g_hTest);
         char szDirCur[RTPATH_MAX];
-        int rc2 = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
-        if (RT_FAILURE(rc2))
-            RTTestFailed(g_hTest, "Failed to retrieve current directory: %Rrc", rc2);
-        rc = audioVerifyOne(RT_SUCCESS(rc2) ? szDirCur : ".", pszTag);
+        rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(pszSetB == NULL);
+            pszSetB = RTStrDup(szDirCur);
+            AssertPtrReturn(pszSetB, RTEXITCODE_FAILURE);
+        }
+        else
+            RTTestFailed(g_hTest, "Failed to retrieve current directory: %Rrc", rc);
     }
+
+    if (RT_SUCCESS(rc))
+        rc = audioVerifyOne(pszSetA, pszSetB);
+
+    RTStrFree(pszSetA);
+    RTStrFree(pszSetB);
 
     /*
      * Print summary and exit.

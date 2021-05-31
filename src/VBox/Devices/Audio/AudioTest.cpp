@@ -26,6 +26,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/formats/riff.h>
 #include <iprt/inifile.h>
@@ -605,14 +606,18 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 {
     AssertReturn(pszTag && strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
 
-    char szPath[RTPATH_MAX];
+    char szTemp[RTPATH_MAX];
+    int rc = RTEnvGetEx(RTENV_DEFAULT, "TESTBOX_PATH_SCRATCH", szTemp, sizeof(szTemp), NULL);
+    if (RT_FAILURE(rc))
+    {
+        rc = RTPathTemp(szTemp, sizeof(szTemp));
+        AssertRCReturn(rc, rc);
+    }
 
-    int rc = RTPathTemp(szPath, sizeof(szPath));
-    AssertRCReturn(rc, rc);
-    rc = AudioTestPathCreate(szPath, sizeof(szPath), pszTag);
+    rc = AudioTestPathCreate(szTemp, sizeof(szTemp), pszTag);
     AssertRCReturn(rc, rc);
 
-    return RTStrCopy(pszPath, cbPath, szPath);
+    return RTStrCopy(pszPath, cbPath, szTemp);
 }
 
 /**
@@ -1223,30 +1228,66 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
     return rc;
 }
 
+static int audioTestVerifyIniValue(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB,
+                                   const char *pszSec, const char *pszKey, const char *pszVal)
+{
+    char szValA[_1K];
+    int rc = RTIniFileQueryValue(pSetA->f.hIniFile, pszSec, pszKey, szValA, sizeof(szValA), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    char szValB[_1K];
+    rc = RTIniFileQueryValue(pSetB->f.hIniFile, pszSec, pszKey, szValB, sizeof(szValB), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (RTStrCmp(szValA, szValB))
+        return VERR_WRONG_TYPE; /** @todo Fudge! */
+
+    if (pszVal)
+    {
+        if (RTStrCmp(szValA, pszVal))
+            return VERR_WRONG_TYPE; /** @todo Fudge! */
+    }
+
+    return rc;
+}
+
 /**
  * Verifies an opened audio test set.
  *
  * @returns VBox status code.
- * @param   pSet                Test set to verify.
- * @param   pszTag              Tag to use for verification purpose.
+ * @param   pSetA               Test set A to verify.
+ * @param   pSetB               Test set to verify test set A with.
  * @param   pErrDesc            Where to return the test verification errors.
  *
  * @note    Test verification errors have to be checked for errors, regardless of the
  *          actual return code.
  */
-int AudioTestSetVerify(PAUDIOTESTSET pSet, const char *pszTag, PAUDIOTESTERRORDESC pErrDesc)
+int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc)
 {
-    AssertReturn(audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
+    AssertReturn(audioTestManifestIsOpen(pSetA), VERR_WRONG_ORDER);
+    AssertReturn(audioTestManifestIsOpen(pSetB), VERR_WRONG_ORDER);
 
     /* We ASSUME the caller has not init'd pErrDesc. */
     audioTestErrorDescInit(pErrDesc);
 
-    char szVal[_1K]; /** @todo Enough, too much? */
+    int rc;
 
-    int rc2 = RTIniFileQueryValue(pSet->f.hIniFile, AUDIOTEST_INI_SEC_HDR_STR, "tag", szVal, sizeof(szVal), NULL);
-    if (   RT_FAILURE(rc2)
-        || RTStrICmp(pszTag, szVal))
-        audioTestErrorDescAdd(pErrDesc, "Tag '%s' does not match with manifest's tag '%s'", pszTag, szVal);
+#define VERIFY_VALUE(a_Sec, a_Key, a_Val, ...) \
+    rc = audioTestVerifyIniValue(pSetA, pSetB, a_Sec, a_Key, a_Val); \
+    if (RT_FAILURE(rc)) \
+        return audioTestErrorDescAdd(pErrDesc, (__VA_ARGS__));
+
+    /*
+     * Compare obvious values first.
+     */
+    VERIFY_VALUE("header",   "magic",        "vkat_ini",    "Manifest magic wrong");
+    VERIFY_VALUE("header",   "ver",          "1"       ,    "Manifest version wrong");
+    VERIFY_VALUE("header",   "tag",          NULL,          "Manifest tags don't match");
+    VERIFY_VALUE("header",   "test_count",   NULL,          "Test counts don't match");
+    VERIFY_VALUE("header",   "obj_count",    NULL,          "Object counts don't match");
+
+#undef VERIFY_VALUE
 
     /* Only return critical stuff not related to actual testing here. */
     return VINF_SUCCESS;
