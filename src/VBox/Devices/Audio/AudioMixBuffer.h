@@ -104,6 +104,12 @@ typedef struct AUDIOMIXBUFPEEKSTATE
     uint8_t                     cDstChannels;
     /** Destination frame size. */
     uint8_t                     cbDstFrame;
+    /** The destination frame layout described as indexes into the source frame.
+     * This ASSUMES that all channels uses the same sample size, so one sample per
+     * channel if you like.
+     * Negative values are special: -1 for zero, -2 for silence.
+     * @note Blending stereo into mono is not really expressible here. */
+    int8_t                      aidxChannelMap[PDMAUDIO_MAX_CHANNELS];
 } AUDIOMIXBUFPEEKSTATE;
 /** Pointer to peek state & config. */
 typedef AUDIOMIXBUFPEEKSTATE *PAUDIOMIXBUFPEEKSTATE;
@@ -127,6 +133,12 @@ typedef struct AUDIOMIXBUFWRITESTATE
     uint8_t                     cSrcChannels;
     /** Source frame size. */
     uint8_t                     cbSrcFrame;
+    /** The destination frame layout described as indexes into the source frame.
+     * This ASSUMES that all channels uses the same sample size, so one sample per
+     * channel if you like.
+     * Negative values are special: -1 for zero, -2 for silence.
+     * @note Blending stereo into mono is not really expressible here. */
+    int8_t                      aidxChannelMap[PDMAUDIO_MAX_CHANNELS];
 } AUDIOMIXBUFWRITESTATE;
 /** Pointer to write state & config. */
 typedef AUDIOMIXBUFWRITESTATE *PAUDIOMIXBUFWRITESTATE;

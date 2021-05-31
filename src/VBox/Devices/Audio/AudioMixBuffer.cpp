@@ -329,6 +329,32 @@ static void audioMixBufBlendBuffer(int32_t *pi32Dst, int32_t const *pi32Src, uin
     \
     /* Encoders for peek: */ \
     \
+    /* Generic */ \
+    static DECLCALLBACK(void) RT_CONCAT(audioMixBufEncodeGeneric,a_Name)(void *pvDst, int32_t const *pi32Src, uint32_t cFrames, \
+                                                                         PAUDIOMIXBUFPEEKSTATE pState) \
+    { \
+        RT_NOREF_PV(pState); \
+        uintptr_t const cSrcChannels = pState->cSrcChannels; \
+        uintptr_t const cDstChannels = pState->cDstChannels; \
+        a_Type         *pDst = (a_Type *)pvDst; \
+        while (cFrames-- > 0) \
+        { \
+            uintptr_t idxDst = cDstChannels; \
+            while (idxDst-- > 0) \
+            { \
+                int8_t idxSrc = pState->aidxChannelMap[idxDst]; \
+                if (idxSrc >= 0) \
+                    pDst[idxDst] = audioMixBufSampleTo##a_Name(pi32Src[idxSrc]); \
+                else if (idxSrc != -2) \
+                    pDst[idxDst] = (_aSigned) ? 0 : (_aMax >> 1); \
+                else \
+                    pDst[idxDst] = 0; \
+            } \
+            pDst    += cDstChannels; \
+            pi32Src += cSrcChannels; \
+        } \
+    } \
+    \
     /* 2ch -> 2ch */ \
     static DECLCALLBACK(void) RT_CONCAT(audioMixBufEncode2ChTo2Ch,a_Name)(void *pvDst, int32_t const *pi32Src, uint32_t cFrames, \
                                                                           PAUDIOMIXBUFPEEKSTATE pState) \
@@ -388,6 +414,32 @@ static void audioMixBufBlendBuffer(int32_t *pi32Dst, int32_t const *pi32Src, uin
     } \
     \
     /* Decoders for write: */ \
+    \
+    /* Generic */ \
+    static DECLCALLBACK(void) RT_CONCAT(audioMixBufDecodeGeneric,a_Name)(int32_t *pi32Dst, void const *pvSrc, uint32_t cFrames, \
+                                                                         PAUDIOMIXBUFWRITESTATE pState) \
+    { \
+        RT_NOREF_PV(pState); \
+        uintptr_t const cSrcChannels = pState->cSrcChannels; \
+        uintptr_t const cDstChannels = pState->cDstChannels; \
+        a_Type const   *pSrc         = (a_Type const *)pvSrc; \
+        while (cFrames-- > 0) \
+        { \
+            uintptr_t idxDst = cDstChannels; \
+            while (idxDst-- > 0) \
+            { \
+                int8_t idxSrc = pState->aidxChannelMap[idxDst]; \
+                if (idxSrc >= 0) \
+                    pi32Dst[idxDst] = audioMixBufSampleTo##a_Name(pSrc[idxSrc]); \
+                else if (idxSrc != -2) \
+                    pi32Dst[idxDst] = (_aSigned) ? 0 : (_aMax >> 1); \
+                else \
+                    pi32Dst[idxDst] = 0; \
+            } \
+            pi32Dst += cDstChannels; \
+            pSrc    += cSrcChannels; \
+        } \
+    } \
     \
     /* 2ch -> 2ch */ \
     static DECLCALLBACK(void) RT_CONCAT(audioMixBufDecode2ChTo2Ch,a_Name)(int32_t *pi32Dst, void const *pvSrc, uint32_t cFrames, \
@@ -449,6 +501,28 @@ static void audioMixBufBlendBuffer(int32_t *pi32Dst, int32_t const *pi32Src, uin
     } \
     \
     /* Decoders for blending: */ \
+    \
+    /* Generic */ \
+    static DECLCALLBACK(void) RT_CONCAT3(audioMixBufDecodeGeneric,a_Name,Blend)(int32_t *pi32Dst, void const *pvSrc, \
+                                                                                uint32_t cFrames, PAUDIOMIXBUFWRITESTATE pState) \
+    { \
+        RT_NOREF_PV(pState); \
+        uintptr_t const cSrcChannels = pState->cSrcChannels; \
+        uintptr_t const cDstChannels = pState->cDstChannels; \
+        a_Type const   *pSrc         = (a_Type const *)pvSrc; \
+        while (cFrames-- > 0) \
+        { \
+            uintptr_t idxDst = cDstChannels; \
+            while (idxDst-- > 0) \
+            { \
+                int8_t idxSrc = pState->aidxChannelMap[idxDst]; \
+                if (idxSrc >= 0) \
+                    audioMixBufBlendSample(&pi32Dst[idxDst], audioMixBufSampleTo##a_Name(pSrc[idxSrc])); \
+            } \
+            pi32Dst += cDstChannels; \
+            pSrc    += cSrcChannels; \
+        } \
+    } \
     \
     /* 2ch -> 2ch */ \
     static DECLCALLBACK(void) RT_CONCAT3(audioMixBufDecode2ChTo2Ch,a_Name,Blend)(int32_t *pi32Dst, void const *pvSrc, \
@@ -543,6 +617,101 @@ AUDMIXBUF_CONVERT(Raw /* Name */, int64_t,  INT32_MIN /* Min */, INT32_MAX  /* M
         (a_pi32Dst)[0] = (a_pi32Src)[0]; \
         (a_pi32Dst)[1] = (a_pi32Src)[1]; \
     } while (0)
+#define COPY_LAST_FRAME_3CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+    } while (0)
+#define COPY_LAST_FRAME_4CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+    } while (0)
+#define COPY_LAST_FRAME_5CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+    } while (0)
+#define COPY_LAST_FRAME_6CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+    } while (0)
+#define COPY_LAST_FRAME_7CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+    } while (0)
+#define COPY_LAST_FRAME_8CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+        (a_pi32Dst)[7] = (a_pi32Src)[7]; \
+    } while (0)
+#define COPY_LAST_FRAME_9CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+        (a_pi32Dst)[7] = (a_pi32Src)[7]; \
+        (a_pi32Dst)[8] = (a_pi32Src)[8]; \
+    } while (0)
+#define COPY_LAST_FRAME_10CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+        (a_pi32Dst)[7] = (a_pi32Src)[7]; \
+        (a_pi32Dst)[8] = (a_pi32Src)[8]; \
+        (a_pi32Dst)[9] = (a_pi32Src)[9]; \
+    } while (0)
+#define COPY_LAST_FRAME_11CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+        (a_pi32Dst)[7] = (a_pi32Src)[7]; \
+        (a_pi32Dst)[8] = (a_pi32Src)[8]; \
+        (a_pi32Dst)[9] = (a_pi32Src)[9]; \
+        (a_pi32Dst)[10] = (a_pi32Src)[10]; \
+    } while (0)
+#define COPY_LAST_FRAME_12CH(a_pi32Dst, a_pi32Src, a_cChannels) do { \
+        (a_pi32Dst)[0] = (a_pi32Src)[0]; \
+        (a_pi32Dst)[1] = (a_pi32Src)[1]; \
+        (a_pi32Dst)[2] = (a_pi32Src)[2]; \
+        (a_pi32Dst)[3] = (a_pi32Src)[3]; \
+        (a_pi32Dst)[4] = (a_pi32Src)[4]; \
+        (a_pi32Dst)[5] = (a_pi32Src)[5]; \
+        (a_pi32Dst)[6] = (a_pi32Src)[6]; \
+        (a_pi32Dst)[7] = (a_pi32Src)[7]; \
+        (a_pi32Dst)[8] = (a_pi32Src)[8]; \
+        (a_pi32Dst)[9] = (a_pi32Src)[9]; \
+        (a_pi32Dst)[10] = (a_pi32Src)[10]; \
+        (a_pi32Dst)[11] = (a_pi32Src)[11]; \
+    } while (0)
 
 #define INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_iCh) \
         (a_pi32Dst)[a_iCh] = ((a_pi32Last)[a_iCh] * a_i64FactorLast + (a_pi32Src)[a_iCh] * a_i64FactorCur) >> 32
@@ -552,6 +721,101 @@ AUDMIXBUF_CONVERT(Raw /* Name */, int64_t,  INT32_MIN /* Min */, INT32_MAX  /* M
 #define INTERPOLATE_2CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
         INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
         INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+    } while (0)
+#define INTERPOLATE_3CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+    } while (0)
+#define INTERPOLATE_4CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+    } while (0)
+#define INTERPOLATE_5CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+    } while (0)
+#define INTERPOLATE_6CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+    } while (0)
+#define INTERPOLATE_7CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+    } while (0)
+#define INTERPOLATE_8CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 7); \
+    } while (0)
+#define INTERPOLATE_9CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 7); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 8); \
+    } while (0)
+#define INTERPOLATE_10CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 7); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 8); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 9); \
+    } while (0)
+#define INTERPOLATE_11CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 7); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 8); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 9); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 10); \
+    } while (0)
+#define INTERPOLATE_12CH(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, a_cChannels) do { \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 0); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 1); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 2); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 3); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 4); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 5); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 6); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 7); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 8); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 9); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 10); \
+        INTERPOLATE_ONE(a_pi32Dst, a_pi32Src, a_pi32Last, a_i64FactorCur, a_i64FactorLast, 11); \
     } while (0)
 
 #define AUDIOMIXBUF_RESAMPLE(a_cChannels, a_Suffix) \
@@ -609,6 +873,16 @@ AUDMIXBUF_CONVERT(Raw /* Name */, int64_t,  INT32_MIN /* Min */, INT32_MAX  /* M
 
 AUDIOMIXBUF_RESAMPLE(1,Generic)
 AUDIOMIXBUF_RESAMPLE(2,Generic)
+AUDIOMIXBUF_RESAMPLE(3,Generic)
+AUDIOMIXBUF_RESAMPLE(4,Generic)
+AUDIOMIXBUF_RESAMPLE(5,Generic)
+AUDIOMIXBUF_RESAMPLE(6,Generic)
+AUDIOMIXBUF_RESAMPLE(7,Generic)
+AUDIOMIXBUF_RESAMPLE(8,Generic)
+AUDIOMIXBUF_RESAMPLE(9,Generic)
+AUDIOMIXBUF_RESAMPLE(10,Generic)
+AUDIOMIXBUF_RESAMPLE(11,Generic)
+AUDIOMIXBUF_RESAMPLE(12,Generic)
 
 
 /**
@@ -677,8 +951,18 @@ DECLINLINE(int) audioMixBufRateInit(PAUDIOSTREAMRATE pRate, uint32_t uSrcHz, uin
         AssertReturn(uSrcHz != 0, VERR_INVALID_PARAMETER);
         switch (cChannels)
         {
-            case 1: pRate->pfnResample = audioMixBufResample1ChGeneric; break;
-            case 2: pRate->pfnResample = audioMixBufResample2ChGeneric; break;
+            case  1: pRate->pfnResample = audioMixBufResample1ChGeneric; break;
+            case  2: pRate->pfnResample = audioMixBufResample2ChGeneric; break;
+            case  3: pRate->pfnResample = audioMixBufResample3ChGeneric; break;
+            case  4: pRate->pfnResample = audioMixBufResample4ChGeneric; break;
+            case  5: pRate->pfnResample = audioMixBufResample5ChGeneric; break;
+            case  6: pRate->pfnResample = audioMixBufResample6ChGeneric; break;
+            case  7: pRate->pfnResample = audioMixBufResample7ChGeneric; break;
+            case  8: pRate->pfnResample = audioMixBufResample8ChGeneric; break;
+            case  9: pRate->pfnResample = audioMixBufResample9ChGeneric; break;
+            case 10: pRate->pfnResample = audioMixBufResample10ChGeneric; break;
+            case 11: pRate->pfnResample = audioMixBufResample11ChGeneric; break;
+            case 12: pRate->pfnResample = audioMixBufResample12ChGeneric; break;
             default:
                 AssertMsgFailedReturn(("resampling %u changes is not implemented yet\n", cChannels), VERR_OUT_OF_RANGE);
         }
@@ -984,6 +1268,58 @@ uint32_t AudioMixBufWritePos(PCAUDIOMIXBUF pMixBuf)
 
 
 /**
+ * Creates a mapping between desination channels and source source channels.
+ *
+ * @param   paidxChannelMap     Where to store the mapping.  Indexed by
+ *                              destination channel.  Entry is either source
+ *                              channel index or -1 for zero and -2 for silence.
+ * @param   pSrcProps           The source properties.
+ * @param   pDstProps           The desination properties.
+ */
+static void audioMixBufInitChannelMap(int8_t paidxChannelMap[PDMAUDIO_MAX_CHANNELS],
+                                      PCPDMAUDIOPCMPROPS pSrcProps, PCPDMAUDIOPCMPROPS pDstProps)
+{
+    uintptr_t const cDstChannels = PDMAudioPropsChannels(pDstProps);
+    uintptr_t const cSrcChannels = PDMAudioPropsChannels(pSrcProps);
+    uintptr_t       idxDst;
+    for (idxDst = 0; idxDst < cDstChannels; idxDst++)
+    {
+        uint8_t const idDstCh = pDstProps->aidChannels[idxDst];
+        if (idDstCh >= PDMAUDIOCHANNELID_FRONT_LEFT && idDstCh < PDMAUDIOCHANNELID_END)
+        {
+            uintptr_t idxSrc;
+            for (idxSrc = 0; idxSrc < cSrcChannels; idxSrc++)
+                if (idDstCh == pSrcProps->aidChannels[idxSrc])
+                {
+                    paidxChannelMap[idxDst] = idxSrc;
+                    break;
+                }
+            if (idxSrc >= cSrcChannels)
+            {
+                /** @todo deal with mono. */
+                paidxChannelMap[idxDst] = -2;
+            }
+        }
+        else if (idDstCh == PDMAUDIOCHANNELID_UNKNOWN)
+        {
+            /** @todo What to do here?  Pick unused source channels in order? */
+            paidxChannelMap[idxDst] = -2;
+        }
+        else
+        {
+            AssertMsg(idDstCh == PDMAUDIOCHANNELID_UNUSED_SILENCE || idDstCh == PDMAUDIOCHANNELID_UNUSED_ZERO,
+                      ("idxDst=%u idDstCh=%u\n", idxDst, idDstCh));
+            paidxChannelMap[idxDst] = idDstCh == PDMAUDIOCHANNELID_UNUSED_SILENCE ? -2 : -1;
+        }
+    }
+
+    /* Set the remainder to -1 just to be sure their are safe. */
+    for (; idxDst < PDMAUDIO_MAX_CHANNELS; idxDst++)
+        paidxChannelMap[idxDst] = -1;
+}
+
+
+/**
  * Initializes the peek state, setting up encoder and (if necessary) resampling.
  *
  * @returns VBox status code.
@@ -997,108 +1333,122 @@ int AudioMixBufInitPeekState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFPEEKSTATE pState
     /*
      * Pick the encoding function first.
      */
-    uint8_t const cSrcCh = PDMAudioPropsChannels(&pMixBuf->Props);
-    uint8_t const cDstCh = PDMAudioPropsChannels(pProps);
-    pState->cSrcChannels = cSrcCh;
-    pState->cDstChannels = cDstCh;
-    pState->cbDstFrame   = PDMAudioPropsFrameSize(pProps);
+    uint8_t const cbSample = PDMAudioPropsSampleSize(pProps);
+    uint8_t const cSrcCh   = PDMAudioPropsChannels(&pMixBuf->Props);
+    uint8_t const cDstCh   = PDMAudioPropsChannels(pProps);
+    pState->cSrcChannels   = cSrcCh;
+    pState->cDstChannels   = cDstCh;
+    pState->cbDstFrame     = PDMAudioPropsFrameSize(pProps);
+    audioMixBufInitChannelMap(pState->aidxChannelMap, &pMixBuf->Props, pProps);
+    AssertReturn(cDstCh > 0 && cDstCh < PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
+    AssertReturn(cSrcCh > 0 && cSrcCh < PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
+
     if (PDMAudioPropsIsSigned(pProps))
     {
+        /* Assign generic encoder first. */
+        switch (cbSample)
+        {
+            case 1: pState->pfnEncode = audioMixBufEncodeGenericS8; break;
+            case 2: pState->pfnEncode = audioMixBufEncodeGenericS16; break;
+            case 4: pState->pfnEncode = audioMixBufEncodeGenericS32; break;
+            case 8:
+                AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
+                pState->pfnEncode = audioMixBufEncodeGenericRaw;
+                break;
+            default:
+                AssertMsgFailedReturn(("%u bytes\n", cbSample), VERR_OUT_OF_RANGE);
+        }
+
+        /* Any specializations available? */
         switch (cDstCh)
         {
             case 1:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChS8  : audioMixBufEncode2ChTo1ChS8;
-                        break;
-                    case 2:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChS16 : audioMixBufEncode2ChTo1ChS16;
-                        break;
-                    case 4:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChS32 : audioMixBufEncode2ChTo1ChS32;
-                        break;
-                    case 8:
-                        AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChRaw : audioMixBufEncode2ChTo1ChRaw;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode1ChTo1ChS8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode1ChTo1ChS16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode1ChTo1ChS32; break;
+                        case 8: pState->pfnEncode = audioMixBufEncode1ChTo1ChRaw; break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode2ChTo1ChS8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode2ChTo1ChS16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode2ChTo1ChS32; break;
+                        case 8: pState->pfnEncode = audioMixBufEncode2ChTo1ChRaw; break;
+                    }
                 break;
+
             case 2:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChS8  : audioMixBufEncode2ChTo2ChS8;
-                        break;
-                    case 2:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChS16 : audioMixBufEncode2ChTo2ChS16;
-                        break;
-                    case 4:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChS32 : audioMixBufEncode2ChTo2ChS32;
-                        break;
-                    case 8:
-                        AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChRaw : audioMixBufEncode2ChTo2ChRaw;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode1ChTo2ChS8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode1ChTo2ChS16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode1ChTo2ChS32; break;
+                        case 8: pState->pfnEncode = audioMixBufEncode1ChTo2ChRaw; break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode2ChTo2ChS8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode2ChTo2ChS16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode2ChTo2ChS32; break;
+                        case 8: pState->pfnEncode = audioMixBufEncode2ChTo2ChRaw; break;
+                    }
                 break;
-            default:
-                /* Note: We may have dedicated encoders for a few selected multichannel
-                         configurations, and generic ones that encodes channel by channel (i.e.
-                         add the mixer channel count, destination frame size, and an array of
-                         destination channel frame offsets to the state). */
-                AssertMsgFailedReturn(("from %u to %u channels is not implemented yet\n", cSrcCh, cDstCh), VERR_OUT_OF_RANGE);
         }
     }
     else
     {
+        /* Assign generic encoder first. */
+        switch (cbSample)
+        {
+            case 1: pState->pfnEncode = audioMixBufEncodeGenericU8; break;
+            case 2: pState->pfnEncode = audioMixBufEncodeGenericU16; break;
+            case 4: pState->pfnEncode = audioMixBufEncodeGenericU32; break;
+            default:
+                AssertMsgFailedReturn(("%u bytes\n", cbSample), VERR_OUT_OF_RANGE);
+        }
+
+        /* Any specializations available? */
         switch (cDstCh)
         {
             case 1:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChU8  : audioMixBufEncode2ChTo1ChU8;
-                        break;
-                    case 2:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChU16 : audioMixBufEncode2ChTo1ChU16;
-                        break;
-                    case 4:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo1ChU32 : audioMixBufEncode2ChTo1ChU32;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode1ChTo1ChU8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode1ChTo1ChU16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode1ChTo1ChU32; break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode2ChTo1ChU8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode2ChTo1ChU16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode2ChTo1ChU32; break;
+                    }
                 break;
+
             case 2:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChU8  : audioMixBufEncode2ChTo2ChU8;
-                        break;
-                    case 2:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChU16 : audioMixBufEncode2ChTo2ChU16;
-                        break;
-                    case 4:
-                        pState->pfnEncode = cSrcCh == 1 ? audioMixBufEncode1ChTo2ChU32 : audioMixBufEncode2ChTo2ChU32;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode1ChTo2ChU8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode1ChTo2ChU16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode1ChTo2ChU32; break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1: pState->pfnEncode = audioMixBufEncode2ChTo2ChU8; break;
+                        case 2: pState->pfnEncode = audioMixBufEncode2ChTo2ChU16; break;
+                        case 4: pState->pfnEncode = audioMixBufEncode2ChTo2ChU32; break;
+                    }
                 break;
-            default:
-                /* Note: We may have dedicated encoders for a few selected multichannel
-                         configurations, and generic ones that encodes channel by channel (i.e.
-                         add an array of destination channel frame offsets to the state). */
-                AssertMsgFailedReturn(("from %u to %u channels is not implemented yet\n", cSrcCh, cDstCh), VERR_OUT_OF_RANGE);
         }
     }
 
@@ -1124,122 +1474,223 @@ int AudioMixBufInitWriteState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pSta
     /*
      * Pick the encoding function first.
      */
-    uint8_t const cSrcCh = PDMAudioPropsChannels(pProps);
-    uint8_t const cDstCh = PDMAudioPropsChannels(&pMixBuf->Props);
-    pState->cSrcChannels = cSrcCh;
-    pState->cDstChannels = cDstCh;
-    pState->cbSrcFrame   = PDMAudioPropsFrameSize(pProps);
+    uint8_t const cbSample = PDMAudioPropsSampleSize(pProps);
+    uint8_t const cSrcCh   = PDMAudioPropsChannels(pProps);
+    uint8_t const cDstCh   = PDMAudioPropsChannels(&pMixBuf->Props);
+    pState->cSrcChannels   = cSrcCh;
+    pState->cDstChannels   = cDstCh;
+    pState->cbSrcFrame     = PDMAudioPropsFrameSize(pProps);
+    audioMixBufInitChannelMap(pState->aidxChannelMap, pProps, &pMixBuf->Props);
+
     if (PDMAudioPropsIsSigned(pProps))
     {
+        /* Assign generic decoders first. */
+        switch (cbSample)
+        {
+            case 1:
+                pState->pfnDecode      = audioMixBufDecodeGenericS8;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericS8Blend;
+                break;
+            case 2:
+                pState->pfnDecode      = audioMixBufDecodeGenericS16;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericS16Blend;
+                break;
+            case 4:
+                pState->pfnDecode      = audioMixBufDecodeGenericS32;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericS32Blend;
+                break;
+            case 8:
+                AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
+                pState->pfnDecode      = audioMixBufDecodeGenericRaw;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericRawBlend;
+                break;
+            default:
+                AssertMsgFailedReturn(("%u bytes\n", cbSample), VERR_OUT_OF_RANGE);
+        }
+
+        /* Any specializations available? */
         switch (cDstCh)
         {
             case 1:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS8       : audioMixBufDecode2ChTo1ChS8;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS8Blend  : audioMixBufDecode2ChTo1ChS8Blend;
-                        break;
-                    case 2:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS16      : audioMixBufDecode2ChTo1ChS16;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS16Blend : audioMixBufDecode2ChTo1ChS16Blend;
-                        break;
-                    case 4:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS32      : audioMixBufDecode2ChTo1ChS32;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChS32Blend : audioMixBufDecode2ChTo1ChS32Blend;
-                        break;
-                    case 8:
-                        AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChRaw      : audioMixBufDecode2ChTo1ChRaw;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChRawBlend : audioMixBufDecode2ChTo1ChRawBlend;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChS8;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChS8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChS16;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChS16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChS32;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChS32Blend;
+                            break;
+                        case 8:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChRaw;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChRawBlend;
+                            break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChS8;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChS8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChS16;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChS16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChS32;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChS32Blend;
+                            break;
+                        case 8:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChRaw;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChRawBlend;
+                            break;
+                    }
                 break;
+
             case 2:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS8       : audioMixBufDecode2ChTo2ChS8;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS8Blend  : audioMixBufDecode2ChTo2ChS8Blend;
-                        break;
-                    case 2:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS16      : audioMixBufDecode2ChTo2ChS16;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS16Blend : audioMixBufDecode2ChTo2ChS16Blend;
-                        break;
-                    case 4:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS32      : audioMixBufDecode2ChTo2ChS32;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChS32Blend : audioMixBufDecode2ChTo2ChS32Blend;
-                        break;
-                    case 8:
-                        AssertReturn(pProps->fRaw, VERR_DISK_INVALID_FORMAT);
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChRaw      : audioMixBufDecode2ChTo2ChRaw;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChRawBlend : audioMixBufDecode2ChTo2ChRawBlend;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChS8;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChS8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChS16;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChS16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChS32;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChS32Blend;
+                            break;
+                        case 8:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChRaw;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChRawBlend;
+                            break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChS8;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChS8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChS16;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChS16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChS32;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChS32Blend;
+                            break;
+                        case 8:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChRaw;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChRawBlend;
+                            break;
+                    }
                 break;
-            default:
-                /* Note: We may have dedicated encoders for a few selected multichannel
-                         configurations, and generic ones that encodes channel by channel (i.e.
-                         add the mixer channel count, destination frame size, and an array of
-                         destination channel frame offsets to the state). */
-                AssertMsgFailedReturn(("from %u to %u channels is not implemented yet\n", cSrcCh, cDstCh), VERR_OUT_OF_RANGE);
         }
     }
     else
     {
+        /* Assign generic decoders first. */
+        switch (cbSample)
+        {
+            case 1:
+                pState->pfnDecode      = audioMixBufDecodeGenericU8;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericU8Blend;
+                break;
+            case 2:
+                pState->pfnDecode      = audioMixBufDecodeGenericU16;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericU16Blend;
+                break;
+            case 4:
+                pState->pfnDecode      = audioMixBufDecodeGenericU32;
+                pState->pfnDecodeBlend = audioMixBufDecodeGenericU32Blend;
+                break;
+            default:
+                AssertMsgFailedReturn(("%u bytes\n", cbSample), VERR_OUT_OF_RANGE);
+        }
+
+        /* Any specializations available? */
         switch (cDstCh)
         {
             case 1:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU8       : audioMixBufDecode2ChTo1ChU8;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU8Blend  : audioMixBufDecode2ChTo1ChU8Blend;
-                        break;
-                    case 2:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU16      : audioMixBufDecode2ChTo1ChU16;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU16Blend : audioMixBufDecode2ChTo1ChU16Blend;
-                        break;
-                    case 4:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU32      : audioMixBufDecode2ChTo1ChU32;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo1ChU32Blend : audioMixBufDecode2ChTo1ChU32Blend;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChU8;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChU8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChU16;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChU16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo1ChU32;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo1ChU32Blend;
+                            break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChU8;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChU8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChU16;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChU16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo1ChU32;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo1ChU32Blend;
+                            break;
+                    }
                 break;
+
             case 2:
-                AssertReturn(cSrcCh == 1 || cSrcCh == 2, VERR_OUT_OF_RANGE);
-                switch (PDMAudioPropsSampleSize(pProps))
-                {
-                    case 1:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU8       : audioMixBufDecode2ChTo2ChU8;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU8Blend  : audioMixBufDecode2ChTo2ChU8Blend;
-                        break;
-                    case 2:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU16      : audioMixBufDecode2ChTo2ChU16;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU16Blend : audioMixBufDecode2ChTo2ChU16Blend;
-                        break;
-                    case 4:
-                        pState->pfnDecode      = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU32      : audioMixBufDecode2ChTo2ChU32;
-                        pState->pfnDecodeBlend = cSrcCh == 1 ? audioMixBufDecode1ChTo2ChU32Blend : audioMixBufDecode2ChTo2ChU32Blend;
-                        break;
-                    default:
-                        AssertMsgFailedReturn(("%u bytes\n", PDMAudioPropsSampleSize(pProps)), VERR_OUT_OF_RANGE);
-                }
+                if (cSrcCh == 1)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChU8;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChU8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChU16;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChU16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode1ChTo2ChU32;
+                            pState->pfnDecodeBlend = audioMixBufDecode1ChTo2ChU32Blend;
+                            break;
+                    }
+                else if (cSrcCh == 2)
+                    switch (cbSample)
+                    {
+                        case 1:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChU8;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChU8Blend;
+                            break;
+                        case 2:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChU16;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChU16Blend;
+                            break;
+                        case 4:
+                            pState->pfnDecode      = audioMixBufDecode2ChTo2ChU32;
+                            pState->pfnDecodeBlend = audioMixBufDecode2ChTo2ChU32Blend;
+                            break;
+                    }
                 break;
-            default:
-                /* Note: We may have dedicated encoders for a few selected multichannel
-                         configurations, and generic ones that encodes channel by channel (i.e.
-                         add an array of destination channel frame offsets to the state). */
-                AssertMsgFailedReturn(("from %u to %u channels is not implemented yet\n", cSrcCh, cDstCh), VERR_OUT_OF_RANGE);
         }
     }
 
