@@ -307,22 +307,68 @@ static void audioMixBufBlendBuffer(int32_t *pi32Dst, int32_t const *pi32Src, uin
  */
 /** @todo Currently does not handle any endianness conversion yet! */
 
+/* audioMixBufConvXXXS8: 8-bit, signed. */
+#define a_Name      S8
+#define a_Type      int8_t
+#define a_Min       INT8_MIN
+#define a_Max       INT8_MAX
+#define a_fSigned   1
+#define a_cShift    8
 #include "AudioMixBuffer-Convert.cpp.h"
 
-/* audioMixBufConvXXXS8: 8-bit, signed. */
-AUDMIXBUF_CONVERT(S8 /* Name */,  int8_t,   INT8_MIN  /* Min */, INT8_MAX   /* Max */, true  /* fSigned */, 8  /* cShift */)
 /* audioMixBufConvXXXU8: 8-bit, unsigned. */
-AUDMIXBUF_CONVERT(U8 /* Name */,  uint8_t,  0         /* Min */, UINT8_MAX  /* Max */, false /* fSigned */, 8  /* cShift */)
+#define a_Name      U8
+#define a_Type      uint8_t
+#define a_Min       0
+#define a_Max       UINT8_MAX
+#define a_fSigned   0
+#define a_cShift    8
+#include "AudioMixBuffer-Convert.cpp.h"
+
 /* audioMixBufConvXXXS16: 16-bit, signed. */
-AUDMIXBUF_CONVERT(S16 /* Name */, int16_t,  INT16_MIN /* Min */, INT16_MAX  /* Max */, true  /* fSigned */, 16 /* cShift */)
+#define a_Name      S16
+#define a_Type      int16_t
+#define a_Min       INT16_MIN
+#define a_Max       INT16_MAX
+#define a_fSigned   1
+#define a_cShift    16
+#include "AudioMixBuffer-Convert.cpp.h"
+
 /* audioMixBufConvXXXU16: 16-bit, unsigned. */
-AUDMIXBUF_CONVERT(U16 /* Name */, uint16_t, 0         /* Min */, UINT16_MAX /* Max */, false /* fSigned */, 16 /* cShift */)
+#define a_Name      U16
+#define a_Type      uint16_t
+#define a_Min       0
+#define a_Max       UINT16_MAX
+#define a_fSigned   0
+#define a_cShift    16
+#include "AudioMixBuffer-Convert.cpp.h"
+
 /* audioMixBufConvXXXS32: 32-bit, signed. */
-AUDMIXBUF_CONVERT(S32 /* Name */, int32_t,  INT32_MIN /* Min */, INT32_MAX  /* Max */, true  /* fSigned */, 32 /* cShift */)
+#define a_Name      S32
+#define a_Type      int32_t
+#define a_Min       INT32_MIN
+#define a_Max       INT32_MAX
+#define a_fSigned   1
+#define a_cShift    32
+#include "AudioMixBuffer-Convert.cpp.h"
+
 /* audioMixBufConvXXXU32: 32-bit, unsigned. */
-AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* Max */, false /* fSigned */, 32 /* cShift */)
+#define a_Name      U32
+#define a_Type      uint32_t
+#define a_Min       0
+#define a_Max       UINT32_MAX
+#define a_fSigned   0
+#define a_cShift    32
+#include "AudioMixBuffer-Convert.cpp.h"
+
 /* audioMixBufConvXXXRaw: 32-bit stored as 64-bit, signed. */
-AUDMIXBUF_CONVERT(Raw /* Name */, int64_t,  INT32_MIN /* Min */, INT32_MAX  /* Max */, true  /* fSigned */, 32 /* cShift */)
+#define a_Name      Raw
+#define a_Type      int64_t
+#define a_Min       INT64_MIN
+#define a_Max       INT64_MAX
+#define a_fSigned   1
+#define a_cShift    32 /* Yes, 32! */
+#include "AudioMixBuffer-Convert.cpp.h"
 
 #undef AUDMIXBUF_CONVERT
 #undef AUDMIXBUF_MACRO_LOG
