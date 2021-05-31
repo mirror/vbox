@@ -125,8 +125,62 @@ AssertCompileSize(RTRIFFWAVEFMT, 16);
 /** Pointer to a wave file format structure. */
 typedef RTRIFFWAVEFMT *PRTRIFFWAVEFMT;
 
-/** RTRIFFWAVEFMT::uFormatTag value for PCM. */
-#define RTRIFFWAVEFMT_TAG_PCM       1
+/**
+ * Extensible wave file format (WAVEFORMATEXTENSIBLE).
+ * @see RTRIFFWAVEFMTEXTCHUNK.
+ */
+#pragma pack(4) /* Override the uint64_t effect from RTUUID, so we can safely put it after RTRIFFHDR in a structure.   */
+typedef struct RTRIFFWAVEFMTEXT
+{
+    /** The coreformat structure. */
+    RTRIFFWAVEFMT       Core;
+    /** Number of bytes of extra information after the core. */
+    uint16_t            cbExtra;
+    /** Number of valid bits per sample. */
+    uint16_t            cValidBitsPerSample;
+    /** The channel mask. */
+    uint32_t            fChannelMask;
+    /** The GUID of the sub-format. */
+    RTUUID              SubFormat;
+} RTRIFFWAVEFMTEXT;
+#pragma pack()
+AssertCompileSize(RTRIFFWAVEFMTEXT, 16+2+22);
+/** Pointer to an extensible wave file format structure. */
+typedef RTRIFFWAVEFMTEXT *PRTRIFFWAVEFMTEXT;
+
+/** RTRIFFWAVEFMT::uFormatTag value for PCM (WDK: WAVE_FORMAT_PCM). */
+#define RTRIFFWAVEFMT_TAG_PCM           UINT16_C(0x0001)
+/** RTRIFFWAVEFMT::uFormatTag value for extensible wave files (WDK: WAVE_FORMAT_EXTENSIBLE). */
+#define RTRIFFWAVEFMT_TAG_EXTENSIBLE    UINT16_C(0xfffe)
+
+/** Typical RTRIFFWAVEFMTEXT::cbExtra value (min). */
+#define RTRIFFWAVEFMTEXT_EXTRA_SIZE     UINT16_C(22)
+
+/** @name Channel IDs for RTRIFFWAVEFMTEXT::fChannelMask.
+ * @{ */
+#define RTRIFFWAVEFMTEXT_CH_ID_FL       RT_BIT_32(0)    /**< Front left. */
+#define RTRIFFWAVEFMTEXT_CH_ID_FR       RT_BIT_32(1)    /**< Front right. */
+#define RTRIFFWAVEFMTEXT_CH_ID_FC       RT_BIT_32(2)    /**< Front center */
+#define RTRIFFWAVEFMTEXT_CH_ID_LFE      RT_BIT_32(3)    /**< Low frequency */
+#define RTRIFFWAVEFMTEXT_CH_ID_BL       RT_BIT_32(4)    /**< Back left. */
+#define RTRIFFWAVEFMTEXT_CH_ID_BR       RT_BIT_32(5)    /**< Back right. */
+#define RTRIFFWAVEFMTEXT_CH_ID_FLC      RT_BIT_32(6)    /**< Front left of center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_FLR      RT_BIT_32(7)    /**< Front right of center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_BC       RT_BIT_32(8)    /**< Back center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_SL       RT_BIT_32(9)    /**< Side left. */
+#define RTRIFFWAVEFMTEXT_CH_ID_SR       RT_BIT_32(10)   /**< Side right. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TC       RT_BIT_32(11)   /**< Top center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TFL      RT_BIT_32(12)   /**< Top front left. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TFC      RT_BIT_32(13)   /**< Top front center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TFR      RT_BIT_32(14)   /**< Top front right. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TBL      RT_BIT_32(15)   /**< Top back left. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TBC      RT_BIT_32(16)   /**< Top back center. */
+#define RTRIFFWAVEFMTEXT_CH_ID_TBR      RT_BIT_32(17)   /**< Top back right. */
+/** @} */
+
+/** RTRIFFWAVEFMTEXT::SubFormat UUID string for PCM. */
+#define RTRIFFWAVEFMTEXT_SUBTYPE_PCM "00000001-0000-0010-8000-00aa00389b71"
+
 
 /**
  * Wave file format chunk.
@@ -141,8 +195,23 @@ typedef struct RTRIFFWAVEFMTCHUNK
 AssertCompileSize(RTRIFFWAVEFMTCHUNK, 8+16);
 /** Pointer to a wave file format chunk.   */
 typedef RTRIFFWAVEFMTCHUNK *PRTRIFFWAVEFMTCHUNK;
-/** Magic value for RTRIFFWAVEFMTCHUNK::uMagic ('fmt '). */
+/** Magic value for RTRIFFWAVEFMTCHUNK and RTRIFFWAVEFMTEXTCHUNK ('fmt '). */
 #define RTRIFFWAVEFMT_MAGIC RT_BE2H_U32_C(0x666d7420)
+
+/**
+ * Extensible wave file format chunk.
+ */
+typedef struct RTRIFFWAVEFMTEXTCHUNK
+{
+    /** Chunk header with RTRIFFWAVEFMT_MAGIC as magic. */
+    RTRIFFCHUNK         Chunk;
+    /** The wave file format. */
+    RTRIFFWAVEFMTEXT    Data;
+} RTRIFFWAVEFMTEXTCHUNK;
+AssertCompileSize(RTRIFFWAVEFMTEXTCHUNK, 8+16+2+22);
+/** Pointer to a wave file format chunk.   */
+typedef RTRIFFWAVEFMTEXTCHUNK *PRTRIFFWAVEFMTEXTCHUNK;
+
 
 /**
  * Wave file data chunk.
