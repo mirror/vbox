@@ -538,48 +538,58 @@ typedef enum PDMAUDIOCHANNELID
     /** Unknown channel ID (unable to map to PDM terms). */
     PDMAUDIOCHANNELID_UNKNOWN,
 
-    /** Front left channel. */
-    PDMAUDIOCHANNELID_FRONT_LEFT,
-    /** Front right channel. */
+    /** The first ID in the standard WAV-file assignment block. */
+    PDMAUDIOCHANNELID_FIRST_STANDARD,
+    /** Front left channel (FR). */
+    PDMAUDIOCHANNELID_FRONT_LEFT = PDMAUDIOCHANNELID_FIRST_STANDARD,
+    /** Front right channel (FR). */
     PDMAUDIOCHANNELID_FRONT_RIGHT,
-    /** Front center channel. */
+    /** Front center channel (FC). */
     PDMAUDIOCHANNELID_FRONT_CENTER,
     /** Mono channel (alias for front center). */
     PDMAUDIOCHANNELID_MONO = PDMAUDIOCHANNELID_FRONT_CENTER,
     /** Low frequency effects (subwoofer) channel. */
     PDMAUDIOCHANNELID_LFE,
-    /** Rear left channel. */
+    /** Rear left channel (BL). */
     PDMAUDIOCHANNELID_REAR_LEFT,
-    /** Rear right channel. */
+    /** Rear right channel (BR). */
     PDMAUDIOCHANNELID_REAR_RIGHT,
-    /** Front left of center channel. */
+    /** Front left of center channel (FLC). */
     PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER,
-    /** Front right of center channel. */
+    /** Front right of center channel (FLR). */
     PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER,
-    /** Rear center channel. */
+    /** Rear center channel (BC). */
     PDMAUDIOCHANNELID_REAR_CENTER,
-    /** Side left channel. */
+    /** Side left channel (SL). */
     PDMAUDIOCHANNELID_SIDE_LEFT,
-    /** Side right channel. */
+    /** Side right channel (SR). */
     PDMAUDIOCHANNELID_SIDE_RIGHT,
-    /** Front left height channel. */
+    /** Top center (TC). */
+    PDMAUDIOCHANNELID_TOP_CENTER,
+    /** Front left height channel (TFL). */
     PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT,
-    /** Front center height channel. */
+    /** Front center height channel (TFC). */
     PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT,
-    /** Front right height channel. */
+    /** Front right height channel (TFR). */
     PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT,
-    /** Rear left height channel. */
+    /** Rear left height channel (TBL). */
     PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT,
-    /** Rear center height channel. */
+    /** Rear center height channel (TBC). */
     PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT,
-    /** Rear right height channel. */
+    /** Rear right height channel (TBR). */
     PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT,
+    /** The end of the standard WAV-file assignment block. */
+    PDMAUDIOCHANNELID_END_STANDARD,
 
     /** End of valid values. */
-    PDMAUDIOCHANNELID_END,
+    PDMAUDIOCHANNELID_END = PDMAUDIOCHANNELID_END_STANDARD,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOCHANNELID_32BIT_HACK = 0x7fffffff
 } PDMAUDIOCHANNELID;
+AssertCompile(PDMAUDIOCHANNELID_FRONT_LEFT - PDMAUDIOCHANNELID_FIRST_STANDARD == 0);
+AssertCompile(PDMAUDIOCHANNELID_LFE - PDMAUDIOCHANNELID_FIRST_STANDARD == 3);
+AssertCompile(PDMAUDIOCHANNELID_REAR_CENTER - PDMAUDIOCHANNELID_FIRST_STANDARD == 8);
+AssertCompile(PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT - PDMAUDIOCHANNELID_FIRST_STANDARD == 17);
 
 /**
  * Mappings channels onto an audio stream.
