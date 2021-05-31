@@ -641,7 +641,6 @@ endif
 	Audio/DevHdaCodec.cpp \
 	Audio/DevHdaStream.cpp \
 	Audio/DevHdaStreamChannel.cpp \
-	Audio/DevHdaStreamMap.cpp \
 	Audio/AudioHlp.cpp \
 	Audio/AudioMixBuffer.cpp \
 	Audio/AudioMixer.cpp \

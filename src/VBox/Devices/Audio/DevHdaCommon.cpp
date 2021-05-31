@@ -325,7 +325,10 @@ int hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps)
     }
 
     if (RT_SUCCESS(rc))
+    {
         PDMAudioPropsInit(pProps, cbSample, true /*fSigned*/, (u16SDFMT & 0xf) + 1 /*cChannels*/, u32Hz * u32HzMult / u32HzDiv);
+        /** @todo is there anything we need to / can do about channel assignments? */
+    }
 
 # undef EXTRACT_VALUE
     return rc;

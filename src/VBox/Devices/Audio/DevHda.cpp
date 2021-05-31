@@ -56,7 +56,6 @@
 #include "DevHdaCommon.h"
 #include "DevHdaCodec.h"
 #include "DevHdaStream.h"
-#include "DevHdaStreamMap.h"
 
 #include "AudioHlp.h"
 
@@ -4138,11 +4137,10 @@ static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStre
 }
 
 /** Worker for hdaR3DbgInfoBDL. */
-static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PCDBGFINFOHLP pHlp, int idxStream)
+static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
     const PHDASTREAM   pStream     = &pThis->aStreams[idxStream];
-    const PHDASTREAMR3 pStreamR3   = &pThisCC->aStreams[idxStream];
-    PCPDMAUDIOPCMPROPS pGuestProps = &pStreamR3->State.Mapping.GuestProps;
+    PCPDMAUDIOPCMPROPS pGuestProps = &pStream->State.Cfg.Props; /** @todo We don't make a distinction any more. The mixer hides that now. */
 
     uint64_t const u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
                                             HDA_STREAM_REG(pThis, BDPU, idxStream));
@@ -4189,7 +4187,7 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
         cbTotal += bd.u32BufSize;
     }
     pHlp->pfnPrintf(pHlp, "  Total: %#RX64 bytes (%RU64), %u ms\n", cbTotal, cbTotal,
-                    PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, (uint32_t)cbTotal));
+                    PDMAudioPropsBytesToMilli(pGuestProps, (uint32_t)cbTotal));
     if (cbTotal != u32CBL)
         pHlp->pfnPrintf(pHlp, "  Warning: %#RX64 bytes does not match CBL (%#RX64)!\n", cbTotal, u32CBL);
 
@@ -4242,14 +4240,13 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
 static DECLCALLBACK(void) hdaR3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    PHDASTATER3 pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     int         idxStream = hdaR3DbgLookupStrmIdx(pHlp, pszArgs);
     if (idxStream != -1)
-        hdaR3DbgPrintBDL(pDevIns, pThis, pThisCC, pHlp, idxStream);
+        hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
     else
     {
         for (idxStream = 0; idxStream < HDA_MAX_STREAMS; ++idxStream)
-            hdaR3DbgPrintBDL(pDevIns, pThis, pThisCC, pHlp, idxStream);
+            hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
         idxStream = -1;
     }
 
@@ -5118,9 +5115,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The stream frequency.",                     "Stream%u/Cfg/Hz", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "The number of channels.",                   "Stream%u/Cfg/FrameSize-Host", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Mapping.GuestProps.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "The number of channels.",                   "Stream%u/Cfg/FrameSize-Guest", idxStream);
+                               "The number of channels.",                   "Stream%u/Cfg/FrameSize", idxStream);
 #if 0 /** @todo this would require some callback or expansion. */
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cChannelsX, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The number of channels.",                   "Stream%u/Cfg/Channels-Host", idxStream);

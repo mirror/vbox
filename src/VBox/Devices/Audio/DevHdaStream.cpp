@@ -168,8 +168,6 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
     LogFlowFunc(("[SD%RU8] Destroying ...\n", pStreamShared->u8SD));
     int rc2;
 
-    hdaR3StreamMapDestroy(&pStreamR3->State.Mapping);
-
     if (pStreamR3->State.pAioRegSink)
     {
         rc2 = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
@@ -486,37 +484,23 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         return VINF_SUCCESS;
     }
 
-    PDMAUDIOPCMPROPS HostProps;
-    int rc = hdaR3SDFMTToPCMProps(u16FMT, &HostProps);
-    if (RT_FAILURE(rc))
+    /*
+     * Convert the config to PDM PCM properties and configure the stream.
+     */
+    PPDMAUDIOSTREAMCFG pCfg = &pStreamShared->State.Cfg;
+    int rc = hdaR3SDFMTToPCMProps(u16FMT, &pCfg->Props);
+    if (RT_SUCCESS(rc))
+        pCfg->enmDir = hdaGetDirFromSD(uSD);
+    else
     {
         LogRelMax(32, ("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
         return rc;
     }
 
-    /*
-     * Initialize the stream mapping in any case, regardless if
-     * we support surround audio or not. This is needed to handle
-     * the supported channels within a single audio stream, e.g. mono/stereo.
-     *
-     * In other words, the stream mapping *always* knows the real
-     * number of channels in a single audio stream.
-     */
-    /** @todo r=bird: this is not done at the wrong time.  We don't have the host
-     * output side set up yet, so we cannot really do proper mapping setup.
-     * However, we really need this further down when we configure the internal DMA
-     * buffer size.  For now we just assume it's all stereo on the host side.
-     * This is not compatible with microphone support. */
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-#  error "Implement me!"
-# endif
-    rc = hdaR3StreamMapInit(&pStreamR3->State.Mapping, 2 /*cHostChannels*/, &HostProps);
-    AssertRCReturn(rc, rc);
-
-    ASSERT_GUEST_LOGREL_MSG_RETURN(   pStreamR3->State.Mapping.cbGuestFrame > 0
-                                   && u32CBL % pStreamR3->State.Mapping.cbGuestFrame == 0,
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   PDMAudioPropsFrameSize(&pCfg->Props) > 0
+                                   && u32CBL % PDMAudioPropsFrameSize(&pCfg->Props) == 0,
                                    ("CBL for stream #%RU8 does not align to frame size (u32CBL=%u cbFrameSize=%u)\n",
-                                    uSD, u32CBL, pStreamR3->State.Mapping.cbGuestFrame),
+                                    uSD, u32CBL, PDMAudioPropsFrameSize(&pCfg->Props)),
                                    VERR_INVALID_PARAMETER);
 
     /* Make sure the guest behaves regarding the stream's FIFO. */
@@ -533,12 +517,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     pStreamShared->u8FIFOS    = u8FIFOS;
     pStreamShared->u8FIFOW    = u8FIFOW;
     pStreamShared->u16FMT     = u16FMT;
-
-    PPDMAUDIOSTREAMCFG pCfg = &pStreamShared->State.Cfg;
-    pCfg->Props = HostProps;
-
-    /* Set the stream's direction. */
-    pCfg->enmDir = hdaGetDirFromSD(uSD);
 
     /* The the stream's name, based on the direction. */
     switch (pCfg->enmDir)
@@ -562,10 +540,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
             break;
     }
 
-    LogRel2(("HDA: Stream #%RU8 DMA @ 0x%x (%RU32 bytes = %RU64ms total)\n",
-             uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL,
-             PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, pStreamShared->u32CBL)));
-
+    LogRel2(("HDA: Stream #%RU8 DMA @ 0x%x (%RU32 bytes = %RU64ms total)\n", uSD, pStreamShared->u64BDLBase,
+             pStreamShared->u32CBL, PDMAudioPropsBytesToMilli(&pCfg->Props, pStreamShared->u32CBL)));
 
     /*
      * Load the buffer descriptor list.
@@ -611,10 +587,11 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     /*
      * Create a DMA timer schedule.
      */
-     rc = hdaR3StreamCreateSchedule(pStreamShared, cTransferFragments, cBufferIrqs, (uint32_t)cbTotal,
-                                   PDMAudioPropsMilliToBytes(&pStreamR3->State.Mapping.GuestProps, 100 /** @todo make configurable */),
+    /** @todo clean up this, pGuestProps and pHostProps are the same now. */
+    rc = hdaR3StreamCreateSchedule(pStreamShared, cTransferFragments, cBufferIrqs, (uint32_t)cbTotal,
+                                   PDMAudioPropsMilliToBytes(&pCfg->Props, 100 /** @todo make configurable */),
                                    PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer),
-                                   &HostProps, &pStreamR3->State.Mapping.GuestProps);
+                                   &pCfg->Props, &pCfg->Props);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1383,9 +1360,8 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
         uint32_t cbChunk = 0;
         RTGCPHYS GCPhys  = hdaR3StreamDmaBufGet(pStreamShared, &cbChunk);
 
-        /* Need to diverge if the frame format differs or if we're writing silence.  */
-        if (   !pStreamR3->State.Mapping.fMappingNeeded
-            && !fWriteSilence)
+        /* If we're writing silence.  */
+        if (!fWriteSilence)
         {
             if (cbChunk <= cbLeft)
             { /* very likely */ }
@@ -1429,8 +1405,8 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
             }
         }
         /*
-         * Either we've got some initial silence to write, or we need to do
-         * channel mapping.  Both produces guest output into the bounce buffer,
+         * We've got some initial silence to write, or we need to do
+         * channel mapping.  We produce guest output into the bounce buffer,
          * which is then copied into guest memory.  The bounce buffer may keep
          * partial frames there for the next BDLE, if an BDLE isn't frame aligned.
          *
@@ -1439,8 +1415,11 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
          */
         else
         {
+/** @todo clean up host/guest props distinction, they're the same now w/o the
+ *        mapping done by the mixer rather than us.  */
+            PCPDMAUDIOPCMPROPS pGuestProps = &pStreamShared->State.Cfg.Props;
             Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
-            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps,
+            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(pGuestProps,
                                                                     PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props,
                                                                                                cbLeft));
             if (cbChunk <= cbLeftGuest)
@@ -1455,53 +1434,13 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
             while (cbChunk > 0)
             {
                 /* Figure out how much we need to convert into the bounce buffer: */
-                uint32_t cbGuest = PDMAudioPropsRoundUpBytesToFrame(&pStreamR3->State.Mapping.GuestProps, cbChunk - cbBounce);
-                uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStreamR3->State.Mapping.GuestProps,
-                                                              RT_MIN(cbGuest, sizeof(abBounce) - cbBounce));
-                size_t   cbBufSrc;
-                if (!fWriteSilence)
-                {
-                    /** @todo we could loop here to optimize buffer wrap around. Not important now though. */
-                    void /*const*/ *pvBufSrc;
-                    RTCircBufAcquireReadBlock(pCircBuf, PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFrames),
-                                              &pvBufSrc, &cbBufSrc);
+                uint32_t cbGuest = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbChunk - cbBounce);
+                uint32_t cFrames = PDMAudioPropsBytesToFrames(pGuestProps, RT_MIN(cbGuest, sizeof(abBounce) - cbBounce));
 
-                    uint32_t const cFramesToConvert = PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props,
-                                                                                 (uint32_t)cbBufSrc);
-                    Assert(PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFramesToConvert) == cbBufSrc);
-                    Assert(cFramesToConvert > 0);
-                    Assert(cFramesToConvert <= cFrames);
-
-                    pStreamR3->State.Mapping.pfnHostToGuest(&abBounce[cbBounce], pvBufSrc, cFramesToConvert,
-                                                            &pStreamR3->State.Mapping);
-                    Log5Func((" loop1: cbBounce=%#05x cFramesToConvert=%#05x cbBufSrc=%#x%s\n",
-                              cbBounce, cFramesToConvert, cbBufSrc, ASMMemIsZero(pvBufSrc, cbBufSrc) ? " all zero" : ""));
-#ifdef HDA_DEBUG_SILENCE
-                    fix me if relevant;
-#endif
-                    if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
-                    { /* likely */ }
-                    else
-                        AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufSrc, cbBufSrc, 0 /* fFlags */);
-
-#ifdef VBOX_WITH_DTRACE
-                    VBOXDD_HDA_STREAM_DMA_IN((uint32_t)uSD, (uint32_t)cbBufSrc, pStreamR3->State.offRead);
-#endif
-
-                    pStreamR3->State.offRead += cbBufSrc;
-                    RTCircBufReleaseReadBlock(pCircBuf, cbBufSrc);
-
-                    cFrames = cFramesToConvert;
-                    cbGuest = cbBounce + PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps, cFrames);
-                }
-                else
-                {
-                    cbBufSrc = PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFrames);
-                    cbGuest  = PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps, cFrames);
-                    PDMAudioPropsClearBuffer(&pStreamR3->State.Mapping.GuestProps,
-                                             &abBounce[cbBounce], cbGuest, cFrames);
-                    cbGuest += cbBounce;
-                }
+                size_t cbBufSrc = PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFrames);
+                cbGuest  = PDMAudioPropsFramesToBytes(pGuestProps, cFrames);
+                PDMAudioPropsClearBuffer(pGuestProps, &abBounce[cbBounce], cbGuest, cFrames);
+                cbGuest += cbBounce;
 
                 /* Write it to the guest buffer. */
                 uint32_t cbGuestActual = RT_MIN(cbGuest, cbChunk);
@@ -1613,8 +1552,10 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
      * The DMA copy loop.
      *
      */
+#if 0
     uint8_t    abBounce[4096 + 128];    /* Most guest does at most 4KB BDLE. So, 4KB + space for a partial frame to reduce loops. */
     uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
+#endif
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToProduce;
     Assert(cbLeft == pStreamShared->State.cbTransferSize);
@@ -1630,9 +1571,10 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
         uint32_t cbChunk = 0;
         RTGCPHYS GCPhys  = hdaR3StreamDmaBufGet(pStreamShared, &cbChunk);
 
-        /* Need to diverge if the frame format differs.  */
-        if (   !pStreamR3->State.Mapping.fMappingNeeded
-            /** @todo && pStreamShared->State.fFrameAlignedBuffers */)
+        /* Need to diverge if the BDLEs contain misaligned entries.  */
+#if 0
+        if (/** @todo pStreamShared->State.fFrameAlignedBuffers */)
+#endif
         {
             if (cbChunk <= cbLeft)
             { /* very likely */ }
@@ -1675,6 +1617,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                 pStreamShared->State.offCurBdle += (uint32_t)cbBufDst;
             }
         }
+#if 0
         /*
          * Need to map the frame content, so we need to read the guest data
          * into a temporary buffer, though the output can be directly written
@@ -1685,8 +1628,11 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
          */
         else
         {
+/** @todo clean up host/guest props distinction, they're the same now w/o the
+ *        mapping done by the mixer rather than us.  */
+            PCPDMAUDIOPCMPROPS pGuestProps = &pStreamShared->State.Cfg.Props;
             Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
-            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps,
+            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(pGuestProps,
                                                                     PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props,
                                                                                                cbLeft));
             if (cbChunk <= cbLeftGuest)
@@ -1707,8 +1653,8 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                 cbBounce += cbToRead;
 
                 /* Convert the size to whole frames and a remainder. */
-                uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStreamR3->State.Mapping.GuestProps, cbBounce);
-                uint32_t const cbRemainder = cbBounce - PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps, cFrames);
+                uint32_t cFrames = PDMAudioPropsBytesToFrames(pGuestProps, cbBounce);
+                uint32_t const cbRemainder = cbBounce - PDMAudioPropsFramesToBytes(pGuestProps, cFrames);
                 Log5Func((" loop1: GCPhys=%RGp cbToRead=%#x cbBounce=%#x cFrames=%#x\n", GCPhys, cbToRead, cbBounce, cFrames));
 
                 /*
@@ -1747,7 +1693,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                     /* advance */
                     cbLeft    -= (uint32_t)cbBufDst;
                     cFrames   -= cFramesToConvert;
-                    offBounce += PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps, cFramesToConvert);
+                    offBounce += PDMAudioPropsFramesToBytes(pGuestProps, cFramesToConvert);
                 }
 
                 /* advance */
@@ -1760,6 +1706,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
             }
             Log5Func(("loop0: GCPhys=%RGp cbBounce=%#x cbLeft=%#x\n", GCPhys, cbBounce, cbLeft));
         }
+#endif
 
         STAM_PROFILE_STOP(&pThis->StatOut, a);
 
@@ -1770,7 +1717,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
+#if 0
     AssertMsg(cbBounce == 0, ("%#x\n", cbBounce));
+#endif
 
     /*
      * Common epilogue.
@@ -2130,7 +2079,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
                     STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowErrors);
                     STAM_REL_COUNTER_ADD(&pStreamR3->State.StatDmaFlowErrorBytes, cbSilence);
                     LogRel2(("HDA: Warning: Stream #%RU8 underrun, added %u bytes of silence (%u us)\n", pStreamShared->u8SD,
-                             cbSilence, PDMAudioPropsBytesToMicro(&pStreamR3->State.Mapping.GuestProps, cbSilence)));
+                             cbSilence, PDMAudioPropsBytesToMicro(&pStreamShared->State.Cfg.Props, cbSilence)));
                 }
             }
         }

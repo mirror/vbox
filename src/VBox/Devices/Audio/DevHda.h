@@ -29,7 +29,6 @@
 
 #include "DevHdaCodec.h"
 #include "DevHdaStream.h"
-#include "DevHdaStreamMap.h"
 
 #ifdef DEBUG_andy
 /** Enables strict mode, which checks for stuff which isn't supposed to happen.
