@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Audio mixing buffer for converting template.
+ * Audio mixing buffer - Format conversion template.
  */
 
 /*
@@ -16,29 +16,22 @@
  */
 
 
-/**
- * Macro for generating the conversion routines from/to different formats.
- * Be careful what to pass in/out, as most of the macros are optimized for speed and
- * thus don't do any bounds checking!
- *
- * @note Currently does not handle any endianness conversion yet!
- */
-#define AUDMIXBUF_CONVERT(a_Name, a_Type, _aMin, _aMax, _aSigned, _aShift) \
+#define AUDMIXBUF_CONVERT(a_Name, a_Type, a_Min, a_Max, a_fSigned, a_cShift) \
 /* Clips a specific output value to a single sample value. */ \
 DECLINLINE(int32_t) audioMixBufSampleFrom##a_Name(a_Type aVal) \
 { \
     /* left shifting of signed values is not defined, therefore the intermediate uint64_t cast */ \
-    if (_aSigned) \
-        return (int32_t) (((uint32_t) ((int32_t) aVal                     )) << (32 - _aShift)); \
-    return     (int32_t) (((uint32_t) ((int32_t) aVal - ((_aMax >> 1) + 1))) << (32 - _aShift)); \
+    if (a_fSigned) \
+        return (int32_t) (((uint32_t) ((int32_t) aVal                     )) << (32 - a_cShift)); \
+    return     (int32_t) (((uint32_t) ((int32_t) aVal - ((a_Max >> 1) + 1))) << (32 - a_cShift)); \
 } \
 \
 /* Clips a single sample value to a specific output value. */ \
 DECLINLINE(a_Type) audioMixBufSampleTo##a_Name(int32_t iVal) \
 { \
-    if (_aSigned) \
-        return (a_Type)  (iVal >> (32 - _aShift)); \
-    return     (a_Type) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1)); \
+    if (a_fSigned) \
+        return (a_Type)  (iVal >> (32 - a_cShift)); \
+    return     (a_Type) ((iVal >> (32 - a_cShift)) + ((a_Max >> 1) + 1)); \
 } \
 \
 /* Encoders for peek: */ \
@@ -60,7 +53,7 @@ static DECLCALLBACK(void) RT_CONCAT(audioMixBufEncodeGeneric,a_Name)(void *pvDst
             if (idxSrc >= 0) \
                 pDst[idxDst] = audioMixBufSampleTo##a_Name(pi32Src[idxSrc]); \
             else if (idxSrc != -2) \
-                pDst[idxDst] = (_aSigned) ? 0 : (_aMax >> 1); \
+                pDst[idxDst] = (a_fSigned) ? 0 : (a_Max >> 1); \
             else \
                 pDst[idxDst] = 0; \
         } \
@@ -146,7 +139,7 @@ static DECLCALLBACK(void) RT_CONCAT(audioMixBufDecodeGeneric,a_Name)(int32_t *pi
             if (idxSrc >= 0) \
                 pi32Dst[idxDst] = audioMixBufSampleTo##a_Name(pSrc[idxSrc]); \
             else if (idxSrc != -2) \
-                pi32Dst[idxDst] = (_aSigned) ? 0 : (_aMax >> 1); \
+                pi32Dst[idxDst] = (a_fSigned) ? 0 : (a_Max >> 1); \
             else \
                 pi32Dst[idxDst] = 0; \
         } \
