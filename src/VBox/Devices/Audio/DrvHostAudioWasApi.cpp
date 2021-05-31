@@ -661,21 +661,43 @@ private:
 #define WAS_CACHE_MAX_ENTRIES_SAME_DEVICE   2
 
 /**
- * Converts from PDM stream config to windows WAVEFORMATEX struct.
+ * Converts from PDM stream config to windows WAVEFORMATEXTENSIBLE struct.
  *
  * @param   pProps  The PDM audio PCM properties to convert from.
  * @param   pFmt    The windows structure to initialize.
  */
-static void drvHostAudioWasWaveFmtExFromProps(PCPDMAUDIOPCMPROPS pProps, PWAVEFORMATEX pFmt)
+static void drvHostAudioWasWaveFmtExtFromProps(PCPDMAUDIOPCMPROPS pProps, PWAVEFORMATEXTENSIBLE pFmt)
 {
     RT_ZERO(*pFmt);
-    pFmt->wFormatTag      = WAVE_FORMAT_PCM;
-    pFmt->nChannels       = PDMAudioPropsChannels(pProps);
-    pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(pProps);
-    pFmt->nSamplesPerSec  = PDMAudioPropsHz(pProps);
-    pFmt->nBlockAlign     = PDMAudioPropsFrameSize(pProps);
-    pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(pProps, PDMAudioPropsHz(pProps));
-    pFmt->cbSize          = 0; /* No extra data specified. */
+    pFmt->Format.wFormatTag      = WAVE_FORMAT_PCM;
+    pFmt->Format.nChannels       = PDMAudioPropsChannels(pProps);
+    pFmt->Format.wBitsPerSample  = PDMAudioPropsSampleBits(pProps);
+    pFmt->Format.nSamplesPerSec  = PDMAudioPropsHz(pProps);
+    pFmt->Format.nBlockAlign     = PDMAudioPropsFrameSize(pProps);
+    pFmt->Format.nAvgBytesPerSec = PDMAudioPropsFramesToBytes(pProps, PDMAudioPropsHz(pProps));
+    pFmt->Format.cbSize          = 0; /* No extra data specified. */
+
+    /*
+     * We need to use the extensible structure if there are more than two channels
+     * or if the channels have non-standard assignments.
+     */
+    if (   pFmt->Format.nChannels > 2
+        || (  pFmt->Format.nChannels == 1 ? pProps->aidChannels[0] != PDMAUDIOCHANNELID_MONO
+            : pProps->aidChannels[0] != PDMAUDIOCHANNELID_FRONT_LEFT || pProps->aidChannels[2] != PDMAUDIOCHANNELID_FRONT_RIGHT))
+    {
+        pFmt->Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        pFmt->Format.cbSize     = sizeof(*pFmt) - sizeof(pFmt->Format);
+        pFmt->Samples.wValidBitsPerSample = PDMAudioPropsSampleBits(pProps);
+        pFmt->SubFormat         = KSDATAFORMAT_SUBTYPE_PCM;
+        pFmt->dwChannelMask     = 0;
+        unsigned const cSrcChannels = pFmt->Format.nChannels;
+        for (unsigned i = 0; i < cSrcChannels; i++)
+            if (   pProps->aidChannels[i] >= PDMAUDIOCHANNELID_FIRST_STANDARD
+                && pProps->aidChannels[i] <  PDMAUDIOCHANNELID_END_STANDARD)
+                pFmt->dwChannelMask |= RT_BIT_32(pProps->aidChannels[i] - PDMAUDIOCHANNELID_FIRST_STANDARD);
+            else
+                pFmt->Format.nChannels -= 1;
+    }
 }
 
 
@@ -945,18 +967,18 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
         return pDevCfg->rcSetup = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     }
 
-    WAVEFORMATEX  WaveFmtEx;
-    drvHostAudioWasWaveFmtExFromProps(&pDevCfg->Props, &WaveFmtEx);
+    WAVEFORMATEXTENSIBLE WaveFmtExt;
+    drvHostAudioWasWaveFmtExtFromProps(&pDevCfg->Props, &WaveFmtExt);
 
     PWAVEFORMATEX pClosestMatch = NULL;
-    hrc = pIAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &WaveFmtEx, &pClosestMatch);
+    hrc = pIAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &WaveFmtExt.Format, &pClosestMatch);
 
     /*
      * If the format is supported, go ahead and initialize the client instance.
      */
-    if (SUCCEEDED(hrc))
+    if (SUCCEEDED(hrc) || hrc == AUDCLNT_E_UNSUPPORTED_FORMAT)
     {
-        if (hrc == S_OK)
+        if (hrc == S_OK || hrc == AUDCLNT_E_UNSUPPORTED_FORMAT)
             Log8Func(("IsFormatSupport(,%s,) -> S_OK + %p: requested format is supported\n", pDevCfg->szProps, pClosestMatch));
         else
             Log8Func(("IsFormatSupport(,%s,) -> %Rhrc + %p: %uch S%u %uHz\n", pDevCfg->szProps, hrc, pClosestMatch,
@@ -967,7 +989,7 @@ static int drvHostAudioWasCacheInitConfig(PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg)
         uint32_t             fInitFlags           = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
                                                   | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
         hrc = pIAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, fInitFlags, cBufferSizeInNtTicks,
-                                        0 /*cPeriodicityInNtTicks*/, &WaveFmtEx, NULL /*pAudioSessionGuid*/);
+                                        0 /*cPeriodicityInNtTicks*/, &WaveFmtExt.Format, NULL /*pAudioSessionGuid*/);
         Log8Func(("Initialize(,%x, %RI64, %s,) -> %Rhrc\n", fInitFlags, cBufferSizeInNtTicks, pDevCfg->szProps, hrc));
         if (SUCCEEDED(hrc))
         {
@@ -1787,10 +1809,10 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     /*
      * Do configuration conversion.
      */
-    WAVEFORMATEX WaveFmtX;
-    drvHostAudioWasWaveFmtExFromProps(&pCfgReq->Props, &WaveFmtX);
+    WAVEFORMATEXTENSIBLE WaveFmtExt;
+    drvHostAudioWasWaveFmtExtFromProps(&pCfgReq->Props, &WaveFmtExt);
     LogRel2(("WasAPI: Requested %s format for '%s':\n"
-             "WasAPI:   wFormatTag      = %RU16\n"
+             "WasAPI:   wFormatTag      = %#RX16\n"
              "WasAPI:   nChannels       = %RU16\n"
              "WasAPI:   nSamplesPerSec  = %RU32\n"
              "WasAPI:   nAvgBytesPerSec = %RU32\n"
@@ -1798,9 +1820,30 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
              "WasAPI:   wBitsPerSample  = %RU16\n"
              "WasAPI:   cbSize          = %RU16\n"
              "WasAPI:   cBufferSizeInNtTicks = %RU64\n",
-             pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
-             WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize,
+             pszStreamType, pCfgReq->szName, WaveFmtExt.Format.wFormatTag, WaveFmtExt.Format.nChannels,
+             WaveFmtExt.Format.nSamplesPerSec, WaveFmtExt.Format.nAvgBytesPerSec, WaveFmtExt.Format.nBlockAlign,
+             WaveFmtExt.Format.wBitsPerSample, WaveFmtExt.Format.cbSize,
              PDMAudioPropsFramesToNtTicks(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize) ));
+    if (WaveFmtExt.Format.cbSize != 0)
+        LogRel2(("WasAPI:   dwChannelMask   = %#RX32\n"
+                 "WasAPI:   wValidBitsPerSample = %RU16\n",
+                 WaveFmtExt.dwChannelMask, WaveFmtExt.Samples.wValidBitsPerSample));
+
+    /* Set up the acquired format here as channel count + layout may have
+       changed and need to be communicated to caller and used in cache lookup. */
+    *pCfgAcq = *pCfgReq;
+    if (WaveFmtExt.Format.cbSize != 0)
+    {
+        PDMAudioPropsSetChannels(&pCfgAcq->Props, WaveFmtExt.Format.nChannels);
+        uint8_t idCh = 0;
+        for (unsigned iBit = 0; iBit < 32 && idCh < WaveFmtExt.Format.nChannels; iBit++)
+            if (WaveFmtExt.dwChannelMask & RT_BIT_32(iBit))
+            {
+                pCfgAcq->Props.aidChannels[idCh] = (unsigned)PDMAUDIOCHANNELID_FIRST_STANDARD + iBit;
+                idCh++;
+            }
+        Assert(idCh == WaveFmtExt.Format.nChannels);
+    }
 
     /*
      * Get the device we're supposed to use.
@@ -1837,7 +1880,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     /** @todo make it return a status code too and retry if the default device
      *        was invalidated/changed while we where working on it here. */
     PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg = NULL;
-    int rc = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, pCfgReq, false /*fOnWorker*/, &pDevCfg);
+    int rc = drvHostAudioWasCacheLookupOrCreate(pThis, pIDevice, pCfgAcq, false /*fOnWorker*/, &pDevCfg);
 
     pIDevice->Release();
     pIDevice = NULL;
