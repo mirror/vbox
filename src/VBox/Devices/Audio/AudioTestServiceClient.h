@@ -29,7 +29,7 @@ typedef struct ATSCLIENT
 } ATSCLIENT;
 typedef ATSCLIENT *PATSCLIENT;
 
-int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr);
+int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t uPort);
 int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms);
 int AudioTestSvcClientClose(PATSCLIENT pClient);
 

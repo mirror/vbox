@@ -28,6 +28,7 @@
 #include <iprt/string.h>
 #include <iprt/tcp.h>
 
+#include "AudioTestService.h"
 #include "AudioTestServiceProtocol.h"
 #include "AudioTestServiceClient.h"
 
@@ -286,14 +287,14 @@ static int audioTestSvcClientDoBye(PATSCLIENT pClient)
  * @returns VBox status code.
  * @param   pClient             Client to connect.
  * @param   pszAddr             Address to connect to. If NULL, 127.0.0.1 (localhost) will be used.
- * @note    The port (6052) is hardcoded for simplicity for now.
+ * @param   uPort               Port to connect. If set to 0, port 6052 (ATS_DEFAULT_PORT) will be used.
  */
-int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr)
+int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t uPort)
 {
     audioTestSvcClientInit(pClient);
 
     /* For simplicity we always run on the same port, localhost only. */
-    int rc = RTTcpClientConnect(pszAddr ? pszAddr : "127.0.0.1", 6052, &pClient->hSock);
+    int rc = RTTcpClientConnect(pszAddr ? pszAddr : "127.0.0.1", uPort == 0 ? ATS_DEFAULT_PORT : uPort, &pClient->hSock);
     if (RT_SUCCESS(rc))
     {
         rc = audioTestSvcClientDoGreet(pClient);
