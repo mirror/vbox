@@ -53,6 +53,7 @@ vkat_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/build
 vkat_SOURCES  = \
 	vkat.cpp \
+	vkatDriverStack.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTest.cpp \
 	$(VKAT_PATH_AUDIO)/DrvAudio.cpp \
 	$(VKAT_PATH_AUDIO)/DrvHostAudioNull.cpp \
