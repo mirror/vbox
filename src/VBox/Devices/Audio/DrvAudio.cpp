@@ -4614,14 +4614,9 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     LogFlowFuncEnter();
 
     /*
-     * Note: No calls here to the driver below us anymore,
-     *       as PDM already has destroyed it.
-     *       If you need to call something from the host driver,
-     *       do this in drvAudioPowerOff() instead.
+     * We must start by setting pHostDrvAudio to NULL here as the anything below
+     * us has already been destroyed at this point.
      */
-
-    /* Thus, NULL the pointer to the host audio driver first,
-     * so that routines like drvAudioStreamDestroyInternal() don't call the driver(s) below us anymore. */
     if (RTCritSectRwIsInitialized(&pThis->CritSectHotPlug))
     {
         RTCritSectRwEnterExcl(&pThis->CritSectHotPlug);
@@ -4634,6 +4629,19 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
         pThis->pHostDrvAudio = NULL;
     }
 
+    /*
+     * Make sure the thread pool is out of the picture before we terminate all the streams.
+     */
+    if (pThis->hReqPool != NIL_RTREQPOOL)
+    {
+        uint32_t cRefs = RTReqPoolRelease(pThis->hReqPool);
+        Assert(cRefs == 0); RT_NOREF(cRefs);
+        pThis->hReqPool = NIL_RTREQPOOL;
+    }
+
+    /*
+     * Destroy all streams.
+     */
     if (RTCritSectRwIsInitialized(&pThis->CritSectGlobals))
     {
         RTCritSectRwEnterExcl(&pThis->CritSectGlobals);
@@ -4667,13 +4675,6 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesIn);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesRead);
 #endif
-
-    if (pThis->hReqPool != NIL_RTREQPOOL)
-    {
-        uint32_t cRefs = RTReqPoolRelease(pThis->hReqPool);
-        Assert(cRefs == 0); RT_NOREF(cRefs);
-        pThis->hReqPool = NIL_RTREQPOOL;
-    }
 
     LogFlowFuncLeave();
 }
