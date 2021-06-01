@@ -23,6 +23,7 @@
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 #include <VBox/log.h>
+#include <iprt/once.h>
 #include <iprt/err.h>
 
 #include <pulse/pulseaudio.h>
@@ -321,31 +322,20 @@ static struct
 };
 #undef FUNC_ENTRY
 
-/**
- * Try to dynamically load the PulseAudio libraries.  This function is not
- * thread-safe, and should be called before attempting to use any of the
- * PulseAudio functions.
- *
- * @returns iprt status code
- */
-int audioLoadPulseLib(void)
-{
-    static volatile int g_rc = VERR_IPE_UNINITIALIZED_STATUS;
-    RTLDRMOD hLib;
-    int rc;
+/** Init once.   */
+static RTONCE g_PulseAudioInitOnce = RTONCE_INITIALIZER;
 
+/** @callback_method_impl{FNRTONCE} */
+static DECLCALLBACK(int32_t) drvHostAudioPusleInitOnce(void *pvUser)
+{
+    RT_NOREF(pvUser);
     LogFlowFunc(("\n"));
 
-    /* If this is not VERR_IPE_UNINITIALIZED_STATUS then the function has
-       obviously been called twice, which is likely to be a bug. */
-    rc = g_rc;
-    AssertMsgReturn(rc == VERR_IPE_UNINITIALIZED_STATUS, ("g_rc=%Rrc\n", rc), rc);
-
-    rc = RTLdrLoadSystemEx(VBOX_PULSE_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hLib);
+    RTLDRMOD hLib = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystemEx(VBOX_PULSE_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hLib);
     if (RT_SUCCESS(rc))
     {
-        unsigned i;
-        for (i = 0; i < RT_ELEMENTS(g_aImportedFunctions); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aImportedFunctions); i++)
         {
             rc = RTLdrGetSymbol(hLib, g_aImportedFunctions[i].pszName, (void **)g_aImportedFunctions[i].pfn);
             if (RT_FAILURE(rc))
@@ -357,7 +347,17 @@ int audioLoadPulseLib(void)
     }
     else
         LogRelFunc(("Failed to load library %s: %Rrc\n", VBOX_PULSE_LIB, rc));
-    g_rc = rc;
     return rc;
+}
+
+/**
+ * Try to dynamically load the PulseAudio libraries.
+ *
+ * @returns VBox status code
+ */
+int audioLoadPulseLib(void)
+{
+    LogFlowFunc(("\n"));
+    return RTOnce(&g_PulseAudioInitOnce, drvHostAudioPusleInitOnce, NULL);
 }
 
