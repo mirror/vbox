@@ -1263,7 +1263,7 @@ int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
 }
 
 /**
- * Packs an audio test so that it's ready for transmission.
+ * Packs a closed audio test so that it's ready for transmission.
  *
  * @returns VBox status code.
  * @param   pSet                Test set to pack.
@@ -1274,7 +1274,7 @@ int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
 int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName)
 {
     AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
-    AssertReturn(audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
+    AssertReturn(!audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
 
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 

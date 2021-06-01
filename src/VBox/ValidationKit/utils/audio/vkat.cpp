@@ -438,9 +438,9 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
         const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
               uint32_t cbToWrite     = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
 
-        AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32", pTstEnv->cMsBufferSize);
-        AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32", pTstEnv->cMsPreBuffer);
-        AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32", pTstEnv->cMsSchedulingHint);
+        AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
+        AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+        AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
 
         while (cbToWrite)
         {
@@ -687,15 +687,15 @@ static void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
  */
 static int audioTestEnvPrologue(PAUDIOTESTENV pTstEnv)
 {
+    /* Close the test set first. */
+    AudioTestSetClose(&pTstEnv->Set);
+
     /* Before destroying the test environment, pack up the test set so
      * that it's ready for transmission. */
     char szFileOut[RTPATH_MAX];
     int rc = AudioTestSetPack(&pTstEnv->Set, pTstEnv->szPathOut, szFileOut, sizeof(szFileOut));
     if (RT_SUCCESS(rc))
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
-
-    /* Clean up. */
-    AudioTestSetClose(&pTstEnv->Set);
 
     int rc2 = AudioTestSetWipe(&pTstEnv->Set);
     if (RT_SUCCESS(rc))
