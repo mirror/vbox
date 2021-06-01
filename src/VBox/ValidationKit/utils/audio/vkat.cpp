@@ -183,6 +183,12 @@ typedef struct AUDIOTESTENV
     char                    szPathOut[RTPATH_MAX];
     /** Temporary path for this test environment. */
     char                    szPathTemp[RTPATH_MAX];
+    /** Buffer size (in ms). */
+    RTMSINTERVAL            cMsBufferSize;
+    /** Pre-buffering time (in ms). */
+    RTMSINTERVAL            cMsPreBuffer;
+    /** Scheduling hint (in ms). */
+    RTMSINTERVAL            cMsSchedulingHint;
     /** The audio test driver stack. */
     AUDIOTESTDRVSTACK       DrvStack;
     /** The current (last) audio device enumeration to use. */
@@ -429,16 +435,17 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
         uint32_t cbBuf;
         uint8_t  abBuf[_4K];
 
-        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
-        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, cSchedulingMs);
+        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
               uint32_t cbToWrite     = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
 
-        AudioTestSetObjAddMetadataStr(pObj, "schedule_ms=%RU16", cSchedulingMs);
+        AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32", pTstEnv->cMsBufferSize);
+        AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32", pTstEnv->cMsPreBuffer);
+        AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32", pTstEnv->cMsSchedulingHint);
 
         while (cbToWrite)
         {
             uint32_t cbWritten    = 0;
-            uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerMs, (uint32_t)sizeof(abBuf)));
+            uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerMs, sizeof(abBuf)));
             Assert(cbToGenerate);
 
             rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbBuf);
@@ -454,7 +461,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
             if (RT_FAILURE(rc))
                 break;
 
-            RTThreadSleep(cSchedulingMs);
+            RTThreadSleep(pTstEnv->cMsSchedulingHint);
 
             Assert(cbToWrite >= cbWritten);
             cbToWrite -= cbWritten;
@@ -571,6 +578,10 @@ static int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     int rc = VINF_SUCCESS;
 
     PDMAudioHostEnumInit(&pTstEnv->DevEnum);
+
+    pTstEnv->cMsBufferSize     = 300; /* ms */ /** @todo Randomize this also? */
+    pTstEnv->cMsPreBuffer      = 150; /* ms */ /** @todo Ditto. */
+    pTstEnv->cMsSchedulingHint = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
 
     /* Only the guest mode needs initializing the driver stack. */
     const bool fUseDriverStack = pTstEnv->enmMode == AUDIOTESTMODE_GUEST;
@@ -857,8 +868,8 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
     pStream->pBackend = NULL;
-    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 150 /*cMsPreBuffer*/,
-                                                   10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
+    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer,
+                                                   pTstEnv->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
     if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
         pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
     return rc;
@@ -891,7 +902,6 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
         uint8_t abBuf[_4K];
 
         const uint64_t tsStartMs     = RTTimeMilliTS();
-        const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
 
         do
         {
@@ -906,7 +916,7 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
             if (RTTimeMilliTS() - tsStartMs >= pParms->msDuration)
                 break;
 
-            RTThreadSleep(cSchedulingMs);
+            RTThreadSleep(pTstEnv->cMsSchedulingHint);
 
         } while (RT_SUCCESS(rc));
     }
@@ -932,8 +942,8 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
 {
     pStream->pBackend = NULL;
-    int rc = audioTestDriverStackStreamCreateOutput(&pTstEnv->DrvStack, pProps, 300 /*cMsBufferSize*/, 200 /*cMsPreBuffer*/,
-                                                    10 /*cMsSchedulingHint*/, &pStream->pStream, &pStream->Cfg);
+    int rc = audioTestDriverStackStreamCreateOutput(&pTstEnv->DrvStack, pProps, pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer,
+                                                    pTstEnv->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
     if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
         pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
     return rc;
