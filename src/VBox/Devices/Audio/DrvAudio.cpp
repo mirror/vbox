@@ -3424,13 +3424,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
         }
 
         /* Make sure to align the writable size to the host's frame size. */
-        cbWritable = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Host.Cfg.Props, cbWritable);
+        cbWritable = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Core.Props, cbWritable);
     }
 
     RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     Log3Func(("[%s] cbWritable=%#RX32 (%RU64ms) enmPlayMode=%s enmBackendState=%s\n",
-              pStreamEx->Core.szName, cbWritable, PDMAudioPropsBytesToMilli(&pStreamEx->Host.Cfg.Props, cbWritable),
+              pStreamEx->Core.szName, cbWritable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Props, cbWritable),
               drvAudioPlayStateName(enmPlayMode), PDMHostAudioStreamStateGetName(enmBackendState) ));
     return cbWritable;
 }
@@ -3465,7 +3465,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
                     ("Stream '%s' is not an output stream and therefore cannot be written to (direction is '%s')\n",
                      pStreamEx->Core.szName, PDMAudioDirGetName(pStreamEx->Core.enmDir)), VERR_ACCESS_DENIED);
 
-    AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Guest.Cfg.Props, cbBuf),
+    AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Core.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%#RX32 bytes)\n", pStreamEx->Core.szName, cbBuf));
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
@@ -3619,7 +3619,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
             case DRVAUDIOCAPTURESTATE_PREBUF:
             {
                 uint64_t const cNsStream = RTTimeNanoTS() - pStreamEx->nsStarted;
-                uint64_t const offCur    = PDMAudioPropsNanoToBytes64(&pStreamEx->Guest.Cfg.Props, cNsStream);
+                uint64_t const offCur    = PDMAudioPropsNanoToBytes64(&pStreamEx->Core.Props, cNsStream);
                 if (offCur > pStreamEx->offInternal)
                 {
                     uint64_t const cbUnread = offCur - pStreamEx->offInternal;
@@ -3638,13 +3638,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         }
 
         /* Make sure to align the readable size to the host's frame size. */
-        cbReadable = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Host.Cfg.Props, cbReadable);
+        cbReadable = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Core.Props, cbReadable);
     }
 
     RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     Log3Func(("[%s] cbReadable=%#RX32 (%RU64ms) enmCaptureMode=%s enmBackendState=%s\n",
-              pStreamEx->Core.szName, cbReadable, PDMAudioPropsBytesToMilli(&pStreamEx->Host.Cfg.Props, cbReadable),
+              pStreamEx->Core.szName, cbReadable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Props, cbReadable),
               drvAudioCaptureStateName(enmCaptureState), PDMHostAudioStreamStateGetName(enmBackendState) ));
     return cbReadable;
 }
@@ -3666,7 +3666,7 @@ static int drvAudioStreamCaptureSilence(PDRVAUDIOSTREAM pStreamEx, uint8_t *pbBu
 {
     /** @todo  Does not take paused time into account...  */
     uint64_t const cNsStream = RTTimeNanoTS() - pStreamEx->nsStarted;
-    uint64_t const offCur    = PDMAudioPropsNanoToBytes64(&pStreamEx->Guest.Cfg.Props, cNsStream);
+    uint64_t const offCur    = PDMAudioPropsNanoToBytes64(&pStreamEx->Core.Props, cNsStream);
     if (offCur > pStreamEx->offInternal)
     {
         uint64_t const cbUnread  = offCur - pStreamEx->offInternal;
@@ -3674,8 +3674,8 @@ static int drvAudioStreamCaptureSilence(PDRVAUDIOSTREAM pStreamEx, uint8_t *pbBu
         *pcbRead                 = cbToClear;
         pStreamEx->offInternal  += cbToClear;
         cbBuf                   -= cbToClear;
-        PDMAudioPropsClearBuffer(&pStreamEx->Guest.Cfg.Props, pbBuf, cbToClear,
-                                 PDMAudioPropsBytesToFrames(&pStreamEx->Guest.Cfg.Props, cbToClear));
+        PDMAudioPropsClearBuffer(&pStreamEx->Core.Props, pbBuf, cbToClear,
+                                 PDMAudioPropsBytesToFrames(&pStreamEx->Core.Props, cbToClear));
     }
     else
         *pcbRead = 0;
@@ -3768,7 +3768,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, P
                     ("Stream '%s' is not an input stream and therefore cannot be read from (direction is '%s')\n",
                      pStreamEx->Core.szName, PDMAudioDirGetName(pStreamEx->Core.enmDir)), VERR_ACCESS_DENIED);
 
-    AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Guest.Cfg.Props, cbBuf),
+    AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Core.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%#RX32 bytes)\n", pStreamEx->Core.szName, cbBuf));
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
