@@ -1646,7 +1646,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 *********************************************************************************************************************************/
 
 /**
- * Worker for audioTestPlayOne.
+ * Worker for audioTestPlayOne implementing the play loop.
  */
 static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWAVEFILE pWaveFile,
                                         PCPDMAUDIOSTREAMCFG pCfgAcq, const char *pszFile)
@@ -1789,6 +1789,10 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                                                         cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Create a mixer wrapper.  This is just a thin wrapper if fWithMixer
+                 * is false, otherwise it's doing mixing, resampling and recoding.
+                 */
                 AUDIOTESTDRVMIXSTREAM Mix;
                 rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, fWithMixer ? &WaveFile.Props : NULL, 100 /*ms*/);
                 if (RT_SUCCESS(rc))
@@ -1797,12 +1801,18 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                         RTMsgInfo("Stream: %s cbBacked=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
                                   pStream->cbBackend, fWithMixer ? " mixed" : "");
 
+                    /*
+                     * Enable the stream and start playing.
+                     */
                     rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
                     if (RT_SUCCESS(rc))
                         rcExit = audioTestPlayOneInner(&Mix, &WaveFile, &CfgAcq, pszFile);
                     else
                         rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
 
+                    /*
+                     * Clean up.
+                     */
                     AudioTestMixStreamTerm(&Mix);
                 }
                 audioTestDriverStackStreamDestroy(&DrvStack, pStream);
