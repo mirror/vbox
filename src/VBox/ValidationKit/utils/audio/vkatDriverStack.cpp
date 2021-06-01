@@ -682,6 +682,7 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
                     RTTestFailed(g_hTest, "Out of memory!\n");
                     rc = VERR_NO_MEMORY;
                 }
+                RTMemFree(pStreamAt);
             }
             else
             {
