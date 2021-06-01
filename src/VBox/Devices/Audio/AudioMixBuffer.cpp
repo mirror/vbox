@@ -1473,7 +1473,7 @@ int AudioMixBufInitWriteState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pSta
  * Worker for AudioMixBufPeek that handles the rate conversion case.
  */
 DECL_NO_INLINE(static, void)
-AudioMixBufPeekResampling(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxSrcFrames, uint32_t *pcSrcFramesPeeked,
+audioMixBufPeekResampling(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxSrcFrames, uint32_t *pcSrcFramesPeeked,
                           PAUDIOMIXBUFPEEKSTATE pState, void *pvDst, uint32_t cbDst, uint32_t *pcbDstPeeked)
 {
     *pcSrcFramesPeeked = 0;
@@ -1483,7 +1483,7 @@ AudioMixBufPeekResampling(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t 
         /* Rate conversion into temporary buffer. */
         int32_t  ai32DstRate[1024];
         uint32_t cSrcFrames    = RT_MIN(pMixBuf->cFrames - offSrcFrame, cMaxSrcFrames);
-        uint32_t cMaxDstFrames = RT_MIN(RT_ELEMENTS(ai32DstRate) / pState->cDstChannels, cbDst / pState->cbDstFrame);
+        uint32_t cMaxDstFrames = RT_MIN(RT_ELEMENTS(ai32DstRate) / pState->cSrcChannels, cbDst / pState->cbDstFrame);
         uint32_t const cDstFrames = pState->Rate.pfnResample(ai32DstRate, cMaxDstFrames,
                                                              &pMixBuf->pi32Samples[offSrcFrame * pMixBuf->cChannels],
                                                              cSrcFrames, &cSrcFrames, &pState->Rate);
@@ -1566,7 +1566,7 @@ void AudioMixBufPeek(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxS
         //Log9Func(("*pcbDstPeeked=%#x\n%32.*Rhxd\n", *pcbDstPeeked, *pcbDstPeeked, pvDst));
     }
     else
-        AudioMixBufPeekResampling(pMixBuf, offSrcFrame, cMaxSrcFrames, pcSrcFramesPeeked, pState, pvDst, cbDst, pcbDstPeeked);
+        audioMixBufPeekResampling(pMixBuf, offSrcFrame, cMaxSrcFrames, pcSrcFramesPeeked, pState, pvDst, cbDst, pcbDstPeeked);
 }
 
 
