@@ -17,9 +17,10 @@
 
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <VBox/log.h>
-#include <iprt/err.h>
+#include <iprt/once.h>
 
 #include <alsa/asoundlib.h>
 #include <errno.h>
@@ -238,47 +239,48 @@ static SHARED_FUNC SharedFuncs[] =
 };
 #undef ELEMENT
 
+/** Init once. */
+static RTONCE g_AlsaLibInitOnce = RTONCE_INITIALIZER;
+
+
+/** @callback_method_impl{FNRTONCE} */
+static DECLCALLBACK(int32_t) drvHostAudioAlsaLibInitOnce(void *pvUser)
+{
+    RT_NOREF(pvUser);
+    LogFlowFunc(("\n"));
+
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystemEx(VBOX_ALSA_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        for (uintptr_t i = 0; i < RT_ELEMENTS(SharedFuncs); i++)
+        {
+            rc = RTLdrGetSymbol(hMod, SharedFuncs[i].name, (void **)SharedFuncs[i].pfn);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else if (SharedFuncs[i].pfnFallback && rc == VERR_SYMBOL_NOT_FOUND)
+                *SharedFuncs[i].pfn = SharedFuncs[i].pfnFallback;
+            else
+            {
+                LogRelFunc(("Failed to load library %s: Getting symbol %s failed: %Rrc\n", VBOX_ALSA_LIB, SharedFuncs[i].name, rc));
+                return rc;
+            }
+        }
+    }
+    else
+        LogRelFunc(("Failed to load library %s (%Rrc)\n", VBOX_ALSA_LIB, rc));
+    return rc;
+}
+
+
 /**
- * Try to dynamically load the ALSA libraries.  This function is not
- * thread-safe, and should be called before attempting to use any of the
- * ALSA functions.
+ * Try to dynamically load the ALSA libraries.
  *
- * @returns iprt status code
+ * @returns VBox status code.
  */
 int audioLoadAlsaLib(void)
 {
-    static enum { NO = 0, YES, FAIL } isLibLoaded = NO;
-    RTLDRMOD hLib;
-
     LogFlowFunc(("\n"));
-    /* If this is not NO then the function has obviously been called twice,
-       which is likely to be a bug. */
-    if (NO != isLibLoaded)
-    {
-        AssertMsgFailed(("isLibLoaded == %s\n", YES == isLibLoaded ? "YES" : "NO"));
-        return YES == isLibLoaded ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
-    }
-    isLibLoaded = FAIL;
-    int rc = RTLdrLoad(VBOX_ALSA_LIB, &hLib);
-    if (RT_FAILURE(rc))
-    {
-        LogRelFunc(("Failed to load library %s (%Rrc)\n", VBOX_ALSA_LIB, rc));
-        return rc;
-    }
-    for (uintptr_t i = 0; i < RT_ELEMENTS(SharedFuncs); i++)
-    {
-        rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void **)SharedFuncs[i].pfn);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else if (SharedFuncs[i].pfnFallback && rc == VERR_SYMBOL_NOT_FOUND)
-            *SharedFuncs[i].pfn = SharedFuncs[i].pfnFallback;
-        else
-        {
-            LogRelFunc(("Failed to load library %s: Getting symbol %s failed: %Rrc\n", VBOX_ALSA_LIB, SharedFuncs[i].name, rc));
-            return rc;
-        }
-    }
-    isLibLoaded = YES;
-    return rc;
+    return RTOnce(&g_AlsaLibInitOnce, drvHostAudioAlsaLibInitOnce, NULL);
 }
 
