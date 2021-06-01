@@ -475,11 +475,14 @@ typedef enum DMAREVENTTYPE
  */
 typedef struct DMARIOTLBE
 {
-    RTGCPHYS    GCPhysBase;
-    uint8_t     cShift;
-    uint8_t     fPerm;
-    uint16_t    idDomain;
-    uint16_t    uPadding0;
+    /** The system-physical base address of the translation. */
+    RTGCPHYS            GCPhysBase;
+    /** The page shift of the translation. */
+    uint8_t             cShift;
+    /** The permissions granted. */
+    uint8_t             fPerm;
+    /** The domain ID of the translated region. */
+    uint16_t            idDomain;
 } DMARIOTLBE;
 /** Pointer to an IOTLB entry. */
 typedef DMARIOTLBE *PDMARIOTLBE;
@@ -487,39 +490,51 @@ typedef DMARIOTLBE *PDMARIOTLBE;
 typedef DMARIOTLBE const *PCDMARIOTLBE;
 
 /**
- * DMA Address Remapping Information.
+ * DMA Address Request.
  */
-typedef struct DMARADDRMAP
+typedef struct DMARADDRREQ
 {
-    /** The device ID (bus, device, function). */
-    uint16_t                idDevice;
+    /** The address being accessed. */
+    uint64_t            uDmaAddr;
+    /** The size of the access (in bytes). */
+    size_t              cbDma;
     /** The requested permissions (DMAR_PERM_XXX). */
-    uint8_t                 fReqPerm;
-    /** The fault processing disabled (FPD) bit. */
-    uint8_t                 fFpd;
-    /** The PASID if present, can be NIL_PCIPASID. */
-    PCIPASID                Pasid;
-    /* The address type of the memory request. */
-    PCIADDRTYPE             enmAddrType;
-    /** The type of the translation request. */
-    VTDREQTYPE              enmReqType;
-    /** The table translation mode (VTD_TTM_XXX). */
-    uint8_t                 fTtm;
-    uint8_t                 uPadding[7];
-    /** The DMA address being accessed. */
-    uint64_t                uDmaAddr;
-    /** The size of the DMA access (in bytes). */
-    size_t                  cbDma;
+    uint8_t             fReqPerm;
+    /** The source device ID (bus, device, function). */
+    uint16_t            idDevice;
+    /** The PASID if present (can be NIL_PCIPASID). */
+    PCIPASID            Pasid;
+    /* The address translation type. */
+    PCIADDRTYPE         enmAddrType;
+    /** The request type. */
+    VTDREQTYPE          enmReqType;
+} DMARADDRREQ;
+/** Pointer to a DMA address request. */
+typedef DMARADDRREQ *PDMARADDRREQ;
+/** Pointer to a const DMA request. */
+typedef DMARADDRREQ const *PCDMARADDRREQ;
 
-    /** The IOTLBE for this remapping. */
-    DMARIOTLBE              Iotlbe;
+/**
+ * DMA Address Remap Info.
+ */
+typedef struct DMARADDRREMAP
+{
+    /* The DMA address request. */
+    DMARADDRREQ         AddrReq;
+    /** The table translation mode (VTD_TTM_XXX). */
+    uint8_t             fTtm;
+    /** The fault processing disabled (FPD) bit. */
+    uint8_t             fFpd;
+
+    /** The IOTLBE results for this remapping. */
+    DMARIOTLBE          Iotlbe;
     /** The size of the contiguous translated region (in bytes). */
-    size_t                  cbContiguous;
-} DMARADDRMAP;
-/** Pointer to a DMA address remapping object. */
-typedef DMARADDRMAP *PDMARADDRMAP;
-/** Pointer to a const DMA address remapping object. */
-typedef DMARADDRMAP const *PCDMARADDRMAP;
+    size_t              cbContiguous;
+} DMARADDRREMAP;
+/** Pointer to a DMA remap info. */
+typedef DMARADDRREMAP *PDMARADDRREMAP;
+/** Pointer to a const DMA remap info. */
+typedef DMARADDRREMAP const *PCDMARADDRREMAP;
 
 
 /*********************************************************************************************************************************
@@ -1487,7 +1502,7 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
  * @param   enmAtFault  The address translation fault reason.
  * @param   pAddrRemap  The DMA address remap info.
  */
-static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARADDRMAP pAddrRemap)
+static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARADDRREMAP pAddrRemap)
 {
     /*
      * Qualified faults are those that can be suppressed by software using the FPD bit
@@ -1495,21 +1510,21 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT e
      */
     if (!pAddrRemap->fFpd)
     {
-        uint8_t const fType1 = pAddrRemap->enmReqType & RT_BIT(1);
-        uint8_t const fType2 = pAddrRemap->enmReqType & RT_BIT(0);
-        uint8_t const fExec  = pAddrRemap->fReqPerm & DMAR_PERM_EXE;
-        uint8_t const fPriv  = pAddrRemap->fReqPerm & DMAR_PERM_PRIV;
-        uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID,  pAddrRemap->idDevice)
+        uint8_t const fType1 = pAddrRemap->AddrReq.enmReqType & RT_BIT(1);
+        uint8_t const fType2 = pAddrRemap->AddrReq.enmReqType & RT_BIT(0);
+        uint8_t const fExec  = pAddrRemap->AddrReq.fReqPerm & DMAR_PERM_EXE;
+        uint8_t const fPriv  = pAddrRemap->AddrReq.fReqPerm & DMAR_PERM_PRIV;
+        uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID,  pAddrRemap->AddrReq.idDevice)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T2,   fType2)
-                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PP,   PCIPASID_IS_VALID(pAddrRemap->Pasid))
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PP,   PCIPASID_IS_VALID(pAddrRemap->AddrReq.Pasid))
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_EXE,  fExec)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PRIV, fPriv)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,   enmAtFault)
-                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PV,   PCIPASID_VAL(pAddrRemap->Pasid))
-                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_AT,   pAddrRemap->enmAddrType)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_PV,   PCIPASID_VAL(pAddrRemap->AddrReq.Pasid))
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_AT,   pAddrRemap->AddrReq.enmAddrType)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T1,   fType1)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,    1);
-        uint64_t const uFrcdLo = pAddrRemap->uDmaAddr & X86_PAGE_BASE_MASK;
+        uint64_t const uFrcdLo = pAddrRemap->AddrReq.uDmaAddr & X86_PAGE_BASE_MASK;
         dmarPrimaryFaultRecord(pDevIns, enmDiag, uFrcdHi, uFrcdLo);
     }
 }
@@ -1891,7 +1906,8 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  * @returns @c true if it's supported, @c false otherwise.
  * @param   pThis               The shared DMAR device state.
  * @param   pCtxEntry           The context entry.
- * @param   pcPagingLevel       Where to store the paging level.
+ * @param   pcPagingLevel       Where to store the paging level. Optional, can be
+ *                              NULL.
  */
 static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry, uint8_t *pcPagingLevel)
 {
@@ -1901,13 +1917,15 @@ static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEn
     uint8_t const fSagaw  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     Assert(!(fSagaw & ~(RT_BIT(1) | RT_BIT(2) | RT_BIT(3))));
 
-    *pcPagingLevel = fAw + 2;
+    uint8_t const cPagingLevel = fAw + 2;
+    if (pcPagingLevel)
+        *pcPagingLevel = cPagingLevel;
 
     /* With pass-through, the address width must be the largest AGAW supported by hardware. */
     if (fTt == VTD_TT_UNTRANSLATED_PT)
     {
         Assert(pThis->cMaxPagingLevel >= 3 && pThis->cMaxPagingLevel <= 5); /* Paranoia. */
-        return *pcPagingLevel == pThis->cMaxPagingLevel;
+        return cPagingLevel == pThis->cMaxPagingLevel;
     }
 
     /* The address width must be any of the ones supported by hardware. */
@@ -1979,7 +1997,7 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
  * @param   pAddrRemap      The DMA address remap info.
  */
 static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, uint8_t cPagingLevel, uint16_t idDomain,
-                                      PDMARADDRMAP pAddrRemap)
+                                      PDMARADDRREMAP pAddrRemap)
 {
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
 
@@ -2003,7 +2021,7 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
     AssertCompile(RT_ELEMENTS(s_auPtEntityRsvd) == 5);
 
     /* Second-level translations restricts input address to an implementation-specific MGAW. */
-    uint64_t const uDmaAddr = pAddrRemap->uDmaAddr;
+    uint64_t const uDmaAddr = pAddrRemap->AddrReq.uDmaAddr;
     if (!(uDmaAddr & pThis->fInvMgawMask))
     { /* likely */ }
     else
@@ -2049,7 +2067,7 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
          *
          * See Intel spec. 7.1.3 "Fault conditions and Remapping hardware behavior for various request".
          */
-        uint8_t const fReqPerm = pAddrRemap->fReqPerm & pThis->fPermValidMask;
+        uint8_t const fReqPerm = pAddrRemap->AddrReq.fReqPerm & pThis->fPermValidMask;
         uint8_t const fPtPerm  = uPtEntity & pThis->fPermValidMask;
         if ((fPtPerm & fReqPerm) == fReqPerm)
         { /* likely */ }
@@ -2127,12 +2145,12 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
  * @param   uRtaddrReg      The current RTADDR_REG value.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
+static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRREMAP pAddrRemap)
 {
     Assert(pAddrRemap->fTtm == VTD_TTM_LEGACY_MODE);    /* Paranoia. */
 
     /* Read the root-entry from guest memory. */
-    uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->idDevice);
+    uint8_t const idxRootEntry = RT_HI_U8(pAddrRemap->AddrReq.idDevice);
     VTD_ROOT_ENTRY_T RootEntry;
     int rc = dmarDrReadRootEntry(pDevIns, uRtaddrReg, idxRootEntry, &RootEntry);
     if (RT_SUCCESS(rc))
@@ -2149,7 +2167,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
             {
                 /* Read the context-entry from guest memory. */
                 RTGCPHYS const GCPhysCtxTable = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_CTP);
-                uint8_t const idxCtxEntry = RT_LO_U8(pAddrRemap->idDevice);
+                uint8_t const idxCtxEntry = RT_LO_U8(pAddrRemap->AddrReq.idDevice);
                 VTD_CONTEXT_ENTRY_T CtxEntry;
                 rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
                 if (RT_SUCCESS(rc))
@@ -2182,7 +2200,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                      * Untranslated requests are translated using second-level paging structures referenced
                                      * through SLPTPTR. Translated requests and Translation Requests are blocked.
                                      */
-                                    if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                    if (pAddrRemap->AddrReq.enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
                                         /* Validate the address width and get the paging level. */
                                         uint8_t cPagingLevel;
@@ -2217,14 +2235,14 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                      */
                                     if (pThis->fExtCapReg & VTD_BF_ECAP_REG_PT_MASK)
                                     {
-                                        if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                        if (pAddrRemap->AddrReq.enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                         {
                                             /** @todo Check AW == maximum SAGAW bit? */
-                                            pAddrRemap->Iotlbe.GCPhysBase = pAddrRemap->uDmaAddr & X86_PAGE_4K_BASE_MASK;
+                                            pAddrRemap->Iotlbe.GCPhysBase = pAddrRemap->AddrReq.uDmaAddr & X86_PAGE_4K_BASE_MASK;
                                             pAddrRemap->Iotlbe.cShift     = X86_PAGE_4K_SHIFT;
                                             pAddrRemap->Iotlbe.fPerm      = DMAR_PERM_ALL;
                                             pAddrRemap->Iotlbe.idDomain   = idDomain;
-                                            pAddrRemap->cbContiguous      = pAddrRemap->cbDma;
+                                            pAddrRemap->cbContiguous      = pAddrRemap->AddrReq.cbDma;
                                             return VINF_SUCCESS;
                                         }
                                         dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pAddrRemap);
@@ -2280,7 +2298,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
  * @param   uRtaddrReg      The current RTADDR_REG value.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRMAP pAddrRemap)
+static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARADDRREMAP pAddrRemap)
 {
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
@@ -2366,17 +2384,17 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         }
 
         uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
-        DMARADDRMAP AddrRemap;
+        DMARADDRREMAP AddrRemap;
         RT_ZERO(AddrRemap);
-        AddrRemap.idDevice     = idDevice;
-        AddrRemap.fReqPerm     = fReqPerm;
-        AddrRemap.Pasid        = NIL_PCIPASID;
-        AddrRemap.enmAddrType  = PCIADDRTYPE_UNTRANSLATED;
-        AddrRemap.enmReqType   = enmReqType;
-        AddrRemap.fTtm         = fTtm;
-        AddrRemap.uDmaAddr     = uIova;
-        AddrRemap.cbDma        = cbIova;
-        AddrRemap.Iotlbe.GCPhysBase = NIL_RTGCPHYS;
+        AddrRemap.AddrReq.uDmaAddr    = uIova;
+        AddrRemap.AddrReq.cbDma       = cbIova;
+        AddrRemap.AddrReq.fReqPerm    = fReqPerm;
+        AddrRemap.AddrReq.idDevice    = idDevice;
+        AddrRemap.AddrReq.Pasid       = NIL_PCIPASID;
+        AddrRemap.AddrReq.enmAddrType = PCIADDRTYPE_UNTRANSLATED;
+        AddrRemap.AddrReq.enmReqType  = enmReqType;
+        AddrRemap.fTtm                = fTtm;
+        AddrRemap.Iotlbe.GCPhysBase   = NIL_RTGCPHYS;
 
         int rc;
         switch (fTtm)
