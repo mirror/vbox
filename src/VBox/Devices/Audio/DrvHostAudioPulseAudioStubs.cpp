@@ -323,21 +323,21 @@ static struct
 #undef FUNC_ENTRY
 
 /** Init once.   */
-static RTONCE g_PulseAudioInitOnce = RTONCE_INITIALIZER;
+static RTONCE g_PulseAudioLibInitOnce = RTONCE_INITIALIZER;
 
 /** @callback_method_impl{FNRTONCE} */
-static DECLCALLBACK(int32_t) drvHostAudioPusleInitOnce(void *pvUser)
+static DECLCALLBACK(int32_t) drvHostAudioPulseLibInitOnce(void *pvUser)
 {
     RT_NOREF(pvUser);
     LogFlowFunc(("\n"));
 
-    RTLDRMOD hLib = NIL_RTLDRMOD;
-    int rc = RTLdrLoadSystemEx(VBOX_PULSE_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hLib);
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystemEx(VBOX_PULSE_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hMod);
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < RT_ELEMENTS(g_aImportedFunctions); i++)
         {
-            rc = RTLdrGetSymbol(hLib, g_aImportedFunctions[i].pszName, (void **)g_aImportedFunctions[i].pfn);
+            rc = RTLdrGetSymbol(hMod, g_aImportedFunctions[i].pszName, (void **)g_aImportedFunctions[i].pfn);
             if (RT_FAILURE(rc))
             {
                 LogRelFunc(("Failed to resolve function #%u: '%s' (%Rrc)\n", i, g_aImportedFunctions[i].pszName, rc));
@@ -353,11 +353,11 @@ static DECLCALLBACK(int32_t) drvHostAudioPusleInitOnce(void *pvUser)
 /**
  * Try to dynamically load the PulseAudio libraries.
  *
- * @returns VBox status code
+ * @returns VBox status code.
  */
 int audioLoadPulseLib(void)
 {
     LogFlowFunc(("\n"));
-    return RTOnce(&g_PulseAudioInitOnce, drvHostAudioPusleInitOnce, NULL);
+    return RTOnce(&g_PulseAudioLibInitOnce, drvHostAudioPulseLibInitOnce, NULL);
 }
 
