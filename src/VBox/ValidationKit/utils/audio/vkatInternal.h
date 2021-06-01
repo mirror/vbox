@@ -30,10 +30,11 @@
 # pragma once
 #endif
 
-#include "VBoxDD.h"
-
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
+#include "Audio/AudioMixBuffer.h"
+
 
 /**
  * Audio driver stack.
@@ -74,8 +75,29 @@ typedef struct AUDIOTESTDRVSTACKSTREAM
 /** Pointer to a backend-only stream structure. */
 typedef AUDIOTESTDRVSTACKSTREAM *PAUDIOTESTDRVSTACKSTREAM;
 
-/** Maximum audio streams a test environment can handle. */
-#define AUDIOTESTENV_MAX_STREAMS 8
+/**
+ * Mixer setup for a stream.
+ */
+typedef struct AUDIOTESTDRVMIXSTREAM
+{
+    /** Pointer to the driver stack. */
+    PAUDIOTESTDRVSTACK      pDrvStack;
+    /** Pointer to the stream. */
+    PPDMAUDIOSTREAM         pStream;
+    /** Properties to use. */
+    PCPDMAUDIOPCMPROPS      pProps;
+    /** Set if we're mixing or just passing thru to the driver stack. */
+    bool                    fDoMixing;
+    /** Mixer buffer. */
+    AUDIOMIXBUF             MixBuf;
+    /** Write state. */
+    AUDIOMIXBUFWRITESTATE   WriteState;
+    /** Peek state. */
+    AUDIOMIXBUFPEEKSTATE    PeekState;
+} AUDIOTESTDRVMIXSTREAM;
+/** Pointer to mixer setup for a stream. */
+typedef AUDIOTESTDRVMIXSTREAM *PAUDIOTESTDRVMIXSTREAM;
+
 
 /** The test handle. */
 extern RTTEST         g_hTest;
@@ -83,35 +105,53 @@ extern unsigned       g_uVerbosity;
 extern bool           g_fDrvAudioDebug;
 extern const char    *g_pszDrvAudioDebug;
 
+
 /** @name Driver stack
  * @{ */
-void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack);
-int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
-int audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId);
+void        audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack);
+int         audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
+int         audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId);
 /** @}  */
 
 /** @name Driver
  * @{ */
-int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, PPDMDRVINS pParentDrvIns, PPPDMDRVINS ppDrvIns);
+int         audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, PPDMDRVINS pParentDrvIns, PPPDMDRVINS ppDrvIns);
 /** @}  */
 
 /** @name Driver stack stream
  * @{ */
-int audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
-                                      void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
-int audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
-                                          uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                                          PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq);
-int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
-                                           uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                                           PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq);
-void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, bool fSync);
-int audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-uint32_t audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-bool audioTestDriverStackStreamIsOkay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, void const *pvBuf, uint32_t cbBuf, uint32_t *pcbPlayed);
+int         audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
+                                                  uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                                  PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq);
+int         audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOPCMPROPS pProps,
+                                                   uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                                   PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq);
+void        audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+int         audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, bool fSync);
+int         audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+int         audioTestDriverStackStreamDisable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+uint32_t    audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+bool        audioTestDriverStackStreamIsOkay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+int         audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, void const *pvBuf,
+                                           uint32_t cbBuf, uint32_t *pcbPlayed);
+int         audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
+                                              void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
 /** @}  */
+
+
+/** @name Mixing stream
+ * @{ */
+int         AudioTestMixStreamInit(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
+                                   PCPDMAUDIOPCMPROPS pProps, uint32_t cMsBuffer);
+void        AudioTestMixStreamTerm(PAUDIOTESTDRVMIXSTREAM pMix);
+int         AudioTestMixStreamDrain(PAUDIOTESTDRVMIXSTREAM pMix, bool fSync);
+int         AudioTestMixStreamEnable(PAUDIOTESTDRVMIXSTREAM pMix);
+uint32_t    AudioTestMixStreamGetWritable(PAUDIOTESTDRVMIXSTREAM pMix);
+bool        AudioTestMixStreamIsOkay(PAUDIOTESTDRVMIXSTREAM pMix);
+int         AudioTestMixStreamPlay(PAUDIOTESTDRVMIXSTREAM pMix, void const *pvBuf, uint32_t cbBuf, uint32_t *pcbPlayed);
+int         AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
+/** @}  */
+
 
 #endif /* !VBOX_INCLUDED_SRC_audio_vkatInternal_h */
 

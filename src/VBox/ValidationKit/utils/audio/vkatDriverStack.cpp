@@ -48,6 +48,7 @@ typedef struct PDMDRVINSINT
 #define PDMDRVINSINT_DECLARED
 
 #include "vkatInternal.h"
+#include "VBoxDD.h"
 
 
 
@@ -68,6 +69,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
     RT_NOREF(pNode, pszPath);
     return NULL;
 }
+
 
 VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
@@ -92,6 +94,7 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
+
 VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
     char szStr[128];
@@ -102,11 +105,13 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
     return rc;
 }
 
+
 VMMR3DECL(void) MMR3HeapFree(void *pv)
 {
     /* counterpart to CFGMR3QueryStringAlloc */
     RTStrFree((char *)pv);
 }
+
 
 VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
@@ -132,6 +137,7 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
     return RTStrCopy(pszString, cchString, pszDef);
 }
 
+
 VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
     PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
@@ -150,17 +156,20 @@ VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf
     return VINF_SUCCESS;
 }
 
+
 VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
     RT_NOREF(pNode, pszName, pu8);
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
+
 VMMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
 {
     RT_NOREF(pNode, pszName, pu32);
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
+
 
 VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
                                     const char *pszValidValues, const char *pszValidNodes,
@@ -200,12 +209,14 @@ static DECLCALLBACK(int) audioTestDrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFl
     return VERR_PDM_NO_ATTACHED_DRIVER;
 }
 
+
 static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
                                                         STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
                                                         const char *pszName, ...)
 {
     RT_NOREF(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName);
 }
+
 
 static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
                                                         STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
@@ -214,11 +225,13 @@ static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void
     RT_NOREF(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
 }
 
+
 static DECLCALLBACK(int) audioTestDrvHlp_STAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
 {
     RT_NOREF(pDrvIns, pvSample);
     return VINF_SUCCESS;
 }
+
 
 static DECLCALLBACK(int) audioTestDrvHlp_STAMDeregisterByPrefix(PPDMDRVINS pDrvIns, const char *pszPrefix)
 {
@@ -278,11 +291,13 @@ static DECLCALLBACK(int) audioTestIHostAudioPort_DoOnWorkerThread(PPDMIHOSTAUDIO
     return VERR_NOT_IMPLEMENTED;
 }
 
+
 DECLCALLBACK(void) audioTestIHostAudioPort_NotifyDeviceChanged(PPDMIHOSTAUDIOPORT pInterface, PDMAUDIODIR enmDir, void *pvUser)
 {
     RT_NOREF(pInterface, enmDir, pvUser);
     RTMsgWarning("audioTestIHostAudioPort_NotifyDeviceChanged was called\n");
 }
+
 
 static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwitch(PPDMIHOSTAUDIOPORT pInterface,
                                                                                     PPDMAUDIOBACKENDSTREAM pStream)
@@ -291,6 +306,7 @@ static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwi
     RTMsgWarning("audioTestIHostAudioPort_StreamNotifyPreparingDeviceSwitch was called\n");
 }
 
+
 static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyDeviceChanged(PPDMIHOSTAUDIOPORT pInterface,
                                                                             PPDMAUDIOBACKENDSTREAM pStream, bool fReInit)
 {
@@ -298,11 +314,13 @@ static DECLCALLBACK(void) audioTestIHostAudioPort_StreamNotifyDeviceChanged(PPDM
     RTMsgWarning("audioTestIHostAudioPort_StreamNotifyDeviceChanged was called\n");
 }
 
+
 static DECLCALLBACK(void) audioTestIHostAudioPort_NotifyDevicesChanged(PPDMIHOSTAUDIOPORT pInterface)
 {
     RT_NOREF(pInterface);
     RTMsgWarning("audioTestIHostAudioPort_NotifyDevicesChanged was called\n");
 }
+
 
 static PDMIHOSTAUDIOPORT g_AudioTestIHostAudioPort =
 {
@@ -312,6 +330,7 @@ static PDMIHOSTAUDIOPORT g_AudioTestIHostAudioPort =
     audioTestIHostAudioPort_StreamNotifyDeviceChanged,
     audioTestIHostAudioPort_NotifyDevicesChanged,
 };
+
 
 /**
  * Implementation of PDMIBASE::pfnQueryInterface for a fake DrvAudio above a
@@ -324,6 +343,7 @@ static DECLCALLBACK(void *) audioTestFakeDrvAudioIBaseQueryInterface(PPDMIBASE p
     RTMsgWarning("audioTestFakeDrvAudioIBaseQueryInterface: Unknown interface: %s\n", pszIID);
     return NULL;
 }
+
 
 /** IBase interface for a fake DrvAudio above a lonesome backend. */
 static PDMIBASE g_AudioTestFakeDrvAudioIBase =  { audioTestFakeDrvAudioIBaseQueryInterface };
@@ -396,6 +416,7 @@ int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, PPD
     return rc;
 }
 
+
 /**
  * Destructs a PDM audio driver instance.
  *
@@ -416,6 +437,7 @@ static void audioTestDrvDestruct(PPDMDRVINS pDrvIns)
     }
 }
 
+
 /**
  * Sends the PDM driver a power off notification.
  *
@@ -430,6 +452,7 @@ static void audioTestDrvNotifyPowerOff(PPDMDRVINS pDrvIns)
             pDrvIns->pReg->pfnPowerOff(pDrvIns);
     }
 }
+
 
 /**
  * Deletes a driver stack.
@@ -456,6 +479,7 @@ void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
     pDrvStack->pIAudioConnector = NULL;
 }
 
+
 /**
  * Initializes a driver stack.
  *
@@ -466,10 +490,11 @@ void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
  */
 int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
 {
+    int rc;
+
     RT_ZERO(*pDrvStack);
     pDrvStack->pDrvReg = pDrvReg;
 
-    int rc;
     if (!fWithDrvAudio)
         rc = audioTestDrvConstruct(pDrvStack, pDrvReg, NULL /*pParentDrvIns*/, &pDrvStack->pDrvBackendIns);
     else
@@ -524,6 +549,7 @@ int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, 
     return rc;
 }
 
+
 /**
  * Wrapper around PDMIHOSTAUDIO::pfnSetDevice.
  */
@@ -540,17 +566,17 @@ int audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmD
     return rc;
 }
 
+
 /**
  * Common stream creation code.
  *
  * @returns VBox status code.
- * @param   pDrvStack           The audio driver stack to create it via.
- * @param   pCfgReq             The requested config.
- * @param   ppStream            Where to return the stream pointer on success.
- * @param   pCfgAcq             Where to return the actual (well, not
- *                              necessarily when using DrvAudio, but probably
- *                              the same) stream config on success (not used as
- *                              input).
+ * @param   pDrvStack   The audio driver stack to create it via.
+ * @param   pCfgReq     The requested config.
+ * @param   ppStream    Where to return the stream pointer on success.
+ * @param   pCfgAcq     Where to return the actual (well, not necessarily when
+ *                      using DrvAudio, but probably the same) stream config on
+ *                      success (not used as input).
  */
 static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAMCFG pCfgReq,
                                             PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
@@ -669,6 +695,7 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
     return rc;
 }
 
+
 /**
  * Creates an output stream.
  *
@@ -727,6 +754,7 @@ int audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAU
      */
     return audioTestDriverStackStreamCreate(pDrvStack, &CfgReq, ppStream, pCfgAcq);
 }
+
 
 /**
  * Creates an input stream.
@@ -787,6 +815,7 @@ int audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUD
     return audioTestDriverStackStreamCreate(pDrvStack, &CfgReq, ppStream, pCfgAcq);
 }
 
+
 /**
  * Destroys a stream.
  */
@@ -816,6 +845,7 @@ void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOST
     }
 }
 
+
 /**
  * Enables a stream.
  */
@@ -837,6 +867,30 @@ int audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTRE
     }
     return rc;
 }
+
+
+/**
+ * Disables a stream.
+ */
+int AudioTestDriverStackStreamDisable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
+{
+    int rc;
+    if (pDrvStack->pIAudioConnector)
+    {
+        rc = pDrvStack->pIAudioConnector->pfnStreamControl(pDrvStack->pIAudioConnector, pStream, PDMAUDIOSTREAMCMD_DISABLE);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamControl/DISABLE failed: %Rrc", rc);
+    }
+    else
+    {
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_DISABLE);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamControl/DISABLE failed: %Rrc", rc);
+    }
+    return rc;
+}
+
 
 /**
  * Drains an output stream.
@@ -920,6 +974,7 @@ int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREA
     return rc;
 }
 
+
 /**
  * Checks if the stream is okay.
  * @returns true if okay, false if not.
@@ -976,6 +1031,7 @@ bool audioTestDriverStackStreamIsOkay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTR
     return fRc;
 }
 
+
 /**
  * Gets the number of bytes it's currently possible to write to the stream.
  */
@@ -991,6 +1047,7 @@ uint32_t audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPD
     }
     return cbWritable;
 }
+
 
 /**
  * Tries to play the @a cbBuf bytes of samples in @a pvBuf.
@@ -1015,6 +1072,7 @@ int audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM
     return rc;
 }
 
+
 /**
  * Tries to capture @a cbBuf bytes of samples in @a pvBuf.
  */
@@ -1036,5 +1094,256 @@ int audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTR
             RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamCapture(,,,%#x) failed: %Rrc", cbBuf, rc);
     }
     return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   Mixed streams                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Initializing mixing for a stream.
+ *
+ * This can be used as a do-nothing wrapper for the stack.
+ *
+ * @returns VBox status code.
+ * @param   pMix        The mixing state.
+ * @param   pStream     The stream to mix to/from.
+ * @param   pProps      The mixer properties.  Pass NULL for no mixing, just
+ *                      wrap the driver stack functionality.
+ * @param   cMsBuffer   The buffer size.
+ */
+int AudioTestMixStreamInit(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
+                           PCPDMAUDIOPCMPROPS pProps, uint32_t cMsBuffer)
+{
+    RT_ZERO(*pMix);
+
+    AssertReturn(pDrvStack, VERR_INVALID_PARAMETER);
+    AssertReturn(pStream, VERR_INVALID_PARAMETER);
+
+    pMix->pDrvStack = pDrvStack;
+    pMix->pStream   = pStream;
+    if (!pProps)
+    {
+        pMix->pProps = &pStream->Props;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Okay, we're doing mixing so we need to set up the mixer buffer
+     * and associated states.
+     */
+    pMix->fDoMixing = true;
+    int rc = AudioMixBufInit(&pMix->MixBuf, "mixer", pProps, PDMAudioPropsMilliToFrames(pProps, cMsBuffer));
+    if (RT_SUCCESS(rc))
+    {
+        pMix->pProps = &pMix->MixBuf.Props;
+
+        if (pStream->enmDir == PDMAUDIODIR_IN)
+        {
+            rc = AudioMixBufInitPeekState(&pMix->MixBuf, &pMix->PeekState, &pMix->MixBuf.Props);
+            if (RT_SUCCESS(rc))
+            {
+                rc = AudioMixBufInitWriteState(&pMix->MixBuf, &pMix->WriteState, &pStream->Props);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
+        }
+        else if (pStream->enmDir == PDMAUDIODIR_OUT)
+        {
+            rc = AudioMixBufInitWriteState(&pMix->MixBuf, &pMix->WriteState, &pMix->MixBuf.Props);
+            if (RT_SUCCESS(rc))
+            {
+                rc = AudioMixBufInitPeekState(&pMix->MixBuf, &pMix->PeekState, &pStream->Props);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
+        }
+        else
+        {
+            RTTestFailed(g_hTest, "Bogus stream direction!");
+            rc = VERR_INVALID_STATE;
+        }
+    }
+    else
+        RTTestFailed(g_hTest, "AudioMixBufInit failed: %Rrc", rc);
+    RT_ZERO(*pMix);
+    return rc;
+}
+
+
+/**
+ * Terminate mixing (leaves the stream untouched).
+ *
+ * @param   pMix        The mixing state.
+ */
+void AudioTestMixStreamTerm(PAUDIOTESTDRVMIXSTREAM pMix)
+{
+    if (pMix->fDoMixing)
+    {
+        AudioMixBufTerm(&pMix->MixBuf);
+        pMix->pStream = NULL;
+    }
+    RT_ZERO(*pMix);
+}
+
+
+/**
+ * Worker that transports data between the mixer buffer and the drivers.
+ *
+ * @returns VBox status code.
+ * @param   pMix    The mixer stream setup to do transfers for.
+ */
+static int audioTestMixStreamTransfer(PAUDIOTESTDRVMIXSTREAM pMix)
+{
+    uint8_t abBuf[16384];
+    if (pMix->pStream->enmDir == PDMAUDIODIR_IN)
+    {
+        //uint32_t const cbBuf = PDMAudioPropsFloorBytesToFrame(&pMix->pStream->Props, sizeof(abBuf));
+
+    }
+    else
+    {
+        /*
+         * The goal here is to empty the mixer buffer by transfering all
+         * the data to the drivers.
+         */
+        uint32_t const cbBuf = PDMAudioPropsFloorBytesToFrame(&pMix->MixBuf.Props, sizeof(abBuf));
+        for (;;)
+        {
+            uint32_t cFrames = AudioMixBufUsed(&pMix->MixBuf);
+            if (!cFrames)
+                break;
+
+            uint32_t cbWritable = audioTestDriverStackStreamGetWritable(pMix->pDrvStack, pMix->pStream);
+            if (!cbWritable)
+                break;
+
+            uint32_t cSrcFramesPeeked;
+            uint32_t cbDstPeeked;
+            AudioMixBufPeek(&pMix->MixBuf, 0 /*offSrcFrame*/, cFrames, &cSrcFramesPeeked,
+                            &pMix->PeekState, abBuf, RT_MIN(cbBuf, cbWritable), &cbDstPeeked);
+            AudioMixBufAdvance(&pMix->MixBuf, cSrcFramesPeeked);
+
+            if (!cbDstPeeked)
+                break;
+
+            uint32_t offBuf = 0;
+            while (offBuf < cbDstPeeked)
+            {
+                uint32_t cbPlayed = 0;
+                int rc = audioTestDriverStackStreamPlay(pMix->pDrvStack, pMix->pStream,
+                                                        &abBuf[offBuf], cbDstPeeked - offBuf, &cbPlayed);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (!cbPlayed)
+                    RTThreadSleep(1);
+                offBuf += cbPlayed;
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Same as audioTestDriverStackStreamDrain.
+ */
+int AudioTestMixStreamDrain(PAUDIOTESTDRVMIXSTREAM pMix, bool fSync)
+{
+    /*
+     * If we're mixing, we must first make sure the buffer is empty.
+     */
+    if (pMix->fDoMixing)
+    {
+        audioTestMixStreamTransfer(pMix);
+        while (AudioMixBufUsed(&pMix->MixBuf) > 0)
+        {
+            RTThreadSleep(1);
+            audioTestMixStreamTransfer(pMix);
+        }
+    }
+
+    /*
+     * Then we do the regular workt.
+     */
+    return audioTestDriverStackStreamDrain(pMix->pDrvStack, pMix->pStream, fSync);
+}
+
+
+/**
+ * Same as audioTestDriverStackStreamEnable.
+ */
+int AudioTestMixStreamEnable(PAUDIOTESTDRVMIXSTREAM pMix)
+{
+    return audioTestDriverStackStreamEnable(pMix->pDrvStack, pMix->pStream);
+}
+
+
+/**
+ * Same as audioTestDriverStackStreamGetWritable
+ */
+uint32_t AudioTestMixStreamGetWritable(PAUDIOTESTDRVMIXSTREAM pMix)
+{
+    if (!pMix->fDoMixing)
+        return audioTestDriverStackStreamGetWritable(pMix->pDrvStack, pMix->pStream);
+    uint32_t cbRet = AudioMixBufFreeBytes(&pMix->MixBuf);
+    if (!cbRet)
+    {
+        audioTestMixStreamTransfer(pMix);
+        cbRet = AudioMixBufFreeBytes(&pMix->MixBuf);
+    }
+    return cbRet;
+}
+
+
+/**
+ * Same as audioTestDriverStackStreamIsOkay.
+ */
+bool AudioTestMixStreamIsOkay(PAUDIOTESTDRVMIXSTREAM pMix)
+{
+    return audioTestDriverStackStreamIsOkay(pMix->pDrvStack, pMix->pStream);
+}
+
+
+/**
+ * Same as audioTestDriverStackStreamPlay.
+ */
+int AudioTestMixStreamPlay(PAUDIOTESTDRVMIXSTREAM pMix, void const *pvBuf, uint32_t cbBuf, uint32_t *pcbPlayed)
+{
+    if (!pMix->fDoMixing)
+        return audioTestDriverStackStreamPlay(pMix->pDrvStack, pMix->pStream, pvBuf, cbBuf, pcbPlayed);
+
+    *pcbPlayed = 0;
+
+    int rc = audioTestMixStreamTransfer(pMix);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t const cbFrame = PDMAudioPropsFrameSize(&pMix->MixBuf.Props);
+    while (cbBuf >= cbFrame)
+    {
+        uint32_t const  cFrames = AudioMixBufFree(&pMix->MixBuf);
+        if (!cFrames)
+            break;
+        uint32_t cbToWrite = PDMAudioPropsFramesToBytes(&pMix->MixBuf.Props, cFrames);
+        cbToWrite = RT_MIN(cbToWrite, cbBuf);
+        cbToWrite = PDMAudioPropsFloorBytesToFrame(&pMix->MixBuf.Props, cbToWrite);
+
+        uint32_t cFramesWritten = 0;
+        AudioMixBufWrite(&pMix->MixBuf, &pMix->WriteState, pvBuf, cbToWrite, 0 /*offDstFrame*/, cFrames, &cFramesWritten);
+        Assert(cFramesWritten == PDMAudioPropsBytesToFrames(&pMix->MixBuf.Props, cbToWrite));
+        AudioMixBufCommit(&pMix->MixBuf, cFramesWritten);
+
+        *pcbPlayed += cbToWrite;
+        cbBuf      -= cbToWrite;
+        pvBuf       = (uint8_t const *)pvBuf + cbToWrite;
+
+        rc = audioTestMixStreamTransfer(pMix);
+        if (RT_FAILURE(rc))
+            return *pcbPlayed ? VINF_SUCCESS : rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
