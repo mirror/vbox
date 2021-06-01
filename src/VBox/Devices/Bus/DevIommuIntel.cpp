@@ -150,9 +150,9 @@ AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 #define DMAR_PERM_READ                              RT_BIT(0)
 /** DMA request permission: Write. */
 #define DMAR_PERM_WRITE                             RT_BIT(1)
-/** DMA request permission: Execute. */
+/** DMA request permission: Execute (ER). */
 #define DMAR_PERM_EXE                               RT_BIT(2)
-/** DMA request permission: Supervisor privilege. */
+/** DMA request permission: Supervisor privilege (PR). */
 #define DMAR_PERM_PRIV                              RT_BIT(3)
 /** DMA request permissions: All. */
 #define DMAR_PERM_ALL                               (DMAR_PERM_READ | DMAR_PERM_WRITE | DMAR_PERM_EXE | DMAR_PERM_PRIV)
@@ -188,6 +188,9 @@ typedef enum
     kDmarDiag_Atf_Lct_4_2,
     kDmarDiag_Atf_Lct_4_3,
     kDmarDiag_Atf_Lct_5,
+    kDmarDiag_Atf_Lgn_1_1,
+    kDmarDiag_Atf_Lgn_1_2,
+    kDmarDiag_Atf_Lgn_1_3,
     kDmarDiag_Atf_Lrt_1,
     kDmarDiag_Atf_Lrt_2,
     kDmarDiag_Atf_Lrt_3,
@@ -197,6 +200,7 @@ typedef enum
     kDmarDiag_Atf_Rta_1_1,
     kDmarDiag_Atf_Rta_1_2,
     kDmarDiag_Atf_Rta_1_3,
+    kDmarDiag_Atf_Sgn_5,
     kDmarDiag_Atf_Ssl_1,
     kDmarDiag_Atf_Ssl_2,
     kDmarDiag_Atf_Ssl_3,
@@ -261,6 +265,9 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Atf_Lct_4_2               ),
     DMARDIAG_DESC(Atf_Lct_4_3               ),
     DMARDIAG_DESC(Atf_Lct_5                 ),
+    DMARDIAG_DESC(Atf_Lgn_1_1               ),
+    DMARDIAG_DESC(Atf_Lgn_1_2               ),
+    DMARDIAG_DESC(Atf_Lgn_1_3               ),
     DMARDIAG_DESC(Atf_Lrt_1                 ),
     DMARDIAG_DESC(Atf_Lrt_2                 ),
     DMARDIAG_DESC(Atf_Lrt_3                 ),
@@ -270,6 +277,7 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Atf_Rta_1_1               ),
     DMARDIAG_DESC(Atf_Rta_1_2               ),
     DMARDIAG_DESC(Atf_Rta_1_3               ),
+    DMARDIAG_DESC(Atf_Sgn_5                 ),
     DMARDIAG_DESC(Atf_Ssl_1                 ),
     DMARDIAG_DESC(Atf_Ssl_2                 ),
     DMARDIAG_DESC(Atf_Ssl_3                 ),
@@ -343,10 +351,10 @@ typedef struct DMAR
 
     /** Host-address width (HAW) base address mask. */
     uint64_t                    fHawBaseMask;
-    /** Maximum guest-address width (MGAW) base address mask. */
-    uint64_t                    fMgawBaseMask;
+    /** Maximum guest-address width (MGAW) invalid address mask. */
+    uint64_t                    fInvMgawMask;
     /** Maximum supported paging level (3, 4 or 5). */
-    uint8_t                     uMaxPagingLevel;
+    uint8_t                     cMaxPagingLevel;
     /** DMA request valid permissions mask. */
     uint8_t                     fPermValidMask;
 
@@ -1883,9 +1891,9 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  * @returns @c true if it's supported, @c false otherwise.
  * @param   pThis               The shared DMAR device state.
  * @param   pCtxEntry           The context entry.
- * @param   puPagingLevel       Where to store the paging level.
+ * @param   pcPagingLevel       Where to store the paging level.
  */
-static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry, uint8_t *puPagingLevel)
+static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry, uint8_t *pcPagingLevel)
 {
     uint8_t const fTt     = RT_BF_GET(pCtxEntry->au64[0], VTD_BF_0_CONTEXT_ENTRY_TT);
     uint8_t const fAw     = RT_BF_GET(pCtxEntry->au64[1], VTD_BF_1_CONTEXT_ENTRY_AW);
@@ -1893,13 +1901,13 @@ static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEn
     uint8_t const fSagaw  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     Assert(!(fSagaw & ~(RT_BIT(1) | RT_BIT(2) | RT_BIT(3))));
 
-    *puPagingLevel = fAw + 2;
+    *pcPagingLevel = fAw + 2;
 
     /* With pass-through, the address width must be the largest AGAW supported by hardware. */
     if (fTt == VTD_TT_UNTRANSLATED_PT)
     {
-        Assert(pThis->uMaxPagingLevel >= 3 && pThis->uMaxPagingLevel <= 5); /* Paranoia. */
-        return *puPagingLevel == pThis->uMaxPagingLevel;
+        Assert(pThis->cMaxPagingLevel >= 3 && pThis->cMaxPagingLevel <= 5); /* Paranoia. */
+        return *pcPagingLevel == pThis->cMaxPagingLevel;
     }
 
     /* The address width must be any of the ones supported by hardware. */
@@ -1966,11 +1974,11 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   SlpEntry        The second-level paging entry.
- * @param   uPagingLevel    The paging level.
+ * @param   cPagingLevel    The paging level.
  * @param   idDomain        The domain ID for the translation.
  * @param   pAddrRemap      The DMA address remap info.
  */
-static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, uint8_t uPagingLevel, uint16_t idDomain,
+static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEntry, uint8_t cPagingLevel, uint16_t idDomain,
                                       PDMARADDRMAP pAddrRemap)
 {
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
@@ -1982,7 +1990,7 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
                                                  VTD_SL_PML4E_VALID_MASK,
                                                  VTD_SL_PML5E_VALID_MASK };
 
-    /* Mask of valid large-page paging entry bits. */
+    /* Mask of valid large-page (1GB, 2MB) paging entries. */
     static uint64_t const s_auLargePageRsvd[] = { 0,
                                                   VTD_SL_PDE2M_VALID_MASK,
                                                   VTD_SL_PDPE1G_VALID_MASK,
@@ -1990,18 +1998,29 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
                                                   0 };
 
     /* Paranoia. */
-    Assert(uPagingLevel >= 3 && uPagingLevel <= 5);
+    Assert(cPagingLevel >= 3 && cPagingLevel <= 5);
     AssertCompile(RT_ELEMENTS(s_auPtEntityRsvd) == RT_ELEMENTS(s_auLargePageRsvd));
     AssertCompile(RT_ELEMENTS(s_auPtEntityRsvd) == 5);
+
+    /* Second-level translations restricts input address to an implementation-specific MGAW. */
+    uint64_t const uDmaAddr = pAddrRemap->uDmaAddr;
+    if (!(uDmaAddr & pThis->fInvMgawMask))
+    { /* likely */ }
+    else
+    {
+        if (pAddrRemap->fTtm == VTD_TTM_LEGACY_MODE)
+            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lgn_1_1, VTDATFAULT_LGN_1_1, pAddrRemap);
+        else
+            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Sgn_5, VTDATFAULT_SGN_5, pAddrRemap);
+        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    }
 
     /*
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t       uPtEntity    = SlpEntry;
-    uint64_t const uDmaAddr     = pAddrRemap->uDmaAddr & pThis->fMgawBaseMask;
-    uint64_t const fHawBaseMask = pThis->fHawBaseMask;
-    for (int8_t iLevel = uPagingLevel - 1; iLevel >= 0; iLevel--)
+    uint64_t uPtEntity = SlpEntry;
+    for (int8_t iLevel = cPagingLevel - 1; iLevel >= 0; iLevel--)
     {
         /*
          * Read the paging entry for the current level.
@@ -2010,8 +2029,7 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
         {
             uint16_t const idxPte         = (uDmaAddr >> cLevelShift) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
-            /** @todo if we validate 63:HAW (since hardware treats it as reserved and we should fault if that's the case, we might not need to & fHawbaseMask here. */
-            RTGCPHYS const GCPhysPtEntity = (uPtEntity & fHawBaseMask) | offPte;
+            RTGCPHYS const GCPhysPtEntity = uPtEntity | offPte;
             int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
             if (RT_SUCCESS(rc))
             { /* likely */ }
@@ -2167,8 +2185,8 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                     if (pAddrRemap->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
                                         /* Validate the address width and get the paging level. */
-                                        uint8_t uPagingLevel;
-                                        if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, &uPagingLevel))
+                                        uint8_t cPagingLevel;
+                                        if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, &cPagingLevel))
                                         {
                                             /* Read the SLPTPTR from guest memory. */
                                             RTGCPHYS const GCPhysSlptPtr = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
@@ -2177,7 +2195,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                             if (RT_SUCCESS(rc))
                                             {
                                                 /* Finally... perform second-level translation. */
-                                                return dmarDrSecondLevelTranslate(pDevIns, SlpEntry, uPagingLevel, idDomain,
+                                                return dmarDrSecondLevelTranslate(pDevIns, SlpEntry, cPagingLevel, idDomain,
                                                                                   pAddrRemap);
                                             }
                                             dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_3, VTDATFAULT_LCT_4_3, pAddrRemap);
@@ -3460,9 +3478,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
-        pThis->fHawBaseMask    = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
-        pThis->fMgawBaseMask   = pThis->fHawBaseMask;
-        pThis->uMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
+        pThis->fHawBaseMask = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
+        pThis->fInvMgawMask = UINT64_MAX << cGstPhysAddrBits;
+        pThis->cMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
     }
 
     /* ECAP_REG */
@@ -3729,9 +3747,9 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     uint8_t const  fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     uint16_t const offFrcd   = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
     uint16_t const offIva    = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
-    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW=%#RX64 MGAW=%#RX64 FRO=%#x IRO=%#x) mapped at %#RGp\n",
+    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Base=%#RX64 MGAW_Inv=%#RX64 FRO=%#x IRO=%#x) mapped at %#RGp\n",
             DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
-            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask, pThis->fMgawBaseMask, offFrcd, offIva,
+            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask, pThis->fInvMgawMask, offFrcd, offIva,
             DMAR_MMIO_BASE_PHYSADDR));
 
     return VINF_SUCCESS;

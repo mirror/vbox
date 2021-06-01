@@ -2713,7 +2713,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_LCT_1   = 0x9,
     VTDATFAULT_LCT_2   = 0x2,
     VTDATFAULT_LCT_3   = 0xb,
-    VTDATFAULT_LCT_4_0 = 0x3,
     VTDATFAULT_LCT_4_1 = 0x3,
     VTDATFAULT_LCT_4_2 = 0x3,
     VTDATFAULT_LCT_4_3 = 0x3,
@@ -2724,7 +2723,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_LSL_2   = 0xc,
 
     /* Legacy General Faults (LGN). */
-    VTDATFAULT_LGN_1_0 = 0x4,
     VTDATFAULT_LGN_1_1 = 0x4,
     VTDATFAULT_LGN_1_2 = 0x4,
     VTDATFAULT_LGN_1_3 = 0x4,
@@ -2733,7 +2731,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_LGN_4   = 0xe,
 
     /* Root-Table Address Register Faults (RTA). */
-    VTDATFAULT_RTA_1_0 = 0x30,
     VTDATFAULT_RTA_1_1 = 0x30,
     VTDATFAULT_RTA_1_2 = 0x30,
     VTDATFAULT_RTA_1_3 = 0x30,
@@ -2750,7 +2747,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_SCT_1   = 0x40,
     VTDATFAULT_SCT_2   = 0x41,
     VTDATFAULT_SCT_3   = 0x42,
-    VTDATFAULT_SCT_4_0 = 0x43,
     VTDATFAULT_SCT_4_1 = 0x43,
     VTDATFAULT_SCT_4_2 = 0x43,
     VTDATFAULT_SCT_5   = 0x44,
@@ -2768,7 +2764,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_SPT_1   = 0x58,
     VTDATFAULT_SPT_2   = 0x59,
     VTDATFAULT_SPT_3   = 0x5a,
-    VTDATFAULT_SPT_4_0 = 0x5b,
     VTDATFAULT_SPT_4_1 = 0x5b,
     VTDATFAULT_SPT_4_2 = 0x5b,
     VTDATFAULT_SPT_4_3 = 0x5b,
@@ -2800,7 +2795,6 @@ typedef enum VTDATFAULT
     VTDATFAULT_SGN_1   = 0x80,
     VTDATFAULT_SGN_2   = 0x81,
     VTDATFAULT_SGN_3   = 0x82,
-    VTDATFAULT_SGN_4_0 = 0x83,
     VTDATFAULT_SGN_4_1 = 0x83,
     VTDATFAULT_SGN_4_2 = 0x83,
     VTDATFAULT_SGN_5   = 0x84,
