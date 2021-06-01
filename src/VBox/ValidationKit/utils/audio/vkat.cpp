@@ -1802,6 +1802,8 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                         rcExit = audioTestPlayOneInner(&Mix, &WaveFile, &CfgAcq, pszFile);
                     else
                         rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
+
+                    AudioTestMixStreamTerm(&Mix);
                 }
                 audioTestDriverStackStreamDestroy(&DrvStack, pStream);
             }
