@@ -1108,8 +1108,8 @@ int AudioMixBufInitPeekState(PCAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFPEEKSTATE pState
     pState->cDstChannels   = cDstCh;
     pState->cbDstFrame     = PDMAudioPropsFrameSize(pProps);
     audioMixBufInitChannelMap(pState->aidxChannelMap, &pMixBuf->Props, pProps);
-    AssertReturn(cDstCh > 0 && cDstCh < PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
-    AssertReturn(cSrcCh > 0 && cSrcCh < PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
+    AssertReturn(cDstCh > 0 && cDstCh <= PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
+    AssertReturn(cSrcCh > 0 && cSrcCh <= PDMAUDIO_MAX_CHANNELS, VERR_OUT_OF_RANGE);
 
     if (PDMAudioPropsIsSigned(pProps))
     {
