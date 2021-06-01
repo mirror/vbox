@@ -1068,7 +1068,7 @@ int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf)
  * @returns VBox status code.
  * @param   pObj                Test object to add meta data for.
  * @param   pszFormat           Format string to add.
- * @param   va_list             Variable arguments list to use for the format string.
+ * @param   va                  Variable arguments list to use for the format string.
  */
 static int audioTestSetObjAddMetadataStrV(PAUDIOTESTOBJ pObj, const char *pszFormat, va_list va)
 {
