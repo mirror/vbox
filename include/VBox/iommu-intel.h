@@ -892,8 +892,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PTE_, UINT64_C(0), UINT64_MAX,
                                                                  | VTD_BF_SL_PTE_IPAT_MASK | VTD_BF_SL_PTE_IGN_7_MASK \
                                                                  | VTD_BF_SL_PTE_A_MASK | VTD_BF_SL_PTE_D_MASK \
                                                                  | VTD_BF_SL_PTE_IGN_10_MASK | VTD_BF_SL_PTE_ADDR_MASK \
-                                                                 | VTD_BF_SL_PTE_IGN_61_52_MASK | VTD_BF_SL_PTE_RSVD_62_MASK \
-                                                                 | VTD_BF_SL_PTE_IGN_63_MASK)
+                                                                 | VTD_BF_SL_PTE_IGN_61_52_MASK | VTD_BF_SL_PTE_IGN_63_MASK)
 /** @} */
 
 
