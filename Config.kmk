@@ -2890,7 +2890,8 @@ ifeq ($(KBUILD_TARGET), darwin)
         /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
         /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
         $(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
-        ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands)
+        $(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 10,/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/bin,) \
+        ) /usr/bin)
  VBOX_JAVA      = $(VBOX_JAVA_COMMANDS)/java
  VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
  VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
@@ -2898,7 +2899,10 @@ ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVADOC   = $(VBOX_JAVA_COMMANDS)/javadoc
  VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
  if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
-  VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
+  VBOX_JAVA_INC = $(firstword $(wildcard \
+        $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers \
+        /Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/include \
+        ) )
  else
   VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
  endif
