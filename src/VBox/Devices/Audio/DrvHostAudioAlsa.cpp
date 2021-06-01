@@ -500,7 +500,7 @@ static int alsaStreamSetSWParams(snd_pcm_t *hPCM, bool fIn, PALSAAUDIOSTREAMCFG 
     err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pCfgObt->threshold);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to get start threshold: %s\n", snd_strerror(err)), err);
 
-    LogRel2(("ALSA: SW params: %ul frames threshold, %ul frame avail minimum\n",
+    LogRel2(("ALSA: SW params: %lu frames threshold, %lu frame avail minimum\n",
              pCfgObt->threshold, pCfgReq->period_size));
     return 0;
 }
@@ -547,7 +547,6 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pCfgReq, P
     unsigned int cChannels = pCfgReq->cChannels;
     err = snd_pcm_hw_params_set_channels_near(hPCM, pHWParms, &cChannels);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", pCfgReq->cChannels), err);
-    AssertLogRelMsgReturn(cChannels == 1 || cChannels == 2, ("ALSA: Number of audio channels (%u) not supported\n", cChannels), -1);
     pCfgObt->cChannels = cChannels;
 
     /* The period size (reportedly frame count per hw interrupt): */
@@ -1128,6 +1127,16 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAlsaAudioHA_StreamGetState(P
 
     PDMHOSTAUDIOSTREAMSTATE enmStreamState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
     snd_pcm_state_t         enmAlsaState   = snd_pcm_state(pStreamALSA->hPCM);
+    if (enmAlsaState == SND_PCM_STATE_DRAINING)
+    {
+        /* We're operating in non-blocking mode, so we must (at least for a demux
+           config) call snd_pcm_drain again to drive it forward.  Otherwise we
+           might be stuck in the drain state forever. */
+        Log5Func(("Calling snd_pcm_drain again...\n"));
+        snd_pcm_drain(pStreamALSA->hPCM);
+        enmAlsaState = snd_pcm_state(pStreamALSA->hPCM);
+    }
+
     if (enmAlsaState == SND_PCM_STATE_DRAINING)
         enmStreamState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 #if (((SND_LIB_MAJOR) << 16) | ((SND_LIB_MAJOR) << 8) | (SND_LIB_SUBMINOR)) >= 0x10002 /* was added in 1.0.2 */
