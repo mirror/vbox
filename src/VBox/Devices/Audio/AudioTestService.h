@@ -33,6 +33,24 @@
 typedef struct ATSCALLBACKS
 {
     /**
+     * Begins a test set. Optional.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pszTag          Tag of test set to begin.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTestSetBegin, (void const *pvUser, const char *pszTag));
+
+    /**
+     * Ends the current test set. Optional.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pszTag          Tag of test set to end.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTestSetEnd,   (void const *pvUser, const char *pszTag));
+
+    /**
      * Plays a test tone.
      *
      * @returns VBox status code.
@@ -77,7 +95,6 @@ typedef struct ATSSERVER
 } ATSSERVER;
 /** Pointer to an Audio Test Service (ATS) instance. */
 typedef ATSSERVER *PATSSERVER;
-
 
 int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks);
 int AudioTestSvcDestroy(PATSSERVER pThis);

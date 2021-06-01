@@ -120,6 +120,38 @@ typedef ATSPKTREPHOWDY *PATSPKTREPHOWDY;
 
 /* No additional structures for BYE. */
 
+#define ATSPKT_OPCODE_TESTSET_BEGIN     "TSET BEG"
+
+/**
+ * The TSET BEG request structure.
+ */
+typedef struct ATSPKTREQTSETBEG
+{
+    /** Embedded packet header. */
+    ATSPKTHDR          Hdr;
+    /** Audio test set tag to use. */
+    char               szTag[AUDIOTEST_TAG_MAX];
+} ATSPKTREQTSETBEG;
+AssertCompileSizeAlignment(ATSPKTREQTSETBEG, ATSPKT_ALIGNMENT);
+/** Pointer to a TSET BEG reply structure. */
+typedef ATSPKTREQTSETBEG *PATSPKTREQTSETBEG;
+
+#define ATSPKT_OPCODE_TESTSET_END       "TSET END"
+
+/**
+ * The TSET END request structure.
+ */
+typedef struct ATSPKTREQTSETEND
+{
+    /** Embedded packet header. */
+    ATSPKTHDR          Hdr;
+    /** Audio test set tag to use. */
+    char               szTag[AUDIOTEST_TAG_MAX];
+} ATSPKTREQTSETEND;
+AssertCompileSizeAlignment(ATSPKTREQTSETEND, ATSPKT_ALIGNMENT);
+/** Pointer to a TSET STA reply structure. */
+typedef ATSPKTREQTSETEND *PATSPKTREQTSETEND;
+
 #define ATSPKT_OPCODE_TONE_PLAY         "TNPLY   "
 
 /**

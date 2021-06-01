@@ -473,7 +473,9 @@ static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHd
 {
     int rc;
     if (pPktHdr->cb == sizeof(ATSPKTHDR))
+    {
         rc = atsReplyAck(pThis, pClient, pPktHdr);
+    }
     else
         rc = atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTHDR));
     return rc;
@@ -513,6 +515,73 @@ static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPkt
         pThis->pTransport->pfnNotifyHowdy(pClient->pTransportClient);
         pClient->enmState = ATSCLIENTSTATE_READY;
     }
+
+    return rc;
+}
+
+/**
+ * Verifies and acknowledges a "TSET BEG" request.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ATS instance.
+ * @param   pClient             The ATS client structure.
+ * @param   pPktHdr             The test set begin packet.
+ */
+static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(ATSPKTREQTSETBEG))
+        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETBEG));
+
+    PATSPKTREQTSETBEG pReq = (PATSPKTREQTSETBEG)pPktHdr;
+
+    int rc = VINF_SUCCESS;
+
+    if (pThis->Callbacks.pfnTestSetBegin)
+    {
+        rc = pThis->Callbacks.pfnTestSetBegin(pThis->Callbacks.pvUser, pReq->szTag);
+        if (RT_FAILURE(rc))
+            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning test set '%s' failed", pReq->szTag);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = atsReplyAck(pThis, pClient, pPktHdr);
+    }
+    else
+        rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning test set failed");
+
+    return rc;
+}
+
+/**
+ * Verifies and acknowledges a "TSET END" request.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ATS instance.
+ * @param   pClient             The ATS client structure.
+ * @param   pPktHdr             The test set end packet.
+ */
+static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(ATSPKTREQTSETEND))
+        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETEND));
+
+    PATSPKTREQTSETEND pReq = (PATSPKTREQTSETEND)pPktHdr;
+
+    int rc = VINF_SUCCESS;
+
+    if (pThis->Callbacks.pfnTestSetEnd)
+    {
+        rc = pThis->Callbacks.pfnTestSetEnd(pThis->Callbacks.pvUser, pReq->szTag);
+        if (RT_FAILURE(rc))
+            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Ending test set '%s' failed", pReq->szTag);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = atsReplyAck(pThis, pClient, pPktHdr);
+    }
+    else
+        rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Ending test set failed");
 
     return rc;
 }
@@ -573,6 +642,11 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
         rc = atsDoHowdy(pThis, pClient, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_BYE))
         rc = atsDoBye(pThis, pClient, pPktHdr);
+    /* Test set handling: */
+    else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_BEGIN))
+        rc = atsDoTestSetBegin(pThis, pClient, pPktHdr);
+    else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_END))
+        rc = atsDoTestSetEnd(pThis, pClient, pPktHdr);
     /* Audio testing: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_PLAY))
         rc = atsDoTonePlay(pThis, pClient, pPktHdr);

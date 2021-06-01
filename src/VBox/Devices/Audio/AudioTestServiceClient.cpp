@@ -304,6 +304,52 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t 
 }
 
 /**
+ * Tells the server to begin a new test set.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to issue command for.
+ * @param   pszTag              Tag to use for the test set to begin.
+ */
+int AudioTestSvcClientTestSetBegin(PATSCLIENT pClient, const char *pszTag)
+{
+    ATSPKTREQTSETBEG Req;
+
+    int rc = RTStrCopy(Req.szTag, sizeof(Req.szTag), pszTag);
+    AssertRCReturn(rc, rc);
+
+    audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TESTSET_BEGIN, 0);
+
+    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    if (RT_SUCCESS(rc))
+        rc = audioTestSvcClientRecvAck(pClient);
+
+    return rc;
+}
+
+/**
+ * Tells the server to end a runing test set.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to issue command for.
+ * @param   pszTag              Tag of test set to end.
+ */
+int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag)
+{
+    ATSPKTREQTSETEND Req;
+
+    int rc = RTStrCopy(Req.szTag, sizeof(Req.szTag), pszTag);
+    AssertRCReturn(rc, rc);
+
+    audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TESTSET_END, 0);
+
+    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    if (RT_SUCCESS(rc))
+        rc = audioTestSvcClientRecvAck(pClient);
+
+    return rc;
+}
+
+/**
  * Tells the server to play a (test) tone.
  *
  * @returns VBox status code.

@@ -545,7 +545,7 @@ bool AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr)
 static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *pszDesc, va_list args)
 {
     PAUDIOTESTERRORENTRY pEntry = (PAUDIOTESTERRORENTRY)RTMemAlloc(sizeof(AUDIOTESTERRORENTRY));
-    AssertReturn(pEntry, VERR_NO_MEMORY);
+    AssertPtrReturn(pEntry, VERR_NO_MEMORY);
 
     if (RTStrPrintf2V(pEntry->szDesc, sizeof(pEntry->szDesc), pszDesc, args) < 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
@@ -632,6 +632,17 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
 DECLINLINE(int) audioTestSetGetObjPath(PAUDIOTESTSET pSet, char *pszPathAbs, size_t cbPathAbs, const char *pszObjName)
 {
     return RTPathJoin(pszPathAbs, cbPathAbs, pSet->szPathAbs, pszObjName);
+}
+
+/**
+ * Returns the tag of a test set.
+ *
+ * @returns Test set tag.
+ * @param   pSet                Test set to return tag for.
+ */
+const char *AudioTestSetGetTag(PAUDIOTESTSET pSet)
+{
+    return pSet->szTag;
 }
 
 /**
@@ -745,6 +756,26 @@ int AudioTestSetDestroy(PAUDIOTESTSET pSet)
         rc = AudioTestSetObjClose(pObj);
         if (RT_SUCCESS(rc))
         {
+            PAUDIOTESTOBJMETA pMeta, pMetaNext;
+            RTListForEachSafe(&pObj->lstMeta, pMeta, pMetaNext, AUDIOTESTOBJMETA, Node)
+            {
+                switch (pMeta->enmType)
+                {
+                    case AUDIOTESTOBJMETADATATYPE_STRING:
+                    {
+                        RTStrFree((char *)pMeta->pvMeta);
+                        break;
+                    }
+
+                    default:
+                        AssertFailed();
+                        break;
+                }
+
+                RTListNodeRemove(&pMeta->Node);
+                RTMemFree(pMeta);
+            }
+
             RTListNodeRemove(&pObj->Node);
             RTMemFree(pObj);
 
@@ -869,6 +900,41 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
         AssertRCReturn(rc, rc);
         rc = audioTestManifestWrite(pSet, "obj_name=%s\n", pObj->szName);
         AssertRCReturn(rc, rc);
+
+        switch (pObj->enmType)
+        {
+            case AUDIOTESTOBJTYPE_FILE:
+            {
+                rc = audioTestManifestWrite(pSet, "obj_size=%RU64\n", pObj->File.cbSize);
+                AssertRCReturn(rc, rc);
+                break;
+            }
+
+            default:
+                AssertFailed();
+                break;
+        }
+
+        /*
+         * Write all meta data.
+         */
+        PAUDIOTESTOBJMETA pMeta;
+        RTListForEach(&pObj->lstMeta, pMeta, AUDIOTESTOBJMETA, Node)
+        {
+            switch (pMeta->enmType)
+            {
+                case AUDIOTESTOBJMETADATATYPE_STRING:
+                {
+                    rc = audioTestManifestWrite(pSet, (const char *)pMeta->pvMeta);
+                    AssertRCReturn(rc, rc);
+                    break;
+                }
+
+                default:
+                    AssertFailed();
+                    break;
+            }
+        }
     }
 
     RTFileClose(pSet->f.hFile);
@@ -937,6 +1003,8 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
     PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
     AssertPtrReturn(pObj, VERR_NO_MEMORY);
 
+    RTListInit(&pObj->lstMeta);
+
     if (RTStrPrintf2(pObj->szName, sizeof(pObj->szName), "%04RU32-%s", pSet->cObj, pszName) <= 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
@@ -995,6 +1063,49 @@ int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf)
 }
 
 /**
+ * Adds meta data to a test object as a string, va_list version.
+ *
+ * @returns VBox status code.
+ * @param   pObj                Test object to add meta data for.
+ * @param   pszFormat           Format string to add.
+ * @param   va_list             Variable arguments list to use for the format string.
+ */
+static int audioTestSetObjAddMetadataStrV(PAUDIOTESTOBJ pObj, const char *pszFormat, va_list va)
+{
+    PAUDIOTESTOBJMETA pMeta = (PAUDIOTESTOBJMETA)RTMemAlloc(sizeof(AUDIOTESTOBJMETA));
+    AssertPtrReturn(pMeta, VERR_NO_MEMORY);
+
+    pMeta->pvMeta = RTStrAPrintf2V(pszFormat, va);
+    AssertPtrReturn(pMeta->pvMeta, VERR_BUFFER_OVERFLOW);
+    pMeta->cbMeta = RTStrNLen((const char *)pMeta->pvMeta, RTSTR_MAX);
+
+    pMeta->enmType = AUDIOTESTOBJMETADATATYPE_STRING;
+
+    RTListAppend(&pObj->lstMeta, &pMeta->Node);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Adds meta data to a test object as a string.
+ *
+ * @returns VBox status code.
+ * @param   pObj                Test object to add meta data for.
+ * @param   pszFormat           Format string to add.
+ * @param   ...                 Variable arguments for the format string.
+ */
+int AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...)
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    int rc = audioTestSetObjAddMetadataStrV(pObj, pszFormat, va);
+    va_end(va);
+
+    return rc;
+}
+
+/**
  * Closes an opened audio test object.
  *
  * @returns VBox status code.
@@ -1012,6 +1123,8 @@ int AudioTestSetObjClose(PAUDIOTESTOBJ pObj)
 
     if (RTFileIsValid(pObj->File.hFile))
     {
+        pObj->File.cbSize = RTFileTell(pObj->File.hFile);
+
         rc = RTFileClose(pObj->File.hFile);
         pObj->File.hFile = NIL_RTFILE;
     }
@@ -1019,6 +1132,15 @@ int AudioTestSetObjClose(PAUDIOTESTOBJ pObj)
     return rc;
 }
 
+/**
+ * Begins a new test of a test set.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to begin new test for.
+ * @param   pszDesc             Test description.
+ * @param   pParms              Test parameters to use.
+ * @param   ppEntry             Where to return the new test handle.
+ */
 int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry)
 {
     AssertReturn(pSet->cTestsRunning == 0, VERR_WRONG_ORDER); /* No test nesting allowed. */
@@ -1094,6 +1216,14 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     return rc;
 }
 
+/**
+ * Marks a running test as failed.
+ *
+ * @returns VBox status code.
+ * @param   pEntry              Test to mark.
+ * @param   rc                  Error code.
+ * @param   pszErr              Error description.
+ */
 int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
 {
     AssertReturn(pEntry->pParent->cTestsRunning == 1,            VERR_WRONG_ORDER); /* No test nesting allowed. */
@@ -1112,6 +1242,12 @@ int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
     return rc2;
 }
 
+/**
+ * Marks a running test as successfully done.
+ *
+ * @returns VBox status code.
+ * @param   pEntry              Test to mark.
+ */
 int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
 {
     AssertReturn(pEntry->pParent->cTestsRunning == 1,            VERR_WRONG_ORDER); /* No test nesting allowed. */
@@ -1142,19 +1278,23 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
 
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
+    int rc = RTDirCreateFullPath(pszOutDir, 0755);
+    if (RT_FAILURE(rc))
+        return rc;
+
     char szOutName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 16];
     if (RTStrPrintf2(szOutName, sizeof(szOutName), "%s-%s%s",
                      AUDIOTEST_PATH_PREFIX_STR, pSet->szTag, AUDIOTEST_ARCHIVE_SUFF_STR) <= 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     char szOutPath[RTPATH_MAX];
-    int rc = RTPathJoin(szOutPath, sizeof(szOutPath), pszOutDir, szOutName);
+    rc = RTPathJoin(szOutPath, sizeof(szOutPath), pszOutDir, szOutName);
     AssertRCReturn(rc, rc);
 
     const char *apszArgs[10];
     unsigned    cArgs = 0;
 
-    apszArgs[cArgs++] = "AudioTest";
+    apszArgs[cArgs++] = "vkat";
     apszArgs[cArgs++] = "--create";
     apszArgs[cArgs++] = "--gzip";
     apszArgs[cArgs++] = "--directory";
@@ -1213,7 +1353,7 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
     const char *apszArgs[8];
     unsigned    cArgs = 0;
 
-    apszArgs[cArgs++] = "AudioTest";
+    apszArgs[cArgs++] = "vkat";
     apszArgs[cArgs++] = "--extract";
     apszArgs[cArgs++] = "--gunzip";
     apszArgs[cArgs++] = "--directory";

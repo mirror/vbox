@@ -169,10 +169,43 @@ typedef enum AUDIOTESTOBJTYPE
  */
 typedef struct AUDIOTESTOBJFILE
 {
-    RTFILE hFile;
+    /** File handle. */
+    RTFILE              hFile;
+    /** Total size (in bytes). */
+    size_t              cbSize;
 } AUDIOTESTOBJFILE;
 /** Pointer to an audio test object file. */
 typedef AUDIOTESTOBJFILE *PAUDIOTESTOBJFILE;
+
+/**
+ * Enumeration for an audio test object meta data type.
+ */
+typedef enum AUDIOTESTOBJMETADATATYPE
+{
+    /** Unknown / invalid, do not use. */
+    AUDIOTESTOBJMETADATATYPE_INVALID = 0,
+    /** Meta data is an UTF-8 string. */
+    AUDIOTESTOBJMETADATATYPE_STRING,
+    /** The usual 32-bit hack. */
+    AUDIOTESTOBJMETADATATYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTOBJMETADATATYPE;
+
+/**
+ * Structure for keeping a meta data block.
+ */
+typedef struct AUDIOTESTOBJMETA
+{
+    /** List node. */
+    RTLISTNODE                Node;
+    /** Meta data type. */
+    AUDIOTESTOBJMETADATATYPE  enmType;
+    /** Meta data block. */
+    void                     *pvMeta;
+    /** Size (in bytes) of \a pvMeta. */
+    size_t                    cbMeta;
+} AUDIOTESTOBJMETA;
+/** Pointer to an audio test object file. */
+typedef AUDIOTESTOBJMETA *PAUDIOTESTOBJMETA;
 
 /**
  * Structure for keeping a single audio test object.
@@ -192,6 +225,8 @@ typedef struct AUDIOTESTOBJ
     char                 szName[64];
     /** The object type. */
     AUDIOTESTOBJTYPE     enmType;
+    /** Meta data list. */
+    RTLISTANCHOR         lstMeta;
     /** Union for holding the object type-specific data. */
     union
     {
@@ -322,6 +357,7 @@ int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
 
 int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj);
 int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf);
+int    AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...);
 int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
 
 int    AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry);
@@ -333,6 +369,7 @@ int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
 int    AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath);
 int    AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetWipe(PAUDIOTESTSET pSet);
+const char *AudioTestSetGetTag(PAUDIOTESTSET pSet);
 bool   AudioTestSetIsPacked(const char *pszPath);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
