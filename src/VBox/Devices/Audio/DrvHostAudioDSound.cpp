@@ -26,6 +26,7 @@
 #include <dsound.h>
 #include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
+#include <iprt/win/mmreg.h> /* WAVEFORMATEXTENSIBLE */
 
 #include <iprt/alloc.h>
 #include <iprt/system.h>
@@ -1284,21 +1285,45 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDSoundHA_GetStatus(PPDMIHOSTAUDIO
 
 
 /**
- * Converts from PDM stream config to windows WAVEFORMATEX struct.
+ * Converts from PDM stream config to windows WAVEFORMATEXTENSIBLE struct.
  *
  * @param   pCfg    The PDM audio stream config to convert from.
  * @param   pFmt    The windows structure to initialize.
  */
-static void dsoundWaveFmtFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
+static void dsoundWaveFmtFromCfg(PCPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEXTENSIBLE pFmt)
 {
     RT_ZERO(*pFmt);
-    pFmt->wFormatTag      = WAVE_FORMAT_PCM;
-    pFmt->nChannels       = PDMAudioPropsChannels(&pCfg->Props);
-    pFmt->wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
-    pFmt->nSamplesPerSec  = PDMAudioPropsHz(&pCfg->Props);
-    pFmt->nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
-    pFmt->nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
-    pFmt->cbSize          = 0; /* No extra data specified. */
+    pFmt->Format.wFormatTag      = WAVE_FORMAT_PCM;
+    pFmt->Format.nChannels       = PDMAudioPropsChannels(&pCfg->Props);
+    pFmt->Format.wBitsPerSample  = PDMAudioPropsSampleBits(&pCfg->Props);
+    pFmt->Format.nSamplesPerSec  = PDMAudioPropsHz(&pCfg->Props);
+    pFmt->Format.nBlockAlign     = PDMAudioPropsFrameSize(&pCfg->Props);
+    pFmt->Format.nAvgBytesPerSec = PDMAudioPropsFramesToBytes(&pCfg->Props, PDMAudioPropsHz(&pCfg->Props));
+    pFmt->Format.cbSize          = 0; /* No extra data specified. */
+
+    /*
+     * We need to use the extensible structure if there are more than two channels
+     * or if the channels have non-standard assignments.
+     */
+    if (   pFmt->Format.nChannels > 2
+        || (  pFmt->Format.nChannels == 1
+            ?    pCfg->Props.aidChannels[0] != PDMAUDIOCHANNELID_MONO
+            :    pCfg->Props.aidChannels[0] != PDMAUDIOCHANNELID_FRONT_LEFT
+              || pCfg->Props.aidChannels[1] != PDMAUDIOCHANNELID_FRONT_RIGHT))
+    {
+        pFmt->Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        pFmt->Format.cbSize     = sizeof(*pFmt) - sizeof(pFmt->Format);
+        pFmt->Samples.wValidBitsPerSample = PDMAudioPropsSampleBits(&pCfg->Props);
+        pFmt->SubFormat         = KSDATAFORMAT_SUBTYPE_PCM;
+        pFmt->dwChannelMask     = 0;
+        unsigned const cSrcChannels = pFmt->Format.nChannels;
+        for (unsigned i = 0; i < cSrcChannels; i++)
+            if (   pCfg->Props.aidChannels[i] >= PDMAUDIOCHANNELID_FIRST_STANDARD
+                && pCfg->Props.aidChannels[i] <  PDMAUDIOCHANNELID_END_STANDARD)
+                pFmt->dwChannelMask |= RT_BIT_32(pCfg->Props.aidChannels[i] - PDMAUDIOCHANNELID_FIRST_STANDARD);
+            else
+                pFmt->Format.nChannels -= 1;
+    }
 }
 
 
@@ -1421,12 +1446,11 @@ static void drvHostDSoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStream
  * @param   pCfgReq     The requested stream config (input).
  * @param   pCfgAcq     Where to return the actual stream config.  This is a
  *                      copy of @a *pCfgReq when called.
- * @param   pWaveFmtX   On input the requested stream format.
- *                      Updated to the actual stream format on successful
- *                      return.
+ * @param   pWaveFmtExt On input the requested stream format. Updated to the
+ *                      actual stream format on successful return.
  */
-static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEX *pWaveFmtX)
+static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PPDMAUDIOSTREAMCFG pCfgReq,
+                                                PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEXTENSIBLE *pWaveFmtExt)
 {
     Assert(pStreamDS->In.pDSCB == NULL);
     HRESULT hrc;
@@ -1453,7 +1477,7 @@ static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTR
         /*.dwFlags = */         0,
         /*.dwBufferBytes =*/    PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
         /*.dwReserved = */      0,
-        /*.lpwfxFormat = */     pWaveFmtX,
+        /*.lpwfxFormat = */     &pWaveFmtExt->Format,
         /*.dwFXCount = */       0,
         /*.lpDSCFXDesc = */     NULL
     };
@@ -1490,8 +1514,8 @@ static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTR
         DSLOGREL(("DSound: Getting capture position failed with %Rhrc\n", hr));
     }
 #endif
-    RT_ZERO(*pWaveFmtX);
-    hrc = IDirectSoundCaptureBuffer8_GetFormat(pStreamDS->In.pDSCB, pWaveFmtX, sizeof(*pWaveFmtX), NULL);
+    RT_ZERO(*pWaveFmtExt);
+    hrc = IDirectSoundCaptureBuffer8_GetFormat(pStreamDS->In.pDSCB, &pWaveFmtExt->Format, sizeof(*pWaveFmtExt), NULL);
     if (SUCCEEDED(hrc))
     {
         /** @todo r=bird: We aren't converting/checking the pWaveFmtX content...   */
@@ -1541,12 +1565,12 @@ static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTR
  * @param   pCfgReq     The requested stream config (input).
  * @param   pCfgAcq     Where to return the actual stream config.  This is a
  *                      copy of @a *pCfgReq when called.
- * @param   pWaveFmtX   On input the requested stream format.
+ * @param   pWaveFmtExt On input the requested stream format.
  *                      Updated to the actual stream format on successful
  *                      return.
  */
-static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEX *pWaveFmtX)
+static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PPDMAUDIOSTREAMCFG pCfgReq,
+                                                 PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEXTENSIBLE *pWaveFmtExt)
 {
     Assert(pStreamDS->Out.pDSB == NULL);
     HRESULT hrc;
@@ -1583,7 +1607,7 @@ static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDST
         /*.dwFlags = */         DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE,
         /*.dwBufferBytes = */   PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
         /*.dwReserved = */      0,
-        /*.lpwfxFormat = */     pWaveFmtX
+        /*.lpwfxFormat = */     &pWaveFmtExt->Format,
         /*.guid3DAlgorithm =    {0, 0, 0, {0,0,0,0, 0,0,0,0}} */
     };
     LogRel2(("DSound: Requested playback buffer is %#x B / %u B / %RU64 ms\n", BufferDesc.dwBufferBytes, BufferDesc.dwBufferBytes,
@@ -1609,8 +1633,8 @@ static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDST
     /*
      * Query the actual stream parameters, they may differ from what we requested.
      */
-    RT_ZERO(*pWaveFmtX);
-    hrc = IDirectSoundBuffer8_GetFormat(pStreamDS->Out.pDSB, pWaveFmtX, sizeof(*pWaveFmtX), NULL);
+    RT_ZERO(*pWaveFmtExt);
+    hrc = IDirectSoundBuffer8_GetFormat(pStreamDS->Out.pDSB, &pWaveFmtExt->Format, sizeof(*pWaveFmtExt), NULL);
     if (SUCCEEDED(hrc))
     {
         /** @todo r=bird: We aren't converting/checking the pWaveFmtX content...   */
@@ -1687,8 +1711,8 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
     LogRel2(("DSound: Opening %s stream '%s' (%s)\n", pCfgReq->szName, pszStreamType,
              PDMAudioPropsToString(&pCfgReq->Props, szTmp, sizeof(szTmp))));
 
-    WAVEFORMATEX WaveFmtX;
-    dsoundWaveFmtFromCfg(pCfgReq, &WaveFmtX);
+    WAVEFORMATEXTENSIBLE WaveFmtExt;
+    dsoundWaveFmtFromCfg(pCfgReq, &WaveFmtExt);
     LogRel2(("DSound: Requested %s format for '%s':\n"
              "DSound:   wFormatTag      = %RU16\n"
              "DSound:   nChannels       = %RU16\n"
@@ -1697,14 +1721,19 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
              "DSound:   nBlockAlign     = %RU16\n"
              "DSound:   wBitsPerSample  = %RU16\n"
              "DSound:   cbSize          = %RU16\n",
-             pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
-             WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize));
+             pszStreamType, pCfgReq->szName, WaveFmtExt.Format.wFormatTag, WaveFmtExt.Format.nChannels,
+             WaveFmtExt.Format.nSamplesPerSec, WaveFmtExt.Format.nAvgBytesPerSec, WaveFmtExt.Format.nBlockAlign,
+             WaveFmtExt.Format.wBitsPerSample, WaveFmtExt.Format.cbSize));
+    if (WaveFmtExt.Format.cbSize != 0)
+        LogRel2(("DSound:   dwChannelMask   = %#RX32\n"
+                 "DSound:   wValidBitsPerSample = %RU16\n",
+                 WaveFmtExt.dwChannelMask, WaveFmtExt.Samples.wValidBitsPerSample));
 
     HRESULT hrc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        hrc = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtX);
+        hrc = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtExt);
     else
-        hrc = drvHostDSoundStreamCreatePlayback(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtX);
+        hrc = drvHostDSoundStreamCreatePlayback(pThis, pStreamDS, pCfgReq, pCfgAcq, &WaveFmtExt);
     int rc;
     if (SUCCEEDED(hrc))
     {
@@ -1716,8 +1745,26 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
                  "DSound:   nBlockAlign     = %RU16\n"
                  "DSound:   wBitsPerSample  = %RU16\n"
                  "DSound:   cbSize          = %RU16\n",
-                 pszStreamType, pCfgReq->szName, WaveFmtX.wFormatTag, WaveFmtX.nChannels, WaveFmtX.nSamplesPerSec,
-                 WaveFmtX.nAvgBytesPerSec, WaveFmtX.nBlockAlign, WaveFmtX.wBitsPerSample, WaveFmtX.cbSize));
+                 pszStreamType, pCfgReq->szName, WaveFmtExt.Format.wFormatTag, WaveFmtExt.Format.nChannels,
+                 WaveFmtExt.Format.nSamplesPerSec, WaveFmtExt.Format.nAvgBytesPerSec, WaveFmtExt.Format.nBlockAlign,
+                 WaveFmtExt.Format.wBitsPerSample, WaveFmtExt.Format.cbSize));
+        if (WaveFmtExt.Format.cbSize != 0)
+        {
+            LogRel2(("DSound:   dwChannelMask   = %#RX32\n"
+                     "DSound:   wValidBitsPerSample = %RU16\n",
+                     WaveFmtExt.dwChannelMask, WaveFmtExt.Samples.wValidBitsPerSample));
+
+            /* Update the channel count and map here. */
+            PDMAudioPropsSetChannels(&pCfgAcq->Props, WaveFmtExt.Format.nChannels);
+            uint8_t idCh = 0;
+            for (unsigned iBit = 0; iBit < 32 && idCh < WaveFmtExt.Format.nChannels; iBit++)
+                if (WaveFmtExt.dwChannelMask & RT_BIT_32(iBit))
+                {
+                    pCfgAcq->Props.aidChannels[idCh] = (unsigned)PDMAUDIOCHANNELID_FIRST_STANDARD + iBit;
+                    idCh++;
+                }
+            Assert(idCh == WaveFmtExt.Format.nChannels);
+        }
 
         /*
          * Copy the acquired config and reset the stream (clears the buffer).
@@ -1834,11 +1881,11 @@ static int drvHostDSoundStreamCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM p
                     IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
                     pStreamDS->In.pDSCB = NULL;
 
-                    PDMAUDIOSTREAMCFG   CfgReq = pStreamDS->Cfg;
-                    PDMAUDIOSTREAMCFG   CfgAcq = pStreamDS->Cfg;
-                    WAVEFORMATEX        WaveFmtX;
-                    dsoundWaveFmtFromCfg(&pStreamDS->Cfg, &WaveFmtX);
-                    hrc = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, &CfgReq, &CfgAcq, &WaveFmtX);
+                    PDMAUDIOSTREAMCFG       CfgReq = pStreamDS->Cfg;
+                    PDMAUDIOSTREAMCFG       CfgAcq = pStreamDS->Cfg;
+                    WAVEFORMATEXTENSIBLE    WaveFmtExt;
+                    dsoundWaveFmtFromCfg(&pStreamDS->Cfg, &WaveFmtExt);
+                    hrc = drvHostDSoundStreamCreateCapture(pThis, pStreamDS, &CfgReq, &CfgAcq, &WaveFmtExt);
                     if (SUCCEEDED(hrc))
                     {
                         PDMAudioStrmCfgCopy(&pStreamDS->Cfg, &CfgAcq);
@@ -2275,8 +2322,8 @@ static int dsoundGetFreeOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD
             if (pStreamDS->Out.cbWritten == 0)
                 cbFree = pStreamDS->cbBufSize;
 
-            DSLOGREL(("DSound: offPlayCursor=%RU32, offWriteCursor=%RU32, offWritePos=%RU32 -> cbFree=%RI32\n",
-                      offPlayCursor, offWriteCursor, pStreamDS->Out.offWritePos, cbFree));
+            LogRel2(("DSound: offPlayCursor=%RU32, offWriteCursor=%RU32, offWritePos=%RU32 -> cbFree=%RI32\n",
+                     offPlayCursor, offWriteCursor, pStreamDS->Out.offWritePos, cbFree));
 
             *pdwFree = cbFree;
             *poffPlayCursor = offPlayCursor;
