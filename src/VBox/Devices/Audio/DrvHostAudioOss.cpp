@@ -375,14 +375,26 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     {
         /*
          * Configure it.
+         *
+         * Note! We limit the output channels to mono or stereo for now just
+         *       to keep things simple and avoid wasting time here.  If the
+         *       channel count isn't a power of two, our code below trips up
+         *       on the fragment size.  We'd also need to try report/get
+         *       channel mappings and whatnot.
          */
         OSSAUDIOSTREAMCFG ReqOssCfg;
         RT_ZERO(ReqOssCfg);
 
         memcpy(&ReqOssCfg.Props, &pCfgReq->Props, sizeof(PDMAUDIOPCMPROPS));
+        if (PDMAudioPropsChannels(&ReqOssCfg.Props) > 2)
+        {
+            LogRel2(("OSS: Limiting output to two channels, requested %u.\n", PDMAudioPropsChannels(&ReqOssCfg.Props) ));
+            PDMAudioPropsSetChannels(&ReqOssCfg.Props, 2);
+        }
+
         ReqOssCfg.cbFragmentLog2 = 12;
         ReqOssCfg.cbFragment     = RT_BIT_32(ReqOssCfg.cbFragmentLog2);
-        uint32_t const cbBuffer  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+        uint32_t const cbBuffer  = PDMAudioPropsFramesToBytes(&ReqOssCfg.Props, pCfgReq->Backend.cFramesBufferSize);
         ReqOssCfg.cFragments     = cbBuffer >> ReqOssCfg.cbFragmentLog2;
         AssertLogRelStmt(cbBuffer < ((uint32_t)0x7ffe << ReqOssCfg.cbFragmentLog2), ReqOssCfg.cFragments = 0x7ffe);
 
@@ -743,11 +755,26 @@ static DECLCALLBACK(int) drvHostOssAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
 
     /*
+     * Return immediately if this is a draining service call.
+     *
+     * Otherwise the ioctl below will race the drain thread and sometimes fail,
+     * triggering annoying assertion and release logging.
+     */
+    if (cbBuf || !pStreamOSS->fDraining)
+    { /* likely */ }
+    else
+    {
+        *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
+
+    /*
      * Figure out now much to write.
      */
     audio_buf_info BufInfo;
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
-    AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback buffer: %s (%d)\n", strerror(errno), errno),
+    AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback buffer: %s (%d, hFile=%d, rc2=%d)\n",
+                                     strerror(errno), errno, pStreamOSS->hFile, rc2),
                           RTErrConvertFromErrno(errno));
 
 #if 0   /** @todo r=bird: WTF do we make a fuss over BufInfo.bytes for when we don't even use it?!? */
