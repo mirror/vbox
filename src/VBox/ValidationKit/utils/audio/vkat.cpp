@@ -431,14 +431,14 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
 
         const uint16_t cSchedulingMs = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
         const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, cSchedulingMs);
-                size_t cbToWrite     = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
+              uint32_t cbToWrite     = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
 
         AudioTestSetObjAddMetadataStr(pObj, "schedule_ms=%RU16", cSchedulingMs);
 
         while (cbToWrite)
         {
             uint32_t cbWritten    = 0;
-            uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerMs, sizeof(abBuf)));
+            uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerMs, (uint32_t)sizeof(abBuf)));
             Assert(cbToGenerate);
 
             rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbBuf);
@@ -1703,7 +1703,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                             /* Pace ourselves a little. */
                             if (offStream >= cbPreBuffer)
                             {
-                                uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(&pStream->Props, offStream);
+                                uint64_t const cNsWritten = PDMAudioPropsBytesToNano(&pStream->Props, offStream);
                                 uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
                                 if (cNsWritten + RT_NS_10MS > cNsElapsed)
                                     RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
