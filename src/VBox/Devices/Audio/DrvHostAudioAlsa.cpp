@@ -92,7 +92,7 @@ typedef struct ALSAAUDIOSTREAMCFG
     /** Periods (in audio frames). */
     unsigned long       period_size;
     /** For playback:  Starting to play threshold (in audio frames).
-     *  For Capturing: Starting to capture threshold (in audio frames).  */
+     *  For Capturing: ~~Starting to capture threshold (in audio frames)~~ !nothing! */
     unsigned long       threshold;
 
     /* latency = period_size * periods / (rate * bytes_per_frame) */
@@ -403,7 +403,7 @@ static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 static int alsaALSAToAudioProps(PPDMAUDIOPCMPROPS pProps, snd_pcm_format_t fmt, int cChannels, unsigned uHz)
 {
     AssertReturn(cChannels > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cChannels < 16, VERR_INVALID_PARAMETER);
+    AssertReturn(cChannels < PDMAUDIO_MAX_CHANNELS, VERR_INVALID_PARAMETER);
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
@@ -457,12 +457,13 @@ static int alsaALSAToAudioProps(PPDMAUDIOPCMPROPS pProps, snd_pcm_format_t fmt, 
  * Sets the software parameters of an ALSA stream.
  *
  * @returns 0 on success, negative errno on failure.
- * @param   hPCM               ALSA stream to set software parameters for.
- * @param   fIn                 Whether this is an input stream or not.
- * @param   pCfgReq             Requested configuration to set.
- * @param   pCfgObt             Obtained configuration on success. Might differ from requested configuration.
+ * @param   hPCM            ALSA stream to set software parameters for.
+ * @param   fIn             Whether this is an input stream or not.
+ * @param   pAlsaCfgReq     Requested configuration to set (ALSA).
+ * @param   pAlsaCfgObt     Obtained configuration on success (ALSA).
+ *                          Might differ from requested configuration.
  */
-static int alsaStreamSetSWParams(snd_pcm_t *hPCM, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
+static int alsaStreamSetSWParams(snd_pcm_t *hPCM, bool fIn, PALSAAUDIOSTREAMCFG pAlsaCfgReq, PALSAAUDIOSTREAMCFG pAlsaCfgObt)
 {
     if (fIn) /* For input streams there's nothing to do in here right now. */
         return VINF_SUCCESS;
@@ -478,30 +479,31 @@ static int alsaStreamSetSWParams(snd_pcm_t *hPCM, bool fIn, PALSAAUDIOSTREAMCFG 
        because DrvAudio will do the pre-buffering and hand us everything in
        one continuous chunk when we should start playing.  But since it is
        configurable, we'll set a reasonable minimum of two DMA periods or
-       max 64 milliseconds (the pCfgReq->threshold value).
+       max 64 milliseconds (the pAlsaCfgReq->threshold value).
 
        Of course we also have to make sure the threshold is below the buffer
        size, or ALSA will never start playing. */
-    unsigned long cFramesThreshold = RT_MIN(pCfgObt->period_size * 2, pCfgReq->threshold);
-    if (cFramesThreshold >= pCfgObt->buffer_size - pCfgObt->buffer_size / 16)
-        cFramesThreshold = pCfgObt->buffer_size - pCfgObt->buffer_size / 16;
+    unsigned long cFramesThreshold = RT_MIN(pAlsaCfgObt->period_size * 2, pAlsaCfgReq->threshold);
+    if (cFramesThreshold >= pAlsaCfgObt->buffer_size - pAlsaCfgObt->buffer_size / 16)
+        cFramesThreshold = pAlsaCfgObt->buffer_size - pAlsaCfgObt->buffer_size / 16;
 
     err = snd_pcm_sw_params_set_start_threshold(hPCM, pSWParms, cFramesThreshold);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set software threshold to %lu: %s\n", cFramesThreshold, snd_strerror(err)), err);
 
-    err = snd_pcm_sw_params_set_avail_min(hPCM, pSWParms, pCfgReq->period_size);
-    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set available minimum to %lu: %s\n", pCfgReq->period_size, snd_strerror(err)), err);
+    err = snd_pcm_sw_params_set_avail_min(hPCM, pSWParms, pAlsaCfgReq->period_size);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set available minimum to %lu: %s\n",
+                                     pAlsaCfgReq->period_size, snd_strerror(err)), err);
 
     /* Commit the software parameters: */
     err = snd_pcm_sw_params(hPCM, pSWParms);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set new software parameters: %s\n", snd_strerror(err)), err);
 
     /* Get the actual parameters: */
-    err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pCfgObt->threshold);
+    err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pAlsaCfgObt->threshold);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to get start threshold: %s\n", snd_strerror(err)), err);
 
     LogRel2(("ALSA: SW params: %lu frames threshold, %lu frame avail minimum\n",
-             pCfgObt->threshold, pCfgReq->period_size));
+             pAlsaCfgObt->threshold, pAlsaCfgReq->period_size));
     return 0;
 }
 
@@ -510,12 +512,12 @@ static int alsaStreamSetSWParams(snd_pcm_t *hPCM, bool fIn, PALSAAUDIOSTREAMCFG 
  * Sets the hardware parameters of an ALSA stream.
  *
  * @returns 0 on success, negative errno on failure.
- * @param   hPCM   ALSA stream to set software parameters for.
- * @param   pCfgReq Requested configuration to set.
- * @param   pCfgObt Obtained configuration on success. Might differ from
- *                  requested configuration.
+ * @param   hPCM        ALSA stream to set software parameters for.
+ * @param   pAlsaCfgReq Requested configuration to set (ALSA).
+ * @param   pAlsaCfgObt Obtained configuration on success (ALSA). Might differ
+ *                      from requested configuration.
  */
-static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
+static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pAlsaCfgReq, PALSAAUDIOSTREAMCFG pAlsaCfgObt)
 {
     /*
      * Get the current hardware parameters.
@@ -528,50 +530,50 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pCfgReq, P
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to initialize hardware parameters: %s\n", snd_strerror(err)), err);
 
     /*
-     * Modify them according to pCfgReq.
-     * We update pCfgObt as we go for parameters set by "near" methods.
+     * Modify them according to pAlsaCfgReq.
+     * We update pAlsaCfgObt as we go for parameters set by "near" methods.
      */
     /* We'll use snd_pcm_writei/snd_pcm_readi: */
     err = snd_pcm_hw_params_set_access(hPCM, pHWParms, SND_PCM_ACCESS_RW_INTERLEAVED);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set access type: %s\n", snd_strerror(err)), err);
 
     /* Set the format, frequency and channel count. */
-    err = snd_pcm_hw_params_set_format(hPCM, pHWParms, pCfgReq->fmt);
-    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set audio format to %d: %s\n", pCfgReq->fmt, snd_strerror(err)), err);
+    err = snd_pcm_hw_params_set_format(hPCM, pHWParms, pAlsaCfgReq->fmt);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set audio format to %d: %s\n", pAlsaCfgReq->fmt, snd_strerror(err)), err);
 
-    unsigned int uFreq = pCfgReq->freq;
+    unsigned int uFreq = pAlsaCfgReq->freq;
     err = snd_pcm_hw_params_set_rate_near(hPCM, pHWParms, &uFreq, NULL /*dir*/);
-    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set frequency to %uHz: %s\n", pCfgReq->freq, snd_strerror(err)), err);
-    pCfgObt->freq      = uFreq;
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set frequency to %uHz: %s\n", pAlsaCfgReq->freq, snd_strerror(err)), err);
+    pAlsaCfgObt->freq = uFreq;
 
-    unsigned int cChannels = pCfgReq->cChannels;
+    unsigned int cChannels = pAlsaCfgReq->cChannels;
     err = snd_pcm_hw_params_set_channels_near(hPCM, pHWParms, &cChannels);
-    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", pCfgReq->cChannels), err);
-    pCfgObt->cChannels = cChannels;
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", pAlsaCfgReq->cChannels), err);
+    pAlsaCfgObt->cChannels = cChannels;
 
     /* The period size (reportedly frame count per hw interrupt): */
     int               dir    = 0;
-    snd_pcm_uframes_t minval = pCfgReq->period_size;
+    snd_pcm_uframes_t minval = pAlsaCfgReq->period_size;
     err = snd_pcm_hw_params_get_period_size_min(pHWParms, &minval, &dir);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Could not determine minimal period size: %s\n", snd_strerror(err)), err);
 
-    snd_pcm_uframes_t period_size_f = pCfgReq->period_size;
+    snd_pcm_uframes_t period_size_f = pAlsaCfgReq->period_size;
     if (period_size_f < minval)
         period_size_f = minval;
     err = snd_pcm_hw_params_set_period_size_near(hPCM, pHWParms, &period_size_f, 0);
-    LogRel2(("ALSA: Period size is: %lu frames (min %lu, requested %lu)\n", period_size_f, minval, pCfgReq->period_size));
+    LogRel2(("ALSA: Period size is: %lu frames (min %lu, requested %lu)\n", period_size_f, minval, pAlsaCfgReq->period_size));
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set period size %d (%s)\n", period_size_f, snd_strerror(err)), err);
 
     /* The buffer size: */
-    minval = pCfgReq->buffer_size;
+    minval = pAlsaCfgReq->buffer_size;
     err = snd_pcm_hw_params_get_buffer_size_min(pHWParms, &minval);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Could not retrieve minimal buffer size: %s\n", snd_strerror(err)), err);
 
-    snd_pcm_uframes_t buffer_size_f = pCfgReq->buffer_size;
+    snd_pcm_uframes_t buffer_size_f = pAlsaCfgReq->buffer_size;
     if (buffer_size_f < minval)
         buffer_size_f = minval;
     err = snd_pcm_hw_params_set_buffer_size_near(hPCM, pHWParms, &buffer_size_f);
-    LogRel2(("ALSA: Buffer size is: %lu frames (min %lu, requested %lu)\n", buffer_size_f, minval, pCfgReq->buffer_size));
+    LogRel2(("ALSA: Buffer size is: %lu frames (min %lu, requested %lu)\n", buffer_size_f, minval, pAlsaCfgReq->buffer_size));
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)), err);
 
     /*
@@ -581,23 +583,24 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pCfgReq, P
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to apply audio parameters: %s\n", snd_strerror(err)), err);
 
     /*
-     * Get relevant parameters and put them in the pCfgObt structure.
+     * Get relevant parameters and put them in the pAlsaCfgObt structure.
      */
     snd_pcm_uframes_t obt_buffer_size = buffer_size_f;
     err = snd_pcm_hw_params_get_buffer_size(pHWParms, &obt_buffer_size);
     AssertLogRelMsgStmt(err >= 0, ("ALSA: Failed to get buffer size: %s\n", snd_strerror(err)), obt_buffer_size = buffer_size_f);
-    pCfgObt->buffer_size = obt_buffer_size;
+    pAlsaCfgObt->buffer_size = obt_buffer_size;
 
     snd_pcm_uframes_t obt_period_size = period_size_f;
     err = snd_pcm_hw_params_get_period_size(pHWParms, &obt_period_size, &dir);
     AssertLogRelMsgStmt(err >= 0, ("ALSA: Failed to get period size: %s\n", snd_strerror(err)), obt_period_size = period_size_f);
-    pCfgObt->period_size = obt_period_size;
+    pAlsaCfgObt->period_size = obt_period_size;
 
-//    pCfgObt->access  = pCfgReq->access;  - unused and uninitialized.
-    pCfgObt->fmt     = pCfgReq->fmt;
+//    pAlsaCfgObt->access  = pAlsaCfgReq->access;  - unused and uninitialized.
+    pAlsaCfgObt->fmt     = pAlsaCfgReq->fmt;
 
     LogRel2(("ALSA: HW params: %u Hz, %lu frames period, %lu frames buffer, %u channel(s), fmt=%d, access=%d\n",
-             pCfgObt->freq, pCfgObt->period_size, pCfgObt->buffer_size, pCfgObt->cChannels, pCfgObt->fmt, -1 /*pCfgObt->access*/));
+             pAlsaCfgObt->freq, pAlsaCfgObt->period_size, pAlsaCfgObt->buffer_size, pAlsaCfgObt->cChannels,
+             pAlsaCfgObt->fmt, -1 /*pAlsaCfgObt->access*/));
     return 0;
 }
 
@@ -606,18 +609,21 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, PALSAAUDIOSTREAMCFG pCfgReq, P
  * Opens (creates) an ALSA stream.
  *
  * @returns VBox status code.
- * @param   pszDev  The name of the device to open.
- * @param   fIn     Whether this is an input stream to create or not.
- * @param   pCfgReq Requested configuration to create stream with.
- * @param   pCfgObt Obtained configuration the stream got created on success.
- * @param   phPCM   Where to store the ALSA stream handle on success.
+ * @param   pszDev      The name of the device to open.
+ * @param   fIn         Whether this is an input stream to create or not.
+ * @param   pAlsaCfgReq Requested configuration to create stream with (ALSA).
+ * @param   pCfgReq     Requested configuration to create stream with (PDM).
+ * @param   pAlsaCfgObt Obtained configuration the stream got created on
+ *                      success.
+ * @param   phPCM       Where to store the ALSA stream handle on success.
  */
-static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq,
-                          PALSAAUDIOSTREAMCFG pCfgObt,  snd_pcm_t **phPCM)
+static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pAlsaCfgReq, PPDMAUDIOSTREAMCFG pCfgReq,
+                          PALSAAUDIOSTREAMCFG pAlsaCfgObt,  snd_pcm_t **phPCM)
 {
     AssertLogRelMsgReturn(pszDev && *pszDev,
                           ("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"),
                           VERR_INVALID_NAME);
+    RT_NOREF(pCfgReq);
 
     /*
      * Open the stream.
@@ -636,7 +642,7 @@ static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfg
             /*
              * Configure hardware stream parameters.
              */
-            err = alsaStreamSetHwParams(hPCM, pCfgReq, pCfgObt);
+            err = alsaStreamSetHwParams(hPCM, pAlsaCfgReq, pAlsaCfgObt);
             if (err >= 0)
             {
                 /*
@@ -649,7 +655,7 @@ static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfg
                     /*
                      * Configure software stream parameters and we're done.
                      */
-                    rc = alsaStreamSetSWParams(hPCM, fIn, pCfgReq, pCfgObt);
+                    rc = alsaStreamSetSWParams(hPCM, fIn, pAlsaCfgReq, pAlsaCfgObt);
                     if (RT_SUCCESS(rc))
                     {
                         *phPCM = hPCM;
@@ -672,93 +678,6 @@ static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfg
 
 
 /**
- * Creates an ALSA output stream.
- *
- * @returns VBox status code.
- * @param   pThis       The ALSA driver instance data.
- * @param   pStreamALSA ALSA output stream to create.
- * @param   pCfgReq     Requested configuration to create stream with.
- * @param   pCfgAcq     Obtained configuration the stream got created
- *                      with on success.
- */
-static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
-                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    ALSAAUDIOSTREAMCFG Req;
-    Req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-    Req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
-    Req.cChannels   = PDMAudioPropsChannels(&pCfgReq->Props);
-    Req.period_size = pCfgReq->Backend.cFramesPeriod;
-    Req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
-    Req.threshold   = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50);
-    int rc = alsaStreamOpen(pThis->szDefaultOut, false /*fIn*/, &Req, &pStreamALSA->AlsaCfg, &pStreamALSA->hPCM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = alsaALSAToAudioProps(&pCfgAcq->Props, pStreamALSA->AlsaCfg.fmt,
-                                  pStreamALSA->AlsaCfg.cChannels, pStreamALSA->AlsaCfg.freq);
-        if (RT_SUCCESS(rc))
-        {
-            pCfgAcq->Backend.cFramesPeriod          = pStreamALSA->AlsaCfg.period_size;
-            pCfgAcq->Backend.cFramesBufferSize      = pStreamALSA->AlsaCfg.buffer_size;
-
-            /* We have no objections to the pre-buffering that DrvAudio applies,
-               only we need to adjust it relative to the actual buffer size. */
-            /** @todo DrvAudio should do this. */
-            pCfgAcq->Backend.cFramesPreBuffering    = (uint64_t)pCfgReq->Backend.cFramesPreBuffering
-                                                    * pCfgAcq->Backend.cFramesBufferSize
-                                                    / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
-
-            LogFlowFunc(("returns success - hPCM=%p\n", pStreamALSA->hPCM));
-            return VINF_SUCCESS;
-        }
-        alsaStreamClose(&pStreamALSA->hPCM);
-    }
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-/**
- * Creates an ALSA input stream.
- *
- * @returns VBox status code.
- * @param   pThis       The ALSA driver instance data.
- * @param   pStreamALSA ALSA input stream to create.
- * @param   pCfgReq     Requested configuration to create stream with.
- * @param   pCfgAcq     Obtained configuration the stream got created
- *                      with on success.
- */
-static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
-                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    ALSAAUDIOSTREAMCFG Req;
-    Req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
-    Req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
-    Req.cChannels   = PDMAudioPropsChannels(&pCfgReq->Props);
-/** @todo r=bird: Isn't all this configurable already?!?   */
-    Req.period_size = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
-    Req.buffer_size = Req.period_size * 2; /** @todo Make this configurable. */
-    Req.threshold   = Req.period_size;
-    int rc = alsaStreamOpen(pThis->szDefaultIn, true /* fIn */, &Req, &pStreamALSA->AlsaCfg, &pStreamALSA->hPCM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = alsaALSAToAudioProps(&pCfgAcq->Props, pStreamALSA->AlsaCfg.fmt, pStreamALSA->AlsaCfg.cChannels, pStreamALSA->AlsaCfg.freq);
-        if (RT_SUCCESS(rc))
-        {
-            pCfgAcq->Backend.cFramesPeriod       = pStreamALSA->AlsaCfg.period_size;
-            pCfgAcq->Backend.cFramesBufferSize   = pStreamALSA->AlsaCfg.buffer_size;
-            pCfgAcq->Backend.cFramesPreBuffering = 0; /* No pre-buffering. */
-            return VINF_SUCCESS;
-        }
-
-        alsaStreamClose(&pStreamALSA->hPCM);
-    }
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -773,13 +692,38 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
     PDMAudioStrmCfgCopy(&pStreamALSA->Cfg, pCfgReq);
 
-    int rc;
-    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = alsaCreateStreamIn( pThis, pStreamALSA, pCfgReq, pCfgAcq);
-    else
-        rc = alsaCreateStreamOut(pThis, pStreamALSA, pCfgReq, pCfgAcq);
+    ALSAAUDIOSTREAMCFG Req;
+    Req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
+    Req.freq        = PDMAudioPropsHz(&pCfgReq->Props);
+    Req.cChannels   = PDMAudioPropsChannels(&pCfgReq->Props);
+    Req.period_size = pCfgReq->Backend.cFramesPeriod;
+    Req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
+    Req.threshold   = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50);
+    int rc = alsaStreamOpen(pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->szDefaultIn : pThis->szDefaultOut,
+                            pCfgReq->enmDir == PDMAUDIODIR_IN,
+                            &Req, pCfgReq, &pStreamALSA->AlsaCfg, &pStreamALSA->hPCM);
     if (RT_SUCCESS(rc))
-        PDMAudioStrmCfgCopy(&pStreamALSA->Cfg, pCfgAcq);
+    {
+        rc = alsaALSAToAudioProps(&pCfgAcq->Props, pStreamALSA->AlsaCfg.fmt,
+                                  pStreamALSA->AlsaCfg.cChannels, pStreamALSA->AlsaCfg.freq);
+        if (RT_SUCCESS(rc))
+        {
+            pCfgAcq->Backend.cFramesPeriod          = pStreamALSA->AlsaCfg.period_size;
+            pCfgAcq->Backend.cFramesBufferSize      = pStreamALSA->AlsaCfg.buffer_size;
+
+            /* We have no objections to the pre-buffering that DrvAudio applies,
+               only we need to adjust it relative to the actual buffer size. */
+            pCfgAcq->Backend.cFramesPreBuffering    = (uint64_t)pCfgReq->Backend.cFramesPreBuffering
+                                                    * pCfgAcq->Backend.cFramesBufferSize
+                                                    / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
+
+            PDMAudioStrmCfgCopy(&pStreamALSA->Cfg, pCfgAcq);
+            LogFlowFunc(("returns success - hPCM=%p\n", pStreamALSA->hPCM));
+            return rc;
+        }
+        alsaStreamClose(&pStreamALSA->hPCM);
+    }
+    LogFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
