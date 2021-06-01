@@ -199,39 +199,32 @@ bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
     AssertPtrReturn(pProps, false);
     AssertReturn(PDMAudioPropsAreValid(pProps), false);
 
-    /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
-    if (PDMAudioPropsChannels(pProps) >= 1 && PDMAudioPropsChannels(pProps) <= 8)
+    switch (PDMAudioPropsSampleSize(pProps))
     {
-        switch (PDMAudioPropsSampleSize(pProps))
-        {
-            case 1: /* 8 bit */
-               if (PDMAudioPropsIsSigned(pProps))
-                   return false;
-               break;
-            case 2: /* 16 bit */
-                if (!PDMAudioPropsIsSigned(pProps))
-                    return false;
-                break;
-            /** @todo Do we need support for 24 bit samples? */
-            case 4: /* 32 bit */
-                if (!PDMAudioPropsIsSigned(pProps))
-                    return false;
-                break;
-            case 8: /* 64-bit raw */
-                if (   !PDMAudioPropsIsSigned(pProps)
-                    || !pProps->fRaw)
-                    return false;
-                break;
-            default:
+        case 1: /* 8 bit */
+           if (PDMAudioPropsIsSigned(pProps))
+               return false;
+           break;
+        case 2: /* 16 bit */
+            if (!PDMAudioPropsIsSigned(pProps))
                 return false;
-        }
-
-        if (pProps->uHz > 0)
-        {
-            if (!pProps->fSwapEndian) /** @todo Handling Big Endian audio data is not supported yet. */
-                return true;
-        }
+            break;
+        /** @todo Do we need support for 24 bit samples? */
+        case 4: /* 32 bit */
+            if (!PDMAudioPropsIsSigned(pProps))
+                return false;
+            break;
+        case 8: /* 64-bit raw */
+            if (   !PDMAudioPropsIsSigned(pProps)
+                || !pProps->fRaw)
+                return false;
+            break;
+        default:
+            return false;
     }
+
+    if (!pProps->fSwapEndian) /** @todo Handling Big Endian audio data is not supported yet. */
+        return true;
     return false;
 }
 
