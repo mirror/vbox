@@ -137,6 +137,48 @@ DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
     AssertMsgFailedReturn(("Unknown enmPath=%d\n", enmPath), "bad");
 }
 
+/**
+ * Gets the name of a channel.
+ *
+ * @returns Pointer to read-only name, "bad" if invalid input.
+ * @param   enmChannelId    The channel ID to name.
+ */
+DECLINLINE(const char *) PDMAudioChannelIdGetName(PDMAUDIOCHANNELID enmChannelId)
+{
+    switch (enmChannelId)
+    {
+        case PDMAUDIOCHANNELID_INVALID:                 return "invalid";
+        case PDMAUDIOCHANNELID_UNUSED_ZERO:             return "unused-zero";
+        case PDMAUDIOCHANNELID_UNUSED_SILENCE:          return "unused-silence";
+        case PDMAUDIOCHANNELID_UNKNOWN:                 return "unknown";
+
+        case PDMAUDIOCHANNELID_FRONT_LEFT:              return "FL";
+        case PDMAUDIOCHANNELID_FRONT_RIGHT:             return "FR";
+        case PDMAUDIOCHANNELID_FRONT_CENTER:            return "FC";
+        case PDMAUDIOCHANNELID_LFE:                     return "LFE";
+        case PDMAUDIOCHANNELID_REAR_LEFT:               return "BL";
+        case PDMAUDIOCHANNELID_REAR_RIGHT:              return "BR";
+        case PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER:    return "FLC";
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER:   return "FRC";
+        case PDMAUDIOCHANNELID_REAR_CENTER:             return "BC";
+        case PDMAUDIOCHANNELID_SIDE_LEFT:               return "SL";
+        case PDMAUDIOCHANNELID_SIDE_RIGHT:              return "SR";
+        case PDMAUDIOCHANNELID_TOP_CENTER:              return "TC";
+        case PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT:       return "TFL";
+        case PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT:     return "TFC";
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT:      return "TFR";
+        case PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT:        return "TBL";
+        case PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT:      return "TBC";
+        case PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT:       return "TBR";
+
+        /* no default */
+        case PDMAUDIOCHANNELID_END:
+        case PDMAUDIOCHANNELID_32BIT_HACK:
+            break;
+    }
+    AssertMsgFailedReturn(("Unknown enmChannelId=%d\n", enmChannelId), "bad");
+}
+
 
 /*********************************************************************************************************************************
 *   PCM Property Helpers                                                                                                         *

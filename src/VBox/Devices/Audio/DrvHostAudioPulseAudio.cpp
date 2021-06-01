@@ -140,10 +140,6 @@ typedef struct PULSEAUDIOSTREAM
     PDRVHOSTPULSEAUDIO      pDrv;
     /** Pointer to opaque PulseAudio stream. */
     pa_stream              *pStream;
-    /** Pulse sample format and attribute specification. */
-    pa_sample_spec          SampleSpec;
-    /** Pulse playback and buffer metrics. */
-    pa_buffer_attr          BufAttr;
     /** Input: Pointer to Pulse sample peek buffer. */
     const uint8_t          *pbPeekBuf;
     /** Input: Current size (in bytes) of peeked data in buffer. */
@@ -174,6 +170,12 @@ typedef struct PULSEAUDIOSTREAM
     /** Number of occurred audio data underflows. */
     uint32_t                cUnderflows;
 #endif
+    /** Pulse sample format and attribute specification. */
+    pa_sample_spec          SampleSpec;
+    /** Channel map. */
+    pa_channel_map          ChannelMap;
+    /** Pulse playback and buffer metrics. */
+    pa_buffer_attr          BufAttr;
 } PULSEAUDIOSTREAM;
 /** Pointer to pulse audio stream data. */
 typedef PULSEAUDIOSTREAM *PPULSEAUDIOSTREAM;
@@ -904,7 +906,7 @@ static int drvHostAudioPaStreamCreateLocked(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDI
     /*
      * Create the stream.
      */
-    pa_stream *pStream = pa_stream_new(pThis->pContext, pszName, &pStreamPA->SampleSpec, NULL /* pa_channel_map */);
+    pa_stream *pStream = pa_stream_new(pThis->pContext, pszName, &pStreamPA->SampleSpec, &pStreamPA->ChannelMap);
     if (!pStream)
     {
         LogRel(("PulseAudio: Failed to create stream '%s': %s (%d)\n",
@@ -1021,6 +1023,73 @@ static int drvHostAudioPaStreamCreateLocked(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDI
 
 
 /**
+ * Translates a PDM channel ID to a PA channel position.
+ *
+ * @returns PA channel position, INVALID if no mapping found.
+ */
+static pa_channel_position_t drvHstAudPaConvertChannelId(uint8_t idChannel)
+{
+    switch (idChannel)
+    {
+        case PDMAUDIOCHANNELID_FRONT_LEFT:              return PA_CHANNEL_POSITION_FRONT_LEFT;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT:             return PA_CHANNEL_POSITION_FRONT_RIGHT;
+        case PDMAUDIOCHANNELID_FRONT_CENTER:            return PA_CHANNEL_POSITION_FRONT_CENTER;
+        case PDMAUDIOCHANNELID_LFE:                     return PA_CHANNEL_POSITION_LFE;
+        case PDMAUDIOCHANNELID_REAR_LEFT:               return PA_CHANNEL_POSITION_REAR_LEFT;
+        case PDMAUDIOCHANNELID_REAR_RIGHT:              return PA_CHANNEL_POSITION_REAR_RIGHT;
+        case PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER:    return PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER:   return PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER;
+        case PDMAUDIOCHANNELID_REAR_CENTER:             return PA_CHANNEL_POSITION_REAR_CENTER;
+        case PDMAUDIOCHANNELID_SIDE_LEFT:               return PA_CHANNEL_POSITION_SIDE_LEFT;
+        case PDMAUDIOCHANNELID_SIDE_RIGHT:              return PA_CHANNEL_POSITION_SIDE_RIGHT;
+        case PDMAUDIOCHANNELID_TOP_CENTER:              return PA_CHANNEL_POSITION_TOP_CENTER;
+        case PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT:       return PA_CHANNEL_POSITION_TOP_FRONT_LEFT;
+        case PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT:     return PA_CHANNEL_POSITION_TOP_FRONT_CENTER;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT:      return PA_CHANNEL_POSITION_TOP_FRONT_RIGHT;
+        case PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT:        return PA_CHANNEL_POSITION_TOP_REAR_LEFT;
+        case PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT:      return PA_CHANNEL_POSITION_TOP_REAR_CENTER;
+        case PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT:       return PA_CHANNEL_POSITION_TOP_REAR_RIGHT;
+        default:                                        return PA_CHANNEL_POSITION_INVALID;
+    }
+}
+
+
+/**
+ * Translates a PA channel position to a PDM channel ID.
+ *
+ * @returns PDM channel ID, UNKNOWN if no mapping found.
+ */
+static PDMAUDIOCHANNELID drvHstAudPaConvertChannelPos(pa_channel_position_t enmChannelPos)
+{
+    switch (enmChannelPos)
+    {
+        case PA_CHANNEL_POSITION_INVALID:               return PDMAUDIOCHANNELID_INVALID;
+        case PA_CHANNEL_POSITION_MONO:                  return PDMAUDIOCHANNELID_MONO;
+        case PA_CHANNEL_POSITION_FRONT_LEFT:            return PDMAUDIOCHANNELID_FRONT_LEFT;
+        case PA_CHANNEL_POSITION_FRONT_RIGHT:           return PDMAUDIOCHANNELID_FRONT_RIGHT;
+        case PA_CHANNEL_POSITION_FRONT_CENTER:          return PDMAUDIOCHANNELID_FRONT_CENTER;
+        case PA_CHANNEL_POSITION_LFE:                   return PDMAUDIOCHANNELID_LFE;
+        case PA_CHANNEL_POSITION_REAR_LEFT:             return PDMAUDIOCHANNELID_REAR_LEFT;
+        case PA_CHANNEL_POSITION_REAR_RIGHT:            return PDMAUDIOCHANNELID_REAR_RIGHT;
+        case PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER:  return PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER;
+        case PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER: return PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER;
+        case PA_CHANNEL_POSITION_REAR_CENTER:           return PDMAUDIOCHANNELID_REAR_CENTER;
+        case PA_CHANNEL_POSITION_SIDE_LEFT:             return PDMAUDIOCHANNELID_SIDE_LEFT;
+        case PA_CHANNEL_POSITION_SIDE_RIGHT:            return PDMAUDIOCHANNELID_SIDE_RIGHT;
+        case PA_CHANNEL_POSITION_TOP_CENTER:            return PDMAUDIOCHANNELID_TOP_CENTER;
+        case PA_CHANNEL_POSITION_TOP_FRONT_LEFT:        return PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT;
+        case PA_CHANNEL_POSITION_TOP_FRONT_CENTER:      return PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT;
+        case PA_CHANNEL_POSITION_TOP_FRONT_RIGHT:       return PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT;
+        case PA_CHANNEL_POSITION_TOP_REAR_LEFT:         return PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT;
+        case PA_CHANNEL_POSITION_TOP_REAR_CENTER:       return PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT;
+        case PA_CHANNEL_POSITION_TOP_REAR_RIGHT:        return PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT;
+        default:                                        return PDMAUDIOCHANNELID_UNKNOWN;
+    }
+}
+
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -1048,8 +1117,38 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
     pStreamPA->SampleSpec.channels = PDMAudioPropsChannels(&pCfgReq->Props);
     pStreamPA->SampleSpec.format   = drvHostAudioPaPropsToPulse(&pCfgReq->Props);
 
-    LogFunc(("Opening '%s', rate=%dHz, channels=%d, format=%s\n", szName, pStreamPA->SampleSpec.rate,
-             pStreamPA->SampleSpec.channels, pa_sample_format_to_string(pStreamPA->SampleSpec.format)));
+    /*
+     * Initialize the channelmap.  This may change the channel count.
+     */
+    AssertCompile(RT_ELEMENTS(pStreamPA->ChannelMap.map) >= PDMAUDIO_MAX_CHANNELS);
+    uint8_t const cSrcChannels = pStreamPA->ChannelMap.channels = PDMAudioPropsChannels(&pCfgReq->Props);
+    uintptr_t iDst = 0;
+    if (cSrcChannels == 1 && pCfgReq->Props.aidChannels[0] == PDMAUDIOCHANNELID_MONO)
+        pStreamPA->ChannelMap.map[iDst++] = PA_CHANNEL_POSITION_MONO;
+    else
+    {
+        uintptr_t iSrc;
+        for (iSrc = iDst = 0; iSrc < cSrcChannels; iSrc++)
+        {
+            pStreamPA->ChannelMap.map[iDst] = drvHstAudPaConvertChannelId(pCfgReq->Props.aidChannels[iSrc]);
+            if (pStreamPA->ChannelMap.map[iDst] != PA_CHANNEL_POSITION_INVALID)
+                iDst++;
+            else
+            {
+                LogRel2(("PulseAudio: Dropping channel #%u (%d/%s)\n", iSrc, pCfgReq->Props.aidChannels[iSrc],
+                         PDMAudioChannelIdGetName((PDMAUDIOCHANNELID)pCfgReq->Props.aidChannels[iSrc])));
+                pStreamPA->ChannelMap.channels--;
+                pStreamPA->SampleSpec.channels--;
+                PDMAudioPropsSetChannels(&pCfgAcq->Props, pStreamPA->SampleSpec.channels);
+            }
+        }
+        Assert(iDst == pStreamPA->ChannelMap.channels);
+    }
+    while (iDst < RT_ELEMENTS(pStreamPA->ChannelMap.map))
+        pStreamPA->ChannelMap.map[iDst++] = PA_CHANNEL_POSITION_INVALID;
+
+    LogFunc(("Opening '%s', rate=%dHz, channels=%d (%d), format=%s\n", szName, pStreamPA->SampleSpec.rate,
+             pStreamPA->SampleSpec.channels, cSrcChannels, pa_sample_format_to_string(pStreamPA->SampleSpec.format)));
 
     if (pa_sample_spec_valid(&pStreamPA->SampleSpec))
     {
@@ -1063,16 +1162,16 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
         pStreamPA->BufAttr.maxlength = UINT32_MAX; /* Let the PulseAudio server choose the biggest size it can handle. */
         if (pCfgReq->enmDir == PDMAUDIODIR_IN)
         {
-            pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
+            pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgAcq->Props, pCfgReq->Backend.cFramesPeriod);
             LogFunc(("Requesting: BufAttr: fragsize=%RU32\n", pStreamPA->BufAttr.fragsize));
             /* (rlength, minreq and prebuf are playback only) */
         }
         else
         {
-            pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+            pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgAcq->Props, pCfgReq->Backend.cFramesBufferSize);
             pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
-            pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
-            pStreamPA->BufAttr.prebuf    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgReq->Props,
+            pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgAcq->Props, pCfgReq->Backend.cFramesPeriod);
+            pStreamPA->BufAttr.prebuf    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgAcq->Props,
                                                                                        pCfgReq->Backend.cFramesPreBuffering),
                                                             &pStreamPA->SampleSpec);
             /* (fragsize is capture only) */
@@ -1110,6 +1209,15 @@ static DECLCALLBACK(int) drvHostAudioPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface
                                                       * pCfgAcq->Backend.cFramesBufferSize
                                                       / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
             }
+
+            /*
+             * Translate back the channel mapping.
+             */
+            for (iDst = 0; iDst < pStreamPA->ChannelMap.channels; iDst++)
+                 pCfgReq->Props.aidChannels[iDst] = drvHstAudPaConvertChannelPos(pStreamPA->ChannelMap.map[iDst]);
+            while (iDst < RT_ELEMENTS(pCfgReq->Props.aidChannels))
+                pCfgReq->Props.aidChannels[iDst++] = PDMAUDIOCHANNELID_INVALID;
+
             PDMAudioStrmCfgCopy(&pStreamPA->Cfg, pCfgAcq);
         }
     }
