@@ -114,6 +114,10 @@ typedef struct DRVHOSTVALKITAUDIO
     PPDMDRVINS          pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO       IHostAudio;
+    /** Temporary path to use. */
+    char                szPathTemp[RTPATH_MAX];
+    /** Output path to use. */
+    char                szPathOut[RTPATH_MAX];
     /** Current test set being handled. */
     AUDIOTESTSET        Set;
     /** Number of tests in \a lstTestsRec. */
@@ -135,13 +139,22 @@ typedef struct DRVHOSTVALKITAUDIO
 typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 
 
-
+/**
+ * Unregisters a ValKit test, common code.
+ *
+ * @param   pTst                Test to unregister.
+ *                              The pointer will be invalid afterwards.
+ */
 static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
 {
+    AssertPtrReturnVoid(pTst);
+
     RTListNodeRemove(&pTst->Node);
 
     AudioTestSetObjClose(pTst->pObj);
     pTst->pObj = NULL;
+
+    AssertPtrReturnVoid(pTst->pEntry);
     AudioTestSetTestDone(pTst->pEntry);
     pTst->pEntry = NULL;
 
@@ -149,6 +162,13 @@ static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
     pTst = NULL;
 }
 
+/**
+ * Unregisters a ValKit recording test.
+ *
+ * @param   pThis               ValKit audio driver instance.
+ * @param   pTst                Test to unregister.
+ *                              The pointer will be invalid afterwards.
+ */
 static void drvHostValKiUnregisterRecTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTESTDATA pTst)
 {
     drvHostValKiUnregisterTest(pTst);
@@ -157,12 +177,59 @@ static void drvHostValKiUnregisterRecTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTEST
     pThis->cTestsRec--;
 }
 
+/**
+ * Unregisters a ValKit playback test.
+ *
+ * @param   pThis               ValKit audio driver instance.
+ * @param   pTst                Test to unregister.
+ *                              The pointer will be invalid afterwards.
+ */
 static void drvHostValKiUnregisterPlayTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTESTDATA pTst)
 {
     drvHostValKiUnregisterTest(pTst);
 
     Assert(pThis->cTestsPlay);
     pThis->cTestsPlay--;
+}
+
+static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const char *pszTag)
+{
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+
+    LogRel(("Audio: Validation Kit: Beginning test set '%s'\n", pszTag));
+
+    return AudioTestSetCreate(&pThis->Set, pThis->szPathTemp, pszTag);
+
+}
+
+static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char *pszTag)
+{
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+
+    const PAUDIOTESTSET pSet  = &pThis->Set;
+
+    LogRel(("Audio: Validation Kit: Ending test set '%s'\n", pszTag));
+
+    /* Close the test set first. */
+    AudioTestSetClose(pSet);
+
+    /* Before destroying the test environment, pack up the test set so
+     * that it's ready for transmission. */
+    char szFileOut[RTPATH_MAX];
+    int rc = AudioTestSetPack(pSet, pThis->szPathOut, szFileOut, sizeof(szFileOut));
+    if (RT_SUCCESS(rc))
+        LogRel(("Audio: Validation Kit: Packed up to '%s'\n", szFileOut));
+
+    int rc2 = AudioTestSetWipe(pSet);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    AudioTestSetDestroy(pSet);
+
+    if (RT_FAILURE(rc))
+        LogRel(("Audio: Validation Kit: Test set prologue failed with %Rrc\n", rc));
+
+    return rc;
 }
 
 /** @copydoc ATSCALLBACKS::pfnTonePlay
@@ -664,9 +731,11 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->cTestsPlay = 0;
 
     ATSCALLBACKS Callbacks;
-    Callbacks.pfnTonePlay   = drvHostValKitRegisterGuestRecTest;
-    Callbacks.pfnToneRecord = drvHostValKitRegisterGuestPlayTest;
-    Callbacks.pvUser        = pThis;
+    Callbacks.pfnTestSetBegin = drvHostValKitTestSetBegin;
+    Callbacks.pfnTestSetEnd   = drvHostValKitTestSetEnd;
+    Callbacks.pfnTonePlay     = drvHostValKitRegisterGuestRecTest;
+    Callbacks.pfnToneRecord   = drvHostValKitRegisterGuestPlayTest;
+    Callbacks.pvUser          = pThis;
 
     LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) ...\n"));
 
@@ -674,15 +743,26 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     if (RT_SUCCESS(rc))
         rc = AudioTestSvcStart(&pThis->Srv);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) failed, rc=%Rrc\n", rc));
-    }
-    else
         LogRel(("Audio: Validation Kit: Audio Test Service (ATS) running\n"));
+
+        /** @todo Let the following be customizable by CFGM later. */
+        rc = AudioTestPathCreateTemp(pThis->szPathTemp, sizeof(pThis->szPathTemp), "ValKitAudio");
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("Audio: Validation Kit: Using temp dir '%s'\n", pThis->szPathTemp));
+            rc = AudioTestPathGetTemp(pThis->szPathOut, sizeof(pThis->szPathOut));
+            if (RT_SUCCESS(rc))
+                LogRel(("Audio: Validation Kit: Using output dir '%s'\n", pThis->szPathOut));
+        }
+    }
 
     if (RT_SUCCESS(rc))
         rc = RTCritSectInit(&pThis->CritSect);
+
+    if (RT_FAILURE(rc))
+        LogRel(("Audio: Validation Kit: Initialization failed, rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -720,8 +800,12 @@ static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
     else
         LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service failed, rc=%Rrc\n", rc));
 
-    rc = RTCritSectDelete(&pThis->CritSect);
-    AssertRC(rc);
+    int rc2 = RTCritSectDelete(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Audio: Validation Kit: Destruction failed, rc=%Rrc\n", rc));
 }
 
 /**
