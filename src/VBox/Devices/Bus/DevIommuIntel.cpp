@@ -2002,23 +2002,23 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   GCPhyseBase     The output address of the translation.
+ * @param   GCPhysBase      The output address of the translation.
  * @param   cShift          The page shift of the translation.
  * @param   fPerm           The permissions granted for the translated.
  * @param   idDomain        The domain ID of the translated region.
  * @param   pMemReqRemap    The DMA memory request remapping info.
  */
-static int dmarDrValidateAndUpdateIotlbe(PPDMDEVINS pDevIns, RTGCPHYS GCPhyseBase, uint8_t cShift, uint8_t fPerm,
+static int dmarDrValidateAndUpdateIotlbe(PPDMDEVINS pDevIns, RTGCPHYS GCPhysBase, uint8_t cShift, uint8_t fPerm,
                                          uint16_t idDomain, PDMARMEMREQREMAP pMemReqRemap)
 {
     Assert(   pMemReqRemap->fTtm == VTD_TTM_LEGACY_MODE
            || pMemReqRemap->fTtm == VTD_TTM_SCALABLE_MODE);
-    Assert(!(GCPhyseBase & X86_PAGE_4K_OFFSET_MASK));
+    Assert(!(GCPhysBase & X86_PAGE_4K_OFFSET_MASK));
 
     /* Ensure the output address is not in the interrupt address range. */
-    if (GCPhyseBase - VBOX_MSI_ADDR_BASE >= VBOX_MSI_ADDR_SIZE)
+    if (GCPhysBase - VBOX_MSI_ADDR_BASE >= VBOX_MSI_ADDR_SIZE)
     {
-        pMemReqRemap->Iotlbe.GCPhysBase = GCPhyseBase;
+        pMemReqRemap->Iotlbe.GCPhysBase = GCPhysBase;
         pMemReqRemap->Iotlbe.cShift     = cShift;
         pMemReqRemap->Iotlbe.fPerm      = fPerm;
         pMemReqRemap->Iotlbe.idDomain   = idDomain;
