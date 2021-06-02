@@ -608,7 +608,7 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR p
         return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Playing tones not supported");
 
     PATSPKTREQTONEPLAY pReq = (PATSPKTREQTONEPLAY)pPktHdr;
-    rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->StreamCfg, &pReq->ToneParms);
+    rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
     int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
     if (RT_SUCCESS(rc))
@@ -639,7 +639,7 @@ static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
         return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Recording tones not supported");
 
     PATSPKTREQTONEREC pReq = (PATSPKTREQTONEREC)pPktHdr;
-    rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->StreamCfg, &pReq->ToneParms);
+    rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
     int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
     if (RT_SUCCESS(rc))

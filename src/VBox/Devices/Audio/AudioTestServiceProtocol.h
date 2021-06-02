@@ -161,16 +161,9 @@ typedef struct ATSPKTREQTONEPLAY
 {
     /** Embedded packet header. */
     ATSPKTHDR          Hdr;
-    /** Stream configuration to use for playing the tone.
-     *  Note: Depending on the actual implementation this configuration might or might not be available / supported. */
-    PDMAUDIOSTREAMCFG  StreamCfg;
     /** Test tone parameters for playback. */
     AUDIOTESTTONEPARMS ToneParms;
-#if HC_ARCH_BITS == 64
-    uint8_t            aPadding[4+8];
-#else
-    uint8_t            aPadding[6+8];
-#endif
+    uint8_t            aPadding[8];
 } ATSPKTREQTONEPLAY;
 AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
@@ -185,16 +178,9 @@ typedef struct ATSPKTREQTONEREC
 {
     /** Embedded packet header. */
     ATSPKTHDR          Hdr;
-    /** Stream configuration to use for recording the tone.
-     *  Note: Depending on the actual implementation this configuration might or might not be available / supported. */
-    PDMAUDIOSTREAMCFG  StreamCfg;
     /** Test tone parameters for playback. */
     AUDIOTESTTONEPARMS ToneParms;
-#if HC_ARCH_BITS == 64
-    uint8_t            aPadding[4+8];
-#else
-    uint8_t            aPadding[6+8];
-#endif
+    uint8_t            aPadding[8];
 } ATSPKTREQTONEREC;
 AssertCompileSizeAlignment(ATSPKTREQTONEREC, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEREC structure. */

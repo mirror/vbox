@@ -115,19 +115,18 @@ typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 /**
  * Note: Called within server (client serving) thread.
  */
-static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+static DECLCALLBACK(int) drvHostValKitAudioSvcTonePlayCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
     AssertPtrReturn(pTestData, VERR_NO_MEMORY);
 
-    memcpy(&pTestData->StreamCfg,        pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
-    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pStreamCfg->Props, pTestData->t.TestTone.Parms.dbFreqHz);
+    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pToneParms->Props, pTestData->t.TestTone.Parms.dbFreqHz);
 
-    pTestData->t.TestTone.cbToWrite = PDMAudioPropsMilliToBytes(&pStreamCfg->Props,
+    pTestData->t.TestTone.cbToWrite = PDMAudioPropsMilliToBytes(&pToneParms->Props,
                                                                 pTestData->t.TestTone.Parms.msDuration);
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))

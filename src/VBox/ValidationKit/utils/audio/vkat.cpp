@@ -592,17 +592,17 @@ static DECLCALLBACK(int) audioTestSvcTestSetEndCallback(void const *pvUser, cons
 }
 
 /** @copydoc ATSCALLBACKS::pfnTonePlay */
-static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
     AUDIOTESTTONE TstTone;
-    AudioTestToneInitRandom(&TstTone, &pStreamCfg->Props);
+    AudioTestToneInitRandom(&TstTone, &pToneParms->Props);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestCreateStreamDefaultOut(pTstEnv, pTstStream, &pStreamCfg->Props);
+    int rc = audioTestCreateStreamDefaultOut(pTstEnv, pTstStream, &pToneParms->Props);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
@@ -635,22 +635,21 @@ static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PPDMAU
 }
 
 /** @copydoc ATSCALLBACKS::pfnToneRecord */
-static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestCreateStreamDefaultIn(pTstEnv, pTstStream, &pStreamCfg->Props);
+    int rc = audioTestCreateStreamDefaultIn(pTstEnv, pTstStream, &pToneParms->Props);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
         RT_ZERO(TstParms);
         TstParms.enmType  = AUDIOTESTTYPE_TESTTONE_RECORD;
         TstParms.enmDir   = PDMAUDIODIR_IN;
-        TstParms.Props    = pStreamCfg->Props;
-        pToneParms->Props = pStreamCfg->Props;
+        TstParms.Props    = pToneParms->Props;
         TstParms.TestTone = *pToneParms;
 
         PAUDIOTESTENTRY pTst;
@@ -1086,7 +1085,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
             /** @todo Add more parameters here? */
             Cfg.Props = pTstParms->Props;
 
-            rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.Client, &Cfg, &pTstParms->TestTone);
+            rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.Client, &pTstParms->TestTone);
             if (RT_SUCCESS(rc))
             {
                 AudioTestSetTestDone(pTst);
@@ -1145,18 +1144,14 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
+        pTstParms->TestTone.Props      = pTstParms->Props;
         pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_10SEC); /** @todo Record even longer? */
 
         PAUDIOTESTENTRY pTst;
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", pTstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
-            PDMAUDIOSTREAMCFG Cfg;
-            RT_ZERO(Cfg);
-            /** @todo Add more parameters here? */
-            Cfg.Props = pTstParms->Props;
-
-            rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.Client, &Cfg, &pTstParms->TestTone);
+            rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.Client, &pTstParms->TestTone);
             if (RT_SUCCESS(rc))
             {
                 AudioTestSetTestDone(pTst);
@@ -2094,7 +2089,7 @@ static int audioTestDoSelftestAts(PCPDMDRVREG pDrvReg, const char *pszAdr)
                         ToneParms.msDuration = RTRandU32Ex(250, 1000 * 5);
                         memcpy(&ToneParms.Props, &CfgAcq.Props, sizeof(PDMAUDIOPCMPROPS));
 
-                        rc = AudioTestSvcClientTonePlay(&Conn, &CfgAcq, &ToneParms);
+                        rc = AudioTestSvcClientTonePlay(&Conn, &ToneParms);
 
                         int rc2 = AudioTestSvcClientClose(&Conn);
                         if (RT_SUCCESS(rc))

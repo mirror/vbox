@@ -354,15 +354,13 @@ int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag)
  *
  * @returns VBox status code.
  * @param   pClient             Client to issue command for.
- * @param   pStreamCfg          Audio stream configuration to use.
  * @param   pToneParms          Tone parameters to use.
  * @note    How (and if) the server plays a tone depends on the actual implementation side.
  */
-int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms)
 {
     ATSPKTREQTONEPLAY Req;
 
-    memcpy(&Req.StreamCfg, pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
     memcpy(&Req.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_PLAY, 0);
@@ -379,15 +377,13 @@ int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg
  *
  * @returns VBox status code.
  * @param   pClient             Client to issue command for.
- * @param   pStreamCfg          Audio stream configuration to use.
  * @param   pToneParms          Tone parameters to use.
  * @note    How (and if) the server plays a tone depends on the actual implementation side.
  */
-int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms)
 {
     ATSPKTREQTONEREC Req;
 
-    memcpy(&Req.StreamCfg, pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
     memcpy(&Req.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_RECORD, 0);
