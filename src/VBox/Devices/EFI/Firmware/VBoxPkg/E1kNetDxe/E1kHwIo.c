@@ -156,7 +156,7 @@ E1kNetDevReset (
       return Status;
     }
 
-    // TODO: Timeout?
+    /// @todo Timeout?
     if (!(Ctrl & E1K_REG_CTRL_RST))
       break;
   }
