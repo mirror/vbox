@@ -238,17 +238,26 @@ typedef AUDIOTESTOBJ *PAUDIOTESTOBJ;
 
 struct AUDIOTESTSET;
 
+/**
+ * Structure specifying a single audio test entry of a test set.
+ *
+ * A test set can contain zero or more test entry (tests).
+ */
 typedef struct AUDIOTESTENTRY
 {
     /** List node. */
     RTLISTNODE           Node;
+    /** Pointer to test set parent. */
     AUDIOTESTSET        *pParent;
+    /** Friendly description of the test. */
     char                 szDesc[64];
+    /** Audio test parameters this test needs to perform the actual test. */
     AUDIOTESTPARMS       Parms;
     /** Number of test objects bound to this test. */
     uint32_t             cObj;
     /** Absolute offset (in bytes) where to write the "obj_count" value later. */
     uint64_t             offObjCount;
+    /** Overall test result. */
     int                  rc;
 } AUDIOTESTENTRY;
 /** Pointer to an audio test entry. */
