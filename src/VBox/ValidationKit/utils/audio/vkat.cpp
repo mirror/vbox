@@ -405,6 +405,25 @@ bool          g_fDrvAudioDebug = 0;
 const char   *g_pszDrvAudioDebug = NULL;
 
 
+
+/**
+ * Helper for handling --backend options.
+ *
+ * @returns Pointer to the specified backend, NULL if not found (error
+ *          displayed).
+ * @param   pszBackend      The backend option value.
+ */
+static PCPDMDRVREG audioTestFindBackendOpt(const char *pszBackend)
+{
+    for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+        if (   strcmp(pszBackend, g_aBackends[i].pszName) == 0
+            || strcmp(pszBackend, g_aBackends[i].pDrvReg->szName) == 0)
+            return g_aBackends[i].pDrvReg;
+    RTMsgError("Unknown backend: '%s'", pszBackend);
+    return NULL;
+}
+
+
 /*********************************************************************************************************************************
 *   Test Primitives                                                                                                              *
 *********************************************************************************************************************************/
@@ -1378,16 +1397,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'b':
-                pDrvReg = NULL;
-                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
-                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
-                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
-                    {
-                        pDrvReg = g_aBackends[i].pDrvReg;
-                        break;
-                    }
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                    return RTEXITCODE_SYNTAX;
                 break;
 
             case 'd':
@@ -1699,6 +1711,114 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 
 
 /*********************************************************************************************************************************
+*   Command: enum                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Options for 'enum'.
+ */
+static const RTGETOPTDEF g_aCmdEnumOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+};
+
+/** The 'enum' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * The 'enum' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState)
+{
+    /*
+     * Parse options.
+     */
+    /* Option values: */
+    PCPDMDRVREG pDrvReg = g_aBackends[0].pDrvReg;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Do the enumeration.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
+    AUDIOTESTDRVSTACK   DrvStack;
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    if (RT_SUCCESS(rc))
+    {
+        if (DrvStack.pIHostAudio->pfnGetDevices)
+        {
+            PDMAUDIOHOSTENUM Enum;
+            rc = DrvStack.pIHostAudio->pfnGetDevices(DrvStack.pIHostAudio, &Enum);
+            if (RT_SUCCESS(rc))
+            {
+                RTPrintf("Found %u device%s\n", Enum.cDevices, Enum.cDevices != 1 ? "s" : "");
+
+                PPDMAUDIOHOSTDEV pHostDev;
+                RTListForEach(&Enum.LstDevices, pHostDev, PDMAUDIOHOSTDEV, ListEntry)
+                {
+                    RTPrintf("\nDevice \"%s\":\n", pHostDev->szName);
+
+                    char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
+                    if (pHostDev->cMaxInputChannels && !pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_IN)
+                        RTPrintf("    Input:  max %u channels (%s)\n",
+                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+                    else if (!pHostDev->cMaxInputChannels && pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_OUT)
+                        RTPrintf("    Output: max %u channels (%s)\n",
+                                 pHostDev->cMaxOutputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+                    else
+                        RTPrintf("    %s: max %u output channels, max %u input channels (%s)\n",
+                                 PDMAudioDirGetName(pHostDev->enmUsage), pHostDev->cMaxOutputChannels,
+                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+
+                    if (pHostDev->pszId && *pHostDev->pszId)
+                        RTPrintf("    ID:     \"%s\"\n", pHostDev->pszId);
+                }
+
+                PDMAudioHostEnumDelete(&Enum);
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Enumeration failed: %Rrc\n", rc);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Enumeration not supported by backend '%s'\n", pDrvReg->szName);
+        audioTestDriverStackDelete(&DrvStack);
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
 *   Command: play                                                                                                                *
 *********************************************************************************************************************************/
 
@@ -1888,7 +2008,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
 }
 
 /**
- * Command line parameters for test mode.
+ * Options for 'play'.
  */
 static const RTGETOPTDEF g_aCmdPlayOptions[] =
 {
@@ -1902,7 +2022,7 @@ static const RTGETOPTDEF g_aCmdPlayOptions[] =
     { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
 };
 
-/** the 'play' command option help. */
+/** The 'play' command option help. */
 static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
@@ -1946,16 +2066,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
         switch (rc)
         {
             case 'b':
-                pDrvReg = NULL;
-                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
-                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
-                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
-                    {
-                        pDrvReg = g_aBackends[i].pDrvReg;
-                        break;
-                    }
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                    return RTEXITCODE_SYNTAX;
                 break;
 
             case 'c':
@@ -2149,7 +2262,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
     /* Option values: */
     PCPDMDRVREG pDrvReg           = g_aBackends[0].pDrvReg;
     bool        fWithDrvAudio     = false;
-    char       *pszAtsAddr        = NULL;
+    const char *pszAtsAddr        = NULL;
 
     /* Argument processing loop: */
     int           rc;
@@ -2159,36 +2272,18 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
         switch (rc)
         {
             case VKAT_SELFTEST_OPT_ATS_HOST:
-            {
                 pszAtsAddr = RTStrDup(ValueUnion.psz);
                 break;
-            }
 
             case 'b':
-            {
-                pDrvReg = NULL;
-                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
-                    if (   strcmp(ValueUnion.psz, g_aBackends[i].pszName) == 0
-                        || strcmp(ValueUnion.psz, g_aBackends[i].pDrvReg->szName) == 0)
-                    {
-                        pDrvReg = g_aBackends[i].pDrvReg;
-                        break;
-                    }
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown backend: '%s'", ValueUnion.psz);
+                    return RTEXITCODE_SYNTAX;
                 break;
-            }
 
             case 'd':
-            {
                 fWithDrvAudio = true;
                 break;
-            }
-
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                break;
-            }
 
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
@@ -2237,6 +2332,11 @@ static struct
         "verify",   audioVerifyMain,
         "Verifies a formerly created audio test set.",
         g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),   NULL,
+    },
+    {
+        "enum",     audioTestCmdEnumHandler,
+        "Enumerates audio devices.",
+        g_aCmdEnumOptions,      RT_ELEMENTS(g_aCmdEnumOptions),     audioTestCmdEnumHelp,
     },
     {
         "play",     audioTestCmdPlayHandler,
