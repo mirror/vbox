@@ -191,6 +191,7 @@ typedef enum
     kDmarDiag_Atf_Lgn_1_1,
     kDmarDiag_Atf_Lgn_1_2,
     kDmarDiag_Atf_Lgn_1_3,
+    kDmarDiag_Atf_Lgn_4,
     kDmarDiag_Atf_Lrt_1,
     kDmarDiag_Atf_Lrt_2,
     kDmarDiag_Atf_Lrt_3,
@@ -201,6 +202,7 @@ typedef enum
     kDmarDiag_Atf_Rta_1_2,
     kDmarDiag_Atf_Rta_1_3,
     kDmarDiag_Atf_Sgn_5,
+    kDmarDiag_Atf_Sgn_8,
     kDmarDiag_Atf_Ssl_1,
     kDmarDiag_Atf_Ssl_2,
     kDmarDiag_Atf_Ssl_3,
@@ -268,6 +270,7 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Atf_Lgn_1_1               ),
     DMARDIAG_DESC(Atf_Lgn_1_2               ),
     DMARDIAG_DESC(Atf_Lgn_1_3               ),
+    DMARDIAG_DESC(Atf_Lgn_4                 ),
     DMARDIAG_DESC(Atf_Lrt_1                 ),
     DMARDIAG_DESC(Atf_Lrt_2                 ),
     DMARDIAG_DESC(Atf_Lrt_3                 ),
@@ -278,6 +281,7 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(Atf_Rta_1_2               ),
     DMARDIAG_DESC(Atf_Rta_1_3               ),
     DMARDIAG_DESC(Atf_Sgn_5                 ),
+    DMARDIAG_DESC(Atf_Sgn_8                 ),
     DMARDIAG_DESC(Atf_Ssl_1                 ),
     DMARDIAG_DESC(Atf_Ssl_2                 ),
     DMARDIAG_DESC(Atf_Ssl_3                 ),
@@ -1993,6 +1997,43 @@ static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP
 
 
 /**
+ * Validates the output address of a translation and updates the IOTLB entry for the
+ * given memory request remapping.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   GCPhyseBase     The output address of the translation.
+ * @param   cShift          The page shift of the translation.
+ * @param   fPerm           The permissions granted for the translated.
+ * @param   idDomain        The domain ID of the translated region.
+ * @param   pMemReqRemap    The DMA memory request remapping info.
+ */
+static int dmarDrValidateAndUpdateIotlbe(PPDMDEVINS pDevIns, RTGCPHYS GCPhyseBase, uint8_t cShift, uint8_t fPerm,
+                                         uint16_t idDomain, PDMARMEMREQREMAP pMemReqRemap)
+{
+    Assert(   pMemReqRemap->fTtm == VTD_TTM_LEGACY_MODE
+           || pMemReqRemap->fTtm == VTD_TTM_SCALABLE_MODE);
+    Assert(!(GCPhyseBase & X86_PAGE_4K_OFFSET_MASK));
+
+    /* Ensure the output address is not in the interrupt address range. */
+    if (GCPhyseBase - VBOX_MSI_ADDR_BASE >= VBOX_MSI_ADDR_SIZE)
+    {
+        pMemReqRemap->Iotlbe.GCPhysBase = GCPhyseBase;
+        pMemReqRemap->Iotlbe.cShift     = cShift;
+        pMemReqRemap->Iotlbe.fPerm      = fPerm;
+        pMemReqRemap->Iotlbe.idDomain   = idDomain;
+        return VINF_SUCCESS;
+    }
+
+    if (pMemReqRemap->fTtm == VTD_TTM_LEGACY_MODE)
+        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lgn_4, VTDATFAULT_LGN_4, pMemReqRemap);
+    else
+        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Sgn_8, VTDATFAULT_SGN_8, pMemReqRemap);
+    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+}
+
+
+/**
  * Performs second level translation.
  *
  * @returns VBox status code.
@@ -2111,11 +2152,8 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
             uint8_t const fSllpsMask = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SLLPS);
             if (fSllpsMask & RT_BIT(iLevel - 1))
             {
-                pMemReqRemap->Iotlbe.GCPhysBase = uPtEntity & ~(RT_BIT_64(cLevelShift) - 1);
-                pMemReqRemap->Iotlbe.cShift     = cLevelShift;
-                pMemReqRemap->Iotlbe.fPerm      = fPtPerm;
-                pMemReqRemap->Iotlbe.idDomain   = idDomain;
-                return VINF_SUCCESS;
+                RTGCPHYS const GCPhysBase = uPtEntity & ~(RT_BIT_64(cLevelShift) - 1);
+                return dmarDrValidateAndUpdateIotlbe(pDevIns, GCPhysBase, cLevelShift, fPtPerm, idDomain, pMemReqRemap);
             }
 
             if (pMemReqRemap->fTtm == VTD_TTM_LEGACY_MODE)
@@ -2130,11 +2168,8 @@ static int dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, VTD_SLP_ENTRY_T SlpEnt
          */
         if (iLevel == 0)
         {
-            pMemReqRemap->Iotlbe.GCPhysBase = uPtEntity & ~(RT_BIT_64(cLevelShift) - 1);
-            pMemReqRemap->Iotlbe.cShift     = cLevelShift;
-            pMemReqRemap->Iotlbe.fPerm      = fPtPerm;
-            pMemReqRemap->Iotlbe.idDomain   = idDomain;
-            return VINF_SUCCESS;
+            RTGCPHYS const GCPhysBase = uPtEntity & ~(RT_BIT_64(cLevelShift) - 1);
+            return dmarDrValidateAndUpdateIotlbe(pDevIns, GCPhysBase, cLevelShift, fPtPerm, idDomain, pMemReqRemap);
         }
     }
 
