@@ -129,11 +129,12 @@ int         audioTestDriverStackStreamCreateOutput(PAUDIOTESTDRVSTACK pDrvStack,
 void        audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
 int         audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, bool fSync);
 int         audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-int         audioTestDriverStackStreamDisable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
-uint32_t    audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+int         AudioTestDriverStackStreamDisable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
 bool        audioTestDriverStackStreamIsOkay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
+uint32_t    audioTestDriverStackStreamGetWritable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
 int         audioTestDriverStackStreamPlay(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream, void const *pvBuf,
                                            uint32_t cbBuf, uint32_t *pcbPlayed);
+uint32_t    audioTestDriverStackStreamGetReadable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream);
 int         audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
                                               void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
 /** @}  */
@@ -144,11 +145,13 @@ int         audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDM
 int         AudioTestMixStreamInit(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream,
                                    PCPDMAUDIOPCMPROPS pProps, uint32_t cMsBuffer);
 void        AudioTestMixStreamTerm(PAUDIOTESTDRVMIXSTREAM pMix);
-int         AudioTestMixStreamDrain(PAUDIOTESTDRVMIXSTREAM pMix, bool fSync);
 int         AudioTestMixStreamEnable(PAUDIOTESTDRVMIXSTREAM pMix);
-uint32_t    AudioTestMixStreamGetWritable(PAUDIOTESTDRVMIXSTREAM pMix);
+int         AudioTestMixStreamDrain(PAUDIOTESTDRVMIXSTREAM pMix, bool fSync);
+int         AudioTestMixStreamDisable(PAUDIOTESTDRVMIXSTREAM pMix);
 bool        AudioTestMixStreamIsOkay(PAUDIOTESTDRVMIXSTREAM pMix);
+uint32_t    AudioTestMixStreamGetWritable(PAUDIOTESTDRVMIXSTREAM pMix);
 int         AudioTestMixStreamPlay(PAUDIOTESTDRVMIXSTREAM pMix, void const *pvBuf, uint32_t cbBuf, uint32_t *pcbPlayed);
+uint32_t    AudioTestMixStreamGetReadable(PAUDIOTESTDRVMIXSTREAM pMix);
 int         AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
 /** @}  */
 

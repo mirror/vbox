@@ -52,6 +52,7 @@
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h> /* for CoInitializeEx */
 #endif
+#include <signal.h>
 
 /**
  * Internal driver instance data
@@ -390,9 +391,11 @@ static struct
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
-static volatile bool g_fTerminated = false;
+
+/** Terminate ASAP if set.  Set on Ctrl-C. */
+static bool volatile    g_fTerminate = false;
 /** The release logger. */
-static PRTLOGGER    g_pRelLogger = NULL;
+static PRTLOGGER        g_pRelLogger = NULL;
 
 
 /** The test handle. */
@@ -403,7 +406,6 @@ unsigned      g_uVerbosity = 0;
 bool          g_fDrvAudioDebug = 0;
 /** DrvAudio: The debug output path. */
 const char   *g_pszDrvAudioDebug = NULL;
-
 
 
 /**
@@ -1291,7 +1293,7 @@ static int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms
     {
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "ATS running\n");
 
-        while (!g_fTerminated) /** @todo Implement signal handling. */
+        while (!g_fTerminate) /** @todo Implement signal handling. */
         {
             RTThreadSleep(100);
         }
@@ -1820,7 +1822,7 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
     uint8_t         abSamples[16384];
     uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
     uint64_t        offStream        = 0;
-    for (;;)
+    while (!g_fTerminate)
     {
         /* Read a chunk from the wave file. */
         size_t      cbSamples = 0;
@@ -1853,8 +1855,7 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
                             offStream  += cbPlayed;
                         }
                         else
-                            return RTMsgErrorExitFailure("Played zero out of %#x bytes - %#x bytes reported playable!\n",
-                                                         cbToPlay, cbCanWrite);
+                            return RTMsgErrorExitFailure("Played zero bytes - %#x bytes reported playable!\n", cbCanWrite);
                     }
                     else
                         return RTMsgErrorExitFailure("Failed to play %#x bytes: %Rrc\n", cbToPlay, rc);
@@ -1958,13 +1959,13 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                 if (RT_SUCCESS(rc))
                 {
                     if (g_uVerbosity > 0)
-                        RTMsgInfo("Stream: %s cbBacked=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
+                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
                                   pStream->cbBackend, fWithMixer ? " mixed" : "");
 
                     /*
                      * Enable the stream and start playing.
                      */
-                    rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
+                    rc = AudioTestMixStreamEnable(&Mix);
                     if (RT_SUCCESS(rc))
                         rcExit = audioTestPlayOneInner(&Mix, &WaveFile, &CfgAcq, pszFile);
                     else
@@ -2082,6 +2083,369 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
             {
                 RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
                                                      cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Command: rec                                                                                                                 *
+*********************************************************************************************************************************/
+
+/**
+ * Worker for audioTestRecOne implementing the recording loop.
+ */
+static RTEXITCODE audioTestRecOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWAVEFILE pWaveFile,
+                                       PCPDMAUDIOSTREAMCFG pCfgAcq, uint64_t cMaxFrames, const char *pszFile)
+{
+    int             rc;
+    uint32_t const  cbPreBuffer = PDMAudioPropsFramesToBytes(pMix->pProps, pCfgAcq->Backend.cFramesPreBuffering);
+    uint64_t const  nsStarted   = RTTimeNanoTS();
+
+    /*
+     * Transfer data as quickly as we're allowed.
+     */
+    uint8_t         abSamples[16384];
+    uint32_t const  cbSamplesAligned     = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
+    uint64_t        cFramesCapturedTotal = 0;
+    while (!g_fTerminate && cFramesCapturedTotal < cMaxFrames)
+    {
+        /*
+         * Anything we can read?
+         */
+        uint32_t const cbCanRead = AudioTestMixStreamGetReadable(pMix);
+        if (cbCanRead)
+        {
+            uint32_t const cbToRead   = RT_MIN(cbCanRead, cbSamplesAligned);
+            uint32_t       cbCaptured = 0;
+            rc = AudioTestMixStreamCapture(pMix, abSamples, cbToRead, &cbCaptured);
+            if (RT_SUCCESS(rc))
+            {
+                if (cbCaptured)
+                {
+                    uint32_t cFramesCaptured = PDMAudioPropsBytesToFrames(pMix->pProps, cbCaptured);
+                    if (cFramesCaptured + cFramesCaptured < cMaxFrames)
+                    { /* likely */ }
+                    else
+                    {
+                        cFramesCaptured = cMaxFrames - cFramesCaptured;
+                        cbCaptured      = PDMAudioPropsFramesToBytes(pMix->pProps, cFramesCaptured);
+                    }
+
+                    rc = AudioTestWaveFileWrite(pWaveFile, abSamples, cbCaptured);
+                    if (RT_SUCCESS(rc))
+                        cFramesCapturedTotal += cFramesCaptured;
+                    else
+                        return RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszFile, rc);
+                }
+                else
+                    return RTMsgErrorExitFailure("Captured zero bytes - %#x bytes reported readable!\n", cbCanRead);
+            }
+            else
+                return RTMsgErrorExitFailure("Failed to capture %#x bytes: %Rrc (%#x available)\n", cbToRead, rc, cbCanRead);
+        }
+        else if (AudioTestMixStreamIsOkay(pMix))
+            RTThreadSleep(RT_MIN(RT_MAX(1, pCfgAcq->Device.cMsSchedulingHint), 256));
+        else
+            return RTMsgErrorExitFailure("Stream is not okay!\n");
+    }
+
+    /*
+     * Disable the stream.
+     */
+    rc = AudioTestMixStreamDisable(pMix);
+    if (RT_SUCCESS(rc) && g_uVerbosity > 0)
+        RTMsgInfo("%'RU64 ns: Stopped after recording %RU64 frames%s\n", RTTimeNanoTS() - nsStarted, cFramesCapturedTotal,
+                  g_fTerminate ? " - Ctrl-C" : ".");
+    else if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Disabling stream failed: %Rrc", rc);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Worker for audioTestCmdRecHandler that recs one file.
+ */
+static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
+                                  PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                                  uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                  uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
+                                  uint64_t cMaxFrames, uint64_t cNsMaxDuration)
+{
+    /*
+     * Construct the driver stack.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
+    AUDIOTESTDRVSTACK   DrvStack;
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, fWithDrvAudio);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Set the input device if one is specified.
+         */
+        rc = audioTestDriverStackSetDevice(&DrvStack, PDMAUDIODIR_IN, pszDevId);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create an input stream.
+             */
+            PDMAUDIOPCMPROPS  ReqProps;
+            PDMAudioPropsInit(&ReqProps,
+                              cbSample ? cbSample : cbWaveSample ? cbWaveSample : 2,
+                              true /*fSigned*/,
+                              cChannels ? cChannels : cWaveChannels ? cWaveChannels : 2,
+                              uHz ? uHz : uWaveHz ? uWaveHz : 44100);
+            PDMAUDIOSTREAMCFG CfgAcq;
+            PPDMAUDIOSTREAM   pStream  = NULL;
+            rc = audioTestDriverStackStreamCreateInput(&DrvStack, &ReqProps, cMsBufferSize,
+                                                       cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Determine the wave file properties.  If it differs from the stream
+                 * properties, make sure the mixer is enabled.
+                 */
+                PDMAUDIOPCMPROPS WaveProps;
+                PDMAudioPropsInit(&WaveProps,
+                                  cbWaveSample ? cbWaveSample : PDMAudioPropsSampleSize(&CfgAcq.Props),
+                                  true /*fSigned*/,
+                                  cWaveChannels ? cWaveChannels : PDMAudioPropsChannels(&CfgAcq.Props),
+                                  uWaveHz ? uWaveHz : PDMAudioPropsHz(&CfgAcq.Props));
+                if (!fWithMixer && !PDMAudioPropsAreEqual(&WaveProps, &CfgAcq.Props))
+                {
+                    RTMsgInfo("Enabling the mixer buffer.\n");
+                    fWithMixer = true;
+                }
+
+                /* Console the max duration into frames now that we've got the wave file format. */
+                if (cMaxFrames != UINT64_MAX && cNsMaxDuration != UINT64_MAX)
+                {
+                    uint64_t cMaxFrames2 = PDMAudioPropsNanoToBytes64(&WaveProps, cNsMaxDuration);
+                    cMaxFrames = RT_MAX(cMaxFrames, cMaxFrames2);
+                }
+                else if (cNsMaxDuration != UINT64_MAX)
+                    cMaxFrames = PDMAudioPropsNanoToBytes64(&WaveProps, cNsMaxDuration);
+
+                /*
+                 * Create a mixer wrapper.  This is just a thin wrapper if fWithMixer
+                 * is false, otherwise it's doing mixing, resampling and recoding.
+                 */
+                AUDIOTESTDRVMIXSTREAM Mix;
+                rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, fWithMixer ? &WaveProps : NULL, 100 /*ms*/);
+                if (RT_SUCCESS(rc))
+                {
+                    char szTmp[128];
+                    if (g_uVerbosity > 0)
+                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
+                                  pStream->cbBackend, fWithMixer ? " mixed" : "");
+
+                    /*
+                     * Open the wave output file.
+                     */
+                    AUDIOTESTWAVEFILE WaveFile;
+                    RTERRINFOSTATIC ErrInfo;
+                    rc = AudioTestWaveFileCreate(pszFile, &WaveProps, &WaveFile, RTErrInfoInitStatic(&ErrInfo));
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (g_uVerbosity > 0)
+                        {
+                            RTMsgInfo("Opened '%s' for playing\n", pszFile);
+                            RTMsgInfo("Format: %s\n", PDMAudioPropsToString(&WaveFile.Props, szTmp, sizeof(szTmp)));
+                        }
+
+                        /*
+                         * Enable the stream and start recording.
+                         */
+                        rc = AudioTestMixStreamEnable(&Mix);
+                        if (RT_SUCCESS(rc))
+                            rcExit = audioTestRecOneInner(&Mix, &WaveFile, &CfgAcq, cMaxFrames, pszFile);
+                        else
+                            rcExit = RTMsgErrorExitFailure("Enabling the input stream failed: %Rrc", rc);
+                        if (rcExit != RTEXITCODE_SUCCESS)
+                            AudioTestMixStreamDisable(&Mix);
+
+                        /*
+                         * Clean up.
+                         */
+                        rc = AudioTestWaveFileClose(&WaveFile);
+                        if (RT_FAILURE(rc))
+                            rcExit = RTMsgErrorExitFailure("Error closing '%s': %Rrc", pszFile, rc);
+                    }
+                    else
+                        rcExit = RTMsgErrorExitFailure("Failed to open '%s': %Rrc%#RTeim", pszFile, rc, &ErrInfo.Core.pszMsg);
+
+                    AudioTestMixStreamTerm(&Mix);
+                }
+                audioTestDriverStackStreamDestroy(&DrvStack, pStream);
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Failed to set output device to '%s': %Rrc", pszDevId, rc);
+        audioTestDriverStackDelete(&DrvStack);
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
+    return rcExit;
+}
+
+/**
+ * Options for 'rec'.
+ */
+static const RTGETOPTDEF g_aCmdRecOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
+    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
+    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
+    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
+    { "--input-device",     'i',                          RTGETOPT_REQ_STRING  },
+    { "--wav-channels",     'C',                          RTGETOPT_REQ_UINT8 },
+    { "--wav-hz",           'F',                          RTGETOPT_REQ_UINT32 },
+    { "--wav-frequency",    'F',                          RTGETOPT_REQ_UINT32 },
+    { "--wav-sample-size",  'Z',                          RTGETOPT_REQ_UINT8 },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
+    { "--max-frames",       'r',                          RTGETOPT_REQ_UINT64 },
+    { "--max-sec",          's',                          RTGETOPT_REQ_UINT64 },
+    { "--max-seconds",      's',                          RTGETOPT_REQ_UINT64 },
+    { "--max-ms",           't',                          RTGETOPT_REQ_UINT64 },
+    { "--max-milliseconds", 't',                          RTGETOPT_REQ_UINT64 },
+    { "--max-ns",           'T',                          RTGETOPT_REQ_UINT64 },
+    { "--max-nanoseconds",  'T',                          RTGETOPT_REQ_UINT64 },
+};
+
+/** The 'rec' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'c': return "Number of backend input channels";
+        case 'C': return "Number of wave-file channels";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'f': return "Input frequency (Hz)";
+        case 'F': return "Wave-file frequency (Hz)";
+        case 'z': return "Input sample size (bits)";
+        case 'Z': return "Wave-file sample size (bits)";
+        case 'm': return "Go via the mixer.";
+        case 'i': return "The ID of the input device to use.";
+        case 'r': return "Max recording duration in frames.";
+        case 's': return "Max recording duration in seconds.";
+        case 't': return "Max recording duration in milliseconds.";
+        case 'T': return "Max recording duration in nanoseconds.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * The 'play' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
+{
+    /* Option values: */
+    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    uint32_t    cMsBufferSize       = UINT32_MAX;
+    uint32_t    cMsPreBuffer        = UINT32_MAX;
+    uint32_t    cMsSchedulingHint   = UINT32_MAX;
+    const char *pszDevId            = NULL;
+    bool        fWithDrvAudio       = false;
+    bool        fWithMixer          = false;
+    uint8_t     cbSample            = 0;
+    uint8_t     cChannels           = 0;
+    uint32_t    uHz                 = 0;
+    uint8_t     cbWaveSample        = 0;
+    uint8_t     cWaveChannels       = 0;
+    uint32_t    uWaveHz             = 0;
+    uint64_t    cMaxFrames          = UINT64_MAX;
+    uint64_t    cNsMaxDuration      = UINT64_MAX;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'c':
+                cChannels = ValueUnion.u8;
+                break;
+
+            case 'C':
+                cWaveChannels = ValueUnion.u8;
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
+            case 'f':
+                uHz = ValueUnion.u32;
+                break;
+
+            case 'F':
+                uWaveHz = ValueUnion.u32;
+                break;
+
+            case 'i':
+                pszDevId = ValueUnion.psz;
+                break;
+
+            case 'm':
+                fWithMixer = true;
+                break;
+
+            case 'r':
+                cMaxFrames = ValueUnion.u64;
+                break;
+
+            case 's':
+                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1SEC ? UINT64_MAX : ValueUnion.u64 * RT_NS_1SEC;
+                break;
+
+            case 't':
+                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1MS  ? UINT64_MAX : ValueUnion.u64 * RT_NS_1MS;
+                break;
+
+            case 'T':
+                cNsMaxDuration = ValueUnion.u64;
+                break;
+
+            case 'z':
+                cbSample = ValueUnion.u8 / 8;
+                break;
+
+            case 'Z':
+                cbWaveSample = ValueUnion.u8 / 8;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit = audioTestRecOne(ValueUnion.psz, cWaveChannels, cbWaveSample, uWaveHz,
+                                                    pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint,
+                                                    cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer,
+                                                    cMaxFrames, cNsMaxDuration);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
@@ -2285,6 +2649,22 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
 
 
 /**
+ * Ctrl-C signal handler.
+ *
+ * This just sets g_fTerminate and hope it will be noticed soon.  It restores
+ * the SIGINT action to default, so that a second Ctrl-C will have the normal
+ * effect (just in case the code doesn't respond to g_fTerminate).
+ */
+static void audioTestSignalHandler(int iSig) RT_NOEXCEPT
+{
+    Assert(iSig == SIGINT); RT_NOREF(iSig);
+    RTPrintf("Ctrl-C!\n");
+    ASMAtomicWriteBool(&g_fTerminate, true);
+    signal(SIGINT, SIG_DFL);
+}
+
+
+/**
  * Commands.
  */
 static struct
@@ -2323,6 +2703,11 @@ static struct
         "play",     audioTestCmdPlayHandler,
         "Plays one or more wave files.",
         g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
+    },
+    {
+        "rec",      audioTestCmdRecHandler,
+        "Records audio to a wave file.",
+        g_aCmdRecOptions,       RT_ELEMENTS(g_aCmdRecOptions),      audioTestCmdRecHelp,
     },
     {
         "selftest", audioTestCmdSelftestHandler,
@@ -2427,6 +2812,18 @@ int main(int argc, char **argv)
         RTLogRelSetDefaultInstance(g_pRelLogger);
     else
         RTMsgWarning("Failed to create release logger: %Rrc", rc);
+
+    /*
+     * Install a Ctrl-C signal handler.
+     */
+#ifdef RT_OS_WINDOWS
+    signal(SIGINT, audioTestSignalHandler);
+#else
+    struct sigaction sa;
+    RT_ZERO(sa);
+    sa.sa_handler = audioTestSignalHandler;
+    sigaction(SIGINT, &sa, NULL);
+#endif
 
     /*
      * Process common options.
