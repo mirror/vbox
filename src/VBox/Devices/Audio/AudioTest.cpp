@@ -1463,6 +1463,7 @@ static unsigned audioTestWaveCountBits(uint32_t fMask)
  */
 int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRTERRINFO pErrInfo)
 {
+    pWaveFile->u32Magic = AUDIOTESTWAVEFILE_MAGIC_DEAD;
     RT_ZERO(pWaveFile->Props);
     pWaveFile->hFile = NIL_RTFILE;
     int rc = RTFileOpen(&pWaveFile->hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -1605,7 +1606,9 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
                             /*
                              * We're good!
                              */
-                            pWaveFile->offCur = 0;
+                            pWaveFile->offCur    = 0;
+                            pWaveFile->fReadMode = true;
+                            pWaveFile->u32Magic  = AUDIOTESTWAVEFILE_MAGIC;
                             return VINF_SUCCESS;
                         }
 
@@ -1634,13 +1637,143 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
     return rc;
 }
 
+
+/**
+ * Creates a new wave file.
+ *
+ * @returns VBox status code.
+ * @param   pszFile     The filename.
+ * @param   pProps      The audio format properties.
+ * @param   pWaveFile   The wave file structure to fill in on success.
+ * @param   pErrInfo    Where to return addition error details on failure.
+ */
+int AudioTestWaveFileCreate(const char *pszFile, PCPDMAUDIOPCMPROPS pProps, PAUDIOTESTWAVEFILE pWaveFile, PRTERRINFO pErrInfo)
+{
+    /*
+     * Construct the file header first (we'll do some input validation
+     * here, so better do it before creating the file).
+     */
+    struct
+    {
+        RTRIFFHDR               Hdr;
+        RTRIFFWAVEFMTEXTCHUNK   FmtExt;
+        RTRIFFCHUNK             Data;
+    } FileHdr;
+
+    FileHdr.Hdr.uMagic                      = RTRIFFHDR_MAGIC;
+    FileHdr.Hdr.cbFile                      = 0; /* need to update this later */
+    FileHdr.Hdr.uFileType                   = RTRIFF_FILE_TYPE_WAVE;
+    FileHdr.FmtExt.Chunk.uMagic             = RTRIFFWAVEFMT_MAGIC;
+    FileHdr.FmtExt.Chunk.cbChunk            = sizeof(RTRIFFWAVEFMTEXTCHUNK) - sizeof(RTRIFFCHUNK);
+    FileHdr.FmtExt.Data.Core.uFormatTag     = RTRIFFWAVEFMT_TAG_EXTENSIBLE;
+    FileHdr.FmtExt.Data.Core.cChannels      = PDMAudioPropsChannels(pProps);
+    FileHdr.FmtExt.Data.Core.uHz            = PDMAudioPropsHz(pProps);
+    FileHdr.FmtExt.Data.Core.cbRate         = PDMAudioPropsFramesToBytes(pProps, PDMAudioPropsHz(pProps));
+    FileHdr.FmtExt.Data.Core.cbFrame        = PDMAudioPropsFrameSize(pProps);
+    FileHdr.FmtExt.Data.Core.cBitsPerSample = PDMAudioPropsSampleBits(pProps);
+    FileHdr.FmtExt.Data.cbExtra             = sizeof(FileHdr.FmtExt.Data) - sizeof(FileHdr.FmtExt.Data.Core);
+    FileHdr.FmtExt.Data.cValidBitsPerSample = PDMAudioPropsSampleBits(pProps);
+    FileHdr.FmtExt.Data.fChannelMask        = 0;
+    for (uintptr_t idxCh = 0; idxCh < FileHdr.FmtExt.Data.Core.cChannels; idxCh++)
+    {
+        PDMAUDIOCHANNELID const idCh = (PDMAUDIOCHANNELID)pProps->aidChannels[idxCh];
+        if (   idCh >= PDMAUDIOCHANNELID_FIRST_STANDARD
+            && idCh <  PDMAUDIOCHANNELID_END_STANDARD)
+        {
+            if (!(FileHdr.FmtExt.Data.fChannelMask & RT_BIT_32(idCh - PDMAUDIOCHANNELID_FIRST_STANDARD)))
+                FileHdr.FmtExt.Data.fChannelMask |= RT_BIT_32(idCh - PDMAUDIOCHANNELID_FIRST_STANDARD);
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_INVALID_PARAMETER, "Channel #%u repeats channel ID %d", idxCh, idCh);
+        }
+        else
+            return RTErrInfoSetF(pErrInfo, VERR_INVALID_PARAMETER, "Invalid channel ID %d for channel #%u", idCh, idxCh);
+    }
+
+    RTUUID UuidTmp;
+    int rc = RTUuidFromStr(&UuidTmp, RTRIFFWAVEFMTEXT_SUBTYPE_PCM);
+    AssertRCReturn(rc, rc);
+    FileHdr.FmtExt.Data.SubFormat = UuidTmp; /* (64-bit field maybe unaligned) */
+
+    FileHdr.Data.uMagic  = RTRIFFWAVEDATACHUNK_MAGIC;
+    FileHdr.Data.cbChunk = 0; /* need to update this later */
+
+    /*
+     * Create the file and write the header.
+     */
+    pWaveFile->hFile = NIL_RTFILE;
+    rc = RTFileOpen(&pWaveFile->hFile, pszFile, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSet(pErrInfo, rc, "RTFileOpen failed");
+
+    rc = RTFileWrite(pWaveFile->hFile, &FileHdr, sizeof(FileHdr), NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Initialize the wave file structure.
+         */
+        pWaveFile->fReadMode       = false;
+        pWaveFile->offCur          = 0;
+        pWaveFile->offSamples      = 0;
+        pWaveFile->cbSamples       = 0;
+        pWaveFile->Props           = *pProps;
+        pWaveFile->offSamples      = RTFileTell(pWaveFile->hFile);
+        if (pWaveFile->offSamples != UINT32_MAX)
+        {
+            pWaveFile->u32Magic = AUDIOTESTWAVEFILE_MAGIC;
+            return VINF_SUCCESS;
+        }
+        rc = RTErrInfoSet(pErrInfo, VERR_SEEK, "RTFileTell failed");
+    }
+    else
+        RTErrInfoSet(pErrInfo, rc, "RTFileWrite failed writing header");
+
+    RTFileClose(pWaveFile->hFile);
+    pWaveFile->hFile    = NIL_RTFILE;
+    pWaveFile->u32Magic = AUDIOTESTWAVEFILE_MAGIC_DEAD;
+
+    RTFileDelete(pszFile);
+    return rc;
+}
+
+
 /**
  * Closes a wave file.
  */
-void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
+int AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
 {
-    RTFileClose(pWaveFile->hFile);
-    pWaveFile->hFile = NIL_RTFILE;
+    AssertReturn(pWaveFile->u32Magic == AUDIOTESTWAVEFILE_MAGIC, VERR_INVALID_MAGIC);
+    int rcRet = VINF_SUCCESS;
+    int rc;
+
+    /*
+     * Update the size fields if writing.
+     */
+    if (!pWaveFile->fReadMode)
+    {
+        uint64_t cbFile = RTFileTell(pWaveFile->hFile);
+        if (cbFile != UINT64_MAX)
+        {
+            uint32_t cbFile32 = cbFile - sizeof(RTRIFFCHUNK);
+            rc = RTFileWriteAt(pWaveFile->hFile, RT_OFFSETOF(RTRIFFHDR, cbFile), &cbFile32, sizeof(cbFile32), NULL);
+            AssertRCStmt(rc, rcRet = rc);
+
+            uint32_t cbSamples = cbFile - pWaveFile->offSamples;
+            rc = RTFileWriteAt(pWaveFile->hFile, pWaveFile->offSamples - sizeof(uint32_t), &cbSamples, sizeof(cbSamples), NULL);
+            AssertRCStmt(rc, rcRet = rc);
+        }
+        else
+            rcRet = VERR_SEEK;
+    }
+
+    /*
+     * Close it.
+     */
+    rc = RTFileClose(pWaveFile->hFile);
+    AssertRCStmt(rc, rcRet = rc);
+
+    pWaveFile->hFile    = NIL_RTFILE;
+    pWaveFile->u32Magic = AUDIOTESTWAVEFILE_MAGIC_DEAD;
+    return rcRet;
 }
 
 /**
@@ -1655,6 +1788,9 @@ void AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile)
  */
 int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
+    AssertReturn(pWaveFile->u32Magic == AUDIOTESTWAVEFILE_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pWaveFile->fReadMode, VERR_ACCESS_DENIED);
+
     bool fEofAdjusted;
     if (pWaveFile->offCur + cbBuf <= pWaveFile->cbSamples)
         fEofAdjusted = false;
@@ -1681,5 +1817,23 @@ int AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBu
             pWaveFile->offCur += (uint32_t)cbBuf;
     }
     return rc;
+}
+
+
+/**
+ * Writes samples to a wave file.
+ *
+ * @returns VBox status code.
+ * @param   pWaveFile   The file to write to.
+ * @param   pvBuf       The samples to write.
+ * @param   cbBuf       How many bytes of samples to write.
+ */
+int AudioTestWaveFileWrite(PAUDIOTESTWAVEFILE pWaveFile, const void *pvBuf, size_t cbBuf)
+{
+    AssertReturn(pWaveFile->u32Magic == AUDIOTESTWAVEFILE_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(!pWaveFile->fReadMode, VERR_ACCESS_DENIED);
+
+    pWaveFile->cbSamples += (uint32_t)cbBuf;
+    return RTFileWrite(pWaveFile->hFile, pvBuf, cbBuf, NULL);
 }
 

@@ -335,26 +335,6 @@ typedef struct AUDIOTESTERRORDESC
 /** Pointer to an audio test error description. */
 typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
 
-/**
- * An open wave (.WAV) file.
- */
-typedef struct AUDIOTESTWAVEFILE
-{
-    /** The file handle. */
-    RTFILE              hFile;
-    /** The absolute file offset of the first sample */
-    uint32_t            offSamples;
-    /** Number of bytes of samples. */
-    uint32_t            cbSamples;
-    /** The current read position relative to @a offSamples.  */
-    uint32_t            offCur;
-    /** The PCM properties for the file format.  */
-    PDMAUDIOPCMPROPS    Props;
-} AUDIOTESTWAVEFILE;
-/** Pointer to an open wave file. */
-typedef AUDIOTESTWAVEFILE *PAUDIOTESTWAVEFILE;
-
-
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq);
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
@@ -387,9 +367,43 @@ int    AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTER
 bool   AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr);
 void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
 
+/** @name Wave File Accessors
+ * @{ */
+/**
+ * An open wave (.WAV) file.
+ */
+typedef struct AUDIOTESTWAVEFILE
+{
+    /** Magic value (AUDIOTESTWAVEFILE_MAGIC). */
+    uint32_t            u32Magic;
+    /** Set if we're in read-mode, clear if in write mode. */
+    bool                fReadMode;
+    /** The file handle. */
+    RTFILE              hFile;
+    /** The absolute file offset of the first sample */
+    uint32_t            offSamples;
+    /** Number of bytes of samples. */
+    uint32_t            cbSamples;
+    /** The current read position relative to @a offSamples.  */
+    uint32_t            offCur;
+    /** The PCM properties for the file format.  */
+    PDMAUDIOPCMPROPS    Props;
+} AUDIOTESTWAVEFILE;
+/** Pointer to an open wave file. */
+typedef AUDIOTESTWAVEFILE *PAUDIOTESTWAVEFILE;
+
+/** Magic value for AUDIOTESTWAVEFILE::u32Magic (Miles Dewey Davis III). */
+#define AUDIOTESTWAVEFILE_MAGIC         UINT32_C(0x19260526)
+/** Magic value for AUDIOTESTWAVEFILE::u32Magic after closing. */
+#define AUDIOTESTWAVEFILE_MAGIC_DEAD    UINT32_C(0x19910928)
+
 int    AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRTERRINFO pErrInfo);
+int    AudioTestWaveFileCreate(const char *pszFile, PCPDMAUDIOPCMPROPS pProps, PAUDIOTESTWAVEFILE pWaveFile, PRTERRINFO pErrInfo);
 int    AudioTestWaveFileRead(PAUDIOTESTWAVEFILE pWaveFile, void *pvBuf, size_t cbBuf, size_t *pcbRead);
-void   AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile);
+int    AudioTestWaveFileWrite(PAUDIOTESTWAVEFILE pWaveFile, const void *pvBuf, size_t cbBuf);
+int    AudioTestWaveFileClose(PAUDIOTESTWAVEFILE pWaveFile);
+
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTest_h */
 
