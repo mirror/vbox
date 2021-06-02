@@ -1639,9 +1639,8 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     /*
      * Parse options and process arguments.
      */
-    char     *pszSetA = NULL;
-    char     *pszSetB = NULL;
-    unsigned iTestSet = 0;
+    const char *apszSets[2] = { NULL, NULL };
+    unsigned    iTestSet    = 0;
 
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -1653,18 +1652,12 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-            {
-                char **ppszSet = iTestSet == 0 ? &pszSetA : &pszSetB;
-
                 if (iTestSet == 0)
                     RTTestBanner(g_hTest);
-
-                *ppszSet = RTStrDup(ValueUnion.psz);
-                AssertPtrReturn(*ppszSet, RTEXITCODE_FAILURE);
-
-                iTestSet++;
+                if (iTestSet >= RT_ELEMENTS(apszSets))
+                    return RTMsgErrorExitFailure("Only two test sets can be verified at one time");
+                apszSets[iTestSet++] = ValueUnion.psz;
                 break;
-            }
 
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
@@ -1676,32 +1669,22 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     if (!iTestSet)
         return RTMsgErrorExitFailure("At least one test set must be specified");
 
-    if (iTestSet > 2)
-        return RTMsgErrorExitFailure("Only two test sets can be verified at one time");
-
     /*
      * If only test set A is given, default to the current directory
      * for test set B.
      */
+    char szDirCur[RTPATH_MAX];
     if (iTestSet == 1)
     {
-        char szDirCur[RTPATH_MAX];
         rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
         if (RT_SUCCESS(rc))
-        {
-            Assert(pszSetB == NULL);
-            pszSetB = RTStrDup(szDirCur);
-            AssertPtrReturn(pszSetB, RTEXITCODE_FAILURE);
-        }
+            apszSets[1] = szDirCur;
         else
             RTTestFailed(g_hTest, "Failed to retrieve current directory: %Rrc", rc);
     }
 
     if (RT_SUCCESS(rc))
-        rc = audioVerifyOne(pszSetA, pszSetB);
-
-    RTStrFree(pszSetA);
-    RTStrFree(pszSetB);
+        audioVerifyOne(apszSets[0], apszSets[1]);
 
     /*
      * Print summary and exit.
@@ -2272,7 +2255,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
         switch (rc)
         {
             case VKAT_SELFTEST_OPT_ATS_HOST:
-                pszAtsAddr = RTStrDup(ValueUnion.psz);
+                pszAtsAddr = ValueUnion.psz;
                 break;
 
             case 'b':
@@ -2293,8 +2276,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetS
     }
 
     audioTestDoSelftest(pDrvReg, pszAtsAddr);
-
-    RTStrFree(pszAtsAddr);
 
     /*
      * Print summary and exit.
