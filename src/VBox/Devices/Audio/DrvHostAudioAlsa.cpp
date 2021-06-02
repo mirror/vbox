@@ -417,6 +417,46 @@ static int alsaStreamSetSWParams(snd_pcm_t *hPCM, PCPDMAUDIOSTREAMCFG pCfgReq, P
 
 
 /**
+ * Maps a PDM channel ID to an ASLA channel map position.
+ */
+static unsigned int drvHstAudAlsaPdmChToAlsa(PDMAUDIOCHANNELID enmId, uint8_t cChannels)
+{
+    switch (enmId)
+    {
+        case PDMAUDIOCHANNELID_UNKNOWN:                 return SND_CHMAP_UNKNOWN;
+        case PDMAUDIOCHANNELID_UNUSED_ZERO:             return SND_CHMAP_NA;
+        case PDMAUDIOCHANNELID_UNUSED_SILENCE:          return SND_CHMAP_NA;
+
+        case PDMAUDIOCHANNELID_FRONT_LEFT:              return SND_CHMAP_FL;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT:             return SND_CHMAP_FR;
+        case PDMAUDIOCHANNELID_FRONT_CENTER:            return cChannels == 1 ? SND_CHMAP_MONO : SND_CHMAP_FC;
+        case PDMAUDIOCHANNELID_LFE:                     return SND_CHMAP_LFE;
+        case PDMAUDIOCHANNELID_REAR_LEFT:               return SND_CHMAP_RL;
+        case PDMAUDIOCHANNELID_REAR_RIGHT:              return SND_CHMAP_RR;
+        case PDMAUDIOCHANNELID_FRONT_LEFT_OF_CENTER:    return SND_CHMAP_FLC;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_OF_CENTER:   return SND_CHMAP_FRC;
+        case PDMAUDIOCHANNELID_REAR_CENTER:             return SND_CHMAP_RC;
+        case PDMAUDIOCHANNELID_SIDE_LEFT:               return SND_CHMAP_SL;
+        case PDMAUDIOCHANNELID_SIDE_RIGHT:              return SND_CHMAP_SR;
+        case PDMAUDIOCHANNELID_TOP_CENTER:              return SND_CHMAP_TC;
+        case PDMAUDIOCHANNELID_FRONT_LEFT_HEIGHT:       return SND_CHMAP_TFL;
+        case PDMAUDIOCHANNELID_FRONT_CENTER_HEIGHT:     return SND_CHMAP_TFC;
+        case PDMAUDIOCHANNELID_FRONT_RIGHT_HEIGHT:      return SND_CHMAP_TFR;
+        case PDMAUDIOCHANNELID_REAR_LEFT_HEIGHT:        return SND_CHMAP_TRL;
+        case PDMAUDIOCHANNELID_REAR_CENTER_HEIGHT:      return SND_CHMAP_TRC;
+        case PDMAUDIOCHANNELID_REAR_RIGHT_HEIGHT:       return SND_CHMAP_TRR;
+
+        case PDMAUDIOCHANNELID_INVALID:
+        case PDMAUDIOCHANNELID_END:
+        case PDMAUDIOCHANNELID_32BIT_HACK:
+            break;
+    }
+    AssertFailed();
+    return SND_CHMAP_NA;
+}
+
+
+/**
  * Sets the hardware parameters of an ALSA stream.
  *
  * @returns 0 on success, negative errno on failure.
@@ -450,7 +490,7 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
     err = snd_pcm_hw_params_set_access(hPCM, pHWParms, SND_PCM_ACCESS_RW_INTERLEAVED);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set access type: %s\n", snd_strerror(err)), err);
 
-    /* Set the format, frequency and channel count. */
+    /* Set the format and frequency. */
     err = snd_pcm_hw_params_set_format(hPCM, pHWParms, enmAlsaFmt);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set audio format to %d: %s\n", enmAlsaFmt, snd_strerror(err)), err);
 
@@ -460,17 +500,43 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
                                      PDMAudioPropsHz(&pCfgReq->Props), snd_strerror(err)), err);
     pCfgAcq->Props.uHz = uFreq;
 
-    unsigned int cChannels = PDMAudioPropsChannels(&pCfgReq->Props);
+    /* Channel count currently does not change with the mapping translations,
+       as ALSA can express both silent and unknown channel positions. */
+    union
+    {
+        snd_pcm_chmap_t Map;
+        unsigned int    padding[1 + PDMAUDIO_MAX_CHANNELS];
+    } u;
+    uint8_t      aidChannels[PDMAUDIO_MAX_CHANNELS];
+    unsigned int cChannels = u.Map.channels = PDMAudioPropsChannels(&pCfgReq->Props);
+    unsigned int iDst      = 0;
+    for (unsigned int iSrc = 0; iSrc < cChannels; iSrc++)
+    {
+        uint8_t const idSrc = pCfgReq->Props.aidChannels[iSrc];
+        aidChannels[iDst] = idSrc;
+        u.Map.pos[iDst]   = drvHstAudAlsaPdmChToAlsa((PDMAUDIOCHANNELID)idSrc, cChannels);
+        iDst++;
+    }
+    u.Map.channels = cChannels = iDst;
+    for (; iDst < PDMAUDIO_MAX_CHANNELS; iDst++)
+    {
+        aidChannels[iDst] = PDMAUDIOCHANNELID_INVALID;
+        u.Map.pos[iDst]   = SND_CHMAP_NA;
+    }
+
     err = snd_pcm_hw_params_set_channels_near(hPCM, pHWParms, &cChannels);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", PDMAudioPropsChannels(&pCfgReq->Props)),
                           err);
-    if (cChannels != PDMAudioPropsChannels(&pCfgReq->Props))
+    if (cChannels == PDMAudioPropsChannels(&pCfgReq->Props))
+        memcpy(pCfgAcq->Props.aidChannels, aidChannels, sizeof(pCfgAcq->Props.aidChannels));
+    else
     {
+        LogRel2(("ALSA: Requested %u channels, got %u\n", u.Map.channels, cChannels));
         AssertLogRelMsgReturn(cChannels > 0 && cChannels <= PDMAUDIO_MAX_CHANNELS,
                               ("ALSA: Unsupported channel count: %u (requested %d)\n",
                                cChannels, PDMAudioPropsChannels(&pCfgReq->Props)), -ERANGE);
         PDMAudioPropsSetChannels(&pCfgAcq->Props, (uint8_t)cChannels);
-        /** @todo Can we somehow guess channel IDs? */
+        /** @todo Can we somehow guess channel IDs? snd_pcm_get_chmap? */
     }
 
     /* The period size (reportedly frame count per hw interrupt): */
@@ -520,6 +586,17 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
     LogRel2(("ALSA: HW params: %u Hz, %u frames period, %u frames buffer, %u channel(s), enmAlsaFmt=%d\n",
              PDMAudioPropsHz(&pCfgAcq->Props), pCfgAcq->Backend.cFramesPeriod, pCfgAcq->Backend.cFramesBufferSize,
              PDMAudioPropsChannels(&pCfgAcq->Props), enmAlsaFmt));
+
+    /*
+     * Channel config (not fatal).
+     */
+    if (PDMAudioPropsChannels(&pCfgAcq->Props) == PDMAudioPropsChannels(&pCfgReq->Props))
+    {
+        err = snd_pcm_set_chmap(hPCM, &u.Map);
+        if (err < 0)
+            LogRel2(("ALSA: snd_pcm_set_chmap failed: %s (%d)\n", snd_strerror(err), err));
+    }
+
     return 0;
 }
 
@@ -571,7 +648,7 @@ static int alsaStreamOpen(PDRVHOSTALSAAUDIO pThis, snd_pcm_format_t enmAlsaFmt, 
                 if (err >= 0)
                 {
                     /*
-                     * Configure software stream parameters and we're done.
+                     * Configure software stream parameters.
                      */
                     rc = alsaStreamSetSWParams(hPCM, pCfgReq, pCfgAcq);
                     if (RT_SUCCESS(rc))

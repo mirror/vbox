@@ -94,6 +94,7 @@ PROXY_STUB(snd_pcm_readi, snd_pcm_sframes_t,
            (snd_pcm_t *pcm, void *buffer, snd_pcm_uframes_t size),
            (pcm, buffer, size))
 PROXY_STUB(snd_pcm_resume, int, (snd_pcm_t *pcm), (pcm))
+PROXY_STUB(snd_pcm_set_chmap, int, (snd_pcm_t *pcm, snd_pcm_chmap_t const *map), (pcm, map))
 PROXY_STUB(snd_pcm_state, snd_pcm_state_t, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_state_name, const char *, (snd_pcm_state_t state), (state))
 PROXY_STUB(snd_pcm_writei, snd_pcm_sframes_t,
@@ -108,6 +109,12 @@ static int fallback_snd_pcm_avail_delay(snd_pcm_t *pcm, snd_pcm_sframes_t *avail
     if (ret >= 0 && *availp < 0)
         ret = (int)*availp;
     return ret;
+}
+
+static int fallback_snd_pcm_set_chmap(snd_pcm_t *pcm, snd_pcm_chmap_t const *map)
+{
+    RT_NOREF(pcm, map);
+    return 0;
 }
 
 /*
@@ -207,6 +214,7 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(snd_pcm_open),
     ELEMENT(snd_pcm_prepare),
     ELEMENT(snd_pcm_resume),
+    ELEMENT_FALLBACK(snd_pcm_set_chmap),
     ELEMENT(snd_pcm_state),
     ELEMENT(snd_pcm_state_name),
 
