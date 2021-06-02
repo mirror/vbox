@@ -836,23 +836,33 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterfac
         case SND_PCM_STATE_RUNNING:
         case SND_PCM_STATE_PREPARED: /* not yet started */
         {
-#if 0       /** @todo r=bird: You want EMT to block here for potentially 200-300ms worth
-             *        of buffer to be drained?  That's a certifiably bad idea.  */
-            int rc2 = snd_pcm_nonblock(pStreamALSA->hPCM, 0);
-            AssertMsg(rc2 >= 0, ("snd_pcm_nonblock(, 0) -> %d\n", rc2));
-#endif
+            /* Do not change to blocking here! */
             rc = snd_pcm_drain(pStreamALSA->hPCM);
             if (rc >= 0 || rc == -EAGAIN)
                 rc = VINF_SUCCESS;
             else
             {
-                LogRel(("ALSA: Error draining output of '%s': %s (%d)\n", pStreamALSA->Cfg.szName, snd_strerror(rc), rc));
-                rc = RTErrConvertFromErrno(-rc);
+                snd_pcm_state_t const enmState2 = snd_pcm_state(pStreamALSA->hPCM);
+                if (rc == -EPIPE && enmState2 == enmState)
+                {
+                    /* Not entirely sure, but possibly an underrun, so just disable the stream. */
+                    LogFunc(("snd_pcm_drain failed with -EPIPE, stopping stream (%s)\n", pStreamALSA->Cfg.szName));
+                    rc = snd_pcm_drop(pStreamALSA->hPCM);
+                    if (rc >= 0)
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        LogRel(("ALSA: Error draining/stopping stream '%s': %s (%d)\n", pStreamALSA->Cfg.szName, snd_strerror(rc), rc));
+                        rc = RTErrConvertFromErrno(-rc);
+                    }
+                }
+                else
+                {
+                    LogRel(("ALSA: Error draining output of '%s': %s (%d; %s -> %s)\n", pStreamALSA->Cfg.szName, snd_strerror(rc),
+                            rc, snd_pcm_state_name(enmState), snd_pcm_state_name(enmState2)));
+                    rc = RTErrConvertFromErrno(-rc);
+                }
             }
-#if 0
-            rc2 = snd_pcm_nonblock(pStreamALSA->hPCM, 1);
-            AssertMsg(rc2 >= 0, ("snd_pcm_nonblock(, 1) -> %d\n", rc2));
-#endif
             break;
         }
 
