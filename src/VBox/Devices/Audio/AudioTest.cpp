@@ -592,6 +592,25 @@ static int audioTestErrorDescAddRc(PAUDIOTESTERRORDESC pErr, int rc, const char 
 #endif
 
 /**
+ * Retrieves the temporary directory.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Where to return the absolute path of the created directory on success.
+ * @param   cbPath              Size (in bytes) of \a pszPath.
+ */
+int AudioTestPathGetTemp(char *pszPath, size_t cbPath)
+{
+    int rc = RTEnvGetEx(RTENV_DEFAULT, "TESTBOX_PATH_SCRATCH", pszPath, cbPath, NULL);
+    if (RT_FAILURE(rc))
+    {
+        rc = RTPathTemp(pszPath, cbPath);
+        AssertRCReturn(rc, rc);
+    }
+
+    return rc;
+}
+
+/**
  * Creates a new temporary directory with a specific (test) tag.
  *
  * @returns VBox status code.
@@ -607,12 +626,8 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
     AssertReturn(pszTag && strlen(pszTag) <= AUDIOTEST_TAG_MAX, VERR_INVALID_PARAMETER);
 
     char szTemp[RTPATH_MAX];
-    int rc = RTEnvGetEx(RTENV_DEFAULT, "TESTBOX_PATH_SCRATCH", szTemp, sizeof(szTemp), NULL);
-    if (RT_FAILURE(rc))
-    {
-        rc = RTPathTemp(szTemp, sizeof(szTemp));
-        AssertRCReturn(rc, rc);
-    }
+    int rc = AudioTestPathGetTemp(szTemp, sizeof(szTemp));
+    AssertRCReturn(rc, rc);
 
     rc = AudioTestPathCreate(szTemp, sizeof(szTemp), pszTag);
     AssertRCReturn(rc, rc);
