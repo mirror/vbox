@@ -1914,10 +1914,9 @@ static void dmarDrTargetAbort(PPDMDEVINS pDevIns)
  * implementation for legacy mode address translation.
  *
  * @returns @c true if it's supported, @c false otherwise.
- * @param   pThis               The shared DMAR device state.
- * @param   pCtxEntry           The context entry.
- * @param   pcPagingLevel       Where to store the paging level. Optional, can be
- *                              NULL.
+ * @param   pThis           The shared DMAR device state.
+ * @param   pCtxEntry       The context entry.
+ * @param   pcPagingLevel   Where to store the paging level. Optional, can be NULL.
  */
 static bool dmarDrLegacyModeIsAwValid(PCDMAR pThis, PCVTD_CONTEXT_ENTRY_T pCtxEntry, uint8_t *pcPagingLevel)
 {
@@ -2278,15 +2277,19 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                     {
                                         if (pMemReqRemap->Req.enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                         {
-                                            /** @todo Check AW == maximum SAGAW bit? */
-                                            pMemReqRemap->Iotlbe.GCPhysBase = pMemReqRemap->Req.uDmaAddr & X86_PAGE_4K_BASE_MASK;
-                                            pMemReqRemap->Iotlbe.cShift     = X86_PAGE_4K_SHIFT;
-                                            pMemReqRemap->Iotlbe.fPerm      = DMAR_PERM_ALL;
-                                            pMemReqRemap->Iotlbe.idDomain   = idDomain;
-                                            pMemReqRemap->cbContiguous      = pMemReqRemap->Req.cbDma;
-                                            return VINF_SUCCESS;
+                                            if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, NULL /* pcPagingLevel */))
+                                            {
+                                                pMemReqRemap->Iotlbe.GCPhysBase = pMemReqRemap->Req.uDmaAddr & X86_PAGE_4K_BASE_MASK;
+                                                pMemReqRemap->Iotlbe.cShift     = X86_PAGE_4K_SHIFT;
+                                                pMemReqRemap->Iotlbe.fPerm      = DMAR_PERM_ALL;
+                                                pMemReqRemap->Iotlbe.idDomain   = idDomain;
+                                                pMemReqRemap->cbContiguous      = pMemReqRemap->Req.cbDma;
+                                                return VINF_SUCCESS;
+                                            }
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lgn_1_3, VTDATFAULT_LGN_1_3, pMemReqRemap);
                                         }
-                                        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pMemReqRemap);
+                                        else
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pMemReqRemap);
                                         break;
                                     }
                                     RT_FALL_THRU();
@@ -3537,8 +3540,8 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
-        pThis->fHawBaseMask = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
-        pThis->fInvMgawMask = UINT64_MAX << cGstPhysAddrBits;
+        pThis->fHawBaseMask    = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
+        pThis->fInvMgawMask    = UINT64_MAX << cGstPhysAddrBits;
         pThis->cMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
     }
 
