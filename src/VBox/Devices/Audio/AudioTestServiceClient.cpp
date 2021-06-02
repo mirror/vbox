@@ -375,6 +375,31 @@ int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg
 }
 
 /**
+ * Tells the server to record a (test) tone.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to issue command for.
+ * @param   pStreamCfg          Audio stream configuration to use.
+ * @param   pToneParms          Tone parameters to use.
+ * @note    How (and if) the server plays a tone depends on the actual implementation side.
+ */
+int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+{
+    ATSPKTREQTONEREC Req;
+
+    memcpy(&Req.StreamCfg, pStreamCfg, sizeof(PDMAUDIOSTREAMCFG));
+    memcpy(&Req.ToneParms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+
+    audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_RECORD, 0);
+
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    if (RT_SUCCESS(rc))
+        rc = audioTestSvcClientRecvAck(pClient);
+
+    return rc;
+}
+
+/**
  * Disconnects from an ATS server.
  *
  * @returns VBox status code.

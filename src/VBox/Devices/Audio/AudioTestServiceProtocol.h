@@ -152,10 +152,10 @@ AssertCompileSizeAlignment(ATSPKTREQTSETEND, ATSPKT_ALIGNMENT);
 /** Pointer to a TSET STA reply structure. */
 typedef ATSPKTREQTSETEND *PATSPKTREQTSETEND;
 
-#define ATSPKT_OPCODE_TONE_PLAY         "TNPLY   "
+#define ATSPKT_OPCODE_TONE_PLAY         "TN PLY  "
 
 /**
- * The TONE PLAY request structure.
+ * The TN PLY request structure.
  */
 typedef struct ATSPKTREQTONEPLAY
 {
@@ -175,6 +175,30 @@ typedef struct ATSPKTREQTONEPLAY
 AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
 typedef ATSPKTREQTONEPLAY *PATSPKTREQTONEPLAY;
+
+#define ATSPKT_OPCODE_TONE_RECORD       "TN REC  "
+
+/**
+ * The TN REC request structure.
+ */
+typedef struct ATSPKTREQTONEREC
+{
+    /** Embedded packet header. */
+    ATSPKTHDR          Hdr;
+    /** Stream configuration to use for recording the tone.
+     *  Note: Depending on the actual implementation this configuration might or might not be available / supported. */
+    PDMAUDIOSTREAMCFG  StreamCfg;
+    /** Test tone parameters for playback. */
+    AUDIOTESTTONEPARMS ToneParms;
+#if HC_ARCH_BITS == 64
+    uint8_t            aPadding[4+8];
+#else
+    uint8_t            aPadding[6+8];
+#endif
+} ATSPKTREQTONEREC;
+AssertCompileSizeAlignment(ATSPKTREQTONEREC, ATSPKT_ALIGNMENT);
+/** Pointer to a ATSPKTREQTONEREC structure. */
+typedef ATSPKTREQTONEREC *PATSPKTREQTONEREC;
 
 /* No additional structure for the reply (just standard STATUS packet). */
 

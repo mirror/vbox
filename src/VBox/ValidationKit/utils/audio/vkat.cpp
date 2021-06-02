@@ -245,6 +245,7 @@ typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
+static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps);
 static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev);
@@ -438,36 +439,43 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
         uint32_t cbBuf;
         uint8_t  abBuf[_4K];
 
-        const uint32_t cbPerMs       = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
-              uint32_t cbToWrite     = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
+        const uint32_t cbPerSched = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
+        AssertStmt(cbPerSched, rc = VERR_INVALID_PARAMETER);
+              uint32_t cbToWrite  = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
+        AssertStmt(cbToWrite,  rc = VERR_INVALID_PARAMETER);
 
-        AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
-        AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
-        AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
-
-        while (cbToWrite)
+        if (RT_SUCCESS(rc))
         {
-            uint32_t cbWritten    = 0;
-            uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerMs, sizeof(abBuf)));
-            Assert(cbToGenerate);
+            AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
+            AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+            AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
 
-            rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbBuf);
-            if (RT_SUCCESS(rc))
+            while (cbToWrite)
             {
-                /* Write stuff to disk before trying to play it. Help analysis later. */
-                rc = AudioTestSetObjWrite(pObj, abBuf, cbBuf);
+                uint32_t cbWritten    = 0;
+                uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerSched, sizeof(abBuf)));
+                Assert(cbToGenerate);
+
+                rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbBuf);
                 if (RT_SUCCESS(rc))
-                    rc = audioTestDriverStackStreamPlay(&pTstEnv->DrvStack, pStream->pStream,
-                                                        abBuf, cbBuf, &cbWritten);
+                {
+                    /* Write stuff to disk before trying to play it. Help analysis later. */
+                    rc = AudioTestSetObjWrite(pObj, abBuf, cbBuf);
+                    if (RT_SUCCESS(rc))
+                        rc = audioTestDriverStackStreamPlay(&pTstEnv->DrvStack, pStream->pStream,
+                                                            abBuf, cbBuf, &cbWritten);
+                }
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                RTThreadSleep(pTstEnv->cMsSchedulingHint);
+
+                RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Written %RU32 bytes\n", cbWritten);
+
+                Assert(cbToWrite >= cbWritten);
+                cbToWrite -= cbWritten;
             }
-
-            if (RT_FAILURE(rc))
-                break;
-
-            RTThreadSleep(pTstEnv->cMsSchedulingHint);
-
-            Assert(cbToWrite >= cbWritten);
-            cbToWrite -= cbWritten;
         }
     }
     else
@@ -477,7 +485,79 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Play tone done\n");
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Playing tone done failed with %Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Records a test tone from a specific audio test stream.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use for running the test.
+ * @param   pStream             Stream to use for recording the tone.
+ * @param   pParms              Tone parameters to use.
+ *
+ * @note    Blocking function.
+ */
+static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+{
+    const char *pcszPathOut = pTstEnv->Set.szPathAbs;
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (for %RU32ms)\n", pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
+
+    /** @todo Use .WAV here? */
+    PAUDIOTESTOBJ pObj;
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-rec.pcm", &pObj);
+    AssertRCReturn(rc, rc);
+
+    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
+    {
+        const uint32_t cbPerSched = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
+        AssertStmt(cbPerSched, rc = VERR_INVALID_PARAMETER);
+              uint32_t cbToRead   = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
+        AssertStmt(cbToRead,   rc = VERR_INVALID_PARAMETER);
+
+        if (RT_SUCCESS(rc))
+        {
+            AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
+            AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+            AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
+
+            uint8_t abBuf[_4K];
+
+            while (cbToRead)
+            {
+                const uint32_t cbChunk = RT_MIN(cbToRead, RT_MIN(cbPerSched, sizeof(abBuf)));
+
+                uint32_t cbRead = 0;
+                rc = audioTestDriverStackStreamCapture(&pTstEnv->DrvStack, pStream->pStream, (void *)abBuf, cbChunk, &cbRead);
+                if (RT_SUCCESS(rc))
+                    rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                RTThreadSleep(pTstEnv->cMsSchedulingHint);
+
+                RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Read %RU32 bytes\n", cbRead);
+
+                Assert(cbToRead >= cbRead);
+                cbToRead -= cbRead;
+            }
+        }
+    }
+    else
+        rc = VERR_AUDIO_STREAM_NOT_READY;
+
+    int rc2 = AudioTestSetObjClose(pObj);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Recording tone done failed with %Rrc\n", rc);
 
     return rc;
 }
@@ -554,6 +634,47 @@ static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PPDMAU
     return rc;
 }
 
+/** @copydoc ATSCALLBACKS::pfnToneRecord */
+static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms)
+{
+    PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
+    PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
+
+    const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
+
+    int rc = audioTestCreateStreamDefaultIn(pTstEnv, pTstStream, &pStreamCfg->Props);
+    if (RT_SUCCESS(rc))
+    {
+        AUDIOTESTPARMS TstParms;
+        RT_ZERO(TstParms);
+        TstParms.enmType  = AUDIOTESTTYPE_TESTTONE_RECORD;
+        TstParms.enmDir   = PDMAUDIODIR_IN;
+        TstParms.Props    = pStreamCfg->Props;
+        pToneParms->Props = pStreamCfg->Props;
+        TstParms.TestTone = *pToneParms;
+
+        PAUDIOTESTENTRY pTst;
+        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", &TstParms, &pTst);
+        if (RT_SUCCESS(rc))
+        {
+            rc = audioTestRecordTone(pTstEnv, pTstStream, pToneParms);
+            if (RT_SUCCESS(rc))
+            {
+                AudioTestSetTestDone(pTst);
+            }
+            else
+                AudioTestSetTestFailed(pTst, rc, "Recording tone failed");
+        }
+
+        int rc2 = audioTestStreamDestroy(pTstEnv, pTstStream);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    else
+        RTTestFailed(g_hTest, "Error creating input stream, rc=%Rrc\n", rc);
+
+    return rc;
+}
 
 /*********************************************************************************************************************************
 *   Implementation of audio test environment handling                                                                            *
@@ -626,6 +747,7 @@ static int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Callbacks.pfnTestSetBegin = audioTestSvcTestSetBeginCallback;
         Callbacks.pfnTestSetEnd   = audioTestSvcTestSetEndCallback;
         Callbacks.pfnTonePlay     = audioTestSvcTonePlayCallback;
+        Callbacks.pfnToneRecord   = audioTestSvcToneRecordCallback;
         Callbacks.pvUser          = &Ctx;
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Starting ATS ...\n");
@@ -879,61 +1001,6 @@ static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREA
 }
 
 /**
- * Records a test tone from a specific audio test stream.
- *
- * @returns VBox status code.
- * @param   pTstEnv             Test environment to use for running the test.
- * @param   pStream             Stream to use for recording the tone.
- * @param   pParms              Tone parameters to use.
- *
- * @note    Blocking function.
- */
-static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
-{
-    const char *pcszPathOut = pTstEnv->Set.szPathAbs;
-
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (for %RU32ms)\n", pParms->msDuration);
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
-
-    /** @todo Use .WAV here? */
-    PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-rec.pcm", &pObj);
-    AssertRCReturn(rc, rc);
-
-    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
-    {
-        uint8_t abBuf[_4K];
-
-        const uint64_t tsStartMs     = RTTimeMilliTS();
-
-        do
-        {
-            uint32_t cbRead = 0;
-            rc = audioTestDriverStackStreamCapture(&pTstEnv->DrvStack, pStream->pStream, (void *)abBuf, sizeof(abBuf), &cbRead);
-            if (RT_SUCCESS(rc))
-                rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
-
-            if (RT_FAILURE(rc))
-                break;
-
-            if (RTTimeMilliTS() - tsStartMs >= pParms->msDuration)
-                break;
-
-            RTThreadSleep(pTstEnv->cMsSchedulingHint);
-
-        } while (RT_SUCCESS(rc));
-    }
-    else
-        rc = VERR_AUDIO_STREAM_NOT_READY;
-
-    int rc2 = AudioTestSetObjClose(pObj);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    return rc;
-}
-
-/**
  * Creates an audio default output (playback) test stream.
  * Convenience function.
  *
@@ -1021,7 +1088,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.Client, &Cfg, &pTstParms->TestTone);
             if (RT_SUCCESS(rc))
             {
-               AudioTestSetTestDone(pTst);
+                AudioTestSetTestDone(pTst);
             }
             else
                 AudioTestSetTestFailed(pTst, rc, "Playing test tone failed");
@@ -1053,8 +1120,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
 
-    RT_ZERO(pTstParmsAcq->TestTone);
-    PDMAudioPropsInit(&pTstParmsAcq->TestTone.Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
+    PDMAudioPropsInit(&pTstParmsAcq->Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
 
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
 #ifdef DEBUG
@@ -1076,8 +1142,6 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 
     int rc = VINF_SUCCESS;
 
-    PAUDIOTESTSTREAM pStream = &pTstEnv->aStreams[0];
-
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
         pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_10SEC); /** @todo Record even longer? */
@@ -1086,18 +1150,15 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", pTstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
-            /** @todo  For now we're (re-)creating the recording stream for each iteration. Change that to be random. */
-            rc = audioTestCreateStreamDefaultIn(pTstEnv, pStream, &pTstParms->TestTone.Props);
-            if (RT_SUCCESS(rc))
-                rc = audioTestRecordTone(pTstEnv, pStream, &pTstParms->TestTone);
+            PDMAUDIOSTREAMCFG Cfg;
+            RT_ZERO(Cfg);
+            /** @todo Add more parameters here? */
+            Cfg.Props = pTstParms->Props;
 
-            int rc2 = audioTestStreamDestroy(pTstEnv, pStream);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-
+            rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.Client, &Cfg, &pTstParms->TestTone);
             if (RT_SUCCESS(rc))
             {
-               AudioTestSetTestDone(pTst);
+                AudioTestSetTestDone(pTst);
             }
             else
                 AudioTestSetTestFailed(pTst, rc, "Recording test tone failed");

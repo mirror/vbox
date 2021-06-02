@@ -587,7 +587,7 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
 }
 
 /**
- * Verifies and processes a "TONE PLAY" request.
+ * Verifies and processes a "TN PLY" request.
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
@@ -609,6 +609,37 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR p
 
     PATSPKTREQTONEPLAY pReq = (PATSPKTREQTONEPLAY)pPktHdr;
     rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->StreamCfg, &pReq->ToneParms);
+
+    int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
+}
+
+/**
+ * Verifies and processes a "TN REC" request.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ATS instance.
+ * @param   pClient             The ATS client structure.
+ * @param   pPktHdr             The packet header.
+ */
+static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pPktHdr->cb < sizeof(ATSPKTREQTONEREC))
+        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTONEREC));
+
+    if (pClient->enmState != ATSCLIENTSTATE_READY)
+        return atsReplyInvalidState(pThis, pClient, pPktHdr);
+
+    if (!pThis->Callbacks.pfnToneRecord)
+        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Recording tones not supported");
+
+    PATSPKTREQTONEREC pReq = (PATSPKTREQTONEREC)pPktHdr;
+    rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->StreamCfg, &pReq->ToneParms);
 
     int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
     if (RT_SUCCESS(rc))
@@ -650,6 +681,8 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
     /* Audio testing: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_PLAY))
         rc = atsDoTonePlay(pThis, pClient, pPktHdr);
+    else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_RECORD))
+        rc = atsDoToneRecord(pThis, pClient, pPktHdr);
     /* Misc: */
     else
         rc = atsReplyUnknown(pThis, pClient, pPktHdr);

@@ -33,6 +33,7 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t 
 int AudioTestSvcClientTestSetBegin(PATSCLIENT pClient, const char *pszTag);
 int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag);
 int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms);
+int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PPDMAUDIOSTREAMCFG pStreamCfg, PAUDIOTESTTONEPARMS pToneParms);
 int AudioTestSvcClientClose(PATSCLIENT pClient);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceClient_h */
