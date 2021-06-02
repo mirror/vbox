@@ -365,7 +365,7 @@ int    AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszUUID
 int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
 
 int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj);
-int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf);
+int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, const void *pvBuf, size_t cbBuf);
 int    AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...);
 int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
 

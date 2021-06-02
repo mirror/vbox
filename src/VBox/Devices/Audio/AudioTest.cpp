@@ -1054,7 +1054,7 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
  * @param   pvBuf               Pointer to data to write.
  * @param   cbBuf               Size (in bytes) of \a pvBuf to write.
  */
-int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, void *pvBuf, size_t cbBuf)
+int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, const void *pvBuf, size_t cbBuf)
 {
     /** @todo Generalize this function more once we have more object types. */
     AssertReturn(pObj->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
