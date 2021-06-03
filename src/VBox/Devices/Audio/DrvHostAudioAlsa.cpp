@@ -510,7 +510,7 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
         unsigned int    padding[1 + PDMAUDIO_MAX_CHANNELS];
     } u;
     uint8_t       aidSrcChannels[PDMAUDIO_MAX_CHANNELS];
-    unsigned int *aidDstChannels = &u.Map.pos[0];
+    unsigned int *aidDstChannels = u.Map.pos;
     unsigned int  cChannels      = u.Map.channels = PDMAudioPropsChannels(&pCfgReq->Props);
     unsigned int  iDst           = 0;
     for (unsigned int iSrc = 0; iSrc < cChannels; iSrc++)
