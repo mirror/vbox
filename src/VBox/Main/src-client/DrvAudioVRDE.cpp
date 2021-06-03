@@ -632,12 +632,12 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
      *        wasn't accessing any internal counter nor doing anything else
      *        sensible, so I've removed it. */
 
-    uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->pStream->Props, cbBuf);
+    uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->pStream->Cfg.Props, cbBuf);
     Assert(cFrames == cbBuf / (sizeof(uint64_t) * 2));
     pDrv->pConsoleVRDPServer->SendAudioSamples(pvBuf, cFrames, uVrdpFormat);
 
     Log3Func(("cFramesWritten=%RU32\n", cFrames));
-    *pcbWritten = PDMAudioPropsFramesToBytes(&pStream->pStream->Props, cFrames);
+    *pcbWritten = PDMAudioPropsFramesToBytes(&pStream->pStream->Cfg.Props, cFrames);
     Assert(*pcbWritten == cbBuf);
     return VINF_SUCCESS;
 }

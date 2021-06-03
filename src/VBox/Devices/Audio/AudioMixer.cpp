@@ -531,10 +531,10 @@ static uint64_t audioMixerSinkDrainDeadline(PAUDMIXSINK pSink, uint32_t cbDmaLef
         if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_CAN_WRITE)
         {
             uint32_t cFrames = pMixStream->cFramesBackendBuffer;
-            if (PDMAudioPropsHz(&pMixStream->pStream->Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
+            if (PDMAudioPropsHz(&pMixStream->pStream->Cfg.Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
             { /* likely */ }
             else
-                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pMixStream->pStream->Props);
+                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pMixStream->pStream->Cfg.Props);
             if (cFrames > cFramesStreamMax)
             {
                 Log4Func(("%s: cFramesStreamMax %u -> %u; %s\n", pSink->pszName, cFramesStreamMax, cFrames, pMixStream->pszName));
@@ -1005,7 +1005,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps)
                 {
                     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
                     {
-                        int rc2 = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pMixStream->pStream->Props);
+                        int rc2 = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pMixStream->pStream->Cfg.Props);
                         /** @todo remember this. */
                         AssertLogRelRC(rc2);
                     }
@@ -1014,7 +1014,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps)
                 {
                     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
                     {
-                        int rc2 = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pMixStream->pStream->Props);
+                        int rc2 = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pMixStream->pStream->Cfg.Props);
                         /** @todo remember this. */
                         AssertLogRelRC(rc2);
                     }
@@ -1136,13 +1136,13 @@ static uint32_t audioMixerSinkUpdateInputCalcFramesToTransfer(PAUDMIXSINK pSink,
             pIConnector->pfnStreamIterate(pIConnector, pStream);
 
             uint32_t const cbReadable = pIConnector->pfnStreamGetReadable(pIConnector, pStream);
-            uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->Props, cbReadable);
+            uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->Cfg.Props, cbReadable);
             pMixStream->cFramesLastAvail = cFrames;
-            if (PDMAudioPropsHz(&pStream->Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
+            if (PDMAudioPropsHz(&pStream->Cfg.Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
             { /* likely */ }
             else
             {
-                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pStream->Props);
+                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pStream->Cfg.Props);
                 cFrames = cFrames > 2 ? cFrames - 2 : 0; /* rounding safety fudge */
             }
             if (cFramesToRead > cFrames && !pMixStream->fUnreliable)
@@ -1273,12 +1273,12 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
                     PPDMAUDIOSTREAM const     pStream     = pMixStream->pStream;
 
                     /* Calculate how many bytes we should read from this stream. */
-                    bool const     fResampleSrc = PDMAudioPropsHz(&pStream->Props) != PDMAudioPropsHz(&pSink->MixBuf.Props);
+                    bool const     fResampleSrc = PDMAudioPropsHz(&pStream->Cfg.Props) != PDMAudioPropsHz(&pSink->MixBuf.Props);
                     uint32_t const cbSrcToXfer  = !fResampleSrc
-                                                ? PDMAudioPropsFramesToBytes(&pStream->Props, cFramesToXfer)
-                                                : PDMAudioPropsFramesToBytes(&pStream->Props, /** @todo check rounding errors here... */
+                                                ? PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, cFramesToXfer)
+                                                : PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, /** @todo check rounding errors here... */
                                                                              cFramesToXfer * PDMAudioPropsHz(&pSink->MixBuf.Props)
-                                                                             / PDMAudioPropsHz(&pStream->Props));
+                                                                             / PDMAudioPropsHz(&pStream->Cfg.Props));
 
                     /* Do the reading. */
                     uint32_t offSrc      = 0;
@@ -1331,14 +1331,14 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
                         }
                         /* We don't need to blend silence buffers.  For simplicity, always blend
                            when we're resampling (for rounding). */
-                        else if (fResampleSrc || !PDMAudioPropsIsBufferSilence(&pStream->Props, pvBuf, cbSrcRead))
+                        else if (fResampleSrc || !PDMAudioPropsIsBufferSilence(&pStream->Cfg.Props, pvBuf, cbSrcRead))
                         {
                             AudioMixBufBlend(&pSink->MixBuf, &pMixStream->WriteState, pvBuf, cbSrcRead,
                                              offDstFrame, cFramesToXfer - offDstFrame, &cFramesDstTransferred);
                         }
                         else
                         {
-                            cFramesDstTransferred = PDMAudioPropsBytesToFrames(&pStream->Props, cbSrcRead);
+                            cFramesDstTransferred = PDMAudioPropsBytesToFrames(&pStream->Cfg.Props, cbSrcRead);
                             AudioMixBufBlendGap(&pSink->MixBuf, &pMixStream->WriteState, cFramesDstTransferred);
                         }
                         AssertBreak(cFramesDstTransferred > 0);
@@ -1419,13 +1419,13 @@ static uint32_t audioMixerSinkUpdateOutputCalcFramesToRead(PAUDMIXSINK pSink, ui
         if (pMixStream->fStatus & AUDMIXSTREAM_STATUS_CAN_WRITE)
         {
             uint32_t const cbWritable = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
-            uint32_t cFrames = PDMAudioPropsBytesToFrames(&pMixStream->pStream->Props, cbWritable);
+            uint32_t cFrames = PDMAudioPropsBytesToFrames(&pMixStream->pStream->Cfg.Props, cbWritable);
             pMixStream->cFramesLastAvail = cFrames;
-            if (PDMAudioPropsHz(&pMixStream->pStream->Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
+            if (PDMAudioPropsHz(&pMixStream->pStream->Cfg.Props) == PDMAudioPropsHz(&pSink->MixBuf.Props))
             { /* likely */ }
             else
             {
-                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pMixStream->pStream->Props);
+                cFrames = cFrames * PDMAudioPropsHz(&pSink->MixBuf.Props) / PDMAudioPropsHz(&pMixStream->pStream->Cfg.Props);
                 cFrames = cFrames > 2 ? cFrames - 2 : 0; /* rounding safety fudge */
             }
             if (cFramesToRead > cFrames && !pMixStream->fUnreliable)
@@ -2261,6 +2261,11 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                  * Initialize the host-side configuration for the stream to be created,
                  * this is the sink format & direction with the src/dir, layout, name
                  * and device specific config copied from the guest side config (pCfg).
+                 * We disregard any Backend settings here.
+                 *
+                 * (Note! pfnStreamCreate used to get both CfgHost and pCfg (aka pCfgGuest)
+                 *        passed in, but that became unnecessary with DrvAudio stoppping
+                 *        mixing.  The mixing is done here and we bridge guest & host configs.)
                  */
                 AssertMsg(AudioHlpPcmPropsAreValid(&pSink->PCMProps),
                           ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
@@ -2281,16 +2286,16 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                  * to use this mixer code too.
                  */
                 PPDMAUDIOSTREAM pStream;
-                rc = pConn->pfnStreamCreate(pConn, 0 /*fFlags*/, &CfgHost, pCfg, &pStream);
+                rc = pConn->pfnStreamCreate(pConn, 0 /*fFlags*/, &CfgHost, &pStream);
                 if (RT_SUCCESS(rc))
                 {
                     pMixStream->cFramesBackendBuffer = CfgHost.Backend.cFramesBufferSize;
 
                     /* Set up the mixing buffer conversion state. */
                     if (pSink->enmDir == PDMAUDIODIR_IN)
-                        rc = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pStream->Props);
+                        rc = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pStream->Cfg.Props);
                     else
-                        rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
+                        rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Cfg.Props);
                     if (RT_SUCCESS(rc))
                     {
                         /* Save the audio stream pointer to this mixing stream. */
@@ -2395,7 +2400,7 @@ static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
     AssertMsgReturn(pStream->pSink == pSink, ("Stream '%s' is not part of sink '%s'\n",
                                               pStream->pszName, pSink->pszName), VERR_NOT_FOUND);
     Assert(RTCritSectIsOwner(&pSink->CritSect));
-    LogFlowFunc(("[%s] (Stream = %s), cStreams=%RU8\n", pSink->pszName, pStream->pStream->szName, pSink->cStreams));
+    LogFlowFunc(("[%s] (Stream = %s), cStreams=%RU8\n", pSink->pszName, pStream->pStream->Cfg.szName, pSink->cStreams));
 
     /*
      * Remove stream from sink, update the count and set the pSink member to NULL.
@@ -2526,13 +2531,13 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
             AssertPtr(pSink);
             if (pSink->enmDir == PDMAUDIODIR_OUT)
             {
-                rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Props);
+                rc = AudioMixBufInitPeekState(&pSink->MixBuf, &pMixStream->PeekState, &pStream->Cfg.Props);
                 /** @todo we need to remember this, don't we? */
                 AssertLogRelRCReturn(rc, VINF_SUCCESS);
             }
             else
             {
-                rc = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pStream->Props);
+                rc = AudioMixBufInitWriteState(&pSink->MixBuf, &pMixStream->WriteState, &pStream->Cfg.Props);
                 /** @todo we need to remember this, don't we? */
                 AssertLogRelRCReturn(rc, VINF_SUCCESS);
             }
