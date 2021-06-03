@@ -67,8 +67,6 @@ typedef struct AUDIOTESTDRVSTACKSTREAM
 {
     /** The public stream data. */
     PDMAUDIOSTREAM          Core;
-    /** The acquired config. */
-    PDMAUDIOSTREAMCFG       Cfg;
     /** The backend data (variable size). */
     PDMAUDIOBACKENDSTREAM   Backend;
 } AUDIOTESTDRVSTACKSTREAM;

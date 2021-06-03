@@ -578,7 +578,7 @@ int audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmD
  *                      using DrvAudio, but probably the same) stream config on
  *                      success (not used as input).
  */
-static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAMCFG pCfgReq,
+static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUDIOSTREAMCFG pCfgReq,
                                             PPDMAUDIOSTREAM *ppStream, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX + 16];
@@ -590,13 +590,10 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
         /*
          * DrvAudio does most of the work here.
          */
-        PDMAUDIOSTREAMCFG CfgGst = *pCfgReq;
-        rc = pDrvStack->pIAudioConnector->pfnStreamCreate(pDrvStack->pIAudioConnector, PDMAUDIOSTREAM_CREATE_F_NO_MIXBUF,
-                                                          pCfgReq, &CfgGst, ppStream);
+        rc = pDrvStack->pIAudioConnector->pfnStreamCreate(pDrvStack->pIAudioConnector, 0 /*fFlags*/, pCfgReq, ppStream);
         if (RT_SUCCESS(rc))
         {
-            *pCfgAcq = *pCfgReq; /** @todo PDMIAUDIOCONNECTOR::pfnStreamCreate only does one utterly pointless change to the two configs (enmLayout) from what I can tell... */
-            pCfgAcq->Props = (*ppStream)->Props;
+            *pCfgAcq = (*ppStream)->Cfg;
             RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(pCfgReq, szTmp, sizeof(szTmp)));
             return rc;
         }
@@ -622,10 +619,8 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
                 if (pStreamAt)
                 {
                     pStreamAt->Core.uMagic     = PDMAUDIOSTREAM_MAGIC;
-                    pStreamAt->Core.enmDir     = pCfgReq->enmDir;
+                    pStreamAt->Core.Cfg        = *pCfgReq;
                     pStreamAt->Core.cbBackend  = cbStream;
-                    pStreamAt->Core.Props      = pCfgReq->Props;
-                    RTStrPrintf(pStreamAt->Core.szName, sizeof(pStreamAt->Core.szName), pCfgReq->szName);
 
                     pStreamAt->Backend.uMagic  = PDMAUDIOBACKENDSTREAM_MAGIC;
                     pStreamAt->Backend.pStream = &pStreamAt->Core;
@@ -633,22 +628,19 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
                     /*
                      * Call the backend to create the stream.
                      */
-                    pStreamAt->Cfg = *pCfgReq;
-
                     rc = pDrvStack->pIHostAudio->pfnStreamCreate(pDrvStack->pIHostAudio, &pStreamAt->Backend,
-                                                                 pCfgReq, &pStreamAt->Cfg);
+                                                                 pCfgReq, &pStreamAt->Core.Cfg);
                     if (RT_SUCCESS(rc))
                     {
-                        pStreamAt->Core.Props = pStreamAt->Cfg.Props;
                         if (g_uVerbosity > 1)
                             RTMsgInfo("Created backend stream: %s\n",
-                                      PDMAudioStrmCfgToString(&pStreamAt->Cfg, szTmp, sizeof(szTmp)));
+                                      PDMAudioStrmCfgToString(&pStreamAt->Core.Cfg, szTmp, sizeof(szTmp)));
 
                         /* Return if stream is ready: */
                         if (rc == VINF_SUCCESS)
                         {
                             *ppStream = &pStreamAt->Core;
-                            *pCfgAcq  = pStreamAt->Cfg;
+                            *pCfgAcq  = pStreamAt->Core.Cfg;
                             return VINF_SUCCESS;
                         }
                         if (rc == VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED)
@@ -661,7 +653,7 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PPDMAU
                             if (RT_SUCCESS(rc))
                             {
                                 *ppStream = &pStreamAt->Core;
-                                *pCfgAcq  = pStreamAt->Cfg;
+                                *pCfgAcq  = pStreamAt->Core.Cfg;
                                 return VINF_SUCCESS;
                             }
 
@@ -1143,7 +1135,7 @@ int AudioTestMixStreamInit(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTDRVSTACK pDrvS
     pMix->pStream   = pStream;
     if (!pProps)
     {
-        pMix->pProps = &pStream->Props;
+        pMix->pProps = &pStream->Cfg.Props;
         return VINF_SUCCESS;
     }
 
@@ -1157,22 +1149,22 @@ int AudioTestMixStreamInit(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTDRVSTACK pDrvS
     {
         pMix->pProps = &pMix->MixBuf.Props;
 
-        if (pStream->enmDir == PDMAUDIODIR_IN)
+        if (pStream->Cfg.enmDir == PDMAUDIODIR_IN)
         {
             rc = AudioMixBufInitPeekState(&pMix->MixBuf, &pMix->PeekState, &pMix->MixBuf.Props);
             if (RT_SUCCESS(rc))
             {
-                rc = AudioMixBufInitWriteState(&pMix->MixBuf, &pMix->WriteState, &pStream->Props);
+                rc = AudioMixBufInitWriteState(&pMix->MixBuf, &pMix->WriteState, &pStream->Cfg.Props);
                 if (RT_SUCCESS(rc))
                     return rc;
             }
         }
-        else if (pStream->enmDir == PDMAUDIODIR_OUT)
+        else if (pStream->Cfg.enmDir == PDMAUDIODIR_OUT)
         {
             rc = AudioMixBufInitWriteState(&pMix->MixBuf, &pMix->WriteState, &pMix->MixBuf.Props);
             if (RT_SUCCESS(rc))
             {
-                rc = AudioMixBufInitPeekState(&pMix->MixBuf, &pMix->PeekState, &pStream->Props);
+                rc = AudioMixBufInitPeekState(&pMix->MixBuf, &pMix->PeekState, &pStream->Cfg.Props);
                 if (RT_SUCCESS(rc))
                     return rc;
             }
@@ -1215,9 +1207,9 @@ void AudioTestMixStreamTerm(PAUDIOTESTDRVMIXSTREAM pMix)
 static int audioTestMixStreamTransfer(PAUDIOTESTDRVMIXSTREAM pMix)
 {
     uint8_t abBuf[16384];
-    if (pMix->pStream->enmDir == PDMAUDIODIR_IN)
+    if (pMix->pStream->Cfg.enmDir == PDMAUDIODIR_IN)
     {
-        //uint32_t const cbBuf = PDMAudioPropsFloorBytesToFrame(&pMix->pStream->Props, sizeof(abBuf));
+        //uint32_t const cbBuf = PDMAudioPropsFloorBytesToFrame(&pMix->pStream->Cfg.Props, sizeof(abBuf));
 
     }
     else

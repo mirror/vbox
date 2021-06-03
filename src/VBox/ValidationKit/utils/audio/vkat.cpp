@@ -1959,7 +1959,8 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                 if (RT_SUCCESS(rc))
                 {
                     if (g_uVerbosity > 0)
-                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
+                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
+                                  PDMAudioPropsToString(&pStream->Cfg.Props, szTmp, sizeof(szTmp)),
                                   pStream->cbBackend, fWithMixer ? " mixed" : "");
 
                     /*
@@ -2246,7 +2247,8 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
                 {
                     char szTmp[128];
                     if (g_uVerbosity > 0)
-                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n", PDMAudioPropsToString(&pStream->Props, szTmp, sizeof(szTmp)),
+                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
+                                  PDMAudioPropsToString(&pStream->Cfg.Props, szTmp, sizeof(szTmp)),
                                   pStream->cbBackend, fWithMixer ? " mixed" : "");
 
                     /*
