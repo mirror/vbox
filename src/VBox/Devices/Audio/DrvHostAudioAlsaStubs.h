@@ -49,7 +49,9 @@ enum snd_pcm_chmap_position { SND_CHMAP_UNKNOWN = 0, SND_CHMAP_NA, SND_CHMAP_MON
     SND_CHMAP_RLFE, SND_CHMAP_BC,  SND_CHMAP_BLC,  SND_CHMAP_BRC };
 typedef struct snd_pcm_chmap
 {
-    unsigned int channels, pos[0];
+    unsigned int channels;
+    RT_GCC_EXTENSION
+    unsigned int pos[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } snd_pcm_chmap_t;
 extern int snd_pcm_set_chmap(snd_pcm_t *, snd_pcm_chmap_t const *);
 #endif
