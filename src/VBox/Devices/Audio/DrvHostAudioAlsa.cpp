@@ -337,7 +337,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHstAudAlsaHA_GetStatus(PPDMIHOSTAUDIO
  * @returns Converted ALSA PCM format.
  * @param   pProps              Internal audio PCM configuration to convert.
  */
-static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
+static snd_pcm_format_t alsaAudioPropsToALSA(PCPDMAUDIOPCMPROPS pProps)
 {
     switch (PDMAudioPropsSampleSize(pProps))
     {
@@ -679,7 +679,7 @@ static int alsaStreamOpen(PDRVHSTAUDALSA pThis, snd_pcm_format_t enmAlsaFmt, PCP
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHstAudAlsaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                                      PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDRVHSTAUDALSA pThis = RT_FROM_MEMBER(pInterface, DRVHSTAUDALSA, IHostAudio);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);

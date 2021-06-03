@@ -1093,7 +1093,7 @@ static PDMAUDIOCHANNELID drvHstAudPaConvertChannelPos(pa_channel_position_t enmC
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                                    PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDRVHSTAUDPA        pThis     = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
     PDRVHSTAUDPASTREAM  pStreamPA = (PDRVHSTAUDPASTREAM)pStream;
@@ -1214,9 +1214,9 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
              * Translate back the channel mapping.
              */
             for (iDst = 0; iDst < pStreamPA->ChannelMap.channels; iDst++)
-                 pCfgReq->Props.aidChannels[iDst] = drvHstAudPaConvertChannelPos(pStreamPA->ChannelMap.map[iDst]);
-            while (iDst < RT_ELEMENTS(pCfgReq->Props.aidChannels))
-                pCfgReq->Props.aidChannels[iDst++] = PDMAUDIOCHANNELID_INVALID;
+                 pCfgAcq->Props.aidChannels[iDst] = drvHstAudPaConvertChannelPos(pStreamPA->ChannelMap.map[iDst]);
+            while (iDst < RT_ELEMENTS(pCfgAcq->Props.aidChannels))
+                pCfgAcq->Props.aidChannels[iDst++] = PDMAUDIOCHANNELID_INVALID;
 
             PDMAudioStrmCfgCopy(&pStreamPA->Cfg, pCfgAcq);
         }

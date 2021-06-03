@@ -1248,15 +1248,16 @@ typedef struct PDMIHOSTAUDIO
      * @returns VBox status code.
      * @retval  VINF_AUDIO_STREAM_ASYNC_INIT_NEEDED if
      *          PDMIHOSTAUDIO::pfnStreamInitAsync should be called.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     * @param   pCfgReq             Pointer to requested stream configuration.
-     * @param   pCfgAcq             Pointer to acquired stream configuration.
-     * @todo    r=bird: Implementation (at least Alsa) seems to make undocumented
-     *          assumptions about the content of @a pCfgAcq.
+     * @param   pInterface      Pointer to this interface.
+     * @param   pStream         Pointer to the audio stream.
+     * @param   pCfgReq         The requested stream configuration.
+     * @param   pCfgAcq         The acquired stream configuration - output.  This is
+     *                          the same as @a *pCfgReq when called, the
+     *                          implementation will adjust it to make the actual
+     *                          stream configuration as needed.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
+                                                PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
 
     /**
      * Asynchronous stream initialization step, optional.
@@ -1390,7 +1391,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "b942d1cd-ffbf-490b-a296-74f30884bbd6"
+#define PDMIHOSTAUDIO_IID                           "0625ae75-491b-428b-836e-4f8a9869788f"
 
 
 /** Pointer to a audio notify from host interface. */

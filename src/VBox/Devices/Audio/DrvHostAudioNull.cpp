@@ -82,7 +82,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHstAudNullHA_GetStatus(PPDMIHOSTAUDIO
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHstAudNullHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                                      PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pInterface);
     PDRVHSTAUDNULLSTREAM pStreamNull = (PDRVHSTAUDNULLSTREAM)pStream;

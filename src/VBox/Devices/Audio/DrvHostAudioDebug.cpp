@@ -103,7 +103,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHstAudDebugHA_GetStatus(PPDMIHOSTAUDI
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHstAudDebugHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                          PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                                       PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDRVHSTAUDDEBUG         pThis      = RT_FROM_MEMBER(pInterface, DRVHSTAUDDEBUG, IHostAudio);
     PDRVHSTAUDDEBUGSTREAM   pStreamDbg = (PDRVHSTAUDDEBUGSTREAM)pStream;

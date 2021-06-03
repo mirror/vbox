@@ -1449,7 +1449,7 @@ static void drvHostDSoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStream
  * @param   pWaveFmtExt On input the requested stream format. Updated to the
  *                      actual stream format on successful return.
  */
-static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PPDMAUDIOSTREAMCFG pCfgReq,
+static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PCPDMAUDIOSTREAMCFG pCfgReq,
                                                 PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEXTENSIBLE *pWaveFmtExt)
 {
     Assert(pStreamDS->In.pDSCB == NULL);
@@ -1569,7 +1569,7 @@ static HRESULT drvHostDSoundStreamCreateCapture(PDRVHOSTDSOUND pThis, PDSOUNDSTR
  *                      Updated to the actual stream format on successful
  *                      return.
  */
-static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PPDMAUDIOSTREAMCFG pCfgReq,
+static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PCPDMAUDIOSTREAMCFG pCfgReq,
                                                  PPDMAUDIOSTREAMCFG pCfgAcq, WAVEFORMATEXTENSIBLE *pWaveFmtExt)
 {
     Assert(pStreamDS->Out.pDSB == NULL);
@@ -1683,7 +1683,7 @@ static HRESULT drvHostDSoundStreamCreatePlayback(PDRVHOSTDSOUND pThis, PDSOUNDST
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                                      PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDRVHOSTDSOUND pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
