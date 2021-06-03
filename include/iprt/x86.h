@@ -1969,6 +1969,16 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
  */
 #define X86_IS_CANONICAL(a_u64Addr)         ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
 
+/**
+ * Gets the page base mask given the page shift.
+ */
+#define X86_GET_PAGE_BASE_MASK(a_cShift)    (UINT64_C(0xffffffffffffffff) << (a_cShift))
+
+/**
+ * Gets the page offset mask given the page shift.
+ */
+#define X86_GET_PAGE_OFFSET_MASK(a_cShift)  (~X86_GET_PAGE_BASE_MASK(a_cShift))
+
 
 /** @name Page Table Entry
  * @{
