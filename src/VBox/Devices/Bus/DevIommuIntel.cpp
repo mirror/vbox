@@ -2241,8 +2241,8 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
 
 
 /**
- * Checks whether two consecutive I/O page results of a DMA memory request form a
- * physically contiguous region.
+ * Checks whether two consecutive I/O page results of a DMA memory request
+ * translates to a physically contiguous region.
  *
  * @returns @c true if the I/O pages are contiguous, @c false otherwise.
  * @param   pIoPagePrev     The previous I/O page.
@@ -2256,16 +2256,16 @@ static bool dmarIsIoPageAccessContig(PCDMARIOPAGE pIoPagePrev, PCDMARIOPAGE pIoP
     size_t const   cbPrev      = RT_BIT_64(pIoPagePrev->cShift);
     RTGCPHYS const GCPhysPrev  = pIoPagePrev->GCPhysBase;
     RTGCPHYS const GCPhys      = pIoPage->GCPhysBase;
-    uint64_t const offMaskPrev = X86_GET_PAGE_OFFSET_MASK(pIoPagePrev->cShift);
-    uint64_t const offMask     = X86_GET_PAGE_OFFSET_MASK(pIoPage->cShift);
-
+#ifdef RT_STRICT
     /* Paranoia: Ensure offset bits are 0. */
-    Assert(!(GCPhysPrev & offMaskPrev));
-    Assert(!(GCPhys     & offMask));
-
-    if ((GCPhysPrev & ~offMaskPrev) + cbPrev == (GCPhys & ~offMask))
-        return true;
-    return false;
+    {
+        uint64_t const fOffMaskPrev = X86_GET_PAGE_OFFSET_MASK(pIoPagePrev->cShift);
+        uint64_t const fOffMask     = X86_GET_PAGE_OFFSET_MASK(pIoPage->cShift);
+        Assert(!(GCPhysPrev & fOffMaskPrev));
+        Assert(!(GCPhys     & fOffMask));
+    }
+#endif
+    return GCPhysPrev + cbPrev == GCPhys;
 }
 
 
