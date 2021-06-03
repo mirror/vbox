@@ -507,28 +507,29 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
         snd_pcm_chmap_t Map;
         unsigned int    padding[1 + PDMAUDIO_MAX_CHANNELS];
     } u;
-    uint8_t      aidChannels[PDMAUDIO_MAX_CHANNELS];
-    unsigned int cChannels = u.Map.channels = PDMAudioPropsChannels(&pCfgReq->Props);
-    unsigned int iDst      = 0;
+    uint8_t       aidSrcChannels[PDMAUDIO_MAX_CHANNELS];
+    unsigned int *aidDstChannels = &u.Map.pos[0];
+    unsigned int  cChannels      = u.Map.channels = PDMAudioPropsChannels(&pCfgReq->Props);
+    unsigned int  iDst           = 0;
     for (unsigned int iSrc = 0; iSrc < cChannels; iSrc++)
     {
-        uint8_t const idSrc = pCfgReq->Props.aidChannels[iSrc];
-        aidChannels[iDst] = idSrc;
-        u.Map.pos[iDst]   = drvHstAudAlsaPdmChToAlsa((PDMAUDIOCHANNELID)idSrc, cChannels);
+        uint8_t const idSrc  = pCfgReq->Props.aidChannels[iSrc];
+        aidSrcChannels[iDst] = idSrc;
+        aidDstChannels[iDst] = drvHstAudAlsaPdmChToAlsa((PDMAUDIOCHANNELID)idSrc, cChannels);
         iDst++;
     }
     u.Map.channels = cChannels = iDst;
     for (; iDst < PDMAUDIO_MAX_CHANNELS; iDst++)
     {
-        aidChannels[iDst] = PDMAUDIOCHANNELID_INVALID;
-        u.Map.pos[iDst]   = SND_CHMAP_NA;
+        aidSrcChannels[iDst] = PDMAUDIOCHANNELID_INVALID;
+        aidDstChannels[iDst] = SND_CHMAP_NA;
     }
 
     err = snd_pcm_hw_params_set_channels_near(hPCM, pHWParms, &cChannels);
     AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", PDMAudioPropsChannels(&pCfgReq->Props)),
                           err);
     if (cChannels == PDMAudioPropsChannels(&pCfgReq->Props))
-        memcpy(pCfgAcq->Props.aidChannels, aidChannels, sizeof(pCfgAcq->Props.aidChannels));
+        memcpy(pCfgAcq->Props.aidChannels, aidSrcChannels, sizeof(pCfgAcq->Props.aidChannels));
     else
     {
         LogRel2(("ALSA: Requested %u channels, got %u\n", u.Map.channels, cChannels));
