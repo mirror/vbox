@@ -367,8 +367,10 @@ ifdef VBOX_WITH_QTGUI
   	libQt5X11ExtrasVBox.so.5 \
   	libQt5WidgetsVBox.so.5 \
   	plugins/platforms/libqxcb.so \
+  	plugins/platformthemes/libqgtk2.so \
   	plugins/platformthemes/libqgtk3.so \
   	plugins/sqldrivers/libqsqlite.so \
+  	plugins/styles/libqgtk2style.so \
   	plugins/xcbglintegrations/libqxcb-glx-integration.so \
   	$(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
  endif

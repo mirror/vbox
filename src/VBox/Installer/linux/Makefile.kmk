@@ -520,6 +520,7 @@ BLDDIRS += $(foreach d,\
 	  archive/plugins/platforms \
 	  archive/plugins/platformthemes \
 	  archive/plugins/sqldrivers \
+	  archive/plugins/styles \
 	  archive/plugins/xcbglintegrations,) \
 	$(if $(VBOX_WITH_PYTHON),\
 	  archive/sdk/installer \

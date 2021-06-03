@@ -280,7 +280,9 @@ endif
 	        --keepgoing --replace /usr/lib/$(package) \
 	        $(prefix)/usr/lib/$(package)/*.so.5 \
 	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \
+	        $(prefix)/usr/lib/$(package)/plugins/platformthemes/*.so; \
 	        $(prefix)/usr/lib/$(package)/plugins/sqldrivers/*.so; \
+	        $(prefix)/usr/lib/$(package)/plugins/styles/*.so; \
 	        $(prefix)/usr/lib/$(package)/plugins/xcbglintegrations/*.so; \
 	    echo "[Paths]" > $(prefix)/usr/lib/$(package)/qt.conf; \
 	    echo "Plugins = /usr/lib/$(package)/plugins" >> $(prefix)/usr/lib/$(package)/qt.conf; \
