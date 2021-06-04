@@ -687,9 +687,10 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
     AssertPtr(pStreamOSS);
 
     /*
-     * Note! This logic was found in StreamPlay and corrected a little.
-     *
      * The logic here must match what StreamPlay does.
+     *
+     * Note! We now use 'bytes' rather than the fragments * fragsize as we used
+     *       to do (up to 2021), as these are documented as obsolete.
      */
     audio_buf_info BufInfo = { 0, 0, 0, 0 };
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
@@ -739,7 +740,8 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
     }
 
     /*
-     * Figure out now much to write (same as drvHstAudOssHA_StreamGetWritable).
+     * Figure out now much to write (same as drvHstAudOssHA_StreamGetWritable,
+     * must match exactly).
      */
     audio_buf_info BufInfo;
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
@@ -814,8 +816,8 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
     /*
      * Use SNDCTL_DSP_GETISPACE to see how much we can read.
      *
-     * Note! We use bytes rather than the fragments * fragsize, as these are
-     *       documented as obsolete.  (Playback code should do the same.)
+     * Note! We now use 'bytes' rather than the fragments * fragsize as we used
+     *       to do (up to 2021), as these are documented as obsolete.
      */
     audio_buf_info BufInfo = { 0, 0, 0, 0 };
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETISPACE, &BufInfo);
@@ -845,7 +847,7 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
     else
         cbRet = PDMAudioPropsFramesToBytes(&pStreamOSS->Cfg.Props, 1);
 
-    Log4Func(("returns %#x (%u) [cbBuf=%#x)\n", cbRet, cbRet, cbBuf));
+    Log4Func(("returns %#x (%u) [cbBuf=%#x]\n", cbRet, cbRet, cbBuf));
     return cbRet;
 }
 
