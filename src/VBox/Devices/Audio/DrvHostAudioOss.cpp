@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_ENABLED 1
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -297,19 +298,6 @@ static int drvHstAudOssStreamConfigure(int hFile, bool fInput, PDRVHSTAUDOSSSTRE
                           ("OSS: Failed to set audio frequency to %d Hz: %s (%d)\n", pOSSReq->Props.uHz, strerror(errno), errno),
                           RTErrConvertFromErrno(errno));
 
-
-    /*
-     * Set obsolete non-blocking call for input streams.
-     */
-    if (fInput)
-    {
-#if !(defined(VBOX) && defined(RT_OS_SOLARIS)) /* Obsolete on Solaris (using O_NONBLOCK is sufficient). */
-        AssertLogRelMsgReturn(ioctl(hFile, SNDCTL_DSP_NONBLOCK, NULL) >= 0,
-                              ("OSS: Failed to set non-blocking mode: %s (%d)\n", strerror(errno), errno),
-                              RTErrConvertFromErrno(errno));
-#endif
-    }
-
     /*
      * Set fragment size and count.
      */
@@ -366,7 +354,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCreate(PPDMIHOSTAUDIO pInterface, 
      */
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        pStreamOSS->hFile = open(g_szPathInputDev, O_RDONLY | O_NONBLOCK);
+        pStreamOSS->hFile = open(g_szPathInputDev, O_RDONLY);
     else
         pStreamOSS->hFile = open(g_szPathOutputDev, O_WRONLY);
     if (pStreamOSS->hFile >= 0)
@@ -462,23 +450,47 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamEnable(PPDMIHOSTAUDIO pInterface, 
 {
     RT_NOREF(pInterface);
     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
-
-    /** @todo this might be a little optimisitic...   */
-    pStreamOSS->fDraining = false;
-
     int rc;
-    if (pStreamOSS->Cfg.enmDir == PDMAUDIODIR_IN)
-        rc = VINF_SUCCESS; /** @todo apparently nothing to do here? */
+
+    /*
+     * This is most probably untested...
+     */
+    if (pStreamOSS->fDraining)
+    {
+        LogFlowFunc(("Still draining...\n"));
+        rc = RTThreadWait(pStreamOSS->hThreadDrain, 0 /*ms*/, NULL);
+        if (RT_FAILURE(rc))
+        {
+            LogFlowFunc(("Resetting...\n"));
+            ioctl(pStreamOSS->hFile, SNDCTL_DSP_RESET, NULL);
+            rc = RTThreadWait(pStreamOSS->hThreadDrain, 0 /*ms*/, NULL);
+            if (RT_FAILURE(rc))
+            {
+                LogFlowFunc(("Poking...\n"));
+                RTThreadPoke(pStreamOSS->hThreadDrain);
+                rc = RTThreadWait(pStreamOSS->hThreadDrain, 1 /*ms*/, NULL);
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("Done draining.\n"));
+            pStreamOSS->hThreadDrain = NIL_RTTHREAD;
+        }
+        else
+            LogFlowFunc(("No, still draining...\n"));
+        pStreamOSS->fDraining = false;
+    }
+
+    /*
+     * Enable the stream.
+     */
+    int fMask = pStreamOSS->Cfg.enmDir == PDMAUDIODIR_IN ? PCM_ENABLE_INPUT : PCM_ENABLE_OUTPUT;
+    if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &fMask) >= 0)
+        rc = VINF_SUCCESS;
     else
     {
-        int fMask = PCM_ENABLE_OUTPUT;
-        if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &fMask) >= 0)
-            rc = VINF_SUCCESS;
-        else
-        {
-            LogRel(("OSS: Failed to enable output stream: %s (%d)\n", strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
-        }
+        LogRel(("OSS: Failed to enable output stream: %s (%d)\n", strerror(errno), errno));
+        rc = RTErrConvertFromErrno(errno);
     }
 
     LogFlowFunc(("returns %Rrc for '%s'\n", rc, pStreamOSS->Cfg.szName));
@@ -493,46 +505,56 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamDisable(PPDMIHOSTAUDIO pInterface,
 {
     RT_NOREF(pInterface);
     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
-
+    LogFlowFunc(("Stream '%s'\n", pStreamOSS->Cfg.szName));
     int rc;
-    if (pStreamOSS->Cfg.enmDir == PDMAUDIODIR_IN)
-        rc = VINF_SUCCESS; /** @todo apparently nothing to do here? */
-    else
-    {
-        /*
-         * If we're still draining, try kick the thread before we try disable the stream.
-         */
-        if (pStreamOSS->fDraining)
-        {
-            LogFlowFunc(("Trying to cancel draining...\n"));
-            if (pStreamOSS->hThreadDrain != NIL_RTTHREAD)
-            {
-                RTThreadPoke(pStreamOSS->hThreadDrain);
-                rc = RTThreadWait(pStreamOSS->hThreadDrain, 1 /*ms*/, NULL);
-                if (RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE)
-                    pStreamOSS->fDraining = false;
-                else
-                    LogFunc(("Failed to cancel draining (%Rrc)\n", rc));
-            }
-            else
-            {
-                LogFlowFunc(("Thread handle is NIL, so we can't be draining\n"));
-                pStreamOSS->fDraining = false;
-            }
-        }
 
-        /** @todo Official documentation says this isn't the right way to stop playback.
-         *        It may work in some implementations but fail in all others...  Suggest
-         *        using SNDCTL_DSP_RESET / SNDCTL_DSP_HALT. */
-        int fMask = 0;
-        if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &fMask) >= 0)
-            rc = VINF_SUCCESS;
+    /*
+     * If we're still draining, try kick the thread before we try disable the stream.
+     */
+    if (pStreamOSS->fDraining)
+    {
+        LogFlowFunc(("Trying to cancel draining...\n"));
+        if (pStreamOSS->hThreadDrain != NIL_RTTHREAD)
+        {
+            RTThreadPoke(pStreamOSS->hThreadDrain);
+            rc = RTThreadWait(pStreamOSS->hThreadDrain, 1 /*ms*/, NULL);
+            if (RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE)
+                pStreamOSS->fDraining = false;
+            else
+                LogFunc(("Failed to cancel draining (%Rrc)\n", rc));
+        }
         else
         {
-            LogRel(("OSS: Failed to enable output stream: %s (%d)\n", strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
+            LogFlowFunc(("Thread handle is NIL, so we can't be draining\n"));
+            pStreamOSS->fDraining = false;
         }
     }
+
+    /*
+     * The Official documentation says this isn't the right way to stop
+     * playback.  It may work in some implementations but fail in all others...
+     * Suggest SNDCTL_DSP_RESET / SNDCTL_DSP_HALT.
+     *
+     * So, let's do both and see how that works out...
+     */
+    rc = VINF_SUCCESS;
+    int fMask = 0;
+    if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &fMask) >= 0)
+        LogFlowFunc(("SNDCTL_DSP_SETTRIGGER succeeded\n"));
+    else
+    {
+        LogRel(("OSS: Failed to clear triggers for stream '%s': %s (%d)\n", pStreamOSS->Cfg.szName, strerror(errno), errno));
+        rc = RTErrConvertFromErrno(errno);
+    }
+
+    if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_RESET, NULL) >= 0)
+        LogFlowFunc(("SNDCTL_DSP_RESET succeeded\n"));
+    else
+    {
+        LogRel(("OSS: Failed to reset stream '%s': %s (%d)\n", pStreamOSS->Cfg.szName, strerror(errno), errno));
+        rc = RTErrConvertFromErrno(errno);
+    }
+
     LogFlowFunc(("returns %Rrc for '%s'\n", rc, pStreamOSS->Cfg.szName));
     return rc;
 }
@@ -570,7 +592,7 @@ static DECLCALLBACK(int) drvHstAudOssDrainThread(RTTHREAD ThreadSelf, void *pvUs
     int fOrgFlags = fcntl(pStreamOSS->hFile, F_GETFL, 0);
     LogFunc(("F_GETFL -> %#x\n", fOrgFlags));
     Assert(fOrgFlags != -1);
-    if (fOrgFlags != -1)
+    if (fOrgFlags != -1 && (fOrgFlags & O_NONBLOCK))
     {
         rc = fcntl(pStreamOSS->hFile, F_SETFL, fOrgFlags & ~O_NONBLOCK);
         AssertStmt(rc != -1, fOrgFlags = -1);
@@ -781,9 +803,46 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
  */
 static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    Log4Func(("returns UINT32_MAX\n"));
-    return UINT32_MAX;
+    RT_NOREF(pInterface);
+    PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+    AssertPtr(pStreamOSS);
+
+    /*
+     * Use SNDCTL_DSP_GETISPACE to see how much we can read.
+     *
+     * Note! We use bytes rather than the fragments * fragsize, as these are
+     *       documented as obsolete.  (Playback code should do the same.)
+     */
+    audio_buf_info BufInfo = { 0, 0, 0, 0 };
+    int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETISPACE, &BufInfo);
+    AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETISPACE failed: %s (%d)\n", strerror(errno), errno), 0);
+
+    uint32_t        cbRet;
+    uint32_t const  cbBuf = pStreamOSS->OssCfg.cbFragment * pStreamOSS->OssCfg.cFragments;
+    if (BufInfo.bytes >= 0 && (unsigned)BufInfo.bytes <= cbBuf)
+        cbRet = BufInfo.bytes;
+    else
+    {
+        AssertMsgFailed(("Invalid available size: %d\n", BufInfo.bytes));
+        AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
+        AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
+        cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
+        AssertMsgStmt(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
+    }
+
+    /*
+     * HACK ALERT! Tweak to force recording to start.  Pretend there are bytes
+     *             available if we haven't read anything yet.  This will cause
+     *             the following StreamCapture call to block and make sure the
+     *             stream is really recording.
+     */
+    if (BufInfo.bytes > 0 || pStreamOSS->offInternal != 0)
+    { /* likely */ }
+    else
+        cbRet = PDMAudioPropsFramesToBytes(&pStreamOSS->Cfg.Props, 1);
+
+    Log4Func(("returns %#x (%u) [cbBuf=%#x)\n", cbRet, cbRet, cbBuf));
+    return cbRet;
 }
 
 
@@ -804,7 +863,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCapture(PPDMIHOSTAUDIO pInterface,
     while (cbToRead > 0)
     {
         ssize_t cbRead = read(pStreamOSS->hFile, &pbDst[offWrite], cbToRead);
-        if (cbRead)
+        if (cbRead > 0)
         {
             LogFlowFunc(("cbRead=%zi, offWrite=%zu cbToRead=%zu\n", cbRead, offWrite, cbToRead));
             Assert((ssize_t)cbToRead >= cbRead);
