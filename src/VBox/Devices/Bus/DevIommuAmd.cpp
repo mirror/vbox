@@ -809,16 +809,16 @@ static bool iommuAmdLookupIsAccessContig(PCIOPAGELOOKUP pPageLookupPrev, PCIOPAG
     size_t const   cbPrev      = RT_BIT_64(pPageLookupPrev->cShift);
     RTGCPHYS const GCPhysPrev  = pPageLookupPrev->GCPhysSpa;
     RTGCPHYS const GCPhys      = pPageLookup->GCPhysSpa;
-    uint64_t const offMaskPrev = IOMMU_GET_PAGE_OFF_MASK(pPageLookupPrev->cShift);
-    uint64_t const offMask     = IOMMU_GET_PAGE_OFF_MASK(pPageLookup->cShift);
-
+#ifdef RT_STRICT
     /* Paranoia: Ensure offset bits are 0. */
-    Assert(!(GCPhysPrev & offMaskPrev));
-    Assert(!(GCPhys     & offMask));
-
-    if ((GCPhysPrev & ~offMaskPrev) + cbPrev == (GCPhys & ~offMask))
-        return true;
-    return false;
+    {
+        uint64_t const fOffMaskPrev = IOMMU_GET_PAGE_OFF_MASK(pPageLookupPrev->cShift);
+        uint64_t const fOffMask     = IOMMU_GET_PAGE_OFF_MASK(pPageLookup->cShift);
+        Assert(!(GCPhysPrev & fOffMaskPrev));
+        Assert(!(GCPhys     & fOffMask));
+    }
+#endif
+    return GCPhysPrev + cbPrev == GCPhys;
 }
 
 
