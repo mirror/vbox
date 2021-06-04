@@ -73,6 +73,9 @@ E1kNetTransmit (
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  DeviceAddress;
 
+  DEBUG((DEBUG_INFO, "E1kNetTransmit: HeaderSize=%u BufferSize=%u Buffer=%p\n",
+         HeaderSize, BufferSize, Buffer));
+
   if (This == NULL || BufferSize == 0 || Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }

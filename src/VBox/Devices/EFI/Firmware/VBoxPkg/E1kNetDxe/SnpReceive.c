@@ -76,6 +76,9 @@ E1kNetReceive (
   UINT8       *RxPtr;
   UINTN       RxBufOffset;
 
+  DEBUG((DEBUG_INFO, "E1kNetReceive: HeaderSize=%p BufferSize=%u Buffer=%p\n",
+         HeaderSize, *BufferSize, Buffer));
+
   if (This == NULL || BufferSize == NULL || Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }

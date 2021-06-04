@@ -44,25 +44,18 @@ E1kNetIsPacketAvailable (
   // DWG-2.3.1, but WaitForKey does have some.
   //
   E1K_NET_DEV *Dev;
-  //UINT16      RxCurUsed;
+  UINT32      RdhCur;
 
   Dev = Context;
   if (Dev->Snm.State != EfiSimpleNetworkInitialized) {
     return;
   }
 
-#if 0
-  //
-  // virtio-0.9.5, 2.4.2 Receiving Used Buffers From the Device
-  //
-  MemoryFence ();
-  RxCurUsed = *Dev->RxRing.Used.Idx;
-  MemoryFence ();
+  E1kNetRegRead32(Dev, E1K_REG_RDH, &RdhCur);
 
-  if (Dev->RxLastUsed != RxCurUsed) {
+  if (Dev->RdhLastSeen != RdhCur) {
     gBS->SignalEvent (Dev->Snp.WaitForPacket);
   }
-#endif
 }
 
 VOID

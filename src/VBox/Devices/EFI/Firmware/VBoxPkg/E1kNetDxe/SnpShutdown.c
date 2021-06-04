@@ -42,6 +42,8 @@ E1kNetShutdown (
   EFI_TPL     OldTpl;
   EFI_STATUS  Status;
 
+  DEBUG((DEBUG_INFO, "E1kNetShutdown:\n"));
+
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -59,13 +61,9 @@ E1kNetShutdown (
     break;
   }
 
-#if 0
-  Dev->VirtIo->SetDeviceStatus (Dev->VirtIo, 0);
-  VirtioNetShutdownRx (Dev);
-  VirtioNetShutdownTx (Dev);
-  VirtioNetUninitRing (Dev, &Dev->TxRing, Dev->TxRingMap);
-  VirtioNetUninitRing (Dev, &Dev->RxRing, Dev->RxRingMap);
-#endif
+  E1kNetDevReset(Dev);
+  E1kNetShutdownRx (Dev);
+  E1kNetShutdownTx (Dev);
 
   Dev->Snm.State = EfiSimpleNetworkStarted;
   Status = EFI_SUCCESS;

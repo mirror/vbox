@@ -331,6 +331,9 @@ INF VBoxPkg/Logo/LogoDxe.inf
 !endif
 !include NetworkPkg/Network.fdf.inc
   INF  OvmfPkg/VirtioNetDxe/VirtioNet.inf
+!ifdef $(VBOX)
+  INF  VBoxPkg/E1kNetDxe/E1kNet.inf
+!endif
 
 #
 # Usb Support

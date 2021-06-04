@@ -85,7 +85,7 @@ E1kNetShutdownTx (
 /**
   Map Caller-supplied TxBuf buffer to the device-mapped address
 
-  @param[in]    Dev               The VNET_DEV driver instance which wants to
+  @param[in]    Dev               The E1K_NET_DEV driver instance which wants to
                                   map the Tx packet.
   @param[in]    Buffer            The system physical address of TxBuf
   @param[in]    NumberOfBytes     Number of bytes to map
@@ -176,7 +176,7 @@ FreeTxBufMapInfo:
   Unmap (aka reverse mapping) device mapped TxBuf buffer to the system
   physical address
 
-  @param[in]    Dev               The VNET_DEV driver instance which wants to
+  @param[in]    Dev               The E1K_NET_DEV driver instance which wants to
                                   reverse- and unmap the Tx packet.
   @param[out]   Buffer            The system physical address of TxBuf
   @param[in]    DeviceAddress     The device address for the TxBuf

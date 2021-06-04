@@ -3,9 +3,10 @@
   Implementation of the SNP.Initialize() function and its private helpers if
   any.
 
+  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2017, AMD Inc, All rights reserved.
   Copyright (C) 2013, Red Hat, Inc.
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) 2017, AMD Inc, All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -145,7 +146,6 @@ E1kNetInitRx (
 {
   EFI_STATUS            Status;
   UINTN                 RxBufSize;
-  UINT16                RxAlwaysPending;
   UINTN                 PktIdx;
   UINTN                 NumBytes;
   EFI_PHYSICAL_ADDRESS  RxBufDeviceAddress;
@@ -160,18 +160,12 @@ E1kNetInitRx (
   RxBufSize = sizeof(*Dev->RxRing) + 2048;
 
   //
-  // Limit the number of pending RX packets if the queue is big. The division
-  // by two is due to the above "two descriptors per packet" trait.
-  //
-  RxAlwaysPending = E1K_NET_MAX_PENDING;
-
-  //
   // The RxBuf is shared between guest and hypervisor, use
   // AllocateSharedPages() to allocate this memory region and map it with
   // BusMasterCommonBuffer so that it can be accessed by both guest and
   // hypervisor.
   //
-  NumBytes = RxAlwaysPending * RxBufSize;
+  NumBytes = E1K_NET_MAX_PENDING * RxBufSize;
   Dev->RxBufNrPages = EFI_SIZE_TO_PAGES (NumBytes);
   Status = Dev->PciIo->AllocateBuffer (
                           Dev->PciIo,
@@ -200,13 +194,13 @@ E1kNetInitRx (
   }
 
   Dev->RxRing = RxBuffer;
-  Dev->RxBuf  = (UINT8 *)RxBuffer + sizeof(*Dev->RxRing) * RxAlwaysPending;
+  Dev->RxBuf  = (UINT8 *)RxBuffer + sizeof(*Dev->RxRing) * E1K_NET_MAX_PENDING;
   Dev->RdhLastSeen = 0;
 
   // Set up the RX descriptors.
-  Dev->RxBufDeviceBase = Dev->RxDeviceBase + sizeof(*Dev->RxRing) * RxAlwaysPending;
+  Dev->RxBufDeviceBase = Dev->RxDeviceBase + sizeof(*Dev->RxRing) * E1K_NET_MAX_PENDING;
   RxBufDeviceAddress = Dev->RxBufDeviceBase;
-  for (PktIdx = 0; PktIdx < RxAlwaysPending; ++PktIdx) {
+  for (PktIdx = 0; PktIdx < E1K_NET_MAX_PENDING; ++PktIdx) {
     Dev->RxRing[PktIdx].AddrBufferLow  = (UINT32)RxBufDeviceAddress;
     Dev->RxRing[PktIdx].AddrBufferHigh = (UINT32)RShiftU64(RxBufDeviceAddress, 32);
     Dev->RxRing[PktIdx].BufferLength   = 2048;
@@ -276,6 +270,8 @@ E1kNetInitialize (
   E1K_NET_DEV *Dev;
   EFI_TPL     OldTpl;
   EFI_STATUS  Status;
+
+  DEBUG((DEBUG_INFO, "E1kNetInitialize:\n"));
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
