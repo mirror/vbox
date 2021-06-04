@@ -2137,30 +2137,12 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t uPtEntity = pMemReqAux->uSlptPtr;
-    for (int8_t iLevel = pMemReqAux->cPagingLevel - 1; iLevel >= 0; iLevel--)
+    uint64_t uPtEntity   = pMemReqAux->uSlptPtr;
+    int8_t   iLevel      = pMemReqAux->cPagingLevel - 1;
+    uint8_t  cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
+    Assert(iLevel >= 2);
+    for (;;)
     {
-        /*
-         * Read the paging entry for the current level.
-         */
-        uint8_t const cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
-        {
-            uint16_t const idxPte         = (uDmaAddr >> cLevelShift) & UINT64_C(0x1ff);
-            uint64_t const offPte         = idxPte << 3;
-            RTGCPHYS const GCPhysPtEntity = uPtEntity | offPte;
-            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-            {
-                if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_1, VTDATFAULT_LSL_1, pMemReqIn, pMemReqAux);
-                else
-                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_1, VTDATFAULT_SSL_1, pMemReqIn, pMemReqAux);
-                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-            }
-        }
-
         /*
          * Check I/O permissions.
          * This must be done prior to check reserved bits for properly reporting errors SSL.2 and SSL.3.
@@ -2203,7 +2185,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         uint8_t const fLargePage = RT_BF_GET(uPtEntity, VTD_BF_SL_PDE_PS);
         if (fLargePage && iLevel > 0)
         {
-            Assert(iLevel == 1 || iLevel == 2);
+            Assert(iLevel == 1 || iLevel == 2);     /* Is guaranteed by the reserved bits check above. */
             uint8_t const fSllpsMask = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SLLPS);
             if (fSllpsMask & RT_BIT(iLevel - 1))
             {
@@ -2233,10 +2215,33 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
             RTGCPHYS const GCPhysBase = uPtEntity & X86_GET_PAGE_BASE_MASK(cLevelShift);
             return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
         }
-    }
 
-    /* Shouldn't ever reach here. */
-    return VERR_IOMMU_IPE_0;
+        /*
+         * Move to the next level.
+         */
+        --iLevel;
+        cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
+
+        /*
+         * Read the paging entry for the next level.
+         */
+        {
+            uint16_t const idxPte         = (uDmaAddr >> cLevelShift) & UINT64_C(0x1ff);
+            uint64_t const offPte         = idxPte << 3;
+            RTGCPHYS const GCPhysPtEntity = uPtEntity | offPte;
+            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
+                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_1, VTDATFAULT_LSL_1, pMemReqIn, pMemReqAux);
+                else
+                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_1, VTDATFAULT_SSL_1, pMemReqIn, pMemReqAux);
+                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            }
+        }
+    }
 }
 
 
