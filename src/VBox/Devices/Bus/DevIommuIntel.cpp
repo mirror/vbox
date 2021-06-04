@@ -2391,7 +2391,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                 && !(uRootEntryQword1 & ~VTD_ROOT_ENTRY_1_VALID_MASK))
             {
                 /* Read the context-entry from guest memory. */
-                RTGCPHYS const GCPhysCtxTable = RT_BF_GET(uRootEntryQword0, VTD_BF_0_ROOT_ENTRY_CTP);
+                RTGCPHYS const GCPhysCtxTable = uRootEntryQword0 & VTD_BF_0_ROOT_ENTRY_CTP_MASK;
                 uint8_t const idxCtxEntry = RT_LO_U8(pMemReqRemap->In.idDevice);
                 VTD_CONTEXT_ENTRY_T CtxEntry;
                 rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
