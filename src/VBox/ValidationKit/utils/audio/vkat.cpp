@@ -2819,7 +2819,7 @@ int main(int argc, char **argv)
      */
     static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
     int rc = RTLogCreate(&g_pRelLogger, RTLOGFLAGS_PREFIX_THREAD, "all.e.l", "VKAT_RELEASE_LOG",
-                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, "vkat-release.log");
+                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(g_pRelLogger);
     else
