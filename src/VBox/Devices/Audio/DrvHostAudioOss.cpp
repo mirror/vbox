@@ -695,20 +695,21 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
     AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETOSPACE failed: %s (%d)\n", strerror(errno), errno), 0);
 
-#if 0 /** @todo we could return BufInfo.bytes here iff StreamPlay didn't use the fragmented approach */
-    /** @todo r=bird: WTF do we make a fuss over BufInfo.bytes for when we don't
-     *        even use it?!? */
-    AssertLogRelMsgReturn(BufInfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", BufInfo.bytes), VERR_INTERNAL_ERROR_3);
-    if ((unsigned)BufInfo.bytes > cbBuf)
+    /* Try use the size. */
+    uint32_t        cbRet;
+    uint32_t const  cbBuf = pStreamOSS->OssCfg.cbFragment * pStreamOSS->OssCfg.cFragments;
+    if (BufInfo.bytes >= 0 && (unsigned)BufInfo.bytes <= cbBuf)
+        cbRet = BufInfo.bytes;
+    else
     {
-        LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", BufInfo.bytes, cbBuf, cbBuf));
-        BufInfo.bytes = cbBuf;
-        /* Keep going. */
+        AssertMsgFailed(("Invalid available size: %d\n", BufInfo.bytes));
+        AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
+        AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
+        cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
+        AssertMsgStmt(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
     }
-#endif
 
-    uint32_t cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
-    Log4Func(("returns %#x (%u)\n", cbRet, cbRet));
+    Log4Func(("returns %#x (%u) [cbBuf=%#x]\n", cbRet, cbRet, cbBuf));
     return cbRet;
 }
 
@@ -738,7 +739,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
     }
 
     /*
-     * Figure out now much to write.
+     * Figure out now much to write (same as drvHstAudOssHA_StreamGetWritable).
      */
     audio_buf_info BufInfo;
     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
@@ -746,16 +747,19 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
                                      strerror(errno), errno, pStreamOSS->hFile, rc2),
                           RTErrConvertFromErrno(errno));
 
-#if 0   /** @todo r=bird: WTF do we make a fuss over BufInfo.bytes for when we don't even use it?!? */
-    AssertLogRelMsgReturn(BufInfo.bytes >= 0, ("OSS: Warning: Invalid available size: %d\n", BufInfo.bytes), VERR_INTERNAL_ERROR_3);
-    if ((unsigned)BufInfo.bytes > cbBuf)
+    uint32_t        cbToWrite;
+    uint32_t const  cbStreamBuf = pStreamOSS->OssCfg.cbFragment * pStreamOSS->OssCfg.cFragments;
+    if (BufInfo.bytes >= 0 && (unsigned)BufInfo.bytes <= cbStreamBuf)
+        cbToWrite = BufInfo.bytes;
+    else
     {
-        LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", BufInfo.bytes, cbBuf, cbBuf));
-        BufInfo.bytes = cbBuf;
-        /* Keep going. */
+        AssertMsgFailed(("Invalid available size: %d\n", BufInfo.bytes));
+        AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
+        AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
+        cbToWrite = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
+        AssertMsgStmt(cbToWrite <= cbStreamBuf, ("fragsize*fragments: %d, cbStreamBuf=%#x\n", cbToWrite, cbStreamBuf), 0);
     }
-#endif
-    uint32_t cbToWrite = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
+
     cbToWrite = RT_MIN(cbToWrite, cbBuf);
     Log3Func(("@%#RX64 cbBuf=%#x BufInfo: fragments=%#x fragstotal=%#x fragsize=%#x bytes=%#x %s cbToWrite=%#x\n",
               pStreamOSS->offInternal, cbBuf, BufInfo.fragments, BufInfo.fragstotal, BufInfo.fragsize, BufInfo.bytes,
