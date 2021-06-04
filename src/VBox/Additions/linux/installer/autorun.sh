@@ -85,12 +85,16 @@ if test "$ostype" = "Linux"; then
                 exec "$gxtpath" "$gxttitle" "$TITLE" "$gxtexec" /bin/sh "$path/runasroot.sh" --has-terminal "$TITLE" "/bin/sh $BINARY --xwin" "Please try running "\""$i"\"" manually."
                 exit
                 ;;
+            *)
+                echo "Unable to start installation process with elevated privileges automatically. Please try running "\""$i"\"" manually."
+                exit
+            ;;
             esac
         fi
     done
 
     # else: unknown failure
-    echo "Linux guest additions installer not found -- try to start them manually."
+    echo "Linux guest additions installer not found -- try to start it manually."
     exit 1
 
 elif test "$ostype" = "SunOS"; then
