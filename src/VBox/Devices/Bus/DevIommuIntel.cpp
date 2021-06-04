@@ -1467,19 +1467,15 @@ static bool dmarPrimaryFaultCanRecord(PPDMDEVINS pDevIns, PDMAR pThis)
  * Records a primary fault.
  *
  * @param   pDevIns     The IOMMU device instance.
- * @param   enmDiag     The diagnostic reason.
  * @param   uFrcdHi     The FRCD_HI_REG value for this fault.
  * @param   uFrcdLo     The FRCD_LO_REG value for this fault.
  */
-static void dmarPrimaryFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, uint64_t uFrcdHi, uint64_t uFrcdLo)
+static void dmarPrimaryFaultRecord(PPDMDEVINS pDevIns, uint64_t uFrcdHi, uint64_t uFrcdLo)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
 
     DMAR_LOCK(pDevIns, pThisCC);
-
-    /* Update the diagnostic reason. */
-    pThis->enmDiag = enmDiag;
 
     /* We don't support advance fault logging. */
     Assert(!(dmarRegRead32(pThis, VTD_MMIO_OFF_GSTS_REG) & VTD_BF_GSTS_REG_AFLS_MASK));
@@ -1512,11 +1508,15 @@ static void dmarPrimaryFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, uint64_
  */
 static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT enmIrFault, uint16_t idDevice, uint16_t idxIntr)
 {
+    /* Update the diagnostic reason. */
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    pThis->enmDiag = enmDiag;
+
     uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID, idDevice)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIrFault)
                            | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,   1);
     uint64_t const uFrcdLo = (uint64_t)idxIntr << 48;
-    dmarPrimaryFaultRecord(pDevIns, enmDiag, uFrcdHi, uFrcdLo);
+    dmarPrimaryFaultRecord(pDevIns, uFrcdHi, uFrcdLo);
 }
 
 
@@ -1540,6 +1540,10 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
     Assert(pIrte);
     if (!(pIrte->au64[0] & VTD_BF_0_IRTE_FPD_MASK))
         return dmarIrFaultRecord(pDevIns, enmDiag, enmIrFault, idDevice, idxIntr);
+
+    /* Update the diagnostic reason (even if software wants to supress faults). */
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    pThis->enmDiag = enmDiag;
 }
 
 
@@ -1555,6 +1559,10 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
 static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARMEMREQIN pMemReqIn,
                                 PCDMARMEMREQAUX pMemReqAux)
 {
+    /* Update the diagnostic reason (even if software wants to supress faults). */
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    pThis->enmDiag = enmDiag;
+
     /*
      * Qualified faults are those that can be suppressed by software using the FPD bit
      * in the contex entry, scalable-mode context entry etc.
@@ -1581,7 +1589,7 @@ static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_T1,   fType1)
                                | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,    1);
         uint64_t const uFrcdLo = pMemReqIn->AddrRange.uAddr & X86_PAGE_BASE_MASK;
-        dmarPrimaryFaultRecord(pDevIns, enmDiag, uFrcdHi, uFrcdLo);
+        dmarPrimaryFaultRecord(pDevIns, uFrcdHi, uFrcdLo);
     }
 }
 
