@@ -345,6 +345,8 @@ private:
         bool isSingleGroupSelected() const;
         /** Returns whether single local group is selected. */
         bool isSingleLocalGroupSelected() const;
+        /** Returns whether single cloud provider group is selected. */
+        bool isSingleCloudProviderGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
 

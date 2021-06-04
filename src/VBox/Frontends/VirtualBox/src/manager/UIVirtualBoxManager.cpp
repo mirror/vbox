@@ -705,11 +705,8 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
     // WORKAROUND:
     // These menus are dynamical since local and cloud VMs have different menu contents.
     // Yet .. we have to prepare Machine/Group menus beforehand, they contains shortcuts.
-    if (currentItem())
-    {
-        updateMenuGroup(actionPool()->action(UIActionIndexMN_M_Group)->menu());
-        updateMenuMachine(actionPool()->action(UIActionIndexMN_M_Machine)->menu());
-    }
+    updateMenuGroup(actionPool()->action(UIActionIndexMN_M_Group)->menu());
+    updateMenuMachine(actionPool()->action(UIActionIndexMN_M_Machine)->menu());
 
     updateActionsVisibility();
     updateActionsAppearance();
@@ -2577,6 +2574,11 @@ bool UIVirtualBoxManager::isSingleLocalGroupSelected() const
     return m_pWidget->isSingleLocalGroupSelected();
 }
 
+bool UIVirtualBoxManager::isSingleCloudProviderGroupSelected() const
+{
+    return m_pWidget->isSingleCloudProviderGroupSelected();
+}
+
 bool UIVirtualBoxManager::isSingleCloudProfileGroupSelected() const
 {
     return m_pWidget->isSingleCloudProfileGroupSelected();
@@ -2818,8 +2820,25 @@ QStringList UIVirtualBoxManager::parseShellArguments(const QString &strArguments
 
 void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
 {
-    /* For single local group selected: */
-    if (isSingleLocalGroupSelected())
+    /* For single cloud provider/profile: */
+    if (   isSingleCloudProviderGroupSelected()
+        || isSingleCloudProfileGroupSelected())
+    {
+        /* Populate Group-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
+    }
+    /* For other cases, like local group or no group at all: */
+    else
     {
         /* Populate Group-menu: */
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
@@ -2846,31 +2865,36 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
     }
-    else
-    {
-        /* Populate Group-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
-    }
 }
 
 void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
 {
     /* Get first selected item: */
     UIVirtualMachineItem *pItem = currentItem();
-    AssertPtrReturnVoid(pItem);
 
-    /* For local machine: */
-    if (pItem->itemType() == UIVirtualMachineItemType_Local)
+    /* For cloud machine(s): */
+    if (   pItem
+        && (   pItem->itemType() == UIVirtualMachineItemType_CloudFake
+            || pItem->itemType() == UIVirtualMachineItemType_CloudReal))
+    {
+        /* Populate Machine-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
+    }
+    /* For other cases, like local machine(s) or no machine at all: */
+    else
     {
         /* Populate Machine-menu: */
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
@@ -2896,24 +2920,6 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut));
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
-    }
-    else
-    {
-        /* Populate Machine-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
-        pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
