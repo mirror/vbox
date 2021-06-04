@@ -104,10 +104,15 @@ typedef struct DRVHSTAUDALSA
     /** Error count for not flooding the release log.
      *  UINT32_MAX for unlimited logging. */
     uint32_t            cLogErrors;
+
+    /** Critical section protecting the default device strings. */
+    RTCRITSECT          CritSect;
     /** Default input device name.   */
     char                szDefaultIn[256];
     /** Default output device name. */
     char                szDefaultOut[256];
+    /** Upwards notification interface. */
+    PPDMIHOSTAUDIOPORT  pIHostAudioPort;
 } DRVHSTAUDALSA;
 /** Pointer to the instance data of an ALSA host audio driver. */
 typedef DRVHSTAUDALSA *PDRVHSTAUDALSA;
@@ -343,6 +348,77 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_GetDevices(PPDMIHOSTAUDIO pInterface, P
         rc = rc2;
     }
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetDevice}
+ */
+static DECLCALLBACK(int) drvHstAudAlsaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir, const char *pszId)
+{
+    PDRVHSTAUDALSA pThis = RT_FROM_MEMBER(pInterface, DRVHSTAUDALSA, IHostAudio);
+
+    /*
+     * Validate and normalize input.
+     */
+    AssertReturn(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszId, VERR_INVALID_POINTER);
+    if (!pszId || !*pszId)
+        pszId = "default";
+    else
+    {
+        size_t cch = strlen(pszId);
+        AssertReturn(cch < sizeof(pThis->szDefaultIn), VERR_INVALID_NAME);
+    }
+    LogFunc(("enmDir=%d pszId=%s\n", enmDir, pszId));
+
+    /*
+     * Update input.
+     */
+    if (enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        int rc = RTCritSectEnter(&pThis->CritSect);
+        AssertRCReturn(rc, rc);
+        if (strcmp(pThis->szDefaultIn, pszId) == 0)
+            RTCritSectLeave(&pThis->CritSect);
+        else
+        {
+            LogRel(("ALSA: Default input device: '%s' -> '%s'\n", pThis->szDefaultIn, pszId));
+            RTStrCopy(pThis->szDefaultIn, sizeof(pThis->szDefaultIn), pszId);
+            PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
+            RTCritSectLeave(&pThis->CritSect);
+            if (pIHostAudioPort)
+            {
+                LogFlowFunc(("Notifying parent driver about input default device change...\n"));
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_IN, NULL /*pvUser*/);
+            }
+        }
+    }
+
+    /*
+     * Update output.
+     */
+    if (enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        int rc = RTCritSectEnter(&pThis->CritSect);
+        AssertRCReturn(rc, rc);
+        if (strcmp(pThis->szDefaultOut, pszId) == 0)
+            RTCritSectLeave(&pThis->CritSect);
+        else
+        {
+            LogRel(("ALSA: Default output device: '%s' -> '%s'\n", pThis->szDefaultOut, pszId));
+            RTStrCopy(pThis->szDefaultOut, sizeof(pThis->szDefaultOut), pszId);
+            PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
+            RTCritSectLeave(&pThis->CritSect);
+            if (pIHostAudioPort)
+            {
+                LogFlowFunc(("Notifying parent driver about output default device change...\n"));
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_OUT, NULL /*pvUser*/);
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1368,6 +1444,10 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamCapture(PPDMIHOSTAUDIO pInterface
 }
 
 
+/*********************************************************************************************************************************
+*   PDMIBASE                                                                                                                     *
+*********************************************************************************************************************************/
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -1377,15 +1457,39 @@ static DECLCALLBACK(void *) drvHstAudAlsaQueryInterface(PPDMIBASE pInterface, co
     PDRVHSTAUDALSA pThis   = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDALSA);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
-
     return NULL;
 }
 
 
+/*********************************************************************************************************************************
+*   PDMDRVREG                                                                                                                    *
+*********************************************************************************************************************************/
+
 /**
- * Construct a DirectSound Audio driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @interface_method_impl{PDMDRVREG::pfnDestruct,
+ * Destructs an ALSA host audio driver instance.}
+ */
+static DECLCALLBACK(void) drvHstAudAlsaDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVHSTAUDALSA pThis = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDALSA);
+    LogFlowFuncEnter();
+
+    if (RTCritSectIsInitialized(&pThis->CritSect))
+    {
+        RTCritSectEnter(&pThis->CritSect);
+        pThis->pIHostAudioPort = NULL;
+        RTCritSectLeave(&pThis->CritSect);
+        RTCritSectDelete(&pThis->CritSect);
+    }
+
+    LogFlowFuncLeave();
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG::pfnConstruct,
+ * Construct an ALSA host audio driver instance.}
  */
 static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
@@ -1398,12 +1502,14 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Init the static parts.
      */
     pThis->pDrvIns                   = pDrvIns;
+    int rc = RTCritSectInit(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHstAudAlsaQueryInterface;
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHstAudAlsaHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = drvHstAudAlsaHA_GetDevices;
-    pThis->IHostAudio.pfnSetDevice                  = NULL;
+    pThis->IHostAudio.pfnSetDevice                  = drvHstAudAlsaHA_SetDevice;
     pThis->IHostAudio.pfnGetStatus                  = drvHstAudAlsaHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
@@ -1422,11 +1528,11 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Read configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "DefaultOutput|DefaultInput", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "OutputDeviceID|InputDeviceID", "");
 
-    int rc = CFGMR3QueryStringDef(pCfg, "DefaultInput", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
+    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryStringDef(pCfg, "DefaultOutput", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
+    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
     AssertRCReturn(rc, rc);
 
     /*
@@ -1438,7 +1544,17 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         LogRel(("ALSA: Failed to load the ALSA shared library: %Rrc\n", rc));
         return rc;
     }
+
+    /*
+     * Query the notification interface from the driver/device above us.
+     */
+    pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
+    AssertReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
+
 #ifdef DEBUG
+    /*
+     * Some debug stuff we don't use for anything at all.
+     */
     snd_lib_error_set_handler(drvHstAudAlsaDbgErrorHandler);
 #endif
     return VINF_SUCCESS;
@@ -1471,7 +1587,7 @@ const PDMDRVREG g_DrvHostALSAAudio =
     /* pfnConstruct */
     drvHstAudAlsaConstruct,
     /* pfnDestruct */
-    NULL,
+    drvHstAudAlsaDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
