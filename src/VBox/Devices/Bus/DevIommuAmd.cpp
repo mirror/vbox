@@ -186,9 +186,6 @@
 # define IOMMU_CACHE_UNLOCK(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
 #endif  /* IOMMU_WITH_DTE_CACHE */
 
-/** Gets the page offset mask given the number of bits to shift. */
-#define IOMMU_GET_PAGE_OFF_MASK(a_cShift)           (~(UINT64_C(0xffffffffffffffff) << (a_cShift)))
-
 /** Acquires the PDM lock (returns a_rcBusy on contention). */
 #define IOMMU_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy)  \
     do { \
@@ -812,8 +809,8 @@ static bool iommuAmdLookupIsAccessContig(PCIOPAGELOOKUP pPageLookupPrev, PCIOPAG
 #ifdef RT_STRICT
     /* Paranoia: Ensure offset bits are 0. */
     {
-        uint64_t const fOffMaskPrev = IOMMU_GET_PAGE_OFF_MASK(pPageLookupPrev->cShift);
-        uint64_t const fOffMask     = IOMMU_GET_PAGE_OFF_MASK(pPageLookup->cShift);
+        uint64_t const fOffMaskPrev = X86_GET_PAGE_OFFSET_MASK(pPageLookupPrev->cShift);
+        uint64_t const fOffMask     = X86_GET_PAGE_OFFSET_MASK(pPageLookup->cShift);
         Assert(!(GCPhysPrev & fOffMaskPrev));
         Assert(!(GCPhys     & fOffMask));
     }
@@ -3886,7 +3883,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbIova)
             {
-                uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(PageLookup.cShift);
+                uint64_t const offMask = X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift);
                 uint64_t const offSpa  = uIova & offMask;
                 Assert(!(PageLookup.GCPhysSpa & offMask));
                 GCPhysSpa = PageLookup.GCPhysSpa | offSpa;
