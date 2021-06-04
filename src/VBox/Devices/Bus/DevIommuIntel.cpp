@@ -2077,7 +2077,7 @@ static int dmarDrUpdateIoPageOut(PPDMDEVINS pDevIns, RTGCPHYS GCPhysBase, uint8_
     {
         pIoPageOut->GCPhysBase = GCPhysBase;
         pIoPageOut->cShift     = cShift;
-        pIoPageOut->fPerm       = fPerm;
+        pIoPageOut->fPerm      = fPerm;
         return VINF_SUCCESS;
     }
 
@@ -2300,7 +2300,7 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTrans
         rc = pfnTranslate(pDevIns, &MemReqIn, &pMemReqRemap->Aux, &IoPage);
         if (RT_SUCCESS(rc))
         {
-            Assert(IoPage.cShift >= X86_PAGE_4K_SHIFT);
+            Assert(IoPage.cShift >= X86_PAGE_4K_SHIFT && IoPage.cShift <= X86_PAGE_1G_SHIFT);
 
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbAddrIn)
@@ -2643,8 +2643,8 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
             }
         }
 
-        *pcbContiguous = MemReqRemap.Out.AddrRange.cb;
         *pGCPhysSpa    = MemReqRemap.Out.AddrRange.uAddr;
+        *pcbContiguous = MemReqRemap.Out.AddrRange.cb;
         return rc;
     }
 
