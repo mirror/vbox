@@ -912,16 +912,16 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
         {
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
             if (pDev->pszId)
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s' (ID '%s'):\n", pDev->szName, pDev->pszId);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s' (ID '%s'):\n", pDev->pszName, pDev->pszId);
             else
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s':\n", pDev->szName);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum: Device '%s':\n", pDev->pszName);
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Usage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage));
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Flags           = %s\n",   PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags));
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Input channels  = %RU8\n", pDev->cMaxInputChannels);
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Output channels = %RU8\n", pDev->cMaxOutputChannels);
 
             if (   pszDev
-                && !RTStrCmp(pDev->szName, pszDev))
+                && !RTStrCmp(pDev->pszName, pszDev))
             {
                 *ppDev = pDev;
             }
@@ -952,7 +952,7 @@ static int audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev)
 {
     int rc = VINF_SUCCESS;
 
-    RTTestSubF(g_hTest, "Opening audio device '%s' ...", pDev->szName);
+    RTTestSubF(g_hTest, "Opening audio device '%s' ...", pDev->pszName);
 
     /** @todo Detect + open device here. */
 
@@ -971,7 +971,7 @@ static int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
 {
     int rc = VINF_SUCCESS;
 
-    RTTestSubF(g_hTest, "Closing audio device '%s' ...", pDev->szName);
+    RTTestSubF(g_hTest, "Closing audio device '%s' ...", pDev->pszName);
 
     /** @todo Close device here. */
 
@@ -1253,7 +1253,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%u: %RU32 iterations\n", uSeq, TstParms.cIterations);
 
-    if (strlen(TstParms.Dev.szName)) /** @todo Refine this check. */
+    if (TstParms.Dev.pszName && strlen(TstParms.Dev.pszName)) /** @todo Refine this check. Use pszId for starters! */
         rc = audioTestDeviceOpen(&TstParms.Dev);
 
     AssertPtr(pTstDesc->pfnExec);
@@ -1770,7 +1770,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
                 PPDMAUDIOHOSTDEV pHostDev;
                 RTListForEach(&Enum.LstDevices, pHostDev, PDMAUDIOHOSTDEV, ListEntry)
                 {
-                    RTPrintf("\nDevice \"%s\":\n", pHostDev->szName);
+                    RTPrintf("\nDevice \"%s\":\n", pHostDev->pszName);
 
                     char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
                     if (pHostDev->cMaxInputChannels && !pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_IN)
