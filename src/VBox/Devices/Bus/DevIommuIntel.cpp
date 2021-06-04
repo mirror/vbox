@@ -2253,9 +2253,9 @@ static bool dmarIsIoPageAccessContig(PCDMARIOPAGE pIoPagePrev, PCDMARIOPAGE pIoP
     /* Paranoia: Permissions for pages of a DMA memory request must be identical. */
     Assert(pIoPagePrev->fPerm  == pIoPage->fPerm);
 
-    size_t const   cbPrev      = RT_BIT_64(pIoPagePrev->cShift);
-    RTGCPHYS const GCPhysPrev  = pIoPagePrev->GCPhysBase;
-    RTGCPHYS const GCPhys      = pIoPage->GCPhysBase;
+    size_t const   cbPrev     = RT_BIT_64(pIoPagePrev->cShift);
+    RTGCPHYS const GCPhysPrev = pIoPagePrev->GCPhysBase;
+    RTGCPHYS const GCPhys     = pIoPage->GCPhysBase;
 #ifdef RT_STRICT
     /* Paranoia: Ensure offset bits are 0. */
     {
@@ -2281,10 +2281,10 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTrans
 {
     RTGCPHYS       GCPhysAddr  = NIL_RTGCPHYS;
     DMARMEMREQIN   MemReqIn    = pMemReqRemap->In;
-    uint64_t const uAddrIn     = pMemReqRemap->In.AddrRange.uAddr;
-    size_t const   cbAddrIn    = pMemReqRemap->In.AddrRange.cb;
-    uint64_t       uAddrInBase = pMemReqRemap->In.AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
-    uint64_t       offAddrIn   = pMemReqRemap->In.AddrRange.uAddr & X86_PAGE_4K_OFFSET_MASK;
+    uint64_t const uAddrIn     = MemReqIn.AddrRange.uAddr;
+    size_t const   cbAddrIn    = MemReqIn.AddrRange.cb;
+    uint64_t       uAddrInBase = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
+    uint64_t       offAddrIn   = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_OFFSET_MASK;
     size_t         cbRemaining = cbAddrIn;
 
     int rc;
@@ -2305,8 +2305,8 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTrans
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbAddrIn)
             {
-                uint64_t const fIoPageMask = X86_GET_PAGE_OFFSET_MASK(IoPage.cShift);
-                uint64_t const offAddrOut  = uAddrIn & fIoPageMask;
+                uint64_t const fOffMask   = X86_GET_PAGE_OFFSET_MASK(IoPage.cShift);
+                uint64_t const offAddrOut = uAddrIn & fOffMask;
                 Assert(!(IoPage.GCPhysBase & fIoPageMask));
                 GCPhysAddr = IoPage.GCPhysBase | offAddrOut;
             }
