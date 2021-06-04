@@ -117,11 +117,6 @@ typedef struct DRVHSTAUDPADEVENTRY
 {
     /** The part we share with others. */
     PDMAUDIOHOSTDEV         Core;
-    /** The pulse audio name.
-     * @note Kind of must use fixed size field here as that allows
-     *       PDMAudioHostDevDup() and PDMAudioHostEnumCopy() to work. */
-    RT_FLEXIBLE_ARRAY_EXTENSION
-    char                    szPulseName[RT_FLEXIBLE_ARRAY];
 } DRVHSTAUDPADEVENTRY;
 /** Pointer to a pulse audio device enumeration entry. */
 typedef DRVHSTAUDPADEVENTRY *PDRVHSTAUDPADEVENTRY;
@@ -400,17 +395,14 @@ static int drvHstAudPaWaitFor(PDRVHSTAUDPA pThis, pa_operation *pOP)
  * result.
  */
 static void drvHstAudPaEnumAddDevice(PDRVHSTAUDPAENUMCBCTX pCbCtx, PDMAUDIODIR enmDir, const char *pszName,
-                                        const char *pszDesc, uint8_t cChannelsInput, uint8_t cChannelsOutput,
-                                        const char *pszDefaultName)
+                                     const char *pszDesc, uint8_t cChannelsInput, uint8_t cChannelsOutput,
+                                     const char *pszDefaultName)
 {
-    size_t const         cchName = strlen(pszName);
-    PDRVHSTAUDPADEVENTRY pDev    = (PDRVHSTAUDPADEVENTRY)PDMAudioHostDevAlloc(RT_UOFFSETOF(DRVHSTAUDPADEVENTRY, szPulseName)
-                                                                            + RT_ALIGN_Z(cchName + 1, 16));
+    size_t const         cbId    = strlen(pszName) + 1;
+    size_t const         cbName  = pszDesc && *pszDesc ? strlen(pszDesc) + 1 : cbId;
+    PDRVHSTAUDPADEVENTRY pDev    = (PDRVHSTAUDPADEVENTRY)PDMAudioHostDevAlloc(sizeof(*pDev), cbName, cbId);
     if (pDev != NULL)
     {
-        memcpy(pDev->szPulseName, pszName, cchName);
-        pDev->szPulseName[cchName] = '\0';
-
         pDev->Core.enmUsage           = enmDir;
         pDev->Core.enmType            = RTStrIStr(pszDesc, "built-in") != NULL
                                       ? PDMAUDIODEVICETYPE_BUILTIN : PDMAUDIODEVICETYPE_UNKNOWN;
@@ -420,8 +412,12 @@ static void drvHstAudPaEnumAddDevice(PDRVHSTAUDPAENUMCBCTX pCbCtx, PDMAUDIODIR e
             pDev->Core.fFlags         = enmDir == PDMAUDIODIR_IN ? PDMAUDIOHOSTDEV_F_DEFAULT_IN : PDMAUDIOHOSTDEV_F_DEFAULT_OUT;
         pDev->Core.cMaxInputChannels  = cChannelsInput;
         pDev->Core.cMaxOutputChannels = cChannelsOutput;
-        RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName),
-                  pszDesc && *pszDesc ? pszDesc : pszName);
+
+        int rc = RTStrCopy(pDev->Core.pszId, cbId, pszName);
+        AssertRC(rc);
+
+        rc = RTStrCopy(pDev->Core.pszName, cbName, pszDesc && *pszDesc ? pszDesc : pszName);
+        AssertRC(rc);
 
         PDMAudioHostEnumAppend(pCbCtx->pDeviceEnum, &pDev->Core);
     }
@@ -455,7 +451,7 @@ static void drvHstAudPaEnumSourceCallback(pa_context *pCtx, const pa_source_info
                  pInfo->index, pInfo->sample_spec.rate, pInfo->sample_spec.channels, pInfo->sample_spec.format,
                  pInfo->name, pInfo->description, pInfo->driver, pInfo->flags));
         drvHstAudPaEnumAddDevice(pCbCtx, PDMAUDIODIR_IN, pInfo->name, pInfo->description,
-                                    pInfo->sample_spec.channels, 0 /*cChannelsOutput*/, pCbCtx->pszDefaultSource);
+                                 pInfo->sample_spec.channels, 0 /*cChannelsOutput*/, pCbCtx->pszDefaultSource);
     }
     else if (eol == 1 && !pInfo && pCbCtx->rcEnum == VERR_AUDIO_ENUMERATION_FAILED)
         pCbCtx->rcEnum = VINF_SUCCESS;

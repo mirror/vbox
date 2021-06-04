@@ -290,6 +290,8 @@ typedef enum PDMAUDIODIR
 #define PDMAUDIOHOSTDEV_F_LOCKED            RT_BIT_32(5)
 /** The device is present but not in an alive state (dead). */
 #define PDMAUDIOHOSTDEV_F_DEAD              RT_BIT_32(6)
+/** Set if the PDMAUDIOHOSTDEV::pszName is allocated. */
+#define PDMAUDIOHOSTDEV_F_NAME_ALLOC        RT_BIT_32(29)
 /** Set if the PDMAUDIOHOSTDEV::pszId is allocated. */
 #define PDMAUDIOHOSTDEV_F_ID_ALLOC          RT_BIT_32(30)
 /** Set if the extra backend specific data cannot be duplicated. */
@@ -341,15 +343,15 @@ typedef struct PDMAUDIOHOSTDEV
     uint8_t             cMaxInputChannels;
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
-    uint8_t             abAlignment[ARCH_BITS == 32 ? 2 + 12 : 2];
+    uint8_t             abAlignment[ARCH_BITS == 32 ? 2 + 8 : 2 + 8];
     /** Backend specific device identifier, can be NULL, used to select device.
      * This can either point into some non-public part of this structure or to a
      * RTStrAlloc allocation.  PDMAUDIOHOSTDEV_F_ID_ALLOC is set in the latter
      * case.
      * @sa PDMIHOSTAUDIO::pfnSetDevice */
     char               *pszId;
-    /** Friendly name of the device, if any. Could be truncated. */
-    char                szName[64];
+    /** The friendly device name. */
+    char               *pszName;
 } PDMAUDIOHOSTDEV;
 AssertCompileSizeAlignment(PDMAUDIOHOSTDEV, 16);
 /** Pointer to audio device info (enumeration result). */
@@ -358,7 +360,7 @@ typedef PDMAUDIOHOSTDEV *PPDMAUDIOHOSTDEV;
 typedef PDMAUDIOHOSTDEV const *PCPDMAUDIOHOSTDEV;
 
 /** Magic value for PDMAUDIOHOSTDEV.  */
-#define PDMAUDIOHOSTDEV_MAGIC       PDM_VERSION_MAKE(0xa0d0, 2, 0)
+#define PDMAUDIOHOSTDEV_MAGIC       PDM_VERSION_MAKE(0xa0d0, 3, 0)
 
 
 /**
@@ -1386,7 +1388,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "147dedd7-cac1-469b-b545-335dbe90abf6"
+#define PDMIHOSTAUDIO_IID                           "2d57627f-6f47-4669-a2fa-93a5f1cb6e51"
 
 
 /** Pointer to a audio notify from host interface. */

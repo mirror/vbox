@@ -243,7 +243,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_GetDevices(PPDMIHOSTAUDIO pInterface, P
             char * const pszInOutId = snd_device_name_get_hint(pszHint, "IOID");
             char * const pszDesc    = snd_device_name_get_hint(pszHint, "DESC");
 
-            if (pszDev && RTStrICmp(pszDev, "null") != 0)
+            if (pszDev && RTStrICmpAscii(pszDev, "null") != 0)
             {
                 /* Detect and log presence of pulse audio plugin. */
                 if (RTStrIStr("pulse", pszDev) != NULL)
@@ -251,40 +251,67 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_GetDevices(PPDMIHOSTAUDIO pInterface, P
 
                 /*
                  * Add an entry to the enumeration result.
+                 * We engage in some trickery here to deal with device names that
+                 * are more than 63 characters long.
                  */
-                PPDMAUDIOHOSTDEV pDev = PDMAudioHostDevAlloc(sizeof(*pDev));
+                size_t const     cbId   = pszDev ? strlen(pszDev) + 1 : 1;
+                size_t const     cbName = pszDesc ? strlen(pszDesc) + 2 + 1 : cbId;
+                PPDMAUDIOHOSTDEV pDev   = PDMAudioHostDevAlloc(sizeof(*pDev), cbName, cbId);
                 if (pDev)
                 {
-                    pDev->fFlags  = PDMAUDIOHOSTDEV_F_NONE;
-                    pDev->enmType = PDMAUDIODEVICETYPE_UNKNOWN;
+                    RTStrCopy(pDev->pszId, cbId, pszDev);
+                    if (pDev->pszId)
+                    {
+                        pDev->fFlags  = PDMAUDIOHOSTDEV_F_NONE;
+                        pDev->enmType = PDMAUDIODEVICETYPE_UNKNOWN;
 
-                    if (pszInOutId == NULL)
-                    {
-                        pDev->enmUsage           = PDMAUDIODIR_DUPLEX;
-                        pDev->cMaxInputChannels  = 2;
-                        pDev->cMaxOutputChannels = 2;
-                    }
-                    else if (RTStrICmp(pszInOutId, "Input") == 0)
-                    {
-                        pDev->enmUsage           = PDMAUDIODIR_IN;
-                        pDev->cMaxInputChannels  = 2;
-                        pDev->cMaxOutputChannels = 0;
+                        if (pszInOutId == NULL)
+                        {
+                            pDev->enmUsage           = PDMAUDIODIR_DUPLEX;
+                            pDev->cMaxInputChannels  = 2;
+                            pDev->cMaxOutputChannels = 2;
+                        }
+                        else if (RTStrICmpAscii(pszInOutId, "Input") == 0)
+                        {
+                            pDev->enmUsage           = PDMAUDIODIR_IN;
+                            pDev->cMaxInputChannels  = 2;
+                            pDev->cMaxOutputChannels = 0;
+                        }
+                        else
+                        {
+                            AssertMsg(RTStrICmpAscii(pszInOutId, "Output") == 0, ("%s (%s)\n", pszInOutId, pszHint));
+                            pDev->enmUsage           = PDMAUDIODIR_OUT;
+                            pDev->cMaxInputChannels  = 0;
+                            pDev->cMaxOutputChannels = 2;
+                        }
+
+                        if (pszDesc && *pszDesc)
+                        {
+                            char *pszDesc2 = strchr(pszDesc, '\n');
+                            if (!pszDesc2)
+                                RTStrCopy(pDev->pszName, cbName, pszDesc);
+                            else
+                            {
+                                *pszDesc2++ = '\0';
+                                char *psz;
+                                while ((psz = strchr(pszDesc2, '\n')) != NULL)
+                                    *psz = ' ';
+                                RTStrPrintf(pDev->pszName, cbName, "%s (%s)", pszDesc2, pszDesc);
+                            }
+                        }
+                        else
+                            RTStrCopy(pDev->pszName, cbName, pszDev);
+
+                        PDMAudioHostEnumAppend(pDeviceEnum, pDev);
+
+                        LogRel2(("ALSA: Device #%u: '%s' enmDir=%s: %s\n", iHint, pszDev,
+                                 PDMAudioDirGetName(pDev->enmUsage), pszDesc));
                     }
                     else
                     {
-                        AssertMsg(RTStrICmp(pszInOutId, "Output") == 0, ("%s (%s)\n", pszInOutId, pszHint));
-                        pDev->enmUsage = PDMAUDIODIR_OUT;
-                        pDev->cMaxInputChannels  = 0;
-                        pDev->cMaxOutputChannels = 2;
+                        PDMAudioHostDevFree(pDev);
+                        rc = VERR_NO_STR_MEMORY;
                     }
-
-                    int rc2 = RTStrCopy(pDev->szName, sizeof(pDev->szName), pszDev);
-                    AssertRC(rc2);
-
-                    PDMAudioHostEnumAppend(pDeviceEnum, pDev);
-
-                    LogRel2(("ALSA: Device #%u: '%s' enmDir=%s: %s\n", iHint, pszDev,
-                             PDMAudioDirGetName(pDev->enmUsage), pszDesc));
                 }
                 else
                     rc = VERR_NO_MEMORY;

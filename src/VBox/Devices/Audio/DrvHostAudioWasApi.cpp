@@ -1524,10 +1524,12 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                     /*
                      * Create a enumeration entry for it.
                      */
-                    size_t const cbDev = RT_ALIGN_Z(  RT_OFFSETOF(DRVHOSTAUDIOWASDEV, wszDevId)
-                                                    + (cwcDevId + 1) * sizeof(RTUTF16),
-                                                    64);
-                    PDRVHOSTAUDIOWASDEV pDev = (PDRVHOSTAUDIOWASDEV)PDMAudioHostDevAlloc(cbDev);
+                    size_t const cbId   = RTUtf16CalcUtf8Len(pwszDevId) + 1;
+                    size_t const cbName = RTUtf16CalcUtf8Len(VarName.pwszVal) + 1;
+                    size_t const cbDev  = RT_ALIGN_Z(  RT_OFFSETOF(DRVHOSTAUDIOWASDEV, wszDevId)
+                                                     + (cwcDevId + 1) * sizeof(RTUTF16),
+                                                     64);
+                    PDRVHOSTAUDIOWASDEV pDev = (PDRVHOSTAUDIOWASDEV)PDMAudioHostDevAlloc(cbDev, cbName, cbId);
                     if (pDev)
                     {
                         pDev->Core.enmType    = PDMAUDIODEVICETYPE_BUILTIN;
@@ -1542,19 +1544,14 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                         memcpy(pDev->wszDevId, pwszDevId, cwcDevId * sizeof(RTUTF16));
                         pDev->wszDevId[cwcDevId] = '\0';
 
-                        char *pszName;
-                        rc = RTUtf16ToUtf8(VarName.pwszVal, &pszName);
+                        Assert(pDev->Core.pszName);
+                        rc = RTUtf16ToUtf8Ex(VarName.pwszVal, RTSTR_MAX, &pDev->Core.pszName, cbName, NULL);
                         if (RT_SUCCESS(rc))
                         {
-                            RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
-                            RTStrFree(pszName);
-
-                            rc = RTUtf16ToUtf8(pDev->wszDevId, &pDev->Core.pszId);
+                            Assert(pDev->Core.pszId);
+                            rc = RTUtf16ToUtf8Ex(pDev->wszDevId, RTSTR_MAX, &pDev->Core.pszId, cbId, NULL);
                             if (RT_SUCCESS(rc))
-                            {
-                                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_ID_ALLOC;
                                 PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
-                            }
                             else
                                 PDMAudioHostDevFree(&pDev->Core);
                         }

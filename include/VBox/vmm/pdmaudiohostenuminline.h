@@ -61,21 +61,29 @@
  *                  size of PDMAUDIOHOSTDEV.  The idea is that the caller extends
  *                  the PDMAUDIOHOSTDEV structure and appends additional data
  *                  after it in its private structure.
+ * @param   cbName  The number of bytes to allocate for the name field
+ *                  (including the terminator). Pass zero if RTStrAlloc and
+ *                  friends will be used.
+ * @param   cbId    The number of bytes to allocate for the ID field. Pass
+ *                  zero if RTStrAlloc and friends will be used.
  */
-DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevAlloc(size_t cb)
+DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevAlloc(size_t cb, size_t cbName, size_t cbId)
 {
     AssertReturn(cb >= sizeof(PDMAUDIOHOSTDEV), NULL);
     AssertReturn(cb < _4M, NULL);
+    AssertReturn(cbName < _4K, NULL);
+    AssertReturn(cbId < _16K, NULL);
 
-    PPDMAUDIOHOSTDEV pDev = (PPDMAUDIOHOSTDEV)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
+    PPDMAUDIOHOSTDEV pDev = (PPDMAUDIOHOSTDEV)RTMemAllocZ(RT_ALIGN_Z(cb + cbName + cbId, 64));
     if (pDev)
     {
-        pDev->uMagic = PDMAUDIOHOSTDEV_MAGIC;
-        pDev->cbSelf = (uint32_t)cb;
+        pDev->uMagic  = PDMAUDIOHOSTDEV_MAGIC;
+        pDev->cbSelf  = (uint32_t)cb;
         RTListInit(&pDev->ListEntry);
-
-        //pDev->cMaxInputChannels  = 0;
-        //pDev->cMaxOutputChannels = 0;
+        if (cbName)
+            pDev->pszName = (char *)pDev + cb;
+        if (cbId)
+            pDev->pszId   = (char *)pDev + cb + cbName;
     }
     return pDev;
 }
@@ -92,6 +100,12 @@ DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
         Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
         pDev->uMagic = ~PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = 0;
+
+        if (pDev->fFlags & PDMAUDIOHOSTDEV_F_NAME_ALLOC)
+        {
+            RTStrFree(pDev->pszName);
+            pDev->pszName = NULL;
+        }
 
         if (pDev->fFlags & PDMAUDIOHOSTDEV_F_ID_ALLOC)
         {
@@ -119,17 +133,39 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PCPDMAUDIOHOSTDEV pDev, bool fOn
     uint32_t cbToDup = fOnlyCoreData ? sizeof(PDMAUDIOHOSTDEV) : pDev->cbSelf;
     AssertReturn(cbToDup >= sizeof(*pDev), NULL);
 
-    PPDMAUDIOHOSTDEV pDevDup = PDMAudioHostDevAlloc(cbToDup);
+    PPDMAUDIOHOSTDEV pDevDup = PDMAudioHostDevAlloc(cbToDup, 0, 0);
     if (pDevDup)
     {
         memcpy(pDevDup, pDev, cbToDup);
         RTListInit(&pDevDup->ListEntry);
         pDevDup->cbSelf = cbToDup;
+
+        if (pDev->pszName)
+        {
+            uintptr_t off;
+            if (   (pDevDup->fFlags & PDMAUDIOHOSTDEV_F_NAME_ALLOC)
+                || (off = (uintptr_t)pDev->pszName - (uintptr_t)pDev) >= pDevDup->cbSelf)
+            {
+                pDevDup->fFlags |= PDMAUDIOHOSTDEV_F_NAME_ALLOC;
+                pDevDup->pszName = RTStrDup(pDev->pszName);
+                AssertReturnStmt(pDevDup->pszName, PDMAudioHostDevFree(pDevDup), NULL);
+            }
+            else
+                pDevDup->pszName = (char *)pDevDup + off;
+        }
+
         if (pDev->pszId)
         {
-            pDevDup->fFlags |= PDMAUDIOHOSTDEV_F_ID_ALLOC;
-            pDevDup->pszId   = RTStrDup(pDev->pszId);
-            AssertReturnStmt(pDevDup->pszId, RTMemFree(pDevDup), NULL);
+            uintptr_t off;
+            if (   (pDevDup->fFlags & PDMAUDIOHOSTDEV_F_ID_ALLOC)
+                || (off = (uintptr_t)pDev->pszId - (uintptr_t)pDev) >= pDevDup->cbSelf)
+            {
+                pDevDup->fFlags |= PDMAUDIOHOSTDEV_F_ID_ALLOC;
+                pDevDup->pszId   = RTStrDup(pDev->pszId);
+                AssertReturnStmt(pDevDup->pszId, PDMAudioHostDevFree(pDevDup), NULL);
+            }
+            else
+                pDevDup->pszId = (char *)pDevDup + off;
         }
     }
 
@@ -333,7 +369,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
 
 /** The max string length for all PDMAUDIOHOSTDEV_F_XXX.
  * @sa PDMAudioHostDevFlagsToString */
-#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN sizeof("DEFAULT_OUT DEFAULT_IN HOTPLUG BUGGY IGNORE LOCKED DEAD ID_ALLOC NO_DUP ")
+#define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN sizeof("DEFAULT_OUT DEFAULT_IN HOTPLUG BUGGY IGNORE LOCKED DEAD NAME_ALLOC ID_ALLOC NO_DUP ")
 
 /**
  * Converts an audio device flags to a string.
@@ -355,7 +391,8 @@ DECLINLINE(const char *) PDMAudioHostDevFlagsToString(char pszDst[PDMAUDIOHOSTDE
         { RT_STR_TUPLE("IGNORE "),      PDMAUDIOHOSTDEV_F_IGNORE  },
         { RT_STR_TUPLE("LOCKED "),      PDMAUDIOHOSTDEV_F_LOCKED  },
         { RT_STR_TUPLE("DEAD "),        PDMAUDIOHOSTDEV_F_DEAD    },
-        { RT_STR_TUPLE("ID_ALLOC "),    PDMAUDIOHOSTDEV_F_ID_ALLOC  },
+        { RT_STR_TUPLE("NAME_ALLOC "),  PDMAUDIOHOSTDEV_F_NAME_ALLOC },
+        { RT_STR_TUPLE("ID_ALLOC "),    PDMAUDIOHOSTDEV_F_ID_ALLOC },
         { RT_STR_TUPLE("NO_DUP "),      PDMAUDIOHOSTDEV_F_NO_DUP  },
     };
     size_t offDst = 0;
@@ -397,7 +434,8 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
         RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
         {
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
-            LogFunc(("Device '%s':\n", pDev->szName));
+            LogFunc(("Device '%s':\n", pDev->pszName));
+            LogFunc(("  ID              = %s\n",             pDev->pszId ? pDev->pszId : "<none>"));
             LogFunc(("  Usage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
             LogFunc(("  Flags           = %s\n",             PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags)));
             LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));

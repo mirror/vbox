@@ -800,7 +800,8 @@ static BOOL CALLBACK drvHostDSoundEnumOldStylePlaybackCallback(LPGUID pGUID, LPC
     RT_NOREF(pwszModule); /* Do not care about pwszModule. */
 
     int rc;
-    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
+    size_t const cbName = RTUtf16CalcUtf8Len(pwszDescription) + 1;
+    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV), cbName, 0);
     if (pDev)
     {
         pDev->Core.enmUsage = PDMAUDIODIR_OUT;
@@ -809,13 +810,9 @@ static BOOL CALLBACK drvHostDSoundEnumOldStylePlaybackCallback(LPGUID pGUID, LPC
         if (pGUID == NULL)
             pDev->Core.fFlags = PDMAUDIOHOSTDEV_F_DEFAULT_OUT;
 
-        char *pszName;
-        rc = RTUtf16ToUtf8(pwszDescription, &pszName);
+        rc = RTUtf16ToUtf8Ex(pwszDescription, RTSTR_MAX, &pDev->Core.pszName, cbName, NULL);
         if (RT_SUCCESS(rc))
         {
-            RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
-            RTStrFree(pszName);
-
             if (!pGUID)
                 pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT_OUT;
             else
@@ -868,19 +865,16 @@ static BOOL CALLBACK drvHostDSoundEnumOldStyleCaptureCallback(LPGUID pGUID, LPCW
     RT_NOREF(pwszModule); /* Do not care about pwszModule. */
 
     int rc;
-    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
+    size_t const cbName = RTUtf16CalcUtf8Len(pwszDescription) + 1;
+    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV), cbName, 0);
     if (pDev)
     {
         pDev->Core.enmUsage = PDMAUDIODIR_IN;
         pDev->Core.enmType  = PDMAUDIODEVICETYPE_BUILTIN;
 
-        char *pszName;
-        rc = RTUtf16ToUtf8(pwszDescription, &pszName);
+        rc = RTUtf16ToUtf8Ex(pwszDescription, RTSTR_MAX, &pDev->Core.pszName, cbName, NULL);
         if (RT_SUCCESS(rc))
         {
-            RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
-            RTStrFree(pszName);
-
             if (!pGUID)
                 pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT_IN;
             else
@@ -1051,7 +1045,8 @@ static int drvHostDSoundEnumNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pD
                     /*
                      * Create a enumeration entry for it.
                      */
-                    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
+                    size_t const cbName = RTUtf16CalcUtf8Len(VarName.pwszVal) + 1;
+                    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV), cbName, 0);
                     if (pDev)
                     {
                         pDev->Core.enmUsage = enmType == eRender ? PDMAUDIODIR_OUT : PDMAUDIODIR_IN;
@@ -1072,15 +1067,9 @@ static int drvHostDSoundEnumNewStyleAdd(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pD
                             AssertRC(rc);
                             pDev->Core.pszId = &pDev->szGuid[0];
 
-                            char *pszName;
-                            rc = RTUtf16ToUtf8(VarName.pwszVal, &pszName);
+                            rc = RTUtf16ToUtf8Ex(VarName.pwszVal, RTSTR_MAX, &pDev->Core.pszName, cbName, NULL);
                             if (RT_SUCCESS(rc))
-                            {
-                                RTStrCopy(pDev->Core.szName, sizeof(pDev->Core.szName), pszName);
-                                RTStrFree(pszName);
-
                                 PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
-                            }
                             else
                                 PDMAudioHostDevFree(&pDev->Core);
                         }

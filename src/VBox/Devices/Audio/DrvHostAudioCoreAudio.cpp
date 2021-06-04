@@ -1259,7 +1259,8 @@ static int drvHstAudCaDevicesEnumerateAll(PPDMAUDIOHOSTENUM pDevEnm)
                                        ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
                                        kAudioObjectPropertyElementMaster, "device name", &hStrName, sizeof(hStrName)))
         {
-            drvHstAudCaCFStringToBuf(hStrName, pDevEntry->Core.szName, sizeof(pDevEntry->Core.szName));
+            pDevEntry->Core.pszName = drvHstAudCaCFStringToHeap(hStrName);
+            pDevEntry->Core.fFlags |= PDMAUDIOHOSTDEV_F_NAME_ALLOC;
             CFRelease(hStrName);
         }
 
@@ -1290,9 +1291,18 @@ static int drvHstAudCaDevicesEnumerateAll(PPDMAUDIOHOSTENUM pDevEnm)
                 pDevEntry->Core.fFlags |= PDMAUDIOHOSTDEV_F_LOCKED;
 
         /*
-         * Add the device to the enumeration.
+         * Try make sure we've got a name...  Only add it to the enumeration if we have one.
          */
-        PDMAudioHostEnumAppend(pDevEnm, &pDevEntry->Core);
+        if (!pDevEntry->Core.pszName)
+        {
+            pDevEntry->Core.pszName = pDevEntry->Core.pszId;
+            pDevEntry->Core.fFlags &= ~PDMAUDIOHOSTDEV_F_NAME_ALLOC;
+        }
+
+        if (pDevEntry->Core.pszName)
+            PDMAudioHostEnumAppend(pDevEnm, &pDevEntry->Core);
+        else
+            PDMAudioHostDevFree(&pDevEntry->Core);
     }
 
     RTMemTmpFree(paidDevices);
