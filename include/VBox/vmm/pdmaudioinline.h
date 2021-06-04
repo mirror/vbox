@@ -1011,17 +1011,32 @@ DECLINLINE(bool) PDMAudioPropsIsBufferSilence(PCPDMAUDIOPCMPROPS pProps, void co
  */
 DECLINLINE(bool) PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
 {
+    uintptr_t idxCh;
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
 
     if (pProps1 == pProps2) /* If the pointers match, take a shortcut. */
         return true;
 
-    return pProps1->uHz         == pProps2->uHz
-        && pProps1->cChannelsX  == pProps2->cChannelsX
-        && pProps1->cbSampleX   == pProps2->cbSampleX
-        && pProps1->fSigned     == pProps2->fSigned
-        && pProps1->fSwapEndian == pProps2->fSwapEndian;
+    if (pProps1->uHz != pProps2->uHz)
+        return false;
+    if (pProps1->cChannelsX  != pProps2->cChannelsX)
+        return false;
+    if (pProps1->cbSampleX   != pProps2->cbSampleX)
+        return false;
+    if (pProps1->fSigned     != pProps2->fSigned)
+        return false;
+    if (pProps1->fSwapEndian != pProps2->fSwapEndian)
+        return false;
+    if (pProps1->fRaw        != pProps2->fRaw)
+        return false;
+
+    idxCh = pProps1->cChannelsX;
+    while (idxCh-- > 0)
+        if (pProps1->aidChannels[idxCh] != pProps2->aidChannels[idxCh])
+            return false;
+
+    return true;
 }
 
 /**
