@@ -2307,7 +2307,7 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTrans
             {
                 uint64_t const fOffMask   = X86_GET_PAGE_OFFSET_MASK(IoPage.cShift);
                 uint64_t const offAddrOut = uAddrIn & fOffMask;
-                Assert(!(IoPage.GCPhysBase & fIoPageMask));
+                Assert(!(IoPage.GCPhysBase & fOffMask));
                 GCPhysAddr = IoPage.GCPhysBase | offAddrOut;
             }
             /* Check if addresses translated so far result in a physically contiguous region. */
@@ -3740,9 +3740,9 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_ERS,    fErs)
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_SRS,    0)  /* Supervisor request not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_NWFS,   0)  /* 0 as DT not supported. */
-                          | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /** @todo figure out if EAFS is required? */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_EAFS,   0)  /* 0 as SMPWCS not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_PSS,    0)  /* 0 as PASID not supported. */
-                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* PASID support. */
+                          | RT_BF_MAKE(VTD_BF_ECAP_REG_PASID,  0)  /* PASID not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_DIT,    0)  /* 0 as DT not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_PDS,    0)  /* 0 as DT not supported. */
                           | RT_BF_MAKE(VTD_BF_ECAP_REG_SMTS,   fSmts)
