@@ -1951,6 +1951,17 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
             if (RT_SUCCESS(rc))
             {
                 /*
+                 * Automatically enable the mixer if the wave file and the
+                 * output parameters doesn't match.
+                 */
+                if (   !fWithMixer
+                    && !PDMAudioPropsAreEqual(&WaveFile.Props, &pStream->Cfg.Props))
+                {
+                    RTMsgInfo("Enabling the mixer buffer.\n");
+                    fWithMixer = true;
+                }
+
+                /*
                  * Create a mixer wrapper.  This is just a thin wrapper if fWithMixer
                  * is false, otherwise it's doing mixing, resampling and recoding.
                  */
