@@ -353,7 +353,7 @@ typedef struct DMAR
     /** Host-address width (HAW) base address mask. */
     uint64_t                    fHawBaseMask;
     /** Maximum guest-address width (MGAW) invalid address mask. */
-    uint64_t                    fInvMgawMask;
+    uint64_t                    fMgawInvMask;
     /** Maximum supported paging level (3, 4 or 5). */
     uint8_t                     cMaxPagingLevel;
     /** DMA request valid permissions mask. */
@@ -554,9 +554,9 @@ typedef struct DMARMEMREQAUX
     /** The paging level of the translation. */
     uint8_t             cPagingLevel;
     uint8_t             afPadding[5];
-    /** The first-level page-table pointer (base).  */
+    /** The first-level page-table pointer.  */
     uint64_t            uFlptPtr;
-    /** The second-level page-table pointer (base).  */
+    /** The second-level page-table pointer.  */
     uint64_t            uSlptPtr;
 } DMARMEMREQAUX;
 /** Pointer to a DMA memory request output. */
@@ -581,9 +581,9 @@ typedef DMARMEMREQREMAP *PDMARMEMREQREMAP;
 /** Pointer to a const DMA remap info. */
 typedef DMARMEMREQREMAP const *PCDMARMEMREQREMAP;
 
-typedef DECLCALLBACKTYPE(int, FNDMAADDRTRANSLATE,(PPDMDEVINS pDevIns, PCDMARMEMREQIN pMemReqIn, PCDMARMEMREQAUX pMemReqAux,
-                                                  PDMARIOPAGE pIoPageOut));
-typedef FNDMAADDRTRANSLATE *PFNDMAADDRTRANSLATE;
+typedef DECLCALLBACKTYPE(int, FNDMADDRLOOKUP,(PPDMDEVINS pDevIns, PCDMARMEMREQIN pMemReqIn, PCDMARMEMREQAUX pMemReqAux,
+                                              PDMARIOPAGE pIoPageOut));
+typedef FNDMADDRLOOKUP *PFNDMADDRLOOKUP;
 
 
 /*********************************************************************************************************************************
@@ -2092,6 +2092,9 @@ static int dmarDrUpdateIoPageOut(PPDMDEVINS pDevIns, RTGCPHYS GCPhysBase, uint8_
 /**
  * Performs second level translation.
  *
+ * This is a DMA address lookup callback function which performs the translation
+ * (and access control) as part of the lookup.
+ *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   pMemReqIn   The DMA memory request input.
@@ -2121,8 +2124,8 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
     AssertCompile(RT_ELEMENTS(s_auPtEntityRsvd) == 5);
 
     /* Second-level translations restricts input address to an implementation-specific MGAW. */
-    uint64_t const uDmaAddr = pMemReqIn->AddrRange.uAddr;
-    if (!(uDmaAddr & pThis->fInvMgawMask))
+    uint64_t const uAddrIn = pMemReqIn->AddrRange.uAddr;
+    if (!(uAddrIn & pThis->fMgawInvMask))
     { /* likely */ }
     else
     {
@@ -2226,7 +2229,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
          * Read the paging entry for the next level.
          */
         {
-            uint16_t const idxPte         = (uDmaAddr >> cLevelShift) & UINT64_C(0x1ff);
+            uint16_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
             RTGCPHYS const GCPhysPtEntity = uPtEntity | offPte;
             int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
@@ -2279,10 +2282,10 @@ static bool dmarIsIoPageAccessContig(PCDMARIOPAGE pIoPagePrev, PCDMARIOPAGE pIoP
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   pfnTranslate    The DMA address translation function.
+ * @param   pfnLookup       The DMA address lookup function.
  * @param   pMemReqRemap    The DMA memory request remapping info.
  */
-static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTranslate, PDMARMEMREQREMAP pMemReqRemap)
+static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, PDMARMEMREQREMAP pMemReqRemap)
 {
     RTGCPHYS       GCPhysAddr  = NIL_RTGCPHYS;
     DMARMEMREQIN   MemReqIn    = pMemReqRemap->In;
@@ -2299,10 +2302,10 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMAADDRTRANSLATE pfnTrans
     {
         /* Update the input memory request with the next address in our range that needs translation. */
         MemReqIn.AddrRange.uAddr = uAddrInBase;
-        MemReqIn.AddrRange.cb    = cbRemaining;  /* Not currently accessed by pfnTranslate, but keep things consistent. */
+        MemReqIn.AddrRange.cb    = cbRemaining;  /* Not currently accessed by pfnLookup, but keep things consistent. */
 
         DMARIOPAGE IoPage;
-        rc = pfnTranslate(pDevIns, &MemReqIn, &pMemReqRemap->Aux, &IoPage);
+        rc = pfnLookup(pDevIns, &MemReqIn, &pMemReqRemap->Aux, &IoPage);
         if (RT_SUCCESS(rc))
         {
             Assert(IoPage.cShift >= X86_PAGE_4K_SHIFT && IoPage.cShift <= X86_PAGE_1G_SHIFT);
@@ -3716,7 +3719,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
         pThis->fHawBaseMask    = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
-        pThis->fInvMgawMask    = UINT64_MAX << cGstPhysAddrBits;
+        pThis->fMgawInvMask    = UINT64_MAX << cGstPhysAddrBits;
         pThis->cMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
     }
 
@@ -3979,16 +3982,17 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Log some of the features exposed to software.
      */
-    uint32_t const uVerReg   = pThis->uVerReg;
-    uint8_t const  cMgawBits = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_MGAW) + 1;
-    uint8_t const  fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
-    uint16_t const offFrcd   = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
-    uint16_t const offIva    = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
-    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Base=%#RX64 MGAW_Inv=%#RX64 FRO=%#x IRO=%#x cMaxPagingLevel=%u) mapped at %#RGp\n",
-            DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
-            pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask, pThis->fInvMgawMask, offFrcd, offIva,
-            pThis->cMaxPagingLevel, DMAR_MMIO_BASE_PHYSADDR));
-
+    uint8_t const uVerMax   = RT_BF_GET(pThis->uVerReg, VTD_BF_VER_REG_MAX);
+    uint8_t const uVerMin   = RT_BF_GET(pThis->uVerReg, VTD_BF_VER_REG_MIN);
+    uint8_t const cMgawBits = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_MGAW) + 1;
+    uint8_t const fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
+    uint16_t const offFrcd  = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
+    uint16_t const offIva   = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
+    LogRel(("%s: Mapped at %#RGp (%u-level page-table supported)\n",
+            DMAR_LOG_PFX, DMAR_MMIO_BASE_PHYSADDR, pThis->cMaxPagingLevel));
+    LogRel(("%s: Version=%u.%u Cap=%#RX64 ExtCap=%#RX64 Mgaw=%u bits Sagaw=%#x HawBaseMask=%#RX64 MgawInvMask=%#RX64 FRO=%#x IRO=%#x\n",
+            DMAR_LOG_PFX, uVerMax, uVerMin, pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask,
+            pThis->fMgawInvMask, offFrcd, offIva));
     return VINF_SUCCESS;
 }
 
