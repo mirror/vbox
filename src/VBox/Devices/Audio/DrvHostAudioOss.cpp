@@ -837,15 +837,23 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
     }
 
     /*
-     * HACK ALERT! Tweak to force recording to start.  Pretend there are bytes
-     *             available if we haven't read anything yet.  This will cause
-     *             the following StreamCapture call to block and make sure the
-     *             stream is really recording.
+     * HACK ALERT! To force the stream to start recording, we read a frame
+     *             here if we get back that there are zero bytes available
+     *             and we're at the start of the stream.  (We cannot just
+     *             return a frame size, we have to read it, as pre-buffering
+     *             would prevent it from being read.)
      */
     if (BufInfo.bytes > 0 || pStreamOSS->offInternal != 0)
     { /* likely */ }
     else
-        cbRet = PDMAudioPropsFramesToBytes(&pStreamOSS->Cfg.Props, 1);
+    {
+        uint32_t cbToRead = PDMAudioPropsFramesToBytes(&pStreamOSS->Cfg.Props, 1);
+        uint8_t  abFrame[256];
+        Assert(cbToRead < sizeof(abFrame));
+        ssize_t  cbRead = read(pStreamOSS->hFile, abFrame, cbToRead);
+        RT_NOREF(cbRead);
+        LogFunc(("Dummy read for '%s' returns %zd (errno=%d)\n", pStreamOSS->Cfg.szName, cbRead, errno));
+    }
 
     Log4Func(("returns %#x (%u) [cbBuf=%#x]\n", cbRet, cbRet, cbBuf));
     return cbRet;
