@@ -2107,39 +2107,6 @@ static DECLCALLBACK(int) drvHstAudCaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PP
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
- */
-static DECLCALLBACK(int) drvHstAudCaHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                     PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
-     *        replacing it with individual StreamXxxx methods.  That would save us
-     *        potentally huge switches and more easily see which drivers implement
-     *        which operations (grep for pfnStreamXxxx). */
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-            return drvHstAudCaHA_StreamEnable(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DISABLE:
-            return drvHstAudCaHA_StreamDisable(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_PAUSE:
-            return drvHstAudCaHA_StreamPause(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_RESUME:
-            return drvHstAudCaHA_StreamResume(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DRAIN:
-            return drvHstAudCaHA_StreamDrain(pInterface, pStream);
-
-        case PDMAUDIOSTREAMCMD_END:
-        case PDMAUDIOSTREAMCMD_32BIT_HACK:
-        case PDMAUDIOSTREAMCMD_INVALID:
-            /* no default*/
-            break;
-    }
-    return VERR_NOT_SUPPORTED;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
 static DECLCALLBACK(uint32_t) drvHstAudCaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -2781,7 +2748,11 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudCaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
-    pThis->IHostAudio.pfnStreamControl              = drvHstAudCaHA_StreamControl;
+    pThis->IHostAudio.pfnStreamEnable               = drvHstAudCaHA_StreamEnable;
+    pThis->IHostAudio.pfnStreamDisable              = drvHstAudCaHA_StreamDisable;
+    pThis->IHostAudio.pfnStreamPause                = drvHstAudCaHA_StreamPause;
+    pThis->IHostAudio.pfnStreamResume               = drvHstAudCaHA_StreamResume;
+    pThis->IHostAudio.pfnStreamDrain                = drvHstAudCaHA_StreamDrain;
     pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudCaHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudCaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;

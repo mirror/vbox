@@ -2498,33 +2498,29 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
             && (   enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY
                 || enmBackendState == PDMHOSTAUDIOSTREAMSTATE_DRAINING) )
         {
-            /** @todo Backend will change to explicit methods here, so please don't simplify
-             *        the switch. */
             switch (enmStreamCmd)
             {
                 case PDMAUDIOSTREAMCMD_ENABLE:
-                    rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend,
-                                                                PDMAUDIOSTREAMCMD_ENABLE);
+                    rc = pThis->pHostDrvAudio->pfnStreamEnable(pThis->pHostDrvAudio, pStreamEx->pBackend);
                     break;
 
                 case PDMAUDIOSTREAMCMD_DISABLE:
-                    rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend,
-                                                                PDMAUDIOSTREAMCMD_DISABLE);
+                    rc = pThis->pHostDrvAudio->pfnStreamDisable(pThis->pHostDrvAudio, pStreamEx->pBackend);
                     break;
 
                 case PDMAUDIOSTREAMCMD_PAUSE:
-                    rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend,
-                                                                PDMAUDIOSTREAMCMD_PAUSE);
+                    rc = pThis->pHostDrvAudio->pfnStreamPause(pThis->pHostDrvAudio, pStreamEx->pBackend);
                     break;
 
                 case PDMAUDIOSTREAMCMD_RESUME:
-                    rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend,
-                                                                PDMAUDIOSTREAMCMD_RESUME);
+                    rc = pThis->pHostDrvAudio->pfnStreamResume(pThis->pHostDrvAudio, pStreamEx->pBackend);
                     break;
 
                 case PDMAUDIOSTREAMCMD_DRAIN:
-                    rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStreamEx->pBackend,
-                                                                PDMAUDIOSTREAMCMD_DRAIN);
+                    if (pThis->pHostDrvAudio->pfnStreamDrain)
+                        rc = pThis->pHostDrvAudio->pfnStreamDrain(pThis->pHostDrvAudio, pStreamEx->pBackend);
+                    else
+                        rc = VERR_NOT_SUPPORTED;
                     break;
 
                 default:
@@ -4304,7 +4300,11 @@ static int drvAudioHostInit(PDRVAUDIO pThis)
     AssertPtrNullReturn(pIHostDrvAudio->pfnStreamInitAsync, VERR_INVALID_POINTER);
     AssertPtrReturn(pIHostDrvAudio->pfnStreamDestroy, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnStreamNotifyDeviceChanged, VERR_INVALID_POINTER);
-    AssertPtrReturn(pIHostDrvAudio->pfnStreamControl, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIHostDrvAudio->pfnStreamEnable, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIHostDrvAudio->pfnStreamDisable, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIHostDrvAudio->pfnStreamPause, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIHostDrvAudio->pfnStreamResume, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pIHostDrvAudio->pfnStreamDrain, VERR_INVALID_POINTER);
     AssertPtrReturn(pIHostDrvAudio->pfnStreamGetReadable, VERR_INVALID_POINTER);
     AssertPtrReturn(pIHostDrvAudio->pfnStreamGetWritable, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pIHostDrvAudio->pfnStreamGetPending, VERR_INVALID_POINTER);

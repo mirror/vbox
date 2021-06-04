@@ -1299,17 +1299,72 @@ typedef struct PDMIHOSTAUDIO
                                                              PPDMAUDIOBACKENDSTREAM pStream, void *pvUser));
 
     /**
-     * Controls an audio stream.
+     * Enables (starts) the stream.
      *
      * @returns VBox status code.
-     * @retval  VERR_AUDIO_STREAM_NOT_READY if stream is not ready for required operation (yet).
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     * @param   enmStreamCmd        The stream command to issue.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Pointer to the audio stream to enable.
+     * @sa      PDMAUDIOSTREAMCMD_ENABLE
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                 PDMAUDIOSTREAMCMD enmStreamCmd));
+    DECLR3CALLBACKMEMBER(int, pfnStreamEnable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
+    /**
+     * Disables (stops) the stream immediately.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Pointer to the audio stream to disable.
+     * @sa      PDMAUDIOSTREAMCMD_DISABLE
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamDisable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
+     * Pauses the stream - called when the VM is suspended.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Pointer to the audio stream to pause.
+     * @sa      PDMAUDIOSTREAMCMD_PAUSE
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamPause, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
+     * Resumes a paused stream - called when the VM is resumed.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Pointer to the audio stream to resume.
+     * @sa      PDMAUDIOSTREAMCMD_RESUME
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamResume, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
+     * Drain the stream, that is, play what's in the buffers and then stop.
+     *
+     * There will be no more samples written after this command is issued.
+     * PDMIHOSTAUDIO::pfnStreamPlay with a zero sized buffer will provide the
+     * backend with a way to drive it forwards.  These calls will come at a
+     * frequency set by the device and be on an asynchronous I/O thread.
+     *
+     * The PDMIHOSTAUDIO::pfnStreamDisable method maybe called if the device/mixer
+     * wants to re-enable the stream while it's still draining or if it gets
+     * impatient and thinks the draining has been going on too long, in which case
+     * the stream should stop immediately.
+     *
+     * @note    This should not wait for the stream to finish draining, just change
+     *          the state.  (The caller could be an EMT and it must not block for
+     *          hundreds of milliseconds of buffer to finish draining.)
+     *
+     * @note    Does not apply to input streams. Backends should refuse such
+     *          requests.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_WRONG_ORDER if not output stream.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pStream     Pointer to the audio stream to drain.
+     * @sa      PDMAUDIOSTREAMCMD_DRAIN
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamDrain, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Returns the current state of the given backend stream.
@@ -1328,7 +1383,7 @@ typedef struct PDMIHOSTAUDIO
      *
      * @returns Number of pending bytes.
      * @param   pInterface          Pointer to this interface.
-     * @param   pStream             Pointer to audio stream.
+     * @param   pStream             Pointer to the audio stream.
      *
      * @todo This is no longer not used by DrvAudio and can probably be removed.
      */
@@ -1388,7 +1443,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "2d57627f-6f47-4669-a2fa-93a5f1cb6e51"
+#define PDMIHOSTAUDIO_IID                           "c0875b91-a4f9-48be-8595-31d27048432d"
 
 
 /** Pointer to a audio notify from host interface. */

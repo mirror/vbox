@@ -542,50 +542,51 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
 
 
 /**
- * Controls an audio output stream
- *
- * @returns VBox status code.
- * @param   pThis               Driver instance.
- * @param   pStreamAV           Audio output stream to control.
- * @param   enmStreamCmd        Stream command to issue.
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
  */
-static int avRecControlStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV, PDMAUDIOSTREAMCMD enmStreamCmd)
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamEnable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pThis, pStreamAV);
-
-    int rc;
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_DISABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
-        case PDMAUDIOSTREAMCMD_PAUSE:
-        case PDMAUDIOSTREAMCMD_DRAIN:
-            rc = VINF_SUCCESS;
-            break;
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
-
-    return rc;
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDisable}
  */
-static DECLCALLBACK(int) drvAudioVideoRecHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                          PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDisable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    PDRVAUDIORECORDING pThis     = RT_FROM_CPP_MEMBER(pInterface, DRVAUDIORECORDING, IHostAudio);
-    PAVRECSTREAM       pStreamAV = (PAVRECSTREAM)pStream;
-    AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
 
-    if (pStreamAV->Cfg.enmDir == PDMAUDIODIR_OUT)
-        return avRecControlStreamOut(pThis, pStreamAV, enmStreamCmd);
 
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPause}
+ */
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPause(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamResume}
+ */
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamResume(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
+ */
+static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
     return VINF_SUCCESS;
 }
 
@@ -1113,7 +1114,11 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVideoRecHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
-    pThis->IHostAudio.pfnStreamControl              = drvAudioVideoRecHA_StreamControl;
+    pThis->IHostAudio.pfnStreamEnable               = drvAudioVideoRecHA_StreamEnable;
+    pThis->IHostAudio.pfnStreamDisable              = drvAudioVideoRecHA_StreamDisable;
+    pThis->IHostAudio.pfnStreamPause                = drvAudioVideoRecHA_StreamPause;
+    pThis->IHostAudio.pfnStreamResume               = drvAudioVideoRecHA_StreamResume;
+    pThis->IHostAudio.pfnStreamDrain                = drvAudioVideoRecHA_StreamDrain;
     pThis->IHostAudio.pfnStreamGetState             = drvAudioVideoRecHA_StreamGetState;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVideoRecHA_StreamGetWritable;

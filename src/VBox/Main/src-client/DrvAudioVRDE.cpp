@@ -416,7 +416,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDestroy(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamEnable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
@@ -450,7 +450,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamEnable(PPDMIHOSTAUDIO pInterface, 
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDisable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDisable}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamDisable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
@@ -476,7 +476,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDisable(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamPause}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPause}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamPause(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
@@ -494,7 +494,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPause(PPDMIHOSTAUDIO pInterface, P
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamResume}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamResume}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamResume(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
@@ -512,46 +512,13 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamResume(PPDMIHOSTAUDIO pInterface, 
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
     LogFlowFunc(("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
- */
-static DECLCALLBACK(int) drvAudioVrdeHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                      PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
-     *        replacing it with individual StreamXxxx methods.  That would save us
-     *        potentally huge switches and more easily see which drivers implement
-     *        which operations (grep for pfnStreamXxxx). */
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-            return drvAudioVrdeHA_StreamEnable(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DISABLE:
-            return drvAudioVrdeHA_StreamDisable(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_PAUSE:
-            return drvAudioVrdeHA_StreamPause(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_RESUME:
-            return drvAudioVrdeHA_StreamResume(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DRAIN:
-            return drvAudioVrdeHA_StreamDrain(pInterface, pStream);
-
-        case PDMAUDIOSTREAMCMD_END:
-        case PDMAUDIOSTREAMCMD_32BIT_HACK:
-        case PDMAUDIOSTREAMCMD_INVALID:
-            /* no default*/
-            break;
-    }
-    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -775,7 +742,11 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVrdeHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
-    pThis->IHostAudio.pfnStreamControl              = drvAudioVrdeHA_StreamControl;
+    pThis->IHostAudio.pfnStreamEnable               = drvAudioVrdeHA_StreamEnable;
+    pThis->IHostAudio.pfnStreamDisable              = drvAudioVrdeHA_StreamDisable;
+    pThis->IHostAudio.pfnStreamPause                = drvAudioVrdeHA_StreamPause;
+    pThis->IHostAudio.pfnStreamResume               = drvAudioVrdeHA_StreamResume;
+    pThis->IHostAudio.pfnStreamDrain                = drvAudioVrdeHA_StreamDrain;
     pThis->IHostAudio.pfnStreamGetState             = drvAudioVrdeHA_StreamGetState;
     pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVrdeHA_StreamGetWritable;

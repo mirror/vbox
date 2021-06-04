@@ -106,45 +106,12 @@ static DECLCALLBACK(int) drvHstAudNullHA_StreamDestroy(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
  */
 static DECLCALLBACK(int) drvHstAudNullHA_StreamControlStub(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
     return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
- */
-static DECLCALLBACK(int) drvHstAudNullHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-{
-    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
-     *        replacing it with individual StreamXxxx methods.  That would save us
-     *        potentally huge switches and more easily see which drivers implement
-     *        which operations (grep for pfnStreamXxxx). */
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-            return drvHstAudNullHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DISABLE:
-            return drvHstAudNullHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_PAUSE:
-            return drvHstAudNullHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_RESUME:
-            return drvHstAudNullHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DRAIN:
-            return drvHstAudNullHA_StreamControlStub(pInterface, pStream);
-
-        case PDMAUDIOSTREAMCMD_END:
-        case PDMAUDIOSTREAMCMD_32BIT_HACK:
-        case PDMAUDIOSTREAMCMD_INVALID:
-            /* no default*/
-            break;
-    }
-    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -246,7 +213,11 @@ DECL_HIDDEN_CONST(PDMIHOSTAUDIO) const g_DrvHostAudioNull =
     /* .pfnStreamInitAsync           =*/ NULL,
     /* .pfnStreamDestroy             =*/ drvHstAudNullHA_StreamDestroy,
     /* .pfnStreamNotifyDeviceChanged =*/ NULL,
-    /* .pfnStreamControl             =*/ drvHstAudNullHA_StreamControl,
+    /* .pfnStreamEnable              =*/ drvHstAudNullHA_StreamControlStub,
+    /* .pfnStreamDisable             =*/ drvHstAudNullHA_StreamControlStub,
+    /* .pfnStreamPause               =*/ drvHstAudNullHA_StreamControlStub,
+    /* .pfnStreamResume              =*/ drvHstAudNullHA_StreamControlStub,
+    /* .pfnStreamDrain               =*/ drvHstAudNullHA_StreamControlStub,
     /* .pfnStreamGetState            =*/ drvHstAudNullHA_StreamGetState,
     /* .pfnStreamGetPending          =*/ drvHstAudNullHA_StreamGetPending,
     /* .pfnStreamGetWritable         =*/ drvHstAudNullHA_StreamGetWritable,

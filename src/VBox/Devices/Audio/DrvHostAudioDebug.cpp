@@ -149,9 +149,9 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamDestroy(PPDMIHOSTAUDIO pInterfac
 
 
 /**
- * @ interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamEnable}
  */
-static DECLCALLBACK(int) drvHstAudDebugHA_StreamControlStub(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHstAudDebugHA_StreamEnable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
     return VINF_SUCCESS;
@@ -159,35 +159,42 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamControlStub(PPDMIHOSTAUDIO pInte
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDisable}
  */
-static DECLCALLBACK(int) drvHstAudDebugHA_StreamControl(PPDMIHOSTAUDIO pInterface,
-                                                        PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static DECLCALLBACK(int) drvHstAudDebugHA_StreamDisable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    /** @todo r=bird: I'd like to get rid of this pfnStreamControl method,
-     *        replacing it with individual StreamXxxx methods.  That would save us
-     *        potentally huge switches and more easily see which drivers implement
-     *        which operations (grep for pfnStreamXxxx). */
-    switch (enmStreamCmd)
-    {
-        case PDMAUDIOSTREAMCMD_ENABLE:
-            return drvHstAudDebugHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DISABLE:
-            return drvHstAudDebugHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_PAUSE:
-            return drvHstAudDebugHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_RESUME:
-            return drvHstAudDebugHA_StreamControlStub(pInterface, pStream);
-        case PDMAUDIOSTREAMCMD_DRAIN:
-            return drvHstAudDebugHA_StreamControlStub(pInterface, pStream);
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
 
-        case PDMAUDIOSTREAMCMD_END:
-        case PDMAUDIOSTREAMCMD_32BIT_HACK:
-        case PDMAUDIOSTREAMCMD_INVALID:
-            /* no default*/
-            break;
-    }
-    return VERR_NOT_SUPPORTED;
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPause}
+ */
+static DECLCALLBACK(int) drvHstAudDebugHA_StreamPause(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamResume}
+ */
+static DECLCALLBACK(int) drvHstAudDebugHA_StreamResume(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDrain}
+ */
+static DECLCALLBACK(int) drvHstAudDebugHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return VINF_SUCCESS;
 }
 
 
@@ -325,7 +332,11 @@ static DECLCALLBACK(int) drvHstAudDebugConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnStreamInitAsync            = NULL;
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudDebugHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
-    pThis->IHostAudio.pfnStreamControl              = drvHstAudDebugHA_StreamControl;
+    pThis->IHostAudio.pfnStreamEnable               = drvHstAudDebugHA_StreamEnable;
+    pThis->IHostAudio.pfnStreamDisable              = drvHstAudDebugHA_StreamDisable;
+    pThis->IHostAudio.pfnStreamPause                = drvHstAudDebugHA_StreamPause;
+    pThis->IHostAudio.pfnStreamResume               = drvHstAudDebugHA_StreamResume;
+    pThis->IHostAudio.pfnStreamDrain                = drvHstAudDebugHA_StreamDrain;
     pThis->IHostAudio.pfnStreamGetState             = drvHstAudDebugHA_StreamGetState;
     pThis->IHostAudio.pfnStreamGetPending           = drvHstAudDebugHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudDebugHA_StreamGetWritable;
