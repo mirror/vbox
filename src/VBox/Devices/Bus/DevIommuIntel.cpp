@@ -3693,7 +3693,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PLMR,    0)     /* Protected Low-Memory Region not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_PHMR,    0)     /* Protected High-Memory Region not supported. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_CM,      1)     /* Software should invalidate on mapping structure changes. */
-                       | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts & fSagaw)
+                       | RT_BF_MAKE(VTD_BF_CAP_REG_SAGAW,   fSlts ? fSagaw : 0)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_MGAW,    uMgaw)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ZLR,     1)     /** @todo Figure out if/how to support zero-length reads. */
                        | RT_BF_MAKE(VTD_BF_CAP_REG_FRO,     offFro)
@@ -3979,10 +3979,10 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     uint8_t const  fSagaw    = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SAGAW);
     uint16_t const offFrcd   = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_FRO);
     uint16_t const offIva    = RT_BF_GET(pThis->fExtCapReg, VTD_BF_ECAP_REG_IRO);
-    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Base=%#RX64 MGAW_Inv=%#RX64 FRO=%#x IRO=%#x) mapped at %#RGp\n",
+    LogRel(("%s: VER=%u.%u CAP=%#RX64 ECAP=%#RX64 (MGAW=%u bits, SAGAW=%#x HAW_Base=%#RX64 MGAW_Inv=%#RX64 FRO=%#x IRO=%#x cMaxPagingLevel=%u) mapped at %#RGp\n",
             DMAR_LOG_PFX, RT_BF_GET(uVerReg, VTD_BF_VER_REG_MAX), RT_BF_GET(uVerReg, VTD_BF_VER_REG_MIN),
             pThis->fCapReg, pThis->fExtCapReg, cMgawBits, fSagaw, pThis->fHawBaseMask, pThis->fInvMgawMask, offFrcd, offIva,
-            DMAR_MMIO_BASE_PHYSADDR));
+            pThis->cMaxPagingLevel, DMAR_MMIO_BASE_PHYSADDR));
 
     return VINF_SUCCESS;
 }
