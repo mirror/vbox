@@ -2227,36 +2227,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamControl(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    /*PDRVHOSTDSOUND  pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio); */ RT_NOREF(pInterface);
-    PDSOUNDSTREAM   pStreamDS = (PDSOUNDSTREAM)pStream;
-    AssertPtrReturn(pStreamDS, 0);
-    Assert(pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN);
-
-    if (pStreamDS->fEnabled)
-    {
-        /* This is the same calculation as for StreamGetPending. */
-        AssertPtr(pStreamDS->In.pDSCB);
-        DWORD   offCaptureCursor = 0;
-        DWORD   offReadCursor    = 0;
-        HRESULT hrc = IDirectSoundCaptureBuffer_GetCurrentPosition(pStreamDS->In.pDSCB, &offCaptureCursor, &offReadCursor);
-        if (SUCCEEDED(hrc))
-        {
-            uint32_t cbPending = dsoundRingDistance(offCaptureCursor, offReadCursor, pStreamDS->cbBufSize);
-            Log3Func(("cbPending=%RU32\n", cbPending));
-            return cbPending;
-        }
-        AssertMsgFailed(("hrc=%Rhrc\n", hrc));
-    }
-
-    return 0;
-}
-
-
-/**
  * Retrieves the number of free bytes available for writing to a DirectSound output stream.
  *
  * @return  VBox status code. VERR_NOT_AVAILABLE if unable to determine or the
@@ -2338,21 +2308,23 @@ static int dsoundGetFreeOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostDSoundHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                            PPDMAUDIOBACKENDSTREAM pStream)
 {
-    PDRVHOSTDSOUND  pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
-    PDSOUNDSTREAM   pStreamDS = (PDSOUNDSTREAM)pStream;
-    AssertPtrReturn(pStreamDS, 0);
-    LogFlowFunc(("Stream '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+    RT_NOREF(pInterface);
+    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    DWORD           cbFree    = 0;
-    DWORD           offIgn    = 0;
-    int rc = dsoundGetFreeOut(pThis, pStreamDS, &cbFree, &offIgn);
-    AssertRCReturn(rc, 0);
-
-    return cbFree;
+    if (   pStreamDS->Cfg.enmDir != PDMAUDIODIR_OUT
+        || !pStreamDS->Out.fDrain)
+    {
+        LogFlowFunc(("returns OKAY for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    }
+    LogFlowFunc(("returns DRAINING for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
+    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 }
 
 #if 0 /* This isn't working as the write cursor is more a function of time than what we do.
@@ -2389,23 +2361,21 @@ static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetPending(PPDMIHOSTAUDIO pI
 #endif
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostDSoundHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                            PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface);
-    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
-    AssertPtrReturn(pStreamDS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    PDRVHOSTDSOUND  pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio);
+    PDSOUNDSTREAM   pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, 0);
+    LogFlowFunc(("Stream '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
 
-    if (   pStreamDS->Cfg.enmDir != PDMAUDIODIR_OUT
-        || !pStreamDS->Out.fDrain)
-    {
-        LogFlowFunc(("returns OKAY for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
-        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
-    }
-    LogFlowFunc(("returns DRAINING for '%s' {%s}\n", pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS)));
-    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+    DWORD           cbFree    = 0;
+    DWORD           offIgn    = 0;
+    int rc = dsoundGetFreeOut(pThis, pStreamDS, &cbFree, &offIgn);
+    AssertRCReturn(rc, 0);
+
+    return cbFree;
 }
 
 
@@ -2532,6 +2502,36 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    /*PDRVHOSTDSOUND  pThis     = RT_FROM_MEMBER(pInterface, DRVHOSTDSOUND, IHostAudio); */ RT_NOREF(pInterface);
+    PDSOUNDSTREAM   pStreamDS = (PDSOUNDSTREAM)pStream;
+    AssertPtrReturn(pStreamDS, 0);
+    Assert(pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN);
+
+    if (pStreamDS->fEnabled)
+    {
+        /* This is the same calculation as for StreamGetPending. */
+        AssertPtr(pStreamDS->In.pDSCB);
+        DWORD   offCaptureCursor = 0;
+        DWORD   offReadCursor    = 0;
+        HRESULT hrc = IDirectSoundCaptureBuffer_GetCurrentPosition(pStreamDS->In.pDSCB, &offCaptureCursor, &offReadCursor);
+        if (SUCCEEDED(hrc))
+        {
+            uint32_t cbPending = dsoundRingDistance(offCaptureCursor, offReadCursor, pStreamDS->cbBufSize);
+            Log3Func(("cbPending=%RU32\n", cbPending));
+            return cbPending;
+        }
+        AssertMsgFailed(("hrc=%Rhrc\n", hrc));
+    }
+
+    return 0;
 }
 
 
@@ -2772,11 +2772,11 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IHostAudio.pfnStreamDestroy              = drvHostDSoundHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHostDSoundHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHostDSoundHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHostDSoundHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetState             = drvHostDSoundHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostDSoundHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostDSoundHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostDSoundHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHostDSoundHA_StreamCapture;
 
     /*

@@ -591,12 +591,14 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamControl(PPDMIHOSTAUDIO pInterf
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvAudioVideoRecHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVideoRecHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                               PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    return 0; /* Video capturing does not provide any input. */
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
 }
 
 
@@ -607,18 +609,6 @@ static DECLCALLBACK(uint32_t) drvAudioVideoRecHA_StreamGetWritable(PPDMIHOSTAUDI
 {
     RT_NOREF(pInterface, pStream);
     return UINT32_MAX;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
- */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVideoRecHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                               PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
-    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
 }
 
 
@@ -790,6 +780,16 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
     LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvAudioVideoRecHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return 0; /* Video capturing does not provide any input. */
 }
 
 
@@ -1114,11 +1114,11 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVideoRecHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvAudioVideoRecHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVideoRecHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVideoRecHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetState             = drvAudioVideoRecHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVideoRecHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvAudioVideoRecHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVideoRecHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvAudioVideoRecHA_StreamCapture;
 
     /*

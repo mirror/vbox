@@ -192,24 +192,14 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamControl(PPDMIHOSTAUDIO pInterfac
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHstAudDebugHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudDebugHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                             PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    PDRVHSTAUDDEBUGSTREAM pStreamDbg = (PDRVHSTAUDDEBUGSTREAM)pStream;
-
-    return PDMAudioPropsMilliToBytes(&pStreamDbg->Cfg.Props, 10 /*ms*/);
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudDebugHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    return UINT32_MAX;
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
 }
 
 
@@ -224,14 +214,12 @@ static DECLCALLBACK(uint32_t) drvHstAudDebugHA_StreamGetPending(PPDMIHOSTAUDIO p
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudDebugHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                             PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHstAudDebugHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
-    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    RT_NOREF(pInterface, pStream);
+    return UINT32_MAX;
 }
 
 
@@ -250,6 +238,18 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
     else
         LogRelMax(32, ("DebugAudio: Writing output failed with %Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudDebugHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PDRVHSTAUDDEBUGSTREAM pStreamDbg = (PDRVHSTAUDDEBUGSTREAM)pStream;
+
+    return PDMAudioPropsMilliToBytes(&pStreamDbg->Cfg.Props, 10 /*ms*/);
 }
 
 
@@ -326,11 +326,11 @@ static DECLCALLBACK(int) drvHstAudDebugConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudDebugHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHstAudDebugHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudDebugHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudDebugHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = drvHstAudDebugHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamGetState             = drvHstAudDebugHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = drvHstAudDebugHA_StreamGetPending;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudDebugHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHstAudDebugHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudDebugHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHstAudDebugHA_StreamCapture;
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH

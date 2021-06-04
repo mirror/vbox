@@ -2374,95 +2374,42 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamControl(PPDMIHOSTAUDIO pInterfa
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioWasHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                              PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
-    AssertPtrReturn(pStreamWas, 0);
-    Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_IN);
+    AssertPtrReturn(pStreamWas, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    uint32_t cbReadable = 0;
-    RTCritSectEnter(&pStreamWas->CritSect);
-
-    if (pStreamWas->pDevCfg->pIAudioCaptureClient /* paranoia */)
+    PDMHOSTAUDIOSTREAMSTATE enmState;
+    AssertPtr(pStreamWas->pDevCfg);
+    if (pStreamWas->pDevCfg /*paranoia*/)
     {
-        UINT32  cFramesPending = 0;
-        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
-        if (SUCCEEDED(hrc))
+        if (RT_SUCCESS(pStreamWas->pDevCfg->rcSetup))
         {
-            /* An unreleased buffer is included in the pending frame count, so subtract
-               whatever we've got hanging around since the previous pfnStreamCapture call. */
-            AssertMsgStmt(cFramesPending >= pStreamWas->cFramesCaptureToRelease,
-                          ("%#x vs %#x\n", cFramesPending, pStreamWas->cFramesCaptureToRelease),
-                          cFramesPending = pStreamWas->cFramesCaptureToRelease);
-            cFramesPending -= pStreamWas->cFramesCaptureToRelease;
-
-            /* Add what we've got left in said buffer. */
-            uint32_t cFramesCurPacket = PDMAudioPropsBytesToFrames(&pStreamWas->Cfg.Props, pStreamWas->cbCapture);
-            cFramesPending += cFramesCurPacket;
-
-            /* Paranoia: Make sure we don't exceed the buffer size. */
-            AssertMsgStmt(cFramesPending <= pStreamWas->Cfg.Backend.cFramesBufferSize,
-                          ("cFramesPending=%#x cFramesCaptureToRelease=%#x cFramesCurPacket=%#x cFramesBufferSize=%#x\n",
-                           cFramesPending, pStreamWas->cFramesCaptureToRelease, cFramesCurPacket,
-                           pStreamWas->Cfg.Backend.cFramesBufferSize),
-                          cFramesPending = pStreamWas->Cfg.Backend.cFramesBufferSize);
-
-            cbReadable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props, cFramesPending);
-        }
-        else
-            LogRelMax(64, ("WasAPI: GetCurrentPadding failed on '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
-    }
-
-    RTCritSectLeave(&pStreamWas->CritSect);
-
-    LogFlowFunc(("returns %#x (%u) {%s}\n", cbReadable, cbReadable, drvHostWasStreamStatusString(pStreamWas)));
-    return cbReadable;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
-    AssertPtrReturn(pStreamWas, 0);
-    LogFlowFunc(("Stream '%s' {%s}\n", pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
-    Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
-
-    uint32_t cbWritable = 0;
-    RTCritSectEnter(&pStreamWas->CritSect);
-
-    if (   pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT
-        && pStreamWas->pDevCfg->pIAudioClient /* paranoia */)
-    {
-        UINT32  cFramesPending = 0;
-        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
-        if (SUCCEEDED(hrc))
-        {
-            if (cFramesPending < pStreamWas->Cfg.Backend.cFramesBufferSize)
-                cbWritable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props,
-                                                        pStreamWas->Cfg.Backend.cFramesBufferSize - cFramesPending);
-            else if (cFramesPending > pStreamWas->Cfg.Backend.cFramesBufferSize)
+            if (!pStreamWas->fDraining)
+                enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+            else
             {
-                LogRelMax(64, ("WasAPI: Warning! GetCurrentPadding('%s') return too high: cFramesPending=%#x > cFramesBufferSize=%#x\n",
-                               pStreamWas->Cfg.szName, cFramesPending, pStreamWas->Cfg.Backend.cFramesBufferSize));
-                AssertMsgFailed(("cFramesPending=%#x > cFramesBufferSize=%#x\n",
-                                 cFramesPending, pStreamWas->Cfg.Backend.cFramesBufferSize));
+                Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
+                enmState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
             }
         }
+        else if (   pStreamWas->pDevCfg->rcSetup == VERR_AUDIO_STREAM_INIT_IN_PROGRESS
+                 || pStreamWas->fSwitchingDevice )
+            enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
         else
-            LogRelMax(64, ("WasAPI: GetCurrentPadding failed on '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
+            enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
     }
+    else if (pStreamWas->fSwitchingDevice)
+        enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
+    else
+        enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
 
-    RTCritSectLeave(&pStreamWas->CritSect);
-
-    LogFlowFunc(("returns %#x (%u) {%s}\n", cbWritable, cbWritable, drvHostWasStreamStatusString(pStreamWas)));
-    return cbWritable;
+    LogFlowFunc(("returns %d for '%s' {%s}\n", enmState, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
+    return enmState;
 }
 
 
@@ -2507,42 +2454,45 @@ static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetPending(PPDMIHOSTAUDIO 
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostAudioWasHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                              PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
-    AssertPtrReturn(pStreamWas, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    AssertPtrReturn(pStreamWas, 0);
+    LogFlowFunc(("Stream '%s' {%s}\n", pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
+    Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
 
-    PDMHOSTAUDIOSTREAMSTATE enmState;
-    AssertPtr(pStreamWas->pDevCfg);
-    if (pStreamWas->pDevCfg /*paranoia*/)
+    uint32_t cbWritable = 0;
+    RTCritSectEnter(&pStreamWas->CritSect);
+
+    if (   pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT
+        && pStreamWas->pDevCfg->pIAudioClient /* paranoia */)
     {
-        if (RT_SUCCESS(pStreamWas->pDevCfg->rcSetup))
+        UINT32  cFramesPending = 0;
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
+        if (SUCCEEDED(hrc))
         {
-            if (!pStreamWas->fDraining)
-                enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
-            else
+            if (cFramesPending < pStreamWas->Cfg.Backend.cFramesBufferSize)
+                cbWritable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props,
+                                                        pStreamWas->Cfg.Backend.cFramesBufferSize - cFramesPending);
+            else if (cFramesPending > pStreamWas->Cfg.Backend.cFramesBufferSize)
             {
-                Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_OUT);
-                enmState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+                LogRelMax(64, ("WasAPI: Warning! GetCurrentPadding('%s') return too high: cFramesPending=%#x > cFramesBufferSize=%#x\n",
+                               pStreamWas->Cfg.szName, cFramesPending, pStreamWas->Cfg.Backend.cFramesBufferSize));
+                AssertMsgFailed(("cFramesPending=%#x > cFramesBufferSize=%#x\n",
+                                 cFramesPending, pStreamWas->Cfg.Backend.cFramesBufferSize));
             }
         }
-        else if (   pStreamWas->pDevCfg->rcSetup == VERR_AUDIO_STREAM_INIT_IN_PROGRESS
-                 || pStreamWas->fSwitchingDevice )
-            enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
         else
-            enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
+            LogRelMax(64, ("WasAPI: GetCurrentPadding failed on '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
     }
-    else if (pStreamWas->fSwitchingDevice)
-        enmState = PDMHOSTAUDIOSTREAMSTATE_INITIALIZING;
-    else
-        enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
 
-    LogFlowFunc(("returns %d for '%s' {%s}\n", enmState, pStreamWas->Cfg.szName, drvHostWasStreamStatusString(pStreamWas)));
-    return enmState;
+    RTCritSectLeave(&pStreamWas->CritSect);
+
+    LogFlowFunc(("returns %#x (%u) {%s}\n", cbWritable, cbWritable, drvHostWasStreamStatusString(pStreamWas)));
+    return cbWritable;
 }
 
 
@@ -2701,6 +2651,56 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     LogFlowFunc(("@%#RX64: rc=%Rrc cbWritten=%RU32 cMsDelta=%RU64 (%RU64 -> %RU64) {%s}\n", pStreamWas->offInternal, rc, cbWritten,
                  msPrev ? msNow - msPrev : 0, msPrev, pStreamWas->msLastTransfer, drvHostWasStreamStatusString(pStreamWas) ));
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHostAudioWasHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PDRVHOSTAUDIOWASSTREAM pStreamWas = (PDRVHOSTAUDIOWASSTREAM)pStream;
+    AssertPtrReturn(pStreamWas, 0);
+    Assert(pStreamWas->Cfg.enmDir == PDMAUDIODIR_IN);
+
+    uint32_t cbReadable = 0;
+    RTCritSectEnter(&pStreamWas->CritSect);
+
+    if (pStreamWas->pDevCfg->pIAudioCaptureClient /* paranoia */)
+    {
+        UINT32  cFramesPending = 0;
+        HRESULT hrc = pStreamWas->pDevCfg->pIAudioClient->GetCurrentPadding(&cFramesPending);
+        if (SUCCEEDED(hrc))
+        {
+            /* An unreleased buffer is included in the pending frame count, so subtract
+               whatever we've got hanging around since the previous pfnStreamCapture call. */
+            AssertMsgStmt(cFramesPending >= pStreamWas->cFramesCaptureToRelease,
+                          ("%#x vs %#x\n", cFramesPending, pStreamWas->cFramesCaptureToRelease),
+                          cFramesPending = pStreamWas->cFramesCaptureToRelease);
+            cFramesPending -= pStreamWas->cFramesCaptureToRelease;
+
+            /* Add what we've got left in said buffer. */
+            uint32_t cFramesCurPacket = PDMAudioPropsBytesToFrames(&pStreamWas->Cfg.Props, pStreamWas->cbCapture);
+            cFramesPending += cFramesCurPacket;
+
+            /* Paranoia: Make sure we don't exceed the buffer size. */
+            AssertMsgStmt(cFramesPending <= pStreamWas->Cfg.Backend.cFramesBufferSize,
+                          ("cFramesPending=%#x cFramesCaptureToRelease=%#x cFramesCurPacket=%#x cFramesBufferSize=%#x\n",
+                           cFramesPending, pStreamWas->cFramesCaptureToRelease, cFramesCurPacket,
+                           pStreamWas->Cfg.Backend.cFramesBufferSize),
+                          cFramesPending = pStreamWas->Cfg.Backend.cFramesBufferSize);
+
+            cbReadable = PDMAudioPropsFramesToBytes(&pStreamWas->Cfg.Props, cFramesPending);
+        }
+        else
+            LogRelMax(64, ("WasAPI: GetCurrentPadding failed on '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
+    }
+
+    RTCritSectLeave(&pStreamWas->CritSect);
+
+    LogFlowFunc(("returns %#x (%u) {%s}\n", cbReadable, cbReadable, drvHostWasStreamStatusString(pStreamWas)));
+    return cbReadable;
 }
 
 
@@ -3029,11 +3029,11 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->IHostAudio.pfnStreamDestroy              = drvHostAudioWasHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = drvHostAudioWasHA_StreamNotifyDeviceChanged;
     pThis->IHostAudio.pfnStreamControl              = drvHostAudioWasHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioWasHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioWasHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = drvHostAudioWasHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamGetState             = drvHostAudioWasHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = drvHostAudioWasHA_StreamGetPending;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHostAudioWasHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHostAudioWasHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHostAudioWasHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHostAudioWasHA_StreamCapture;
 
     /*

@@ -149,37 +149,6 @@ static DECLCALLBACK(int) drvHstAudNullHA_StreamControl(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    /** @todo rate limit this?   */
-    return UINT32_MAX;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    return UINT32_MAX;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetPending}
- */
-static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface, pStream);
-    return 0;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
 static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudNullHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
@@ -198,6 +167,26 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudNullHA_StreamGetState(PPDM
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetPending}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    return UINT32_MAX;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHstAudNullHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
@@ -208,6 +197,17 @@ static DECLCALLBACK(int) drvHstAudNullHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
     /* The bitbucket never overflows. */
     *pcbWritten = cbBuf;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudNullHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    /** @todo rate limit this?   */
+    return UINT32_MAX;
 }
 
 

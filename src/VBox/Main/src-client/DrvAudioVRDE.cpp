@@ -556,20 +556,15 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamControl(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVrdeHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                           PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface);
-    PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
-    {
-        /* Return frames instead of bytes here
-         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        return PDMAudioPropsBytesToFrames(&pStreamVRDE->Cfg.Props, (uint32_t)RTCircBufUsed(pStreamVRDE->In.pCircBuf));
-    }
-    return 0;
+    return pDrv->cClients > 0 ? PDMHOSTAUDIOSTREAMSTATE_OKAY : PDMHOSTAUDIOSTREAMSTATE_INACTIVE;
 }
 
 
@@ -585,19 +580,6 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pI
     if (pDrv->cClients)
         return _16K * sizeof(int64_t) * 2;
     return 0;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
- */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVrdeHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                           PPDMAUDIOBACKENDSTREAM pStream)
-{
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
-
-    return pDrv->cClients > 0 ? PDMHOSTAUDIOSTREAMSTATE_OKAY : PDMHOSTAUDIOSTREAMSTATE_INACTIVE;
 }
 
 
@@ -640,6 +622,24 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
     *pcbWritten = PDMAudioPropsFramesToBytes(&pStream->pStream->Cfg.Props, cFrames);
     Assert(*pcbWritten == cbBuf);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
+
+    if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
+    {
+        /* Return frames instead of bytes here
+         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
+        return PDMAudioPropsBytesToFrames(&pStreamVRDE->Cfg.Props, (uint32_t)RTCircBufUsed(pStreamVRDE->In.pCircBuf));
+    }
+    return 0;
 }
 
 
@@ -776,11 +776,11 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IHostAudio.pfnStreamDestroy              = drvAudioVrdeHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvAudioVrdeHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVrdeHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVrdeHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetState             = drvAudioVrdeHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvAudioVrdeHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvAudioVrdeHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvAudioVrdeHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvAudioVrdeHA_StreamCapture;
 
     /*

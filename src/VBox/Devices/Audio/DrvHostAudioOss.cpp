@@ -676,13 +676,17 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamControl(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
-static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudOssHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                           PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    Log4Func(("returns UINT32_MAX\n"));
-    return UINT32_MAX;
+    RT_NOREF(pInterface);
+    PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+    AssertPtrReturn(pStreamOSS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+    if (!pStreamOSS->fDraining)
+        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 }
 
 
@@ -719,21 +723,6 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
     uint32_t cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
     Log4Func(("returns %#x (%u)\n", cbRet, cbRet));
     return cbRet;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
- */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudOssHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                           PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
-    AssertPtrReturn(pStreamOSS, PDMHOSTAUDIOSTREAMSTATE_INVALID);
-    if (!pStreamOSS->fDraining)
-        return PDMHOSTAUDIOSTREAMSTATE_OKAY;
-    return PDMHOSTAUDIOSTREAMSTATE_DRAINING;
 }
 
 
@@ -819,6 +808,17 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
 
     *pcbWritten = offChunk;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+    Log4Func(("returns UINT32_MAX\n"));
+    return UINT32_MAX;
 }
 
 
@@ -912,11 +912,11 @@ static DECLCALLBACK(int) drvHstAudOssConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudOssHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHstAudOssHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudOssHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudOssHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetState             = drvHstAudOssHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudOssHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHstAudOssHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudOssHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHstAudOssHA_StreamCapture;
 
     return VINF_SUCCESS;

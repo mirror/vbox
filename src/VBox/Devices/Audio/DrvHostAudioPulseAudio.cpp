@@ -1589,69 +1589,6 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamControl(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    PDRVHSTAUDPA        pThis      = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
-    PDRVHSTAUDPASTREAM  pStreamPA  = (PDRVHSTAUDPASTREAM)pStream;
-    uint32_t            cbReadable = 0;
-    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
-    {
-        pa_threaded_mainloop_lock(pThis->pMainLoop);
-
-        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
-        if (PA_STREAM_IS_GOOD(enmState))
-        {
-            size_t cbReadablePa = pa_stream_readable_size(pStreamPA->pStream);
-            if (cbReadablePa != (size_t)-1)
-                cbReadable = (uint32_t)cbReadablePa;
-            else
-                drvHstAudPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
-        }
-        else
-            LogFunc(("non-good stream state: %d\n", enmState));
-
-        pa_threaded_mainloop_unlock(pThis->pMainLoop);
-    }
-    Log3Func(("returns %#x (%u)\n", cbReadable, cbReadable));
-    return cbReadable;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    PDRVHSTAUDPA        pThis      = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
-    PDRVHSTAUDPASTREAM  pStreamPA  = (PDRVHSTAUDPASTREAM)pStream;
-    uint32_t            cbWritable = 0;
-    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
-    {
-        pa_threaded_mainloop_lock(pThis->pMainLoop);
-
-        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
-        if (PA_STREAM_IS_GOOD(enmState))
-        {
-            size_t cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
-            if (cbWritablePa != (size_t)-1)
-                cbWritable = cbWritablePa <= UINT32_MAX ? (uint32_t)cbWritablePa : UINT32_MAX;
-            else
-                drvHstAudPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
-        }
-        else
-            LogFunc(("non-good stream state: %d\n", enmState));
-
-        pa_threaded_mainloop_unlock(pThis->pMainLoop);
-    }
-    Log3Func(("returns %#x (%u) [max=%#RX32 min=%#RX32]\n",
-              cbWritable, cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
-    return cbWritable;
-}
-
-
-/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
  */
 static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudPaHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
@@ -1694,6 +1631,38 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudPaHA_StreamGetState(PPDMIH
         LogFunc(("No context!\n"));
     LogFlowFunc(("returns %s for stream '%s'\n", PDMHostAudioStreamStateGetName(enmBackendStreamState), pStreamPA->Cfg.szName));
     return enmBackendStreamState;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    PDRVHSTAUDPA        pThis      = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
+    PDRVHSTAUDPASTREAM  pStreamPA  = (PDRVHSTAUDPASTREAM)pStream;
+    uint32_t            cbWritable = 0;
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_OUT)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
+        if (PA_STREAM_IS_GOOD(enmState))
+        {
+            size_t cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
+            if (cbWritablePa != (size_t)-1)
+                cbWritable = cbWritablePa <= UINT32_MAX ? (uint32_t)cbWritablePa : UINT32_MAX;
+            else
+                drvHstAudPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
+        }
+        else
+            LogFunc(("non-good stream state: %d\n", enmState));
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    }
+    Log3Func(("returns %#x (%u) [max=%#RX32 min=%#RX32]\n",
+              cbWritable, cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
+    return cbWritable;
 }
 
 
@@ -1773,6 +1742,37 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
     }
     Log3Func(("returns %Rrc *pcbWritten=%#x iLoop=%u\n", rc, cbTotalWritten, iLoop));
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    PDRVHSTAUDPA        pThis      = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
+    PDRVHSTAUDPASTREAM  pStreamPA  = (PDRVHSTAUDPASTREAM)pStream;
+    uint32_t            cbReadable = 0;
+    if (pStreamPA->Cfg.enmDir == PDMAUDIODIR_IN)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+
+        pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
+        if (PA_STREAM_IS_GOOD(enmState))
+        {
+            size_t cbReadablePa = pa_stream_readable_size(pStreamPA->pStream);
+            if (cbReadablePa != (size_t)-1)
+                cbReadable = (uint32_t)cbReadablePa;
+            else
+                drvHstAudPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
+        }
+        else
+            LogFunc(("non-good stream state: %d\n", enmState));
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+    }
+    Log3Func(("returns %#x (%u)\n", cbReadable, cbReadable));
+    return cbReadable;
 }
 
 
@@ -2042,11 +2042,11 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudPaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHstAudPaHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudPaHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudPaHA_StreamGetWritable;
-    pThis->IHostAudio.pfnStreamGetPending           = NULL;
     pThis->IHostAudio.pfnStreamGetState             = drvHstAudPaHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetPending           = NULL;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudPaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHstAudPaHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudPaHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHstAudPaHA_StreamCapture;
 
     /*

@@ -938,6 +938,41 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamControl(PPDMIHOSTAUDIO pInterface
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
+ */
+static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudAlsaHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
+                                                                            PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
+    AssertPtrReturn(pStreamALSA, PDMHOSTAUDIOSTREAMSTATE_INVALID);
+
+    PDMHOSTAUDIOSTREAMSTATE enmStreamState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
+    snd_pcm_state_t         enmAlsaState   = snd_pcm_state(pStreamALSA->hPCM);
+    if (enmAlsaState == SND_PCM_STATE_DRAINING)
+    {
+        /* We're operating in non-blocking mode, so we must (at least for a demux
+           config) call snd_pcm_drain again to drive it forward.  Otherwise we
+           might be stuck in the drain state forever. */
+        Log5Func(("Calling snd_pcm_drain again...\n"));
+        snd_pcm_drain(pStreamALSA->hPCM);
+        enmAlsaState = snd_pcm_state(pStreamALSA->hPCM);
+    }
+
+    if (enmAlsaState == SND_PCM_STATE_DRAINING)
+        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
+#if (((SND_LIB_MAJOR) << 16) | ((SND_LIB_MAJOR) << 8) | (SND_LIB_SUBMINOR)) >= 0x10002 /* was added in 1.0.2 */
+    else if (enmAlsaState == SND_PCM_STATE_DISCONNECTED)
+        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
+#endif
+
+    Log5Func(("Stream '%s': ALSA state=%s -> %s\n",
+              pStreamALSA->Cfg.szName, snd_pcm_state_name(enmAlsaState), PDMHostAudioStreamStateGetName(enmStreamState) ));
+    return enmStreamState;
+}
+
+
+/**
  * Returns the available audio frames queued.
  *
  * @returns VBox status code.
@@ -985,42 +1020,6 @@ static int alsaStreamGetAvail(snd_pcm_t *hPCM, snd_pcm_sframes_t *pcFramesAvail)
     LogFunc(("failed - cFramesAvail=%ld rc=%Rrc\n", cFramesAvail, rc));
     *pcFramesAvail = 0;
     return rc;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudAlsaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
-
-    uint32_t          cbAvail      = 0;
-    snd_pcm_sframes_t cFramesAvail = 0;
-    int rc = alsaStreamGetAvail(pStreamALSA->hPCM, &cFramesAvail);
-    if (RT_SUCCESS(rc))
-        cbAvail = PDMAudioPropsFramesToBytes(&pStreamALSA->Cfg.Props, cFramesAvail);
-
-    return cbAvail;
-}
-
-
-/**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
- */
-static DECLCALLBACK(uint32_t) drvHstAudAlsaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
-{
-    RT_NOREF(pInterface);
-    PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
-
-    uint32_t          cbAvail      = 0;
-    snd_pcm_sframes_t cFramesAvail = 0;
-    int rc = alsaStreamGetAvail(pStreamALSA->hPCM, &cFramesAvail);
-    if (RT_SUCCESS(rc))
-        cbAvail = PDMAudioPropsFramesToBytes(&pStreamALSA->Cfg.Props, cFramesAvail);
-
-    return cbAvail;
 }
 
 
@@ -1083,37 +1082,20 @@ static DECLCALLBACK(uint32_t) drvHstAudAlsaHA_StreamGetPending(PPDMIHOSTAUDIO pI
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetState}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudAlsaHA_StreamGetState(PPDMIHOSTAUDIO pInterface,
-                                                                            PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHstAudAlsaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
-    AssertPtrReturn(pStreamALSA, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
-    PDMHOSTAUDIOSTREAMSTATE enmStreamState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
-    snd_pcm_state_t         enmAlsaState   = snd_pcm_state(pStreamALSA->hPCM);
-    if (enmAlsaState == SND_PCM_STATE_DRAINING)
-    {
-        /* We're operating in non-blocking mode, so we must (at least for a demux
-           config) call snd_pcm_drain again to drive it forward.  Otherwise we
-           might be stuck in the drain state forever. */
-        Log5Func(("Calling snd_pcm_drain again...\n"));
-        snd_pcm_drain(pStreamALSA->hPCM);
-        enmAlsaState = snd_pcm_state(pStreamALSA->hPCM);
-    }
+    uint32_t          cbAvail      = 0;
+    snd_pcm_sframes_t cFramesAvail = 0;
+    int rc = alsaStreamGetAvail(pStreamALSA->hPCM, &cFramesAvail);
+    if (RT_SUCCESS(rc))
+        cbAvail = PDMAudioPropsFramesToBytes(&pStreamALSA->Cfg.Props, cFramesAvail);
 
-    if (enmAlsaState == SND_PCM_STATE_DRAINING)
-        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_DRAINING;
-#if (((SND_LIB_MAJOR) << 16) | ((SND_LIB_MAJOR) << 8) | (SND_LIB_SUBMINOR)) >= 0x10002 /* was added in 1.0.2 */
-    else if (enmAlsaState == SND_PCM_STATE_DISCONNECTED)
-        enmStreamState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
-#endif
-
-    Log5Func(("Stream '%s': ALSA state=%s -> %s\n",
-              pStreamALSA->Cfg.szName, snd_pcm_state_name(enmAlsaState), PDMHostAudioStreamStateGetName(enmStreamState) ));
-    return enmStreamState;
+    return cbAvail;
 }
 
 
@@ -1230,6 +1212,24 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
         LogFunc(("Error getting number of playback frames, rc=%Rrc\n", rc));
     *pcbWritten = 0;
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHstAudAlsaHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
+
+    uint32_t          cbAvail      = 0;
+    snd_pcm_sframes_t cFramesAvail = 0;
+    int rc = alsaStreamGetAvail(pStreamALSA->hPCM, &cFramesAvail);
+    if (RT_SUCCESS(rc))
+        cbAvail = PDMAudioPropsFramesToBytes(&pStreamALSA->Cfg.Props, cFramesAvail);
+
+    return cbAvail;
 }
 
 
@@ -1412,11 +1412,11 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IHostAudio.pfnStreamDestroy              = drvHstAudAlsaHA_StreamDestroy;
     pThis->IHostAudio.pfnStreamNotifyDeviceChanged  = NULL;
     pThis->IHostAudio.pfnStreamControl              = drvHstAudAlsaHA_StreamControl;
-    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudAlsaHA_StreamGetReadable;
-    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudAlsaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamGetPending           = drvHstAudAlsaHA_StreamGetPending;
     pThis->IHostAudio.pfnStreamGetState             = drvHstAudAlsaHA_StreamGetState;
+    pThis->IHostAudio.pfnStreamGetWritable          = drvHstAudAlsaHA_StreamGetWritable;
     pThis->IHostAudio.pfnStreamPlay                 = drvHstAudAlsaHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudAlsaHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHstAudAlsaHA_StreamCapture;
 
     /*
