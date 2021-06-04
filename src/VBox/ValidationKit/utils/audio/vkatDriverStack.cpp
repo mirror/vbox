@@ -854,9 +854,9 @@ int audioTestDriverStackStreamEnable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTRE
     else
     {
         PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
-        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_ENABLE);
+        rc = pDrvStack->pIHostAudio->pfnStreamEnable(pDrvStack->pIHostAudio, &pStreamAt->Backend);
         if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamControl/ENABLE failed: %Rrc", rc);
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamEnable failed: %Rrc", rc);
     }
     return rc;
 }
@@ -877,9 +877,9 @@ int AudioTestDriverStackStreamDisable(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTR
     else
     {
         PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
-        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_DISABLE);
+        rc = pDrvStack->pIHostAudio->pfnStreamDisable(pDrvStack->pIHostAudio, &pStreamAt->Backend);
         if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamControl/DISABLE failed: %Rrc", rc);
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamDisable failed: %Rrc", rc);
     }
     return rc;
 }
@@ -929,7 +929,7 @@ int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREA
          * Issue the drain request.
          */
         PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
-        rc = pDrvStack->pIHostAudio->pfnStreamControl(pDrvStack->pIHostAudio, &pStreamAt->Backend, PDMAUDIOSTREAMCMD_DRAIN);
+        rc = pDrvStack->pIHostAudio->pfnStreamDrain(pDrvStack->pIHostAudio, &pStreamAt->Backend);
         if (RT_SUCCESS(rc) && fSync)
         {
             /*
