@@ -178,35 +178,30 @@ typedef enum
     kDmarDiag_None = 0,
 
     /* Address Translation Faults. */
-    kDmarDiag_Atf_Lct_1,
-    kDmarDiag_Atf_Lct_2,
-    kDmarDiag_Atf_Lct_3,
-    kDmarDiag_Atf_Lct_4_1,
-    kDmarDiag_Atf_Lct_4_2,
-    kDmarDiag_Atf_Lct_4_3,
-    kDmarDiag_Atf_Lct_5,
-    kDmarDiag_Atf_Lgn_1_1,
-    kDmarDiag_Atf_Lgn_1_2,
-    kDmarDiag_Atf_Lgn_1_3,
-    kDmarDiag_Atf_Lgn_4,
-    kDmarDiag_Atf_Lrt_1,
-    kDmarDiag_Atf_Lrt_2,
-    kDmarDiag_Atf_Lrt_3,
-    kDmarDiag_Atf_Lsl_1,
-    kDmarDiag_Atf_Lsl_2,
-    kDmarDiag_Atf_Lsl_2_LargePage,
-    kDmarDiag_Atf_Rta_1_1,
-    kDmarDiag_Atf_Rta_1_2,
-    kDmarDiag_Atf_Rta_1_3,
-    kDmarDiag_Atf_Sgn_5,
-    kDmarDiag_Atf_Sgn_8,
-    kDmarDiag_Atf_Ssl_1,
-    kDmarDiag_Atf_Ssl_2,
-    kDmarDiag_Atf_Ssl_3,
-    kDmarDiag_Atf_Ssl_3_LargePage,
+    kDmarDiag_At_Lm_CtxEntry_Not_Present,
+    kDmarDiag_At_Lm_CtxEntry_Read_Failed,
+    kDmarDiag_At_Lm_CtxEntry_Rsvd,
+    kDmarDiag_At_Lm_Pt_At_Block,
+    kDmarDiag_At_Lm_Pt_Aw_Invalid,
+    kDmarDiag_At_Lm_RootEntry_Not_Present,
+    kDmarDiag_At_Lm_RootEntry_Read_Failed,
+    kDmarDiag_At_Lm_RootEntry_Rsvd,
+    kDmarDiag_At_Lm_Slpptr_Read_Failed,
+    kDmarDiag_At_Lm_Tt_Invalid,
+    kDmarDiag_At_Lm_Ut_At_Block,
+    kDmarDiag_At_Lm_Ut_Aw_Invalid,
+    kDmarDiag_At_Rta_Adms_Not_Supported,
+    kDmarDiag_At_Rta_Rsvd,
+    kDmarDiag_At_Rta_Smts_Not_Supported,
+    kDmarDiag_At_Xm_AddrIn_Invalid,
+    kDmarDiag_At_Xm_AddrOut_Invalid,
+    kDmarDiag_At_Xm_Perm_Denied,
+    kDmarDiag_At_Xm_Pte_Rsvd,
+    kDmarDiag_At_Xm_Pte_Sllps_Invalid,
+    kDmarDiag_At_Xm_Read_Pte_Failed,
 
     /* CCMD_REG faults. */
-    kDmarDiag_CcmdReg_NotSupported,
+    kDmarDiag_CcmdReg_Not_Supported,
     kDmarDiag_CcmdReg_Qi_Enabled,
     kDmarDiag_CcmdReg_Ttm_Invalid,
 
@@ -224,12 +219,10 @@ typedef enum
 
     /* IQT_REG faults. */
     kDmarDiag_IqtReg_Qt_Invalid,
-    kDmarDiag_IqtReg_Qt_NotAligned,
+    kDmarDiag_IqtReg_Qt_Not_Aligned,
 
-    /* Compatibility Format Interrupt Faults. */
+    /* Interrupt Remapping Faults. */
     kDmarDiag_Ir_Cfi_Blocked,
-
-    /* Remappable Format Interrupt Faults. */
     kDmarDiag_Ir_Rfi_Intr_Index_Invalid,
     kDmarDiag_Ir_Rfi_Irte_Mode_Invalid,
     kDmarDiag_Ir_Rfi_Irte_Not_Present,
@@ -256,56 +249,63 @@ AssertCompileSize(DMARDIAG, 4);
 /** DMAR diagnostics description for members in DMARDIAG. */
 static const char *const g_apszDmarDiagDesc[] =
 {
-    DMARDIAG_DESC(None                      ),
-    DMARDIAG_DESC(Atf_Lct_1                 ),
-    DMARDIAG_DESC(Atf_Lct_2                 ),
-    DMARDIAG_DESC(Atf_Lct_3                 ),
-    DMARDIAG_DESC(Atf_Lct_4_1               ),
-    DMARDIAG_DESC(Atf_Lct_4_2               ),
-    DMARDIAG_DESC(Atf_Lct_4_3               ),
-    DMARDIAG_DESC(Atf_Lct_5                 ),
-    DMARDIAG_DESC(Atf_Lgn_1_1               ),
-    DMARDIAG_DESC(Atf_Lgn_1_2               ),
-    DMARDIAG_DESC(Atf_Lgn_1_3               ),
-    DMARDIAG_DESC(Atf_Lgn_4                 ),
-    DMARDIAG_DESC(Atf_Lrt_1                 ),
-    DMARDIAG_DESC(Atf_Lrt_2                 ),
-    DMARDIAG_DESC(Atf_Lrt_3                 ),
-    DMARDIAG_DESC(Atf_Lsl_1                 ),
-    DMARDIAG_DESC(Atf_Lsl_2                 ),
-    DMARDIAG_DESC(Atf_Lsl_2_LargePage       ),
-    DMARDIAG_DESC(Atf_Rta_1_1               ),
-    DMARDIAG_DESC(Atf_Rta_1_2               ),
-    DMARDIAG_DESC(Atf_Rta_1_3               ),
-    DMARDIAG_DESC(Atf_Sgn_5                 ),
-    DMARDIAG_DESC(Atf_Sgn_8                 ),
-    DMARDIAG_DESC(Atf_Ssl_1                 ),
-    DMARDIAG_DESC(Atf_Ssl_2                 ),
-    DMARDIAG_DESC(Atf_Ssl_3                 ),
-    DMARDIAG_DESC(Atf_Ssl_3_LargePage       ),
-    DMARDIAG_DESC(CcmdReg_NotSupported      ),
-    DMARDIAG_DESC(CcmdReg_Qi_Enabled        ),
-    DMARDIAG_DESC(CcmdReg_Ttm_Invalid       ),
-    DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error    ),
-    DMARDIAG_DESC(IqaReg_Dw_128_Invalid     ),
-    DMARDIAG_DESC(IqaReg_Dw_256_Invalid     ),
-    DMARDIAG_DESC(Iqei_Dsc_Type_Invalid     ),
-    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_0_1_Rsvd),
-    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_2_3_Rsvd),
-    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Invalid ),
-    DMARDIAG_DESC(Iqei_Ttm_Rsvd             ),
-    DMARDIAG_DESC(IqtReg_Qt_Invalid         ),
-    DMARDIAG_DESC(IqtReg_Qt_NotAligned      ),
-    DMARDIAG_DESC(Ir_Cfi_Blocked            ),
-    DMARDIAG_DESC(Ir_Rfi_Intr_Index_Invalid ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Mode_Invalid  ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Not_Present   ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed   ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Rsvd          ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Bus       ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Masked    ),
-    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Rsvd      ),
-    DMARDIAG_DESC(Ir_Rfi_Rsvd               ),
+    DMARDIAG_DESC(None                       ),
+
+    /* Address Translation Faults. */
+    DMARDIAG_DESC(At_Lm_CtxEntry_Not_Present ),
+    DMARDIAG_DESC(At_Lm_CtxEntry_Read_Failed ),
+    DMARDIAG_DESC(At_Lm_CtxEntry_Rsvd        ),
+    DMARDIAG_DESC(At_Lm_Pt_At_Block          ),
+    DMARDIAG_DESC(At_Lm_Pt_Aw_Invalid        ),
+    DMARDIAG_DESC(At_Lm_RootEntry_Not_Present),
+    DMARDIAG_DESC(At_Lm_RootEntry_Read_Failed),
+    DMARDIAG_DESC(At_Lm_RootEntry_Rsvd       ),
+    DMARDIAG_DESC(At_Lm_Slpptr_Read_Failed   ),
+    DMARDIAG_DESC(At_Lm_Tt_Invalid           ),
+    DMARDIAG_DESC(At_Lm_Ut_At_Block          ),
+    DMARDIAG_DESC(At_Lm_Ut_Aw_Invalid        ),
+    DMARDIAG_DESC(At_Rta_Adms_Not_Supported  ),
+    DMARDIAG_DESC(At_Rta_Rsvd                ),
+    DMARDIAG_DESC(At_Rta_Smts_Not_Supported  ),
+    DMARDIAG_DESC(At_Xm_AddrIn_Invalid       ),
+    DMARDIAG_DESC(At_Xm_AddrOut_Invalid      ),
+    DMARDIAG_DESC(At_Xm_Perm_Denied          ),
+    DMARDIAG_DESC(At_Xm_Pte_Rsvd             ),
+    DMARDIAG_DESC(At_Xm_Pte_Sllps_Invalid    ),
+    DMARDIAG_DESC(At_Xm_Read_Pte_Failed      ),
+
+    /* CCMD_REG faults. */
+    DMARDIAG_DESC(CcmdReg_Not_Supported      ),
+    DMARDIAG_DESC(CcmdReg_Qi_Enabled         ),
+    DMARDIAG_DESC(CcmdReg_Ttm_Invalid        ),
+
+    /* IQA_REG faults. */
+    DMARDIAG_DESC(IqaReg_Dsc_Fetch_Error     ),
+    DMARDIAG_DESC(IqaReg_Dw_128_Invalid      ),
+    DMARDIAG_DESC(IqaReg_Dw_256_Invalid      ),
+
+    /* Invalidation Queue Error Info. */
+    DMARDIAG_DESC(Iqei_Dsc_Type_Invalid      ),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_0_1_Rsvd ),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_2_3_Rsvd ),
+    DMARDIAG_DESC(Iqei_Inv_Wait_Dsc_Invalid  ),
+    DMARDIAG_DESC(Iqei_Ttm_Rsvd              ),
+
+    /* IQT_REG faults. */
+    DMARDIAG_DESC(IqtReg_Qt_Invalid          ),
+    DMARDIAG_DESC(IqtReg_Qt_Not_Aligned      ),
+
+    /* Interrupt remapping faults. */
+    DMARDIAG_DESC(Ir_Cfi_Blocked             ),
+    DMARDIAG_DESC(Ir_Rfi_Intr_Index_Invalid  ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Mode_Invalid   ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Not_Present    ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Read_Failed    ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Rsvd           ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Bus        ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Masked     ),
+    DMARDIAG_DESC(Ir_Rfi_Irte_Svt_Rsvd       ),
+    DMARDIAG_DESC(Ir_Rfi_Rsvd                ),
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
@@ -1548,18 +1548,18 @@ static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTD
 
 
 /**
- * Records an address translation fault (extended version).
+ * Records an address translation fault.
  *
  * @param   pDevIns         The IOMMU device instance.
  * @param   enmDiag         The diagnostic reason.
- * @param   enmAtFault      The address translation fault reason.
  * @param   pMemReqIn       The DMA memory request input.
  * @param   pMemReqAux      The DMA memory request auxiliary info.
  */
-static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARMEMREQIN pMemReqIn,
-                                PCDMARMEMREQAUX pMemReqAux)
+static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, PCDMARMEMREQIN pMemReqIn, PCDMARMEMREQAUX pMemReqAux)
 {
-    /* Update the diagnostic reason (even if software wants to supress faults). */
+    /*
+     * Update the diagnostic reason (even if software wants to supress faults).
+     */
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     pThis->enmDiag = enmDiag;
 
@@ -1569,6 +1569,50 @@ static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT
      */
     if (!pMemReqAux->fFpd)
     {
+        /*
+         * Figure out the fault reason to report to software from our diagnostic code.
+         * The case labels below are sorted alphabetically for convenience.
+         */
+        VTDATFAULT enmAtFault;
+        bool const fLm = pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE;
+        switch (enmDiag)
+        {
+            /* LM (Legacy Mode) faults. */
+            case kDmarDiag_At_Lm_CtxEntry_Not_Present:       enmAtFault = VTDATFAULT_LCT_2;    break;
+            case kDmarDiag_At_Lm_CtxEntry_Read_Failed:       enmAtFault = VTDATFAULT_LCT_1;    break;
+            case kDmarDiag_At_Lm_CtxEntry_Rsvd:              enmAtFault = VTDATFAULT_LCT_3;    break;
+            case kDmarDiag_At_Lm_Pt_At_Block:                enmAtFault = VTDATFAULT_LCT_5;    break;
+            case kDmarDiag_At_Lm_Pt_Aw_Invalid:              enmAtFault = VTDATFAULT_LGN_1_3;  break;
+            case kDmarDiag_At_Lm_RootEntry_Not_Present:      enmAtFault = VTDATFAULT_LRT_2;    break;
+            case kDmarDiag_At_Lm_RootEntry_Read_Failed:      enmAtFault = VTDATFAULT_LRT_1;    break;
+            case kDmarDiag_At_Lm_RootEntry_Rsvd:             enmAtFault = VTDATFAULT_LRT_3;    break;
+            case kDmarDiag_At_Lm_Slpptr_Read_Failed:         enmAtFault = VTDATFAULT_LCT_4_3;  break;
+            case kDmarDiag_At_Lm_Tt_Invalid:                 enmAtFault = VTDATFAULT_LCT_4_2;  break;
+            case kDmarDiag_At_Lm_Ut_At_Block:                enmAtFault = VTDATFAULT_LCT_5;    break;
+            case kDmarDiag_At_Lm_Ut_Aw_Invalid:              enmAtFault = VTDATFAULT_LCT_4_1;  break;
+
+            /* RTA (Root Table Address) faults. */
+            case kDmarDiag_At_Rta_Adms_Not_Supported:        enmAtFault = VTDATFAULT_RTA_1_1;  break;
+            case kDmarDiag_At_Rta_Rsvd:                      enmAtFault = VTDATFAULT_RTA_1_2;  break;
+            case kDmarDiag_At_Rta_Smts_Not_Supported:        enmAtFault = VTDATFAULT_RTA_1_3;  break;
+
+            /* XM (Legacy mode or Scalable Mode) faults. */
+            case kDmarDiag_At_Xm_AddrIn_Invalid:             enmAtFault = fLm ? VTDATFAULT_LGN_1_1 : VTDATFAULT_SGN_5; break;
+            case kDmarDiag_At_Xm_AddrOut_Invalid:            enmAtFault = fLm ? VTDATFAULT_LGN_4 : VTDATFAULT_SGN_8;   break;
+            case kDmarDiag_At_Xm_Perm_Denied:                enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_2;   break;
+            case kDmarDiag_At_Xm_Pte_Rsvd:
+            case kDmarDiag_At_Xm_Pte_Sllps_Invalid:          enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_3;   break;
+            case kDmarDiag_At_Xm_Read_Pte_Failed:            enmAtFault = fLm ? VTDATFAULT_LSL_1 : VTDATFAULT_SSL_1;   break;
+
+            /* Shouldn't ever happen. */
+            default:
+            {
+                AssertLogRelMsgFailedReturnVoid(("%s: Invalid address translation fault diagnostic code %#x\n",
+                                                 DMAR_LOG_PFX, enmDiag));
+            }
+        }
+
+        /* Construct and record the error. */
         uint16_t const idDevice  = pMemReqIn->idDevice;
         uint8_t const  fType1    = pMemReqIn->enmReqType & RT_BIT(1);
         uint8_t const  fType2    = pMemReqIn->enmReqType & RT_BIT(0);
@@ -1591,20 +1635,6 @@ static void dmarAtFaultRecordEx(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT
         uint64_t const uFrcdLo = pMemReqIn->AddrRange.uAddr & X86_PAGE_BASE_MASK;
         dmarPrimaryFaultRecord(pDevIns, uFrcdHi, uFrcdLo);
     }
-}
-
-
-/**
- * Records an address translation fault.
- *
- * @param   pDevIns         The IOMMU device instance.
- * @param   enmDiag         The diagnostic reason.
- * @param   enmAtFault      The address translation fault reason.
- * @param   pMemReqRemap    The DMA memory request remapping info.
- */
-static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDATFAULT enmAtFault, PCDMARMEMREQREMAP pMemReqRemap)
-{
-    dmarAtFaultRecordEx(pDevIns, enmDiag, enmAtFault, &pMemReqRemap->In, &pMemReqRemap->Aux);
 }
 
 
@@ -1760,7 +1790,7 @@ static VBOXSTRICTRC dmarCcmdRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint8_
                     pThis->enmDiag = kDmarDiag_CcmdReg_Qi_Enabled;
             }
             else
-                pThis->enmDiag = kDmarDiag_CcmdReg_NotSupported;
+                pThis->enmDiag = kDmarDiag_CcmdReg_Not_Supported;
             dmarRegChangeRaw64(pThis, VTD_MMIO_OFF_GSTS_REG, ~VTD_BF_CCMD_REG_CAIG_MASK, 0 /* fOrMask */);
         }
     }
@@ -1844,7 +1874,7 @@ static VBOXSTRICTRC dmarIqtRegWrite(PPDMDEVINS pDevIns, uint16_t offReg, uint64_
     {
         /* Hardware treats bit 4 as RsvdZ in this situation, so clear it. */
         dmarRegChangeRaw32(pThis, offReg, ~RT_BIT(4), 0 /* fOrMask */);
-        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_NotAligned, VTDIQEI_QUEUE_TAIL_MISALIGNED);
+        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqtReg_Qt_Not_Aligned, VTDIQEI_QUEUE_TAIL_MISALIGNED);
     }
     return VINF_SUCCESS;
 }
@@ -2089,10 +2119,7 @@ static int dmarDrUpdateIoPageOut(PPDMDEVINS pDevIns, RTGCPHYS GCPhysBase, uint8_
         return VINF_SUCCESS;
     }
 
-    if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-        dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lgn_4, VTDATFAULT_LGN_4, pMemReqIn, pMemReqAux);
-    else
-        dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Sgn_8, VTDATFAULT_SGN_8, pMemReqIn, pMemReqAux);
+    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_AddrOut_Invalid, pMemReqIn, pMemReqAux);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -2137,10 +2164,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
     { /* likely */ }
     else
     {
-        if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-            dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lgn_1_1, VTDATFAULT_LGN_1_1, pMemReqIn, pMemReqAux);
-        else
-            dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Sgn_5, VTDATFAULT_SGN_5, pMemReqIn, pMemReqAux);
+        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_AddrIn_Invalid, pMemReqIn, pMemReqAux);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -2168,10 +2192,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         { /* likely */ }
         else
         {
-            if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_2, VTDATFAULT_LSL_2, pMemReqIn, pMemReqAux);
-            else
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_2, VTDATFAULT_SSL_2, pMemReqIn, pMemReqAux);
+            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Denied, pMemReqIn, pMemReqAux);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2182,10 +2203,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         { /* likely */ }
         else
         {
-            if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_2, VTDATFAULT_LSL_2, pMemReqIn, pMemReqAux);
-            else
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_3, VTDATFAULT_SSL_3, pMemReqIn, pMemReqAux);
+            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Rsvd, pMemReqIn, pMemReqAux);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2211,10 +2229,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
                 return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
             }
 
-            if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_2_LargePage, VTDATFAULT_LSL_2, pMemReqIn, pMemReqAux);
-            else
-                dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_3_LargePage, VTDATFAULT_SSL_3, pMemReqIn, pMemReqAux);
+            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Sllps_Invalid, pMemReqIn, pMemReqAux);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2245,10 +2260,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
             { /* likely */ }
             else
             {
-                if (pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE)
-                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Lsl_1, VTDATFAULT_LSL_1, pMemReqIn, pMemReqAux);
-                else
-                    dmarAtFaultRecordEx(pDevIns, kDmarDiag_Atf_Ssl_1, VTDATFAULT_SSL_1, pMemReqIn, pMemReqAux);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
                 return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
         }
@@ -2372,10 +2384,13 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
  */
 static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
 {
-    Assert(pMemReqRemap->Aux.fTtm == VTD_TTM_LEGACY_MODE);    /* Paranoia. */
+    PCDMARMEMREQIN  pMemReqIn  = &pMemReqRemap->In;
+    PDMARMEMREQAUX  pMemReqAux = &pMemReqRemap->Aux;
+    PDMARMEMREQOUT  pMemReqOut = &pMemReqRemap->Out;
+    Assert(pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE);    /* Paranoia. */
 
     /* Read the root-entry from guest memory. */
-    uint8_t const idxRootEntry = RT_HI_U8(pMemReqRemap->In.idDevice);
+    uint8_t const idxRootEntry = RT_HI_U8(pMemReqIn->idDevice);
     VTD_ROOT_ENTRY_T RootEntry;
     int rc = dmarDrReadRootEntry(pDevIns, uRtaddrReg, idxRootEntry, &RootEntry);
     if (RT_SUCCESS(rc))
@@ -2392,7 +2407,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
             {
                 /* Read the context-entry from guest memory. */
                 RTGCPHYS const GCPhysCtxTable = uRootEntryQword0 & VTD_BF_0_ROOT_ENTRY_CTP_MASK;
-                uint8_t const idxCtxEntry = RT_LO_U8(pMemReqRemap->In.idDevice);
+                uint8_t const idxCtxEntry = RT_LO_U8(pMemReqIn->idDevice);
                 VTD_CONTEXT_ENTRY_T CtxEntry;
                 rc = dmarDrReadCtxEntry(pDevIns, GCPhysCtxTable, idxCtxEntry, &CtxEntry);
                 if (RT_SUCCESS(rc))
@@ -2401,7 +2416,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                     uint64_t const uCtxEntryQword1 = CtxEntry.au64[1];
 
                     /* Note the FPD bit which software can use to supress translation faults from here on in. */
-                    pMemReqRemap->Aux.fFpd = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_FPD);
+                    pMemReqAux->fFpd = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_FPD);
 
                     /* Check if the context-entry is present (must be done before validating reserved bits). */
                     bool const fCtxEntryPresent = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_P);
@@ -2412,7 +2427,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                             && !(uCtxEntryQword1 & ~VTD_CONTEXT_ENTRY_1_VALID_MASK))
                         {
                             /* Get the domain ID for this mapping. */
-                            pMemReqRemap->Out.idDomain = RT_BF_GET(uCtxEntryQword1, VTD_BF_1_CONTEXT_ENTRY_DID);
+                            pMemReqOut->idDomain = RT_BF_GET(uCtxEntryQword1, VTD_BF_1_CONTEXT_ENTRY_DID);
 
                             /* Validate the translation type (TT). */
                             PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
@@ -2425,7 +2440,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                      * Untranslated requests are translated using second-level paging structures referenced
                                      * through SLPTPTR. Translated requests and Translation Requests are blocked.
                                      */
-                                    if (pMemReqRemap->In.enmAddrType == PCIADDRTYPE_UNTRANSLATED)
+                                    if (pMemReqIn->enmAddrType == PCIADDRTYPE_UNTRANSLATED)
                                     {
                                         /* Validate the address width and get the paging level. */
                                         uint8_t cPagingLevel;
@@ -2438,17 +2453,17 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                             if (RT_SUCCESS(rc))
                                             {
                                                 /* Finally... perform second-level translation. */
-                                                pMemReqRemap->Aux.uSlptPtr     = SlptPtr;
-                                                pMemReqRemap->Aux.cPagingLevel = cPagingLevel;
+                                                pMemReqAux->uSlptPtr     = SlptPtr;
+                                                pMemReqAux->cPagingLevel = cPagingLevel;
                                                 return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
                                             }
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_3, VTDATFAULT_LCT_4_3, pMemReqRemap);
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Slpptr_Read_Failed, pMemReqIn, pMemReqAux);
                                         }
                                         else
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_1, VTDATFAULT_LCT_4_1, pMemReqRemap);
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_Aw_Invalid, pMemReqIn, pMemReqAux);
                                     }
                                     else
-                                        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pMemReqRemap);
+                                        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_At_Block, pMemReqIn, pMemReqAux);
                                     break;
                                 }
 
@@ -2472,10 +2487,10 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                                 pOut->AddrRange.fPerm = DMAR_PERM_ALL;
                                                 return VINF_SUCCESS;
                                             }
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lgn_1_3, VTDATFAULT_LGN_1_3, pMemReqRemap);
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Pt_Aw_Invalid, pMemReqIn, pMemReqAux);
                                         }
                                         else
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_5, VTDATFAULT_LCT_5, pMemReqRemap);
+                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Pt_At_Block, pMemReqIn, pMemReqAux);
                                         break;
                                     }
                                     RT_FALL_THRU();
@@ -2494,28 +2509,28 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                 default:
                                 {
                                     /* Any other TT value is reserved. */
-                                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_4_2, VTDATFAULT_LCT_4_2, pMemReqRemap);
+                                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Tt_Invalid, pMemReqIn, pMemReqAux);
                                     break;
                                 }
                             }
                         }
                         else
-                            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_3, VTDATFAULT_LCT_3, pMemReqRemap);
+                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_CtxEntry_Rsvd, pMemReqIn, pMemReqAux);
                     }
                     else
-                        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_2, VTDATFAULT_LCT_2, pMemReqRemap);
+                        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_CtxEntry_Not_Present, pMemReqIn, pMemReqAux);
                 }
                 else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lct_1, VTDATFAULT_LCT_1, pMemReqRemap);
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_CtxEntry_Read_Failed, pMemReqIn, pMemReqAux);
             }
             else
-                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_3, VTDATFAULT_LRT_3, pMemReqRemap);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_RootEntry_Rsvd, pMemReqIn, pMemReqAux);
         }
         else
-            dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_2, VTDATFAULT_LRT_2, pMemReqRemap);
+            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_RootEntry_Not_Present, pMemReqIn, pMemReqAux);
     }
     else
-        dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Lrt_1, VTDATFAULT_LRT_1, pMemReqRemap);
+        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_RootEntry_Read_Failed, pMemReqIn, pMemReqAux);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -2530,6 +2545,8 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
  */
 static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
 {
+    NOREF(pMemReqRemap);
+
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
     {
@@ -2537,7 +2554,6 @@ static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, 
         return VERR_NOT_IMPLEMENTED;
     }
 
-    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_3, VTDATFAULT_RTA_1_3, pMemReqRemap);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -2637,7 +2653,13 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
 
             case VTD_TTM_SCALABLE_MODE:
             {
-                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &MemReqRemap);
+                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
+                    rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &MemReqRemap);
+                else
+                {
+                    rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Smts_Not_Supported, &MemReqRemap.In, &MemReqRemap.Aux);
+                }
                 break;
             }
 
@@ -2647,14 +2669,14 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
                 if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
                     dmarDrTargetAbort(pDevIns);
                 else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_1, VTDATFAULT_RTA_1_1, &MemReqRemap);
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Adms_Not_Supported, &MemReqRemap.In, &MemReqRemap.Aux);
                 break;
             }
 
             default:
             {
                 rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-                dmarAtFaultRecord(pDevIns, kDmarDiag_Atf_Rta_1_2, VTDATFAULT_RTA_1_2, &MemReqRemap);
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Rsvd, &MemReqRemap.In, &MemReqRemap.Aux);
                 break;
             }
         }
