@@ -732,13 +732,12 @@ static void drvHstAudPaStreamReqWriteDebugCallback(pa_stream *pStream, size_t cb
     pa_usec_t cUsLatency = 0;
     int       fNegative  = 0;
     int       rcPa = pa_stream_get_latency(pStream, &cUsLatency, &fNegative);
-    Log2Func(("Requesting %zu bytes; Latency: %'RU64 us%s\n",
-              cbLen, cUsLatency, rcPa == 0 ? " - pa_stream_get_latency failed!" : ""));
+    Log2Func(("Requesting %zu bytes; Latency: %'RU64 us (rcPa=%d n=%d)\n", cbLen, cUsLatency, rcPa, fNegative));
 }
 
 
 /**
- * Debug PA callback: Underflow.  This may happen when draing/corking.
+ * Debug PA callback: Underflow.  This may happen when draining/corking.
  */
 static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pvContext)
 {
@@ -749,6 +748,7 @@ static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pv
 
     LogRel2(("PulseAudio: Warning: Hit underflow #%RU32\n", pStrm->cUnderflows));
 
+# if 0
     if (   pStrm->cUnderflows >= 6                /** @todo Make this check configurable. */
         && pStrm->cUsLatency  < 2U*RT_US_1SEC)
     {
@@ -765,6 +765,7 @@ static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pv
 
         pStrm->cUnderflows = 0;
     }
+# endif
 
     pa_usec_t cUsLatency = 0;
     int       fNegative  = 0;
@@ -787,7 +788,7 @@ static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pv
 
 
 /**
- * Debug PA callback: Overflow.  This may happen when draing/corking.
+ * Debug PA callback: Overflow.  This may happen when draining/corking.
  */
 static void drvHstAudPaStreamOverflowDebugCallback(pa_stream *pStream, void *pvContext)
 {
@@ -1166,7 +1167,12 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
         {
             pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgAcq->Props, pCfgReq->Backend.cFramesBufferSize);
             pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
+#if 0 /* bird: Bad bad idea. Messes up output via a "Intel Corporation 200 Series PCH HD Audio"
+               device here on fedora-32. Just use the default instead. */
             pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgAcq->Props, pCfgReq->Backend.cFramesPeriod);
+#else
+            pStreamPA->BufAttr.minreq    = -1;
+#endif
             pStreamPA->BufAttr.prebuf    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgAcq->Props,
                                                                                        pCfgReq->Backend.cFramesPreBuffering),
                                                             &pStreamPA->SampleSpec);
@@ -1656,7 +1662,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("play delta: %'RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    Log3Func(("play delta: %'RI64 us; cbBuf=%#x\n",
+              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
@@ -1758,7 +1765,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("capture delta: %'RU64 us; cbBuf=%#x\n", tsNowUs - pStreamPA->tsLastReadWrittenUs, cbBuf));
+    Log3Func(("capture delta: %'RI64 us; cbBuf=%#x\n",
+              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
