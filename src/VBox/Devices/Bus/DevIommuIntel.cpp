@@ -1502,48 +1502,68 @@ static void dmarPrimaryFaultRecord(PPDMDEVINS pDevIns, uint64_t uFrcdHi, uint64_
  *
  * @param   pDevIns     The IOMMU device instance.
  * @param   enmDiag     The diagnostic reason.
- * @param   enmIrFault  The interrupt fault reason.
  * @param   idDevice    The device ID (bus, device, function).
  * @param   idxIntr     The interrupt index.
+ * @param   pIrte       The IRTE that caused this fault. Can be NULL if the fault is
+ *                      not qualified.
  */
-static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT enmIrFault, uint16_t idDevice, uint16_t idxIntr)
+static void dmarIrFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, uint16_t idDevice, uint16_t idxIntr, PCVTD_IRTE_T pIrte)
 {
-    /* Update the diagnostic reason. */
+    /*
+     * Update the diagnostic reason (even if software wants to supress faults).
+     */
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     pThis->enmDiag = enmDiag;
 
-    uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID, idDevice)
-                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIrFault)
-                           | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,   1);
-    uint64_t const uFrcdLo = (uint64_t)idxIntr << 48;
-    dmarPrimaryFaultRecord(pDevIns, uFrcdHi, uFrcdLo);
-}
+    /*
+     * Figure out the fault reason to report to software from our diagnostic code.
+     * The case labels below are sorted alphabetically for convenience.
+     */
+    VTDIRFAULT enmIrFault;
+    switch (enmDiag)
+    {
+        case kDmarDiag_Ir_Cfi_Blocked:            enmIrFault = VTDIRFAULT_CFI_BLOCKED;          break;
+        case kDmarDiag_Ir_Rfi_Intr_Index_Invalid: enmIrFault = VTDIRFAULT_INTR_INDEX_INVALID;   break;
+        case kDmarDiag_Ir_Rfi_Irte_Mode_Invalid:  enmIrFault = VTDIRFAULT_IRTE_PRESENT_RSVD;    break;
+        case kDmarDiag_Ir_Rfi_Irte_Not_Present:   enmIrFault = VTDIRFAULT_IRTE_NOT_PRESENT;     break;
+        case kDmarDiag_Ir_Rfi_Irte_Read_Failed:   enmIrFault = VTDIRFAULT_IRTE_READ_FAILED;     break;
+        case kDmarDiag_Ir_Rfi_Irte_Rsvd:
+        case kDmarDiag_Ir_Rfi_Irte_Svt_Bus:
+        case kDmarDiag_Ir_Rfi_Irte_Svt_Masked:
+        case kDmarDiag_Ir_Rfi_Irte_Svt_Rsvd:      enmIrFault = VTDIRFAULT_IRTE_PRESENT_RSVD;    break;
+        case kDmarDiag_Ir_Rfi_Rsvd:               enmIrFault = VTDIRFAULT_REMAPPABLE_INTR_RSVD; break;
 
+        /* Shouldn't ever happen. */
+        default:
+        {
+            AssertLogRelMsgFailedReturnVoid(("%s: Invalid interrupt remapping fault diagnostic code %#x\n", DMAR_LOG_PFX,
+                                             enmDiag));
+        }
+    }
 
-/**
- * Records a qualified interrupt request fault.
- *
- * Qualified faults are those that can be suppressed by software using the FPD bit
- * in the IRTE.
- *
- * @param   pDevIns     The IOMMU device instance.
- * @param   enmDiag     The diagnostic reason.
- * @param   enmIrFault  The interrupt fault reason.
- * @param   idDevice    The device ID (bus, device, function).
- * @param   idxIntr     The interrupt index.
- * @param   pIrte       The IRTE that caused this fault.
- */
-static void dmarIrFaultRecordQualified(PPDMDEVINS pDevIns, DMARDIAG enmDiag, VTDIRFAULT enmIrFault, uint16_t idDevice,
-                                       uint16_t idxIntr, PCVTD_IRTE_T pIrte)
-{
-    Assert(vtdIrFaultIsQualified(enmIrFault));
-    Assert(pIrte);
-    if (!(pIrte->au64[0] & VTD_BF_0_IRTE_FPD_MASK))
-        return dmarIrFaultRecord(pDevIns, enmDiag, enmIrFault, idDevice, idxIntr);
+    /*
+     * Qualified faults are those that can be suppressed by software using the FPD bit
+     * in the interrupt-remapping table entry.
+     */
+    bool fFpd;
+    bool const fQualifiedFault = vtdIrFaultIsQualified(enmIrFault);
+    if (fQualifiedFault)
+    {
+        AssertReturnVoid(pIrte);
+        fFpd = RT_BOOL(pIrte->au64[0] & VTD_BF_0_IRTE_FPD_MASK);
+    }
+    else
+        fFpd = false;
 
-    /* Update the diagnostic reason (even if software wants to supress faults). */
-    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    pThis->enmDiag = enmDiag;
+    if (!fFpd)
+    {
+        /* Construct and record the error. */
+        uint64_t const uFrcdHi = RT_BF_MAKE(VTD_BF_1_FRCD_REG_SID, idDevice)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_FR,  enmIrFault)
+                               | RT_BF_MAKE(VTD_BF_1_FRCD_REG_F,   1);
+        uint64_t const uFrcdLo = (uint64_t)idxIntr << 48;
+        dmarPrimaryFaultRecord(pDevIns, uFrcdHi, uFrcdLo);
+    }
 }
 
 
@@ -1565,7 +1585,7 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, PCDMARMEMREQ
 
     /*
      * Qualified faults are those that can be suppressed by software using the FPD bit
-     * in the contex entry, scalable-mode context entry etc.
+     * in the context entry, scalable-mode context entry etc.
      */
     if (!pMemReqAux->fFpd)
     {
@@ -2193,7 +2213,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         else
         {
             dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Denied, pMemReqIn, pMemReqAux);
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            break;
         }
 
         /*
@@ -2204,7 +2224,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         else
         {
             dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Rsvd, pMemReqIn, pMemReqAux);
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            break;
         }
 
         /*
@@ -2230,7 +2250,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
             }
 
             dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Sllps_Invalid, pMemReqIn, pMemReqAux);
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            break;
         }
 
         /*
@@ -2261,10 +2281,12 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
             else
             {
                 dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
-                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                break;
             }
         }
     }
+
+    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
 
@@ -2843,7 +2865,7 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                             default:
                             {
                                 fSrcValid = false;
-                                enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Bus;
+                                enmIrDiag = kDmarDiag_Ir_Rfi_Irte_Svt_Rsvd;
                                 break;
                             }
                         }
@@ -2856,29 +2878,25 @@ static int dmarIrRemapIntr(PPDMDEVINS pDevIns, uint64_t uIrtaReg, uint16_t idDev
                                 dmarIrRemapFromIrte(fExtIntrMode, &Irte, pMsiIn, pMsiOut);
                                 return VINF_SUCCESS;
                             }
-                            dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Mode_Invalid,
-                                                         VTDIRFAULT_IRTE_PRESENT_RSVD, idDevice, idxIntr, &Irte);
+                            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Mode_Invalid, idDevice, idxIntr, &Irte);
                         }
                         else
-                            dmarIrFaultRecordQualified(pDevIns, enmIrDiag, VTDIRFAULT_IRTE_PRESENT_RSVD, idDevice, idxIntr,
-                                                         &Irte);
+                            dmarIrFaultRecord(pDevIns, enmIrDiag, idDevice, idxIntr, &Irte);
                     }
                     else
-                        dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, VTDIRFAULT_IRTE_PRESENT_RSVD,
-                                                     idDevice, idxIntr, &Irte);
+                        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Rsvd, idDevice, idxIntr, &Irte);
                 }
                 else
-                    dmarIrFaultRecordQualified(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, VTDIRFAULT_IRTE_NOT_PRESENT,
-                                                 idDevice, idxIntr, &Irte);
+                    dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Not_Present, idDevice, idxIntr, &Irte);
             }
             else
-                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, VTDIRFAULT_IRTE_READ_FAILED, idDevice, idxIntr);
+                dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Irte_Read_Failed, idDevice, idxIntr, NULL /* pIrte */);
         }
         else
-            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, VTDIRFAULT_INTR_INDEX_INVALID, idDevice, idxIntr);
+            dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Intr_Index_Invalid, idDevice, idxIntr, NULL /* pIrte */);
     }
     else
-        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, VTDIRFAULT_REMAPPABLE_INTR_RSVD, idDevice, 0 /* idxIntr */);
+        dmarIrFaultRecord(pDevIns, kDmarDiag_Ir_Rfi_Rsvd, idDevice, 0 /* idxIntr */, NULL /* pIrte */);
     return VERR_IOMMU_INTR_REMAP_DENIED;
 }
 
