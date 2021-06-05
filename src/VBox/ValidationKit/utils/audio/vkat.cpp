@@ -1834,7 +1834,7 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
             {
                 uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream);
                 uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
-                if (cNsWritten + RT_NS_10MS > cNsElapsed)
+                if (cNsWritten > cNsElapsed + RT_NS_10MS)
                     RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
             }
 
