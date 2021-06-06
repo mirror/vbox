@@ -741,29 +741,31 @@ static void drvHstAudPaStreamReqWriteDebugCallback(pa_stream *pStream, size_t cb
  */
 static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pvContext)
 {
-    PDRVHSTAUDPASTREAM pStrm = (PDRVHSTAUDPASTREAM)pvContext;
-    AssertPtrReturnVoid(pStrm);
+    PDRVHSTAUDPASTREAM pStreamPA = (PDRVHSTAUDPASTREAM)pvContext;
+    AssertPtrReturnVoid(pStreamPA);
 
-    pStrm->cUnderflows++;
+    pStreamPA->cUnderflows++;
 
-    LogRel2(("PulseAudio: Warning: Hit underflow #%RU32\n", pStrm->cUnderflows));
+    LogRel2(("PulseAudio: Warning: Hit underflow #%RU32%s%s\n", pStreamPA->cUnderflows,
+             pStreamPA->pDrainOp && pa_operation_get_state(pStreamPA->pDrainOp) == PA_OPERATION_RUNNING ? " (draining)" : "",
+             pStreamPA->pCorkOp  && pa_operation_get_state(pStreamPA->pCorkOp)  == PA_OPERATION_RUNNING ? " (corking)" : "" ));
 
-# if 0
-    if (   pStrm->cUnderflows >= 6                /** @todo Make this check configurable. */
-        && pStrm->cUsLatency  < 2U*RT_US_1SEC)
+# if 0 /* bird: It's certifiably insane to make buffer changes here and make DEBUG build behave differently from RELEASE builds. */
+    if (   pStreamPA->cUnderflows >= 6                /** @todo Make this check configurable. */
+        && pStreamPA->cUsLatency  < 2U*RT_US_1SEC)
     {
-        pStrm->cUsLatency = pStrm->cUsLatency * 3 / 2;
-        LogRel2(("PulseAudio: Increasing output latency to %'RU64 us\n", pStrm->cUsLatency));
+        pStreamPA->cUsLatency = pStreamPA->cUsLatency * 3 / 2;
+        LogRel2(("PulseAudio: Increasing output latency to %'RU64 us\n", pStreamPA->cUsLatency));
 
-        pStrm->BufAttr.maxlength = pa_usec_to_bytes(pStrm->cUsLatency, &pStrm->SampleSpec);
-        pStrm->BufAttr.tlength   = pa_usec_to_bytes(pStrm->cUsLatency, &pStrm->SampleSpec);
-        pa_operation *pOperation = pa_stream_set_buffer_attr(pStream, &pStrm->BufAttr, NULL, NULL);
+        pStreamPA->BufAttr.maxlength = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
+        pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
+        pa_operation *pOperation = pa_stream_set_buffer_attr(pStream, &pStreamPA->BufAttr, NULL, NULL);
         if (pOperation)
             pa_operation_unref(pOperation);
         else
             LogRel2(("pa_stream_set_buffer_attr failed!\n"));
 
-        pStrm->cUnderflows = 0;
+        pStreamPA->cUnderflows = 0;
     }
 # endif
 
@@ -781,7 +783,7 @@ static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pv
         AssertReturnVoid(pSpec);
         Log2Func(("writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
                   pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
-                  pa_rtclock_now() - pStrm->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
+                  pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
     }
 # endif
 }
@@ -885,6 +887,20 @@ static int drvHstAudPaToAudioProps(PPDMAUDIOPCMPROPS pProps, pa_sample_format_t 
 }
 
 
+#if 0 /* experiment */
+/**
+ * Completion callback used with pa_stream_set_buffer_attr().
+ */
+static void drvHstAudPaStreamSetBufferAttrCompletionCallback(pa_stream *pStream, int fSuccess, void *pvUser)
+{
+    PDRVHSTAUDPA pThis = (PDRVHSTAUDPA)pvUser;
+    LogFlowFunc(("fSuccess=%d\n", fSuccess));
+    pa_threaded_mainloop_signal(pThis->pMainLoop, 0 /*fWaitForAccept*/);
+    RT_NOREF(pStream);
+}
+#endif
+
+
 /**
  * Worker that does the actual creation of an PA stream.
  *
@@ -967,6 +983,21 @@ static int drvHstAudPaStreamCreateLocked(PDRVHSTAUDPA pThis, PDRVHSTAUDPASTREAM 
              * Update the buffer attributes.
              */
             const pa_buffer_attr *pBufAttribs = pa_stream_get_buffer_attr(pStream);
+#if 0 /* Experiment for getting tlength closer to what we requested (ADJUST_LATENCY effect).
+         Will slow down stream creation, so not pursued any further at present. */
+            if (   pCfgAcq->enmDir == PDMAUDIODIR_OUT
+                && pBufAttribs
+                && pBufAttribs->tlength < pStreamPA->BufAttr.tlength)
+            {
+                pStreamPA->BufAttr.maxlength += (pStreamPA->BufAttr.tlength - pBufAttribs->tlength) * 2;
+                pStreamPA->BufAttr.tlength   += (pStreamPA->BufAttr.tlength - pBufAttribs->tlength) * 2;
+                LogRel(("Before pa_stream_set_buffer_attr: tlength=%#x (trying =%#x)\n", pBufAttribs->tlength, pStreamPA->BufAttr.tlength));
+                drvHstAudPaWaitFor(pThis, pa_stream_set_buffer_attr(pStream, &pStreamPA->BufAttr,
+                                                                    drvHstAudPaStreamSetBufferAttrCompletionCallback, pThis));
+                pBufAttribs = pa_stream_get_buffer_attr(pStream);
+                LogRel(("After  pa_stream_set_buffer_attr: tlength=%#x\n", pBufAttribs->tlength));
+            }
+#endif
             AssertPtr(pBufAttribs);
             if (pBufAttribs)
             {
@@ -1150,37 +1181,81 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
     if (pa_sample_spec_valid(&pStreamPA->SampleSpec))
     {
         /*
-         * Set up buffer attributes according to the stream type.
-         *
-         * For output streams we configure pre-buffering as requested, since
-         * there is little point in using a different size than DrvAudio. This
-         * assumes that a 'drain' request will override the prebuf size.
+         * Convert the requested buffer parameters to PA bytes.
          */
-        pStreamPA->BufAttr.maxlength = UINT32_MAX; /* Let the PulseAudio server choose the biggest size it can handle. */
+        uint32_t const cbBuffer    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgAcq->Props,
+                                                                                 pCfgReq->Backend.cFramesBufferSize),
+                                                      &pStreamPA->SampleSpec);
+        uint32_t const cbPreBuffer = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgAcq->Props,
+                                                                                 pCfgReq->Backend.cFramesPreBuffering),
+                                                      &pStreamPA->SampleSpec);
+        uint32_t const cbSchedHint = pa_usec_to_bytes(pCfgReq->Device.cMsSchedulingHint * RT_US_1MS, &pStreamPA->SampleSpec);
+        RT_NOREF(cbBuffer, cbSchedHint, cbPreBuffer);
+
+        /*
+         * Set up buffer attributes according to the stream type.
+         */
         if (pCfgReq->enmDir == PDMAUDIODIR_IN)
         {
-            pStreamPA->BufAttr.fragsize  = PDMAudioPropsFramesToBytes(&pCfgAcq->Props, pCfgReq->Backend.cFramesPeriod);
-            LogFunc(("Requesting: BufAttr: fragsize=%RU32\n", pStreamPA->BufAttr.fragsize));
-            /* (rlength, minreq and prebuf are playback only) */
+            /* Set maxlength to the requested buffer size. */
+            pStreamPA->BufAttr.maxlength = cbBuffer;
+
+            /* Set the fragment size according to the scheduling hint (forget
+               cFramesPeriod, it's generally rubbish on input). */
+            pStreamPA->BufAttr.fragsize  = cbSchedHint;
+
+            /* (tlength, minreq and prebuf are playback only) */
+            LogFunc(("Requesting: BufAttr: fragsize=%#RX32 maxLength=%#RX32\n",
+                     pStreamPA->BufAttr.fragsize, pStreamPA->BufAttr.maxlength));
         }
         else
         {
-            pStreamPA->cUsLatency        = PDMAudioPropsFramesToMicro(&pCfgAcq->Props, pCfgReq->Backend.cFramesBufferSize);
-            pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
-#if 0 /* bird: Bad bad idea. Messes up output via a "Intel Corporation 200 Series PCH HD Audio"
-               device here on fedora-32. Just use the default instead. */
-            pStreamPA->BufAttr.minreq    = PDMAudioPropsFramesToBytes(&pCfgAcq->Props, pCfgReq->Backend.cFramesPeriod);
-#else
-            pStreamPA->BufAttr.minreq    = -1;
-#endif
-            pStreamPA->BufAttr.prebuf    = pa_usec_to_bytes(PDMAudioPropsFramesToMicro(&pCfgAcq->Props,
-                                                                                       pCfgReq->Backend.cFramesPreBuffering),
-                                                            &pStreamPA->SampleSpec);
+            /* Set tlength to the desired buffer size as PA doesn't have any way
+               of telling us if anything beyond tlength is writable or not (see
+               drvHstAudPaStreamGetWritableLocked for more).  Because of the
+               ADJUST_LATENCY flag, this value will be adjusted down, so we'll
+               end up with less buffer than what we requested, however it should
+               probably reflect the actual latency a bit closer.  Probably not
+               worth trying to adjust this via pa_stream_set_buffer_attr. */
+            pStreamPA->BufAttr.tlength = cbBuffer;
+
+            /* Set maxlength to the same as tlength as we won't ever write more
+               than tlength. */
+            pStreamPA->BufAttr.maxlength = pStreamPA->BufAttr.tlength;
+
+            /* According to vlc, pulseaudio goes berserk if the minreq is not
+               significantly smaller than half of tlength.  They use a 1:3 ratio
+               between minreq and tlength.  Traditionally, we've used to just
+               pass the period value here, however the quality of the incoming
+               cFramesPeriod value is so variable that just ignore it.  This
+               minreq value is mainly about updating the pa_stream_writable_size
+               return value, so it makes sense that it need to be well below
+               half of the buffer length, otherwise we will think the buffer
+               is full for too long when it isn't.
+
+               The DMA scheduling hint is often a much better indicator. Just
+               to avoid generating too much IPC, limit this to 10 ms. */
+            uint32_t const cbMinUpdate = pa_usec_to_bytes(RT_US_10MS, &pStreamPA->SampleSpec);
+            pStreamPA->BufAttr.minreq = RT_MIN(RT_MAX(cbSchedHint, cbMinUpdate),
+                                               pStreamPA->BufAttr.tlength / 4);
+
+            /* Just pass along the requested pre-buffering size.  This seems
+               typically to be unaltered by pa_stream_connect_playback.  Not
+               sure if tlength is perhaps adjusted relative to it...  Ratio
+               seen here is prebuf=93.75% of tlength.  This isn't entirely
+               optimal as we use 50% by default (see DrvAudio) so that there
+               is equal room for the guest to run too fast and too slow.  Not
+               much we can do about it w/o slowing down stream creation. */
+            pStreamPA->BufAttr.prebuf = cbPreBuffer;
+
             /* (fragsize is capture only) */
+            LogRel2(("PulseAudio: Requesting: BufAttr: tlength=%#RX32 minReq=%#RX32 prebuf=%#RX32 maxLength=%#RX32\n",
+                     pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.minreq, pStreamPA->BufAttr.prebuf, pStreamPA->BufAttr.maxlength));
+
+            /* This (cUsLatency) isn't used for anything. */
+            pStreamPA->cUsLatency = PDMAudioPropsFramesToMicro(&pCfgAcq->Props, pCfgReq->Backend.cFramesBufferSize);
             LogRel2(("PulseAudio: Initial output latency is %RU64 us (%RU32 bytes)\n",
                      pStreamPA->cUsLatency, pStreamPA->BufAttr.tlength));
-            LogFunc(("Requesting: BufAttr: tlength=%RU32 maxLength=%RU32 minReq=%RU32 maxlength=-1\n",
-                     pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
         }
 
         /*
@@ -1194,22 +1269,28 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
             /*
              * Set the acquired stream config according to the actual buffer
              * attributes we got and the stream type.
+             *
+             * Note! We use maxlength for input buffer and tlength for the
+             *       output buffer size.  See above for why.
              */
             if (pCfgReq->enmDir == PDMAUDIODIR_IN)
             {
+                LogRel2(("PulseAudio: Got:        BufAttr: fragsize=%#RX32 maxLength=%#RX32\n",
+                         pStreamPA->BufAttr.fragsize, pStreamPA->BufAttr.maxlength));
                 pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.fragsize);
                 pCfgAcq->Backend.cFramesBufferSize   = pStreamPA->BufAttr.maxlength != UINT32_MAX /* paranoia */
                                                      ? PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.maxlength)
-                                                     : pCfgAcq->Backend.cFramesPeriod * 2 /* whatever */;
-                pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod;
+                                                     : pCfgAcq->Backend.cFramesPeriod * 3 /* whatever */;
+                pCfgAcq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesPreBuffering * pCfgAcq->Backend.cFramesBufferSize
+                                                     / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
             }
             else
             {
-                pCfgAcq->Backend.cFramesPeriod        = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
-                pCfgAcq->Backend.cFramesBufferSize    = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
-                pCfgAcq->Backend.cFramesPreBuffering  = pCfgReq->Backend.cFramesPreBuffering
-                                                      * pCfgAcq->Backend.cFramesBufferSize
-                                                      / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
+                LogRel2(("PulseAudio: Got:        BufAttr: tlength=%#RX32 minReq=%#RX32 prebuf=%#RX32 maxLength=%#RX32\n",
+                         pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.minreq, pStreamPA->BufAttr.prebuf, pStreamPA->BufAttr.maxlength));
+                pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
+                pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
+                pCfgAcq->Backend.cFramesPreBuffering = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.prebuf);
             }
 
             /*
@@ -1608,6 +1689,43 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudPaHA_StreamGetState(PPDMIH
 
 
 /**
+ * Gets the number of bytes that can safely be written to a stream.
+ *
+ * @returns Number of writable bytes, ~(size_t)0 on error.
+ * @param   pStreamPA       The stream.
+ */
+DECLINLINE(uint32_t) drvHstAudPaStreamGetWritableLocked(PDRVHSTAUDPASTREAM pStreamPA)
+{
+    /* pa_stream_writable_size() returns the amount requested currently by the
+       server, we could write more than this if we liked.  The documentation says
+       up to maxlength, whoever I'm not sure how that limitation is enforced or
+       what would happen if we exceed it.  There seems to be no (simple) way to
+       figure out how much buffer we have left between what pa_stream_writable_size
+       returns and what maxlength indicates.
+
+       An alternative would be to guess the difference using the read and write
+       positions in the timing info, however the read position is only updated
+       when starting and stopping.  In the auto update mode it's updated at a
+       sharply decreasing rate starting at 10ms and ending at 1500ms.  So, not
+       all that helpful.  (As long as pa_stream_writable_size returns a non-zero
+       value, though, we could just add the maxlength-tlength difference. But
+       the problem is after that.)
+
+       So, for now we just use tlength = maxlength for output streams and
+       problem solved. */
+    size_t const cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
+#if 1
+    return cbWritablePa;
+#else
+    if (cbWritablePa > 0 && cbWritablePa != (size_t)-1)
+        return cbWritablePa + (pStreamPA->BufAttr.maxlength - pStreamPA->BufAttr.tlength);
+    //const pa_timing_info * const pTimingInfo  = pa_stream_get_timing_info(pStreamPA->pStream);
+    return 0;
+#endif
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
 static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -1622,7 +1740,7 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pIn
         pa_stream_state_t const enmState = pa_stream_get_state(pStreamPA->pStream);
         if (PA_STREAM_IS_GOOD(enmState))
         {
-            size_t cbWritablePa = pa_stream_writable_size(pStreamPA->pStream);
+            size_t cbWritablePa = drvHstAudPaStreamGetWritableLocked(pStreamPA);
             if (cbWritablePa != (size_t)-1)
                 cbWritable = cbWritablePa <= UINT32_MAX ? (uint32_t)cbWritablePa : UINT32_MAX;
             else
@@ -1668,18 +1786,18 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
 #endif
 
     /*
-     * Using a loop here so we can take maxlength into account when writing.
+     * Using a loop here so we can stuff the buffer as full as it gets.
      */
     int      rc             = VINF_SUCCESS;
     uint32_t cbTotalWritten = 0;
     uint32_t iLoop;
     for (iLoop = 0; ; iLoop++)
     {
-        size_t const cbWriteable = pa_stream_writable_size(pStreamPA->pStream);
+        size_t const cbWriteable = drvHstAudPaStreamGetWritableLocked(pStreamPA);
         if (   cbWriteable != (size_t)-1
             && cbWriteable >= PDMAudioPropsFrameSize(&pStreamPA->Cfg.Props))
         {
-            uint32_t cbToWrite = (uint32_t)RT_MIN(RT_MIN(cbWriteable, pStreamPA->BufAttr.maxlength), cbBuf);
+            uint32_t cbToWrite = (uint32_t)RT_MIN(cbWriteable, cbBuf);
             cbToWrite = PDMAudioPropsFloorBytesToFrame(&pStreamPA->Cfg.Props, cbToWrite);
             if (pa_stream_write(pStreamPA->pStream, pvBuf, cbToWrite, NULL /*pfnFree*/, 0 /*offset*/, PA_SEEK_RELATIVE) >= 0)
             {
@@ -1883,7 +2001,7 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
         }
         else
         {
-            if (cbAvail != (size_t)-1)
+            if (cbAvail == (size_t)-1)
                 rc = drvHstAudPaError(pStreamPA->pDrv, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
             break;
         }
