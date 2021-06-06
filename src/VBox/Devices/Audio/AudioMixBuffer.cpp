@@ -1483,8 +1483,8 @@ audioMixBufPeekResampling(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t 
         /* Rate conversion into temporary buffer. */
         int32_t  ai32DstRate[1024];
         uint32_t cSrcFrames    = RT_MIN(pMixBuf->cFrames - offSrcFrame, cMaxSrcFrames);
-        uint32_t cMaxDstFrames = RT_MIN(RT_ELEMENTS(ai32DstRate) / pState->cSrcChannels, cbDst / pState->cbDstFrame);
-        uint32_t const cDstFrames = pState->Rate.pfnResample(ai32DstRate, cMaxDstFrames,
+        uint32_t cDstMaxFrames = RT_MIN(RT_ELEMENTS(ai32DstRate) / pState->cSrcChannels, cbDst / pState->cbDstFrame);
+        uint32_t const cDstFrames = pState->Rate.pfnResample(ai32DstRate, cDstMaxFrames,
                                                              &pMixBuf->pi32Samples[offSrcFrame * pMixBuf->cChannels],
                                                              cSrcFrames, &cSrcFrames, &pState->Rate);
         *pcSrcFramesPeeked += cSrcFrames;
@@ -1575,15 +1575,15 @@ void AudioMixBufPeek(PCAUDIOMIXBUF pMixBuf, uint32_t offSrcFrame, uint32_t cMaxS
  */
 DECL_NO_INLINE(static, void)
 audioMixBufWriteResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const void *pvSrcBuf, uint32_t cbSrcBuf,
-                           uint32_t offDstFrame, uint32_t cMaxDstFrames, uint32_t *pcDstFramesWritten)
+                           uint32_t offDstFrame, uint32_t cDstMaxFrames, uint32_t *pcDstFramesWritten)
 {
     *pcDstFramesWritten = 0;
-    while (cMaxDstFrames > 0 && cbSrcBuf >= pState->cbSrcFrame)
+    while (cDstMaxFrames > 0 && cbSrcBuf >= pState->cbSrcFrame)
     {
         /* Decode into temporary buffer. */
-        int32_t  ai32SrcDecoded[1024];
-        uint32_t cFramesDecoded = RT_MIN(RT_ELEMENTS(ai32SrcDecoded) / pState->cSrcChannels, cbSrcBuf / pState->cbSrcFrame);
-        pState->pfnDecode(ai32SrcDecoded, pvSrcBuf, cFramesDecoded, pState);
+        int32_t  ai32Decoded[1024];
+        uint32_t cFramesDecoded = RT_MIN(RT_ELEMENTS(ai32Decoded) / pState->cDstChannels, cbSrcBuf / pState->cbSrcFrame);
+        pState->pfnDecode(ai32Decoded, pvSrcBuf, cFramesDecoded, pState);
         cbSrcBuf -= cFramesDecoded * pState->cbSrcFrame;
         pvSrcBuf  = (uint8_t const *)pvSrcBuf + cFramesDecoded * pState->cbSrcFrame;
 
@@ -1591,11 +1591,11 @@ audioMixBufWriteResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, 
         uint32_t iFrameDecoded = 0;
         while (iFrameDecoded < cFramesDecoded)
         {
-            uint32_t cDstMaxFrames    = RT_MIN(pMixBuf->cFrames - offDstFrame, cMaxDstFrames);
+            uint32_t cDstMaxFramesNow = RT_MIN(pMixBuf->cFrames - offDstFrame, cDstMaxFrames);
             uint32_t cSrcFrames       = cFramesDecoded - iFrameDecoded;
             uint32_t const cDstFrames = pState->Rate.pfnResample(&pMixBuf->pi32Samples[offDstFrame * pMixBuf->cChannels],
-                                                                 cDstMaxFrames,
-                                                                 &ai32SrcDecoded[iFrameDecoded * pState->cSrcChannels],
+                                                                 cDstMaxFramesNow,
+                                                                 &ai32Decoded[iFrameDecoded * pState->cDstChannels],
                                                                  cSrcFrames, &cSrcFrames, &pState->Rate);
 
             iFrameDecoded       += cSrcFrames;
@@ -1619,7 +1619,7 @@ audioMixBufWriteResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, 
  *                              convered in full.
  * @param   offDstFrame         Mixing buffer offset relative to the write
  *                              position.
- * @param   cMaxDstFrames       Max number of frames to write.
+ * @param   cDstMaxFrames       Max number of frames to write.
  * @param   pcDstFramesWritten  Where to return the number of frames actually
  *                              written.
  *
@@ -1627,7 +1627,7 @@ audioMixBufWriteResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, 
  *          to do that.
  */
 void AudioMixBufWrite(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const void *pvSrcBuf, uint32_t cbSrcBuf,
-                      uint32_t offDstFrame, uint32_t cMaxDstFrames, uint32_t *pcDstFramesWritten)
+                      uint32_t offDstFrame, uint32_t cDstMaxFrames, uint32_t *pcDstFramesWritten)
 {
     /*
      * Check inputs.
@@ -1638,8 +1638,8 @@ void AudioMixBufWrite(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
     AssertPtr(pState->pfnDecode);
     AssertPtr(pState->pfnDecodeBlend);
     Assert(pState->cDstChannels == PDMAudioPropsChannels(&pMixBuf->Props));
-    Assert(cMaxDstFrames > 0);
-    Assert(cMaxDstFrames <= pMixBuf->cFrames - pMixBuf->cUsed);
+    Assert(cDstMaxFrames > 0);
+    Assert(cDstMaxFrames <= pMixBuf->cFrames - pMixBuf->cUsed);
     Assert(offDstFrame <= pMixBuf->cFrames);
     AssertPtr(pvSrcBuf);
     Assert(!(cbSrcBuf % pState->cbSrcFrame));
@@ -1656,29 +1656,29 @@ void AudioMixBufWrite(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
     if (pState->Rate.fNoConversionNeeded)
     {
         /* Figure out how much we should convert. */
-        Assert(cMaxDstFrames >= cbSrcBuf / pState->cbSrcFrame);
-        cMaxDstFrames       = RT_MIN(cMaxDstFrames, cbSrcBuf / pState->cbSrcFrame);
-        *pcDstFramesWritten = cMaxDstFrames;
+        Assert(cDstMaxFrames >= cbSrcBuf / pState->cbSrcFrame);
+        cDstMaxFrames       = RT_MIN(cDstMaxFrames, cbSrcBuf / pState->cbSrcFrame);
+        *pcDstFramesWritten = cDstMaxFrames;
 
-        //Log10Func(("cbSrc=%#x\n%32.*Rhxd\n", pState->cbSrcFrame * cMaxDstFrames, pState->cbSrcFrame * cMaxDstFrames, pvSrcBuf));
+        //Log10Func(("cbSrc=%#x\n%32.*Rhxd\n", pState->cbSrcFrame * cDstMaxFrames, pState->cbSrcFrame * cDstMaxFrames, pvSrcBuf));
 
         /* First chunk. */
-        uint32_t const cDstFrames1 = RT_MIN(pMixBuf->cFrames - offDstFrame, cMaxDstFrames);
+        uint32_t const cDstFrames1 = RT_MIN(pMixBuf->cFrames - offDstFrame, cDstMaxFrames);
         pState->pfnDecode(&pMixBuf->pi32Samples[offDstFrame * pMixBuf->cChannels], pvSrcBuf, cDstFrames1, pState);
         //Log8Func(("offDstFrame=%#x cDstFrames1=%#x\n%32.*Rhxd\n", offDstFrame, cDstFrames1,
         //          cDstFrames1 * pMixBuf->cbFrame, &pMixBuf->pi32Samples[offDstFrame * pMixBuf->cChannels]));
 
         /* Another chunk from the start of the mixing buffer? */
-        if (cMaxDstFrames > cDstFrames1)
+        if (cDstMaxFrames > cDstFrames1)
         {
             pState->pfnDecode(&pMixBuf->pi32Samples[0], (uint8_t *)pvSrcBuf + cDstFrames1 * pState->cbSrcFrame,
-                              cMaxDstFrames - cDstFrames1, pState);
-            //Log8Func(("cDstFrames2=%#x\n%32.*Rhxd\n", cMaxDstFrames - cDstFrames1,
-            //          (cMaxDstFrames - cDstFrames1) * pMixBuf->cbFrame, &pMixBuf->pi32Samples[0]));
+                              cDstMaxFrames - cDstFrames1, pState);
+            //Log8Func(("cDstFrames2=%#x\n%32.*Rhxd\n", cDstMaxFrames - cDstFrames1,
+            //          (cDstMaxFrames - cDstFrames1) * pMixBuf->cbFrame, &pMixBuf->pi32Samples[0]));
         }
     }
     else
-        audioMixBufWriteResampling(pMixBuf, pState, pvSrcBuf, cbSrcBuf, offDstFrame, cMaxDstFrames, pcDstFramesWritten);
+        audioMixBufWriteResampling(pMixBuf, pState, pvSrcBuf, cbSrcBuf, offDstFrame, cDstMaxFrames, pcDstFramesWritten);
 }
 
 
@@ -1687,15 +1687,15 @@ void AudioMixBufWrite(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
  */
 DECL_NO_INLINE(static, void)
 audioMixBufBlendResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const void *pvSrcBuf, uint32_t cbSrcBuf,
-                           uint32_t offDstFrame, uint32_t cMaxDstFrames, uint32_t *pcDstFramesBlended)
+                           uint32_t offDstFrame, uint32_t cDstMaxFrames, uint32_t *pcDstFramesBlended)
 {
     *pcDstFramesBlended = 0;
-    while (cMaxDstFrames > 0 && cbSrcBuf >= pState->cbSrcFrame)
+    while (cDstMaxFrames > 0 && cbSrcBuf >= pState->cbSrcFrame)
     {
-        /* Decode into temporary buffer. */
-        int32_t  ai32SrcDecoded[1024];
-        uint32_t cFramesDecoded = RT_MIN(RT_ELEMENTS(ai32SrcDecoded) / pState->cSrcChannels, cbSrcBuf / pState->cbSrcFrame);
-        pState->pfnDecode(ai32SrcDecoded, pvSrcBuf, cFramesDecoded, pState);
+        /* Decode into temporary buffer.  This then has the destination channel count. */
+        int32_t  ai32Decoded[1024];
+        uint32_t cFramesDecoded = RT_MIN(RT_ELEMENTS(ai32Decoded) / pState->cDstChannels, cbSrcBuf / pState->cbSrcFrame);
+        pState->pfnDecode(ai32Decoded, pvSrcBuf, cFramesDecoded, pState);
         cbSrcBuf -= cFramesDecoded * pState->cbSrcFrame;
         pvSrcBuf  = (uint8_t const *)pvSrcBuf + cFramesDecoded * pState->cbSrcFrame;
 
@@ -1703,22 +1703,22 @@ audioMixBufBlendResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, 
         uint32_t iFrameDecoded = 0;
         while (iFrameDecoded < cFramesDecoded)
         {
-            int32_t  ai32SrcRate[1024];
-            uint32_t cDstMaxFrames    = RT_MIN(RT_ELEMENTS(ai32SrcRate), cMaxDstFrames);
+            int32_t  ai32Rate[1024];
+            uint32_t cDstMaxFramesNow = RT_MIN(RT_ELEMENTS(ai32Rate) / pState->cDstChannels, cDstMaxFrames);
             uint32_t cSrcFrames       = cFramesDecoded - iFrameDecoded;
-            uint32_t const cDstFrames = pState->Rate.pfnResample(&ai32SrcRate[0], cDstMaxFrames,
-                                                                 &ai32SrcDecoded[iFrameDecoded * pState->cSrcChannels],
+            uint32_t const cDstFrames = pState->Rate.pfnResample(&ai32Rate[0], cDstMaxFramesNow,
+                                                                 &ai32Decoded[iFrameDecoded * pState->cDstChannels],
                                                                  cSrcFrames, &cSrcFrames, &pState->Rate);
 
             /* First chunk.*/
             uint32_t const cDstFrames1 = RT_MIN(pMixBuf->cFrames - offDstFrame, cDstFrames);
             audioMixBufBlendBuffer(&pMixBuf->pi32Samples[offDstFrame * pMixBuf->cChannels],
-                                   ai32SrcRate, cDstFrames1, pState->cSrcChannels);
+                                   ai32Rate, cDstFrames1, pState->cDstChannels);
 
             /* Another chunk from the start of the mixing buffer? */
             if (cDstFrames > cDstFrames1)
-                audioMixBufBlendBuffer(&pMixBuf->pi32Samples[0], &ai32SrcRate[cDstFrames1 * pState->cSrcChannels],
-                                       cDstFrames - cDstFrames1, pState->cSrcChannels);
+                audioMixBufBlendBuffer(&pMixBuf->pi32Samples[0], &ai32Rate[cDstFrames1 * pState->cDstChannels],
+                                       cDstFrames - cDstFrames1, pState->cDstChannels);
 
             /* Advance */
             iFrameDecoded       += cSrcFrames;
@@ -1736,7 +1736,7 @@ audioMixBufBlendResampling(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, 
  *       we mean.
  */
 void AudioMixBufBlend(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const void *pvSrcBuf, uint32_t cbSrcBuf,
-                      uint32_t offDstFrame, uint32_t cMaxDstFrames, uint32_t *pcDstFramesBlended)
+                      uint32_t offDstFrame, uint32_t cDstMaxFrames, uint32_t *pcDstFramesBlended)
 {
     /*
      * Check inputs.
@@ -1747,8 +1747,8 @@ void AudioMixBufBlend(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
     AssertPtr(pState->pfnDecode);
     AssertPtr(pState->pfnDecodeBlend);
     Assert(pState->cDstChannels == PDMAudioPropsChannels(&pMixBuf->Props));
-    Assert(cMaxDstFrames > 0);
-    Assert(cMaxDstFrames <= pMixBuf->cFrames - pMixBuf->cUsed);
+    Assert(cDstMaxFrames > 0);
+    Assert(cDstMaxFrames <= pMixBuf->cFrames - pMixBuf->cUsed);
     Assert(offDstFrame <= pMixBuf->cFrames);
     AssertPtr(pvSrcBuf);
     Assert(!(cbSrcBuf % pState->cbSrcFrame));
@@ -1765,21 +1765,21 @@ void AudioMixBufBlend(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pState, const
     if (pState->Rate.fNoConversionNeeded)
     {
         /* Figure out how much we should convert. */
-        Assert(cMaxDstFrames >= cbSrcBuf / pState->cbSrcFrame);
-        cMaxDstFrames       = RT_MIN(cMaxDstFrames, cbSrcBuf / pState->cbSrcFrame);
-        *pcDstFramesBlended = cMaxDstFrames;
+        Assert(cDstMaxFrames >= cbSrcBuf / pState->cbSrcFrame);
+        cDstMaxFrames       = RT_MIN(cDstMaxFrames, cbSrcBuf / pState->cbSrcFrame);
+        *pcDstFramesBlended = cDstMaxFrames;
 
         /* First chunk. */
-        uint32_t const cDstFrames1 = RT_MIN(pMixBuf->cFrames - offDstFrame, cMaxDstFrames);
+        uint32_t const cDstFrames1 = RT_MIN(pMixBuf->cFrames - offDstFrame, cDstMaxFrames);
         pState->pfnDecodeBlend(&pMixBuf->pi32Samples[offDstFrame * pMixBuf->cChannels], pvSrcBuf, cDstFrames1, pState);
 
         /* Another chunk from the start of the mixing buffer? */
-        if (cMaxDstFrames > cDstFrames1)
+        if (cDstMaxFrames > cDstFrames1)
             pState->pfnDecodeBlend(&pMixBuf->pi32Samples[0], (uint8_t *)pvSrcBuf + cDstFrames1 * pState->cbSrcFrame,
-                                   cMaxDstFrames - cDstFrames1, pState);
+                                   cDstMaxFrames - cDstFrames1, pState);
     }
     else
-        audioMixBufBlendResampling(pMixBuf, pState, pvSrcBuf, cbSrcBuf, offDstFrame, cMaxDstFrames, pcDstFramesBlended);
+        audioMixBufBlendResampling(pMixBuf, pState, pvSrcBuf, cbSrcBuf, offDstFrame, cDstMaxFrames, pcDstFramesBlended);
 }
 
 
