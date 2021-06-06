@@ -1854,7 +1854,16 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pIn
         {
             size_t cbReadablePa = pa_stream_readable_size(pStreamPA->pStream);
             if (cbReadablePa != (size_t)-1)
-                cbReadable = (uint32_t)cbReadablePa;
+            {
+                /* As with WASAPI on windows, the peek buffer must be subtracked.*/
+                if (cbReadablePa >= pStreamPA->cbPeekBuf)
+                    cbReadable = (uint32_t)(cbReadablePa - pStreamPA->cbPeekBuf);
+                else
+                {
+                    AssertMsgFailed(("%#zx vs %#zx\n", cbReadablePa, pStreamPA->cbPeekBuf));
+                    cbReadable = 0;
+                }
+            }
             else
                 drvHstAudPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
