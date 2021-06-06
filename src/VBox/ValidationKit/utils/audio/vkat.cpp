@@ -1813,8 +1813,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
 static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWAVEFILE pWaveFile,
                                         PCPDMAUDIOSTREAMCFG pCfgAcq, const char *pszFile)
 {
-    uint32_t const  cbPreBuffer = PDMAudioPropsFramesToBytes(pMix->pProps, pCfgAcq->Backend.cFramesPreBuffering);
-    uint64_t const  nsStarted   = RTTimeNanoTS();
+    uint32_t const  cbPreBuffer        = PDMAudioPropsFramesToBytes(pMix->pProps, pCfgAcq->Backend.cFramesPreBuffering);
+    uint64_t const  nsStarted          = RTTimeNanoTS();
+    uint64_t        nsDonePreBuffering = 0;
 
     /*
      * Transfer data as quickly as we're allowed.
@@ -1832,7 +1833,9 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
             /* Pace ourselves a little. */
             if (offStream >= cbPreBuffer)
             {
-                uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream);
+                if (!nsDonePreBuffering)
+                    nsDonePreBuffering = RTTimeNanoTS();
+                uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream - cbPreBuffer);
                 uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
                 if (cNsWritten > cNsElapsed + RT_NS_10MS)
                     RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
