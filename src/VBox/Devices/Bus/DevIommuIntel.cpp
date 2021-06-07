@@ -2567,16 +2567,10 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
  */
 static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
 {
-    NOREF(pMemReqRemap);
-
+    RT_NOREF2(uRtaddrReg, pMemReqRemap);
     PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
-    {
-        RT_NOREF1(uRtaddrReg);
-        return VERR_NOT_IMPLEMENTED;
-    }
-
-    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    Assert(pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK);
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -3118,9 +3112,9 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
 
     /*
      * The below check is redundant since we check both TTM and DW for each
-     * descriptor type we process. However, the error reported by hardware
-     * may differ hence this is kept commented out but not removed from the code
-     * if we need to change this in the future.
+     * descriptor type we process. However, the order errors reported by hardware
+     * may differ hence this is kept commented out but not removed if we need to
+     * change this in the future.
      *
      * In our implementation, we would report the descriptor type as invalid,
      * while on real hardware it may report descriptor width as invalid.
