@@ -2217,7 +2217,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         uint8_t const fReqPerm = pMemReqIn->AddrRange.fPerm & pThis->fPermValidMask;
         uint8_t const fPtPerm  = uPtEntity & pThis->fPermValidMask;
         Assert(!(fReqPerm & DMAR_PERM_EXE));                        /* No Execute-requests support yet. */
-        Assert(pThis->fExtCapReg & VTD_BF_ECAP_REG_SLADS_MASK);     /* No Second-level access/dirty support. */
+        Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_SLADS_MASK));  /* No Second-level access/dirty support. */
         if ((fPtPerm & fReqPerm) == fReqPerm)
         { /* likely */ }
         else
