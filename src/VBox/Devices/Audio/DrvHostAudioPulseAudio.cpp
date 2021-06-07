@@ -198,14 +198,21 @@ typedef struct DRVHSTAUDPA
     /** Error count for not flooding the release log.
      *  Specify UINT32_MAX for unlimited logging. */
     uint32_t                cLogErrors;
-    /** The stream (base) name; needed for distinguishing
-     *  streams in the PulseAudio mixer controls if multiple
-     *  VMs are running at the same time. */
-    char                    szStreamName[64];
     /** Don't want to put this on the stack... */
     DRVHSTAUDPASTATECHGCTX  InitStateChgCtx;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO           IHostAudio;
+    /** Upwards notification interface. */
+    PPDMIHOSTAUDIOPORT      pIHostAudioPort;
+
+    /** The stream (base) name.
+     * This is needed for distinguishing streams in the PulseAudio mixer controls if
+     * multiple VMs are running at the same time. */
+    char                    szStreamName[64];
+    /** The name of the input device to use. Empty string for default. */
+    char                    szInputDev[256];
+    /** The name of the output device to use. Empty string for default. */
+    char                    szOutputDev[256];
 } DRVHSTAUDPA;
 
 
@@ -689,6 +696,77 @@ static DECLCALLBACK(int) drvHstAudPaHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPD
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetDevice}
+ */
+static DECLCALLBACK(int) drvHstAudPaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir, const char *pszId)
+{
+    PDRVHSTAUDPA pThis = RT_FROM_MEMBER(pInterface, DRVHSTAUDPA, IHostAudio);
+
+    /*
+     * Validate and normalize input.
+     */
+    AssertReturn(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszId, VERR_INVALID_POINTER);
+    if (!pszId || !*pszId)
+        pszId = "";
+    else
+    {
+        size_t cch = strlen(pszId);
+        AssertReturn(cch < sizeof(pThis->szInputDev), VERR_INVALID_NAME);
+    }
+    LogFunc(("enmDir=%d pszId=%s\n", enmDir, pszId));
+
+    /*
+     * Update input.
+     */
+    if (enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+        if (strcmp(pThis->szInputDev, pszId) == 0)
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+        else
+        {
+            LogRel(("PulseAudio: Changing input device: '%s' -> '%s'\n", pThis->szInputDev, pszId));
+            RTStrCopy(pThis->szInputDev, sizeof(pThis->szInputDev), pszId);
+            PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            if (pIHostAudioPort)
+            {
+                LogFlowFunc(("Notifying parent driver about input device change...\n"));
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_IN, NULL /*pvUser*/);
+            }
+        }
+    }
+
+    /*
+     * Update output.
+     */
+    if (enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        pa_threaded_mainloop_lock(pThis->pMainLoop);
+        if (strcmp(pThis->szOutputDev, pszId) == 0)
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+        else
+        {
+            LogRel(("PulseAudio: Changing output device: '%s' -> '%s'\n", pThis->szOutputDev, pszId));
+            RTStrCopy(pThis->szOutputDev, sizeof(pThis->szOutputDev), pszId);
+            PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            if (pIHostAudioPort)
+            {
+                LogFlowFunc(("Notifying parent driver about output device change...\n"));
+                pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_OUT, NULL /*pvUser*/);
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHstAudPaHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -953,13 +1031,14 @@ static int drvHstAudPaStreamCreateLocked(PDRVHSTAUDPA pThis, PDRVHSTAUDPASTREAM 
     {
         LogFunc(("Input stream attributes: maxlength=%d fragsize=%d\n",
                  pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.fragsize));
-        rc = pa_stream_connect_record(pStream, NULL /*dev*/, &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags);
+        rc = pa_stream_connect_record(pStream, pThis->szInputDev[0] ? pThis->szInputDev : NULL,
+                                      &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags);
     }
     else
     {
         LogFunc(("Output buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
                  pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.prebuf, pStreamPA->BufAttr.minreq));
-        rc = pa_stream_connect_playback(pStream, NULL /*dev*/, &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags,
+        rc = pa_stream_connect_playback(pStream, pThis->szOutputDev[0] ? pThis->szOutputDev : NULL, &pStreamPA->BufAttr, (pa_stream_flags_t)fFlags,
                                         NULL /*volume*/, NULL /*sync_stream*/);
     }
     if (rc >= 0)
@@ -2141,7 +2220,7 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHstAudPaHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = drvHstAudPaHA_GetDevices;
-    pThis->IHostAudio.pfnSetDevice                  = NULL;
+    pThis->IHostAudio.pfnSetDevice                  = drvHstAudPaHA_SetDevice;
     pThis->IHostAudio.pfnGetStatus                  = drvHstAudPaHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = NULL;
     pThis->IHostAudio.pfnStreamConfigHint           = NULL;
@@ -2164,13 +2243,24 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Read configuration.
      */
-    int rc2 = CFGMR3QueryString(pCfg, "VmName", pThis->szStreamName, sizeof(pThis->szStreamName));
-    AssertMsgRCReturn(rc2, ("Confguration error: No/bad \"VmName\" value, rc=%Rrc\n", rc2), rc2);
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|InputDeviceID|OutputDeviceID", "");
+    int rc = CFGMR3QueryString(pCfg, "VmName", pThis->szStreamName, sizeof(pThis->szStreamName));
+    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"VmName\" value, rc=%Rrc\n", rc), rc);
+    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "");
+    AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"InputDeviceID\" as string: rc=%Rrc\n", rc), rc);
+    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "");
+    AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"OutputDeviceID\" as string: rc=%Rrc\n", rc), rc);
+
+    /*
+     * Query the notification interface from the driver/device above us.
+     */
+    pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
+    AssertReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     /*
      * Load the pulse audio library.
      */
-    int rc = audioLoadPulseLib();
+    rc = audioLoadPulseLib();
     if (RT_SUCCESS(rc))
         LogRel(("PulseAudio: Using version %s\n", pa_get_library_version()));
     else
