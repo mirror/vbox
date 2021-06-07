@@ -236,6 +236,7 @@ int AudioVRDE::onVRDEInputData(void *pvContext, const void *pvData, uint32_t cbD
 {
     PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pvContext;
     AssertPtrReturn(pStreamVRDE, VERR_INVALID_POINTER);
+    LogFlowFunc(("cbData=%#x\n", cbData));
 
     void  *pvBuf = NULL;
     size_t cbBuf = 0;
@@ -300,58 +301,6 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVrdeHA_GetStatus(PPDMIHOSTAUDIO 
 }
 
 
-static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    /*
-     * The VRDP server does its own mixing and resampling as it may server
-     * multiple clients all with different sound formats.  So, it feeds us
-     * raw mixer frames (somewhat akind to stereo signed 64-bit, see
-     * st_sample_t and PDMAUDIOFRAME).
-     */
-    PDMAudioPropsInitEx(&pCfgAcq->Props, 8 /*64-bit*/, true /*fSigned*/, 2 /*stereo*/, 22050 /*Hz*/,
-                        true /*fLittleEndian*/, true /*fRaw*/);
-
-    /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-    const uint32_t cFramesVrdpServer = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 200 /*ms*/);
-
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
-    if (RT_SUCCESS(rc))
-    {
-        pCfgAcq->Backend.cFramesPeriod          = cFramesVrdpServer;
-/** @todo r=bird: This is inconsistent with the above buffer allocation and I
- * think also ALSA and Pulse backends way of setting cFramesBufferSize. */
-        pCfgAcq->Backend.cFramesBufferSize      = cFramesVrdpServer * 2; /* Use "double buffering". */
-        pCfgAcq->Backend.cFramesPreBuffering    = cFramesVrdpServer;
-    }
-
-    return rc;
-}
-
-
-static int vrdeCreateStreamOut(PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    /*
-     * The VRDP server does its own mixing and resampling because it may be
-     * sending the audio to any number of different clients all with different
-     * formats (including clients which hasn't yet connected).  So, it desires
-     * the raw data from the mixer (somewhat akind to stereo signed 64-bit,
-     * see st_sample_t and PDMAUDIOFRAME).
-     */
-    PDMAudioPropsInitEx(&pCfgAcq->Props, 8 /*64-bit*/, true /*fSigned*/, 2 /*stereo*/, 22050 /*Hz*/,
-                        true /*fLittleEndian*/, true /*fRaw*/);
-
-    /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-    /** @todo r=bird: So, if VRDP does 200ms chunks, why do we report 100ms
-     *        buffer and 20ms period?  How does these parameters at all correlate
-     *        with the above comment?!? */
-    pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
-    pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
-    pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
-
-    return VINF_SUCCESS;
-}
-
-
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
@@ -378,10 +327,41 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCreate(PPDMIHOSTAUDIO pInterface, 
     else
 #endif
     {
+        /*
+         * The VRDP server does its own mixing and resampling because it may be
+         * sending the audio to any number of different clients all with different
+         * formats (including clients which hasn't yet connected).  So, it desires
+         * the raw data from the mixer (somewhat akind to stereo signed 64-bit,
+         * see st_sample_t and PDMAUDIOFRAME).
+         */
+        PDMAudioPropsInitEx(&pCfgAcq->Props, 8 /*64-bit*/, true /*fSigned*/, 2 /*stereo*/,
+                            22050 /*Hz - VRDP_AUDIO_CHUNK_INTERNAL_FREQ_HZ*/,
+                            true /*fLittleEndian*/, true /*fRaw*/);
+
+        /* According to the VRDP docs (VRDP_AUDIO_CHUNK_TIME_MS), the VRDP server
+           stores audio in 200ms chunks. */
+        const uint32_t cFramesVrdpServer = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 200 /*ms*/);
+
         if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-            rc = vrdeCreateStreamIn(pStreamVRDE, pCfgAcq);
+        {
+            pCfgAcq->Backend.cFramesBufferSize      = cFramesVrdpServer;
+            pCfgAcq->Backend.cFramesPeriod          = cFramesVrdpServer / 4; /* This is utter non-sense, but whatever. */
+            pCfgAcq->Backend.cFramesPreBuffering    = pCfgReq->Backend.cFramesPreBuffering * cFramesVrdpServer
+                                                    / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
+
+            rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
+        }
         else
-            rc = vrdeCreateStreamOut(pCfgAcq);
+        {
+            /** @todo r=bird: So, if VRDP does 200ms chunks, why do we report 100ms
+             *        buffer and 20ms period?  How does these parameters at all correlate
+             *        with the above comment?!? */
+            pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
+            pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
+            pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
+            rc = VINF_SUCCESS;
+        }
+
         PDMAudioStrmCfgCopy(&pStreamVRDE->Cfg, pCfgAcq);
     }
     return rc;
@@ -399,8 +379,9 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDestroy(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pStreamVRDE, VERR_INVALID_POINTER);
     RT_NOREF(fImmediate);
 
-    if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_OUT)
+    if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
     {
+        LogFlowFunc(("Calling SendAudioInputEnd\n"));
         if (pDrv->pConsoleVRDPServer)
             pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL);
 
@@ -436,6 +417,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamEnable(PPDMIHOSTAUDIO pInterface, 
                                                            PDMAudioPropsHz(&pStreamVRDE->Cfg.Props),
                                                            PDMAudioPropsChannels(&pStreamVRDE->Cfg.Props),
                                                            PDMAudioPropsSampleBits(&pStreamVRDE->Cfg.Props));
+        LogFlowFunc(("SendAudioInputBegin returns %Rrc\n", rc));
         if (rc == VERR_NOT_SUPPORTED)
         {
             LogRelMax(64, ("Audio: No VRDE client connected, so no input recording available\n"));
@@ -465,6 +447,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDisable(PPDMIHOSTAUDIO pInterface,
     }
     else if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
     {
+        LogFlowFunc(("Calling SendAudioInputEnd\n"));
         pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
         rc = VINF_SUCCESS;
     }
@@ -540,12 +523,12 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVrdeHA_StreamGetState(PPDMI
  */
 static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    RT_NOREF(pStream);
+    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
     /** @todo Find some sane value here. We probably need a VRDE API VRDE to specify this. */
     if (pDrv->cClients)
-        return _16K * sizeof(int64_t) * 2;
+        return PDMAudioPropsFramesToBytes(&pStreamVRDE->Cfg.Props, pStreamVRDE->Cfg.Backend.cFramesBufferSize);
     return 0;
 }
 
@@ -600,13 +583,10 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetReadable(PPDMIHOSTAUDIO pI
     RT_NOREF(pInterface);
     PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
 
-    if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
-    {
-        /* Return frames instead of bytes here
-         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        return PDMAudioPropsBytesToFrames(&pStreamVRDE->Cfg.Props, (uint32_t)RTCircBufUsed(pStreamVRDE->In.pCircBuf));
-    }
-    return 0;
+    AssertReturn(pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN, 0);
+    uint32_t cbRet = (uint32_t)RTCircBufUsed(pStreamVRDE->In.pCircBuf);
+    Log4Func(("returns %#x\n", cbRet));
+    return cbRet;
 }
 
 
@@ -623,19 +603,23 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCapture(PPDMIHOSTAUDIO pInterface,
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbRead, VERR_INVALID_PARAMETER);
 
-    size_t cbData = 0;
-    if (RTCircBufUsed(pStreamVRDE->In.pCircBuf))
+    *pcbRead = 0;
+    while (cbBuf > 0 && RTCircBufUsed(pStreamVRDE->In.pCircBuf) > 0)
     {
-        void *pvData = NULL;
+        size_t cbData = 0;
+        void  *pvData = NULL;
         RTCircBufAcquireReadBlock(pStreamVRDE->In.pCircBuf, cbBuf, &pvData, &cbData);
 
-        if (cbData)
-            memcpy(pvBuf, pvData, cbData);
+        memcpy(pvBuf, pvData, cbData);
 
         RTCircBufReleaseReadBlock(pStreamVRDE->In.pCircBuf, cbData);
+
+        *pcbRead += (uint32_t)cbData;
+        cbBuf    -= (uint32_t)cbData;
+        pvData    = (uint8_t *)pvData + cbData;
     }
 
-    *pcbRead = (uint32_t)cbData;
+    LogFlowFunc(("returns %#x bytes\n", *pcbRead));
     return VINF_SUCCESS;
 }
 
