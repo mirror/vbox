@@ -161,10 +161,8 @@ typedef struct DRVHSTAUDPASTREAM
     /** Timestamp (in microsecs) when last read from / written to the stream. */
     pa_usec_t               tsLastReadWrittenUs;
 #endif
-#ifdef DEBUG
     /** Number of occurred audio data underflows. */
     uint32_t                cUnderflows;
-#endif
     /** Pulse sample format and attribute specification. */
     pa_sample_spec          SampleSpec;
     /** Channel map. */
@@ -213,6 +211,11 @@ typedef struct DRVHSTAUDPA
     char                    szInputDev[256];
     /** The name of the output device to use. Empty string for default. */
     char                    szOutputDev[256];
+
+    /** Number of buffer underruns (for all streams). */
+    STAMCOUNTER             StatUnderruns;
+    /** Number of buffer overruns (for all streams). */
+    STAMCOUNTER             StatOverruns;
 } DRVHSTAUDPA;
 
 
@@ -799,8 +802,65 @@ static void drvHstAudPaStreamStateChangedCallback(pa_stream *pStream, void *pvUs
     }
 }
 
-#ifdef DEBUG
 
+/**
+ * Underflow notification.
+ */
+static void drvHstAudPaStreamUnderflowStatsCallback(pa_stream *pStream, void *pvContext)
+{
+    PDRVHSTAUDPASTREAM pStreamPA = (PDRVHSTAUDPASTREAM)pvContext;
+    AssertPtrReturnVoid(pStreamPA);
+    AssertPtrReturnVoid(pStreamPA->pDrv);
+
+    /* This may happen when draining/corking, so don't count those. */
+    if (!pStreamPA->pDrainOp)
+        STAM_REL_COUNTER_INC(&pStreamPA->pDrv->StatUnderruns);
+
+    pStreamPA->cUnderflows++;
+
+    LogRel2(("PulseAudio: Warning: Hit underflow #%RU32%s%s\n", pStreamPA->cUnderflows,
+             pStreamPA->pDrainOp && pa_operation_get_state(pStreamPA->pDrainOp) == PA_OPERATION_RUNNING ? " (draining)" : "",
+             pStreamPA->pCorkOp  && pa_operation_get_state(pStreamPA->pCorkOp)  == PA_OPERATION_RUNNING ? " (corking)" : "" ));
+
+    if (LogRelIs2Enabled() || LogIs2Enabled())
+    {
+        pa_usec_t cUsLatency = 0;
+        int       fNegative  = 0;
+        pa_stream_get_latency(pStream, &cUsLatency, &fNegative);
+        LogRel2(("PulseAudio: Latency now is %'RU64 us\n", cUsLatency));
+
+# ifdef LOG_ENABLED
+        if (LogIs2Enabled())
+        {
+            const pa_timing_info *pTInfo = pa_stream_get_timing_info(pStream);
+            AssertReturnVoid(pTInfo);
+            const pa_sample_spec *pSpec  = pa_stream_get_sample_spec(pStream);
+            AssertReturnVoid(pSpec);
+            Log2Func(("writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
+                      pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
+                      pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
+        }
+# endif
+    }
+}
+
+
+/**
+ * Overflow notification.
+ */
+static void drvHstAudPaStreamOverflowStatsCallback(pa_stream *pStream, void *pvContext)
+{
+    PDRVHSTAUDPASTREAM pStreamPA = (PDRVHSTAUDPASTREAM)pvContext;
+    AssertPtrReturnVoid(pStreamPA);
+    AssertPtrReturnVoid(pStreamPA->pDrv);
+
+    STAM_REL_COUNTER_INC(&pStreamPA->pDrv->StatOverruns);
+    LogRel2(("PulseAudio: Warning: Hit overflow.\n"));
+    RT_NOREF(pStream);
+}
+
+
+#ifdef DEBUG
 /**
  * Debug PA callback: Need data to output.
  */
@@ -812,70 +872,6 @@ static void drvHstAudPaStreamReqWriteDebugCallback(pa_stream *pStream, size_t cb
     int       rcPa = pa_stream_get_latency(pStream, &cUsLatency, &fNegative);
     Log2Func(("Requesting %zu bytes; Latency: %'RU64 us (rcPa=%d n=%d)\n", cbLen, cUsLatency, rcPa, fNegative));
 }
-
-
-/**
- * Debug PA callback: Underflow.  This may happen when draining/corking.
- */
-static void drvHstAudPaStreamUnderflowDebugCallback(pa_stream *pStream, void *pvContext)
-{
-    PDRVHSTAUDPASTREAM pStreamPA = (PDRVHSTAUDPASTREAM)pvContext;
-    AssertPtrReturnVoid(pStreamPA);
-
-    pStreamPA->cUnderflows++;
-
-    LogRel2(("PulseAudio: Warning: Hit underflow #%RU32%s%s\n", pStreamPA->cUnderflows,
-             pStreamPA->pDrainOp && pa_operation_get_state(pStreamPA->pDrainOp) == PA_OPERATION_RUNNING ? " (draining)" : "",
-             pStreamPA->pCorkOp  && pa_operation_get_state(pStreamPA->pCorkOp)  == PA_OPERATION_RUNNING ? " (corking)" : "" ));
-
-# if 0 /* bird: It's certifiably insane to make buffer changes here and make DEBUG build behave differently from RELEASE builds. */
-    if (   pStreamPA->cUnderflows >= 6                /** @todo Make this check configurable. */
-        && pStreamPA->cUsLatency  < 2U*RT_US_1SEC)
-    {
-        pStreamPA->cUsLatency = pStreamPA->cUsLatency * 3 / 2;
-        LogRel2(("PulseAudio: Increasing output latency to %'RU64 us\n", pStreamPA->cUsLatency));
-
-        pStreamPA->BufAttr.maxlength = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
-        pStreamPA->BufAttr.tlength   = pa_usec_to_bytes(pStreamPA->cUsLatency, &pStreamPA->SampleSpec);
-        pa_operation *pOperation = pa_stream_set_buffer_attr(pStream, &pStreamPA->BufAttr, NULL, NULL);
-        if (pOperation)
-            pa_operation_unref(pOperation);
-        else
-            LogRel2(("pa_stream_set_buffer_attr failed!\n"));
-
-        pStreamPA->cUnderflows = 0;
-    }
-# endif
-
-    pa_usec_t cUsLatency = 0;
-    int       fNegative  = 0;
-    pa_stream_get_latency(pStream, &cUsLatency, &fNegative);
-    LogRel2(("PulseAudio: Latency now is %'RU64 us\n", cUsLatency));
-
-# ifdef LOG_ENABLED
-    if (LogIs2Enabled())
-    {
-        const pa_timing_info *pTInfo = pa_stream_get_timing_info(pStream);
-        AssertReturnVoid(pTInfo);
-        const pa_sample_spec *pSpec  = pa_stream_get_sample_spec(pStream);
-        AssertReturnVoid(pSpec);
-        Log2Func(("writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
-                  pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
-                  pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
-    }
-# endif
-}
-
-
-/**
- * Debug PA callback: Overflow.  This may happen when draining/corking.
- */
-static void drvHstAudPaStreamOverflowDebugCallback(pa_stream *pStream, void *pvContext)
-{
-    RT_NOREF(pStream, pvContext);
-    Log2Func(("Warning: Hit overflow\n"));
-}
-
 #endif /* DEBUG */
 
 /**
@@ -1008,13 +1004,12 @@ static int drvHstAudPaStreamCreateLocked(PDRVHSTAUDPA pThis, PDRVHSTAUDPASTREAM 
     /*
      * Set the state callback, and in debug builds a few more...
      */
+    pa_stream_set_state_callback(pStream, drvHstAudPaStreamStateChangedCallback, pThis);
+    pa_stream_set_underflow_callback(pStream, drvHstAudPaStreamUnderflowStatsCallback, pStreamPA);
+    pa_stream_set_overflow_callback(pStream, drvHstAudPaStreamOverflowStatsCallback, pStreamPA);
 #ifdef DEBUG
-    pa_stream_set_write_callback(       pStream, drvHstAudPaStreamReqWriteDebugCallback,  pStreamPA);
-    pa_stream_set_underflow_callback(   pStream, drvHstAudPaStreamUnderflowDebugCallback, pStreamPA);
-    if (pCfgAcq->enmDir == PDMAUDIODIR_OUT)
-        pa_stream_set_overflow_callback(pStream, drvHstAudPaStreamOverflowDebugCallback,  pStreamPA);
+    pa_stream_set_write_callback(pStream, drvHstAudPaStreamReqWriteDebugCallback, pStreamPA);
 #endif
-    pa_stream_set_state_callback(       pStream, drvHstAudPaStreamStateChangedCallback,   pThis);
 
     /*
      * Connect the stream.
@@ -2341,6 +2336,17 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
     RTSemEventDestroy(pThis->InitStateChgCtx.hEvtInit);
     pThis->InitStateChgCtx.hEvtInit = NIL_RTSEMEVENT;
+
+    /*
+     * Register statistics.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        PDMDrvHlpSTAMRegister(pDrvIns, &pThis->StatOverruns, STAMTYPE_COUNTER, "Overruns", STAMUNIT_OCCURENCES,
+                              "Pulse-server side buffer overruns (all streams)");
+        PDMDrvHlpSTAMRegister(pDrvIns, &pThis->StatUnderruns, STAMTYPE_COUNTER, "Underruns", STAMUNIT_OCCURENCES,
+                              "Pulse-server side buffer underruns (all streams)");
+    }
 
     return rc;
 }
