@@ -1565,7 +1565,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     connect(m_pTabManager, &UIHelpBrowserTabManager::currentChanged,
             this, &UIHelpBrowserWidget::sltCurrentTabChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigLinkHighlighted,
-            this, &UIHelpBrowserWidget::sigLinkHighlighted);
+            this, &UIHelpBrowserWidget::sltLinkHighlighted);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigZoomPercentageChanged,
             this, &UIHelpBrowserWidget::sltZoomPercentageChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigCopyAvailableChanged,
@@ -1910,6 +1910,11 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
         m_pForwardAction->setEnabled(fForwardAvailable);
 }
 
+void UIHelpBrowserWidget::sltLinkHighlighted(const QString &strLink)
+{
+    emit sigStatusBarMessage(strLink, 0);
+}
+
 void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)
 {
     if (m_pCopySelectedTextAction)
@@ -2106,6 +2111,8 @@ void UIHelpBrowserWidget::sltAddNewBookmark(const QUrl &url, const QString &strT
 {
     if (m_pBookmarksWidget)
         m_pBookmarksWidget->addBookmark(url, strTitle);
+    Q_UNUSED(url);
+    emit sigStatusBarMessage(QString("%1%2").arg(tr("Bookmark added: ")).arg(strTitle), 3000);
 }
 
 void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab)

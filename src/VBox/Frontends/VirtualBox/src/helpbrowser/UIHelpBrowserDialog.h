@@ -58,7 +58,7 @@ protected:
 
 private slots:
 
-    void sltLinkHighlighted(const QString& strLink);
+    void sltStatusBarMessage(const QString& strLink, int iTimeOut);
     void sltStatusBarVisibilityChange(bool fVisible);
     void sltZoomPercentageChanged(int iPercentage);
 

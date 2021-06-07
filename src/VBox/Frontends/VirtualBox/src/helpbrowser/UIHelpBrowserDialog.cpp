@@ -115,8 +115,8 @@ void UIHelpBrowserDialog::prepareCentralWidget()
     sltZoomPercentageChanged(m_pWidget->zoomPercentage());
     connect(m_pWidget, &UIHelpBrowserWidget::sigCloseDialog,
             this, &UIHelpBrowserDialog::close);
-    connect(m_pWidget, &UIHelpBrowserWidget::sigLinkHighlighted,
-            this, &UIHelpBrowserDialog::sltLinkHighlighted);
+    connect(m_pWidget, &UIHelpBrowserWidget::sigStatusBarMessage,
+            this, &UIHelpBrowserDialog::sltStatusBarMessage);
     connect(m_pWidget, &UIHelpBrowserWidget::sigStatusBarVisible,
             this, &UIHelpBrowserDialog::sltStatusBarVisibilityChange);
     connect(m_pWidget, &UIHelpBrowserWidget::sigZoomPercentageChanged,
@@ -150,9 +150,9 @@ bool UIHelpBrowserDialog::shouldBeMaximized() const
     return gEDataManager->helpBrowserDialogShouldBeMaximized();
 }
 
-void UIHelpBrowserDialog::sltLinkHighlighted(const QString& strLink)
+void UIHelpBrowserDialog::sltStatusBarMessage(const QString& strLink, int iTimeOut)
 {
-    statusBar()->showMessage(strLink);
+    statusBar()->showMessage(strLink, iTimeOut);
 }
 
 void UIHelpBrowserDialog::sltStatusBarVisibilityChange(bool fVisible)
