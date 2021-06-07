@@ -555,9 +555,9 @@ typedef struct DMARMEMREQAUX
     uint8_t             cPagingLevel;
     uint8_t             afPadding[5];
     /** The first-level page-table pointer.  */
-    uint64_t            uFlptPtr;
+    uint64_t            uFlPtPtr;
     /** The second-level page-table pointer.  */
-    uint64_t            uSlptPtr;
+    uint64_t            uSlPtPtr;
 } DMARMEMREQAUX;
 /** Pointer to a DMA memory request output. */
 typedef DMARMEMREQAUX *PDMARMEMREQAUX;
@@ -2109,17 +2109,17 @@ static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8
 
 
 /**
- * Reads a second-level paging entry from guest memory.
+ * Reads a second-level page-table pointer from guest memory.
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   GCPhysSlptPtr   The physical address of the SLPTPTR.
+ * @param   GCPhysSlPtPtr   The physical address of the SLPTPTR.
  * @param   pSlpEntry       Where to store the read SLPTPTR.
  */
-static int dmarDrReadSlpPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlptPtr, PVTD_SLP_ENTRY_T pSlpEntry)
+static int dmarDrReadSecondLevelPtPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlPtPtr, PVTD_SLP_ENTRY_T pSlpEntry)
 {
-    /* We don't verify bits 63:HAW of GCPhysSlptPtr is 0 since reading from such an address should fail anyway. */
-    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysSlptPtr, pSlpEntry, sizeof(*pSlpEntry));
+    /* We don't verify bits 63:HAW of GCPhysSlPtPtr is 0 since reading from such an address should fail anyway. */
+    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysSlPtPtr, pSlpEntry, sizeof(*pSlpEntry));
 }
 
 
@@ -2202,7 +2202,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t uPtEntity   = pMemReqAux->uSlptPtr;
+    uint64_t uPtEntity   = pMemReqAux->uSlPtPtr;
     int8_t   iLevel      = pMemReqAux->cPagingLevel - 1;
     uint8_t  cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
     Assert(iLevel >= 2);
@@ -2479,13 +2479,13 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                         if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, &cPagingLevel))
                                         {
                                             /* Read the SLPTPTR from guest memory. */
-                                            VTD_SLP_ENTRY_T SlptPtr;
-                                            RTGCPHYS const GCPhysSlptPtr = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
-                                            rc = dmarDrReadSlpPtr(pDevIns, GCPhysSlptPtr, &SlptPtr);
+                                            VTD_SLP_ENTRY_T SlPtPtr;
+                                            RTGCPHYS const GCPhysSlPtPtr = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
+                                            rc = dmarDrReadSecondLevelPtPtr(pDevIns, GCPhysSlPtPtr, &SlPtPtr);
                                             if (RT_SUCCESS(rc))
                                             {
                                                 /* Finally... perform second-level translation. */
-                                                pMemReqAux->uSlptPtr     = SlptPtr;
+                                                pMemReqAux->uSlPtPtr     = SlPtPtr;
                                                 pMemReqAux->cPagingLevel = cPagingLevel;
                                                 return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
                                             }
@@ -3122,7 +3122,7 @@ static void dmarR3InvQueueProcessRequests(PPDMDEVINS pDevIns, void const *pvRequ
 
     /*
      * The below check is redundant since we check both TTM and DW for each
-     * descriptor type we process. However, the order errors reported by hardware
+     * descriptor type we process. However, the order of errors reported by hardware
      * may differ hence this is kept commented out but not removed if we need to
      * change this in the future.
      *
