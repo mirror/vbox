@@ -110,6 +110,7 @@ private slots:
     void sltFindPreviousInPage();
     void sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
     void sltLinkHighlighted(const QString &strLink);
+    void sltMouseOverImage(const QString &strImageName);
 
 private:
 

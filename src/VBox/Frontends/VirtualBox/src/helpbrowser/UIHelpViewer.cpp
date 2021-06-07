@@ -659,24 +659,29 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
 }
 
-
-void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
+void UIHelpViewer::setImageOverCursor(QPoint globalPosition)
 {
-    if (m_fOverlayMode)
-        return;
-
-    QPoint viewportCoordinates = viewport()->mapFromGlobal(pEvent->globalPos());
+    QPoint viewportCoordinates = viewport()->mapFromGlobal(globalPosition);
     QTextCursor cursor = cursorForPosition(viewportCoordinates);
     if (!m_fCursorChanged && cursor.charFormat().isImageFormat())
     {
         m_fCursorChanged = true;
         viewport()->setCursor(m_handCursor);
+        emit sigMouseOverImage(cursor.charFormat().toImageFormat().name());
     }
     if (m_fCursorChanged && !cursor.charFormat().isImageFormat())
     {
         viewport()->setCursor(m_defaultCursor);
         m_fCursorChanged = false;
     }
+
+}
+
+void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
+{
+    if (m_fOverlayMode)
+        return;
+    setImageOverCursor(pEvent->globalPos());
     QIWithRetranslateUI<QTextBrowser>::mouseMoveEvent(pEvent);
 }
 
@@ -994,6 +999,8 @@ void UIHelpViewer::scaleImages()
 
 void UIHelpViewer::clearOverlay()
 {
+    setImageOverCursor(cursor().pos());
+
     if (!m_fOverlayMode)
         return;
     m_overlayPixmap = QPixmap();
@@ -1037,6 +1044,7 @@ void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
             if (m_pOverlayBlurEffect)
                 m_pOverlayBlurEffect->setEnabled(true);
             viewport()->setCursor(m_defaultCursor);
+            m_fCursorChanged = false;
             emit sigOverlayModeChanged(true);
             toggleFindInPageWidget(false);
         }

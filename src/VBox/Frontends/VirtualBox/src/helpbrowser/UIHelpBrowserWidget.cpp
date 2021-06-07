@@ -190,6 +190,7 @@ signals:
     void sigZoomPercentageChanged(int iPercentage);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
     void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
+    void sigMouseOverImage(const QString &strImageName);
 
 public:
 
@@ -270,6 +271,7 @@ signals:
     void sigCopyAvailableChanged(bool fAvailable);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
     void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
+    void sigMouseOverImage(const QString &strImageName);
 
 public:
 
@@ -709,6 +711,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sigCopyAvailableChanged);
     connect(m_pContentViewer, &UIHelpViewer::sigFindInPageWidgetToogle,
             this, &UIHelpBrowserTab::sltFindInPageWidgetVisibilityChanged);
+    connect(m_pContentViewer, &UIHelpViewer::sigMouseOverImage,
+            this, &UIHelpBrowserTab::sigMouseOverImage);
 
     m_pContentViewer->setSource(initialUrl);
 }
@@ -938,10 +942,10 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sigFindInPageWidgetVisibilityChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigHistoryChanged,
             this, &UIHelpBrowserTabManager::sigHistoryChanged);
+   connect(pTabWidget, &UIHelpBrowserTab::sigMouseOverImage,
+            this, &UIHelpBrowserTabManager::sigMouseOverImage);
 
-
-
-    pTabWidget->setZoomPercentage(zoomPercentage());
+   pTabWidget->setZoomPercentage(zoomPercentage());
     pTabWidget->setHelpFileList(m_helpFileList);
     setFocusProxy(pTabWidget);
     if (!fBackground)
@@ -1574,7 +1578,8 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigHistoryChanged,
             this, &UIHelpBrowserWidget::sltHistoryChanged);
-
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigMouseOverImage,
+            this, &UIHelpBrowserWidget::sltMouseOverImage);
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHelpEngineSetupFinished);
@@ -1913,6 +1918,11 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
 void UIHelpBrowserWidget::sltLinkHighlighted(const QString &strLink)
 {
     emit sigStatusBarMessage(strLink, 0);
+}
+
+void UIHelpBrowserWidget::sltMouseOverImage(const QString &strImageName)
+{
+    emit sigStatusBarMessage(QString("%1: %2").arg(tr("Click to enlarge the image")).arg(strImageName) , 3000);
 }
 
 void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)

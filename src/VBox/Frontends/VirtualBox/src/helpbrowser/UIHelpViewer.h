@@ -51,6 +51,7 @@ signals:
     void sigAddBookmark();
     void sigZoomPercentageChanged(int iPercentage);
     void sigOverlayModeChanged(bool fEnabled);
+    void sigMouseOverImage(const QString &strImageName);
 
 public:
 
@@ -128,6 +129,7 @@ private:
     /** If there is image at @p globalPosition then its data is loaded to m_overlayPixmap. */
     void loadImageAtPosition(const QPoint &globalPosition);
     void clearOverlay();
+    void setImageOverCursor(QPoint globalPosition);
 
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
