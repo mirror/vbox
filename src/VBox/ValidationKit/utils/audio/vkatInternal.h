@@ -30,12 +30,52 @@
 # pragma once
 #endif
 
+#include <iprt/getopt.h>
+
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/vmm/pdmaudiohostenuminline.h>
+
 #include "Audio/AudioMixBuffer.h"
+#include "Audio/AudioTest.h"
+#include "Audio/AudioTestService.h"
+#include "Audio/AudioTestServiceClient.h"
+
+#include "VBoxDD.h"
 
 
+/*********************************************************************************************************************************
+*   Externals                                                                                                                    *
+*********************************************************************************************************************************/
+/** Terminate ASAP if set.  Set on Ctrl-C. */
+extern bool volatile    g_fTerminate;
+/** The release logger. */
+extern PRTLOGGER        g_pRelLogger;
+
+/** The test handle. */
+extern RTTEST         g_hTest;
+extern unsigned       g_uVerbosity;
+extern bool           g_fDrvAudioDebug;
+extern const char    *g_pszDrvAudioDebug;
+
+/** The test handle. */
+extern RTTEST         g_hTest;
+/** The current verbosity level. */
+extern unsigned       g_uVerbosity;
+/** DrvAudio: Enable debug (or not). */
+extern bool           g_fDrvAudioDebug;
+/** DrvAudio: The debug output path. */
+extern const char    *g_pszDrvAudioDebug;
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Audio driver stack.
  *
@@ -96,13 +136,212 @@ typedef struct AUDIOTESTDRVMIXSTREAM
 /** Pointer to mixer setup for a stream. */
 typedef AUDIOTESTDRVMIXSTREAM *PAUDIOTESTDRVMIXSTREAM;
 
+/**
+ * Backends.
+ *
+ * @note The first backend in the array is the default one for the platform.
+ */
+struct
+{
+    /** The driver registration structure. */
+    PCPDMDRVREG pDrvReg;
+    /** The backend name.
+     * Aliases are implemented by having multiple entries for the same backend.  */
+    const char *pszName;
+} const g_aBackends[] =
+{
+#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
+    {   &g_DrvHostALSAAudio,          "alsa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+    {   &g_DrvHostPulseAudio,         "pulseaudio" },
+    {   &g_DrvHostPulseAudio,         "pulse" },
+    {   &g_DrvHostPulseAudio,         "pa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+    {   &g_DrvHostOSSAudio,           "oss" },
+#endif
+#if defined(RT_OS_DARWIN)
+    {   &g_DrvHostCoreAudio,          "coreaudio" },
+    {   &g_DrvHostCoreAudio,          "core" },
+    {   &g_DrvHostCoreAudio,          "ca" },
+#endif
+#if defined(RT_OS_WINDOWS)
+    {   &g_DrvHostAudioWas,           "wasapi" },
+    {   &g_DrvHostAudioWas,           "was" },
+    {   &g_DrvHostDSound,             "directsound" },
+    {   &g_DrvHostDSound,             "dsound" },
+    {   &g_DrvHostDSound,             "ds" },
+#endif
+    {   &g_DrvHostValidationKitAudio, "valkit" }
+};
+AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
-/** The test handle. */
-extern RTTEST         g_hTest;
-extern unsigned       g_uVerbosity;
-extern bool           g_fDrvAudioDebug;
-extern const char    *g_pszDrvAudioDebug;
 
+
+/**
+ * Enumeration specifying the current audio test mode.
+ */
+typedef enum AUDIOTESTMODE
+{
+    /** Unknown mode. */
+    AUDIOTESTMODE_UNKNOWN = 0,
+    /** VKAT is running on the guest side. */
+    AUDIOTESTMODE_GUEST,
+    /** VKAT is running on the host side. */
+    AUDIOTESTMODE_HOST
+} AUDIOTESTMODE;
+
+struct AUDIOTESTENV;
+/** Pointer a audio test environment. */
+typedef AUDIOTESTENV *PAUDIOTESTENV;
+
+struct AUDIOTESTDESC;
+/** Pointer a audio test descriptor. */
+typedef AUDIOTESTDESC *PAUDIOTESTDESC;
+
+/**
+ * Callback to set up the test parameters for a specific test.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS    if setting the parameters up succeeded. Any other error code
+ *                          otherwise indicating the kind of error.
+ * @param   pszTest         Test name.
+ * @param   pTstParmsAcq    The audio test parameters to set up.
+ */
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTSETUP,(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx));
+/** Pointer to an audio test setup callback. */
+typedef FNAUDIOTESTSETUP *PFNAUDIOTESTSETUP;
+
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTEXEC,(PAUDIOTESTENV pTstEnv, void *pvCtx, PAUDIOTESTPARMS pTstParms));
+/** Pointer to an audio test exec callback. */
+typedef FNAUDIOTESTEXEC *PFNAUDIOTESTEXEC;
+
+typedef DECLCALLBACKTYPE(int, FNAUDIOTESTDESTROY,(PAUDIOTESTENV pTstEnv, void *pvCtx));
+/** Pointer to an audio test destroy callback. */
+typedef FNAUDIOTESTDESTROY *PFNAUDIOTESTDESTROY;
+
+/**
+ * Structure for keeping an audio test audio stream.
+ */
+typedef struct AUDIOTESTSTREAM
+{
+    /** The PDM stream. */
+    PPDMAUDIOSTREAM         pStream;
+    /** The backend stream. */
+    PPDMAUDIOBACKENDSTREAM  pBackend;
+    /** The stream config. */
+    PDMAUDIOSTREAMCFG       Cfg;
+} AUDIOTESTSTREAM;
+/** Pointer to audio test stream. */
+typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
+
+/** Maximum audio streams a test environment can handle. */
+#define AUDIOTESTENV_MAX_STREAMS 8
+
+/**
+ * Audio test environment parameters.
+ * Not necessarily bound to a specific test (can be reused).
+ */
+typedef struct AUDIOTESTENV
+{
+    /** Audio testing mode. */
+    AUDIOTESTMODE           enmMode;
+    /** Whether self test mode is active or not. */
+    bool                    fSelftest;
+    /** Output path for storing the test environment's final test files. */
+    char                    szTag[AUDIOTEST_TAG_MAX];
+    /** Output path for storing the test environment's final test files. */
+    char                    szPathOut[RTPATH_MAX];
+    /** Temporary path for this test environment. */
+    char                    szPathTemp[RTPATH_MAX];
+    /** Buffer size (in ms). */
+    RTMSINTERVAL            cMsBufferSize;
+    /** Pre-buffering time (in ms). */
+    RTMSINTERVAL            cMsPreBuffer;
+    /** Scheduling hint (in ms). */
+    RTMSINTERVAL            cMsSchedulingHint;
+    /** The audio test driver stack. */
+    AUDIOTESTDRVSTACK       DrvStack;
+    /** The current (last) audio device enumeration to use. */
+    PDMAUDIOHOSTENUM        DevEnum;
+    /** Audio stream. */
+    AUDIOTESTSTREAM         aStreams[AUDIOTESTENV_MAX_STREAMS];
+    /** The audio test set to use. */
+    AUDIOTESTSET            Set;
+    union
+    {
+        struct
+        {
+            /** ATS instance to use. */
+            ATSSERVER       Srv;
+        } Guest;
+        struct
+        {
+            /** Client connected to the ATS on the guest side. */
+            ATSCLIENT       AtsClGuest;
+            /** Client connected to the ATS on the Validation Kit. */
+            ATSCLIENT       AtsClValKit;
+        } Host;
+    } u;
+} AUDIOTESTENV;
+
+/**
+ * Audio test descriptor.
+ */
+typedef struct AUDIOTESTDESC
+{
+    /** (Sort of) Descriptive test name. */
+    const char             *pszName;
+    /** Flag whether the test is excluded. */
+    bool                    fExcluded;
+    /** The setup callback. */
+    PFNAUDIOTESTSETUP       pfnSetup;
+    /** The exec callback. */
+    PFNAUDIOTESTEXEC        pfnExec;
+    /** The destruction callback. */
+    PFNAUDIOTESTDESTROY     pfnDestroy;
+} AUDIOTESTDESC;
+
+/**
+ * Structure for keeping a VKAT self test context.
+ */
+typedef struct SELFTESTCTX
+{
+    /** Common tag for guest and host side. */
+    char             szTag[AUDIOTEST_TAG_MAX];
+    /** Whether to use DrvAudio in the driver stack or not. */
+    bool             fWithDrvAudio;
+    struct
+    {
+        AUDIOTESTENV TstEnv;
+        /** Audio driver to use.
+         *  Defaults to the platform's default driver. */
+        PCPDMDRVREG  pDrvReg;
+    } Guest;
+    struct
+    {
+        AUDIOTESTENV TstEnv;
+        /** Address of the guest ATS instance.
+         *  Defaults to localhost (127.0.0.1) if not set. */
+        char         szGuestAtsAddr[64];
+        /** Port of the guest ATS instance.
+         *  Defaults to ATS_DEFAULT_PORT if not set. */
+        uint32_t     uGuestAtsPort;
+        /** Address of the Validation Kit audio driver ATS instance.
+         *  Defaults to localhost (127.0.0.1) if not set. */
+        char         szValKitAtsAddr[64];
+        /** Port of the Validation Kit audio driver ATS instance.
+         *  Defaults to ATS_ALT_PORT if not set. */
+        uint32_t     uValKitAtsPort;
+    } Host;
+} SELFTESTCTX;
+/** Pointer to a VKAT self test context. */
+typedef SELFTESTCTX *PSELFTESTCTX;
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
 
 /** @name Driver stack
  * @{ */
@@ -137,6 +376,10 @@ int         audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDM
                                               void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
 /** @}  */
 
+/** @name Backend handling
+ * @{ */
+PCPDMDRVREG audioTestFindBackendOpt(const char *pszBackend);
+/** @}  */
 
 /** @name Mixing stream
  * @{ */
@@ -153,6 +396,37 @@ uint32_t    AudioTestMixStreamGetReadable(PAUDIOTESTDRVMIXSTREAM pMix);
 int         AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, uint32_t cbBuf, uint32_t *pcbCaptured);
 /** @}  */
 
+/** @name Device handling
+ * @{ */
+int         audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev);
+int         audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev);
+/** @}  */
+
+/** @name Test environment handling
+ * @{ */
+int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszTcpAddr, uint32_t uTcpPort);
+void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
+int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv);
+
+void        audioTestParmsInit(PAUDIOTESTPARMS pTstParms);
+void        audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms);
+/** @}  */
+
+int         audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms);
+
+/** @name Command handlers
+ * @{ */
+RTEXITCODE   audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                              uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                              uint8_t cChannels, uint8_t cbSample, uint32_t uHz,
+                              bool fWithDrvAudio, bool fWithMixer);
+RTEXITCODE   audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
+                             PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                             uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                             uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
+                             uint64_t cMaxFrames, uint64_t cNsMaxDuration);
+RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
+/** @}  */
 
 #endif /* !VBOX_INCLUDED_SRC_audio_vkatInternal_h */
 
