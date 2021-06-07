@@ -153,8 +153,8 @@ typedef struct DRVHSTAUDPASTREAM
      * (This solely for cancelling before destroying the stream, so the callback
      * won't do any after-freed accesses.) */
     pa_operation           *pTriggerOp;
-    /** Output: Current latency (in microsecs). */
-    uint64_t                cUsLatency;
+    /** Internal byte offset. */
+    uint64_t                offInternal;
 #ifdef LOG_ENABLED
     /** Creation timestamp (in microsecs) of stream playback / recording. */
     pa_usec_t               tsStartUs;
@@ -1251,11 +1251,6 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
             /* (fragsize is capture only) */
             LogRel2(("PulseAudio: Requesting: BufAttr: tlength=%#RX32 minReq=%#RX32 prebuf=%#RX32 maxLength=%#RX32\n",
                      pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.minreq, pStreamPA->BufAttr.prebuf, pStreamPA->BufAttr.maxlength));
-
-            /* This (cUsLatency) isn't used for anything. */
-            pStreamPA->cUsLatency = PDMAudioPropsFramesToMicro(&pCfgAcq->Props, pCfgReq->Backend.cFramesBufferSize);
-            LogRel2(("PulseAudio: Initial output latency is %RU64 us (%RU32 bytes)\n",
-                     pStreamPA->cUsLatency, pStreamPA->BufAttr.tlength));
         }
 
         /*
@@ -1291,6 +1286,9 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCreate(PPDMIHOSTAUDIO pInterface, P
                 pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.minreq);
                 pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.tlength);
                 pCfgAcq->Backend.cFramesPreBuffering = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamPA->BufAttr.prebuf);
+
+                LogRel2(("PulseAudio: Initial output latency is %RU64 us (%RU32 bytes)\n",
+                         PDMAudioPropsBytesToMicro(&pCfgAcq->Props, pStreamPA->BufAttr.tlength), pStreamPA->BufAttr.tlength));
             }
 
             /*
@@ -1435,6 +1433,7 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamEnable(PPDMIHOSTAUDIO pInterface, P
     int const rc = pStreamPA->pCorkOp ? VINF_SUCCESS
                  : drvHstAudPaError(pThis, "pa_stream_cork('%s', 0 /*uncork it*/,,) failed", pStreamPA->Cfg.szName);
 
+    pStreamPA->offInternal = 0;
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
 
@@ -1611,7 +1610,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PP
      * issued here, so that we avoid waiting for the trigger request to complete.
      */
     int rc = VINF_SUCCESS;
-    if (true /** @todo skip this if we're already playing or haven't written any data to the stream since xxxx. */)
+    if (  pStreamPA->offInternal
+        < PDMAudioPropsFramesToBytes(&pStreamPA->Cfg.Props, pStreamPA->Cfg.Backend.cFramesPreBuffering) * 2)
     {
         if (pStreamPA->pTriggerOp)
         {
@@ -1780,8 +1780,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("play delta: %'RI64 us; cbBuf=%#x\n",
-              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf));
+    Log3Func(("play delta: %'RI64 us; cbBuf=%#x @%#RX64\n",
+              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf, pStreamPA->offInternal));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
@@ -1801,8 +1801,9 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
             cbToWrite = PDMAudioPropsFloorBytesToFrame(&pStreamPA->Cfg.Props, cbToWrite);
             if (pa_stream_write(pStreamPA->pStream, pvBuf, cbToWrite, NULL /*pfnFree*/, 0 /*offset*/, PA_SEEK_RELATIVE) >= 0)
             {
-                cbTotalWritten += cbToWrite;
-                cbBuf          -= cbToWrite;
+                cbTotalWritten         += cbToWrite;
+                cbBuf                  -= cbToWrite;
+                pStreamPA->offInternal += cbToWrite;
                 if (!cbBuf)
                     break;
                 pvBuf = (uint8_t const *)pvBuf + cbToWrite;
@@ -1832,7 +1833,7 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPD
         LogFunc(("Supressing %Rrc because we wrote %#x bytes\n", rc, cbTotalWritten));
         rc = VINF_SUCCESS;
     }
-    Log3Func(("returns %Rrc *pcbWritten=%#x iLoop=%u\n", rc, cbTotalWritten, iLoop));
+    Log3Func(("returns %Rrc *pcbWritten=%#x iLoop=%u @%#RX64\n", rc, cbTotalWritten, iLoop, pStreamPA->offInternal));
     return rc;
 }
 
@@ -1892,8 +1893,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs = pa_rtclock_now();
-    Log3Func(("capture delta: %'RI64 us; cbBuf=%#x\n",
-              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf));
+    Log3Func(("capture delta: %'RI64 us; cbBuf=%#x @%#RX64\n",
+              pStreamPA->tsLastReadWrittenUs ? tsNowUs - pStreamPA->tsLastReadWrittenUs : -1, cbBuf, pStreamPA->offInternal));
     pStreamPA->tsLastReadWrittenUs = tsNowUs;
 #endif
 
@@ -1909,8 +1910,10 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
         if (cbToCopy >= cbBuf)
         {
             memcpy(pvBuf, &pStreamPA->pbPeekBuf[pStreamPA->offPeekBuf], cbBuf);
-            pStreamPA->offPeekBuf += cbBuf;
-            *pcbRead               = cbBuf;
+            pStreamPA->offPeekBuf  += cbBuf;
+            pStreamPA->offInternal += cbBuf;
+            *pcbRead                = cbBuf;
+
             if (cbToCopy == cbBuf)
             {
                 pa_threaded_mainloop_lock(pThis->pMainLoop);
@@ -1919,7 +1922,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
                 pa_stream_drop(pStreamPA->pStream);
                 pa_threaded_mainloop_unlock(pThis->pMainLoop);
             }
-            Log3Func(("returns *pcbRead=%#x from prev peek buf (%#x/%#x)\n", cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
+            Log3Func(("returns *pcbRead=%#x from prev peek buf (%#x/%#x) @%#RX64\n",
+                      cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf, pStreamPA->offInternal));
             return VINF_SUCCESS;
         }
 
@@ -1969,17 +1973,19 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
                         if (cbBuf < pStreamPA->cbPeekBuf)
                         {
                             memcpy(pvBuf, pStreamPA->pbPeekBuf, cbBuf);
-                            cbTotalRead          += cbBuf;
-                            pStreamPA->offPeekBuf = cbBuf;
+                            cbTotalRead            += cbBuf;
+                            pStreamPA->offPeekBuf   = cbBuf;
+                            pStreamPA->offInternal += cbBuf;
                             cbBuf = 0;
                             break;
                         }
                         memcpy(pvBuf, pStreamPA->pbPeekBuf, pStreamPA->cbPeekBuf);
-                        cbBuf       -= pStreamPA->cbPeekBuf;
-                        pvBuf        = (uint8_t *)pvBuf + pStreamPA->cbPeekBuf;
-                        cbTotalRead += pStreamPA->cbPeekBuf;
+                        cbBuf                  -= pStreamPA->cbPeekBuf;
+                        pvBuf                   = (uint8_t *)pvBuf + pStreamPA->cbPeekBuf;
+                        cbTotalRead            += pStreamPA->cbPeekBuf;
+                        pStreamPA->offInternal += cbBuf;
 
-                        pStreamPA->pbPeekBuf = NULL;
+                        pStreamPA->pbPeekBuf    = NULL;
                     }
                     else
                     {
@@ -2025,8 +2031,8 @@ static DECLCALLBACK(int) drvHstAudPaHA_StreamCapture(PPDMIHOSTAUDIO pInterface, 
         LogFunc(("Supressing %Rrc because we're returning %#x bytes\n", rc, cbTotalRead));
         rc = VINF_SUCCESS;
     }
-    Log3Func(("returns %Rrc *pcbRead=%#x (%#x left, peek %#x/%#x)\n",
-              rc, cbTotalRead, cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
+    Log3Func(("returns %Rrc *pcbRead=%#x (%#x left, peek %#x/%#x) @%#RX64\n",
+              rc, cbTotalRead, cbBuf, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf, pStreamPA->offInternal));
     return rc;
 }
 
