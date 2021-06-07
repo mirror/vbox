@@ -792,13 +792,21 @@ void UIHelpBrowserTab::sltHomeAction()
 void UIHelpBrowserTab::sltForwardAction()
 {
     if (m_pContentViewer)
+    {
         m_pContentViewer->forward();
+        /* when we dont reload our overload imag hack does not work and images look ugly: */
+        m_pContentViewer->reload();
+    }
 }
 
 void UIHelpBrowserTab::sltBackwardAction()
 {
     if (m_pContentViewer)
+    {
         m_pContentViewer->backward();
+        /* when we dont reload our overload imag hack does not work and images look ugly: */
+        m_pContentViewer->reload();
+    }
 }
 
 void UIHelpBrowserTab::sltFindInPageAction(bool fToggled)
@@ -1468,11 +1476,13 @@ void UIHelpBrowserWidget::prepareActions()
     m_pQuitAction->setShortcut(QString("Ctrl+Q"));
 
     m_pBackwardAction = new QAction(this);
+    m_pBackwardAction->setShortcut(QKeySequence::Back);
     connect(m_pBackwardAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigGoBackward);
     m_pBackwardAction->setEnabled(false);
 
     m_pForwardAction = new QAction(this);
+    m_pForwardAction->setShortcut(QKeySequence::Forward);
     connect(m_pForwardAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigGoForward);
     m_pForwardAction->setEnabled(false);
@@ -1482,10 +1492,12 @@ void UIHelpBrowserWidget::prepareActions()
             this, &UIHelpBrowserWidget::sigGoHome);
 
     m_pReloadPageAction = new QAction(this);
+    m_pReloadPageAction->setShortcut(QKeySequence::Refresh);
     connect(m_pReloadPageAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigReloadPage);
 
     m_pAddBookmarkAction = new QAction(this);
+    m_pAddBookmarkAction->setShortcut(QKeySequence("Ctrl+D"));
     connect(m_pAddBookmarkAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigAddBookmark);
 
@@ -1807,9 +1819,9 @@ void UIHelpBrowserWidget::retranslateUi()
     if (m_pFindInPageAction)
         m_pFindInPageAction->setText(tr("&Find in Page"));
     if (m_pFindNextInPageAction)
-        m_pFindNextInPageAction->setText(tr("&Find Next"));
+        m_pFindNextInPageAction->setText(tr("Find Ne&xt"));
     if (m_pFindPreviousInPageAction)
-        m_pFindPreviousInPageAction->setText(tr("&Find Previous"));
+        m_pFindPreviousInPageAction->setText(tr("Find &Previous"));
 
     if (m_pBackwardAction)
         m_pBackwardAction->setText(tr("Go Backward"));
