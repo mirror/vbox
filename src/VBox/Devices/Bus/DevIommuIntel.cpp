@@ -581,8 +581,18 @@ typedef DMARMEMREQREMAP *PDMARMEMREQREMAP;
 /** Pointer to a const DMA remap info. */
 typedef DMARMEMREQREMAP const *PCDMARMEMREQREMAP;
 
+/**
+ * Callback function to lookup a DMA address.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pMemReqIn   The DMA memory request input.
+ * @param   pMemReqAux  The DMA memory request auxiliary info.
+ * @param   pIoPageOut  Where to store the output of the lookup.
+ */
 typedef DECLCALLBACKTYPE(int, FNDMADDRLOOKUP,(PPDMDEVINS pDevIns, PCDMARMEMREQIN pMemReqIn, PCDMARMEMREQAUX pMemReqAux,
                                               PDMARIOPAGE pIoPageOut));
+/** Pointer to a DMA address-lookup function. */
 typedef FNDMADDRLOOKUP *PFNDMADDRLOOKUP;
 
 
