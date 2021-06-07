@@ -233,7 +233,6 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uin
      *        code handles queuing the MSI to be sent from ring-3 when I/O APIC isn't
      *        available in R0. When this TODO is done, remove the remark in the doxygen
      *        above. */
-    Assert(PCIBDF_IS_VALID(uBusDevFn));
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi));
