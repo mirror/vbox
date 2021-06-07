@@ -210,6 +210,13 @@ static DECLCALLBACK(int) audioTestDrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFl
 }
 
 
+static DECLCALLBACK(void) audioTestDrvHlp_STAMRegister(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, const char *pszName,
+                                                       STAMUNIT enmUnit, const char *pszDesc)
+{
+    RT_NOREF(pDrvIns, pvSample, enmType, pszName, enmUnit, pszDesc);
+}
+
+
 static DECLCALLBACK(void) audioTestDrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
                                                         STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
                                                         const char *pszName, ...)
@@ -257,6 +264,7 @@ static const PDMDRVHLPR3 *audioTestFakeGetDrvHlp(void)
         s_DrvHlp.u32Version                     = PDM_DRVHLPR3_VERSION;
         s_DrvHlp.u32TheEnd                      = PDM_DRVHLPR3_VERSION;
         s_DrvHlp.pfnAttach                      = audioTestDrvHlp_Attach;
+        s_DrvHlp.pfnSTAMRegister                = audioTestDrvHlp_STAMRegister;
         s_DrvHlp.pfnSTAMRegisterF               = audioTestDrvHlp_STAMRegisterF;
         s_DrvHlp.pfnSTAMRegisterV               = audioTestDrvHlp_STAMRegisterV;
         s_DrvHlp.pfnSTAMDeregister              = audioTestDrvHlp_STAMDeregister;
