@@ -108,9 +108,9 @@ typedef struct DRVHSTAUDALSA
     /** Critical section protecting the default device strings. */
     RTCRITSECT          CritSect;
     /** Default input device name.   */
-    char                szDefaultIn[256];
+    char                szInputDev[256];
     /** Default output device name. */
-    char                szDefaultOut[256];
+    char                szOutputDev[256];
     /** Upwards notification interface. */
     PPDMIHOSTAUDIOPORT  pIHostAudioPort;
 } DRVHSTAUDALSA;
@@ -368,7 +368,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PD
     else
     {
         size_t cch = strlen(pszId);
-        AssertReturn(cch < sizeof(pThis->szDefaultIn), VERR_INVALID_NAME);
+        AssertReturn(cch < sizeof(pThis->szInputDev), VERR_INVALID_NAME);
     }
     LogFunc(("enmDir=%d pszId=%s\n", enmDir, pszId));
 
@@ -379,17 +379,17 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PD
     {
         int rc = RTCritSectEnter(&pThis->CritSect);
         AssertRCReturn(rc, rc);
-        if (strcmp(pThis->szDefaultIn, pszId) == 0)
+        if (strcmp(pThis->szInputDev, pszId) == 0)
             RTCritSectLeave(&pThis->CritSect);
         else
         {
-            LogRel(("ALSA: Default input device: '%s' -> '%s'\n", pThis->szDefaultIn, pszId));
-            RTStrCopy(pThis->szDefaultIn, sizeof(pThis->szDefaultIn), pszId);
+            LogRel(("ALSA: Changing input device: '%s' -> '%s'\n", pThis->szInputDev, pszId));
+            RTStrCopy(pThis->szInputDev, sizeof(pThis->szInputDev), pszId);
             PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
             RTCritSectLeave(&pThis->CritSect);
             if (pIHostAudioPort)
             {
-                LogFlowFunc(("Notifying parent driver about input default device change...\n"));
+                LogFlowFunc(("Notifying parent driver about input device change...\n"));
                 pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_IN, NULL /*pvUser*/);
             }
         }
@@ -402,17 +402,17 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_SetDevice(PPDMIHOSTAUDIO pInterface, PD
     {
         int rc = RTCritSectEnter(&pThis->CritSect);
         AssertRCReturn(rc, rc);
-        if (strcmp(pThis->szDefaultOut, pszId) == 0)
+        if (strcmp(pThis->szOutputDev, pszId) == 0)
             RTCritSectLeave(&pThis->CritSect);
         else
         {
-            LogRel(("ALSA: Default output device: '%s' -> '%s'\n", pThis->szDefaultOut, pszId));
-            RTStrCopy(pThis->szDefaultOut, sizeof(pThis->szDefaultOut), pszId);
+            LogRel(("ALSA: Changing output device: '%s' -> '%s'\n", pThis->szOutputDev, pszId));
+            RTStrCopy(pThis->szOutputDev, sizeof(pThis->szOutputDev), pszId);
             PPDMIHOSTAUDIOPORT pIHostAudioPort = pThis->pIHostAudioPort;
             RTCritSectLeave(&pThis->CritSect);
             if (pIHostAudioPort)
             {
-                LogFlowFunc(("Notifying parent driver about output default device change...\n"));
+                LogFlowFunc(("Notifying parent driver about output device change...\n"));
                 pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, PDMAUDIODIR_OUT, NULL /*pvUser*/);
             }
         }
@@ -729,7 +729,7 @@ static int alsaStreamOpen(PDRVHSTAUDALSA pThis, snd_pcm_format_t enmAlsaFmt, PCP
      */
     int                rc      = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     const char * const pszType = pCfgReq->enmDir == PDMAUDIODIR_IN ? "input" : "output";
-    const char * const pszDev  = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->szDefaultIn : pThis->szDefaultOut;
+    const char * const pszDev  = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->szInputDev : pThis->szOutputDev;
     snd_pcm_stream_t   enmType = pCfgReq->enmDir == PDMAUDIODIR_IN ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK;
 
     snd_pcm_t *hPCM = NULL;
@@ -1501,9 +1501,9 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "OutputDeviceID|InputDeviceID", "");
 
-    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
+    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "default");
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
+    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "default");
     AssertRCReturn(rc, rc);
 
     /*
