@@ -341,6 +341,8 @@ int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, 
 
 int    AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMPROPS pProps);
 
+int    AudioTestGenTag(char *pszTag, size_t cbTag);
+
 int    AudioTestPathGetTemp(char *pszPath, size_t cbPath);
 int    AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszUUID);
 int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);

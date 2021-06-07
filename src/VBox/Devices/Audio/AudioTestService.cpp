@@ -142,9 +142,9 @@ static int atsSendPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt)
 
     Log(("atsSendPkt: cb=%#x opcode=%.8s\n", pPkt->cb, pPkt->achOpcode));
     Log2(("%.*Rhxd\n", RT_MIN(pPkt->cb, 256), pPkt));
-    int rc = pThis->pTransport->pfnSendPkt(pClient->pTransportClient, pPkt);
+    int rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
     while (RT_UNLIKELY(rc == VERR_INTERRUPTED) && !pThis->fTerminate)
-        rc = pThis->pTransport->pfnSendPkt(pClient->pTransportClient, pPkt);
+        rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
     if (RT_FAILURE(rc))
         Log(("atsSendPkt: rc=%Rrc\n", rc));
 
@@ -165,7 +165,7 @@ static void atsReplyBabble(PATSSERVER pThis, PATSCLIENTINST pClient, const char 
     Reply.uCrc32 = 0;
     memcpy(Reply.achOpcode, pszOpcode, sizeof(Reply.achOpcode));
 
-    pThis->pTransport->pfnBabble(pClient->pTransportClient, &Reply, 20*1000);
+    pThis->pTransport->pfnBabble(&pThis->TransportInst, pClient->pTransportClient, &Reply, 20*1000);
 }
 
 /**
@@ -186,7 +186,7 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
     for (;;)
     {
         PATSPKTHDR pPktHdr;
-        int rc = pThis->pTransport->pfnRecvPkt(pClient->pTransportClient, &pPktHdr);
+        int rc = pThis->pTransport->pfnRecvPkt(&pThis->TransportInst, pClient->pTransportClient, &pPktHdr);
         if (RT_SUCCESS(rc))
         {
             /* validate the packet. */
@@ -512,7 +512,7 @@ static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPkt
     rc = atsReplyInternal(pThis, pClient, &Rep.Sts, "ACK     ", sizeof(Rep) - sizeof(ATSPKTSTS));
     if (RT_SUCCESS(rc))
     {
-        pThis->pTransport->pfnNotifyHowdy(pClient->pTransportClient);
+        pThis->pTransport->pfnNotifyHowdy(&pThis->TransportInst, pClient->pTransportClient);
         pClient->enmState = ATSCLIENTSTATE_READY;
     }
 
@@ -768,7 +768,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                                    && papClients[idxSlt] != NULL)
                                 idxSlt++;
 
-                            rc = pThis->pTransport->pfnPollSetAdd(pThis->hPollSet, pIt->pTransportClient, idxSlt + 1);
+                            rc = pThis->pTransport->pfnPollSetAdd(&pThis->TransportInst, pThis->hPollSet, pIt->pTransportClient, idxSlt + 1);
                             if (RT_SUCCESS(rc))
                             {
                                 cClientsCur++;
@@ -776,13 +776,13 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                             }
                             else
                             {
-                                pThis->pTransport->pfnNotifyBye(pIt->pTransportClient);
+                                pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pIt->pTransportClient);
                                 atsClientDestroy(pIt);
                             }
                         }
                         else
                         {
-                            pThis->pTransport->pfnNotifyBye(pIt->pTransportClient);
+                            pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pIt->pTransportClient);
                             atsClientDestroy(pIt);
                         }
                     }
@@ -800,10 +800,10 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                         || RT_FAILURE(rc))
                     {
                         /* Close connection and remove client from array. */
-                        rc = pThis->pTransport->pfnPollSetRemove(pThis->hPollSet, pClient->pTransportClient, uId);
+                        rc = pThis->pTransport->pfnPollSetRemove(&pThis->TransportInst, pThis->hPollSet, pClient->pTransportClient, uId);
                         AssertRC(rc);
 
-                        pThis->pTransport->pfnNotifyBye(pClient->pTransportClient);
+                        pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pClient->pTransportClient);
                         papClients[uId - 1] = NULL;
                         cClientsCur--;
                         atsClientDestroy(pClient);
@@ -828,7 +828,8 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
     PATSSERVER pThis = (PATSSERVER)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    int rc = RTThreadUserSignal(hThread);
+    AssertRCReturn(rc, rc);
 
     while (!pThis->fTerminate)
     {
@@ -837,7 +838,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
          * for every new client.
          */
         PATSTRANSPORTCLIENT pTransportClient;
-        rc = pThis->pTransport->pfnWaitForConnect(&pTransportClient);
+        rc = pThis->pTransport->pfnWaitForConnect(&pThis->TransportInst, &pTransportClient);
         if (RT_FAILURE(rc))
             continue;
 
@@ -865,7 +866,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
         else
         {
             RTMsgError("Creating new client structure failed with out of memory error\n");
-            pThis->pTransport->pfnNotifyBye(pTransportClient);
+            pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pTransportClient);
         }
     }
 
@@ -877,9 +878,13 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
+ * @param   pszBindAddr         Bind address. Empty means any address.
+ *                              If set to NULL, "127.0.0.1" will be used.
+ * @param   uBindPort           Bind port. If set to 0, ATS_DEFAULT_PORT is being used.
  * @param   pCallbacks          The callbacks table to use.
  *  */
-int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
+int AudioTestSvcInit(PATSSERVER pThis,
+                     const char *pszBindAddr, uint32_t uBindPort, PCATSCALLBACKS pCallbacks)
 {
     memcpy(&pThis->Callbacks, pCallbacks, sizeof(ATSCALLBACKS));
 
@@ -895,7 +900,8 @@ int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
     /*
      * Initialize the transport layer.
      */
-    int rc = pThis->pTransport->pfnInit();
+    int rc = pThis->pTransport->pfnInit(&pThis->TransportInst, pszBindAddr ? pszBindAddr : "127.0.0.1",
+                                         uBindPort ? uBindPort : ATS_TCP_DEFAULT_PORT);
     if (RT_SUCCESS(rc))
     {
         rc = RTCritSectInit(&pThis->CritSectClients);
@@ -949,7 +955,11 @@ int AudioTestSvcStart(PATSSERVER pThis)
     int rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                             "AUDTSTSRVM");
     if (RT_SUCCESS(rc))
-        pThis->fStarted = true;
+    {
+        rc = RTThreadUserWait(pThis->hThreadMain, RT_MS_30SEC);
+        if (RT_SUCCESS(rc))
+            pThis->fStarted = true;
+    }
 
     return rc;
 }
@@ -968,7 +978,7 @@ int AudioTestSvcShutdown(PATSSERVER pThis)
     ASMAtomicXchgBool(&pThis->fTerminate, true);
 
     if (pThis->pTransport)
-        pThis->pTransport->pfnTerm();
+        pThis->pTransport->pfnTerm(&pThis->TransportInst);
 
     size_t cbWritten;
     int rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);

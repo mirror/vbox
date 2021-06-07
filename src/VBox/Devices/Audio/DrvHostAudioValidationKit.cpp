@@ -154,9 +154,12 @@ static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
     AudioTestSetObjClose(pTst->pObj);
     pTst->pObj = NULL;
 
-    AssertPtrReturnVoid(pTst->pEntry);
-    AudioTestSetTestDone(pTst->pEntry);
-    pTst->pEntry = NULL;
+    if (pTst->pEntry) /* Set set entry assign? Mark as done. */
+    {
+        AssertPtrReturnVoid(pTst->pEntry);
+        AudioTestSetTestDone(pTst->pEntry);
+        pTst->pEntry = NULL;
+    }
 
     RTMemFree(pTst);
     pTst = NULL;
@@ -234,8 +237,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
 
 /** @copydoc ATSCALLBACKS::pfnTonePlay
  *
- * Creates and registers a new test tone recording test
- * which later then gets recorded by the guest side.
+ * Creates and registers a new test tone guest recording test.
  */
 static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
@@ -269,8 +271,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
 
 /** @copydoc ATSCALLBACKS::pfnToneRecord
  *
- * Creates and registers a new test tone playback test
- * which later then records audio played back by the guest side.
+ * Creates and registers a new test tone guest playback test.
  */
 static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
@@ -282,7 +283,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
     pTestData->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(&pToneParms->Props,
-                                                                pTestData->t.TestTone.Parms.msDuration);
+                                                                      pTestData->t.TestTone.Parms.msDuration);
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
@@ -713,9 +714,16 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     Callbacks.pfnToneRecord   = drvHostValKitRegisterGuestPlayTest;
     Callbacks.pvUser          = pThis;
 
-    LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) ...\n"));
+    /** @todo Make this configurable via CFGM. */
+    const char *pszTcpAddr = "127.0.0.1";
+       uint32_t uTcpPort   = ATS_TCP_DEFAULT_PORT;
 
-    int rc = AudioTestSvcInit(&pThis->Srv, &Callbacks);
+    LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
+            pszTcpAddr, uTcpPort));
+
+    int rc = AudioTestSvcInit(&pThis->Srv,
+                              /* We only allow connections from localhost for now. */
+                              pszTcpAddr, uTcpPort, &Callbacks);
     if (RT_SUCCESS(rc))
         rc = AudioTestSvcStart(&pThis->Srv);
 

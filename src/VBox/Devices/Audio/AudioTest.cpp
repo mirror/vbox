@@ -291,7 +291,6 @@ int AudioTestGenTag(char *pszTag, size_t cbTag)
     return rc;
 }
 
-
 /**
  * Return the tag to use in the given buffer, generating one if needed.
  *
@@ -301,7 +300,7 @@ int AudioTestGenTag(char *pszTag, size_t cbTag)
  *                              AUDIOTEST_TAG_MAX is a good size.
  * @param   pszTagUser          User specified tag, optional.
  */
-int AudioTestCopyOrGenTag(char *pszTag, size_t cbTag, const char *pszTagUser)
+static int audioTestCopyOrGenTag(char *pszTag, size_t cbTag, const char *pszTagUser)
 {
     if (pszTagUser && *pszTagUser)
         return RTStrCopy(pszTag, cbTag, pszTagUser);
@@ -324,7 +323,7 @@ int AudioTestCopyOrGenTag(char *pszTag, size_t cbTag, const char *pszTagUser)
 int AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszTag)
 {
     char szTag[AUDIOTEST_TAG_MAX];
-    int rc = AudioTestCopyOrGenTag(szTag, sizeof(szTag), pszTag);
+    int rc = audioTestCopyOrGenTag(szTag, sizeof(szTag), pszTag);
     AssertRCReturn(rc, rc);
 
     char szName[RT_ELEMENTS(AUDIOTEST_PATH_PREFIX_STR) + AUDIOTEST_TAG_MAX + 4];
@@ -673,7 +672,7 @@ int AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszT
 {
     audioTestSetInitInternal(pSet);
 
-    int rc = AudioTestCopyOrGenTag(pSet->szTag, sizeof(pSet->szTag), pszTag);
+    int rc = audioTestCopyOrGenTag(pSet->szTag, sizeof(pSet->szTag), pszTag);
     AssertRCReturn(rc, rc);
 
     /*

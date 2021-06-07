@@ -25,7 +25,9 @@
 
 
 /** Default TCP/IP port the ATS (Audio Test Service) is running on. */
-#define ATS_DEFAULT_PORT        6052
+#define ATS_TCP_DEFAULT_PORT        6052
+/** Alternative TCP/IP port the ATS (Audio Test Service) is running on. */
+#define ATS_TCP_ALT_PORT            6042
 
 /**
  * Structure for keeping an Audio Test Service (ATS) callback table.
@@ -75,12 +77,31 @@ typedef struct ATSCALLBACKS
 typedef const struct ATSCALLBACKS *PCATSCALLBACKS;
 
 /**
+ * Structure for keeping Audio Test Service (ATS) transport instance-specific data.
+ *
+ * Currently only TCP/IP is supported.
+ */
+typedef struct ATSTRANSPORTINST
+{
+    /** The addresses to bind to.  Empty string means any. */
+    char                 szTcpBindAddr[256];
+    /** The TCP port to listen to. */
+    uint32_t             uTcpBindPort;
+    /** Pointer to the TCP server instance. */
+    PRTTCPSERVER         pTcpServer;
+} ATSTRANSPORTINST;
+/** Pointer to an Audio Test Service (ATS) TCP/IP transport instance. */
+typedef ATSTRANSPORTINST *PATSTRANSPORTINSTTCP;
+
+/**
  * Structure for keeping an Audio Test Service (ATS) instance.
  */
 typedef struct ATSSERVER
 {
     /** The selected transport layer. */
     PCATSTRANSPORT       pTransport;
+    /** The transport instance. */
+    ATSTRANSPORTINST     TransportInst;
     /** The callbacks table. */
     ATSCALLBACKS         Callbacks;
     /** Whether server is in started state or not. */
@@ -105,7 +126,7 @@ typedef struct ATSSERVER
 /** Pointer to an Audio Test Service (ATS) instance. */
 typedef ATSSERVER *PATSSERVER;
 
-int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks);
+int AudioTestSvcInit(PATSSERVER pThis, const char *pszBindAddr, uint32_t uBindPort, PCATSCALLBACKS pCallbacks);
 int AudioTestSvcDestroy(PATSSERVER pThis);
 int AudioTestSvcStart(PATSSERVER pThis);
 int AudioTestSvcShutdown(PATSSERVER pThis);

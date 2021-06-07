@@ -33,17 +33,13 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#include "AudioTestService.h"
 #include "AudioTestServiceInternal.h"
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** The default server port.
- *  Note: Do not choose/use 6042, as the Validation Kit TxsService already might use that port. */
-#define ATS_TCP_DEF_BIND_PORT                   6052
-/** The default server bind address. */
-#define ATS_TCP_DEF_BIND_ADDRESS                ""
 
 
 /*********************************************************************************************************************************
@@ -69,28 +65,14 @@ typedef struct ATSTRANSPORTCLIENT
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** @name TCP Parameters
- * @{ */
-/** The addresses to bind to.  Empty string means any.  */
-static char                 g_szTcpBindAddr[256]    = ATS_TCP_DEF_BIND_ADDRESS;
-/** The TCP port to listen to. */
-static uint32_t             g_uTcpBindPort          = ATS_TCP_DEF_BIND_PORT;
-/** @} */
-
-/** Pointer to the TCP server instance. */
-static PRTTCPSERVER         g_pTcpServer            = NULL;
-#if 0 /* unused */
-/** Stop connecting attempts when set. */
-static bool                 g_fTcpStopConnecting    = false;
-#endif
-
-
 
 /**
  * Disconnects the current client and frees all stashed data.
  */
-static void atsTcpDisconnectClient(PATSTRANSPORTCLIENT pClient)
+static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
+    RT_NOREF(pThis);
+
     if (pClient->hTcpClient != NIL_RTSOCKET)
     {
         int rc = RTTcpServerDisconnectClient2(pClient->hTcpClient);
@@ -108,12 +90,12 @@ static void atsTcpDisconnectClient(PATSTRANSPORTCLIENT pClient)
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnWaitForConnect}
  */
-static DECLCALLBACK(int) atsTcpWaitForConnect(PPATSTRANSPORTCLIENT ppClientNew)
+static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRANSPORTCLIENT ppClientNew)
 {
     int rc;
     RTSOCKET hClientNew;
 
-    rc = RTTcpServerListen2(g_pTcpServer, &hClientNew);
+    rc = RTTcpServerListen2(pThis->pTcpServer, &hClientNew);
     Log(("atsTcpWaitForConnect: RTTcpServerListen2 -> %Rrc\n", rc));
 
     if (RT_SUCCESS(rc))
@@ -140,41 +122,41 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PPATSTRANSPORTCLIENT ppClientNew)
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnNotifyReboot}
  */
-static DECLCALLBACK(void) atsTcpNotifyReboot(void)
+static DECLCALLBACK(void) atsTcpNotifyReboot(PATSTRANSPORTINST pThis)
 {
-    Log(("atsTcpNotifyReboot: RTTcpServerDestroy(%p)\n", g_pTcpServer));
-    if (g_pTcpServer)
+    Log(("atsTcpNotifyReboot: RTTcpServerDestroy(%p)\n", pThis->pTcpServer));
+    if (pThis->pTcpServer)
     {
-        int rc = RTTcpServerDestroy(g_pTcpServer);
+        int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
             RTMsgInfo("RTTcpServerDestroy failed in atsTcpNotifyReboot: %Rrc", rc);
-        g_pTcpServer = NULL;
+        pThis->pTcpServer = NULL;
     }
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnNotifyBye}
  */
-static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTCLIENT pClient)
+static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
     Log(("atsTcpNotifyBye: atsTcpDisconnectClient %RTsock\n", pClient->hTcpClient));
-    atsTcpDisconnectClient(pClient);
+    atsTcpDisconnectClient(pThis, pClient);
     RTMemFree(pClient);
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnNotifyHowdy}
  */
-static DECLCALLBACK(void) atsTcpNotifyHowdy(PATSTRANSPORTCLIENT pClient)
+static DECLCALLBACK(void) atsTcpNotifyHowdy(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
     /* nothing to do here */
-    RT_NOREF1(pClient);
+    RT_NOREF(pThis, pClient);
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnBabble}
  */
-static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTCLIENT pClient, PCATSPKTHDR pPktHdr, RTMSINTERVAL cMsSendTimeout)
+static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient, PCATSPKTHDR pPktHdr, RTMSINTERVAL cMsSendTimeout)
 {
     /*
      * Try send the babble reply.
@@ -189,13 +171,13 @@ static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTCLIENT pClient, PCATSPKTHDR 
      * Disconnect the client.
      */
     Log(("atsTcpBabble: atsTcpDisconnectClient(%RTsock) (RTTcpWrite rc=%Rrc)\n", pClient->hTcpClient, rc));
-    atsTcpDisconnectClient(pClient);
+    atsTcpDisconnectClient(pThis, pClient);
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnSendPkt}
  */
-static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTCLIENT pClient, PCATSPKTHDR pPktHdr)
+static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient, PCATSPKTHDR pPktHdr)
 {
     Assert(pPktHdr->cb >= sizeof(ATSPKTHDR));
 
@@ -209,7 +191,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTCLIENT pClient, PCATSPKTHDR 
     {
         /* assume fatal connection error. */
         Log(("RTTcpWrite -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
-        atsTcpDisconnectClient(pClient);
+        atsTcpDisconnectClient(pThis, pClient);
     }
 
     return rc;
@@ -218,7 +200,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTCLIENT pClient, PCATSPKTHDR 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnRecvPkt}
  */
-static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTCLIENT pClient, PPATSPKTHDR ppPktHdr)
+static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient, PPATSPKTHDR ppPktHdr)
 {
     int rc = VINF_SUCCESS;
     *ppPktHdr = NULL;
@@ -334,7 +316,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTCLIENT pClient, PPATSPKTHDR 
 
             /* assume fatal connection error. */
             Log(("atsTcpRecvPkt: RTTcpRead -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
-            atsTcpDisconnectClient(pClient);
+            atsTcpDisconnectClient(pThis, pClient);
         }
     }
 
@@ -344,25 +326,27 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTCLIENT pClient, PPATSPKTHDR 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnPollSetAdd}
  */
-static DECLCALLBACK(int) atsTcpPollSetAdd(RTPOLLSET hPollSet, PATSTRANSPORTCLIENT pClient, uint32_t idStart)
+static DECLCALLBACK(int) atsTcpPollSetAdd(PATSTRANSPORTINST pThis, RTPOLLSET hPollSet, PATSTRANSPORTCLIENT pClient, uint32_t idStart)
 {
+    RT_NOREF(pThis);
     return RTPollSetAddSocket(hPollSet, pClient->hTcpClient, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, idStart);
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnPollSetRemove}
  */
-static DECLCALLBACK(int) atsTcpPollSetRemove(RTPOLLSET hPollSet, PATSTRANSPORTCLIENT pClient, uint32_t idStart)
+static DECLCALLBACK(int) atsTcpPollSetRemove(PATSTRANSPORTINST pThis, RTPOLLSET hPollSet, PATSTRANSPORTCLIENT pClient, uint32_t idStart)
 {
-    RT_NOREF1(pClient);
+    RT_NOREF(pThis, pClient);
     return RTPollSetRemove(hPollSet, idStart);
 }
 
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnPollIn}
  */
-static DECLCALLBACK(bool) atsTcpPollIn(PATSTRANSPORTCLIENT pClient)
+static DECLCALLBACK(bool) atsTcpPollIn(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
+    RT_NOREF(pThis);
     int rc = RTTcpSelectOne(pClient->hTcpClient, 0/*cMillies*/);
     return RT_SUCCESS(rc);
 }
@@ -370,16 +354,16 @@ static DECLCALLBACK(bool) atsTcpPollIn(PATSTRANSPORTCLIENT pClient)
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnTerm}
  */
-static DECLCALLBACK(void) atsTcpTerm(void)
+static DECLCALLBACK(void) atsTcpTerm(PATSTRANSPORTINST pThis)
 {
     /* Shut down the server (will wake up thread). */
-    if (g_pTcpServer)
+    if (pThis->pTcpServer)
     {
         Log(("atsTcpTerm: Destroying server...\n"));
-        int rc = RTTcpServerDestroy(g_pTcpServer);
+        int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
             RTMsgInfo("RTTcpServerDestroy failed in atsTcpTerm: %Rrc", rc);
-        g_pTcpServer        = NULL;
+        pThis->pTcpServer        = NULL;
     }
 
     Log(("atsTcpTerm: done\n"));
@@ -388,20 +372,20 @@ static DECLCALLBACK(void) atsTcpTerm(void)
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnInit}
  */
-static DECLCALLBACK(int) atsTcpInit(void)
+static DECLCALLBACK(int) atsTcpInit(PATSTRANSPORTINST pThis, const char *pszBindAddr, uint32_t uBindPort)
 {
-    int rc = RTTcpServerCreateEx(g_szTcpBindAddr[0] ? g_szTcpBindAddr : NULL, g_uTcpBindPort, &g_pTcpServer);
+    int rc = RTTcpServerCreateEx(pszBindAddr[0] ? pszBindAddr : NULL, uBindPort, &pThis->pTcpServer);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NET_DOWN)
         {
             RTMsgInfo("RTTcpServerCreateEx(%s, %u,) failed: %Rrc, retrying for 20 seconds...\n",
-                      g_szTcpBindAddr[0] ? g_szTcpBindAddr : NULL, g_uTcpBindPort, rc);
+                      pszBindAddr[0] ? pszBindAddr : NULL, uBindPort, rc);
             uint64_t StartMs = RTTimeMilliTS();
             do
             {
                 RTThreadSleep(1000);
-                rc = RTTcpServerCreateEx(g_szTcpBindAddr[0] ? g_szTcpBindAddr : NULL, g_uTcpBindPort, &g_pTcpServer);
+                rc = RTTcpServerCreateEx(pszBindAddr[0] ? pszBindAddr : NULL, uBindPort, &pThis->pTcpServer);
             } while (   rc == VERR_NET_DOWN
                      && RTTimeMilliTS() - StartMs < 20000);
             if (RT_SUCCESS(rc))
@@ -409,75 +393,20 @@ static DECLCALLBACK(int) atsTcpInit(void)
         }
         if (RT_FAILURE(rc))
         {
-            g_pTcpServer = NULL;
+            pThis->pTcpServer = NULL;
             RTMsgError("RTTcpServerCreateEx(%s, %u,) failed: %Rrc\n",
-                       g_szTcpBindAddr[0] ? g_szTcpBindAddr : NULL, g_uTcpBindPort, rc);
+                       pszBindAddr[0] ? pszBindAddr : NULL, uBindPort, rc);
         }
     }
 
     return rc;
 }
 
-/** Options  */
-enum ATSTCPOPT
-{
-    ATSTCPOPT_BIND_ADDRESS = 1000,
-    ATSTCPOPT_BIND_PORT
-};
-
-/**
- * @interface_method_impl{ATSTRANSPORT,pfnOption}
- */
-static DECLCALLBACK(int) atsTcpOption(int ch, PCRTGETOPTUNION pVal)
-{
-    int rc;
-
-    switch (ch)
-    {
-        case ATSTCPOPT_BIND_ADDRESS:
-            rc = RTStrCopy(g_szTcpBindAddr, sizeof(g_szTcpBindAddr), pVal->psz);
-            if (RT_FAILURE(rc))
-                return RTMsgErrorRc(VERR_INVALID_PARAMETER, "TCP bind address is too long (%Rrc)", rc);
-            return VINF_SUCCESS;
-
-        case ATSTCPOPT_BIND_PORT:
-            g_uTcpBindPort = pVal->u16 == 0 ? ATS_TCP_DEF_BIND_PORT : pVal->u16;
-            return VINF_SUCCESS;
-    }
-    return VERR_TRY_AGAIN;
-}
-
-/**
- * @interface_method_impl{ATSTRANSPORT,pfnUsage}
- */
-DECLCALLBACK(void) atsTcpUsage(PRTSTREAM pStream)
-{
-    RTStrmPrintf(pStream,
-                 "  --tcp-bind-address <address>\n"
-                 "       The address(es) to listen to TCP connection on.  Empty string\n"
-                 "       means any address, this is the default.\n"
-                 "  --tcp-bind-port <port>\n"
-                 "       The port to listen to TCP connections on.\n"
-                 "       Default: %u\n"
-                 , ATS_TCP_DEF_BIND_PORT);
-}
-
-/** Command line options for the TCP/IP transport layer. */
-static const RTGETOPTDEF  g_TcpOpts[] =
-{
-    { "--tcp-bind-address",     ATSTCPOPT_BIND_ADDRESS,     RTGETOPT_REQ_STRING },
-    { "--tcp-bind-port",        ATSTCPOPT_BIND_PORT,        RTGETOPT_REQ_UINT16 }
-};
-
 /** TCP/IP transport layer. */
 const ATSTRANSPORT g_TcpTransport =
 {
     /* .szName            = */ "tcp",
     /* .pszDesc           = */ "TCP/IP",
-    /* .cOpts             = */ &g_TcpOpts[0],
-    /* .paOpts            = */ RT_ELEMENTS(g_TcpOpts),
-    /* .pfnUsage          = */ atsTcpUsage,
-    /* .pfnOption         = */ atsTcpOption,
     /* .pfnInit           = */ atsTcpInit,
     /* .pfnTerm           = */ atsTcpTerm,
     /* .pfnWaitForConnect = */ atsTcpWaitForConnect,
@@ -492,3 +421,4 @@ const ATSTRANSPORT g_TcpTransport =
     /* .pfnNotifyReboot   = */ atsTcpNotifyReboot,
     /* .u32EndMarker      = */ UINT32_C(0x12345678)
 };
+
