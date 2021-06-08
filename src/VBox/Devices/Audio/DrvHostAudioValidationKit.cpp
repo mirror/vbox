@@ -422,8 +422,26 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterf
  */
 static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    return UINT32_MAX;
+    RT_NOREF(pStream);
+
+    PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pTestCur = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
+    }
+
+    if (pThis->pTestCur == NULL) /* Empty list? */
+        return 0;
+
+    PVALKITTESTDATA const pTst = pThis->pTestCur;
+
+    Assert(pTst->t.TestTone.u.Rec.cbToWrite >= pTst->t.TestTone.u.Rec.cbWritten);
+    return pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
 }
 
 
@@ -470,11 +488,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (pThis->pTestCur == NULL) /* Empty list? */
     {
-        LogRelMax(64, ("Audio: Validation Kit: Warning: Guest is playing back data when no playback test is active\n"));
-#ifdef DEBUG_andy
-        AssertFailed();
-#endif
-        *pcbWritten = 0;
+        //LogRelMax(64, ("Audio: Validation Kit: Warning: Guest is playing back data when no playback test is active\n"));
+
+        *pcbWritten = cbBuf; /* Report all data as being written. */
         return VINF_SUCCESS;
     }
 
@@ -569,9 +585,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     if (pThis->pTestCur == NULL) /* Empty list? */
     {
         LogRelMax(64, ("Audio: Validation Kit: Warning: Guest is recording audio data when no recording test is active\n"));
-#ifdef DEBUG_andy
-        AssertFailed();
-#endif
+
         *pcbRead = 0;
         return VINF_SUCCESS;
     }
