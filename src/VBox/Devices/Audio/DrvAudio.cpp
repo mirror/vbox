@@ -237,13 +237,11 @@ typedef struct DRVAUDIOSTREAM
             {
                 uint32_t        cbBackendReadableBefore;
                 uint32_t        cbBackendReadableAfter;
-
-                STAMCOUNTER     TotalFramesCaptured;
-                STAMCOUNTER     AvgFramesCaptured;
-                STAMCOUNTER     TotalTimesCaptured;
-                STAMCOUNTER     TotalFramesRead;
-                STAMCOUNTER     AvgFramesRead;
-                STAMCOUNTER     TotalTimesRead;
+#ifdef VBOX_WITH_STATISTICS
+                STAMPROFILE     ProfCapture;
+                STAMPROFILE     ProfGetReadable;
+                STAMPROFILE     ProfGetReadableBytes;
+#endif
             } Stats;
         } In;
 
@@ -252,17 +250,6 @@ typedef struct DRVAUDIOSTREAM
          */
         struct
         {
-            struct
-            {
-                /** File for writing stream playback. */
-                PAUDIOHLPFILE   pFilePlay;
-            } Dbg;
-            struct
-            {
-                uint32_t        cbBackendWritableBefore;
-                uint32_t        cbBackendWritableAfter;
-            } Stats;
-
             /** Space for pre-buffering. */
             uint8_t            *pbPreBuf;
             /** The size of the pre-buffer allocation (in bytes). */
@@ -273,8 +260,28 @@ typedef struct DRVAUDIOSTREAM
             uint32_t            cbPreBuffered;
             /** The play state. */
             DRVAUDIOPLAYSTATE   enmPlayState;
+
+            struct
+            {
+                /** File for writing stream playback. */
+                PAUDIOHLPFILE   pFilePlay;
+            } Dbg;
+            struct
+            {
+                uint32_t        cbBackendWritableBefore;
+                uint32_t        cbBackendWritableAfter;
+#ifdef VBOX_WITH_STATISTICS
+                STAMPROFILE     ProfPlay;
+                STAMPROFILE     ProfGetWritable;
+                STAMPROFILE     ProfGetWritableBytes;
+#endif
+            } Stats;
         } Out;
     } RT_UNION_NM(u);
+#ifdef VBOX_WITH_STATISTICS
+    STAMPROFILE     StatProfGetState;
+    STAMPROFILE     StatXfer;
+#endif
 } DRVAUDIOSTREAM;
 /** Pointer to an extended stream structure. */
 typedef DRVAUDIOSTREAM *PDRVAUDIOSTREAM;
@@ -388,18 +395,6 @@ typedef struct DRVAUDIO
     /** Request pool if the backend needs it for async stream creation. */
     RTREQPOOL               hReqPool;
 
-#ifdef VBOX_WITH_STATISTICS
-    /** Statistics. */
-    struct
-    {
-        STAMCOUNTER TotalStreamsActive;
-        STAMCOUNTER TotalStreamsCreated;
-        STAMCOUNTER TotalFramesRead;
-        STAMCOUNTER TotalFramesIn;
-        STAMCOUNTER TotalBytesRead;
-    } Stats;
-#endif
-
 #ifdef VBOX_WITH_AUDIO_ENUM
     /** Handle to the timer for delayed re-enumeration of backend devices. */
     TMTIMERHANDLE           hEnumTimer;
@@ -411,6 +406,8 @@ typedef struct DRVAUDIO
     DRVAUDIOCFG             CfgIn;
     /** Output audio configuration values (static). */
     DRVAUDIOCFG             CfgOut;
+
+    STAMCOUNTER             StatTotalStreamsCreated;
 } DRVAUDIO;
 /** Pointer to the instance data of an audio driver. */
 typedef DRVAUDIO *PDRVAUDIO;
@@ -1636,34 +1633,55 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
     PPDMDRVINS const pDrvIns = pThis->pDrvIns;
     /** @todo expose config and more. */
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Backend.cFramesBufferSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                           "Host side: The size of the backend buffer (in frames)", "%s/0-HostBackendBufSize", pStreamEx->Core.Cfg.szName);
+                           "The size of the backend buffer (in frames)",     "%s/0-HostBackendBufSize", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Backend.cFramesPeriod, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "The size of the backend period (in frames)",     "%s/0-HostBackendPeriodSize", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Backend.cFramesPreBuffering, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Pre-buffer size (in frames)",                    "%s/0-HostBackendPreBufferSize", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Device.cMsSchedulingHint, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Device DMA scheduling hint (in milliseconds)",   "%s/0-DeviceSchedulingHint", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_HZ,
+                           "Backend stream frequency",                       "%s/Hz", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Core.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Backend frame size",                             "%s/Framesize", pStreamEx->Core.Cfg.szName);
     if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_IN)
     {
-        /** @todo later? */
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.cbBackendReadableBefore, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Free space in backend buffer before play",   "%s/0-HostBackendBufReadableBefore", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.cbBackendReadableAfter, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                               "Free space in backend buffer after play",    "%s/0-HostBackendBufReadableAfter", pStreamEx->Core.Cfg.szName);
+#ifdef VBOX_WITH_STATISTICS
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.ProfCapture, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Profiling time spent in StreamCapture",      "%s/ProfStreamCapture", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.ProfGetReadable, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Profiling time spent in StreamGetReadable",  "%s/ProfStreamGetReadable", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.ProfGetReadableBytes, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Readable byte stats",                        "%s/ProfStreamGetReadableBytes", pStreamEx->Core.Cfg.szName);
+#endif
     }
     else
     {
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.cbBackendWritableBefore, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Host side: Free space in backend buffer before play", "%s/0-HostBackendBufFreeBefore", pStreamEx->Core.Cfg.szName);
+                               "Free space in backend buffer before play",   "%s/0-HostBackendBufWritableBefore", pStreamEx->Core.Cfg.szName);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.cbBackendWritableAfter, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Host side: Free space in backend buffer after play",  "%s/0-HostBackendBufFreeAfter", pStreamEx->Core.Cfg.szName);
-    }
-
+                               "Free space in backend buffer after play",    "%s/0-HostBackendBufWritableAfter", pStreamEx->Core.Cfg.szName);
 #ifdef VBOX_WITH_STATISTICS
-    if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_IN)
-    {
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalFramesCaptured, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total frames played.", "%s/TotalFramesCaptured", pStreamEx->Core.Cfg.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalTimesCaptured, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total number of playbacks.", "%s/TotalTimesCaptured", pStreamEx->Core.Cfg.szName);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->In.Stats.TotalTimesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_NONE,
-                               "Total number of reads.", "%s/TotalTimesRead", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.ProfPlay, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Profiling time spent in StreamPlay",         "%s/ProfStreamPlay", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.ProfGetWritable, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Profiling time spent in StreamGetWritable",  "%s/ProfStreamGetWritable", pStreamEx->Core.Cfg.szName);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->Out.Stats.ProfGetWritableBytes, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Writeable byte stats",                       "%s/ProfStreamGetWritableBytes", pStreamEx->Core.Cfg.szName);
+#endif
     }
-    else
-    {
-        Assert(pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT);
-    }
-#endif /* VBOX_WITH_STATISTICS */
+#ifdef VBOX_WITH_STATISTICS
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->StatProfGetState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                           "Profiling time spent in StreamGetState",         "%s/ProfStreamGetState", pStreamEx->Core.Cfg.szName);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->StatXfer, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Byte transfer stats (excluding pre-buffering)",  "%s/Transfers", pStreamEx->Core.Cfg.szName);
+#endif
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pStreamEx->offInternal, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_NONE,
+                           "Internal stream offset",                         "%s/offInternal", pStreamEx->Core.Cfg.szName);
 
     LogFlowFunc(("[%s] Returning %Rrc\n", pStreamEx->Core.Cfg.szName, rc));
     return rc;
@@ -1788,7 +1806,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
 
                     RTListAppend(&pThis->LstStreams, &pStreamEx->ListEntry);
                     pThis->cStreams++;
-                    STAM_COUNTER_INC(&pThis->Stats.TotalStreamsCreated);
+                    STAM_REL_COUNTER_INC(&pThis->StatTotalStreamsCreated);
 
                     RTCritSectRwLeaveExcl(&pThis->CritSectGlobals);
 
@@ -2555,9 +2573,6 @@ static void drvAudioStreamResetOnDisable(PDRVAUDIOSTREAM pStreamEx)
      */
     if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_IN)
     {
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalFramesCaptured);
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesCaptured);
-        STAM_COUNTER_RESET(&pStreamEx->In.Stats.TotalTimesRead);
     }
     else if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT)
     {
@@ -2936,6 +2951,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
         cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
     }
 
+    STAM_PROFILE_ADD_PERIOD(&pStreamEx->StatXfer, cbWritten);
     *pcbWritten = cbWritten;
     pStreamEx->Out.Stats.cbBackendWritableAfter = cbWritable;
     if (cbWritten)
@@ -3200,6 +3216,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNEC
     AssertPtrReturn(pStreamEx, PDMAUDIOSTREAMSTATE_INVALID);
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, PDMAUDIOSTREAMSTATE_INVALID);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, PDMAUDIOSTREAMSTATE_INVALID);
+    STAM_PROFILE_START(&pStreamEx->StatProfGetState, a);
 
     /*
      * Get the status mask.
@@ -3239,6 +3256,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNEC
     else
         enmState = PDMAUDIOSTREAMSTATE_NEED_REINIT;
 
+    STAM_PROFILE_STOP(&pStreamEx->StatProfGetState, a);
 #ifdef LOG_ENABLED
     char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
@@ -3260,6 +3278,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, 0);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, 0);
     AssertMsgReturn(pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"), 0);
+    STAM_PROFILE_START(&pStreamEx->Out.Stats.ProfGetWritable, a);
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
     AssertRCReturn(rc, 0);
@@ -3345,6 +3364,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     }
 
     RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
+    STAM_PROFILE_ADD_PERIOD(&pStreamEx->Out.Stats.ProfGetWritableBytes, cbWritable);
+    STAM_PROFILE_STOP(&pStreamEx->Out.Stats.ProfGetWritable, a);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     Log3Func(("[%s] cbWritable=%#RX32 (%RU64ms) enmPlayMode=%s enmBackendState=%s\n",
               pStreamEx->Core.Cfg.szName, cbWritable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Cfg.Props, cbWritable),
@@ -3384,6 +3405,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
     AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Core.Cfg.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%#RX32 bytes)\n", pStreamEx->Core.Cfg.szName, cbBuf));
+    STAM_PROFILE_START(&pStreamEx->Out.Stats.ProfPlay, a);
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
     AssertRCReturn(rc, rc);
@@ -3485,6 +3507,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
 
+    STAM_PROFILE_STOP(&pStreamEx->Out.Stats.ProfPlay, a);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     return rc;
 }
@@ -3502,7 +3525,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
     AssertReturn(pStreamEx->Core.uMagic == PDMAUDIOSTREAM_MAGIC, 0);
     AssertReturn(pStreamEx->uMagic      == DRVAUDIOSTREAM_MAGIC, 0);
     AssertMsg(pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_IN, ("Can't read from a non-input stream\n"));
-
+    STAM_PROFILE_START(&pStreamEx->In.Stats.ProfGetReadable, a);
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
     AssertRCReturn(rc, 0);
@@ -3559,6 +3582,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
     }
 
     RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
+    STAM_PROFILE_ADD_PERIOD(&pStreamEx->In.Stats.ProfGetReadableBytes, cbReadable);
+    STAM_PROFILE_STOP(&pStreamEx->In.Stats.ProfGetReadable, a);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     Log3Func(("[%s] cbReadable=%#RX32 (%RU64ms) enmCaptureMode=%s enmBackendState=%s\n",
               pStreamEx->Core.Cfg.szName, cbReadable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Cfg.Props, cbReadable),
@@ -3646,6 +3671,7 @@ static int drvAudioStreamCaptureLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
         cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
     }
 
+    STAM_PROFILE_ADD_PERIOD(&pStreamEx->StatXfer, cbRead);
     *pcbRead = cbRead;
     pStreamEx->In.Stats.cbBackendReadableAfter = cbReadable;
     if (cbRead)
@@ -3687,6 +3713,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, P
 
     AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Core.Cfg.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%#RX32 bytes)\n", pStreamEx->Core.Cfg.szName, cbBuf));
+    STAM_PROFILE_START(&pStreamEx->In.Stats.ProfCapture, a);
 
     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
     AssertRCReturn(rc, rc);
@@ -3768,6 +3795,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, P
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
 
+    STAM_PROFILE_STOP(&pStreamEx->In.Stats.ProfCapture, a);
     RTCritSectLeave(&pStreamEx->Core.CritSect);
     return rc;
 }
@@ -4589,13 +4617,7 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     if (RTCritSectRwIsInitialized(&pThis->CritSectHotPlug))
         RTCritSectRwDelete(&pThis->CritSectHotPlug);
 
-#ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsActive);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsCreated);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesRead);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesIn);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesRead);
-#endif
+    PDMDrvHlpSTAMDeregisterByPrefix(pDrvIns, "");
 
     LogFlowFuncLeave();
 }
@@ -4811,22 +4833,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IHostAudioPort.pfnStreamNotifyDeviceChanged          = drvAudioHostPort_StreamNotifyDeviceChanged;
     pThis->IHostAudioPort.pfnNotifyDevicesChanged               = drvAudioHostPort_NotifyDevicesChanged;
 
-    /*
-     * Statistics.
-     */
-#ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
-                              STAMUNIT_COUNT, "Total active audio streams.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsCreated,  "TotalStreamsCreated",
-                              STAMUNIT_COUNT, "Total created audio streams.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
-                              STAMUNIT_COUNT, "Total frames read by device emulation.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
-                              STAMUNIT_COUNT, "Total frames captured by backend.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
-                              STAMUNIT_BYTES, "Total bytes read.");
-#endif
-
 #ifdef VBOX_WITH_AUDIO_ENUM
     /*
      * Create a timer to trigger delayed device enumeration on device changes.
@@ -4843,6 +4849,17 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     rc = drvAudioDoAttachInternal(pDrvIns, pThis, fFlags);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         rc = VINF_SUCCESS;
+
+    /*
+     * Statistics (afte driver attach for name).
+     */
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->BackendCfg.fFlags,   STAMTYPE_U32,  "BackendFlags",     STAMUNIT_COUNT, pThis->BackendCfg.szName); /* Mainly for the name. */
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->cStreams,            STAMTYPE_U32,  "Streams",          STAMUNIT_COUNT, "Current streams count.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatTotalStreamsCreated,          "TotalStreamsCreated", "Number of stream ever created.");
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->In.fEnabled,         STAMTYPE_BOOL, "InputEnabled",     STAMUNIT_NONE, "Whether input is enabled or not.");
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->In.cStreamsFree,     STAMTYPE_U32,  "InputStreamFree",  STAMUNIT_COUNT, "Number of free input stream slots");
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->Out.fEnabled,        STAMTYPE_BOOL, "OutputEnabled",    STAMUNIT_NONE, "Whether output is enabled or not.");
+    PDMDrvHlpSTAMRegister(pDrvIns, &pThis->Out.cStreamsFree,    STAMTYPE_U32,  "OutputStreamFree", STAMUNIT_COUNT, "Number of free output stream slots");
 
     LogFlowFuncLeaveRC(rc);
     return rc;
