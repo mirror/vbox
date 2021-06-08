@@ -857,6 +857,8 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
         {
             if (pStreamEx->Core.Cfg.enmDir == enmDir)
             {
+                RTCritSectEnter(&pStreamEx->Core.CritSect);
+
                 /*
                  * When (re-)enabling a stream, clear the disabled warning bit again.
                  */
@@ -909,6 +911,8 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
                                         * about individual stream by the caller... */
                     }
                 }
+
+                RTCritSectLeave(&pStreamEx->Core.CritSect);
             }
         }
 
