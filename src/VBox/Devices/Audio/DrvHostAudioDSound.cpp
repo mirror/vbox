@@ -2447,7 +2447,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
     pStreamDS->Out.cbTransferred += cbWritten;
     if (cbWritten)
     {
-        uint64_t const msPrev = pStreamDS->msLastTransfer;
+        uint64_t const msPrev = pStreamDS->msLastTransfer; RT_NOREF(msPrev);
         pStreamDS->Out.cbLastTransferred = cbWritten;
         pStreamDS->msLastTransfer        = RTTimeMilliTS();
         LogFlowFunc(("cbLastTransferred=%RU32, msLastTransfer=%RU64 msNow=%RU64 cMsDelta=%RU64 {%s}\n",
@@ -2602,7 +2602,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCapture(PPDMIHOSTAUDIO pInterface
     *pcbRead = cbRead;
     if (cbRead)
     {
-        uint64_t const msPrev = pStreamDS->msLastTransfer;
+        uint64_t const msPrev = pStreamDS->msLastTransfer; RT_NOREF(msPrev);
         pStreamDS->msLastTransfer = RTTimeMilliTS();
         LogFlowFunc(("cbRead=%RU32, msLastTransfer=%RU64 msNow=%RU64 cMsDelta=%RU64 {%s}\n",
                      cbRead, msPrev, pStreamDS->msLastTransfer, msPrev ? pStreamDS->msLastTransfer - msPrev : 0,

@@ -2601,7 +2601,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
     /*
      * Done.
      */
-    uint64_t const msPrev = pStreamWas->msLastTransfer;
+    uint64_t const msPrev = pStreamWas->msLastTransfer; RT_NOREF(msPrev);
     if (cbWritten)
         pStreamWas->msLastTransfer = msNow;
 
@@ -2797,7 +2797,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCapture(PPDMIHOSTAUDIO pInterfa
     /*
      * Done.
      */
-    uint64_t const msPrev = pStreamWas->msLastTransfer;
+    uint64_t const msPrev = pStreamWas->msLastTransfer; RT_NOREF(msPrev);
     uint64_t const msNow  = RTTimeMilliTS();
     if (cbRead)
         pStreamWas->msLastTransfer = msNow;

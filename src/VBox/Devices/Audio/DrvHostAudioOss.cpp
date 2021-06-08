@@ -966,7 +966,7 @@ static DECLCALLBACK(int) drvHstAudOssConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 
 
 /**
- * Char driver registration record.
+ * OSS driver registration record.
  */
 const PDMDRVREG g_DrvHostOSSAudio =
 {
