@@ -3911,6 +3911,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             }
             else
             {
+                /* Caller (PDM) doesn't expect more data accessed than what was requested. */
                 cbRemaining = 0;
                 break;
             }
