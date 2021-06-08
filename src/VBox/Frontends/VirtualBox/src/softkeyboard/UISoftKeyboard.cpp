@@ -35,7 +35,6 @@
 #include <QStatusBar>
 #include <QStyle>
 #include <QStackedWidget>
-#include <QTableWidget>
 #include <QToolButton>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
