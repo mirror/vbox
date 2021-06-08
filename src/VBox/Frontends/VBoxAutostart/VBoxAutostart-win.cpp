@@ -44,6 +44,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 #include <iprt/process.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
@@ -939,22 +940,20 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
                 if (autostartSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
                 {
                     LogFlow(("autostartSvcWinServiceMain: calling autostartStartVMs\n"));
-                    RTEXITCODE ec = autostartStartVMs();
-                    if (ec == RTEXITCODE_SUCCESS)
+
+                    /* check if we should stopped already, e.g. windows shutdown */
+                    rc = RTSemEventMultiWait(g_hSupSvcWinEvent, 1);
+                    if (RT_FAILURE(rc))
                     {
-                        LogFlow(("autostartSvcWinServiceMain: done string VMs\n"));
-                        err = NO_ERROR;
-                        rc = RTSemEventMultiWait(g_hSupSvcWinEvent, RT_INDEFINITE_WAIT);
-                        if (RT_SUCCESS(rc))
+                        /* No one signaled us to stop */
+                        RTEXITCODE ec = autostartStartVMs();
+                        if (ec == RTEXITCODE_SUCCESS)
                         {
-                            LogFlow(("autostartSvcWinServiceMain: woke up\n"));
-                            /** @todo Autostop part. */
+                            LogFlow(("autostartSvcWinServiceMain: done starting VMs\n"));
                             err = NO_ERROR;
                         }
-                        else
-                            autostartSvcLogError("RTSemEventWait failed, rc=%Rrc", rc);
+                        /* No reason to keep started. Shutdown the service*/
                     }
-
                     autostartShutdown();
                 }
                 else
@@ -1042,7 +1041,23 @@ static int autostartSvcWinRunIt(int argc, char **argv)
             autostartSvcLogError("Failed to create release log file: %Rrc\n", rc);
     } while (0);
 
-
+    /*
+     * Init com here for first main thread initialization.
+     * Service main function called in another thread
+     * created by service manager.
+     */
+    HRESULT hrc = com::Initialize();
+# ifdef VBOX_WITH_XPCOM
+    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
+    {
+        char szHome[RTPATH_MAX] = "";
+        com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+        return RTMsgErrorExit(RTEXITCODE_FAILURE,
+               "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+    }
+# endif
+    if (FAILED(hrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM (%Rhrc)!", hrc);
 
     /*
      * Parse the arguments.
@@ -1116,6 +1131,9 @@ static int autostartSvcWinRunIt(int argc, char **argv)
             autostartSvcLogError("StartServiceCtrlDispatcher failed, err=%u", err);
             break;
     }
+
+    com::Shutdown();
+
     return RTEXITCODE_FAILURE;
 }
 

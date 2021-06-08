@@ -174,7 +174,10 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                         }
                     }
                 }
-                g_pSession->UnlockMachine();
+                SessionState_T enmSessionState;
+                CHECK_ERROR(g_pSession, COMGETTER(State)(&enmSessionState));
+                if (SUCCEEDED(rc) && enmSessionState == SessionState_Locked)
+                    g_pSession->UnlockMachine();
             }
         }
     }
