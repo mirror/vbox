@@ -1090,29 +1090,9 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
     }
 
     /*
-     * Period size
-     */
-    const char *pszWhat = "device-specific";
-    if (pDrvCfg->uPeriodSizeMs)
-    {
-        pCfg->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uPeriodSizeMs);
-        pszWhat = "custom";
-    }
-
-    if (!pCfg->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
-    {
-        pCfg->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfg->Props, 150 /*ms*/);
-        pszWhat = "default";
-    }
-
-    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
-             pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod),
-             pCfg->Backend.cFramesPeriod, pszName));
-
-    /*
      * Buffer size
      */
-    pszWhat = "device-specific";
+    const char *pszWhat = "device-specific";
     if (pDrvCfg->uBufferSizeMs)
     {
         pCfg->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uBufferSizeMs);
@@ -1128,6 +1108,34 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
     LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize),
              pCfg->Backend.cFramesBufferSize, pszName));
+
+    /*
+     * Period size
+     */
+    pszWhat = "device-specific";
+    if (pDrvCfg->uPeriodSizeMs)
+    {
+        pCfg->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uPeriodSizeMs);
+        pszWhat = "custom";
+    }
+
+    if (!pCfg->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
+    {
+        pCfg->Backend.cFramesPeriod = pCfg->Backend.cFramesBufferSize / 4;
+        pszWhat = "default";
+    }
+
+    if (pCfg->Backend.cFramesPeriod >= pCfg->Backend.cFramesBufferSize / 2)
+    {
+        LogRel(("Audio: Warning! Stream '%s': The stream period size (%RU64ms, %s) cannot be more than half the buffer size (%RU64ms)!\n",
+                pszName, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod), pszWhat,
+                PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize)));
+        pCfg->Backend.cFramesPeriod = pCfg->Backend.cFramesBufferSize / 2;
+    }
+
+    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod),
+             pCfg->Backend.cFramesPeriod, pszName));
 
     /*
      * Pre-buffering size
@@ -1153,32 +1161,17 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
         }
     }
 
+    if (pCfg->Backend.cFramesPreBuffering >= pCfg->Backend.cFramesBufferSize)
+    {
+        LogRel(("Audio: Warning! Stream '%s': Pre-buffering (%RU64ms, %s) cannot equal or exceed the buffer size (%RU64ms)!\n",
+                pszName,  PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize), pszWhat,
+                PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPreBuffering) ));
+        pCfg->Backend.cFramesPreBuffering = pCfg->Backend.cFramesBufferSize - 1;
+    }
+
     LogRel2(("Audio: Using %s pre-buffering size %RU64 ms / %RU32 frames for stream '%s'\n",
              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPreBuffering),
              pCfg->Backend.cFramesPreBuffering, pszName));
-
-    /*
-     * Validate input.
-     */
-    if (pCfg->Backend.cFramesBufferSize < pCfg->Backend.cFramesPeriod)
-    {
-        LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the period size (%RU64ms)\n",
-                pszName, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize),
-                PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod)));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (   pCfg->Backend.cFramesPreBuffering != UINT32_MAX /* Custom pre-buffering set? */
-        && pCfg->Backend.cFramesPreBuffering)
-    {
-        if (pCfg->Backend.cFramesBufferSize < pCfg->Backend.cFramesPreBuffering)
-        {
-            LogRel(("Audio: Error for stream '%s': Buffering size (%RU64ms) must not be smaller than the pre-buffering size (%RU64ms)\n",
-                    pszName, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPreBuffering),
-                    PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize)));
-            return VERR_INVALID_PARAMETER;
-        }
-    }
 
     return VINF_SUCCESS;
 }
