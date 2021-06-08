@@ -2161,6 +2161,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
     Assert(pMemReqIn->AddrRange.fPerm & (DMAR_PERM_READ | DMAR_PERM_WRITE));
     Assert(   pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE
            || pMemReqAux->fTtm == VTD_TTM_SCALABLE_MODE);
+    Assert(!(pMemReqAux->GCPhysSlPt & X86_PAGE_4K_OFFSET_MASK));
 
     /* Mask of valid paging entry bits. */
     static uint64_t const s_auPtEntityRsvd[] = { VTD_SL_PTE_VALID_MASK,
@@ -2195,9 +2196,9 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
          */
         uint8_t const cLevelShift = X86_PAGE_4K_SHIFT + (idxLevel * 9);
         {
-            uint64_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
-            uint64_t const offPte         = idxPte << 3;
-            RTGCPHYS const GCPhysPtEntity = (uPtEntity & X86_PAGE_BASE_MASK) | offPte;
+            uint16_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
+            uint16_t const offPte         = idxPte << 3;
+            RTGCPHYS const GCPhysPtEntity = (uPtEntity & X86_PAGE_4K_BASE_MASK) | offPte;
             int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
             if (RT_SUCCESS(rc))
             { /* likely */ }
@@ -2465,7 +2466,6 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                              */
                                             pMemReqAux->cPagingLevel = cPagingLevel;
                                             pMemReqAux->GCPhysSlPt   = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
-                                            Assert(!(pMemReqAux->GCPhysSlPt & X86_PAGE_OFFSET_MASK));
                                             return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
                                         }
                                         else
