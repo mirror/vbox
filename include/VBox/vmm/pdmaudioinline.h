@@ -57,18 +57,18 @@
 /**
  * Gets the name of an audio direction enum value.
  *
- * @returns Pointer to read-only name string on success, "bad" if
- *          passed an invalid enum value.
+ * @returns Pointer to read-only name string on success, "bad" if passed an
+ *          invalid enum value.
  * @param   enmDir  The audio direction value to name.
  */
 DECLINLINE(const char *) PDMAudioDirGetName(PDMAUDIODIR enmDir)
 {
     switch (enmDir)
     {
-        case PDMAUDIODIR_UNKNOWN: return "Unknown";
-        case PDMAUDIODIR_IN:      return "Input";
-        case PDMAUDIODIR_OUT:     return "Output";
-        case PDMAUDIODIR_DUPLEX:  return "Duplex";
+        case PDMAUDIODIR_UNKNOWN: return "unknown";
+        case PDMAUDIODIR_IN:      return "input";
+        case PDMAUDIODIR_OUT:     return "output";
+        case PDMAUDIODIR_DUPLEX:  return "duplex";
 
         /* no default */
         case PDMAUDIODIR_END:
@@ -115,18 +115,18 @@ DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
 {
     switch (enmPath)
     {
-        case PDMAUDIOPATH_UNKNOWN:          return "Unknown";
+        case PDMAUDIOPATH_UNKNOWN:          return "unknown";
 
-        case PDMAUDIOPATH_OUT_FRONT:        return "Front";
-        case PDMAUDIOPATH_OUT_CENTER_LFE:   return "Center / LFE";
-        case PDMAUDIOPATH_OUT_REAR:         return "Rear";
+        case PDMAUDIOPATH_OUT_FRONT:        return "front";
+        case PDMAUDIOPATH_OUT_CENTER_LFE:   return "center-lfe";
+        case PDMAUDIOPATH_OUT_REAR:         return "rear";
 
-        case PDMAUDIOPATH_IN_MIC:           return "Microphone In";
-        case PDMAUDIOPATH_IN_CD:            return "CD";
-        case PDMAUDIOPATH_IN_VIDEO:         return "Video";
-        case PDMAUDIOPATH_IN_AUX:           return "AUX";
-        case PDMAUDIOPATH_IN_LINE:          return "Line In";
-        case PDMAUDIOPATH_IN_PHONE:         return "Phone";
+        case PDMAUDIOPATH_IN_MIC:           return "mic";
+        case PDMAUDIOPATH_IN_CD:            return "cd";
+        case PDMAUDIOPATH_IN_VIDEO:         return "video-in";
+        case PDMAUDIOPATH_IN_AUX:           return "aux-in";
+        case PDMAUDIOPATH_IN_LINE:          return "line-in";
+        case PDMAUDIOPATH_IN_PHONE:         return "phone";
 
         /* no default */
         case PDMAUDIOPATH_INVALID:
@@ -700,6 +700,31 @@ DECLINLINE(uint64_t) PDMAudioPropsFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint3
     uint32_t const uHz = pProps->uHz;
     if (uHz)
         return ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, uHz);
+    return 0;
+}
+
+/**
+ * Converts frames to milliseconds, but not returning more than @a cMsMax
+ *
+ * This is a convenience for logging and such.
+ *
+ * @returns milliseconds (32-bit).
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
+ * @param   cMsMax      Max return value (32-bit).
+ * @note    No rounding here, result is floored.
+ */
+DECLINLINE(uint32_t) PDMAudioPropsFramesToMilliMax(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames, uint32_t cMsMax)
+{
+    AssertPtrReturn(pProps, 0);
+
+    /* Check input to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+    {
+        uint32_t const cMsResult = ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, uHz);
+        return RT_MIN(cMsResult, cMsMax);
+    }
     return 0;
 }
 
@@ -1291,7 +1316,7 @@ DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
 
 /** Max necessary buffer space for PDMAudioStrmCfgToString  */
 #define PDMAUDIOSTRMCFGTOSTRING_MAX \
-    sizeof("'01234567890123456789012345678901234567890123456789012345678901234' Unknown 16ch S64 4294967296Hz swap raw")
+    sizeof("'01234567890123456789012345678901234567890123456789012345678901234' unknown 16ch S64 4294967295Hz swap raw, 9999999ms buffer, 9999999ms period, 9999999ms pre-buffer, 4294967295ms sched, center-lfe")
 
 /**
  * Formats an audio stream configuration.
@@ -1303,11 +1328,18 @@ DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
  */
 DECLINLINE(const char *) PDMAudioStrmCfgToString(PCPDMAUDIOSTREAMCFG pCfg, char *pszDst, size_t cbDst)
 {
+    /* 'front' output 2ch 44100Hz raw, 300ms buffer, 75ms period, 150ms pre-buffer, 10ms sched */
     RTStrPrintf(pszDst, cbDst,
-                "'%s' %s %uch %c%u %RU32Hz%s%s",
+                "'%s' %s %uch %c%u %RU32Hz%s%s, %RU32ms buffer, %RU32ms period, %RU32ms pre-buffer, %RU32ms sched%s%s",
                 pCfg->szName, PDMAudioDirGetName(pCfg->enmDir), PDMAudioPropsChannels(&pCfg->Props),
                 PDMAudioPropsIsSigned(&pCfg->Props) ? 'S' : 'U', PDMAudioPropsSampleBits(&pCfg->Props),
-                PDMAudioPropsHz(&pCfg->Props), pCfg->Props.fSwapEndian ? " swap" : "", pCfg->Props.fRaw ? " raw" : "");
+                PDMAudioPropsHz(&pCfg->Props), pCfg->Props.fSwapEndian ? " swap" : "", pCfg->Props.fRaw ? " raw" : "",
+                PDMAudioPropsFramesToMilliMax(&pCfg->Props, pCfg->Backend.cFramesBufferSize, 9999999),
+                PDMAudioPropsFramesToMilliMax(&pCfg->Props, pCfg->Backend.cFramesPeriod, 9999999),
+                PDMAudioPropsFramesToMilliMax(&pCfg->Props, pCfg->Backend.cFramesPreBuffering, 9999999),
+                pCfg->Device.cMsSchedulingHint,
+                pCfg->enmPath == PDMAUDIOPATH_UNKNOWN ? ", " : "",
+                pCfg->enmPath == PDMAUDIOPATH_UNKNOWN ? "" : PDMAudioPathGetName(pCfg->enmPath) );
     return pszDst;
 }
 

@@ -1572,9 +1572,8 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
     /*
      * Done, just log the result:
      */
-    LogFunc(("[%s] Acquired format: %s\n",  pCfgAcq->szName,
-             PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
-    LogRel2(("Audio: Acquired format: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
+    LogFunc(("Acquired stream config: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
+    LogRel2(("Audio: Acquired stream config: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
 
     return VINF_SUCCESS;
 }
@@ -1598,9 +1597,8 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
     pStreamEx->Core.uMagic = PDMAUDIOSTREAM_MAGIC;
 
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
-    LogFunc(("[%s] Requested host format: %s\n", pStreamEx->Core.Cfg.szName,
-             PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
-    LogRel2(("Audio: Creating stream: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp))));
+    LogFunc(("Requested stream config: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
+    LogRel2(("Audio: Creating stream: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
 
     int rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx);
     if (RT_FAILURE(rc))
@@ -2253,8 +2251,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStream
         rc = drvAudioStreamCreateInternalBackend(pThis, pStreamEx);
         if (RT_SUCCESS(rc))
         {
-            LogFunc(("[%s] Acquired host format: %s\n",
-                     pStreamEx->Core.Cfg.szName, PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
+            LogFunc(("Acquired host config: %s\n", PDMAudioStrmCfgToString(&pStreamEx->Core.Cfg, szTmp, sizeof(szTmp)) ));
             /** @todo Validate (re-)acquired configuration with pStreamEx->Core.Core.Cfg?
              * drvAudioStreamInitInternal() does some setup and a bunch of
              * validations + adjustments of the stream config, so this surely is quite
