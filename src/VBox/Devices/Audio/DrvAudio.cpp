@@ -1527,32 +1527,23 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
         pCfgAcq->Backend.cFramesPreBuffering = 0;
     }
 
-    /* Sanity for detecting buggy backends. */
-    AssertMsgReturn(pCfgAcq->Backend.cFramesPeriod < pCfgAcq->Backend.cFramesBufferSize,
-                    ("Acquired period size must be smaller than buffer size\n"),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pCfgAcq->Backend.cFramesPreBuffering <= pCfgAcq->Backend.cFramesBufferSize,
-                    ("Acquired pre-buffering size must be smaller or as big as the buffer size\n"),
-                    VERR_INVALID_PARAMETER);
-
     /*
      * Check if the backend did return sane values and correct if necessary.
-     * Should never happen with our own backends, but you never know ...
      */
     uint32_t const cFramesPreBufferingMax = pCfgAcq->Backend.cFramesBufferSize - RT_MIN(16, pCfgAcq->Backend.cFramesBufferSize);
     if (pCfgAcq->Backend.cFramesPreBuffering > cFramesPreBufferingMax)
     {
-        LogRel2(("Audio: Warning: Pre-buffering size of %RU32 frames for stream '%s' is too close to or larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
+        LogRel2(("Audio: Warning! Pre-buffering size of %RU32 frames for stream '%s' is too close to or larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
                  pCfgAcq->Backend.cFramesPreBuffering, pCfgAcq->szName, pCfgAcq->Backend.cFramesBufferSize, cFramesPreBufferingMax));
-        AssertFailed();
+        AssertMsgFailed(("cFramesPreBuffering=%#x vs cFramesPreBufferingMax=%#x\n", pCfgAcq->Backend.cFramesPreBuffering, cFramesPreBufferingMax));
         pCfgAcq->Backend.cFramesPreBuffering = cFramesPreBufferingMax;
     }
 
     if (pCfgAcq->Backend.cFramesPeriod > pCfgAcq->Backend.cFramesBufferSize)
     {
-        LogRel2(("Audio: Warning: Period size of %RU32 frames for stream '%s' is larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
+        LogRel2(("Audio: Warning! Period size of %RU32 frames for stream '%s' is larger than the %RU32 frames buffer size, reducing it to %RU32 frames!\n",
                  pCfgAcq->Backend.cFramesPeriod, pCfgAcq->szName, pCfgAcq->Backend.cFramesBufferSize, pCfgAcq->Backend.cFramesBufferSize / 2));
-        AssertFailed();
+        AssertMsgFailed(("cFramesPeriod=%#x vs cFramesBufferSize=%#x\n", pCfgAcq->Backend.cFramesPeriod, pCfgAcq->Backend.cFramesBufferSize));
         pCfgAcq->Backend.cFramesPeriod = pCfgAcq->Backend.cFramesBufferSize / 2;
     }
 
