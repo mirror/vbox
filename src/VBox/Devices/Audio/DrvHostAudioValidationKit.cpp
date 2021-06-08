@@ -490,7 +490,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     {
         LogRelMax(64, ("Audio: Validation Kit: Warning: Guest is playing back data when no playback test is active\n"));
 
-        *pcbWritten = 0;
+        *pcbWritten = cbBuf;
         return VINF_SUCCESS;
     }
 
