@@ -798,9 +798,12 @@ static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
     else
         LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service failed, rc=%Rrc\n", rc));
 
-    int rc2 = RTCritSectDelete(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (RTCritSectIsInitialized(&pThis->CritSect))
+    {
+        int rc2 = RTCritSectDelete(&pThis->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     if (RT_FAILURE(rc))
         LogRel(("Audio: Validation Kit: Destruction failed, rc=%Rrc\n", rc));

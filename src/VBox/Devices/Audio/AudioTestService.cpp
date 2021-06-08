@@ -890,6 +890,10 @@ int AudioTestSvcInit(PATSSERVER pThis,
 
     pThis->fStarted   = false;
     pThis->fTerminate = false;
+
+    pThis->hPipeR     = NIL_RTPIPE;
+    pThis->hPipeW     = NIL_RTPIPE;
+
     RTListInit(&pThis->LstClientsNew);
 
     /*
