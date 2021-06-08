@@ -186,7 +186,6 @@ typedef enum
     kDmarDiag_At_Lm_RootEntry_Not_Present,
     kDmarDiag_At_Lm_RootEntry_Read_Failed,
     kDmarDiag_At_Lm_RootEntry_Rsvd,
-    kDmarDiag_At_Lm_Slpptr_Read_Failed,
     kDmarDiag_At_Lm_Tt_Invalid,
     kDmarDiag_At_Lm_Ut_At_Block,
     kDmarDiag_At_Lm_Ut_Aw_Invalid,
@@ -199,6 +198,7 @@ typedef enum
     kDmarDiag_At_Xm_Pte_Rsvd,
     kDmarDiag_At_Xm_Pte_Sllps_Invalid,
     kDmarDiag_At_Xm_Read_Pte_Failed,
+    kDmarDiag_At_Xm_Slpptr_Read_Failed,
 
     /* CCMD_REG faults. */
     kDmarDiag_CcmdReg_Not_Supported,
@@ -260,7 +260,6 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(At_Lm_RootEntry_Not_Present),
     DMARDIAG_DESC(At_Lm_RootEntry_Read_Failed),
     DMARDIAG_DESC(At_Lm_RootEntry_Rsvd       ),
-    DMARDIAG_DESC(At_Lm_Slpptr_Read_Failed   ),
     DMARDIAG_DESC(At_Lm_Tt_Invalid           ),
     DMARDIAG_DESC(At_Lm_Ut_At_Block          ),
     DMARDIAG_DESC(At_Lm_Ut_Aw_Invalid        ),
@@ -273,6 +272,7 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(At_Xm_Pte_Rsvd             ),
     DMARDIAG_DESC(At_Xm_Pte_Sllps_Invalid    ),
     DMARDIAG_DESC(At_Xm_Read_Pte_Failed      ),
+    DMARDIAG_DESC(At_Xm_Slpptr_Read_Failed   ),
 
     /* CCMD_REG faults. */
     DMARDIAG_DESC(CcmdReg_Not_Supported      ),
@@ -554,10 +554,10 @@ typedef struct DMARMEMREQAUX
     /** The paging level of the translation. */
     uint8_t             cPagingLevel;
     uint8_t             afPadding[5];
-    /** The first-level page-table pointer.  */
-    uint64_t            uFlPtPtr;
-    /** The second-level page-table pointer.  */
-    uint64_t            uSlPtPtr;
+    /** The address of the first-level page-table.  */
+    uint64_t            GCPhysFlPt;
+    /** The address of second-level page-table.  */
+    uint64_t            GCPhysSlPt;
 } DMARMEMREQAUX;
 /** Pointer to a DMA memory request output. */
 typedef DMARMEMREQAUX *PDMARMEMREQAUX;
@@ -1616,7 +1616,6 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, PCDMARMEMREQ
             case kDmarDiag_At_Lm_RootEntry_Not_Present:      enmAtFault = VTDATFAULT_LRT_2;    break;
             case kDmarDiag_At_Lm_RootEntry_Read_Failed:      enmAtFault = VTDATFAULT_LRT_1;    break;
             case kDmarDiag_At_Lm_RootEntry_Rsvd:             enmAtFault = VTDATFAULT_LRT_3;    break;
-            case kDmarDiag_At_Lm_Slpptr_Read_Failed:         enmAtFault = VTDATFAULT_LCT_4_3;  break;
             case kDmarDiag_At_Lm_Tt_Invalid:                 enmAtFault = VTDATFAULT_LCT_4_2;  break;
             case kDmarDiag_At_Lm_Ut_At_Block:                enmAtFault = VTDATFAULT_LCT_5;    break;
             case kDmarDiag_At_Lm_Ut_Aw_Invalid:              enmAtFault = VTDATFAULT_LCT_4_1;  break;
@@ -1633,6 +1632,7 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, PCDMARMEMREQ
             case kDmarDiag_At_Xm_Pte_Rsvd:
             case kDmarDiag_At_Xm_Pte_Sllps_Invalid:          enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_3;   break;
             case kDmarDiag_At_Xm_Read_Pte_Failed:            enmAtFault = fLm ? VTDATFAULT_LSL_1 : VTDATFAULT_SSL_1;   break;
+            case kDmarDiag_At_Xm_Slpptr_Read_Failed:         enmAtFault = fLm ? VTDATFAULT_LCT_4_3 : VTDATFAULT_SSL_4; break;
 
             /* Shouldn't ever happen. */
             default:
@@ -2109,21 +2109,6 @@ static int dmarDrReadCtxEntry(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCtxTable, uint8
 
 
 /**
- * Reads a second-level page-table pointer from guest memory.
- *
- * @returns VBox status code.
- * @param   pDevIns         The IOMMU device instance.
- * @param   GCPhysSlPtPtr   The physical address of the SLPTPTR.
- * @param   pSlpEntry       Where to store the read SLPTPTR.
- */
-static int dmarDrReadSecondLevelPtPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSlPtPtr, PVTD_SLP_ENTRY_T pSlpEntry)
-{
-    /* We don't verify bits 63:HAW of GCPhysSlPtPtr is 0 since reading from such an address should fail anyway. */
-    return PDMDevHlpPhysReadMeta(pDevIns, GCPhysSlPtPtr, pSlpEntry, sizeof(*pSlpEntry));
-}
-
-
-/**
  * Validates and updates the output I/O page of a translation.
  *
  * @returns VBox status code.
@@ -2155,9 +2140,9 @@ static int dmarDrUpdateIoPageOut(PPDMDEVINS pDevIns, RTGCPHYS GCPhysBase, uint8_
 
 
 /**
- * Performs second level translation.
+ * Performs second level translation by walking the I/O page tables.
  *
- * This is a DMA address lookup callback function which performs the translation
+ * This is a DMA address-lookup callback function which performs the translation
  * (and access control) as part of the lookup.
  *
  * @returns VBox status code.
@@ -2202,16 +2187,33 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t uPtEntity   = pMemReqAux->uSlPtPtr;
-    int8_t   iLevel      = pMemReqAux->cPagingLevel - 1;
-    uint8_t  cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
-    Assert(iLevel >= 2);
-    for (;;)
+    uint64_t uPtEntity   = pMemReqAux->GCPhysSlPt;
+    for (int8_t idxLevel = pMemReqAux->cPagingLevel - 1; idxLevel >= 0; idxLevel--)
     {
+        /*
+         * Read the paging entry for the current level.
+         */
+        uint8_t const cLevelShift = X86_PAGE_4K_SHIFT + (idxLevel * 9);
+        {
+            uint64_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
+            uint64_t const offPte         = idxPte << 3;
+            RTGCPHYS const GCPhysPtEntity = (uPtEntity & X86_PAGE_BASE_MASK) | offPte;
+            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                if ((GCPhysPtEntity & X86_PAGE_BASE_MASK) == pMemReqAux->GCPhysSlPt)
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Slpptr_Read_Failed, pMemReqIn, pMemReqAux);
+                else
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
+                break;
+            }
+        }
+
         /*
          * Check I/O permissions.
          * This must be done prior to check reserved bits for properly reporting errors SSL.2 and SSL.3.
-         *
          * See Intel spec. 7.1.3 "Fault conditions and Remapping hardware behavior for various request".
          */
         uint8_t const fReqPerm = pMemReqIn->AddrRange.fPerm & pThis->fPermValidMask;
@@ -2229,7 +2231,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         /*
          * Validate reserved bits of the current paging entry.
          */
-        if (!(uPtEntity & ~s_auPtEntityRsvd[iLevel]))
+        if (!(uPtEntity & ~s_auPtEntityRsvd[idxLevel]))
         { /* likely */ }
         else
         {
@@ -2242,11 +2244,11 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
          */
         AssertCompile(VTD_BF_SL_PDE_PS_MASK == VTD_BF_SL_PDPE_PS_MASK);
         uint8_t const fLargePage = RT_BF_GET(uPtEntity, VTD_BF_SL_PDE_PS);
-        if (fLargePage && iLevel > 0)
+        if (fLargePage && idxLevel > 0)
         {
-            Assert(iLevel == 1 || iLevel == 2);     /* Is guaranteed by the reserved bits check above. */
+            Assert(idxLevel == 1 || idxLevel == 2);   /* Is guaranteed by the reserved bits check above. */
             uint8_t const fSllpsMask = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SLLPS);
-            if (fSllpsMask & RT_BIT(iLevel - 1))
+            if (fSllpsMask & RT_BIT(idxLevel - 1))
             {
                 /*
                  * We don't support MTS (asserted below), hence IPAT and EMT fields of the paging entity are ignored.
@@ -2266,33 +2268,10 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         /*
          * If this is the final PTE, compute the translation address and we're done.
          */
-        if (iLevel == 0)
+        if (idxLevel == 0)
         {
             RTGCPHYS const GCPhysBase = uPtEntity & X86_GET_PAGE_BASE_MASK(cLevelShift);
             return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
-        }
-
-        /*
-         * Move to the next level.
-         */
-        --iLevel;
-        cLevelShift = X86_PAGE_4K_SHIFT + (iLevel * 9);
-
-        /*
-         * Read the paging entry for the next level.
-         */
-        {
-            uint16_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
-            uint64_t const offPte         = idxPte << 3;
-            RTGCPHYS const GCPhysPtEntity = uPtEntity | offPte;
-            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-            {
-                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
-                break;
-            }
         }
     }
 
@@ -2339,6 +2318,8 @@ static bool dmarIsIoPageAccessContig(PCDMARIOPAGE pIoPagePrev, PCDMARIOPAGE pIoP
  */
 static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, PDMARMEMREQREMAP pMemReqRemap)
 {
+    AssertPtr(pfnLookup);
+
     RTGCPHYS       GCPhysAddr  = NIL_RTGCPHYS;
     DMARMEMREQIN   MemReqIn    = pMemReqRemap->In;
     uint64_t const uAddrIn     = MemReqIn.AddrRange.uAddr;
@@ -2478,18 +2459,14 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                         uint8_t cPagingLevel;
                                         if (dmarDrLegacyModeIsAwValid(pThis, &CtxEntry, &cPagingLevel))
                                         {
-                                            /* Read the SLPTPTR from guest memory. */
-                                            VTD_SLP_ENTRY_T SlPtPtr;
-                                            RTGCPHYS const GCPhysSlPtPtr = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
-                                            rc = dmarDrReadSecondLevelPtPtr(pDevIns, GCPhysSlPtPtr, &SlPtPtr);
-                                            if (RT_SUCCESS(rc))
-                                            {
-                                                /* Finally... perform second-level translation. */
-                                                pMemReqAux->uSlPtPtr     = SlPtPtr;
-                                                pMemReqAux->cPagingLevel = cPagingLevel;
-                                                return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
-                                            }
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Slpptr_Read_Failed, pMemReqIn, pMemReqAux);
+                                            /*
+                                             * The second-level page table is located at the physical address specified
+                                             * in the context entry with which we can finally perform second-level translation.
+                                             */
+                                            pMemReqAux->cPagingLevel = cPagingLevel;
+                                            pMemReqAux->GCPhysSlPt   = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
+                                            Assert(!(pMemReqAux->GCPhysSlPt & X86_PAGE_OFFSET_MASK));
+                                            return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
                                         }
                                         else
                                             dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_Aw_Invalid, pMemReqIn, pMemReqAux);

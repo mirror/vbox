@@ -249,6 +249,7 @@ typedef struct VTD_CONTEXT_ENTRY_T
 typedef VTD_CONTEXT_ENTRY_T *PVTD_CONTEXT_ENTRY_T;
 /** Pointer to a const context entry. */
 typedef VTD_CONTEXT_ENTRY_T const *PCVTD_CONTEXT_ENTRY_T;
+AssertCompileSize(VTD_CONTEXT_ENTRY_T, 16);
 
 /** Context Entry: Qword 0 valid mask. */
 #define VTD_CONTEXT_ENTRY_0_VALID_MASK                          (  VTD_BF_0_CONTEXT_ENTRY_P_MASK \
@@ -510,9 +511,6 @@ typedef VTD_SM_PASID_TBL_ENTRY_T const *PCVTD_SM_PASID_TBL_ENTRY_T;
 #define VTD_BF_FLP_ENTRY_XD_MASK                                UINT64_C(0x8000000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FLP_ENTRY_, UINT64_C(0), UINT64_MAX,
                             (P, RW, US, PWT, PCD, A, IGN_6, RSVD_7, IGN_9_8, EA, IGN_11, ADDR, IGN_62_52, XD));
-
-/** First-Level Paging Entry. */
-typedef uint64_t VTD_FLP_ENTRY_T;
 /** @} */
 
 
@@ -893,18 +891,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_SL_PTE_, UINT64_C(0), UINT64_MAX,
                                                                  | VTD_BF_SL_PTE_A_MASK | VTD_BF_SL_PTE_D_MASK \
                                                                  | VTD_BF_SL_PTE_IGN_10_MASK | VTD_BF_SL_PTE_ADDR_MASK \
                                                                  | VTD_BF_SL_PTE_IGN_61_52_MASK | VTD_BF_SL_PTE_IGN_63_MASK)
-/** @} */
-
-
-/** @name Second-Level Generic Paging Entry.
- * In accordance with the Intel spec.
- * @{ */
-/** Second-Level Paging Entry. */
-typedef uint64_t VTD_SLP_ENTRY_T;
-/** Pointer to a second-level paging entry. */
-typedef uint64_t *PVTD_SLP_ENTRY_T;
-/** Pointer to a const second-level paging entry. */
-typedef uint64_t const *CPVTD_SLP_ENTRY_T;
 /** @} */
 
 
