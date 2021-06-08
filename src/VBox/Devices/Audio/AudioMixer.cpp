@@ -2289,7 +2289,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPD
                 rc = pConn->pfnStreamCreate(pConn, 0 /*fFlags*/, &CfgHost, &pStream);
                 if (RT_SUCCESS(rc))
                 {
-                    pMixStream->cFramesBackendBuffer = CfgHost.Backend.cFramesBufferSize;
+                    pMixStream->cFramesBackendBuffer = pStream->Cfg.Backend.cFramesBufferSize;
 
                     /* Set up the mixing buffer conversion state. */
                     if (pSink->enmDir == PDMAUDIODIR_IN)
