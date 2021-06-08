@@ -1356,8 +1356,9 @@ static DECLCALLBACK(void) drvAudioStreamInitAsync(PDRVAUDIO pThis, PDRVAUDIOSTRE
                     pStreamEx->Out.enmPlayState = DRVAUDIOPLAYSTATE_PREBUF;
                     break;
                 case DRVAUDIOPLAYSTATE_PLAY:
-                case DRVAUDIOPLAYSTATE_PLAY_PREBUF:
                 case DRVAUDIOPLAYSTATE_PREBUF_COMMITTING:
+                    break; /* possible race here, so don't assert. */
+                case DRVAUDIOPLAYSTATE_PLAY_PREBUF:
                     AssertFailedBreak();
                 /* no default */
                 case DRVAUDIOPLAYSTATE_END:
