@@ -263,7 +263,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
 
     /** @todo Use .WAV here? */
     PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-play.pcm", &pObj);
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
     if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
@@ -340,7 +340,7 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 
     /** @todo Use .WAV here? */
     PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "tone-rec.pcm", &pObj);
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-rec.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
     if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
@@ -395,19 +395,25 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 *   ATS Callback Implementations                                                                                                 *
 *********************************************************************************************************************************/
 
-/** @copydoc ATSCALLBACKS::pfnTestSetBegin */
-static DECLCALLBACK(int) audioTestSvcTestSetBeginCallback(void const *pvUser, const char *pszTag)
+/** @copydoc ATSCALLBACKS::pfnTestSetBegin
+ *
+ *  @note Runs as part of the guest ATS.
+ */
+static DECLCALLBACK(int) audioTestGstAtsTestSetBeginCallback(void const *pvUser, const char *pszTag)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Beginning test set '%s'\n", pszTag);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Beginning test set '%s' in '%s'\n", pszTag, pTstEnv->szPathTemp);
 
     return AudioTestSetCreate(&pTstEnv->Set, pTstEnv->szPathTemp, pszTag);
 }
 
-/** @copydoc ATSCALLBACKS::pfnTestSetEnd */
-static DECLCALLBACK(int) audioTestSvcTestSetEndCallback(void const *pvUser, const char *pszTag)
+/** @copydoc ATSCALLBACKS::pfnTestSetEnd
+ *
+ *  @note Runs as part of the guest ATS.
+ */
+static DECLCALLBACK(int) audioTestGstAtsTestSetEndCallback(void const *pvUser, const char *pszTag)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
@@ -417,8 +423,11 @@ static DECLCALLBACK(int) audioTestSvcTestSetEndCallback(void const *pvUser, cons
     return audioTestEnvPrologue(pTstEnv);
 }
 
-/** @copydoc ATSCALLBACKS::pfnTonePlay */
-static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
+/** @copydoc ATSCALLBACKS::pfnTonePlay
+ *
+ *  @note Runs as part of the guest ATS.
+ */
+static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
@@ -461,7 +470,7 @@ static DECLCALLBACK(int) audioTestSvcTonePlayCallback(void const *pvUser, PAUDIO
 }
 
 /** @copydoc ATSCALLBACKS::pfnToneRecord */
-static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
+static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
@@ -479,7 +488,7 @@ static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PAUD
         TstParms.TestTone = *pToneParms;
 
         PAUDIOTESTENTRY pTst;
-        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", &TstParms, &pTst);
+        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone from host", &TstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestRecordTone(pTstEnv, pTstStream, pToneParms);
@@ -505,6 +514,42 @@ static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PAUD
 /*********************************************************************************************************************************
 *   Implementation of audio test environment handling                                                                            *
 *********************************************************************************************************************************/
+
+int audioTestEnvConnectToHostAts(PAUDIOTESTENV pTstEnv,
+                                 const char *pszHostTcpAddr, uint32_t uHostTcpPort)
+{
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to host ATS at %s:%RU32 ...\n",
+                 (pszHostTcpAddr && *pszHostTcpAddr) ? pszHostTcpAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
+                 uHostTcpPort ? uHostTcpPort : ATS_TCP_HOST_DEFAULT_PORT);
+
+    int rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClValKit, pszHostTcpAddr, uHostTcpPort);
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "Connecting to host ATS failed with %Rrc\n", rc);
+        return rc;
+    }
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to host ATS\n");
+    return rc;
+}
+
+int audioTestEnvConnectToGuestAts(PAUDIOTESTENV pTstEnv,
+                                  const char *pszGuestTcpAddr, uint32_t uGuestTcpPort)
+{
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Connecting to guest ATS at %s:%RU32 ...\n",
+                 (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
+                 uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
+
+    int rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClGuest, pszGuestTcpAddr, uGuestTcpPort);
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "Connecting to guest ATS failed with %Rrc\n", rc);
+        return rc;
+    }
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to guest ATS\n");
+    return rc;
+}
 
 /**
  * Initializes an audio test environment.
@@ -549,8 +594,13 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         AssertRCReturn(rc, rc);
     }
 
-    if (pDrvReg == NULL) /* Go with the platform's default backend if nothing else is set. */
-        pDrvReg = g_aBackends[0].pDrvReg;
+    if (pDrvReg == NULL)
+    {
+        if (pTstEnv->fSelftest)
+            pDrvReg = &g_DrvHostValidationKitAudio;
+        else /* Go with the platform's default backend if nothing else is set. */
+            pDrvReg = g_aBackends[0].pDrvReg;
+    }
 
     if (!uHostTcpPort)
         uHostTcpPort = ATS_TCP_HOST_DEFAULT_PORT;
@@ -570,11 +620,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     pTstEnv->cMsSchedulingHint = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
 
     /* Only the guest mode needs initializing the driver stack. */
-    const bool fUseDriverStack =    pTstEnv->enmMode == AUDIOTESTMODE_GUEST
-                                 /* The self test mode drives the ValKit audio driver locally,
-                                  * so also use the driver stack here. */
-                                 || (   pTstEnv->enmMode == AUDIOTESTMODE_HOST
-                                     && pTstEnv->fSelftest);
+    const bool fUseDriverStack = pTstEnv->enmMode == AUDIOTESTMODE_GUEST;
     if (fUseDriverStack)
     {
         rc = audioTestDriverStackInitEx(&pTstEnv->DrvStack, pDrvReg,
@@ -611,10 +657,10 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Ctx.pTstEnv = pTstEnv;
 
         ATSCALLBACKS Callbacks;
-        Callbacks.pfnTestSetBegin = audioTestSvcTestSetBeginCallback;
-        Callbacks.pfnTestSetEnd   = audioTestSvcTestSetEndCallback;
-        Callbacks.pfnTonePlay     = audioTestSvcTonePlayCallback;
-        Callbacks.pfnToneRecord   = audioTestSvcToneRecordCallback;
+        Callbacks.pfnTestSetBegin = audioTestGstAtsTestSetBeginCallback;
+        Callbacks.pfnTestSetEnd   = audioTestGstAtsTestSetEndCallback;
+        Callbacks.pfnTonePlay     = audioTestGstAtsTonePlayCallback;
+        Callbacks.pfnToneRecord   = audioTestGstAtsToneRecordCallback;
         Callbacks.pvUser          = &Ctx;
 
         /*
@@ -631,38 +677,13 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
             rc = AudioTestSvcStart(&pTstEnv->u.Guest.Srv);
 
         if (RT_FAILURE(rc))
-        {
             RTTestFailed(g_hTest, "Starting ATS failed with %Rrc\n", rc);
-            return rc;
-        }
     }
     else /* Host mode */
     {
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to host ATS at %s:%RU32 ...\n",
-                     (pszHostTcpAddr && *pszHostTcpAddr) ? pszHostTcpAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
-                     uHostTcpPort ? uHostTcpPort : ATS_TCP_HOST_DEFAULT_PORT);
-
-        rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClValKit, pszHostTcpAddr, uHostTcpPort);
-        if (RT_FAILURE(rc))
-        {
-            RTTestFailed(g_hTest, "Connecting to host ATS failed with %Rrc\n", rc);
-            return rc;
-        }
-
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to host ATS\n");
-
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Connecting to guest ATS at %s:%RU32 ...\n",
-                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
-                     uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
-
-        rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClGuest, pszGuestTcpAddr, uGuestTcpPort);
-        if (RT_FAILURE(rc))
-        {
-            RTTestFailed(g_hTest, "Connecting to guest ATS failed with %Rrc\n", rc);
-            return rc;
-        }
-
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to guest ATS\n");
+        rc = audioTestEnvConnectToHostAts(pTstEnv, pszHostTcpAddr, uHostTcpPort);
+        if (RT_SUCCESS(rc))
+            rc = audioTestEnvConnectToGuestAts(pTstEnv, pszGuestTcpAddr, uGuestTcpPort);
     }
 
     if (   RT_FAILURE(rc)

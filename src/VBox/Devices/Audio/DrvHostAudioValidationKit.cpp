@@ -88,6 +88,8 @@ typedef struct VALKITTESTDATA
 {
     /** The list node. */
     RTLISTNODE             Node;
+    /** Index in test sequence (0-based). */
+    uint32_t               idxTest;
     /** Current test set entry to process. */
     PAUDIOTESTENTRY        pEntry;
     /** Current test object to process. */
@@ -121,6 +123,8 @@ typedef struct DRVHOSTVALKITAUDIO
     char                szPathOut[RTPATH_MAX];
     /** Current test set being handled. */
     AUDIOTESTSET        Set;
+    /** Number of total tests created. */
+    uint32_t            cTestsTotal;
     /** Number of tests in \a lstTestsRec. */
     uint32_t            cTestsRec;
     /** List keeping the recording tests (FIFO). */
@@ -257,10 +261,12 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Audio: Validation Kit: Registered guest recording test (%RU32ms, %RU64 bytes)\n",
-                pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
+        LogRel(("Audio: Validation Kit: Registered guest recording test #%RU32 (%RU32ms, %RU64 bytes)\n",
+                pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
 
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
+
+        pTestData->idxTest = pThis->cTestsTotal++;
 
         pThis->cTestsRec++;
 
@@ -290,10 +296,12 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Audio: Validation Kit: Registered guest playback test (%RU32ms, %RU64 bytes)\n",
-                pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
+        LogRel(("Audio: Validation Kit: Registered guest playback test #%RU32 (%RU32ms, %RU64 bytes)\n",
+                pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
 
         RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
+
+        pTestData->idxTest = pThis->cTestsTotal++;
 
         pThis->cTestsPlay++;
 
@@ -511,7 +519,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         rc = AudioTestSetTestBegin(&pThis->Set, "Recording audio data from guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
-            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "guest-output.pcm", &pTst->pObj);
+            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-rec.pcm", &pTst->pObj);
 
         if (RT_SUCCESS(rc))
         {
@@ -532,7 +540,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         if (RT_SUCCESS(rc))
         {
             pTst->t.TestTone.u.Play.cbRead += cbToRead;
-
             Assert(pTst->t.TestTone.u.Play.cbRead <= pTst->t.TestTone.u.Play.cbToRead);
 
             const bool fComplete = pTst->t.TestTone.u.Play.cbToRead == pTst->t.TestTone.u.Play.cbRead;
@@ -612,7 +619,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         rc = AudioTestSetTestBegin(&pThis->Set, "Injecting audio input data to guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
-            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-input.pcm", &pTst->pObj);
+            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-play.pcm", &pTst->pObj);
 
         if (RT_SUCCESS(rc))
         {
@@ -793,16 +800,27 @@ static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
         LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service complete\n"));
 
         if (pThis->cTestsRec)
-            LogRel(("Audio: Validation Kit: Warning: %RU32 guest recording tests still outstanding\n", pThis->cTestsRec));
-        if (pThis->cTestsPlay)
-            LogRel(("Audio: Validation Kit: Warning: %RU32 guest playback tests still outstanding\n", pThis->cTestsPlay));
+            LogRel(("Audio: Validation Kit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
 
         PVALKITTESTDATA pTst, pTstNext;
         RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
+        {
+            size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
+            if (cbOutstanding)
+                LogRel(("Audio: Validation Kit: \tRecording test #%RU32 has %RU64 bytes outstanding\n", pTst->idxTest, cbOutstanding));
             drvHostValKiUnregisterRecTest(pThis, pTst);
+        }
+
+        if (pThis->cTestsPlay)
+            LogRel(("Audio: Validation Kit: Warning: %RU32 guest playback tests still outstanding:\n", pThis->cTestsPlay));
 
         RTListForEachSafe(&pThis->lstTestsPlay, pTst, pTstNext, VALKITTESTDATA, Node)
+        {
+            size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+            if (cbOutstanding)
+                LogRel(("Audio: Validation Kit: \tPlayback test #%RU32 has %RU64 bytes outstanding\n", pTst->idxTest, cbOutstanding));
             drvHostValKiUnregisterPlayTest(pThis, pTst);
+        }
 
         Assert(pThis->cTestsRec == 0);
         Assert(pThis->cTestsPlay == 0);

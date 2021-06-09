@@ -409,6 +409,12 @@ int         audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev);
 int         audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev);
 /** @}  */
 
+/** @name ATS routines
+ * @{ */
+int         audioTestEnvConnectToHostAts(PAUDIOTESTENV pTstEnv,
+                                         const char *pszHostTcpAddr, uint32_t uHostTcpPort);
+/** @}  */
+
 /** @name Test environment handling
  * @{ */
 int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszHostTcpAddr, uint32_t uHostTcpPort, const char *pszGuestTcpAddr, uint32_t uGuestTcpPort);
