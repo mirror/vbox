@@ -2248,7 +2248,7 @@ static int dsoundGetFreeOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD
             if (pStreamDS->Out.cbWritten == 0)
                 cbFree = pStreamDS->cbBufSize;
 
-            LogRel2(("DSound: offPlayCursor=%RU32, offWriteCursor=%RU32, offWritePos=%RU32 -> cbFree=%RI32\n",
+            LogRel3(("DSound: offPlayCursor=%RU32, offWriteCursor=%RU32, offWritePos=%RU32 -> cbFree=%RI32\n",
                      offPlayCursor, offWriteCursor, pStreamDS->Out.offWritePos, cbFree));
 
             *pdwFree = cbFree;
