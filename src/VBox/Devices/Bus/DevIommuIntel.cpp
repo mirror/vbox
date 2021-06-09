@@ -2564,6 +2564,103 @@ static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, 
 
 
 /**
+ * Gets the DMA access permissions and the address-translation request
+ * type given the PDM IOMMU memory access flags.
+ *
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
+ * @param   fBulk           Whether this is a bulk memory access (used for
+ *                          statistics).
+ * @param   penmReqType     Where to store the address-translation request type.
+ * @param   pfReqPerm       Where to store the DMA access permissions.
+ */
+static void dmarDrGetPermAndReqType(PPDMDEVINS pDevIns, uint32_t fFlags, bool fBulk, PVTDREQTYPE penmReqType, uint8_t *pfReqPerm)
+{
+    PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    if (fFlags & PDMIOMMU_MEM_F_READ)
+    {
+        *penmReqType = VTDREQTYPE_READ;
+        *pfReqPerm   = DMAR_PERM_READ;
+#ifdef VBOX_WITH_STATISTICS
+        if (!fBulk)
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
+        else
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkRead));
+#else
+        RT_NOREF2(pThis, fBulk);
+#endif
+    }
+    else
+    {
+        *penmReqType = VTDREQTYPE_WRITE;
+        *pfReqPerm   = DMAR_PERM_WRITE;
+#ifdef VBOX_WITH_STATISTICS
+        if (!fBulk)
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+        else
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
+#else
+        RT_NOREF2(pThis, fBulk);
+#endif
+    }
+}
+
+
+/**
+ * Handles DMA remapping based on the table translation mode (TTM).
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uRtaddrReg      The current RTADDR_REG value.
+ * @param   pMemReqRemap    The DMA memory request remapping info.
+ */
+static int dmarDrMemReqRemap(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
+{
+    int rc;
+    switch (pMemReqRemap->Aux.fTtm)
+    {
+        case VTD_TTM_LEGACY_MODE:
+        {
+            rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, pMemReqRemap);
+            break;
+        }
+
+        case VTD_TTM_SCALABLE_MODE:
+        {
+            PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
+                rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, pMemReqRemap);
+            else
+            {
+                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Smts_Not_Supported, &pMemReqRemap->In, &pMemReqRemap->Aux);
+            }
+            break;
+        }
+
+        case VTD_TTM_ABORT_DMA_MODE:
+        {
+            PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+            if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
+                dmarDrTargetAbort(pDevIns);
+            else
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Adms_Not_Supported, &pMemReqRemap->In, &pMemReqRemap->Aux);
+            rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            break;
+        }
+
+        default:
+        {
+            rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Rsvd, &pMemReqRemap->In, &pMemReqRemap->Aux);
+            break;
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Memory access bulk (one or more 4K pages) request from a device.
  *
  * @returns VBox status code.
@@ -2579,8 +2676,62 @@ static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, 
 static DECLCALLBACK(int) iommuIntelMemBulkAccess(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                  uint32_t fFlags, PRTGCPHYS paGCPhysSpa)
 {
-    RT_NOREF6(pDevIns, idDevice, cIovas, pauIovas, fFlags, paGCPhysSpa);
-    return VERR_NOT_IMPLEMENTED;
+    /* Validate. */
+    AssertPtr(pDevIns);
+    Assert(cIovas > 0);
+    AssertPtr(pauIovas);
+    AssertPtr(paGCPhysSpa);
+    Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
+
+    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
+
+    DMAR_LOCK(pDevIns, pThisCC);
+    uint32_t const uGstsReg   = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_GSTS_REG);
+    uint64_t const uRtaddrReg = pThis->uRtaddrReg;
+    DMAR_UNLOCK(pDevIns, pThisCC);
+
+    if (uGstsReg & VTD_BF_GSTS_REG_TES_MASK)
+    {
+        VTDREQTYPE enmReqType;
+        uint8_t    fReqPerm;
+        dmarDrGetPermAndReqType(pDevIns, fFlags, true /* fBulk */, &enmReqType, &fReqPerm);
+
+        DMARMEMREQREMAP MemReqRemap;
+        RT_ZERO(MemReqRemap);
+        MemReqRemap.In.AddrRange.cb     = X86_PAGE_SIZE;
+        MemReqRemap.In.AddrRange.fPerm  = fReqPerm;
+        MemReqRemap.In.idDevice         = idDevice;
+        MemReqRemap.In.Pasid            = NIL_PCIPASID;
+        MemReqRemap.In.enmAddrType      = PCIADDRTYPE_UNTRANSLATED;
+        MemReqRemap.In.enmReqType       = enmReqType;
+        MemReqRemap.Aux.fTtm            = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
+        MemReqRemap.Out.AddrRange.uAddr = NIL_RTGCPHYS;
+
+        for (size_t i = 0; i < cIovas; i++)
+        {
+            MemReqRemap.In.AddrRange.uAddr = pauIovas[i] & X86_PAGE_BASE_MASK;
+            int const rc = dmarDrMemReqRemap(pDevIns, uRtaddrReg, &MemReqRemap);
+            if (RT_SUCCESS(rc))
+            {
+                paGCPhysSpa[i] = MemReqRemap.Out.AddrRange.uAddr | (pauIovas[i] & X86_PAGE_OFFSET_MASK);
+                Assert(MemReqRemap.Out.AddrRange.cb == MemReqRemap.In.AddrRange.cb);
+            }
+            else
+            {
+                LogFlowFunc(("idDevice=%#x uIova=%#RX64 fPerm=%#x rc=%Rrc\n", idDevice, pauIovas[i], fReqPerm, rc));
+                return rc;
+            }
+        }
+    }
+    else
+    {
+        /* Addresses are forwarded without translation when the translation is disabled. */
+        for (size_t i = 0; i < cIovas; i++)
+            paGCPhysSpa[i] = pauIovas[i];
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2621,20 +2772,8 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
     {
         VTDREQTYPE enmReqType;
         uint8_t    fReqPerm;
-        if (fFlags & PDMIOMMU_MEM_F_READ)
-        {
-            enmReqType = VTDREQTYPE_READ;
-            fReqPerm   = DMAR_PERM_READ;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
-        }
-        else
-        {
-            enmReqType = VTDREQTYPE_WRITE;
-            fReqPerm   = DMAR_PERM_WRITE;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
-        }
+        dmarDrGetPermAndReqType(pDevIns, fFlags, false /* fBulk */, &enmReqType, &fReqPerm);
 
-        uint8_t const fTtm = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
         DMARMEMREQREMAP MemReqRemap;
         RT_ZERO(MemReqRemap);
         MemReqRemap.In.AddrRange.uAddr  = uIova;
@@ -2644,48 +2783,10 @@ static DECLCALLBACK(int) iommuIntelMemAccess(PPDMDEVINS pDevIns, uint16_t idDevi
         MemReqRemap.In.Pasid            = NIL_PCIPASID;
         MemReqRemap.In.enmAddrType      = PCIADDRTYPE_UNTRANSLATED;
         MemReqRemap.In.enmReqType       = enmReqType;
-        MemReqRemap.Aux.fTtm            = fTtm;
+        MemReqRemap.Aux.fTtm            = RT_BF_GET(uRtaddrReg, VTD_BF_RTADDR_REG_TTM);
         MemReqRemap.Out.AddrRange.uAddr = NIL_RTGCPHYS;
 
-        int rc;
-        switch (fTtm)
-        {
-            case VTD_TTM_LEGACY_MODE:
-            {
-                rc = dmarDrLegacyModeRemapAddr(pDevIns, uRtaddrReg, &MemReqRemap);
-                break;
-            }
-
-            case VTD_TTM_SCALABLE_MODE:
-            {
-                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK)
-                    rc = dmarDrScalableModeRemapAddr(pDevIns, uRtaddrReg, &MemReqRemap);
-                else
-                {
-                    rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Smts_Not_Supported, &MemReqRemap.In, &MemReqRemap.Aux);
-                }
-                break;
-            }
-
-            case VTD_TTM_ABORT_DMA_MODE:
-            {
-                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-                if (pThis->fExtCapReg & VTD_BF_ECAP_REG_ADMS_MASK)
-                    dmarDrTargetAbort(pDevIns);
-                else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Adms_Not_Supported, &MemReqRemap.In, &MemReqRemap.Aux);
-                break;
-            }
-
-            default:
-            {
-                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Rta_Rsvd, &MemReqRemap.In, &MemReqRemap.Aux);
-                break;
-            }
-        }
-
+        int const rc = dmarDrMemReqRemap(pDevIns, uRtaddrReg, &MemReqRemap);
         *pGCPhysSpa    = MemReqRemap.Out.AddrRange.uAddr;
         *pcbContiguous = MemReqRemap.Out.AddrRange.cb;
         return rc;

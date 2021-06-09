@@ -1689,6 +1689,8 @@ typedef enum VTDREQTYPE
     VTDREQTYPE_READ,        /**< Memory access read request. */
     VTDREQTYPE_ATOMIC_OP    /**< Memory access atomic operation. */
 } VTDREQTYPE;
+/** Pointer to a VTDREQTYPE. */
+typedef VTDREQTYPE *PVTDREQTYPE;
 
 
 /** @name Advanced Fault Log Register (AFLOG_REG).
