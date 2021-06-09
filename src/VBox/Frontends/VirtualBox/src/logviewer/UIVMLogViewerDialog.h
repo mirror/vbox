@@ -39,6 +39,7 @@ class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
 class UIVMLogViewerDialog;
+class UIVirtualMachineItem;
 class CMachine;
 
 
@@ -78,6 +79,8 @@ public:
       * @param  comMachine     Brings the machine reference. */
     UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
     ~UIVMLogViewerDialog();
+    void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
+    void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
 
 protected:
 

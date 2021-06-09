@@ -221,6 +221,19 @@ void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineIte
     setMachines(selectedMachines);
 }
 
+void UIVMLogViewerWidget::addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
+{
+    QVector<QUuid> selectedMachines(m_machines);
+
+    foreach (const UIVirtualMachineItem *item, items)
+    {
+        if (!item)
+            continue;
+        selectedMachines << item->id();
+    }
+    setMachines(selectedMachines);
+}
+
 void UIVMLogViewerWidget::setMachines(const QVector<QUuid> &machineIDs)
 {
     /* List of machines that are newly added to selected machine list: */
@@ -959,7 +972,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         QUuid uMachineId = comMachine.GetId();
         QString strMachineName = comMachine.GetName();
 
-        if (m_enmEmbedding == EmbedTo_Stack)
+        if (uiCommon().uiType() == UICommon::UIType_SelectorUI)
             m_pTabWidget->addTab(new UILabelTab(this, uMachineId), strMachineName);
 
         bool fNoLogFileForMachine = true;

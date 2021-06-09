@@ -87,6 +87,7 @@ public:
 #endif
 
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
+    void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
     /** Sets m_fDialogBeingClosed. */

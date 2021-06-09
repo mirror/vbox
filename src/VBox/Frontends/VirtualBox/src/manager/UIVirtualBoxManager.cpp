@@ -466,6 +466,8 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
+    , m_pLogViewerDialog(0)
+    , m_pWidget(0)
     , m_iGeometrySaveTimerId(-1)
 {
     s_pInstance = this;
@@ -2000,6 +2002,8 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
         m_pWidget->closeMachineTool(UIToolType_Logs);
     }
 
+    QList<UIVirtualMachineItem*> itemsToShowLogs;
+
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
@@ -2011,74 +2015,38 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
         /* Check if log could be show for the current item: */
         if (!isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
             continue;
-
-        QIManagerDialog *pLogViewerDialog = 0;
-        /* Create and Show VM Log Viewer: */
-        if (!m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()])
-        {
-            UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItemLocal->machine());
-            dialogFactory.prepare(pLogViewerDialog, this);
-            if (pLogViewerDialog)
-            {
-                m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()] = pLogViewerDialog;
-                connect(pLogViewerDialog, &QIManagerDialog::sigClose,
-                        this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
-            }
-        }
-        else
-        {
-            pLogViewerDialog = m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()];
-        }
-        if (pLogViewerDialog)
-        {
-            /* Show instance: */
-            pLogViewerDialog->show();
-            pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
-            pLogViewerDialog->activateWindow();
-        }
+        itemsToShowLogs << pItem;
     }
+
+    if (itemsToShowLogs.isEmpty())
+        return;
+    if (!m_pLogViewerDialog)
+    {
+        UIVMLogViewerDialogFactory dialogFactory(actionPool(), CMachine());
+        dialogFactory.prepare(m_pLogViewerDialog, this);
+        if (m_pLogViewerDialog)
+            connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,
+                    this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
+    }
+    AssertPtrReturnVoid(m_pLogViewerDialog);
+    UIVMLogViewerDialog *pDialog = qobject_cast<UIVMLogViewerDialog*>(m_pLogViewerDialog);
+    if (pDialog)
+        pDialog->addSelectedVMListItems(itemsToShowLogs);
+    m_pLogViewerDialog->show();
+    m_pLogViewerDialog->setWindowState(m_pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
+    m_pLogViewerDialog->activateWindow();
 }
 
 void UIVirtualBoxManager::sltCloseLogViewerWindow()
 {
-    /* If there is a proper sender: */
-    if (qobject_cast<QIManagerDialog*>(sender()))
-    {
-        /* Search for the sender of the signal within the m_logViewers map: */
-        QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
-        while (sendersIterator != m_logViewers.end() && sendersIterator.value() != sender())
-            ++sendersIterator;
-        /* Do nothing if we cannot find it with the map: */
-        if (sendersIterator == m_logViewers.end())
-            return;
+    if (!m_pLogViewerDialog)
+        return;
 
-        /* Check whether we have found the proper dialog: */
-        QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
-        if (!pDialog)
-            return;
-
-        /* First remove this log-viewer dialog from the map.
-         * This should be done before closing the dialog which will incur
-         * a second call to this function and result in double delete!!! */
-        m_logViewers.erase(sendersIterator);
-        UIVMLogViewerDialogFactory().cleanup(pDialog);
-    }
-    /* Otherwise: */
-    else
-    {
-        /* Just wipe out everything: */
-        foreach (const QString &strKey, m_logViewers.keys())
-        {
-            /* First remove each log-viewer dialog from the map.
-             * This should be done before closing the dialog which will incur
-             * a second call to this function and result in double delete!!! */
-            QIManagerDialog *pDialog = m_logViewers.value(strKey);
-            m_logViewers.remove(strKey);
-            UIVMLogViewerDialogFactory().cleanup(pDialog);
-        }
-    }
+    QIManagerDialog* pDialog = m_pLogViewerDialog;
+    m_pLogViewerDialog = 0;
+    pDialog->close();
+    UIVMLogViewerDialogFactory().cleanup(pDialog);
 }
-
 
 void UIVirtualBoxManager::sltPerformRefreshMachine()
 {

@@ -43,7 +43,6 @@ class UIVirtualMachineItem;
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
 typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
-typedef QMap<QString, QIManagerDialog*> VMLogViewerMap;
 
 /** Singleton QMainWindow extension used as VirtualBox Manager instance. */
 class UIVirtualBoxManager : public QMainWindowWithRestorableGeometryAndRetranslateUi
@@ -452,8 +451,8 @@ private:
     /** Holds the map of various global managers. */
     QMap<UIToolType, QIManagerDialog*>  m_managers;
 
-    /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
-    VMLogViewerMap   m_logViewers;
+    /** Holds the instance of UIVMLogViewerDialog. */
+    QIManagerDialog   *m_pLogViewerDialog;
 
     /** Holds the central-widget instance. */
     UIVirtualBoxManagerWidget *m_pWidget;

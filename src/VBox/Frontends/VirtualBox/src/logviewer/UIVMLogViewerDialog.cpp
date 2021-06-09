@@ -75,6 +75,22 @@ UIVMLogViewerDialog::~UIVMLogViewerDialog()
         pWidget->setDialogBeingClosed(true);
 }
 
+void UIVMLogViewerDialog::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
+{
+    Q_UNUSED(items);
+    UIVMLogViewerWidget *pLogViewerWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
+    if (pLogViewerWidget)
+        pLogViewerWidget->setSelectedVMListItems(items);
+}
+
+void UIVMLogViewerDialog::addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
+{
+    Q_UNUSED(items);
+    UIVMLogViewerWidget *pLogViewerWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
+    if (pLogViewerWidget)
+        pLogViewerWidget->addSelectedVMListItems(items);
+}
+
 void UIVMLogViewerDialog::retranslateUi()
 {
     /* Translate window title: */
