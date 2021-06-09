@@ -98,6 +98,8 @@
  *  See Intel VT-d spec. 10.4.2 "Capability Register" (CAP_REG.NFR). */
 #define DMAR_FRCD_REG_COUNT                         UINT32_C(1)
 
+/** Number of register groups (used in saved states). */
+#define DMAR_MMIO_GROUP_COUNT                       2
 /** Offset of first register in group 0. */
 #define DMAR_MMIO_GROUP_0_OFF_FIRST                 VTD_MMIO_OFF_VER_REG
 /** Offset of last register in group 0 (inclusive). */
@@ -318,8 +320,8 @@ typedef struct DMAR
 {
     /** IOMMU device index. */
     uint32_t                    idxIommu;
-    /** DMAR magic. */
-    uint32_t                    u32Magic;
+    /** Padding. */
+    uint32_t                    u32Padding0;
 
     /** Registers (group 0). */
     uint8_t                     abRegs0[DMAR_MMIO_GROUP_0_SIZE];
@@ -2398,9 +2400,9 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
  */
 static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
 {
-    PCDMARMEMREQIN  pMemReqIn  = &pMemReqRemap->In;
-    PDMARMEMREQAUX  pMemReqAux = &pMemReqRemap->Aux;
-    PDMARMEMREQOUT  pMemReqOut = &pMemReqRemap->Out;
+    PCDMARMEMREQIN pMemReqIn  = &pMemReqRemap->In;
+    PDMARMEMREQAUX pMemReqAux = &pMemReqRemap->Aux;
+    PDMARMEMREQOUT pMemReqOut = &pMemReqRemap->Out;
     Assert(pMemReqAux->fTtm == VTD_TTM_LEGACY_MODE);    /* Paranoia. */
 
     /* Read the root-entry from guest memory. */
@@ -3678,6 +3680,7 @@ static DECLCALLBACK(void) dmarR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
 static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 {
     PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    LogFlowFunc(("\n"));
 
     /*
      * Wipe all registers (required on reset).
@@ -3821,6 +3824,159 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
 
 
 /**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) dmarR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PCDMAR        pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    LogFlowFunc(("\n"));
+
+    /* First, save software-immutable registers that we validate on state load. */
+    pHlp->pfnSSMPutU32(pSSM, pThis->uVerReg);
+    pHlp->pfnSSMPutU64(pSSM, pThis->fCapReg);
+    pHlp->pfnSSMPutU64(pSSM, pThis->fExtCapReg);
+
+    /* Save MMIO registers. */
+    pHlp->pfnSSMPutU32(pSSM, DMAR_MMIO_GROUP_COUNT);
+    pHlp->pfnSSMPutU32(pSSM, sizeof(pThis->abRegs0));
+    pHlp->pfnSSMPutMem(pSSM, &pThis->abRegs0[0], sizeof(pThis->abRegs0));
+    pHlp->pfnSSMPutU32(pSSM, sizeof(pThis->abRegs1));
+    pHlp->pfnSSMPutMem(pSSM, &pThis->abRegs1[0], sizeof(pThis->abRegs1));
+
+    /* Save lazily activated registers. */
+    pHlp->pfnSSMPutU64(pSSM, pThis->uIrtaReg);
+    pHlp->pfnSSMPutU64(pSSM, pThis->uRtaddrReg);
+
+    /* Save terminator marker and return status. */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PDMAR         pThis     = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+    PCPDMDEVHLPR3 pHlp      = pDevIns->pHlpR3;
+    int const     rcDataErr = VERR_SSM_UNEXPECTED_DATA;
+    int const     rcFmtErr  = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    LogFlowFunc(("\n"));
+
+    /*
+     * Validate saved-state version.
+     */
+    AssertReturn(uPass == SSM_PASS_FINAL, VERR_WRONG_ORDER);
+    if (uVersion != DMAR_SAVED_STATE_VERSION)
+    {
+        LogRel(("%s: Invalid saved-state version %#x\n", DMAR_LOG_PFX, uVersion));
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
+
+    /*
+     * Load and validate software-immutable registers.
+     */
+    {
+        /* VER_REG */
+        uint32_t uVerReg;
+        int rc = pHlp->pfnSSMGetU32(pSSM, &uVerReg);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(uVerReg == pThis->uVerReg,
+                              ("%s: VER_REG mismatch (expected %#RX32 got %#RX32)\n", DMAR_LOG_PFX, pThis->uVerReg, uVerReg),
+                              rcDataErr);
+
+        /* CAP_REG */
+        uint64_t fCapReg;
+        pHlp->pfnSSMGetU64(pSSM, &fCapReg);
+        AssertLogRelMsgReturn(fCapReg == pThis->fCapReg,
+                              ("%s: CAP_REG mismatch (expected %#RX64 got %#RX64)\n", DMAR_LOG_PFX, pThis->fCapReg, fCapReg),
+                              rcDataErr);
+
+        /* ECAP_REG */
+        uint64_t fExtCapReg;
+        pHlp->pfnSSMGetU64(pSSM, &fExtCapReg);
+        AssertLogRelMsgReturn(fExtCapReg == pThis->fExtCapReg,
+                              ("%s: ECAP_REG mismatch (expected %#RX64 got %#RX64)\n", DMAR_LOG_PFX, pThis->fExtCapReg,
+                               fExtCapReg), rcDataErr);
+    }
+
+    /*
+     * Load MMIO registers.
+     */
+    {
+        /* Group count. */
+        uint32_t cRegGroups;
+        pHlp->pfnSSMGetU32(pSSM, &cRegGroups);
+        AssertLogRelMsgReturn(cRegGroups == DMAR_MMIO_GROUP_COUNT,
+                              ("%s: MMIO group count mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_GROUP_COUNT,
+                               cRegGroups), rcDataErr);
+
+        /* Group 0. */
+        uint32_t cbRegs0;
+        pHlp->pfnSSMGetU32(pSSM, &cbRegs0);
+        AssertLogRelMsgReturn(cbRegs0 == sizeof(pThis->abRegs0),
+                              ("%s: MMIO group 0 size mismatch (expected %u got %u)\n", DMAR_LOG_PFX, sizeof(pThis->abRegs0),
+                               cbRegs0), rcDataErr);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->abRegs0[0], cbRegs0);
+
+        /* Group 1. */
+        uint32_t cbRegs1;
+        pHlp->pfnSSMGetU32(pSSM, &cbRegs1);
+        AssertLogRelMsgReturn(cbRegs1 == sizeof(pThis->abRegs1),
+                              ("%s: MMIO group 1 size mismatch (expected %u got %u)\n", DMAR_LOG_PFX, sizeof(pThis->abRegs1),
+                               cbRegs1), rcDataErr);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->abRegs1[0], cbRegs1);
+    }
+
+    /*
+     * Load lazily activated registers.
+     */
+    {
+        /* Active IRTA_REG. */
+        pHlp->pfnSSMGetU64(pSSM, &pThis->uIrtaReg);
+        AssertLogRelMsgReturn(!(pThis->uIrtaReg & ~VTD_IRTA_REG_RW_MASK),
+                              ("%s: IRTA_REG reserved bits set %#RX64\n", DMAR_LOG_PFX, pThis->uIrtaReg), rcDataErr);
+
+        /* Active RTADDR_REG. */
+        pHlp->pfnSSMGetU64(pSSM, &pThis->uRtaddrReg);
+        AssertLogRelMsgReturn(!(pThis->uRtaddrReg & ~VTD_RTADDR_REG_RW_MASK),
+                              ("%s: RTADDR_REG reserved bits set %#RX64\n", DMAR_LOG_PFX, pThis->uRtaddrReg), rcDataErr);
+    }
+
+    /*
+     * Load and verify terminator marker.
+     */
+    {
+        uint32_t uEndMarker;
+        int const rc = pHlp->pfnSSMGetU32(pSSM, &uEndMarker);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(uEndMarker == UINT32_MAX,
+                              ("%s: End marker mismatch (expected %#RX32 got %#RX32)\n", DMAR_LOG_PFX, UINT32_MAX, uEndMarker),
+                              rcFmtErr);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE}
+ */
+static DECLCALLBACK(int) dmarR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PDMARR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PDMARR3);
+    LogFlowFunc(("\n"));
+    RT_NOREF(pSSM);
+    AssertPtrReturn(pThisR3, VERR_INVALID_POINTER);
+
+    DMAR_LOCK(pDevIns, pThisR3);
+    dmarInvQueueThreadWakeUpIfNeeded(pDevIns);
+    DMAR_UNLOCK(pDevIns, pThisR3);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) iommuIntelR3Reset(PPDMDEVINS pDevIns)
@@ -3921,7 +4077,6 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     /** @todo Chipset spec says PCI Express Capability Id. Relevant for us? */
     PDMPciDevSetStatus(pPciDev,            0);
     PDMPciDevSetCapabilityList(pPciDev,    0);
-
     /** @todo VTBAR at 0x180? */
 
     /*
@@ -3930,14 +4085,6 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @todo Register MSI but what's the MSI capability offset? */
-#if 0
-    /*
-     * Register MSI support for the PCI device.
-     * This must be done -after- registering it as a PCI device!
-     */
-#endif
-
     /*
      * Register MMIO region.
      */
@@ -3945,6 +4092,15 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = PDMDevHlpMmioCreateAndMap(pDevIns, DMAR_MMIO_BASE_PHYSADDR, DMAR_MMIO_SIZE, dmarMmioWrite, dmarMmioRead,
                                    IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED, "Intel-IOMMU",
                                    &pThis->hMmio);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Register saved state handlers.
+     */
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, DMAR_SAVED_STATE_VERSION, sizeof(DMAR), NULL /* pszBefore */,
+                                NULL /* pfnLivePrep */,  NULL /* pfnLiveExec */,  NULL /* pfnLiveVote */,
+                                NULL /* pfnSavePrep */,  dmarR3SaveExec, NULL /* pfnSaveDone */,
+                                NULL /* pfnLoadPrep */,  dmarR3LoadExec, dmarR3LoadDone);
     AssertLogRelRCReturn(rc, rc);
 
     /*
