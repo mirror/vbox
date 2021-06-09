@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 
 #include <iprt/ctype.h>
+#include <iprt/dir.h>
 #include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/message.h>
@@ -400,20 +401,14 @@ static DECLCALLBACK(int) audioTestSvcTestSetBeginCallback(void const *pvUser, co
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    char szTag[AUDIOTEST_TAG_MAX];
-    int rc = RTStrPrintf2(szTag, sizeof(szTag), "%s-guest", pszTag);
-    AssertRCReturn(rc, rc);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Beginning test set '%s'\n", pszTag);
 
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Beginning test set '%s'\n", szTag);
-
-    return AudioTestSetCreate(&pTstEnv->Set, pTstEnv->szPathTemp, szTag);
+    return AudioTestSetCreate(&pTstEnv->Set, pTstEnv->szPathTemp, pszTag);
 }
 
 /** @copydoc ATSCALLBACKS::pfnTestSetEnd */
 static DECLCALLBACK(int) audioTestSvcTestSetEndCallback(void const *pvUser, const char *pszTag)
 {
-    RT_NOREF(pszTag);
-
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
@@ -517,21 +512,56 @@ static DECLCALLBACK(int) audioTestSvcToneRecordCallback(void const *pvUser, PAUD
  * @param   pTstEnv             Audio test environment to initialize.
  * @param   pDrvReg             Audio driver to use.
  * @param   fWithDrvAudio       Whether to include DrvAudio in the stack or not.
- * @param   pszTcpAddr          TCP/IP address to connect to.
+ * @param   pszHostTcpAddr      Host ATS TCP/IP address to connect to.
+ *                              If NULL, ATS_TCP_HOST_DEFAULT_ADDR_STR will be used.
+ * @param   uHostTcpPort        Host ATS TCP/IP port to connect to.
+ *                              If 0, ATS_TCP_HOST_DEFAULT_PORT will be used.
+ * @param   pszGuestTcpAddr     Guest ATS TCP/IP address to connect to.
  *                              If NULL, localhost (127.0.0.1) will be used.
- * @param   uTcpPort            TCP/IP port to connect to.
- *                              If 0, ATS_DEFAULT_PORT will be used.
+ * @param   uGuestTcpPort       Guest ATS TCP/IP port to connect to.
+ *                              If 0, ATS_TCP_GUEST_DEFAULT_PORT will be used.
  */
 int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
                      PCPDMDRVREG pDrvReg, bool fWithDrvAudio,
-                     const char *pszTcpAddr, uint32_t uTcpPort)
+                     const char *pszHostTcpAddr, uint32_t uHostTcpPort,
+                     const char *pszGuestTcpAddr, uint32_t uGuestTcpPort)
 {
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Set sane defaults if not already set.
+     */
+    if (!RTStrNLen(pTstEnv->szTag, sizeof(pTstEnv->szTag)))
+    {
+        rc = AudioTestGenTag(pTstEnv->szTag, sizeof(pTstEnv->szTag));
+        AssertRCReturn(rc, rc);
+    }
+
+    if (!RTStrNLen(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp)))
+    {
+        rc = AudioTestPathGetTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp));
+        AssertRCReturn(rc, rc);
+    }
+
+    if (!RTStrNLen(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut)))
+    {
+        rc = RTPathJoin(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), pTstEnv->szPathTemp, "vkat-temp");
+        AssertRCReturn(rc, rc);
+    }
+
+    if (pDrvReg == NULL) /* Go with the platform's default backend if nothing else is set. */
+        pDrvReg = g_aBackends[0].pDrvReg;
+
+    if (!uHostTcpPort)
+        uHostTcpPort = ATS_TCP_HOST_DEFAULT_PORT;
+
+    if (!uGuestTcpPort)
+        uGuestTcpPort = ATS_TCP_GUEST_DEFAULT_PORT;
+
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test mode is '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
-
-    int rc = VINF_SUCCESS;
 
     PDMAudioHostEnumInit(&pTstEnv->DevEnum);
 
@@ -543,10 +573,12 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     const bool fUseDriverStack =    pTstEnv->enmMode == AUDIOTESTMODE_GUEST
                                  /* The self test mode drives the ValKit audio driver locally,
                                   * so also use the driver stack here. */
-                                 || pTstEnv->fSelftest;
+                                 || (   pTstEnv->enmMode == AUDIOTESTMODE_HOST
+                                     && pTstEnv->fSelftest);
     if (fUseDriverStack)
     {
-        rc = audioTestDriverStackInit(&pTstEnv->DrvStack, pDrvReg, fWithDrvAudio);
+        rc = audioTestDriverStackInitEx(&pTstEnv->DrvStack, pDrvReg,
+                                        true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -585,8 +617,16 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Callbacks.pfnToneRecord   = audioTestSvcToneRecordCallback;
         Callbacks.pvUser          = &Ctx;
 
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Starting guest ATS at %s:%RU32...\n", pszTcpAddr, uTcpPort);
-        rc = AudioTestSvcInit(&pTstEnv->u.Guest.Srv, pszTcpAddr, uTcpPort, &Callbacks);
+        /*
+         * Start the ATS (Audio Test Service) on the guest side.
+         * That service then will perform playback and recording operations on the guest, triggered from the host.
+         *
+         * When running this in self-test mode, that service also will be run on the host.
+         */
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Starting guest ATS at %s:%RU32...\n",
+                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
+                     uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
+        rc = AudioTestSvcInit(&pTstEnv->u.Guest.Srv, pszGuestTcpAddr, uGuestTcpPort, &Callbacks);
         if (RT_SUCCESS(rc))
             rc = AudioTestSvcStart(&pTstEnv->u.Guest.Srv);
 
@@ -598,17 +638,31 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     }
     else /* Host mode */
     {
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Connecting to guest ATS at %s:%RU32 ...\n",
-                     (pszTcpAddr && *pszTcpAddr) ? pszTcpAddr : "127.0.0.1", uTcpPort ? uTcpPort : ATS_TCP_DEFAULT_PORT);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to host ATS at %s:%RU32 ...\n",
+                     (pszHostTcpAddr && *pszHostTcpAddr) ? pszHostTcpAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
+                     uHostTcpPort ? uHostTcpPort : ATS_TCP_HOST_DEFAULT_PORT);
 
-        rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClGuest, pszTcpAddr, uTcpPort);
+        rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClValKit, pszHostTcpAddr, uHostTcpPort);
         if (RT_FAILURE(rc))
         {
-            RTTestFailed(g_hTest, "Connecting to ATS failed with %Rrc\n", rc);
+            RTTestFailed(g_hTest, "Connecting to host ATS failed with %Rrc\n", rc);
             return rc;
         }
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to ATS\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to host ATS\n");
+
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Connecting to guest ATS at %s:%RU32 ...\n",
+                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
+                     uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
+
+        rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClGuest, pszGuestTcpAddr, uGuestTcpPort);
+        if (RT_FAILURE(rc))
+        {
+            RTTestFailed(g_hTest, "Connecting to guest ATS failed with %Rrc\n", rc);
+            return rc;
+        }
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to guest ATS\n");
     }
 
     if (   RT_FAILURE(rc)
@@ -637,6 +691,10 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
             RTTestFailed(g_hTest, "Stream destruction for stream #%u failed with %Rrc\n", i, rc2);
     }
 
+    /* Try cleaning up a bit. */
+    RTDirRemove(pTstEnv->szPathTemp);
+    RTDirRemove(pTstEnv->szPathOut);
+
     audioTestDriverStackDelete(&pTstEnv->DrvStack);
 }
 
@@ -658,9 +716,7 @@ int audioTestEnvPrologue(PAUDIOTESTENV pTstEnv)
     if (RT_SUCCESS(rc))
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
 
-    int rc2 = AudioTestSetWipe(&pTstEnv->Set);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    /* ignore rc */ AudioTestSetWipe(&pTstEnv->Set);
 
     AudioTestSetDestroy(&pTstEnv->Set);
 

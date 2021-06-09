@@ -20,6 +20,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -195,16 +196,16 @@ static void drvHostValKiUnregisterPlayTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTES
     pThis->cTestsPlay--;
 }
 
+/** @copydoc ATSCALLBACKS::pfnTestSetBegin */
 static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const char *pszTag)
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     LogRel(("Audio: Validation Kit: Beginning test set '%s'\n", pszTag));
-
     return AudioTestSetCreate(&pThis->Set, pThis->szPathTemp, pszTag);
-
 }
 
+/** @copydoc ATSCALLBACKS::pfnTestSetEnd */
 static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char *pszTag)
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
@@ -238,6 +239,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
 /** @copydoc ATSCALLBACKS::pfnTonePlay
  *
  * Creates and registers a new test tone guest recording test.
+ * This backend will play (inject) input data to the guest.
  */
 static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
@@ -272,6 +274,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
 /** @copydoc ATSCALLBACKS::pfnToneRecord
  *
  * Creates and registers a new test tone guest playback test.
+ * This backend will record the guest output data.
  */
 static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
@@ -282,13 +285,13 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
 
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
-    pTestData->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(&pToneParms->Props,
+    pTestData->t.TestTone.u.Play.cbToRead = PDMAudioPropsMilliToBytes(&pToneParms->Props,
                                                                       pTestData->t.TestTone.Parms.msDuration);
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         LogRel(("Audio: Validation Kit: Registered guest playback test (%RU32ms, %RU64 bytes)\n",
-                pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
+                pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
 
         RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
 
@@ -500,6 +503,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
+        Parms.enmDir   = PDMAUDIODIR_IN;
+        Parms.enmType  = AUDIOTESTTYPE_TESTTONE_RECORD;
         Parms.TestTone = pTst->t.TestTone.Parms;
 
         Assert(pTst->pEntry == NULL);
@@ -512,8 +517,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         {
             pTst->msStartedTS = RTTimeMilliTS();
             LogRel(("Audio: Validation Kit: Recording audio data (%RU16Hz, %RU32ms) started\n",
-                    (uint16_t)pTst->t.TestTone.Tone.rdFreqHz,
-                    pTst->t.TestTone.Parms.msDuration));
+                    (uint16_t)Parms.TestTone.dbFreqHz, Parms.TestTone.msDuration));
         }
     }
 
@@ -522,7 +526,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     if (RT_SUCCESS(rc))
     {
         uint32_t cbToRead = RT_MIN(cbBuf,
-                                   pTst->t.TestTone.u.Play.cbToRead- pTst->t.TestTone.u.Play.cbRead);
+                                   pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead);
 
         rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbToRead);
         if (RT_SUCCESS(rc))
@@ -543,10 +547,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     drvHostValKiUnregisterPlayTest(pThis, pTst);
 
+                    pThis->pTestCur = NULL;
+
                     int rc2 = RTCritSectLeave(&pThis->CritSect);
                     AssertRC(rc2);
                 }
             }
+
+            cbWritten = cbToRead;
         }
     }
 
@@ -596,6 +604,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
+        Parms.enmDir   = PDMAUDIODIR_OUT;
+        Parms.enmType  = AUDIOTESTTYPE_TESTTONE_PLAY;
         Parms.TestTone = pTst->t.TestTone.Parms;
 
         Assert(pTst->pEntry == NULL);
@@ -621,9 +631,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         if (cbToWrite)
             rc = AudioTestToneGenerate(&pTst->t.TestTone.Tone, pvBuf, RT_MIN(cbToWrite, cbBuf), &cbRead);
         if (   RT_SUCCESS(rc)
-            && cbToWrite)
+            && cbRead)
         {
-            rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbToWrite);
+            rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbRead);
             if (RT_SUCCESS(rc))
             {
                 pTst->t.TestTone.u.Rec.cbWritten += cbRead;
@@ -640,6 +650,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                     if (RT_SUCCESS(rc))
                     {
                         drvHostValKiUnregisterRecTest(pThis, pTst);
+
+                        pThis->pTestCur = NULL;
 
                         int rc2 = RTCritSectLeave(&pThis->CritSect);
                         AssertRC(rc2);
@@ -729,8 +741,8 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     Callbacks.pvUser          = pThis;
 
     /** @todo Make this configurable via CFGM. */
-    const char *pszTcpAddr = "127.0.0.1";
-       uint32_t uTcpPort   = ATS_TCP_DEFAULT_PORT;
+    const char *pszTcpAddr = ATS_TCP_HOST_DEFAULT_ADDR_STR;
+       uint32_t uTcpPort   = ATS_TCP_HOST_DEFAULT_PORT;
 
     LogRel(("Audio: Validation Kit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
             pszTcpAddr, uTcpPort));
@@ -797,6 +809,10 @@ static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
     }
     else
         LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service failed, rc=%Rrc\n", rc));
+
+    /* Try cleaning up a bit. */
+    RTDirRemove(pThis->szPathTemp);
+    RTDirRemove(pThis->szPathOut);
 
     if (RTCritSectIsInitialized(&pThis->CritSect))
     {

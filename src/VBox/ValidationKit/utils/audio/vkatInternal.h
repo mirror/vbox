@@ -280,7 +280,7 @@ typedef struct AUDIOTESTENV
         {
             /** Client connected to the ATS on the guest side. */
             ATSCLIENT       AtsClGuest;
-            /** Client connected to the ATS on the Validation Kit. */
+            /** Client connected to the Validation Kit audio driver ATS. */
             ATSCLIENT       AtsClValKit;
         } Host;
     } u;
@@ -318,6 +318,12 @@ typedef struct SELFTESTCTX
         /** Audio driver to use.
          *  Defaults to the platform's default driver. */
         PCPDMDRVREG  pDrvReg;
+        /** Where to bind the address of the guest ATS instance to.
+         *  Defaults to localhost (127.0.0.1) if empty. */
+        char         szAtsAddr[64];
+        /** Port of the guest ATS instance.
+         *  Defaults to ATS_ALT_PORT if not set. */
+        uint32_t     uAtsPort;
     } Guest;
     struct
     {
@@ -346,6 +352,7 @@ typedef SELFTESTCTX *PSELFTESTCTX;
 /** @name Driver stack
  * @{ */
 void        audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack);
+int         audioTestDriverStackInitEx(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
 int         audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
 int         audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId);
 /** @}  */
@@ -404,7 +411,7 @@ int         audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev);
 
 /** @name Test environment handling
  * @{ */
-int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszTcpAddr, uint32_t uTcpPort);
+int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszHostTcpAddr, uint32_t uHostTcpPort, const char *pszGuestTcpAddr, uint32_t uGuestTcpPort);
 void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
 int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv);
 

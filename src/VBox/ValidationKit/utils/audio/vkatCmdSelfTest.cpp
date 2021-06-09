@@ -43,6 +43,13 @@
 #include "vkatInternal.h"
 
 
+/**
+ * Thread callback for mocking the guest (VM) side of things.
+ *
+ * @returns VBox status code.
+ * @param   hThread             Thread handle.
+ * @param   pvUser              Pointer to user-supplied data.
+ */
 static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread);
@@ -72,10 +79,9 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     PDMAudioPropsInit(&TstCust.TestTone.Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    /* Use ATS_ALT_PORT, as on ATS_DEFAULT_PORT the
-     * Validation Kit audio driver ATS already is running on ATS_DEFAULT_PORT. */
-    rc = audioTestEnvInit(pTstEnv, pCtx->Guest.pDrvReg, pCtx->fWithDrvAudio,
-                          "127.0.0.1", ATS_TCP_ALT_PORT);
+    rc = audioTestEnvInit(pTstEnv, pTstEnv->DrvStack.pDrvReg, pCtx->fWithDrvAudio,
+                          pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
+                          pCtx->Guest.szAtsAddr, pCtx->Guest.uAtsPort);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
@@ -101,10 +107,13 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     /*
      * The self-test does the following:
-     * - 1. Creates an ATS instance to emulate the guest mode ("--mode guest")
-     *      at port 6042 (ATS_ALT_PORT).
+     * - 1. a) Creates an ATS instance to emulate the guest mode ("--mode guest")
+     *         at port 6042 (ATS_TCP_GUEST_DEFAULT_PORT).
+     *      or
+     *      b) Connect to an already existing guest ATS instance if "--guest-ats-address" is specified.
+     *      This makes it more flexible in terms of testing / debugging.
      * - 2. Uses the Validation Kit audio backend, which in turn creates an ATS instance
-     *      at port 6052 (ATS_DEFAULT_PORT).
+     *      at port 6052 (ATS_TCP_HOST_DEFAULT_PORT).
      * - 3. Executes a complete test run locally (e.g. without any guest (VM) involved).
      */
 
@@ -124,7 +133,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
     rc = RTStrCopy(pTstEnv->szTag, sizeof(pTstEnv->szTag), pCtx->szTag);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-host");
+    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-tmp");
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     rc = AudioTestPathCreateTemp(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), "selftest-out");
@@ -132,31 +141,34 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     /*
      * Step 1.
-     * Creates a separate thread for the guest ATS.
      */
-    RTTHREAD hThreadGstAts;
-    rc = RTThreadCreate(&hThreadGstAts, audioTestSelftestGuestAtsThread, pCtx, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-                        "VKATGstAts");
+    RTTHREAD hThreadGstAts = NIL_RTTHREAD;
+
+    bool const fStartGuestAts = RTStrNLen(pCtx->Host.szGuestAtsAddr, sizeof(pCtx->Host.szGuestAtsAddr)) == 0;
+    if (fStartGuestAts)
+    {
+        /* Step 1b. */
+        rc = RTThreadCreate(&hThreadGstAts, audioTestSelftestGuestAtsThread, pCtx, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                            "VKATGstAts");
+        if (RT_SUCCESS(rc))
+            rc = RTThreadUserWait(hThreadGstAts, RT_MS_30SEC);
+    }
+    /* else Step 1a later. */
+
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadUserWait(hThreadGstAts, RT_MS_30SEC);
+        /*
+         * Steps 2 + 3.
+         */
+        pTstEnv->enmMode = AUDIOTESTMODE_HOST;
+
+        rc = audioTestEnvInit(pTstEnv, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */,
+                              pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
+                              pCtx->Host.szGuestAtsAddr, pCtx->Host.uGuestAtsPort);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Steps 2 + 3.
-             */
-            pTstEnv->enmMode = AUDIOTESTMODE_HOST;
-
-            if (!pCtx->Host.uGuestAtsPort)
-                pCtx->Host.uGuestAtsPort = ATS_TCP_ALT_PORT;
-
-            rc = audioTestEnvInit(pTstEnv, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */,
-                                  pCtx->Host.szGuestAtsAddr, pCtx->Host.uGuestAtsPort);
-            if (RT_SUCCESS(rc))
-            {
-                audioTestWorker(pTstEnv, &TstCust);
-                audioTestEnvDestroy(pTstEnv);
-            }
+            audioTestWorker(pTstEnv, &TstCust);
+            audioTestEnvDestroy(pTstEnv);
         }
     }
 
@@ -169,15 +181,17 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     ASMAtomicWriteBool(&g_fTerminate, true);
 
-    int rcThread;
-    int rc2 = RTThreadWait(hThreadGstAts, RT_MS_30SEC, &rcThread);
-    if (RT_SUCCESS(rc2))
-        rc2 = rcThread;
-    if (RT_FAILURE(rc2))
-        RTTestFailed(g_hTest, "Shutting down self test failed with %Rrc\n", rc2);
-
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (fStartGuestAts)
+    {
+        int rcThread;
+        int rc2 = RTThreadWait(hThreadGstAts, RT_MS_30SEC, &rcThread);
+        if (RT_SUCCESS(rc2))
+            rc2 = rcThread;
+        if (RT_FAILURE(rc2))
+            RTTestFailed(g_hTest, "Shutting down guest ATS failed with %Rrc\n", rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Self test failed with %Rrc\n", rc);

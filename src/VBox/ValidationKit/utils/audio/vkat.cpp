@@ -138,8 +138,10 @@ enum
 {
     VKAT_TEST_OPT_COUNT = 900,
     VKAT_TEST_OPT_DEV,
-    VKAT_TEST_OPT_ATS_ADDR,
-    VKAT_TEST_OPT_ATS_PORT,
+    VKAT_TEST_OPT_GUEST_ATS_ADDR,
+    VKAT_TEST_OPT_GUEST_ATS_PORT,
+    VKAT_TEST_OPT_HOST_ATS_ADDR,
+    VKAT_TEST_OPT_HOST_ATS_PORT,
     VKAT_TEST_OPT_MODE,
     VKAT_TEST_OPT_OUTDIR,
     VKAT_TEST_OPT_PAUSE,
@@ -187,25 +189,27 @@ static const RTGETOPTDEF g_aCmdCommonOptions[] =
  */
 static const RTGETOPTDEF g_aCmdTestOptions[] =
 {
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-    { "--drvaudio",         'd',                          RTGETOPT_REQ_NOTHING },
-    { "--exclude",          'e',                          RTGETOPT_REQ_UINT32  },
-    { "--exclude-all",      'a',                          RTGETOPT_REQ_NOTHING },
-    { "--mode",             VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
-    { "--ats-address",      VKAT_TEST_OPT_ATS_ADDR,       RTGETOPT_REQ_STRING  },
-    { "--ats-port",         VKAT_TEST_OPT_ATS_PORT,       RTGETOPT_REQ_UINT32  },
-    { "--include",          'i',                          RTGETOPT_REQ_UINT32  },
-    { "--outdir",           VKAT_TEST_OPT_OUTDIR,         RTGETOPT_REQ_STRING  },
-    { "--count",            VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
-    { "--device",           VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
-    { "--pause",            VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
-    { "--pcm-bit",          VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
-    { "--pcm-chan",         VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
-    { "--pcm-hz",           VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
-    { "--pcm-signed",       VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
-    { "--tag",              VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
-    { "--tempdir",          VKAT_TEST_OPT_TEMPDIR,        RTGETOPT_REQ_STRING  },
-    { "--volume",           VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
+    { "--backend",           'b',                          RTGETOPT_REQ_STRING  },
+    { "--drvaudio",          'd',                          RTGETOPT_REQ_NOTHING },
+    { "--exclude",           'e',                          RTGETOPT_REQ_UINT32  },
+    { "--exclude-all",       'a',                          RTGETOPT_REQ_NOTHING },
+    { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
+    { "--guest-ats-address", VKAT_TEST_OPT_GUEST_ATS_ADDR, RTGETOPT_REQ_STRING  },
+    { "--guest-ats-port",    VKAT_TEST_OPT_GUEST_ATS_PORT, RTGETOPT_REQ_UINT32  },
+    { "--host-ats-address",  VKAT_TEST_OPT_HOST_ATS_ADDR,  RTGETOPT_REQ_STRING  },
+    { "--host-ats-port",     VKAT_TEST_OPT_HOST_ATS_PORT,  RTGETOPT_REQ_UINT32  },
+    { "--include",           'i',                          RTGETOPT_REQ_UINT32  },
+    { "--outdir",            VKAT_TEST_OPT_OUTDIR,         RTGETOPT_REQ_STRING  },
+    { "--count",             VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
+    { "--device",            VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
+    { "--pause",             VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
+    { "--pcm-bit",           VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
+    { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
+    { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
+    { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
+    { "--tag",               VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
+    { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,        RTGETOPT_REQ_STRING  },
+    { "--volume",            VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
 };
 
 /**
@@ -305,23 +309,10 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
     {
         AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->Props);
 
-        PAUDIOTESTENTRY pTst;
-        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Playing test tone", pTstParms, &pTst);
+        PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
+        rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClValKit, pToneParms);
         if (RT_SUCCESS(rc))
-        {
-            PDMAUDIOSTREAMCFG Cfg;
-            RT_ZERO(Cfg);
-            /** @todo Add more parameters here? */
-            Cfg.Props = pTstParms->Props;
-
-            rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
-            if (RT_SUCCESS(rc))
-            {
-                AudioTestSetTestDone(pTst);
-            }
-            else
-                AudioTestSetTestFailed(pTst, rc, "Playing test tone failed");
-        }
+            rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
 
         if (RT_FAILURE(rc))
             RTTestFailed(g_hTest, "Playing tone failed\n");
@@ -345,7 +336,7 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
  */
 static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
 {
-    RT_NOREF(pTstDesc, ppvCtx);
+    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
 
@@ -359,18 +350,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
 #endif
     pTstParmsAcq->idxCurrent  = 0;
 
-    /* Connect to the Validation Kit audio driver ATS. */
-    int rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClValKit,
-                                       "127.0.0.1" /** @todo Make this dynamic. */, ATS_TCP_DEFAULT_PORT);
-    if (RT_SUCCESS(rc))
-    {
-        char szTag[AUDIOTEST_TAG_MAX];
-        rc = RTStrPrintf2(szTag, sizeof(szTag), "%s-valkit", pTstEnv->szTag);
-        if (RT_SUCCESS(rc))
-            rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, szTag);
-    }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -390,27 +370,16 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 #else
         pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
 #endif
-        PAUDIOTESTENTRY pTst;
-        rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone", pTstParms, &pTst);
+        /*
+         * 1. Arm the ValKit ATS with the recording parameters.
+         */
+        rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClValKit, &pTstParms->TestTone);
         if (RT_SUCCESS(rc))
         {
             /*
-             * 1. Arm the ValKit ATS with the recording parameters.
+             * 2. Tell the guest ATS to start recording.
              */
-            rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClValKit, &pTstParms->TestTone);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * 2. Tell the guest ATS to start recording.
-                 */
-                rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
-                if (RT_SUCCESS(rc))
-                {
-                    AudioTestSetTestDone(pTst);
-                }
-                else
-                    AudioTestSetTestFailed(pTst, rc, "Recording test tone failed");
-            }
+            rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
         }
 
         if (RT_FAILURE(rc))
@@ -425,18 +394,9 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
  */
 static DECLCALLBACK(int) audioTestRecordToneDestroy(PAUDIOTESTENV pTstEnv, void *pvCtx)
 {
-    RT_NOREF(pvCtx);
+    RT_NOREF(pTstEnv, pvCtx);
 
-    char szTag[AUDIOTEST_TAG_MAX];
-    int rc = RTStrPrintf2(szTag, sizeof(szTag), "%s-valkit", pTstEnv->szTag);
-    if (RT_SUCCESS(rc))
-        rc = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, szTag);
-
-    int rc2 = AudioTestSvcClientClose(&pTstEnv->u.Host.AtsClValKit);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -549,38 +509,44 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
     }
     else if (pTstEnv->enmMode == AUDIOTESTMODE_HOST)
     {
-        /* Generate tag for the host side. */
-        char szTag[AUDIOTEST_TAG_MAX];
-        rc = RTStrPrintf2(szTag, sizeof(szTag), "%s-host", pTstEnv->szTag);
+        /* Generate tags for the host and guest side. */
+        char szTagHost [AUDIOTEST_TAG_MAX];
+        char szTagGuest[AUDIOTEST_TAG_MAX];
+
+        rc = RTStrPrintf2(szTagHost, sizeof(szTagHost),   "%s-host",  pTstEnv->szTag);
+        AssertRCReturn(rc, rc);
+        rc = RTStrPrintf2(szTagGuest, sizeof(szTagGuest), "%s-guest", pTstEnv->szTag);
         AssertRCReturn(rc, rc);
 
-        /* We have one single test set for all executed tests for now. */
-        rc = AudioTestSetCreate(&pTstEnv->Set, pTstEnv->szPathTemp, szTag);
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Guest test set tag is '%s'\n", szTagGuest);
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Host test set tag is '%s'\n", szTagHost);
+
+        rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, szTagHost);
+        if (RT_SUCCESS(rc))
+            rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, szTagGuest);
+
         if (RT_SUCCESS(rc))
         {
-            rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
-            if (RT_SUCCESS(rc))
+            unsigned uSeq = 0;
+            for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
             {
-                unsigned uSeq = 0;
-                for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
-                {
-                    int rc2 = audioTestOne(pTstEnv, &g_aTests[i], uSeq, pOverrideParms);
-                    if (RT_SUCCESS(rc))
-                        rc = rc2;
-
-                    if (!g_aTests[i].fExcluded)
-                        uSeq++;
-
-                    if (g_fTerminate)
-                        break;
-                }
-
-                int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
+                int rc2 = audioTestOne(pTstEnv, &g_aTests[i], uSeq, pOverrideParms);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
+
+                if (!g_aTests[i].fExcluded)
+                    uSeq++;
+
+                if (g_fTerminate)
+                    break;
             }
 
-            audioTestEnvPrologue(pTstEnv);
+            int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, szTagGuest);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+            rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, szTagHost);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
     }
     else
@@ -597,14 +563,16 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'd':                    return "Go via DrvAudio instead of directly interfacing with the backend";
-        case VKAT_TEST_OPT_DEV:      return "Use the specified audio device";
-        case VKAT_TEST_OPT_ATS_ADDR: return "ATS address (hostname or IP) to connect to";
-        case VKAT_TEST_OPT_ATS_PORT: return "ATS port to connect to. Defaults to 6052 if not set";
-        case VKAT_TEST_OPT_MODE:     return "Specifies the mode this program runs at";
-        case 'e':                    return "Exclude the given test id from the list";
-        case 'a':                    return "Exclude all tests from the list (useful to enable single tests later with --include)";
-        case 'i':                    return "Include the given test id in the list";
+        case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
+        case VKAT_TEST_OPT_DEV:            return "Use the specified audio device";
+        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to.";
+        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6052].";
+        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to.";
+        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052].";
+        case VKAT_TEST_OPT_MODE:           return "Specifies the mode this program runs at";
+        case 'e':                          return "Exclude the given test id from the list";
+        case 'a':                          return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'i':                          return "Include the given test id in the list";
     }
     return NULL;
 }
@@ -631,8 +599,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint8_t     cPcmChannels  = 0;
     uint32_t    uPcmHz        = 0;
     bool        fPcmSigned    = true;
-    const char *pszTcpAddr    = NULL;
-    uint16_t    uTcpPort      = 0;
+
+    const char *pszGuestTcpAddr  = NULL;
+    uint16_t    uGuestTcpPort    = ATS_TCP_GUEST_DEFAULT_PORT;
+    const char *pszValKitTcpAddr = NULL;
+    uint16_t    uValKitTcpPort   = ATS_TCP_HOST_DEFAULT_PORT;
 
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -661,16 +632,20 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 g_aTests[ValueUnion.u32].fExcluded = true;
                 break;
 
-            case VKAT_TEST_OPT_ATS_ADDR:
-                if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Must specify a test mode first!");
-                pszTcpAddr = ValueUnion.psz;
+            case VKAT_TEST_OPT_GUEST_ATS_ADDR:
+                pszGuestTcpAddr = ValueUnion.psz;
                 break;
 
-            case VKAT_TEST_OPT_ATS_PORT:
-                if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Must specify a test mode first!");
-                uTcpPort = ValueUnion.u32;
+            case VKAT_TEST_OPT_GUEST_ATS_PORT:
+                uGuestTcpPort = ValueUnion.u32;
+                break;
+
+            case VKAT_TEST_OPT_HOST_ATS_ADDR:
+                pszValKitTcpAddr = ValueUnion.psz;
+                break;
+
+            case VKAT_TEST_OPT_HOST_ATS_PORT:
+                uValKitTcpPort = ValueUnion.u32;
                 break;
 
             case VKAT_TEST_OPT_MODE:
@@ -753,16 +728,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
     if (TstEnv.enmMode == AUDIOTESTMODE_HOST)
     {
-        /* Use the default port is none is specified. */
-        if (!uTcpPort)
-            uTcpPort = ATS_TCP_DEFAULT_PORT;
-
-        if (!pszTcpAddr)
-            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--ats-address missing\n");
+        if (!pszGuestTcpAddr)
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--guest-ats-address missing\n");
     }
 
     /* For now all tests have the same test environment. */
-    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio, pszTcpAddr, uTcpPort);
+    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio,
+                          pszValKitTcpAddr, uValKitTcpPort,
+                          pszGuestTcpAddr, uGuestTcpPort);
     if (RT_SUCCESS(rc))
     {
         audioTestWorker(&TstEnv, &TstCust);

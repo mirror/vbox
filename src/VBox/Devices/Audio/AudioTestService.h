@@ -24,10 +24,12 @@
 #include "AudioTestServiceInternal.h"
 
 
-/** Default TCP/IP port the ATS (Audio Test Service) is running on. */
-#define ATS_TCP_DEFAULT_PORT        6052
-/** Alternative TCP/IP port the ATS (Audio Test Service) is running on. */
-#define ATS_TCP_ALT_PORT            6042
+/** Default TCP/IP port the host ATS (Audio Test Service) is running on. */
+#define ATS_TCP_HOST_DEFAULT_PORT        6052
+/** Default TCP/IP address the host ATS (Audio Test Service) is running on. */
+#define ATS_TCP_HOST_DEFAULT_ADDR_STR    "127.0.0.1"
+/** Default TCP/IP port the guest ATS (Audio Test Service) is running on. */
+#define ATS_TCP_GUEST_DEFAULT_PORT       6042
 
 /**
  * Structure for keeping an Audio Test Service (ATS) callback table.

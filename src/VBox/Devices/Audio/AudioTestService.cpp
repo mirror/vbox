@@ -904,8 +904,8 @@ int AudioTestSvcInit(PATSSERVER pThis,
     /*
      * Initialize the transport layer.
      */
-    int rc = pThis->pTransport->pfnInit(&pThis->TransportInst, pszBindAddr ? pszBindAddr : "127.0.0.1",
-                                         uBindPort ? uBindPort : ATS_TCP_DEFAULT_PORT);
+    int rc = pThis->pTransport->pfnInit(&pThis->TransportInst, pszBindAddr ? pszBindAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
+                                         uBindPort ? uBindPort : ATS_TCP_HOST_DEFAULT_PORT);
     if (RT_SUCCESS(rc))
     {
         rc = RTCritSectInit(&pThis->CritSectClients);

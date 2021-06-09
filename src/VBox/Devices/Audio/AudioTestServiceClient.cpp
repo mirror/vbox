@@ -293,8 +293,7 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t 
 {
     audioTestSvcClientInit(pClient);
 
-    /* For simplicity we always run on the same port, localhost only. */
-    int rc = RTTcpClientConnect(pszAddr ? pszAddr : "127.0.0.1", uPort == 0 ? ATS_TCP_DEFAULT_PORT : uPort, &pClient->hSock);
+    int rc = RTTcpClientConnect(pszAddr ? pszAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR, uPort == 0 ? ATS_TCP_HOST_DEFAULT_PORT : uPort, &pClient->hSock);
     if (RT_SUCCESS(rc))
     {
         rc = audioTestSvcClientDoGreet(pClient);
