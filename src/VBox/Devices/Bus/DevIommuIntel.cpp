@@ -3910,14 +3910,14 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         pHlp->pfnSSMGetU32(pSSM, &cRegGroups);
         AssertLogRelMsgReturn(cRegGroups == DMAR_MMIO_GROUP_COUNT,
                               ("%s: MMIO group count mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_GROUP_COUNT,
-                               cRegGroups), rcDataErr);
+                               cRegGroups), rcFmtErr);
 
         /* Group 0. */
         uint32_t cbRegs0;
         pHlp->pfnSSMGetU32(pSSM, &cbRegs0);
         AssertLogRelMsgReturn(cbRegs0 == sizeof(pThis->abRegs0),
                               ("%s: MMIO group 0 size mismatch (expected %u got %u)\n", DMAR_LOG_PFX, sizeof(pThis->abRegs0),
-                               cbRegs0), rcDataErr);
+                               cbRegs0), rcFmtErr);
         pHlp->pfnSSMGetMem(pSSM, &pThis->abRegs0[0], cbRegs0);
 
         /* Group 1. */
@@ -3925,7 +3925,7 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         pHlp->pfnSSMGetU32(pSSM, &cbRegs1);
         AssertLogRelMsgReturn(cbRegs1 == sizeof(pThis->abRegs1),
                               ("%s: MMIO group 1 size mismatch (expected %u got %u)\n", DMAR_LOG_PFX, sizeof(pThis->abRegs1),
-                               cbRegs1), rcDataErr);
+                               cbRegs1), rcFmtErr);
         pHlp->pfnSSMGetMem(pSSM, &pThis->abRegs1[0], cbRegs1);
     }
 
