@@ -51,7 +51,7 @@ unload_service "org.virtualbox.additions.vboxservice" "/Library/LaunchDaemons" "
 for user in $(dscl . -list /Users | grep -v -e'^_' -e'root'); do
     system_user="YES"
     test -n "$(dscl . -read /Users/$user NFSHomeDirectory | grep '/Users')" && system_user="NO"
-    if [ "$system_user" = "NO" ]; then 
+    if [ "$system_user" = "NO" ]; then
         unload_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "$user"
     fi
 done
@@ -83,7 +83,7 @@ load_service "org.virtualbox.additions.vboxservice" "/Library/LaunchDaemons" "ro
 for user in $(dscl . -list /Users | grep -v -e'^_' -e'root'); do
     system_user="YES"
     test -n "$(dscl . -read /Users/$user NFSHomeDirectory | grep '/Users')" && system_user="NO"
-    if [ "$system_user" = "NO" ]; then 
+    if [ "$system_user" = "NO" ]; then
         load_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "$user"
     fi
 done
