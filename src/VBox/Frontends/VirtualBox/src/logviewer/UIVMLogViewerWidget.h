@@ -140,6 +140,7 @@ private slots:
         void sltChangeFont(QFont font);
         void sltResetOptionsToDefault();
     /** @} */
+    void sltShowTabBarContextMenu(const QPoint &pos);
 
 private:
 
@@ -174,6 +175,7 @@ private:
 
     /** Returns the newly created log-page using @a strPage filename. */
     void createLogPage(const QString &strFileName,
+                       const QString &strMachineName,
                        const QUuid &machineId, int iLogFileId,
                        const QString &strLogContent, bool noLogsToShow);
 

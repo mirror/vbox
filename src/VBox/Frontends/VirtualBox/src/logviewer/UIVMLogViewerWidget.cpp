@@ -66,8 +66,8 @@ class UILabelTab : public UIVMLogPage
 
 public:
 
-    UILabelTab(QWidget *pParent, const QUuid &uMachineId)
-        : UIVMLogPage(pParent, uMachineId)
+    UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName)
+        : UIVMLogPage(pParent, uMachineId, strMachineName)
     {
     }
 };
@@ -112,6 +112,7 @@ public:
 UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     :QTabBar(pParent)
 {
+    setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void UITabBar::paintEvent(QPaintEvent *pEvent)
@@ -597,6 +598,16 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     saveOptions();
 }
 
+void UIVMLogViewerWidget::sltShowTabBarContextMenu(const QPoint &pos)
+{
+    if (m_pTabWidget && m_pTabWidget->tabBar())
+    {
+        QMenu menu;
+        menu.addAction(tr("Close Other Tabs"));
+        menu.exec(m_pTabWidget->tabBar()->mapToGlobal(pos));
+    }
+}
+
 void UIVMLogViewerWidget::prepare()
 {
     /* Load options: */
@@ -667,6 +678,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pTabWidget);
             connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
+            connect(m_pTabWidget->tabBar(), &QTabBar::customContextMenuRequested,
+                    this, &UIVMLogViewerWidget::sltShowTabBarContextMenu);
         }
 
         /* Create VM Log-Viewer search-panel: */
@@ -903,6 +916,7 @@ QVector<UIVMLogPage*> UIVMLogViewerWidget::logPages()
 }
 
 void UIVMLogViewerWidget::createLogPage(const QString &strFileName,
+                                        const QString &strMachineName,
                                         const QUuid &machineId, int iLogFileId,
                                         const QString &strLogContent, bool noLogsToShow)
 {
@@ -910,7 +924,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName,
         return;
 
     /* Create page-container: */
-    UIVMLogPage* pLogPage = new UIVMLogPage(this, machineId);
+    UIVMLogPage* pLogPage = new UIVMLogPage(this, machineId, strMachineName);
     if (pLogPage)
     {
         connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);
@@ -973,7 +987,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         QString strMachineName = comMachine.GetName();
 
         if (uiCommon().uiType() == UICommon::UIType_SelectorUI)
-            m_pTabWidget->addTab(new UILabelTab(this, uMachineId), strMachineName);
+            m_pTabWidget->addTab(new UILabelTab(this, uMachineId, strMachineName), strMachineName);
 
         bool fNoLogFileForMachine = true;
         for (unsigned iLogFileId = 0; iLogFileId < cMaxLogs; ++iLogFileId)
@@ -983,6 +997,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
             {
                 fNoLogFileForMachine = false;
                 createLogPage(comMachine.QueryLogFilename(iLogFileId),
+                              strMachineName,
                               uMachineId, iLogFileId,
                               strLogContent, false);
             }
@@ -993,7 +1008,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
                                                  "<b>Reload</b> button to reload the log folder "
                                                  "<nobr><b>%2</b></nobr>.</p>")
                                               .arg(strMachineName).arg(comMachine.GetLogFolder()));
-            createLogPage(tr("NoLogFile"), uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
+            createLogPage(tr("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
         }
     }
     m_pTabWidget->blockSignals(false);

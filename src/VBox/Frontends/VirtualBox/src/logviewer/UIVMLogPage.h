@@ -48,12 +48,14 @@ class UIVMLogTab : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    UIVMLogTab(QWidget *pParent, const QUuid &uMachineId);
+    UIVMLogTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
     const QUuid &machineId() const;
+    const QString machineName() const;
 
 private:
 
     QUuid m_uMachineId;
+    QString m_strMachineName;
 };
 
 /** UIVMLogPage defines data and functionalities of the each tab page of a UIVMLogViewerWidget.
@@ -69,7 +71,7 @@ signals:
 
 public:
 
-    UIVMLogPage(QWidget *pParent, const QUuid &uMachineId);
+    UIVMLogPage(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
     ~UIVMLogPage();
 
     /** Returns the width of the current log page. return 0 if there is no current log page: */
