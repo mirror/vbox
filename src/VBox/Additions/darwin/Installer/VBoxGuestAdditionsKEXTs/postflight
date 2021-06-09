@@ -46,7 +46,15 @@ load_service()
 }
 
 unload_service "org.virtualbox.additions.vboxservice" "/Library/LaunchDaemons" "root"
-unload_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "${USER}"
+
+# Remove the old service for all users
+for user in $(dscl . -list /Users | grep -v -e'^_' -e'root'); do
+    system_user="YES"
+    test -n "$(dscl . -read /Users/$user NFSHomeDirectory | grep '/Users')" && system_user="NO"
+    if [ "$system_user" = "NO" ]; then 
+        unload_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "$user"
+    fi
+done
 
 items="VBoxGuest"
 for item in $items; do
@@ -71,7 +79,14 @@ fi
 kextcache -update-volume / || true
 
 load_service "org.virtualbox.additions.vboxservice" "/Library/LaunchDaemons" "root"
-load_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "${USER}"
+# Add VBoxClient for all currently defined users
+for user in $(dscl . -list /Users | grep -v -e'^_' -e'root'); do
+    system_user="YES"
+    test -n "$(dscl . -read /Users/$user NFSHomeDirectory | grep '/Users')" && system_user="NO"
+    if [ "$system_user" = "NO" ]; then 
+        load_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "$user"
+    fi
+done
 
 echo "Warning: If VBoxService adjusts the time backwards (because of --biossystemtimeoffset), the installer may hang."
 echo "Done."

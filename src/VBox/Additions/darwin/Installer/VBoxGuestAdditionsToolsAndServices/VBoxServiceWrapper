@@ -35,5 +35,19 @@ for item in $items; do
     fi
 done
 
+echo "Check if VBoxClient is added for all non-system users"
+for user in $(dscl . -list /Users | grep -v -e'^_' -e'root'); do
+    system_user="YES"
+    test -n "$(dscl . -read /Users/$user NFSHomeDirectory | grep '/Users')" && system_user="NO"
+    if [ "$system_user" = "NO" ]; then
+        loaded="NO"
+        test -n "$(sudo -u "$user" launchctl list | grep 'org.virtualbox.additions.vboxclient')" && loaded="YES"
+        if [ "$loaded" = "NO" ] ; then
+            echo "Loading org.virtualbox.additions.vboxclient for $user"
+            sudo -u "$user" launchctl load -F "/Library/LaunchAgents/org.virtualbox.additions.vboxclient.plist"
+        fi
+    fi
+done
+
 exec "/Library/Application Support/VirtualBox Guest Additions/VBoxService" -f
 
