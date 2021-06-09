@@ -2571,11 +2571,12 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     if (!strErrorMsg.isEmpty())
         formatted.prepend(QString("<p>%1.</p>").arg(uiCommon().emphasize(strErrorMsg)));
     if (!strErrorId.isEmpty())
-        formatted += QString("<table bgcolor=#EEEEEE border=0 cellspacing=5 "
+        formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
                              "cellpadding=0 width=100%>"
-                             "<tr><td>%1</td><td>%2</td></tr>"
-                             "<tr><td>%3</td><td>%4</td></tr>"
+                             "<tr><td>%2</td><td>%3</td></tr>"
+                             "<tr><td>%4</td><td>%5</td></tr>"
                              "</table>")
+                             .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
                              .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"), strErrorId)
                              .arg(tr("Severity: ", "runtime error info"), severity);
     if (!formatted.isEmpty())

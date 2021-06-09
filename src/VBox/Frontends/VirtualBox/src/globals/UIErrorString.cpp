@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QObject>
+#include <QPalette>
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -98,8 +99,9 @@ QString UIErrorString::formatErrorInfo(const CProgress &comProgress)
     if (!comErrorInfo.isNull())
         return formatErrorInfo(comErrorInfo);
     /* Handle NULL error-info otherwise: */
-    return QString("<table bgcolor=#EEEEEE border=0 cellspacing=5 cellpadding=0 width=100%>"
-                   "<tr><td>%1</td><td><tt>%2</tt></td></tr></table>")
+    return QString("<table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>"
+                   "<tr><td>%2</td><td><tt>%3</tt></td></tr></table>")
+                   .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
                    .arg(QApplication::translate("UIErrorString", "Result&nbsp;Code: ", "error info"))
                    .arg(formatRCFull(comProgress.GetResultCode()))
                    .prepend("<!--EOM-->") /* move to details */;
@@ -151,8 +153,8 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
             strFormatted += QString("<p>%1.</p>").arg(uiCommon().emphasize(strDetailsInfo));
     }
 
-    strFormatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=5 "
-                    "cellpadding=0 width=100%>";
+    strFormatted += QString("<!--EOM--><table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>")
+                            .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb));
 
     bool fHaveResultCode = false;
 
