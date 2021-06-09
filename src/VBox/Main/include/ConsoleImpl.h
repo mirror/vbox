@@ -673,8 +673,8 @@ private:
     void    i_resumeAfterConfigChange(PUVM pUVM);
 
     static DECLCALLBACK(int) i_configConstructor(PUVM pUVM, PVM pVM, void *pvConsole);
-    void i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVirtualBox, IMachine *pMachine,
-                             PCFGMNODE pLUN, const char *pszDriverName);
+    void i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, PCFGMNODE pLUN, const char *pszDriverName,
+                             bool fAudioEnabledIn, bool fAudioEnabledOut);
     int i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock);
     int i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int i_configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);

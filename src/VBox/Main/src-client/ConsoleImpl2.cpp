@@ -3217,31 +3217,37 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
             }
 
+            BOOL fAudioEnabledIn = FALSE;
+            hrc = audioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                            H();
+            BOOL fAudioEnabledOut = FALSE;
+            hrc = audioAdapter->COMGETTER(EnabledOut)(&fAudioEnabledOut);                          H();
+
             unsigned idxAudioLun = 0;
 
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-            i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, pszAudioDriver);
+            i_configAudioDriver(virtualBox, pMachine, pLunL0, pszAudioDriver, fAudioEnabledIn, fAudioEnabledOut);
             idxAudioLun++;
 
 #ifdef VBOX_WITH_AUDIO_VRDE
             /* Insert dummy audio driver to have the LUN configured. */
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE");
+            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE", fAudioEnabledIn, fAudioEnabledOut);
             rc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
             AssertRCStmt(rc, throw ConfigError(__FUNCTION__, rc, "mAudioVRDE->InitializeConfig failed"));
             idxAudioLun++;
-#endif /* VBOX_WITH_AUDIO_VRDE */
+#endif
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
             /* Insert dummy audio driver to have the LUN configured. */
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            AudioDriverCfg DrvCfgVideoRec(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVideoRec");
+            AudioDriverCfg DrvCfgVideoRec(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVideoRec",
+                                          false /*a_fEnabledIn*/, true /*a_fEnabledOut*/);
             rc = Recording.mAudioRec->InitializeConfig(&DrvCfgVideoRec);
             AssertRCStmt(rc, throw ConfigError(__FUNCTION__, rc, "Recording.mAudioRec->InitializeConfig failed"));
             idxAudioLun++;
-#endif /* VBOX_WITH_AUDIO_RECORDING */
+#endif
 
             if (fDebugEnabled)
             {
@@ -3262,7 +3268,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 {
 # endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
                     InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-                    i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "DebugAudio");
+                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "DebugAudio", fAudioEnabledIn, fAudioEnabledOut);
                     idxAudioLun++;
 # ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
                 }
@@ -3677,26 +3683,22 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 /**
  * Configures an audio driver via CFGM by getting (optional) values from extra data.
  *
- * @param  pAudioAdapter        Pointer to audio adapter instance. Needed for the driver's input / output configuration.
- * @param  pVirtualBox          Pointer to IVirtualBox instance.
- * @param  pMachine             Pointer to IMachine instance.
- * @param  pLUN                 Pointer to CFGM node of LUN (the driver) to configure.
- * @param  pszDrvName           Name of the driver to configure.
+ * @param   pVirtualBox         Pointer to IVirtualBox instance.
+ * @param   pMachine            Pointer to IMachine instance.
+ * @param   pLUN                Pointer to CFGM node of LUN (the driver) to configure.
+ * @param   pszDrvName          Name of the driver to configure.
+ * @param   fAudioEnabledIn     IAudioAdapter::enabledIn value.
+ * @param   fAudioEnabledOut    IAudioAdapter::enabledOut value.
  *
  * @throws ConfigError or HRESULT on if there is trouble.
  */
-void Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVirtualBox, IMachine *pMachine,
-                                  PCFGMNODE pLUN, const char *pszDrvName)
+void Console::i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, PCFGMNODE pLUN, const char *pszDrvName,
+                                  bool fAudioEnabledIn, bool fAudioEnabledOut)
 {
 #define H()     AssertLogRelMsgStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), \
                                     throw ConfigError(__FUNCTION__, VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR, "line: " RT_XSTR(__LINE__)))
 
     HRESULT hrc;
-
-    BOOL fAudioEnabledIn = FALSE;
-    hrc = pAudioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                            H();
-    BOOL fAudioEnabledOut = FALSE;
-    hrc = pAudioAdapter->COMGETTER(EnabledOut)(&fAudioEnabledOut);                          H();
 
     InsertConfigString(pLUN, "Driver", "AUDIO");
 

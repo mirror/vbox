@@ -33,32 +33,42 @@ using namespace com;
  */
 struct AudioDriverCfg
 {
-    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0, Utf8Str a_strName = "")
+    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0, Utf8Str a_strName = "",
+                   bool a_fEnabledIn = false, bool a_fEnabledOut = false)
         : strDev(a_strDev)
         , uInst(a_uInst)
         , uLUN(a_uLUN)
-        , strName(a_strName) { }
+        , strName(a_strName)
+        , fEnabledIn(a_fEnabledIn)
+        , fEnabledOut(a_fEnabledOut)
+    { }
 
     /** Copy assignment operator. */
     AudioDriverCfg& operator=(AudioDriverCfg const &a_rThat) RT_NOEXCEPT
     {
-        this->strDev  = a_rThat.strDev;
-        this->uInst   = a_rThat.uInst;
-        this->uLUN    = a_rThat.uLUN;
-        this->strName = a_rThat.strName;
+        this->strDev      = a_rThat.strDev;
+        this->uInst       = a_rThat.uInst;
+        this->uLUN        = a_rThat.uLUN;
+        this->strName     = a_rThat.strName;
+        this->fEnabledIn  = a_rThat.fEnabledIn;
+        this->fEnabledOut = a_rThat.fEnabledOut;
 
         return *this;
     }
 
     /** The device name. */
-    Utf8Str              strDev;
+    Utf8Str             strDev;
     /** The device instance. */
-    unsigned             uInst;
+    unsigned            uInst;
     /** The LUN the driver is attached to.
      *  Set the UINT8_MAX if not attached. */
-    unsigned             uLUN;
+    unsigned            uLUN;
     /** The driver name. */
-    Utf8Str              strName;
+    Utf8Str             strName;
+    /** Whether input is enabled. */
+    bool                fEnabledIn;
+    /** Whether output is enabled. */
+    bool                fEnabledOut;
 };
 
 class Console;
