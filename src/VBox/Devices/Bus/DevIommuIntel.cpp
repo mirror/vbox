@@ -3945,7 +3945,7 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     }
 
     /*
-     * Load and verify terminator marker.
+     * Verify terminator marker.
      */
     {
         uint32_t uEndMarker;
