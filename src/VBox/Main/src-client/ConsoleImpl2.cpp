@@ -3698,8 +3698,6 @@ void Console::i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, 
 #define H()     AssertLogRelMsgStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), \
                                     throw ConfigError(__FUNCTION__, VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR, "line: " RT_XSTR(__LINE__)))
 
-    HRESULT hrc;
-
     InsertConfigString(pLUN, "Driver", "AUDIO");
 
     PCFGMNODE pCfg;
@@ -3781,7 +3779,7 @@ void Console::i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, 
     if (strcmp(pszDrvName, "HostAudioWas") == 0)
     {
         Bstr bstrTmp;
-        hrc = pMachine->COMGETTER(Id)(bstrTmp.asOutParam());                                    H();
+        HRESULT hrc = pMachine->COMGETTER(Id)(bstrTmp.asOutParam());                            H();
         InsertConfigString(pCfg, "VmUuid", bstrTmp);
     }
 #endif
@@ -3791,7 +3789,7 @@ void Console::i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, 
         || strcmp(pszDrvName, "PulseAudio") == 0)
     {
         Bstr bstrTmp;
-        hrc = pMachine->COMGETTER(Name)(bstrTmp.asOutParam());                                  H();
+        HRESULT hrc = pMachine->COMGETTER(Name)(bstrTmp.asOutParam());                          H();
         InsertConfigString(pCfg, "VmName", bstrTmp);
     }
 #endif
