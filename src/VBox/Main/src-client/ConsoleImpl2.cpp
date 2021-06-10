@@ -3225,14 +3225,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             unsigned idxAudioLun = 0;
 
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-            i_configAudioDriver(virtualBox, pMachine, pLunL0, pszAudioDriver, fAudioEnabledIn, fAudioEnabledOut);
+            i_configAudioDriver(virtualBox, pMachine, pLunL0, pszAudioDriver, !!fAudioEnabledIn, !!fAudioEnabledOut);
             idxAudioLun++;
 
 #ifdef VBOX_WITH_AUDIO_VRDE
             /* Insert dummy audio driver to have the LUN configured. */
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE", fAudioEnabledIn, fAudioEnabledOut);
+            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE",
+                                      !!fAudioEnabledIn, !!fAudioEnabledOut);
             rc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
             AssertRCStmt(rc, throw ConfigError(__FUNCTION__, rc, "mAudioVRDE->InitializeConfig failed"));
             idxAudioLun++;
@@ -3268,7 +3269,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 {
 # endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
                     InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "DebugAudio", fAudioEnabledIn, fAudioEnabledOut);
+                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "DebugAudio", !!fAudioEnabledIn, !!fAudioEnabledOut);
                     idxAudioLun++;
 # ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
                 }
