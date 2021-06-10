@@ -931,6 +931,8 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                                file <file>|\n"
                      "                                                <devicename>\n"
                      "                            vm-process-priority default|flat|low|normal|high\n"
+                     "                            autostart-enabled on|off\n"
+                     "                            autostart-delay <seconds>\n"
                      "\n", SEP);
     }
 

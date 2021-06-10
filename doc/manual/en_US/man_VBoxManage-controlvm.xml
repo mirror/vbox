@@ -681,6 +681,28 @@
         <arg choice="plain"><replaceable>device-name</replaceable></arg>
       </group>
     </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartenabled">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">autostart-enabled<replaceable>N</replaceable></arg>
+      <group choice="plain">
+        <arg choice="plain">on</arg>
+        <arg choice="plain">off</arg>
+      </group>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartdelay">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">autostart-delay<replaceable>seconds</replaceable></arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
@@ -2093,6 +2115,31 @@
             </para></listitem>
         </varlistentry>
       </variablelist>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-autostartenabled">
+      <title>Enabling autostart the VM during host system boot</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> autostart-enabled</command>
+        command specifies whether to enable or disable automatically
+        start the VM at host system boot-up. You must do some host
+        system configuration before you can use this feature.
+        See <xref linkend="autostart" />. Valid values are
+        <literal>on</literal>, which enables autostart feature for
+        the VM and <literal>off</literal>, which disables it. The
+        default value is <literal>off</literal>.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-autostartdelay">
+      <title>Setting the delay of starting the VM on host system boot</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> autostart-delay</command>
+        command specifies the delay in seconds before the VM starts
+        on host system boot-up. See <xref linkend="autostart" />.
+      </para>
     </refsect2>
   </refsect1>
 

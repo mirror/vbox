@@ -2358,6 +2358,54 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             break;
         }
+        else if (!strncmp(a->argv[1], "autostart-enabled", 17))
+        {
+            if (a->argc != 3)
+            {
+                errorArgument("Incorrect arguments to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            if (!strcmp(a->argv[2], "on"))
+            {
+                CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(TRUE));
+            }
+            else if (!strcmp(a->argv[2], "off"))
+            {
+                CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(FALSE));
+            }
+            else
+            {
+                errorArgument("Invalid value '%s'", Utf8Str(a->argv[2]).c_str());
+                rc = E_FAIL;
+                break;
+            }
+            if (SUCCEEDED(rc))
+                fNeedsSaving = true;
+            break;
+        }
+        else if (!strncmp(a->argv[1], "autostart-delay", 15))
+        {
+            if (a->argc != 3)
+            {
+                errorArgument("Incorrect arguments to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            uint32_t u32;
+            char *pszNext;
+            int vrc = RTStrToUInt32Ex(a->argv[2], &pszNext, 10, &u32);
+            if (RT_FAILURE(vrc) || *pszNext != '\0')
+            {
+                errorArgument("Invalid autostart delay number '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR(sessionMachine, COMSETTER(AutostartDelay)(u32));
+            if (SUCCEEDED(rc))
+                fNeedsSaving = true;
+            break;
+        }
         else
         {
             errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", a->argv[1]);
