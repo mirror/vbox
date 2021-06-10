@@ -21,8 +21,6 @@
 # pragma once
 #endif
 
-#include <VBox/iommu-intel.h>
-
 /** Intel vendor ID for the DMAR unit. */
 #define DMAR_PCI_VENDOR_ID                          0x8086
 /** VirtualBox DMAR unit's device ID. */

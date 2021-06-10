@@ -23,6 +23,7 @@
 #include "VBoxDD.h"
 #include "DevIommuIntel.h"
 
+#include <VBox/iommu-intel.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
@@ -345,7 +346,7 @@ typedef struct DMAR
     /** Copy of VER_REG. */
     uint8_t                     uVerReg;
     /** Alignment. */
-    uint8_t                     abPadding[7];
+    uint8_t                     abPadding0[7];
     /** Copy of CAP_REG. */
     uint64_t                    fCapReg;
     /** Copy of ECAP_REG. */
@@ -360,13 +361,15 @@ typedef struct DMAR
     uint8_t                     cMaxPagingLevel;
     /** DMA request valid permissions mask. */
     uint8_t                     fPermValidMask;
+    /** Alignment. */
+    uint8_t                     abPadding1[6];
 
     /** The event semaphore the invalidation-queue thread waits on. */
     SUPSEMEVENT                 hEvtInvQueue;
-    /** Padding. */
-    uint32_t                    uPadding0;
     /** Error diagnostic. */
     DMARDIAG                    enmDiag;
+    /** Padding. */
+    uint32_t                    uPadding0;
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
 
@@ -555,7 +558,7 @@ typedef struct DMARMEMREQAUX
     uint8_t             fFpd;
     /** The paging level of the translation. */
     uint8_t             cPagingLevel;
-    uint8_t             afPadding[5];
+    uint8_t             abPadding[5];
     /** The address of the first-level page-table.  */
     uint64_t            GCPhysFlPt;
     /** The address of second-level page-table.  */
