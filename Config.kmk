@@ -7037,6 +7037,14 @@ ifdef VBOX_WITH_QTGUI
   endif
  endif
 
+ # WORKAROUND:
+ # Both files included automatically, 1st include is included from 2nd one,
+ # but moc can't include it due to problem with parsing framework structure,
+ # as a result QT_VERSION can't be calculated and it's not only used in our
+ # GUI but by the moc itself to parse modern signal/slot definitions.
+ # We were hardcoding QT_VERSION for TEMPLATE_VBOXQTGUIEXE below for quite
+ # a long, but this have to end.  Instead we can pass both includes manually.
+ TOOL_QT5_MOCFLAGS.darwin    += --include qconfig.h --include qglobal.h
 
  #
  # Template for building Qt GUI executables.
@@ -7049,7 +7057,6 @@ ifdef VBOX_WITH_QTGUI
  TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
  TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
  TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
- TEMPLATE_VBOXQTGUIEXE_MOCDEFS.darwin += QT_VERSION=0x050602
  TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
  TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)
