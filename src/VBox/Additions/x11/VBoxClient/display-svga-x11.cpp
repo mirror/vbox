@@ -498,7 +498,7 @@ static void sendMonitorPositions(RTPOINT *pPositions, size_t cPositions)
     }
     int rc = VbglR3SeamlessSendMonitorPositions(cPositions, pPositions);
     if (RT_SUCCESS(rc))
-        VBClLogError("Sending monitor positions (%u of them)  to the host: %Rrc\n", cPositions, rc);
+        VBClLogInfo("Sending monitor positions (%u of them)  to the host: %Rrc\n", cPositions, rc);
     else
         VBClLogError("Error during sending monitor positions (%u of them)  to the host: %Rrc\n", cPositions, rc);
 }
@@ -537,9 +537,15 @@ static void queryMonitorPositions()
         }
         for (int i = 0; i < iMonitorCount; ++i)
         {
-            int iMonitorID = getMonitorIdFromName(XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name)) - 1;
+            int iMonitorID = getMonitorIdFromName(XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name));
             if (iMonitorID >= x11Context.hOutputCount || iMonitorID == -1)
+            {
+                VBClLogInfo("queryMonitorPositions: skip monitor %d (id %d, %s) (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
+                        i, iMonitorID, XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name),
+                        pMonitorInfo[i].width, pMonitorInfo[i].height,
+                        pMonitorInfo[i].x, pMonitorInfo[i].y);
                 continue;
+            }
             VBClLogInfo("Monitor %d (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
                         i,
                         pMonitorInfo[i].width, pMonitorInfo[i].height,
@@ -1060,7 +1066,8 @@ static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
 
     if (!event || newSize.width != (int)iXRes || newSize.height != (int)iYRes)
     {
-        VBClLogError("Resizing frame buffer to %d %d has failed\n", iXRes, iYRes);
+        VBClLogError("Resizing frame buffer to %d %d has failed, current mode %d %d\n",
+            iXRes, iYRes, newSize.width, newSize.height);
         return false;
     }
     return true;
@@ -1209,6 +1216,7 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     if (!x11Context.pScreenResources)
     {
         XUngrabServer(x11Context.pDisplay);
+        XFlush(x11Context.pDisplay);
         return;
     }
 
@@ -1231,12 +1239,14 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
         {
             VBClLogFatalError("Crtc disable failed %lu\n", pOutputInfo->crtc);
             XUngrabServer(x11Context.pDisplay);
+            XSync(x11Context.pDisplay, False);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
             XRRFreeScreenResources(x11Context.pScreenResources);
 #else
             if (x11Context.pXRRFreeScreenResources)
                 x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
 #endif
+            XFlush(x11Context.pDisplay);
             return;
         }
 #ifdef WITH_DISTRO_XRAND_XINERAMA
@@ -1250,12 +1260,14 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     if (!resizeFrameBuffer(paOutputs))
     {
         XUngrabServer(x11Context.pDisplay);
+        XSync(x11Context.pDisplay, False);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
         XRRFreeScreenResources(x11Context.pScreenResources);
 #else
         if (x11Context.pXRRFreeScreenResources)
             x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
 #endif
+        XFlush(x11Context.pDisplay);
         return;
     }
 
