@@ -231,9 +231,11 @@ typedef struct DRVHOSTAUDIOWAS
     IMMDeviceEnumerator            *pIEnumerator;
     /** The upwards interface. */
     PPDMIHOSTAUDIOPORT              pIHostAudioPort;
-    /** The output device ID, NULL for default. */
+    /** The output device ID, NULL for default.
+     * Protected by DrvHostAudioWasMmNotifyClient::m_CritSect. */
     PRTUTF16                        pwszOutputDevId;
-    /** The input device ID, NULL for default. */
+    /** The input device ID, NULL for default.
+     * Protected by DrvHostAudioWasMmNotifyClient::m_CritSect.  */
     PRTUTF16                        pwszInputDevId;
 
     /** Pointer to the MM notification client instance. */
@@ -1661,6 +1663,122 @@ static DECLCALLBACK(int) drvHostAudioWasHA_GetDevices(PPDMIHOSTAUDIO pInterface,
 
 
 /**
+ * Worker for drvHostAudioWasHA_SetDevice.
+ */
+static int drvHostAudioWasSetDeviceWorker(PDRVHOSTAUDIOWAS pThis, const char *pszId, PRTUTF16 *ppwszDevId, IMMDevice **ppIDevice,
+                                          EDataFlow enmFlow, PDMAUDIODIR enmDir, const char *pszWhat)
+{
+    pThis->pNotifyClient->lockEnter();
+
+    /*
+     * Did anything actually change?
+     */
+    if (    (pszId == NULL) != (*ppwszDevId == NULL)
+        || (   pszId
+            && RTUtf16ICmpUtf8(*ppwszDevId, pszId) != 0))
+    {
+        /*
+         * Duplicate the ID.
+         */
+        PRTUTF16 pwszDevId = NULL;
+        if (pszId)
+        {
+            int rc = RTStrToUtf16(pszId, &pwszDevId);
+            AssertRCReturnStmt(rc, pThis->pNotifyClient->lockLeave(), rc);
+        }
+
+        /*
+         * Try get the device.
+         */
+        IMMDevice *pIDevice = NULL;
+        HRESULT    hrc;
+        if (pwszDevId)
+            hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
+        else
+            hrc = pThis->pIEnumerator->GetDefaultAudioEndpoint(enmFlow, eMultimedia, &pIDevice);
+        LogFlowFunc(("Got device %p (%Rhrc)\n", pIDevice, hrc));
+        if (FAILED(hrc))
+        {
+            LogRel(("WasAPI: Failed to get IMMDevice for %s audio device '%s' (SetDevice): %Rhrc\n",
+                    pszWhat, pszId ? pszId : "{default}", hrc));
+            pIDevice = NULL;
+        }
+
+        /*
+         * Make the switch.
+         */
+        LogRel(("PulseAudio: Changing %s device: '%ls' -> '%s'\n",
+                pszWhat, *ppwszDevId ? *ppwszDevId : L"{Default}", pszId ? pszId : "{Default}"));
+
+        if (*ppIDevice)
+            (*ppIDevice)->Release();
+        *ppIDevice = pIDevice;
+
+        RTUtf16Free(*ppwszDevId);
+        *ppwszDevId = pwszDevId;
+
+        /*
+         * Only notify the driver above us.
+         */
+        PPDMIHOSTAUDIOPORT const pIHostAudioPort = pThis->pIHostAudioPort;
+        pThis->pNotifyClient->lockLeave();
+
+        if (pIHostAudioPort)
+        {
+            LogFlowFunc(("Notifying parent driver about %s device change...\n", pszWhat));
+            pIHostAudioPort->pfnNotifyDeviceChanged(pIHostAudioPort, enmDir, NULL);
+        }
+    }
+    else
+    {
+        pThis->pNotifyClient->lockLeave();
+        LogFunc(("No %s device change\n", pszWhat));
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetDevice}
+ */
+static DECLCALLBACK(int) drvHostAudioWasHA_SetDevice(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir, const char *pszId)
+{
+    PDRVHOSTAUDIOWAS pThis = RT_FROM_MEMBER(pInterface, DRVHOSTAUDIOWAS, IHostAudio);
+
+    /*
+     * Validate and normalize input.
+     */
+    AssertReturn(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszId, VERR_INVALID_POINTER);
+    if (!pszId || !*pszId)
+        pszId = NULL;
+    else
+        AssertReturn(strlen(pszId) < 1024, VERR_INVALID_NAME);
+    LogFunc(("enmDir=%d pszId=%s\n", enmDir, pszId));
+
+    /*
+     * Do the updating.
+     */
+    if (enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        int rc = drvHostAudioWasSetDeviceWorker(pThis, pszId, &pThis->pwszInputDevId, &pThis->pIDeviceInput,
+                                                eCapture, PDMAUDIODIR_IN, "input");
+        AssertRCReturn(rc, rc);
+    }
+
+    if (enmDir == PDMAUDIODIR_OUT || enmDir == PDMAUDIODIR_DUPLEX)
+    {
+        int rc = drvHostAudioWasSetDeviceWorker(pThis, pszId, &pThis->pwszOutputDevId, &pThis->pIDeviceOutput,
+                                                eRender, PDMAUDIODIR_OUT, "output");
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAudioWasHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
@@ -1863,7 +1981,8 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
     PRTUTF16 const pwszDevIdDesc = pwszDevId ? pwszDevId : pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
     if (!pIDevice)
     {
-        /** @todo we can eliminate this too...   */
+        /* This might not strictly be necessary anymore, however it shouldn't
+           hurt and may be useful when using specific devices. */
         HRESULT hrc;
         if (pwszDevId)
             hrc = pThis->pIEnumerator->GetDevice(pwszDevId, &pIDevice);
@@ -2987,7 +3106,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /* IHostAudio */
     pThis->IHostAudio.pfnGetConfig                  = drvHostAudioWasHA_GetConfig;
     pThis->IHostAudio.pfnGetDevices                 = drvHostAudioWasHA_GetDevices;
-    pThis->IHostAudio.pfnSetDevice                  = NULL;
+    pThis->IHostAudio.pfnSetDevice                  = drvHostAudioWasHA_SetDevice;
     pThis->IHostAudio.pfnGetStatus                  = drvHostAudioWasHA_GetStatus;
     pThis->IHostAudio.pfnDoOnWorkerThread           = drvHostAudioWasHA_DoOnWorkerThread;
     pThis->IHostAudio.pfnStreamConfigHint           = drvHostAudioWasHA_StreamConfigHint;
@@ -3010,8 +3129,24 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Validate and read the configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|VmUuid", "");
-    /** @todo make it possible to override the default device selection. */
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|VmUuid|InputDeviceID|OutputDeviceID", "");
+
+    char szTmp[1024];
+    int rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", szTmp, sizeof(szTmp), "");
+    AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"InputDeviceID\" as string: rc=%Rrc\n", rc), rc);
+    if (szTmp[0])
+    {
+        rc = RTStrToUtf16(szTmp, &pThis->pwszInputDevId);
+        AssertRCReturn(rc, rc);
+    }
+
+    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", szTmp, sizeof(szTmp), "");
+    AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"OutputDeviceID\" as string: rc=%Rrc\n", rc), rc);
+    if (szTmp[0])
+    {
+        rc = RTStrToUtf16(szTmp, &pThis->pwszOutputDevId);
+        AssertRCReturn(rc, rc);
+    }
 
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -3020,7 +3155,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Initialize the critical sections early.
      */
-    int rc = RTCritSectRwInit(&pThis->CritSectStreamList);
+    rc = RTCritSectRwInit(&pThis->CritSectStreamList);
     AssertRCReturn(rc, rc);
 
     rc = RTCritSectInit(&pThis->CritSectCache);
