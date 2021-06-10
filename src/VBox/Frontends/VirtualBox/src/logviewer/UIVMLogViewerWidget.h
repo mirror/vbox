@@ -141,7 +141,6 @@ private slots:
         void sltChangeFont(QFont font);
         void sltResetOptionsToDefault();
     /** @} */
-    void sltShowTabBarContextMenu(const QPoint &pos);
     void sltCloseMachineLogs();
     void sltTabCloseButtonClick();
 

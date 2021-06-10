@@ -154,7 +154,6 @@ void UILabelTab::retranslateUi()
 UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     :QTabBar(pParent)
 {
-    setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void UITabBar::paintEvent(QPaintEvent *pEvent)
@@ -311,13 +310,17 @@ void UIVMLogViewerWidget::markLabelTabs()
         if (qobject_cast<UILabelTab*>(m_pTabWidget->widget(i)))
         {
             pTabBar->setTabData(i, true);
-            UIVMLogTab *pTab = logTab(i);
-            if (pTab)
+            /* Add close button only for manager UI. */
+            if (uiCommon().uiType() == UICommon::UIType_SelectorUI)
             {
-                UILogTabCloseButton *pCloseButton = new UILogTabCloseButton(0, pTab->machineId());
-                pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-                pTabBar->setTabButton(i, QTabBar::RightSide, pCloseButton);
-                connect(pCloseButton, &UILogTabCloseButton::clicked, this, &UIVMLogViewerWidget::sltTabCloseButtonClick);
+                UIVMLogTab *pTab = logTab(i);
+                if (pTab)
+                {
+                    UILogTabCloseButton *pCloseButton = new UILogTabCloseButton(0, pTab->machineId());
+                    pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+                    pTabBar->setTabButton(i, QTabBar::RightSide, pCloseButton);
+                    connect(pCloseButton, &UILogTabCloseButton::clicked, this, &UIVMLogViewerWidget::sltTabCloseButtonClick);
+                }
             }
         }
         else
@@ -651,25 +654,6 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     saveOptions();
 }
 
-void UIVMLogViewerWidget::sltShowTabBarContextMenu(const QPoint &pos)
-{
-    if (m_pTabWidget && m_pTabWidget->tabBar())
-    {
-        int iIndex = m_pTabWidget->tabBar()->tabAt(pos);
-        if (iIndex == -1)
-            return;
-        UIVMLogTab *pTab = qobject_cast<UIVMLogTab*>(m_pTabWidget->widget(iIndex));
-        if (!pTab)
-            return;
-        QMenu menu;
-
-        QAction *pCloseAction = menu.addAction(QString("%1 %2").arg(tr("Close Logs of")).arg(pTab->machineName()));
-        pCloseAction->setData(pTab->machineId());
-        connect(pCloseAction, &QAction::triggered, this, &UIVMLogViewerWidget::sltCloseMachineLogs);
-        menu.exec(m_pTabWidget->tabBar()->mapToGlobal(pos));
-    }
-}
-
 void UIVMLogViewerWidget::sltCloseMachineLogs()
 {
     QAction *pAction = qobject_cast<QAction*>(sender());
@@ -765,8 +749,6 @@ void UIVMLogViewerWidget::prepareWidgets()
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pTabWidget);
             connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
-            connect(m_pTabWidget->tabBar(), &QTabBar::customContextMenuRequested,
-                    this, &UIVMLogViewerWidget::sltShowTabBarContextMenu);
         }
 
         /* Create VM Log-Viewer search-panel: */
