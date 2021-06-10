@@ -48,6 +48,7 @@ class QIToolButton;
 class UIMachineListMenu;
 class UIVirtualMachineItem;
 class UIVMLogPage;
+class UIVMLogTab;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerPanel;
@@ -182,10 +183,11 @@ private:
 
     const UIVMLogPage *currentLogPage() const;
     UIVMLogPage *currentLogPage();
-    /** Returns the log page at tab with iIndex if it contains a log page. Return 0 otherwise. */
+    /** Returns the log tab at tab with iIndex if it contains a log page. Return 0 otherwise. */
+    UIVMLogTab *logTab(int iIndex);
     UIVMLogPage *logPage(int iIndex);
     /** Returns a vector of all the log pages of the tab widget. */
-    QVector<UIVMLogPage*> logPages();
+    QVector<UIVMLogTab*> logTabs();
 
     void createLogViewerPages(const QVector<QUuid> &machineList);
     /** Removes the log pages/tabs that shows logs of the machines from @p machineList. */

@@ -120,10 +120,8 @@ UITabBar::UITabBar(QWidget *pParent /* = 0 */)
 
 void UITabBar::paintEvent(QPaintEvent *pEvent)
 {
-
     Q_UNUSED(pEvent);
     QStylePainter painter(this);
-
     for (int i = 0; i < count(); i++)
     {
         QStyleOptionTab opt;
@@ -628,7 +626,9 @@ void UIVMLogViewerWidget::sltCloseMachineLogs()
     QUuid machineId = pAction->data().toUuid();
     if (machineId.isNull())
         return;
-
+    QVector<QUuid> machineList;
+    machineList << machineId;
+    removeLogViewerPages(machineList);
 }
 
 void UIVMLogViewerWidget::prepare()
@@ -924,18 +924,18 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     QWidget::keyPressEvent(pEvent);
 }
 
-QVector<UIVMLogPage*> UIVMLogViewerWidget::logPages()
+QVector<UIVMLogTab*> UIVMLogViewerWidget::logTabs()
 {
-    QVector<UIVMLogPage*> pages;
+    QVector<UIVMLogTab*> tabs;
     if (m_pTabWidget)
-        return pages;
+        return tabs;
     for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
-        UIVMLogPage *pPage = logPage(i);
+        UIVMLogTab *pPage = logTab(i);
         if (pPage)
-            pages << pPage;
+            tabs << pPage;
     }
-    return pages;
+    return tabs;
 }
 
 void UIVMLogViewerWidget::createLogPage(const QString &strFileName,
@@ -983,6 +983,13 @@ UIVMLogPage *UIVMLogViewerWidget::currentLogPage()
     if (!m_pTabWidget)
         return 0;
     return qobject_cast<UIVMLogPage*>(m_pTabWidget->currentWidget());
+}
+
+UIVMLogTab *UIVMLogViewerWidget::logTab(int iIndex)
+{
+    if (!m_pTabWidget)
+        return 0;
+    return qobject_cast<UIVMLogTab*>(m_pTabWidget->widget(iIndex));
 }
 
 UIVMLogPage *UIVMLogViewerWidget::logPage(int iIndex)
@@ -1043,12 +1050,21 @@ void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList
     /* Nothing to do: */
     if (machineList.isEmpty() || !m_pTabWidget)
         return;
+
+    QVector<QUuid> currentMachineList(m_machines);
+    /* Make sure that we remove the machine(s) from our machine list: */
+    foreach (const QUuid &id, machineList)
+        currentMachineList.removeAll(id);
+    if (currentMachineList.isEmpty())
+        return;
+    m_machines = currentMachineList;
+
     m_pTabWidget->blockSignals(true);
     /* Cache log page pointers and tab titles: */
     QVector<QPair<UIVMLogTab*, QString> > logTabs;
     for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
-        UIVMLogTab *pTab = logPage(i);
+        UIVMLogTab *pTab = logTab(i);
         if (pTab)
             logTabs << QPair<UIVMLogTab*, QString>(pTab, m_pTabWidget->tabText(i));
     }
@@ -1070,6 +1086,8 @@ void UIVMLogViewerWidget::removeLogViewerPages(const QVector<QUuid> &machineList
     /* Delete all the other pages: */
     qDeleteAll(pagesToRemove.begin(), pagesToRemove.end());
     m_pTabWidget->blockSignals(false);
+    labelTabHandler();
+    markLabelTabs();
 }
 
 void UIVMLogViewerWidget::removeAllLogPages()
