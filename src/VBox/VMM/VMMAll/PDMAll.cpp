@@ -222,9 +222,6 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
  *                      Cannot be NIL_PCIBDF.
  * @param   pMsi        The MSI to send.
  * @param   uTagSrc     The IRQ tag and source tracer ID.
- *
- * @remarks Atm, don't call this from ring-0. Use the respective R0 device helpers
- *          instead.
  */
 VMM_INT_DECL(void) PDMIoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
