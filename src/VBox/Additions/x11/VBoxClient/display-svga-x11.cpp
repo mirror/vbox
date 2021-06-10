@@ -537,11 +537,21 @@ static void queryMonitorPositions()
         }
         for (int i = 0; i < iMonitorCount; ++i)
         {
-            int iMonitorID = getMonitorIdFromName(XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name));
+            char *pszMonitorName = XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name);
+            if (!pszMonitorName)
+            {
+                VBClLogError("queryMonitorPositions: skip monitor with unknown name %d\n", i);
+                continue;
+            }
+
+            int iMonitorID = getMonitorIdFromName(pszMonitorName);
+            XFree((void *)pszMonitorName);
+            pszMonitorName = NULL;
+
             if (iMonitorID >= x11Context.hOutputCount || iMonitorID == -1)
             {
-                VBClLogInfo("queryMonitorPositions: skip monitor %d (id %d, %s) (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
-                        i, iMonitorID, XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name),
+                VBClLogInfo("queryMonitorPositions: skip monitor %d (id %d) (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
+                        i, iMonitorID,
                         pMonitorInfo[i].width, pMonitorInfo[i].height,
                         pMonitorInfo[i].x, pMonitorInfo[i].y);
                 continue;
