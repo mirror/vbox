@@ -277,6 +277,7 @@ static const struct E1kChips
 
 /*****************************************************************************/
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /** Gets the specfieid bits from the register. */
 #define GET_BITS(reg, bits) ((reg & reg##_##bits##_MASK) >> reg##_##bits##_SHIFT)
 #define GET_BITS_V(val, reg, bits) ((val & reg##_##bits##_MASK) >> reg##_##bits##_SHIFT)
@@ -491,6 +492,7 @@ AssertCompileSize(PBAST, 4);
 #define IPAV     pThis->auRegs[IPAV_IDX]
 #define WUPL     pThis->auRegs[WUPL_IDX]
 /** @} */
+#endif  /* VBOX_DEVICE_STRUCT_TESTCASE */
 
 /**
  * Indices of memory-mapped registers in register table.
