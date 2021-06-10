@@ -660,6 +660,9 @@ static void               ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC
 
 DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 DECLINLINE(void)          ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint64_t cTicksToDeadline);
+
+static void               ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
+                                               PCDBGFINFOHLP pHlp, const char *pszPrefix);
 #endif /* IN_RING3 */
 
 
@@ -1226,39 +1229,6 @@ static void ichac97R3StreamPushToMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSin
 }
 
 
-# ifdef LOG_ENABLED
-static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16_t cBDLE)
-{
-    LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BDLBase, cBDLE));
-    if (!u64BDLBase)
-        return;
-
-    uint32_t cbBDLE = 0;
-    for (uint16_t i = 0; i < cBDLE; i++)
-    {
-        AC97BDLE BDLE;
-        PDMDevHlpPCIPhysRead(pDevIns, u64BDLBase + i * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
-
-# ifndef RT_LITTLE_ENDIAN
-#  error "Please adapt the code (audio buffers are little endian)!"
-# else
-        BDLE.addr    = RT_H2LE_U32(BDLE.addr & ~3);
-        BDLE.ctl_len = RT_H2LE_U32(BDLE.ctl_len);
-#endif
-        LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32 [%RU32 bytes], bup:%RTbool, ioc:%RTbool)\n",
-                  i, BDLE.addr,
-                  BDLE.ctl_len & AC97_BD_LEN_MASK,
-                 (BDLE.ctl_len & AC97_BD_LEN_MASK) << 1, /** @todo r=andy Assumes 16bit samples. */
-                  RT_BOOL(BDLE.ctl_len & AC97_BD_BUP),
-                  RT_BOOL(BDLE.ctl_len & AC97_BD_IOC)));
-
-        cbBDLE += (BDLE.ctl_len & AC97_BD_LEN_MASK) << 1; /** @todo r=andy Ditto. */
-    }
-
-    LogFlowFunc(("Total: %RU32 bytes\n", cbBDLE));
-}
-# endif /* LOG_ENABLED */
-
 /**
  * Updates an AC'97 stream by doing its DMA transfers.
  *
@@ -1688,6 +1658,8 @@ static uint64_t ichac97R3StreamTransferCalcNext(PPDMDEVINS pDevIns, PAC97STREAM 
     if (!cbBytes)
         return 0;
 
+    /** @todo r=bird: Why use microseconds when the timer clock has been using
+     *        nanosecond resolution since early 2005? */
     const uint64_t usBytes        = PDMAudioPropsBytesToMicro(&pStreamCC->State.Cfg.Props, cbBytes);
     const uint64_t cTransferTicks = PDMDevHlpTimerFromMicro(pDevIns, pStream->hTimer, usBytes);
 
@@ -1720,6 +1692,48 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
     Assert(pStreamCC->State.cTransferTicks); /* Paranoia. */
 }
 
+
+/**
+ * Gets the frequency of a given stream.
+ *
+ * @returns The frequency. Zero if invalid stream index.
+ * @param   pThis       The shared AC'97 device state.
+ * @param   idxStream   The stream.
+ */
+DECLINLINE(uint32_t) ichach97R3CalcStreamHz(PAC97STATE pThis, uint8_t idxStream)
+{
+    switch (idxStream)
+    {
+        case AC97SOUNDSOURCE_PI_INDEX:
+            return ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+
+        case AC97SOUNDSOURCE_MC_INDEX:
+            return ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+
+        case AC97SOUNDSOURCE_PO_INDEX:
+            return ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+
+        default:
+            AssertMsgFailedReturn(("%d\n", idxStream), 0);
+    }
+}
+
+
+/**
+ * Gets the PCM properties for a given stream.
+ *
+ * @returns pProps.
+ * @param   pThis       The shared AC'97 device state.
+ * @param   idxStream   Which stream
+ * @param   pProps      Where to return the stream properties.
+ */
+DECLINLINE(PPDMAUDIOPCMPROPS) ichach97R3CalcStreamProps(PAC97STATE pThis, uint8_t idxStream, PPDMAUDIOPCMPROPS pProps)
+{
+    PDMAudioPropsInit(pProps, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/, ichach97R3CalcStreamHz(pThis, idxStream));
+    return pProps;
+}
+
+
 /**
  * Opens an AC'97 stream with its current mixer settings.
  *
@@ -1738,110 +1752,99 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
 static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
                                PAC97STREAMR3 pStreamCC, bool fForce)
 {
-    int                 rc = VINF_SUCCESS;
-    PAUDMIXSINK         pMixSink;
+    /*
+     * Assemble the stream config and get the associate mixer sink.
+     */
+    PDMAUDIOPCMPROPS    PropsTmp;
     PDMAUDIOSTREAMCFG   Cfg;
-    RT_ZERO(Cfg);
+    PDMAudioStrmCfgInitWithProps(&Cfg, ichach97R3CalcStreamProps(pThis, pStream->u8SD, &PropsTmp));
+
+    PAUDMIXSINK         pMixSink;
     switch (pStream->u8SD)
     {
         case AC97SOUNDSOURCE_PI_INDEX:
-        {
-            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
-                              ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
             Cfg.enmPath     = PDMAUDIOPATH_IN_LINE;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Line-In");
 
             pMixSink        = pThisCC->pSinkLineIn;
             break;
-        }
 
         case AC97SOUNDSOURCE_MC_INDEX:
-        {
-            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
-                              ichac97MixerGet(pThis, AC97_MIC_ADC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_IN;
             Cfg.enmPath     = PDMAUDIOPATH_IN_MIC;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Mic-In");
 
             pMixSink        = pThisCC->pSinkMicIn;
             break;
-        }
 
         case AC97SOUNDSOURCE_PO_INDEX:
-        {
-            PDMAudioPropsInit(&Cfg.Props, 2 /*16-bit*/, true /*signed*/, 2 /*stereo*/,
-                              ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate));
             Cfg.enmDir      = PDMAUDIODIR_OUT;
             Cfg.enmPath     = PDMAUDIOPATH_OUT_FRONT;
             RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Output");
 
             pMixSink        = pThisCC->pSinkOut;
             break;
-        }
 
         default:
-            rc = VERR_NOT_SUPPORTED;
-            pMixSink = NULL;
-            break;
+            AssertMsgFailedReturn(("u8SD=%d\n", pStream->u8SD), VERR_INTERNAL_ERROR_3);
     }
 
-    if (RT_SUCCESS(rc))
+    /*
+     * Only (re-)create the stream (and driver chain) if we really have to.
+     * Otherwise avoid this and just reuse it, as this costs performance.
+     */
+    int rc = VINF_SUCCESS;
+    if (   !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
+        || fForce)
     {
-        /* Only (re-)create the stream (and driver chain) if we really have to.
-         * Otherwise avoid this and just reuse it, as this costs performance. */
-        if (   !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
-            || fForce)
+        LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
+                 PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
+
+        LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
+
+        if (Cfg.Props.uHz)
         {
-            LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
-                     PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
+            Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
 
-            LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
-
-            if (Cfg.Props.uHz)
+            /*
+             * Set the stream's timer Hz rate, based on the PCM properties Hz rate.
+             */
+            if (pThis->uTimerHz == AC97_TIMER_HZ_DEFAULT) /* Make sure that we don't have any custom Hz rate set we want to enforce */
             {
-                Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
-
-                /*
-                 * Set the stream's timer Hz rate, based on the PCM properties Hz rate.
-                 */
-                if (pThis->uTimerHz == AC97_TIMER_HZ_DEFAULT) /* Make sure that we don't have any custom Hz rate set we want to enforce */
-                {
-                    if (Cfg.Props.uHz > 44100) /* E.g. 48000 Hz. */
-                        pStreamCC->State.uTimerHz = 200;
-                    else /* Just take the global Hz rate otherwise. */
-                        pStreamCC->State.uTimerHz = pThis->uTimerHz;
-                }
-                else
+                if (Cfg.Props.uHz > 44100) /* E.g. 48000 Hz. */
+                    pStreamCC->State.uTimerHz = 200;
+                else /* Just take the global Hz rate otherwise. */
                     pStreamCC->State.uTimerHz = pThis->uTimerHz;
+            }
+            else
+                pStreamCC->State.uTimerHz = pThis->uTimerHz;
 
-                /* Set scheduling hint (if available). */
-                if (pStreamCC->State.uTimerHz)
-                    Cfg.Device.cMsSchedulingHint = 1000 /* ms */ / pStreamCC->State.uTimerHz;
+            /* Set scheduling hint (if available). */
+            if (pStreamCC->State.uTimerHz)
+                Cfg.Device.cMsSchedulingHint = 1000 /* ms */ / pStreamCC->State.uTimerHz;
 
-                if (pStreamCC->State.pCircBuf)
-                {
-                    RTCircBufDestroy(pStreamCC->State.pCircBuf);
-                    pStreamCC->State.pCircBuf = NULL;
-                }
+            if (pStreamCC->State.pCircBuf)
+            {
+                RTCircBufDestroy(pStreamCC->State.pCircBuf);
+                pStreamCC->State.pCircBuf = NULL;
+            }
 
-                rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
+            rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
+            if (RT_SUCCESS(rc))
+            {
+                pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
+
+                ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
+                rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
                 if (RT_SUCCESS(rc))
-                {
-                    pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
-
-                    ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
-                    rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
-                    if (RT_SUCCESS(rc))
-                        rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
-                }
+                    rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
             }
         }
-        else
-            LogFlowFunc(("[SD%RU8] Skipping (re-)creation\n", pStream->u8SD));
+        LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
     }
-
-    LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
+    else
+        LogFlowFunc(("[SD%RU8] Skipping (re-)creation\n", pStream->u8SD));
     return rc;
 }
 
@@ -2871,12 +2874,12 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                                 /* Fetch the initial BDLE descriptor. */
                                 ichac97R3StreamFetchBDLE(pDevIns, pStream);
 # ifdef LOG_ENABLED
-                                ichac97R3BDLEDumpAll(pDevIns, pStream->Regs.bdbar, pStream->Regs.lvi + 1);
+                                if (LogIsFlowEnabled())
+                                    ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
 # endif
                                 ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
 
                                 /* Arm the timer for this stream. */
-                                /** @todo r=bird: This function returns bool, not VBox status! */
                                 ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
                             }
                         }
@@ -3254,6 +3257,11 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 
 #ifdef IN_RING3
 
+
+/*********************************************************************************************************************************
+*   State Saving & Loading                                                                                                       *
+*********************************************************************************************************************************/
+
 /**
  * Saves (serializes) an AC'97 stream using SSM.
  *
@@ -3424,6 +3432,136 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
 }
 
 
+/*********************************************************************************************************************************
+*   Debug Info Items                                                                                                             *
+*********************************************************************************************************************************/
+
+/** Used by ichac97R3DbgInfoStream and ichac97R3DbgInfoBDL. */
+static int ichac97R3DbgLookupStrmIdx(PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    if (pszArgs && *pszArgs)
+    {
+        int32_t idxStream;
+        int rc = RTStrToInt32Full(pszArgs, 0, &idxStream);
+        if (RT_SUCCESS(rc) && idxStream >= -1 && idxStream < AC97_MAX_STREAMS)
+            return idxStream;
+        pHlp->pfnPrintf(pHlp, "Argument '%s' is not a valid stream number!\n", pszArgs);
+    }
+    return -1;
+}
+
+
+/**
+ * Generic buffer descriptor list dumper.
+ */
+static void ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
+                                 PCDBGFINFOHLP pHlp, const char *pszPrefix)
+{
+    unsigned const cEntries = pStream->Regs.lvi + 1;
+    pHlp->pfnPrintf(pHlp, "%sBDL for stream #%u: @ %#RX32 L %#x:\n", pszPrefix, pStream->u8SD, pStream->Regs.bdbar, cEntries);
+    if (pStream->Regs.bdbar != 0)
+    {
+        /* Read all in one go. */
+        AssertCompile(sizeof(pStream->Regs.lvi) == sizeof(uint8_t));
+        AC97BDLE aBdl[256];
+        RT_ZERO(aBdl);
+        PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl[0]) * cEntries);
+
+        /* Get the audio props for the stream so we can translate the sizes correctly. */
+        PDMAUDIOPCMPROPS Props;
+        ichach97R3CalcStreamProps(pThis, pStream->u8SD, &Props);
+
+        /* Dump them. */
+        uint64_t cbTotal = 0;
+        for (unsigned i = 0; i < cEntries; i++)
+        {
+            aBdl[i].addr    = RT_LE2H_U32(aBdl[i].addr);
+            aBdl[i].ctl_len = RT_LE2H_U32(aBdl[i].ctl_len);
+
+            uint32_t const cb = (aBdl[i].ctl_len & AC97_BD_LEN_MASK) * PDMAudioPropsSampleSize(&Props); /** @todo or frame size? OSDev says frame... */
+            cbTotal += cb;
+
+            char szFlags[64];
+            szFlags[0] = '\0';
+            if (aBdl[i].ctl_len & ~(AC97_BD_LEN_MASK | AC97_BD_IOC | AC97_BD_BUP))
+                RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", aBdl[i].ctl_len & ~AC97_BD_LEN_MASK);
+
+            pHlp->pfnPrintf(pHlp, "%s  BDLE%03u: %#010RX32 L %#06x / LB %#RX32 / %RU64ms%s%s%s\n", pszPrefix, i, aBdl[i].addr,
+                            aBdl[i].ctl_len & AC97_BD_LEN_MASK, cb, PDMAudioPropsBytesToMilli(&Props, cb),
+                            aBdl[i].ctl_len & AC97_BD_IOC ?  " ioc" : "",
+                            aBdl[i].ctl_len & AC97_BD_BUP ?  " bup" : "",
+                            szFlags, !(aBdl[i].addr & 3) ? "" : " !!Addr!!");
+        }
+
+        pHlp->pfnPrintf(pHlp, "%sTotal: %#RX64 bytes (%RU64), %RU64 ms\n", pszPrefix, cbTotal, cbTotal,
+                        PDMAudioPropsBytesToMilli(&Props, cbTotal));
+    }
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, ac97bdl}
+ */
+static DECLCALLBACK(void) ichac97R3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAC97STATE  pThis     = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    int         idxStream = ichac97R3DbgLookupStrmIdx(pHlp, pszArgs);
+    if (idxStream != -1)
+        ichac97R3DbgPrintBdl(pDevIns, pThis, &pThis->aStreams[idxStream], pHlp, "");
+    else
+        for (idxStream = 0; idxStream < AC97_MAX_STREAMS; ++idxStream)
+            ichac97R3DbgPrintBdl(pDevIns, pThis, &pThis->aStreams[idxStream], pHlp, "");
+}
+
+
+/** Worker for ichac97R3DbgInfoStream.    */
+static void ichac97R3DbgPrintStream(PCDBGFINFOHLP pHlp, PAC97STREAM pStream, PAC97STREAMR3 pStreamR3)
+{
+    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
+    pHlp->pfnPrintf(pHlp, "Stream #%d: %s\n", pStream->u8SD,
+                    PDMAudioStrmCfgToString(&pStreamR3->State.Cfg, szTmp, sizeof(szTmp)));
+    pHlp->pfnPrintf(pHlp, "  BDBAR   %#010RX32\n", pStream->Regs.bdbar);
+    pHlp->pfnPrintf(pHlp, "  CIV     %#04RX8\n", pStream->Regs.civ);
+    pHlp->pfnPrintf(pHlp, "  LVI     %#04RX8\n", pStream->Regs.lvi);
+    pHlp->pfnPrintf(pHlp, "  SR      %#06RX16\n", pStream->Regs.sr);
+    pHlp->pfnPrintf(pHlp, "  PICB    %#06RX16\n", pStream->Regs.picb);
+    pHlp->pfnPrintf(pHlp, "  PIV     %#04RX8\n", pStream->Regs.piv);
+    pHlp->pfnPrintf(pHlp, "  CR      %#04RX8\n", pStream->Regs.cr);
+    if (pStream->Regs.bd_valid)
+    {
+        pHlp->pfnPrintf(pHlp, "  BD.ADDR %#010RX32\n", pStream->Regs.bd.addr);
+        pHlp->pfnPrintf(pHlp, "  BD.LEN  %#04RX16\n", (uint16_t)pStream->Regs.bd.ctl_len);
+        pHlp->pfnPrintf(pHlp, "  BD.CTL  %#04RX16\n", (uint16_t)(pStream->Regs.bd.ctl_len >> 16));
+    }
+
+    pHlp->pfnPrintf(pHlp, "  offRead            %#RX64\n", pStreamR3->State.offRead);
+    pHlp->pfnPrintf(pHlp, "  offWrite           %#RX64\n", pStreamR3->State.offWrite);
+    pHlp->pfnPrintf(pHlp, "  uTimerHz           %RU16\n", pStreamR3->State.uTimerHz);
+    pHlp->pfnPrintf(pHlp, "  cTransferTicks     %RU64\n", pStreamR3->State.cTransferTicks);
+    pHlp->pfnPrintf(pHlp, "  cbTransferChunk    %#RX32\n", pStreamR3->State.cbTransferChunk);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, ac97stream}
+ */
+static DECLCALLBACK(void) ichac97R3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAC97STATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATER3 pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
+    int          idxStream = ichac97R3DbgLookupStrmIdx(pHlp, pszArgs);
+    if (idxStream != -1)
+        ichac97R3DbgPrintStream(pHlp, &pThis->aStreams[idxStream], &pThisCC->aStreams[idxStream]);
+    else
+        for (idxStream = 0; idxStream < AC97_MAX_STREAMS; ++idxStream)
+            ichac97R3DbgPrintStream(pHlp, &pThis->aStreams[idxStream], &pThisCC->aStreams[idxStream]);
+}
+
+
+/*********************************************************************************************************************************
+*   PDMIBASE                                                                                                                     *
+*********************************************************************************************************************************/
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -3434,6 +3572,10 @@ static DECLCALLBACK(void *) ichac97R3QueryInterface(struct PDMIBASE *pInterface,
     return NULL;
 }
 
+
+/*********************************************************************************************************************************
+*   PDMDEVREG                                                                                                                    *
+*********************************************************************************************************************************/
 
 /**
  * Powers off the device.
@@ -3881,6 +4023,15 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     }
 
     ichac97R3Reset(pDevIns);
+
+    /*
+     * Info items.
+     */
+    //PDMDevHlpDBGFInfoRegister(pDevIns, "ac97",         "AC'97 registers. (ac97 [register case-insensitive])", ichac97R3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ac97bdl",      "AC'97 buffer descriptor list (BDL). (ac97bdl [stream number])",
+                              ichac97R3DbgInfoBDL);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ac97stream",   "AC'97 stream info. (ac97stream [stream number])", ichac97R3DbgInfoStream);
+    //PDMDevHlpDBGFInfoRegister(pDevIns, "ac97mixer",    "AC'97 mixer state.",                             ichac97R3DbgInfoMixer);
 
     /*
      * Register statistics.
