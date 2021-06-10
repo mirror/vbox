@@ -214,7 +214,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF u
     Assert(PCIBDF_IS_VALID(uBusDevFn));
     Log4(("pdmR3PciHlp_IoApicSendMsi: uBusDevFn=%#x Msi (Addr=%#RX64 Data=%#x) uTagSrc=%#x\n", uBusDevFn,
           pMsi->Addr.u64, pMsi->Data.u32, uTagSrc));
-    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, uBusDevFn, pMsi, uTagSrc);
+    PDMIoApicSendMsi(pDevIns, uBusDevFn, pMsi, uTagSrc);
 }
 
 
@@ -302,7 +302,7 @@ static DECLCALLBACK(void) pdmR3IommuHlp_SendMsi(PPDMDEVINS pDevIns, PCMSIMSG pMs
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlowFunc(("caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
-    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, NIL_PCIBDF, pMsi, uTagSrc);
+    PDMIoApicSendMsi(pDevIns, NIL_PCIBDF, pMsi, uTagSrc);
 }
 
 

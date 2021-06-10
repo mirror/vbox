@@ -217,8 +217,7 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
 /**
  * Send a MSI to an I/O APIC.
  *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The PCI device instance.
  * @param   uBusDevFn   The bus:device:function of the device initiating the MSI.
  *                      Cannot be NIL_PCIBDF.
  * @param   pMsi        The MSI to send.
@@ -227,19 +226,39 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
  * @remarks Atm, don't call this from ring-0. Use the respective R0 device helpers
  *          instead.
  */
-VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
+VMM_INT_DECL(void) PDMIoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
-    /** @todo We should somehow move/make this to ring-3 only, as in ring-0, the helper
-     *        code handles queuing the MSI to be sent from ring-3 when I/O APIC isn't
-     *        available in R0. When this TODO is done, remove the remark in the doxygen
-     *        above. */
-    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
+#ifdef IN_RING0
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+    PCPDMIOAPIC pIoApic = &pGVM->pdm.s.IoApic;
+    if (pIoApic->pDevInsR0)
+        pIoApic->pfnSendMsiR0(pIoApic->pDevInsR0, uBusDevFn, pMsi, uTagSrc);
+    else if (pIoApic->pDevInsR3)
     {
-        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi));
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), uBusDevFn, pMsi, uTagSrc);
-        return VINF_SUCCESS;
+        /* Queue for ring-3 execution. */
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+        if (pTask)
+        {
+            pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SEND_MSI;
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+            pTask->u.IoApicSendMsi.uBusDevFn = uBusDevFn;
+            pTask->u.IoApicSendMsi.Msi       = *pMsi;
+            pTask->u.IoApicSendMsi.uTagSrc   = uTagSrc;
+
+            PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+        }
+        else
+            AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
-    return VERR_PDM_NO_PIC_INSTANCE;
+#else
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PCPDMIOAPIC pIoApic = &pVM->pdm.s.IoApic;
+    if (pIoApic->pDevInsR3)
+    {
+        Assert(pIoApic->pfnSendMsiR3);
+        pIoApic->pfnSendMsiR3(pIoApic->pDevInsR3, uBusDevFn, pMsi, uTagSrc);
+    }
+#endif
 }
 
 
