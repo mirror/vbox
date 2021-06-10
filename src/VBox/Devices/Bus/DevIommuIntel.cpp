@@ -2492,7 +2492,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                             {
                                                 PDMARMEMREQOUT pOut = &pMemReqRemap->Out;
                                                 PCDMARMEMREQIN pIn  = &pMemReqRemap->In;
-                                                pOut->AddrRange.uAddr = pIn->AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
+                                                pOut->AddrRange.uAddr = pIn->AddrRange.uAddr;
                                                 pOut->AddrRange.cb    = pIn->AddrRange.cb;
                                                 pOut->AddrRange.fPerm = DMAR_PERM_ALL;
                                                 return VINF_SUCCESS;
