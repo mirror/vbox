@@ -141,6 +141,7 @@ private slots:
         void sltResetOptionsToDefault();
     /** @} */
     void sltShowTabBarContextMenu(const QPoint &pos);
+    void sltCloseMachineLogs();
 
 private:
 

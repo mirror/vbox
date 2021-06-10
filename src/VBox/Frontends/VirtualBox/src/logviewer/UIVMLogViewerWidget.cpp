@@ -59,7 +59,7 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
-class UILabelTab : public UIVMLogPage
+class UILabelTab : public UIVMLogTab
 {
 
     Q_OBJECT;
@@ -67,9 +67,12 @@ class UILabelTab : public UIVMLogPage
 public:
 
     UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName)
-        : UIVMLogPage(pParent, uMachineId, strMachineName)
+        : UIVMLogTab(pParent, uMachineId, strMachineName)
     {
     }
+
+protected:
+    void retranslateUi(){}
 };
 
 /*********************************************************************************************************************************
@@ -602,10 +605,30 @@ void UIVMLogViewerWidget::sltShowTabBarContextMenu(const QPoint &pos)
 {
     if (m_pTabWidget && m_pTabWidget->tabBar())
     {
+        int iIndex = m_pTabWidget->tabBar()->tabAt(pos);
+        if (iIndex == -1)
+            return;
+        UIVMLogTab *pTab = qobject_cast<UIVMLogTab*>(m_pTabWidget->widget(iIndex));
+        if (!pTab)
+            return;
         QMenu menu;
-        menu.addAction(tr("Close Other Tabs"));
+
+        QAction *pCloseAction = menu.addAction(QString("%1 %2").arg(tr("Close Logs of")).arg(pTab->machineName()));
+        pCloseAction->setData(pTab->machineId());
+        connect(pCloseAction, &QAction::triggered, this, &UIVMLogViewerWidget::sltCloseMachineLogs);
         menu.exec(m_pTabWidget->tabBar()->mapToGlobal(pos));
     }
+}
+
+void UIVMLogViewerWidget::sltCloseMachineLogs()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (!pAction)
+        return;
+    QUuid machineId = pAction->data().toUuid();
+    if (machineId.isNull())
+        return;
+
 }
 
 void UIVMLogViewerWidget::prepare()
