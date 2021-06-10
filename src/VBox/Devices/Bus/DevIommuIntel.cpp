@@ -850,10 +850,6 @@ AssertCompile(RT_ELEMENTS(g_auNdMask) >= DMAR_ND);
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-/** @todo Add IOMMU struct size/alignment verification, see
- *        Devices/testcase/Makefile.kmk and
- *        Devices/testcase/tstDeviceStructSize[RC].cpp  */
-
 /**
  * Returns the supported adjusted guest-address width (SAGAW) given the maximum
  * guest address width (MGAW).

@@ -134,6 +134,10 @@
 # undef LOG_GROUP
 # include "../Bus/DevIommuAmd.cpp"
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+# undef LOG_GROUP
+# include "../Bus/DevIommuIntel.cpp"
+#endif
 
 #include <VBox/vmm/pdmaudioifs.h>
 
@@ -417,6 +421,17 @@ int main()
     CHECK_MEMBER_ALIGNMENT(IOMMU, Status, 8);
 # ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(IOMMU, StatMmioReadR3, 8);
+# endif
+#endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+    CHECK_MEMBER_ALIGNMENT(DMAR, abRegs0, 8);
+    CHECK_MEMBER_ALIGNMENT(DMAR, abRegs1, 8);
+    CHECK_MEMBER_ALIGNMENT(DMAR, uIrtaReg, 8);
+    CHECK_MEMBER_ALIGNMENT(DMAR, uRtaddrReg, 8);
+    CHECK_MEMBER_ALIGNMENT(DMAR, hEvtInvQueue, 8);
+# ifdef VBOX_WITH_STATISTICS
+    CHECK_MEMBER_ALIGNMENT(DMAR, StatMmioReadR3, 8);
+    CHECK_MEMBER_ALIGNMENT(DMAR, StatPasidDevtlbInvDsc, 8);
 # endif
 #endif
 

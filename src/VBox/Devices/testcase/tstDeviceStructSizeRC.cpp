@@ -147,6 +147,10 @@
 # undef LOG_GROUP
 # include "../Bus/DevIommuAmd.cpp"
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+# undef LOG_GROUP
+# include "../Bus/DevIommuIntel.cpp"
+#endif
 
 /* Check that important preprocessor macros didn't get redefined: */
 #if defined(DEBUG)       != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_DEBUG)
@@ -2215,5 +2219,84 @@ int main()
     GEN_CHECK_OFF(IOMMU, StatIntrCacheMiss);
 # endif
 #endif
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+    GEN_CHECK_SIZE(DMAR);
+    GEN_CHECK_OFF(DMAR, idxIommu);
+    GEN_CHECK_OFF(DMAR, abRegs0);
+    GEN_CHECK_OFF(DMAR, abRegs1);
+    GEN_CHECK_OFF(DMAR, uIrtaReg);
+    GEN_CHECK_OFF(DMAR, uRtaddrReg);
+    GEN_CHECK_OFF(DMAR, uVerReg);
+    GEN_CHECK_OFF(DMAR, fCapReg);
+    GEN_CHECK_OFF(DMAR, fExtCapReg);
+    GEN_CHECK_OFF(DMAR, fHawBaseMask);
+    GEN_CHECK_OFF(DMAR, fMgawInvMask);
+    GEN_CHECK_OFF(DMAR, cMaxPagingLevel);
+    GEN_CHECK_OFF(DMAR, fPermValidMask);
+    GEN_CHECK_OFF(DMAR, hEvtInvQueue);
+    GEN_CHECK_OFF(DMAR, enmDiag);
+    GEN_CHECK_OFF(DMAR, hMmio);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(DMAR, StatMmioReadR3);
+    GEN_CHECK_OFF(DMAR, StatMmioReadRZ);
+    GEN_CHECK_OFF(DMAR, StatMmioWriteR3);
+    GEN_CHECK_OFF(DMAR, StatMmioWriteRZ);
+    GEN_CHECK_OFF(DMAR, StatMsiRemapCfiR3);
+    GEN_CHECK_OFF(DMAR, StatMsiRemapCfiRZ);
+    GEN_CHECK_OFF(DMAR, StatMsiRemapRfiR3);
+    GEN_CHECK_OFF(DMAR, StatMsiRemapRfiRZ);
+    GEN_CHECK_OFF(DMAR, StatMemReadR3);
+    GEN_CHECK_OFF(DMAR, StatMemReadRZ);
+    GEN_CHECK_OFF(DMAR, StatMemWriteR3);
+    GEN_CHECK_OFF(DMAR, StatMemWriteRZ);
+    GEN_CHECK_OFF(DMAR, StatMemBulkReadR3);
+    GEN_CHECK_OFF(DMAR, StatMemBulkReadRZ);
+    GEN_CHECK_OFF(DMAR, StatMemBulkWriteR3);
+    GEN_CHECK_OFF(DMAR, StatMemBulkWriteRZ);
+    GEN_CHECK_OFF(DMAR, StatCcInvDsc);
+    GEN_CHECK_OFF(DMAR, StatIotlbInvDsc);
+    GEN_CHECK_OFF(DMAR, StatDevtlbInvDsc);
+    GEN_CHECK_OFF(DMAR, StatIecInvDsc);
+    GEN_CHECK_OFF(DMAR, StatInvWaitDsc);
+    GEN_CHECK_OFF(DMAR, StatPasidIotlbInvDsc);
+    GEN_CHECK_OFF(DMAR, StatPasidCacheInvDsc);
+    GEN_CHECK_OFF(DMAR, StatPasidDevtlbInvDsc);
+# endif
+
+    GEN_CHECK_SIZE(DMARIOPAGE);
+    GEN_CHECK_OFF(DMARIOPAGE, GCPhysBase);
+    GEN_CHECK_OFF(DMARIOPAGE, cShift);
+    GEN_CHECK_OFF(DMARIOPAGE, fPerm);
+
+    GEN_CHECK_SIZE(DMARIOADDRRANGE);
+    GEN_CHECK_OFF(DMARIOADDRRANGE, uAddr);
+    GEN_CHECK_OFF(DMARIOADDRRANGE, cb);
+    GEN_CHECK_OFF(DMARIOADDRRANGE, fPerm);
+
+    GEN_CHECK_SIZE(DMARMEMREQIN);
+    GEN_CHECK_OFF(DMARMEMREQIN, AddrRange);
+    GEN_CHECK_OFF(DMARMEMREQIN, idDevice);
+    GEN_CHECK_OFF(DMARMEMREQIN, Pasid);
+    GEN_CHECK_OFF(DMARMEMREQIN, enmAddrType);
+    GEN_CHECK_OFF(DMARMEMREQIN, enmReqType);
+
+    GEN_CHECK_SIZE(DMARMEMREQOUT);
+    GEN_CHECK_OFF(DMARMEMREQOUT, AddrRange);
+    GEN_CHECK_OFF(DMARMEMREQOUT, idDomain);
+
+    GEN_CHECK_SIZE(DMARMEMREQAUX);
+    GEN_CHECK_OFF(DMARMEMREQAUX, fTtm
+    GEN_CHECK_OFF(DMARMEMREQAUX, fFpd);
+    GEN_CHECK_OFF(DMARMEMREQAUX, cPagingLevel);
+    GEN_CHECK_OFF(DMARMEMREQAUX, GCPhysFlPt);
+    GEN_CHECK_OFF(DMARMEMREQAUX, GCPhysSlPt);
+
+    GEN_CHECK_SIZE(DMARMEMREQREMAP);
+    GEN_CHECK_OFF(DMARMEMREQREMAP, In);
+    GEN_CHECK_OFF(DMARMEMREQREMAP, Aux);
+    GEN_CHECK_OFF(DMARMEMREQREMAP, Out);
+#endif
+
     return (0);
 }
