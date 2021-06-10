@@ -152,6 +152,7 @@ struct X11CONTEXT
     RRMode (*pXRRCreateMode) (Display *, Window, XRRModeInfo *);
     XRROutputInfo* (*pXRRGetOutputInfo) (Display *, XRRScreenResources *, RROutput);
     XRRCrtcInfo* (*pXRRGetCrtcInfo) (Display *, XRRScreenResources *, RRCrtc crtc);
+    void (*pXRRFreeCrtcInfo)(XRRCrtcInfo *);
     void (*pXRRAddOutputMode)(Display *, RROutput, RRMode);
 };
 
@@ -838,6 +839,9 @@ static int openLibRandR()
     *(void **)(&x11Context.pXRRGetCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetCrtcInfo");
     checkFunctionPtrReturn(x11Context.pXRRGetCrtcInfo);
 
+    *(void **)(&x11Context.pXRRFreeCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeCrtcInfo");
+    checkFunctionPtrReturn(x11Context.pXRRFreeCrtcInfo);
+
     *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
     checkFunctionPtrReturn(x11Context.pXRRAddOutputMode);
 
@@ -998,6 +1002,14 @@ static bool disableCRTC(RRCrtc crtcID)
         ret = x11Context.pXRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
                                            CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
 #endif
+
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRFreeCrtcInfo(pCrctInfo);
+#else
+    if (x11Context.pXRRFreeCrtcInfo)
+        x11Context.pXRRFreeCrtcInfo(pCrctInfo);
+#endif
+
     /** @todo  In case of unsuccesful crtc config set  we have to revert frame buffer size and crtc sizes. */
     if (ret == Success)
         return true;
