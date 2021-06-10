@@ -334,8 +334,7 @@ RTDECL(int) RTReqCancel(PRTREQ hReq)
     PRTREQINT pReq = hReq;
     AssertPtrReturn(pReq, VERR_INVALID_HANDLE);
     AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_HANDLE);
-    //AssertMsgReturn(pReq->enmState == RTREQSTATE_ALLOCATED, ("%d\n", pReq->enmState), VERR_RT_REQUEST_STATE);
-    AssertMsgReturn(pReq->uOwner.hQueue && !pReq->pNext && pReq->EventSem != NIL_RTSEMEVENT,
+    AssertMsgReturn(pReq->uOwner.hQueue && pReq->EventSem != NIL_RTSEMEVENT,
                     ("Invalid request package! Anyone cooking their own packages???\n"),
                     VERR_RT_REQUEST_INVALID_PACKAGE);
     AssertMsgReturn(pReq->enmType > RTREQTYPE_INVALID && pReq->enmType < RTREQTYPE_MAX,
