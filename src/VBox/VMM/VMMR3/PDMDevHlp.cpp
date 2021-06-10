@@ -5393,6 +5393,7 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 
         case PDMDEVHLPTASKOP_IOAPIC_SEND_MSI:
         {
+            Assert(pTask->pDevInsR3);
             PDMIoApicSendMsi(pTask->pDevInsR3, pTask->u.IoApicSendMsi.uBusDevFn, &pTask->u.IoApicSendMsi.Msi,
                              pTask->u.IoApicSendMsi.uTagSrc);
             break;

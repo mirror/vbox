@@ -237,7 +237,7 @@ VMM_INT_DECL(void) PDMIoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIM
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SEND_MSI;
-            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+            pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
             pTask->u.IoApicSendMsi.uBusDevFn = uBusDevFn;
             pTask->u.IoApicSendMsi.Msi       = *pMsi;
             pTask->u.IoApicSendMsi.uTagSrc   = uTagSrc;
