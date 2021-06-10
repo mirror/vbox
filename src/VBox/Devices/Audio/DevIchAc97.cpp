@@ -3486,7 +3486,7 @@ static void ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STRE
             if (aBdl[i].ctl_len & ~(AC97_BD_LEN_MASK | AC97_BD_IOC | AC97_BD_BUP))
                 RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", aBdl[i].ctl_len & ~AC97_BD_LEN_MASK);
 
-            pHlp->pfnPrintf(pHlp, "%s  BDLE%03u: %#010RX32 L %#06x / LB %#RX32 / %RU64ms%s%s%s\n", pszPrefix, i, aBdl[i].addr,
+            pHlp->pfnPrintf(pHlp, "%s  BDLE%02u: %#010RX32 L %#06x / LB %#RX32 / %RU64ms%s%s%s%s\n", pszPrefix, i, aBdl[i].addr,
                             aBdl[i].ctl_len & AC97_BD_LEN_MASK, cb, PDMAudioPropsBytesToMilli(&Props, cb),
                             aBdl[i].ctl_len & AC97_BD_IOC ?  " ioc" : "",
                             aBdl[i].ctl_len & AC97_BD_BUP ?  " bup" : "",
