@@ -143,6 +143,7 @@ private slots:
     /** @} */
     void sltShowTabBarContextMenu(const QPoint &pos);
     void sltCloseMachineLogs();
+    void sltTabCloseButtonClick();
 
 private:
 

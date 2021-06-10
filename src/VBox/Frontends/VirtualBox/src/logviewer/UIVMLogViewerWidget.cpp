@@ -59,6 +59,27 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+class UILogTabCloseButton : public QIToolButton
+{
+    Q_OBJECT;
+
+public:
+
+    //UILogTabCloseButton(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
+    UILogTabCloseButton(QWidget *pParent = 0)
+        : QIToolButton(pParent)
+    {
+        setAutoRaise(true);
+        setIcon(UIIconPool::iconSet(":/close_16px.png"));
+    }
+
+protected:
+
+};
+/*********************************************************************************************************************************
+*   UILabelTab definition.                                                                                        *
+*********************************************************************************************************************************/
+
 class UILabelTab : public UIVMLogTab
 {
 
@@ -66,13 +87,11 @@ class UILabelTab : public UIVMLogTab
 
 public:
 
-    UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName)
-        : UIVMLogTab(pParent, uMachineId, strMachineName)
-    {
-    }
+    UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
 
 protected:
-    void retranslateUi(){}
+
+    void retranslateUi();
 };
 
 /*********************************************************************************************************************************
@@ -107,6 +126,19 @@ public:
 
     UITabWidget(QWidget *pParent = 0);
 };
+
+/*********************************************************************************************************************************
+*   UILabelTab implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UILabelTab::UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName)
+    : UIVMLogTab(pParent, uMachineId, strMachineName)
+{
+}
+
+void UILabelTab::retranslateUi()
+{
+}
 
 /*********************************************************************************************************************************
 *   UITabBar implementation.                                                                                        *
@@ -270,9 +302,19 @@ void UIVMLogViewerWidget::markLabelTabs()
     for (int i = 0; i < pTabBar->count(); ++i)
     {
         if (qobject_cast<UILabelTab*>(m_pTabWidget->widget(i)))
+        {
             pTabBar->setTabData(i, true);
+            UILogTabCloseButton *pCloseButton = new UILogTabCloseButton;
+            pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+
+            pTabBar->setTabButton(i, QTabBar::RightSide, pCloseButton);
+            connect(pCloseButton, &UILogTabCloseButton::clicked, this, &UIVMLogViewerWidget::sltTabCloseButtonClick);
+        }
         else
+        {
             pTabBar->setTabData(i, false);
+        }
+
     }
 }
 
@@ -629,6 +671,11 @@ void UIVMLogViewerWidget::sltCloseMachineLogs()
     QVector<QUuid> machineList;
     machineList << machineId;
     removeLogViewerPages(machineList);
+}
+
+void UIVMLogViewerWidget::sltTabCloseButtonClick()
+{
+    printf("UIVMLogViewerWidget::sltTabCloseButtonClick\n");
 }
 
 void UIVMLogViewerWidget::prepare()
