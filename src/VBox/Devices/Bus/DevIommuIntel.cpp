@@ -1290,7 +1290,7 @@ static void dmarInvQueueThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
     PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
-    Log4Func(("\n"));
+    LogFlowFunc(("\n"));
 
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
@@ -3799,7 +3799,7 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_VER_REG, pThis->uVerReg);
     }
 
-    uint8_t const fFlts  = 1;                    /* First-level translation support. */
+    uint8_t const fFlts  = 0;                    /* First-level translation support. */
     uint8_t const fSlts  = 1;                    /* Second-level translation support. */
     uint8_t const fPt    = 1;                    /* Pass-Through support. */
     uint8_t const fSmts  = fFlts & fSlts & fPt;  /* Scalable mode translation support.*/
@@ -3977,6 +3977,8 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
     /*
      * Load and validate software-immutable registers.
+     * The features we had exposed to the guest (in the saved state) must be identical
+     * to what is currently emulated.
      */
     {
         /* VER_REG */
@@ -3986,14 +3988,12 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         AssertLogRelMsgReturn(uVerReg == pThis->uVerReg,
                               ("%s: VER_REG mismatch (expected %#RX32 got %#RX32)\n", DMAR_LOG_PFX, pThis->uVerReg, uVerReg),
                               rcDataErr);
-
         /* CAP_REG */
         uint64_t fCapReg;
         pHlp->pfnSSMGetU64(pSSM, &fCapReg);
         AssertLogRelMsgReturn(fCapReg == pThis->fCapReg,
                               ("%s: CAP_REG mismatch (expected %#RX64 got %#RX64)\n", DMAR_LOG_PFX, pThis->fCapReg, fCapReg),
                               rcDataErr);
-
         /* ECAP_REG */
         uint64_t fExtCapReg;
         pHlp->pfnSSMGetU64(pSSM, &fExtCapReg);
@@ -4012,7 +4012,6 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         AssertLogRelMsgReturn(cRegGroups == DMAR_MMIO_GROUP_COUNT,
                               ("%s: MMIO group count mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_GROUP_COUNT,
                                cRegGroups), rcFmtErr);
-
         /* Group 0. */
         uint32_t cbRegs0;
         pHlp->pfnSSMGetU32(pSSM, &cbRegs0);
@@ -4020,7 +4019,6 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                               ("%s: MMIO group 0 size mismatch (expected %u got %u)\n", DMAR_LOG_PFX, sizeof(pThis->abRegs0),
                                cbRegs0), rcFmtErr);
         pHlp->pfnSSMGetMem(pSSM, &pThis->abRegs0[0], cbRegs0);
-
         /* Group 1. */
         uint32_t cbRegs1;
         pHlp->pfnSSMGetU32(pSSM, &cbRegs1);
@@ -4038,7 +4036,6 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         pHlp->pfnSSMGetU64(pSSM, &pThis->uIrtaReg);
         AssertLogRelMsgReturn(!(pThis->uIrtaReg & ~VTD_IRTA_REG_RW_MASK),
                               ("%s: IRTA_REG reserved bits set %#RX64\n", DMAR_LOG_PFX, pThis->uIrtaReg), rcDataErr);
-
         /* Active RTADDR_REG. */
         pHlp->pfnSSMGetU64(pSSM, &pThis->uRtaddrReg);
         AssertLogRelMsgReturn(!(pThis->uRtaddrReg & ~VTD_RTADDR_REG_RW_MASK),
