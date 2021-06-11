@@ -233,7 +233,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
 
 
 /**
- * @copydoc{FNRTTIMER}
+ * @copydoc FNRTTIMER
  */
 static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
