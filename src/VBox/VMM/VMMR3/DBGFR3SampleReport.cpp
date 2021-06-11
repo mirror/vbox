@@ -252,6 +252,7 @@ static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pv
  * @returns VBox status code.
  * @param   pUVM                    The usermode VM handle.
  * @param   cSampleIntervalUs       The sample interval in micro seconds.
+ * @param   fFlags                  Combination of DBGF_SAMPLE_REPORT_F_XXX.
  * @param   phSample                Where to return the handle to the sample report on success.
  */
 VMMR3DECL(int) DBGFR3SampleReportCreate(PUVM pUVM, uint32_t cSampleIntervalUs, uint32_t fFlags, PDBGFSAMPLEREPORT phSample)
@@ -427,6 +428,7 @@ VMMR3DECL(int) DBGFR3SampleReportStop(DBGFSAMPLEREPORT hSample)
  *
  * @returns VBox status code.
  * @param   hSample                 Sample report handle.
+ * @param   pszFilename             The filename to dump the report to.
  */
 VMMR3DECL(int) DBGFR3SampleReportDumpToFile(DBGFSAMPLEREPORT hSample, const char *pszFilename)
 {
