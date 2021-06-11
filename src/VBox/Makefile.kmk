@@ -28,6 +28,11 @@ ifdef VBOX_ONLY_ADDITIONS
  endif
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
+ ifdef VBOX_WITH_VALIDATIONKIT
+  # For including VKAT with the Guest Additions.
+  include $(PATH_SUB_CURRENT)/ValidationKit/utils/audio/Makefile.kmk
+ endif
+
 else ifdef VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
@@ -110,4 +115,3 @@ endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
