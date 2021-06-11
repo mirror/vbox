@@ -1214,7 +1214,7 @@ typedef enum PDMDEVHLPTASKOP
     PDMDEVHLPTASKOP_IOAPIC_SET_IRQ,
     /** IoApicSendMsi */
     PDMDEVHLPTASKOP_IOAPIC_SEND_MSI,
-    /** IoApicBroadcastEoi */
+    /** IoApicSettEoi */
     PDMDEVHLPTASKOP_IOAPIC_SET_EOI,
     /** The usual 32-bit hack. */
     PDMDEVHLPTASKOP_32BIT_HACK = 0x7fffffff
