@@ -121,12 +121,14 @@ typedef struct HDASTATE
     /** Number of milliseconds to delay kicking off the AIO when a stream starts.
      * @sa InitialDelayMs config value.  */
     uint16_t                msInitialDelay;
-    /** Buffer size (in ms) of the internal input FIFO buffer.
-     *  The actual buffer size in bytes will depend on the actual stream configuration. */
-    uint16_t                cbCircBufInMs;
-    /** Buffer size (in ms) of the internal output FIFO buffer.
-     *  The actual buffer size in bytes will depend on the actual stream configuration. */
-    uint16_t                cbCircBufOutMs;
+    /** Config: Internal input DMA buffer size override, specified in milliseconds.
+     * Zero means default size according to buffer and stream config.
+     * @sa BufSizeInMs config value.  */
+    uint16_t                cMsCircBufIn;
+    /** Config: Internal output DMA buffer size override, specified in milliseconds.
+     * Zero means default size according to buffer and stream config.
+     * @sa BufSizeOutMs config value.  */
+    uint16_t                cMsCircBufOut;
     /** The start time of the wall clock (WALCLK), measured on the virtual sync clock. */
     uint64_t                tsWalClkStart;
     /** CORB DMA task handle.

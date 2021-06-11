@@ -4645,23 +4645,31 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                   "|DebugPathOut",
                                   "");
 
-    /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, 0 /* Default value, if not set. */);
+    /** @devcfgm{hda,BufSizeInMs,uint16_t,0,2000,0,ms}
+     * The size of the DMA buffer for input streams expressed in milliseconds. */
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cMsCircBufIn, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read input buffer size (ms) as unsigned integer"));
+                                N_("HDA configuration error: failed to read 'BufSizeInMs' as 16-bit unsigned integer"));
+    if (pThis->cMsCircBufIn > 2000)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
+                                N_("HDA configuration error: 'BufSizeInMs' is out of bound, max 2000 ms"));
 
-    /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, 0 /* Default value, if not set. */);
+    /** @devcfgm{hda,BufSizeOutMs,uint16_t,0,2000,0,ms}
+     * The size of the DMA buffer for output streams expressed in milliseconds. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cMsCircBufOut, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read output buffer size (ms) as unsigned integer"));
+                                N_("HDA configuration error: failed to read 'BufSizeOutMs' as 16-bit unsigned integer"));
+    if (pThis->cMsCircBufOut > 2000)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
+                                N_("HDA configuration error: 'BufSizeOutMs' is out of bound, max 2000 ms"));
 
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    /** @todo uTimerHz isn't used for anything anymore. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
-
     if (pThis->uTimerHz != HDA_TIMER_HZ_DEFAULT)
         LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
@@ -4679,27 +4687,27 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("HDA configuration error: Out of range: 0 <= InitialDelayMs < 256: %u"), pThis->msInitialDelay);
 
+    /** @todo fPosAdjustEnabled is not honored anymore.   */
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read position adjustment enabled as boolean"));
-
     if (!pThis->fPosAdjustEnabled)
         LogRel(("HDA: Position adjustment is disabled\n"));
 
+    /** @todo cPosAdjustFrames is not consulted anymore.   */
     rc = pHlp->pfnCFGMQueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read position adjustment frames as unsigned integer"));
-
     if (pThis->cPosAdjustFrames)
         LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
 
+    /** @todo fTransferHeuristicsEnabled is not used anymore.   */
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TransferHeuristicsEnabled", &pThis->fTransferHeuristicsEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read data transfer heuristics enabled as boolean"));
-
     if (!pThis->fTransferHeuristicsEnabled)
         LogRel(("HDA: Data transfer heuristics are disabled\n"));
 
@@ -4712,7 +4720,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read debugging output path flag as string"));
-
     if (pThisCC->Dbg.fEnabled)
         LogRel2(("HDA: Debug output will be saved to '%s'\n", pThisCC->Dbg.pszOutPath));
 
