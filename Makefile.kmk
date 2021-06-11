@@ -1340,6 +1340,7 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \
 		'--exclude=src/VBox/Devices/**' \
+		'--include=src/VBox/Devices/Audio/**' \
 		'--exclude=src/VBox/Disassembler/**' \
 		'--exclude=src/VBox/ExtPacks/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1352,6 +1353,7 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/RDP/**' \
 		'--exclude=src/VBox/Storage/**' \
 		'--exclude=src/VBox/ValidationKit/**' \
+		'--include=src/VBox/ValidationKit/utils/audio/**' \
 		'--exclude=src/VBox/VMM/**' \
 		'--exclude=src/apps/**' \
 		'--exclude=src/recompiler/**' \
@@ -1369,6 +1371,7 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \
 		'--exclude=src/VBox/Devices/**' \
+		'--include=src/VBox/Devices/Audio/**' \
 		'--exclude=src/VBox/Disassembler/**' \
 		'--exclude=src/VBox/ExtPacks/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1381,6 +1384,7 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/VBox/RDP/**' \
 		'--exclude=src/VBox/Storage/**' \
 		'--exclude=src/VBox/ValidationKit/**' \
+		'--include=src/VBox/ValidationKit/utils/audio/**' \
 		'--exclude=src/VBox/VMM/**' \
 		'--exclude=src/apps/**' \
 		'--exclude=src/recompiler/**' \
@@ -2056,4 +2060,3 @@ quick: \
 	$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win",VBoxProxyStub,) \
 	$(if-expr defined(VBOX_WITH_SDS),VBoxSDS,) \
 	$(if-expr defined(VBOX_WITH_QTGUI),VirtualBox,)
-
