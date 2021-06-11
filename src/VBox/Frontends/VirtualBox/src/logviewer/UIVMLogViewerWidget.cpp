@@ -310,7 +310,7 @@ void UIVMLogViewerWidget::markLabelTabs()
         if (qobject_cast<UILabelTab*>(m_pTabWidget->widget(i)))
         {
             pTabBar->setTabData(i, true);
-            /* Add close button only for manager UI. */
+            /* Add close button only for dialog mode in manager UI. */
             if (uiCommon().uiType() == UICommon::UIType_SelectorUI && m_enmEmbedding == EmbedTo_Dialog)
             {
                 UIVMLogTab *pTab = logTab(i);
