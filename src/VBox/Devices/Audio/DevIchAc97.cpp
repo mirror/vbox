@@ -308,7 +308,8 @@ typedef struct AC97BDLE
 {
     /** Location of data buffer (bits 31:1). */
     uint32_t                addr;
-    /** Flags (bits 31 + 30) and length (bits 15:0) of data buffer (in audio samples). */
+    /** Flags (bits 31 + 30) and length (bits 15:0) of data buffer (in audio samples).
+     * @todo split up into two 16-bit fields.  */
     uint32_t                ctl_len;
 } AC97BDLE;
 AssertCompileSize(AC97BDLE, 8);
@@ -1809,12 +1810,68 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
     }
 
     /*
+     * Read the buffer descriptors and check what the max distance between
+     * interrupts are, so we can more correctly size the internal DMA buffer.
+     *
+     * Note! The buffer list are not fixed once the stream starts running as
+     *       with HDA, so this is just a general idea of what the guest is
+     *       up to and we cannot really make much of a plan out of it.
+     */
+    AC97BDLE aBdl[AC97_MAX_BDLE];
+    RT_ZERO(aBdl);
+    unsigned const cBuffers = pStream->Regs.lvi + 1;
+    PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl[0]) * cBuffers);
+
+    uint32_t cSamplesMax   = 0;
+    uint32_t cSamplesMin   = UINT32_MAX;
+    uint32_t cSamplesCur   = 0;
+    uint32_t cSamplesTotal = 0;
+    for (unsigned i = 0; i < cBuffers; i++)
+    {
+        cSamplesCur   += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
+        cSamplesTotal += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
+        if (aBdl[0].ctl_len & AC97_BD_IOC)
+        {
+            if (cSamplesCur > cSamplesMax)
+                cSamplesMax = cSamplesCur;
+            if (cSamplesCur < cSamplesMin)
+                cSamplesMin = cSamplesCur;
+            cSamplesCur = 0;
+        }
+    }
+
+    if (cSamplesCur && cSamplesMax != 0)
+    {
+        LogFlowFunc(("Tail buffer w/o IOC, loops.\n"));
+        for (unsigned i = 0; i < cBuffers; i++)
+        {
+            cSamplesCur += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
+            if (aBdl[0].ctl_len & AC97_BD_IOC)
+            {
+                if (cSamplesCur > cSamplesMax)
+                    cSamplesMax = cSamplesCur;
+                if (cSamplesCur < cSamplesMin)
+                    cSamplesMin = cSamplesCur;
+                cSamplesCur = 0;
+                break;
+            }
+        }
+    }
+
+    uint32_t const cbDmaMinBuf  = cSamplesMax * PDMAudioPropsSampleSize(&Cfg.Props) * 3; /* see further down */
+    uint32_t const cMsDmaMinBuf = PDMAudioPropsBytesToMilli(&Cfg.Props, cbDmaMinBuf);
+    LogRel3(("AC97: [SD%RU8] buffer length stats: total=%#x in %u buffers, min=%#x, max=%#x => min DMA buffer %u ms / %#x bytes\n",
+                 pStream->u8SD, cSamplesTotal, cBuffers, cSamplesMin, cSamplesMax, cMsDmaMinBuf, cbDmaMinBuf));
+
+    /*
      * Only (re-)create the stream (and driver chain) if we really have to.
      * Otherwise avoid this and just reuse it, as this costs performance.
      */
     int rc = VINF_SUCCESS;
-    if (   !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
-        || fForce)
+    if (   fForce
+        || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
+        || !pStreamCC->State.pCircBuf
+        || cbDmaMinBuf > RTCircBufSize(pStreamCC->State.pCircBuf))
     {
         LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
                  PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
@@ -1861,20 +1918,20 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
              * transfer data thru the stack, we don't need to go overboard and double
              * the minimums here.  The less buffer the less possible delay can build when
              * TM is doing catch up.
-             *
-             * Unlike the HDA code, we currently do not have any knowledge of the buffer
-             * timinings, so we only have the scheduling hint to work with.
              */
-            uint32_t const cMsCircBuf = RT_MAX(Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut,
-                                               Cfg.Device.cMsSchedulingHint * 3);
-            uint32_t const cbCircBuf  = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
+            uint32_t cMsCircBuf = Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut;
+            cMsCircBuf = RT_MAX(cMsCircBuf, cMsDmaMinBuf);
+            cMsCircBuf = RT_MAX(cMsCircBuf, Cfg.Device.cMsSchedulingHint * 3);
+            cMsCircBuf = RT_MIN(cMsCircBuf, RT_MS_1SEC * 2); /** @todo make sure the DMA timer doesn't go over 500ms (use uTimerHz as max, really). */
+            uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
 
             if (pStreamCC->State.pCircBuf && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
                 RTCircBufReset(pStreamCC->State.pCircBuf);
             else
             {
-                LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x)\n",
-                             cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize));
+                LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x); cMsSchedulingHint=%u cMsDmaMinBuf=%u cMsCircBufXxx=%u\n",
+                             cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize, Cfg.Device.cMsSchedulingHint, cMsDmaMinBuf,
+                             Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut));
                 if (pStreamCC->State.pCircBuf)
                     RTCircBufDestroy(pStreamCC->State.pCircBuf);
 
