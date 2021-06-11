@@ -43,10 +43,6 @@
 #include "vkatInternal.h"
 
 
-/*********************************************************************************************************************************
-*   Command: play                                                                                                                *
-*********************************************************************************************************************************/
-
 /**
  * Worker for audioTestPlayOne implementing the play loop.
  */
@@ -449,4 +445,293 @@ RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t c
         rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
     return rcExit;
 }
+
+
+/*********************************************************************************************************************************
+*   Command: play                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Options for 'play'.
+ */
+static const RTGETOPTDEF g_aCmdPlayOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
+    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
+    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
+    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
+    { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
+};
+
+/** The 'play' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'c': return "Number of backend output channels";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'f': return "Output frequency (Hz)";
+        case 'z': return "Output sample size (bits)";
+        case 'm': return "Go via the mixer.";
+        case 'o': return "The ID of the output device to use.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * The 'play' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
+{
+    /* Option values: */
+    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    uint32_t    cMsBufferSize       = UINT32_MAX;
+    uint32_t    cMsPreBuffer        = UINT32_MAX;
+    uint32_t    cMsSchedulingHint   = UINT32_MAX;
+    const char *pszDevId            = NULL;
+    bool        fWithDrvAudio       = false;
+    bool        fWithMixer          = false;
+    uint8_t     cbSample            = 0;
+    uint8_t     cChannels           = 0;
+    uint32_t    uHz                 = 0;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'c':
+                cChannels = ValueUnion.u8;
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
+            case 'f':
+                uHz = ValueUnion.u32;
+                break;
+
+            case 'm':
+                fWithMixer = true;
+                break;
+
+            case 'o':
+                pszDevId = ValueUnion.psz;
+                break;
+
+            case 'z':
+                cbSample = ValueUnion.u8 / 8;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
+                                                     cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+const VKATCMD g_cmdPlay =
+{
+    "play",     audioTestCmdPlayHandler,
+    "Plays one or more wave files.",
+    g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
+};
+
+
+/*********************************************************************************************************************************
+*   Command: rec                                                                                                                 *
+*********************************************************************************************************************************/
+
+/**
+ * Options for 'rec'.
+ */
+static const RTGETOPTDEF g_aCmdRecOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
+    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
+    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
+    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
+    { "--input-device",     'i',                          RTGETOPT_REQ_STRING  },
+    { "--wav-channels",     'C',                          RTGETOPT_REQ_UINT8 },
+    { "--wav-hz",           'F',                          RTGETOPT_REQ_UINT32 },
+    { "--wav-frequency",    'F',                          RTGETOPT_REQ_UINT32 },
+    { "--wav-sample-size",  'Z',                          RTGETOPT_REQ_UINT8 },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
+    { "--max-frames",       'r',                          RTGETOPT_REQ_UINT64 },
+    { "--max-sec",          's',                          RTGETOPT_REQ_UINT64 },
+    { "--max-seconds",      's',                          RTGETOPT_REQ_UINT64 },
+    { "--max-ms",           't',                          RTGETOPT_REQ_UINT64 },
+    { "--max-milliseconds", 't',                          RTGETOPT_REQ_UINT64 },
+    { "--max-ns",           'T',                          RTGETOPT_REQ_UINT64 },
+    { "--max-nanoseconds",  'T',                          RTGETOPT_REQ_UINT64 },
+};
+
+/** The 'rec' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'c': return "Number of backend input channels";
+        case 'C': return "Number of wave-file channels";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'f': return "Input frequency (Hz)";
+        case 'F': return "Wave-file frequency (Hz)";
+        case 'z': return "Input sample size (bits)";
+        case 'Z': return "Wave-file sample size (bits)";
+        case 'm': return "Go via the mixer.";
+        case 'i': return "The ID of the input device to use.";
+        case 'r': return "Max recording duration in frames.";
+        case 's': return "Max recording duration in seconds.";
+        case 't': return "Max recording duration in milliseconds.";
+        case 'T': return "Max recording duration in nanoseconds.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * The 'play' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
+{
+    /* Option values: */
+    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    uint32_t    cMsBufferSize       = UINT32_MAX;
+    uint32_t    cMsPreBuffer        = UINT32_MAX;
+    uint32_t    cMsSchedulingHint   = UINT32_MAX;
+    const char *pszDevId            = NULL;
+    bool        fWithDrvAudio       = false;
+    bool        fWithMixer          = false;
+    uint8_t     cbSample            = 0;
+    uint8_t     cChannels           = 0;
+    uint32_t    uHz                 = 0;
+    uint8_t     cbWaveSample        = 0;
+    uint8_t     cWaveChannels       = 0;
+    uint32_t    uWaveHz             = 0;
+    uint64_t    cMaxFrames          = UINT64_MAX;
+    uint64_t    cNsMaxDuration      = UINT64_MAX;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'c':
+                cChannels = ValueUnion.u8;
+                break;
+
+            case 'C':
+                cWaveChannels = ValueUnion.u8;
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
+            case 'f':
+                uHz = ValueUnion.u32;
+                break;
+
+            case 'F':
+                uWaveHz = ValueUnion.u32;
+                break;
+
+            case 'i':
+                pszDevId = ValueUnion.psz;
+                break;
+
+            case 'm':
+                fWithMixer = true;
+                break;
+
+            case 'r':
+                cMaxFrames = ValueUnion.u64;
+                break;
+
+            case 's':
+                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1SEC ? UINT64_MAX : ValueUnion.u64 * RT_NS_1SEC;
+                break;
+
+            case 't':
+                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1MS  ? UINT64_MAX : ValueUnion.u64 * RT_NS_1MS;
+                break;
+
+            case 'T':
+                cNsMaxDuration = ValueUnion.u64;
+                break;
+
+            case 'z':
+                cbSample = ValueUnion.u8 / 8;
+                break;
+
+            case 'Z':
+                cbWaveSample = ValueUnion.u8 / 8;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit = audioTestRecOne(ValueUnion.psz, cWaveChannels, cbWaveSample, uWaveHz,
+                                                    pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint,
+                                                    cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer,
+                                                    cMaxFrames, cNsMaxDuration);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+const VKATCMD g_cmdRec =
+{
+    "rec",      audioTestCmdRecHandler,
+    "Records audio to a wave file.",
+    g_aCmdRecOptions,       RT_ELEMENTS(g_aCmdRecOptions),      audioTestCmdRecHelp,
+};
 

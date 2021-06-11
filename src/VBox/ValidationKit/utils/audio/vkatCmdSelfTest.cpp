@@ -199,3 +199,139 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
     return RT_SUCCESS(rc) ?  RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+
+/*********************************************************************************************************************************
+*   Command: selftest                                                                                                            *
+*********************************************************************************************************************************/
+
+/**
+ * Long option values for the 'selftest' command.
+ */
+enum
+{
+    VKAT_SELFTEST_OPT_ATS_GUEST_ADDR = 900,
+    VKAT_SELFTEST_OPT_ATS_GUEST_PORT,
+    VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR,
+    VKAT_SELFTEST_OPT_ATS_VALKIT_PORT
+};
+
+/**
+ * Command line parameters for self-test mode.
+ */
+static const RTGETOPTDEF s_aCmdSelftestOptions[] =
+{
+    { "--ats-guest-addr",   VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
+    { "--ats-guest-port",   VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
+    { "--ats-valkit-addr",  VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
+    { "--ats-valkit-port",  VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
+    { "--exclude-all",      'a',                                RTGETOPT_REQ_NOTHING },
+    { "--backend",          'b',                                RTGETOPT_REQ_STRING  },
+    { "--with-drv-audio",   'd',                                RTGETOPT_REQ_NOTHING },
+    { "--exclude",          'e',                                RTGETOPT_REQ_UINT32  },
+    { "--include",          'i',                                RTGETOPT_REQ_UINT32  }
+};
+
+/** the 'selftest' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        default:  return NULL;
+    }
+}
+
+/**
+ * The 'selftest' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
+{
+    SELFTESTCTX Ctx;
+    RT_ZERO(Ctx);
+
+    /* Go with the platform's default bakcend if nothing else is specified. */
+    Ctx.Guest.pDrvReg = g_aBackends[0].pDrvReg;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case VKAT_SELFTEST_OPT_ATS_GUEST_ADDR:
+                rc = RTStrCopy(Ctx.Host.szGuestAtsAddr, sizeof(Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
+                break;
+
+            case VKAT_SELFTEST_OPT_ATS_GUEST_PORT:
+                Ctx.Host.uGuestAtsPort = ValueUnion.u32;
+                break;
+
+            case VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR:
+                rc = RTStrCopy(Ctx.Host.szValKitAtsAddr, sizeof(Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
+                break;
+
+            case VKAT_SELFTEST_OPT_ATS_VALKIT_PORT:
+                Ctx.Host.uValKitAtsPort = ValueUnion.u32;
+                break;
+
+            case 'a':
+                for (unsigned i = 0; i < g_cTests; i++)
+                    g_aTests[i].fExcluded = true;
+                break;
+
+            case 'b':
+                Ctx.Guest.pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (Ctx.Guest.pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'd':
+                Ctx.fWithDrvAudio = true;
+                break;
+
+            case 'e':
+                if (ValueUnion.u32 >= g_cTests)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --exclude", ValueUnion.u32);
+                g_aTests[ValueUnion.u32].fExcluded = true;
+                break;
+
+            case 'i':
+                if (ValueUnion.u32 >= g_cTests)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --include", ValueUnion.u32);
+                g_aTests[ValueUnion.u32].fExcluded = false;
+                break;
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Start testing.
+     */
+    RTTestBanner(g_hTest);
+
+    int rc2 = audioTestDoSelftest(&Ctx);
+    if (RT_FAILURE(rc2))
+        RTTestFailed(g_hTest, "Self test failed with rc=%Rrc", rc2);
+
+    /*
+     * Print summary and exit.
+     */
+    return RTTestSummaryAndDestroy(g_hTest);
+}
+
+const VKATCMD g_cmdSelfTest =
+{
+    "selftest", audioTestCmdSelftestHandler,
+    "Performs self-tests.",
+    s_aCmdSelftestOptions,  RT_ELEMENTS(s_aCmdSelftestOptions), audioTestCmdSelftestHelp,
+};
+

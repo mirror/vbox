@@ -177,8 +177,6 @@ struct
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
-
-
 /**
  * Enumeration specifying the current audio test mode.
  */
@@ -345,9 +343,45 @@ typedef struct SELFTESTCTX
 /** Pointer to a VKAT self test context. */
 typedef SELFTESTCTX *PSELFTESTCTX;
 
+/**
+ * Structure for defining a single VKAT command.
+ */
+typedef struct VKATCMD
+{
+    /** The command name. */
+    const char     *pszCommand;
+    /** The command handler.   */
+    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(PRTGETOPTSTATE pGetState));
+
+    /** Command description.   */
+    const char     *pszDesc;
+    /** Options array.  */
+    PCRTGETOPTDEF   paOptions;
+    /** Number of options in the option array. */
+    size_t          cOptions;
+    /** Gets help for an option. */
+    DECLCALLBACKMEMBER(const char *, pfnOptionHelp,(PCRTGETOPTDEF pOpt));
+} VKATCMD;
+typedef VKATCMD *PVKATCMD;
+/** Pointer to a single VKAT command. */
+typedef VKATCMD *PVKATCMD;
+
+extern const VKATCMD g_cmdPlay;
+extern const VKATCMD g_cmdRec;
+extern const VKATCMD g_cmdSelfTest;
+
+extern AUDIOTESTDESC g_aTests[];
+extern unsigned      g_cTests;
+
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
+
+/** @name Command line handlers
+ * @{ */
+RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
+RTEXITCODE audioTestVersion(void);
+/** @}  */
 
 /** @name Driver stack
  * @{ */
@@ -440,6 +474,48 @@ RTEXITCODE   audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t
                              uint64_t cMaxFrames, uint64_t cNsMaxDuration);
 RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
 /** @}  */
+
+
+/*********************************************************************************************************************************
+*   Common command line stuff                                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * Common long options values.
+ */
+enum
+{
+    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE = 256,
+    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH
+};
+
+/** For use in the option switch to handle common options. */
+#define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion) \
+            case 'q': \
+                g_uVerbosity = 0; \
+                if (g_pRelLogger) \
+                    RTLogGroupSettings(g_pRelLogger, "all=0 all.e"); \
+                break; \
+            \
+            case 'v': \
+                g_uVerbosity++; \
+                if (g_pRelLogger) \
+                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0"); \
+                break; \
+            \
+            case 'V': \
+                return audioTestVersion(); \
+            \
+            case 'h': \
+                return audioTestUsage(g_pStdOut); \
+            \
+            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE: \
+                g_fDrvAudioDebug = true; \
+                break; \
+            \
+            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH: \
+                g_pszDrvAudioDebug = (a_ValueUnion).psz; \
+                break
 
 #endif /* !VBOX_INCLUDED_SRC_audio_vkatInternal_h */
 

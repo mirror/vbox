@@ -81,33 +81,6 @@ typedef struct PDMDRVINSINT
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** For use in the option switch to handle common options. */
-#define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion) \
-            case 'q': \
-                g_uVerbosity = 0; \
-                if (g_pRelLogger) \
-                    RTLogGroupSettings(g_pRelLogger, "all=0 all.e"); \
-                break; \
-            \
-            case 'v': \
-                g_uVerbosity++; \
-                if (g_pRelLogger) \
-                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0"); \
-                break; \
-            \
-            case 'V': \
-                return audioTestVersion(); \
-            \
-            case 'h': \
-                return audioTestUsage(g_pStdOut); \
-            \
-            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE: \
-                g_fDrvAudioDebug = true; \
-                break; \
-            \
-            case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH: \
-                g_pszDrvAudioDebug = (a_ValueUnion).psz; \
-                break
 
 
 
@@ -115,21 +88,11 @@ typedef struct PDMDRVINSINT
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
-static RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
-static RTEXITCODE audioTestVersion(void);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/**
- * Common long options values.
- */
-enum
-{
-    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE = 256,
-    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH
-};
 
 /**
  * Long option values for the 'test' command.
@@ -160,17 +123,6 @@ enum
 enum
 {
     VKAT_VERIFY_OPT_TAG = 900
-};
-
-/**
- * Long option values for the 'selftest' command.
- */
-enum
-{
-    VKAT_SELFTEST_OPT_ATS_GUEST_ADDR = 900,
-    VKAT_SELFTEST_OPT_ATS_GUEST_PORT,
-    VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR,
-    VKAT_SELFTEST_OPT_ATS_VALKIT_PORT
 };
 
 /**
@@ -404,12 +356,15 @@ static DECLCALLBACK(int) audioTestRecordToneDestroy(PAUDIOTESTENV pTstEnv, void 
 *   Test execution                                                                                                               *
 *********************************************************************************************************************************/
 
-static AUDIOTESTDESC g_aTests[] =
+/** Test definition table. */
+AUDIOTESTDESC g_aTests[] =
 {
     /* pszTest      fExcluded      pfnSetup */
     { "PlayTone",   false,         audioTestPlayToneSetup,       audioTestPlayToneExec,      audioTestPlayToneDestroy },
     { "RecordTone", false,         audioTestRecordToneSetup,     audioTestRecordToneExec,    audioTestRecordToneDestroy }
 };
+/** Number of tests defined. */
+unsigned g_cTests = RT_ELEMENTS(g_aTests);
 
 /**
  * Runs one specific audio test.
@@ -1047,395 +1002,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
 }
 
 /**
- * Options for 'play'.
- */
-static const RTGETOPTDEF g_aCmdPlayOptions[] =
-{
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
-    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
-    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
-    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
-    { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
-    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
-    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
-};
-
-/** The 'play' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        case 'c': return "Number of backend output channels";
-        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
-        case 'f': return "Output frequency (Hz)";
-        case 'z': return "Output sample size (bits)";
-        case 'm': return "Go via the mixer.";
-        case 'o': return "The ID of the output device to use.";
-        default:  return NULL;
-    }
-}
-
-/**
- * The 'play' command handler.
- *
- * @returns Program exit code.
- * @param   pGetState   RTGetOpt state.
- */
-static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
-{
-    /* Option values: */
-    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
-    uint32_t    cMsBufferSize       = UINT32_MAX;
-    uint32_t    cMsPreBuffer        = UINT32_MAX;
-    uint32_t    cMsSchedulingHint   = UINT32_MAX;
-    const char *pszDevId            = NULL;
-    bool        fWithDrvAudio       = false;
-    bool        fWithMixer          = false;
-    uint8_t     cbSample            = 0;
-    uint8_t     cChannels           = 0;
-    uint32_t    uHz                 = 0;
-
-    /* Argument processing loop: */
-    int           rc;
-    RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
-                if (pDrvReg == NULL)
-                    return RTEXITCODE_SYNTAX;
-                break;
-
-            case 'c':
-                cChannels = ValueUnion.u8;
-                break;
-
-            case 'd':
-                fWithDrvAudio = true;
-                break;
-
-            case 'f':
-                uHz = ValueUnion.u32;
-                break;
-
-            case 'm':
-                fWithMixer = true;
-                break;
-
-            case 'o':
-                pszDevId = ValueUnion.psz;
-                break;
-
-            case 'z':
-                cbSample = ValueUnion.u8 / 8;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
-                                                     cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
-
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/*********************************************************************************************************************************
-*   Command: rec                                                                                                                 *
-*********************************************************************************************************************************/
-
-/**
- * Options for 'rec'.
- */
-static const RTGETOPTDEF g_aCmdRecOptions[] =
-{
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
-    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
-    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
-    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
-    { "--input-device",     'i',                          RTGETOPT_REQ_STRING  },
-    { "--wav-channels",     'C',                          RTGETOPT_REQ_UINT8 },
-    { "--wav-hz",           'F',                          RTGETOPT_REQ_UINT32 },
-    { "--wav-frequency",    'F',                          RTGETOPT_REQ_UINT32 },
-    { "--wav-sample-size",  'Z',                          RTGETOPT_REQ_UINT8 },
-    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
-    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
-    { "--max-frames",       'r',                          RTGETOPT_REQ_UINT64 },
-    { "--max-sec",          's',                          RTGETOPT_REQ_UINT64 },
-    { "--max-seconds",      's',                          RTGETOPT_REQ_UINT64 },
-    { "--max-ms",           't',                          RTGETOPT_REQ_UINT64 },
-    { "--max-milliseconds", 't',                          RTGETOPT_REQ_UINT64 },
-    { "--max-ns",           'T',                          RTGETOPT_REQ_UINT64 },
-    { "--max-nanoseconds",  'T',                          RTGETOPT_REQ_UINT64 },
-};
-
-/** The 'rec' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        case 'c': return "Number of backend input channels";
-        case 'C': return "Number of wave-file channels";
-        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
-        case 'f': return "Input frequency (Hz)";
-        case 'F': return "Wave-file frequency (Hz)";
-        case 'z': return "Input sample size (bits)";
-        case 'Z': return "Wave-file sample size (bits)";
-        case 'm': return "Go via the mixer.";
-        case 'i': return "The ID of the input device to use.";
-        case 'r': return "Max recording duration in frames.";
-        case 's': return "Max recording duration in seconds.";
-        case 't': return "Max recording duration in milliseconds.";
-        case 'T': return "Max recording duration in nanoseconds.";
-        default:  return NULL;
-    }
-}
-
-/**
- * The 'play' command handler.
- *
- * @returns Program exit code.
- * @param   pGetState   RTGetOpt state.
- */
-static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
-{
-    /* Option values: */
-    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
-    uint32_t    cMsBufferSize       = UINT32_MAX;
-    uint32_t    cMsPreBuffer        = UINT32_MAX;
-    uint32_t    cMsSchedulingHint   = UINT32_MAX;
-    const char *pszDevId            = NULL;
-    bool        fWithDrvAudio       = false;
-    bool        fWithMixer          = false;
-    uint8_t     cbSample            = 0;
-    uint8_t     cChannels           = 0;
-    uint32_t    uHz                 = 0;
-    uint8_t     cbWaveSample        = 0;
-    uint8_t     cWaveChannels       = 0;
-    uint32_t    uWaveHz             = 0;
-    uint64_t    cMaxFrames          = UINT64_MAX;
-    uint64_t    cNsMaxDuration      = UINT64_MAX;
-
-    /* Argument processing loop: */
-    int           rc;
-    RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
-                if (pDrvReg == NULL)
-                    return RTEXITCODE_SYNTAX;
-                break;
-
-            case 'c':
-                cChannels = ValueUnion.u8;
-                break;
-
-            case 'C':
-                cWaveChannels = ValueUnion.u8;
-                break;
-
-            case 'd':
-                fWithDrvAudio = true;
-                break;
-
-            case 'f':
-                uHz = ValueUnion.u32;
-                break;
-
-            case 'F':
-                uWaveHz = ValueUnion.u32;
-                break;
-
-            case 'i':
-                pszDevId = ValueUnion.psz;
-                break;
-
-            case 'm':
-                fWithMixer = true;
-                break;
-
-            case 'r':
-                cMaxFrames = ValueUnion.u64;
-                break;
-
-            case 's':
-                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1SEC ? UINT64_MAX : ValueUnion.u64 * RT_NS_1SEC;
-                break;
-
-            case 't':
-                cNsMaxDuration = ValueUnion.u64 >= UINT64_MAX / RT_NS_1MS  ? UINT64_MAX : ValueUnion.u64 * RT_NS_1MS;
-                break;
-
-            case 'T':
-                cNsMaxDuration = ValueUnion.u64;
-                break;
-
-            case 'z':
-                cbSample = ValueUnion.u8 / 8;
-                break;
-
-            case 'Z':
-                cbWaveSample = ValueUnion.u8 / 8;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                RTEXITCODE rcExit = audioTestRecOne(ValueUnion.psz, cWaveChannels, cbWaveSample, uWaveHz,
-                                                    pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint,
-                                                    cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer,
-                                                    cMaxFrames, cNsMaxDuration);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
-
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/*********************************************************************************************************************************
-*   Command: selftest                                                                                                            *
-*********************************************************************************************************************************/
-
-/**
- * Command line parameters for self-test mode.
- */
-static const RTGETOPTDEF g_aCmdSelftestOptions[] =
-{
-    { "--ats-guest-addr",   VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
-    { "--ats-guest-port",   VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
-    { "--ats-valkit-addr",  VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
-    { "--ats-valkit-port",  VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
-    { "--exclude-all",      'a',                                RTGETOPT_REQ_NOTHING },
-    { "--backend",          'b',                                RTGETOPT_REQ_STRING  },
-    { "--with-drv-audio",   'd',                                RTGETOPT_REQ_NOTHING },
-    { "--exclude",          'e',                                RTGETOPT_REQ_UINT32  },
-    { "--include",          'i',                                RTGETOPT_REQ_UINT32  }
-};
-
-/** the 'selftest' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
-        default:  return NULL;
-    }
-}
-
-/**
- * The 'selftest' command handler.
- *
- * @returns Program exit code.
- * @param   pGetState   RTGetOpt state.
- */
-DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
-{
-    SELFTESTCTX Ctx;
-    RT_ZERO(Ctx);
-
-    /* Go with the platform's default bakcend if nothing else is specified. */
-    Ctx.Guest.pDrvReg = g_aBackends[0].pDrvReg;
-
-    /* Argument processing loop: */
-    int           rc;
-    RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case VKAT_SELFTEST_OPT_ATS_GUEST_ADDR:
-                rc = RTStrCopy(Ctx.Host.szGuestAtsAddr, sizeof(Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
-                break;
-
-            case VKAT_SELFTEST_OPT_ATS_GUEST_PORT:
-                Ctx.Host.uGuestAtsPort = ValueUnion.u32;
-                break;
-
-            case VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR:
-                rc = RTStrCopy(Ctx.Host.szValKitAtsAddr, sizeof(Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
-                break;
-
-            case VKAT_SELFTEST_OPT_ATS_VALKIT_PORT:
-                Ctx.Host.uValKitAtsPort = ValueUnion.u32;
-                break;
-
-            case 'a':
-                for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
-                    g_aTests[i].fExcluded = true;
-                break;
-
-            case 'b':
-                Ctx.Guest.pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
-                if (Ctx.Guest.pDrvReg == NULL)
-                    return RTEXITCODE_SYNTAX;
-                break;
-
-            case 'd':
-                Ctx.fWithDrvAudio = true;
-                break;
-
-            case 'e':
-                if (ValueUnion.u32 >= RT_ELEMENTS(g_aTests))
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --exclude", ValueUnion.u32);
-                g_aTests[ValueUnion.u32].fExcluded = true;
-                break;
-
-            case 'i':
-                if (ValueUnion.u32 >= RT_ELEMENTS(g_aTests))
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --include", ValueUnion.u32);
-                g_aTests[ValueUnion.u32].fExcluded = false;
-                break;
-
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
-
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-
-    /*
-     * Start testing.
-     */
-    RTTestBanner(g_hTest);
-
-    int rc2 = audioTestDoSelftest(&Ctx);
-    if (RT_FAILURE(rc2))
-        RTTestFailed(g_hTest, "Self test failed with rc=%Rrc", rc2);
-
-    /*
-     * Print summary and exit.
-     */
-    return RTTestSummaryAndDestroy(g_hTest);
-}
-
-
-/**
  * Ctrl-C signal handler.
  *
  * This just sets g_fTerminate and hope it will be noticed soon.  It restores
@@ -1450,26 +1016,7 @@ static void audioTestSignalHandler(int iSig) RT_NOEXCEPT
     signal(SIGINT, SIG_DFL);
 }
 
-
-/**
- * Commands.
- */
-static struct
-{
-    /** The command name. */
-    const char     *pszCommand;
-    /** The command handler.   */
-    DECLCALLBACKMEMBER(RTEXITCODE, pfnHandler,(PRTGETOPTSTATE pGetState));
-
-    /** Command description.   */
-    const char     *pszDesc;
-    /** Options array.  */
-    PCRTGETOPTDEF   paOptions;
-    /** Number of options in the option array. */
-    size_t          cOptions;
-    /** Gets help for an option. */
-    DECLCALLBACKMEMBER(const char *, pfnOptionHelp,(PCRTGETOPTDEF pOpt));
-} const g_aCommands[] =
+const VKATCMD g_aCommands[] =
 {
     {
         "test",     audioTestMain,
@@ -1486,27 +1033,15 @@ static struct
         "Enumerates audio devices.",
         g_aCmdEnumOptions,      RT_ELEMENTS(g_aCmdEnumOptions),     audioTestCmdEnumHelp,
     },
-    {
-        "play",     audioTestCmdPlayHandler,
-        "Plays one or more wave files.",
-        g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
-    },
-    {
-        "rec",      audioTestCmdRecHandler,
-        "Records audio to a wave file.",
-        g_aCmdRecOptions,       RT_ELEMENTS(g_aCmdRecOptions),      audioTestCmdRecHelp,
-    },
-    {
-        "selftest", audioTestCmdSelftestHandler,
-        "Performs self-tests.",
-        g_aCmdSelftestOptions,  RT_ELEMENTS(g_aCmdSelftestOptions), audioTestCmdSelftestHelp,
-    }
+    g_cmdPlay,
+    g_cmdRec,
+    g_cmdSelfTest
 };
 
 /**
  * Shows tool usage text.
  */
-static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
+RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
 {
     RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n",
                  RTPathFilename(RTProcExecutablePath()));
@@ -1556,9 +1091,9 @@ static RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
 /**
  * Shows tool version.
  */
-static RTEXITCODE audioTestVersion(void)
+RTEXITCODE audioTestVersion(void)
 {
-    RTPrintf("v0.0.1\n");
+    RTPrintf("%s\n", RTBldCfgRevisionStr());
     return RTEXITCODE_SUCCESS;
 }
 
