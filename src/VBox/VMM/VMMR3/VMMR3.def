@@ -225,6 +225,12 @@ EXPORTS
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll
     DBGFR3PlugInUnloadAll
+    DBGFR3SampleReportCreate
+    DBGFR3SampleReportRetain
+    DBGFR3SampleReportRelease
+    DBGFR3SampleReportStart
+    DBGFR3SampleReportStop
+    DBGFR3SampleReportDumpToFile
     DBGFR3SelQueryInfo
     DBGFR3StackWalkBegin
     DBGFR3StackWalkNext

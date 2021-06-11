@@ -534,6 +534,11 @@ typedef uint32_t                DBGFBP;
 typedef DBGFBP                 *PDBGFBP;
 /** A NIL DBGF breakpoint handle. */
 #define NIL_DBGFBP              ((uint32_t)UINT32_MAX)
+
+/** A sample report handle. */
+typedef struct DBGFSAMPLEREPORTINT *DBGFSAMPLEREPORT;
+/** Pointer to a sample report handle. */
+typedef DBGFSAMPLEREPORT       *PDBGFSAMPLEREPORT;
 /** @} */
 
 

@@ -3082,6 +3082,26 @@ VMM_INT_DECL(int)   DBGFTracerEvtGCPhysRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc,
 VMM_INT_DECL(int)   DBGFTracerEvtGCPhysWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 /** @} */
 
+
+/** @defgroup grp_dbgf_sample_report DBGF sample report.
+ * @{ */
+
+/** @name Flags to pass to DBGFR3SampleReportCreate().
+ * @{ */
+/** The report creates the call stack in reverse order (bottom to top). */
+#define DBGF_SAMPLE_REPORT_F_UPSIDE_DOWN    RT_BIT(0)
+/** Mask containing the valid flags. */
+#define DBGF_AMPLE_REPORT_F_VALID_MASK      UINT32_C(0x00000001)
+/** @} */
+
+VMMR3DECL(int)      DBGFR3SampleReportCreate(PUVM pUVM, uint32_t cSampleIntervalMs, uint32_t fFlags, PDBGFSAMPLEREPORT phSample);
+VMMR3DECL(uint32_t) DBGFR3SampleReportRetain(DBGFSAMPLEREPORT hSample);
+VMMR3DECL(uint32_t) DBGFR3SampleReportRelease(DBGFSAMPLEREPORT hSample);
+VMMR3DECL(int)      DBGFR3SampleReportStart(DBGFSAMPLEREPORT hSample);
+VMMR3DECL(int)      DBGFR3SampleReportStop(DBGFSAMPLEREPORT hSample);
+VMMR3DECL(int)      DBGFR3SampleReportDumpToFile(DBGFSAMPLEREPORT hSample, const char *pszFilename);
+/** @} */
+
 /** @} */
 
 RT_C_DECLS_END
