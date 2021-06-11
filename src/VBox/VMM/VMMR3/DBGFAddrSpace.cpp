@@ -1205,6 +1205,8 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAd
         dbgfR3AsSymbolJoinNames(pSymbol, hMod);
         if (!phMod)
             RTDbgModRelease(hMod);
+        else
+            *phMod = hMod;
     }
 
     RTDbgAsRelease(hRealAS);
