@@ -28,6 +28,14 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
+# Make sure the ValKit config file is included when the additions build
+# is including just this makefile.
+#
+ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/ValidationKit/Config.kmk
+endif
+
+#
 # Utility to play sine wave to Default Audio Device.
 #
 if 0 # Disabled for now; does not work without WinMM.dll import validator files.
