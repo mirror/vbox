@@ -29,6 +29,10 @@ ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
  ifdef VBOX_WITH_VALIDATIONKIT
+  # Make sure our Config.kmk is included.
+  ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+   include $(PATH_SUB_CURRENT)/ValidationKit/Config.kmk
+  endif
   # For including VKAT with the Guest Additions.
   include $(PATH_SUB_CURRENT)/ValidationKit/utils/audio/Makefile.kmk
  endif
