@@ -339,7 +339,7 @@ typedef AC97BMREGS *PAC97BMREGS;
  */
 typedef struct AC97STREAMSTATE
 {
-    /** Criticial section for this stream. */
+    /** Critical section for this stream. */
     RTCRITSECT              CritSect;
     /** Circular buffer (FIFO) for holding DMA'ed data. */
     R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
@@ -531,7 +531,15 @@ typedef struct AC97STATE
     AC97STREAM              aStreams[AC97_MAX_STREAMS];
     /** The device timer Hz rate. Defaults to AC97_TIMER_HZ_DEFAULT_DEFAULT. */
     uint16_t                uTimerHz;
-    uint16_t                au16Padding1[3];
+    /** Config: Internal input DMA buffer size override, specified in milliseconds.
+     * Zero means default size according to buffer and stream config.
+     * @sa BufSizeInMs config value.  */
+    uint16_t                cMsCircBufIn;
+    /** Config: Internal output DMA buffer size override, specified in milliseconds.
+     * Zero means default size according to buffer and stream config.
+     * @sa BufSizeOutMs config value.  */
+    uint16_t                cMsCircBufOut;
+    uint16_t                au16Padding1[1];
     uint8_t                 silence[128];
     uint32_t                bup_flag;
     /** Codec model. */
@@ -1830,26 +1838,60 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
             else
                 pStreamCC->State.uTimerHz = pThis->uTimerHz;
 
-            /* Set scheduling hint (if available). */
-            if (pStreamCC->State.uTimerHz)
-                Cfg.Device.cMsSchedulingHint = 1000 /* ms */ / pStreamCC->State.uTimerHz;
-
-            if (pStreamCC->State.pCircBuf)
+            if (   pStreamCC->State.uTimerHz >= 10
+                && pStreamCC->State.uTimerHz <= 500)
+            { /* likely */ }
+            else
             {
-                RTCircBufDestroy(pStreamCC->State.pCircBuf);
-                pStreamCC->State.pCircBuf = NULL;
+                LogFunc(("[SD%RU8] Adjusting uTimerHz=%u to %u\n",
+                         pStreamCC->State.uTimerHz, Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT));
+                pStreamCC->State.uTimerHz = Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT;
             }
 
-            rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
-            if (RT_SUCCESS(rc))
+            /* Set scheduling hint. */
+            Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / pStreamCC->State.uTimerHz;
+
+            /*
+             * Re-create the circular buffer if necessary.
+             *
+             * As mentioned in the HDA code, this should be at least able to hold the
+             * data transferred in three DMA periods and in three AIO period (whichever
+             * is higher).  However, if we assume that the DMA code will engage the DMA
+             * timer thread (currently EMT) if the AIO thread isn't getting schduled to
+             * transfer data thru the stack, we don't need to go overboard and double
+             * the minimums here.  The less buffer the less possible delay can build when
+             * TM is doing catch up.
+             *
+             * Unlike the HDA code, we currently do not have any knowledge of the buffer
+             * timinings, so we only have the scheduling hint to work with.
+             */
+            uint32_t const cMsCircBuf = RT_MAX(Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut,
+                                               Cfg.Device.cMsSchedulingHint * 3);
+            uint32_t const cbCircBuf  = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
+
+            if (pStreamCC->State.pCircBuf && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
+                RTCircBufReset(pStreamCC->State.pCircBuf);
+            else
             {
+                LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x)\n",
+                             cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize));
+                if (pStreamCC->State.pCircBuf)
+                    RTCircBufDestroy(pStreamCC->State.pCircBuf);
+
+                rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, cbCircBuf);
+                AssertRCReturnStmt(rc, pStreamCC->State.pCircBuf = NULL, rc);
+
                 pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
-
-                ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
-                rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
-                if (RT_SUCCESS(rc))
-                    rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
             }
+            Assert(pStreamCC->State.StatDmaBufSize == cbCircBuf);
+
+            /*
+             * <there should be a comment here>
+             */
+            ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
+            rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
+            if (RT_SUCCESS(rc))
+                rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
         }
         LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
     }
@@ -3844,21 +3886,43 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Codec|TimerHz|DebugEnabled|DebugPathOut", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|Codec|TimerHz|DebugEnabled|DebugPathOut", "");
 
-    char szCodec[20];
-    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
-
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, AC97_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    /** @devcfgm{ac97,BufSizeInMs,uint16_t,0,2000,0,ms}
+     * The size of the DMA buffer for input streams expressed in milliseconds. */
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cMsCircBufIn, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+                                N_("AC97 configuration error: failed to read 'BufSizeInMs' as 16-bit unsigned integer"));
+    if (pThis->cMsCircBufIn > 2000)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
+                                N_("AC97 configuration error: 'BufSizeInMs' is out of bound, max 2000 ms"));
+
+    /** @devcfgm{ac97,BufSizeOutMs,uint16_t,0,2000,0,ms}
+     * The size of the DMA buffer for output streams expressed in milliseconds. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cMsCircBufOut, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AC97 configuration error: failed to read 'BufSizeOutMs' as 16-bit unsigned integer"));
+    if (pThis->cMsCircBufOut > 2000)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
+                                N_("AC97 configuration error: 'BufSizeOutMs' is out of bound, max 2000 ms"));
+
+    /** @devcfgm{ac97,TimerHz,uint16_t,10,1000,100,ms}
+     * Currently the approximate rate at which the asynchronous I/O threads move
+     * data from/to the DMA buffer, thru the mixer and drivers stack, and
+     * to/from the host device/whatever.  (It does NOT govern any DMA timer rate any
+     * more as might be hinted at by the name.) */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, AC97_TIMER_HZ_DEFAULT);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AC'97 configuration error: failed to read 'TimerHz' as a 16-bit unsigned integer"));
+    if (pThis->uTimerHz < 10 || pThis->uTimerHz > 1000)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
+                                N_("AC'97 configuration error: 'TimerHz' is out of range (10-1000 Hz)"));
 
     if (pThis->uTimerHz != AC97_TIMER_HZ_DEFAULT)
-        LogRel(("AC97: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
+        LogRel(("AC97: Using custom device timer rate: %RU16 Hz\n", pThis->uTimerHz));
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThisCC->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))
@@ -3878,6 +3942,11 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      * in the Linux kernel; Linux makes no attempt to measure the data rate and assumes
      * 48 kHz rate, which is exactly what we need. Same goes for AD1981B.
      */
+    char szCodec[20];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
     if (!strcmp(szCodec, "STAC9700"))
         pThis->enmCodecModel = AC97CODEC_STAC9700;
     else if (!strcmp(szCodec, "AD1980"))
