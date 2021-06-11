@@ -438,7 +438,7 @@ int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pTonePa
  * @returns VBox status code.
  * @param   pClient             Client to issue command for.
  * @param   pszTag              Tag of test set to send.
- * @note    pszPathOutAbs       Absolute path where to store the downloaded test set archive.
+ * @param   pszPathOutAbs       Absolute path where to store the downloaded test set archive.
  */
 int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, const char *pszPathOutAbs)
 {
