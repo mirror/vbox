@@ -46,7 +46,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
 /** Current saved state version. */
 #define AC97_SAVED_STATE_VERSION 1
 
@@ -56,9 +55,11 @@
 /** Maximum number of streams we support. */
 #define AC97_MAX_STREAMS        3
 
-/** Maximum FIFO size (in bytes). */
+/** Maximum FIFO size (in bytes) - unused. */
 #define AC97_FIFO_MAX           256
 
+/** @name AC97_SR_XXX - Status Register Bits (AC97_NABM_OFF_SR, PI_SR, PO_SR, MC_SR).
+ * @{ */
 #define AC97_SR_FIFOE           RT_BIT(4)           /**< rwc, FIFO error. */
 #define AC97_SR_BCIS            RT_BIT(3)           /**< rwc, Buffer completion interrupt status. */
 #define AC97_SR_LVBCI           RT_BIT(2)           /**< rwc, Last valid buffer completion interrupt. */
@@ -68,7 +69,10 @@
 #define AC97_SR_WCLEAR_MASK     (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
 #define AC97_SR_RO_MASK         (AC97_SR_DCH | AC97_SR_CELV)
 #define AC97_SR_INT_MASK        (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
+/** @} */
 
+/** @name AC97_CR_XXX - Control Register Bits (AC97_NABM_OFF_CR, PI_CR, PO_CR, MC_CR).
+ * @{ */
 #define AC97_CR_IOCE            RT_BIT(4)           /**< rw,   Interrupt On Completion Enable. */
 #define AC97_CR_FEIE            RT_BIT(3)           /**< rw    FIFO Error Interrupt Enable. */
 #define AC97_CR_LVBIE           RT_BIT(2)           /**< rw    Last Valid Buffer Interrupt Enable. */
@@ -76,11 +80,16 @@
 #define AC97_CR_RPBM            RT_BIT(0)           /**< rw    Run/Pause Bus Master. */
 #define AC97_CR_VALID_MASK      (RT_BIT(5) - 1)
 #define AC97_CR_DONT_CLEAR_MASK (AC97_CR_IOCE | AC97_CR_FEIE | AC97_CR_LVBIE)
+/** @} */
 
+/** @name AC97_GC_XXX - Global Control Bits (see AC97_GLOB_CNT). */
 #define AC97_GC_WR              4                   /**< rw    Warm reset. */
 #define AC97_GC_CR              2                   /**< rw    Cold reset. */
 #define AC97_GC_VALID_MASK      (RT_BIT(6) - 1)
+/** @} */
 
+/** @name AC97_GS_XXX - Global Status Bits (AC97_GLOB_STA).
+ * @{ */
 #define AC97_GS_MD3             RT_BIT(17)          /**< rw */
 #define AC97_GS_AD3             RT_BIT(16)          /**< rw */
 #define AC97_GS_RCS             RT_BIT(15)          /**< rwc */
@@ -111,8 +120,9 @@
                                  | AC97_GS_MIINT)
 #define AC97_GS_VALID_MASK      (RT_BIT(18) - 1)
 #define AC97_GS_WCLEAR_MASK     (AC97_GS_RCS | AC97_GS_S1R1 | AC97_GS_S0R1 | AC97_GS_GSCI)
+/** @} */
 
-/** @name Buffer Descriptor (BD).
+/** @name Buffer Descriptor (BDLE, BDL).
  * @{ */
 #define AC97_BD_IOC             RT_BIT(31)          /**< Interrupt on Completion. */
 #define AC97_BD_BUP             RT_BIT(30)          /**< Buffer Underrun Policy. */
@@ -207,7 +217,7 @@
  * @{ */
 #define BUP_SET                         RT_BIT_32(0)
 #define BUP_LAST                        RT_BIT_32(1)
-/** @}   */
+/** @} */
 
 /** @name AC'97 source indices.
  * @note The order of these indices is fixed (also applies for saved states) for
@@ -734,30 +744,30 @@ static const IOMIOPORTDESC g_aNabmPorts[] =
 
 /** @name Source indices
  * @{ */
-#define AC97SOUNDSOURCE_PI_INDEX        0           /**< PCM in */
-#define AC97SOUNDSOURCE_PO_INDEX        1           /**< PCM out */
-#define AC97SOUNDSOURCE_MC_INDEX        2           /**< Mic in */
-#define AC97SOUNDSOURCE_MAX             3           /**< Max sound sources. */
+# define AC97SOUNDSOURCE_PI_INDEX       0           /**< PCM in */
+# define AC97SOUNDSOURCE_PO_INDEX       1           /**< PCM out */
+# define AC97SOUNDSOURCE_MC_INDEX       2           /**< Mic in */
+# define AC97SOUNDSOURCE_MAX            3           /**< Max sound sources. */
 /** @} */
 
 /** Port number (offset into NABM BAR) to stream index. */
-#define AC97_PORT2IDX(a_idx)            ( ((a_idx) >> 4) & 3 )
+# define AC97_PORT2IDX(a_idx)           ( ((a_idx) >> 4) & 3 )
 /** Port number (offset into NABM BAR) to stream index, but no masking. */
-#define AC97_PORT2IDX_UNMASKED(a_idx)   ( ((a_idx) >> 4) )
+# define AC97_PORT2IDX_UNMASKED(a_idx)  ( ((a_idx) >> 4) )
 
 /** @name Stream offsets
  * @{ */
-#define AC97_NABM_OFF_BDBAR             0x0         /**< Buffer Descriptor Base Address */
-#define AC97_NABM_OFF_CIV               0x4         /**< Current Index Value */
-#define AC97_NABM_OFF_LVI               0x5         /**< Last Valid Index */
-#define AC97_NABM_OFF_SR                0x6         /**< Status Register */
-#define AC97_NABM_OFF_PICB              0x8         /**< Position in Current Buffer */
-#define AC97_NABM_OFF_PIV               0xa         /**< Prefetched Index Value */
-#define AC97_NABM_OFF_CR                0xb         /**< Control Register */
-#define AC97_NABM_OFF_MASK              0xf         /**< Mask for getting the the per-stream register. */
+# define AC97_NABM_OFF_BDBAR            0x0         /**< Buffer Descriptor Base Address */
+# define AC97_NABM_OFF_CIV              0x4         /**< Current Index Value */
+# define AC97_NABM_OFF_LVI              0x5         /**< Last Valid Index */
+# define AC97_NABM_OFF_SR               0x6         /**< Status Register */
+# define AC97_NABM_OFF_PICB             0x8         /**< Position in Current Buffer */
+# define AC97_NABM_OFF_PIV              0xa         /**< Prefetched Index Value */
+# define AC97_NABM_OFF_CR               0xb         /**< Control Register */
+# define AC97_NABM_OFF_MASK             0xf         /**< Mask for getting the the per-stream register. */
 /** @} */
 
-#endif
+#endif /* IN_RING3 */
 
 
 
