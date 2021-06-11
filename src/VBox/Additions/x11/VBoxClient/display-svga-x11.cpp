@@ -869,6 +869,7 @@ static void x11Connect()
     x11Context.pXRRCreateMode = NULL;
     x11Context.pXRRGetOutputInfo = NULL;
     x11Context.pXRRGetCrtcInfo = NULL;
+    x11Context.pXRRFreeCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
     x11Context.fWmwareCtrlExtention = false;
     x11Context.fMonitorInfoAvailable = false;
