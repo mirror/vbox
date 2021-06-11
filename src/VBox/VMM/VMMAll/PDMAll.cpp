@@ -190,66 +190,79 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint
 
 
 /**
- * Broadcasts an EOI to the I/O APICs.
+ * Broadcasts an EOI to the I/O APIC(s).
  *
- * @returns Strict VBox status code - only the following informational status codes:
- * @retval  VINF_IOM_R3_MMIO_WRITE if the I/O APIC lock is contenteded and we're in R0 or RC.
- * @retval  VINF_SUCCESS
- *
- * @param   pVM             The cross context VM structure.
- * @param   uVector         The interrupt vector corresponding to the EOI.
+ * @param   pVM         The cross context VM structure.
+ * @param   uVector     The interrupt vector corresponding to the EOI.
  */
-VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
+VMM_INT_DECL(void) PDMIoApicBroadcastEoi(PVMCC pVM, uint8_t uVector)
 {
-    /* At present, we support only a maximum of one I/O APIC per-VM. If we ever implement having
-       multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs. */
-    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
+    /*
+     * At present, we support only a maximum of one I/O APIC per-VM. If we ever implement having
+     * multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs.
+     */
+    PCPDMIOAPIC pIoApic = &pVM->pdm.s.IoApic;
+#ifdef IN_RING0
+    if (pIoApic->pDevInsR0)
     {
-        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
-        return pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), uVector);
+        Assert(pIoApic->pfnSetEoiR0);
+        pIoApic->pfnSetEoiR0(pIoApic->pDevInsR0, uVector);
     }
-
-    /* We shouldn't return failure if no I/O APIC is present. */
-    return VINF_SUCCESS;
+    else if (pIoApic->pDevInsR3)
+    {
+        /* Queue for ring-3 execution. */
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+        if (pTask)
+        {
+            pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_EOI;
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+            pTask->u.IoApicSetEoi.uVector = uVector;
+            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+        }
+        else
+            AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
+    }
+#else
+    if (pIoApic->pDevInsR3)
+    {
+        Assert(pIoApic->pfnSetEoiR3);
+        pIoApic->pfnSetEoiR3(pIoApic->pDevInsR3, uVector);
+    }
+#endif
 }
 
 
 /**
  * Send a MSI to an I/O APIC.
  *
- * @param   pDevIns     The PCI device instance.
+ * @param   pVM         The cross context VM structure.
  * @param   uBusDevFn   The bus:device:function of the device initiating the MSI.
- *                      Cannot be NIL_PCIBDF.
  * @param   pMsi        The MSI to send.
  * @param   uTagSrc     The IRQ tag and source tracer ID.
  */
-VMM_INT_DECL(void) PDMIoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
+VMM_INT_DECL(void) PDMIoApicSendMsi(PVMCC pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
+    PCPDMIOAPIC pIoApic = &pVM->pdm.s.IoApic;
 #ifdef IN_RING0
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    PCPDMIOAPIC pIoApic = &pGVM->pdm.s.IoApic;
     if (pIoApic->pDevInsR0)
         pIoApic->pfnSendMsiR0(pIoApic->pDevInsR0, uBusDevFn, pMsi, uTagSrc);
     else if (pIoApic->pDevInsR3)
     {
         /* Queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SEND_MSI;
-            pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
             pTask->u.IoApicSendMsi.uBusDevFn = uBusDevFn;
             pTask->u.IoApicSendMsi.Msi       = *pMsi;
             pTask->u.IoApicSendMsi.uTagSrc   = uTagSrc;
-
-            PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
 #else
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    PCPDMIOAPIC pIoApic = &pVM->pdm.s.IoApic;
     if (pIoApic->pDevInsR3)
     {
         Assert(pIoApic->pfnSendMsiR3);

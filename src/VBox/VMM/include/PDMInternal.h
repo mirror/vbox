@@ -798,7 +798,7 @@ typedef struct PDMIOAPIC
     /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLR3CALLBACKMEMBER(void,      pfnSendMsiR3,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
     /** @copydoc PDMIOAPICREG::pfnSetEoi */
-    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLR3CALLBACKMEMBER(void,      pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the I/O  APIC device instance - R0. */
     PPDMDEVINSR0                    pDevInsR0;
@@ -807,7 +807,7 @@ typedef struct PDMIOAPIC
     /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLR0CALLBACKMEMBER(void,      pfnSendMsiR0,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
     /** @copydoc PDMIOAPICREG::pfnSetEoi */
-    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR0,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLR0CALLBACKMEMBER(void,      pfnSetEoiR0,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the I/O APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
@@ -816,7 +816,7 @@ typedef struct PDMIOAPIC
      /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLRCCALLBACKMEMBER(void,      pfnSendMsiRC,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
      /** @copydoc PDMIOAPICREG::pfnSendMsi */
-    DECLRCCALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiRC,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLRCCALLBACKMEMBER(void,      pfnSetEoiRC,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 } PDMIOAPIC;
 /** Pointer to a PDM IOAPIC instance. */
 typedef PDMIOAPIC *PPDMIOAPIC;
@@ -1214,6 +1214,8 @@ typedef enum PDMDEVHLPTASKOP
     PDMDEVHLPTASKOP_IOAPIC_SET_IRQ,
     /** IoApicSendMsi */
     PDMDEVHLPTASKOP_IOAPIC_SEND_MSI,
+    /** IoApicBroadcastEoi */
+    PDMDEVHLPTASKOP_IOAPIC_SET_EOI,
     /** The usual 32-bit hack. */
     PDMDEVHLPTASKOP_32BIT_HACK = 0x7fffffff
 } PDMDEVHLPTASKOP;
@@ -1277,6 +1279,15 @@ typedef struct PDMDEVHLPTASK
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
         } IoApicSendMsi;
+
+        /**
+         * PDMDEVHLPTASKOP_IOAPIC_SET_EOI
+         */
+        struct PDMDEVHLPTASKIOAPICSETEOI
+        {
+            /** The vector corresponding to the EOI. */
+            uint8_t                 uVector;
+        } IoApicSetEoi;
 
         /** Expanding the structure. */
         uint64_t    au64[3];

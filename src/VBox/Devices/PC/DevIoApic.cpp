@@ -312,8 +312,6 @@ typedef struct IOAPIC
     STAMCOUNTER             StatIommuRemappedMsi;
     /** Number of IOMMU denied or failed MSIs. */
     STAMCOUNTER             StatIommuDiscardedMsi;
-    /** Number of returns to ring-3 due to EOI broadcast lock contention. */
-    STAMCOUNTER             StatEoiContention;
     /** Number of returns to ring-3 due to Set RTE lock contention. */
     STAMCOUNTER             StatSetRteContention;
     /** Number of level-triggered interrupts dispatched to the local APIC(s). */
@@ -844,49 +842,46 @@ static VBOXSTRICTRC ioapicSetData(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC p
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSetEoi}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
+static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 {
     PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetEoi));
+
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetEoi));
 
     bool fRemoteIrrCleared = false;
-    VBOXSTRICTRC rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_IOM_R3_MMIO_WRITE);
-    if (rc == VINF_SUCCESS)
+    int rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_SUCCESS);
+    AssertRC(rc);
+
+    for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
     {
-        for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
+        uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
+        if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
         {
-            uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
-            if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
-            {
 #ifdef DEBUG_ramshankar
-                /* This assertion may trigger when restoring saved-states created using the old, incorrect I/O APIC code. */
-                Assert(IOAPIC_RTE_GET_REMOTE_IRR(u64Rte));
+            /* This assertion may trigger when restoring saved-states created using the old, incorrect I/O APIC code. */
+            Assert(IOAPIC_RTE_GET_REMOTE_IRR(u64Rte));
 #endif
-                pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
-                fRemoteIrrCleared = true;
-                STAM_COUNTER_INC(&pThis->StatEoiReceived);
-                Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
+            pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
+            fRemoteIrrCleared = true;
+            STAM_COUNTER_INC(&pThis->StatEoiReceived);
+            Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
 
-                /*
-                 * Signal the next pending interrupt for this RTE.
-                 */
-                uint32_t const uPinMask = UINT32_C(1) << idxRte;
-                if (pThis->uIrr & uPinMask)
-                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
-            }
+            /*
+             * Signal the next pending interrupt for this RTE.
+             */
+            uint32_t const uPinMask = UINT32_C(1) << idxRte;
+            if (pThis->uIrr & uPinMask)
+                ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
         }
-
-        IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
-#ifndef VBOX_WITH_IOMMU_AMD
-        AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
-#endif
     }
-    else
-        STAM_COUNTER_INC(&pThis->StatEoiContention);
 
-    return rc;
+    IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
+
+#ifndef VBOX_WITH_IOMMU_AMD
+    AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
+#endif
 }
 
 
@@ -1118,7 +1113,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUs
 
         case IOAPIC_DIRECT_OFF_EOI:
             if (pThis->u8ApicVer == IOAPIC_VERSION_ICH9)
-                rc = ioapicSetEoi(pDevIns, uValue);
+                ioapicSetEoi(pDevIns, uValue);
             else
                 Log(("IOAPIC: ioapicMmioWrite: Write to EOI register ignored!\n"));
             break;
@@ -1667,7 +1662,6 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIommuDiscardedIntr, STAMTYPE_COUNTER, "Iommu/DiscardedIntr", STAMUNIT_OCCURENCES, "Number of interrupts discarded by the IOMMU.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIommuDiscardedMsi,  STAMTYPE_COUNTER, "Iommu/DiscardedMsi",  STAMUNIT_OCCURENCES, "Number of MSIs discarded by the IOMMU.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiContention,    STAMTYPE_COUNTER, "CritSect/ContentionSetEoi", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during EOI writes causing trips to R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetRteContention, STAMTYPE_COUNTER, "CritSect/ContentionSetRte", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during RTE writes causing trips to R3.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");

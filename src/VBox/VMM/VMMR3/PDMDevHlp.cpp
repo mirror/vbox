@@ -5370,9 +5370,9 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
             PPDMPCIDEV pPciDev = pTask->u.PciSetIrq.pPciDevR3;
             if (pPciDev)
             {
-                size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+                size_t const idxBus = pPciDev->Int.s.idxPdmBus;
                 AssertBreak(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-                PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
+                PPDMPCIBUS   pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
                 pdmLock(pVM);
                 pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, pTask->u.PciSetIrq.iIrq,
@@ -5393,9 +5393,13 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 
         case PDMDEVHLPTASKOP_IOAPIC_SEND_MSI:
         {
-            Assert(pTask->pDevInsR3);
-            PDMIoApicSendMsi(pTask->pDevInsR3, pTask->u.IoApicSendMsi.uBusDevFn, &pTask->u.IoApicSendMsi.Msi,
-                             pTask->u.IoApicSendMsi.uTagSrc);
+            PDMIoApicSendMsi(pVM, pTask->u.IoApicSendMsi.uBusDevFn, &pTask->u.IoApicSendMsi.Msi, pTask->u.IoApicSendMsi.uTagSrc);
+            break;
+        }
+
+        case PDMDEVHLPTASKOP_IOAPIC_SET_EOI:
+        {
+            PDMIoApicBroadcastEoi(pVM, pTask->u.IoApicSetEoi.uVector);
             break;
         }
 
