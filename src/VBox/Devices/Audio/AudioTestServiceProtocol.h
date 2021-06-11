@@ -30,6 +30,13 @@
 
 RT_C_DECLS_BEGIN
 
+/** Maximum length (in bytes) an opcode can have. */
+#define ATSPKT_OPCODE_MAX_LEN           8
+/** Packet alignment. */
+#define ATSPKT_ALIGNMENT                16
+/** Max packet size. */
+#define ATSPKT_MAX_SIZE                 _256K
+
 /**
  * Common Packet header (for requests and replies).
  */
@@ -41,7 +48,7 @@ typedef struct ATSPKTHDR
      *  hasn't been CRCed. */
     uint32_t        uCrc32;
     /** Packet opcode, an unterminated ASCII string.  */
-    uint8_t         achOpcode[8];
+    uint8_t         achOpcode[ATSPKT_OPCODE_MAX_LEN];
 } ATSPKTHDR;
 AssertCompileSize(ATSPKTHDR, 16);
 /** Pointer to a packet header. */
@@ -50,30 +57,6 @@ typedef ATSPKTHDR *PATSPKTHDR;
 typedef ATSPKTHDR const *PCATSPKTHDR;
 /** Pointer to a packet header pointer. */
 typedef PATSPKTHDR *PPATSPKTHDR;
-
-/** Packet alignment. */
-#define ATSPKT_ALIGNMENT                16
-/** Max packet size. */
-#define ATSPKT_MAX_SIZE                 _256K
-
-/**
- * Status packet.
- */
-typedef struct ATSPKTSTS
-{
-    /** Embedded common packet header. */
-    ATSPKTHDR       Hdr;
-    /** The IPRT status code of the request. */
-    int32_t         rcReq;
-    /** Size of the optional status message following this structure -
-     * only for errors. */
-    uint32_t        cchStsMsg;
-    /** Padding - reserved. */
-    uint8_t         au8Padding[8];
-} ATSPKTSTS;
-AssertCompileSizeAlignment(ATSPKTSTS, ATSPKT_ALIGNMENT);
-/** Pointer to a status packet header. */
-typedef ATSPKTSTS *PATSPKTSTS;
 
 #define ATSPKT_OPCODE_HOWDY             "HOWDY   "
 
@@ -105,8 +88,8 @@ typedef ATSPKTREQHOWDY *PATSPKTREQHOWDY;
  */
 typedef struct ATSPKTREPHOWDY
 {
-    /** Status packet. */
-    ATSPKTSTS       Sts;
+    /** Packet header. */
+    ATSPKTHDR       Hdr;
     /** Version to use for the established connection. */
     uint32_t        uVersion;
     /** Padding - reserved. */
@@ -123,7 +106,7 @@ typedef ATSPKTREPHOWDY *PATSPKTREPHOWDY;
 #define ATSPKT_OPCODE_TESTSET_BEGIN     "TSET BEG"
 
 /**
- * The TSET BEG request structure.
+ * The TSET BEG (test set begin) request structure.
  */
 typedef struct ATSPKTREQTSETBEG
 {
@@ -139,7 +122,7 @@ typedef ATSPKTREQTSETBEG *PATSPKTREQTSETBEG;
 #define ATSPKT_OPCODE_TESTSET_END       "TSET END"
 
 /**
- * The TSET END request structure.
+ * The TSET END (test set end) request structure.
  */
 typedef struct ATSPKTREQTSETEND
 {
@@ -152,10 +135,26 @@ AssertCompileSizeAlignment(ATSPKTREQTSETEND, ATSPKT_ALIGNMENT);
 /** Pointer to a TSET STA reply structure. */
 typedef ATSPKTREQTSETEND *PATSPKTREQTSETEND;
 
+#define ATSPKT_OPCODE_TESTSET_SEND      "TSET SND"
+
+/**
+ * The TSET SND (test set send) request structure.
+ */
+typedef struct ATSPKTREQTSETSND
+{
+    /** Embedded packet header. */
+    ATSPKTHDR          Hdr;
+    /** Audio test set tag to use. */
+    char               szTag[AUDIOTEST_TAG_MAX];
+} ATSPKTREQTSETSND;
+AssertCompileSizeAlignment(ATSPKTREQTSETSND, ATSPKT_ALIGNMENT);
+/** Pointer to a ATSPKTREQTSETSND structure. */
+typedef ATSPKTREQTSETSND *PATSPKTREQTSETSND;
+
 #define ATSPKT_OPCODE_TONE_PLAY         "TN PLY  "
 
 /**
- * The TN PLY request structure.
+ * The TN PLY (tone play) request structure.
  */
 typedef struct ATSPKTREQTONEPLAY
 {
@@ -172,7 +171,7 @@ typedef ATSPKTREQTONEPLAY *PATSPKTREQTONEPLAY;
 #define ATSPKT_OPCODE_TONE_RECORD       "TN REC  "
 
 /**
- * The TN REC request structure.
+ * The TN REC (tone record) request structure.
  */
 typedef struct ATSPKTREQTONEREC
 {
@@ -222,38 +221,6 @@ DECLINLINE(bool) atsIsSameOpcode(PCATSPKTHDR pPktHdr, const char *pszOpcode2)
 
     return i == RT_SIZEOFMEMB(ATSPKTHDR, achOpcode);
 }
-
-/**
- * Converts a ATS request packet from host to network byte ordering.
- *
- * @returns nothing.
- * @param   pPktHdr           The packet to convert.
- */
-DECLHIDDEN(void) atsProtocolReqH2N(PATSPKTHDR pPktHdr);
-
-/**
- * Converts a ATS request packet from network to host byte ordering.
- *
- * @returns nothing.
- * @param   pPktHdr           The packet to convert.
- */
-DECLHIDDEN(void) atsProtocolReqN2H(PATSPKTHDR pPktHdr);
-
-/**
- * Converts a ATS reply packet from host to network byte ordering.
- *
- * @returns nothing.
- * @param   pPktHdr           The packet to convert.
- */
-DECLHIDDEN(void) atsProtocolRepH2N(PATSPKTHDR pPktHdr);
-
-/**
- * Converts a ATS reply packet from network to host byte ordering.
- *
- * @returns nothing.
- * @param   pPktHdr           The packet to convert.
- */
-DECLHIDDEN(void) atsProtocolRepN2H(PATSPKTHDR pPktHdr);
 
 RT_C_DECLS_END
 

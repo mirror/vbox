@@ -544,9 +544,33 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
             int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, szTagGuest);
             if (RT_SUCCESS(rc))
                 rc = rc2;
+
             rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, szTagHost);
             if (RT_SUCCESS(rc))
                 rc = rc2;
+
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Download guest test set to host.
+                 */
+                char szFileName[RTPATH_MAX];
+                if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s.tar.gz", szTagGuest))
+                {
+                    char szFilePath[RTPATH_MAX];
+                    rc2 = RTPathJoin(szFilePath, sizeof(szFilePath), pTstEnv->szPathOut, szFileName);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading guest test set to '%s'\n", szFilePath);
+                        rc2 = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClGuest, szTagGuest, szFilePath);
+                    }
+                }
+                else
+                    rc2 = VERR_BUFFER_OVERFLOW;
+
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
         }
     }
     else

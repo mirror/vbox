@@ -419,7 +419,7 @@ int         audioTestEnvConnectToHostAts(PAUDIOTESTENV pTstEnv,
  * @{ */
 int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszHostTcpAddr, uint32_t uHostTcpPort, const char *pszGuestTcpAddr, uint32_t uGuestTcpPort);
 void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
-int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv);
+int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszFilePath, size_t cbFilePath);
 
 void        audioTestParmsInit(PAUDIOTESTPARMS pTstParms);
 void        audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms);

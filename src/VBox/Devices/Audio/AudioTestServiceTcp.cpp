@@ -185,6 +185,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
      * Write it.
      */
     size_t cbToSend = RT_ALIGN_Z(pPktHdr->cb, ATSPKT_ALIGNMENT);
+    LogFlowFunc(("%RU32 -> %zu\n", pPktHdr->cb, cbToSend));
     int rc = RTTcpWrite(pClient->hTcpClient, pPktHdr, cbToSend);
     if (    RT_FAILURE(rc)
         &&  rc != VERR_INTERRUPTED)

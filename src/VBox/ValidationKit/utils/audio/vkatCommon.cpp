@@ -63,7 +63,13 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
  */
 typedef struct ATSCALLBACKCTX
 {
+    /** The test environment bound to this context. */
     PAUDIOTESTENV pTstEnv;
+    /** Absolute path to the packed up test set archive.
+     *  Keep it simple for now and only support one (open) archive at a time. */
+    char          szTestSetArchive[RTPATH_MAX];
+    /** File handle to the (opened) test set archive for reading. */
+    RTFILE        hTestSetArchive;
 } ATSCALLBACKCTX;
 typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 
@@ -420,7 +426,8 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetEndCallback(void const *pvUser, c
 
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Ending test set '%s'\n", pszTag);
 
-    return audioTestEnvPrologue(pTstEnv);
+    /* Pack up everything to be ready for transmission. */
+    return audioTestEnvPrologue(pTstEnv, true /* fPack */, pCtx->szTestSetArchive, sizeof(pCtx->szTestSetArchive));
 }
 
 /** @copydoc ATSCALLBACKS::pfnTonePlay
@@ -506,6 +513,55 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
     }
     else
         RTTestFailed(g_hTest, "Error creating input stream, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/** @copydoc ATSCALLBACKS::pfnTestSetSendBegin */
+static DECLCALLBACK(int) audioTestGstAtsTestSetSendBeginCallback(void const *pvUser, const char *pszTag)
+{
+    RT_NOREF(pszTag);
+
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    if (!RTFileExists(pCtx->szTestSetArchive)) /* Has the archive successfully been created yet? */
+        return VERR_WRONG_ORDER;
+
+    int rc = RTFileOpen(&pCtx->hTestSetArchive, pCtx->szTestSetArchive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t uSize;
+        rc = RTFileQuerySize(pCtx->hTestSetArchive, &uSize);
+        if (RT_SUCCESS(rc))
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Sending test set '%s' (%zu bytes)\n", pCtx->szTestSetArchive, uSize);
+    }
+
+    return rc;
+}
+
+/** @copydoc ATSCALLBACKS::pfnTestSetSendRead */
+static DECLCALLBACK(int) audioTestGstAtsTestSetSendReadCallback(void const *pvUser,
+                                                                const char *pszTag, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    RT_NOREF(pszTag);
+
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    return RTFileRead(pCtx->hTestSetArchive, pvBuf, cbBuf, pcbRead);
+}
+
+/** @copydoc ATSCALLBACKS::pfnTestSetSendEnd */
+static DECLCALLBACK(int) audioTestGstAtsTestSetSendEndCallback(void const *pvUser, const char *pszTag)
+{
+    RT_NOREF(pszTag);
+
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    int rc = RTFileClose(pCtx->hTestSetArchive);
+    if (RT_SUCCESS(rc))
+    {
+        pCtx->hTestSetArchive = NIL_RTFILE;
+    }
 
     return rc;
 }
@@ -657,11 +713,14 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Ctx.pTstEnv = pTstEnv;
 
         ATSCALLBACKS Callbacks;
-        Callbacks.pfnTestSetBegin = audioTestGstAtsTestSetBeginCallback;
-        Callbacks.pfnTestSetEnd   = audioTestGstAtsTestSetEndCallback;
-        Callbacks.pfnTonePlay     = audioTestGstAtsTonePlayCallback;
-        Callbacks.pfnToneRecord   = audioTestGstAtsToneRecordCallback;
-        Callbacks.pvUser          = &Ctx;
+        Callbacks.pfnTestSetBegin     = audioTestGstAtsTestSetBeginCallback;
+        Callbacks.pfnTestSetEnd       = audioTestGstAtsTestSetEndCallback;
+        Callbacks.pfnTonePlay         = audioTestGstAtsTonePlayCallback;
+        Callbacks.pfnToneRecord       = audioTestGstAtsToneRecordCallback;
+        Callbacks.pfnTestSetSendBegin = audioTestGstAtsTestSetSendBeginCallback;
+        Callbacks.pfnTestSetSendRead  = audioTestGstAtsTestSetSendReadCallback;
+        Callbacks.pfnTestSetSendEnd   = audioTestGstAtsTestSetSendEndCallback;
+        Callbacks.pvUser              = &Ctx;
 
         /*
          * Start the ATS (Audio Test Service) on the guest side.
@@ -724,18 +783,25 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
  *
  * @returns VBox status code.
  * @param   pTstEnv             Test environment to handle.
+ * @param   fPack               Whether to pack the test set up before destroying / wiping it.
+ * @param   pszPackFile         Where to store the packed test set file on success. Can be NULL if \a fPack is \c false.
+ * @param   cbPackFile          Size (in bytes) of \a pszPackFile. Can be 0 if \a fPack is \c false.
  */
-int audioTestEnvPrologue(PAUDIOTESTENV pTstEnv)
+int audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszPackFile, size_t cbPackFile)
 {
     /* Close the test set first. */
     AudioTestSetClose(&pTstEnv->Set);
 
-    /* Before destroying the test environment, pack up the test set so
-     * that it's ready for transmission. */
-    char szFileOut[RTPATH_MAX];
-    int rc = AudioTestSetPack(&pTstEnv->Set, pTstEnv->szPathOut, szFileOut, sizeof(szFileOut));
-    if (RT_SUCCESS(rc))
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", szFileOut);
+    int rc = VINF_SUCCESS;
+
+    if (fPack)
+    {
+        /* Before destroying the test environment, pack up the test set so
+         * that it's ready for transmission. */
+        rc = AudioTestSetPack(&pTstEnv->Set, pTstEnv->szPathOut, pszPackFile, cbPackFile);
+        if (RT_SUCCESS(rc))
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", pszPackFile);
+    }
 
     /* ignore rc */ AudioTestSetWipe(&pTstEnv->Set);
 

@@ -55,6 +55,36 @@ typedef struct ATSCALLBACKS
     DECLR3CALLBACKMEMBER(int, pfnTestSetEnd,   (void const *pvUser, const char *pszTag));
 
     /**
+     * Marks the begin of sending a test set. Optional.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pszTag          Tag of test set to begin sending.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTestSetSendBegin, (void const *pvUser, const char *pszTag));
+
+    /**
+     * Reads data from a test set for sending it.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pszTag          Tag of test set to begin sending.
+     * @param   pvBuf           Where to store the read test set data.
+     * @param   cbBuf           Size of \a pvBuf (in bytes).
+     * @param   pcbRead         Where to return the amount of read data in bytes. Optional and can be NULL.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTestSetSendRead,  (void const *pvUser, const char *pszTag, void *pvBuf, size_t cbBuf, size_t *pcbRead));
+
+    /**
+     * Marks the end of sending a test set. Optional.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     * @param   pszTag          Tag of test set to end sending.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTestSetSendEnd,   (void const *pvUser, const char *pszTag));
+
+    /**
      * Plays a test tone.
      *
      * @returns VBox status code.

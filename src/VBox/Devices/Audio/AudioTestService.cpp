@@ -140,13 +140,12 @@ static int atsSendPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt)
     if (pPkt->cb != RT_ALIGN_32(pPkt->cb, ATSPKT_ALIGNMENT))
         memset((uint8_t *)pPkt + pPkt->cb, '\0', RT_ALIGN_32(pPkt->cb, ATSPKT_ALIGNMENT) - pPkt->cb);
 
-    Log(("atsSendPkt: cb=%#x opcode=%.8s\n", pPkt->cb, pPkt->achOpcode));
-    Log2(("%.*Rhxd\n", RT_MIN(pPkt->cb, 256), pPkt));
+    LogFlowFunc(("cb=%RU32 (%#x), payload=%RU32 (%#x), opcode=%.8s\n",
+            pPkt->cb, pPkt->cb, pPkt->cb - sizeof(ATSPKTHDR), pPkt->cb - sizeof(ATSPKTHDR), pPkt->achOpcode));
+    LogFlowFunc(("%.*Rhxd\n", RT_MIN(pPkt->cb, 256), pPkt));
     int rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
     while (RT_UNLIKELY(rc == VERR_INTERRUPTED) && !pThis->fTerminate)
         rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
-    if (RT_FAILURE(rc))
-        Log(("atsSendPkt: rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -265,26 +264,26 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
  *                              with space.
  * @param   cbExtra             Bytes in addition to the header.
  */
-static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTSTS pReply, const char *pszOpcode, size_t cbExtra)
+static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pReply, const char *pszOpcode, size_t cbExtra)
 {
     /* copy the opcode, don't be too strict in case of a padding screw up. */
     size_t cchOpcode = strlen(pszOpcode);
-    if (RT_LIKELY(cchOpcode == sizeof(pReply->Hdr.achOpcode)))
-        memcpy(pReply->Hdr.achOpcode, pszOpcode, sizeof(pReply->Hdr.achOpcode));
+    if (RT_LIKELY(cchOpcode == sizeof(pReply->achOpcode)))
+        memcpy(pReply->achOpcode, pszOpcode, sizeof(pReply->achOpcode));
     else
     {
-        Assert(cchOpcode == sizeof(pReply->Hdr.achOpcode));
+        Assert(cchOpcode == sizeof(pReply->achOpcode));
         while (cchOpcode > 0 && pszOpcode[cchOpcode - 1] == ' ')
             cchOpcode--;
-        AssertMsgReturn(cchOpcode < sizeof(pReply->Hdr.achOpcode), ("%d/'%.8s'\n", cchOpcode, pszOpcode), VERR_INTERNAL_ERROR_4);
-        memcpy(pReply->Hdr.achOpcode, pszOpcode, cchOpcode);
-        memset(&pReply->Hdr.achOpcode[cchOpcode], ' ', sizeof(pReply->Hdr.achOpcode) - cchOpcode);
+        AssertMsgReturn(cchOpcode < sizeof(pReply->achOpcode), ("%d/'%.8s'\n", cchOpcode, pszOpcode), VERR_INTERNAL_ERROR_4);
+        memcpy(pReply->achOpcode, pszOpcode, cchOpcode);
+        memset(&pReply->achOpcode[cchOpcode], ' ', sizeof(pReply->achOpcode) - cchOpcode);
     }
 
-    pReply->Hdr.cb     = (uint32_t)sizeof(ATSPKTSTS) + (uint32_t)cbExtra;
-    pReply->Hdr.uCrc32 = 0;
+    pReply->cb     = (uint32_t)sizeof(ATSPKTHDR) + (uint32_t)cbExtra;
+    pReply->uCrc32 = 0;
 
-    return atsSendPkt(pThis, pClient, &pReply->Hdr);
+    return atsSendPkt(pThis, pClient, pReply);
 }
 
 /**
@@ -297,15 +296,9 @@ static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTSTS
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
  */
-static int atsReplySimple(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr, const char *pszOpcode)
+static int atsReplySimple(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode)
 {
-    ATSPKTSTS Pkt;
-
-    RT_ZERO(Pkt);
-    Pkt.rcReq = VINF_SUCCESS;
-    Pkt.cchStsMsg = 0;
-    RT_NOREF(pPktHdr);
-    return atsReplyInternal(pThis, pClient, &Pkt, pszOpcode, 0);
+    return atsReplyInternal(pThis, pClient, pPktHdr, pszOpcode, 0);
 }
 
 /**
@@ -316,7 +309,7 @@ static int atsReplySimple(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR 
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The original packet (for future use).
  */
-static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     return atsReplySimple(pThis, pClient, pPktHdr, "ACK     ");
 }
@@ -336,22 +329,24 @@ static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPk
  * @param   va                  Format arguments.
  */
 static int atsReplyFailureV(PATSSERVER pThis,
-                            PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
+                            PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
 {
     RT_NOREF(pPktHdr);
     union
     {
-        ATSPKTSTS   Hdr;
+        ATSPKTHDR   Hdr;
+        int         rc;
         char        ach[256];
     } uPkt;
-
     RT_ZERO(uPkt);
-    size_t cchDetail = RTStrPrintfV(&uPkt.ach[sizeof(ATSPKTSTS)],
-                                    sizeof(uPkt) - sizeof(ATSPKTSTS),
+
+    size_t cchDetail = RTStrPrintfV(&uPkt.ach[sizeof(ATSPKTHDR)],
+                                    sizeof(uPkt) - sizeof(ATSPKTHDR),
                                     pszDetailFmt, va);
-    uPkt.Hdr.rcReq = rcReq;
-    uPkt.Hdr.cchStsMsg = (uint32_t)cchDetail;
-    return atsReplyInternal(pThis, pClient, &uPkt.Hdr, pszOpcode, cchDetail + 1);
+
+    uPkt.rc = rcReq;
+
+    return atsReplyInternal(pThis, pClient, &uPkt.Hdr, pszOpcode, sizeof(int) + cchDetail + 1);
 }
 
 /**
@@ -368,7 +363,7 @@ static int atsReplyFailureV(PATSSERVER pThis,
  * @param   ...                 Format arguments.
  */
 static int atsReplyFailure(PATSSERVER pThis,
-                           PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
+                           PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
 {
     va_list va;
     va_start(va, pszDetailFmt);
@@ -390,7 +385,7 @@ static int atsReplyFailure(PATSSERVER pThis,
  * @param   ...                 Arguments to the format string.
  */
 static int atsReplyRC(PATSSERVER pThis,
-                      PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr, int rcOperation, const char *pszOperationFmt, ...)
+                      PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, int rcOperation, const char *pszOperationFmt, ...)
 {
     if (RT_SUCCESS(rcOperation))
         return atsReplyAck(pThis, pClient, pPktHdr);
@@ -414,7 +409,7 @@ static int atsReplyRC(PATSSERVER pThis,
  * @param   pPktHdr             The packet to reply to.
  * @param   cb                  The wanted size.
  */
-static int atsReplyBadSize(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr, size_t cb)
+static int atsReplyBadSize(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, size_t cb)
 {
     return atsReplyFailure(pThis, pClient, pPktHdr, "BAD SIZE", VERR_INVALID_PARAMETER, "Expected at %zu bytes, got %u  (opcode '%.8s')",
                            cb, pPktHdr->cb, pPktHdr->achOpcode);
@@ -428,7 +423,7 @@ static int atsReplyBadSize(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The packet to reply to.
  */
-static int atsReplyUnknown(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsReplyUnknown(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     return atsReplyFailure(pThis, pClient, pPktHdr, "UNKNOWN ", VERR_NOT_FOUND, "Opcode '%.8s' is not known", pPktHdr->achOpcode);
 }
@@ -441,7 +436,7 @@ static int atsReplyUnknown(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The packet containing the unterminated string.
  */
-static int atsReplyBadStrTermination(PATSCLIENT pClient, PCATSPKTHDR pPktHdr)
+static int atsReplyBadStrTermination(PATSCLIENT pClient, PATSPKTHDR pPktHdr)
 {
     return atsReplyFailure(pClient, pPktHdr, "BAD TERM", VERR_INVALID_PARAMETER, "Opcode '%.8s' contains an unterminated string", pPktHdr->achOpcode);
 }
@@ -455,7 +450,7 @@ static int atsReplyBadStrTermination(PATSCLIENT pClient, PCATSPKTHDR pPktHdr)
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The packet containing the unterminated string.
  */
-static int atsReplyInvalidState(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsReplyInvalidState(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     return atsReplyFailure(pThis, pClient, pPktHdr, "INVSTATE", VERR_INVALID_STATE, "Opcode '%.8s' is not supported at client state '%s",
                            pPktHdr->achOpcode, atsClientStateStringify(pClient->enmState));
@@ -467,9 +462,9 @@ static int atsReplyInvalidState(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSP
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
  * @param   pClient             The ATS client structure.
- * @param   pPktHdr             The howdy packet.
+ * @param   pPktHdr             The bye packet.
  */
-static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     int rc;
     if (pPktHdr->cb == sizeof(ATSPKTHDR))
@@ -489,7 +484,7 @@ static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHd
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The howdy packet.
  */
-static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
@@ -509,7 +504,7 @@ static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPkt
 
     Rep.uVersion = ATS_PROTOCOL_VS;
 
-    rc = atsReplyInternal(pThis, pClient, &Rep.Sts, "ACK     ", sizeof(Rep) - sizeof(ATSPKTSTS));
+    rc = atsReplyInternal(pThis, pClient, &Rep.Hdr, "ACK     ", sizeof(Rep) - sizeof(ATSPKTHDR));
     if (RT_SUCCESS(rc))
     {
         pThis->pTransport->pfnNotifyHowdy(&pThis->TransportInst, pClient->pTransportClient);
@@ -527,7 +522,7 @@ static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPkt
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The test set begin packet.
  */
-static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     if (pPktHdr->cb != sizeof(ATSPKTREQTSETBEG))
         return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETBEG));
@@ -561,7 +556,7 @@ static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTH
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The test set end packet.
  */
-static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     if (pPktHdr->cb != sizeof(ATSPKTREQTSETEND))
         return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETEND));
@@ -587,6 +582,115 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
 }
 
 /**
+ * Used by atsDoTestSetSend to wait for a reply ACK from the client.
+ *
+ * @returns VINF_SUCCESS on ACK, VERR_GENERAL_FAILURE on NACK,
+ *          VERR_NET_NOT_CONNECTED on unknown response (sending a bable reply),
+ *          or whatever atsRecvPkt returns.
+ * @param   pPktHdr             The original packet (for future use).
+ */
+static int atsWaitForAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+{
+    RT_NOREF(pPktHdr);
+    /** @todo timeout? */
+    PATSPKTHDR pReply;
+    int rc = atsRecvPkt(pThis, pClient, &pReply, false /*fAutoRetryOnFailure*/);
+    if (RT_SUCCESS(rc))
+    {
+        if (atsIsSameOpcode(pReply, "ACK"))
+            rc = VINF_SUCCESS;
+        else if (atsIsSameOpcode(pReply, "NACK"))
+            rc = VERR_GENERAL_FAILURE;
+        else
+        {
+            atsReplyBabble(pThis, pClient, "BABBLE  ");
+            rc = VERR_NET_NOT_CONNECTED;
+        }
+        RTMemFree(pReply);
+    }
+    return rc;
+}
+
+/**
+ * Verifies and acknowledges a "TSET SND" request.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ATS instance.
+ * @param   pClient             The ATS client structure.
+ * @param   pPktHdr             The test set end packet.
+ */
+static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(ATSPKTREQTSETSND))
+        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETSND));
+
+    PATSPKTREQTSETSND pReq = (PATSPKTREQTSETSND)pPktHdr;
+
+    int rc = VINF_SUCCESS;
+
+    if (!pThis->Callbacks.pfnTestSetSendRead)
+        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Sending test set not implemented");
+
+    if (pThis->Callbacks.pfnTestSetSendBegin)
+    {
+        rc = pThis->Callbacks.pfnTestSetSendBegin(pThis->Callbacks.pvUser, pReq->szTag);
+        if (RT_FAILURE(rc))
+            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning sending test set '%s' failed", pReq->szTag);
+    }
+
+    uint32_t uMyCrc32 = RTCrc32Start();
+    for (;;)
+    {
+        struct
+        {
+            ATSPKTHDR   Hdr;
+            uint32_t    uCrc32;
+            char        ab[_8K]; /** @todo BUGBUG No clue why sending / receiving does not work when I use bigger sizes like _32K / _64K here. Some network / frame limitation? */
+            char        abPadding[ATSPKT_ALIGNMENT];
+        }       Pkt;
+        size_t  cbRead;
+        rc = pThis->Callbacks.pfnTestSetSendRead(pThis->Callbacks.pvUser, pReq->szTag, &Pkt.ab, sizeof(Pkt.ab), &cbRead);
+        if (   RT_FAILURE(rc)
+            || cbRead == 0)
+        {
+            if (    rc == VERR_EOF
+                || (RT_SUCCESS(rc) && cbRead == 0))
+            {
+                Pkt.uCrc32 = RTCrc32Finish(uMyCrc32);
+                rc = atsReplyInternal(pThis, pClient, &Pkt.Hdr, "DATA EOF", sizeof(uint32_t) /* uCrc32 */);
+                if (RT_SUCCESS(rc))
+                    rc = atsWaitForAck(pThis, pClient, &Pkt.Hdr);
+            }
+            else
+                return atsReplyRC(pThis, pClient, pPktHdr, rc, "Sending data for test set '%s' failed", pReq->szTag);
+            break;
+        }
+
+        uMyCrc32   = RTCrc32Process(uMyCrc32, &Pkt.ab[0], cbRead);
+        Pkt.uCrc32 = RTCrc32Finish(uMyCrc32);
+
+        Assert(cbRead <= sizeof(Pkt.ab));
+
+        rc = atsReplyInternal(pThis, pClient, &Pkt.Hdr, "DATA    ", sizeof(uint32_t) /* uCrc32 */ + cbRead);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = atsWaitForAck(pThis, pClient, &Pkt.Hdr);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (pThis->Callbacks.pfnTestSetSendEnd)
+    {
+        int rc2 = pThis->Callbacks.pfnTestSetSendEnd(pThis->Callbacks.pvUser, pReq->szTag);
+        if (RT_FAILURE(rc2))
+            return atsReplyRC(pThis, pClient, pPktHdr, rc2, "Ending sending test set '%s' failed", pReq->szTag);
+    }
+
+    return rc;
+}
+
+/**
  * Verifies and processes a "TN PLY" request.
  *
  * @returns IPRT status code.
@@ -594,7 +698,7 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The packet header.
  */
-static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
@@ -625,7 +729,7 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR p
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The packet header.
  */
-static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PCATSPKTHDR pPktHdr)
+static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
@@ -678,6 +782,8 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
         rc = atsDoTestSetBegin(pThis, pClient, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_END))
         rc = atsDoTestSetEnd(pThis, pClient, pPktHdr);
+    else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_SEND))
+        rc = atsDoTestSetSend(pThis, pClient, pPktHdr);
     /* Audio testing: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_PLAY))
         rc = atsDoTonePlay(pThis, pClient, pPktHdr);

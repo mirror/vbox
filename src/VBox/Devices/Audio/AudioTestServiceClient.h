@@ -34,6 +34,7 @@ int AudioTestSvcClientTestSetBegin(PATSCLIENT pClient, const char *pszTag);
 int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag);
 int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms);
 int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms);
+int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, const char *pszPathOutAbs);
 int AudioTestSvcClientClose(PATSCLIENT pClient);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceClient_h */
