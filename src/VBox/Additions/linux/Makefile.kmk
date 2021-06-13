@@ -116,6 +116,10 @@ VBOX_LNX_ADD_STRIP_BIN += \
 	VBoxControl \
 	VBoxDRMClient \
 	VBoxClient
+ifdef VBOX_WITH_VALIDATIONKIT
+ VBOX_LNX_ADD_STRIP_BIN += \
+ 	vkat
+endif
 
 VBOX_LNX_ADD_STRIP_SBIN += \
 	VBoxService \
