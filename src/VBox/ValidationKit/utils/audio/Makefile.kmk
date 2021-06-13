@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # is including just this makefile.
 #
 ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
- include $(PATH_SUB_CURRENT)/ValidationKit/Config.kmk
+ include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
 endif
 
 #
