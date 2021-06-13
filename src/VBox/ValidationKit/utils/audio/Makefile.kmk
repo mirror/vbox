@@ -43,7 +43,9 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   PROGRAMS += vkat
  endif
  if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
-  PROGRAMS += vkatadd
+  ifndef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+   PROGRAMS += vkatadd
+  endif
  endif
 endif
 
