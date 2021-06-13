@@ -35,6 +35,7 @@ ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
 endif
 
+
 #
 # Append what we build here to PROGRAMS (at the top because it's a bit messy).
 #
@@ -42,14 +43,17 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
  if defined(VBOX_ONLY_VALIDATIONKIT) || !defined(VBOX_ONLY_BUILD)
   PROGRAMS += vkat
  endif
- if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
-  ifndef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
-   ifdef VBOX_WITH_ADDITIONS
-    PROGRAMS += vkatadd
+ ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
+  if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
+   ifndef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+    ifdef VBOX_WITH_ADDITIONS
+     PROGRAMS += vkatadd
+    endif
    endif
   endif
  endif
 endif
+
 
 #
 # Utility to play sine wave to Default Audio Device.
@@ -61,6 +65,7 @@ if 0 # Disabled for now; does not work without WinMM.dll import validator files.
  ntPlayToneWaveX_LIBS    += \
   WinMM.Lib
 endif
+
 
 #
 # The Validation Kit Audio Test (VKAT) utility.
@@ -147,6 +152,15 @@ vkatadd_TEMPLATE       = VBoxGuestR3Exe
 vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
 
+
+#
+# Copy the valkit vkat to bin so it can be shipped with the host installer too.
+#
+ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
+ INSTALLS += vkathost
+ vkathost_TEMPLATE = VBOXR3EXE
+ vkathost_SOURCES  = $(vkat_1_TARGET)
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

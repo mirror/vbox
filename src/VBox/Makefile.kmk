@@ -28,7 +28,7 @@ ifdef VBOX_ONLY_ADDITIONS
  endif
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
- ifdef VBOX_WITH_VALIDATIONKIT # For including VKAT with the Guest Additions.
+ ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
   include $(PATH_SUB_CURRENT)/ValidationKit/utils/audio/Makefile.kmk
  endif
 
@@ -101,6 +101,8 @@ else
  endif
  ifdef VBOX_WITH_VALIDATIONKIT
   include $(PATH_SUB_CURRENT)/ValidationKit/Makefile.kmk
+ else ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
+  include $(PATH_SUB_CURRENT)/ValidationKit/utils/audio/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))

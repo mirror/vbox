@@ -736,6 +736,10 @@ VBOX_WITH_ONLY_PYTHON_LIMITED_API = 1
 VBOX_WITH_KCHMVIEWER =
 # Build the Validation Kit.
 VBOX_WITH_VALIDATIONKIT = 1
+# Set if we should ship the audio test from the Validation Kit with the host installer.
+VBOX_WITH_HOST_SHIPPING_AUDIO_TEST = 1
+# Set if we should ship the audio test from the Validation Kit with the guest additions.
+VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST = 1
 # Build the testcases.
 VBOX_WITH_TESTCASES = 1
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
