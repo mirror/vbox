@@ -71,7 +71,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
      * Parse options.
      */
     /* Option values: */
-    PCPDMDRVREG pDrvReg = g_aBackends[0].pDrvReg;
+    PCPDMDRVREG pDrvReg = AudioTestGetDefaultBackend();
 
     /* Argument processing loop: */
     int           rc;
@@ -81,7 +81,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
         switch (rc)
         {
             case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;
@@ -407,7 +407,7 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
 static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
 {
     /* Option values: */
-    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    PCPDMDRVREG pDrvReg             = AudioTestGetDefaultBackend();
     uint32_t    cMsBufferSize       = UINT32_MAX;
     uint32_t    cMsPreBuffer        = UINT32_MAX;
     uint32_t    cMsSchedulingHint   = UINT32_MAX;
@@ -426,7 +426,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
         switch (rc)
         {
             case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;
@@ -752,7 +752,7 @@ static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
 static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
 {
     /* Option values: */
-    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    PCPDMDRVREG pDrvReg             = AudioTestGetDefaultBackend();
     uint32_t    cMsBufferSize       = UINT32_MAX;
     uint32_t    cMsPreBuffer        = UINT32_MAX;
     uint32_t    cMsSchedulingHint   = UINT32_MAX;
@@ -776,7 +776,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
         switch (rc)
         {
             case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;

@@ -93,6 +93,46 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/**
+ * Backends.
+ *
+ * @note The first backend in the array is the default one for the platform.
+ */
+struct
+{
+    /** The driver registration structure. */
+    PCPDMDRVREG pDrvReg;
+    /** The backend name.
+     * Aliases are implemented by having multiple entries for the same backend.  */
+    const char *pszName;
+} const g_aBackends[] =
+{
+#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
+    {   &g_DrvHostALSAAudio,          "alsa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+    {   &g_DrvHostPulseAudio,         "pulseaudio" },
+    {   &g_DrvHostPulseAudio,         "pulse" },
+    {   &g_DrvHostPulseAudio,         "pa" },
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+    {   &g_DrvHostOSSAudio,           "oss" },
+#endif
+#if defined(RT_OS_DARWIN)
+    {   &g_DrvHostCoreAudio,          "coreaudio" },
+    {   &g_DrvHostCoreAudio,          "core" },
+    {   &g_DrvHostCoreAudio,          "ca" },
+#endif
+#if defined(RT_OS_WINDOWS)
+    {   &g_DrvHostAudioWas,           "wasapi" },
+    {   &g_DrvHostAudioWas,           "was" },
+    {   &g_DrvHostDSound,             "directsound" },
+    {   &g_DrvHostDSound,             "dsound" },
+    {   &g_DrvHostDSound,             "ds" },
+#endif
+    {   &g_DrvHostValidationKitAudio, "valkit" }
+};
+AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
 /**
  * Long option values for the 'test' command.
@@ -187,13 +227,22 @@ const char      *g_pszDrvAudioDebug = NULL;
 
 
 /**
+ * Get default backend.
+ */
+PCPDMDRVREG AudioTestGetDefaultBackend(void)
+{
+    return g_aBackends[0].pDrvReg;
+}
+
+
+/**
  * Helper for handling --backend options.
  *
  * @returns Pointer to the specified backend, NULL if not found (error
  *          displayed).
  * @param   pszBackend      The backend option value.
  */
-PCPDMDRVREG audioTestFindBackendOpt(const char *pszBackend)
+PCPDMDRVREG AudioTestFindBackendOpt(const char *pszBackend)
 {
     for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
         if (   strcmp(pszBackend, g_aBackends[i].pszName) == 0
@@ -572,7 +621,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
     const char *pszDevice     = NULL; /* Custom device to use. Can be NULL if not being used. */
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
-    PCPDMDRVREG pDrvReg       = g_aBackends[0].pDrvReg;
+    PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
     bool        fWithDrvAudio = false;
     uint8_t     cPcmSampleBit = 0;
     uint8_t     cPcmChannels  = 0;
@@ -596,7 +645,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
                 if (pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;

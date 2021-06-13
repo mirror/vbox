@@ -654,7 +654,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         if (pTstEnv->fSelftest)
             pDrvReg = &g_DrvHostValidationKitAudio;
         else /* Go with the platform's default backend if nothing else is set. */
-            pDrvReg = g_aBackends[0].pDrvReg;
+            pDrvReg = AudioTestGetDefaultBackend();
     }
 
     if (!uHostTcpPort)

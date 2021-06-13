@@ -30,6 +30,10 @@
 # pragma once
 #endif
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/getopt.h>
 
 #include <VBox/vmm/pdmdrv.h>
@@ -42,35 +46,6 @@
 #include "Audio/AudioTestServiceClient.h"
 
 #include "VBoxDD.h"
-
-
-/*********************************************************************************************************************************
-*   Externals                                                                                                                    *
-*********************************************************************************************************************************/
-/** Terminate ASAP if set.  Set on Ctrl-C. */
-extern bool volatile    g_fTerminate;
-/** The release logger. */
-extern PRTLOGGER        g_pRelLogger;
-
-/** The test handle. */
-extern RTTEST         g_hTest;
-extern unsigned       g_uVerbosity;
-extern bool           g_fDrvAudioDebug;
-extern const char    *g_pszDrvAudioDebug;
-
-/** The test handle. */
-extern RTTEST         g_hTest;
-/** The current verbosity level. */
-extern unsigned       g_uVerbosity;
-/** DrvAudio: Enable debug (or not). */
-extern bool           g_fDrvAudioDebug;
-/** DrvAudio: The debug output path. */
-extern const char    *g_pszDrvAudioDebug;
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
 
 
 /*********************************************************************************************************************************
@@ -135,47 +110,6 @@ typedef struct AUDIOTESTDRVMIXSTREAM
 } AUDIOTESTDRVMIXSTREAM;
 /** Pointer to mixer setup for a stream. */
 typedef AUDIOTESTDRVMIXSTREAM *PAUDIOTESTDRVMIXSTREAM;
-
-/**
- * Backends.
- *
- * @note The first backend in the array is the default one for the platform.
- */
-struct
-{
-    /** The driver registration structure. */
-    PCPDMDRVREG pDrvReg;
-    /** The backend name.
-     * Aliases are implemented by having multiple entries for the same backend.  */
-    const char *pszName;
-} const g_aBackends[] =
-{
-#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
-    {   &g_DrvHostALSAAudio,          "alsa" },
-#endif
-#ifdef VBOX_WITH_AUDIO_PULSE
-    {   &g_DrvHostPulseAudio,         "pulseaudio" },
-    {   &g_DrvHostPulseAudio,         "pulse" },
-    {   &g_DrvHostPulseAudio,         "pa" },
-#endif
-#ifdef VBOX_WITH_AUDIO_OSS
-    {   &g_DrvHostOSSAudio,           "oss" },
-#endif
-#if defined(RT_OS_DARWIN)
-    {   &g_DrvHostCoreAudio,          "coreaudio" },
-    {   &g_DrvHostCoreAudio,          "core" },
-    {   &g_DrvHostCoreAudio,          "ca" },
-#endif
-#if defined(RT_OS_WINDOWS)
-    {   &g_DrvHostAudioWas,           "wasapi" },
-    {   &g_DrvHostAudioWas,           "was" },
-    {   &g_DrvHostDSound,             "directsound" },
-    {   &g_DrvHostDSound,             "dsound" },
-    {   &g_DrvHostDSound,             "ds" },
-#endif
-    {   &g_DrvHostValidationKitAudio, "valkit" }
-};
-AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 
 /**
  * Enumeration specifying the current audio test mode.
@@ -365,13 +299,37 @@ typedef struct VKATCMD
 /** Pointer to a const VKAT command entry. */
 typedef VKATCMD const *PCVKATCMD;
 
-extern const VKATCMD g_CmdEnum;
-extern const VKATCMD g_CmdPlay;
-extern const VKATCMD g_CmdRec;
-extern const VKATCMD g_CmdSelfTest;
 
-extern AUDIOTESTDESC g_aTests[];
-extern unsigned      g_cTests;
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Terminate ASAP if set.  Set on Ctrl-C. */
+extern bool volatile    g_fTerminate;
+/** The release logger. */
+extern PRTLOGGER        g_pRelLogger;
+
+/** The test handle. */
+extern RTTEST           g_hTest;
+extern unsigned         g_uVerbosity;
+extern bool             g_fDrvAudioDebug;
+extern const char      *g_pszDrvAudioDebug;
+
+/** The test handle. */
+extern RTTEST           g_hTest;
+/** The current verbosity level. */
+extern unsigned         g_uVerbosity;
+/** DrvAudio: Enable debug (or not). */
+extern bool             g_fDrvAudioDebug;
+/** DrvAudio: The debug output path. */
+extern const char      *g_pszDrvAudioDebug;
+
+extern const VKATCMD    g_CmdEnum;
+extern const VKATCMD    g_CmdPlay;
+extern const VKATCMD    g_CmdRec;
+extern const VKATCMD    g_CmdSelfTest;
+
+extern AUDIOTESTDESC    g_aTests[];
+extern unsigned         g_cTests;
 
 
 /*********************************************************************************************************************************
@@ -420,7 +378,8 @@ int         audioTestDriverStackStreamCapture(PAUDIOTESTDRVSTACK pDrvStack, PPDM
 
 /** @name Backend handling
  * @{ */
-PCPDMDRVREG audioTestFindBackendOpt(const char *pszBackend);
+PCPDMDRVREG AudioTestGetDefaultBackend(void);
+PCPDMDRVREG AudioTestFindBackendOpt(const char *pszBackend);
 /** @}  */
 
 /** @name Mixing stream
