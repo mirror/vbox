@@ -328,10 +328,16 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     return RTTestSummaryAndDestroy(g_hTest);
 }
 
-const VKATCMD g_cmdSelfTest =
+/**
+ * Command table entry for 'selftest'.
+ */
+const VKATCMD g_CmdSelfTest =
 {
-    "selftest", audioTestCmdSelftestHandler,
+    "selftest",
+    audioTestCmdSelftestHandler,
     "Performs self-tests.",
-    s_aCmdSelftestOptions,  RT_ELEMENTS(s_aCmdSelftestOptions), audioTestCmdSelftestHelp,
+    s_aCmdSelftestOptions,
+    RT_ELEMENTS(s_aCmdSelftestOptions),
+    audioTestCmdSelftestHelp,
 };
 

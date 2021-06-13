@@ -148,7 +148,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
 /**
  * Command table entry for 'enum'.
  */
-const VKATCMD g_cmdEnum =
+const VKATCMD g_CmdEnum =
 {
     "enum",
     audioTestCmdEnumHandler,
@@ -477,7 +477,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
 /**
  * Command table entry for 'play'.
  */
-const VKATCMD g_cmdPlay =
+const VKATCMD g_CmdPlay =
 {
     "play",
     audioTestCmdPlayHandler,
@@ -857,7 +857,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
 /**
  * Command table entry for 'rec'.
  */
-const VKATCMD g_cmdRec =
+const VKATCMD g_CmdRec =
 {
     "rec",
     audioTestCmdRecHandler,

@@ -733,6 +733,17 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 }
 
 
+const VKATCMD g_CmdTest =
+{
+    "test",
+    audioTestMain,
+    "Runs audio tests and creates an audio test set.",
+    g_aCmdTestOptions,
+    RT_ELEMENTS(g_aCmdTestOptions),
+    audioTestCmdTestHelp
+};
+
+
 /*********************************************************************************************************************************
 *   Command: verify                                                                                                              *
 *********************************************************************************************************************************/
@@ -894,6 +905,17 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 }
 
 
+const VKATCMD g_CmdVerify =
+{
+    "verify",
+    audioVerifyMain,
+    "Verifies a formerly created audio test set.",
+    g_aCmdVerifyOptions,
+    RT_ELEMENTS(g_aCmdVerifyOptions),
+    NULL,
+};
+
+
 /*********************************************************************************************************************************
 *   Main                                                                                                                         *
 *********************************************************************************************************************************/
@@ -913,22 +935,17 @@ static void audioTestSignalHandler(int iSig) RT_NOEXCEPT
     signal(SIGINT, SIG_DFL);
 }
 
-const VKATCMD g_aCommands[] =
+/**
+ * Commands.
+ */
+const VKATCMD *g_apCommands[] =
 {
-    {
-        "test",     audioTestMain,
-        "Runs audio tests and creates an audio test set.",
-        g_aCmdTestOptions,      RT_ELEMENTS(g_aCmdTestOptions),     audioTestCmdTestHelp
-    },
-    {
-        "verify",   audioVerifyMain,
-        "Verifies a formerly created audio test set.",
-        g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),   NULL,
-    },
-    g_cmdEnum,
-    g_cmdPlay,
-    g_cmdRec,
-    g_cmdSelfTest
+    &g_CmdTest,
+    &g_CmdVerify,
+    &g_CmdEnum,
+    &g_CmdPlay,
+    &g_CmdRec,
+    &g_CmdSelfTest
 };
 
 /**
@@ -955,16 +972,17 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                  "    Displays help.\n"
                  );
 
-    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_aCommands); iCmd++)
+    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_apCommands); iCmd++)
     {
+        PCVKATCMD const pCmd = g_apCommands[iCmd];
         RTStrmPrintf(pStrm,
                      "\n"
                      "Command '%s':\n"
                      "    %s\n"
                      "Options for '%s':\n",
-                     g_aCommands[iCmd].pszCommand, g_aCommands[iCmd].pszDesc, g_aCommands[iCmd].pszCommand);
-        PCRTGETOPTDEF const paOptions = g_aCommands[iCmd].paOptions;
-        for (unsigned i = 0; i < g_aCommands[iCmd].cOptions; i++)
+                     pCmd->pszCommand, pCmd->pszDesc, pCmd->pszCommand);
+        PCRTGETOPTDEF const paOptions = pCmd->paOptions;
+        for (unsigned i = 0; i < pCmd->cOptions; i++)
         {
             if (RT_C_IS_PRINT(paOptions[i].iShort))
                 RTStrmPrintf(pStrm, "  -%c, %s\n", paOptions[i].iShort, paOptions[i].pszLong);
@@ -972,8 +990,8 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                 RTStrmPrintf(pStrm, "  %s\n", paOptions[i].pszLong);
 
             const char *pszHelp = NULL;
-            if (g_aCommands[iCmd].pfnOptionHelp)
-                pszHelp = g_aCommands[iCmd].pfnOptionHelp(&paOptions[i]);
+            if (pCmd->pfnOptionHelp)
+                pszHelp = pCmd->pfnOptionHelp(&paOptions[i]);
             if (pszHelp)
                 RTStrmPrintf(pStrm, "    %s\n", pszHelp);
         }
@@ -1074,23 +1092,25 @@ int main(int argc, char **argv)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                for (uintptr_t i = 0; i < RT_ELEMENTS(g_aCommands); i++)
-                    if (strcmp(ValueUnion.psz, g_aCommands[i].pszCommand) == 0)
+                for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_apCommands); iCmd++)
+                {
+                    PCVKATCMD const pCmd = g_apCommands[iCmd];
+                    if (strcmp(ValueUnion.psz, pCmd->pszCommand) == 0)
                     {
-                        size_t const cCombinedOptions  = g_aCommands[i].cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
+                        size_t const cCombinedOptions  = pCmd->cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
                         PRTGETOPTDEF paCombinedOptions = (PRTGETOPTDEF)RTMemAlloc(cCombinedOptions * sizeof(RTGETOPTDEF));
                         if (paCombinedOptions)
                         {
                             memcpy(paCombinedOptions, g_aCmdCommonOptions, sizeof(g_aCmdCommonOptions));
                             memcpy(&paCombinedOptions[RT_ELEMENTS(g_aCmdCommonOptions)],
-                                   g_aCommands[i].paOptions, g_aCommands[i].cOptions * sizeof(RTGETOPTDEF));
+                                   pCmd->paOptions, pCmd->cOptions * sizeof(RTGETOPTDEF));
 
                             rc = RTGetOptInit(&GetState, argc, argv, paCombinedOptions, cCombinedOptions,
                                               GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
                             if (RT_SUCCESS(rc))
                             {
 
-                                rcExit = g_aCommands[i].pfnHandler(&GetState);
+                                rcExit = pCmd->pfnHandler(&GetState);
                                 RTMemFree(paCombinedOptions);
                                 return rcExit;
                             }
@@ -1098,6 +1118,7 @@ int main(int argc, char **argv)
                         }
                         return RTMsgErrorExitFailure("Out of memory!");
                     }
+                }
                 RTMsgError("Unknown command '%s'!\n", ValueUnion.psz);
                 audioTestUsage(g_pStdErr);
                 return RTEXITCODE_SYNTAX;
