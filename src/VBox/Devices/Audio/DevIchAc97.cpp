@@ -303,6 +303,9 @@ typedef struct AC97STATER3 *PAC97STATER3;
 
 /**
  * Buffer Descriptor List Entry (BDLE).
+ *
+ * (See section 3.2.1 in Intel document number 252751-001, or section 1.2.2.1 in
+ * Intel document number 302349-003.)
  */
 typedef struct AC97BDLE
 {
@@ -318,6 +321,9 @@ typedef AC97BDLE *PAC97BDLE;
 
 /**
  * Bus master register set for an audio stream.
+ *
+ * (See section 16.2 in Intel document 301473-002, or section 2.2 in Intel
+ * document 302349-003.)
  */
 typedef struct AC97BMREGS
 {
@@ -325,7 +331,7 @@ typedef struct AC97BMREGS
     uint8_t                 civ;        /**< ro 0, Current index value. */
     uint8_t                 lvi;        /**< rw 0, Last valid index. */
     uint16_t                sr;         /**< rw 1, Status register. */
-    uint16_t                picb;       /**< ro 0, Position in current buffer (in samples). */
+    uint16_t                picb;       /**< ro 0, Position in current buffer (samples left to process). */
     uint8_t                 piv;        /**< ro 0, Prefetched index value. */
     uint8_t                 cr;         /**< rw 0, Control register. */
     int32_t                 bd_valid;   /**< Whether current BDLE is initialized or not. */
@@ -1264,80 +1270,89 @@ static void ichac97R3StreamPushToMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSin
 static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
                                      PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
-    int         rc2;
-    PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
+    /*
+     * Make sure we're running and got an active mixer sink.
+     */
+    PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD); /** @todo caller will need + check this too afterwards... */
     AssertPtr(pSink);
-    if (AudioMixerSinkIsActive(pSink))
+    if (RT_LIKELY(AudioMixerSinkIsActive(pSink)))
+    { /* likely */ }
+    else
+        return;
+
+    int rc2;
+
+    /*
+     * Output streams (SDO).
+     */
+    if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT)
     {
-        if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT) /* Output (SDO). */
+        uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
+        if (cbStreamFree)
+        { /* likely */ }
+        else
         {
-            uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
-            if (cbStreamFree)
-            { /* likely */ }
-            else
-            {
-                /** @todo Record this as a statistic. Try make some space available.    */
-            }
-            if (cbStreamFree)
-            {
-                Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
-                          pStream->u8SD,
-                          (pStream->Regs.picb << 1), PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStream->Regs.picb << 1),
-                          cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
-                          pStreamCC->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk)));
-
-                /* Do the DMA transfer. */
-                rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC,
-                                              RT_MIN(pStreamCC->State.cbTransferChunk, cbStreamFree));
-                AssertRC(rc2);
-
-                pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
-            }
-
-            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
-            AssertRC(rc2);
+            /** @todo Record this as a statistic. Try make some space available.    */
         }
-        else /* Input (SDI). */
+        if (cbStreamFree)
         {
-#if 0 /* bird: I just love when crusial code like this with no explanation.  This just causing AIO
-       *       skipping a DMA timer cycle if the timer callback is a bit quicker than the 'hint' (see HDA/9890).   */
-            const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStreamCC->State.tsLastUpdateNs >= pStreamCC->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
-            {
-                rc2 = AudioMixerSinkSignalUpdateJob(pSink);
-                AssertRC(rc2);
+            Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
+                      pStream->u8SD,
+                      (pStream->Regs.picb << 1), PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStream->Regs.picb << 1),
+                      cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
+                      pStreamCC->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk)));
 
-                pStreamCC->State.tsLastUpdateNs = tsNowNs;
-            }
-#endif
-
-            uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
-            if (cbStreamUsed)
-            { /* likey */ }
-            else
-            {
-                /** @todo Record this as a statistic. Try pull some data into the DMA buffer.*/
-            }
-
-            if (cbStreamUsed)
-            {
-                /* When running synchronously, do the DMA data transfers here.
-                 * Otherwise this will be done in the stream's async I/O thread. */
-                rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, cbStreamUsed);
-                AssertRC(rc2);
-            }
-
-            /*
-             * We should always kick the AIO thread.
-             */
-            /** @todo This isn't entirely ideal.  If we get into an underrun situation,
-             *        we ideally want the AIO thread to run right before the DMA timer
-             *        rather than right after it ran. */
-            Log5Func(("Notifying AIO thread\n"));
-            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+            /* Do the DMA transfer. */
+            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC,
+                                          RT_MIN(pStreamCC->State.cbTransferChunk, cbStreamFree));
             AssertRC(rc2);
+
             pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
         }
+
+        rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+        AssertRC(rc2);
+    }
+    else /* Input (SDI). */
+    {
+#if 0 /* bird: I just love when crusial code like this with no explanation.  This just causing AIO
+   *       skipping a DMA timer cycle if the timer callback is a bit quicker than the 'hint' (see HDA/9890).   */
+        const uint64_t tsNowNs = RTTimeNanoTS();
+        if (tsNowNs - pStreamCC->State.tsLastUpdateNs >= pStreamCC->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
+        {
+            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+            AssertRC(rc2);
+
+            pStreamCC->State.tsLastUpdateNs = tsNowNs;
+        }
+#endif
+
+        uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+        if (cbStreamUsed)
+        { /* likey */ }
+        else
+        {
+            /** @todo Record this as a statistic. Try pull some data into the DMA buffer.*/
+        }
+
+        if (cbStreamUsed)
+        {
+            /* When running synchronously, do the DMA data transfers here.
+             * Otherwise this will be done in the stream's async I/O thread. */
+            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, cbStreamUsed);
+            AssertRC(rc2);
+        }
+
+        /*
+         * We should always kick the AIO thread.
+         */
+        /** @todo This isn't entirely ideal.  If we get into an underrun situation,
+         *        we ideally want the AIO thread to run right before the DMA timer
+         *        rather than right after it ran. */
+        Log5Func(("Notifying AIO thread\n"));
+        rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+        AssertRC(rc2);
+        pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
     }
 }
 
@@ -3267,10 +3282,14 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     if (!(u32 & AC97_EACS_VRA)) /* Check if VRA bit is not set. */
                     {
                         ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
 
                         ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
@@ -3283,6 +3302,8 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     if (!(u32 & AC97_EACS_VRM)) /* Check if VRM bit is not set. */
                     {
                         ichac97MixerSet(pThis, AC97_MIC_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
@@ -3301,6 +3322,8 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting front DAC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
                     }
@@ -3316,6 +3339,8 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting microphone ADC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
@@ -3331,6 +3356,8 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     {
                         LogRel2(("AC97: Setting line-in ADC rate to 0x%x\n", u32));
                         ichac97MixerSet(pThis, offPort, u32);
+                        /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
+                         *        actually used? */
                         ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
