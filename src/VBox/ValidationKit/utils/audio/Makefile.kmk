@@ -151,6 +151,7 @@ vkatadd_NAME           = vkat
 vkatadd_TEMPLATE       = VBoxGuestR3Exe
 vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
+vkatadd_LIBS.solaris   = m
 
 
 #
