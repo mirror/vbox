@@ -63,7 +63,7 @@ vkat_INCS     = \
 vkat_SOURCES  = \
 	vkat.cpp \
 	vkatCommon.cpp \
-	vkatCmdPlayRec.cpp \
+	vkatCmdGeneric.cpp \
 	vkatDriverStack.cpp \
 	$(VKAT_PATH_AUDIO)/AudioTest.cpp \
 	$(VKAT_PATH_AUDIO)/DrvAudio.cpp \

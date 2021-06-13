@@ -344,7 +344,7 @@ typedef struct SELFTESTCTX
 typedef SELFTESTCTX *PSELFTESTCTX;
 
 /**
- * Structure for defining a single VKAT command.
+ * VKAT command table entry.
  */
 typedef struct VKATCMD
 {
@@ -362,16 +362,17 @@ typedef struct VKATCMD
     /** Gets help for an option. */
     DECLCALLBACKMEMBER(const char *, pfnOptionHelp,(PCRTGETOPTDEF pOpt));
 } VKATCMD;
-typedef VKATCMD *PVKATCMD;
 /** Pointer to a single VKAT command. */
 typedef VKATCMD *PVKATCMD;
 
+extern const VKATCMD g_cmdEnum;
 extern const VKATCMD g_cmdPlay;
 extern const VKATCMD g_cmdRec;
 extern const VKATCMD g_cmdSelfTest;
 
 extern AUDIOTESTDESC g_aTests[];
 extern unsigned      g_cTests;
+
 
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
@@ -463,15 +464,6 @@ int         audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParm
 
 /** @name Command handlers
  * @{ */
-RTEXITCODE   audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
-                              uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                              uint8_t cChannels, uint8_t cbSample, uint32_t uHz,
-                              bool fWithDrvAudio, bool fWithMixer);
-RTEXITCODE   audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
-                             PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
-                             uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                             uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
-                             uint64_t cMaxFrames, uint64_t cNsMaxDuration);
 RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
 /** @}  */
 

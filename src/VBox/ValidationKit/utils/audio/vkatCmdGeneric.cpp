@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Validation Kit Audio Test (VKAT) - Self test code.
+ * Validation Kit Audio Test (VKAT) utility for testing and validating the audio stack.
  */
 
 /*
@@ -28,20 +28,142 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
-#include <iprt/ctype.h>
 #include <iprt/errcore.h>
-#include <iprt/getopt.h>
 #include <iprt/message.h>
 #include <iprt/test.h>
 
-#include "Audio/AudioHlp.h"
-#include "Audio/AudioTest.h"
-#include "Audio/AudioTestService.h"
-#include "Audio/AudioTestServiceClient.h"
-
 #include "vkatInternal.h"
 
+
+/*********************************************************************************************************************************
+*   Command: enum                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Options for 'enum'.
+ */
+static const RTGETOPTDEF g_aCmdEnumOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+};
+
+
+/** The 'enum' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        default:  return NULL;
+    }
+}
+
+
+/**
+ * The 'enum' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState)
+{
+    /*
+     * Parse options.
+     */
+    /* Option values: */
+    PCPDMDRVREG pDrvReg = g_aBackends[0].pDrvReg;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Do the enumeration.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
+    AUDIOTESTDRVSTACK   DrvStack;
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    if (RT_SUCCESS(rc))
+    {
+        if (DrvStack.pIHostAudio->pfnGetDevices)
+        {
+            PDMAUDIOHOSTENUM Enum;
+            rc = DrvStack.pIHostAudio->pfnGetDevices(DrvStack.pIHostAudio, &Enum);
+            if (RT_SUCCESS(rc))
+            {
+                RTPrintf("Found %u device%s\n", Enum.cDevices, Enum.cDevices != 1 ? "s" : "");
+
+                PPDMAUDIOHOSTDEV pHostDev;
+                RTListForEach(&Enum.LstDevices, pHostDev, PDMAUDIOHOSTDEV, ListEntry)
+                {
+                    RTPrintf("\nDevice \"%s\":\n", pHostDev->pszName);
+
+                    char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
+                    if (pHostDev->cMaxInputChannels && !pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_IN)
+                        RTPrintf("    Input:  max %u channels (%s)\n",
+                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+                    else if (!pHostDev->cMaxInputChannels && pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_OUT)
+                        RTPrintf("    Output: max %u channels (%s)\n",
+                                 pHostDev->cMaxOutputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+                    else
+                        RTPrintf("    %s: max %u output channels, max %u input channels (%s)\n",
+                                 PDMAudioDirGetName(pHostDev->enmUsage), pHostDev->cMaxOutputChannels,
+                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
+
+                    if (pHostDev->pszId && *pHostDev->pszId)
+                        RTPrintf("    ID:     \"%s\"\n", pHostDev->pszId);
+                }
+
+                PDMAudioHostEnumDelete(&Enum);
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Enumeration failed: %Rrc\n", rc);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Enumeration not supported by backend '%s'\n", pDrvReg->szName);
+        audioTestDriverStackDelete(&DrvStack);
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Command table entry for 'enum'.
+ */
+const VKATCMD g_cmdEnum =
+{
+    "enum",
+    audioTestCmdEnumHandler,
+    "Enumerates audio devices.",
+    g_aCmdEnumOptions,
+    RT_ELEMENTS(g_aCmdEnumOptions),
+    audioTestCmdEnumHelp,
+};
+
+
+
+
+/*********************************************************************************************************************************
+*   Command: play                                                                                                                *
+*********************************************************************************************************************************/
 
 /**
  * Worker for audioTestPlayOne implementing the play loop.
@@ -132,10 +254,10 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
 /**
  * Worker for audioTestCmdPlayHandler that plays one file.
  */
-RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
-                            uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                            uint8_t cChannels, uint8_t cbSample, uint32_t uHz,
-                            bool fWithDrvAudio, bool fWithMixer)
+static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                                   uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                   uint8_t cChannels, uint8_t cbSample, uint32_t uHz,
+                                   bool fWithDrvAudio, bool fWithMixer)
 {
     char szTmp[128];
 
@@ -243,6 +365,129 @@ RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char
 }
 
 
+/**
+ * Options for 'play'.
+ */
+static const RTGETOPTDEF g_aCmdPlayOptions[] =
+{
+    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
+    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
+    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
+    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
+    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
+    { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
+    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
+    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
+};
+
+
+/** The 'play' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
+{
+    switch (pOpt->iShort)
+    {
+        case 'b': return "The audio backend to use.";
+        case 'c': return "Number of backend output channels";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'f': return "Output frequency (Hz)";
+        case 'z': return "Output sample size (bits)";
+        case 'm': return "Go via the mixer.";
+        case 'o': return "The ID of the output device to use.";
+        default:  return NULL;
+    }
+}
+
+
+/**
+ * The 'play' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
+{
+    /* Option values: */
+    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
+    uint32_t    cMsBufferSize       = UINT32_MAX;
+    uint32_t    cMsPreBuffer        = UINT32_MAX;
+    uint32_t    cMsSchedulingHint   = UINT32_MAX;
+    const char *pszDevId            = NULL;
+    bool        fWithDrvAudio       = false;
+    bool        fWithMixer          = false;
+    uint8_t     cbSample            = 0;
+    uint8_t     cChannels           = 0;
+    uint32_t    uHz                 = 0;
+
+    /* Argument processing loop: */
+    int           rc;
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'b':
+                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
+                if (pDrvReg == NULL)
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'c':
+                cChannels = ValueUnion.u8;
+                break;
+
+            case 'd':
+                fWithDrvAudio = true;
+                break;
+
+            case 'f':
+                uHz = ValueUnion.u32;
+                break;
+
+            case 'm':
+                fWithMixer = true;
+                break;
+
+            case 'o':
+                pszDevId = ValueUnion.psz;
+                break;
+
+            case 'z':
+                cbSample = ValueUnion.u8 / 8;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
+                                                     cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Command table entry for 'play'.
+ */
+const VKATCMD g_cmdPlay =
+{
+    "play",
+    audioTestCmdPlayHandler,
+    "Plays one or more wave files.",
+    g_aCmdPlayOptions,
+    RT_ELEMENTS(g_aCmdPlayOptions),
+    audioTestCmdPlayHelp,
+};
+
+
 /*********************************************************************************************************************************
 *   Command: rec                                                                                                                 *
 *********************************************************************************************************************************/
@@ -321,11 +566,11 @@ static RTEXITCODE audioTestRecOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWA
 /**
  * Worker for audioTestCmdRecHandler that recs one file.
  */
-RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
-                           PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
-                           uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                           uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
-                           uint64_t cMaxFrames, uint64_t cNsMaxDuration)
+static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
+                                  PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                                  uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                  uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
+                                  uint64_t cMaxFrames, uint64_t cNsMaxDuration)
 {
     /*
      * Construct the driver stack.
@@ -447,128 +692,6 @@ RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t c
 }
 
 
-/*********************************************************************************************************************************
-*   Command: play                                                                                                                *
-*********************************************************************************************************************************/
-
-/**
- * Options for 'play'.
- */
-static const RTGETOPTDEF g_aCmdPlayOptions[] =
-{
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-    { "--channels",         'c',                          RTGETOPT_REQ_UINT8 },
-    { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
-    { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
-    { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
-    { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
-    { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
-    { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
-};
-
-/** The 'play' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        case 'c': return "Number of backend output channels";
-        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
-        case 'f': return "Output frequency (Hz)";
-        case 'z': return "Output sample size (bits)";
-        case 'm': return "Go via the mixer.";
-        case 'o': return "The ID of the output device to use.";
-        default:  return NULL;
-    }
-}
-
-/**
- * The 'play' command handler.
- *
- * @returns Program exit code.
- * @param   pGetState   RTGetOpt state.
- */
-static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState)
-{
-    /* Option values: */
-    PCPDMDRVREG pDrvReg             = g_aBackends[0].pDrvReg;
-    uint32_t    cMsBufferSize       = UINT32_MAX;
-    uint32_t    cMsPreBuffer        = UINT32_MAX;
-    uint32_t    cMsSchedulingHint   = UINT32_MAX;
-    const char *pszDevId            = NULL;
-    bool        fWithDrvAudio       = false;
-    bool        fWithMixer          = false;
-    uint8_t     cbSample            = 0;
-    uint8_t     cChannels           = 0;
-    uint32_t    uHz                 = 0;
-
-    /* Argument processing loop: */
-    int           rc;
-    RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
-                if (pDrvReg == NULL)
-                    return RTEXITCODE_SYNTAX;
-                break;
-
-            case 'c':
-                cChannels = ValueUnion.u8;
-                break;
-
-            case 'd':
-                fWithDrvAudio = true;
-                break;
-
-            case 'f':
-                uHz = ValueUnion.u32;
-                break;
-
-            case 'm':
-                fWithMixer = true;
-                break;
-
-            case 'o':
-                pszDevId = ValueUnion.psz;
-                break;
-
-            case 'z':
-                cbSample = ValueUnion.u8 / 8;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
-                                                     cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
-
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-    return RTEXITCODE_SUCCESS;
-}
-
-const VKATCMD g_cmdPlay =
-{
-    "play",     audioTestCmdPlayHandler,
-    "Plays one or more wave files.",
-    g_aCmdPlayOptions,      RT_ELEMENTS(g_aCmdPlayOptions),     audioTestCmdPlayHelp,
-};
-
-
-/*********************************************************************************************************************************
-*   Command: rec                                                                                                                 *
-*********************************************************************************************************************************/
-
 /**
  * Options for 'rec'.
  */
@@ -595,6 +718,7 @@ static const RTGETOPTDEF g_aCmdRecOptions[] =
     { "--max-nanoseconds",  'T',                          RTGETOPT_REQ_UINT64 },
 };
 
+
 /** The 'rec' command option help. */
 static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
 {
@@ -618,8 +742,9 @@ static DECLCALLBACK(const char *) audioTestCmdRecHelp(PCRTGETOPTDEF pOpt)
     }
 }
 
+
 /**
- * The 'play' command handler.
+ * The 'rec' command handler.
  *
  * @returns Program exit code.
  * @param   pGetState   RTGetOpt state.
@@ -728,10 +853,17 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
     return RTEXITCODE_SUCCESS;
 }
 
+
+/**
+ * Command table entry for 'rec'.
+ */
 const VKATCMD g_cmdRec =
 {
-    "rec",      audioTestCmdRecHandler,
+    "rec",
+    audioTestCmdRecHandler,
     "Records audio to a wave file.",
-    g_aCmdRecOptions,       RT_ELEMENTS(g_aCmdRecOptions),      audioTestCmdRecHelp,
+    g_aCmdRecOptions,
+    RT_ELEMENTS(g_aCmdRecOptions),
+    audioTestCmdRecHelp,
 };
 

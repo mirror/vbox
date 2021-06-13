@@ -895,111 +895,8 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 
 
 /*********************************************************************************************************************************
-*   Command: enum                                                                                                                *
+*   Main                                                                                                                         *
 *********************************************************************************************************************************/
-
-/**
- * Options for 'enum'.
- */
-static const RTGETOPTDEF g_aCmdEnumOptions[] =
-{
-    { "--backend",          'b',                          RTGETOPT_REQ_STRING  },
-};
-
-/** The 'enum' command option help. */
-static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
-{
-    switch (pOpt->iShort)
-    {
-        case 'b': return "The audio backend to use.";
-        default:  return NULL;
-    }
-}
-
-/**
- * The 'enum' command handler.
- *
- * @returns Program exit code.
- * @param   pGetState   RTGetOpt state.
- */
-static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState)
-{
-    /*
-     * Parse options.
-     */
-    /* Option values: */
-    PCPDMDRVREG pDrvReg = g_aBackends[0].pDrvReg;
-
-    /* Argument processing loop: */
-    int           rc;
-    RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'b':
-                pDrvReg = audioTestFindBackendOpt(ValueUnion.psz);
-                if (pDrvReg == NULL)
-                    return RTEXITCODE_SYNTAX;
-                break;
-
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
-
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-
-    /*
-     * Do the enumeration.
-     */
-    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
-    AUDIOTESTDRVSTACK   DrvStack;
-    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
-    if (RT_SUCCESS(rc))
-    {
-        if (DrvStack.pIHostAudio->pfnGetDevices)
-        {
-            PDMAUDIOHOSTENUM Enum;
-            rc = DrvStack.pIHostAudio->pfnGetDevices(DrvStack.pIHostAudio, &Enum);
-            if (RT_SUCCESS(rc))
-            {
-                RTPrintf("Found %u device%s\n", Enum.cDevices, Enum.cDevices != 1 ? "s" : "");
-
-                PPDMAUDIOHOSTDEV pHostDev;
-                RTListForEach(&Enum.LstDevices, pHostDev, PDMAUDIOHOSTDEV, ListEntry)
-                {
-                    RTPrintf("\nDevice \"%s\":\n", pHostDev->pszName);
-
-                    char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
-                    if (pHostDev->cMaxInputChannels && !pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_IN)
-                        RTPrintf("    Input:  max %u channels (%s)\n",
-                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
-                    else if (!pHostDev->cMaxInputChannels && pHostDev->cMaxOutputChannels && pHostDev->enmUsage == PDMAUDIODIR_OUT)
-                        RTPrintf("    Output: max %u channels (%s)\n",
-                                 pHostDev->cMaxOutputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
-                    else
-                        RTPrintf("    %s: max %u output channels, max %u input channels (%s)\n",
-                                 PDMAudioDirGetName(pHostDev->enmUsage), pHostDev->cMaxOutputChannels,
-                                 pHostDev->cMaxInputChannels, PDMAudioHostDevFlagsToString(szFlags, pHostDev->fFlags));
-
-                    if (pHostDev->pszId && *pHostDev->pszId)
-                        RTPrintf("    ID:     \"%s\"\n", pHostDev->pszId);
-                }
-
-                PDMAudioHostEnumDelete(&Enum);
-            }
-            else
-                rcExit = RTMsgErrorExitFailure("Enumeration failed: %Rrc\n", rc);
-        }
-        else
-            rcExit = RTMsgErrorExitFailure("Enumeration not supported by backend '%s'\n", pDrvReg->szName);
-        audioTestDriverStackDelete(&DrvStack);
-    }
-    else
-        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
-    return RTEXITCODE_SUCCESS;
-}
 
 /**
  * Ctrl-C signal handler.
@@ -1028,11 +925,7 @@ const VKATCMD g_aCommands[] =
         "Verifies a formerly created audio test set.",
         g_aCmdVerifyOptions,    RT_ELEMENTS(g_aCmdVerifyOptions),   NULL,
     },
-    {
-        "enum",     audioTestCmdEnumHandler,
-        "Enumerates audio devices.",
-        g_aCmdEnumOptions,      RT_ELEMENTS(g_aCmdEnumOptions),     audioTestCmdEnumHelp,
-    },
+    g_cmdEnum,
     g_cmdPlay,
     g_cmdRec,
     g_cmdSelfTest
