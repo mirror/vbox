@@ -1339,6 +1339,10 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \
+		'--include=src/VBox/Devices/' \
+		'--include=src/VBox/Devices/Audio/' \
+		'--include=src/VBox/Devices/Audio/**' \
+		'--exclude=src/VBox/Devices/**' \
 		'--exclude=src/VBox/Disassembler/**' \
 		'--exclude=src/VBox/ExtPacks/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1350,6 +1354,12 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/NetworkService/**' \
 		'--exclude=src/VBox/RDP/**' \
 		'--exclude=src/VBox/Storage/**' \
+		'--include=src/VBox/ValidationKit/' \
+		'--include=src/VBox/ValidationKit/Config.kmk' \
+		'--include=src/VBox/ValidationKit/utils/' \
+		'--include=src/VBox/ValidationKit/utils/audio/' \
+		'--include=src/VBox/ValidationKit/utils/audio/**' \
+		'--exclude=src/VBox/ValidationKit/**' \
 		'--exclude=src/VBox/VMM/**' \
 		'--exclude=src/apps/**' \
 		'--exclude=src/recompiler/**' \
@@ -1366,6 +1376,10 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \
+		'--include=src/VBox/Devices/' \
+		'--include=src/VBox/Devices/Audio/' \
+		'--include=src/VBox/Devices/Audio/**' \
+		'--exclude=src/VBox/Devices/**' \
 		'--exclude=src/VBox/Disassembler/**' \
 		'--exclude=src/VBox/ExtPacks/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1377,6 +1391,12 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/VBox/NetworkService/**' \
 		'--exclude=src/VBox/RDP/**' \
 		'--exclude=src/VBox/Storage/**' \
+		'--include=src/VBox/ValidationKit/' \
+		'--include=src/VBox/ValidationKit/Config.kmk' \
+		'--include=src/VBox/ValidationKit/utils/' \
+		'--include=src/VBox/ValidationKit/utils/audio/' \
+		'--include=src/VBox/ValidationKit/utils/audio/**' \
+		'--exclude=src/VBox/ValidationKit/**' \
 		'--exclude=src/VBox/VMM/**' \
 		'--exclude=src/apps/**' \
 		'--exclude=src/recompiler/**' \
