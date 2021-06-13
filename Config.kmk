@@ -7633,7 +7633,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 else # the gcc guys
  TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
- TEMPLATE_VBOXGUESTR3EXE_TOOL    := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
+ ifn1of ($(KBUILD_TARGET), darwin)
+  TEMPLATE_VBOXGUESTR3EXE_TOOL   := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
+ endif
  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fno-exceptions -fno-rtti
  # Do not inherit sanitizer flags from VBOXR3EXE in guest executables.  Deal with them separately.
  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.debug = $(NO_SUCH_VARIABLE)
