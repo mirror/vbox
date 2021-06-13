@@ -36,6 +36,18 @@ ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
 endif
 
 #
+# Append what we build here to PROGRAMS (at the top because it's a bit messy).
+#
+ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
+ if defined(VBOX_ONLY_VALIDATIONKIT) || !defined(VBOX_ONLY_BUILD)
+  PROGRAMS += vkat
+ endif
+ if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
+  PROGRAMS += vkatadd
+ endif
+endif
+
+#
 # Utility to play sine wave to Default Audio Device.
 #
 if 0 # Disabled for now; does not work without WinMM.dll import validator files.
@@ -50,10 +62,6 @@ endif
 # The Validation Kit Audio Test (VKAT) utility.
 #
 VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
-
-ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
-PROGRAMS += vkat
-endif
 vkat_TEMPLATE = VBoxValidationKitR3
 vkat_VBOX_IMPORT_CHECKER.win.x86 = nt4
 vkat_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
@@ -71,7 +79,6 @@ vkat_SOURCES  = \
 	$(VKAT_PATH_AUDIO)/AudioMixer.cpp \
 	$(VKAT_PATH_AUDIO)/AudioMixBuffer.cpp \
 	$(VKAT_PATH_AUDIO)/AudioHlp.cpp
-
 
 # Self-test stuff.
 vkat_DEFS     += VBOX_WITH_AUDIO_VALIDATIONKIT
@@ -124,6 +131,17 @@ ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
  vkat_LDFLAGS.darwin += \
  	-framework AVFoundation
 endif
+
+
+#
+# The additions variant of the audio test utility.
+#
+vkatadd_EXTENDS        = vkat
+vkatadd_EXTENDS_BY     = appending
+vkatadd_NAME           = vkat
+vkatadd_TEMPLATE       = VBoxGuestR3Exe
+vkatadd_SDKS           = VBOX_ZLIB_STATIC
+vkatadd_LDFLAGS.darwin = -framework IOKit
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
