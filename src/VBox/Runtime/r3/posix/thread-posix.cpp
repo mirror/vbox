@@ -90,7 +90,7 @@ static pthread_key_t    g_SelfKey;
 #ifdef RTTHREAD_POSIX_WITH_POKE
 /** The signal we use for poking threads.
  * This is set to -1 if no available signal was found. */
-static int              g_iSigPokeThread = -1;
+static int volatile     g_iSigPokeThread = -1;
 #endif
 
 #ifdef IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
@@ -166,7 +166,10 @@ static void rtThreadPosixSelectPokeSignal(void)
     /*
      * Note! Avoid SIGRTMIN thru SIGRTMIN+2 because of LinuxThreads.
      */
-    static const int s_aiSigCandidates[] =
+# ifndef RT_OS_LINUX /* glibc defines SIGRTMAX to __libc_current_sigrtmax(), causing compiler to deploy serialization here. */
+    static
+# endif
+    const int s_aiSigCandidates[] =
     {
 # ifdef SIGRTMAX
         SIGRTMAX-3,
