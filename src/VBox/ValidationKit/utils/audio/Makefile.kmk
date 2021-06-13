@@ -44,7 +44,7 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
  endif
  if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
   ifndef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
-   ifndef VBOX_WITH_ADDITIONS
+   ifdef VBOX_WITH_ADDITIONS
     PROGRAMS += vkatadd
    endif
   endif
@@ -149,3 +149,4 @@ vkatadd_LDFLAGS.darwin = -framework IOKit
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
