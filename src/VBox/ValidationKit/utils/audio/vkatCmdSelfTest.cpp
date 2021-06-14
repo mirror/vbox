@@ -167,7 +167,12 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
                               pCtx->Host.szGuestAtsAddr, pCtx->Host.uGuestAtsPort);
         if (RT_SUCCESS(rc))
         {
-            audioTestWorker(pTstEnv, &TstCust);
+            rc = audioTestWorker(pTstEnv, &TstCust);
+            if (RT_SUCCESS(rc))
+            {
+
+            }
+
             audioTestEnvDestroy(pTstEnv);
         }
     }

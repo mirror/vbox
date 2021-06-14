@@ -474,7 +474,10 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
             rc = VINF_EOF;
         }
         else
-            AssertFailedStmt(rc = VERR_NET_PROTOCOL_ERROR);
+        {
+            AssertMsgFailed(("Got unexpected reply '%s'", Reply.szOp));
+            rc = VERR_NET_PROTOCOL_ERROR;
+        }
 
         audioTestSvcClientReplyDestroy(&Reply);
 

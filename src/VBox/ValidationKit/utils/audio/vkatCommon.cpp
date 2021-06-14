@@ -712,6 +712,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Ctx.pTstEnv = pTstEnv;
 
         ATSCALLBACKS Callbacks;
+        RT_ZERO(Callbacks);
         Callbacks.pfnTestSetBegin     = audioTestGstAtsTestSetBeginCallback;
         Callbacks.pfnTestSetEnd       = audioTestGstAtsTestSetEndCallback;
         Callbacks.pfnTonePlay         = audioTestGstAtsTonePlayCallback;

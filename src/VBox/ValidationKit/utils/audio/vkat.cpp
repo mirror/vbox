@@ -528,24 +528,49 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Download guest test set to host.
+                 * Download guest + Validation Kit audio driver test sets to our output directory.
                  */
                 char szFileName[RTPATH_MAX];
                 if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s.tar.gz", szTagGuest))
                 {
-                    char szFilePath[RTPATH_MAX];
-                    rc2 = RTPathJoin(szFilePath, sizeof(szFilePath), pTstEnv->szPathOut, szFileName);
-                    if (RT_SUCCESS(rc2))
+                    rc = RTPathJoin(pTstEnv->u.Host.szPathTestSetGuest, sizeof(pTstEnv->u.Host.szPathTestSetGuest),
+                                    pTstEnv->szPathOut, szFileName);
+                    if (RT_SUCCESS(rc))
                     {
-                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading guest test set to '%s'\n", szFilePath);
-                        rc2 = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClGuest, szTagGuest, szFilePath);
+                        if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s.tar.gz", szTagHost))
+                        {
+                            rc = RTPathJoin(pTstEnv->u.Host.szPathTestSetValKit, sizeof(pTstEnv->u.Host.szPathTestSetValKit),
+                                            pTstEnv->szPathOut, szFileName);
+                        }
+                        else
+                            rc = VERR_BUFFER_OVERFLOW;
+                    }
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading guest test set to '%s'\n",
+                                     pTstEnv->u.Host.szPathTestSetGuest);
+                        rc = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClGuest,
+                                                               szTagGuest, pTstEnv->u.Host.szPathTestSetGuest);
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading host test set to '%s'\n",
+                                     pTstEnv->u.Host.szPathTestSetValKit);
+                        rc = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClValKit,
+                                                               szTagHost, pTstEnv->u.Host.szPathTestSetValKit);
                     }
                 }
                 else
-                    rc2 = VERR_BUFFER_OVERFLOW;
+                    rc = VERR_BUFFER_OVERFLOW;
 
                 if (RT_SUCCESS(rc))
-                    rc = rc2;
+                {
+
+                }
             }
         }
     }
@@ -815,7 +840,7 @@ static int audioVerifyOpenTestSet(const char *pszPathSet, PAUDIOTESTSET pSet)
 }
 
 /**
- * Verifies one single test set.
+ * Verifies one test set pair.
  *
  * @returns VBox status code.
  * @param   pszPathSetA         Absolute path to test set A.

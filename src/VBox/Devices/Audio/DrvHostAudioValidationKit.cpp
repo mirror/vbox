@@ -76,9 +76,9 @@ typedef struct VALKITTESTTONEDATA
         } Play;
     } u;
     /** The test tone instance to use. */
-    AUDIOTESTTONE      Tone;
+    AUDIOTESTTONE              Tone;
     /** The test tone parameters to use. */
-    AUDIOTESTTONEPARMS Parms;
+    AUDIOTESTTONEPARMS         Parms;
 } VALKITTESTTONEDATA;
 
 /**
@@ -139,10 +139,20 @@ typedef struct DRVHOSTVALKITAUDIO
     RTCRITSECT          CritSect;
     /** The Audio Test Service (ATS) instance. */
     ATSSERVER           Srv;
+    /** Absolute path to the packed up test set archive.
+     *  Keep it simple for now and only support one (open) archive at a time. */
+    char                szTestSetArchive[RTPATH_MAX];
+    /** File handle to the (opened) test set archive for reading. */
+    RTFILE              hTestSetArchive;
+
 } DRVHOSTVALKITAUDIO;
 /** Pointer to a Validation Kit host audio driver instance. */
 typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 
+
+/*********************************************************************************************************************************
+*   Internal test handling code                                                                                                  *
+*********************************************************************************************************************************/
 
 /**
  * Unregisters a ValKit test, common code.
@@ -209,6 +219,11 @@ static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const cha
     return AudioTestSetCreate(&pThis->Set, pThis->szPathTemp, pszTag);
 }
 
+
+/*********************************************************************************************************************************
+*   ATS callback implementations                                                                                                 *
+*********************************************************************************************************************************/
+
 /** @copydoc ATSCALLBACKS::pfnTestSetEnd */
 static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char *pszTag)
 {
@@ -223,10 +238,9 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
 
     /* Before destroying the test environment, pack up the test set so
      * that it's ready for transmission. */
-    char szFileOut[RTPATH_MAX];
-    int rc = AudioTestSetPack(pSet, pThis->szPathOut, szFileOut, sizeof(szFileOut));
+    int rc = AudioTestSetPack(pSet, pThis->szPathOut, pThis->szTestSetArchive, sizeof(pThis->szTestSetArchive));
     if (RT_SUCCESS(rc))
-        LogRel(("Audio: Validation Kit: Packed up to '%s'\n", szFileOut));
+        LogRel(("Audio: Validation Kit: Packed up to '%s'\n", pThis->szTestSetArchive));
 
     int rc2 = AudioTestSetWipe(pSet);
     if (RT_SUCCESS(rc))
@@ -235,7 +249,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
     AudioTestSetDestroy(pSet);
 
     if (RT_FAILURE(rc))
-        LogRel(("Audio: Validation Kit: Test set prologue failed with %Rrc\n", rc));
+        LogRel(("Audio: Validation Kit: Ending test set failed with %Rrc\n", rc));
 
     return rc;
 }
@@ -312,6 +326,60 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     return VINF_SUCCESS;
 }
 
+/** @copydoc ATSCALLBACKS::pfnTestSetSendBegin */
+static DECLCALLBACK(int) drvHostValKitTestSetSendBeginCallback(void const *pvUser, const char *pszTag)
+{
+    RT_NOREF(pszTag);
+
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+
+    if (!RTFileExists(pThis->szTestSetArchive)) /* Has the archive successfully been created yet? */
+        return VERR_WRONG_ORDER;
+
+    int rc = RTFileOpen(&pThis->hTestSetArchive, pThis->szTestSetArchive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t uSize;
+        rc = RTFileQuerySize(pThis->hTestSetArchive, &uSize);
+        if (RT_SUCCESS(rc))
+            LogRel(("Audio: Validation Kit: Sending test set '%s' (%zu bytes)\n", pThis->szTestSetArchive, uSize));
+    }
+
+    return rc;
+}
+
+/** @copydoc ATSCALLBACKS::pfnTestSetSendRead */
+static DECLCALLBACK(int) drvHostValKitTestSetSendReadCallback(void const *pvUser,
+                                                              const char *pszTag, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    RT_NOREF(pszTag);
+
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+
+    return RTFileRead(pThis->hTestSetArchive, pvBuf, cbBuf, pcbRead);
+}
+
+/** @copydoc ATSCALLBACKS::pfnTestSetSendEnd */
+static DECLCALLBACK(int) drvHostValKitTestSetSendEndCallback(void const *pvUser, const char *pszTag)
+{
+    RT_NOREF(pszTag);
+
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+
+    int rc = RTFileClose(pThis->hTestSetArchive);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hTestSetArchive = NIL_RTFILE;
+    }
+
+    return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   PDMIHOSTAUDIO interface implementation                                                                                       *
+*********************************************************************************************************************************/
+
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
@@ -362,7 +430,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
     PDMAudioStrmCfgCopy(&pStreamDbg->Cfg, pCfgAcq);
     return rc;
 }
-
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
@@ -741,11 +808,15 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->cTestsPlay = 0;
 
     ATSCALLBACKS Callbacks;
-    Callbacks.pfnTestSetBegin = drvHostValKitTestSetBegin;
-    Callbacks.pfnTestSetEnd   = drvHostValKitTestSetEnd;
-    Callbacks.pfnTonePlay     = drvHostValKitRegisterGuestRecTest;
-    Callbacks.pfnToneRecord   = drvHostValKitRegisterGuestPlayTest;
-    Callbacks.pvUser          = pThis;
+    RT_ZERO(Callbacks);
+    Callbacks.pfnTestSetBegin     = drvHostValKitTestSetBegin;
+    Callbacks.pfnTestSetEnd       = drvHostValKitTestSetEnd;
+    Callbacks.pfnTonePlay         = drvHostValKitRegisterGuestRecTest;
+    Callbacks.pfnToneRecord       = drvHostValKitRegisterGuestPlayTest;
+    Callbacks.pfnTestSetSendBegin = drvHostValKitTestSetSendBeginCallback;
+    Callbacks.pfnTestSetSendRead  = drvHostValKitTestSetSendReadCallback;
+    Callbacks.pfnTestSetSendEnd   = drvHostValKitTestSetSendEndCallback;
+    Callbacks.pvUser              = pThis;
 
     /** @todo Make this configurable via CFGM. */
     const char *pszTcpAddr = ATS_TCP_HOST_DEFAULT_ADDR_STR;
