@@ -355,7 +355,7 @@ if [ "$ACTION" = "install" ]; then
         ln -sf VBoxDTrace /usr/bin/vboxdtrace > /dev/null 2>&1
     fi
     if [ -f $INSTALLATION_DIR/VBoxAudioTest ]; then
-        ln -sf VBoxDTrace /usr/bin/vboxaudiotest > /dev/null 2>&1
+        ln -sf VBoxAudioTest /usr/bin/vboxaudiotest > /dev/null 2>&1
     fi
 
     # Icons
