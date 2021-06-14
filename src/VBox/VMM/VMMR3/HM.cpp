@@ -852,8 +852,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
         {
             HM_REG_COUNTER(&pHmCpu->StatVmxWriteHostRip,    "/HM/CPU%u/WriteHostRIP", "Number of VMX_VMCS_HOST_RIP instructions.");
             HM_REG_COUNTER(&pHmCpu->StatVmxWriteHostRsp,    "/HM/CPU%u/WriteHostRSP", "Number of VMX_VMCS_HOST_RSP instructions.");
-            HM_REG_COUNTER(&pHmCpu->StatVmxVmLaunch,        "/HM/CPU%u/VMLaunch", "Number of VMLAUNCH instructions.");
-            HM_REG_COUNTER(&pHmCpu->StatVmxVmResume,        "/HM/CPU%u/VMResume", "Number of VMRESUME instructions.");
+            HM_REG_COUNTER(&pHmCpu->StatVmxVmLaunch,        "/HM/CPU%u/VMLaunch", "Number of VM-entries using VMLAUNCH.");
+            HM_REG_COUNTER(&pHmCpu->StatVmxVmResume,        "/HM/CPU%u/VMResume", "Number of VM-entries using VMRESUME.");
         }
 
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadRmSelBase,   "/HM/CPU%u/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
@@ -874,7 +874,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
             HM_REG_COUNTER(&pHmCpu->StatExitPreemptTimer,                      "/HM/CPU%u/PreemptTimer",                          "VMX-preemption timer fired.");
             HM_REG_COUNTER(&pHmCpu->StatVmxPreemptionReusingDeadline,          "/HM/CPU%u/PreemptTimer/ReusingDeadline",          "VMX-preemption timer arming logic using previously calculated deadline");
             HM_REG_COUNTER(&pHmCpu->StatVmxPreemptionReusingDeadlineExpired,   "/HM/CPU%u/PreemptTimer/ReusingDeadlineExpired",   "VMX-preemption timer arming logic found previous deadline already expired (ignored)");
-            HM_REG_COUNTER(&pHmCpu->StatVmxPreemptionRecalcingDeadline,        "/HM/CPU%u/PreemptTimer/RecalcingDeadline",        "VMX-preemption timer arming logic recalculating the deadline (slighly expensive)");
+            HM_REG_COUNTER(&pHmCpu->StatVmxPreemptionRecalcingDeadline,        "/HM/CPU%u/PreemptTimer/RecalcingDeadline",        "VMX-preemption timer arming logic recalculating the deadline (slightly expensive)");
             HM_REG_COUNTER(&pHmCpu->StatVmxPreemptionRecalcingDeadlineExpired, "/HM/CPU%u/PreemptTimer/RecalcingDeadlineExpired", "VMX-preemption timer arming logic found recalculated deadline expired (ignored)");
         }
 #ifdef VBOX_WITH_STATISTICS
