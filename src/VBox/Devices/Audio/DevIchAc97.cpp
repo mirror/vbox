@@ -1319,18 +1319,9 @@ static void ichac97R3StreamPushToMixer(PAC97STREAMR3 pStreamR3, PAUDMIXSINK pSin
  * @param   pStreamCC           The AC'97 stream to update (ring-3).
  */
 static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
-                                     PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
+                                     PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, PAUDMIXSINK pSink)
 {
-    /*
-     * Make sure we're running and got an active mixer sink.
-     */
-    PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD); /** @todo caller will need + check this too afterwards... */
-    AssertPtr(pSink);
-    if (RT_LIKELY(AudioMixerSinkIsActive(pSink)))
-    { /* likely */ }
-    else
-        return;
-
+    RT_NOREF(pThisCC);
     int rc2;
 
     /*
@@ -2550,7 +2541,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTime
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
     if (pSink && AudioMixerSinkIsActive(pSink))
     {
-        ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC);
+        ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC, pSink);
 
         ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
         ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
