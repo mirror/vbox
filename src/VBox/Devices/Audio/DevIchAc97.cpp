@@ -24,6 +24,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/AssertGuest.h>
 
 #include <iprt/assert.h>
 #ifdef IN_RING3
@@ -128,6 +129,8 @@
 #define AC97_BD_BUP             RT_BIT(30)          /**< Buffer Underrun Policy. */
 
 #define AC97_BD_LEN_MASK        0xFFFF              /**< Mask for the BDL buffer length. */
+
+#define AC97_BD_LEN_CTL_MBZ     UINT32_C(0x3fff0000) /**< Must-be-zero mask for AC97BDLE.ctl_len. */
 
 #define AC97_MAX_BDLE           32                  /**< Maximum number of BDLEs. */
 /** @} */
@@ -819,38 +822,78 @@ DECLINLINE(PAUDMIXSINK) ichac97R3IndexToSink(PAC97STATER3 pThisCC, uint8_t uInde
 }
 
 /**
- * Fetches the current BDLE (Buffer Descriptor List Entry) of an AC'97 audio stream.
+ * Fetches the next buffer descriptor (BDLE) updating the stream registers.
  *
- * @returns VBox status code.
+ * This will skip zero length descriptors.
+ *
+ * @returns Zero, or AC97_SR_BCIS if skipped zero length buffer with IOC set.
  * @param   pDevIns             The device instance.
  * @param   pStream             AC'97 stream to fetch BDLE for.
+ * @param   pStreamCC           The AC'97 stream, ring-3 state.
  *
- * @remark  Uses CIV as BDLE index.
+ * @remark  Updates CIV, PIV, BD and PICB.
  */
-static void ichac97R3StreamFetchBDLE(PPDMDEVINS pDevIns, PAC97STREAM pStream)
+static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
-    PAC97BMREGS pRegs = &pStream->Regs;
+    RT_NOREF(pStreamCC);
+    uint32_t fSrBcis = 0;
 
-    AC97BDLE BDLE;
-    PDMDevHlpPCIPhysRead(pDevIns, pRegs->bdbar + pRegs->civ * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
-    pRegs->bd_valid   = 1;
-# ifndef RT_LITTLE_ENDIAN
-#  error "Please adapt the code (audio buffers are little endian)!"
-# else
-    pRegs->bd.addr    = RT_H2LE_U32(BDLE.addr & ~3);
-    pRegs->bd.ctl_len = RT_H2LE_U32(BDLE.ctl_len);
-# endif
-    pRegs->picb       = pRegs->bd.ctl_len & AC97_BD_LEN_MASK;
-    LogFlowFunc(("bd %2d addr=%#x ctl=%#06x len=%#x(%d bytes), bup=%RTbool, ioc=%RTbool\n",
-                  pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len >> 16,
-                  pRegs->bd.ctl_len & AC97_BD_LEN_MASK,
-                 (pRegs->bd.ctl_len & AC97_BD_LEN_MASK) << 1,  /** @todo r=andy Assumes 16bit samples. */
-                  RT_BOOL(pRegs->bd.ctl_len & AC97_BD_BUP),
-                  RT_BOOL(pRegs->bd.ctl_len & AC97_BD_IOC)));
-    /** @todo r=bird: Several of the specificiation states that zero length BDL
-     *        entries are okay, as long as they aren't at the head or end.  We
-     *        should simply skip up to 30 empty ones, because otherwise the timer
-     *        locking falls flat on its face. */
+    /*
+     * Loop for skipping zero length entries.
+     */
+    for (;;)
+    {
+        /* Advance the buffer. */
+        pStream->Regs.civ = pStream->Regs.piv;
+        pStream->Regs.piv = (pStream->Regs.piv + 1) % AC97_MAX_BDLE;
+
+        /* Load it. */
+        AC97BDLE Bdle = { 0, 0 };
+        PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar + pStream->Regs.civ * sizeof(AC97BDLE), &Bdle, sizeof(AC97BDLE));
+        pStream->Regs.bd_valid   = 1;
+        pStream->Regs.bd.addr    = RT_H2LE_U32(Bdle.addr) & ~3;
+        pStream->Regs.bd.ctl_len = RT_H2LE_U32(Bdle.ctl_len);
+        pStream->Regs.picb       = pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK;
+
+        LogFlowFunc(("BDLE%02u: %#RX32 L %#x / LB %#x, ctl=%#06x\n",
+                     pStream->Regs.civ, pStream->Regs.bd.addr, pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK,
+                     (pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK) * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props),
+                     pStream->Regs.bd.ctl_len >> 16,
+                     pStream->Regs.bd.ctl_len & AC97_BD_IOC ? " ioc" : "",
+                     pStream->Regs.bd.ctl_len & AC97_BD_BUP ? " bup" : ""));
+
+        /* Complain about any reserved bits set in CTL and ADDR: */
+        ASSERT_GUEST_MSG(!(pStream->Regs.bd.ctl_len & AC97_BD_LEN_CTL_MBZ),
+                         ("Reserved bits set: %#RX32\n", pStream->Regs.bd.ctl_len));
+        ASSERT_GUEST_MSG(!(RT_H2LE_U32(Bdle.addr) & 3),
+                         ("Reserved addr bits set: %#RX32\n", RT_H2LE_U32(Bdle.addr) ));
+
+        /* If the length is non-zero or if we've reached LVI, we're done regardless
+           of what's been loaded.  Otherwise, we skip zero length buffers. */
+        if (pStream->Regs.picb)
+            break;
+        if (pStream->Regs.civ == pStream->Regs.lvi)
+        {
+            LogFunc(("BDLE%02u is zero length! Can't skip (CIV=LVI). %#RX32 %#RX32\n", pStream->Regs.civ, Bdle.addr, Bdle.ctl_len));
+            break;
+        }
+        LogFunc(("BDLE%02u is zero length! Skipping. %#RX32 %#RX32\n", pStream->Regs.civ, Bdle.addr, Bdle.ctl_len));
+
+        /* If the buffer has IOC set, make sure it's triggered by the caller. */
+        if (   (pStream->Regs.bd.ctl_len & AC97_BD_IOC)
+            && (pStream->Regs.bd.ctl_len & AC97_BD_IOC))
+            fSrBcis |= AC97_SR_BCIS;
+    }
+
+    /* 1.2.4.2 PCM Buffer Restrictions (in 302349-003) - #1  */
+    ASSERT_GUEST_MSG(!(pStream->Regs.picb & 1),
+                     ("Odd lengths buffers are not allowed: %#x (%d) samples\n",  pStream->Regs.picb, pStream->Regs.picb));
+
+    /* 1.2.4.2 PCM Buffer Restrictions (in 302349-003) - #2  */
+    ASSERT_GUEST_MSG(pStream->Regs.picb > 0, ("Zero length buffers not allowed to terminate list (LVI=%u CIV=%u)\n",
+                                              pStream->Regs.lvi, pStream->Regs.civ));
+
+    return fSrBcis;
 }
 
 #endif /* IN_RING3 */
@@ -2612,10 +2655,8 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
             }
 
             pRegs->sr &= ~AC97_SR_CELV;
-            pRegs->civ = pRegs->piv;
-            pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-
-            ichac97R3StreamFetchBDLE(pDevIns, pStream);
+            if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
+                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
             continue;
         }
 
@@ -2716,11 +2757,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
                 rc = VINF_EOF;
             }
             else
-            {
-                pRegs->civ = pRegs->piv;
-                pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-                ichac97R3StreamFetchBDLE(pDevIns, pStream);
-            }
+                new_sr |= ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC);
 
             ichac97StreamUpdateSR(pDevIns, pThis, pStream, new_sr);
         }
@@ -3000,13 +3037,10 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             {
                                 Log3Func(("[SD%RU8] Enable\n", pStream->u8SD));
 
-                                pRegs->civ = pRegs->piv;
-                                pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-
                                 pRegs->sr &= ~AC97_SR_DCH;
 
-                                /* Fetch the initial BDLE descriptor. */
-                                ichac97R3StreamFetchBDLE(pDevIns, pStream);
+                                if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
+                                    ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
 # ifdef LOG_ENABLED
                                 if (LogIsFlowEnabled())
                                     ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
