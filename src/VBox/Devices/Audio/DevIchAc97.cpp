@@ -1884,6 +1884,8 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
      *       with HDA, so this is just a general idea of what the guest is
      *       up to and we cannot really make much of a plan out of it.
      */
+    /** @todo This is wrong! The valid range is CVI thru LVI. However, CVI is
+     *        typically reset to zero, I guess... */
     AC97BDLE aBdl[AC97_MAX_BDLE];
     RT_ZERO(aBdl);
     unsigned const cBuffers = pStream->Regs.lvi + 1;
@@ -2868,7 +2870,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         /* 32-bit access: Current Index Value Register +
                          *                Last Valid Index Register +
                          *                Status Register */
-                        *pu32 = pRegs->civ | (pRegs->lvi << 8) | (pRegs->sr << 16); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                        *pu32 = pRegs->civ | ((uint32_t)pRegs->lvi << 8) | ((uint32_t)pRegs->sr << 16);
                         Log3Func(("CIV LVI SR[%d] -> %#x, %#x, %#x\n",
                                   AC97_PORT2IDX(offPort), pRegs->civ, pRegs->lvi, pRegs->sr));
                         break;
@@ -2876,7 +2878,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         /* 32-bit access: Position in Current Buffer Register +
                          *                Prefetched Index Value Register +
                          *                Control Register */
-                        *pu32 = pRegs->picb | (pRegs->piv << 16) | (pRegs->cr << 24); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                        *pu32 = pRegs->picb | ((uint32_t)pRegs->piv << 16) | ((uint32_t)pRegs->cr << 24);
                         Log3Func(("PICB PIV CR[%d] -> %#x %#x %#x %#x\n",
                                   AC97_PORT2IDX(offPort), *pu32, pRegs->picb, pRegs->piv, pRegs->cr));
                         break;
@@ -2989,7 +2991,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         if (   (pRegs->cr & AC97_CR_RPBM)
                             && (pRegs->sr & AC97_SR_DCH))
                         {
-#ifdef IN_RING3
+#ifdef IN_RING3 /** @todo r=bird: What kind of unexplained non-sense is this ifdef?!? */
                             pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
                             pRegs->civ = pRegs->piv;
                             pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
@@ -3087,7 +3089,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 {
                     case AC97_NABM_OFF_BDBAR:
                         /* Buffer Descriptor list Base Address Register */
-                        pRegs->bdbar = u32 & ~3;
+                        pRegs->bdbar = u32 & ~(uint32_t)3;
                         Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(offPort), u32, pRegs->bdbar));
                         break;
                     default:
@@ -3636,15 +3638,16 @@ static int ichac97R3DbgLookupStrmIdx(PCDBGFINFOHLP pHlp, const char *pszArgs)
 static void ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
                                  PCDBGFINFOHLP pHlp, const char *pszPrefix)
 {
-    unsigned const cEntries = pStream->Regs.lvi + 1;
-    pHlp->pfnPrintf(pHlp, "%sBDL for stream #%u: @ %#RX32 L %#x:\n", pszPrefix, pStream->u8SD, pStream->Regs.bdbar, cEntries);
+    uint8_t const bLvi = pStream->Regs.lvi;
+    uint8_t const bCiv = pStream->Regs.civ;
+    pHlp->pfnPrintf(pHlp, "%sBDL for stream #%u: @ %#RX32 LB 0x100; CIV=%#04x LVI=%#04x:\n",
+                    pszPrefix, pStream->u8SD, pStream->Regs.bdbar, bCiv, bLvi);
     if (pStream->Regs.bdbar != 0)
     {
         /* Read all in one go. */
-        AssertCompile(sizeof(pStream->Regs.lvi) == sizeof(uint8_t));
-        AC97BDLE aBdl[256];
+        AC97BDLE aBdl[AC97_MAX_BDLE];
         RT_ZERO(aBdl);
-        PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl[0]) * cEntries);
+        PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl));
 
         /* Get the audio props for the stream so we can translate the sizes correctly. */
         PDMAUDIOPCMPROPS Props;
@@ -3652,28 +3655,37 @@ static void ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STRE
 
         /* Dump them. */
         uint64_t cbTotal = 0;
-        for (unsigned i = 0; i < cEntries; i++)
+        uint64_t cbValid = 0;
+        for (unsigned i = 0; i < RT_ELEMENTS(aBdl); i++)
         {
             aBdl[i].addr    = RT_LE2H_U32(aBdl[i].addr);
             aBdl[i].ctl_len = RT_LE2H_U32(aBdl[i].ctl_len);
 
+            bool const fValid = bCiv <= bLvi
+                              ? i >= bCiv && i <= bLvi
+                              : (i >= bCiv && i < RT_ELEMENTS(aBdl)) || i <= bLvi;
+
             uint32_t const cb = (aBdl[i].ctl_len & AC97_BD_LEN_MASK) * PDMAudioPropsSampleSize(&Props); /** @todo or frame size? OSDev says frame... */
             cbTotal += cb;
+            if (fValid)
+                cbValid += cb;
 
             char szFlags[64];
             szFlags[0] = '\0';
             if (aBdl[i].ctl_len & ~(AC97_BD_LEN_MASK | AC97_BD_IOC | AC97_BD_BUP))
                 RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", aBdl[i].ctl_len & ~AC97_BD_LEN_MASK);
 
-            pHlp->pfnPrintf(pHlp, "%s  BDLE%02u: %#010RX32 L %#06x / LB %#RX32 / %RU64ms%s%s%s%s\n", pszPrefix, i, aBdl[i].addr,
+            pHlp->pfnPrintf(pHlp, "%s %cBDLE%02u: %#010RX32 L %#06x / LB %#RX32 / %RU64ms%s%s%s%s\n",
+                            pszPrefix, fValid ? ' ' : '?', i, aBdl[i].addr,
                             aBdl[i].ctl_len & AC97_BD_LEN_MASK, cb, PDMAudioPropsBytesToMilli(&Props, cb),
                             aBdl[i].ctl_len & AC97_BD_IOC ?  " ioc" : "",
                             aBdl[i].ctl_len & AC97_BD_BUP ?  " bup" : "",
                             szFlags, !(aBdl[i].addr & 3) ? "" : " !!Addr!!");
         }
 
-        pHlp->pfnPrintf(pHlp, "%sTotal: %#RX64 bytes (%RU64), %RU64 ms\n", pszPrefix, cbTotal, cbTotal,
-                        PDMAudioPropsBytesToMilli(&Props, cbTotal));
+        pHlp->pfnPrintf(pHlp, "%sTotal: %#RX64 bytes (%RU64), %RU64 ms;  Valid: %#RX64 bytes (%RU64), %RU64 ms\n", pszPrefix,
+                        cbTotal, cbTotal, PDMAudioPropsBytesToMilli(&Props, cbTotal),
+                        cbValid, cbValid, PDMAudioPropsBytesToMilli(&Props, cbValid) );
     }
 }
 
