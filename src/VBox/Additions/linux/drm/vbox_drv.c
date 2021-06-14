@@ -262,7 +262,7 @@ static const struct file_operations vbox_fops = {
 	.read = drm_read,
 };
 
-#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 static void
 #else
 static int
@@ -286,7 +286,7 @@ vbox_master_set(struct drm_device *dev,
 	schedule_delayed_work(&vbox->refresh_work, VBOX_REFRESH_PERIOD);
 	mutex_unlock(&vbox->hw_mutex);
 
-#if RTLNX_VER_MAX(5,9,0) && !RTLNX_RHEL_MAJ_PREREQ(8,4)
+#if RTLNX_VER_MAX(5,9,0) && !RTLNX_RHEL_MAJ_PREREQ(8,4) && !RTLNX_SUSE_MAJ_PREREQ(15,3)
 	return 0;
 #endif
 }
@@ -310,13 +310,13 @@ static void vbox_master_drop(struct drm_device *dev, struct drm_file *file_priv)
 }
 
 static struct drm_driver driver = {
-#if RTLNX_VER_MAX(5,4,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3)
+#if RTLNX_VER_MAX(5,4,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3) && !RTLNX_SUSE_MAJ_PREREQ(15,3)
 	.driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ |
 # if RTLNX_VER_MAX(5,1,0) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 	    DRIVER_IRQ_SHARED |
 # endif
 	    DRIVER_PRIME,
-#else  /* >= 5.4.0 && RHEL >= 8.3 */
+#else  /* >= 5.4.0 && RHEL >= 8.3 && SLES >= 15-SP3 */
 		.driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
 #endif /* <  5.4.0 */
 

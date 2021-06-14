@@ -410,7 +410,7 @@ void vbox_fbdev_fini(struct drm_device *dev)
 				vbox_bo_unpin(bo);
 			vbox_bo_unreserve(bo);
 		}
-#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 		drm_gem_object_put(afb->obj);
 #else
 		drm_gem_object_put_unlocked(afb->obj);
@@ -443,7 +443,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 #else
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
 #endif
-#if RTLNX_VER_MIN(5,7,0) || RTLNX_RHEL_MIN(8,4)
+#if RTLNX_VER_MIN(5,7,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
         ret = drm_fb_helper_init(dev, &fbdev->helper);
 #elif RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 	ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs);
@@ -455,7 +455,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	if (ret)
 		return ret;
 
-#if RTLNX_VER_MAX(5,7,0) && !RTLNX_RHEL_MAJ_PREREQ(8,4)
+#if RTLNX_VER_MAX(5,7,0) && !RTLNX_RHEL_MAJ_PREREQ(8,4) && !RTLNX_SUSE_MAJ_PREREQ(15,3)
 	ret = drm_fb_helper_single_add_all_connectors(&fbdev->helper);
 	if (ret)
 		goto err_fini;

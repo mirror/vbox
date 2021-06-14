@@ -151,7 +151,7 @@
 #define S64_MIN         ((s64)(-S64_MAX - 1))
 #endif
 
-#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3)
+#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 # include <drm/drm_file.h>
 # include <drm/drm_drv.h>
 # include <drm/drm_device.h>
@@ -159,7 +159,7 @@
 # include <drm/drm_fourcc.h>
 # include <drm/drm_irq.h>
 # include <drm/drm_vblank.h>
-#else /* < 5.5.0 || RHEL < 8.3 */
+#else /* < 5.5.0 || RHEL < 8.3 || SLES < 15-SP3 */
 # include <drm/drmP.h>
 #endif
 #if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)

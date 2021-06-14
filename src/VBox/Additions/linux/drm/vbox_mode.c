@@ -398,7 +398,7 @@ static struct drm_encoder *drm_encoder_find(struct drm_device *dev, u32 id)
 static struct drm_encoder *vbox_best_single_encoder(struct drm_connector
 						    *connector)
 {
-#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3)
+#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3) || RTLNX_SUSE_MAJ_PREREQ(15,3)
         struct drm_encoder *encoder;
 
         /* There is only one encoder per connector */
@@ -888,7 +888,7 @@ out_unmap_bo:
 out_unreserve_bo:
 	vbox_bo_unreserve(bo);
 out_unref_obj:
-#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 	drm_gem_object_put(obj);
 #else
 	drm_gem_object_put_unlocked(obj);

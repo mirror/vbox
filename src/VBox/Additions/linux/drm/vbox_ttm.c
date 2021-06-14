@@ -420,7 +420,7 @@ int vbox_mm_init(struct vbox_private *vbox)
 #if RTLNX_VER_MIN(3,15,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 				 dev->anon_inode->i_mapping,
 #endif
-#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3)
+#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 				 dev->vma_offset_manager,
 #elif RTLNX_VER_MAX(5,2,0) && !RTLNX_RHEL_MAJ_PREREQ(8,2)
 				 DRM_FILE_PAGE_OFFSET,
@@ -626,7 +626,7 @@ err_free_vboxbo:
 
 static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 {
-#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4)
+#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 	return bo->bo.mem.start << PAGE_SHIFT;
 #else
 	return bo->bo.offset;
