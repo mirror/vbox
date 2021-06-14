@@ -102,6 +102,8 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_MaxGuestResolution;
         /** Holds whether hovered machine-window should be activated. */
         SHARED_LIBRARY_STUFF extern const char *GUI_ActivateHoveredMachineWindow;
+        /** Holds whether the host scrrn saver is disabled when a vm is running. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_DisableHostScreenSaver;
     /** @} */
 
     /** @name Settings: Keyboard

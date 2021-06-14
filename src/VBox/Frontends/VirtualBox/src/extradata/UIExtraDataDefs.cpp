@@ -55,6 +55,7 @@ const char *UIExtraDataDefs::GUI_LanguageID = "GUI/LanguageID";
 /* Settings: Display: */
 const char *UIExtraDataDefs::GUI_MaxGuestResolution = "GUI/MaxGuestResolution";
 const char *UIExtraDataDefs::GUI_ActivateHoveredMachineWindow = "GUI/ActivateHoveredMachineWindow";
+const char *UIExtraDataDefs::GUI_DisableHostScreenSaver = "GUI/DisableHostScreenSaver";
 
 /* Settings: Keyboard: */
 const char *UIExtraDataDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorShortcuts";

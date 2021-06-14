@@ -35,6 +35,7 @@ struct UIDataSettingsGlobalDisplay
     /** Constructs data. */
     UIDataSettingsGlobalDisplay()
         : m_fActivateHoveredMachineWindow(false)
+        , m_fDisableHostScreenSaver(false)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -43,6 +44,7 @@ struct UIDataSettingsGlobalDisplay
         return    true
                && (m_guiMaximumGuestScreenSizeValue == other.m_guiMaximumGuestScreenSizeValue)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
+               && (m_fDisableHostScreenSaver == other.m_fDisableHostScreenSaver)
                && (m_scaleFactors == other.m_scaleFactors)
                   ;
     }
@@ -56,6 +58,9 @@ struct UIDataSettingsGlobalDisplay
     UIMaximumGuestScreenSizeValue  m_guiMaximumGuestScreenSizeValue;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool                           m_fActivateHoveredMachineWindow;
+    /** Holds whether we should disable host sceen saver on a vm is running. */
+    bool                           m_fDisableHostScreenSaver;
+
     /** Holds the guest screen scale-factor. */
     QList<double>                  m_scaleFactors;
 };
@@ -75,6 +80,7 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     , m_pEditorScaleFactor(0)
     , m_pLabelMachineWindows(0)
     , m_pCheckBoxActivateOnMouseHover(0)
+    , m_pCheckBoxDisableHostScreenSaver(0)
 {
     prepare();
 }
@@ -97,6 +103,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldData.m_guiMaximumGuestScreenSizeValue = UIMaximumGuestScreenSizeValue(gEDataManager->maxGuestResolutionPolicy(),
                                                                              gEDataManager->maxGuestResolutionForPolicyFixed());
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+    oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
     oldData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
     m_pCache->cacheInitialData(oldData);
 
@@ -110,6 +117,7 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
     m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
     m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
+    m_pCheckBoxDisableHostScreenSaver->setChecked(oldData.m_fDisableHostScreenSaver);
     m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
 }
@@ -122,6 +130,7 @@ void UIGlobalSettingsDisplay::putToCache()
     /* Cache new data: */
     newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
     newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+    newData.m_fDisableHostScreenSaver = m_pCheckBoxDisableHostScreenSaver->isChecked();
     newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
     m_pCache->cacheCurrentData(newData);
 }
@@ -148,6 +157,8 @@ void UIGlobalSettingsDisplay::retranslateUi()
     m_pLabelMachineWindows->setText(tr("Machine Windows:"));
     m_pCheckBoxActivateOnMouseHover->setWhatsThis(tr("When checked, machine windows will be raised when the mouse pointer moves over them."));
     m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse"));
+    m_pCheckBoxDisableHostScreenSaver->setWhatsThis(tr("When checked, screen saver of the host OS is disabled."));
+    m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -170,7 +181,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
     if (pLayoutMain)
     {
         pLayoutMain->setColumnStretch(1, 1);
-        pLayoutMain->setRowStretch(6, 1);
+        pLayoutMain->setRowStretch(7, 1);
 
         /* Prepare maximum guest screen size label: */
         m_pLabelMaximumGuestScreenSizePolicy = new QLabel(this);
@@ -233,6 +244,11 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pCheckBoxActivateOnMouseHover = new QCheckBox(this);
         if (m_pCheckBoxActivateOnMouseHover)
             pLayoutMain->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1);
+
+        /* Prepare 'disable host screen saver' check-box: */
+        m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
+        if (m_pCheckBoxDisableHostScreenSaver)
+            pLayoutMain->addWidget(m_pCheckBoxDisableHostScreenSaver, 6, 1);
     }
 }
 
@@ -265,6 +281,10 @@ bool UIGlobalSettingsDisplay::saveData()
         if (   fSuccess
             && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
             /* fSuccess = */ gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow);
+        /* Save whether the host screen saver is to be disable when a vm is running: */
+        if (   fSuccess
+            && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
+            /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
         /* Save guest-screen scale-factor: */
         if (   fSuccess
             && newData.m_scaleFactors != oldData.m_scaleFactors)

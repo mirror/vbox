@@ -96,6 +96,8 @@ private:
         QLabel                         *m_pLabelMachineWindows;
         /** Holds the 'activate on mouse hover' check-box instance. */
         QCheckBox                      *m_pCheckBoxActivateOnMouseHover;
+        /** Holds the 'disable host screen saver' check-box instance. */
+        QCheckBox                      *m_pCheckBoxDisableHostScreenSaver;
     /** @} */
 };
 

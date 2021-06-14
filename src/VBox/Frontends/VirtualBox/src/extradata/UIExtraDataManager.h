@@ -242,6 +242,10 @@ public:
         bool activateHoveredMachineWindow();
         /** Defines whether hovered machine-window should be @a fActivated. */
         void setActivateHoveredMachineWindow(bool fActivate);
+        /* Return whether host screen saver is disabled when a vm is running. */
+        bool disableHostScreenSaver();
+        /* Sets whether host screen saver is disabled when a vm is running. */
+        void setDisableHostScreenSaver(bool fActivate);
     /** @} */
 
     /** @name Settings: Keyboard
