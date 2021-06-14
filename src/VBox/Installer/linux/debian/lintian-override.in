@@ -38,7 +38,7 @@
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
 %VERPKG%: binary-without-manpage usr/bin/vboxballoonctrl
 %VERPKG%: binary-without-manpage usr/bin/vboxdtrace
-%VERPKG%: binary-without-manpage usr/bin/audiotest
+%VERPKG%: binary-without-manpage usr/bin/vboxaudiotest
 %VERPKG%: binary-without-manpage usr/bin/vboxheadless
 %VERPKG%: binary-without-manpage usr/bin/vboxmanage
 %VERPKG%: binary-without-manpage usr/bin/vboxsdl
