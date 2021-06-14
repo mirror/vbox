@@ -668,6 +668,8 @@ RTR3DECL(int) RTTimerDestroy(PRTTIMER pTimer)
         struct itimerspec TimerSpec;
         TimerSpec.it_value.tv_sec     = 0;
         TimerSpec.it_value.tv_nsec    = 0;
+        TimerSpec.it_interval.tv_sec  = 0;
+        TimerSpec.it_interval.tv_nsec = 0;
         int err = timer_settime(pTimer->NativeTimer, 0, &TimerSpec, NULL); NOREF(err);
         AssertMsg(!err, ("%d / %d\n", err, errno));
     }
