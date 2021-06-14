@@ -121,6 +121,8 @@
 /** Implementation-specific MMIO offset of FRCD_HI_REG (used in saved state). */
 #define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe78
 AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
+AssertCompile(DMAR_MMIO_OFF_IOTLB_REG == DMAR_MMIO_OFF_IVA_REG + 8);
+AssertCompile(DMAR_MMIO_OFF_FRCD_HI_REG == DMAR_MMIO_OFF_FRCD_LO_REG + 8);
 
 /** Offset of first register in group 1. */
 #define DMAR_MMIO_GROUP_1_OFF_FIRST                 VTD_MMIO_OFF_VCCAP_REG
