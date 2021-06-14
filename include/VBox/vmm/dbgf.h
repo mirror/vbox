@@ -3086,18 +3086,31 @@ VMM_INT_DECL(int)   DBGFTracerEvtGCPhysWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc
 /** @defgroup grp_dbgf_sample_report DBGF sample report.
  * @{ */
 
+/**
+ * Callback which provides progress information about a currently running
+ * lengthy operation.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_DBGF_CANCELLED to cancel the operation.
+ * @param   pvUser          The opaque user data associated with this interface.
+ * @param   uPercentage     Completion percentage.
+ */
+typedef DECLCALLBACKTYPE(int, FNDBGFPROGRESS,(void *pvUser, unsigned uPercentage));
+/** Pointer to FNDBGFPROGRESS() */
+typedef FNDBGFPROGRESS *PFNDBGFPROGRESS;
+
 /** @name Flags to pass to DBGFR3SampleReportCreate().
  * @{ */
 /** The report creates the call stack in reverse order (bottom to top). */
-#define DBGF_SAMPLE_REPORT_F_UPSIDE_DOWN    RT_BIT(0)
+#define DBGF_SAMPLE_REPORT_F_STACK_REVERSE  RT_BIT(0)
 /** Mask containing the valid flags. */
-#define DBGF_AMPLE_REPORT_F_VALID_MASK      UINT32_C(0x00000001)
+#define DBGF_SAMPLE_REPORT_F_VALID_MASK     UINT32_C(0x00000001)
 /** @} */
 
 VMMR3DECL(int)      DBGFR3SampleReportCreate(PUVM pUVM, uint32_t cSampleIntervalMs, uint32_t fFlags, PDBGFSAMPLEREPORT phSample);
 VMMR3DECL(uint32_t) DBGFR3SampleReportRetain(DBGFSAMPLEREPORT hSample);
 VMMR3DECL(uint32_t) DBGFR3SampleReportRelease(DBGFSAMPLEREPORT hSample);
-VMMR3DECL(int)      DBGFR3SampleReportStart(DBGFSAMPLEREPORT hSample);
+VMMR3DECL(int)      DBGFR3SampleReportStart(DBGFSAMPLEREPORT hSample, uint64_t cSampleUs, PFNDBGFPROGRESS pfnProgress, void *pvUser);
 VMMR3DECL(int)      DBGFR3SampleReportStop(DBGFSAMPLEREPORT hSample);
 VMMR3DECL(int)      DBGFR3SampleReportDumpToFile(DBGFSAMPLEREPORT hSample, const char *pszFilename);
 /** @} */
