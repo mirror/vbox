@@ -134,6 +134,9 @@ case "$APP" in
     VBoxDTrace|vboxdtrace)
         exec "$INSTALL_DIR/VBoxDTrace" "$@"
         ;;
+    VBoxAudioTest|vboxaudiotest|vkat)
+        exec "$INSTALL_DIR/VBoxAudioTest" "$@"
+        ;;
     vboxwebsrv)
         exec "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;

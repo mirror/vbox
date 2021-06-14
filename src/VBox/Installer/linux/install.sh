@@ -332,6 +332,9 @@ if [ "$ACTION" = "install" ]; then
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxDTrace
     fi
+    if [ -f $INSTALLATION_DIR/VBoxAudioTest ]; then
+        ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAudioTest
+    fi
     # Unity and Nautilus seem to look here for their icons
     ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
     ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
@@ -350,6 +353,9 @@ if [ "$ACTION" = "install" ]; then
     ln -sf VBoxBugReport /usr/bin/vboxbugreport > /dev/null 2>&1
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf VBoxDTrace /usr/bin/vboxdtrace > /dev/null 2>&1
+    fi
+    if [ -f $INSTALLATION_DIR/VBoxAudioTest ]; then
+        ln -sf VBoxDTrace /usr/bin/vboxaudiotest > /dev/null 2>&1
     fi
 
     # Icons

@@ -278,6 +278,10 @@
               Source="$(env.PATH_OUT)\bin\VBoxSupLib.dll" />
         <File Id="file_VBoxVMM.dll" Name="VBoxVMM.dll"
               Source="$(env.PATH_OUT)\bin\VBoxVMM.dll" />
+<?if $(env.VBOX_WITH_HOST_SHIPPING_AUDIO_TEST) = "yes" ?>
+        <File Id="file_VBoxAudioTest.exe" Name="VBoxAudioTest.exe"
+              Source="$(env.PATH_OUT)\bin\VBoxAudioTest.exe" />
+<?endif ?>
 <?if $(env.VBOX_WITH_VRDP) = "yes" ?>
         <File Id="file_VBoxVRDP.dll" Name="VBoxVRDP.dll"
               Source="$(env.PATH_OUT)\bin\VBoxVRDP.dll" />

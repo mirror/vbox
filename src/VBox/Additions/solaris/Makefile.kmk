@@ -166,7 +166,8 @@ SOLARIS_ADD_STRIP_BINS = \
 	vboxfs \
 	vboxmslnk \
 	$(if ($VBOX_WITH_PAM),pam_vbox.so,) \
-	$(if $(VBOX_OSE),,vboxfs_s10)
+	$(if $(VBOX_OSE),,vboxfs_s10) \
+	$(if $(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
 SOLARIS_ADD_DRIVERS = \
 	vboxguest \

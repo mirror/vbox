@@ -102,7 +102,8 @@ VBOX_FBSD_STRIP_BIN = \
 		components/VBoxC.so,) \
 		VBoxTestOGL \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
-	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
+	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
 # Do not remove relocation information of these binaries
 VBOX_FBSD_STRIP_OBJ = \
@@ -132,7 +133,8 @@ VBOX_FBSD_SYMLINKS = \
 		VBoxManage \
 		VBoxSVC) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
-	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
+	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
 # Qt GUI
 ifdef VBOX_WITH_QTGUI

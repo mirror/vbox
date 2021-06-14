@@ -69,6 +69,8 @@ OTHER_CLEAN += \
 	$(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe \
 	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe
 
+## @todo r=andy Rename DRIVER_FILES to INST_FILES or something, as those files are not strictly driver-related files.
+
 DRIVER_FILES := \
 	$(PATH_STAGE_BIN)/additions/VBoxGuestDrvInst.exe \
 	$(PATH_STAGE_BIN)/additions/RegCleanup.exe \
@@ -129,6 +131,12 @@ DRIVER_FILES += \
   endif
  endif
 endif
+
+ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
+ DRIVER_FILES += \
+  $(VBOX_PATH_VALIDATIONKIT_BIN)/VBoxAudioTest.exe
+endif
+
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 	-E 'PATH_TARGET=$(subst /,\,$(PATH_TARGET))' \
@@ -149,6 +157,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_NSIS_ICON_FILE=$(subst /,\,$(VBOX_NSIS_ICON_FILE))' \
 	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
 	-E 'VBOX_WITH_GUEST_INSTALLER_UNICODE=$(if $(VBOX_WITH_GUEST_INSTALLER_UNICODE),1,0)' \
+	-E 'VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST=$(if $(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST),1,0)' \
 	-E 'VBOX_WITH_LICENSE_INSTALL_RTF=$(if $(VBOX_BRAND_LICENSE_RTF),1,0)' \
 	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),1,0)' \
 	-E 'VBOX_WITH_MESA3D=$(if $(VBOX_WITH_MESA3D),1,0)' \
@@ -335,4 +344,3 @@ VBoxAddInstallNt3x.cpp_DEPS = $(VBOX_SVN_REV_HEADER)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

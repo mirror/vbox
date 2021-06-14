@@ -321,7 +321,8 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_VMSVGA3D), VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,) \
-	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
+	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
 ## @def SOLARIS_STRIP_BINS
 # List of shared libraries that are copied from INST_BIN to /opt/VirtualBox/$(VBOX_SI_ARCH)/ and stripped of debug info.
@@ -431,7 +432,8 @@ SOLARIS_USRBIN_LINKS = \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	VBoxManage \
-	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
+	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
 SOLARIS_COMMON_EXES += \
 	vboxconfig.sh \

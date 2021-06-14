@@ -175,7 +175,7 @@ VBOX_LNX_STRIP_BIN = \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)\
-	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),vkat,) \
+	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,) \
 	VBoxTunctl
 
 # Do not remove relocation information of these binaries
