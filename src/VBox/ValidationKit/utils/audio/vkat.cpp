@@ -60,6 +60,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
+static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB);
 
 
 /*********************************************************************************************************************************
@@ -118,6 +119,7 @@ enum
     VKAT_TEST_OPT_HOST_ATS_ADDR,
     VKAT_TEST_OPT_HOST_ATS_PORT,
     VKAT_TEST_OPT_MODE,
+    VKAT_TEST_OPT_NO_VERIFY,
     VKAT_TEST_OPT_OUTDIR,
     VKAT_TEST_OPT_PAUSE,
     VKAT_TEST_OPT_PCM_HZ,
@@ -157,7 +159,6 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--drvaudio",          'd',                          RTGETOPT_REQ_NOTHING },
     { "--exclude",           'e',                          RTGETOPT_REQ_UINT32  },
     { "--exclude-all",       'a',                          RTGETOPT_REQ_NOTHING },
-    { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
     { "--guest-ats-address", VKAT_TEST_OPT_GUEST_ATS_ADDR, RTGETOPT_REQ_STRING  },
     { "--guest-ats-port",    VKAT_TEST_OPT_GUEST_ATS_PORT, RTGETOPT_REQ_UINT32  },
     { "--host-ats-address",  VKAT_TEST_OPT_HOST_ATS_ADDR,  RTGETOPT_REQ_STRING  },
@@ -171,6 +172,8 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
     { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
     { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
+    { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
+    { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,      RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
     { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,        RTGETOPT_REQ_STRING  },
     { "--volume",            VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
@@ -567,10 +570,13 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                 else
                     rc = VERR_BUFFER_OVERFLOW;
 
-                if (RT_SUCCESS(rc))
+                if (   RT_SUCCESS(rc)
+                    && !pTstEnv->fSkipVerify)
                 {
-
+                    rc = audioVerifyOne(pTstEnv->u.Host.szPathTestSetGuest, pTstEnv->u.Host.szPathTestSetValKit);
                 }
+                else
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification skipped\n");
             }
         }
     }
@@ -595,6 +601,7 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to.";
         case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052].";
         case VKAT_TEST_OPT_MODE:           return "Specifies the mode this program runs at";
+        case VKAT_TEST_OPT_NO_VERIFY:      return "Skips the verification step.";
         case 'e':                          return "Exclude the given test id from the list";
         case 'a':                          return "Exclude all tests from the list (useful to enable single tests later with --include)";
         case 'i':                          return "Include the given test id in the list";
@@ -677,6 +684,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 if (TstEnv.enmMode != AUDIOTESTMODE_UNKNOWN)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Test mode (guest / host) already specified");
                 TstEnv.enmMode = RTStrICmp(ValueUnion.psz, "guest") == 0 ? AUDIOTESTMODE_GUEST : AUDIOTESTMODE_HOST;
+                break;
+
+            case VKAT_TEST_OPT_NO_VERIFY:
+                TstEnv.fSkipVerify = true;
                 break;
 
             case 'i':

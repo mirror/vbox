@@ -181,6 +181,8 @@ typedef struct AUDIOTESTENV
     AUDIOTESTMODE           enmMode;
     /** Whether self test mode is active or not. */
     bool                    fSelftest;
+    /** Whether skip the actual verification or not. */
+    bool                    fSkipVerify;
     /** Output path for storing the test environment's final test files. */
     char                    szTag[AUDIOTEST_TAG_MAX];
     /** Output path for storing the test environment's final test files. */
