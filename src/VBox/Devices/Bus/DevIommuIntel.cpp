@@ -109,16 +109,17 @@
 #define DMAR_MMIO_GROUP_0_OFF_END                   (DMAR_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
 /** Size of the group 0 (in bytes). */
 #define DMAR_MMIO_GROUP_0_SIZE                      (DMAR_MMIO_GROUP_0_OFF_END - DMAR_MMIO_GROUP_0_OFF_FIRST)
-/** Number of MMIO register offsets defined by our implementation (for saved
- *  states) - IVA_REG, IOTLB_REG, FRCD_LO, FRCD_HI. */
-#define DMAR_MMIO_OFF_IMPL_COUNT                    4
+/** Number of implementation-defined MMIO register offsets - IVA_REG and
+ *  FRCD_LO_REG (used in saved state). IOTLB_REG and FRCD_HI_REG are derived from
+ *  IVA_REG and FRCD_LO_REG respectively */
+#define DMAR_MMIO_OFF_IMPL_COUNT                    2
 /** Implementation-specific MMIO offset of IVA_REG (used in saved state). */
 #define DMAR_MMIO_OFF_IVA_REG                       0xe50
-/** Implementation-specific MMIO offset of IOTLB_REG (used in saved state). */
+/** Implementation-specific MMIO offset of IOTLB_REG. */
 #define DMAR_MMIO_OFF_IOTLB_REG                     0xe58
 /** Implementation-specific MMIO offset of FRCD_LO_REG (used in saved state). */
 #define DMAR_MMIO_OFF_FRCD_LO_REG                   0xe70
-/** Implementation-specific MMIO offset of FRCD_HI_REG (used in saved state). */
+/** Implementation-specific MMIO offset of FRCD_HI_REG. */
 #define DMAR_MMIO_OFF_FRCD_HI_REG                   0xe78
 AssertCompile(!(DMAR_MMIO_OFF_FRCD_LO_REG & 0xf));
 AssertCompile(DMAR_MMIO_OFF_IOTLB_REG == DMAR_MMIO_OFF_IVA_REG + 8);
@@ -3955,11 +3956,9 @@ static DECLCALLBACK(int) dmarR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * We save these to ensure they're located where the code expects them while loading state.
      */
     pHlp->pfnSSMPutU16(pSSM, DMAR_MMIO_OFF_IMPL_COUNT);
-    AssertCompile(DMAR_MMIO_OFF_IMPL_COUNT == 4);
+    AssertCompile(DMAR_MMIO_OFF_IMPL_COUNT == 2);
     pHlp->pfnSSMPutU16(pSSM, DMAR_MMIO_OFF_IVA_REG);
-    pHlp->pfnSSMPutU16(pSSM, DMAR_MMIO_OFF_IOTLB_REG);
     pHlp->pfnSSMPutU16(pSSM, DMAR_MMIO_OFF_FRCD_LO_REG);
-    pHlp->pfnSSMPutU16(pSSM, DMAR_MMIO_OFF_FRCD_HI_REG);
 
     /* Save lazily activated registers. */
     pHlp->pfnSSMPutU64(pSSM, pThis->uIrtaReg);
@@ -4061,8 +4060,7 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                               ("%s: IVA_REG offset mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_OFF_IVA_REG,
                                offReg), rcFmtErr);
         /* IOTLB_REG. */
-        pHlp->pfnSSMGetU16(pSSM, &offReg);
-        AssertLogRelMsgReturn(offReg == DMAR_MMIO_OFF_IOTLB_REG,
+        AssertLogRelMsgReturn(offReg + 8 == DMAR_MMIO_OFF_IOTLB_REG,
                               ("%s: IOTLB_REG offset mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_OFF_IOTLB_REG,
                                offReg), rcFmtErr);
         /* FRCD_LO_REG. */
@@ -4071,8 +4069,7 @@ static DECLCALLBACK(int) dmarR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                               ("%s: FRCD_LO_REG offset mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_OFF_FRCD_LO_REG,
                                offReg), rcFmtErr);
         /* FRCD_HI_REG. */
-        pHlp->pfnSSMGetU16(pSSM, &offReg);
-        AssertLogRelMsgReturn(offReg == DMAR_MMIO_OFF_FRCD_HI_REG,
+        AssertLogRelMsgReturn(offReg + 8 == DMAR_MMIO_OFF_FRCD_HI_REG,
                               ("%s: FRCD_HI_REG offset mismatch (expected %u got %u)\n", DMAR_LOG_PFX, DMAR_MMIO_OFF_FRCD_HI_REG,
                                offReg), rcFmtErr);
     }
