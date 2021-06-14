@@ -150,7 +150,7 @@ endif
 #
 vkatadd_EXTENDS        = vkat
 vkatadd_EXTENDS_BY     = appending
-vkatadd_NAME           = VBoxAudioTest
+vkatadd_NAME           = VBoxAudioTest$(HOSTSUFF_EXE)
 vkatadd_TEMPLATE       = VBoxGuestR3Exe
 vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
@@ -164,7 +164,7 @@ vkatadd_LIBS.solaris   = m
 ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  INSTALLS += vkathost
  vkathost_TEMPLATE = VBOXR3EXE
- vkathost_SOURCES  = $(vkat_1_TARGET)=>VBoxAudioTest
+ vkathost_SOURCES  = $(vkat_1_TARGET)=>VBoxAudioTest$(HOSTSUFF_EXE)
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
