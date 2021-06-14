@@ -847,6 +847,10 @@ static void ichac97R3StreamFetchBDLE(PPDMDEVINS pDevIns, PAC97STREAM pStream)
                  (pRegs->bd.ctl_len & AC97_BD_LEN_MASK) << 1,  /** @todo r=andy Assumes 16bit samples. */
                   RT_BOOL(pRegs->bd.ctl_len & AC97_BD_BUP),
                   RT_BOOL(pRegs->bd.ctl_len & AC97_BD_IOC)));
+    /** @todo r=bird: Several of the specificiation states that zero length BDL
+     *        entries are okay, as long as they aren't at the head or end.  We
+     *        should simply skip up to 30 empty ones, because otherwise the timer
+     *        locking falls flat on its face. */
 }
 
 #endif /* IN_RING3 */
@@ -1678,30 +1682,6 @@ static void ichac97R3MixerRemoveDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThi
     }
 }
 
-/**
- * Calculates and returns the ticks for a specified amount of bytes.
- *
- * @returns Calculated ticks
- * @param   pDevIns             The device instance.
- * @param   pStream             AC'97 stream to calculate ticks for (shared).
- * @param   pStreamCC           AC'97 stream to calculate ticks for (ring-3).
- * @param   cbBytes             Bytes to calculate ticks for.
- */
-static uint64_t ichac97R3StreamTransferCalcNext(PPDMDEVINS pDevIns, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, uint32_t cbBytes)
-{
-    if (!cbBytes)
-        return 0;
-
-    /** @todo r=bird: Why use microseconds when the timer clock has been using
-     *        nanosecond resolution since early 2005? */
-    const uint64_t usBytes        = PDMAudioPropsBytesToMicro(&pStreamCC->State.Cfg.Props, cbBytes);
-    const uint64_t cTransferTicks = PDMDevHlpTimerFromMicro(pDevIns, pStream->hTimer, usBytes);
-
-    Log3Func(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
-              pStream->u8SD, pStreamCC->State.uTimerHz, cbBytes, usBytes, cTransferTicks));
-
-    return cTransferTicks;
-}
 
 /**
  * Updates the next transfer based on a specific amount of bytes.
@@ -1709,21 +1689,51 @@ static uint64_t ichac97R3StreamTransferCalcNext(PPDMDEVINS pDevIns, PAC97STREAM 
  * @param   pDevIns             The device instance.
  * @param   pStream             The AC'97 stream to update (shared).
  * @param   pStreamCC           The AC'97 stream to update (ring-3).
- * @param   cbBytes             Bytes to update next transfer for.
  */
-static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, uint32_t cbBytes)
+static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
-    if (!cbBytes)
-        return;
+    /*
+     * Get the number of bytes left in the current buffer.
+     *
+     * This isn't entirely optimal iff the current entry doesn't have IOC set, in
+     * that case we should use the number of bytes to the next IOC.  Unfortuantely,
+     * it seems the spec doesn't allow us to prefetch more than one BDLE, so we
+     * probably cannot look ahead without violating that restriction.  This is
+     * probably a purely theoretical problem at this point.
+     */
+    uint32_t const cbLeftInBdle = pStream->Regs.picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
+    if (cbLeftInBdle > 0) /** @todo r=bird: see todo about this in ichac97R3StreamFetchBDLE. */
+    {
+        /*
+         * Since the buffer can be up to 0xfffe samples long (frame aligning stereo
+         * prevents 0xffff), which translates to 743ms at a 44.1kHz rate, we must
+         * also take the nominal timer frequency into account here so we keep
+         * moving data at a steady rate.  (In theory, I think the guest can even
+         * set up just one buffer and anticipate where we are in the buffer
+         * processing when it writes/reads from it.  Linux seems to be doing such
+         * configs when not playing or something.)
+         */
+        uint32_t const cbMaxPerHz = PDMAudioPropsNanoToBytes(&pStreamCC->State.Cfg.Props, RT_NS_1SEC / pStreamCC->State.uTimerHz);
 
-    /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
-     * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-    pStreamCC->State.cbTransferChunk = cbBytes;
+        if (cbLeftInBdle <= cbMaxPerHz)
+            pStreamCC->State.cbTransferChunk = cbLeftInBdle;
+        /* Try avoid leaving a very short period at the end of a buffer. */
+        else if (cbLeftInBdle >= cbMaxPerHz + cbMaxPerHz / 2)
+            pStreamCC->State.cbTransferChunk = cbMaxPerHz;
+        else
+            pStreamCC->State.cbTransferChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbLeftInBdle / 2);
 
-    /* Update the transfer ticks. */
-    pStreamCC->State.cTransferTicks = ichac97R3StreamTransferCalcNext(pDevIns, pStream, pStreamCC,
-                                                                      pStreamCC->State.cbTransferChunk);
-    Assert(pStreamCC->State.cTransferTicks); /* Paranoia. */
+        /*
+         * Translate the chunk size to timer ticks.
+         */
+        uint64_t const cNsXferChunk     = PDMAudioPropsBytesToNano(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk);
+        pStreamCC->State.cTransferTicks = PDMDevHlpTimerFromNano(pDevIns, pStream->hTimer, cNsXferChunk);
+        Assert(pStreamCC->State.cTransferTicks > 0);
+
+        Log3Func(("[SD%RU8] cbLeftInBdle=%#RX32 cbMaxPerHz=%#RX32 (%RU16Hz) -> cbTransferChunk=%#RX32 cTransferTicks=%RX64\n",
+                  pStream->u8SD, cbLeftInBdle, cbMaxPerHz, pStreamCC->State.uTimerHz,
+                  pStreamCC->State.cbTransferChunk, pStreamCC->State.cTransferTicks));
+    }
 }
 
 
@@ -2486,12 +2496,12 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTime
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStream->hTimer));
 
-    ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC);
-
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
     if (pSink && AudioMixerSinkIsActive(pSink))
     {
-        ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
+        ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC);
+
+        ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
         ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
     }
 
