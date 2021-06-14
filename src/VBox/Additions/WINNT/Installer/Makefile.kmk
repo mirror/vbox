@@ -134,7 +134,7 @@ endif
 
 ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
  DRIVER_FILES += \
-  $(VBOX_PATH_VALIDATIONKIT_BIN)/VBoxAudioTest.exe
+  $(PATH_STAGE_BIN)/additions/VBoxAudioTest.exe
 endif
 
 VB_WIN_ADD_NSIS_ENV := \
