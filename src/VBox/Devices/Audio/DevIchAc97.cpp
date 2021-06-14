@@ -855,7 +855,7 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
         pStream->Regs.bd.ctl_len = RT_H2LE_U32(Bdle.ctl_len);
         pStream->Regs.picb       = pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK;
 
-        LogFlowFunc(("BDLE%02u: %#RX32 L %#x / LB %#x, ctl=%#06x\n",
+        LogFlowFunc(("BDLE%02u: %#RX32 L %#x / LB %#x, ctl=%#06x%s%s\n",
                      pStream->Regs.civ, pStream->Regs.bd.addr, pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK,
                      (pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK) * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props),
                      pStream->Regs.bd.ctl_len >> 16,
@@ -880,8 +880,7 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
         LogFunc(("BDLE%02u is zero length! Skipping. %#RX32 %#RX32\n", pStream->Regs.civ, Bdle.addr, Bdle.ctl_len));
 
         /* If the buffer has IOC set, make sure it's triggered by the caller. */
-        if (   (pStream->Regs.bd.ctl_len & AC97_BD_IOC)
-            && (pStream->Regs.bd.ctl_len & AC97_BD_IOC))
+        if (pStream->Regs.bd.ctl_len & AC97_BD_IOC)
             fSrBcis |= AC97_SR_BCIS;
     }
 
