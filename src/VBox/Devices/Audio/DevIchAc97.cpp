@@ -387,6 +387,12 @@ typedef struct AC97STREAMSTATE
     uint32_t                StatDmaBufSize;
     /** Number of used bytes in the DMA buffer (pCircBuf). */
     uint32_t                StatDmaBufUsed;
+    /** Counter for all under/overflows problems. */
+    STAMCOUNTER             StatDmaFlowProblems;
+    /** Counter for unresovled under/overflows problems. */
+    STAMCOUNTER             StatDmaFlowErrors;
+    /** Number of bytes involved in unresolved flow errors. */
+    STAMCOUNTER             StatDmaFlowErrorBytes;
 } AC97STREAMSTATE;
 AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 /** Pointer to internal state of an AC'97 stream. */
@@ -1324,34 +1330,76 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
     RT_NOREF(pThisCC);
     int rc2;
 
+    /* The amount we're supposed to be transfering in this DMA period. */
+    uint32_t cbPeriod = pStreamCC->State.cbTransferChunk;
+
     /*
      * Output streams (SDO).
      */
     if (pStreamCC->State.Cfg.enmDir == PDMAUDIODIR_OUT)
     {
+        /*
+         * Check how much room we have in our DMA buffer.  There should be at
+         * least one period worth of space there or we're in an overflow situation.
+         */
         uint32_t cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
-        if (cbStreamFree)
+        if (cbStreamFree >= cbPeriod)
         { /* likely */ }
         else
         {
-            /** @todo Record this as a statistic. Try make some space available.    */
+            STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowProblems);
+            Log(("ichac97R3StreamUpdateDma: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
+                 pStreamCC->u8SD, cbStreamFree, cbPeriod));
+            int rc = AudioMixerSinkTryLock(pSink);
+            if (RT_SUCCESS(rc))
+            {
+                ichac97R3StreamPushToMixer(pStreamCC, pSink);
+                AudioMixerSinkUpdate(pSink, 0, 0);
+                AudioMixerSinkUnlock(pSink);
+            }
+            else
+                RTThreadYield();
+            Log(("ichac97R3StreamUpdateDma: Gained %u bytes.\n", ichac97R3StreamGetFree(pStreamCC) - cbStreamFree));
+
+            cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
+            if (cbStreamFree < cbPeriod)
+            {
+                /* Unable to make sufficient space.  Drop the whole buffer content.
+                 * This is needed in order to keep the device emulation running at a constant rate,
+                 * at the cost of losing valid (but too much) data. */
+                STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowErrors);
+                LogRel2(("AC97: Warning: Hit stream #%RU8 overflow, dropping %u bytes of audio data\n",
+                         pStreamCC->u8SD, ichac97R3StreamGetUsed(pStreamCC)));
+# ifdef HDA_STRICT
+                AssertMsgFailed(("Hit stream #%RU8 overflow -- timing bug?\n", pStreamCC->u8SD));
+# endif
+                RTCircBufReset(pStreamCC->State.pCircBuf);
+                pStreamCC->State.offWrite = 0;
+                pStreamCC->State.offRead  = 0;
+                cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
+                Assert(cbStreamFree >= cbPeriod);
+            }
         }
-        if (cbStreamFree)
-        {
-            Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
-                      pStream->u8SD,
-                      (pStream->Regs.picb << 1), PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStream->Regs.picb << 1),
-                      cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
-                      pStreamCC->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk)));
 
-            /* Do the DMA transfer. */
-            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC,
-                                          RT_MIN(pStreamCC->State.cbTransferChunk, cbStreamFree));
-            AssertRC(rc2);
+        /*
+         * Do the DMA transfer.
+         */
+        Log3Func(("[SD%RU8] PICB=%#x samples / %RU64 ms, cbFree=%#x / %RU64 ms, cbTransferChunk=%#x / %RU64 ms\n", pStream->u8SD,
+                  pStream->Regs.picb, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props,
+                                                                  PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props)
+                                                                * pStream->Regs.picb),
+                  cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
+                  cbPeriod, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbPeriod)));
 
-            pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
-        }
+        rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbStreamFree, cbPeriod));
+        AssertRC(rc2);
 
+        pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
+
+
+        /*
+         * Notify the AIO thread.
+         */
         rc2 = AudioMixerSinkSignalUpdateJob(pSink);
         AssertRC(rc2);
     }
@@ -4271,6 +4319,18 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
                                "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowProblems, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Number of internal DMA buffer problems.",   "Stream%u/DMABufferProblems", idxStream);
+        if (ichac97GetDirFromSD(idxStream) == PDMAUDIODIR_OUT)
+            PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                                   "Number of internal DMA buffer overflows.",  "Stream%u/DMABufferOverflows", idxStream);
+        else
+        {
+            PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                                   "Number of internal DMA buffer underuns.", "Stream%u/DMABufferUnderruns", idxStream);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
+        }
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
