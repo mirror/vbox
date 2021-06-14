@@ -831,7 +831,12 @@ DECLINLINE(PAUDMIXSINK) ichac97R3IndexToSink(PAC97STATER3 pThisCC, uint8_t uInde
  * @param   pStream             AC'97 stream to fetch BDLE for.
  * @param   pStreamCC           The AC'97 stream, ring-3 state.
  *
- * @remark  Updates CIV, PIV, BD and PICB.
+ * @remarks Updates CIV, PIV, BD and PICB.
+ *
+ * @note    Both PIV and CIV will be zero after a stream reset, so the first
+ *          time we advance the buffer position afterwards, CIV will remain zero
+ *          and PIV becomes 1.  Thus we will start processing from BDLE00 and
+ *          not BDLE01 as CIV=0 may lead you to think.
  */
 static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
@@ -844,7 +849,7 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
     for (;;)
     {
         /* Advance the buffer. */
-        pStream->Regs.civ = pStream->Regs.piv;
+        pStream->Regs.civ = pStream->Regs.piv % AC97_MAX_BDLE /* (paranoia) */;
         pStream->Regs.piv = (pStream->Regs.piv + 1) % AC97_MAX_BDLE;
 
         /* Load it. */
@@ -872,7 +877,7 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
            of what's been loaded.  Otherwise, we skip zero length buffers. */
         if (pStream->Regs.picb)
             break;
-        if (pStream->Regs.civ == pStream->Regs.lvi)
+        if (pStream->Regs.civ == (pStream->Regs.lvi % AC97_MAX_BDLE /* (paranoia) */))
         {
             LogFunc(("BDLE%02u is zero length! Can't skip (CIV=LVI). %#RX32 %#RX32\n", pStream->Regs.civ, Bdle.addr, Bdle.ctl_len));
             break;
@@ -1087,7 +1092,7 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream, PAC97STR
     pRegs->lvi      = 0;
 
     pRegs->picb     = 0;
-    pRegs->piv      = 0;
+    pRegs->piv      = 0; /* Note! Because this is also zero, we will actually start transferring with BDLE00. */
     pRegs->cr       = pRegs->cr & AC97_CR_DONT_CLEAR_MASK;
     pRegs->bd_valid = 0;
 
@@ -1884,22 +1889,22 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
      *       with HDA, so this is just a general idea of what the guest is
      *       up to and we cannot really make much of a plan out of it.
      */
-    /** @todo This is wrong! The valid range is CVI thru LVI. However, CVI is
-     *        typically reset to zero, I guess... */
     AC97BDLE aBdl[AC97_MAX_BDLE];
     RT_ZERO(aBdl);
-    unsigned const cBuffers = pStream->Regs.lvi + 1;
-    PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl[0]) * cBuffers);
+    PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl));
 
-    uint32_t cSamplesMax   = 0;
-    uint32_t cSamplesMin   = UINT32_MAX;
-    uint32_t cSamplesCur   = 0;
-    uint32_t cSamplesTotal = 0;
-    for (unsigned i = 0; i < cBuffers; i++)
+    uint8_t const bLvi          = pStream->Regs.lvi % AC97_MAX_BDLE /* paranoia */;
+    uint8_t const bCiv          = pStream->Regs.civ % AC97_MAX_BDLE /* paranoia */;
+    uint32_t      cSamplesMax   = 0;
+    uint32_t      cSamplesMin   = UINT32_MAX;
+    uint32_t      cSamplesCur   = 0;
+    uint32_t      cSamplesTotal = 0;
+    uint32_t      cBuffers      = 1;
+    for (uintptr_t i = bCiv; ; cBuffers++)
     {
-        cSamplesCur   += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
-        cSamplesTotal += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
-        if (aBdl[0].ctl_len & AC97_BD_IOC)
+        cSamplesTotal += aBdl[i].ctl_len & AC97_BD_LEN_MASK;
+        cSamplesCur   += aBdl[i].ctl_len & AC97_BD_LEN_MASK;
+        if (aBdl[i].ctl_len & AC97_BD_IOC)
         {
             if (cSamplesCur > cSamplesMax)
                 cSamplesMax = cSamplesCur;
@@ -1907,30 +1912,32 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
                 cSamplesMin = cSamplesCur;
             cSamplesCur = 0;
         }
-    }
 
-    if (cSamplesCur && cSamplesMax != 0)
-    {
-        LogFlowFunc(("Tail buffer w/o IOC, loops.\n"));
-        for (unsigned i = 0; i < cBuffers; i++)
-        {
-            cSamplesCur += aBdl[0].ctl_len & AC97_BD_LEN_MASK;
-            if (aBdl[0].ctl_len & AC97_BD_IOC)
-            {
-                if (cSamplesCur > cSamplesMax)
-                    cSamplesMax = cSamplesCur;
-                if (cSamplesCur < cSamplesMin)
-                    cSamplesMin = cSamplesCur;
-                cSamplesCur = 0;
-                break;
-            }
-        }
+        /* Advance. */
+        if (i != bLvi)
+            i = (i + 1) % RT_ELEMENTS(aBdl);
+        else
+            break;
     }
+    if (!cSamplesCur)
+    { /* likely */ }
+    else if (!cSamplesMax)
+    {
+        LogFlowFunc(("%u buffers without IOC set, assuming %#x samples as the IOC period.\n", cBuffers, cSamplesMax));
+        cSamplesMin = cSamplesMax = cSamplesCur;
+    }
+    else if (cSamplesCur > cSamplesMax)
+    {
+        LogFlowFunc(("final buffer is without IOC, using open period as max (%#x vs current max %#x).\n", cSamplesCur, cSamplesMax));
+        cSamplesMax = cSamplesCur;
+    }
+    else
+        LogFlowFunc(("final buffer is without IOC, ignoring (%#x vs current max %#x).\n", cSamplesCur, cSamplesMax));
 
     uint32_t const cbDmaMinBuf  = cSamplesMax * PDMAudioPropsSampleSize(&Cfg.Props) * 3; /* see further down */
     uint32_t const cMsDmaMinBuf = PDMAudioPropsBytesToMilli(&Cfg.Props, cbDmaMinBuf);
     LogRel3(("AC97: [SD%RU8] buffer length stats: total=%#x in %u buffers, min=%#x, max=%#x => min DMA buffer %u ms / %#x bytes\n",
-                 pStream->u8SD, cSamplesTotal, cBuffers, cSamplesMin, cSamplesMax, cMsDmaMinBuf, cbDmaMinBuf));
+             pStream->u8SD, cSamplesTotal, cBuffers, cSamplesMin, cSamplesMax, cMsDmaMinBuf, cbDmaMinBuf));
 
     /*
      * Only (re-)create the stream (and driver chain) if we really have to.
@@ -3663,7 +3670,7 @@ static void ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STRE
 
             bool const fValid = bCiv <= bLvi
                               ? i >= bCiv && i <= bLvi
-                              : (i >= bCiv && i < RT_ELEMENTS(aBdl)) || i <= bLvi;
+                              : i >= bCiv || i <= bLvi;
 
             uint32_t const cb = (aBdl[i].ctl_len & AC97_BD_LEN_MASK) * PDMAudioPropsSampleSize(&Props); /** @todo or frame size? OSDev says frame... */
             cbTotal += cb;
