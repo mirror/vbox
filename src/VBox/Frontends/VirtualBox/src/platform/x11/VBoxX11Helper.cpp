@@ -174,6 +174,9 @@ QStringList X11ScrenSaverServices()
         if (strServiceName.contains("screensaver", Qt::CaseInsensitive))
             serviceNames << strServiceName;
     }
+    if (serviceNames.isEmpty())
+        LogRel(("No screen saver service found among registered DBus services."));
+
     return serviceNames;
 }
 

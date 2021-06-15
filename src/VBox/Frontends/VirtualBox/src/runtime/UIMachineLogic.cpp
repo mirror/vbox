@@ -712,11 +712,19 @@ void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
 void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
 #if defined(VBOX_WS_X11)
+    if (m_fHostScreenSaverDisabled == fDisabled)
+        return;
+    m_fHostScreenSaverDisabled = fDisabled;
+
     QStringList services = X11ScrenSaverServices();
     if (services.isEmpty())
         return;
 
-    Q_UNUSED(fDisabled);
+    if (fDisabled)
+        X11InhibitScrenSaver(services, m_screenSaverInhibitionCookies);
+    else
+        X11UninhibitScrenSaver(m_screenSaverInhibitionCookies);
+
 #else
     Q_UNUSED(fDisabled);
 #endif
@@ -879,6 +887,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pProcessControlDialog(0)
     , m_pSoftKeyboardDialog(0)
     , m_pVMInformationDialog(0)
+    , m_fHostScreenSaverDisabled(false)
 {
 }
 
