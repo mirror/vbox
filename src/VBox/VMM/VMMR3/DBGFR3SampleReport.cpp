@@ -630,7 +630,7 @@ VMMR3DECL(uint32_t) DBGFR3SampleReportRelease(DBGFSAMPLEREPORT hSample)
         return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(ASMAtomicReadU32((volatile uint32_t *)&pThis->enmState) == DBGFSAMPLEREPORTSTATE_READY,
-                 VERR_INVALID_STATE);
+                 0);
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pThis));
