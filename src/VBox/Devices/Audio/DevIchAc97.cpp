@@ -687,7 +687,8 @@ static void               ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC);
 static uint32_t           ichac97R3StreamGetUsed(PAC97STREAMR3 pStreamCC);
 static uint32_t           ichac97R3StreamGetFree(PAC97STREAMR3 pStreamCC);
 static int                ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
-                                                  PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence);
+                                                  PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax,
+                                                  bool fWriteSilence, bool fInput);
 static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
@@ -1397,7 +1398,8 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
                   cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
                   cbPeriod, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbPeriod)));
 
-        rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbStreamFree, cbPeriod), false /*fWriteSilence*/);
+        rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbStreamFree, cbPeriod),
+                                      false /*fWriteSilence*/, false /*fInput*/);
         AssertRC(rc2);
 
         pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
@@ -1512,7 +1514,8 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
          */
         if (cbStreamUsed)
         {
-            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbPeriod, cbStreamUsed), fWriteSilence);
+            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbPeriod, cbStreamUsed),
+                                          fWriteSilence, true /*fInput*/);
             AssertRC(rc2);
 
             pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
@@ -2745,9 +2748,10 @@ DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint
  * @param   fWriteSilence       Whether to write silence if this is an input
  *                              stream (done while waiting for backend to get
  *                              going).
+ * @param   fInput              Set if input, clear if output.
  */
 static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
-                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence)
+                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence, bool fInput)
 {
     if (!cbToProcessMax)
         return VINF_SUCCESS;
@@ -2824,74 +2828,67 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
         uint32_t cbChunk = cbLeft;
 
-        switch (pStream->u8SD)
+        /*
+         * Output.
+         */
+        if (!fInput)
         {
-            case AC97SOUNDSOURCE_PO_INDEX: /* Output */
-            {
-                void  *pvDst = NULL;
-                size_t cbDst = NULL;
-                RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvDst, &cbDst);
+            void  *pvDst = NULL;
+            size_t cbDst = NULL;
+            RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvDst, &cbDst);
 
-                if (cbDst)
+            if (cbDst)
+            {
+                int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, pvDst, cbDst);
+                AssertRC(rc2);
+
+                if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+                { /* likely */ }
+                else
+                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvDst, cbDst, 0 /* fFlags */);
+            }
+
+            RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
+
+            cbChunk = (uint32_t)cbDst; /* Update the current chunk size to what really has been written. */
+        }
+        /*
+         * Input.
+         */
+        else
+        {
+            if (!fWriteSilence)
+            {
+                void  *pvSrc = NULL;
+                size_t cbSrc = NULL;
+                RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
+
+                if (cbSrc)
                 {
-                    int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, pvDst, cbDst);
+                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
                     AssertRC(rc2);
 
                     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
                     { /* likely */ }
                     else
-                        AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvDst, cbDst, 0 /* fFlags */);
+                        AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
                 }
 
-                RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
+                RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
 
-                cbChunk = (uint32_t)cbDst; /* Update the current chunk size to what really has been written. */
-                break;
+                cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
             }
+            else
+            {
+                /* Since the format is signed 16-bit or 32-bit integer samples, we can
+                   use g_abRTZero64K as source and avoid some unnecessary bzero() work. */
+                cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
+                cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
 
-            case AC97SOUNDSOURCE_PI_INDEX: /* Input */
-            case AC97SOUNDSOURCE_MC_INDEX: /* Input */
-                if (!fWriteSilence)
-                {
-                    void  *pvSrc = NULL;
-                    size_t cbSrc = NULL;
-                    RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
-
-                    if (cbSrc)
-                    {
-                        int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
-                        AssertRC(rc2);
-
-                        if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-                        { /* likely */ }
-                        else
-                            AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
-                    }
-
-                    RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
-
-                    cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
-                }
-                else
-                {
-                    /* Since the format is signed 16-bit or 32-bit integer samples, we can
-                       use g_abRTZero64K as source and avoid some unnecessary bzero() work. */
-                    cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
-                    cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
-
-                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
-                    AssertRC(rc2);
-                }
-                break;
-
-            default:
-                AssertMsgFailed(("Stream #%RU8 not supported\n", pStream->u8SD));
-                rc = VERR_NOT_SUPPORTED;
-                break;
+                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
+                AssertRC(rc2);
+            }
         }
-
-        if (RT_FAILURE(rc))
-            break;
 
         if (cbChunk)
         {
@@ -2933,13 +2930,9 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
             ichac97StreamUpdateSR(pDevIns, pThis, pStream, new_sr);
         }
 
-        if (/* All data processed? */
-               rc == VINF_EOF
-            /* ... or an error occurred? */
-            || RT_FAILURE(rc))
-        {
+        /* All data processed? */
+        if (rc == VINF_EOF)
             break;
-        }
     }
 
     ichac97R3StreamUnlock(pStreamCC);
