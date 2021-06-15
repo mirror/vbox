@@ -35,6 +35,7 @@
 # include <iprt/semaphore.h>
 # include <iprt/string.h>
 # include <iprt/uuid.h>
+# include <iprt/zero.h>
 #endif
 
 #include "VBoxDD.h"
@@ -377,7 +378,9 @@ typedef struct AC97STREAMSTATE
     uint16_t                uTimerHz;
     /** Set if we've registered the asynchronous update job. */
     bool                    fRegisteredAsyncUpdateJob;
-    uint8_t                 Padding3;
+    /** Input streams only: Set when we switch from feeding the guest silence and
+     *  commits to proving actual audio input bytes. */
+    bool                    fInputPreBuffered;
     /** (Virtual) clock ticks per transfer. */
     uint64_t                cTransferTicks;
     /** Timestamp (in ns) of last stream update. */
@@ -684,7 +687,7 @@ static void               ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC);
 static uint32_t           ichac97R3StreamGetUsed(PAC97STREAMR3 pStreamCC);
 static uint32_t           ichac97R3StreamGetFree(PAC97STREAMR3 pStreamCC);
 static int                ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
-                                                  PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax);
+                                                  PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence);
 static DECLCALLBACK(void) ichac97R3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
@@ -1023,9 +1026,12 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     int rc = VINF_SUCCESS;
     if (fEnable)
     {
+        /* Reset some of the state. */
+        pStreamCC->State.fInputPreBuffered = false;
         if (pStreamCC->State.pCircBuf)
             RTCircBufReset(pStreamCC->State.pCircBuf);
 
+        /* (Re-)Open the steram if necessary. */
         rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
 
         /* Re-register the update job with the AIO thread with correct sched hint.
@@ -1370,7 +1376,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
                 STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowErrors);
                 LogRel2(("AC97: Warning: Hit stream #%RU8 overflow, dropping %u bytes of audio data\n",
                          pStreamCC->u8SD, ichac97R3StreamGetUsed(pStreamCC)));
-# ifdef HDA_STRICT
+# ifdef AC97_STRICT
                 AssertMsgFailed(("Hit stream #%RU8 overflow -- timing bug?\n", pStreamCC->u8SD));
 # endif
                 RTCircBufReset(pStreamCC->State.pCircBuf);
@@ -1391,7 +1397,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
                   cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
                   cbPeriod, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbPeriod)));
 
-        rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbStreamFree, cbPeriod));
+        rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbStreamFree, cbPeriod), false /*fWriteSilence*/);
         AssertRC(rc2);
 
         pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
@@ -1403,34 +1409,113 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
         rc2 = AudioMixerSinkSignalUpdateJob(pSink);
         AssertRC(rc2);
     }
-    else /* Input (SDI). */
+    /*
+     * Input stream (SDI).
+     */
+    else
     {
-#if 0 /* bird: I just love when crusial code like this with no explanation.  This just causing AIO
-   *       skipping a DMA timer cycle if the timer callback is a bit quicker than the 'hint' (see HDA/9890).   */
-        const uint64_t tsNowNs = RTTimeNanoTS();
-        if (tsNowNs - pStreamCC->State.tsLastUpdateNs >= pStreamCC->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
+        /*
+         * See how much data we've got buffered...
+         */
+        bool     fWriteSilence = false;
+        uint32_t cbStreamUsed  = ichac97R3StreamGetUsed(pStreamCC);
+        if (pStreamCC->State.fInputPreBuffered && cbStreamUsed >= cbPeriod)
+        { /*likely*/ }
+        /*
+         * Because it may take a while for the input stream to get going (at least
+         * with pulseaudio), we feed the guest silence till we've pre-buffer a
+         * couple of timer Hz periods.  (This avoid lots of bogus buffer underruns
+         * when starting an input stream and hogging the timer EMT.)
+         */
+        else if (!pStreamCC->State.fInputPreBuffered)
         {
-            rc2 = AudioMixerSinkSignalUpdateJob(pSink);
-            AssertRC(rc2);
-
-            pStreamCC->State.tsLastUpdateNs = tsNowNs;
+            uint32_t const cbPreBuffer = PDMAudioPropsNanoToBytes(&pStreamCC->State.Cfg.Props,
+                                                                  RT_NS_1SEC / pStreamCC->State.uTimerHz);
+            if (cbStreamUsed < cbPreBuffer)
+            {
+                Log3(("hdaR3StreamUpdateDma: Pre-buffering (got %#x out of %#x bytes)...\n", cbStreamUsed, cbPreBuffer));
+                fWriteSilence = true;
+                cbStreamUsed  = cbPeriod;
+            }
+            else
+            {
+                Log3(("hdaR3StreamUpdateDma: Completed pre-buffering (got %#x, needed %#x bytes).\n", cbStreamUsed, cbPreBuffer));
+                pStreamCC->State.fInputPreBuffered = true;
+                fWriteSilence = ichac97R3StreamGetFree(pStreamCC) >= cbPreBuffer + cbPreBuffer / 2;
+                if (fWriteSilence)
+                    cbStreamUsed = cbPeriod;
+            }
         }
-#endif
-
-        uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
-        if (cbStreamUsed)
-        { /* likey */ }
+        /*
+         * When we're low on data, we must really try fetch some ourselves
+         * as buffer underruns must not happen.
+         */
         else
         {
-            /** @todo Record this as a statistic. Try pull some data into the DMA buffer.*/
+            STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowProblems);
+            Log(("ichac97R3StreamUpdateDma: Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
+                 pStreamCC->u8SD, cbStreamUsed, cbPeriod));
+            int rc = AudioMixerSinkTryLock(pSink);
+            if (RT_SUCCESS(rc))
+            {
+                AudioMixerSinkUpdate(pSink, cbStreamUsed, cbPeriod);
+                ichac97R3StreamPullFromMixer(pStreamCC, pSink);
+                AudioMixerSinkUnlock(pSink);
+            }
+            else
+                RTThreadYield();
+            Log(("ichac97R3StreamUpdateDma: Gained %u bytes.\n", ichac97R3StreamGetUsed(pStreamCC) - cbStreamUsed));
+            cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+            if (cbStreamUsed < cbPeriod)
+            {
+                /* Unable to find sufficient input data by simple prodding.
+                   In order to keep a constant byte stream following thru the DMA
+                   engine into the guest, we will try again and then fall back on
+                   filling the gap with silence. */
+                uint32_t cbSilence = 0;
+                do
+                {
+                    AudioMixerSinkLock(pSink);
+
+                    cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+                    if (cbStreamUsed < cbPeriod)
+                    {
+                        ichac97R3StreamPullFromMixer(pStreamCC, pSink);
+                        cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
+                        while (cbStreamUsed < cbPeriod)
+                        {
+                            void  *pvDstBuf;
+                            size_t cbDstBuf;
+                            RTCircBufAcquireWriteBlock(pStreamCC->State.pCircBuf, cbPeriod - cbStreamUsed,
+                                                       &pvDstBuf, &cbDstBuf);
+                            RT_BZERO(pvDstBuf, cbDstBuf);
+                            RTCircBufReleaseWriteBlock(pStreamCC->State.pCircBuf, cbDstBuf);
+                            cbSilence    += (uint32_t)cbDstBuf;
+                            cbStreamUsed += (uint32_t)cbDstBuf;
+                        }
+                    }
+
+                    AudioMixerSinkUnlock(pSink);
+                } while (cbStreamUsed < cbPeriod);
+                if (cbSilence > 0)
+                {
+                    STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowErrors);
+                    STAM_REL_COUNTER_ADD(&pStreamCC->State.StatDmaFlowErrorBytes, cbSilence);
+                    LogRel2(("AC97: Warning: Stream #%RU8 underrun, added %u bytes of silence (%u us)\n", pStreamCC->u8SD,
+                             cbSilence, PDMAudioPropsBytesToMicro(&pStreamCC->State.Cfg.Props, cbSilence)));
+                }
+            }
         }
 
+        /*
+         * Do the DMA'ing.
+         */
         if (cbStreamUsed)
         {
-            /* When running synchronously, do the DMA data transfers here.
-             * Otherwise this will be done in the stream's async I/O thread. */
-            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, cbStreamUsed);
+            rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC, RT_MIN(cbPeriod, cbStreamUsed), fWriteSilence);
             AssertRC(rc2);
+
+            pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
         }
 
         /*
@@ -1442,7 +1527,6 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
         Log5Func(("Notifying AIO thread\n"));
         rc2 = AudioMixerSinkSignalUpdateJob(pSink);
         AssertRC(rc2);
-        pStreamCC->State.tsLastUpdateNs = RTTimeNanoTS();
     }
 }
 
@@ -2630,9 +2714,12 @@ DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint
  * @param   pStream             The AC'97 stream to update (shared).
  * @param   pStreamCC           The AC'97 stream to update (ring-3).
  * @param   cbToProcessMax      Maximum of data (in bytes) to process.
+ * @param   fWriteSilence       Whether to write silence if this is an input
+ *                              stream (done while waiting for backend to get
+ *                              going).
  */
 static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
-                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax)
+                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence)
 {
     if (!cbToProcessMax)
         return VINF_SUCCESS;
@@ -2713,14 +2800,13 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         {
             case AC97SOUNDSOURCE_PO_INDEX: /* Output */
             {
-                void *pvDst;
-                size_t cbDst;
-
+                void  *pvDst = NULL;
+                size_t cbDst = NULL;
                 RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvDst, &cbDst);
 
                 if (cbDst)
                 {
-                    int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, (uint8_t *)pvDst, cbDst);
+                    int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, pvDst, cbDst);
                     AssertRC(rc2);
 
                     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
@@ -2737,28 +2823,38 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
             case AC97SOUNDSOURCE_PI_INDEX: /* Input */
             case AC97SOUNDSOURCE_MC_INDEX: /* Input */
-            {
-                void *pvSrc;
-                size_t cbSrc;
-
-                RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
-
-                if (cbSrc)
+                if (!fWriteSilence)
                 {
-                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, (uint8_t *)pvSrc, cbSrc);
-                    AssertRC(rc2);
+                    void  *pvSrc = NULL;
+                    size_t cbSrc = NULL;
+                    RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
 
-                    if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-                    { /* likely */ }
-                    else
-                        AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
+                    if (cbSrc)
+                    {
+                        int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
+                        AssertRC(rc2);
+
+                        if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+                        { /* likely */ }
+                        else
+                            AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
+                    }
+
+                    RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
+
+                    cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
                 }
+                else
+                {
+                    /* Since the format is signed 16-bit or 32-bit integer samples, we can
+                       use g_abRTZero64K as source and avoid some unnecessary bzero() work. */
+                    cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
+                    cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
 
-                RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
-
-                cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
+                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
+                    AssertRC(rc2);
+                }
                 break;
-            }
 
             default:
                 AssertMsgFailed(("Stream #%RU8 not supported\n", pStream->u8SD));
@@ -2771,14 +2867,14 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
         if (cbChunk)
         {
+            Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbChunk));
+            Assert(cbChunk <= cbLeft);
+
             cbProcessedTotal     += cbChunk;
             Assert(cbProcessedTotal <= cbToProcessMax);
-            Assert(cbLeft >= cbChunk);
-            cbLeft      -= cbChunk;
-            Assert((cbChunk & 1) == 0); /* Else the following shift won't work */
-
-            pRegs->picb    -= (cbChunk >> 1); /** @todo r=andy Assumes 16bit samples. */
-            pRegs->bd.addr += cbChunk;
+            cbLeft               -= cbChunk;
+            pRegs->picb          -= (cbChunk >> 1); /** @todo r=andy Assumes 16bit samples. */
+            pRegs->bd.addr       += cbChunk;
         }
 
         LogFlowFunc(("[SD%RU8] cbChunk=%RU32, cbLeft=%RU32, cbTotal=%RU32, rc=%Rrc\n",
