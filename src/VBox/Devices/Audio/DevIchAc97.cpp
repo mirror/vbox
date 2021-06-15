@@ -1031,7 +1031,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
         if (pStreamCC->State.pCircBuf)
             RTCircBufReset(pStreamCC->State.pCircBuf);
 
-        /* (Re-)Open the steram if necessary. */
+        /* (Re-)Open the stream if necessary. */
         rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
 
         /* Re-register the update job with the AIO thread with correct sched hint.
@@ -2004,6 +2004,25 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
             AssertMsgFailedReturn(("u8SD=%d\n", pStream->u8SD), VERR_INTERNAL_ERROR_3);
     }
 
+    /** @todo r=bird: If uHz == 0 then we'll just keep the previous stream, so
+     * wonder how that's going to play out if the guest tries to enable it...  This
+     * makes no real sense.
+     *
+     * Comment your code and changes you make, please!  This is frigging tedious.
+     *
+     * Test added in r127402?  The test is older (before r118166, r113296, r112652,
+     * r112463, r107142), but it used to be placed after calling
+     * ichac97R3MixerRemoveDrvStreams() since r112652.  Till ~r112463 a zero uHz
+     * caused a VERR_INVALID_PARAMETER return. Before r107142 it would disable the
+     * stream if uHz was zero. */
+    if (Cfg.Props.uHz)
+    { /* likely */ }
+    else
+    {
+        LogFlowFunc(("[SD%RU8] Hz is zero!! skipping/ignoring\n"));
+        return VINF_SUCCESS;
+    }
+
     /*
      * Read the buffer descriptors and check what the max distance between
      * interrupts are, so we can more correctly size the internal DMA buffer.
@@ -2063,6 +2082,51 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
              pStream->u8SD, cSamplesTotal, cBuffers, cSamplesMin, cSamplesMax, cMsDmaMinBuf, cbDmaMinBuf));
 
     /*
+     * Calculate the timer Hz / scheduling hint based on the stream frame rate.
+     */
+    uint32_t uTimerHz;
+    if (pThis->uTimerHz == AC97_TIMER_HZ_DEFAULT) /* Make sure that we don't have any custom Hz rate set we want to enforce */
+    {
+        if (Cfg.Props.uHz > 44100) /* E.g. 48000 Hz. */
+            uTimerHz = 200;
+        else /* Just take the global Hz rate otherwise. */
+            uTimerHz = pThis->uTimerHz;
+    }
+    else
+        uTimerHz = pThis->uTimerHz;
+
+    if (   uTimerHz >= 10
+        && uTimerHz <= 500)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("[SD%RU8] Adjusting uTimerHz=%u to %u\n", pStream->u8SD, uTimerHz,
+                 Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT));
+        uTimerHz = Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT;
+    }
+
+    /* Translate it to a scheduling hint. */
+    uint32_t const cMsSchedulingHint = RT_MS_1SEC / uTimerHz;
+
+    /*
+     * Calculate the circular buffer size so we can decide whether to recreate
+     * the stream or not.
+     *
+     * As mentioned in the HDA code, this should be at least able to hold the
+     * data transferred in three DMA periods and in three AIO period (whichever
+     * is higher).  However, if we assume that the DMA code will engage the DMA
+     * timer thread (currently EMT) if the AIO thread isn't getting schduled to
+     * transfer data thru the stack, we don't need to go overboard and double
+     * the minimums here.  The less buffer the less possible delay can build when
+     * TM is doing catch up.
+     */
+    uint32_t cMsCircBuf = Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut;
+    cMsCircBuf = RT_MAX(cMsCircBuf, cMsDmaMinBuf);
+    cMsCircBuf = RT_MAX(cMsCircBuf, cMsSchedulingHint * 3);
+    cMsCircBuf = RT_MIN(cMsCircBuf, RT_MS_1SEC * 2);
+    uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
+
+    /*
      * Only (re-)create the stream (and driver chain) if we really have to.
      * Otherwise avoid this and just reuse it, as this costs performance.
      */
@@ -2070,85 +2134,49 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
     if (   fForce
         || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
         || !pStreamCC->State.pCircBuf
-        || cbDmaMinBuf > RTCircBufSize(pStreamCC->State.pCircBuf))
+        || cbCircBuf != RTCircBufSize(pStreamCC->State.pCircBuf))
     {
         LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
                  PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
 
         LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
 
-        if (Cfg.Props.uHz)
+        Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
+
+        /*
+         * Set the stream's timer rate and scheduling hint.
+         */
+        pStreamCC->State.uTimerHz    = uTimerHz;
+        Cfg.Device.cMsSchedulingHint = cMsSchedulingHint;
+
+        /*
+         * Re-create the circular buffer if necessary.
+         */
+        if (pStreamCC->State.pCircBuf && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
+            RTCircBufReset(pStreamCC->State.pCircBuf);
+        else
         {
-            Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
+            LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x); cMsSchedulingHint=%u cMsDmaMinBuf=%u cMsCircBufXxx=%u\n",
+                         cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize, Cfg.Device.cMsSchedulingHint, cMsDmaMinBuf,
+                         Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut));
+            if (pStreamCC->State.pCircBuf)
+                RTCircBufDestroy(pStreamCC->State.pCircBuf);
 
-            /*
-             * Set the stream's timer Hz rate, based on the PCM properties Hz rate.
-             */
-            if (pThis->uTimerHz == AC97_TIMER_HZ_DEFAULT) /* Make sure that we don't have any custom Hz rate set we want to enforce */
-            {
-                if (Cfg.Props.uHz > 44100) /* E.g. 48000 Hz. */
-                    pStreamCC->State.uTimerHz = 200;
-                else /* Just take the global Hz rate otherwise. */
-                    pStreamCC->State.uTimerHz = pThis->uTimerHz;
-            }
-            else
-                pStreamCC->State.uTimerHz = pThis->uTimerHz;
+            rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, cbCircBuf);
+            AssertRCReturnStmt(rc, pStreamCC->State.pCircBuf = NULL, rc);
 
-            if (   pStreamCC->State.uTimerHz >= 10
-                && pStreamCC->State.uTimerHz <= 500)
-            { /* likely */ }
-            else
-            {
-                LogFunc(("[SD%RU8] Adjusting uTimerHz=%u to %u\n", pStream->u8SD, pStreamCC->State.uTimerHz,
-                         Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT));
-                pStreamCC->State.uTimerHz = Cfg.Props.uHz > 44100 ? 200 : AC97_TIMER_HZ_DEFAULT;
-            }
-
-            /* Set scheduling hint. */
-            Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / pStreamCC->State.uTimerHz;
-
-            /*
-             * Re-create the circular buffer if necessary.
-             *
-             * As mentioned in the HDA code, this should be at least able to hold the
-             * data transferred in three DMA periods and in three AIO period (whichever
-             * is higher).  However, if we assume that the DMA code will engage the DMA
-             * timer thread (currently EMT) if the AIO thread isn't getting schduled to
-             * transfer data thru the stack, we don't need to go overboard and double
-             * the minimums here.  The less buffer the less possible delay can build when
-             * TM is doing catch up.
-             */
-            uint32_t cMsCircBuf = Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut;
-            cMsCircBuf = RT_MAX(cMsCircBuf, cMsDmaMinBuf);
-            cMsCircBuf = RT_MAX(cMsCircBuf, Cfg.Device.cMsSchedulingHint * 3);
-            cMsCircBuf = RT_MIN(cMsCircBuf, RT_MS_1SEC * 2); /** @todo make sure the DMA timer doesn't go over 500ms (use uTimerHz as max, really). */
-            uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
-
-            if (pStreamCC->State.pCircBuf && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
-                RTCircBufReset(pStreamCC->State.pCircBuf);
-            else
-            {
-                LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x); cMsSchedulingHint=%u cMsDmaMinBuf=%u cMsCircBufXxx=%u\n",
-                             cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize, Cfg.Device.cMsSchedulingHint, cMsDmaMinBuf,
-                             Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut));
-                if (pStreamCC->State.pCircBuf)
-                    RTCircBufDestroy(pStreamCC->State.pCircBuf);
-
-                rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, cbCircBuf);
-                AssertRCReturnStmt(rc, pStreamCC->State.pCircBuf = NULL, rc);
-
-                pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
-            }
-            Assert(pStreamCC->State.StatDmaBufSize == cbCircBuf);
-
-            /*
-             * <there should be a comment here>
-             */
-            ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
-            rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
-            if (RT_SUCCESS(rc))
-                rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
+            pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
         }
+        Assert(pStreamCC->State.StatDmaBufSize == cbCircBuf);
+
+        /*
+         * <there should be a comment here>
+         */
+        ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
+        rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
+        if (RT_SUCCESS(rc))
+            rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
+
         LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
     }
     else
