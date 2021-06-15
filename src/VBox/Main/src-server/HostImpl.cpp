@@ -1006,7 +1006,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MultiResult rc = i_checkUSBProxyService();
-    if (FAILED(rc))
+    if (FAILED(rc) || SUCCEEDED_WARNING(rc))
         return rc;
 
     return m->pUSBProxyService->getDeviceCollection(aUSBDevices);
@@ -3546,7 +3546,7 @@ HRESULT Host::i_checkUSBProxyService()
         {
             case VERR_FILE_NOT_FOUND:  /** @todo what does this mean? */
                 return setWarning(E_FAIL,
-                                  tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer"));
+                                  tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND).  The service might not be installed on the host computer"));
             case VERR_VUSB_USB_DEVICE_PERMISSION:
                 return setWarning(E_FAIL,
                                   tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation"));

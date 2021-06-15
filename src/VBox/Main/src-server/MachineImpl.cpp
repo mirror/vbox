@@ -13242,7 +13242,8 @@ HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId, const com::Utf8St
     /* if captureDeviceForVM() fails, it must have set extended error info */
     clearError();
     MultiResult rc = mParent->i_host()->i_checkUSBProxyService();
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc) || SUCCEEDED_WARNING(rc))
+        return rc;
 
     USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
