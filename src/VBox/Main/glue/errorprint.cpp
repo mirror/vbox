@@ -46,6 +46,7 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
 
     try
     {
+        HRESULT rc = S_OK;
         Utf8Str str;
         RTCList<Utf8Str> comp;
 
@@ -54,9 +55,10 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
             str = Utf8StrFmt("%ls\n",
                              bstrDetailsText.raw());
         if (haveResultCode)
-            comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)",
-                                   info.getResultCode(),
-                                   info.getResultCode()));
+        {
+            rc = info.getResultCode();
+            comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)", rc, rc));
+        }
         if (haveComponent)
             comp.append(Utf8StrFmt("component %ls",
                                    info.getComponent().raw()));
@@ -77,8 +79,16 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
         }
 
         // print and log
-        RTMsgError("%s", str.c_str());
-        Log(("ERROR: %s", str.c_str()));
+        if (FAILED(rc))
+        {
+            RTMsgError("%s", str.c_str());
+            Log(("ERROR: %s", str.c_str()));
+        }
+        else
+        {
+            RTMsgWarning("%s", str.c_str());
+            Log(("WARNING: %s", str.c_str()));
+        }
     }
     catch (std::bad_alloc &)
     {
@@ -87,21 +97,37 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
     }
 }
 
-void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine)
+void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine, bool fWarning /* = false */)
 {
     // pcszSourceFile comes from __FILE__ macro, which always contains the full path,
     // which we don't want to see printed:
     // print and log
     const char *pszFilenameOnly = RTPathFilename(pcszSourceFile);
-    RTMsgError("Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly);
-    Log(("Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly));
+    if (!fWarning)
+    {
+        RTMsgError("Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly);
+        Log(("ERROR: Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly));
+    }
+    else
+    {
+        RTMsgWarning("Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly);
+        Log(("WARNING: Context: \"%s\" at line %d of file %s\n", pcszContext, ulLine, pszFilenameOnly));
+    }
 }
 
 void GluePrintRCMessage(HRESULT rc)
 {
     // print and log
-    RTMsgError("Code %Rhra (extended info not available)\n", rc);
-    Log(("ERROR: Code %Rhra (extended info not available)\n", rc));
+    if (FAILED(rc))
+    {
+        RTMsgError("Code %Rhra (extended info not available)\n", rc);
+        Log(("ERROR: Code %Rhra (extended info not available)\n", rc));
+    }
+    else
+    {
+        RTMsgWarning("Code %Rhra (extended info not available)\n", rc);
+        Log(("WARNING: Code %Rhra (extended info not available)\n", rc));
+    }
 }
 
 static void glueHandleComErrorInternal(com::ErrorInfo &info,
@@ -116,6 +142,12 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
         do
         {
             GluePrintErrorInfo(*pInfo);
+
+            /* Use rc for figuring out if there were just warnings. */
+            HRESULT rc2 = pInfo->getResultCode();
+            if (   (SUCCEEDED_WARNING(rc) && FAILED(rc2))
+                || (SUCCEEDED(rc) && (FAILED(rc2) || SUCCEEDED_WARNING(rc2))))
+                rc = rc2;
 
             pInfo = pInfo->getNext();
             /* If there is more than one error, separate them visually. */
@@ -135,7 +167,7 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
         GluePrintRCMessage(rc);
 
     if (pcszContext != NULL || pcszSourceFile != NULL)
-        GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
+        GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine, SUCCEEDED_WARNING(rc));
 }
 
 void GlueHandleComError(ComPtr<IUnknown> iface,

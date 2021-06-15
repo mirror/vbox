@@ -47,7 +47,7 @@ namespace com
 // shared prototypes; these are defined in shared glue code and are
 // compiled only once for all front-ends
 void GluePrintErrorInfo(const com::ErrorInfo &info);
-void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t uLine);
+void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t uLine, bool fWarning = false);
 void GluePrintRCMessage(HRESULT rc);
 void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT rc, const char *pcszSourceFile, uint32_t uLine);
 void GlueHandleComErrorNoCtx(ComPtr<IUnknown> iface, HRESULT rc);
@@ -87,12 +87,15 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 #define CHECK_ERROR2_EX(type, hrc, iface, method, stmtError) \
     if (1) { \
         type hrc = iface->method; \
-        if (SUCCEEDED(hrc)) \
+        if (SUCCEEDED(hrc) && !SUCCEEDED_WARNING(hrc)) \
         { /*likely*/ } \
         else \
         { \
             com::GlueHandleComError(iface, #method, (hrc), __FILE__, __LINE__); \
-            stmtError; \
+            if (!SUCCEEDED_WARNING(hrc)) \
+            { \
+                stmtError; \
+            } \
         } \
     } else do { /* nothing */ } while (0)
 
@@ -111,7 +114,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 #define CHECK_ERROR(iface, method) \
     do { \
         rc = iface->method; \
-        if (FAILED(rc)) \
+        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
     } while (0)
 /**
@@ -143,10 +146,13 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 #define CHECK_ERROR_STMT(iface, method, stmt) \
     do { \
         rc = iface->method; \
-        if (FAILED(rc)) \
+        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
         { \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            stmt; \
+            if (!SUCCEEDED_WARNING(rc) \
+            { \
+                stmt; \
+            } \
         } \
     } while (0)
 /**
@@ -182,10 +188,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
     __extension__ \
     ({ \
         rc = iface->method; \
-        if (FAILED(rc)) \
+        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
         { \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            break; \
+            if (!SUCCEEDED_WARNING(rc)) \
+                break; \
         } \
     })
 #else
@@ -196,7 +203,8 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         if (FAILED(rc)) \
         { \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            break; \
+            if (!SUCCEEDED_WARNING(rc)) \
+                break; \
         } \
     } \
     else do {} while (0)
@@ -242,10 +250,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 #define CHECK_ERROR_RET(iface, method, ret) \
     do { \
         rc = iface->method; \
-        if (FAILED(rc)) \
+        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
         { \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            return (ret); \
+            if (!SUCCEEDED_WARNING(rc)) \
+                return (ret); \
         } \
     } while (0)
 /**
