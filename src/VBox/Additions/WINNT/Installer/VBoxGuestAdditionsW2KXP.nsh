@@ -196,6 +196,10 @@ Function W2K_CopyFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
   FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe" ; Not used by W2K and up, but required by the .INF file
 
+!ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
+  FILE "$%PATH_OUT%\bin\additions\VBoxAudioTest.exe"
+!endif
+
   ; WHQL fake
 !ifdef WHQL_FAKE
   FILE "$%PATH_OUT%\bin\additions\VBoxWHQLFake.exe"
@@ -610,4 +614,3 @@ FunctionEnd
 !macroend
 !insertmacro W2K_Uninstall ""
 !insertmacro W2K_Uninstall "un."
-

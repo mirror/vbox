@@ -116,6 +116,9 @@ Function NT4_CopyFiles
   AccessControl::SetOnFile "$INSTDIR\VBoxGuestDrvInst.exe" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\RegCleanup.exe"
   AccessControl::SetOnFile "$INSTDIR\RegCleanup.exe" "(BU)" "GenericRead"
+!ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
+  FILE "$%PATH_OUT%\bin\additions\VBoxAudioTest.exe"
+!endif
 
   ; The files to install for NT 4, they go into the system directories
   SetOutPath "$SYSDIR"
