@@ -53,7 +53,4 @@ SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsRestore();
 /** X11: Returns true if XLib extension with name @p extensionName is avaible, false otherwise. */
 SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName);
 
-/* Returns the list of DBus screensaver services.*/
-SHARED_LIBRARY_STUFF QStringList X11ScrenSaverServices();
-
 #endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxX11Helper_h */
