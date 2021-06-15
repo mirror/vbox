@@ -25,6 +25,11 @@
 #include "UIDetailsElement.h"
 #include "UITask.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudMachine.h"
+#include "CMachine.h"
+
 /* Forward declarations: */
 class UIMachinePreview;
 class CNetworkAdapter;
@@ -41,6 +46,30 @@ public:
     UIDetailsUpdateTask(const CMachine &comMachine);
     /** Constructs update task taking @a comCloudMachine as data. */
     UIDetailsUpdateTask(const CCloudMachine &comCloudMachine);
+
+    /** Returns the machine. */
+    CMachine machine() const;
+    /** Returns the cloud machine. */
+    CCloudMachine cloudMachine() const;
+
+    /** Returns the table. */
+    UITextTable table() const;
+    /** Defines the @a guiTable. */
+    void setTable(const UITextTable &guiTable);
+
+private:
+
+    /** Holds the mutex to access m_comMachine and m_comCloudMachine members. */
+    mutable QMutex  m_machineMutex;
+    /** Holds the machine being processed. */
+    CMachine        m_comMachine;
+    /** Holds the cloud machine being processed. */
+    CCloudMachine   m_comCloudMachine;
+
+    /** Holds the mutex to access m_guiTable member. */
+    mutable QMutex  m_tableMutex;
+    /** Holds the machine being filled. */
+    UITextTable     m_guiTable;
 };
 
 /** UIDetailsElement extension used as a wrapping interface to
