@@ -194,6 +194,8 @@ private slots:
         CHost host = uiCommon().host();
 
         bool fIsUSBEmpty = host.GetUSBDevices().size() == 0;
+        printf("%d %d %d warning\n", host.lastRC(), host.isReallyOk(), host.isWarning());
+
         if (fIsUSBEmpty)
         {
             QAction *pAction = addAction(tr("<no devices available>", "USB devices"));

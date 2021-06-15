@@ -4742,6 +4742,8 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Cloud Console Manager restrictions changed: */
             else if (strKey == GUI_CloudConsoleManager_Restrictions)
                 emit sigCloudConsoleManagerRestrictionChange();
+            else if (strKey == GUI_DisableHostScreenSaver)
+                emit sigDisableHostScreenSaverStateChange(isFeatureAllowed(GUI_DisableHostScreenSaver));
             /* Details categories: */
             else if (strKey == GUI_Details_Elements)
                 emit sigDetailsCategoriesChange();

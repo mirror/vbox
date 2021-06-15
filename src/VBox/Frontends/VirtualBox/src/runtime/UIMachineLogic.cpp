@@ -709,6 +709,11 @@ void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
     m_fIsHidLedsSyncEnabled = fEnabled;
 }
 
+void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
+{
+    Q_UNUSED(fDisabled);
+}
+
 void UIMachineLogic::sltKeyboardLedsChanged()
 {
     /* Here we have to update host LED lock states using values provided by UISession:
@@ -1486,6 +1491,11 @@ void UIMachineLogic::loadSettings()
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
     /* HID LEDs sync initialization: */
     sltSwitchKeyboardLedsToGuestLeds();
+    /* */
+#if defined(VBOX_WS_X11)
+    connect(gEDataManager, &UIExtraDataManager::sigDisableHostScreenSaverStateChange,
+            this, &UIMachineLogic::sltDisableHostScreenSaverStateChanged);
+#endif
 }
 
 void UIMachineLogic::saveSettings()

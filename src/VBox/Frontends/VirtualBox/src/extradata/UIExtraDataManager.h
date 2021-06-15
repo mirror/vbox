@@ -115,6 +115,11 @@ signals:
     void sigDockIconOverlayAppearanceChange(bool fEnabled);
 #endif /* VBOX_WS_MAC */
 
+#ifdef VBOX_WS_X11
+    /* Is emitted when host screen saver inhibition state changes. */
+    void sigDisableHostScreenSaverStateChange(bool fDisable);
+#endif
+
 public:
 
     /** Global extra-data ID. */

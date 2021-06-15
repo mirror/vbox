@@ -350,6 +350,9 @@ private slots:
     void sltSwitchKeyboardLedsToGuestLeds();
     void sltSwitchKeyboardLedsToPreviousLeds();
 
+    /* Handle disabling/enabling host screen saver. */
+    void sltDisableHostScreenSaverStateChanged(bool fDisabled);
+
     /** Show Global Preferences. */
     void sltShowGlobalPreferences();
 
