@@ -590,8 +590,6 @@ VMMR3DECL(int) DBGFR3SampleReportCreate(PUVM pUVM, uint32_t cSampleIntervalUs, u
 
         *phSample = pThis;
         return VINF_SUCCESS;
-
-        MMR3HeapFree(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
