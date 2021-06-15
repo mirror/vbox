@@ -171,10 +171,7 @@ QStringList X11ScrenSaverServices()
     {
         const QString strServiceName = replyr.value()[i];
         if (strServiceName.contains("screensaver", Qt::CaseInsensitive))
-        {
-            printf("%s\n", qPrintable(strServiceName));
             serviceNames << strServiceName;
-        }
     }
     return serviceNames;
 }
