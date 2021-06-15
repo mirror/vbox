@@ -41,6 +41,7 @@
 #include <iprt/time.h>
 #include <iprt/timer.h>
 #include <iprt/string.h>
+#include <iprt/stream.h>
 
 
 /*********************************************************************************************************************************
@@ -131,6 +132,8 @@ typedef struct DBGFSAMPLEREPORTINT
     void                             *pvProgressUser;
     /** Number of microseconds left for sampling. */
     uint64_t                         cSampleUsLeft;
+    /** The report created after sampling was stopped. */
+    char                             *pszReport;
     /** Array of per VCPU samples collected. */
     DBGFSAMPLEREPORTVCPU             aCpus[1];
 } DBGFSAMPLEREPORTINT;
@@ -330,11 +333,12 @@ static PDBGFSAMPLEFRAME dbgfR3SampleReportAddFrameByAddr(PUVM pUVM, PDBGFSAMPLEF
  * Dumps a single given frame to the release log.
  *
  * @returns nothing.
+ * @param   pHlp                    The debug info helper used for printing.
  * @param   pUVM                    The usermode VM handle.
  * @param   pFrame                  The frame to dump.
  * @param   idxFrame                The frame number.
  */
-static void dbgfR3SampleReportDumpFrame(PUVM pUVM, PCDBGFSAMPLEFRAME pFrame, uint32_t idxFrame)
+static void dbgfR3SampleReportDumpFrame(PCDBGFINFOHLP pHlp, PUVM pUVM, PCDBGFSAMPLEFRAME pFrame, uint32_t idxFrame)
 {
     RTGCINTPTR offDisp;
     RTDBGMOD hMod;
@@ -349,21 +353,22 @@ static void dbgfR3SampleReportDumpFrame(PUVM pUVM, PCDBGFSAMPLEFRAME pFrame, uin
         {
             const char *pszModName = hMod != NIL_RTDBGMOD ? RTDbgModName(hMod) : NULL;
 
-            LogRel(("%*s%RU64 %s+%llx (%s) [%RGv]\n", idxFrame * 4, " ",
-                                                      pFrame->cSamples,
-                                                      SymPC.szName, offDisp,
-                                                      hMod ? pszModName : "",
-                                                      pFrame->AddrFrame.FlatPtr));
+            pHlp->pfnPrintf(pHlp,
+                            "%*s%RU64 %s+%llx (%s) [%RGv]\n", idxFrame * 4, " ",
+                                                              pFrame->cSamples,
+                                                              SymPC.szName, offDisp,
+                                                              hMod ? pszModName : "",
+                                                              pFrame->AddrFrame.FlatPtr);
             RTDbgModRelease(hMod);
         }
         else
-            LogRel(("%*s%RU64 %RGv\n", idxFrame * 4, " ", pFrame->cSamples, pFrame->AddrFrame.FlatPtr));
+            pHlp->pfnPrintf(pHlp, "%*s%RU64 %RGv\n", idxFrame * 4, " ", pFrame->cSamples, pFrame->AddrFrame.FlatPtr);
     }
     else
-        LogRel(("%*s%RU64 %RGv\n", idxFrame * 4, " ", pFrame->cSamples, pFrame->AddrFrame.FlatPtr));
+        pHlp->pfnPrintf(pHlp, "%*s%RU64 %RGv\n", idxFrame * 4, " ", pFrame->cSamples, pFrame->AddrFrame.FlatPtr);
 
     for (uint32_t i = 0; i < pFrame->cFramesValid; i++)
-        dbgfR3SampleReportDumpFrame(pUVM, &pFrame->paFrames[i], idxFrame + 1);
+        dbgfR3SampleReportDumpFrame(pHlp, pUVM, &pFrame->paFrames[i], idxFrame + 1);
 }
 
 
@@ -440,20 +445,19 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
             rc = RTTimerDestroy(pThis->hTimer); AssertRC(rc); RT_NOREF(rc);
             pThis->hTimer = NULL;
 
-#if 1
+            DBGFSAMPLEREPORTINFOHLP Hlp;
+            PCDBGFINFOHLP           pHlp = &Hlp.Core;
+
+            dbgfR3SampleReportInfoHlpInit(&Hlp);
+
             /* Some early dump code. */
             for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
             {
                 PCDBGFSAMPLEREPORTVCPU pSampleVCpu = &pThis->aCpus[i];
 
-                LogRel(("Sample report for vCPU %u:\n", i));
-                dbgfR3SampleReportDumpFrame(pThis->pUVM, &pSampleVCpu->FrameRoot, 0);
+                pHlp->pfnPrintf(pHlp, "Sample report for vCPU %u:\n", i);
+                dbgfR3SampleReportDumpFrame(pHlp, pThis->pUVM, &pSampleVCpu->FrameRoot, 0);
             }
-
-            DBGFSAMPLEREPORTINFOHLP Hlp;
-            PCDBGFINFOHLP           pHlp = &Hlp.Core;
-
-            dbgfR3SampleReportInfoHlpInit(&Hlp);
 
             /* Shameless copy from VMMGuruMeditation.cpp */
             static struct
@@ -493,9 +497,12 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
             pHlp->pfnPrintf(pHlp,
                             "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
-            LogRel(("%s", Hlp.pachBuf));
+            if (pThis->pszReport)
+                RTMemFree(pThis->pszReport);
+            pThis->pszReport = Hlp.pachBuf;
             dbgfR3SampleReportInfoHlpDelete(&Hlp);
-#endif
+
+            ASMAtomicXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_READY);
 
             if (pThis->pfnProgress)
             {
@@ -504,7 +511,6 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
                 pThis->pvProgressUser = NULL;
             }
 
-            ASMAtomicXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_READY);
             DBGFR3SampleReportRelease(pThis);
         }
     }
@@ -616,8 +622,6 @@ VMMR3DECL(uint32_t) DBGFR3SampleReportRetain(DBGFSAMPLEREPORT hSample)
  *
  * @returns New reference count, on 0 the sample report instance is destroyed.
  * @param   hSample                 Sample report handle.
- *
- * @note Can't be called from the progress callback passed during creation.
  */
 VMMR3DECL(uint32_t) DBGFR3SampleReportRelease(DBGFSAMPLEREPORT hSample)
 {
@@ -717,12 +721,24 @@ VMMR3DECL(int) DBGFR3SampleReportStop(DBGFSAMPLEREPORT hSample)
  * Dumps the current sample report to the given file.
  *
  * @returns VBox status code.
+ * @retval  VERR_INVALID_STATE if nothing was sampled so far for reporting.
  * @param   hSample                 Sample report handle.
  * @param   pszFilename             The filename to dump the report to.
  */
 VMMR3DECL(int) DBGFR3SampleReportDumpToFile(DBGFSAMPLEREPORT hSample, const char *pszFilename)
 {
-    RT_NOREF(hSample, pszFilename);
-    return VINF_SUCCESS;
+    PDBGFSAMPLEREPORTINT pThis = hSample;
+
+    AssertReturn(pThis->pszReport, VERR_INVALID_STATE);
+
+    PRTSTREAM hStream;
+    int rc = RTStrmOpen(pszFilename, "w", &hStream);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrmPutStr(hStream, pThis->pszReport);
+        RTStrmClose(hStream);
+    }
+
+    return rc;
 }
 

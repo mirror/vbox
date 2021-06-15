@@ -118,7 +118,7 @@ VBoxVMM_SOURCES  = \
 	$(if-expr defined(VBOX_WITH_DBGF_FLOW_TRACING), VMMR3/DBGFR3FlowTrace.cpp,) \
 	VMMR3/DBGFR3Trace.cpp \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/DBGFR3Tracer.cpp,) \
-	$(if-expr defined(VBOX_WITH_DBGF_SAMPLE_REPORT), VMMR3/DBGFR3SampleReport.cpp,) \
+	VMMR3/DBGFR3SampleReport.cpp \
 	VMMR3/DBGFR3Type.cpp \
 	VMMR3/EM.cpp \
 	VMMR3/EMR3Dbg.cpp \

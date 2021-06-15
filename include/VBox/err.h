@@ -360,6 +360,8 @@
 #define VINF_DBGF_R3_BP_OWNER_DEFER         1239
 /** The breakpoint owner callback returned an invalid status code. */
 #define VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS (-1240)
+/** The operation was cancelled. */
+#define VERR_DBGF_CANCELLED                 (-1241)
 /** @} */
 
 
