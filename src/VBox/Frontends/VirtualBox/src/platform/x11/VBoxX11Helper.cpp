@@ -38,6 +38,7 @@ RT_C_DECLS_BEGIN
 #include <X11/extensions/dpms.h>
 RT_C_DECLS_END
 
+#include <VBox/log.h>
 
 static int  gX11ScreenSaverTimeout;
 static BOOL gX11ScreenSaverDpmsAvailable;
@@ -176,10 +177,61 @@ QStringList X11ScrenSaverServices()
     return serviceNames;
 }
 
-void X11InhibitScrenSaver(const QStringList &serviceNameList)
+void X11InhibitScrenSaver(const QStringList &serviceNameList, QMap<QString, uint> &outCookies)
 {
-    Q_UNUSED(serviceNameList);
+    outCookies.clear();
+    QDBusConnection bus = QDBusConnection::sessionBus();
+
+    foreach(QString service, serviceNameList)
+    {
+        QDBusInterface screenSaverInterface(service, "/ScreenSaver",
+                                            QString(), bus);
+        if (!screenSaverInterface.isValid())
+        {
+            QDBusError error = screenSaverInterface.lastError();
+            LogRel(("QDBus error for service %s: %s\n",
+                    service.toUtf8().constData(), error.message().toUtf8().constData()));
+            continue;
+        }
+        QDBusReply<uint> reply = screenSaverInterface.call("Inhibit", "Oracle VirtualBox", "");
+        if (reply.isValid())
+            outCookies[service] = reply.value();
+        else
+        {
+            QDBusError error = screenSaverInterface.lastError();
+            LogRel(("QDBus inhibition call error for service %s: %s\n",
+                    service.toUtf8().constData(), error.message().toUtf8().constData()));
+        }
+    }
 }
+
+void X11UninhibitScrenSaver(const QMap<QString, uint> &cookies)
+{
+
+    QDBusConnection bus = QDBusConnection::sessionBus();
+
+    for (QMap<QString, uint>::const_iterator iterator = cookies.begin(); iterator != cookies.end(); ++iterator)
+    {
+
+        QDBusInterface screenSaverInterface(iterator.key(), "/ScreenSaver",
+                                            QString(), bus);
+        if (!screenSaverInterface.isValid())
+        {
+            QDBusError error = screenSaverInterface.lastError();
+            LogRel(("QDBus error for service %s: %s\n",
+                    iterator.key().toUtf8().constData(), error.message().toUtf8().constData()));
+            continue;
+        }
+        QDBusReply<uint> reply = screenSaverInterface.call("UnInhibit", iterator.value());
+        if (!reply.isValid())
+        {
+            QDBusError error = screenSaverInterface.lastError();
+            LogRel(("QDBus uninhibition call error for service %s: %s\n",
+                    iterator.key().toUtf8().constData(), error.message().toUtf8().constData()));
+        }
+    }
+}
+
 
 #ifdef VBOX_WS_X11
 #endif

@@ -57,6 +57,9 @@ SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName);
 SHARED_LIBRARY_STUFF QStringList X11ScrenSaverServices();
 
 /* Disables Screen Saver through QDBus. */
-SHARED_LIBRARY_STUFF  void X11InhibitScrenSaver(const QStringList &serviceNameList);
+SHARED_LIBRARY_STUFF  void X11InhibitScrenSaver(const QStringList &serviceNameList, QMap<QString, uint> &outCookies);
+
+/* Enables Screen Saver through QDBus. */
+SHARED_LIBRARY_STUFF  void X11UninhibitScrenSaver(const QMap<QString, uint> &cookies);
 
 #endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxX11Helper_h */
