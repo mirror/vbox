@@ -688,9 +688,17 @@ VMMR3DECL(int) DBGFR3SampleReportStart(DBGFSAMPLEREPORT hSample, uint64_t cSampl
 
     if (RT_FAILURE(rc))
     {
+        if (pThis->hTimer)
+        {
+            int rc2 = RTTimerDestroy(pThis->hTimer);
+            AssertRC(rc2); RT_NOREF(rc2);
+            pThis->hTimer = NULL;
+        }
+
         bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_READY,
                                          DBGFSAMPLEREPORTSTATE_RUNNING);
         Assert(fXchg); RT_NOREF(fXchg);
+        DBGFR3SampleReportRelease(pThis);
     }
 
     return rc;
