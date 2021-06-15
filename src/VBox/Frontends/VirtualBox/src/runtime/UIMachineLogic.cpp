@@ -711,7 +711,14 @@ void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
 
 void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
+#if defined(VBOX_WS_X11)
+    QStringList services = X11ScrenSaverServices();
+    Q_UNUSED(services);
     Q_UNUSED(fDisabled);
+
+#else
+    Q_UNUSED(fDisabled);
+#endif
 }
 
 void UIMachineLogic::sltKeyboardLedsChanged()
@@ -1495,6 +1502,7 @@ void UIMachineLogic::loadSettings()
 #if defined(VBOX_WS_X11)
     connect(gEDataManager, &UIExtraDataManager::sigDisableHostScreenSaverStateChange,
             this, &UIMachineLogic::sltDisableHostScreenSaverStateChanged);
+    sltDisableHostScreenSaverStateChanged(gEDataManager->disableHostScreenSaver());
 #endif
 }
 
