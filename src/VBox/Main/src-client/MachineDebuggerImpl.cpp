@@ -26,6 +26,7 @@
 
 #include "Global.h"
 #include "ConsoleImpl.h"
+#include "ProgressImpl.h"
 
 #include "AutoCaller.h"
 
@@ -93,6 +94,8 @@ HRESULT MachineDebugger::init(Console *aParent)
     mVirtualTimeRateQueued = UINT32_MAX;
     mFlushMode = false;
 
+    m_hSampleReport = NULL;
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -114,6 +117,37 @@ void MachineDebugger::uninit()
 
     unconst(mParent) = NULL;
     mFlushMode = false;
+}
+
+/**
+ * @callback_method_impl{FNDBGFPROGRESS}
+ */
+/*static*/ DECLCALLBACK(int) MachineDebugger::i_dbgfProgressCallback(void *pvUser, unsigned uPercentage)
+{
+    MachineDebugger *pThis = (MachineDebugger *)pvUser;
+
+    int vrc = pThis->m_Progress->i_iprtProgressCallback(uPercentage, static_cast<Progress *>(pThis->m_Progress));
+    if (   RT_SUCCESS(vrc)
+        && uPercentage == 100)
+    {
+        vrc = DBGFR3SampleReportDumpToFile(pThis->m_hSampleReport, pThis->m_strFilename.c_str());
+        DBGFR3SampleReportRelease(pThis->m_hSampleReport);
+        pThis->m_hSampleReport = NULL;
+        if (RT_SUCCESS(vrc))
+            pThis->m_Progress->i_notifyComplete(S_OK);
+        else
+        {
+            HRESULT hrc = pThis->setError(VBOX_E_IPRT_ERROR,
+                                          tr("Writing the sample report to '%s' failed with %Rrc"),
+                                          pThis->m_strFilename.c_str(), vrc);
+            pThis->m_Progress->i_notifyComplete(hrc);
+        }
+        pThis->m_Progress.setNull();
+    }
+    else if (vrc == VERR_CANCELLED)
+        vrc = VERR_DBGF_CANCELLED;
+
+    return vrc;
 }
 
 // IMachineDebugger properties
@@ -1587,6 +1621,57 @@ HRESULT MachineDebugger::getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *a
     }
     else
         hrc = setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+    return hrc;
+}
+
+
+HRESULT MachineDebugger::takeGuestSample(const com::Utf8Str &aFilename, ULONG aUsInterval, LONG64 aUsSampleTime, ComPtr<IProgress> &pProgress)
+{
+    /*
+     * The prologue.
+     */
+    LogFlowThisFunc(("\n"));
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+    {
+        if (!m_hSampleReport)
+        {
+            m_strFilename = aFilename;
+
+            int vrc = DBGFR3SampleReportCreate(ptrVM.rawUVM(), aUsInterval, DBGF_SAMPLE_REPORT_F_STACK_REVERSE, &m_hSampleReport);
+            if (RT_SUCCESS(vrc))
+            {
+                hrc = m_Progress.createObject();
+                if (SUCCEEDED(hrc))
+                {
+                    hrc = m_Progress->init(static_cast<IMachineDebugger*>(this),
+                                           tr("Creating guest sample report..."),
+                                           TRUE /* aCancelable */);
+                    if (SUCCEEDED(hrc))
+                    {
+                        vrc = DBGFR3SampleReportStart(m_hSampleReport, aUsSampleTime, i_dbgfProgressCallback, static_cast<MachineDebugger*>(this));
+                        if (RT_SUCCESS(vrc))
+                            hrc = m_Progress.queryInterfaceTo(pProgress.asOutParam());
+                        else
+                            hrc = setErrorVrc(vrc);
+                    }
+                }
+
+                if (FAILED(hrc))
+                {
+                    DBGFR3SampleReportRelease(m_hSampleReport);
+                    m_hSampleReport = NULL;
+                }
+            }
+            else
+                hrc = setErrorVrc(vrc);
+        }
+        else
+            hrc = setError(VBOX_E_INVALID_VM_STATE, "A sample report is already in progress");
+    }
+
     return hrc;
 }
 

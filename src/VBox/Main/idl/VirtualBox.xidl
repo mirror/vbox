@@ -20583,7 +20583,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMachineDebugger" extends="$unknown"
     uuid="00ae6af4-00a7-4104-0009-49bc00b2da80"
     wsmap="managed"
-    reservedMethods="16" reservedAttributes="16"
+    reservedMethods="15" reservedAttributes="16"
     >
     <method name="dumpGuestCore">
       <desc>
@@ -20971,6 +20971,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="msInterval" type="long long" dir="return">
         <desc>The interval the percentage was calculated over in milliseconds</desc>
+      </param>
+    </method>
+
+    <method name="takeGuestSample">
+      <desc>
+        Creates a sample report of the guest and emulated device activity.
+      </desc>
+      <param name="filename" type="wstring" dir="in">
+        <desc>The file to dump the report to.</desc>
+      </param>
+      <param name="usInterval" type="unsigned long" dir="in">
+        <desc>The sample interval.</desc>
+      </param>
+      <param name="usSampleTime" type="long long" dir="in">
+        <desc>The number of microseconds to sample.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>The progress object on return.</desc>
       </param>
     </method>
 
