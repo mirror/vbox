@@ -488,21 +488,11 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
     }
     else if (pTstEnv->enmMode == AUDIOTESTMODE_HOST)
     {
-        /* Generate tags for the host and guest side. */
-        char szTagHost [AUDIOTEST_TAG_MAX];
-        char szTagGuest[AUDIOTEST_TAG_MAX];
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Using tag '%s'\n", pTstEnv->szTag);
 
-        rc = RTStrPrintf2(szTagHost, sizeof(szTagHost),   "%s-host",  pTstEnv->szTag);
-        AssertRCReturn(rc, rc);
-        rc = RTStrPrintf2(szTagGuest, sizeof(szTagGuest), "%s-guest", pTstEnv->szTag);
-        AssertRCReturn(rc, rc);
-
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Guest test set tag is '%s'\n", szTagGuest);
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Host test set tag is '%s'\n", szTagHost);
-
-        rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, szTagHost);
+        rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
         if (RT_SUCCESS(rc))
-            rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, szTagGuest);
+            rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
 
         if (RT_SUCCESS(rc))
         {
@@ -520,11 +510,11 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                     break;
             }
 
-            int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, szTagGuest);
+            int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
-            rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, szTagHost);
+            rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
@@ -534,13 +524,13 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                  * Download guest + Validation Kit audio driver test sets to our output directory.
                  */
                 char szFileName[RTPATH_MAX];
-                if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s.tar.gz", szTagGuest))
+                if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s-guest.tar.gz", pTstEnv->szTag))
                 {
                     rc = RTPathJoin(pTstEnv->u.Host.szPathTestSetGuest, sizeof(pTstEnv->u.Host.szPathTestSetGuest),
                                     pTstEnv->szPathOut, szFileName);
                     if (RT_SUCCESS(rc))
                     {
-                        if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s.tar.gz", szTagHost))
+                        if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s-host.tar.gz", pTstEnv->szTag))
                         {
                             rc = RTPathJoin(pTstEnv->u.Host.szPathTestSetValKit, sizeof(pTstEnv->u.Host.szPathTestSetValKit),
                                             pTstEnv->szPathOut, szFileName);
@@ -556,7 +546,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading guest test set to '%s'\n",
                                      pTstEnv->u.Host.szPathTestSetGuest);
                         rc = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClGuest,
-                                                               szTagGuest, pTstEnv->u.Host.szPathTestSetGuest);
+                                                               pTstEnv->szTag, pTstEnv->u.Host.szPathTestSetGuest);
                     }
 
                     if (RT_SUCCESS(rc))
@@ -564,7 +554,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Downloading host test set to '%s'\n",
                                      pTstEnv->u.Host.szPathTestSetValKit);
                         rc = AudioTestSvcClientTestSetDownload(&pTstEnv->u.Host.AtsClValKit,
-                                                               szTagHost, pTstEnv->u.Host.szPathTestSetValKit);
+                                                               pTstEnv->szTag, pTstEnv->u.Host.szPathTestSetValKit);
                     }
                 }
                 else
@@ -873,6 +863,7 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
         rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
         if (RT_SUCCESS(rc))
         {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%RU32 errors occurred while verifying\n", AudioTestErrorDescCount(&errDesc));
             if (AudioTestErrorDescFailed(&errDesc))
             {
                 /** @todo Use some AudioTestErrorXXX API for enumeration here later. */

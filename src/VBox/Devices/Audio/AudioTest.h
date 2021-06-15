@@ -334,6 +334,8 @@ typedef struct AUDIOTESTERRORDESC
 } AUDIOTESTERRORDESC;
 /** Pointer to an audio test error description. */
 typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
+/** Const pointer to an audio test error description. */
+typedef AUDIOTESTERRORDESC const *PCAUDIOTESTERRORDESC;
 
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq);
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
@@ -367,7 +369,9 @@ int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFile
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 int    AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc);
 
-bool   AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr);
+uint32_t AudioTestErrorDescCount(PCAUDIOTESTERRORDESC pErr);
+bool   AudioTestErrorDescFailed(PCAUDIOTESTERRORDESC pErr);
+
 void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
 
 /** @name Wave File Accessors

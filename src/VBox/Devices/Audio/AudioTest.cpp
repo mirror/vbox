@@ -66,6 +66,24 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/**
+ * Structure for keeping an audio test verification job.
+ */
+typedef struct AUDIOTESTVERIFYJOB
+{
+    /** Pointer to set A. */
+    PAUDIOTESTSET       pSetA;
+    /** Pointer to set B. */
+    PAUDIOTESTSET       pSetB;
+    /** Pointer to the error description to use. */
+    PAUDIOTESTERRORDESC pErr;
+    /** Zero-based index of current test being verified. */
+    uint32_t            idxTest;
+    /** Flag indicating whether to keep going after an error has occurred. */
+    bool                fKeepGoing;
+} AUDIOTESTVERIFYJOB;
+/** Pointer to an audio test verification job. */
+typedef AUDIOTESTVERIFYJOB *PAUDIOTESTVERIFYJOB;
 
 
 /*********************************************************************************************************************************
@@ -515,13 +533,23 @@ void AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr)
 }
 
 /**
+ * Returns the the number of errors of an audio test error description.
+ *
+ * @returns Error count.
+ * @param   pErr                Test error description to return error count for.
+ */
+uint32_t AudioTestErrorDescCount(PCAUDIOTESTERRORDESC pErr)
+{
+    return pErr->cErrors;
+}
+
+/**
  * Returns if an audio test error description contains any errors or not.
  *
  * @returns \c true if it contains errors, or \c false if not.
- *
  * @param   pErr                Test error description to return error status for.
  */
-bool AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr)
+bool AudioTestErrorDescFailed(PCAUDIOTESTERRORDESC pErr)
 {
     if (pErr->cErrors)
     {
@@ -537,17 +565,23 @@ bool AudioTestErrorDescFailed(PAUDIOTESTERRORDESC pErr)
  *
  * @returns VBox status code.
  * @param   pErr                Test error description to add entry for.
+ * @param   idxTest             Index of failing test (zero-based).
  * @param   rc                  Result code of entry to add.
  * @param   pszDesc             Error description format string to add.
  * @param   args                Optional format arguments of \a pszDesc to add.
  */
-static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *pszDesc, va_list args)
+static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, int rc, const char *pszDesc, va_list args)
 {
     PAUDIOTESTERRORENTRY pEntry = (PAUDIOTESTERRORENTRY)RTMemAlloc(sizeof(AUDIOTESTERRORENTRY));
     AssertPtrReturn(pEntry, VERR_NO_MEMORY);
 
-    if (RTStrPrintf2V(pEntry->szDesc, sizeof(pEntry->szDesc), pszDesc, args) < 0)
-        AssertFailedReturn(VERR_BUFFER_OVERFLOW);
+    char *pszDescTmp;
+    if (RTStrAPrintf(&pszDescTmp, pszDesc, args) < 0)
+        AssertFailedReturn(VERR_NO_MEMORY);
+
+    const ssize_t cch = RTStrPrintf2(pEntry->szDesc, sizeof(pEntry->szDesc), "Test #%RU32 failed: %s", idxTest, pszDescTmp);
+    RTStrFree(pszDescTmp);
+    AssertReturn(cch > 0, VERR_BUFFER_OVERFLOW);
 
     pEntry->rc = rc;
 
@@ -563,15 +597,16 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, int rc, const char *
  *
  * @returns VBox status code.
  * @param   pErr                Test error description to add entry for.
+ * @param   idxTest             Index of failing test (zero-based).
  * @param   pszDesc             Error description format string to add.
  * @param   ...                 Optional format arguments of \a pszDesc to add.
  */
-static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, const char *pszDesc, ...)
+static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszDesc, ...)
 {
     va_list va;
     va_start(va, pszDesc);
 
-    int rc = audioTestErrorDescAddV(pErr, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszDesc, va);
+    int rc = audioTestErrorDescAddV(pErr, idxTest, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszDesc, va);
 
     va_end(va);
     return rc;
@@ -1382,28 +1417,135 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
     return rc;
 }
 
-static int audioTestVerifyIniValue(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB,
-                                   const char *pszSec, const char *pszKey, const char *pszVal)
+/**
+ * Gets a value as string.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to get value from.
+ * @param   pszSec              Section to get value from.
+ * @param   pszKey              Key to get value from.
+ * @param   pszVal              Where to return the value on success.
+ * @param   cbVal               Size (in bytes) of \a pszVal.
+ */
+static int audioTestGetValueStr(PAUDIOTESTSET pSet,
+                                const char *pszSec, const char *pszKey, char *pszVal, size_t cbVal)
 {
-    char szValA[_1K];
-    int rc = RTIniFileQueryValue(pSetA->f.hIniFile, pszSec, pszKey, szValA, sizeof(szValA), NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-    char szValB[_1K];
-    rc = RTIniFileQueryValue(pSetB->f.hIniFile, pszSec, pszKey, szValB, sizeof(szValB), NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    return RTIniFileQueryValue(pSet->f.hIniFile, pszSec, pszKey, pszVal, cbVal, NULL);
+}
 
-    if (RTStrCmp(szValA, szValB))
-        return VERR_WRONG_TYPE; /** @todo Fudge! */
-
-    if (pszVal)
-    {
-        if (RTStrCmp(szValA, pszVal))
-            return VERR_WRONG_TYPE; /** @todo Fudge! */
-    }
+/**
+ * Gets a value as uint32_t.
+ *
+ * @returns VBox status code.
+ * @param   pSet                Test set to get value from.
+ * @param   pszSec              Section to get value from.
+ * @param   pszKey              Key to get value from.
+ * @param   puVal               Where to return the value on success.
+ */
+static int audioTestGetValueUInt32(PAUDIOTESTSET pSet,
+                                   const char *pszSec, const char *pszKey, uint32_t *puVal)
+{
+    char szVal[_1K];
+    int rc = audioTestGetValueStr(pSet, pszSec, pszKey, szVal, sizeof(szVal));
+    if (RT_SUCCESS(rc))
+        *puVal = RTStrToUInt32(szVal);
 
     return rc;
+}
+
+/**
+ * Verifies a value of a test verification job.
+ *
+ * @returns VBox status code.
+ * @returns Error if the verification failed and test verification job has fKeepGoing not set.
+ * @param   pVerify             Verification job to verify value for.
+ * @param   pszSec              Section of key / value to verify.
+ * @param   pszKey              Key to verify.
+ * @param   pszVal              Value to verify.
+ * @param   pszErrFmt           Error format string in case the verification failed.
+ * @param   ...                 Variable aruments for error format string.
+ */
+static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
+                                const char *pszSec, const char *pszKey, const char *pszVal, const char *pszErrFmt, ...)
+{
+    va_list va;
+    va_start(va, pszErrFmt);
+
+    char szValA[_1K];
+    int rc = audioTestGetValueStr(pVerify->pSetA, pszSec, pszKey, szValA, sizeof(szValA));
+    if (RT_SUCCESS(rc))
+    {
+        char szValB[_1K];
+        rc = audioTestGetValueStr(pVerify->pSetB, pszSec, pszKey, szValB, sizeof(szValB));
+        if (RT_SUCCESS(rc))
+        {
+            if (RTStrCmp(szValA, szValB))
+                rc = VERR_WRONG_TYPE; /** @todo Fudge! */
+
+            if (pszVal)
+            {
+                if (RTStrCmp(szValA, pszVal))
+                    rc = VERR_WRONG_TYPE; /** @todo Fudge! */
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = audioTestErrorDescAddV(pVerify->pErr, pVerify->idxTest, rc, pszErrFmt, va);
+        AssertRC(rc2);
+    }
+
+    va_end(va);
+
+    return pVerify->fKeepGoing ? VINF_SUCCESS : rc;
+}
+
+/**
+ * Verifies a test tone test.
+ *
+ * @returns VBox status code.
+ * @returns Error if the verification failed and test verification job has fKeepGoing not set.
+ * @retval  VERR_
+ * @param   pVerify             Verification job to verify test tone for.
+ * @param   pszSec              Section of test tone to verify.
+ * @param   pSetPlay            Test set which did the playing part.
+ * @param   pSetRecord          Test set which did the recording part.
+ */
+static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, const char *pszSec, PAUDIOTESTSET pSetPlay, PAUDIOTESTSET pSetRecord)
+{
+    RT_NOREF(pSetPlay, pSetRecord);
+
+    int rc;
+
+    /*
+     * Verify test parameters.
+     * More important items have precedence.
+     */
+    rc = audioTestVerifyValue(pVerify, pszSec, "error_rc", "0", "Test was reported as failed");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "obj_count", NULL, "Object counts don't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_freq_hz", NULL, "Tone frequency doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_prequel_ms", NULL, "Tone prequel (ms) doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_duration_ms", NULL, "Tone duration (ms) doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_sequel_ms", NULL, "Tone sequel (ms) doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_volume_percent", NULL, "Tone volume (percent) doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_pcm_hz", NULL, "Tone PCM Hz doesn't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_pcm_channels", NULL, "Tone PCM channels don't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_pcm_bits", NULL, "Tone PCM bits don't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(pVerify, pszSec, "tone_pcm_is_signed", NULL, "Tone PCM signed bit doesn't match");
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1425,21 +1567,89 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     /* We ASSUME the caller has not init'd pErrDesc. */
     audioTestErrorDescInit(pErrDesc);
 
-    int rc;
+    AUDIOTESTVERIFYJOB VerJob;
+    RT_ZERO(VerJob);
+    VerJob.pErr       = pErrDesc;
+    VerJob.pSetA      = pSetA;
+    VerJob.pSetB      = pSetB;
+    VerJob.fKeepGoing = true;
 
-#define VERIFY_VALUE(a_Sec, a_Key, a_Val, ...) \
-    rc = audioTestVerifyIniValue(pSetA, pSetB, a_Sec, a_Key, a_Val); \
-    if (RT_FAILURE(rc)) \
-        return audioTestErrorDescAdd(pErrDesc, (__VA_ARGS__));
+    int rc;
 
     /*
      * Compare obvious values first.
      */
-    VERIFY_VALUE("header",   "magic",        "vkat_ini",    "Manifest magic wrong");
-    VERIFY_VALUE("header",   "ver",          "1"       ,    "Manifest version wrong");
-    VERIFY_VALUE("header",   "tag",          NULL,          "Manifest tags don't match");
-    VERIFY_VALUE("header",   "test_count",   NULL,          "Test counts don't match");
-    VERIFY_VALUE("header",   "obj_count",    NULL,          "Object counts don't match");
+    rc = audioTestVerifyValue(&VerJob, "header",   "magic",        "vkat_ini",    "Manifest magic wrong");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(&VerJob, "header",   "ver",          "1"       ,    "Manifest version wrong");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(&VerJob, "header",   "tag",          NULL,          "Manifest tags don't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(&VerJob, "header",   "test_count",   NULL,          "Test counts don't match");
+    AssertRCReturn(rc, rc);
+    rc = audioTestVerifyValue(&VerJob, "header",   "obj_count",    NULL,          "Object counts don't match");
+    AssertRCReturn(rc, rc);
+
+    if (   pErrDesc->cErrors
+        && !VerJob.fKeepGoing)
+        return VINF_SUCCESS;
+
+    /*
+     * Compare ran tests.
+     */
+    uint32_t cTests;
+    rc = audioTestGetValueUInt32(VerJob.pSetA, "header", "test_count", &cTests);
+    AssertRCReturn(rc, rc);
+
+    for (uint32_t i = 0; i < cTests; i++)
+    {
+        VerJob.idxTest = i;
+
+        char szSec[64];
+        RTStrPrintf(szSec, sizeof(szSec), "test_%04RU32", i);
+
+        AUDIOTESTTYPE enmTestTypeA;
+        audioTestGetValueUInt32(VerJob.pSetA, szSec, "test_type", (uint32_t *)&enmTestTypeA);
+        AUDIOTESTTYPE enmTestTypeB;
+        audioTestGetValueUInt32(VerJob.pSetB, szSec, "test_type", (uint32_t *)&enmTestTypeB);
+
+        switch (enmTestTypeA)
+        {
+            case AUDIOTESTTYPE_TESTTONE_PLAY:
+            {
+                if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_RECORD)
+                {
+                    rc = audioTestVerifyTestTone(&VerJob, szSec, VerJob.pSetA, VerJob.pSetB);
+                }
+                else
+                    rc = audioTestErrorDescAdd(pErrDesc, i, "Playback test types don't match (set A=%#x, set B=%#x)",
+                                               enmTestTypeA, enmTestTypeB);
+                break;
+            }
+
+            case AUDIOTESTTYPE_TESTTONE_RECORD:
+            {
+                if (enmTestTypeB != AUDIOTESTTYPE_TESTTONE_PLAY)
+                {
+                    rc = audioTestVerifyTestTone(&VerJob, szSec, VerJob.pSetB, VerJob.pSetA);
+                }
+                else
+                    rc = audioTestErrorDescAdd(pErrDesc, i, "Recording test types don't match (set A=%#x, set B=%#x)",
+                                               enmTestTypeA, enmTestTypeB);
+                break;
+            }
+
+            case AUDIOTESTTYPE_INVALID:
+                rc = VERR_INVALID_PARAMETER;
+                break;
+
+            default:
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
+        }
+
+        AssertRC(rc);
+    }
 
 #undef VERIFY_VALUE
 
