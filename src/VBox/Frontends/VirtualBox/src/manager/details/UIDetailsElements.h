@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QMutex>
+
 /* GUI includes: */
 #include "UIDetailsElement.h"
 #include "UITask.h"
