@@ -681,9 +681,8 @@ typedef AC97STATER3 *PAC97STATER3;
 static void                 ichac97StreamUpdateSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr);
 static uint16_t             ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx);
 #ifdef IN_RING3
-static void                 ichac97R3StreamLock(PAC97STREAMR3 pStreamCC);
-static void                 ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC);
-
+DECLINLINE(void)            ichac97R3StreamLock(PAC97STREAMR3 pStreamCC);
+DECLINLINE(void)            ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC);
 static void                 ichac97R3DbgPrintBdl(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
                                                  PCDBGFINFOHLP pHlp, const char *pszPrefix);
 static DECLCALLBACK(void)   ichac97R3Reset(PPDMDEVINS pDevIns);
@@ -1793,6 +1792,8 @@ static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97DRIVER pDrv, PDMAUDIODI
 /**
  * Adds a driver stream to a specific mixer sink.
  *
+ * Called by ichac97R3MixerAddDrvStreams() and ichac97R3MixerAddDrv().
+ *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pMixSink    Mixer sink to add driver stream to.
@@ -1841,8 +1842,11 @@ static int ichac97R3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, 
     return rc;
 }
 
+
 /**
  * Adds all current driver streams to a specific mixer sink.
+ *
+ * Called by ichac97R3StreamOpen().
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -1880,81 +1884,11 @@ static int ichac97R3MixerAddDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC,
     return rc;
 }
 
-/**
- * Adds a specific AC'97 driver to the driver chain.
- *
- * Only called from ichac97R3Attach().
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThisCC     The ring-3 AC'97 device state.
- * @param   pDrv        The AC'97 driver to add.
- */
-static int ichac97R3MixerAddDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
-{
-    int rc = VINF_SUCCESS;
-
-    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg))
-        rc = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkLineIn,
-                                        &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg, pDrv);
-
-    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg))
-    {
-        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkOut,
-                                             &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg, pDrv);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg))
-    {
-        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkMicIn,
-                                             &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg, pDrv);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    return rc;
-}
-
-/**
- * Removes a specific AC'97 driver from the driver chain and destroys its
- * associated streams.
- *
- * Only called from ichac97R3Detach().
- *
- * @param   pDevIns     The device instance.
- * @param   pThisCC     The ring-3 AC'97 device state.
- * @param   pDrv        AC'97 driver to remove.
- */
-static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
-{
-    if (pDrv->MicIn.pMixStrm)
-    {
-        AudioMixerSinkRemoveStream(pThisCC->pSinkMicIn,  pDrv->MicIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns, true /*fImmediate*/);
-        pDrv->MicIn.pMixStrm = NULL;
-    }
-
-    if (pDrv->LineIn.pMixStrm)
-    {
-        AudioMixerSinkRemoveStream(pThisCC->pSinkLineIn, pDrv->LineIn.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns, true /*fImmediate*/);
-        pDrv->LineIn.pMixStrm = NULL;
-    }
-
-    if (pDrv->Out.pMixStrm)
-    {
-        AudioMixerSinkRemoveStream(pThisCC->pSinkOut,    pDrv->Out.pMixStrm);
-        AudioMixerStreamDestroy(pDrv->Out.pMixStrm, pDevIns, true /*fImmediate*/);
-        pDrv->Out.pMixStrm = NULL;
-    }
-
-    RTListNodeRemove(&pDrv->Node);
-}
 
 /**
  * Removes a driver stream from a specific mixer sink.
+ *
+ * Worker for ichac97R3MixerRemoveDrvStreams.
  *
  * @param   pDevIns     The device instance.
  * @param   pMixSink    Mixer sink to remove audio streams from.
@@ -1980,6 +1914,8 @@ static void ichac97R3MixerRemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSi
 
 /**
  * Removes all driver streams from a specific mixer sink.
+ *
+ * Called by ichac97R3StreamOpen() and ichac97R3StreamsDestroy().
  *
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 state.
@@ -4020,6 +3956,44 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
 
 
 /**
+ * Adds a specific AC'97 driver to the driver chain.
+ *
+ * Only called from ichac97R3Attach().
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The ring-3 AC'97 device state.
+ * @param   pDrv        The AC'97 driver to add.
+ */
+static int ichac97R3MixerAddDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
+{
+    int rc = VINF_SUCCESS;
+
+    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg))
+        rc = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkLineIn,
+                                        &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX].State.Cfg, pDrv);
+
+    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg))
+    {
+        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkOut,
+                                             &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX].State.Cfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    if (AudioHlpStreamCfgIsValid(&pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg))
+    {
+        int rc2 = ichac97R3MixerAddDrvStream(pDevIns, pThisCC->pSinkMicIn,
+                                             &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX].State.Cfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+
+/**
  * Worker for ichac97R3Construct() and ichac97R3Attach().
  *
  * @returns VBox status code.
@@ -4104,6 +4078,43 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     DEVAC97_UNLOCK(pDevIns, pThis);
 
     return rc;
+}
+
+
+/**
+ * Removes a specific AC'97 driver from the driver chain and destroys its
+ * associated streams.
+ *
+ * Only called from ichac97R3Detach().
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The ring-3 AC'97 device state.
+ * @param   pDrv        AC'97 driver to remove.
+ */
+static void ichac97R3MixerRemoveDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
+{
+    if (pDrv->MicIn.pMixStrm)
+    {
+        AudioMixerSinkRemoveStream(pThisCC->pSinkMicIn,  pDrv->MicIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm, pDevIns, true /*fImmediate*/);
+        pDrv->MicIn.pMixStrm = NULL;
+    }
+
+    if (pDrv->LineIn.pMixStrm)
+    {
+        AudioMixerSinkRemoveStream(pThisCC->pSinkLineIn, pDrv->LineIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm, pDevIns, true /*fImmediate*/);
+        pDrv->LineIn.pMixStrm = NULL;
+    }
+
+    if (pDrv->Out.pMixStrm)
+    {
+        AudioMixerSinkRemoveStream(pThisCC->pSinkOut,    pDrv->Out.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm, pDevIns, true /*fImmediate*/);
+        pDrv->Out.pMixStrm = NULL;
+    }
+
+    RTListNodeRemove(&pDrv->Node);
 }
 
 
