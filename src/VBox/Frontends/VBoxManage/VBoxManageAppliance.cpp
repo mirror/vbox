@@ -443,8 +443,10 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
             // to tinker with the error info a bit
             RTStrmPrintf(g_pStdErr, "Interpreting %ls...\n", path.raw());
             rc = pAppliance->Interpret();
-            com::ErrorInfo info0(pAppliance, COM_IIDOF(IAppliance));
+            com::ErrorInfoKeeper eik;
 
+            /** @todo r=klaus Eliminate this special way of signalling
+             * warnings which should be part of the ErrorInfo. */
             com::SafeArray<BSTR> aWarnings;
             if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))
             {
@@ -456,10 +458,10 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 }
             }
 
+            eik.restore();
             if (FAILED(rc))     // during interpret, after printing warnings
             {
-                com::GluePrintErrorInfo(info0);
-                com::GluePrintErrorContext("Interpret", __FILE__, __LINE__);
+                com::GlueHandleComError(pAppliance, "Interpret()", rc, __FILE__, __LINE__);
                 break;
             }
 
