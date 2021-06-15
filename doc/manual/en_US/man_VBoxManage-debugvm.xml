@@ -122,6 +122,14 @@
       <arg>--descriptions</arg>
       <arg>--pattern=<replaceable>pattern</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-guestsample">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">guestsample</arg>
+      <arg>--filename=<replaceable>filename</replaceable></arg>
+      <arg>--sample-interval-us=<replaceable>interval</replaceable></arg>
+      <arg>--sample-time-us=<replaceable>time</replaceable></arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
     <title>Description</title>
@@ -604,6 +612,35 @@
         <varlistentry>
           <term><option>--reset</option></term>
           <listitem><para>Select reset instead of display mode.</para></listitem>
+        </varlistentry>
+      </variablelist>
+
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-guestsample">
+      <title>debugvm guestsample</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Creates a sample report of the guest activity.
+      </para>
+      <para>
+        Retrieves the filename to dump the report to.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--filename=<replaceable>filename</replaceable></option></term>
+          <listitem><para>The filename to dump the sample report to.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--sample-interval-us=<replaceable>interval</replaceable></option></term>
+          <listitem><para>The interval in microseconds between guest samples.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--sample-time-us=<replaceable>time</replaceable></option></term>
+          <listitem><para>The amount of microseconds to take guest samples.</para>
+          </listitem>
         </varlistentry>
       </variablelist>
 
