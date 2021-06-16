@@ -4742,7 +4742,7 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Cloud Console Manager restrictions changed: */
             else if (strKey == GUI_CloudConsoleManager_Restrictions)
                 emit sigCloudConsoleManagerRestrictionChange();
-#ifdef VBOX_WS_X11
+#if defined(VBOX_WS_X11) || defined(VBOX_WS_WIN)
             else if (strKey == GUI_DisableHostScreenSaver)
                 emit sigDisableHostScreenSaverStateChange(isFeatureAllowed(GUI_DisableHostScreenSaver));
 #endif

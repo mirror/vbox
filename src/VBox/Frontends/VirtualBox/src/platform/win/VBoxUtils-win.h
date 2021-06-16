@@ -35,6 +35,7 @@ namespace NativeWindowSubsystem
 {
     /* Returns area covered by visible always-on-top (top-most) windows: */
     SHARED_LIBRARY_STUFF const QRegion areaCoveredByTopMostWindows();
+    SHARED_LIBRARY_STUFF const void setScreenSaverActive(BOOL fDisableScreenSaver);
 }
 
 #endif /* !FEQT_INCLUDED_SRC_platform_win_VBoxUtils_win_h */

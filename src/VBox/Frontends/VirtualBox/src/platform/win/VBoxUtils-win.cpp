@@ -74,3 +74,19 @@ const QRegion NativeWindowSubsystem::areaCoveredByTopMostWindows()
     return topMostRegion;
 }
 
+const void NativeWindowSubsystem::setScreenSaverActive(BOOL fDisableScreenSaver)
+{
+    BOOL fIsActive;
+    SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fIsActive, 0);
+    if (fIsActive == !fDisableScreenSaver)
+        return;
+    //printf("before %d\n", fIsActive);
+
+    SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, !fDisableScreenSaver, NULL, 0);
+
+    SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fIsActive, 0);
+    /*if (fIsActive == !fDisableScreenSaver)
+        printf("success %d %d\n", fIsActive, fDisableScreenSaver);
+*/
+}
+

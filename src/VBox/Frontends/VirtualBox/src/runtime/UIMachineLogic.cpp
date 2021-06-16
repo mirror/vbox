@@ -107,6 +107,7 @@
 #endif
 #ifdef VBOX_WS_WIN
 # include "WinKeyboard.h"
+# include "VBoxUtils-win.h"
 #endif
 #ifdef VBOX_WS_X11
 # include <XKeyboard.h>
@@ -724,7 +725,8 @@ void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
         X11InhibitScrenSaver(services, m_screenSaverInhibitionCookies);
     else
         X11UninhibitScrenSaver(m_screenSaverInhibitionCookies);
-
+#elif defined(VBOX_WS_WIN)
+    NativeWindowSubsystem::setScreenSaverActive(fDisabled);
 #else
     Q_UNUSED(fDisabled);
 #endif
@@ -1509,7 +1511,7 @@ void UIMachineLogic::loadSettings()
     /* HID LEDs sync initialization: */
     sltSwitchKeyboardLedsToGuestLeds();
     /* */
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_X11) || defined(VBOX_WS_WIN)
     connect(gEDataManager, &UIExtraDataManager::sigDisableHostScreenSaverStateChange,
             this, &UIMachineLogic::sltDisableHostScreenSaverStateChanged);
     sltDisableHostScreenSaverStateChanged(gEDataManager->disableHostScreenSaver());
