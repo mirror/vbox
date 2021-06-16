@@ -400,6 +400,11 @@ typedef struct AC97STREAMSTATE
     STAMCOUNTER             StatDmaFlowErrors;
     /** Number of bytes involved in unresolved flow errors. */
     STAMCOUNTER             StatDmaFlowErrorBytes;
+    STAMPROFILE             StatStart;
+    STAMPROFILE             StatReset;
+    STAMPROFILE             StatStop;
+    STAMCOUNTER             StatWriteLviRecover;
+    STAMCOUNTER             StatWriteCr;
 } AC97STREAMSTATE;
 AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 /** Pointer to internal state of an AC'97 stream. */
@@ -444,6 +449,10 @@ typedef struct AC97STREAM
     AC97BMREGS              Regs;
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE           hTimer;
+    STAMCOUNTER             StatWriteLvi;
+    STAMCOUNTER             StatWriteSr1;
+    STAMCOUNTER             StatWriteSr2;
+    STAMCOUNTER             StatWriteBdBar;
 } AC97STREAM;
 AssertCompileSizeAlignment(AC97STREAM, 8);
 /** Pointer to a shared AC'97 stream state. */
@@ -2647,10 +2656,12 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      */
                     case AC97_NABM_OFF_LVI:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
+
                         if (   !(pRegs->sr & AC97_SR_DCH)
                             || !(pRegs->cr & AC97_CR_RPBM))
                         {
                             pRegs->lvi = u32 % AC97_MAX_BDLE;
+                            STAM_REL_COUNTER_INC(&pStream->StatWriteLvi);
                             DEVAC97_UNLOCK(pDevIns, pThis);
                             Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32));
                         }
@@ -2674,6 +2685,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 
                             /** @todo Stop the DMA timer when we get into the AC97_SR_CELV situation to
                              *        avoid potential race here. */
+                            STAM_REL_COUNTER_INC(&pStreamCC->State.StatWriteLviRecover);
                             DEVAC97_UNLOCK(pDevIns, pThis);
 
                             LogFunc(("[SD%RU8] LVI <- %#x; CIV=%#x PIV=%#x SR=%#x cTicksToDeadline=%#RX64 [recovering]\n",
@@ -2695,6 +2707,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                     {
 #ifdef IN_RING3
                         DEVAC97_LOCK(pDevIns, pThis);
+                        STAM_REL_COUNTER_INC(&pStreamCC->State.StatWriteCr);
 
                         uint32_t const fCrChanged = pRegs->cr ^ u32;
                         Log3Func(("[SD%RU8] CR <- %#x (was %#x; changed %#x)\n", pStream->u8SD, u32, pRegs->cr, fCrChanged));
@@ -2704,6 +2717,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                          */
                         if (u32 & AC97_CR_RR)
                         {
+                            STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatReset, r);
                             LogFunc(("[SD%RU8] Reset\n", pStream->u8SD));
 
                             /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0).
@@ -2718,6 +2732,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             ichac97StreamUpdateSR(pDevIns, pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
+                            STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatReset, r);
                             break;
                         }
 
@@ -2733,18 +2748,21 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                          */
                         else if (!(pRegs->cr & AC97_CR_RPBM))
                         {
+                            STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatStop, p);
                             LogFunc(("[SD%RU8] Pause busmaster (disable stream) SR=%#x -> %#x\n",
                                      pStream->u8SD, pRegs->sr, pRegs->sr | AC97_SR_DCH));
                             ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
                             pRegs->sr |= AC97_SR_DCH;
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
+                            STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatStop, p);
                         }
                         /*
                          * Run busmaster.
                          */
                         else
                         {
+                            STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatStart, r);
                             LogFunc(("[SD%RU8] Run busmaster (enable stream) SR=%#x -> %#x\n",
                                      pStream->u8SD, pRegs->sr, pRegs->sr & ~AC97_SR_DCH));
                             pRegs->sr &= ~AC97_SR_DCH;
@@ -2772,6 +2790,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             /** @todo take down the start time here.  */
                             int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
                             AssertRC(rc2);
+
+                            STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatStart, r);
                         }
 #else /* !IN_RING3 */
                         rc = VINF_IOM_R3_IOPORT_WRITE;
@@ -2785,6 +2805,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                     case AC97_NABM_OFF_SR:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
+                        STAM_REL_COUNTER_INC(&pStream->StatWriteSr1);
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
 
@@ -2801,6 +2822,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                     case AC97_NABM_OFF_SR:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
+                        STAM_REL_COUNTER_INC(&pStream->StatWriteSr2);
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
@@ -2818,6 +2840,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         /* Buffer Descriptor list Base Address Register */
                         pRegs->bdbar = u32 & ~(uint32_t)3;
                         Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(offPort), u32, pRegs->bdbar));
+                        STAM_REL_COUNTER_INC(&pStream->StatWriteBdBar);
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
@@ -4481,16 +4504,26 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
 # endif
     for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.cbTransferChunk, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Bytes to transfer in the current DMA period.",  "Stream%u/cbTransferChunk", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].Regs.cr, STAMTYPE_X8, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                               "Control register (CR), bit 0 is the run bit.",  "Stream%u/reg-CR", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].Regs.sr, STAMTYPE_X16, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                               "Status register (SR).",                         "Stream%u/reg-SR", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The stream frequency.",                         "Stream%u/Hz", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The frame size.",                               "Stream%u/FrameSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
+                               "Virtual internal buffer read position.",        "Stream%u/offRead", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Virtual internal buffer write position.",   "Stream%u/offWrite", idxStream);
+                               "Virtual internal buffer write position.",       "Stream%u/offWrite", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Size of the internal DMA buffer.",  "Stream%u/DMABufSize", idxStream);
+                               "Size of the internal DMA buffer.",              "Stream%u/DMABufSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
+                               "Number of bytes used in the internal DMA buffer.", "Stream%u/DMABufUsed", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowProblems, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                               "Number of internal DMA buffer problems.",   "Stream%u/DMABufferProblems", idxStream);
+                               "Number of internal DMA buffer problems.",       "Stream%u/DMABufferProblems", idxStream);
         if (ichac97R3GetDirFromSD(idxStream) == PDMAUDIODIR_OUT)
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                    "Number of internal DMA buffer overflows.",  "Stream%u/DMABufferOverflows", idxStream);
@@ -4501,6 +4534,25 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                    "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
         }
+
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStart, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Starting the stream.",  "Stream%u/Start", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStop, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Stopping the stream.",  "Stream%u/Stop", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatReset, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "Resetting the stream.",  "Stream%u/Reset", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatWriteCr, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "CR register writes.",                           "Stream%u/WriteCr", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatWriteLviRecover, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "LVI register writes recovering from underflow.", "Stream%u/WriteLviRecover", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].StatWriteLvi, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "LVI register writes (non-recoving).",           "Stream%u/WriteLvi", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].StatWriteSr1, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "SR register 1-byte writes.",                    "Stream%u/WriteSr-1byte", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].StatWriteSr2, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "SR register 2-byte writes.",                    "Stream%u/WriteSr-2byte", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].StatWriteBdBar, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "BDBAR register writes.",                        "Stream%u/WriteBdBar", idxStream);
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
