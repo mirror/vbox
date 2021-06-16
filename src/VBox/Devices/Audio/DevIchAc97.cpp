@@ -2037,24 +2037,15 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
             AssertMsgFailedReturn(("u8SD=%d\n", pStream->u8SD), VERR_INTERNAL_ERROR_3);
     }
 
-    /** @todo r=bird: If uHz == 0 then we'll just keep the previous stream, so
-     * wonder how that's going to play out if the guest tries to enable it...  This
-     * makes no real sense.
-     *
-     * Comment your code and changes you make, please!  This is frigging tedious.
-     *
-     * Test added in r127402?  The test is older (before r118166, r113296, r112652,
-     * r112463, r107142), but it used to be placed after calling
-     * ichac97R3MixerRemoveDrvStreams() since r112652.  Till ~r112463 a zero uHz
-     * caused a VERR_INVALID_PARAMETER return. Before r107142 it would disable the
-     * stream if uHz was zero. */
-    if (Cfg.Props.uHz)
-    { /* likely */ }
-    else
-    {
-        LogFlowFunc(("[SD%RU8] Hz is zero!! skipping/ignoring\n", pStreamCC->u8SD));
-        return VINF_SUCCESS;
-    }
+    /*
+     * Don't continue if the frequency is out of range (the rest of the
+     * properties should be okay).
+     */
+    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
+    ASSERT_GUEST_MSG_RETURN(AudioHlpStreamCfgIsValid(&Cfg),
+                            ("Invalid stream #%u rate: %s\n", pStreamCC->u8SD,
+                             PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp)) ),
+                            VERR_INVALID_PARAMETER);
 
     /*
      * Read the buffer descriptors and check what the max distance between
@@ -2122,8 +2113,8 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     {
         if (Cfg.Props.uHz > 44100) /* E.g. 48000 Hz. */
             uTimerHz = 200;
-        else /* Just take the global Hz rate otherwise. */
-            uTimerHz = pThis->uTimerHz;
+        else
+            uTimerHz = AC97_TIMER_HZ_DEFAULT;
     }
     else
         uTimerHz = pThis->uTimerHz;
@@ -2204,7 +2195,6 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
      * Only (re-)create the stream (and driver chain) if we really have to.
      * Otherwise avoid this and just reuse it, as this costs performance.
      */
-    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
     int rc = VINF_SUCCESS;
     if (   fForce
         || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
