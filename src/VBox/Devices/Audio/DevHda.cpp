@@ -5117,7 +5117,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                "Bytes transfered per DMA timer callout.",   "Stream%u/cbTransferSize", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, (void*)&pThis->aStreams[idxStream].State.fRunning, STAMTYPE_BOOL, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "True if the stream is in RUN mode.",        "Stream%u/fRunning", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_HZ,
                                "The stream frequency.",                     "Stream%u/Cfg/Hz", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The frame size.",                           "Stream%u/Cfg/FrameSize", idxStream);
