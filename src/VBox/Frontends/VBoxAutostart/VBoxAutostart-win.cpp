@@ -636,6 +636,7 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
             com::Bstr bstrCmdLine(sCmdLine);
             com::Bstr bstrUserFullName(sUserFullName);
             com::Bstr bstrPwd(strPwd);
+            com::Bstr bstrDependencies("Winmgmt\0RpcSs\0\0");
 
             SC_HANDLE hSvc = CreateServiceW(hSCM,                            /* hSCManager */
                                             bstrServiceName.raw(),           /* lpServiceName */
@@ -647,7 +648,7 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
                                             bstrCmdLine.raw(),               /* lpBinaryPathName */
                                             NULL,                            /* lpLoadOrderGroup */
                                             NULL,                            /* lpdwTagId */
-                                            NULL,                            /* lpDependencies */
+                                            bstrDependencies.raw(),          /* lpDependencies */
                                             bstrUserFullName.raw(),          /* lpServiceStartName (NULL => LocalSystem) */
                                             bstrPwd.raw());                  /* lpPassword */
             if (hSvc)
@@ -996,6 +997,24 @@ static int autostartSvcWinRunIt(int argc, char **argv)
     LogFlowFuncEnter();
 
     /*
+     * Init com here for first main thread initialization.
+     * Service main function called in another thread
+     * created by service manager.
+     */
+    HRESULT hrc = com::Initialize();
+# ifdef VBOX_WITH_XPCOM
+    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
+    {
+        char szHome[RTPATH_MAX] = "";
+        com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+        return RTMsgErrorExit(RTEXITCODE_FAILURE,
+               "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+    }
+# endif
+    if (FAILED(hrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM (%Rhrc)!", hrc);
+
+    /*
      * Initialize release logging, do this early.  This means command
      * line options (like --logfile &c) can't be introduced to affect
      * the log file parameters, but the user can't change them easily
@@ -1040,24 +1059,6 @@ static int autostartSvcWinRunIt(int argc, char **argv)
         if (RT_FAILURE(rc))
             autostartSvcLogError("Failed to create release log file: %Rrc\n", rc);
     } while (0);
-
-    /*
-     * Init com here for first main thread initialization.
-     * Service main function called in another thread
-     * created by service manager.
-     */
-    HRESULT hrc = com::Initialize();
-# ifdef VBOX_WITH_XPCOM
-    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
-    {
-        char szHome[RTPATH_MAX] = "";
-        com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-               "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
-    }
-# endif
-    if (FAILED(hrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM (%Rhrc)!", hrc);
 
     /*
      * Parse the arguments.
@@ -1228,8 +1229,6 @@ int main(int argc, char **argv)
         autostartSvcLogError("RTR3InitExe failed with rc=%Rrc", rc);
         return RTEXITCODE_FAILURE;
     }
-
-    RTThreadSleep(10 * 1000);
 
     /*
      * Parse the initial arguments to determine the desired action.
