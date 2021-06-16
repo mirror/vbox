@@ -1718,7 +1718,7 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream, PAC97STR
 
     pRegs->picb     = 0;
     pRegs->piv      = 0; /* Note! Because this is also zero, we will actually start transferring with BDLE00. */
-    pRegs->cr       = pRegs->cr & AC97_CR_DONT_CLEAR_MASK;
+    pRegs->cr      &= AC97_CR_DONT_CLEAR_MASK;
     pRegs->bd_valid = 0;
 
     RT_ZERO(pThis->silence);
@@ -2701,73 +2701,92 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      * Control Registers.
                      */
                     case AC97_NABM_OFF_CR:
+                    {
 #ifdef IN_RING3
                         DEVAC97_LOCK(pDevIns, pThis);
 
-                        Log3Func(("[SD%RU8] CR <- %#x (cr %#x)\n", pStream->u8SD, u32, pRegs->cr));
-                        if (u32 & AC97_CR_RR) /* Busmaster reset. */
-                        {
-                            Log3Func(("[SD%RU8] Reset\n", pStream->u8SD));
+                        uint32_t const fCrChanged = pRegs->cr ^ u32;
+                        Log3Func(("[SD%RU8] CR <- %#x (was %#x; changed %#x)\n", pStream->u8SD, u32, pRegs->cr, fCrChanged));
 
-                            /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0). */
-                            Assert((pRegs->cr & AC97_CR_RPBM) == 0);
-                            if (pRegs->cr & AC97_CR_RPBM)
-                                ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
+                        /*
+                         * Busmaster reset.
+                         */
+                        if (u32 & AC97_CR_RR)
+                        {
+                            LogFunc(("[SD%RU8] Reset\n", pStream->u8SD));
+
+                            /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0).
+                               3.2.7 in 302349-003 says RPBM be must be clear when resetting
+                               and that behavior is undefined if it's set. */
+                            ASSERT_GUEST_STMT((pRegs->cr & AC97_CR_RPBM) == 0,
+                                              ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream,
+                                                                    pStreamCC, false /* fEnable */));
 
                             ichac97R3StreamReset(pThis, pStream, pStreamCC);
 
                             ichac97StreamUpdateSR(pDevIns, pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
+                            break;
                         }
+
+                        /*
+                         * Write the new value to the register and if RPBM didn't change we're done.
+                         */
+                        pRegs->cr = u32 & AC97_CR_VALID_MASK;
+
+                        if (!(fCrChanged & AC97_CR_RPBM))
+                            DEVAC97_UNLOCK(pDevIns, pThis); /* Probably not so likely, but avoid one extra intentation level. */
+                        /*
+                         * Pause busmaster.
+                         */
+                        else if (!(pRegs->cr & AC97_CR_RPBM))
+                        {
+                            LogFunc(("[SD%RU8] Pause busmaster (disable stream) SR=%#x -> %#x\n",
+                                     pStream->u8SD, pRegs->sr, pRegs->sr | AC97_SR_DCH));
+                            ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
+                            pRegs->sr |= AC97_SR_DCH;
+
+                            DEVAC97_UNLOCK(pDevIns, pThis);
+                        }
+                        /*
+                         * Run busmaster.
+                         */
                         else
                         {
-                            pRegs->cr = u32 & AC97_CR_VALID_MASK;
+                            LogFunc(("[SD%RU8] Run busmaster (enable stream) SR=%#x -> %#x\n",
+                                     pStream->u8SD, pRegs->sr, pRegs->sr & ~AC97_SR_DCH));
+                            pRegs->sr &= ~AC97_SR_DCH;
 
-                            if (!(pRegs->cr & AC97_CR_RPBM))
-                            {
-                                Log3Func(("[SD%RU8] Disable\n", pStream->u8SD));
-
-                                ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
-
-                                pRegs->sr |= AC97_SR_DCH;
-
-                                DEVAC97_UNLOCK(pDevIns, pThis);
-                            }
-                            else
-                            {
-                                /** @todo r=bird: How do we prevent the guest from triggering enable more
-                                 *        than once?  Only take action if the RBMP bit changed. Duh^3 */
-                                Log3Func(("[SD%RU8] Enable\n", pStream->u8SD));
-
-                                pRegs->sr &= ~AC97_SR_DCH;
-
-                                if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
-                                    ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
+                            if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
+                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
 # ifdef LOG_ENABLED
-                                if (LogIsFlowEnabled())
-                                    ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
+                            if (LogIsFlowEnabled())
+                                ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
 # endif
-                                ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
+                            ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
 
-                                /*
-                                 * Arm the DMA timer.  Must drop the AC'97 device lock first as it would
-                                 * create a lock order violation with the virtual sync time lock otherwise.
-                                 */
-                                /** @todo is ichac97R3StreamTransferUpdate called here? */
-                                uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
+                            /*
+                             * Arm the DMA timer.  Must drop the AC'97 device lock first as it would
+                             * create a lock order violation with the virtual sync time lock otherwise.
+                             */
+                            /** @todo is ichac97R3StreamTransferUpdate called here? */
+                            uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
 
-                                DEVAC97_UNLOCK(pDevIns, pThis);
+                            DEVAC97_UNLOCK(pDevIns, pThis);
 
-                                /** @todo take down the start time here.  */
-                                int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
-                                AssertRC(rc2);
-                            }
+                            /** @todo for output streams we could probably service this a little bit
+                             *        earlier if we push it, just to reduce the lag...  For HDA we do a
+                             *        DMA run immediately after the stream is enabled. */
+                            /** @todo take down the start time here.  */
+                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+                            AssertRC(rc2);
                         }
 #else /* !IN_RING3 */
                         rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
                         break;
+                    }
 
                     /*
                      * Status Registers.
