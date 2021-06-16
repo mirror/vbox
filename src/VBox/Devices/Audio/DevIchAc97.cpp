@@ -2192,7 +2192,7 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
         {
             PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
             pStreamCC->State.nsRetrySetup = 0;
-            LogFlowFunc(("[SD%RU8] success (uHz=%u)\n", pStreamCC->u8SD, rc, PDMAudioPropsHz(&Cfg.Props)));
+            LogFlowFunc(("[SD%RU8] success (uHz=%u)\n", pStreamCC->u8SD, PDMAudioPropsHz(&Cfg.Props)));
         }
         else
         {
