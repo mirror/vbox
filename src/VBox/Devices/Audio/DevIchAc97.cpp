@@ -2157,13 +2157,25 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
 
     LogFlowFunc(("Stream %u: uTimerHz: %u -> %u; cMsSchedulingHint: %u -> %u; cbCircBuf: %#zx -> %#x (%u ms, cMsDmaMinBuf=%u)%s\n",
-                 pStreamCC->State.uTimerHz, uTimerHz, Cfg.Device.cMsSchedulingHint, cMsSchedulingHint,
+                 pStreamCC->State.uTimerHz, uTimerHz, pStreamCC->State.Cfg.Device.cMsSchedulingHint, cMsSchedulingHint,
                  pStreamCC->State.pCircBuf ? RTCircBufSize(pStreamCC->State.pCircBuf) : 0, cbCircBuf, cMsCircBuf, cMsDmaMinBuf,
                  !pStreamCC->State.pCircBuf || RTCircBufSize(pStreamCC->State.pCircBuf) != cbCircBuf  ? " - re-creating DMA buffer" : ""));
 
     /*
-     * Set the stream's timer rate and scheduling hint.
+     * Update the stream's timer rate and scheduling hint, re-registering the AIO
+     * update job if necessary.
      */
+    if (   pStreamCC->State.Cfg.Device.cMsSchedulingHint != cMsSchedulingHint
+        || !pStreamCC->State.fRegisteredAsyncUpdateJob)
+    {
+        if (pStreamCC->State.fRegisteredAsyncUpdateJob)
+            AudioMixerSinkRemoveUpdateJob(pMixSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC);
+        int rc2 = AudioMixerSinkAddUpdateJob(pMixSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC,
+                                             pStreamCC->State.Cfg.Device.cMsSchedulingHint);
+        AssertRC(rc2);
+        pStreamCC->State.fRegisteredAsyncUpdateJob = RT_SUCCESS(rc2) || rc2 == VERR_ALREADY_EXISTS;
+    }
+
     pStreamCC->State.uTimerHz    = uTimerHz;
     Cfg.Device.cMsSchedulingHint = cMsSchedulingHint;
 
@@ -2280,6 +2292,9 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     AudioMixerSinkLock(pSink);
 
     int rc = VINF_SUCCESS;
+    /*
+     * Enable.
+     */
     if (fEnable)
     {
         /* Reset the input pre-buffering state. */
@@ -2287,39 +2302,32 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
 
         /* (Re-)Open the stream if necessary. */
         rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
-
-        /* Re-register the update job with the AIO thread with correct sched hint.
-           Note! We do not unregister it on disable because of draining. */
-        if (pStreamCC->State.fRegisteredAsyncUpdateJob)
-            AudioMixerSinkRemoveUpdateJob(pSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC);
-        int rc2 = AudioMixerSinkAddUpdateJob(pSink, ichac97R3StreamUpdateAsyncIoJob, pStreamCC,
-                                             pStreamCC->State.Cfg.Device.cMsSchedulingHint);
-        AssertRC(rc2);
-        pStreamCC->State.fRegisteredAsyncUpdateJob = RT_SUCCESS(rc2) || rc2 == VERR_ALREADY_EXISTS;
-
-        /* Open debug files: */
-        if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-        { /* likely */ }
-        else
-        {
-            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
-            {
-                rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                       &pStreamCC->State.Cfg.Props);
-                AssertRC(rc2);
-            }
-
-            if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
-            {
-                rc2 = AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                       &pStreamCC->State.Cfg.Props);
-                AssertRC(rc2);
-            }
-        }
-
         if (RT_SUCCESS(rc))
+        {
+            /*
+             * Open debug files.
+             */
+            if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+            { /* likely */ }
+            else
+            {
+                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileStream))
+                    AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                     &pStreamCC->State.Cfg.Props);
+                if (!AudioHlpFileIsOpen(pStreamCC->Dbg.Runtime.pFileDMA))
+                    AudioHlpFileOpen(pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                     &pStreamCC->State.Cfg.Props);
+            }
+
+            /*
+             * Do the actual enabling.
+             */
             rc = AudioMixerSinkStart(pSink);
+        }
     }
+    /*
+     * Disable
+     */
     else
     {
         rc = AudioMixerSinkDrainAndStop(pSink, pStreamCC->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamCC->State.pCircBuf) : 0);
