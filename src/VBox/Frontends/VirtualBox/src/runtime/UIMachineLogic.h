@@ -399,7 +399,8 @@ private:
     void takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const;
 
     /** Reactivates the screen saver. This is possbily called during vm window close and enables host screen
-      * if there are no other vms running at the moment. */
+      * if there are no other vms running at the moment. Note that this seems to be not needed on Linux since
+      * closing vm windows re-activates screen saver automatically. On Windows explicit re-activation is needed. */
     void activateScreenSaver();
 
     /* Private variables: */
