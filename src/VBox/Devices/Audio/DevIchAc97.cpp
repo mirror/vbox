@@ -1846,7 +1846,7 @@ static int ichac97R3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, 
 /**
  * Adds all current driver streams to a specific mixer sink.
  *
- * Called by ichac97R3StreamOpen().
+ * Called by ichac97R3StreamSetUp().
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -1915,7 +1915,7 @@ static void ichac97R3MixerRemoveDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSi
 /**
  * Removes all driver streams from a specific mixer sink.
  *
- * Called by ichac97R3StreamOpen() and ichac97R3StreamsDestroy().
+ * Called by ichac97R3StreamSetUp() and ichac97R3StreamsDestroy().
  *
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 state.
@@ -1978,9 +1978,9 @@ DECLINLINE(PPDMAUDIOPCMPROPS) ichach97R3CalcStreamProps(PAC97STATE pThis, uint8_
 
 
 /**
- * Opens an AC'97 stream with its current mixer settings.
+ * Sets up an AC'97 stream with its current mixer settings.
  *
- * This will open an AC'97 stream with 2 (stereo) channels, 16-bit samples and
+ * This will set up an AC'97 stream with 2 (stereo) channels, 16-bit samples and
  * the last set sample rate in the AC'97 mixer for this stream.
  *
  * @returns VBox status code.
@@ -1992,8 +1992,8 @@ DECLINLINE(PPDMAUDIOPCMPROPS) ichach97R3CalcStreamProps(PAC97STATE pThis, uint8_
  * @param   fForce      Whether to force re-opening the stream or not.
  *                      Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
-                               PAC97STREAMR3 pStreamCC, bool fForce)
+static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
+                                PAC97STREAMR3 pStreamCC, bool fForce)
 {
     /*
      * Assemble the stream config and get the associate mixer sink.
@@ -2215,14 +2215,14 @@ static int ichac97R3StreamOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER
 
 
 /**
- * Closes an AC'97 stream.
+ * Tears down an AC'97 stream (counter part to ichac97R3StreamSetUp).
  *
  * Empty stub at present, nothing to do here as we reuse streams and only really
  * re-open them if parameters changed (seldom).
  *
  * @param   pStream             The AC'97 stream to close (shared).
  */
-static void ichac97R3StreamClose(PAC97STREAM pStream)
+static void ichac97R3StreamTearDown(PAC97STREAM pStream)
 {
     RT_NOREF(pStream);
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
@@ -2230,8 +2230,8 @@ static void ichac97R3StreamClose(PAC97STREAM pStream)
 
 
 /**
- * Re-opens (that is, closes and opens again) an AC'97 stream on the backend
- * side with the current AC'97 mixer settings for this stream.
+ * Tears down and sets up an AC'97 stream on the backend side with the current
+ * AC'97 mixer settings for this stream.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -2242,16 +2242,16 @@ static void ichac97R3StreamClose(PAC97STREAM pStream)
  * @param   fForce      Whether to force re-opening the stream or not.
  *                      Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamReOpen(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
-                                 PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
+static int ichac97R3StreamReSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
+                                  PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
     Assert(pStream->u8SD == pStreamCC->u8SD);
     Assert(pStream   - &pThis->aStreams[0]   == pStream->u8SD);
     Assert(pStreamCC - &pThisCC->aStreams[0] == pStream->u8SD);
 
-    ichac97R3StreamClose(pStream);
-    return ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
+    ichac97R3StreamTearDown(pStream);
+    return ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
 }
 
 
@@ -2283,7 +2283,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
             RTCircBufReset(pStreamCC->State.pCircBuf);
 
         /* (Re-)Open the stream if necessary. */
-        rc = ichac97R3StreamOpen(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
+        rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
 
         /* Re-register the update job with the AIO thread with correct sched hint.
            Note! We do not unregister it on disable because of draining. */
@@ -2320,7 +2320,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     else
     {
         rc = AudioMixerSinkDrainAndStop(pSink, pStreamCC->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamCC->State.pCircBuf) : 0);
-        ichac97R3StreamClose(pStream);
+        ichac97R3StreamTearDown(pStream);
     }
 
     /* Make sure to leave the lock before (eventually) starting the timer. */
@@ -2359,13 +2359,13 @@ static bool ichac97R3StreamIsEnabled(PAC97STATER3 pThisCC, PAC97STREAM pStream)
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to destroy (shared).
  * @param   pStreamCC           The AC'97 stream to destroy (ring-3).
- * @sa      ichac97R3StreamCreate
+ * @sa      ichac97R3StreamConstruct
  */
 static void ichac97R3StreamDestroy(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
 
-    ichac97R3StreamClose(pStream);
+    ichac97R3StreamTearDown(pStream);
 
     int rc2 = RTCritSectDelete(&pStreamCC->State.CritSect);
     AssertRC(rc2);
@@ -2411,7 +2411,7 @@ static void ichac97R3StreamDestroy(PAC97STATER3 pThisCC, PAC97STREAM pStream, PA
  * @param   u8SD                Stream descriptor number to assign.
  * @sa      ichac97R3StreamDestroy
  */
-static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, uint8_t u8SD)
+static int ichac97R3StreamConstruct(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, uint8_t u8SD)
 {
     LogFunc(("[SD%RU8] pStream=%p\n", u8SD, pStream));
 
@@ -3399,13 +3399,13 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 0xbb80); /* Set default (48000 Hz). */
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
 
                         ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
                     else
@@ -3419,7 +3419,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         ichac97MixerSet(pThis, AC97_MIC_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
                     else
@@ -3439,7 +3439,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         ichac97MixerSet(pThis, offPort, u32);
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
                     }
                     else
@@ -3456,7 +3456,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         ichac97MixerSet(pThis, offPort, u32);
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
                     }
                     else
@@ -3473,7 +3473,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         ichac97MixerSet(pThis, offPort, u32);
                         /** @todo r=bird: Why reopen it now?  Can't we put that off till it's
                          *        actually used? */
-                        ichac97R3StreamReOpen(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
+                        ichac97R3StreamReSetUp(pDevIns, pThis, pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX],
                                               &pThisCC->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
                     }
                     else
@@ -4392,7 +4392,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     AssertCompile(RT_ELEMENTS(pThis->aStreams) == AC97_MAX_STREAMS);
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        rc = ichac97R3StreamCreate(pThisCC, &pThis->aStreams[i], &pThisCC->aStreams[i], i /* SD# */);
+        rc = ichac97R3StreamConstruct(pThisCC, &pThis->aStreams[i], &pThisCC->aStreams[i], i /* SD# */);
         AssertRCReturn(rc, rc);
     }
 
