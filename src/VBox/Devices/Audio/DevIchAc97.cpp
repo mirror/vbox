@@ -642,39 +642,12 @@ typedef AC97STATER3 *PAC97STATER3;
         return rcLock; \
     } while (0)
 
-/** Retrieves an attribute from a specific audio stream in RC. */
-#define DEVAC97_CTX_SUFF_SD(a_Var, a_SD)      CTX_SUFF(a_Var)[a_SD]
-
 /**
  * Releases the AC'97 lock.
  */
 #define DEVAC97_UNLOCK(a_pDevIns, a_pThis) \
     do { PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); } while (0)
 
-/**
- * Acquires the TM lock and AC'97 lock, returns on failure.
- *
- * @todo r=bird: Isn't this overkill for ring-0, only ring-3 access the timer
- *               from what I can tell (ichac97R3StreamTransferCalcNext,
- *               ichac97R3TimerSet, timer callback and state load).
- */
-#define DEVAC97_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_pStream, a_rcBusy) \
-    do { \
-        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2((a_pDevIns), (a_pStream)->hTimer, &(a_pThis)->CritSect, (a_rcBusy)); \
-        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
-        { /* likely */ } \
-        else \
-        { \
-            AssertRC(VBOXSTRICTRC_VAL(rcLock)); \
-            return rcLock; \
-        } \
-    } while (0)
-
-/**
- * Releases the AC'97 lock and TM lock.
- */
-#define DEVAC97_UNLOCK_BOTH(a_pDevIns, a_pThis, a_pStream) \
-    PDMDevHlpTimerUnlockClock2((a_pDevIns), (a_pStream)->hTimer, &(a_pThis)->CritSect)
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -1994,6 +1967,11 @@ DECLINLINE(PPDMAUDIOPCMPROPS) ichach97R3CalcStreamProps(PAC97STATE pThis, uint8_
  * @param   pStreamCC   The AC'97 stream to open (ring-3).
  * @param   fForce      Whether to force re-opening the stream or not.
  *                      Otherwise re-opening only will happen if the PCM properties have changed.
+ *
+ * @remarks This is called holding:
+ *              -# The AC'97 device lock.
+ *              -# The AC'97 stream lock.
+ *              -# The mixer sink lock (to prevent racing AIO thread).
  */
 static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream,
                                 PAC97STREAMR3 pStreamCC, bool fForce)
@@ -2667,9 +2645,6 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
         PAC97STREAM     pStream   = &pThis->aStreams[AC97_PORT2IDX(offPort)];
         PAC97BMREGS     pRegs     = &pStream->Regs;
 
-        /** @todo r=bird: this locking is overkill, we don't need the timer lock
-         *        unless we're going to call ichac97R3TimerSet. */
-        DEVAC97_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_IOPORT_WRITE);
         switch (cb)
         {
             case 1:
@@ -2679,6 +2654,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      * Last Valid Index.
                      */
                     case AC97_NABM_OFF_LVI:
+                        DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         if (   (pRegs->cr & AC97_CR_RPBM)
                             && (pRegs->sr & AC97_SR_DCH))
                         {
@@ -2691,6 +2667,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 #endif
                         }
                         pRegs->lvi = u32 % AC97_MAX_BDLE;
+                        DEVAC97_UNLOCK(pDevIns, pThis);
                         Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32));
                         break;
 
@@ -2699,6 +2676,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      */
                     case AC97_NABM_OFF_CR:
 #ifdef IN_RING3
+                        DEVAC97_LOCK(pDevIns, pThis);
+
                         Log3Func(("[SD%RU8] CR <- %#x (cr %#x)\n", pStream->u8SD, u32, pRegs->cr));
                         if (u32 & AC97_CR_RR) /* Busmaster reset. */
                         {
@@ -2712,6 +2691,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             ichac97R3StreamReset(pThis, pStream, pStreamCC);
 
                             ichac97StreamUpdateSR(pDevIns, pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
+
+                            DEVAC97_UNLOCK(pDevIns, pThis);
                         }
                         else
                         {
@@ -2724,9 +2705,13 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                                 ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
 
                                 pRegs->sr |= AC97_SR_DCH;
+
+                                DEVAC97_UNLOCK(pDevIns, pThis);
                             }
                             else
                             {
+                                /** @todo r=bird: How do we prevent the guest from triggering enable more
+                                 *        than once? */
                                 Log3Func(("[SD%RU8] Enable\n", pStream->u8SD));
 
                                 pRegs->sr &= ~AC97_SR_DCH;
@@ -2739,8 +2724,17 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 # endif
                                 ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
 
-                                /* Arm the timer for this stream. */
-                                ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
+                                /*
+                                 * Arm the DMA timer.  Must drop the AC'97 device lock first as it would
+                                 * create a lock order violation with the virtual sync time lock otherwise.
+                                 */
+                                uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
+
+                                DEVAC97_UNLOCK(pDevIns, pThis);
+
+                                /** @todo take down the start time here.  */
+                                int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+                                AssertRC(rc2);
                             }
                         }
 #else /* !IN_RING3 */
@@ -2752,7 +2746,9 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      * Status Registers.
                      */
                     case AC97_NABM_OFF_SR:
+                        DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
+                        DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
 
                     default:
@@ -2766,7 +2762,9 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 switch (offPort & AC97_NABM_OFF_MASK)
                 {
                     case AC97_NABM_OFF_SR:
+                        DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
+                        DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
                         LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 2\n", offPort, u32));
@@ -2779,9 +2777,11 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 switch (offPort & AC97_NABM_OFF_MASK)
                 {
                     case AC97_NABM_OFF_BDBAR:
+                        DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         /* Buffer Descriptor list Base Address Register */
                         pRegs->bdbar = u32 & ~(uint32_t)3;
                         Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(offPort), u32, pRegs->bdbar));
+                        DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
                         LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 4\n", offPort, u32));
@@ -2794,7 +2794,6 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 AssertMsgFailed(("offPort=%#x <- %#x LB %u\n", offPort, u32, cb));
                 break;
         }
-        DEVAC97_UNLOCK_BOTH(pDevIns, pThis, pStream);
     }
     else
     {
