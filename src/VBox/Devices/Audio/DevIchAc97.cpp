@@ -2129,7 +2129,8 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
 
     LogFlowFunc(("Stream %u: uTimerHz: %u -> %u; cMsSchedulingHint: %u -> %u; cbCircBuf: %#zx -> %#x (%u ms, cMsDmaMinBuf=%u)%s\n",
-                 pStreamCC->State.uTimerHz, uTimerHz, pStreamCC->State.Cfg.Device.cMsSchedulingHint, cMsSchedulingHint,
+                 pStreamCC->u8SD, pStreamCC->State.uTimerHz, uTimerHz,
+                 pStreamCC->State.Cfg.Device.cMsSchedulingHint, cMsSchedulingHint,
                  pStreamCC->State.pCircBuf ? RTCircBufSize(pStreamCC->State.pCircBuf) : 0, cbCircBuf, cMsCircBuf, cMsDmaMinBuf,
                  !pStreamCC->State.pCircBuf || RTCircBufSize(pStreamCC->State.pCircBuf) != cbCircBuf  ? " - re-creating DMA buffer" : ""));
 
