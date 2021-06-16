@@ -1671,7 +1671,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
 
-    for (int i = 0; i < RT_ELEMENTS(pThis->aStatLevelAct); ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(pThis->aStatLevelAct); ++i)
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatLevelAct[i], STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Time spent in the level active state", "IntPending/%02x", i);
 # endif
     for (size_t i = 0; i < RT_ELEMENTS(pThis->aStatVectors); i++)
