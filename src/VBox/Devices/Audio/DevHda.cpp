@@ -5120,7 +5120,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The stream frequency.",                     "Stream%u/Cfg/Hz", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "The number of channels.",                   "Stream%u/Cfg/FrameSize", idxStream);
+                               "The frame size.",                           "Stream%u/Cfg/FrameSize", idxStream);
 #if 0 /** @todo this would require some callback or expansion. */
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cChannelsX, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The number of channels.",                   "Stream%u/Cfg/Channels-Host", idxStream);
