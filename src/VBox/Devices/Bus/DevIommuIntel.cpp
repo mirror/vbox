@@ -363,6 +363,8 @@ typedef struct DMAR
     uint64_t                    fHawBaseMask;
     /** Maximum guest-address width (MGAW) invalid address mask. */
     uint64_t                    fMgawInvMask;
+    /** Context-entry qword-1 valid mask. */
+    uint64_t                    fCtxEntryQw1ValidMask;
     /** Maximum supported paging level (3, 4 or 5). */
     uint8_t                     cMaxPagingLevel;
     /** DMA request valid permissions mask. */
@@ -1401,12 +1403,12 @@ static void dmarEventRaiseInterrupt(PPDMDEVINS pDevIns, DMAREVENTTYPE enmEventTy
  */
 static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 {
-    PDMAR    pThis   = PDMDEVINS_2_DATA(pDevIns, PDMAR);
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
 #ifdef RT_STRICT
     {
+        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
         uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
         uint32_t const fFaultMask = VTD_BF_FSTS_REG_PPF_MASK | VTD_BF_FSTS_REG_PFO_MASK
                                /* | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_AFO_MASK */    /* AFL not supported */
@@ -2444,14 +2446,14 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                     if (fCtxEntryPresent)
                     {
                         /* Validate reserved bits in the context-entry. */
+                        PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
                         if (   !(uCtxEntryQword0 & ~VTD_CONTEXT_ENTRY_0_VALID_MASK)
-                            && !(uCtxEntryQword1 & ~VTD_CONTEXT_ENTRY_1_VALID_MASK))
+                            && !(uCtxEntryQword1 & ~pThis->fCtxEntryQw1ValidMask))
                         {
                             /* Get the domain ID for this mapping. */
                             pMemReqOut->idDomain = RT_BF_GET(uCtxEntryQword1, VTD_BF_1_CONTEXT_ENTRY_DID);
 
                             /* Validate the translation type (TT). */
-                            PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
                             uint8_t const fTt = RT_BF_GET(uCtxEntryQword0, VTD_BF_0_CONTEXT_ENTRY_TT);
                             switch (fTt)
                             {
@@ -2475,8 +2477,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                             pMemReqAux->GCPhysSlPt   = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
                                             return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
                                         }
-                                        else
-                                            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_Aw_Invalid, pMemReqIn, pMemReqAux);
+                                        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_Aw_Invalid, pMemReqIn, pMemReqAux);
                                     }
                                     else
                                         dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_At_Block, pMemReqIn, pMemReqAux);
@@ -2561,9 +2562,7 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
  */
 static int dmarDrScalableModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PDMARMEMREQREMAP pMemReqRemap)
 {
-    RT_NOREF2(uRtaddrReg, pMemReqRemap);
-    PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
-    Assert(pThis->fExtCapReg & VTD_BF_ECAP_REG_SMTS_MASK);
+    RT_NOREF3(pDevIns, uRtaddrReg, pMemReqRemap);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3831,7 +3830,6 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
         uint16_t const offFro  = DMAR_MMIO_OFF_FRCD_LO_REG >> 4;   /* MMIO offset of FRCD registers. */
         uint8_t const fEsrtps  = 1;                                /* Enhanced SRTPS (auto invalidate cache on SRTP). */
         uint8_t const fEsirtps = 1;                                /* Enhanced SIRTPS (auto invalidate cache on SIRTP). */
-        AssertCompile(DMAR_ND <= 6);
 
         pThis->fCapReg = RT_BF_MAKE(VTD_BF_CAP_REG_ND,      fNd)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_AFL,     0)     /* Advanced fault logging not supported. */
@@ -3856,9 +3854,13 @@ static void dmarR3RegsInit(PPDMDEVINS pDevIns)
                        | RT_BF_MAKE(VTD_BF_CAP_REG_ESRTPS,  fEsrtps);
         dmarRegWriteRaw64(pThis, VTD_MMIO_OFF_CAP_REG, pThis->fCapReg);
 
-        pThis->fHawBaseMask    = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
-        pThis->fMgawInvMask    = UINT64_MAX << cGstPhysAddrBits;
-        pThis->cMaxPagingLevel = vtdCapRegGetMaxPagingLevel(fSagaw);
+        AssertCompile(fNd <= RT_ELEMENTS(g_auNdMask));
+        pThis->fHawBaseMask          = ~(UINT64_MAX << cGstPhysAddrBits) & X86_PAGE_4K_BASE_MASK;
+        pThis->fMgawInvMask          = UINT64_MAX << cGstPhysAddrBits;
+        pThis->cMaxPagingLevel       = vtdCapRegGetMaxPagingLevel(fSagaw);
+        pThis->fCtxEntryQw1ValidMask = VTD_BF_1_CONTEXT_ENTRY_AW_MASK
+                                     | VTD_BF_1_CONTEXT_ENTRY_IGN_6_3_MASK
+                                     | RT_BF_MAKE(VTD_BF_1_CONTEXT_ENTRY_DID, g_auNdMask[fNd]);
     }
 
     /* ECAP_REG */
