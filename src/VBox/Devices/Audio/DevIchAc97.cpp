@@ -2658,13 +2658,22 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         if (   (pRegs->cr & AC97_CR_RPBM)
                             && (pRegs->sr & AC97_SR_DCH))
                         {
-#ifdef IN_RING3 /** @todo r=bird: What kind of unexplained non-sense is this ifdef?!? */
                             pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
                             pRegs->civ = pRegs->piv;
                             pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-#else
-                            rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
+                            /** @todo r=bird: there used to be a ichac97StreamFetchBDLE here, but it was
+                             * removed in r128222 without any helpful clue in the commit message
+                             * ("Audio/AC97: Added more code for transfer calculation for helping with A/V
+                             * synchronization"). There wasn't and isn't any clue to the logic here in the
+                             * source code either, of course, so at least there is some consistency. :-)
+                             *
+                             * The old code with the fetch was probably correct, though, as we're now
+                             * skipping one BDLE (CIV is incremented here, but since PICB is still zero
+                             * we'll increment CIV again in the DMA transfer loop - the way I read it).
+                             *
+                             * I found no special handling of DCH in the linux code, but that doesn't prove
+                             * anything as they might just expect the device never to get into this underrun
+                             * situation...  Ditto windows 8.1 AC'97 sample driver. */
                         }
                         pRegs->lvi = u32 % AC97_MAX_BDLE;
                         DEVAC97_UNLOCK(pDevIns, pThis);
