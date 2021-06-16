@@ -1408,7 +1408,7 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
 
 #ifdef RT_STRICT
     {
-        PDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PDMAR);
+        PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
         uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
         uint32_t const fFaultMask = VTD_BF_FSTS_REG_PPF_MASK | VTD_BF_FSTS_REG_PFO_MASK
                                /* | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_AFO_MASK */    /* AFL not supported */
@@ -2172,16 +2172,16 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
            || pMemReqAux->fTtm == VTD_TTM_SCALABLE_MODE);
     Assert(!(pMemReqAux->GCPhysSlPt & X86_PAGE_4K_OFFSET_MASK));
 
-    /* Mask of valid paging entry bits. */
-    static uint64_t const s_auPtEntityRsvd[] = { VTD_SL_PTE_VALID_MASK,
-                                                 VTD_SL_PDE_VALID_MASK,
-                                                 VTD_SL_PDPE_VALID_MASK,
-                                                 VTD_SL_PML4E_VALID_MASK,
-                                                 VTD_SL_PML5E_VALID_MASK };
+    /* Mask of reserved paging entry bits. */
+    static uint64_t const s_auPtEntityInvMasks[] = { ~VTD_SL_PTE_VALID_MASK,
+                                                     ~VTD_SL_PDE_VALID_MASK,
+                                                     ~VTD_SL_PDPE_VALID_MASK,
+                                                     ~VTD_SL_PML4E_VALID_MASK,
+                                                     ~VTD_SL_PML5E_VALID_MASK };
 
     /* Paranoia. */
     Assert(pMemReqAux->cPagingLevel >= 3 && pMemReqAux->cPagingLevel <= 5);
-    AssertCompile(RT_ELEMENTS(s_auPtEntityRsvd) == 5);
+    AssertCompile(RT_ELEMENTS(s_auPtEntityInvMasks) == 5);
 
     /* Second-level translations restricts input address to an implementation-specific MGAW. */
     uint64_t const uAddrIn = pMemReqIn->AddrRange.uAddr;
@@ -2241,7 +2241,7 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         /*
          * Validate reserved bits of the current paging entry.
          */
-        if (!(uPtEntity & ~s_auPtEntityRsvd[idxLevel]))
+        if (!(uPtEntity & s_auPtEntityInvMasks[idxLevel]))
         { /* likely */ }
         else
         {
