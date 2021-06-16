@@ -119,7 +119,7 @@ typedef enum AUDIOTESTTYPE
     AUDIOTESTTYPE_TESTTONE_PLAY,
     /** Record a test tone. */
     AUDIOTESTTYPE_TESTTONE_RECORD,
-        /** The usual 32-bit hack. */
+    /** The usual 32-bit hack. */
     AUDIOTESTTYPE_32BIT_HACK = 0x7fffffff
 } AUDIOTESTTYPE;
 

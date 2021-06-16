@@ -32,6 +32,7 @@
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/errcore.h>
+#include <iprt/file.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
 #include <iprt/message.h>
@@ -567,11 +568,18 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
                 }
                 else
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification skipped\n");
+
+                RTFileDelete(pTstEnv->u.Host.szPathTestSetGuest);
+                RTFileDelete(pTstEnv->u.Host.szPathTestSetValKit);
             }
         }
     }
     else
         AssertFailed();
+
+    /* Clean up. */
+    RTDirRemove(pTstEnv->szPathTemp);
+    RTDirRemove(pTstEnv->szPathOut);
 
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Test worker failed with %Rrc", rc);
@@ -880,7 +888,10 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
             RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
     }
 
+    AudioTestSetWipe(&SetA);
     AudioTestSetClose(&SetA);
+
+    AudioTestSetWipe(&SetB);
     AudioTestSetClose(&SetB);
 
     RTTestSubDone(g_hTest);
