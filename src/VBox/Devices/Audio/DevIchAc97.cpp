@@ -577,19 +577,10 @@ typedef struct AC97STATE
     STAMCOUNTER             StatUnimplementedNabmWrites;
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;
-    STAMPROFILE             StatIn;
-    STAMPROFILE             StatOut;
-    STAMCOUNTER             StatBytesRead;
-    STAMCOUNTER             StatBytesWritten;
 #endif
 } AC97STATE;
 AssertCompileMemberAlignment(AC97STATE, aStreams, 8);
 AssertCompileMemberAlignment(AC97STATE, StatUnimplementedNabmReads, 8);
-#ifdef VBOX_WITH_STATISTICS
-AssertCompileMemberAlignment(AC97STATE, StatTimer,        8);
-AssertCompileMemberAlignment(AC97STATE, StatBytesRead,    8);
-AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
-#endif
 
 
 /**
@@ -4487,10 +4478,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUnimplementedNabmWrites, STAMTYPE_COUNTER, "UnimplementedNabmWrites", STAMUNIT_OCCURENCES, "Unimplemented NABM register writes.");
 # ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,        STAMTYPE_PROFILE, "Timer",        STAMUNIT_TICKS_PER_CALL, "Profiling ichac97Timer.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,           STAMTYPE_PROFILE, "Input",        STAMUNIT_TICKS_PER_CALL, "Profiling input.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,          STAMTYPE_PROFILE, "Output",       STAMUNIT_TICKS_PER_CALL, "Profiling output.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
 # endif
     for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
