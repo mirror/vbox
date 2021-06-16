@@ -93,6 +93,11 @@
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
+#define REG_C_IRQF  0x80
+#define REG_C_PF    0x40
+#define REG_C_AF    0x20
+#define REG_C_UF    0x10
+
 #define CMOS_BANK_LOWER_LIMIT   0x0E
 #define CMOS_BANK_UPPER_LIMIT   0x7F
 #define CMOS_BANK2_LOWER_LIMIT  0x80
@@ -170,6 +175,12 @@ typedef struct RTCSTATE
     STAMCOUNTER             StatRTCIrq;
     /** Number of times the timer callback handler ran. */
     STAMCOUNTER             StatRTCTimerCB;
+    /** Number of times the PIE bit was changed. */
+    STAMCOUNTER             StatRTCPieFlip;
+    /** Number of times an interrupt was cleared. */
+    STAMCOUNTER             StatRTCIrqClear;
+    /** How long the periodic interrupt remains active. */
+    STAMPROFILEADV          StatPIrqPending;
 } RTCSTATE;
 /** Pointer to the RTC device state. */
 typedef RTCSTATE *PRTCSTATE;
@@ -380,6 +391,12 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
 
             case RTC_REG_C:
                 *pu32 = pThis->cmos_data[pThis->cmos_index[0]];
+                if (*pu32)  /* If any bits were set, reading will clear them. */
+                {
+                    STAM_REL_COUNTER_INC(&pThis->StatRTCIrqClear);
+                    if (pThis->cmos_data[RTC_REG_C] & REG_C_PF)
+                        STAM_REL_PROFILE_ADV_STOP(&pThis->StatPIrqPending, dummy);
+                }
                 rtc_raise_irq(pDevIns, pThis, 0);
                 pThis->cmos_data[RTC_REG_C] = 0x00;
                 break;
@@ -480,6 +497,10 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
                         if (pThis->cmos_data[RTC_REG_B] & REG_B_SET)
                             rtc_set_time(pThis);
                     }
+
+                    if (((uint8_t)u32 & REG_B_PIE) != (pThis->cmos_data[RTC_REG_B] & REG_B_PIE))
+                        STAM_REL_COUNTER_INC(&pThis->StatRTCPieFlip);
+
                     pThis->cmos_data[RTC_REG_B] = u32;
                 }
 
@@ -578,6 +599,12 @@ static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
     pHlp->pfnPrintf(pHlp, "REG A=%02x B=%02x C=%02x D=%02x\n",
                     pThis->cmos_data[RTC_REG_A], pThis->cmos_data[RTC_REG_B],
                     pThis->cmos_data[RTC_REG_C], pThis->cmos_data[RTC_REG_D]);
+
+    if (pThis->cmos_data[RTC_REG_B] & REG_B_PIE)
+    {
+        if (pThis->CurHintPeriod)
+            pHlp->pfnPrintf(pHlp, "Periodic Interrupt Enabled: %d Hz\n", _32K / pThis->CurHintPeriod);
+    }
 }
 
 
@@ -598,7 +625,11 @@ static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
 
     rtc_timer_update(pDevIns, pThis, pThis->next_periodic_time);
     STAM_REL_COUNTER_INC(&pThis->StatRTCTimerCB);
-    pThis->cmos_data[RTC_REG_C] |= 0xc0;
+
+    if (!(pThis->cmos_data[RTC_REG_C] & REG_C_PF))
+        STAM_REL_PROFILE_ADV_START(&pThis->StatPIrqPending, dummy);
+
+    pThis->cmos_data[RTC_REG_C] |= REG_C_IRQF | REG_C_PF;
 
     rtc_raise_irq(pDevIns, pThis, 1);
 }
@@ -755,7 +786,7 @@ static DECLCALLBACK(void) rtcR3TimerSecond2(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
                 || from_bcd(pThis, pThis->cmos_data[RTC_HOURS_ALARM  ]) == pThis->current_tm.tm_hour)
             )
         {
-            pThis->cmos_data[RTC_REG_C] |= 0xa0;
+            pThis->cmos_data[RTC_REG_C] |= REG_C_IRQF | REG_C_AF;
             rtc_raise_irq(pDevIns, pThis, 1);
         }
     }
@@ -763,7 +794,7 @@ static DECLCALLBACK(void) rtcR3TimerSecond2(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
     /* update ended interrupt */
     if (pThis->cmos_data[RTC_REG_B] & REG_B_UIE)
     {
-        pThis->cmos_data[RTC_REG_C] |= 0x90;
+        pThis->cmos_data[RTC_REG_C] |= REG_C_IRQF | REG_C_UF;
         rtc_raise_irq(pDevIns, pThis, 1);
     }
 
@@ -1221,8 +1252,11 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCIrq,      STAMTYPE_COUNTER, "Irq",      STAMUNIT_OCCURENCES,  "The number of times a RTC interrupt was triggered.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCTimerCB,  STAMTYPE_COUNTER, "TimerCB",  STAMUNIT_OCCURENCES,  "The number of times the RTC timer callback ran.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCIrq,      STAMTYPE_COUNTER, "Irq",      STAMUNIT_OCCURENCES,      "The number of times a RTC interrupt was triggered.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCTimerCB,  STAMTYPE_COUNTER, "TimerCB",  STAMUNIT_OCCURENCES,      "The number of times the RTC timer callback ran.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCPieFlip,  STAMTYPE_COUNTER, "PieFlip",  STAMUNIT_OCCURENCES,      "The number of times Periodic Interrupt Enable changed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCIrqClear, STAMTYPE_COUNTER, "IrqClear", STAMUNIT_OCCURENCES,      "The number of times an active interrupt was cleared.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPIrqPending, STAMTYPE_PROFILE, "PiActive", STAMUNIT_TICKS_PER_CALL,  "How long periodic interrupt stays active (pending).");
 
     return VINF_SUCCESS;
 }
