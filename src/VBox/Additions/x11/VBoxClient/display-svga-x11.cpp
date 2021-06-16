@@ -67,6 +67,11 @@
 #define MILLIS_PER_INCH (25.4)
 #define DEFAULT_DPI (96.0)
 
+/* Time in milliseconds to relax if no X11 events available. */
+#define VBOX_SVGA_X11_RELAX_TIME_MS  (500)
+/* Time in milliseconds to wait for host events. */
+#define VBOX_SVGA_HOST_EVENT_RX_TIMEOUT_MS  (500)
+
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
  *  context structure. */
@@ -578,16 +583,24 @@ static void queryMonitorPositions()
 static void monitorRandREvents()
 {
     XEvent event;
-    XNextEvent(x11Context.pDisplayRandRMonitoring, &event);
-    int eventTypeOffset = event.type - x11Context.hRandREventBase;
-    switch (eventTypeOffset)
+
+    if (XPending(x11Context.pDisplayRandRMonitoring) > 0)
     {
-        case RRScreenChangeNotify:
-            VBClLogInfo("RRScreenChangeNotify event received\n");
-            queryMonitorPositions();
-            break;
-        default:
-            break;
+        XNextEvent(x11Context.pDisplayRandRMonitoring, &event);
+        int eventTypeOffset = event.type - x11Context.hRandREventBase;
+        VBClLogInfo("received X11 event (%d)\n", event.type);
+        switch (eventTypeOffset)
+        {
+            case RRScreenChangeNotify:
+                VBClLogInfo("RRScreenChangeNotify event received\n");
+                queryMonitorPositions();
+                break;
+            default:
+                break;
+        }
+    } else
+    {
+        RTThreadSleep(VBOX_SVGA_X11_RELAX_TIME_MS);
     }
 }
 
@@ -601,6 +614,9 @@ static DECLCALLBACK(int) x11MonitorThreadFunction(RTTHREAD ThreadSelf, void *pvU
     {
         monitorRandREvents();
     }
+
+    VBClLogInfo("X11 thread gracefully terminated\n");
+
     return 0;
 }
 
@@ -622,7 +638,7 @@ static int startX11MonitorThread()
 
 static int stopX11MonitorThread(void)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     if (mX11MonitorThread != NIL_RTTHREAD)
     {
         ASMAtomicWriteBool(&g_fMonitorThreadShutdown, true);
@@ -747,30 +763,36 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
  */
 static DECLCALLBACK(void) vbclSVGAStop(void)
 {
+    int rc;
+
+    rc = stopX11MonitorThread(); /** @todo r=andy We ignore rc!? */
+    if (RT_FAILURE(rc))
+    {
+        VBClLogFatalError("cannot stop X11 monitor thread (%Rrc)\n", rc);
+        return;
+    }
+
     if (mpMonitorPositions)
     {
         free(mpMonitorPositions);
         mpMonitorPositions = NULL;
     }
 
-    stopX11MonitorThread(); /** @todo r=andy We ignore rc!? */
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
+#else
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
+#endif
+
+    XCloseDisplay(x11Context.pDisplay);
+    XCloseDisplay(x11Context.pDisplayRandRMonitoring);
 
     if (x11Context.pRandLibraryHandle)
     {
         dlclose(x11Context.pRandLibraryHandle);
         x11Context.pRandLibraryHandle = NULL;
     }
-#ifdef WITH_DISTRO_XRAND_XINERAMA
-    XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
-    XRRFreeScreenResources(x11Context.pScreenResources);
-#else
-    if (x11Context.pXRRSelectInput)
-        x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
-    if (x11Context.pXRRFreeScreenResources)
-        x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
-#endif
-    XCloseDisplay(x11Context.pDisplay);
-    XCloseDisplay(x11Context.pDisplayRandRMonitoring);
 }
 
 #ifndef WITH_DISTRO_XRAND_XINERAMA
@@ -1320,8 +1342,6 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
  */
 static DECLCALLBACK(int) vbclSVGAWorker(bool volatile *pfShutdown)
 {
-    RT_NOREF(pfShutdown);
-
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
@@ -1408,11 +1428,22 @@ static DECLCALLBACK(int) vbclSVGAWorker(bool volatile *pfShutdown)
         uint32_t events;
         do
         {
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
-        } while (rc == VERR_INTERRUPTED);
-        if (RT_FAILURE(rc))
+            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, VBOX_SVGA_HOST_EVENT_RX_TIMEOUT_MS, &events);
+        } while (rc == VERR_TIMEOUT && !ASMAtomicReadBool(pfShutdown));
+
+        if (ASMAtomicReadBool(pfShutdown))
+        {
+            /* Shutdown requested. */
+            break;
+        }
+        else if (RT_FAILURE(rc))
+        {
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
-    }
+        }
+
+    };
+
+    return VINF_SUCCESS;
 }
 
 VBCLSERVICE g_SvcDisplaySVGA =
