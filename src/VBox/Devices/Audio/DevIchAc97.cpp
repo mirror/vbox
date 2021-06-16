@@ -2655,29 +2655,45 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                      */
                     case AC97_NABM_OFF_LVI:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
-                        if (   (pRegs->cr & AC97_CR_RPBM)
-                            && (pRegs->sr & AC97_SR_DCH))
+                        if (   !(pRegs->sr & AC97_SR_DCH)
+                            || !(pRegs->cr & AC97_CR_RPBM))
                         {
-                            pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
-                            pRegs->civ = pRegs->piv;
-                            pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-                            /** @todo r=bird: there used to be a ichac97StreamFetchBDLE here, but it was
-                             * removed in r128222 without any helpful clue in the commit message
-                             * ("Audio/AC97: Added more code for transfer calculation for helping with A/V
-                             * synchronization"). There wasn't and isn't any clue to the logic here in the
-                             * source code either, of course, so at least there is some consistency. :-)
-                             *
-                             * The old code with the fetch was probably correct, though, as we're now
-                             * skipping one BDLE (CIV is incremented here, but since PICB is still zero
-                             * we'll increment CIV again in the DMA transfer loop - the way I read it).
-                             *
-                             * I found no special handling of DCH in the linux code, but that doesn't prove
-                             * anything as they might just expect the device never to get into this underrun
-                             * situation...  Ditto windows 8.1 AC'97 sample driver. */
+                            pRegs->lvi = u32 % AC97_MAX_BDLE;
+                            DEVAC97_UNLOCK(pDevIns, pThis);
+                            Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32));
                         }
-                        pRegs->lvi = u32 % AC97_MAX_BDLE;
-                        DEVAC97_UNLOCK(pDevIns, pThis);
-                        Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32));
+                        else
+                        {
+#ifdef IN_RING3
+                            /* Recover from underflow situation where CIV caught up with LVI
+                               and the DMA processing stopped.  We clear the status condition,
+                               update LVI and then try to load the next BDLE.  Unfortunately,
+                               we cannot do this from ring-3 as much of the BDLE state is
+                               ring-3 only. */
+                            pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
+                            pRegs->lvi = u32 % AC97_MAX_BDLE;
+                            if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
+                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
+
+                            /* We now have to re-arm the DMA timer according to the new BDLE length.
+                               This means leaving the device lock to avoid virtual sync lock order issues. */
+                            ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
+                            uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
+
+                            /** @todo Stop the DMA timer when we get into the AC97_SR_CELV situation to
+                             *        avoid potential race here. */
+                            DEVAC97_UNLOCK(pDevIns, pThis);
+
+                            LogFunc(("[SD%RU8] LVI <- %#x; CIV=%#x PIV=%#x SR=%#x cTicksToDeadline=%#RX64 [recovering]\n",
+                                     pStream->u8SD, u32, pRegs->civ, pRegs->piv, pRegs->sr, cTicksToDeadline));
+
+                            /** @todo take down the start time here.  */
+                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+                            AssertRC(rc2);
+#else
+                            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+                        }
                         break;
 
                     /*
@@ -2720,7 +2736,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             else
                             {
                                 /** @todo r=bird: How do we prevent the guest from triggering enable more
-                                 *        than once? */
+                                 *        than once?  Only take action if the RBMP bit changed. Duh^3 */
                                 Log3Func(("[SD%RU8] Enable\n", pStream->u8SD));
 
                                 pRegs->sr &= ~AC97_SR_DCH;
@@ -2737,6 +2753,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                                  * Arm the DMA timer.  Must drop the AC'97 device lock first as it would
                                  * create a lock order violation with the virtual sync time lock otherwise.
                                  */
+                                /** @todo is ichac97R3StreamTransferUpdate called here? */
                                 uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
 
                                 DEVAC97_UNLOCK(pDevIns, pThis);
