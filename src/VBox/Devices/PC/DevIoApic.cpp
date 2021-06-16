@@ -319,6 +319,8 @@ typedef struct IOAPIC
     /** Number of EOIs received for level-triggered interrupts from the local
      *  APIC(s). */
     STAMCOUNTER             StatEoiReceived;
+    /** The time an interrupt level spent in the pending state. */
+    STAMPROFILEADV          aStatLevelAct[IOAPIC_NUM_INTR_PINS];
 #endif
     /** Per-vector stats. */
     STAMCOUNTER             aStatVectors[256];
@@ -676,6 +678,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
         pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
         STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
+        STAM_PROFILE_ADV_START(&pThis->aStatLevelAct[idxRte], a);
     }
 }
 
@@ -865,6 +868,7 @@ static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 #endif
             pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
             fRemoteIrrCleared = true;
+            STAM_PROFILE_ADV_STOP(&pThis->aStatLevelAct[idxRte], a);
             STAM_COUNTER_INC(&pThis->StatEoiReceived);
             Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
 
@@ -1666,6 +1670,9 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
+
+    for (int i = 0; i < RT_ELEMENTS(pThis->aStatLevelAct); ++i)
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatLevelAct[i], STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Time spent in the level active state", "IntPending/%02x", i);
 # endif
     for (size_t i = 0; i < RT_ELEMENTS(pThis->aStatVectors); i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatVectors[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
