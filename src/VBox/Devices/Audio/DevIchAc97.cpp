@@ -381,6 +381,10 @@ typedef struct AC97STREAMSTATE
     /** Input streams only: Set when we switch from feeding the guest silence and
      *  commits to proving actual audio input bytes. */
     bool                    fInputPreBuffered;
+    /** This is ZERO if stream setup succeeded, otherwise it's the RTTimeNanoTS() at
+     *  which to retry setting it up.  The latter applies only to same
+     *  parameters. */
+    uint64_t                nsRetrySetup;
     /** (Virtual) clock ticks per transfer. */
     uint64_t                cTransferTicks;
     /** Timestamp (in ns) of last stream update. */
@@ -1062,7 +1066,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
     uint32_t cbProcessedTotal = 0;
 
     PRTCIRCBUF pCircBuf = pStreamCC->State.pCircBuf;
-    AssertPtr(pCircBuf);
+    AssertReturnStmt(pCircBuf, ichac97R3StreamUnlock(pStreamCC), VINF_SUCCESS);
 
     int rc = VINF_SUCCESS;
 
@@ -1864,7 +1868,6 @@ static int ichac97R3MixerAddDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC,
         rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
         if (RT_SUCCESS(rc))
         {
-
             PAC97DRIVER pDrv;
             RTListForEach(&pThisCC->lstDrv, pDrv, AC97DRIVER, Node)
             {
@@ -2204,24 +2207,25 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
     int rc = VINF_SUCCESS;
     if (   fForce
-        || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props))
+        || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
+        || (pStreamCC->State.nsRetrySetup && RTTimeNanoTS() >= pStreamCC->State.nsRetrySetup))
     {
         LogRel2(("AC97: Setting up stream #%u: %s\n", pStreamCC->u8SD, PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp)) ));
 
         ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
+
         rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
         if (RT_SUCCESS(rc))
         {
             PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
+            pStreamCC->State.nsRetrySetup = 0;
             LogFlowFunc(("[SD%RU8] success (uHz=%u)\n", pStreamCC->u8SD, rc, PDMAudioPropsHz(&Cfg.Props)));
         }
         else
         {
             LogFunc(("[SD%RU8] ichac97R3MixerAddDrvStreams failed: %Rrc (uHz=%u)\n",
                      pStreamCC->u8SD, rc, PDMAudioPropsHz(&Cfg.Props)));
-            /** @todo r=bird: we should remember this somehow and prevent things from
-             *        working and ensure that we redo setup the next time the guest
-             *        tries to play/record something with this stream... */
+            pStreamCC->State.nsRetrySetup = RTTimeNanoTS() + 5*RT_NS_1SEC; /* retry in 5 seconds, unless config changes. */
         }
     }
     else
@@ -2300,13 +2304,11 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
         /* Reset the input pre-buffering state. */
         pStreamCC->State.fInputPreBuffered = false;
 
-        /* (Re-)Open the stream if necessary. */
+        /* Set up (update) the AC'97 stream as needed. */
         rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Open debug files.
-             */
+            /* Open debug files. */
             if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
             { /* likely */ }
             else
@@ -2319,9 +2321,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
                                      &pStreamCC->State.Cfg.Props);
             }
 
-            /*
-             * Do the actual enabling.
-             */
+            /* Do the actual enabling (won't fail as long as pSink is valid). */
             rc = AudioMixerSinkStart(pSink);
         }
     }
@@ -2677,6 +2677,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
         PAC97STREAM     pStream   = &pThis->aStreams[AC97_PORT2IDX(offPort)];
         PAC97BMREGS     pRegs     = &pStream->Regs;
 
+        /** @todo r=bird: this locking is overkill, we don't need the timer lock
+         *        unless we're going to call ichac97R3TimerSet. */
         DEVAC97_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_IOPORT_WRITE);
         switch (cb)
         {
