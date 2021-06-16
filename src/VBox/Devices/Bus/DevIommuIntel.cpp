@@ -250,10 +250,11 @@ typedef enum
 } DMARDIAG;
 AssertCompileSize(DMARDIAG, 4);
 
+#ifdef IN_RING3
 /** DMAR diagnostic enum description expansion.
  * The below construct ensures typos in the input to this macro are caught
  * during compile time. */
-#define DMARDIAG_DESC(a_Name)        RT_CONCAT(kDmarDiag_, a_Name) < kDmarDiag_End ? RT_STR(a_Name) : "Ignored"
+# define DMARDIAG_DESC(a_Name)        RT_CONCAT(kDmarDiag_, a_Name) < kDmarDiag_End ? RT_STR(a_Name) : "Ignored"
 
 /** DMAR diagnostics description for members in DMARDIAG. */
 static const char *const g_apszDmarDiagDesc[] =
@@ -318,7 +319,8 @@ static const char *const g_apszDmarDiagDesc[] =
     /* kDmarDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszDmarDiagDesc) == kDmarDiag_End);
-#undef DMARDIAG_DESC
+# undef DMARDIAG_DESC
+#endif /* IN_RING3 */
 
 /**
  * The shared DMAR device state.
@@ -852,12 +854,15 @@ static uint8_t const *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
 /* Masks arrays must be identical in size (even bounds checking code assumes this). */
 AssertCompile(sizeof(g_apbRw1cMasks) == sizeof(g_apbRwMasks));
 
+#ifdef IN_RING3
 /** Array of valid domain-ID bits. */
 static uint16_t const g_auNdMask[] = { 0xf, 0x3f, 0xff, 0x3ff, 0xfff, 0x3fff, 0xffff, 0 };
 AssertCompile(RT_ELEMENTS(g_auNdMask) >= DMAR_ND);
+#endif
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+#ifdef IN_RING3
 /**
  * Returns the supported adjusted guest-address width (SAGAW) given the maximum
  * guest address width (MGAW).
@@ -904,6 +909,27 @@ static uint8_t vtdCapRegGetMaxPagingLevel(uint8_t fSagaw)
 
 
 /**
+ * Returns table translation mode's descriptive name.
+ *
+ * @returns The descriptive name.
+ * @param   uTtm    The RTADDR_REG.TTM value.
+ */
+static const char* vtdRtaddrRegGetTtmDesc(uint8_t uTtm)
+{
+    Assert(!(uTtm & 3));
+    static const char* s_apszTtmNames[] =
+    {
+        "Legacy Mode",
+        "Scalable Mode",
+        "Reserved",
+        "Abort-DMA Mode"
+    };
+    return s_apszTtmNames[uTtm & (RT_ELEMENTS(s_apszTtmNames) - 1)];
+}
+#endif /* IN_RING3 */
+
+
+/**
  * Returns whether the interrupt remapping (IR) fault is qualified or not.
  *
  * @returns @c true if qualified, @c false otherwise.
@@ -922,26 +948,6 @@ static bool vtdIrFaultIsQualified(VTDIRFAULT enmIrFault)
         default:
             return false;
     }
-}
-
-
-/**
- * Returns table translation mode's descriptive name.
- *
- * @returns The descriptive name.
- * @param   uTtm    The RTADDR_REG.TTM value.
- */
-static const char* vtdRtaddrRegGetTtmDesc(uint8_t uTtm)
-{
-    Assert(!(uTtm & 3));
-    static const char* s_apszTtmNames[] =
-    {
-        "Legacy Mode",
-        "Scalable Mode",
-        "Reserved",
-        "Abort-DMA Mode"
-    };
-    return s_apszTtmNames[uTtm & (RT_ELEMENTS(s_apszTtmNames) - 1)];
 }
 
 
