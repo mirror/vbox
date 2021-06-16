@@ -461,7 +461,6 @@ private:
 
     /* Holds the cookies returnd by QDBus inhibition calls. Map keys are service name. These are required during uninhibition.*/
     QMap<QString, uint> m_screenSaverInhibitionCookies;
-    bool m_fHostScreenSaverDisabled;
 
     /* Friend classes: */
     friend class UIMachineWindow;
