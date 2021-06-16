@@ -2846,6 +2846,7 @@ void UIMachineLogic::sltHandleCommitData()
     sltCloseLogViewerWindow();
     sltCloseGuestControlConsoleDialog();
 #endif
+    activateScreenSaver();
     sltCloseFileManagerDialog();
     sltCloseVMInformationDialog();
     sltCloseSoftKeyboard();
@@ -3331,6 +3332,29 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
     const QString &strSuffix = fi.suffix().isEmpty() ? strFormat : fi.suffix();
     bigImg.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strPathWithoutSuffix, strSuffix))),
                 strFormat.toUtf8().constData());
+}
+
+void UIMachineLogic::activateScreenSaver()
+{
+    /* Do nothing if we did not de-activated the host screen saver: */
+    if (!gEDataManager->disableHostScreenSaver())
+        return;
+
+    QVector<CMachine> machines = uiCommon().virtualBox().GetMachines();
+    bool fAnother = false;
+    for (int i = 0; i < machines.size(); ++i)
+    {
+        if (machines[i].GetState() == KMachineState_Running && machines[i].GetId() != machine().GetId())
+        {
+            fAnother = true;
+            break;
+        }
+    }
+
+    /* Do nothing if there are other vms running.*/
+    if (fAnother)
+        return;
+    sltDisableHostScreenSaverStateChanged(false);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
