@@ -403,6 +403,8 @@ typedef struct AC97STREAMSTATE
     STAMPROFILE             StatStart;
     STAMPROFILE             StatReset;
     STAMPROFILE             StatStop;
+    STAMPROFILE             StatReSetUpChanged;
+    STAMPROFILE             StatReSetUpSame;
     STAMCOUNTER             StatWriteLviRecover;
     STAMCOUNTER             StatWriteCr;
 } AC97STREAMSTATE;
@@ -1960,6 +1962,8 @@ DECLINLINE(PPDMAUDIOPCMPROPS) ichach97R3CalcStreamProps(PAC97STATE pThis, uint8_
  * the last set sample rate in the AC'97 mixer for this stream.
  *
  * @returns VBox status code.
+ * @retval  VINF_NO_CHANGE if the streams weren't re-created.
+ *
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AC'97 device state (shared).
  * @param   pThisCC     The shared AC'97 device state (ring-3).
@@ -2198,8 +2202,11 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
         }
     }
     else
+    {
         LogFlowFunc(("[SD%RU8] Skipping set-up (unchanged: %s)\n",
                      pStreamCC->u8SD, PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp))));
+        rc = VINF_NO_CHANGE;
+    }
     return rc;
 }
 
@@ -2235,13 +2242,19 @@ static void ichac97R3StreamTearDown(PAC97STREAM pStream)
 static int ichac97R3StreamReSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
                                   PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
 {
+    STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatReSetUpChanged, r);
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
     Assert(pStream->u8SD == pStreamCC->u8SD);
     Assert(pStream   - &pThis->aStreams[0]   == pStream->u8SD);
     Assert(pStreamCC - &pThisCC->aStreams[0] == pStream->u8SD);
 
     ichac97R3StreamTearDown(pStream);
-    return ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
+    int rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
+    if (rc == VINF_NO_CHANGE)
+        STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatReSetUpSame, r);
+    else
+        STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatReSetUpChanged, r);
+    return rc;
 }
 
 
@@ -4510,7 +4523,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
                                "Control register (CR), bit 0 is the run bit.",  "Stream%u/reg-CR", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].Regs.sr, STAMTYPE_X16, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                                "Status register (SR).",                         "Stream%u/reg-SR", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_HZ,
                                "The stream frequency.",                         "Stream%u/Hz", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.Cfg.Props.cbFrame, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "The frame size.",                               "Stream%u/FrameSize", idxStream);
@@ -4541,6 +4554,10 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
                                "Stopping the stream.",  "Stream%u/Stop", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatReset, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
                                "Resetting the stream.",  "Stream%u/Reset", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatReSetUpChanged, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "ichac97R3StreamReSetUp when recreating the streams.", "Stream%u/ReSetUp-Change", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatReSetUpSame, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
+                               "ichac97R3StreamReSetUp when no change.",        "Stream%u/ReSetUp-NoChange", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatWriteCr, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "CR register writes.",                           "Stream%u/WriteCr", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatWriteLviRecover, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
