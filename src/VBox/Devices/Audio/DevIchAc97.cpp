@@ -2045,7 +2045,7 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     ASSERT_GUEST_MSG_RETURN(AudioHlpStreamCfgIsValid(&Cfg),
                             ("Invalid stream #%u rate: %s\n", pStreamCC->u8SD,
                              PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp)) ),
-                            VERR_INVALID_PARAMETER);
+                            VERR_OUT_OF_RANGE);
 
     /*
      * Read the buffer descriptors and check what the max distance between
