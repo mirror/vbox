@@ -1996,11 +1996,12 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
                                 PAC97STREAMR3 pStreamCC, bool fForce)
 {
     /*
-     * Assemble the stream config and get the associate mixer sink.
+     * Assemble the stream config and get the associated mixer sink.
      */
     PDMAUDIOPCMPROPS    PropsTmp;
     PDMAUDIOSTREAMCFG   Cfg;
     PDMAudioStrmCfgInitWithProps(&Cfg, ichach97R3CalcStreamProps(pThis, pStream->u8SD, &PropsTmp));
+    Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
 
     PAUDMIXSINK         pMixSink;
     switch (pStream->u8SD)
@@ -2155,61 +2156,65 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     cMsCircBuf = RT_MIN(cMsCircBuf, RT_MS_1SEC * 2);
     uint32_t const cbCircBuf = PDMAudioPropsMilliToBytes(&Cfg.Props, cMsCircBuf);
 
+    LogFlowFunc(("Stream %u: uTimerHz: %u -> %u; cMsSchedulingHint: %u -> %u; cbCircBuf: %#zx -> %#x (%u ms, cMsDmaMinBuf=%u)%s\n",
+                 pStreamCC->State.uTimerHz, uTimerHz, Cfg.Device.cMsSchedulingHint, cMsSchedulingHint,
+                 pStreamCC->State.pCircBuf ? RTCircBufSize(pStreamCC->State.pCircBuf) : 0, cbCircBuf, cMsCircBuf, cMsDmaMinBuf,
+                 !pStreamCC->State.pCircBuf || RTCircBufSize(pStreamCC->State.pCircBuf) != cbCircBuf  ? " - re-creating DMA buffer" : ""));
+
+    /*
+     * Set the stream's timer rate and scheduling hint.
+     */
+    pStreamCC->State.uTimerHz    = uTimerHz;
+    Cfg.Device.cMsSchedulingHint = cMsSchedulingHint;
+
+    /*
+     * Re-create the circular buffer if necessary, resetting if not.
+     */
+    if (   pStreamCC->State.pCircBuf
+        && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
+        RTCircBufReset(pStreamCC->State.pCircBuf);
+    else
+    {
+        if (pStreamCC->State.pCircBuf)
+            RTCircBufDestroy(pStreamCC->State.pCircBuf);
+
+        int rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, cbCircBuf);
+        AssertRCReturnStmt(rc, pStreamCC->State.pCircBuf = NULL, rc);
+
+        pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
+    }
+    Assert(pStreamCC->State.StatDmaBufSize == cbCircBuf);
+
     /*
      * Only (re-)create the stream (and driver chain) if we really have to.
      * Otherwise avoid this and just reuse it, as this costs performance.
      */
+    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
     int rc = VINF_SUCCESS;
     if (   fForce
-        || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
-        || !pStreamCC->State.pCircBuf
-        || cbCircBuf != RTCircBufSize(pStreamCC->State.pCircBuf))
+        || !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props))
     {
-        LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n", Cfg.szName, Cfg.Props.uHz,
-                 PDMAudioPropsChannels(&Cfg.Props), Cfg.Props.fSigned ? "S" : "U",  PDMAudioPropsSampleBits(&Cfg.Props)));
+        LogRel2(("AC97: Setting up stream #%u: %s\n", pStreamCC->u8SD, PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp)) ));
 
-        LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
-
-        Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
-
-        /*
-         * Set the stream's timer rate and scheduling hint.
-         */
-        pStreamCC->State.uTimerHz    = uTimerHz;
-        Cfg.Device.cMsSchedulingHint = cMsSchedulingHint;
-
-        /*
-         * Re-create the circular buffer if necessary.
-         */
-        if (pStreamCC->State.pCircBuf && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
-            RTCircBufReset(pStreamCC->State.pCircBuf);
-        else
-        {
-            LogFlowFunc(("Re-creating circular buffer with size %u ms / %#x bytes (was %#x); cMsSchedulingHint=%u cMsDmaMinBuf=%u cMsCircBufXxx=%u\n",
-                         cMsCircBuf, cbCircBuf, pStreamCC->State.StatDmaBufSize, Cfg.Device.cMsSchedulingHint, cMsDmaMinBuf,
-                         Cfg.enmDir == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut));
-            if (pStreamCC->State.pCircBuf)
-                RTCircBufDestroy(pStreamCC->State.pCircBuf);
-
-            rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, cbCircBuf);
-            AssertRCReturnStmt(rc, pStreamCC->State.pCircBuf = NULL, rc);
-
-            pStreamCC->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStreamCC->State.pCircBuf);
-        }
-        Assert(pStreamCC->State.StatDmaBufSize == cbCircBuf);
-
-        /*
-         * <there should be a comment here>
-         */
         ichac97R3MixerRemoveDrvStreams(pDevIns, pThisCC, pMixSink, Cfg.enmDir, Cfg.enmPath);
         rc = ichac97R3MixerAddDrvStreams(pDevIns, pThisCC, pMixSink, &Cfg);
         if (RT_SUCCESS(rc))
-            rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
-
-        LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
+        {
+            PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
+            LogFlowFunc(("[SD%RU8] success (uHz=%u)\n", pStreamCC->u8SD, rc, PDMAudioPropsHz(&Cfg.Props)));
+        }
+        else
+        {
+            LogFunc(("[SD%RU8] ichac97R3MixerAddDrvStreams failed: %Rrc (uHz=%u)\n",
+                     pStreamCC->u8SD, rc, PDMAudioPropsHz(&Cfg.Props)));
+            /** @todo r=bird: we should remember this somehow and prevent things from
+             *        working and ensure that we redo setup the next time the guest
+             *        tries to play/record something with this stream... */
+        }
     }
     else
-        LogFlowFunc(("[SD%RU8] Skipping (re-)creation\n", pStream->u8SD));
+        LogFlowFunc(("[SD%RU8] Skipping set-up (unchanged: %s)\n",
+                     pStreamCC->u8SD, PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp))));
     return rc;
 }
 
@@ -2277,10 +2282,8 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     int rc = VINF_SUCCESS;
     if (fEnable)
     {
-        /* Reset some of the state. */
+        /* Reset the input pre-buffering state. */
         pStreamCC->State.fInputPreBuffered = false;
-        if (pStreamCC->State.pCircBuf)
-            RTCircBufReset(pStreamCC->State.pCircBuf);
 
         /* (Re-)Open the stream if necessary. */
         rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
@@ -2429,7 +2432,6 @@ static int ichac97R3StreamConstruct(PAC97STATER3 pThisCC, PAC97STREAM pStream, P
     else
     {
         char szFile[64];
-
         if (ichac97R3GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
             RTStrPrintf(szFile, sizeof(szFile), "ac97StreamWriteSD%RU8", pStream->u8SD);
         else
