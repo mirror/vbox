@@ -1,7 +1,9 @@
 /* $Id$ */
 /** @file
  * Audio testing routines.
- * Common code which is being used by the ValidationKit and the debug / ValdikationKit audio driver(s).
+ *
+ * Common code which is being used by the ValidationKit and the
+ * debug / ValdikationKit audio driver(s).
  */
 
 /*
@@ -20,7 +22,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
 #include <package-generated.h>
 #include "product-generated.h"
 
@@ -101,12 +102,6 @@ typedef AUDIOTESTVERIFYJOB *PAUDIOTESTVERIFYJOB;
 
 
 /*********************************************************************************************************************************
-*   Prototypes                                                                                                                   *
-*********************************************************************************************************************************/
-static int audioTestSetObjCloseInternal(PAUDIOTESTOBJ pObj);
-static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj);
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Well-known frequency selection test tones. */
@@ -122,6 +117,14 @@ static const double s_aAudioTestToneFreqsHz[] =
     1396.913  /*F6*/,
     1760.0000 /*A6*/
 };
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int  audioTestSetObjCloseInternal(PAUDIOTESTOBJ pObj);
+static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj);
+
 
 /**
  * Returns a random test tone frequency.
