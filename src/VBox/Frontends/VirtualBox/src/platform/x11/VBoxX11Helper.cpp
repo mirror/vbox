@@ -188,7 +188,7 @@ void X11InhibitScrenSaver(const QStringList &serviceNameList, QMap<QString, uint
     foreach(QString service, serviceNameList)
     {
         QDBusInterface screenSaverInterface(service, "/ScreenSaver",
-                                            QString(), bus);
+                                            service, bus);
         if (!screenSaverInterface.isValid())
         {
             QDBusError error = screenSaverInterface.lastError();
@@ -217,7 +217,7 @@ void X11UninhibitScrenSaver(const QMap<QString, uint> &cookies)
     {
 
         QDBusInterface screenSaverInterface(iterator.key(), "/ScreenSaver",
-                                            QString(), bus);
+                                            iterator.key(), bus);
         if (!screenSaverInterface.isValid())
         {
             QDBusError error = screenSaverInterface.lastError();
