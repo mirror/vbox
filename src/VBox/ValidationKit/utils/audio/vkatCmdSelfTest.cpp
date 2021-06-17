@@ -214,10 +214,10 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
  */
 enum
 {
-    VKAT_SELFTEST_OPT_ATS_GUEST_ADDR = 900,
-    VKAT_SELFTEST_OPT_ATS_GUEST_PORT,
-    VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR,
-    VKAT_SELFTEST_OPT_ATS_VALKIT_PORT
+    VKAT_SELFTEST_OPT_GUEST_ATS_ADDR = 900,
+    VKAT_SELFTEST_OPT_GUEST_ATS_PORT,
+    VKAT_SELFTEST_OPT_HOST_ATS_ADDR,
+    VKAT_SELFTEST_OPT_HOST_ATS_PORT
 };
 
 /**
@@ -225,10 +225,10 @@ enum
  */
 static const RTGETOPTDEF s_aCmdSelftestOptions[] =
 {
-    { "--ats-guest-addr",   VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
-    { "--ats-guest-port",   VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
-    { "--ats-valkit-addr",  VKAT_SELFTEST_OPT_ATS_GUEST_ADDR,   RTGETOPT_REQ_STRING  },
-    { "--ats-valkit-port",  VKAT_SELFTEST_OPT_ATS_GUEST_PORT,   RTGETOPT_REQ_UINT32  },
+    { "--guest-ats-addr",   VKAT_SELFTEST_OPT_GUEST_ATS_ADDR,   RTGETOPT_REQ_STRING  },
+    { "--guest-ats-port",   VKAT_SELFTEST_OPT_GUEST_ATS_PORT,   RTGETOPT_REQ_UINT32  },
+    { "--host-ats-addr",    VKAT_SELFTEST_OPT_HOST_ATS_ADDR,    RTGETOPT_REQ_STRING  },
+    { "--host-ats-port",    VKAT_SELFTEST_OPT_HOST_ATS_PORT,    RTGETOPT_REQ_UINT32  },
     { "--exclude-all",      'a',                                RTGETOPT_REQ_NOTHING },
     { "--backend",          'b',                                RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                                RTGETOPT_REQ_NOTHING },
@@ -268,19 +268,19 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     {
         switch (rc)
         {
-            case VKAT_SELFTEST_OPT_ATS_GUEST_ADDR:
+            case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR:
                 rc = RTStrCopy(Ctx.Host.szGuestAtsAddr, sizeof(Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
                 break;
 
-            case VKAT_SELFTEST_OPT_ATS_GUEST_PORT:
+            case VKAT_SELFTEST_OPT_GUEST_ATS_PORT:
                 Ctx.Host.uGuestAtsPort = ValueUnion.u32;
                 break;
 
-            case VKAT_SELFTEST_OPT_ATS_VALKIT_ADDR:
+            case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:
                 rc = RTStrCopy(Ctx.Host.szValKitAtsAddr, sizeof(Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
                 break;
 
-            case VKAT_SELFTEST_OPT_ATS_VALKIT_PORT:
+            case VKAT_SELFTEST_OPT_HOST_ATS_PORT:
                 Ctx.Host.uValKitAtsPort = ValueUnion.u32;
                 break;
 
