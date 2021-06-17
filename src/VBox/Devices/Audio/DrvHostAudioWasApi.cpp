@@ -2715,6 +2715,7 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamPlay(PPDMIHOSTAUDIO pInterface,
             LogRelMax(64, ("WasAPI: Failed to stop draining stream '%s': %Rhrc\n", pStreamWas->Cfg.szName, hrc));
         pStreamWas->fDraining = false;
         pStreamWas->fStarted  = false;
+        pStreamWas->fEnabled  = false;
     }
 
     /*
