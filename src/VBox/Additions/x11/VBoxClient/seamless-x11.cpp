@@ -522,7 +522,11 @@ bool SeamlessX11::interruptEventWait(void)
 
     LogRelFlowFuncEnter();
     if (pDisplay == NULL)
+    {
         VBClLogFatalError("Failed to open X11 display\n");
+        return false;
+    }
+
     /* Message contents set to zero. */
     XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
 
