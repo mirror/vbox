@@ -181,6 +181,84 @@ DECLINLINE(const char *) PDMAudioChannelIdGetName(PDMAUDIOCHANNELID enmChannelId
 
 
 /*********************************************************************************************************************************
+*  Volume Helpers                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Initializes a PDMAUDIOVOLUME structure to max.
+ *
+ * @param   pVol    The structure to initialize.
+ */
+DECLINLINE(void) PDMAudioVolumeInitMax(PPDMAUDIOVOLUME pVol)
+{
+    pVol->fMuted = false;
+    for (uintptr_t i = 0; i < RT_ELEMENTS(pVol->auChannels); i++)
+        pVol->auChannels[i] = PDMAUDIO_VOLUME_MAX;
+}
+
+
+/**
+ * Initializes a PDMAUDIOVOLUME structure from a simple stereo setting.
+ *
+ * The additional channels will simply be assigned the higer of the two.
+ *
+ * @param   pVol    The structure to initialize.
+ * @param   fMuted  Muted.
+ * @param   bLeft   The left channel volume.
+ * @param   bRight  The right channel volume.
+ */
+DECLINLINE(void) PDMAudioVolumeInitFromStereo(PPDMAUDIOVOLUME pVol, bool fMuted, uint8_t bLeft, uint8_t bRight)
+{
+    pVol->fMuted        = fMuted;
+    pVol->auChannels[0] = bLeft;
+    pVol->auChannels[1] = bRight;
+
+    uint8_t const bOther = RT_MAX(bLeft, bRight);
+    for (uintptr_t i = 2; i < RT_ELEMENTS(pVol->auChannels); i++)
+        pVol->auChannels[i] = bOther;
+}
+
+
+/**
+ * Combines two volume settings (typically master and sink).
+ *
+ * @param   pVol    Where to return the combined volume
+ * @param   pVol1   The first volume settings to combine.
+ * @param   pVol2   The second volume settings.
+ */
+DECLINLINE(void) PDMAudioVolumeCombine(PPDMAUDIOVOLUME pVol, PCPDMAUDIOVOLUME pVol1, PCPDMAUDIOVOLUME pVol2)
+{
+    if (pVol1->fMuted || pVol2->fMuted)
+    {
+        pVol->fMuted = true;
+        for (uintptr_t i = 0; i < RT_ELEMENTS(pVol->auChannels); i++)
+            pVol->auChannels[i] = 0;
+    }
+    else
+    {
+        pVol->fMuted = false;
+        /** @todo Very crude implementation for now -- needs more work! (At least
+         *        when used in audioMixerSinkUpdateVolume it was considered as such.) */
+        for (uintptr_t i = 0; i < RT_ELEMENTS(pVol->auChannels); i++)
+        {
+#if 0 /* bird: I think the shift variant should produce the exact same result, w/o two conditionals per iteration. */
+            /* 255 * 255 / 255 = 0xFF (255) */
+            /*  17 * 127 / 255 = 8 */
+            /*  39 *  39 / 255 = 5 */
+            pVol->auChannels[i] = (uint8_t)(  (RT_MAX(pVol1->auChannels[i], 1U) * RT_MAX(pVol2->auChannels[i], 1U))
+                                            / PDMAUDIO_VOLUME_MAX);
+#else
+            /* (((255 + 1) * (255 + 1)) >> 8) - 1 = 0xFF (255) */
+            /* ((( 17 + 1) * (127 + 1)) >> 8) - 1 = 0x8 (8) */
+            /* ((( 39 + 1) * ( 39 + 1)) >> 8) - 1 = 0x5 (5) */
+            pVol->auChannels[i] = (uint8_t)((((1U + pVol1->auChannels[i]) * (1U + pVol2->auChannels[i])) >> 8) - 1U);
+#endif
+        }
+    }
+}
+
+
+/*********************************************************************************************************************************
 *   PCM Property Helpers                                                                                                         *
 *********************************************************************************************************************************/
 

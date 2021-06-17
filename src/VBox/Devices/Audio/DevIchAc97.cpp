@@ -1275,7 +1275,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
         else
         {
             STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowProblems);
-            Log(("ichac97R3StreamUpdateDma: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
+            LogFunc(("Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
                  pStreamCC->u8SD, cbStreamFree, cbPeriod));
             int rc = AudioMixerSinkTryLock(pSink);
             if (RT_SUCCESS(rc))
@@ -1286,7 +1286,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
             }
             else
                 RTThreadYield();
-            Log(("ichac97R3StreamUpdateDma: Gained %u bytes.\n", ichac97R3StreamGetFree(pStreamCC) - cbStreamFree));
+            LogFunc(("Gained %u bytes.\n", ichac97R3StreamGetFree(pStreamCC) - cbStreamFree));
 
             cbStreamFree = ichac97R3StreamGetFree(pStreamCC);
             if (cbStreamFree < cbPeriod)
@@ -1355,13 +1355,13 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
                                                                   RT_NS_1SEC / pStreamCC->State.uTimerHz);
             if (cbStreamUsed < cbPreBuffer)
             {
-                Log3(("hdaR3StreamUpdateDma: Pre-buffering (got %#x out of %#x bytes)...\n", cbStreamUsed, cbPreBuffer));
+                Log3Func(("Pre-buffering (got %#x out of %#x bytes)...\n", cbStreamUsed, cbPreBuffer));
                 fWriteSilence = true;
                 cbStreamUsed  = cbPeriod;
             }
             else
             {
-                Log3(("hdaR3StreamUpdateDma: Completed pre-buffering (got %#x, needed %#x bytes).\n", cbStreamUsed, cbPreBuffer));
+                Log3Func(("Completed pre-buffering (got %#x, needed %#x bytes).\n", cbStreamUsed, cbPreBuffer));
                 pStreamCC->State.fInputPreBuffered = true;
                 fWriteSilence = ichac97R3StreamGetFree(pStreamCC) >= cbPreBuffer + cbPreBuffer / 2;
                 if (fWriteSilence)
@@ -1375,7 +1375,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
         else
         {
             STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaFlowProblems);
-            Log(("ichac97R3StreamUpdateDma: Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
+            LogFunc(("Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
                  pStreamCC->u8SD, cbStreamUsed, cbPeriod));
             int rc = AudioMixerSinkTryLock(pSink);
             if (RT_SUCCESS(rc))
@@ -1386,7 +1386,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
             }
             else
                 RTThreadYield();
-            Log(("ichac97R3StreamUpdateDma: Gained %u bytes.\n", ichac97R3StreamGetUsed(pStreamCC) - cbStreamUsed));
+            LogFunc(("Gained %u bytes.\n", ichac97R3StreamGetUsed(pStreamCC) - cbStreamUsed));
             cbStreamUsed = ichac97R3StreamGetUsed(pStreamCC);
             if (cbStreamUsed < cbPeriod)
             {
@@ -3033,9 +3033,10 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, PAC97STATER3 pThisCC, int i
 
     if (pThisCC->pMixer) /* Device can be in reset state, so no mixer available. */
     {
-        PDMAUDIOVOLUME Vol   = { fCtlMuted, lVol, rVol };
-        PAUDMIXSINK    pSink = NULL;
+        PDMAUDIOVOLUME Vol;
+        PDMAudioVolumeInitFromStereo(&Vol, fCtlMuted, lVol, rVol);
 
+        PAUDMIXSINK pSink = NULL;
         switch (enmMixerCtl)
         {
             case PDMAUDIOMIXERCTL_VOLUME_MASTER:
@@ -3117,9 +3118,10 @@ static int ichac97R3MixerSetGain(PAC97STATE pThis, PAC97STATER3 pThisCC, int ind
 
     if (pThisCC->pMixer) /* Device can be in reset state, so no mixer available. */
     {
-        PDMAUDIOVOLUME Vol   = { fCtlMuted, lVol, rVol };
-        PAUDMIXSINK    pSink = NULL;
+        PDMAUDIOVOLUME Vol;
+        PDMAudioVolumeInitFromStereo(&Vol, fCtlMuted, lVol, rVol);
 
+        PAUDMIXSINK    pSink = NULL;
         switch (enmMixerCtl)
         {
             case PDMAUDIOMIXERCTL_MIC_IN:
@@ -3136,14 +3138,15 @@ static int ichac97R3MixerSetGain(PAC97STATE pThis, PAC97STATER3 pThisCC, int ind
                 break;
         }
 
-        if (pSink) {
+        if (pSink)
+        {
             rc = AudioMixerSinkSetVolume(pSink, &Vol);
             /* There is only one AC'97 recording gain control. If line in
              * is changed, also update the microphone. If the optional dedicated
              * microphone is changed, only change that.
              * NB: The codecs we support do not have the dedicated microphone control.
              */
-            if ((pSink == pThisCC->pSinkLineIn) && pThisCC->pSinkMicIn)
+            if (pSink == pThisCC->pSinkLineIn && pThisCC->pSinkMicIn)
                 rc = AudioMixerSinkSetVolume(pSink, &Vol);
         }
     }

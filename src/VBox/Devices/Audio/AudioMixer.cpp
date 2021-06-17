@@ -192,9 +192,7 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
                 LogRel(("Audio Mixer: Debug mode enabled\n"));
 
             /* Set master volume to the max. */
-            pMixer->VolMaster.fMuted = false;
-            pMixer->VolMaster.uLeft  = PDMAUDIO_VOLUME_MAX;
-            pMixer->VolMaster.uRight = PDMAUDIO_VOLUME_MAX;
+            PDMAudioVolumeInitMax(&pMixer->VolMaster);
 
             LogFlowFunc(("Created mixer '%s'\n", pMixer->pszName));
             *ppMixer = pMixer;
@@ -261,15 +259,15 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
     int rc2 = RTCritSectEnter(&pMixer->CritSect);
     AssertRCReturnVoid(rc2);
 
-    pHlp->pfnPrintf(pHlp, "[Master] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", pMixer->pszName,
-                    pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight, pMixer->VolMaster.fMuted);
+    pHlp->pfnPrintf(pHlp, "[Master] %s: fMuted=%RTbool auChannels=%.*Rhxs\n",
+                    pMixer->pszName, pMixer->VolMaster.fMuted, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels);
 
     PAUDMIXSINK pSink;
     unsigned    iSink = 0;
     RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
     {
-        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", iSink, pSink->pszName,
-                        pSink->Volume.uLeft, pSink->Volume.uRight, pSink->Volume.fMuted);
+        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: fMuted=%RTbool auChannels=%.*Rhxs\n",
+                        iSink, pSink->pszName, pSink->Volume.fMuted, sizeof(pSink->Volume.auChannels), pSink->Volume.auChannels);
         ++iSink;
     }
 
@@ -297,10 +295,10 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PCPDMAUDIOVOLUME pVol)
     /*
      * Make a copy.
      */
+    LogFlowFunc(("[%s] fMuted=%RTbool auChannels=%.*Rhxs => fMuted=%RTbool auChannels=%.*Rhxs\n", pMixer->pszName,
+                 pMixer->VolMaster.fMuted, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels,
+                 pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels ));
     memcpy(&pMixer->VolMaster, pVol, sizeof(PDMAUDIOVOLUME));
-    LogFlowFunc(("[%s] lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
-                 pMixer->pszName, pVol->uLeft, pVol->uRight,
-                 pMixer->VolMaster.fMuted, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
 
     /*
      * Propagate new master volume to all sinks.
@@ -394,14 +392,10 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR en
             RTListInit(&pSink->lstStreams);
 
             /* Set initial volume to max. */
-            pSink->Volume.fMuted = false;
-            pSink->Volume.uLeft  = PDMAUDIO_VOLUME_MAX;
-            pSink->Volume.uRight = PDMAUDIO_VOLUME_MAX;
+            PDMAudioVolumeInitMax(&pSink->Volume);
 
             /* Ditto for the combined volume. */
-            pSink->VolumeCombined.fMuted = false;
-            pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
-            pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
+            PDMAudioVolumeInitMax(&pSink->VolumeCombined);
 
             /* AIO */
             AssertPtr(pDevIns);
@@ -1061,17 +1055,14 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVolMa
     AssertPtr(pSink);
     Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
     AssertPtr(pVolMaster);
-    LogFlowFunc(("[%s] Master fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
-                  pSink->pszName, pVolMaster->fMuted, pVolMaster->uLeft, pVolMaster->uRight));
+    LogFlowFunc(("[%s] Master fMuted=%RTbool auChannels=%.*Rhxs\n",
+                  pSink->pszName, pVolMaster->fMuted, sizeof(pVolMaster->auChannels), pVolMaster->auChannels));
 
-    pSink->VolumeCombined.fMuted = pVolMaster->fMuted || pSink->Volume.fMuted;
-    /** @todo Very crude implementation for now -- needs more work! */
-    pSink->VolumeCombined.uLeft  = (uint32_t)RT_MAX(pSink->Volume.uLeft, 1)  * RT_MAX(pVolMaster->uLeft, 1)  / PDMAUDIO_VOLUME_MAX;
-    pSink->VolumeCombined.uRight = (uint32_t)RT_MAX(pSink->Volume.uRight, 1) * RT_MAX(pVolMaster->uRight, 1) / PDMAUDIO_VOLUME_MAX;
+    PDMAudioVolumeCombine(&pSink->VolumeCombined, &pSink->Volume, pVolMaster);
 
-    LogFlowFunc(("[%s] fMuted=%RTbool, lVol=%RU32, rVol=%RU32 -> fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
-                 pSink->pszName, pSink->Volume.fMuted, pSink->Volume.uLeft, pSink->Volume.uRight,
-                 pSink->VolumeCombined.fMuted, pSink->VolumeCombined.uLeft, pSink->VolumeCombined.uRight));
+    LogFlowFunc(("[%s] fMuted=%RTbool auChannels=%.*Rhxs -> fMuted=%RTbool auChannels=%.*Rhxs\n", pSink->pszName,
+                 pSink->Volume.fMuted, sizeof(pSink->Volume.auChannels), pSink->Volume.auChannels,
+                 pSink->VolumeCombined.fMuted, sizeof(pSink->VolumeCombined.auChannels), pSink->VolumeCombined.auChannels ));
 
     AudioMixBufSetVolume(&pSink->MixBuf, &pSink->VolumeCombined);
     return VINF_SUCCESS;
@@ -1096,8 +1087,8 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVol)
 
     memcpy(&pSink->Volume, pVol, sizeof(PDMAUDIOVOLUME));
 
-    LogRel2(("Audio Mixer: Setting volume of sink '%s' to %RU8/%RU8 (%s)\n",
-             pSink->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted ? "Muted" : "Unmuted"));
+    LogRel2(("Audio Mixer: Setting volume of sink '%s' to fMuted=%RTbool auChannels=%.*Rhxs\n",
+              pSink->pszName, pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels));
 
     Assert(pSink->pParent);
     if (pSink->pParent)

@@ -1182,15 +1182,10 @@ static uint8_t sb16MixRegToVol(PSB16STATE pThis, int reg)
  * @param   pThis               SB16 state.
  * @param   pVol                Where to store the master volume information.
  */
-static void sb16GetMasterVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
+DECLINLINE(void) sb16GetMasterVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
 {
     /* There's no mute switch, only volume controls. */
-    uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
-    uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
-
-    pVol->fMuted = false;
-    pVol->uLeft  = lvol;
-    pVol->uRight = rvol;
+    PDMAudioVolumeInitFromStereo(pVol, false /*fMuted*/, sb16MixRegToVol(pThis, 0x30), sb16MixRegToVol(pThis, 0x31));
 }
 
 /**
@@ -1199,15 +1194,10 @@ static void sb16GetMasterVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
  * @param   pThis               SB16 state.
  * @param   pVol                Where to store the output stream volume information.
  */
-static void sb16GetPcmOutVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
+DECLINLINE(void) sb16GetPcmOutVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
 {
     /* There's no mute switch, only volume controls. */
-    uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
-    uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
-
-    pVol->fMuted = false;
-    pVol->uLeft  = lvol;
-    pVol->uRight = rvol;
+    PDMAudioVolumeInitFromStereo(pVol, false /*fMuted*/, sb16MixRegToVol(pThis, 0x32), sb16MixRegToVol(pThis, 0x33));
 }
 
 static void sb16UpdateVolume(PSB16STATE pThis)
@@ -1220,17 +1210,7 @@ static void sb16UpdateVolume(PSB16STATE pThis)
 
     /* Combine the master + output stream volume. */
     PDMAUDIOVOLUME VolCombined;
-    RT_ZERO(VolCombined);
-
-    VolCombined.fMuted = VolMaster.fMuted || VolOut.fMuted;
-    if (!VolCombined.fMuted)
-    {
-        VolCombined.uLeft  = (   (VolOut.uLeft    ? VolOut.uLeft     : 1)
-                               * (VolMaster.uLeft ? VolMaster.uLeft  : 1)) / PDMAUDIO_VOLUME_MAX;
-
-        VolCombined.uRight = (  (VolOut.uRight    ? VolOut.uRight    : 1)
-                              * (VolMaster.uRight ? VolMaster.uRight : 1)) / PDMAUDIO_VOLUME_MAX;
-    }
+    PDMAudioVolumeCombine(&VolCombined, &VolMaster, &VolOut);
 
     int rc2 = AudioMixerSinkSetVolume(pThis->pSinkOut, &VolCombined);
     AssertRC(rc2);

@@ -2081,7 +2081,8 @@ void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
     AssertPtrReturnVoid(pMixBuf);
     AssertPtrReturnVoid(pVol);
 
-    LogFlowFunc(("%s: lVol=%RU8, rVol=%RU8, fMuted=%RTbool\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted));
+    LogFlowFunc(("%s: fMuted=%RTbool auChannels=%.*Rhxs\n",
+                 pMixBuf->pszName, pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels));
 
     /*
      * Convert PDM audio volume to the internal format.
@@ -2090,11 +2091,9 @@ void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
     {
         pMixBuf->Volume.fMuted  = false;
 
-        AssertCompileSize(pVol->uLeft, sizeof(uint8_t));
-        pMixBuf->Volume.auChannels[0] = s_aVolumeConv[pVol->uLeft ] * (AUDIOMIXBUF_VOL_0DB >> 16);
-        pMixBuf->Volume.auChannels[1] = s_aVolumeConv[pVol->uRight] * (AUDIOMIXBUF_VOL_0DB >> 16);
+        AssertCompileSize(pVol->auChannels[0], sizeof(uint8_t));
         for (uintptr_t i = 2; i < pMixBuf->cChannels; i++)
-            pMixBuf->Volume.auChannels[i] = pMixBuf->Volume.auChannels[1];
+            pMixBuf->Volume.auChannels[i] = s_aVolumeConv[pVol->auChannels[i]] * (AUDIOMIXBUF_VOL_0DB >> 16);
 
         pMixBuf->Volume.fAllMax = true;
         for (uintptr_t i = 0; i < pMixBuf->cChannels; i++)

@@ -690,33 +690,6 @@ typedef PDMAUDIOSTREAMCFG const *PCPDMAUDIOSTREAMCFG;
 #define PDMAUDIOSTREAMCFG_B2F(pCfg, cb)         PDMAUDIOPCMPROPS_B2F(&(pCfg)->Props, (cb))
 
 /**
- * Audio mixer controls.
- */
-typedef enum PDMAUDIOMIXERCTL
-{
-    /** Invalid zero value as per usual (guards against using unintialized values). */
-    PDMAUDIOMIXERCTL_INVALID = 0,
-    /** Unknown mixer control. */
-    PDMAUDIOMIXERCTL_UNKNOWN,
-    /** Master volume. */
-    PDMAUDIOMIXERCTL_VOLUME_MASTER,
-    /** Front. */
-    PDMAUDIOMIXERCTL_FRONT,
-    /** Center / LFE (Subwoofer). */
-    PDMAUDIOMIXERCTL_CENTER_LFE,
-    /** Rear. */
-    PDMAUDIOMIXERCTL_REAR,
-    /** Line-In. */
-    PDMAUDIOMIXERCTL_LINE_IN,
-    /** Microphone-In. */
-    PDMAUDIOMIXERCTL_MIC_IN,
-    /** End of valid values. */
-    PDMAUDIOMIXERCTL_END,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
-} PDMAUDIOMIXERCTL;
-
-/**
  * Audio stream commands.
  *
  * Used in the audio connector as well as in the actual host backends.
@@ -761,33 +734,6 @@ typedef enum PDMAUDIOSTREAMCMD
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCMD_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCMD;
-
-/**
- * Audio volume parameters.
- */
-typedef struct PDMAUDIOVOLUME
-{
-    /** Set to @c true if this stream is muted, @c false if not. */
-    bool    fMuted;
-    /** Left channel volume.
-     *  Range is from [0 ... 255], whereas 0 specifies
-     *  the most silent and 255 the loudest value. */
-    uint8_t uLeft;
-    /** Right channel volume.
-     *  Range is from [0 ... 255], whereas 0 specifies
-     *  the most silent and 255 the loudest value. */
-    uint8_t uRight;
-} PDMAUDIOVOLUME;
-/** Pointer to audio volume settings. */
-typedef PDMAUDIOVOLUME *PPDMAUDIOVOLUME;
-/** Pointer to const audio volume settings. */
-typedef PDMAUDIOVOLUME const *PCPDMAUDIOVOLUME;
-
-/** Defines the minimum volume allowed. */
-#define PDMAUDIO_VOLUME_MIN     (0)
-/** Defines the maximum volume allowed. */
-#define PDMAUDIO_VOLUME_MAX     (255)
-
 
 /**
  * Backend status.
@@ -1529,6 +1475,66 @@ typedef struct PDMIHOSTAUDIOPORT
 
 /** PDMIHOSTAUDIOPORT interface ID. */
 #define PDMIHOSTAUDIOPORT_IID                    "92ea5169-8271-402d-99a7-9de26a52acaf"
+
+
+/**
+ * Audio mixer controls.
+ *
+ * @note This isn't part of any official PDM interface as such, it's more of a
+ *       common thing that all the devices seem to need.
+ */
+typedef enum PDMAUDIOMIXERCTL
+{
+    /** Invalid zero value as per usual (guards against using unintialized values). */
+    PDMAUDIOMIXERCTL_INVALID = 0,
+    /** Unknown mixer control. */
+    PDMAUDIOMIXERCTL_UNKNOWN,
+    /** Master volume. */
+    PDMAUDIOMIXERCTL_VOLUME_MASTER,
+    /** Front. */
+    PDMAUDIOMIXERCTL_FRONT,
+    /** Center / LFE (Subwoofer). */
+    PDMAUDIOMIXERCTL_CENTER_LFE,
+    /** Rear. */
+    PDMAUDIOMIXERCTL_REAR,
+    /** Line-In. */
+    PDMAUDIOMIXERCTL_LINE_IN,
+    /** Microphone-In. */
+    PDMAUDIOMIXERCTL_MIC_IN,
+    /** End of valid values. */
+    PDMAUDIOMIXERCTL_END,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
+} PDMAUDIOMIXERCTL;
+
+/**
+ * Audio volume parameters.
+ *
+ * @note This isn't part of any official PDM interface any more (it used to be
+ *       used to PDMIAUDIOCONNECTOR). It's currently only used by the mixer API.
+ */
+typedef struct PDMAUDIOVOLUME
+{
+    /** Set to @c true if this stream is muted, @c false if not. */
+    bool    fMuted;
+    /** The volume for each channel.
+     * The values zero is the most silent one (although not quite muted), and 255
+     * the loudest. */
+    uint8_t auChannels[PDMAUDIO_MAX_CHANNELS];
+} PDMAUDIOVOLUME;
+/** Pointer to audio volume settings. */
+typedef PDMAUDIOVOLUME *PPDMAUDIOVOLUME;
+/** Pointer to const audio volume settings. */
+typedef PDMAUDIOVOLUME const *PCPDMAUDIOVOLUME;
+
+/** Defines the minimum volume allowed. */
+#define PDMAUDIO_VOLUME_MIN     (0)
+/** Defines the maximum volume allowed. */
+#define PDMAUDIO_VOLUME_MAX     (255)
+/** Initializator for max volume on all channels. */
+#define PDMAUDIOVOLUME_INITIALIZER_MAX \
+    { /* .fMuted = */       false, \
+      /* .auChannels = */   { 255, 255, 255, 255,  255, 255, 255, 255,  255, 255, 255, 255 } }
 
 /** @} */
 

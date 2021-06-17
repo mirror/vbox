@@ -895,8 +895,8 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
     iMute >>=7;
     iMute &= 0x1;
 
-    uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_LEFT,  0) & 0x7f;
-    uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_RIGHT, 0) & 0x7f;
+    uint8_t bLeft = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_LEFT,  0) & 0x7f;
+    uint8_t bRight = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_RIGHT, 0) & 0x7f;
 
     /*
      * The STAC9220 volume controls have 0 to -96dB attenuation range in 128 steps.
@@ -904,16 +904,15 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
      * to 255 internally (0dB), while HDA volume setting of 0 (-96dB) should map
      * to 1 (rather than zero) internally.
      */
-    lVol = (lVol + 1) * (2 * 255) / 256;
-    rVol = (rVol + 1) * (2 * 255) / 256;
+    bLeft = (bLeft + 1) * (2 * 255) / 256;
+    bRight = (bRight + 1) * (2 * 255) / 256;
 
-    PDMAUDIOVOLUME Vol = { RT_BOOL(iMute), lVol, rVol };
+    PDMAUDIOVOLUME Vol;
+    PDMAudioVolumeInitFromStereo(&Vol, RT_BOOL(iMute), bLeft, bRight);
 
-    LogFunc(("[NID0x%02x] %RU8/%RU8 (%s)\n",
-             pNode->node.uID, lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
-
-    LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8 (%s)\n",
-             PDMAudioMixerCtlGetName(enmMixerCtl), lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
+    LogFunc(("[NID0x%02x] %RU8/%RU8%s\n", pNode->node.uID, bLeft, bRight, Vol.fMuted ? "- Muted!" : ""));
+    LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8%s\n",
+             PDMAudioMixerCtlGetName(enmMixerCtl), bLeft, bRight, Vol.fMuted ? "- Muted!" : ""));
 
     return pThisCC->pfnCbMixerSetVolume(pThisCC->pDevIns, enmMixerCtl, &Vol);
 }

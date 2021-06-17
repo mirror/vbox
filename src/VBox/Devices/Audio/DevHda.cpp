@@ -2584,8 +2584,8 @@ static DECLCALLBACK(int) hdaR3MixerSetVolume(PPDMDEVINS pDevIns, PDMAUDIOMIXERCT
     if (   pSink
         && pSink->pMixSink)
     {
-        LogRel2(("HDA: Setting volume for mixer sink '%s' to %RU8/%RU8 (%s)\n",
-                 pSink->pMixSink->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted ? "Muted" : "Unmuted"));
+        LogRel2(("HDA: Setting volume for mixer sink '%s' to fMuted=%RTbool auChannels=%.*Rhxs\n",
+                 pSink->pMixSink->pszName, pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels));
 
         /* Set the volume.
          * We assume that the codec already converted it to the correct range. */
@@ -4920,8 +4920,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 # endif
 
     /* There is no master volume control. Set the master to max. */
-    PDMAUDIOVOLUME vol = { false, 255, 255 };
-    rc = AudioMixerSetMasterVolume(pThisCC->pMixer, &vol);
+    PDMAUDIOVOLUME Vol = PDMAUDIOVOLUME_INITIALIZER_MAX;
+    rc = AudioMixerSetMasterVolume(pThisCC->pMixer, &Vol);
     AssertRCReturn(rc, rc);
 
     /* Allocate codec. */

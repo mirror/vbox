@@ -793,10 +793,7 @@ static void tstVolume(RTTEST hTest)
     /*
      * 1) Full volume/0dB attenuation (255).
      */
-    PDMAUDIOVOLUME Vol;
-    Vol.fMuted = false;
-    Vol.uLeft  = 255;
-    Vol.uRight = 255;
+    PDMAUDIOVOLUME Vol = PDMAUDIOVOLUME_INITIALIZER_MAX;
     AudioMixBufSetVolume(&MixBuf, &Vol);
 
     /* Write all the test frames to the mixer buffer: */
@@ -825,8 +822,7 @@ static void tstVolume(RTTEST hTest)
     /*
      * 2) Half volume/-6dB attenuation (16 steps down).
      */
-    Vol.uLeft  = 255 - 16;
-    Vol.uRight = 255 - 16;
+    PDMAudioVolumeInitFromStereo(&Vol, false, 255 - 16, 255 - 16);
     AudioMixBufSetVolume(&MixBuf, &Vol);
 
     /* Write all the test frames to the mixer buffer: */
