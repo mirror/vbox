@@ -933,6 +933,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
 	generic/mppresent-generic-online.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
