@@ -205,7 +205,7 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD hThreadSelf, void *pvArg)
         /*
          * Disable the timer.
          */
-        int rc = CancelWaitableTimer (pTimer->hTimer);
+        int rc = CancelWaitableTimer (pTimer->hTimer); RT_NOREF(rc);
         AssertMsg(rc, ("CancelWaitableTimer lasterr=%d\n", GetLastError()));
 
         /*
