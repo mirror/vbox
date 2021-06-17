@@ -134,6 +134,8 @@ typedef struct DBGFSAMPLEREPORTINT
     uint64_t                         cSampleUsLeft;
     /** The report created after sampling was stopped. */
     char                             *pszReport;
+    /** Number of EMTs having a guest sample operation queued. */
+    volatile uint32_t                cEmtsActive;
     /** Array of per VCPU samples collected. */
     DBGFSAMPLEREPORTVCPU             aCpus[1];
 } DBGFSAMPLEREPORTINT;
@@ -376,15 +378,13 @@ static void dbgfR3SampleReportDumpFrame(PCDBGFINFOHLP pHlp, PUVM pUVM, PCDBGFSAM
  * Worker for dbgfR3SampleReportTakeSample(), doing the work in an EMT rendezvous point on
  * each VCPU.
  *
- * @returns Strict VBox status code.
- * @param   pVM                     The VM instance data.
- * @param   pVCpu                   The virtual CPU we execute on.
- * @param   pvUser                  Opaque user data.
+ * @returns nothing.
+ * @param   pThis                    Pointer to the sample report instance.
  */
-static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(void) dbgfR3SampleReportSample(PDBGFSAMPLEREPORTINT pThis)
 {
-    RT_NOREF(pVM);
-    PDBGFSAMPLEREPORTINT pThis = (PDBGFSAMPLEREPORTINT)pvUser;
+    PVM pVM = pThis->pUVM->pVM;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 
     PCDBGFSTACKFRAME pFrameFirst;
     int rc = DBGFR3StackWalkBegin(pThis->pUVM, pVCpu->idCpu, DBGFCODETYPE_GUEST, &pFrameFirst);
@@ -436,89 +436,83 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
     else
         LogRelMax(10, ("Sampling guest stack on VCPU %u failed with rc=%Rrc\n", pVCpu->idCpu, rc));
 
-    if (pVCpu->idCpu == 0)
+    /* Last EMT finishes the report when sampling was stopped. */
+    uint32_t cEmtsActive = ASMAtomicDecU32(&pThis->cEmtsActive);
+    if (   ASMAtomicReadU32((volatile uint32_t *)&pThis->enmState) == DBGFSAMPLEREPORTSTATE_STOPPING
+        && !cEmtsActive)
     {
-        /* Destroy the timer if requested. */
-        if (ASMAtomicReadU32((volatile uint32_t *)&pThis->enmState) == DBGFSAMPLEREPORTSTATE_STOPPING)
+        rc = RTTimerDestroy(pThis->hTimer); AssertRC(rc); RT_NOREF(rc);
+        pThis->hTimer = NULL;
+
+        DBGFSAMPLEREPORTINFOHLP Hlp;
+        PCDBGFINFOHLP           pHlp = &Hlp.Core;
+
+        dbgfR3SampleReportInfoHlpInit(&Hlp);
+
+        /* Some early dump code. */
+        for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
         {
-#ifndef RT_OS_WINDOWS
-            rc = RTTimerStop(pThis->hTimer); AssertRC(rc); RT_NOREF(rc);
-#endif
-            rc = RTTimerDestroy(pThis->hTimer); AssertRC(rc); RT_NOREF(rc);
-            pThis->hTimer = NULL;
+            PCDBGFSAMPLEREPORTVCPU pSampleVCpu = &pThis->aCpus[i];
 
-            DBGFSAMPLEREPORTINFOHLP Hlp;
-            PCDBGFINFOHLP           pHlp = &Hlp.Core;
-
-            dbgfR3SampleReportInfoHlpInit(&Hlp);
-
-            /* Some early dump code. */
-            for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
-            {
-                PCDBGFSAMPLEREPORTVCPU pSampleVCpu = &pThis->aCpus[i];
-
-                pHlp->pfnPrintf(pHlp, "Sample report for vCPU %u:\n", i);
-                dbgfR3SampleReportDumpFrame(pHlp, pThis->pUVM, &pSampleVCpu->FrameRoot, 0);
-            }
-
-            /* Shameless copy from VMMGuruMeditation.cpp */
-            static struct
-            {
-                const char *pszInfo;
-                const char *pszArgs;
-            } const     aInfo[] =
-            {
-                { "mappings",        NULL },
-                { "mode",            "all" },
-                { "handlers",        "phys virt hyper stats" },
-                { "timers",          NULL },
-                { "activetimers",    NULL },
-            };
-            for (unsigned i = 0; i < RT_ELEMENTS(aInfo); i++)
-            {
-                pHlp->pfnPrintf(pHlp,
-                                "!!\n"
-                                "!! {%s, %s}\n"
-                                "!!\n",
-                                aInfo[i].pszInfo, aInfo[i].pszArgs);
-                DBGFR3Info(pVM->pUVM, aInfo[i].pszInfo, aInfo[i].pszArgs, pHlp);
-            }
-
-            /* All other info items */
-            DBGFR3InfoMulti(pVM,
-                            "*",
-                            "mappings|hma|cpum|cpumguest|cpumguesthwvirt|cpumguestinstr|cpumhyper|cpumhost|cpumvmxfeat|mode|cpuid"
-                            "|pgmpd|pgmcr3|timers|activetimers|handlers|help|cfgm",
-                            "!!\n"
-                            "!! {%s}\n"
-                            "!!\n",
-                            pHlp);
-
-
-            /* done */
-            pHlp->pfnPrintf(pHlp,
-                            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-
-            if (pThis->pszReport)
-                RTMemFree(pThis->pszReport);
-            pThis->pszReport = Hlp.pachBuf;
-            Hlp.pachBuf = NULL;
-            dbgfR3SampleReportInfoHlpDelete(&Hlp);
-
-            ASMAtomicXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_READY);
-
-            if (pThis->pfnProgress)
-            {
-                pThis->pfnProgress(pThis->pvProgressUser, 100);
-                pThis->pfnProgress    = NULL;
-                pThis->pvProgressUser = NULL;
-            }
-
-            DBGFR3SampleReportRelease(pThis);
+            pHlp->pfnPrintf(pHlp, "Sample report for vCPU %u:\n", i);
+            dbgfR3SampleReportDumpFrame(pHlp, pThis->pUVM, &pSampleVCpu->FrameRoot, 0);
         }
-    }
 
-    return VINF_SUCCESS;
+        /* Shameless copy from VMMGuruMeditation.cpp */
+        static struct
+        {
+            const char *pszInfo;
+            const char *pszArgs;
+        } const     aInfo[] =
+        {
+            { "mappings",        NULL },
+            { "mode",            "all" },
+            { "handlers",        "phys virt hyper stats" },
+            { "timers",          NULL },
+            { "activetimers",    NULL },
+        };
+        for (unsigned i = 0; i < RT_ELEMENTS(aInfo); i++)
+        {
+            pHlp->pfnPrintf(pHlp,
+                            "!!\n"
+                            "!! {%s, %s}\n"
+                            "!!\n",
+                            aInfo[i].pszInfo, aInfo[i].pszArgs);
+            DBGFR3Info(pVM->pUVM, aInfo[i].pszInfo, aInfo[i].pszArgs, pHlp);
+        }
+
+        /* All other info items */
+        DBGFR3InfoMulti(pVM,
+                        "*",
+                        "mappings|hma|cpum|cpumguest|cpumguesthwvirt|cpumguestinstr|cpumhyper|cpumhost|cpumvmxfeat|mode|cpuid"
+                        "|pgmpd|pgmcr3|timers|activetimers|handlers|help|cfgm",
+                        "!!\n"
+                        "!! {%s}\n"
+                        "!!\n",
+                        pHlp);
+
+
+        /* done */
+        pHlp->pfnPrintf(pHlp,
+                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
+        if (pThis->pszReport)
+            RTMemFree(pThis->pszReport);
+        pThis->pszReport = Hlp.pachBuf;
+        Hlp.pachBuf = NULL;
+        dbgfR3SampleReportInfoHlpDelete(&Hlp);
+
+        ASMAtomicXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_READY);
+
+        if (pThis->pfnProgress)
+        {
+            pThis->pfnProgress(pThis->pvProgressUser, 100);
+            pThis->pfnProgress    = NULL;
+            pThis->pvProgressUser = NULL;
+        }
+
+        DBGFR3SampleReportRelease(pThis);
+    }
 }
 
 
@@ -527,7 +521,6 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3SampleReportSample(PVM pVM, PVMCPU pVCpu
  */
 static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-    RT_NOREF(pTimer);
     PDBGFSAMPLEREPORTINT pThis = (PDBGFSAMPLEREPORTINT)pvUser;
 
     if (pThis->cSampleUsLeft != UINT32_MAX)
@@ -548,12 +541,20 @@ static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pv
              */
             ASMAtomicCmpXchgU32((volatile uint32_t *)&pThis->enmState, DBGFSAMPLEREPORTSTATE_STOPPING,
                                 DBGFSAMPLEREPORTSTATE_RUNNING);
+
+            rc = RTTimerStop(pTimer); AssertRC(rc); RT_NOREF(rc);
         }
     }
 
-    int rc = VMMR3EmtRendezvous(pThis->pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING,
-                                dbgfR3SampleReportSample, pThis);
-    AssertRC(rc); RT_NOREF(rc);
+    ASMAtomicAddU32(&pThis->cEmtsActive, pThis->pUVM->cCpus);
+
+    for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
+    {
+        int rc = VMR3ReqCallVoidNoWait(pThis->pUVM->pVM, i, (PFNRT)dbgfR3SampleReportSample, 1, pThis);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            ASMAtomicDecU32(&pThis->cEmtsActive);
+    }
 }
 
 
@@ -582,6 +583,7 @@ VMMR3DECL(int) DBGFR3SampleReportCreate(PUVM pUVM, uint32_t cSampleIntervalUs, u
         pThis->fFlags            = fFlags;
         pThis->cSampleIntervalUs = cSampleIntervalUs;
         pThis->enmState          = DBGFSAMPLEREPORTSTATE_READY;
+        pThis->cEmtsActive       = 0;
 
         for (uint32_t i = 0; i < pUVM->cCpus; i++)
         {
@@ -683,17 +685,11 @@ VMMR3DECL(int) DBGFR3SampleReportStart(DBGFSAMPLEREPORT hSample, uint64_t cSampl
      */
     DBGFR3SampleReportRetain(pThis);
 
-#ifndef RT_OS_WINDOWS
     rc = RTTimerCreateEx(&pThis->hTimer, pThis->cSampleIntervalUs * 1000,
                          RTTIMER_FLAGS_CPU_ANY | RTTIMER_FLAGS_HIGH_RES,
                          dbgfR3SampleReportTakeSample, pThis);
     if (RT_SUCCESS(rc))
         rc = RTTimerStart(pThis->hTimer, 0 /*u64First*/);
-#else
-    rc = RTTimerCreate(&pThis->hTimer, pThis->cSampleIntervalUs / 1000,
-                       dbgfR3SampleReportTakeSample, pThis);
-#endif
-
     if (RT_FAILURE(rc))
     {
         if (pThis->hTimer)
