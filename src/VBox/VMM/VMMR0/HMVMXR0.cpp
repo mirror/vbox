@@ -7129,7 +7129,6 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
 
     if (pVM->hmr0.s.vmx.fUsePreemptTimer)
     {
-
         /* The TMCpuTickGetDeadlineAndTscOffset function is expensive (calling it on
            every entry slowed down the bs2-test1 CPUID testcase by ~33% (on an 10980xe). */
         uint64_t cTicksToDeadline;
@@ -8168,7 +8167,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
         /* Pending nested-guest VMX-preemption timer expired. */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
         {
-            Log4Func(("Pending nested-guest MTF\n"));
+            Log4Func(("Pending nested-guest preempt timer\n"));
             VBOXSTRICTRC rcStrict = IEMExecVmxVmexitPreemptTimer(pVCpu);
             Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
             return rcStrict;
@@ -9416,7 +9415,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             int rc = hmR0EnterCpu(pVCpu);
             AssertRC(rc);
             Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
-                   ==                            (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
+                                              == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
 
             /* Load the active VMCS as the current one. */
             PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
