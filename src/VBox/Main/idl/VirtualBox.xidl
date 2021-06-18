@@ -5949,7 +5949,7 @@
     <const name="Flat"                  value="2">
       <desc>
         Assumes a scheduling policy which puts the process at the default
-        priority and with all thread at the same priority
+        priority and with all threads at the same priority
       </desc>
     </const>
     <const name="Low"                   value="3">

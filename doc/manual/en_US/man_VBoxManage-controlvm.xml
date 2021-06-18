@@ -1842,10 +1842,36 @@
         when starting the specified VM and while the VM runs.
       </para>
       <para>
-        Valid values are <literal>default</literal>,
-        <literal>flat</literal>, <literal>low</literal>,
-        <literal>normal</literal>, and <literal>high</literal>.
+        Valid values are:
       </para>
+      <itemizedlist>
+        <listitem><para>
+            <literal>default</literal> &ndash; Default process
+            priority determined by the OS.
+          </para></listitem>
+        <listitem><para>
+            <literal>flat</literal> &ndash; Assumes a scheduling
+            policy which puts the process at the default priority
+            and with all threads at the same priority.
+          </para></listitem>
+        <listitem><para>
+            <literal>low</literal> &ndash;  Assumes a scheduling
+            policy which puts the process mostly below the default
+            priority of the host OS.
+          </para></listitem>
+        <listitem><para>
+            <literal>normal</literal> &ndash; Assume a scheduling
+            policy which shares the CPU resources fairly with
+            other processes running with the default priority of
+            the host OS.
+          </para></listitem>
+        <listitem><para>
+            <literal>high</literal> &ndash; Assumes a scheduling
+            policy which puts the task above the default priority of
+            the host OS. This policy might easily cause other tasks
+            in the system to starve.
+          </para></listitem>
+      </itemizedlist>
       <para>
         This subcommand does not affect the VM's running state directly.
       </para>
