@@ -994,7 +994,6 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
  *                              period.   The current period will never be
  *                              larger than what can be stored in the current
  *                              buffer (i.e. what PICB indicates).
- * @param   tsNowNs             The current RTTimeNano() value.
  * @param   fWriteSilence       Whether to write silence if this is an input
  *                              stream (done while waiting for backend to get
  *                              going).
