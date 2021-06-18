@@ -442,11 +442,11 @@ typedef struct AC97STREAMDEBUG
  */
 typedef struct AC97STREAM
 {
+    /** Bus master registers of this stream. */
+    AC97BMREGS              Regs;
     /** Stream number (SDn). */
     uint8_t                 u8SD;
     uint8_t                 abPadding0[7];
-    /** Bus master registers of this stream. */
-    AC97BMREGS              Regs;
 
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE           hTimer;
@@ -1017,8 +1017,6 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
     ichac97R3StreamLock(pStreamCC);
 
-    PAC97BMREGS pRegs = &pStream->Regs;
-
     /*
      * Check that the controller is not halted (DCH) and that the buffer
      * completion interrupt isn't pending.
@@ -1041,22 +1039,22 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
      *
      *        I just wish there was some clear reasoning in the source code for
      *        weird shit like this.  This is just random voodoo.  Sigh^3! */
-    if (!(pRegs->sr & (AC97_SR_DCH | AC97_SR_BCIS))) /* Controller halted? */
+    if (!(pStream->Regs.sr & (AC97_SR_DCH | AC97_SR_BCIS))) /* Controller halted? */
     { /* not halted nor does it have pending interrupt - likely */ }
     else
     {
         /** @todo Stop DMA timer when DCH is set. */
-        if (pRegs->sr & AC97_SR_DCH)
+        if (pStream->Regs.sr & AC97_SR_DCH)
         {
             STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaSkippedDch);
             LogFunc(("[SD%RU8] DCH set\n", pStream->u8SD));
         }
-        if (pRegs->sr & AC97_SR_BCIS)
+        if (pStream->Regs.sr & AC97_SR_BCIS)
         {
             STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaSkippedPendingBcis);
             LogFunc(("[SD%RU8] BCIS set\n", pStream->u8SD));
         }
-        if ((pRegs->cr & AC97_CR_RPBM) /* Bus master operation started. */ && !fInput)
+        if ((pStream->Regs.cr & AC97_CR_RPBM) /* Bus master operation started. */ && !fInput)
         {
             /*ichac97R3WriteBUP(pThis, cbToProcess);*/
         }
@@ -1074,9 +1072,9 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
     int        rc               = VINF_SUCCESS;
     PRTCIRCBUF pCircBuf         = pStreamCC->State.pCircBuf;
     AssertReturnStmt(pCircBuf, ichac97R3StreamUnlock(pStreamCC), VINF_SUCCESS);
-    Assert((uint32_t)pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props) >= cbToProcess);
-    Log3Func(("[SD%RU8] cbToProcess=%#x PICB=%#x/%#x\n",
-              pStream->u8SD, cbToProcess, pRegs->picb, pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props)));
+    Assert((uint32_t)pStream->Regs.picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props) >= cbToProcess);
+    Log3Func(("[SD%RU8] cbToProcess=%#x PICB=%#x/%#x\n", pStream->u8SD, cbToProcess,
+              pStream->Regs.picb, pStream->Regs.picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props)));
 
     while (cbToProcess > 0)
     {
@@ -1093,7 +1091,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
             if (cbDst)
             {
-                int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, pvDst, cbDst);
+                int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bd.addr, pvDst, cbDst);
                 AssertRC(rc2);
 
                 if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
@@ -1117,7 +1115,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
             if (cbSrc)
             {
-                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
+                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pStream->Regs.bd.addr, pvSrc, cbSrc);
                 AssertRC(rc2);
 
                 if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
@@ -1137,7 +1135,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
             cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
             cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
 
-            int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
+            int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pStream->Regs.bd.addr, g_abRTZero64K, cbChunk);
             AssertRC(rc2);
         }
 
@@ -1147,33 +1145,33 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         /*
          * Advance.
          */
-        pRegs->picb          -= cbChunk / PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
-        pRegs->bd.addr       += cbChunk;
-        cbToProcess          -= cbChunk;
+        pStream->Regs.picb    -= cbChunk / PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
+        pStream->Regs.bd.addr += cbChunk;
+        cbToProcess           -= cbChunk;
 #ifdef LOG_ENABLED
-        cbProcessedTotal     += cbChunk;
+        cbProcessedTotal      += cbChunk;
 #endif
         LogFlowFunc(("[SD%RU8] cbChunk=%#x, cbToProcess=%#x, cbTotal=%#x picb=%#x\n",
-                     pStream->u8SD, cbChunk, cbToProcess, cbProcessedTotal, pRegs->picb));
+                     pStream->u8SD, cbChunk, cbToProcess, cbProcessedTotal, pStream->Regs.picb));
     }
 
     /*
      * Fetch a new buffer descriptor if we've exhausted the current one.
      */
-    if (!pRegs->picb)
+    if (!pStream->Regs.picb)
     {
-        uint32_t fNewSr = pRegs->sr & ~AC97_SR_CELV;
+        uint32_t fNewSr = pStream->Regs.sr & ~AC97_SR_CELV;
 
-        if (pRegs->bd.ctl_len & AC97_BD_IOC)
+        if (pStream->Regs.bd.ctl_len & AC97_BD_IOC)
             fNewSr |= AC97_SR_BCIS;
 
-        if (pRegs->civ != pRegs->lvi)
+        if (pStream->Regs.civ != pStream->Regs.lvi)
             fNewSr |= ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC);
         else
         {
-            LogFunc(("Underrun CIV (%RU8) == LVI (%RU8)\n", pRegs->civ, pRegs->lvi));
+            LogFunc(("Underrun CIV (%RU8) == LVI (%RU8)\n", pStream->Regs.civ, pStream->Regs.lvi));
             fNewSr |= AC97_SR_LVBCI | AC97_SR_DCH | AC97_SR_CELV;
-            pThis->bup_flag = (pRegs->bd.ctl_len & AC97_BD_BUP) ? BUP_LAST : 0;
+            pThis->bup_flag = (pStream->Regs.bd.ctl_len & AC97_BD_BUP) ? BUP_LAST : 0;
             /** @todo r=bird: The bup_flag isn't cleared anywhere else.  We should probably
              *        do what the spec says, and keep writing zeros (silence).
              *        Alternatively, we could hope the guest will pause the DMA engine
@@ -1635,13 +1633,11 @@ DECLINLINE(void) ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC)
  */
 static void ichac97StreamUpdateSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
 {
-    PAC97BMREGS pRegs   = &pStream->Regs;
-
     bool fSignal = false;
     int  iIRQL = 0;
 
     uint32_t new_mask = new_sr & AC97_SR_INT_MASK;
-    uint32_t old_mask = pRegs->sr  & AC97_SR_INT_MASK;
+    uint32_t old_mask = pStream->Regs.sr & AC97_SR_INT_MASK;
 
     if (new_mask ^ old_mask)
     {
@@ -1651,22 +1647,22 @@ static void ichac97StreamUpdateSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STR
             fSignal = true;
             iIRQL   = 0;
         }
-        else if ((new_mask & AC97_SR_LVBCI) && (pRegs->cr & AC97_CR_LVBIE))
+        else if ((new_mask & AC97_SR_LVBCI) && (pStream->Regs.cr & AC97_CR_LVBIE))
         {
             fSignal = true;
             iIRQL   = 1;
         }
-        else if ((new_mask & AC97_SR_BCIS) && (pRegs->cr & AC97_CR_IOCE))
+        else if ((new_mask & AC97_SR_BCIS) && (pStream->Regs.cr & AC97_CR_IOCE))
         {
             fSignal = true;
             iIRQL   = 1;
         }
     }
 
-    pRegs->sr = new_sr;
+    pStream->Regs.sr = new_sr;
 
     LogFlowFunc(("IOC%d, LVB%d, sr=%#x, fSignal=%RTbool, IRQL=%d\n",
-                 pRegs->sr & AC97_SR_BCIS, pRegs->sr & AC97_SR_LVBCI, pRegs->sr, fSignal, iIRQL));
+                 pStream->Regs.sr & AC97_SR_BCIS, pStream->Regs.sr & AC97_SR_LVBCI, pStream->Regs.sr, fSignal, iIRQL));
 
     if (fSignal)
     {
@@ -1692,12 +1688,10 @@ static void ichac97StreamUpdateSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STR
  */
 static void ichac97StreamWriteSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t u32Val)
 {
-    PAC97BMREGS pRegs = &pStream->Regs;
+    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pStream->Regs.sr));
 
-    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
-
-    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-    ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
+    pStream->Regs.sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
+    ichac97StreamUpdateSR(pDevIns, pThis, pStream, pStream->Regs.sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
 }
 
 #ifdef IN_RING3
@@ -1718,16 +1712,14 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream, PAC97STR
     if (pStreamCC->State.pCircBuf)
         RTCircBufReset(pStreamCC->State.pCircBuf);
 
-    PAC97BMREGS pRegs = &pStream->Regs;
+    pStream->Regs.bdbar    = 0;
+    pStream->Regs.civ      = 0;
+    pStream->Regs.lvi      = 0;
 
-    pRegs->bdbar    = 0;
-    pRegs->civ      = 0;
-    pRegs->lvi      = 0;
-
-    pRegs->picb     = 0;
-    pRegs->piv      = 0; /* Note! Because this is also zero, we will actually start transferring with BDLE00. */
-    pRegs->cr      &= AC97_CR_DONT_CLEAR_MASK;
-    pRegs->bd_valid = 0;
+    pStream->Regs.picb     = 0;
+    pStream->Regs.piv      = 0; /* Note! Because this is also zero, we will actually start transferring with BDLE00. */
+    pStream->Regs.cr      &= AC97_CR_DONT_CLEAR_MASK;
+    pStream->Regs.bd_valid = 0;
 
     RT_ZERO(pThis->silence);
 
@@ -2484,7 +2476,6 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
         && offPort != AC97_GLOB_CNT)
     {
         PAC97STREAM pStream = &pThis->aStreams[AC97_PORT2IDX(offPort)];
-        PAC97BMREGS pRegs   = &pStream->Regs;
 
         switch (cb)
         {
@@ -2493,27 +2484,27 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                 {
                     case AC97_NABM_OFF_CIV:
                         /* Current Index Value Register */
-                        *pu32 = pRegs->civ;
+                        *pu32 = pStream->Regs.civ;
                         Log3Func(("CIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_LVI:
                         /* Last Valid Index Register */
-                        *pu32 = pRegs->lvi;
+                        *pu32 = pStream->Regs.lvi;
                         Log3Func(("LVI[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_PIV:
                         /* Prefetched Index Value Register */
-                        *pu32 = pRegs->piv;
+                        *pu32 = pStream->Regs.piv;
                         Log3Func(("PIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_CR:
                         /* Control Register */
-                        *pu32 = pRegs->cr;
+                        *pu32 = pStream->Regs.cr;
                         Log3Func(("CR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_SR:
                         /* Status Register (lower part) */
-                        *pu32 = RT_LO_U8(pRegs->sr);
+                        *pu32 = RT_LO_U8(pStream->Regs.sr);
                         Log3Func(("SRb[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     default:
@@ -2529,7 +2520,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                 {
                     case AC97_NABM_OFF_SR:
                         /* Status Register */
-                        *pu32 = pRegs->sr;
+                        *pu32 = pStream->Regs.sr;
                         Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_PICB:
@@ -2544,7 +2535,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                          * however most of these happen very very early, 1-10% into the buffer. So, I'm
                          * not sure if it's worth it, as it'll be a big complication... */
 #if 1
-                        *pu32 = pRegs->picb;
+                        *pu32 = pStream->Regs.picb;
 # ifdef LOG_ENABLED
                         if (LogIs3Enabled())
                         {
@@ -2573,14 +2564,14 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                                 cSamples = pStream->Regs.picb - 8;
                             else
                                 cSamples = 0;
-                            *pu32 = pRegs->picb - cSamples;
+                            *pu32 = pStream->Regs.picb - cSamples;
                             Log3Func(("PICB[%d] -> %#x (PICB=%#x cSamples=%#x offPeriod=%RU64 of %RU64 / %RU64%%)\n",
-                                      AC97_PORT2IDX(offPort), *pu32, pRegs->picb, cSamples, offPeriod, pStream->cDmaPeriodTicks,
-                                      offPeriod * 100 / pStream->cDmaPeriodTicks));
+                                      AC97_PORT2IDX(offPort), *pu32, pStream->Regs.picb, cSamples, offPeriod,
+                                      pStream->cDmaPeriodTicks, offPeriod * 100 / pStream->cDmaPeriodTicks));
                         }
                         else
                         {
-                            *pu32 = pRegs->picb;
+                            *pu32 = pStream->Regs.picb;
                             Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         }
 #endif
@@ -2598,24 +2589,24 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                 {
                     case AC97_NABM_OFF_BDBAR:
                         /* Buffer Descriptor Base Address Register */
-                        *pu32 = pRegs->bdbar;
+                        *pu32 = pStream->Regs.bdbar;
                         Log3Func(("BMADDR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_CIV:
                         /* 32-bit access: Current Index Value Register +
                          *                Last Valid Index Register +
                          *                Status Register */
-                        *pu32 = pRegs->civ | ((uint32_t)pRegs->lvi << 8) | ((uint32_t)pRegs->sr << 16);
+                        *pu32 = pStream->Regs.civ | ((uint32_t)pStream->Regs.lvi << 8) | ((uint32_t)pStream->Regs.sr << 16);
                         Log3Func(("CIV LVI SR[%d] -> %#x, %#x, %#x\n",
-                                  AC97_PORT2IDX(offPort), pRegs->civ, pRegs->lvi, pRegs->sr));
+                                  AC97_PORT2IDX(offPort), pStream->Regs.civ, pStream->Regs.lvi, pStream->Regs.sr));
                         break;
                     case AC97_NABM_OFF_PICB:
                         /* 32-bit access: Position in Current Buffer Register +
                          *                Prefetched Index Value Register +
                          *                Control Register */
-                        *pu32 = pRegs->picb | ((uint32_t)pRegs->piv << 16) | ((uint32_t)pRegs->cr << 24);
+                        *pu32 = pStream->Regs.picb | ((uint32_t)pStream->Regs.piv << 16) | ((uint32_t)pStream->Regs.cr << 24);
                         Log3Func(("PICB PIV CR[%d] -> %#x %#x %#x %#x\n",
-                                  AC97_PORT2IDX(offPort), *pu32, pRegs->picb, pRegs->piv, pRegs->cr));
+                                  AC97_PORT2IDX(offPort), *pu32, pStream->Regs.picb, pStream->Regs.piv, pStream->Regs.cr));
                         break;
 
                     default:
@@ -2712,7 +2703,6 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
         PAC97STREAMR3   pStreamCC = &pThisCC->aStreams[AC97_PORT2IDX(offPort)];
 #endif
         PAC97STREAM     pStream   = &pThis->aStreams[AC97_PORT2IDX(offPort)];
-        PAC97BMREGS     pRegs     = &pStream->Regs;
 
         switch (cb)
         {
@@ -2725,10 +2715,10 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                     case AC97_NABM_OFF_LVI:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
 
-                        if (   !(pRegs->sr & AC97_SR_DCH)
-                            || !(pRegs->cr & AC97_CR_RPBM))
+                        if (   !(pStream->Regs.sr & AC97_SR_DCH)
+                            || !(pStream->Regs.cr & AC97_CR_RPBM))
                         {
-                            pRegs->lvi = u32 % AC97_MAX_BDLE;
+                            pStream->Regs.lvi = u32 % AC97_MAX_BDLE;
                             STAM_REL_COUNTER_INC(&pStream->StatWriteLvi);
                             DEVAC97_UNLOCK(pDevIns, pThis);
                             Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32));
@@ -2741,10 +2731,10 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                                update LVI and then try to load the next BDLE.  Unfortunately,
                                we cannot do this from ring-3 as much of the BDLE state is
                                ring-3 only. */
-                            pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
-                            pRegs->lvi = u32 % AC97_MAX_BDLE;
+                            pStream->Regs.sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
+                            pStream->Regs.lvi = u32 % AC97_MAX_BDLE;
                             if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
-                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
+                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pStream->Regs.sr | AC97_SR_BCIS);
 
                             /* We now have to re-arm the DMA timer according to the new BDLE length.
                                This means leaving the device lock to avoid virtual sync lock order issues. */
@@ -2757,7 +2747,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             DEVAC97_UNLOCK(pDevIns, pThis);
 
                             LogFunc(("[SD%RU8] LVI <- %#x; CIV=%#x PIV=%#x SR=%#x cTicksToDeadline=%#RX64 [recovering]\n",
-                                     pStream->u8SD, u32, pRegs->civ, pRegs->piv, pRegs->sr, cTicksToDeadline));
+                                     pStream->u8SD, u32, pStream->Regs.civ, pStream->Regs.piv, pStream->Regs.sr, cTicksToDeadline));
 
                             int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, &pStream->uArmedTs);
                             AssertRC(rc2);
@@ -2776,8 +2766,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         DEVAC97_LOCK(pDevIns, pThis);
                         STAM_REL_COUNTER_INC(&pStreamCC->State.StatWriteCr);
 
-                        uint32_t const fCrChanged = pRegs->cr ^ u32;
-                        Log3Func(("[SD%RU8] CR <- %#x (was %#x; changed %#x)\n", pStream->u8SD, u32, pRegs->cr, fCrChanged));
+                        uint32_t const fCrChanged = pStream->Regs.cr ^ u32;
+                        Log3Func(("[SD%RU8] CR <- %#x (was %#x; changed %#x)\n", pStream->u8SD, u32, pStream->Regs.cr, fCrChanged));
 
                         /*
                          * Busmaster reset.
@@ -2790,7 +2780,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0).
                                3.2.7 in 302349-003 says RPBM be must be clear when resetting
                                and that behavior is undefined if it's set. */
-                            ASSERT_GUEST_STMT((pRegs->cr & AC97_CR_RPBM) == 0,
+                            ASSERT_GUEST_STMT((pStream->Regs.cr & AC97_CR_RPBM) == 0,
                                               ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream,
                                                                     pStreamCC, false /* fEnable */));
 
@@ -2806,20 +2796,20 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         /*
                          * Write the new value to the register and if RPBM didn't change we're done.
                          */
-                        pRegs->cr = u32 & AC97_CR_VALID_MASK;
+                        pStream->Regs.cr = u32 & AC97_CR_VALID_MASK;
 
                         if (!(fCrChanged & AC97_CR_RPBM))
                             DEVAC97_UNLOCK(pDevIns, pThis); /* Probably not so likely, but avoid one extra intentation level. */
                         /*
                          * Pause busmaster.
                          */
-                        else if (!(pRegs->cr & AC97_CR_RPBM))
+                        else if (!(pStream->Regs.cr & AC97_CR_RPBM))
                         {
                             STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatStop, p);
                             LogFunc(("[SD%RU8] Pause busmaster (disable stream) SR=%#x -> %#x\n",
-                                     pStream->u8SD, pRegs->sr, pRegs->sr | AC97_SR_DCH));
+                                     pStream->u8SD, pStream->Regs.sr, pStream->Regs.sr | AC97_SR_DCH));
                             ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fEnable */);
-                            pRegs->sr |= AC97_SR_DCH;
+                            pStream->Regs.sr |= AC97_SR_DCH;
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
                             STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatStop, p);
@@ -2831,11 +2821,11 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         {
                             STAM_REL_PROFILE_START_NS(&pStreamCC->State.StatStart, r);
                             LogFunc(("[SD%RU8] Run busmaster (enable stream) SR=%#x -> %#x\n",
-                                     pStream->u8SD, pRegs->sr, pRegs->sr & ~AC97_SR_DCH));
-                            pRegs->sr &= ~AC97_SR_DCH;
+                                     pStream->u8SD, pStream->Regs.sr, pStream->Regs.sr & ~AC97_SR_DCH));
+                            pStream->Regs.sr &= ~AC97_SR_DCH;
 
                             if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
-                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
+                                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pStream->Regs.sr | AC97_SR_BCIS);
 # ifdef LOG_ENABLED
                             if (LogIsFlowEnabled())
                                 ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
@@ -2906,8 +2896,8 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                     case AC97_NABM_OFF_BDBAR:
                         DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                         /* Buffer Descriptor list Base Address Register */
-                        pRegs->bdbar = u32 & ~(uint32_t)3;
-                        Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(offPort), u32, pRegs->bdbar));
+                        pStream->Regs.bdbar = u32 & ~(uint32_t)3;
+                        Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(offPort), u32, pStream->Regs.bdbar));
                         STAM_REL_COUNTER_INC(&pStream->StatWriteBdBar);
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
@@ -3660,19 +3650,18 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
  */
 static void ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
-    PAC97BMREGS   pRegs = &pStream->Regs;
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    pHlp->pfnSSMPutU32(pSSM, pRegs->bdbar);
-    pHlp->pfnSSMPutU8( pSSM, pRegs->civ);
-    pHlp->pfnSSMPutU8( pSSM, pRegs->lvi);
-    pHlp->pfnSSMPutU16(pSSM, pRegs->sr);
-    pHlp->pfnSSMPutU16(pSSM, pRegs->picb);
-    pHlp->pfnSSMPutU8( pSSM, pRegs->piv);
-    pHlp->pfnSSMPutU8( pSSM, pRegs->cr);
-    pHlp->pfnSSMPutS32(pSSM, pRegs->bd_valid);
-    pHlp->pfnSSMPutU32(pSSM, pRegs->bd.addr);
-    pHlp->pfnSSMPutU32(pSSM, pRegs->bd.ctl_len);
+    pHlp->pfnSSMPutU32(pSSM, pStream->Regs.bdbar);
+    pHlp->pfnSSMPutU8( pSSM, pStream->Regs.civ);
+    pHlp->pfnSSMPutU8( pSSM, pStream->Regs.lvi);
+    pHlp->pfnSSMPutU16(pSSM, pStream->Regs.sr);
+    pHlp->pfnSSMPutU16(pSSM, pStream->Regs.picb);
+    pHlp->pfnSSMPutU8( pSSM, pStream->Regs.piv);
+    pHlp->pfnSSMPutU8( pSSM, pStream->Regs.cr);
+    pHlp->pfnSSMPutS32(pSSM, pStream->Regs.bd_valid);
+    pHlp->pfnSSMPutU32(pSSM, pStream->Regs.bd.addr);
+    pHlp->pfnSSMPutU32(pSSM, pStream->Regs.bd.ctl_len);
 }
 
 
@@ -3722,19 +3711,18 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int ichac97R3LoadStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
-    PAC97BMREGS   pRegs = &pStream->Regs;
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    pHlp->pfnSSMGetU32(pSSM, &pRegs->bdbar);
-    pHlp->pfnSSMGetU8( pSSM, &pRegs->civ);
-    pHlp->pfnSSMGetU8( pSSM, &pRegs->lvi);
-    pHlp->pfnSSMGetU16(pSSM, &pRegs->sr);
-    pHlp->pfnSSMGetU16(pSSM, &pRegs->picb);
-    pHlp->pfnSSMGetU8( pSSM, &pRegs->piv);
-    pHlp->pfnSSMGetU8( pSSM, &pRegs->cr);
-    pHlp->pfnSSMGetS32(pSSM, &pRegs->bd_valid);
-    pHlp->pfnSSMGetU32(pSSM, &pRegs->bd.addr);
-    return pHlp->pfnSSMGetU32(pSSM, &pRegs->bd.ctl_len);
+    pHlp->pfnSSMGetU32(pSSM, &pStream->Regs.bdbar);
+    pHlp->pfnSSMGetU8( pSSM, &pStream->Regs.civ);
+    pHlp->pfnSSMGetU8( pSSM, &pStream->Regs.lvi);
+    pHlp->pfnSSMGetU16(pSSM, &pStream->Regs.sr);
+    pHlp->pfnSSMGetU16(pSSM, &pStream->Regs.picb);
+    pHlp->pfnSSMGetU8( pSSM, &pStream->Regs.piv);
+    pHlp->pfnSSMGetU8( pSSM, &pStream->Regs.cr);
+    pHlp->pfnSSMGetS32(pSSM, &pStream->Regs.bd_valid);
+    pHlp->pfnSSMGetU32(pSSM, &pStream->Regs.bd.addr);
+    return pHlp->pfnSSMGetU32(pSSM, &pStream->Regs.bd.ctl_len);
 }
 
 
