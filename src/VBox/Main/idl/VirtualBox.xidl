@@ -4182,7 +4182,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="70c5ca7b-65a8-49cc-9b19-e80192b9db1d"
+    uuid="247f8b6f-1042-4c15-8910-3e3c64395eb7"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -4251,6 +4251,7 @@
     <const name="CloudPublicSSHKey" value="48" />
     <const name="BootingFirmware" value="49" />
     <const name="CloudInitScriptPath" value="50" />
+    <const name="CloudCompartmentId" value="51" />
     <const name="HardDiskControllerVirtioSCSI" value="60" />
   </enum>
 
@@ -27564,7 +27565,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="5fa3a8db-1c4f-4cda-b8d4-7982ef60fefb"
-    wsmap="managed" reservedMethods="16" reservedAttributes="8"
+    wsmap="managed" reservedMethods="14" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -27866,6 +27867,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="listVnicAttachments" const="yes">
+      <desc>
+        Returns the list of the Vnic attachements in the Cloud.
+      </desc>
+      <param name="parameters" type="wstring" dir="in" safearray="yes">
+        <desc>Each parameter in the array must be in the form "name=value".</desc>
+      </param>
+      <param name="returnVnicAttachmentIds" type="IStringArray" dir="out">
+        <desc>VM ids.</desc>
+      </param>
+      <param name="returnVnicIds" type="IStringArray" dir="out">
+        <desc>VM ids.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
     <method name="getInstanceInfo" const="yes">
       <desc>
         Returns the information about an instance in the Cloud.
@@ -28035,6 +28056,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
+
+    <method name="getVnicInfo" const="yes">
+      <desc>
+        Returns the information about Vnic in the Cloud.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>The id of vnic in the Cloud.</desc>
+      </param>
+      <param name="infoArray" type="IStringArray" dir="out">
+        <desc>
+          An array where the Vnic settings/properties is returned.
+          Each parameter in the array must be in the form "name=value".
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--

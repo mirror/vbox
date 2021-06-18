@@ -1115,6 +1115,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudPublicSSHKey:
                         case VirtualSystemDescriptionType_BootingFirmware:
                         case VirtualSystemDescriptionType_CloudInitScriptPath:
+                        case VirtualSystemDescriptionType_CloudCompartmentId:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
 
