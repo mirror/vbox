@@ -309,13 +309,13 @@ ALIGNCODE(16)
         rdmsr
         shl     rdx, 32
         or      rdx, rax
-        mov     [r8 + VMXRESTOREHOST.uHostFSBase], rax
+        mov     [r8 + VMXRESTOREHOST.uHostFSBase], rdx
 
         mov     ecx, MSR_K8_GS_BASE
         rdmsr
         shl     rdx, 32
         or      rdx, rax
-        mov     [r8 + VMXRESTOREHOST.uHostGSBase], rax
+        mov     [r8 + VMXRESTOREHOST.uHostGSBase], rdx
 
 %ifdef ASM_CALL64_MSC
         mov     pRestoreHost, r8
