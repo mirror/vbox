@@ -1101,39 +1101,36 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         /*
          * Input.
          */
+        else if (!fWriteSilence)
+        {
+            void  *pvSrc = NULL;
+            size_t cbSrc = 0;
+            RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
+
+            if (cbSrc)
+            {
+                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
+                AssertRC(rc2);
+
+                if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
+                { /* likely */ }
+                else
+                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
+            }
+
+            RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
+
+            cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
+        }
         else
         {
-            if (!fWriteSilence)
-            {
-                void  *pvSrc = NULL;
-                size_t cbSrc = 0;
-                RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvSrc, &cbSrc);
+            /* Since the format is signed 16-bit or 32-bit integer samples, we can
+               use g_abRTZero64K as source and avoid some unnecessary bzero() work. */
+            cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
+            cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
 
-                if (cbSrc)
-                {
-                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, pvSrc, cbSrc);
-                    AssertRC(rc2);
-
-                    if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
-                    { /* likely */ }
-                    else
-                        AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
-                }
-
-                RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
-
-                cbChunk = (uint32_t)cbSrc; /* Update the current chunk size to what really has been read. */
-            }
-            else
-            {
-                /* Since the format is signed 16-bit or 32-bit integer samples, we can
-                   use g_abRTZero64K as source and avoid some unnecessary bzero() work. */
-                cbChunk = RT_MIN(cbChunk, sizeof(g_abRTZero64K));
-                cbChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbChunk);
-
-                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
-                AssertRC(rc2);
-            }
+            int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, g_abRTZero64K, cbChunk);
+            AssertRC(rc2);
         }
 
         Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbChunk));
