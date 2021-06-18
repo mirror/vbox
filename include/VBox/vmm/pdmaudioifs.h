@@ -27,6 +27,53 @@
  *
  * @section sec_pdm_audio_overview  Audio architecture overview
  *
+@startuml
+skinparam componentStyle rectangular
+
+component "DevAudio" {
+  [Output DMA Engine]
+  [Input DMA Engine]
+  () LUN0
+  () LUN1
+
+  component "AudioMixer" {
+      component "Output Sink" {
+          DrvStreamOut0 --> LUN0
+          DrvStreamOut1 --> LUN1
+          [Output MixerBuffer] --> DrvStreamOut0
+          [Output MixerBuffer] --> DrvStreamOut1
+          [Output MixerBuffer] <- [Output DMA Engine]
+      }
+      component "Input Sink" {
+          LUN0 --> DrvStreamIn0
+          LUN1 --> DrvStreamIn1
+          [Input MixerBuffer] <-- DrvStreamIn0
+          [Input MixerBuffer] <-- DrvStreamIn1
+          [Input MixerBuffer] <- [Input DMA Engine]
+      }
+  }
+}
+
+component "DrvAudio0" {
+   () PDMIAUDIOCONNECTOR0
+}
+
+component "DrvHostAudioWasApi" {
+   () PDMIHOSTAUDIO0 <--> DrvAudio0
+}
+
+component "DrvAudio1" {
+   () PDMIAUDIOCONNECTOR1
+}
+
+component "DrvAudioVRDE" {
+   () PDMIHOSTAUDIO1 <--> DrvAudio1
+}
+
+PDMIAUDIOCONNECTOR0 <--> LUN0
+PDMIAUDIOCONNECTOR1 <--> LUN1
+@enduml
+ *
  * The audio architecture mainly consists of two PDM interfaces,
  * PDMIAUDIOCONNECTOR and PDMIHOSTAUDIO.
  *
