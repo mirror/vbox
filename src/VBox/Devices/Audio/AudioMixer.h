@@ -297,7 +297,7 @@ PDMAUDIODIR AudioMixerSinkGetDir(PCAUDMIXSINK pSink);
 uint32_t    AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
 bool        AudioMixerSinkIsActive(PAUDMIXSINK pSink);
 void        AudioMixerSinkReset(PAUDMIXSINK pSink);
-int         AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps);
+int         AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pPCMProps, uint32_t cMsSchedulingHint);
 int         AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVol);
 int         AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t cbDmaPeriod);
 

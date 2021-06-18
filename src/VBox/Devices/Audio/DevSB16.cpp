@@ -1794,23 +1794,26 @@ static int sb16AddDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSINK p
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
 
-    if (!AudioHlpStreamCfgIsValid(pCfg))
-        return VERR_INVALID_PARAMETER;
-
-    int rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    PSB16DRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    int rc;
+    if (AudioHlpStreamCfgIsValid(pCfg))
     {
-        int rc2 = sb16AddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
-        if (RT_FAILURE(rc2))
-            LogFunc(("Attaching stream failed with %Rrc\n", rc2));
+        rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props, pCfg->Device.cMsSchedulingHint);
+        if (RT_SUCCESS(rc))
+        {
+            PSB16DRIVER pDrv;
+            RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+            {
+                int rc2 = sb16AddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
+                if (RT_FAILURE(rc2))
+                    LogFunc(("Attaching stream failed with %Rrc\n", rc2));
 
-        /* Do not pass failure to rc here, as there might be drivers which aren't
-         * configured / ready yet. */
+                /* Do not pass failure to rc here, as there might be drivers which aren't
+                 * configured / ready yet. */
+            }
+        }
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

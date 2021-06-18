@@ -1838,7 +1838,7 @@ static int ichac97R3MixerAddDrvStreams(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC,
     int rc;
     if (AudioHlpStreamCfgIsValid(pCfg))
     {
-        rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
+        rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props, pCfg->Device.cMsSchedulingHint);
         if (RT_SUCCESS(rc))
         {
             PAC97DRIVER pDrv;

@@ -944,41 +944,65 @@ void AudioMixerSinkReset(PAUDMIXSINK pSink)
  * Sets the audio format of a mixer sink.
  *
  * @returns VBox status code.
- * @param   pSink   The sink to set audio format for.
- * @param   pProps  The properties of the new audio format (guest side).
+ * @param   pSink               The sink to set audio format for.
+ * @param   pProps              The properties of the new audio format (guest side).
+ * @param   cMsSchedulingHint   Scheduling hint for mixer buffer sizing.
  */
-int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps)
+int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps, uint32_t cMsSchedulingHint)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertReturn(pSink->uMagic == AUDMIXSINK_MAGIC, VERR_INVALID_MAGIC);
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
     AssertReturn(AudioHlpPcmPropsAreValid(pProps), VERR_INVALID_PARAMETER);
 
+    /*
+     * Calculate the mixer buffer size so we can force a recreation if it changes.
+     *
+     * This used to be fixed at 100ms, however that's usually too generous and can
+     * in theory be too small.  Generally, we size the buffer at 3 DMA periods as
+     * that seems reasonable.  Now, since the we don't quite trust the scheduling
+     * hint we're getting, make sure we're got a minimum of 30ms buffer space, but
+     * no more than 500ms.
+     */
+    if (cMsSchedulingHint <= 10)
+        cMsSchedulingHint = 30;
+    else
+    {
+        cMsSchedulingHint *= 3;
+        if (cMsSchedulingHint > 500)
+            cMsSchedulingHint = 500;
+    }
+    uint32_t const cBufferFrames = PDMAudioPropsMilliToFrames(pProps, cMsSchedulingHint);
+     /** @todo configuration override on the buffer size? */
+
     int rc = RTCritSectEnter(&pSink->CritSect);
     AssertRCReturn(rc, rc);
 
     /*
      * Do nothing unless the format actually changed.
+     * The buffer size must not match exactly, within +/- 2% is okay.
      */
-    if (!PDMAudioPropsAreEqual(&pSink->PCMProps, pProps))
+    uint32_t cOldBufferFrames;
+    if (   !PDMAudioPropsAreEqual(&pSink->PCMProps, pProps)
+        || (   cBufferFrames != (cOldBufferFrames = AudioMixBufSize(&pSink->MixBuf))
+            && (uint32_t)RT_ABS((int32_t)(cBufferFrames - cOldBufferFrames)) > cBufferFrames / 50) )
     {
 #ifdef LOG_ENABLED
         char szTmp[PDMAUDIOPROPSTOSTRING_MAX];
 #endif
         if (PDMAudioPropsHz(&pSink->PCMProps) != 0)
-            LogFlowFunc(("[%s] Old format: %s\n", pSink->pszName, PDMAudioPropsToString(&pSink->PCMProps, szTmp, sizeof(szTmp)) ));
+            LogFlowFunc(("[%s] Old format: %s; buffer: %u frames\n", pSink->pszName,
+                         PDMAudioPropsToString(&pSink->PCMProps, szTmp, sizeof(szTmp)), AudioMixBufSize(&pSink->MixBuf) ));
         pSink->PCMProps = *pProps;
-        LogFlowFunc(("[%s] New format: %s\n", pSink->pszName, PDMAudioPropsToString(&pSink->PCMProps, szTmp, sizeof(szTmp)) ));
+        LogFlowFunc(("[%s] New format: %s; buffer: %u frames\n", pSink->pszName,
+                     PDMAudioPropsToString(&pSink->PCMProps, szTmp, sizeof(szTmp)), cBufferFrames ));
 
         /*
          * Also update the sink's mixing buffer format.
          */
         AudioMixBufTerm(&pSink->MixBuf);
 
-        /** @todo r=bird: Make sure we've got more room here than what's expected to
-         *        be moved in one guest DMA period. */
-        rc = AudioMixBufInit(&pSink->MixBuf, pSink->pszName, &pSink->PCMProps,
-                             PDMAudioPropsMilliToFrames(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable? */
+        rc = AudioMixBufInit(&pSink->MixBuf, pSink->pszName, &pSink->PCMProps, cBufferFrames);
         if (RT_SUCCESS(rc))
         {
             /*

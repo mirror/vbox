@@ -2347,22 +2347,25 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
 
     LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
 
-    if (!AudioHlpStreamCfgIsValid(pCfg))
-        return VERR_INVALID_PARAMETER;
-
-    int rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (AudioHlpStreamCfgIsValid(pCfg))
     {
-        PHDADRIVER pDrv;
-        RTListForEach(&pThisCC->lstDrv, pDrv, HDADRIVER, Node)
+        rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props, pCfg->Device.cMsSchedulingHint);
+        if (RT_SUCCESS(rc))
         {
-            /* We ignore failures here because one non-working driver shouldn't
-               be allowed to spoil it for everyone else. */
-            int rc2 = hdaR3MixerAddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
-            if (RT_FAILURE(rc2))
-                LogFunc(("Attaching stream failed with %Rrc (ignored)\n", rc2));
+            PHDADRIVER pDrv;
+            RTListForEach(&pThisCC->lstDrv, pDrv, HDADRIVER, Node)
+            {
+                /* We ignore failures here because one non-working driver shouldn't
+                   be allowed to spoil it for everyone else. */
+                int rc2 = hdaR3MixerAddDrvStream(pDevIns, pMixSink, pCfg, pDrv);
+                if (RT_FAILURE(rc2))
+                    LogFunc(("Attaching stream failed with %Rrc (ignored)\n", rc2));
+            }
         }
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
     return rc;
 }
 
