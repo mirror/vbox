@@ -25,7 +25,7 @@
 
 /** @page pg_pdm_audio  PDM Audio
  *
- * @section sec_pdm_audio_overview  Audio architecture overview
+ * @section sec_pdm_audio_overview  Overview
  *
 @startuml
 skinparam componentStyle rectangular
@@ -40,16 +40,16 @@ component "DevAudio" {
       component "Output Sink" {
           DrvStreamOut0 --> LUN0
           DrvStreamOut1 --> LUN1
-          [Output MixerBuffer] --> DrvStreamOut0
-          [Output MixerBuffer] --> DrvStreamOut1
-          [Output MixerBuffer] <- [Output DMA Engine]
+          [Output Mixer Buffer] --> DrvStreamOut0
+          [Output Mixer Buffer] --> DrvStreamOut1
+          [Output Mixer Buffer] <-- [Output DMA Engine]
       }
       component "Input Sink" {
           LUN0 --> DrvStreamIn0
           LUN1 --> DrvStreamIn1
-          [Input MixerBuffer] <-- DrvStreamIn0
-          [Input MixerBuffer] <-- DrvStreamIn1
-          [Input MixerBuffer] <- [Input DMA Engine]
+          [Input Mixer Buffer] <-- DrvStreamIn0
+          [Input Mixer Buffer] <-- DrvStreamIn1
+          [Input Mixer Buffer] <-- [Input DMA Engine]
       }
   }
 }
@@ -74,30 +74,46 @@ PDMIAUDIOCONNECTOR0 <--> LUN0
 PDMIAUDIOCONNECTOR1 <--> LUN1
 @enduml
  *
- * The audio architecture mainly consists of two PDM interfaces,
- * PDMIAUDIOCONNECTOR and PDMIHOSTAUDIO.
+ * Actors:
+ *      - An audio device implementation: "DevAudio"
+ *          - Mixer instance (AudioMixer.cpp) with one or more mixer
+ *            sinks: "Output Sink",  "Input Sink"
+ *          - One DMA engine teamed up with each mixer sink: "Output DMA
+ *            Engine", "Input DMA Engine"
+ *      - The audio driver "DrvAudio" instances attached to LUN0 and LUN1
+ *        respectively: "DrvAudio0", "DrvAudio1"
+ *      - The Windows host audio driver attached to "DrvAudio0": "DrvHostAudioWas"
+ *      - The VRDE/VRDP host audio driver attached to "DrvAudio1": "DrvAudioVRDE"
  *
- * The PDMIAUDIOCONNECTOR interface is responsible of connecting a device
- * emulation, such as SB16, AC'97 and HDA to one or multiple audio backend(s).
- * Its API abstracts audio stream handling and I/O functions, device enumeration
- * and so on.
+ * Both "Output Sink" and "Input Sink" talks to all the attached driver chains
+ * ("DrvAudio0" and "DrvAudio1"), but using different PDMAUDIOSTREAM instances.
+ * There can be an arbritrary number of driver chains attached to an audio
+ * device, the mixer sinks will multiplex output to each of them and blend input
+ * from all of them, taking care of format and rate conversions.  The mixer and
+ * mixer sinks does not fit into the PDM device/driver model, so it is
+ * implemented as a separate component that all the audio devices share (see
+ * AudioMixer.h, AudioMixer.cpp, AudioMixBuffer.h and AudioMixBuffer.cpp).
  *
- * The PDMIHOSTAUDIO interface must be implemented by all audio backends to
- * provide an abstract and common way of accessing needed functions, such as
- * transferring output audio data for playing audio or recording input from the
- * host.
+ * The driver chains attached to LUN0, LUN1, ... LUNn typically have two
+ * drivers attached, first DrvAudio and then a backend driver like
+ * DrvHostAudioWasApi, DrvHostAudioPulseAudio, or DrvAudioVRDE.  DrvAudio
+ * exposes PDMIAUDIOCONNECTOR upwards towards the device and mixer component,
+ * and PDMIHOSTAUDIOPORT downwards towards DrvHostAudioWasApi and the other
+ * backends.  The backend exposes the PDMIHOSTAUDIO upwards towards DrvAudio.
  *
- * A device emulation can have one or more LUNs attached to it, whereas these
- * LUNs in turn then all have their own PDMIAUDIOCONNECTOR, making it possible
- * to connect multiple backends to a certain device emulation stream
- * (multiplexing).
+ * The purpose of DrvAudio is to make the work of the backend as simple as
+ * possible and try avoid needing to write the same code over and over again for
+ * each backend.  It takes care of:
+ *      - Stream creation, operation, re-initialization and destruction.
+ *      - Pre-buffering.
+ *      - Thread pool.
  *
- * An audio backend's job is to record and/or play audio data (depending on its
- * capabilities). It highly depends on the host it's running on and needs very
- * specific (host-OS-dependent) code. The backend itself only has very limited
- * ways of accessing and/or communicating with the PDMIAUDIOCONNECTOR interface
- * via callbacks, but never directly with the device emulation or other parts of
- * the audio sub system.
+ * The purpose of a host audio driver (aka backend) is to interface with the
+ * host audio system (or other audio systems like VRDP and video recording).
+ * The backend will optionally provide a list of host audio devices, switch
+ * between them, and monitor changes to them.  By default our host backends use
+ * the default host device and will trigger stream re-initialization if this
+ * changes while we're using it.
  *
  *
  * @section sec_pdm_audio_mixing    Mixing
