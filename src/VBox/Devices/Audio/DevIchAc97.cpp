@@ -588,6 +588,8 @@ typedef struct AC97STATE
 
     STAMCOUNTER             StatUnimplementedNabmReads;
     STAMCOUNTER             StatUnimplementedNabmWrites;
+    STAMCOUNTER             StatUnimplementedNamReads;
+    STAMCOUNTER             StatUnimplementedNamWrites;
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;
 #endif
@@ -2509,7 +2511,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         break;
                     default:
                         *pu32 = UINT32_MAX;
-                        LogFunc(("U nabm readb %#x -> %#x\n", offPort, UINT32_MAX));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 1 (line " RT_XSTR(__LINE__) ")\n", offPort));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                         break;
                 }
@@ -2530,7 +2532,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         break;
                     default:
                         *pu32 = UINT32_MAX;
-                        LogFunc(("U nabm readw %#x -> %#x\n", offPort, UINT32_MAX));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 2 (line " RT_XSTR(__LINE__) ")\n", offPort));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                         break;
                 }
@@ -2563,7 +2565,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 
                     default:
                         *pu32 = UINT32_MAX;
-                        LogFunc(("U nabm readl %#x -> %#x\n", offPort, UINT32_MAX));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                         break;
                 }
@@ -2590,7 +2592,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         break;
                     default:
                         *pu32 = UINT32_MAX;
-                        LogFunc(("U nabm readb %#x -> %#x\n", offPort, UINT32_MAX));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 1 (line " RT_XSTR(__LINE__) ")\n", offPort));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                         break;
                 }
@@ -2598,7 +2600,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 
             case 2:
                 *pu32 = UINT32_MAX;
-                LogFunc(("U nabm readw %#x -> %#x\n", offPort, UINT32_MAX));
+                LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 2 (line " RT_XSTR(__LINE__) ")\n", offPort));
                 STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                 break;
 
@@ -2617,7 +2619,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         break;
                     default:
                         *pu32 = UINT32_MAX;
-                        LogFunc(("U nabm readl %#x -> %#x\n", offPort, UINT32_MAX));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB read offPort=%#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmReads);
                         break;
                 }
@@ -2821,7 +2823,9 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         break;
 
                     default:
-                        LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 1\n", offPort, u32));
+                        /* Linux tries to write CIV. */
+                        LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x%s <- %#x LB 1 (line " RT_XSTR(__LINE__) ")\n",
+                                 offPort, (offPort & AC97_NABM_OFF_MASK) == AC97_NABM_OFF_CIV ? " (CIV)" : "" , u32));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                         break;
                 }
@@ -2837,7 +2841,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
-                        LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 2\n", offPort, u32));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x <- %#x LB 2 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                         break;
                 }
@@ -2855,7 +2859,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
-                        LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 4\n", offPort, u32));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x <- %#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                         break;
                 }
@@ -2871,12 +2875,12 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
         switch (cb)
         {
             case 1:
-                LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 1\n", offPort, u32));
+                LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x <- %#x LB 1 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
                 STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                 break;
 
             case 2:
-                LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 2\n", offPort, u32));
+                LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x <- %#x LB 2 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
                 STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                 break;
 
@@ -2904,7 +2908,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         DEVAC97_UNLOCK(pDevIns, pThis);
                         break;
                     default:
-                        LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 4\n", offPort, u32));
+                        LogRel2(("AC97: Warning: Unimplemented NAMB write offPort=%#x <- %#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
                         STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNabmWrites);
                         break;
                 }
@@ -3328,7 +3332,8 @@ ichac97IoPortNamRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
     switch (cb)
     {
         case 1:
-            LogRel2(("AC97: Warning: Unimplemented read (1 byte) offPort=%#x\n", offPort));
+            LogRel2(("AC97: Warning: Unimplemented NAM read offPort=%#x LB 1 (line " RT_XSTR(__LINE__) ")\n", offPort));
+            STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNamReads);
             pThis->cas = 0;
             *pu32 = UINT32_MAX;
             break;
@@ -3339,7 +3344,8 @@ ichac97IoPortNamRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
             break;
 
         case 4:
-            LogRel2(("AC97: Warning: Unimplemented read (4 bytes) offPort=%#x\n", offPort));
+            LogRel2(("AC97: Warning: Unimplemented NAM read offPort=%#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort));
+            STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNamReads);
             pThis->cas = 0;
             *pu32 = UINT32_MAX;
             break;
@@ -3372,7 +3378,8 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     switch (cb)
     {
         case 1:
-            LogRel2(("AC97: Warning: Unimplemented NAMWrite (1 byte) offPort=%#x <- %#x\n", offPort, u32));
+            LogRel2(("AC97: Warning: Unimplemented NAM write offPort=%#x <- %#x LB 1 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
+            STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNamWrites);
             pThis->cas = 0;
             break;
 
@@ -3558,7 +3565,11 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 #endif
                     break;
                 default:
-                    LogRel2(("AC97: Warning: Unimplemented NAMWrite (2 bytes) offPort=%#x <- %#x\n", offPort, u32));
+                    /* Most of these are to register we don't care about like AC97_CD_Volume_Mute
+                       and AC97_Master_Volume_Mono_Mute or things we don't need to handle specially.
+                       Thus this is not a 'warning' but an 'info log message. */
+                    LogRel2(("AC97: Info: Unimplemented NAM write offPort=%#x <- %#x LB 2 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
+                    STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNamWrites);
                     ichac97MixerSet(pThis, offPort, u32);
                     break;
             }
@@ -3566,12 +3577,13 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
         }
 
         case 4:
-            LogRel2(("AC97: Warning: Unimplemented 4 byte NAMWrite: offPort=%#x <- %#x\n", offPort, u32));
+            LogRel2(("AC97: Warning: Unimplemented NAM write offPort=%#x <- %#x LB 4 (line " RT_XSTR(__LINE__) ")\n", offPort, u32));
+            STAM_REL_COUNTER_INC(&pThis->StatUnimplementedNamWrites);
             pThis->cas = 0;
             break;
 
         default:
-            AssertMsgFailed(("Unhandled NAMWrite offPort=%#x, cb=%u u32=%#x\n", offPort, cb, u32));
+            AssertMsgFailed(("Unhandled NAM write offPort=%#x, cb=%u u32=%#x\n", offPort, cb, u32));
             break;
     }
 
@@ -4513,6 +4525,8 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      */
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUnimplementedNabmReads,  STAMTYPE_COUNTER, "UnimplementedNabmReads", STAMUNIT_OCCURENCES, "Unimplemented NABM register reads.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUnimplementedNabmWrites, STAMTYPE_COUNTER, "UnimplementedNabmWrites", STAMUNIT_OCCURENCES, "Unimplemented NABM register writes.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUnimplementedNamReads,   STAMTYPE_COUNTER, "UnimplementedNamReads", STAMUNIT_OCCURENCES, "Unimplemented NAM register reads.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUnimplementedNamWrites,  STAMTYPE_COUNTER, "UnimplementedNamWrites", STAMUNIT_OCCURENCES, "Unimplemented NAM register writes.");
 # ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,        STAMTYPE_PROFILE, "Timer",        STAMUNIT_TICKS_PER_CALL, "Profiling ichac97Timer.");
 # endif
