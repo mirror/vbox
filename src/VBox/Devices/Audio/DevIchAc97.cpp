@@ -369,8 +369,6 @@ typedef struct AC97STREAMSTATE
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t                tsTransferNext;
-    /** Transfer chunk size (in bytes) of a transfer period. */
-    uint32_t                cbTransferChunk;
     /** The stream's timer Hz rate.
      *  This value can can be different from the device's default Hz rate,
      *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
@@ -385,8 +383,6 @@ typedef struct AC97STREAMSTATE
      *  which to retry setting it up.  The latter applies only to same
      *  parameters. */
     uint64_t                nsRetrySetup;
-    /** (Virtual) clock ticks per transfer. */
-    uint64_t                cTransferTicks;
     /** Timestamp (in ns) of last stream update. */
     uint64_t                tsLastUpdateNs;
 
@@ -451,8 +447,18 @@ typedef struct AC97STREAM
     uint8_t                 abPadding0[7];
     /** Bus master registers of this stream. */
     AC97BMREGS              Regs;
+
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE           hTimer;
+    /** When the timer was armed (timer clock). */
+    uint64_t                uArmedTs;
+    /** (Virtual) clock ticks per transfer. */
+    uint64_t                cDmaPeriodTicks;
+    /** Transfer chunk size (in bytes) of a transfer period. */
+    uint32_t                cbDmaPeriod;
+    /** DMA period counter (for logging). */
+    uint32_t                uDmaPeriod;
+
     STAMCOUNTER             StatWriteLvi;
     STAMCOUNTER             StatWriteSr1;
     STAMCOUNTER             StatWriteSr2;
@@ -1258,7 +1264,7 @@ static void ichac97R3StreamUpdateDma(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97
     int rc2;
 
     /* The amount we're supposed to be transfering in this DMA period. */
-    uint32_t cbPeriod = pStreamCC->State.cbTransferChunk;
+    uint32_t cbPeriod = pStream->cbDmaPeriod;
 
     /*
      * Output streams (SDO).
@@ -1519,23 +1525,22 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
         uint32_t const cbMaxPerHz = PDMAudioPropsNanoToBytes(&pStreamCC->State.Cfg.Props, RT_NS_1SEC / pStreamCC->State.uTimerHz);
 
         if (cbLeftInBdle <= cbMaxPerHz)
-            pStreamCC->State.cbTransferChunk = cbLeftInBdle;
+            pStream->cbDmaPeriod = cbLeftInBdle;
         /* Try avoid leaving a very short period at the end of a buffer. */
         else if (cbLeftInBdle >= cbMaxPerHz + cbMaxPerHz / 2)
-            pStreamCC->State.cbTransferChunk = cbMaxPerHz;
+            pStream->cbDmaPeriod = cbMaxPerHz;
         else
-            pStreamCC->State.cbTransferChunk = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbLeftInBdle / 2);
+            pStream->cbDmaPeriod = PDMAudioPropsFloorBytesToFrame(&pStreamCC->State.Cfg.Props, cbLeftInBdle / 2);
 
         /*
          * Translate the chunk size to timer ticks.
          */
-        uint64_t const cNsXferChunk     = PDMAudioPropsBytesToNano(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk);
-        pStreamCC->State.cTransferTicks = PDMDevHlpTimerFromNano(pDevIns, pStream->hTimer, cNsXferChunk);
-        Assert(pStreamCC->State.cTransferTicks > 0);
+        uint64_t const cNsXferChunk = PDMAudioPropsBytesToNano(&pStreamCC->State.Cfg.Props, pStream->cbDmaPeriod);
+        pStream->cDmaPeriodTicks    = PDMDevHlpTimerFromNano(pDevIns, pStream->hTimer, cNsXferChunk);
+        Assert(pStream->cDmaPeriodTicks > 0);
 
-        Log3Func(("[SD%RU8] cbLeftInBdle=%#RX32 cbMaxPerHz=%#RX32 (%RU16Hz) -> cbTransferChunk=%#RX32 cTransferTicks=%RX64\n",
-                  pStream->u8SD, cbLeftInBdle, cbMaxPerHz, pStreamCC->State.uTimerHz,
-                  pStreamCC->State.cbTransferChunk, pStreamCC->State.cTransferTicks));
+        Log3Func(("[SD%RU8] cbLeftInBdle=%#RX32 cbMaxPerHz=%#RX32 (%RU16Hz) -> cbDmaPeriod=%#RX32 cDmaPeriodTicks=%RX64\n",
+                  pStream->u8SD, cbLeftInBdle, cbMaxPerHz, pStreamCC->State.uTimerHz, pStream->cbDmaPeriod, pStream->cDmaPeriodTicks));
     }
 }
 
@@ -1551,7 +1556,7 @@ static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STREAM pStrea
  */
 DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint64_t cTicksToDeadline)
 {
-    int rc = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+    int rc = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, &pStream->uArmedTs);
     AssertRC(rc);
 }
 
@@ -1578,8 +1583,9 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTime
     {
         ichac97R3StreamUpdateDma(pDevIns, pThis, pThisCC, pStream, pStreamCC, pSink);
 
+        pStream->uDmaPeriod++;
         ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
-        ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
+        ichac97R3TimerSet(pDevIns, pStream, pStream->cDmaPeriodTicks);
     }
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
@@ -2283,8 +2289,9 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
      */
     if (fEnable)
     {
-        /* Reset the input pre-buffering state. */
+        /* Reset the input pre-buffering state and DMA period counter. */
         pStreamCC->State.fInputPreBuffered = false;
+        pStream->uDmaPeriod = 0;
 
         /* Set up (update) the AC'97 stream as needed. */
         rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fForce */);
@@ -2526,9 +2533,57 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                         Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
                         break;
                     case AC97_NABM_OFF_PICB:
-                        /* Position in Current Buffer */
+                        /* Position in Current Buffer
+                         * ---
+                         * We can do DMA work here if we want to give the guest a better impression of
+                         * the DMA engine of a real device.  For ring-0 we'd have to add some buffering
+                         * to AC97STREAM (4K or so), only going to ring-3 if full.  Ring-3 would commit
+                         * that buffer and write directly to the internal DMA pCircBuf.
+                         *
+                         * Checking a Linux guest (knoppix 8.6.2), I see some PIC reads each DMA cycle,
+                         * however most of these happen very very early, 1-10% into the buffer. So, I'm
+                         * not sure if it's worth it, as it'll be a big complication... */
+#if 1
                         *pu32 = pRegs->picb;
-                        Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+# ifdef LOG_ENABLED
+                        if (LogIs3Enabled())
+                        {
+                            uint64_t offPeriod = PDMDevHlpTimerGet(pDevIns, pStream->hTimer) - pStream->uArmedTs;
+                            Log3Func(("PICB[%d] -> %#x (%RU64 of %RU64 ticks / %RU64%% into DMA period #%RU32)\n",
+                                      AC97_PORT2IDX(offPort), *pu32, offPeriod, pStream->cDmaPeriodTicks,
+                                      pStream->cDmaPeriodTicks ? offPeriod * 100 / pStream->cDmaPeriodTicks : 0,
+                                      pStream->uDmaPeriod));
+                        }
+# endif
+#else /* For trying out sub-buffer PICB.  Will cause distortions, but can be helpful to see if it help eliminate other issues.  */
+                        if (   (pStream->Regs.cr & AC97_CR_RPBM)
+                            && !(pStream->Regs.sr & AC97_SR_DCH)
+                            && pStream->uArmedTs > 0
+                            && pStream->cDmaPeriodTicks > 0)
+                        {
+                            uint64_t const offPeriod = PDMDevHlpTimerGet(pDevIns, pStream->hTimer) - pStream->uArmedTs;
+                            uint32_t cSamples;
+                            if (offPeriod < pStream->cDmaPeriodTicks)
+                                cSamples = pStream->Regs.picb * offPeriod / pStream->cDmaPeriodTicks;
+                            else
+                                cSamples = pStream->Regs.picb;
+                            if (cSamples + 8 < pStream->Regs.picb)
+                            { /* likely */ }
+                            else if (pStream->Regs.picb > 8)
+                                cSamples = pStream->Regs.picb - 8;
+                            else
+                                cSamples = 0;
+                            *pu32 = pRegs->picb - cSamples;
+                            Log3Func(("PICB[%d] -> %#x (PICB=%#x cSamples=%#x offPeriod=%RU64 of %RU64 / %RU64%%)\n",
+                                      AC97_PORT2IDX(offPort), *pu32, pRegs->picb, cSamples, offPeriod, pStream->cDmaPeriodTicks,
+                                      offPeriod * 100 / pStream->cDmaPeriodTicks));
+                        }
+                        else
+                        {
+                            *pu32 = pRegs->picb;
+                            Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        }
+#endif
                         break;
                     default:
                         *pu32 = UINT32_MAX;
@@ -2694,7 +2749,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             /* We now have to re-arm the DMA timer according to the new BDLE length.
                                This means leaving the device lock to avoid virtual sync lock order issues. */
                             ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
-                            uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
+                            uint64_t const cTicksToDeadline = pStream->cDmaPeriodTicks;
 
                             /** @todo Stop the DMA timer when we get into the AC97_SR_CELV situation to
                              *        avoid potential race here. */
@@ -2704,8 +2759,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             LogFunc(("[SD%RU8] LVI <- %#x; CIV=%#x PIV=%#x SR=%#x cTicksToDeadline=%#RX64 [recovering]\n",
                                      pStream->u8SD, u32, pRegs->civ, pRegs->piv, pRegs->sr, cTicksToDeadline));
 
-                            /** @todo take down the start time here.  */
-                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, &pStream->uArmedTs);
                             AssertRC(rc2);
 #else
                             rc = VINF_IOM_R3_IOPORT_WRITE;
@@ -2793,15 +2847,14 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                              * create a lock order violation with the virtual sync time lock otherwise.
                              */
                             ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
-                            uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
+                            uint64_t const cTicksToDeadline = pStream->cDmaPeriodTicks;
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
 
                             /** @todo for output streams we could probably service this a little bit
                              *        earlier if we push it, just to reduce the lag...  For HDA we do a
                              *        DMA run immediately after the stream is enabled. */
-                            /** @todo take down the start time here.  */
-                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, NULL /*pu64Now*/);
+                            int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, &pStream->uArmedTs);
                             AssertRC(rc2);
 
                             STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatStart, r);
@@ -3753,10 +3806,10 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
         {
             /* Re-arm the timer for this stream. */
             /** @todo r=aeichner This causes a VM hang upon saved state resume when NetBSD is used as a guest
-             * Stopping the timer if cTransferTicks is 0 is a workaround but needs further investigation,
+             * Stopping the timer if cDmaPeriodTicks is 0 is a workaround but needs further investigation,
              * see @bugref{9759} for more information. */
-            if (pStreamCC->State.cTransferTicks)
-                ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
+            if (pStream->cDmaPeriodTicks)
+                ichac97R3TimerSet(pDevIns, pStream, pStream->cDmaPeriodTicks);
             else
                 PDMDevHlpTimerStop(pDevIns, pStream->hTimer);
         }
@@ -3886,8 +3939,8 @@ static void ichac97R3DbgPrintStream(PCDBGFINFOHLP pHlp, PAC97STREAM pStream, PAC
     pHlp->pfnPrintf(pHlp, "  offRead            %#RX64\n", pStreamR3->State.offRead);
     pHlp->pfnPrintf(pHlp, "  offWrite           %#RX64\n", pStreamR3->State.offWrite);
     pHlp->pfnPrintf(pHlp, "  uTimerHz           %RU16\n", pStreamR3->State.uTimerHz);
-    pHlp->pfnPrintf(pHlp, "  cTransferTicks     %RU64\n", pStreamR3->State.cTransferTicks);
-    pHlp->pfnPrintf(pHlp, "  cbTransferChunk    %#RX32\n", pStreamR3->State.cbTransferChunk);
+    pHlp->pfnPrintf(pHlp, "  cDmaPeriodTicks    %RU64\n", pStream->cDmaPeriodTicks);
+    pHlp->pfnPrintf(pHlp, "  cbDmaPeriod        %#RX32\n", pStream->cbDmaPeriod);
 }
 
 
@@ -4532,7 +4585,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
 # endif
     for (unsigned idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.cbTransferChunk, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].cbDmaPeriod, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Bytes to transfer in the current DMA period.",  "Stream%u/cbTransferChunk", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].Regs.cr, STAMTYPE_X8, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                                "Control register (CR), bit 0 is the run bit.",  "Stream%u/reg-CR", idxStream);
