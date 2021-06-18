@@ -987,17 +987,24 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
  * @param   pThis               The shared AC'97 state.
  * @param   pStream             The AC'97 stream to update (shared).
  * @param   pStreamCC           The AC'97 stream to update (ring-3).
- * @param   cbToProcessMax      Maximum of data (in bytes) to process.
+ * @param   cbToProcess         The max amount of data to process (i.e.
+ *                              put into / remove from the circular buffer).
+ *                              Unless something is going seriously wrong, this
+ *                              will always be transfer size for the current
+ *                              period.   The current period will never be
+ *                              larger than what can be stored in the current
+ *                              buffer (i.e. what PICB indicates).
+ * @param   tsNowNs             The current RTTimeNano() value.
  * @param   fWriteSilence       Whether to write silence if this is an input
  *                              stream (done while waiting for backend to get
  *                              going).
  * @param   fInput              Set if input, clear if output.
  */
 static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream,
-                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcessMax, bool fWriteSilence, bool fInput)
+                                   PAC97STREAMR3 pStreamCC, uint32_t cbToProcess, bool fWriteSilence, bool fInput)
 {
-    if (RT_LIKELY(cbToProcessMax > 0))
-        Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbToProcessMax));
+    if (RT_LIKELY(cbToProcess > 0))
+        Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbToProcess));
     else
         return VINF_SUCCESS;
 
@@ -1031,6 +1038,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
     { /* not halted nor does it have pending interrupt - likely */ }
     else
     {
+        /** @todo Stop DMA timer when DCH is set. */
         if (pRegs->sr & AC97_SR_DCH)
         {
             STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaSkippedDch);
@@ -1050,54 +1058,22 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         return VINF_SUCCESS;
     }
 
-    /*
-     * How much to transfer.
-     */
-    /** @todo r=bird: This is wrong, isn't it?  We should just transfer
-     *        cbToProcessMax.  The caller does a RT_MIN(cbPeriod, buffer), so
-     *        we'll get the min number of bytes to transfer in.  It should equal
-     *        PICB, but it doesn't technically have to and the loop below seems to
-     *        think we can work with PICB=0, which this code here contratradicts.
-     *
-     *        When it was introduced in r108022, it might've made some sense...
-     *
-     *        Which is inconsistent.  I hate inconsistencies. */
-    uint32_t cbLeft           = pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
-    cbLeft = RT_MIN(cbLeft, cbToProcessMax);
-    Log3Func(("[SD%RU8] cbToProcessMax=%#x cbLeft=%#x\n", pStream->u8SD, cbToProcessMax, cbLeft));
-
-    /*
+    /*                                                           0x1ba*2 = 0x374 (884) 0x3c0
      * Transfer loop.
      */
+#ifdef LOG_ENABLED
     uint32_t   cbProcessedTotal = 0;
+#endif
     int        rc               = VINF_SUCCESS;
     PRTCIRCBUF pCircBuf         = pStreamCC->State.pCircBuf;
     AssertReturnStmt(pCircBuf, ichac97R3StreamUnlock(pStreamCC), VINF_SUCCESS);
+    Assert((uint32_t)pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props) >= cbToProcess);
+    Log3Func(("[SD%RU8] cbToProcess=%#x PICB=%#x/%#x\n",
+              pStream->u8SD, cbToProcess, pRegs->picb, pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props)));
 
-    while (cbLeft > 0)
+    while (cbToProcess > 0)
     {
-        /** @todo as mentioned above, this is utter non-sense as it won't _ever_ be
-         *        taken, given that cbLeft == PICB * 2. */
-        if (!pRegs->picb) /* Get a new buffer descriptor, that is, the position is 0? */
-        {
-            Log3Func(("Fresh buffer descriptor %RU8 is empty, addr=%#x, len=%#x, skipping\n",
-                      pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len));
-            if (pRegs->civ == pRegs->lvi)
-            {
-                pRegs->sr |= AC97_SR_DCH; /** @todo r=andy Also set CELV? */
-                pThis->bup_flag = 0;
-
-                rc = VINF_EOF;
-                break;
-            }
-
-            pRegs->sr &= ~AC97_SR_CELV;
-            if (ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC))
-                ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr | AC97_SR_BCIS);
-            continue;
-        }
-
-        uint32_t cbChunk = cbLeft;
+        uint32_t cbChunk = cbToProcess;
 
         /*
          * Output.
@@ -1162,51 +1138,49 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         }
 
         Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbChunk));
-        Assert(cbChunk <= cbLeft);
+        Assert(cbChunk <= cbToProcess);
 
-        cbProcessedTotal     += cbChunk;
-        Assert(cbProcessedTotal <= cbToProcessMax);
-        cbLeft               -= cbChunk;
-        pRegs->picb          -= (cbChunk >> 1); /** @todo r=andy Assumes 16bit samples. */
+        /*
+         * Advance.
+         */
+        pRegs->picb          -= cbChunk / PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
         pRegs->bd.addr       += cbChunk;
+        cbToProcess          -= cbChunk;
+#ifdef LOG_ENABLED
+        cbProcessedTotal     += cbChunk;
+#endif
+        LogFlowFunc(("[SD%RU8] cbChunk=%#x, cbToProcess=%#x, cbTotal=%#x picb=%#x\n",
+                     pStream->u8SD, cbChunk, cbToProcess, cbProcessedTotal, pRegs->picb));
+    }
 
-        LogFlowFunc(("[SD%RU8] cbChunk=%RU32, cbLeft=%RU32, cbTotal=%RU32, rc=%Rrc\n",
-                     pStream->u8SD, cbChunk, cbLeft, cbProcessedTotal, rc));
+    /*
+     * Fetch a new buffer descriptor if we've exhausted the current one.
+     */
+    if (!pRegs->picb)
+    {
+        uint32_t fNewSr = pRegs->sr & ~AC97_SR_CELV;
 
-        /** @todo r=bird: again, given that cbLeft == PICB * 2, we could put this
-         *        outside the loop and save a lot of clutter (VINF_EOF). */
-        if (!pRegs->picb)
+        if (pRegs->bd.ctl_len & AC97_BD_IOC)
+            fNewSr |= AC97_SR_BCIS;
+
+        if (pRegs->civ != pRegs->lvi)
+            fNewSr |= ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC);
+        else
         {
-            uint32_t new_sr = pRegs->sr & ~AC97_SR_CELV;
-
-            if (pRegs->bd.ctl_len & AC97_BD_IOC)
-            {
-                new_sr |= AC97_SR_BCIS;
-            }
-
-            if (pRegs->civ == pRegs->lvi)
-            {
-                /* Did we run out of data? */
-                LogFunc(("Underrun CIV (%RU8) == LVI (%RU8)\n", pRegs->civ, pRegs->lvi));
-
-                new_sr |= AC97_SR_LVBCI | AC97_SR_DCH | AC97_SR_CELV;
-                pThis->bup_flag = (pRegs->bd.ctl_len & AC97_BD_BUP) ? BUP_LAST : 0;
-
-                rc = VINF_EOF;
-            }
-            else
-                new_sr |= ichac97R3StreamFetchNextBdle(pDevIns, pStream, pStreamCC);
-
-            ichac97StreamUpdateSR(pDevIns, pThis, pStream, new_sr);
+            LogFunc(("Underrun CIV (%RU8) == LVI (%RU8)\n", pRegs->civ, pRegs->lvi));
+            fNewSr |= AC97_SR_LVBCI | AC97_SR_DCH | AC97_SR_CELV;
+            pThis->bup_flag = (pRegs->bd.ctl_len & AC97_BD_BUP) ? BUP_LAST : 0;
+            /** @todo r=bird: The bup_flag isn't cleared anywhere else.  We should probably
+             *        do what the spec says, and keep writing zeros (silence).
+             *        Alternatively, we could hope the guest will pause the DMA engine
+             *        immediately after seeing this condition, in which case we should
+             *        stop the DMA timer from being re-armed. */
         }
 
-        /* All data processed? */
-        if (rc == VINF_EOF)
-            break;
+        ichac97StreamUpdateSR(pDevIns, pThis, pStream, fNewSr);
     }
 
     ichac97R3StreamUnlock(pStreamCC);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -2820,7 +2794,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                              * Arm the DMA timer.  Must drop the AC'97 device lock first as it would
                              * create a lock order violation with the virtual sync time lock otherwise.
                              */
-                            /** @todo is ichac97R3StreamTransferUpdate called here? */
+                            ichac97R3StreamTransferUpdate(pDevIns, pStream, pStreamCC);
                             uint64_t const cTicksToDeadline = pStreamCC->State.cTransferTicks;
 
                             DEVAC97_UNLOCK(pDevIns, pThis);
