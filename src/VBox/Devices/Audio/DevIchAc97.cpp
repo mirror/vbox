@@ -400,6 +400,8 @@ typedef struct AC97STREAMSTATE
     STAMCOUNTER             StatDmaFlowErrors;
     /** Number of bytes involved in unresolved flow errors. */
     STAMCOUNTER             StatDmaFlowErrorBytes;
+    STAMCOUNTER             StatDmaSkippedDch;
+    STAMCOUNTER             StatDmaSkippedPendingBcis;
     STAMPROFILE             StatStart;
     STAMPROFILE             StatReset;
     STAMPROFILE             StatStop;
@@ -1003,53 +1005,80 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
     PAC97BMREGS pRegs = &pStream->Regs;
 
-    if (!(pRegs->sr & AC97_SR_DCH)) /* Controller halted? */
-    { /* not halted - likely */ }
+    /*
+     * Check that the controller is not halted (DCH) and that the buffer
+     * completion interrupt isn't pending.
+     */
+    /** @todo r=bird: Why do we not just barge ahead even when BCIS is set?  Can't
+     *        find anything in spec indicating that we shouldn't.  Linux shouldn't
+     *        care if be bundle IOCs, as it checks how many steps we've taken using
+     *        CIV.  The Windows AC'97 sample driver doesn't care at all, since it
+     *        just sets LIV to CIV-1  (thought that's probably not what the real
+     *        windows driver does)...
+     *
+     *        This is not going to sound good if it happens often enough, because
+     *        each time we'll lose one DMA period (exact length depends on the
+     *        buffer here).
+     *
+     *        If we're going to keep this hack, there should be a
+     *        PDMDevHlpTimerSetRelative call arm-ing the DMA timer to fire shortly
+     *        after BCIS is cleared.  Otherwise, we might lag behind even more
+     *        before we get stuff going again.
+     *
+     *        I just wish there was some clear reasoning in the source code for
+     *        weird shit like this.  This is just random voodoo.  Sigh^3! */
+    if (!(pRegs->sr & (AC97_SR_DCH | AC97_SR_BCIS))) /* Controller halted? */
+    { /* not halted nor does it have pending interrupt - likely */ }
     else
     {
-        if (pRegs->cr & AC97_CR_RPBM) /* Bus master operation starts. */
+        if (pRegs->sr & AC97_SR_DCH)
         {
-            switch (pStream->u8SD)
-            {
-                case AC97SOUNDSOURCE_PO_INDEX:
-                    /*ichac97R3WriteBUP(pThis, cbToProcess);*/
-                    break;
-
-                default:
-                    break;
-            }
+            STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaSkippedDch);
+            LogFunc(("[SD%RU8] DCH set\n", pStream->u8SD));
+        }
+        if (pRegs->sr & AC97_SR_BCIS)
+        {
+            STAM_REL_COUNTER_INC(&pStreamCC->State.StatDmaSkippedPendingBcis);
+            LogFunc(("[SD%RU8] BCIS set\n", pStream->u8SD));
+        }
+        if ((pRegs->cr & AC97_CR_RPBM) /* Bus master operation started. */ && !fInput)
+        {
+            /*ichac97R3WriteBUP(pThis, cbToProcess);*/
         }
 
         ichac97R3StreamUnlock(pStreamCC);
         return VINF_SUCCESS;
     }
 
-    /* BCIS flag still set? Skip iteration. */
-/** @todo combine with the above test. */
-    if (!(pRegs->sr & AC97_SR_BCIS))
-    { /* likely */ }
-    else
-    {
-        /** @todo counter   */
-        Log3Func(("[SD%RU8] BCIS set\n", pStream->u8SD));
+    /*
+     * How much to transfer.
+     */
+    /** @todo r=bird: This is wrong, isn't it?  We should just transfer
+     *        cbToProcessMax.  The caller does a RT_MIN(cbPeriod, buffer), so
+     *        we'll get the min number of bytes to transfer in.  It should equal
+     *        PICB, but it doesn't technically have to and the loop below seems to
+     *        think we can work with PICB=0, which this code here contratradicts.
+     *
+     *        When it was introduced in r108022, it might've made some sense...
+     *
+     *        Which is inconsistent.  I hate inconsistencies. */
+    uint32_t cbLeft           = pRegs->picb * PDMAudioPropsSampleSize(&pStreamCC->State.Cfg.Props);
+    cbLeft = RT_MIN(cbLeft, cbToProcessMax);
+    Log3Func(("[SD%RU8] cbToProcessMax=%#x cbLeft=%#x\n", pStream->u8SD, cbToProcessMax, cbLeft));
 
-        ichac97R3StreamUnlock(pStreamCC);
-        return VINF_SUCCESS;
-    }
-
-    uint32_t cbLeft           = RT_MIN((uint32_t)(pRegs->picb << 1), cbToProcessMax); /** @todo r=andy Assumes 16bit samples. */
-    uint32_t cbProcessedTotal = 0;
-
-    PRTCIRCBUF pCircBuf = pStreamCC->State.pCircBuf;
+    /*
+     * Transfer loop.
+     */
+    uint32_t   cbProcessedTotal = 0;
+    int        rc               = VINF_SUCCESS;
+    PRTCIRCBUF pCircBuf         = pStreamCC->State.pCircBuf;
     AssertReturnStmt(pCircBuf, ichac97R3StreamUnlock(pStreamCC), VINF_SUCCESS);
 
-    int rc = VINF_SUCCESS;
-
-    Log3Func(("[SD%RU8] cbToProcessMax=%RU32, cbLeft=%RU32\n", pStream->u8SD, cbToProcessMax, cbLeft));
-
-    while (cbLeft)
+    while (cbLeft > 0)
     {
-        if (!pRegs->picb) /* Got a new buffer descriptor, that is, the position is 0? */
+        /** @todo as mentioned above, this is utter non-sense as it won't _ever_ be
+         *        taken, given that cbLeft == PICB * 2. */
+        if (!pRegs->picb) /* Get a new buffer descriptor, that is, the position is 0? */
         {
             Log3Func(("Fresh buffer descriptor %RU8 is empty, addr=%#x, len=%#x, skipping\n",
                       pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len));
@@ -1132,21 +1161,20 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
             }
         }
 
-        if (cbChunk)
-        {
-            Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbChunk));
-            Assert(cbChunk <= cbLeft);
+        Assert(PDMAudioPropsIsSizeAligned(&pStreamCC->State.Cfg.Props, cbChunk));
+        Assert(cbChunk <= cbLeft);
 
-            cbProcessedTotal     += cbChunk;
-            Assert(cbProcessedTotal <= cbToProcessMax);
-            cbLeft               -= cbChunk;
-            pRegs->picb          -= (cbChunk >> 1); /** @todo r=andy Assumes 16bit samples. */
-            pRegs->bd.addr       += cbChunk;
-        }
+        cbProcessedTotal     += cbChunk;
+        Assert(cbProcessedTotal <= cbToProcessMax);
+        cbLeft               -= cbChunk;
+        pRegs->picb          -= (cbChunk >> 1); /** @todo r=andy Assumes 16bit samples. */
+        pRegs->bd.addr       += cbChunk;
 
         LogFlowFunc(("[SD%RU8] cbChunk=%RU32, cbLeft=%RU32, cbTotal=%RU32, rc=%Rrc\n",
                      pStream->u8SD, cbChunk, cbLeft, cbProcessedTotal, rc));
 
+        /** @todo r=bird: again, given that cbLeft == PICB * 2, we could put this
+         *        outside the loop and save a lot of clutter (VINF_EOF). */
         if (!pRegs->picb)
         {
             uint32_t new_sr = pRegs->sr & ~AC97_SR_CELV;
@@ -4550,6 +4578,10 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                    "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
         }
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedDch, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "DMA transfer period skipped, controller halted (DCH).", "Stream%u/DMASkippedDch", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedPendingBcis, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "DMA transfer period skipped because of BCIS pending.", "Stream%u/DMASkippedPendingBCIS", idxStream);
 
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStart, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
                                "Starting the stream.",  "Stream%u/Start", idxStream);
