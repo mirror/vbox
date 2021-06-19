@@ -16,7 +16,7 @@
  */
 
 
-/** @page pg_dbgf_flow DBGFR3SampleReport - Sample Report Interface
+/** @page pg_dbgf_sample_report DBGFR3SampleReport - Sample Report Interface
  *
  * @todo
  */
