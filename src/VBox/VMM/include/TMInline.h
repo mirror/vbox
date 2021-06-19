@@ -210,7 +210,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PVMCC pVM, PTMTIMERQUEUECC pQue
         Assert(VM_IS_EMT(pVM))
 #endif
 
-/** @def TMTIMER_HANDLE_TO_VARS_RETURN_EX
+/** @def TMTIMER_HANDLE_TO_VARS_RETURN
  * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
  * the handle is invalid.
  *
