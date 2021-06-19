@@ -84,7 +84,8 @@
 #define AC97_CR_DONT_CLEAR_MASK (AC97_CR_IOCE | AC97_CR_FEIE | AC97_CR_LVBIE)
 /** @} */
 
-/** @name AC97_GC_XXX - Global Control Bits (see AC97_GLOB_CNT). */
+/** @name AC97_GC_XXX - Global Control Bits (see AC97_GLOB_CNT).
+ * @{ */
 #define AC97_GC_WR              4                   /**< rw    Warm reset. */
 #define AC97_GC_CR              2                   /**< rw    Cold reset. */
 #define AC97_GC_VALID_MASK      (RT_BIT(6) - 1)
