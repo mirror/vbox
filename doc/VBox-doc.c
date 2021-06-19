@@ -71,6 +71,21 @@
  *      - DevPCI - Peripheral Component Interface (Bus).
  *      - VBoxDev - Special PCI Device which serves as an interface between
  *                  the VMM and the guest OS for the additions.
+ *      - \@ref pg_pdm_audio "Audio":
+ *          - DevHda - Intel High Definition Audio Device Emulation.
+ *          - DevIchAc97 - ICH AC'97 Device Emulation.
+ *          - DevSB16 - SoundBlaster 16 Device Emulation.
+ *          - DrvAudio - Intermediate driver.
+ *          - DrvHostAudioAlsa - ALSA Host Audio Driver (Linux).
+ *          - DrvHostAudioCoreAudio - Core Audio Host Audio Driver (macOS).
+ *          - DrvHostAudioDebug - Debug Backend Driver.
+ *          - DrvHostAudioDSound - DirectSound Host Audio Driver (Windows).
+ *          - DrvHostAudioNull - NULL Backend Driver.
+ *          - DrvHostAudioOss - Open Sound System Host Audio Driver (Linux,
+ *            Solaris, ++).
+ *          - DrvHostAudioPulseAudio - PulseAudio Host Audio Driver (Linux).
+ *          - DrvHostAudioValidationKit - Validation Kit Test Driver.
+ *          - DrvHostAudioWasApi - Windows Audio Session API Host Audio Driver.
  *      - Networking:
  *          - DevPCNet - AMD PCNet Device Emulation.
  *          - DevE1000 - Intel E1000 Device Emulation.
