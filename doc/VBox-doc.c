@@ -71,7 +71,7 @@
  *      - DevPCI - Peripheral Component Interface (Bus).
  *      - VBoxDev - Special PCI Device which serves as an interface between
  *                  the VMM and the guest OS for the additions.
- *      - \@ref pg_pdm_audio "Audio":
+ *      - @ref pg_pdm_audio "Audio":
  *          - DevHda - Intel High Definition Audio Device Emulation.
  *          - DevIchAc97 - ICH AC'97 Device Emulation.
  *          - DevSB16 - SoundBlaster 16 Device Emulation.
