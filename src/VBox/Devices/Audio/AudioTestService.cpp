@@ -321,15 +321,14 @@ static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt
  * @param   pThis               The ATS instance.
  * @param   pClient             The ATS client structure.
  * @param   pPktHdr             The original packet (for future use).
- * @param   rcReq               Status code.
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
  * @param   rcReq               The status code of the request.
  * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   va                  Format arguments.
  */
-static int atsReplyFailureV(PATSSERVER pThis,
-                            PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
+static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr,
+                            const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
 {
     RT_NOREF(pPktHdr);
     union
@@ -362,8 +361,8 @@ static int atsReplyFailureV(PATSSERVER pThis,
  * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   ...                 Format arguments.
  */
-static int atsReplyFailure(PATSSERVER pThis,
-                           PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
+static int atsReplyFailure(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr,
+                           const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
 {
     va_list va;
     va_start(va, pszDetailFmt);
