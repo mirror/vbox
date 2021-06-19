@@ -2963,7 +2963,7 @@ endif # !darwin
 # The first transform the almost usless openjdk versions like "javac 9-Ubuntu" into something the 2nd expression groks.
 VBOX_JAVA_FIGURE_VERSION = $(shell $(1) -version 2>&1 \
 	| $(SED_EXT) -n \
-	-e 's/ \([0-9][0-9]*\)\(-[[:alpha:]][[:alpha:]]\)$/ \1.0.0\2/' \
+	-e 's/ \([0-9][0-9]*\)\(-[[:alpha:]][[:alpha:]]\)/ \1.0.0\2/' \
 	-e 's|^[^ ]* *\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
 # Test C and C++ files.
