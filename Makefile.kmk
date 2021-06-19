@@ -940,11 +940,12 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core: Doxyfile.Core \
 	@$(APPEND) $@.dep "DOXYGEN_CORE_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
 # Do the actual job.
+# Note! We must add the VBOX_JAVA dir to the path so doxygen can run plantuml.jar.
 $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) \
 		| $(VBOX_CORE_DOXYFILE_OUTPUT)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
-	doxygen $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
+       $(REDIRECT) -E "PATH=$(VBOX_JAVA_BIN_PATH)$(HOST_PATH_SEP)$(PATH)" -- doxygen $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
 	$(SED) -n \
                -e ':nextwarning' \
                -e '/^ *$(DOLLAR)/d' \

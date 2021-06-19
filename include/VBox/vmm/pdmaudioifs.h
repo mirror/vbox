@@ -25,6 +25,10 @@
 
 /** @page pg_pdm_audio  PDM Audio
  *
+ * PDM provides audio device emulations and their driver chains with the
+ * interfaces they need to communicate with each other.
+ *
+ *
  * @section sec_pdm_audio_overview  Overview
  *
 @startuml
