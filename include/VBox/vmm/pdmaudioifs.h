@@ -34,7 +34,7 @@
 @startuml
 skinparam componentStyle rectangular
 
-component "DevAudio" {
+component DevAudio {
   [Output DMA Engine]
   [Input DMA Engine]
   () LUN0
@@ -42,40 +42,52 @@ component "DevAudio" {
 
   component "AudioMixer" {
       component "Output Sink" {
-          DrvStreamOut0 --> LUN0
-          DrvStreamOut1 --> LUN1
           [Output Mixer Buffer] --> DrvStreamOut0
           [Output Mixer Buffer] --> DrvStreamOut1
-          [Output Mixer Buffer] <-- [Output DMA Engine]
+          [Output DMA Engine] --> [Output Mixer Buffer]
+          DrvStreamOut0 --> LUN0
+          DrvStreamOut1 --> LUN1
       }
       component "Input Sink" {
-          LUN0 --> DrvStreamIn0
-          LUN1 --> DrvStreamIn1
           [Input Mixer Buffer] <-- DrvStreamIn0
           [Input Mixer Buffer] <-- DrvStreamIn1
-          [Input Mixer Buffer] <-- [Input DMA Engine]
+          [Input DMA Engine] --> [Input Mixer Buffer]
+          DrvStreamIn0 <-- LUN0
+          DrvStreamIn1 <-- LUN1
       }
   }
 }
+note right of DevAudio
+    This could be DevHda, DevIchAc97
+    or DevSB16.
+end note
 
-component "DrvAudio0" {
-   () PDMIAUDIOCONNECTOR0
+node "Driver Chain #0" {
+    component "DrvAudio#0" {
+        () PDMIAUDIOCONNECTOR0
+        () PDMIHOSTAUDIOPORT0
+    }
+    component "DrvHostAudioWasApi" {
+        () PDMIHOSTAUDIO0
+    }
 }
 
-component "DrvHostAudioWasApi" {
-   () PDMIHOSTAUDIO0 <--> DrvAudio0
+node "Driver Chain #1" {
+    component "DrvAudio#1" {
+        () PDMIAUDIOCONNECTOR1
+        () PDMIHOSTAUDIOPORT1
+    }
+    component "DrvAudioVRDE" {
+        () PDMIHOSTAUDIO1
+    }
 }
 
-component "DrvAudio1" {
-   () PDMIAUDIOCONNECTOR1
-}
+LUN0 <--> PDMIAUDIOCONNECTOR0
+LUN1 <--> PDMIAUDIOCONNECTOR1
 
-component "DrvAudioVRDE" {
-   () PDMIHOSTAUDIO1 <--> DrvAudio1
-}
+PDMIHOSTAUDIOPORT0 <--> PDMIHOSTAUDIO0
+PDMIHOSTAUDIOPORT1 <--> PDMIHOSTAUDIO1
 
-PDMIAUDIOCONNECTOR0 <--> LUN0
-PDMIAUDIOCONNECTOR1 <--> LUN1
 @enduml
  *
  * Actors:
@@ -85,7 +97,7 @@ PDMIAUDIOCONNECTOR1 <--> LUN1
  *          - One DMA engine teamed up with each mixer sink: "Output DMA
  *            Engine", "Input DMA Engine"
  *      - The audio driver "DrvAudio" instances attached to LUN0 and LUN1
- *        respectively: "DrvAudio0", "DrvAudio1"
+ *        respectively: "DrvAudio#0", "DrvAudio#1"
  *      - The Windows host audio driver attached to "DrvAudio0": "DrvHostAudioWas"
  *      - The VRDE/VRDP host audio driver attached to "DrvAudio1": "DrvAudioVRDE"
  *
