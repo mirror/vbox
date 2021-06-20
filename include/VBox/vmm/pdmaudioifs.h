@@ -32,7 +32,7 @@
  * @section sec_pdm_audio_overview  Overview
  *
 @startuml
-skinparam componentStyle rectangular
+skinparam componentStyle rectangle
 
 component DevAudio {
   [Output DMA Engine]
@@ -57,20 +57,33 @@ component DevAudio {
       }
   }
 }
-note right of DevAudio
+note top of DevAudio
     This could be DevHda, DevIchAc97
     or DevSB16.
 end note
 
+''note as LunNote
+''    There can be any number of LUNs.
+''
+''    The first LUN is normally used for
+''    connecting to the host audio device.
+''
+''    Then follows remote desktop, video
+''    recording, debugging and testing.
+''end note
+''LunNote .. LUN0
+''LunNote .. LUN1
+
 node "Driver Chain #0" {
     component "DrvAudio#0" {
-        () PDMIAUDIOCONNECTOR0
         () PDMIHOSTAUDIOPORT0
+        () PDMIAUDIOCONNECTOR0
     }
     component "DrvHostAudioWasApi" {
         () PDMIHOSTAUDIO0
     }
 }
+PDMIHOSTAUDIOPORT0 <--> PDMIHOSTAUDIO0
 
 node "Driver Chain #1" {
     component "DrvAudio#1" {
@@ -81,11 +94,16 @@ node "Driver Chain #1" {
         () PDMIHOSTAUDIO1
     }
 }
+note bottom of DrvAudioVRDE
+    The backend driver is sometimes not configured if the component it represents
+    is not configured for the VM.  However, Main will still set up the LUN but
+    with just DrvAudio attached to simplify runtime activation of the component.
+    In the meanwhile, the DrvAudio instance works as if DrvHostAudioNull were attached.
+end note
 
-LUN0 <--> PDMIAUDIOCONNECTOR0
 LUN1 <--> PDMIAUDIOCONNECTOR1
+LUN0 <--> PDMIAUDIOCONNECTOR0
 
-PDMIHOSTAUDIOPORT0 <--> PDMIHOSTAUDIO0
 PDMIHOSTAUDIOPORT1 <--> PDMIHOSTAUDIO1
 
 @enduml
