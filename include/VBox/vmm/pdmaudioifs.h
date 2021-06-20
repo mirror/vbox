@@ -34,45 +34,39 @@
 @startuml
 skinparam componentStyle rectangle
 
-component DevAudio {
-  [Output DMA Engine]
-  [Input DMA Engine]
-  () LUN0
-  () LUN1
-
-  component "AudioMixer" {
-      component "Output Sink" {
-          [Output Mixer Buffer] --> DrvStreamOut0
-          [Output Mixer Buffer] --> DrvStreamOut1
-          [Output DMA Engine] --> [Output Mixer Buffer]
-          DrvStreamOut0 --> LUN0
-          DrvStreamOut1 --> LUN1
-      }
-      component "Input Sink" {
-          [Input Mixer Buffer] <-- DrvStreamIn0
-          [Input Mixer Buffer] <-- DrvStreamIn1
-          [Input DMA Engine] --> [Input Mixer Buffer]
-          DrvStreamIn0 <-- LUN0
-          DrvStreamIn1 <-- LUN1
-      }
-  }
+node VM {
+    [Music Player App] --> [Guest Audio Driver]
+    [Recording App]    <-- [Guest Audio Driver]
 }
-note top of DevAudio
-    This could be DevHda, DevIchAc97
-    or DevSB16.
-end note
 
-''note as LunNote
-''    There can be any number of LUNs.
-''
-''    The first LUN is normally used for
-''    connecting to the host audio device.
-''
-''    Then follows remote desktop, video
-''    recording, debugging and testing.
-''end note
-''LunNote .. LUN0
-''LunNote .. LUN1
+component "DevAudio (DevHda / DevIchAc97 / DevSB16)" as DevAudio {
+    [Output DMA Engine]
+    [Input DMA Engine]
+    () LUN0
+    () LUN1
+
+    component "AudioMixer" {
+        component "Output Sink" {
+            () "Output Stream #0" as DrvStreamOut0
+            () "Output Stream #1" as DrvStreamOut1
+            [Output Mixer Buffer] --> DrvStreamOut0
+            [Output Mixer Buffer] --> DrvStreamOut1
+            [Output DMA Engine] --> [Output Mixer Buffer]
+            DrvStreamOut0 --> LUN0
+            DrvStreamOut1 --> LUN1
+        }
+        component "Input Sink" {
+            () "Input Stream #2" as DrvStreamIn0
+            () "Input Stream #3" as DrvStreamIn1
+            [Input Mixer Buffer] <-- DrvStreamIn0
+            [Input Mixer Buffer] <-- DrvStreamIn1
+            [Input DMA Engine] --> [Input Mixer Buffer]
+            DrvStreamIn0 <-- LUN0
+            DrvStreamIn1 <-- LUN1
+        }
+    }
+}
+[Guest Audio Driver] <..> DevAudio : " MMIO or Port I/O, DMA"
 
 node "Driver Chain #0" {
     component "DrvAudio#0" {
