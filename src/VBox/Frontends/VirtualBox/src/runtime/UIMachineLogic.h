@@ -52,6 +52,7 @@ class CMachineDebugger;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
+struct X11ScreenSaverInhibitMethod;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 typedef struct DBGGUIVT const *PCDBGGUIVT;
@@ -206,6 +207,8 @@ protected:
 
     /* Constructor: */
     UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType);
+    /* Destructor: */
+    ~UIMachineLogic();
 
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
@@ -462,7 +465,7 @@ private:
 
     /* Holds the cookies returnd by QDBus inhibition calls. Map keys are service name. These are required during uninhibition.*/
     QMap<QString, uint> m_screenSaverInhibitionCookies;
-
+    QVector<X11ScreenSaverInhibitMethod*> m_methods;
     /* Friend classes: */
     friend class UIMachineWindow;
 };

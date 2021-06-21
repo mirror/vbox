@@ -16,12 +16,13 @@
  */
 
 /* Qt includes: */
-#include <QString>
 #include <QX11Info>
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusReply>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnectionInterface>
+#include <QtXml/QDomDocument>
+#include <QtXml/QDomElement>
 
 /* GUI includes: */
 #include "VBoxX11Helper.h"
@@ -161,13 +162,19 @@ SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName)
     return XQueryExtension(pDisplay, extensionName, &major_opcode, &first_event, &first_error);
 }
 
-QStringList X11ScrenSaverServices()
+static QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 {
     QStringList serviceNames;
-    QDBusConnection bus = QDBusConnection::sessionBus();
-    QDBusReply<QStringList> replyr = bus.interface()->registeredServiceNames();
+
+    QDBusReply<QStringList> replyr = connection.interface()->registeredServiceNames();
     if (!replyr.isValid())
+    {
+        const QDBusError replyError = replyr.error();
+        LogRel(("QDBus error. Could not query registered service names %s %s",
+                replyError.name().toUtf8().constData(), replyError.message().toUtf8().constData()));
         return serviceNames;
+    }
+
     for (int i = 0; i < replyr.value().size(); ++i)
     {
         const QString strServiceName = replyr.value()[i];
@@ -175,66 +182,130 @@ QStringList X11ScrenSaverServices()
             serviceNames << strServiceName;
     }
     if (serviceNames.isEmpty())
-        LogRel(("No screen saver service found among registered DBus services."));
+        LogRel(("QDBus error. No screen saver service found among registered DBus services."));
 
     return serviceNames;
 }
 
-void X11InhibitScrenSaver(const QStringList &serviceNameList, QMap<QString, uint> &outCookies)
+static void X11IntrorespectInterfaceNode(const QDomElement &interface,
+                                         const QString &strServiceName, QVector<X11ScreenSaverInhibitMethod*> &methods)
 {
-    outCookies.clear();
-    QDBusConnection bus = QDBusConnection::sessionBus();
+    QDomElement child = interface.firstChildElement();
+    while (!child.isNull()) {
 
-    foreach(QString service, serviceNameList)
+        if (child.tagName() == "method" && child.attribute("name") == "Inhibit")
+        {
+            X11ScreenSaverInhibitMethod *newMethod = new X11ScreenSaverInhibitMethod;
+            newMethod->m_iCookie = 0;
+            newMethod->m_strServiceName = strServiceName;
+            newMethod->m_strInterface = interface.attribute("name");
+            newMethod->m_strPath = "/";
+            newMethod->m_strPath.append(interface.attribute("name"));
+            newMethod->m_strPath.replace(".", "/");
+            methods << newMethod;
+        }
+        child = child.nextSiblingElement();
+    }
+}
+
+static void X11IntrorespectServices(const QDBusConnection &connection,
+                                    const QString &strService, const QString &path, QVector<X11ScreenSaverInhibitMethod*> &methods)
+{
+    QDBusMessage call = QDBusMessage::createMethodCall(strService, path.isEmpty() ? QLatin1String("/") : path,
+                                                       QLatin1String("org.freedesktop.DBus.Introspectable"),
+                                                       QLatin1String("Introspect"));
+    QDBusReply<QString> xmlReply = connection.call(call);
+
+    if (!xmlReply.isValid())
+        return;
+
+    QDomDocument doc;
+    doc.setContent(xmlReply);
+    QDomElement node = doc.documentElement();
+    QDomElement child = node.firstChildElement();
+    while (!child.isNull())
     {
-        QDBusInterface screenSaverInterface(service, "/ScreenSaver",
-                                            service, bus);
+        if (child.tagName() == QLatin1String("node"))
+        {
+            QString subPath = path + QLatin1Char('/') + child.attribute(QLatin1String("name"));
+            X11IntrorespectServices(connection, strService, subPath, methods);
+        }
+        else if (child.tagName() == QLatin1String("interface"))
+            X11IntrorespectInterfaceNode(child, strService, methods);
+        child = child.nextSiblingElement();
+    }
+}
+
+static bool X11CheckDBusConnection(const QDBusConnection &connection)
+{
+    if (!connection.isConnected()) {
+        const QDBusError lastError = connection.lastError();
+        if (lastError.isValid())
+        {
+            LogRel(("QDBus error. Could not connect to D-Bus server: %s: %s\n",
+                    lastError.name().toUtf8().constData(),
+                    lastError.message().toUtf8().constData()));
+        }
+        else
+            LogRel(("QDBus error. Could not connect to D-Bus server: Unable to load dbus libraries\n"));
+        return false;
+    }
+    return true;
+}
+
+QVector<X11ScreenSaverInhibitMethod*> X11FindDBusScrenSaverInhibitMethods()
+{
+    QVector<X11ScreenSaverInhibitMethod*> methods;
+
+    QDBusConnection connection = QDBusConnection::sessionBus();
+    if (!X11CheckDBusConnection(connection))
+        return methods;
+
+    foreach(const QString &strServiceName, X11FindDBusScreenSaverServices(connection))
+        X11IntrorespectServices(connection, strServiceName, "", methods);
+
+    return methods;
+}
+
+void X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutIhibitMethods)
+{
+    QDBusConnection connection = QDBusConnection::sessionBus();
+    if (!X11CheckDBusConnection(connection))
+        return;
+    for (int i = 0; i < inOutIhibitMethods.size(); ++i)
+    {
+        QDBusInterface screenSaverInterface(inOutIhibitMethods[i]->m_strServiceName, inOutIhibitMethods[i]->m_strPath,
+                                            inOutIhibitMethods[i]->m_strInterface, connection);
         if (!screenSaverInterface.isValid())
         {
             QDBusError error = screenSaverInterface.lastError();
-            LogRel(("QDBus error for service %s: %s\n",
-                    service.toUtf8().constData(), error.message().toUtf8().constData()));
+            LogRel(("QDBus error for service %s: %s. %s\n",
+                    inOutIhibitMethods[i]->m_strServiceName.toUtf8().constData(),
+                    error.name().toUtf8().constData(),
+                    error.message().toUtf8().constData()));
             continue;
         }
-        QDBusReply<uint> reply = screenSaverInterface.call("Inhibit", "Oracle VirtualBox", "");
-        if (reply.isValid())
-            outCookies[service] = reply.value();
+        QDBusReply<uint> reply;
+        if (fInhibit)
+        {
+            reply = screenSaverInterface.call("Inhibit", "Oracle VirtualBox", "ScreenSaverInhibit");
+            if (reply.isValid())
+                inOutIhibitMethods[i]->m_iCookie = reply.value();
+        }
         else
         {
-            QDBusError error = screenSaverInterface.lastError();
-            LogRel(("QDBus inhibition call error for service %s: %s\n",
-                    service.toUtf8().constData(), error.message().toUtf8().constData()));
+            reply = screenSaverInterface.call("UnInhibit", inOutIhibitMethods[i]->m_iCookie);
         }
-    }
-}
-
-void X11UninhibitScrenSaver(const QMap<QString, uint> &cookies)
-{
-
-    QDBusConnection bus = QDBusConnection::sessionBus();
-
-    for (QMap<QString, uint>::const_iterator iterator = cookies.begin(); iterator != cookies.end(); ++iterator)
-    {
-
-        QDBusInterface screenSaverInterface(iterator.key(), "/ScreenSaver",
-                                            iterator.key(), bus);
-        if (!screenSaverInterface.isValid())
-        {
-            QDBusError error = screenSaverInterface.lastError();
-            LogRel(("QDBus error for service %s: %s\n",
-                    iterator.key().toUtf8().constData(), error.message().toUtf8().constData()));
-            continue;
-        }
-        QDBusReply<uint> reply = screenSaverInterface.call("UnInhibit", iterator.value());
         if (!reply.isValid())
         {
-            QDBusError error = screenSaverInterface.lastError();
-            LogRel(("QDBus uninhibition call error for service %s: %s\n",
-                    iterator.key().toUtf8().constData(), error.message().toUtf8().constData()));
+            QDBusError error = reply.error();
+            LogRel(("QDBus inhibition call error for service %s: %s. %s\n",
+                    inOutIhibitMethods[i]->m_strServiceName.toUtf8().constData(),
+                    error.name().toUtf8().constData(),
+                    error.message().toUtf8().constData()));
         }
     }
 }
-
 
 #ifdef VBOX_WS_X11
 #endif

@@ -1556,10 +1556,13 @@ endif
 UICommon_QT_MODULES = Core Gui Widgets
 UICommon_QT_MODULES.linux   += X11Extras
 UICommon_QT_MODULES.linux   += DBus
+UICommon_QT_MODULES.linux   += Xml
 UICommon_QT_MODULES.solaris += X11Extras
 UICommon_QT_MODULES.solaris += DBus
+UICommon_QT_MODULES.solaris += Xml
 UICommon_QT_MODULES.freebsd += X11Extras
 UICommon_QT_MODULES.freebsd += DBus
+UICommon_QT_MODULES.freebsd += Xml
 UICommon_QT_MODULES.darwin  += MacExtras
 UICommon_QT_MODULES.win     += WinExtras
 
