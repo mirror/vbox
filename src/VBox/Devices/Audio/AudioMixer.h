@@ -32,6 +32,15 @@
 #include "AudioHlp.h"
 
 
+/** @defgroup grp_pdm_ifs_audio_mixing  Audio Mixing
+ * @ingroup grp_pdm_ifs_audio
+ *
+ * @note This is currently placed under PDM Audio Interface as that seemed like
+ *       the best place for it.
+ *
+ * @{
+ */
+
 /** Pointer to an audio mixer sink. */
 typedef struct AUDMIXSINK *PAUDMIXSINK;
 /** Pointer to a const audio mixer sink. */
@@ -322,6 +331,8 @@ void        AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 /** @name Audio mixer stream methods
  * @{ */
 void        AudioMixerStreamDestroy(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
+/** @} */
+
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixer_h */

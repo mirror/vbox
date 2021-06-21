@@ -24,6 +24,15 @@
 #include <iprt/cdefs.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
+/** @defgroup grp_pdm_ifs_audio_mixer_buffers   Audio Mixing Buffers
+ * @ingroup grp_pdm_ifs_audio_mixing
+ *
+ * @note This is currently placed under PDM Audio Interface as that seemed like
+ *       the best place for it.
+ *
+ * @{
+ */
+
 
 /**
  * Rate processing information of a source & destination audio stream.
@@ -228,5 +237,6 @@ void        AudioMixBufBlendGap(PAUDIOMIXBUF pMixBuf, PAUDIOMIXBUFWRITESTATE pSt
 void        AudioMixBufCommit(PAUDIOMIXBUF pMixBuf, uint32_t cFrames);
 /** @} */
 
+/** @} */
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixBuffer_h */
 
