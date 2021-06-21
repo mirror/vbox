@@ -95,92 +95,114 @@ static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, 
 {
     int rc;
 
+    LogFlowFuncEnter();
+
     ATSPKTHDR Hdr;
+    RT_ZERO(Hdr);
     size_t    cbHdr = 0;
-    if (pClient->cbHdr)
+    if (pClient->cbHdr) /* Header already received? */
     {
         memcpy(&Hdr, &pClient->abHdr, sizeof(Hdr));
         cbHdr = pClient->cbHdr;
         pClient->cbHdr = 0;
         rc = VINF_SUCCESS;
     }
-    else
+    else /* No, receive header. */
     {
         rc = RTTcpRead(pClient->hSock, &Hdr, sizeof(Hdr), &cbHdr);
-        LogFlowFunc(("rc=%Rrc, hdr=%zu, hdr.cb=%zu, %.8s -> %.*Rhxd\n", rc, sizeof(Hdr), Hdr.cb, Hdr.achOpcode, RT_MIN(cbHdr, sizeof(ATSPKTHDR)), &Hdr));
     }
 
+    LogFlowFunc(("rc=%Rrc, hdr=%zu, hdr.cb=%zu, %.8s -> %.*Rhxd\n", rc, cbHdr, Hdr.cb, Hdr.achOpcode, RT_MIN(cbHdr, sizeof(ATSPKTHDR)), &Hdr));
+
+    if (RT_FAILURE(rc))
+        return rc;
+
     if (cbHdr != sizeof(Hdr)) /* Check for bad packet sizes. */
-        return VERR_NET_PROTOCOL_ERROR;
-
-    if (RT_SUCCESS(rc))
     {
-        if (Hdr.cb < sizeof(ATSPKTHDR))
-            return VERR_NET_PROTOCOL_ERROR;
+        AssertMsgFailed(("Packet is invalid (%RU32 bytes), must be at least %zu bytes\n", cbHdr, sizeof(Hdr)));
+        return VERR_NET_INCOMPLETE_TX_PACKET;
+    }
 
-        if (Hdr.cb > ATSPKT_MAX_SIZE)
-            return VERR_NET_PROTOCOL_ERROR;
+    if (Hdr.cb < sizeof(ATSPKTHDR))
+    {
+        AssertMsgFailed(("Packet is too small (%RU32 bytes), must be at least %zu bytes\n", Hdr.cb, sizeof(Hdr)));
+        return VERR_NET_INCOMPLETE_TX_PACKET;
+    }
 
-        /** @todo Check opcode encoding. */
+    if (Hdr.cb > ATSPKT_MAX_SIZE)
+    {
+        AssertMsgFailed(("Packet is %RU32 bytes, only %zu bytes allowed\n", Hdr.cb, ATSPKT_MAX_SIZE));
+        return VERR_BUFFER_OVERFLOW;
+    }
 
-        uint32_t cbPadding;
-        if (Hdr.cb % ATSPKT_ALIGNMENT)
-            cbPadding = ATSPKT_ALIGNMENT - (Hdr.cb % ATSPKT_ALIGNMENT);
-        else
-            cbPadding = 0;
+    if (Hdr.cb > ATSPKT_MAX_SIZE)
+    {
+        AssertMsgFailed(("Packet is %RU32 bytes, only %zu bytes allowed\n", Hdr.cb, ATSPKT_MAX_SIZE));
+        return VERR_BUFFER_OVERFLOW;
+    }
 
-        if (Hdr.cb > sizeof(ATSPKTHDR))
+    pReply->cbPayload = Hdr.cb - sizeof(ATSPKTHDR);
+    Log3Func(("cbHdr=%zu, Hdr.szOp=%s, Hdr.cb=%RU32 -> %zu bytes payload\n", cbHdr, Hdr.achOpcode, Hdr.cb, pReply->cbPayload));
+    if (pReply->cbPayload)
+    {
+        pReply->pvPayload = RTMemAlloc(pReply->cbPayload);
+        if (pReply->pvPayload)
         {
-            pReply->cbPayload = (Hdr.cb - sizeof(ATSPKTHDR)) + cbPadding;
-            Log3Func(("cbPadding=%RU32, cbPayload: %RU32 -> %zu\n", cbPadding, Hdr.cb - sizeof(ATSPKTHDR), pReply->cbPayload));
-            AssertReturn(pReply->cbPayload <= ATSPKT_MAX_SIZE, VERR_BUFFER_OVERFLOW); /* Paranoia. */
-        }
-
-        if (pReply->cbPayload)
-        {
-            pReply->pvPayload = RTMemAlloc(pReply->cbPayload);
-            if (pReply->pvPayload)
+            uint32_t cbPayloadRead = 0;
+            while (cbPayloadRead < pReply->cbPayload)
             {
                 size_t cbRead = 0;
-                rc = RTTcpRead(pClient->hSock, pReply->pvPayload, pReply->cbPayload, &cbRead);
+                rc = RTTcpRead(pClient->hSock, (uint8_t *)pReply->pvPayload + cbPayloadRead, pReply->cbPayload - cbPayloadRead, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
-                    Log3Func(("cbPayload=%zu -> cbRead=%zu\n", pReply->cbPayload, cbRead));
                     if (!cbRead)
                     {
                         memcpy(&pClient->abHdr, &Hdr, sizeof(pClient->abHdr));
                         if (!fNoDataOk)
                             rc = VERR_NET_PROTOCOL_ERROR;
                     }
-                    else
+
+                    cbPayloadRead += cbRead;
+                    Assert(cbPayloadRead <= pReply->cbPayload);
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                Assert(cbPayloadRead == pReply->cbPayload);
+                if (Hdr.uCrc32) /* Checksum given? */
+                {
+                    uint32_t uMyCrc32 = RTCrc32Start();
+                             uMyCrc32 = RTCrc32Process(uMyCrc32, Hdr.achOpcode, sizeof(Hdr.achOpcode));
+                             uMyCrc32 = RTCrc32Process(uMyCrc32, pReply->pvPayload, pReply->cbPayload);
+
+                    if (Hdr.uCrc32 != RTCrc32Finish(uMyCrc32))
+                        AssertFailedStmt(rc = VERR_TAR_CHKSUM_MISMATCH /** @todo Fudge! */);
+
+                    if (RT_SUCCESS(rc))
                     {
-                        while (cbPadding--)
+                        /* Make sure to align the payload data (if not done by the sender already). */
+                        size_t const cbRestAlignment = RT_ALIGN_Z(pReply->cbPayload, ATSPKT_ALIGNMENT) - pReply->cbPayload;
+                        if (cbRestAlignment)
                         {
-                            Assert(cbRead);
-                            cbRead--;
+                            uint8_t abAlignment[ATSPKT_ALIGNMENT];
+                            rc = RTTcpRead(pClient->hSock, abAlignment, RT_MIN(cbRestAlignment, sizeof(abAlignment)), NULL);
                         }
                     }
                 }
-
-                if (RT_SUCCESS(rc))
-                {
-                    /** @todo Check CRC-32. */
-                    pReply->cbPayload = cbRead;
-                    /** @todo Re-allocate pvPayload to not store padding? */
-                }
-                else
-                    audioTestSvcClientReplyDestroy(pReply);
             }
-            else
-                rc = VERR_NO_MEMORY;
-        }
 
-        if (RT_SUCCESS(rc))
-        {
-            memcpy(pReply->szOp, Hdr.achOpcode, sizeof(pReply->szOp));
+            if (RT_FAILURE(rc))
+                audioTestSvcClientReplyDestroy(pReply);
         }
+        else
+            rc = VERR_NO_MEMORY;
     }
 
+    if (RT_SUCCESS(rc))
+        memcpy(pReply->szOp, Hdr.achOpcode, sizeof(pReply->szOp));
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -458,25 +480,36 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
     {
         ATSSRVREPLY Reply;
         RT_ZERO(Reply);
-
         rc = audioTestSvcClientRecvReply(pClient, &Reply, false /* fNoDataOk */);
-        AssertRCBreak(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /* Calculate and validate checksum. */
+            uint32_t uDataCrc32;
+            memcpy(&uDataCrc32, Reply.pvPayload, sizeof(uint32_t));
 
-        if (   RTStrNCmp(Reply.szOp, "DATA    ", ATSPKT_OPCODE_MAX_LEN) == 0
-            && Reply.pvPayload
-            && Reply.cbPayload)
-        {
-            /** @todo Skip uCrc32 for now. */
-            rc = RTFileWrite(hFile, (uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4, NULL);
-        }
-        else if (RTStrNCmp(Reply.szOp, "DATA EOF", ATSPKT_OPCODE_MAX_LEN) == 0)
-        {
-            rc = VINF_EOF;
-        }
-        else
-        {
-            AssertMsgFailed(("Got unexpected reply '%s'", Reply.szOp));
-            rc = VERR_NET_PROTOCOL_ERROR;
+            if (   uDataCrc32
+                && uDataCrc32 != RTCrc32((uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4))
+                rc = VERR_TAR_CHKSUM_MISMATCH; /** @todo Fudge! */
+
+            if (RT_SUCCESS(rc))
+            {
+                if (   RTStrNCmp(Reply.szOp, "DATA    ", ATSPKT_OPCODE_MAX_LEN) == 0
+                    && Reply.pvPayload
+                    && Reply.cbPayload)
+                {
+                    /** @todo Skip uCrc32 for now. */
+                    rc = RTFileWrite(hFile, (uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4, NULL);
+                }
+                else if (RTStrNCmp(Reply.szOp, "DATA EOF", ATSPKT_OPCODE_MAX_LEN) == 0)
+                {
+                    rc = VINF_EOF;
+                }
+                else
+                {
+                    AssertMsgFailed(("Got unexpected reply '%s'", Reply.szOp));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+            }
         }
 
         audioTestSvcClientReplyDestroy(&Reply);
