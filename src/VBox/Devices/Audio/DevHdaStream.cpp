@@ -235,8 +235,9 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
 
     /* Figure out the BDLE range for this period. */
     uint32_t const idxFirstBdle = idx == 0 ? 0
-                                :   pStreamShared->State.aSchedule[idx - 1].idxFirst
-                                  + pStreamShared->State.aSchedule[idx - 1].cEntries;
+                                : RT_MIN((uint32_t)(  pStreamShared->State.aSchedule[idx - 1].idxFirst
+                                                    + pStreamShared->State.aSchedule[idx - 1].cEntries),
+                                         idxLastBdle);
 
     pStreamShared->State.aSchedule[idx].idxFirst = (uint8_t)idxFirstBdle;
     pStreamShared->State.aSchedule[idx].cEntries = idxLastBdle >= idxFirstBdle
@@ -339,10 +340,13 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
     uint32_t cPotentialPrologue = 0;
     uint32_t cbBorrow           = 0;
     uint32_t cbCur              = 0;
+    uint32_t cbMin              = UINT32_MAX;
     pStreamShared->State.aSchedule[0].idxFirst = 0;
     for (uint32_t i = 0; i < cSegments; i++)
     {
         cbCur += pStreamShared->State.aBdl[i].cb;
+        if (pStreamShared->State.aBdl[i].cb < cbMin)
+            cbMin = pStreamShared->State.aBdl[i].cb;
         if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
         {
             rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pHostProps, pGuestProps, &cbBorrow);
@@ -362,15 +366,67 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
      */
     if (cbCur && cBufferIrqs == 0)
     {
-        /* No IOC. Split the period in two. */
+        /*
+         * No IOC. Vista ends up here, typically with three buffers configured.
+         *
+         * The perferred option here is to aim at processing one average BDLE with
+         * each DMA timer period, since that best matches how we update LPIB at
+         * present.
+         *
+         * The second alternative is to divide the whole span up into 3-4 periods
+         * to try increase our chances of keeping ahead of the guest.  We may need
+         * to pick this if there are too few buffer descriptor or they are too small.
+         *
+         * However, what we probably should be doing is to do real DMA work whenever
+         * the guest reads a DMA related register (like LPIB) and just do 3-4 DMA
+         * timer periods, however we'll be postponing the DMA timer every time we
+         * return to ring-3 and signal the AIO, so in the end we'd probably not use
+         * the timer callback at all.  (This is assuming a small shared per-stream
+         * buffer for keeping the DMA data in and that it's size will force a return
+         * to ring-3 often enough to keep the AIO thread going at a reasonable rate.)
+         */
         Assert(cbCur == cbTotal);
-        cbCur = PDMAudioPropsFloorBytesToFrame(pGuestProps, cbCur / 2);
-        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, cSegments, pHostProps, pGuestProps, &cbBorrow);
-        ASSERT_GUEST_RC_RETURN(rc, rc);
 
-        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbTotal - cbCur, cbMaxPeriod, cSegments,
-                                        pHostProps, pGuestProps, &cbBorrow);
-        ASSERT_GUEST_RC_RETURN(rc, rc);
+        /* Match the BDLEs 1:1 if there are 3 or more and that the smallest one
+           is at least 5ms big. */
+        if (cSegments >= 3 && PDMAudioPropsBytesToMilli(pGuestProps, cbMin) >= 5 /*ms*/)
+        {
+            for (uint32_t i = 0; i < cSegments; i++)
+            {
+                rc = hdaR3StreamAddScheduleItem(pStreamShared, pStreamShared->State.aBdl[i].cb, cbMaxPeriod,
+                                                i, pHostProps, pGuestProps, &cbBorrow);
+                ASSERT_GUEST_RC_RETURN(rc, rc);
+            }
+        }
+        /* Otherwise, just divide the work into 3 or 4 portions and hope for the best.
+           It seems, though, that this only really work for windows vista if we avoid
+           working accross buffer lines.  */
+        /** @todo This can be simplified/relaxed/uncluttered if we do DMA work when LPIB
+         * is read, assuming ofc that LPIB is read before each buffer update. */
+        else
+        {
+            uint32_t const cPeriods = cSegments != 3 && PDMAudioPropsBytesToMilli(pGuestProps, cbCur) >= 4 * 5 /*ms*/
+                                    ? 4 : cSegments != 2 ? 3 : 2;
+            uint32_t const cbPeriod = PDMAudioPropsFloorBytesToFrame(pGuestProps, cbCur / cPeriods);
+            uint32_t       iBdle    = 0;
+            uint32_t       offBdle  = 0;
+            for (uint32_t iPeriod = 0; iPeriod < cPeriods; iPeriod++)
+            {
+                if (iPeriod + 1 < cPeriods)
+                {
+                    offBdle += cbPeriod;
+                    while (iBdle < cSegments && offBdle >= pStreamShared->State.aBdl[iBdle].cb)
+                        offBdle -= pStreamShared->State.aBdl[iBdle++].cb;
+                    rc = hdaR3StreamAddScheduleItem(pStreamShared, cbPeriod, cbMaxPeriod, offBdle != 0 ? iBdle : iBdle - 1,
+                                                    pHostProps, pGuestProps, &cbBorrow);
+                }
+                else
+                    rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur - iPeriod * cbPeriod, cbMaxPeriod, cSegments - 1,
+                                                    pHostProps, pGuestProps, &cbBorrow);
+                ASSERT_GUEST_RC_RETURN(rc, rc);
+            }
+
+        }
         Assert(cbBorrow == 0);
     }
     else if (cbCur)
@@ -998,7 +1054,7 @@ static uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStreamShared
 static void hdaR3StreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uLPIB)
 {
     AssertPtrReturnVoid(pStreamShared);
-    AssertReturnVoid   (uLPIB <= pStreamShared->u32CBL); /* Make sure that we don't go out-of-bounds. */
+    AssertMsgStmt(uLPIB <= pStreamShared->u32CBL, ("%#x\n", uLPIB), uLPIB = pStreamShared->u32CBL);
 
     Log3Func(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",  pStreamShared->u8SD, uLPIB, pThis->fDMAPosition));
 
@@ -1032,8 +1088,17 @@ static void hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevI
     {
         uint32_t const uCBL = pStreamShared->u32CBL;
         if (uCBL) /* paranoia */
-            hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis,
-                                      (HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) + cbToAdd) % uCBL);
+        {
+            uint32_t uNewLpid = HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) + cbToAdd;
+#if 1 /** @todo r=bird: this is wrong according to the spec */
+            uNewLpid %= uCBL;
+#else
+            /* The spec says it goes to CBL then wraps arpimd to 1, not back to zero. See 3.3.37.  */
+            if (uNewLpid > uCBL)
+                uNewLpid %= uCBL;
+#endif
+            hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis, uNewLpid);
+        }
     }
 }
 
@@ -1263,7 +1328,7 @@ DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTA
          * Update the stream's current position.
          *
          * Do this as accurate and close to the actual data transfer as possible.
-         * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
+         * All guests rely on this, depending on the mechanism they use (LPIB register or DMA counters).
          *
          * Note for Windows 10: The OS' driver is *very* picky about *when* the (DMA) positions get updated!
          *                      Not doing this at the right time will result in ugly sound crackles!
