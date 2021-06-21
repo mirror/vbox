@@ -187,7 +187,7 @@ static QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connect
     return serviceNames;
 }
 
-static void X11IntrorespectInterfaceNode(const QDomElement &interface,
+static void X11IntrospectInterfaceNode(const QDomElement &interface,
                                          const QString &strServiceName, QVector<X11ScreenSaverInhibitMethod*> &methods)
 {
     QDomElement child = interface.firstChildElement();
@@ -208,7 +208,7 @@ static void X11IntrorespectInterfaceNode(const QDomElement &interface,
     }
 }
 
-static void X11IntrorespectServices(const QDBusConnection &connection,
+static void X11IntrospectServices(const QDBusConnection &connection,
                                     const QString &strService, const QString &path, QVector<X11ScreenSaverInhibitMethod*> &methods)
 {
     QDBusMessage call = QDBusMessage::createMethodCall(strService, path.isEmpty() ? QLatin1String("/") : path,
@@ -228,10 +228,10 @@ static void X11IntrorespectServices(const QDBusConnection &connection,
         if (child.tagName() == QLatin1String("node"))
         {
             QString subPath = path + QLatin1Char('/') + child.attribute(QLatin1String("name"));
-            X11IntrorespectServices(connection, strService, subPath, methods);
+            X11IntrospectServices(connection, strService, subPath, methods);
         }
         else if (child.tagName() == QLatin1String("interface"))
-            X11IntrorespectInterfaceNode(child, strService, methods);
+            X11IntrospectInterfaceNode(child, strService, methods);
         child = child.nextSiblingElement();
     }
 }
@@ -262,7 +262,7 @@ QVector<X11ScreenSaverInhibitMethod*> X11FindDBusScrenSaverInhibitMethods()
         return methods;
 
     foreach(const QString &strServiceName, X11FindDBusScreenSaverServices(connection))
-        X11IntrorespectServices(connection, strServiceName, "", methods);
+        X11IntrospectServices(connection, strServiceName, "", methods);
 
     return methods;
 }
