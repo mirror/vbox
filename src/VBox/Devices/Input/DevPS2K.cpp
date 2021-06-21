@@ -953,7 +953,7 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
  *
  * Note: The throttling is currently only done for keyboard data, not command responses.
  * The throttling could and perhaps should be done for any data (including command
- * response) scoming from PS/2 devices, both keyboard and auxiliary. That is not currently
+ * responses) coming from PS/2 devices, both keyboard and auxiliary. That is not currently
  * done because it would needlessly slow things down.
  */
 static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
