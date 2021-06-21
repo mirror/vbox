@@ -357,7 +357,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, R
  * @{
  */
 #ifdef IN_RING3
-static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PHDADRIVER pDrv);
+static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PCPDMAUDIOSTREAMCFG pCfg, PHDADRIVER pDrv);
 #endif
 /** @} */
 
@@ -2251,7 +2251,7 @@ static void hdaR3MixerRemoveDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRI
  *                      streams to add.
  * @param   pDrv        Driver stream to add.
  */
-static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PHDADRIVER pDrv)
+static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PCPDMAUDIOSTREAMCFG pCfg, PHDADRIVER pDrv)
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
@@ -2304,21 +2304,18 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
     else
         AssertFailedReturn(VERR_NOT_SUPPORTED);
 
-    PDMAUDIOSTREAMCFG StreamCfg; /** @todo r=bird: Why do we need to copy this? (We used to duplicate it originally.) */
-    PDMAudioStrmCfgCopy(&StreamCfg, pCfg);
-
-    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, StreamCfg.szName));
+    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pCfg->szName));
 
     AssertPtr(pDrvStream);
     AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
     PAUDMIXSTREAM pMixStrm = NULL;
-    int rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, &StreamCfg, pDevIns, &pMixStrm);
-    LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, StreamCfg.szName, rc));
+    int rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pCfg, pDevIns, &pMixStrm);
+    LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
     if (RT_SUCCESS(rc))
     {
         rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
-        LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, StreamCfg.szName, rc));
+        LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
         if (RT_FAILURE(rc))
             AudioMixerStreamDestroy(pMixStrm, pDevIns, true /*fImmediate*/);
     }
@@ -2340,7 +2337,7 @@ static int hdaR3MixerAddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDM
  * @param   pCfg        Audio stream configuration to use for the audio streams
  *                      to add.
  */
-static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
+static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUDMIXSINK pMixSink, PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
@@ -2372,12 +2369,12 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
 /**
  * @interface_method_impl{HDACODECR3,pfnCbMixerAddStream}
  */
-static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
+static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
-    int rc;
 
+    int rc;
     PHDAMIXERSINK pSink = hdaR3MixerControlToSink(pThisCC, enmMixerCtl);
     if (pSink)
     {

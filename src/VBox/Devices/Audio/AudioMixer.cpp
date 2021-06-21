@@ -2225,7 +2225,7 @@ int     AudioMixerSinkUnlock(PAUDMIXSINK pSink)
  * @param   pDevIns     The device instance to register statistics with.
  * @param   ppStream    Pointer which receives the newly created audio stream.
  */
-int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg,
+int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PCPDMAUDIOSTREAMCFG pCfg,
                                PPDMDEVINS pDevIns, PAUDMIXSTREAM *ppStream)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);

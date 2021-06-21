@@ -915,7 +915,7 @@ typedef struct HDACODECR3
      * @param   enmMixerCtl         Mixer control to assign new stream to.
      * @param   pCfg                Stream configuration for the new stream.
      */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerAddStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerAddStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg));
     /**
      * Removes a specified mixer control from the HDA's mixer.
      *

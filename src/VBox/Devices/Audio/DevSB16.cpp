@@ -1739,33 +1739,24 @@ static PSB16DRIVERSTREAM sb16GetDrvStream(PSB16DRIVER pDrv, PDMAUDIODIR enmDir, 
  * @param   pCfg        Stream configuration to use.
  * @param   pDrv        Driver stream to add.
  */
-static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
+static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PCPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
 {
     AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_NOT_IMPLEMENTED); /* We don't support recording for SB16 so far. */
-
-    PPDMAUDIOSTREAMCFG pStreamCfg = PDMAudioStrmCfgDup(pCfg);
-    if (!pStreamCfg)
-        return VERR_NO_MEMORY;
-
-    AssertCompile(sizeof(pStreamCfg->szName) == sizeof(pCfg->szName));
-    RTStrCopy(pStreamCfg->szName, sizeof(pStreamCfg->szName), pCfg->szName);
-
-    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
+    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pCfg->szName));
 
     int rc;
-
-    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, pStreamCfg->enmDir, pStreamCfg->enmPath);
+    PSB16DRIVERSTREAM pDrvStream = sb16GetDrvStream(pDrv, pCfg->enmDir, pCfg->enmPath);
     if (pDrvStream)
     {
         AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
         PAUDMIXSTREAM pMixStrm;
-        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, pDevIns, &pMixStrm);
-        LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
+        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pCfg, pDevIns, &pMixStrm);
+        LogFlowFunc(("LUN#%RU8: Created stream \"%s\" for sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
         if (RT_SUCCESS(rc))
         {
             rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
-            LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
+            LogFlowFunc(("LUN#%RU8: Added stream \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
             if (RT_SUCCESS(rc))
                 pDrvStream->pMixStrm = pMixStrm;
             else
@@ -1774,8 +1765,6 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
     }
     else
         rc = VERR_INVALID_PARAMETER;
-
-    PDMAudioStrmCfgFree(pStreamCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1790,7 +1779,7 @@ static int sb16AddDrvStream(PPDMDEVINS pDevIns, PAUDMIXSINK pMixSink, PPDMAUDIOS
  * @param   pMixSink    Mixer sink to add stream to.
  * @param   pCfg        Stream configuration to use.
  */
-static int sb16AddDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
+static int sb16AddDrvStreams(PPDMDEVINS pDevIns, PSB16STATE pThis, PAUDMIXSINK pMixSink, PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
 
