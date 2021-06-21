@@ -885,8 +885,10 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 
 UIMachineLogic::~UIMachineLogic()
 {
+#if defined(VBOX_WS_X11)
     qDeleteAll(m_methods.begin(), m_methods.end());
     m_methods.clear();
+#endif
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
