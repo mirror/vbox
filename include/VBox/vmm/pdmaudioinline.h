@@ -1416,7 +1416,7 @@ DECLINLINE(const char *) PDMAudioStrmCfgToString(PCPDMAUDIOSTREAMCFG pCfg, char 
                 PDMAudioPropsFramesToMilliMax(&pCfg->Props, pCfg->Backend.cFramesPeriod, 9999999),
                 PDMAudioPropsFramesToMilliMax(&pCfg->Props, pCfg->Backend.cFramesPreBuffering, 9999999),
                 pCfg->Device.cMsSchedulingHint,
-                pCfg->enmPath == PDMAUDIOPATH_UNKNOWN ? ", " : "",
+                pCfg->enmPath == PDMAUDIOPATH_UNKNOWN ? "" : ", ",
                 pCfg->enmPath == PDMAUDIOPATH_UNKNOWN ? "" : PDMAudioPathGetName(pCfg->enmPath) );
     return pszDst;
 }

@@ -114,15 +114,11 @@ typedef struct HDASTREAMSTATE
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t                tsTransferNext;
-    /** Total transfer size (in bytes) of a transfer period.
-     * @note This is in host side frames, in case we're doing any mapping. */
+    /** Total transfer size (in bytes) of a transfer period. */
     uint32_t                cbTransferSize;
     /** The size of an average transfer. */
     uint32_t                cbAvgTransfer;
-    /** The stream's current host side configuration.
-     * This should match the SDnFMT in all respects but maybe the channel count as
-     * we may need to expand mono or into/from into stereo.  The unmodified SDnFMT
-     * properties can be found in HDASTREAMR3::Mapping::PCMProps. */
+    /** The stream's current configuration (matches SDnFMT). */
     PDMAUDIOSTREAMCFG       Cfg;
     /** Timestamp (real time, in ns) of last DMA transfer. */
     uint64_t                tsLastTransferNs;
@@ -198,9 +194,6 @@ AssertCompileMemberAlignment(HDASTREAMSTATE, aSchedule, 16);
  *       by the audio connector or the audio mixer. This HDA stream is a serial
  *       data in/out stream (SDI/SDO) defined in hardware and can contain
  *       multiple audio streams in one single SDI/SDO (interleaving streams).
- *
- * How a specific SDI/SDO is mapped to our internal audio streams relies on the
- * stream channel mappings.
  *
  * Contains only register values which do *not* change until a stream reset
  * occurs.

@@ -256,23 +256,30 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
     RT_NOREF(pszArgs);
     AssertReturnVoid(pMixer->uMagic == AUDIOMIXER_MAGIC);
 
-    int rc2 = RTCritSectEnter(&pMixer->CritSect);
-    AssertRCReturnVoid(rc2);
+    int rc = RTCritSectEnter(&pMixer->CritSect);
+    AssertRCReturnVoid(rc);
 
-    pHlp->pfnPrintf(pHlp, "[Master] %s: fMuted=%RTbool auChannels=%.*Rhxs\n",
-                    pMixer->pszName, pMixer->VolMaster.fMuted, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels);
-
+    /* Determin max sink name length for pretty formatting: */
+    size_t cchMaxName = strlen(pMixer->pszName);
     PAUDMIXSINK pSink;
-    unsigned    iSink = 0;
     RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
     {
-        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: fMuted=%RTbool auChannels=%.*Rhxs\n",
-                        iSink, pSink->pszName, pSink->Volume.fMuted, sizeof(pSink->Volume.auChannels), pSink->Volume.auChannels);
+        size_t const cchMixer = strlen(pSink->pszName);
+        cchMaxName = RT_MAX(cchMixer, cchMaxName);
+    }
+
+    /* Do the displaying. */
+    pHlp->pfnPrintf(pHlp, "[Master] %*s: fMuted=%#RTbool auChannels=%.*Rhxs\n", cchMaxName, pMixer->pszName,
+                    pMixer->VolMaster.fMuted, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels);
+    unsigned iSink = 0;
+    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
+    {
+        pHlp->pfnPrintf(pHlp, "[Sink %u] %*s: fMuted=%#RTbool auChannels=%.*Rhxs\n", iSink, cchMaxName, pSink->pszName,
+                        pSink->Volume.fMuted, sizeof(pSink->Volume.auChannels), pSink->Volume.auChannels);
         ++iSink;
     }
 
-    rc2 = RTCritSectLeave(&pMixer->CritSect);
-    AssertRC(rc2);
+    RTCritSectLeave(&pMixer->CritSect);
 }
 
 

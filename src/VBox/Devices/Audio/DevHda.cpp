@@ -4119,14 +4119,13 @@ static DECLCALLBACK(void) hdaR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 /** Worker for hdaR3DbgInfoStream.    */
 static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
-
-    pHlp->pfnPrintf(pHlp, "Stream #%d:\n", idxStream);
+    char szTmp[PDMAUDIOSTRMCFGTOSTRING_MAX];
+    PHDASTREAM const pStream = &pThis->aStreams[idxStream];
+    pHlp->pfnPrintf(pHlp, "Stream #%d: %s\n", idxStream, PDMAudioStrmCfgToString(&pStream->State.Cfg, szTmp, sizeof(szTmp)));
     pHlp->pfnPrintf(pHlp, "  SD%dCTL  : %R[sdctl]\n",   idxStream, HDA_STREAM_REG(pThis, CTL,   idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dCTS  : %R[sdsts]\n",   idxStream, HDA_STREAM_REG(pThis, STS,   idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dFIFOS: %R[sdfifos]\n", idxStream, HDA_STREAM_REG(pThis, FIFOS, idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dFIFOW: %R[sdfifow]\n", idxStream, HDA_STREAM_REG(pThis, FIFOW, idxStream));
-
-    PHDASTREAM const pStream = &pThis->aStreams[idxStream];
     pHlp->pfnPrintf(pHlp, "  Current BDLE%02u: %s%#RX64 LB %#x%s - off=%#x\n", pStream->State.idxCurBdle, "%%" /*vboxdbg phys prefix*/,
                     pStream->State.aBdl[pStream->State.idxCurBdle].GCPhys, pStream->State.aBdl[pStream->State.idxCurBdle].cb,
                     pStream->State.aBdl[pStream->State.idxCurBdle].fFlags ? " IOC" : "", pStream->State.offCurBdle);
