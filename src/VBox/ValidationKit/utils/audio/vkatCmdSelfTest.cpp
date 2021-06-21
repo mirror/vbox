@@ -258,7 +258,7 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     SELFTESTCTX Ctx;
     RT_ZERO(Ctx);
 
-    /* Go with the platform's default bakcend if nothing else is specified. */
+    /* Go with the platform's default backend if nothing else is specified. */
     Ctx.Guest.pDrvReg = AudioTestGetDefaultBackend();
 
     /* Argument processing loop: */

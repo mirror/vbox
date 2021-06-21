@@ -617,7 +617,7 @@ int audioTestEnvConnectToGuestAts(PAUDIOTESTENV pTstEnv,
  * @param   uHostTcpPort        Host ATS TCP/IP port to connect to.
  *                              If 0, ATS_TCP_HOST_DEFAULT_PORT will be used.
  * @param   pszGuestTcpAddr     Guest ATS TCP/IP address to connect to.
- *                              If NULL, localhost (127.0.0.1) will be used.
+ *                              If NULL, any address (0.0.0.0) will be used.
  * @param   uGuestTcpPort       Guest ATS TCP/IP port to connect to.
  *                              If 0, ATS_TCP_GUEST_DEFAULT_PORT will be used.
  */
@@ -649,13 +649,9 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         AssertRCReturn(rc, rc);
     }
 
-    if (pDrvReg == NULL)
-    {
-        if (pTstEnv->fSelftest)
-            pDrvReg = &g_DrvHostValidationKitAudio;
-        else /* Go with the platform's default backend if nothing else is set. */
-            pDrvReg = AudioTestGetDefaultBackend();
-    }
+    /* Go with the platform's default backend if nothing else is set. */
+    if (!pDrvReg)
+        pDrvReg = AudioTestGetDefaultBackend();
 
     if (!uHostTcpPort)
         uHostTcpPort = ATS_TCP_HOST_DEFAULT_PORT;
@@ -663,7 +659,8 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     if (!uGuestTcpPort)
         uGuestTcpPort = ATS_TCP_GUEST_DEFAULT_PORT;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test mode is '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing environment for mode '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using backend '%s'\n", pDrvReg->szName);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
@@ -674,8 +671,17 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     pTstEnv->cMsPreBuffer      = 150; /* ms */ /** @todo Ditto. */
     pTstEnv->cMsSchedulingHint = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
 
-    /* Only the guest mode needs initializing the driver stack. */
-    const bool fUseDriverStack = pTstEnv->enmMode == AUDIOTESTMODE_GUEST;
+    bool fUseDriverStack = false; /* Whether to init + use the audio driver stack or not. */
+
+    /* In regular testing mode only the guest mode needs initializing the driver stack. */
+    if (pTstEnv->enmMode == AUDIOTESTMODE_GUEST)
+        fUseDriverStack = true;
+
+    /* When running in self-test mode, the host mode also needs to initialize the stack in order to
+     * to run the Valdation Kit audio driver ATS (no "real" VBox involved). */
+    if (pTstEnv->enmMode == AUDIOTESTMODE_HOST && pTstEnv->fSelftest)
+        fUseDriverStack = true;
+
     if (fUseDriverStack)
     {
         rc = audioTestDriverStackInitEx(&pTstEnv->DrvStack, pDrvReg,
@@ -726,12 +732,13 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
          * Start the ATS (Audio Test Service) on the guest side.
          * That service then will perform playback and recording operations on the guest, triggered from the host.
          *
-         * When running this in self-test mode, that service also will be run on the host.
+         * When running this in self-test mode, that service also can be run on the host if nothing else is specified.
+         * Note that we have to bind to "0.0.0.0" by default so that the host can connect to it.
          */
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Starting guest ATS at %s:%RU32...\n",
-                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
-                     uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
-        rc = AudioTestSvcInit(&pTstEnv->u.Guest.Srv, pszGuestTcpAddr, uGuestTcpPort, &Callbacks);
+                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "0.0.0.0", uGuestTcpPort);
+        rc = AudioTestSvcInit(&pTstEnv->u.Guest.Srv,
+                              (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "0.0.0.0", uGuestTcpPort, &Callbacks);
         if (RT_SUCCESS(rc))
             rc = AudioTestSvcStart(&pTstEnv->u.Guest.Srv);
 
