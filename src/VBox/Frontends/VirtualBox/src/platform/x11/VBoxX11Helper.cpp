@@ -202,7 +202,7 @@ static void X11IntrorespectInterfaceNode(const QDomElement &interface,
             newMethod->m_strPath = "/";
             newMethod->m_strPath.append(interface.attribute("name"));
             newMethod->m_strPath.replace(".", "/");
-            methods << newMethod;
+            methods.append(newMethod);
         }
         child = child.nextSiblingElement();
     }
