@@ -2055,17 +2055,26 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          RT_EXPORT_SYMBOL(name)= \
                          "DECLINLINE(type)=inline type" \
                          DECL_FORCE_INLINE(type)=DECLINLINE(type) \
-                         AssertCompile(expr) \
-                         AssertCompileSize(a,b) \
-                         AssertCompileSizeAlignment(a,b) \
-                         AssertCompileMemberSizeAlignment(a,b,c) \
-                         AssertCompileMemberAlignment(a,b,c) \
-                         AssertCompileMemberOffset(a,b,c) \
-                         AssertCompile2MemberOffsets(a,b,c) \
                          RT_OS_DARWIN \
                          Q_WS_MAC \
                          Q_WS_X11 \
                          Q_WS_WIN
+
+# Compile assertion hacks.
+PREDEFINED            += \
+    "AssertCompileNS(expr)=static_assert(expr)" \
+    "AssertCompile(expr)=static_assert(expr)" \
+    "AssertCompileSize(type, size)=static_assert(true)" \
+    "AssertCompileSizeAlignment(type, align)=static_assert(true)" \
+    "AssertCompileMemberAlignment(type, member, align)=static_assert(true)" \
+    "AssertCompileMemberOffset(type, member, off)=static_assert(true)" \
+    "AssertCompile2MemberOffsets(type, member1, member2)=static_assert(true)" \
+    "AssertCompileAdjacentMembers(type, member1, member2)=static_assert(true)" \
+    "AssertCompileMembersAtSameOffset(type1, member1, type2, member2)=static_assert(true)" \
+    "AssertCompileMemberSize(type, member, size)=static_assert(true)" \
+    "AssertCompileMemberSizeAlignment(type, member, align)=static_assert(true)" \
+    "AssertCompileMembersSameSize(type1, member1, type2, member2)=static_assert(true)" \
+    "AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2)=static_assert(true)"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
