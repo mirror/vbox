@@ -17,7 +17,7 @@
 
 /** @page pg_audio_mixing_buffers   Audio Mixer Buffer
  *
- * @section pg_audio_mixing_buffers_volume     Soft Volume Control
+ * @section sec_audio_mixing_buffers_volume     Soft Volume Control
  *
  * The external code supplies an 8-bit volume (attenuation) value in the
  * 0 .. 255 range. This represents 0 to -96dB attenuation where an input
@@ -100,11 +100,11 @@
 
 
 /** Bit shift for fixed point conversion.
- * @sa @ref sec_audio_mix_buffer_volume */
+ * @sa @ref sec_audio_mixing_buffers_volume */
 #define AUDIOMIXBUF_VOL_SHIFT       30
 
 /** Internal representation of 0dB volume (1.0 in fixed point).
- * @sa @ref sec_audio_mix_buffer_volume */
+ * @sa @ref sec_audio_mixing_buffers_volume */
 #define AUDIOMIXBUF_VOL_0DB         (1 << AUDIOMIXBUF_VOL_SHIFT)
 AssertCompile(AUDIOMIXBUF_VOL_0DB <= 0x40000000);   /* Must always hold. */
 AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only attenuation is used. */
@@ -114,7 +114,7 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Logarithmic/exponential volume conversion table.
- * @sa @ref sec_audio_mix_buffer_volume
+ * @sa @ref sec_audio_mixing_buffers_volume
  */
 static uint32_t const s_aVolumeConv[256] =
 {
