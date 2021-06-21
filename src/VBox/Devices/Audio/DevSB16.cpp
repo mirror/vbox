@@ -2586,6 +2586,23 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 
 
 /*********************************************************************************************************************************
+*   Debug Info Items                                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, sb16mixer}
+ */
+static DECLCALLBACK(void) sb16DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    if (pThis->pMixer)
+        AudioMixerDebug(pThis->pMixer, pHlp, pszArgs);
+    else
+        pHlp->pfnPrintf(pHlp, "Mixer not available\n");
+}
+
+
+/*********************************************************************************************************************************
 *   IBase implementation                                                                                                         *
 *********************************************************************************************************************************/
 
@@ -3037,6 +3054,13 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.StatDmaBufUsed, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Number of bytes used in the internal DMA buffer.",  "Stream%u/DMABufUsed", idxStream);
     }
+
+    /*
+     * Debug info items.
+     */
+    //PDMDevHlpDBGFInfoRegister(pDevIns, "sb16",         "SB16 registers. (sb16 [register case-insensitive])", sb16DbgInfo);
+    //PDMDevHlpDBGFInfoRegister(pDevIns, "sb16stream",   "SB16 stream info. (sb16stream [stream number])", sb16DbgInfoStream);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "sb16mixer",    "SB16 mixer state.", sb16DbgInfoMixer);
 
     return VINF_SUCCESS;
 }

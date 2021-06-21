@@ -4306,7 +4306,6 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFIN
 static DECLCALLBACK(void) hdaR3DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-
     if (pThisCC->pMixer)
         AudioMixerDebug(pThisCC->pMixer, pHlp, pszArgs);
     else

@@ -3938,6 +3938,19 @@ static DECLCALLBACK(void) ichac97R3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOH
 }
 
 
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, ac97mixer}
+ */
+static DECLCALLBACK(void) ichac97R3DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAC97STATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
+    if (pThisCC->pMixer)
+        AudioMixerDebug(pThisCC->pMixer, pHlp, pszArgs);
+    else
+        pHlp->pfnPrintf(pHlp, "Mixer not available\n");
+}
+
+
 /*********************************************************************************************************************************
 *   PDMIBASE                                                                                                                     *
 *********************************************************************************************************************************/
@@ -4549,7 +4562,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PDMDevHlpDBGFInfoRegister(pDevIns, "ac97bdl",      "AC'97 buffer descriptor list (BDL). (ac97bdl [stream number])",
                               ichac97R3DbgInfoBDL);
     PDMDevHlpDBGFInfoRegister(pDevIns, "ac97stream",   "AC'97 stream info. (ac97stream [stream number])", ichac97R3DbgInfoStream);
-    //PDMDevHlpDBGFInfoRegister(pDevIns, "ac97mixer",    "AC'97 mixer state.",                             ichac97R3DbgInfoMixer);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ac97mixer",    "AC'97 mixer state.",                              ichac97R3DbgInfoMixer);
 
     /*
      * Register statistics.
