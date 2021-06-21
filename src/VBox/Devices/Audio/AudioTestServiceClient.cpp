@@ -162,7 +162,7 @@ static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, 
                             rc = VERR_NET_PROTOCOL_ERROR;
                     }
 
-                    cbPayloadRead += cbRead;
+                    cbPayloadRead += (uint32_t)cbRead;
                     Assert(cbPayloadRead <= pReply->cbPayload);
                 }
             }
