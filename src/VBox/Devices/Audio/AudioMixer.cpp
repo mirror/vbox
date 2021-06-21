@@ -1,59 +1,6 @@
 /* $Id$ */
 /** @file
  * Audio mixing routines for multiplexing audio sources in device emulations.
- *
- * Overview
- * ========
- *
- * This mixer acts as a layer between the audio connector interface and
- * the actual device emulation, providing mechanisms for audio sources (input)
- * and audio sinks (output).
- *
- * Think of this mixer as kind of a high(er) level interface for the audio
- * connector interface, abstracting common tasks such as creating and managing
- * various audio sources and sinks. This mixer class is purely optional and can
- * be left out when implementing a new device emulation, using only the audi
- * connector interface instead.  For example, the SB16 emulation does not use
- * this mixer and does all its stream management on its own.
- *
- * As audio driver instances are handled as LUNs on the device level, this
- * audio mixer then can take care of e.g. mixing various inputs/outputs to/from
- * a specific source/sink.
- *
- * How and which audio streams are connected to sinks/sources depends on how
- * the audio mixer has been set up.
- *
- * A sink can connect multiple output streams together, whereas a source
- * does this with input streams. Each sink / source consists of one or more
- * so-called mixer streams, which then in turn have pointers to the actual
- * PDM audio input/output streams.
- *
- * Playback
- * ========
- *
- * For output sinks there can be one or more mixing stream attached.
- * As the host sets the overall pace for the device emulation (virtual time
- * in the guest OS vs. real time on the host OS), an output mixing sink
- * needs to make sure that all connected output streams are able to accept
- * all the same amount of data at a time.
- *
- * This is called synchronous multiplexing.
- *
- * A mixing sink employs an own audio mixing buffer, which in turn can convert
- * the audio (output) data supplied from the device emulation into the sink's
- * audio format. As all connected mixing streams in theory could have the same
- * audio format as the mixing sink (parent), this can save processing time when
- * it comes to serving a lot of mixing streams at once. That way only one
- * conversion must be done, instead of each stream having to iterate over the
- * data.
- *
- * Recording
- * =========
- *
- * For input sinks only one mixing stream at a time can be the recording
- * source currently. A recording source is optional, e.g. it is possible to
- * have no current recording source set. Switching to a different recording
- * source at runtime is possible.
  */
 
 /*
@@ -68,6 +15,58 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_audio_mixer    Audio Mixer
+ *
+ * Overview
+ * ========
+ *
+ * This mixer acts as a layer between the audio connector interface and the
+ * actual device emulation, providing mechanisms for audio input sinks (sometime
+ * referred to as audio sources) and audio output sinks.
+ *
+ * Think of this mixer as kind of a higher level interface for the audio device
+ * to use in steado of PDMIAUDIOCONNECTOR, where it works with sinks rather than
+ * individual PDMAUDIOSTREAM instances.
+ *
+ * How and which audio streams are connected to the sinks depends on how the
+ * audio mixer has been set up by the device.  Though, generally, each driver
+ * chain (LUN) has a mixer stream for each sink.
+ *
+ * An output sink can connect multiple output streams together, whereas an input
+ * sink (source) does this with input streams.  Each of these mixer stream will
+ * in turn point to actual PDMAUDIOSTREAM instances.
+ *
+ * A mixing sink employs an own audio mixing buffer in a standard format (32-bit
+ * signed) with the virtual device's rate and channel configuration.  The mixer
+ * streams will convert to/from this as they write and read from it.
+ *
+ *
+ * Playback
+ * ========
+ *
+ * For output sinks there can be one or more mixing stream attached.
+ *
+ * The backends are the consumers here and if they don't get samples when then
+ * need them we'll be having cracles, distortion and/or bits of silence in the
+ * actual output.  The guest runs independently at it's on speed (see @ref
+ * sec_pdm_audio_timing for more details) and we're just inbetween trying to
+ * shuffle the data along as best as we can.  If one or more of the backends
+ * for some reason isn't able to process data at a nominal speed (as defined by
+ * the others), we'll try detect this, mark it as bad and disregard it when
+ * calculating how much we can write to the backends in a buffer update call.
+ *
+ * This is called synchronous multiplexing.
+ *
+ *
+ * Recording
+ * =========
+ *
+ * For input sinks (sources) we blend the samples of all mixing streams
+ * together, however ignoring silent ones to avoid too much of a hit on the
+ * volume level.  It is otherwise very similar to playback, only the direction
+ * is different and we don't multicast but blend.
+ *
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

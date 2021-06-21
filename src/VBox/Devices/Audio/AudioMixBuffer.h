@@ -24,7 +24,7 @@
 #include <iprt/cdefs.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-/** @defgroup grp_pdm_ifs_audio_mixer_buffers   Audio Mixing Buffers
+/** @defgroup grp_pdm_ifs_audio_mixing_buffers   Audio Mixing Buffers
  * @ingroup grp_pdm_ifs_audio_mixing
  *
  * @note This is currently placed under PDM Audio Interface as that seemed like

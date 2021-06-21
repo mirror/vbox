@@ -15,9 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/** @page pg_audio_mix_buffer   Audio Mixer Buffer
+/** @page pg_audio_mixing_buffers   Audio Mixer Buffer
  *
- * @section sec_audio_mix_buffer_volume     Soft Volume Control
+ * @section pg_audio_mixing_buffers_volume     Soft Volume Control
  *
  * The external code supplies an 8-bit volume (attenuation) value in the
  * 0 .. 255 range. This represents 0 to -96dB attenuation where an input

@@ -191,9 +191,11 @@ PDMIHOSTAUDIOPORT1 <--> PDMIHOSTAUDIO1
  * which streams are currently active and which aren't.  Inactive streams are
  * ignored.
  *
+ * For more info: @ref pg_audio_mixer, @ref pg_audio_mixing_buffers
+ *
  * The AudioMixer API reference can be found here:
- *      - @ref grp_pdm_ifs_audio_mixing and
- *      - @ref grp_pdm_ifs_audio_mixer_buffers
+ *      - @ref grp_pdm_ifs_audio_mixing
+ *      - @ref grp_pdm_ifs_audio_mixing_buffers
  *
  *
  * @section sec_pdm_audio_timing    Timing
