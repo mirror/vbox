@@ -497,7 +497,6 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
                     && Reply.pvPayload
                     && Reply.cbPayload)
                 {
-                    /** @todo Skip uCrc32 for now. */
                     rc = RTFileWrite(hFile, (uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4, NULL);
                 }
                 else if (RTStrNCmp(Reply.szOp, "DATA EOF", ATSPKT_OPCODE_MAX_LEN) == 0)
