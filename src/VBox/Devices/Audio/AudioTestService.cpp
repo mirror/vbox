@@ -639,17 +639,17 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
             return atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning sending test set '%s' failed", pReq->szTag);
     }
 
-    uint32_t uMyCrc32 = RTCrc32Start();
     for (;;)
     {
+        uint32_t uMyCrc32 = RTCrc32Start();
         struct
         {
             ATSPKTHDR   Hdr;
             uint32_t    uCrc32;
-            char        ab[_8K]; /** @todo BUGBUG No clue why sending / receiving does not work when I use bigger sizes like _32K / _64K here. Some network / frame limitation? */
+            char        ab[_64K];
             char        abPadding[ATSPKT_ALIGNMENT];
         }       Pkt;
-        size_t  cbRead;
+        size_t  cbRead = 0;
         rc = pThis->Callbacks.pfnTestSetSendRead(pThis->Callbacks.pvUser, pReq->szTag, &Pkt.ab, sizeof(Pkt.ab), &cbRead);
         if (   RT_FAILURE(rc)
             || cbRead == 0)
@@ -663,7 +663,7 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
                     rc = atsWaitForAck(pThis, pClient, &Pkt.Hdr);
             }
             else
-                return atsReplyRC(pThis, pClient, pPktHdr, rc, "Sending data for test set '%s' failed", pReq->szTag);
+                rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Sending data for test set '%s' failed", pReq->szTag);
             break;
         }
 
