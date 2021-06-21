@@ -40,7 +40,7 @@ enum X11WMType
     X11WMType_Xfwm4,
 };
 
-SHARED_LIBRARY_STUFF struct X11ScreenSaverInhibitMethod
+struct SHARED_LIBRARY_STUFF X11ScreenSaverInhibitMethod
 {
     QString m_strServiceName;
     QString m_strInterface;
