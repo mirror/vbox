@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QString>
+#include <QVector>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
