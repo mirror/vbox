@@ -44,6 +44,18 @@
 #include <iprt/semaphore.h>
 #include <iprt/err.h>
 #include "internal/magics.h"
+#include "internal-r3-win.h"
+
+
+/** Define the flag for creating a manual reset timer if not available in the SDK we are compiling with. */
+#ifndef CREATE_WAITABLE_TIMER_MANUAL_RESET
+# define CREATE_WAITABLE_TIMER_MANUAL_RESET    0x00000001
+#endif
+/** Define the flag for high resolution timers, available since Windows 10 RS4 if not available. */
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+# define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
 
 RT_C_DECLS_BEGIN
 /* from sysinternals. */
@@ -227,14 +239,14 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD hThreadSelf, void *pvArg)
 }
 
 
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+/**
+ * Tries to set the NT timer resolution to a value matching the given timer interval.
+ *
+ * @returns IPRT status code.
+ * @param   u64NanoInterval             The timer interval in nano seconds.
+ */
+static int rtTimerNtSetTimerResolution(uint64_t u64NanoInterval)
 {
-    /*
-     * We don't support the fancy MP features.
-     */
-    if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
-        return VERR_NOT_SUPPORTED;
-
     /*
      * On windows we'll have to set the timer resolution before
      * we start the timer.
@@ -265,6 +277,18 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         }
     }
 
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+{
+    /*
+     * We don't support the fancy MP features.
+     */
+    if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+        return VERR_NOT_SUPPORTED;
+
     /*
      * Create new timer.
      */
@@ -285,10 +309,24 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         if (RT_SUCCESS(rc))
         {
             /*
-             * Create Win32 event semaphore.
+             * Create Win32 waitable timer.
+             * We will first try the undocumented CREATE_WAITABLE_TIMER_HIGH_RESOLUTION which
+             * exists since some Windows 10 version (RS4). If this fails we resort to the old
+             * method of setting the timer resolution before creating a timer which will probably
+             * not give us the accuracy for intervals below the system tick resolution.
              */
             pTimer->iError = 0;
-            pTimer->hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
+            if (g_pfnCreateWaitableTimerExW)
+                pTimer->hTimer = g_pfnCreateWaitableTimerExW(NULL, NULL,
+                                                             CREATE_WAITABLE_TIMER_MANUAL_RESET | CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+                                                             TIMER_ALL_ACCESS);
+            if (!pTimer->hTimer)
+            {            
+                rc = rtTimerNtSetTimerResolution(u64NanoInterval);
+                if (RT_SUCCESS(rc))
+                    pTimer->hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
+            }
+
             if (pTimer->hTimer)
             {
                 /*
@@ -320,6 +358,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
                 }
                 CloseHandle(pTimer->hTimer);
             }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
             RTSemEventDestroy(pTimer->Event);
             pTimer->Event = NIL_RTSEMEVENT;
         }

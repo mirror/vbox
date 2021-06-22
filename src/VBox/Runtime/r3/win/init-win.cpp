@@ -76,6 +76,8 @@ static PFNSETUNHANDLEDEXCEPTIONFILTER           g_pfnSetUnhandledExceptionFilter
 static LPTOP_LEVEL_EXCEPTION_FILTER             g_pfnUnhandledXcptFilter = NULL;
 /** SystemTimeToTzSpecificLocalTime. */
 DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *) g_pfnSystemTimeToTzSpecificLocalTime = NULL;
+/** CreateWaitableTimerEx . */
+DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)      g_pfnCreateWaitableTimerExW = NULL;
 
 /** The native ntdll.dll handle. */
 DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
@@ -512,6 +514,7 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     if (g_pfnGetSystemWindowsDirectoryW)
         g_pfnGetSystemWindowsDirectoryW = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetWindowsDirectoryW");
     g_pfnSystemTimeToTzSpecificLocalTime = (decltype(SystemTimeToTzSpecificLocalTime) *)GetProcAddress(g_hModKernel32, "SystemTimeToTzSpecificLocalTime");
+    g_pfnCreateWaitableTimerExW = (PFNCREATEWAITABLETIMEREX)GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
 
     /*
      * Resolve some ntdll.dll APIs that weren't there in early NT versions.
