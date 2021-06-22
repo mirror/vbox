@@ -248,8 +248,8 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
                                             pItem->u.Absolute.dw,
                                             pItem->u.Absolute.fButtons);
     else
-        return false;
-    return RT_SUCCESS(rc);
+        AssertMsgFailedReturn(("enmType=%d\n"), true /* remove buggy data */);
+    return rc != VERR_TRY_AGAIN;
 }
 
 
@@ -401,7 +401,8 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         return rc;
     }
 
-    rc = PDMDrvHlpQueueCreate(pDrvIns, sizeof(DRVMOUSEQUEUEITEM), cItems, cMilliesInterval, drvMouseQueueConsumer, "Mouse", &pDrv->pQueue);
+    rc = PDMDrvHlpQueueCreate(pDrvIns, sizeof(DRVMOUSEQUEUEITEM), cItems, cMilliesInterval,
+                              drvMouseQueueConsumer, "Mouse", &pDrv->pQueue);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Rrc\n", cItems, cMilliesInterval, rc));
