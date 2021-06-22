@@ -248,7 +248,7 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
                                             pItem->u.Absolute.dw,
                                             pItem->u.Absolute.fButtons);
     else
-        AssertMsgFailedReturn(("enmType=%d\n"), true /* remove buggy data */);
+        AssertMsgFailedReturn(("enmType=%d\n", pItem->enmType), true /* remove buggy data */);
     return rc != VERR_TRY_AGAIN;
 }
 
