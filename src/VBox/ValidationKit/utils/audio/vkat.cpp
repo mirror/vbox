@@ -592,17 +592,29 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
-        case VKAT_TEST_OPT_DEV:            return "Use the specified audio device";
-        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to.";
-        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6052].";
-        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to.";
-        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052].";
-        case VKAT_TEST_OPT_MODE:           return "Specifies the mode this program runs at";
-        case VKAT_TEST_OPT_NO_VERIFY:      return "Skips the verification step.";
-        case 'e':                          return "Exclude the given test id from the list";
         case 'a':                          return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'b':                          return "The audio backend to use";
+        case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
+        case 'e':                          return "Exclude the given test id from the list";
         case 'i':                          return "Include the given test id in the list";
+        case VKAT_TEST_OPT_DEV:            return "Use the specified audio device";
+        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to";
+        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6042]";
+        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to";
+        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052]";
+        case VKAT_TEST_OPT_MODE:           return "Specifies the test mode to use when running the tests";
+        case VKAT_TEST_OPT_NO_VERIFY:      return "Skips the verification step";
+        case VKAT_TEST_OPT_OUTDIR:         return "Specifies the output directory to use";
+        case VKAT_TEST_OPT_PAUSE:          return "Not yet implemented";
+        case VKAT_TEST_OPT_PCM_HZ:         return "Specifies the PCM Hetz (Hz) rate to use [44100]";
+        case VKAT_TEST_OPT_PCM_BIT:        return "Specifies the PCM sample bits (i.e. 16) to use [16]";
+        case VKAT_TEST_OPT_PCM_CHAN:       return "Specifies the number of PCM channels to use [2]";
+        case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples [true]";
+        case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
+        case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
+        case VKAT_TEST_OPT_VOL:            return "Specifies the audio volume (in percent, 0-100) to use";
+        default:
+            break;
     }
     return NULL;
 }
@@ -758,12 +770,12 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                       uPcmHz ? uPcmHz : 44100);
 
     if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode specified!\n");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
 
     if (TstEnv.enmMode == AUDIOTESTMODE_HOST)
     {
         if (!pszGuestTcpAddr)
-            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--guest-ats-address missing\n");
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No guest ATS address (--guest-ats-addr) specified!\n");
     }
 
     /* For now all tests have the same test environment. */
@@ -1055,6 +1067,9 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                 RTStrmPrintf(pStrm, "    %s\n", pszHelp);
         }
     }
+
+    RTStrmPrintf(pStrm, "\nDefault values for an option are displayed in [] if available.\n");
+
     return RTEXITCODE_SUCCESS;
 }
 
