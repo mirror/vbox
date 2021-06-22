@@ -590,16 +590,16 @@ bool AudioTestErrorDescFailed(PCAUDIOTESTERRORDESC pErr)
  * @param   pErr                Test error description to add entry for.
  * @param   idxTest             Index of failing test (zero-based).
  * @param   rc                  Result code of entry to add.
- * @param   pszDesc             Error description format string to add.
- * @param   args                Optional format arguments of \a pszDesc to add.
+ * @param   pszFormat           Error description format string to add.
+ * @param   va                  Optional format arguments of \a pszDesc to add.
  */
-static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, int rc, const char *pszDesc, va_list args)
+static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, int rc, const char *pszFormat, va_list va)
 {
     PAUDIOTESTERRORENTRY pEntry = (PAUDIOTESTERRORENTRY)RTMemAlloc(sizeof(AUDIOTESTERRORENTRY));
     AssertPtrReturn(pEntry, VERR_NO_MEMORY);
 
     char *pszDescTmp;
-    if (RTStrAPrintf(&pszDescTmp, pszDesc, args) < 0)
+    if (RTStrAPrintfV(&pszDescTmp, pszFormat, va) < 0)
         AssertFailedReturn(VERR_NO_MEMORY);
 
     const ssize_t cch = RTStrPrintf2(pEntry->szDesc, sizeof(pEntry->szDesc), "Test #%RU32 failed: %s", idxTest, pszDescTmp);
@@ -621,15 +621,15 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, in
  * @returns VBox status code.
  * @param   pErr                Test error description to add entry for.
  * @param   idxTest             Index of failing test (zero-based).
- * @param   pszDesc             Error description format string to add.
+ * @param   pszFormat           Error description format string to add.
  * @param   ...                 Optional format arguments of \a pszDesc to add.
  */
-static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszDesc, ...)
+static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszFormat, ...)
 {
     va_list va;
-    va_start(va, pszDesc);
+    va_start(va, pszFormat);
 
-    int rc = audioTestErrorDescAddV(pErr, idxTest, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszDesc, va);
+    int rc = audioTestErrorDescAddV(pErr, idxTest, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszFormat, va);
 
     va_end(va);
     return rc;
@@ -1636,32 +1636,46 @@ static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t c
     return RT_SUCCESS(rc) && (cbToCompare == 0);
 }
 
+#define CHECK_RC_MAYBE_RET(a_rc, a_pVerJob) \
+    if (RT_FAILURE(a_rc)) \
+    { \
+        if (!a_pVerJob->fKeepGoing) \
+            return VINF_SUCCESS; \
+    }
+
+#define CHECK_RC_MSG_MAYBE_RET(a_rc, a_pVerJob, a_Msg) \
+    if (RT_FAILURE(a_rc)) \
+    { \
+        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, (a_Msg)); \
+        AssertRC(rc3); \
+        if (!a_pVerJob->fKeepGoing) \
+            return VINF_SUCCESS; \
+    }
+
 /**
  * Does the actual PCM data verification of a test tone.
  *
  * @returns VBox status code.
- * @param   pVerify             Verification job to verify PCM data for.
+ * @param   pVerJob             Verification job to verify PCM data for.
  * @param   phTest              Test handle of test to verify PCM data for.
  */
-static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJHANDLE phTest)
+static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJHANDLE phTest)
 {
     int rc;
 
     /** @todo For now ASSUME that we only have one object per test. */
 
     char szObjA[128];
-    rc = audioTestGetValueStr(pVerify->pSetA, phTest, "obj0_uuid", szObjA, sizeof(szObjA));
-    AssertRCReturn(rc, rc);
+    rc = audioTestGetValueStr(pVerJob->pSetA, phTest, "obj0_uuid", szObjA, sizeof(szObjA));
     PAUDIOTESTOBJ pObjA;
-    rc = audioTestSetObjOpen(pVerify->pSetA, szObjA, &pObjA);
-    AssertRCReturn(rc, rc);
+    rc = audioTestSetObjOpen(pVerJob->pSetA, szObjA, &pObjA);
+    CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Unable to open object A '%s'", szObjA));
 
     char szObjB[128];
-    rc = audioTestGetValueStr(pVerify->pSetB, phTest, "obj0_uuid", szObjB, sizeof(szObjB));
-    AssertRCReturn(rc, rc);
+    rc = audioTestGetValueStr(pVerJob->pSetB, phTest, "obj0_uuid", szObjB, sizeof(szObjB));
     PAUDIOTESTOBJ pObjB;
-    rc = audioTestSetObjOpen(pVerify->pSetB, szObjB, &pObjB);
-    AssertRCReturn(rc, rc);
+    rc = audioTestSetObjOpen(pVerJob->pSetB, szObjB, &pObjB);
+    CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Unable to open object B '%s'", szObjB));
 
     AssertReturn(pObjA->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
     AssertReturn(pObjB->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
@@ -1679,7 +1693,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOB
     {
         /** @todo Add more sophisticated stuff here. */
 
-        int rc2 = audioTestErrorDescAdd(pVerify->pErr, pVerify->idxTest, "Files '%s' and '%s' don't match\n", szObjA, szObjB);
+        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' don't match\n", szObjA, szObjB);
         AssertRC(rc2);
     }
 
@@ -1774,6 +1788,8 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     VerJob.pSetB      = pSetB;
     VerJob.fKeepGoing = true;
 
+    PAUDIOTESTVERIFYJOB pVerJob = &VerJob;
+
     int rc;
 
     /*
@@ -1783,19 +1799,15 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     RTStrPrintf(hHdr.szSec, sizeof(hHdr.szSec), "header");
 
     rc = audioTestVerifyValue(&VerJob, &hHdr,   "magic",        "vkat_ini",    "Manifest magic wrong");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
     rc = audioTestVerifyValue(&VerJob, &hHdr,   "ver",          "1"       ,    "Manifest version wrong");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
     rc = audioTestVerifyValue(&VerJob, &hHdr,   "tag",          NULL,          "Manifest tags don't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
     rc = audioTestVerifyValue(&VerJob, &hHdr,   "test_count",   NULL,          "Test counts don't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
     rc = audioTestVerifyValue(&VerJob, &hHdr,   "obj_count",    NULL,          "Object counts don't match");
-    AssertRCReturn(rc, rc);
-
-    if (   pErrDesc->cErrors
-        && !VerJob.fKeepGoing)
-        return VINF_SUCCESS;
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
 
     /*
      * Compare ran tests.
@@ -1813,10 +1825,11 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
 
         AUDIOTESTTYPE enmTestTypeA;
         rc = audioTestGetValueUInt32(VerJob.pSetA, &hTest, "test_type", (uint32_t *)&enmTestTypeA);
-        AssertRCReturn(rc, rc);
+        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Test type A not found"));
+
         AUDIOTESTTYPE enmTestTypeB;
         rc = audioTestGetValueUInt32(VerJob.pSetB, &hTest, "test_type", (uint32_t *)&enmTestTypeB);
-        AssertRCReturn(rc, rc);
+        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Test type B not found"));
 
         switch (enmTestTypeA)
         {
@@ -1856,11 +1869,12 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
         AssertRC(rc);
     }
 
-#undef VERIFY_VALUE
-
     /* Only return critical stuff not related to actual testing here. */
     return VINF_SUCCESS;
 }
+
+#undef CHECK_RC_MAYBE_RET
+#undef CHECK_RC_MSG_MAYBE_RET
 
 
 /*********************************************************************************************************************************
