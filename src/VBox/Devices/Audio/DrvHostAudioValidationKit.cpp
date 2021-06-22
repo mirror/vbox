@@ -210,6 +210,49 @@ static void drvHostValKiUnregisterPlayTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTES
     pThis->cTestsPlay--;
 }
 
+/**
+ * Performs some internal cleanup / housekeeping of all registered tests.
+ *
+ * @param   pThis               ValKit audio driver instance.
+ */
+static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
+{
+    LogRel(("Audio: Validation Kit: Cleaning up ...\n"));
+
+    if (pThis->cTestsRec)
+        LogRel(("Audio: Validation Kit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
+
+    PVALKITTESTDATA pTst, pTstNext;
+    RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
+    {
+        size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
+        if (cbOutstanding)
+            LogRel(("Audio: Validation Kit: \tRecording test #%RU32 has %RU64 bytes (%RU32ms) outstanding\n",
+                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, cbOutstanding)));
+        drvHostValKiUnregisterRecTest(pThis, pTst);
+    }
+
+    if (pThis->cTestsPlay)
+        LogRel(("Audio: Validation Kit: Warning: %RU32 guest playback tests still outstanding:\n", pThis->cTestsPlay));
+
+    RTListForEachSafe(&pThis->lstTestsPlay, pTst, pTstNext, VALKITTESTDATA, Node)
+    {
+        size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+        if (cbOutstanding)
+            LogRel(("Audio: Validation Kit: \tPlayback test #%RU32 has %RU64 bytes (%RU32ms) outstanding\n",
+                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, cbOutstanding)));
+        drvHostValKiUnregisterPlayTest(pThis, pTst);
+    }
+
+    Assert(pThis->cTestsRec == 0);
+    Assert(pThis->cTestsPlay == 0);
+}
+
+
+/*********************************************************************************************************************************
+*   ATS callback implementations                                                                                                 *
+*********************************************************************************************************************************/
+
 /** @copydoc ATSCALLBACKS::pfnTestSetBegin */
 static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const char *pszTag)
 {
@@ -218,11 +261,6 @@ static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const cha
     LogRel(("Audio: Validation Kit: Beginning test set '%s'\n", pszTag));
     return AudioTestSetCreate(&pThis->Set, pThis->szPathTemp, pszTag);
 }
-
-
-/*********************************************************************************************************************************
-*   ATS callback implementations                                                                                                 *
-*********************************************************************************************************************************/
 
 /** @copydoc ATSCALLBACKS::pfnTestSetEnd */
 static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char *pszTag)
@@ -241,6 +279,9 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
     int rc = AudioTestSetPack(pSet, pThis->szPathOut, pThis->szTestSetArchive, sizeof(pThis->szTestSetArchive));
     if (RT_SUCCESS(rc))
         LogRel(("Audio: Validation Kit: Packed up to '%s'\n", pThis->szTestSetArchive));
+
+    /* Do some internal housekeeping. */
+    drvHostValKitCleanup(pThis);
 
     int rc2 = AudioTestSetWipe(pSet);
     if (RT_SUCCESS(rc))
@@ -868,36 +909,11 @@ static DECLCALLBACK(void) drvHostValKitAudioDestruct(PPDMDRVINS pDrvIns)
 
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service complete\n"));
-
-        if (pThis->cTestsRec)
-            LogRel(("Audio: Validation Kit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
-
-        PVALKITTESTDATA pTst, pTstNext;
-        RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
-        {
-            size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
-            if (cbOutstanding)
-                LogRel(("Audio: Validation Kit: \tRecording test #%RU32 has %RU64 bytes outstanding\n", pTst->idxTest, cbOutstanding));
-            drvHostValKiUnregisterRecTest(pThis, pTst);
-        }
-
-        if (pThis->cTestsPlay)
-            LogRel(("Audio: Validation Kit: Warning: %RU32 guest playback tests still outstanding:\n", pThis->cTestsPlay));
-
-        RTListForEachSafe(&pThis->lstTestsPlay, pTst, pTstNext, VALKITTESTDATA, Node)
-        {
-            size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
-            if (cbOutstanding)
-                LogRel(("Audio: Validation Kit: \tPlayback test #%RU32 has %RU64 bytes outstanding\n", pTst->idxTest, cbOutstanding));
-            drvHostValKiUnregisterPlayTest(pThis, pTst);
-        }
-
-        Assert(pThis->cTestsRec == 0);
-        Assert(pThis->cTestsPlay == 0);
+        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service (ATS) complete\n"));
+        drvHostValKitCleanup(pThis);
     }
     else
-        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service failed, rc=%Rrc\n", rc));
+        LogRel(("Audio: Validation Kit: Shutdown of Audio Test Service (ATS) failed, rc=%Rrc\n", rc));
 
     /* Try cleaning up a bit. */
     RTDirRemove(pThis->szPathTemp);
