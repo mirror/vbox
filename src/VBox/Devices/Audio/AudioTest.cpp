@@ -1646,7 +1646,16 @@ static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t c
 #define CHECK_RC_MSG_MAYBE_RET(a_rc, a_pVerJob, a_Msg) \
     if (RT_FAILURE(a_rc)) \
     { \
-        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, (a_Msg)); \
+        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg); \
+        AssertRC(rc3); \
+        if (!a_pVerJob->fKeepGoing) \
+            return VINF_SUCCESS; \
+    }
+
+#define CHECK_RC_MSG_VA_MAYBE_RET(a_rc, a_pVerJob, a_Msg, ...) \
+    if (RT_FAILURE(a_rc)) \
+    { \
+        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg, __VA_ARGS__); \
         AssertRC(rc3); \
         if (!a_pVerJob->fKeepGoing) \
             return VINF_SUCCESS; \
@@ -1669,14 +1678,13 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     rc = audioTestGetValueStr(pVerJob->pSetA, phTest, "obj0_uuid", szObjA, sizeof(szObjA));
     PAUDIOTESTOBJ pObjA;
     rc = audioTestSetObjOpen(pVerJob->pSetA, szObjA, &pObjA);
-    CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Unable to open object A '%s'", szObjA));
+    CHECK_RC_MSG_VA_MAYBE_RET(rc, pVerJob, "Unable to open object A '%s'", szObjA);
 
     char szObjB[128];
     rc = audioTestGetValueStr(pVerJob->pSetB, phTest, "obj0_uuid", szObjB, sizeof(szObjB));
     PAUDIOTESTOBJ pObjB;
     rc = audioTestSetObjOpen(pVerJob->pSetB, szObjB, &pObjB);
-    CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Unable to open object B '%s'", szObjB));
-
+    CHECK_RC_MSG_VA_MAYBE_RET(rc, pVerJob, "Unable to open object B '%s'", szObjB);
     AssertReturn(pObjA->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
     AssertReturn(pObjB->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
 
@@ -1727,27 +1735,27 @@ static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJHAN
      * More important items have precedence.
      */
     rc = audioTestVerifyValue(pVerify, phTest, "error_rc", "0", "Test was reported as failed");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "obj_count", NULL, "Object counts don't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_freq_hz", NULL, "Tone frequency doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_prequel_ms", NULL, "Tone prequel (ms) doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_duration_ms", NULL, "Tone duration (ms) doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_sequel_ms", NULL, "Tone sequel (ms) doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_volume_percent", NULL, "Tone volume (percent) doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_pcm_hz", NULL, "Tone PCM Hz doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_pcm_channels", NULL, "Tone PCM channels don't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_pcm_bits", NULL, "Tone PCM bits don't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
     rc = audioTestVerifyValue(pVerify, phTest, "tone_pcm_is_signed", NULL, "Tone PCM signed bit doesn't match");
-    AssertRCReturn(rc, rc);
+    CHECK_RC_MAYBE_RET(rc, pVerify);
 
     /*
      * Now the fun stuff, PCM data analysis.
@@ -1825,11 +1833,11 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
 
         AUDIOTESTTYPE enmTestTypeA;
         rc = audioTestGetValueUInt32(VerJob.pSetA, &hTest, "test_type", (uint32_t *)&enmTestTypeA);
-        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Test type A not found"));
+        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type A not found");
 
         AUDIOTESTTYPE enmTestTypeB;
         rc = audioTestGetValueUInt32(VerJob.pSetB, &hTest, "test_type", (uint32_t *)&enmTestTypeB);
-        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, ("Test type B not found"));
+        CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type B not found %RU32");
 
         switch (enmTestTypeA)
         {
