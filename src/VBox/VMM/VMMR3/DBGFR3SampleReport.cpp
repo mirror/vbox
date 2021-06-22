@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 #include <iprt/time.h>
 #include <iprt/timer.h>
+#include <iprt/sort.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
@@ -332,6 +333,24 @@ static PDBGFSAMPLEFRAME dbgfR3SampleReportAddFrameByAddr(PUVM pUVM, PDBGFSAMPLEF
 
 
 /**
+ * @copydoc FNRTSORTCMP
+ */
+static DECLCALLBACK(int) dbgfR3SampleReportFrameSortCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    PCDBGFSAMPLEFRAME pFrame1 = (PCDBGFSAMPLEFRAME)pvElement1;
+    PCDBGFSAMPLEFRAME pFrame2 = (PCDBGFSAMPLEFRAME)pvElement2;
+
+    if (pFrame1->cSamples < pFrame2->cSamples)
+        return 1;
+    if (pFrame1->cSamples > pFrame2->cSamples)
+        return -1;
+
+    return 0;
+}
+
+
+/**
  * Dumps a single given frame to the release log.
  *
  * @returns nothing.
@@ -368,6 +387,9 @@ static void dbgfR3SampleReportDumpFrame(PCDBGFINFOHLP pHlp, PUVM pUVM, PCDBGFSAM
     }
     else
         pHlp->pfnPrintf(pHlp, "%*s%RU64 %RGv\n", idxFrame * 4, " ", pFrame->cSamples, pFrame->AddrFrame.FlatPtr);
+
+    /* Sort by sample count. */
+    RTSortShell(pFrame->paFrames, pFrame->cFramesValid, sizeof(*pFrame->paFrames), dbgfR3SampleReportFrameSortCmp, NULL);
 
     for (uint32_t i = 0; i < pFrame->cFramesValid; i++)
         dbgfR3SampleReportDumpFrame(pHlp, pUVM, &pFrame->paFrames[i], idxFrame + 1);
