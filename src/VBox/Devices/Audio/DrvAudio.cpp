@@ -622,7 +622,7 @@ static PDMHOSTAUDIOSTREAMSTATE drvAudioStreamProcessBackendStateChange(PDRVAUDIO
 #ifdef LOG_ENABLED
     DRVAUDIOPLAYSTATE const     enmPlayState    = enmDir == PDMAUDIODIR_OUT
                                                 ? pStreamEx->Out.enmPlayState   : DRVAUDIOPLAYSTATE_INVALID;
-    DRVAUDIOCAPTURESTATE const  enmCaptureState = enmDir == PDMAUDIODIR_OUT
+    DRVAUDIOCAPTURESTATE const  enmCaptureState = enmDir == PDMAUDIODIR_IN
                                                 ? pStreamEx->In.enmCaptureState : DRVAUDIOCAPTURESTATE_INVALID;
 #endif
     Assert(enmNewState != enmOldState);
