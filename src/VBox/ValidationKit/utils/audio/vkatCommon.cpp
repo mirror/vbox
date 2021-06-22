@@ -704,9 +704,23 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         && !strlen(pTstEnv->szPathTemp))
         rc = RTPathJoin(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), szPathTemp, "vkat-temp");
 
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTDirCreate(pTstEnv->szPathTemp, RTFS_UNIX_IRWXU, 0 /* fFlags */);
+        if (rc == VERR_ALREADY_EXISTS)
+            rc = VINF_SUCCESS;
+    }
+
     if (   RT_SUCCESS(rc)
         && !strlen(pTstEnv->szPathOut))
         rc = RTPathJoin(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), szPathTemp, "vkat");
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTDirCreate(pTstEnv->szPathOut, RTFS_UNIX_IRWXU, 0 /* fFlags */);
+        if (rc == VERR_ALREADY_EXISTS)
+            rc = VINF_SUCCESS;
+    }
 
     if (RT_FAILURE(rc))
         return rc;
