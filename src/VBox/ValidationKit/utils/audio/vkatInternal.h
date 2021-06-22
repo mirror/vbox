@@ -346,6 +346,7 @@ extern unsigned         g_cTests;
  * @{ */
 RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
 RTEXITCODE audioTestVersion(void);
+void       audioTestShowLogo(PRTSTREAM pStream);
 /** @}  */
 
 /** @name Driver stack
@@ -464,6 +465,7 @@ enum
                 return audioTestVersion(); \
             \
             case 'h': \
+                audioTestShowLogo(g_pStdOut); \
                 return audioTestUsage(g_pStdOut); \
             \
             case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE: \

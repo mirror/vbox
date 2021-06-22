@@ -197,7 +197,7 @@ RTTEST           g_hTest;
 /** The current verbosity level. */
 unsigned         g_uVerbosity = 0;
 /** DrvAudio: Enable debug (or not). */
-bool             g_fDrvAudioDebug = 0;
+bool             g_fDrvAudioDebug = false;
 /** DrvAudio: The debug output path. */
 const char      *g_pszDrvAudioDebug = NULL;
 
@@ -900,10 +900,12 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
             RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
     }
 
-    AudioTestSetWipe(&SetA);
+    if (!g_fDrvAudioDebug) /* Don't wipe stuff when debugging. Can be useful for introspecting data. */
+        AudioTestSetWipe(&SetA);
     AudioTestSetClose(&SetA);
 
-    AudioTestSetWipe(&SetB);
+    if (!g_fDrvAudioDebug) /* Ditto. */
+        AudioTestSetWipe(&SetB);
     AudioTestSetClose(&SetB);
 
     RTTestSubDone(g_hTest);
@@ -1030,7 +1032,7 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                  "\n"
                  "Global Options:\n"
                  "  --debug-audio\n"
-                 "    Enables DrvAudio debugging.\n"
+                 "    Enables (DrvAudio) debugging.\n"
                  "  --debug-audio-path=<path>\n"
                  "    Tells DrvAudio where to put its debug output (wav-files).\n"
                  "  -q, --quiet\n"
@@ -1087,7 +1089,7 @@ RTEXITCODE audioTestVersion(void)
  *
  * @param   pStream             Output stream to show logo on.
  */
-static void audioTestShowLogo(PRTSTREAM pStream)
+void audioTestShowLogo(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) Version " VBOX_VERSION_STRING " - r%s\n"
                  "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
@@ -1145,24 +1147,7 @@ int main(int argc, char **argv)
     {
         switch (rc)
         {
-            case 'q':
-                g_uVerbosity = 0;
-                if (g_pRelLogger)
-                    RTLogGroupSettings(g_pRelLogger, "all=0 all.e");
-                break;
-
-            case 'v':
-                g_uVerbosity++;
-                if (g_pRelLogger)
-                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0");
-                break;
-
-            case 'V':
-                return audioTestVersion();
-
-            case 'h':
-                audioTestShowLogo(g_pStdOut);
-                return audioTestUsage(g_pStdOut);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             case VINF_GETOPT_NOT_OPTION:
             {

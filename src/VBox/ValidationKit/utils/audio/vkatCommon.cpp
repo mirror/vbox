@@ -824,7 +824,8 @@ int audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszPackFile, s
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set packed up to '%s'\n", pszPackFile);
     }
 
-    /* ignore rc */ AudioTestSetWipe(&pTstEnv->Set);
+    if (!g_fDrvAudioDebug) /* Don't wipe stuff when debugging. Can be useful for introspecting data. */
+        /* ignore rc */ AudioTestSetWipe(&pTstEnv->Set);
 
     AudioTestSetDestroy(&pTstEnv->Set);
 
