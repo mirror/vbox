@@ -165,8 +165,9 @@ ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   ifndef VBOX_ONLY_ADDITIONS
    INSTALLS += vkathost
-    vkathost_TEMPLATE = VBOXR3EXE
-    vkathost_SOURCES  = $(vkat_1_TARGET)=>VBoxAudioTest$(HOSTSUFF_EXE)
+   vkathost_TEMPLATE = VBOXR3EXE
+   vkathost_SOURCES  = $(vkat_1_TARGET)=>VBoxAudioTest$(HOSTSUFF_EXE)
+   vkathost_MODE     = a+rx,u+w
   endif
  endif
 endif
