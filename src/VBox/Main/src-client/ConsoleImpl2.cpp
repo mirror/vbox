@@ -3022,6 +3022,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/VaKit/Enabled", &strTmp); /* Deprecated; do not use! */
             if (strTmp.isEmpty())
                 GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/ValKit/Enabled", &strTmp);
+            /* Whether the Validation Kit audio backend runs as the primary backend.
+             * Can also be used with VBox release builds. */
             const bool fValKitEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
 #endif
             /** @todo Implement an audio device class, similar to the audio backend class, to construct the common stuff
@@ -3260,16 +3262,29 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                  * mess with the audio data and would lead to side effects.
                  *
                  * The ValidationKit audio driver has precedence over the Debug audio driver.
+                 *
+                 * This also can (and will) be used in VBox release builds.
                  */
                 if (fValKitEnabled)
                 {
                     LogRel(("Audio: Warning: ValidationKit running and Debug mode enabled -- disabling Debug driver\n"));
                 }
-                else
+                else /* Debug mode active -- run both (nice for catching errors / doing development). */
                 {
-# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+                    /*
+                     * The ValidationKit backend.
+                     */
                     InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
-                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "DebugAudio", !!fAudioEnabledIn, !!fAudioEnabledOut);
+                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "ValidationKitAudio",
+                                        !!fAudioEnabledIn, !!fAudioEnabledOut);
+                    idxAudioLun++;
+# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+                    /*
+                     * The Debug audio backend.
+                     */
+                    InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+                    i_configAudioDriver(virtualBox, pMachine, pLunL0, "DebugAudio",
+                                        !!fAudioEnabledIn, !!fAudioEnabledOut);
                     idxAudioLun++;
 # ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
                 }
