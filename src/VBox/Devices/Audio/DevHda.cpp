@@ -2967,7 +2967,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                  * Straight forward DWORD access.
                  */
                 rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, (uint32_t *)pv);
-                Log3Func(("\tRead %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+                Log3Func(("  Read %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
                 STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
             }
 #ifndef IN_RING3
@@ -2994,7 +2994,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                     uint32_t        u32Tmp       = 0;
 
                     rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, &u32Tmp);
-                    Log4Func(("\tRead %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
+                    Log4Func(("  Read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
                     STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
 #ifdef IN_RING3
                     if (rc != VINF_SUCCESS)
@@ -3018,7 +3018,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
         else
         {
             LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
-            Log3Func(("\tHole at %x is accessed for read\n", offRegLog));
+            Log3Func(("  Hole at %x is accessed for read\n", offRegLog));
             STAM_COUNTER_INC(&pThis->StatRegUnknownReads);
             rc = VINF_IOM_MMIO_UNUSED_FF;
         }
@@ -3030,11 +3030,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
          */
 #ifdef LOG_ENABLED
         if (cbLog == 4)
-            Log3Func(("\tReturning @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+            Log3Func(("  Returning @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
         else if (cbLog == 2)
-            Log3Func(("\tReturning @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, VBOXSTRICTRC_VAL(rc)));
+            Log3Func(("  Returning @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, VBOXSTRICTRC_VAL(rc)));
         else if (cbLog == 1)
-            Log3Func(("\tReturning @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, VBOXSTRICTRC_VAL(rc)));
+            Log3Func(("  Returning @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, VBOXSTRICTRC_VAL(rc)));
 #endif
     }
     else
@@ -3163,7 +3163,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     {
         Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
-        Log3Func(("\t%#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
+        Log3Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
     }
     /*
      * Sub-register access.  Supply missing bits as needed.
@@ -3171,15 +3171,18 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     else if (   idxRegDsc >= 0
              && cb < g_aHdaRegMap[idxRegDsc].size)
     {
+        /** @todo r=bird: This is not correctly serialized!  Also we're not gaining
+         *        any advantage by not entering the critsect here already, because
+         *        hdaWriteReg will enter it! */
         u64Value |=   pThis->au32Regs[g_aHdaRegMap[idxRegDsc].mem_idx]
                     & g_afMasks[g_aHdaRegMap[idxRegDsc].size]
                     & ~g_afMasks[cb];
         Log4Func(("@%#05x u%u=%#0*RX64 cb=%#x cbReg=%x %s\n"
-                  "\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
+                  "hdaMmioWrite: Supplying missing bits (%#x): %#llx -> %#llx ...\n",
                   (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, cb, g_aHdaRegMap[idxRegDsc].size, g_aHdaRegMap[idxRegDsc].abbrev,
                   g_afMasks[g_aHdaRegMap[idxRegDsc].size] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
-        Log4Func(("\t%#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
+        Log4Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegSubWrite));
     }
     /*
@@ -3188,6 +3191,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     else
     {
 #ifdef IN_RING3
+        /** @todo r=bird: This is not correctly serialized!  Also we're not gaining
+         *        much of an advantage by not entering the critsect here already,
+         *        becuase hdaWriteReg will eventually enter it, possibly multiple
+         *        times!   The only would be unknown wrights, which should be rare
+         *        and not something we need to optimize for. */
         if (idxRegDsc == -1)
             Log4Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
         else if (g_aHdaRegMap[idxRegDsc].size == cb)
@@ -3213,7 +3221,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
                 u64Value <<= cbBefore * 8;
                 u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
-                Log4Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
+                Log4Func(("  Within register, supplied %u leading bits: %#llx -> %#llx ...\n",
                           cbBefore * 8, ~(uint64_t)g_afMasks[cbBefore] & u64Value, u64Value));
                 STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiWrites));
             }
@@ -3238,14 +3246,14 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 if (cb < cbReg)
                 {
                     u64Value |= pThis->au32Regs[idxRegMem] & g_afMasks[cbReg] & ~g_afMasks[cb];
-                    Log4Func(("\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
+                    Log4Func(("  Supplying missing bits (%#x): %#llx -> %#llx ...\n",
                               g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
                 }
 # ifdef LOG_ENABLED
                 uint32_t uLogOldVal = pThis->au32Regs[idxRegMem];
 # endif
                 rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value & g_afMasks[cbReg], "*");
-                Log4Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
+                Log4Func(("  %#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
             }
             else
             {
