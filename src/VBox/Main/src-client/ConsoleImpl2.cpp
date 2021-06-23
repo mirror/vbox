@@ -1033,16 +1033,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "NT4LeafLimit", true);
         }
 
-        /* Expose CMPXCHG16B. Currently a hack. */
-        if (   osTypeId == "Windows81_64"
-            || osTypeId == "Windows2012_64"
-            || osTypeId == "Windows10_64"
-            || osTypeId == "Windows2016_64")
-        {
-            LogRel(("Enabling CMPXCHG16B for Windows 8.1 / 2k12 or newer guests\n"));
-            InsertConfigInteger(pIsaExts, "CMPXCHG16B", true);
-        }
-
         if (fOsXGuest)
         {
             /* Expose extended MWAIT features to Mac OS X guests. */

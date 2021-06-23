@@ -1375,6 +1375,9 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                              || mUserData->s.strOsType == "Windows7_64"
                              || mUserData->s.strOsType == "WindowsVista"
                              || mUserData->s.strOsType == "WindowsVista_64"
+                             || (   (   mUserData->s.strOsType.startsWith("Windows202")
+                                     || mUserData->s.strOsType.startsWith("Windows201"))
+                                 && mUserData->s.strOsType.endsWith("_64"))
                              || mUserData->s.strOsType == "Windows2012"
                              || mUserData->s.strOsType == "Windows2012_64"
                              || mUserData->s.strOsType == "Windows2008"
