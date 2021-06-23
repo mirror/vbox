@@ -35,7 +35,7 @@ if exist %SystemRoot%\System32\aim_ll.exe (
     set RAMEXE=aim
 ) else if exist %SystemRoot%\System32\imdisk.exe (
     set RAMEXE=imdisk
-) else goto defaulttest    
+) else goto defaulttest
 
 REM Take presence of imdisk.exe or aim_ll.exe as order to test in ramdisk.
 set RAMDRIVE=D:
