@@ -1143,6 +1143,7 @@ static uint32_t hdaR3StreamGetFree(PHDASTREAMR3 pStreamR3)
 }
 
 #endif /* IN_RING3 */
+#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 
 /**
  * Get the current address and number of bytes left in the current BDLE.
@@ -1227,6 +1228,7 @@ DECLINLINE(void) hdaStreamDmaBufAdvanceToNext(PHDASTREAM pStreamShared)
     pStreamShared->State.offCurBdle = 0;
 }
 
+#endif /* defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA) */
 #ifdef IN_RING3
 
 /**
@@ -1334,6 +1336,7 @@ DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTREAM pStream
 
 #endif /* IN_RING3 */
 
+#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 /**
  * Completes a BDLE at the end of a DMA loop iteration, if possible.
  *
@@ -1404,6 +1407,8 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
           pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags, pStreamShared->State.offCurBdle));
     return false;
 }
+#endif /* IN_RING3 || VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
+
 
 #ifdef IN_RING3
 
