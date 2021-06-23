@@ -72,17 +72,17 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
 
     pStreamShared->State.fInReset = false;
     pStreamShared->State.fRunning = false;
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
+# ifdef HDA_USE_DMA_ACCESS_HANDLER
     RTListInit(&pStreamR3->State.lstDMAHandlers);
-#endif
+# endif
 
     AssertPtr(pStreamR3->pHDAStateR3);
     AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
 
-#ifdef DEBUG
+# ifdef DEBUG
     int rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
     AssertRCReturn(rc, rc);
-#endif
+# endif
 
     const bool fIsInput = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN;
 
@@ -177,13 +177,13 @@ void hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3)
         pStreamR3->State.StatDmaBufUsed = 0;
     }
 
-#ifdef DEBUG
+# ifdef DEBUG
     if (RTCritSectIsInitialized(&pStreamR3->Dbg.CritSect))
     {
         rc2 = RTCritSectDelete(&pStreamR3->Dbg.CritSect);
         AssertRC(rc2);
     }
-#endif
+# endif
 
     if (pStreamR3->Dbg.Runtime.fEnabled)
     {
@@ -696,9 +696,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
     hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     hdaR3BDLEDumpAll(pDevIns, pThis, pStreamShared->u64BDLBase, pStreamShared->u16LVI + 1);
-#endif
+# endif
 
     /*
      * Set up internal ring buffer.
@@ -783,11 +783,11 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     if (RT_FAILURE(rc))
         LogRelMax(32, ("HDA: Initializing stream #%RU8 failed with %Rrc\n", uSD, rc));
 
-#ifdef VBOX_WITH_DTRACE
+# ifdef VBOX_WITH_DTRACE
     VBOXDD_HDA_STREAM_SETUP((uint32_t)uSD, rc, pStreamShared->State.Cfg.Props.uHz,
                             pStreamShared->State.aSchedule[pStreamShared->State.cSchedule - 1].cPeriodTicks,
                             pStreamShared->State.aSchedule[pStreamShared->State.cSchedule - 1].cbPeriod);
-#endif
+# endif
     return rc;
 }
 
@@ -840,9 +840,9 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     HDA_STREAM_REG(pThis, BDPU,  uSD) = 0;
     HDA_STREAM_REG(pThis, BDPL,  uSD) = 0;
 
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
+# ifdef HDA_USE_DMA_ACCESS_HANDLER
     hdaR3StreamUnregisterDMAHandlers(pThis, pStream);
-#endif
+# endif
 
     /* Assign the default mixer sink to the stream. */
     pStreamR3->pMixSink = hdaR3GetDefaultSink(pThisCC, uSD);
@@ -880,7 +880,7 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     pStreamR3->State.offWrite = 0;
     pStreamR3->State.offRead  = 0;
 
-#ifdef DEBUG
+# ifdef DEBUG
     pStreamR3->Dbg.cReadsTotal      = 0;
     pStreamR3->Dbg.cbReadTotal      = 0;
     pStreamR3->Dbg.tsLastReadNs     = 0;
@@ -889,14 +889,14 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     pStreamR3->Dbg.cWritesHz        = 0;
     pStreamR3->Dbg.cbWrittenHz      = 0;
     pStreamR3->Dbg.tsWriteSlotBegin = 0;
-#endif
+# endif
 
     /* Report that we're done resetting this stream. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0;
 
-#ifdef VBOX_WITH_DTRACE
+# ifdef VBOX_WITH_DTRACE
     VBOXDD_HDA_STREAM_RESET((uint32_t)uSD);
-#endif
+# endif
     LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /* Exit reset mode. */
@@ -1023,12 +1023,12 @@ void hdaR3StreamMarkStopped(PHDASTREAM pStreamShared)
 }
 
 
-#if 0 /* Not used atm. */
+# if 0 /* Not used atm. */
 static uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStreamShared)
 {
     return HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD);
 }
-#endif
+# endif
 
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
@@ -1236,10 +1236,10 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
     else
     {
         Log3(("%s: [SD%RU8] BCIS bit set, skipping transfer\n", pszFunction, uSD));
-#ifdef HDA_STRICT
+# ifdef HDA_STRICT
         /* Timing emulation bug or guest is misbehaving -- let me know. */
         AssertMsgFailed(("%s: BCIS bit for stream #%RU8 still set when it shouldn't\n", pszFunction, uSD));
-#endif
+# endif
         return false;
     }
 
@@ -1435,17 +1435,17 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
                 int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBufSrc, cbBufSrc);
                 AssertRC(rc2);
 
-#ifdef HDA_DEBUG_SILENCE
+# ifdef HDA_DEBUG_SILENCE
                 fix me if relevant;
-#endif
+# endif
                 if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
                 { /* likely */ }
                 else
                     AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufSrc, cbBufSrc, 0 /* fFlags */);
 
-#ifdef VBOX_WITH_DTRACE
+# ifdef VBOX_WITH_DTRACE
                 VBOXDD_HDA_STREAM_DMA_IN((uint32_t)uSD, (uint32_t)cbBufSrc, pStreamR3->State.offRead);
-#endif
+# endif
                 pStreamR3->State.offRead += cbBufSrc;
                 RTCircBufReleaseReadBlock(pCircBuf, cbBufSrc);
                 STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufSrc);
@@ -1550,9 +1550,9 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
  */
 static void hdaR3StreamPullFromMixer(PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
 {
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     uint64_t const offWriteOld = pStreamR3->State.offWrite;
-#endif
+# endif
     pStreamR3->State.offWrite = AudioMixerSinkTransferToCircBuf(pSink,
                                                                 pStreamR3->State.pCircBuf,
                                                                 pStreamR3->State.offWrite,
@@ -1605,10 +1605,10 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
      * The DMA copy loop.
      *
      */
-#if 0
+# if 0
     uint8_t    abBounce[4096 + 128];    /* Most guest does at most 4KB BDLE. So, 4KB + space for a partial frame to reduce loops. */
     uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
-#endif
+# endif
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToProduce;
     Assert(cbLeft == pStreamShared->State.cbTransferSize);
@@ -1625,9 +1625,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
         RTGCPHYS GCPhys  = hdaR3StreamDmaBufGet(pStreamShared, &cbChunk);
 
         /* Need to diverge if the BDLEs contain misaligned entries.  */
-#if 0
+# if 0
         if (/** @todo pStreamShared->State.fFrameAlignedBuffers */)
-#endif
+# endif
         {
             if (cbChunk <= cbLeft)
             { /* very likely */ }
@@ -1648,17 +1648,17 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                 int rc2 = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBufDst, cbBufDst);
                 AssertRC(rc2);
 
-#ifdef HDA_DEBUG_SILENCE
+# ifdef HDA_DEBUG_SILENCE
                 fix me if relevant;
-#endif
+# endif
                 if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
                 { /* likely */ }
                 else
                     AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst, 0 /* fFlags */);
 
-#ifdef VBOX_WITH_DTRACE
+# ifdef VBOX_WITH_DTRACE
                 VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbBufDst, pStreamR3->State.offWrite);
-#endif
+# endif
                 pStreamR3->State.offWrite += cbBufDst;
                 RTCircBufReleaseWriteBlock(pCircBuf, cbBufDst);
                 STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
@@ -1670,7 +1670,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                 pStreamShared->State.offCurBdle += (uint32_t)cbBufDst;
             }
         }
-#if 0
+# if 0
         /*
          * Need to map the frame content, so we need to read the guest data
          * into a temporary buffer, though the output can be directly written
@@ -1731,9 +1731,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
                     Log5Func(("  loop2: offBounce=%#05x cFramesToConvert=%#05x cbBufDst=%#x%s\n",
                               offBounce, cFramesToConvert, cbBufDst, ASMMemIsZero(pvBufDst, cbBufDst) ? " all zero" : ""));
 
-# ifdef HDA_DEBUG_SILENCE
+#  ifdef HDA_DEBUG_SILENCE
                     fix me if relevant;
-# endif
+#  endif
                     if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
                     { /* likely */ }
                     else
@@ -1759,7 +1759,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
             }
             Log5Func(("loop0: GCPhys=%RGp cbBounce=%#x cbLeft=%#x\n", GCPhys, cbBounce, cbLeft));
         }
-#endif
+# endif
 
         STAM_PROFILE_STOP(&pThis->StatOut, a);
 
@@ -1770,9 +1770,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
-#if 0
+# if 0
     AssertMsg(cbBounce == 0, ("%#x\n", cbBounce));
-#endif
+# endif
 
     /*
      * Common epilogue.
@@ -1798,9 +1798,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
  */
 static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink, uint64_t nsNow)
 {
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     uint64_t const offReadOld = pStreamR3->State.offRead;
-#endif
+# endif
     pStreamR3->State.offRead = AudioMixerSinkTransferFromCircBuf(pSink,
                                                                  pStreamR3->State.pCircBuf,
                                                                  pStreamR3->State.offRead,
@@ -2196,7 +2196,7 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
 }
 
 
-#if 0 /* unused - no prototype even */
+# if 0 /* unused - no prototype even */
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * updating its associated LPIB register and DMA position buffer (if enabled).
@@ -2230,7 +2230,7 @@ uint32_t hdaR3StreamUpdateLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM p
 
     return u32LPIB;
 }
-#endif
+# endif
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 /**
