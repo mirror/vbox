@@ -922,7 +922,7 @@
     </xsl:if>
     <!-- Special overview trick for the current VBoxManage command overview. -->
     <xsl:if test="parent::remark[@role='VBoxManage-overview']">
-      <xsl:text>}\vspace{1em}</xsl:text>
+      <xsl:text>\par}\vspace{1em}</xsl:text>
     </xsl:if>
   </xsl:template>
 
