@@ -27,14 +27,44 @@
 
 #include "AudioMixer.h"
 
-#include "DevHdaCodec.h"
-#include "DevHdaStream.h"
+/*
+ * Compile time feature configuration.
+ */
+
+/** @def VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+ * Enables doing DMA work on certain register accesses (LPIB, WALCLK) in
+ * addition to the DMA timer.   All but the last frame can be done during
+ * register accesses (as we don't wish to leave the DMA timer w/o work to
+ * do in case that upsets it). */
+#if defined(DOXYGEN_RUNNING) || 0
+# define VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+#endif
 
 #ifdef DEBUG_andy
 /** Enables strict mode, which checks for stuff which isn't supposed to happen.
  *  Be prepared for assertions coming in! */
 //# define HDA_STRICT
 #endif
+
+
+/*
+ * Common pointer types.
+ */
+/** Pointer to an HDA stream (SDI / SDO).  */
+typedef struct HDASTREAMR3 *PHDASTREAMR3;
+/** Pointer to a shared HDA device state.  */
+typedef struct HDASTATE    *PHDASTATE;
+/** Pointer to a ring-3 HDA device state.  */
+typedef struct HDASTATER3  *PHDASTATER3;
+
+
+/*
+ * The rest of the headers.
+ */
+#include "DevHdaCommon.h"
+#include "DevHdaStream.h"
+#include "DevHdaCodec.h"
+
 
 /**
  * HDA mixer sink definition (ring-3).
@@ -276,8 +306,6 @@ typedef struct HDASTATER3
         R3PTRTYPE(char *)       pszOutPath;
     } Dbg;
 } HDASTATER3;
-/** Pointer to a ring-3 HDA device state.  */
-typedef HDASTATER3 *PHDASTATER3;
 
 
 /** Pointer to the context specific HDA state (HDASTATER3 or HDASTATER0). */

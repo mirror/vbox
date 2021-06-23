@@ -21,7 +21,9 @@
 # pragma once
 #endif
 
-#include "DevHdaCommon.h"
+#ifndef VBOX_INCLUDED_SRC_Audio_DevHda_h
+# error "Only include DevHda.h!"
+#endif
 
 
 /**
@@ -82,7 +84,6 @@ typedef struct HDASTREAMDEBUG
     uint64_t                au64Alignment[2];
 #endif
 } HDASTREAMDEBUG;
-typedef HDASTREAMDEBUG *PHDASTREAMDEBUG;
 
 /**
  * Internal state of a HDA stream.
@@ -131,8 +132,8 @@ typedef struct HDASTREAMSTATE
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t                tsTransferNext;
-    /** Total transfer size (in bytes) of a transfer period. */
-    uint32_t                cbTransferSize;
+    /** The size of the current DMA transfer period. */
+    uint32_t                cbCurDmaPeriod;
     /** The size of an average transfer. */
     uint32_t                cbAvgTransfer;
 
@@ -323,7 +324,9 @@ typedef HDASTREAMR3 *PHDASTREAMR3;
  * @{
  */
 VBOXSTRICTRC        hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
-                                                 uint32_t cbToTransfer);
+                                                 uint64_t tsNow, uint32_t cbToTransfer);
+VBOXSTRICTRC        hdaStreamMaybeDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis,
+                                                      PHDASTREAM pStreamShared, uint64_t tsNow);
 /** @} */
 
 #ifdef IN_RING3

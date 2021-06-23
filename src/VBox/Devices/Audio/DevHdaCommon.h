@@ -24,12 +24,12 @@
 # pragma once
 #endif
 
+#ifndef VBOX_INCLUDED_SRC_Audio_DevHda_h
+# error "Only include DevHda.h!"
+#endif
+
 #include "AudioMixer.h"
 #include <VBox/log.h> /* LOG_ENABLED */
-
-/** Pointer to an HDA stream (SDI / SDO).  */
-typedef struct HDASTREAMR3 *PHDASTREAMR3;
-
 
 
 /** Read callback. */

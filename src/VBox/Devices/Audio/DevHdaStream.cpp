@@ -33,7 +33,6 @@
 #include "AudioHlp.h"
 
 #include "DevHda.h"
-#include "DevHdaStream.h"
 
 #ifdef VBOX_WITH_DTRACE
 # include "dtrace/VBoxDD.h"
@@ -648,7 +647,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     if (RT_FAILURE(rc))
         return rc;
 
-    pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[0].cbPeriod;
+    pStreamShared->State.cbCurDmaPeriod = pStreamShared->State.aSchedule[0].cbPeriod;
 
     /*
      * Calculate the transfer Hz for use in the circular buffer calculation.
@@ -1462,7 +1461,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
     uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToConsume;
-    Assert(cbLeft == pStreamShared->State.cbTransferSize);
+    Assert(cbLeft == pStreamShared->State.cbCurDmaPeriod);
     Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
 
     while (cbLeft > 0)
@@ -1606,7 +1605,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
      * Log and leave.
      */
     Log3Func(("LEAVE - [SD%RU8] %#RX32/%#RX32 @ %#RX64 - cTransferPendingInterrupts=%RU8\n",
-              uSD, cbToConsume, pStreamShared->State.cbTransferSize, pStreamShared->State.offRead - cbToConsume,
+              uSD, cbToConsume, pStreamShared->State.cbCurDmaPeriod, pStreamShared->State.offRead - cbToConsume,
               pStreamShared->State.cTransferPendingInterrupts));
 }
 
@@ -1683,9 +1682,9 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToProduce;
 # ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
-    Assert(cbLeft <= pStreamShared->State.cbTransferSize); /* a little pointless with the DMA'ing on LPIB read. */
+    Assert(cbLeft <= pStreamShared->State.cbCurDmaPeriod); /* a little pointless with the DMA'ing on LPIB read. */
 # else
-    Assert(cbLeft == pStreamShared->State.cbTransferSize);
+    Assert(cbLeft == pStreamShared->State.cbCurDmaPeriod);
 # endif
     Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
 
@@ -1867,23 +1866,25 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
      * Log and leave.
      */
     Log3Func(("LEAVE - [SD%RU8] %#RX32/%#RX32 @ %#RX64 - cTransferPendingInterrupts=%RU8\n",
-              uSD, cbToProduce, pStreamShared->State.cbTransferSize, pStreamShared->State.offWrite - cbToProduce,
+              uSD, cbToProduce, pStreamShared->State.cbCurDmaPeriod, pStreamShared->State.offWrite - cbToProduce,
               pStreamShared->State.cTransferPendingInterrupts));
 }
 
 #endif /* IN_RING3 */
-
 #ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+
 /**
- * Do DMA output transfer on LPIB register access.
+ * Do DMA output transfer on LPIB/WALCLK register access.
  *
  * @returns VINF_SUCCESS or VINF_IOM_R3_MMIO_READ.
  * @param   pDevIns         The device instance.
  * @param   pThis           The shared instance data.
  * @param   pStreamShared   The shared stream data.
+ * @param   tsNow           The current time on the timer clock.
  * @param   cbToTransfer    How much to transfer.
  */
-VBOXSTRICTRC hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint32_t cbToTransfer)
+VBOXSTRICTRC hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
+                                          uint64_t tsNow, uint32_t cbToTransfer)
 {
     AssertReturn(cbToTransfer > 0, VINF_SUCCESS);
     int rc = VINF_SUCCESS;
@@ -1991,8 +1992,9 @@ VBOXSTRICTRC hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, P
         } while (cbLeft > 0);
 
         /*
-         * Advance LPIB.
+         * Advance LPIB and update the last transfer time (for WALCLK).
          */
+        pStreamShared->State.tsTransferLast = tsNow;
         hdaStreamSetPositionAdd(pStreamShared, pDevIns, pThis, cbToTransfer - cbLeft);
     }
 
@@ -2006,9 +2008,86 @@ VBOXSTRICTRC hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, P
     STAM_REL_COUNTER_INC(&pThis->StatAccessDmaOutput);
     return rc;
 }
+
+
+/**
+ * Consider doing DMA output transfer on LPIB/WALCLK register access.
+ *
+ * @returns VINF_SUCCESS or VINF_IOM_R3_MMIO_READ.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared instance data.
+ * @param   pStreamShared   The shared stream data.
+ * @param   tsNow           The current time on the timer clock.  Used to do the
+ *                          calculation.
+ */
+VBOXSTRICTRC hdaStreamMaybeDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint64_t tsNow)
+{
+    Assert(pStreamShared->State.fRunning); /* caller should check this */
+
+    /*
+     * Calculate where the DMA engine should be according to the clock, if we can.
+     */
+    uint32_t const cbFrame  = PDMAudioPropsFrameSize(&pStreamShared->State.Cfg.Props);
+    uint32_t const cbPeriod = pStreamShared->State.cbCurDmaPeriod;
+    if (cbPeriod > cbFrame)
+    {
+        AssertMsg(pStreamShared->State.cbDmaTotal < cbPeriod, ("%#x vs %#x\n", pStreamShared->State.cbDmaTotal, cbPeriod));
+        uint64_t const tsTransferNext = pStreamShared->State.tsTransferNext;
+        uint32_t       cbFuture;
+        if (tsNow < tsTransferNext)
+        {
+            /** @todo ASSUMES nanosecond clock ticks, need to make this
+             *        resolution independent. */
+            cbFuture = PDMAudioPropsNanoToBytes(&pStreamShared->State.Cfg.Props, tsTransferNext - tsNow);
+            cbFuture = RT_MIN(cbFuture, cbPeriod - cbFrame);
+        }
+        else
+        {
+            /* We've hit/overshot the timer deadline.  Return to ring-3 if we're
+               not already there to increase the chance that we'll help expidite
+               the timer.  If we're already in ring-3, do all but the last frame. */
+# ifndef IN_RING3
+            LogFunc(("[SD%RU8] DMA period expired: tsNow=%RU64 >= tsTransferNext=%RU64 -> VINF_IOM_R3_MMIO_READ\n",
+                     tsNow, tsTransferNext));
+            return VINF_IOM_R3_MMIO_READ;
+# else
+            cbFuture = cbPeriod - cbFrame;
+            LogFunc(("[SD%RU8] DMA period expired: tsNow=%RU64 >= tsTransferNext=%RU64 -> cbFuture=%#x (cbPeriod=%#x - cbFrame=%#x)\n",
+                     tsNow, tsTransferNext, cbFuture, cbPeriod, cbFrame));
+# endif
+        }
+        uint32_t const offNow = PDMAudioPropsFloorBytesToFrame(&pStreamShared->State.Cfg.Props, cbPeriod - cbFuture);
+
+        /*
+         * Should we transfer a little?  Minimum is 64 bytes (semi-random,
+         * suspect real hardware might be doing some cache aligned stuff,
+         * which might soon get complicated if you take unaligned buffers
+         * into consideration and which cache line size (128 bytes is just
+         * as likely as 64 or 32 bytes)).
+         */
+        uint32_t cbDmaTotal = pStreamShared->State.cbDmaTotal;
+        if (cbDmaTotal + 64 <= offNow)
+        {
+# ifdef LOG_ENABLED
+            uint32_t const uOldLpib = HDA_STREAM_REG(pThis, CBL, pStreamShared->u8SD);
+# endif
+            VBOXSTRICTRC   rcStrict = hdaStreamDoOnAccessDmaOutput(pDevIns, pThis, pStreamShared, tsNow, offNow - cbDmaTotal);
+            LogFlowFunc(("[SD%RU8] LPIB=%#RX32 -> LPIB=%#RX32 offNow=%#x rcStrict=%Rrc\n", pStreamShared->u8SD,
+                         uOldLpib, HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD), offNow, VBOXSTRICTRC_VAL(rcStrict) ));
+            return rcStrict;
+        }
+
+        /*
+         * Do nothing.
+         */
+        LogFlowFunc(("[SD%RU8] Skipping DMA transfer: cbDmaTotal=%#x offNow=%#x\n", pStreamShared->u8SD, cbDmaTotal, offNow));
+    }
+    else
+        LogFunc(("[SD%RU8] cbPeriod=%#x <= cbFrame=%#x\n", pStreamShared->u8SD, cbPeriod, cbFrame));
+    return VINF_SUCCESS;
+}
+
 #endif /* VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
-
-
 #ifdef IN_RING3
 
 /**
@@ -2239,7 +2318,7 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
 
         /* Some legacy stuff: */
         pStreamShared->State.tsTransferNext = tsTransferNext;
-        pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[idxSched].cbPeriod;
+        pStreamShared->State.cbCurDmaPeriod = pStreamShared->State.aSchedule[idxSched].cbPeriod;
 
         return tsNow;
     }
