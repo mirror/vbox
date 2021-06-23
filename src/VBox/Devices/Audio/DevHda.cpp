@@ -5106,6 +5106,9 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                    "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
         }
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedPendingBcis, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                               "DMA transfer period skipped because of BCIS pending.", "Stream%u/DMASkippedPendingBCIS", idxStream);
+
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,

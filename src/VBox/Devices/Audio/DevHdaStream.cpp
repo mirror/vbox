@@ -1210,11 +1210,12 @@ DECLINLINE(void) hdaR3StreamDmaBufAdvanceToNext(PHDASTREAM pStreamShared)
  * @retval  false if caller should return immediately.
  * @param   pThis           The shared HDA device state.
  * @param   pStreamShared   HDA stream to update (shared).
+ * @param   pStreamR3       HDA stream to update (ring-3).
  * @param   uSD             The stream ID (for asserting).
  * @param   tsNowNs         The current RTTimeNano() value.
  * @param   pszFunction     The function name (for logging).
  */
-DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamShared, uint8_t uSD,
+DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD,
                                           uint64_t tsNowNs, const char *pszFunction)
 {
     RT_NOREF(uSD, pszFunction);
@@ -1235,7 +1236,23 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
     { /* likely */ }
     else
     {
+        /** @todo r=bird: This is a bit fishy.  We should make effort the reschedule
+         *        the transfer immediately after the guest clears the interrupt.
+         *        The same fishy code is present in AC'97 with just a little
+         *        explanation as here, see {9890#c95}.
+         *
+         *        The reasoning is probably that the developer noticed some windows
+         *        versions don't like having their BCIS interrupts bundled.  There were
+         *        comments to that effect elsewhere, probably as a result of a fixed
+         *        uTimerHz approach to DMA scheduling.  However, pausing DMA for a
+         *        period isn't going to help us with the host backends, as they don't
+         *        pause and will want samples ASAP.  So, we should at least unpause
+         *        DMA as quickly as we possible when BCIS is cleared.  We might even
+         *        not skip it iff the DMA work here doesn't involve raising any IOC,
+         *        which is possible although unlikely. */
         Log3(("%s: [SD%RU8] BCIS bit set, skipping transfer\n", pszFunction, uSD));
+        STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaSkippedPendingBcis);
+        Log(("%s: [SD%RU8] BCIS bit set, skipping transfer\n", pszFunction, uSD));
 # ifdef HDA_STRICT
         /* Timing emulation bug or guest is misbehaving -- let me know. */
         AssertMsgFailed(("%s: BCIS bit for stream #%RU8 still set when it shouldn't\n", pszFunction, uSD));
@@ -1386,7 +1403,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
     /*
      * Common prologue.
      */
-    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaInput"))
+    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, pStreamR3, uSD, tsNowNs, "hdaR3StreamDoDmaInput"))
     { /* likely */ }
     else
         return;
@@ -1595,7 +1612,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     /*
      * Common prologue.
      */
-    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
+    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, pStreamR3, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
     { /* likely */ }
     else
         return;
