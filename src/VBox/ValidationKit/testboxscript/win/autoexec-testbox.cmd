@@ -31,12 +31,20 @@ setlocal EnableExtensions
 set exe=python.exe
 for /f %%x in ('tasklist /NH /FI "IMAGENAME eq %exe%"') do if %%x == %exe% goto end
 
-if not exist %SystemRoot%\System32\imdisk.exe goto defaulttest
+if exist %SystemRoot%\System32\aim_ll.exe (
+	set RAMEXE=aim
+) else if exist %SystemRoot%\System32\imdisk.exe (
+    set RAMEXE=imdisk
+) else goto defaulttest	
 
-REM Take presence of imdisk.exe as order to test in ramdisk.
+REM Take presence of imdisk.exe or aim_ll.exe as order to test in ramdisk.
 set RAMDRIVE=D:
 if exist %RAMDRIVE%\TEMP goto skip
-imdisk -a -s 16GB -m %RAMDRIVE% -p "/fs:ntfs /q /y" -o "awe"
+if %RAMEXE% == aim (
+	aim_ll -a -t vm -s 16G -m %RAMDRIVE% -p "/fs:ntfs /q /y"
+) else if %RAMEXE% == aim (
+	imdisk -a -s 16GB -m %RAMDRIVE% -p "/fs:ntfs /q /y" -o "awe"
+) else goto defaulttest
 :skip
 
 set VBOX_INSTALL_PATH=%RAMDRIVE%\VBoxInstall
