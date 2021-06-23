@@ -65,6 +65,7 @@ DECLINLINE(const char *) PDMAudioDirGetName(PDMAUDIODIR enmDir)
 {
     switch (enmDir)
     {
+        case PDMAUDIODIR_INVALID: return "invalid";
         case PDMAUDIODIR_UNKNOWN: return "unknown";
         case PDMAUDIODIR_IN:      return "input";
         case PDMAUDIODIR_OUT:     return "output";
@@ -72,7 +73,6 @@ DECLINLINE(const char *) PDMAudioDirGetName(PDMAUDIODIR enmDir)
 
         /* no default */
         case PDMAUDIODIR_END:
-        case PDMAUDIODIR_INVALID:
         case PDMAUDIODIR_32BIT_HACK:
             break;
     }
@@ -89,16 +89,17 @@ DECLINLINE(const char *) PDMAudioMixerCtlGetName(PDMAUDIOMIXERCTL enmMixerCtl)
 {
     switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_UNKNOWN:       return "Unknown";
+        case PDMAUDIOMIXERCTL_INVALID:      return "Invalid";
+        case PDMAUDIOMIXERCTL_UNKNOWN:      return "Unknown";
         case PDMAUDIOMIXERCTL_VOLUME_MASTER: return "Master Volume";
-        case PDMAUDIOMIXERCTL_FRONT:         return "Front";
-        case PDMAUDIOMIXERCTL_CENTER_LFE:    return "Center / LFE";
-        case PDMAUDIOMIXERCTL_REAR:          return "Rear";
-        case PDMAUDIOMIXERCTL_LINE_IN:       return "Line-In";
-        case PDMAUDIOMIXERCTL_MIC_IN:        return "Microphone-In";
+        case PDMAUDIOMIXERCTL_FRONT:        return "Front";
+        case PDMAUDIOMIXERCTL_CENTER_LFE:   return "Center / LFE";
+        case PDMAUDIOMIXERCTL_REAR:         return "Rear";
+        case PDMAUDIOMIXERCTL_LINE_IN:      return "Line-In";
+        case PDMAUDIOMIXERCTL_MIC_IN:       return "Microphone-In";
+
         /* no default */
         case PDMAUDIOMIXERCTL_END:
-        case PDMAUDIOMIXERCTL_INVALID:
         case PDMAUDIOMIXERCTL_32BIT_HACK:
             break;
     }
@@ -115,6 +116,7 @@ DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
 {
     switch (enmPath)
     {
+        case PDMAUDIOPATH_INVALID:          return "invalid";
         case PDMAUDIOPATH_UNKNOWN:          return "unknown";
 
         case PDMAUDIOPATH_OUT_FRONT:        return "front";
@@ -129,7 +131,6 @@ DECLINLINE(const char *) PDMAudioPathGetName(PDMAUDIOPATH enmPath)
         case PDMAUDIOPATH_IN_PHONE:         return "phone";
 
         /* no default */
-        case PDMAUDIOPATH_INVALID:
         case PDMAUDIOPATH_END:
         case PDMAUDIOPATH_32BIT_HACK:
             break;
