@@ -166,7 +166,7 @@ static void rtThreadPosixSelectPokeSignal(void)
     /*
      * Note! Avoid SIGRTMIN thru SIGRTMIN+2 because of LinuxThreads.
      */
-# ifndef RT_OS_LINUX /* glibc defines SIGRTMAX to __libc_current_sigrtmax(), causing compiler to deploy serialization here. */
+# if !defined(RT_OS_LINUX) && !defined(RT_OS_SOLARIS) /* glibc defines SIGRTMAX to __libc_current_sigrtmax() and Solaris libc defines it relying on _sysconf(), causing compiler to deploy serialization here. */
     static
 # endif
     const int s_aiSigCandidates[] =
