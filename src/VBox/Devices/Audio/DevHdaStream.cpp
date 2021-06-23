@@ -43,7 +43,9 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 static void     hdaStreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uLPIB);
+#endif
 #ifdef IN_RING3
 # ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
 static void     hdaR3StreamFlushDmaBounceBufferOutput(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
@@ -1033,6 +1035,7 @@ void hdaR3StreamMarkStopped(PHDASTREAM pStreamShared)
 }
 
 #endif /* IN_RING3 */
+#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
@@ -1077,7 +1080,6 @@ static void hdaStreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
 }
 
 
-#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * adding a value to its associated LPIB register and DMA position buffer (if enabled).
@@ -1108,8 +1110,8 @@ static void hdaStreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
         }
     }
 }
-#endif /* IN_RING3 || VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
 
+#endif /* IN_RING3 || VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
 #ifdef IN_RING3
 
 /**
