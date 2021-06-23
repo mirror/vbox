@@ -625,6 +625,13 @@ void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const
     alert(0, MessageType_Error, QString("<p>%1:</p>%2").arg(tr("Failed to find the following help file")).arg(strFileLocation));
 }
 
+void UIMessageCenter::cannotEnumerateHostUSBDevices(const CHost &comHost, QWidget *pParent  /* = 0 */) const
+{
+    error(pParent, MessageType_Warning,
+          tr("Failed to enumerate host USB devices."),
+          UIErrorString::formatErrorInfo(comHost), "USBEnumerationWarning");
+}
+
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
 {
     error(0, MessageType_Error,

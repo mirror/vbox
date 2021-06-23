@@ -266,6 +266,7 @@ public:
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
     void cannotFindHelpFile(const QString &strFileLocation) const;
+    void cannotEnumerateHostUSBDevices(const CHost &comHost, QWidget *pParent = 0) const;
 
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
