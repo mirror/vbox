@@ -32,18 +32,18 @@ set exe=python.exe
 for /f %%x in ('tasklist /NH /FI "IMAGENAME eq %exe%"') do if %%x == %exe% goto end
 
 if exist %SystemRoot%\System32\aim_ll.exe (
-	set RAMEXE=aim
+    set RAMEXE=aim
 ) else if exist %SystemRoot%\System32\imdisk.exe (
     set RAMEXE=imdisk
-) else goto defaulttest	
+) else goto defaulttest    
 
 REM Take presence of imdisk.exe or aim_ll.exe as order to test in ramdisk.
 set RAMDRIVE=D:
 if exist %RAMDRIVE%\TEMP goto skip
 if %RAMEXE% == aim (
-	aim_ll -a -t vm -s 16G -m %RAMDRIVE% -p "/fs:ntfs /q /y"
+    aim_ll -a -t vm -s 16G -m %RAMDRIVE% -p "/fs:ntfs /q /y"
 ) else if %RAMEXE% == aim (
-	imdisk -a -s 16GB -m %RAMDRIVE% -p "/fs:ntfs /q /y" -o "awe"
+    imdisk -a -s 16GB -m %RAMDRIVE% -p "/fs:ntfs /q /y" -o "awe"
 ) else goto defaulttest
 :skip
 
