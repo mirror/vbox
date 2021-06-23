@@ -834,7 +834,7 @@ static int audioVerifyOpenTestSet(const char *pszPathSet, PAUDIOTESTSET pSet)
         {
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using temporary directory '%s'\n", szPathTemp);
 
-            rc = RTPathJoin(szPathExtracted, sizeof(szPathExtracted), szPathTemp, "vkat-XXXX");
+            rc = RTPathJoin(szPathExtracted, sizeof(szPathExtracted), szPathTemp, "vkat-testset-XXXX");
             if (RT_SUCCESS(rc))
             {
                 rc = RTDirCreateTemp(szPathExtracted, 0755);
