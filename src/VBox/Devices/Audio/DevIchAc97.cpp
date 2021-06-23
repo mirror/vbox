@@ -4606,9 +4606,9 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                    "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
         }
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedDch, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedDch, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "DMA transfer period skipped, controller halted (DCH).", "Stream%u/DMASkippedDch", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedPendingBcis, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedPendingBcis, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "DMA transfer period skipped because of BCIS pending.", "Stream%u/DMASkippedPendingBCIS", idxStream);
 
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatStart, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
