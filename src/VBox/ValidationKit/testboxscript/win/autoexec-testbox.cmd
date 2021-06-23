@@ -42,7 +42,7 @@ set RAMDRIVE=D:
 if exist %RAMDRIVE%\TEMP goto skip
 if %RAMEXE% == aim (
     aim_ll -a -t vm -s 16G -m %RAMDRIVE% -p "/fs:ntfs /q /y"
-) else if %RAMEXE% == aim (
+) else if %RAMEXE% == imdisk (
     imdisk -a -s 16GB -m %RAMDRIVE% -p "/fs:ntfs /q /y" -o "awe"
 ) else goto defaulttest
 :skip
