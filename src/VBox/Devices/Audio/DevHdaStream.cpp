@@ -1076,6 +1076,8 @@ static void hdaStreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
     }
 }
 
+
+#if defined(IN_RING3) || defined(VBOX_HDA_WITH_ON_REG_ACCESS_DMA)
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * adding a value to its associated LPIB register and DMA position buffer (if enabled).
@@ -1095,17 +1097,18 @@ static void hdaStreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
         if (uCBL) /* paranoia */
         {
             uint32_t uNewLpid = HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) + cbToAdd;
-#if 1 /** @todo r=bird: this is wrong according to the spec */
+# if 1 /** @todo r=bird: this is wrong according to the spec */
             uNewLpid %= uCBL;
-#else
+# else
             /* The spec says it goes to CBL then wraps arpimd to 1, not back to zero. See 3.3.37.  */
             if (uNewLpid > uCBL)
                 uNewLpid %= uCBL;
-#endif
+# endif
             hdaStreamSetPositionAbs(pStreamShared, pDevIns, pThis, uNewLpid);
         }
     }
 }
+#endif /* IN_RING3 || VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
 
 #ifdef IN_RING3
 
