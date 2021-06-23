@@ -708,7 +708,7 @@ void UIVirtualBoxManager::sltCheckUSBAccesibility()
     CHost comHost = uiCommon().host();
     if (!comHost.isOk())
         return;
-    if (comHost.GetUSBDevices().size() == 0 && comHost.isWarning())
+    if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
         msgCenter().cannotEnumerateHostUSBDevices(comHost, this);
 }
 

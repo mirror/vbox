@@ -61,6 +61,7 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CGraphicsAdapter.h"
+#include "CHostUSBDevice.h"
 #include "CRecordingSettings.h"
 #include "CSystemProperties.h"
 #include "CStorageController.h"
@@ -1883,6 +1884,11 @@ bool UISession::preprocessInitialization()
         }
     }
 #endif /* VBOX_WITH_NETFLT */
+
+    /* Check for USB enumeration warning. Don't return false even if we have a warning: */
+    CHost comHost = uiCommon().host();
+    if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
+        msgCenter().cannotEnumerateHostUSBDevices(comHost, activeMachineWindow());
 
     /* True by default: */
     return true;
