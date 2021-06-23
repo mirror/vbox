@@ -1828,14 +1828,14 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     {
         VerJob.idxTest = i;
 
-        AUDIOTESTOBJHANDLE hTest;
+        AUDIOTESTOBJHANDLE hTest; /** @todo r=bird: This is not a handle if you RTStrPrintf to its members. A handle doesn't have members, it's opque. */
         RTStrPrintf(hTest.szSec, sizeof(hTest.szSec), "test_%04RU32", i);
 
-        AUDIOTESTTYPE enmTestTypeA;
+        AUDIOTESTTYPE enmTestTypeA = AUDIOTESTTYPE_INVALID;
         rc = audioTestGetValueUInt32(VerJob.pSetA, &hTest, "test_type", (uint32_t *)&enmTestTypeA);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type A not found");
 
-        AUDIOTESTTYPE enmTestTypeB;
+        AUDIOTESTTYPE enmTestTypeB = AUDIOTESTTYPE_INVALID;
         rc = audioTestGetValueUInt32(VerJob.pSetB, &hTest, "test_type", (uint32_t *)&enmTestTypeB);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type B not found");
 
@@ -1844,9 +1844,7 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
             case AUDIOTESTTYPE_TESTTONE_PLAY:
             {
                 if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_RECORD)
-                {
                     rc = audioTestVerifyTestTone(&VerJob, &hTest, VerJob.pSetA, VerJob.pSetB);
-                }
                 else
                     rc = audioTestErrorDescAdd(pErrDesc, i, "Playback test types don't match (set A=%#x, set B=%#x)",
                                                enmTestTypeA, enmTestTypeB);
@@ -1856,9 +1854,7 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
             case AUDIOTESTTYPE_TESTTONE_RECORD:
             {
                 if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_PLAY)
-                {
                     rc = audioTestVerifyTestTone(&VerJob, &hTest, VerJob.pSetB, VerJob.pSetA);
-                }
                 else
                     rc = audioTestErrorDescAdd(pErrDesc, i, "Recording test types don't match (set A=%#x, set B=%#x)",
                                                enmTestTypeA, enmTestTypeB);
