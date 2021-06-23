@@ -237,9 +237,6 @@ typedef struct HDASTREAM
 
     /** Pad the structure size to a 64 byte alignment. */
     uint64_t                    au64Padding1[2];
-    /** Critical section for serialize access to the stream state between the async
-     * I/O thread and (basically) the guest. */
-    PDMCRITSECT                 CritSect;
 } HDASTREAM;
 AssertCompileMemberAlignment(HDASTREAM, State.aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAM, State.aSchedule, 16);
@@ -306,13 +303,6 @@ AssertCompileSizeAlignment(HDASTREAMR3, 64);
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAMR3 *PHDASTREAMR3;
 
-/** @name Stream functions (shared).
- * @{
- */
-void                hdaStreamLock(PHDASTREAM pStreamShared);
-void                hdaStreamUnlock(PHDASTREAM pStreamShared);
-/** @} */
-
 #ifdef IN_RING3
 
 /** @name Stream functions (ring-3).
@@ -320,7 +310,7 @@ void                hdaStreamUnlock(PHDASTREAM pStreamShared);
  */
 int                 hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDASTATE pThis,
                                          PHDASTATER3 pThisCC, uint8_t uSD);
-void                hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
+void                hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3);
 int                 hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
                                      PHDASTREAMR3 pStreamR3, uint8_t uSD);
 void                hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC,

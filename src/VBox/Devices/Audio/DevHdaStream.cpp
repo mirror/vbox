@@ -63,8 +63,6 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
  */
 int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDASTATE pThis, PHDASTATER3 pThisCC, uint8_t uSD)
 {
-    int rc;
-
     pStreamR3->u8SD             = uSD;
     pStreamShared->u8SD         = uSD;
     pStreamR3->pMixSink         = NULL;
@@ -80,12 +78,9 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
 
     AssertPtr(pStreamR3->pHDAStateR3);
     AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
-    rc = PDMDevHlpCritSectInit(pStreamR3->pHDAStateR3->pDevIns, &pStreamShared->CritSect,
-                               RT_SRC_POS, "hda_sd#%RU8", pStreamShared->u8SD);
-    AssertRCReturn(rc, rc);
 
 #ifdef DEBUG
-    rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
+    int rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
     AssertRCReturn(rc, rc);
 #endif
 
@@ -154,7 +149,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         AudioHlpFileDelete(pStreamR3->Dbg.Runtime.pFileDMAMapped);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -163,9 +158,9 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
  * @param   pStreamShared       The HDA stream to destroy - shared bits.
  * @param   pStreamR3           The HDA stream to destroy - ring-3 bits.
  */
-void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
+void hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3)
 {
-    LogFlowFunc(("[SD%RU8] Destroying ...\n", pStreamShared->u8SD));
+    LogFlowFunc(("[SD%RU8] Destroying ...\n", pStreamR3->u8SD));
     int rc2;
 
     if (pStreamR3->State.pAioRegSink)
@@ -173,12 +168,6 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
         rc2 = AudioMixerSinkRemoveUpdateJob(pStreamR3->State.pAioRegSink, hdaR3StreamUpdateAsyncIoJob, pStreamR3);
         AssertRC(rc2);
         pStreamR3->State.pAioRegSink = NULL;
-    }
-
-    if (PDMCritSectIsInitialized(&pStreamShared->CritSect))
-    {
-        rc2 = PDMR3CritSectDelete(&pStreamShared->CritSect);
-        AssertRC(rc2);
     }
 
     if (pStreamR3->State.pCircBuf)
@@ -1990,14 +1979,8 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
         /*
          * Do the DMA transfer.
          */
-        rc2 = PDMDevHlpCritSectEnter(pDevIns, &pStreamShared->CritSect, VERR_IGNORED);
-        AssertRC(rc2);
-
         uint64_t const offWriteBefore = pStreamR3->State.offWrite;
         hdaR3StreamDoDmaOutput(pDevIns, pThis, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
-
-        rc2 = PDMDevHlpCritSectLeave(pDevIns, &pStreamShared->CritSect);
-        AssertRC(rc2);
 
         /*
          * Should we push data to down thru the mixer to and to the host drivers?
@@ -2153,16 +2136,8 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
          * Do the DMA'ing.
          */
         if (cbStreamUsed)
-        {
-            rc2 = PDMDevHlpCritSectEnter(pDevIns, &pStreamShared->CritSect, VERR_IGNORED);
-            AssertRC(rc2);
-
             hdaR3StreamDoDmaInput(pDevIns, pThis, pStreamShared, pStreamR3,
                                   RT_MIN(cbStreamUsed, cbPeriod), fWriteSilence, tsNowNs);
-
-            rc2 = PDMDevHlpCritSectLeave(pDevIns, &pStreamShared->CritSect);
-            AssertRC(rc2);
-        }
 
         /*
          * We should always kick the AIO thread.
@@ -2221,35 +2196,6 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
     }
 }
 
-#endif /* IN_RING3 */
-
-/**
- * Locks an HDA stream for serialized access.
- *
- * @returns VBox status code.
- * @param   pStreamShared       HDA stream to lock (shared bits).
- */
-void hdaStreamLock(PHDASTREAM pStreamShared)
-{
-    AssertPtrReturnVoid(pStreamShared);
-    int rc2 = PDMCritSectEnter(&pStreamShared->CritSect, VINF_SUCCESS);
-    AssertRC(rc2);
-}
-
-/**
- * Unlocks a formerly locked HDA stream.
- *
- * @returns VBox status code.
- * @param   pStreamShared       HDA stream to unlock (shared bits).
- */
-void hdaStreamUnlock(PHDASTREAM pStreamShared)
-{
-    AssertPtrReturnVoid(pStreamShared);
-    int rc2 = PDMCritSectLeave(&pStreamShared->CritSect);
-    AssertRC(rc2);
-}
-
-#ifdef IN_RING3
 
 #if 0 /* unused - no prototype even */
 /**

@@ -1332,7 +1332,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         LogFunc(("[SD%RU8] Reset enter\n", uSD));
 
         STAM_REL_PROFILE_START_NS(&pStreamR3->State.StatReset, a);
-        hdaStreamLock(pStreamShared);
+        Assert(PDMCritSectIsOwner(&pThis->CritSect));
         PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
         if (pMixSink)
             AudioMixerSinkLock(pMixSink);
@@ -1349,7 +1349,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         if (pMixSink) /* (FYI. pMixSink might not be what pStreamR3->pMixSink->pMixSink points at any longer) */
             AudioMixerSinkUnlock(pMixSink);
-        hdaStreamUnlock(pStreamShared);
         STAM_REL_PROFILE_STOP_NS(&pStreamR3->State.StatReset, a);
     }
     else
@@ -1363,7 +1362,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             Assert(!fReset && !fInReset); /* (code change paranoia, currently impossible ) */
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
-            hdaStreamLock(pStreamShared);
+            Assert(PDMCritSectIsOwner(&pThis->CritSect));
             /** @todo bird: It's not clear to me when the pMixSink is actually
              *        assigned to the stream, so being paranoid till I find out... */
             PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
@@ -1461,7 +1460,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             /* Make sure to leave the lock before (eventually) starting the timer. */
             if (pMixSink)
                 AudioMixerSinkUnlock(pMixSink);
-            hdaStreamUnlock(pStreamShared);
             STAM_REL_PROFILE_STOP_NS((fRun ? &pStreamR3->State.StatStart : &pStreamR3->State.StatStop), r);
         }
     }
@@ -2519,8 +2517,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
         {
             LogFunc(("Sink '%s' was assigned to stream #%RU8 (channel %RU8) before\n",
                      pSink->pMixSink->pszName, pOldStreamShared->u8SD, pOldStreamShared->u8Channel));
-
-            hdaStreamLock(pOldStreamShared);
+            Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
             /* Only disable the stream if the stream descriptor # has changed. */
             if (pOldStreamShared->u8SD != uSD)
@@ -2534,7 +2531,6 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
             pOldStreamR3->pMixSink = NULL;
 
-            hdaStreamUnlock(pOldStreamShared);
 
             pSink->pStreamShared = NULL;
             pSink->pStreamR3     = NULL;
@@ -2549,7 +2545,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
             PHDASTREAMR3 pStreamR3     = &pThisCC->aStreams[uSD];
             PHDASTREAM   pStreamShared = &pThis->aStreams[uSD];
-            hdaStreamLock(pStreamShared);
+            Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
             pSink->pStreamR3     = pStreamR3;
             pSink->pStreamShared = pStreamShared;
@@ -2557,7 +2553,6 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
             pStreamShared->u8Channel = uChannel;
             pStreamR3->pMixSink      = pSink;
 
-            hdaStreamUnlock(pStreamShared);
             rc = VINF_SUCCESS;
         }
     }
@@ -2764,6 +2759,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, R
 static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC)
 {
     LogFlowFuncEnter();
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
     /*
      * Make sure all streams have stopped as these have both timers and
@@ -2773,7 +2769,6 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
     {
         PHDASTREAM const   pStreamShared = &pThis->aStreams[idxStream];
         PHDASTREAMR3 const pStreamR3     = &pThisCC->aStreams[idxStream];
-        hdaStreamLock(pStreamShared);
         PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
         if (pMixSink)
             AudioMixerSinkLock(pMixSink);
@@ -2788,7 +2783,6 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 
         if (pMixSink) /* (FYI. pMixSink might not be what pStreamR3->pMixSink->pMixSink points at any longer) */
             AudioMixerSinkUnlock(pMixSink);
-        hdaStreamUnlock(pStreamShared);
     }
 
     /*
@@ -4591,7 +4585,7 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     hdaCodecDestruct(&pThis->Codec);
 
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
-        hdaR3StreamDestroy(&pThis->aStreams[i], &pThisCC->aStreams[i]);
+        hdaR3StreamDestroy(&pThisCC->aStreams[i]);
 
     /* We don't always go via PowerOff, so make sure the mixer is destroyed. */
     if (pThisCC->pMixer)
