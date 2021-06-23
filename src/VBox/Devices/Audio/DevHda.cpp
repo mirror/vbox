@@ -3048,8 +3048,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
 
 DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, char const *pszLog)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     if (   (HDA_REG(pThis, GCTL) & HDA_GCTL_CRST)
         || idxRegDsc == HDA_REG_GCTL)
     { /* likely */ }
@@ -3059,8 +3057,6 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
                  g_aHdaRegMap[idxRegDsc].abbrev));
         STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByReset);
-
-        DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
     }
 
@@ -3085,8 +3081,6 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
                      g_aHdaRegMap[idxRegDsc].abbrev));
             STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByRun);
-
-            DEVHDA_UNLOCK(pDevIns, pThis);
             return VINF_SUCCESS;
         }
     }
@@ -3105,7 +3099,6 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
 #endif
         STAM_COUNTER_INC(&pThis->aStatRegWrites[idxRegDsc]);
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     RT_NOREF(pszLog);
     return rc;
 }
@@ -3161,9 +3154,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     VBOXSTRICTRC rc;
     if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size == cb)
     {
+        DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+
         Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log3Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
+
+        DEVHDA_UNLOCK(pDevIns, pThis);
     }
     /*
      * Sub-register access.  Supply missing bits as needed.
@@ -3171,9 +3168,8 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     else if (   idxRegDsc >= 0
              && cb < g_aHdaRegMap[idxRegDsc].size)
     {
-        /** @todo r=bird: This is not correctly serialized!  Also we're not gaining
-         *        any advantage by not entering the critsect here already, because
-         *        hdaWriteReg will enter it! */
+        DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+
         u64Value |=   pThis->au32Regs[g_aHdaRegMap[idxRegDsc].mem_idx]
                     & g_afMasks[g_aHdaRegMap[idxRegDsc].size]
                     & ~g_afMasks[cb];
@@ -3184,6 +3180,8 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log4Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegSubWrite));
+
+        DEVHDA_UNLOCK(pDevIns, pThis);
     }
     /*
      * Partial or multiple register access, loop thru the requested memory.
@@ -3191,11 +3189,8 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     else
     {
 #ifdef IN_RING3
-        /** @todo r=bird: This is not correctly serialized!  Also we're not gaining
-         *        much of an advantage by not entering the critsect here already,
-         *        becuase hdaWriteReg will eventually enter it, possibly multiple
-         *        times!   The only would be unknown wrights, which should be rare
-         *        and not something we need to optimize for. */
+        DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+
         if (idxRegDsc == -1)
             Log4Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
         else if (g_aHdaRegMap[idxRegDsc].size == cb)
@@ -3279,6 +3274,8 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                     idxRegDsc = -1;
             }
         }
+
+        DEVHDA_UNLOCK(pDevIns, pThis);
 
 #else  /* !IN_RING3 */
         /* Take the simple way out. */
