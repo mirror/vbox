@@ -1034,12 +1034,100 @@ static VBOXSTRICTRC hdaRegWriteSTATESTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uin
 static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF(pDevIns);
+    uint8_t const  uSD   = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
+    uint32_t const uLPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
 
-    const uint8_t  uSD     = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
-    const uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
-    *pu32Value = u32LPIB;
-    LogFlowFunc(("[SD%RU8] LPIB=%RU32, CBL=%RU32\n", uSD, u32LPIB, HDA_STREAM_REG(pThis, CBL, uSD)));
+#ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+    /*
+     * Should we consider doing DMA work while we're here?  That would require
+     * the stream to have the DMA engine enabled and be an output stream.
+     */
+    if (   (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_RUN)
+        && hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT
+        && uSD < RT_ELEMENTS(pThis->aStreams) /* paranoia */)
+    {
+        PHDASTREAM const pStreamShared = &pThis->aStreams[uSD];
+        Assert(pStreamShared->u8SD == uSD);
+        if (pStreamShared->State.fRunning /* should be same as HDA_SDCTL_RUN, but doesn't hurt to check twice */)
+        {
+            /*
+             * Calculate where the DMA engine should be according to the clock, if we can.
+             */
+            uint32_t const idxSched = pStreamShared->State.idxSchedule;
+            if (idxSched < RT_MIN(RT_ELEMENTS(pStreamShared->State.aSchedule), pStreamShared->State.cSchedule))
+            {
+                uint32_t const cbPeriod = pStreamShared->State.aSchedule[idxSched].cbPeriod;
+                uint32_t const cbFrame  = PDMAudioPropsFrameSize(&pStreamShared->State.Cfg.Props);
+                if (cbPeriod > cbFrame)
+                {
+                    AssertMsg(pStreamShared->State.cbDmaTotal < cbPeriod, ("%#x vs %#x\n", pStreamShared->State.cbDmaTotal, cbPeriod));
+                    uint64_t const tsTransferNext = pStreamShared->State.tsTransferNext;
+                    uint64_t const tsNow          = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
+                    uint32_t       cbFuture;
+                    if (tsNow < tsTransferNext)
+                    {
+                        /** @todo ASSUMES nanosecond clock ticks, need to make this
+                         *        resolution independent. */
+                        cbFuture = PDMAudioPropsNanoToBytes(&pStreamShared->State.Cfg.Props, tsTransferNext - tsNow);
+                        cbFuture = RT_MIN(cbFuture, cbPeriod - cbFrame);
+                    }
+                    else
+                    {
+                        /* We've hit/overshot the timer deadline.  Return to ring-3 if we're
+                           not already there to increase the chance that we'll help expidite
+                           the timer.  If we're already in ring-3, do all but the last frame. */
+# ifndef IN_RING3
+                        LogFunc(("[SD%RU8] DMA period expired: tsNow=%RU64 >= tsTransferNext=%RU64 -> VINF_IOM_R3_MMIO_READ\n",
+                                 tsNow, tsTransferNext));
+                        return VINF_IOM_R3_MMIO_READ;
+# else
+                        cbFuture = cbPeriod - cbFrame;
+                        LogFunc(("[SD%RU8] DMA period expired: tsNow=%RU64 >= tsTransferNext=%RU64 -> cbFuture=%#x (cbPeriod=%#x - cbFrame=%#x)\n",
+                                 tsNow, tsTransferNext, cbFuture, cbPeriod, cbFrame));
+# endif
+                    }
+                    uint32_t const offNow = PDMAudioPropsFloorBytesToFrame(&pStreamShared->State.Cfg.Props, cbPeriod - cbFuture);
 
+                    /*
+                     * Should we transfer a little?  Minimum is 64 bytes (semi-random,
+                     * suspect real hardware might be doing some cache aligned stuff,
+                     * which might soon get complicated if you take unaligned buffers
+                     * into consideration and which cache line size (128 bytes is just
+                     * as likely as 64 or 32 bytes)).
+                     */
+                    uint32_t cbDmaTotal = pStreamShared->State.cbDmaTotal;
+                    if (cbDmaTotal + 64 <= offNow)
+                    {
+                        VBOXSTRICTRC rcStrict = hdaStreamDoOnAccessDmaOutput(pDevIns, pThis, pStreamShared, offNow - cbDmaTotal);
+
+                        /* LPIB is updated by hdaStreamDoOnAccessDmaOutput, so get the new value. */
+                        uint32_t const uNewLpib = HDA_STREAM_REG(pThis, LPIB, uSD);
+                        *pu32Value = uNewLpib;
+
+                        LogFlowFunc(("[SD%RU8] LPIB=%#RX32 (CBL=%#RX32 PrevLPIB=%#x offNow=%#x) rcStrict=%Rrc\n", uSD,
+                                     uNewLpib, HDA_STREAM_REG(pThis, CBL, uSD), uLPIB, offNow, VBOXSTRICTRC_VAL(rcStrict) ));
+                        return rcStrict;
+                    }
+
+                    /*
+                     * Do nothing, just return LPIB as it is.
+                     */
+                    LogFlowFunc(("[SD%RU8] Skipping DMA transfer: cbDmaTotal=%#x offNow=%#x\n", uSD, cbDmaTotal, offNow));
+                }
+                else
+                    LogFunc(("[SD%RU8] cbPeriod=%#x <= cbFrame=%#x!!\n", uSD, cbPeriod, cbFrame));
+            }
+            else
+                LogFunc(("[SD%RU8] idxSched=%u cSchedule=%u!!\n", uSD, idxSched, pStreamShared->State.cSchedule));
+        }
+        else
+            LogFunc(("[SD%RU8] fRunning=0 SDnCTL=%#x!!\n", uSD, HDA_STREAM_REG(pThis, CTL, uSD) ));
+    }
+#endif /* VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
+
+    LogFlowFunc(("[SD%RU8] LPIB=%#RX32 (CBL=%#RX32 CTL=%#RX32)\n",
+                 uSD, uLPIB, HDA_STREAM_REG(pThis, CBL, uSD), HDA_STREAM_REG(pThis, CTL, uSD) ));
+    *pu32Value = uLPIB;
     return VINF_SUCCESS;
 }
 
@@ -3982,7 +4070,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
                                       VERR_INTERNAL_ERROR_3);
                 rc = pHlp->pfnSSMGetMem(pSSM, pvBuf, cbBuf);
                 AssertRCReturn(rc, rc);
-                pStreamR3->State.offWrite = cbCircBufUsed;
+                pStreamShared->State.offWrite = cbCircBufUsed;
 
                 RTCircBufReleaseWriteBlock(pStreamR3->State.pCircBuf, cbBuf);
 
@@ -4964,10 +5052,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
     for (size_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
-        /* We need the first timer in ring-0 to calculate the wall clock (WALCLK) time. */
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, (void *)(uintptr_t)i,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT | (i == 0 ? TMTIMER_FLAGS_RING0 : TMTIMER_FLAGS_NO_RING0),
-                                  s_apszNames[i], &pThis->aStreams[i].hTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, s_apszNames[i], &pThis->aStreams[i].hTimer);
         AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->aStreams[i].hTimer, &pThis->CritSect);
@@ -5061,8 +5147,12 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read (DMA) from the guest.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "BytesWritten",      STAMUNIT_BYTES,          "Bytes written (DMA) to the guest.");
+#  ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessDmaOutput,  STAMTYPE_COUNTER, "AccessDmaOutput",   STAMUNIT_COUNT,          "Number of on-register-access DMA sub-transfers we've made.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessDmaOutputToR3,STAMTYPE_COUNTER, "AccessDmaOutputToR3", STAMUNIT_COUNT,      "Number of time the on-register-access DMA forced a ring-3 return.");
+#  endif
 
     AssertCompile(RT_ELEMENTS(g_aHdaRegMap)              == HDA_NUM_REGS);
     AssertCompile(RT_ELEMENTS(pThis->aStatRegReads)      == HDA_NUM_REGS);
@@ -5109,9 +5199,9 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaSkippedPendingBcis, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "DMA transfer period skipped because of BCIS pending.", "Stream%u/DMASkippedPendingBCIS", idxStream);
 
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Virtual internal buffer write position.",   "Stream%u/offWrite", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.cbTransferSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Bytes transfered per DMA timer callout.",   "Stream%u/cbTransferSize", idxStream);

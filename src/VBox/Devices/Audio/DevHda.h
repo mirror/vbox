@@ -145,6 +145,10 @@ typedef struct HDASTATE
     /** Shared R0/R3 HDA codec to use. */
     HDACODEC                Codec;
 
+#ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+    STAMCOUNTER             StatAccessDmaOutput;
+    STAMCOUNTER             StatAccessDmaOutputToR3;
+#endif
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatIn;
     STAMPROFILE             StatOut;

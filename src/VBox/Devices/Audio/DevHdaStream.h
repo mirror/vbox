@@ -110,14 +110,6 @@ typedef struct HDASTREAMSTATE
     /** Timestamp (absolute, in timer ticks) of the last DMA data transfer.
      * @note This is used for wall clock (WALCLK) calculations.  */
     uint64_t volatile       tsTransferLast;
-    /** Timestamp (absolute, in timer ticks) of the next DMA data transfer.
-     *  Next for determining the next scheduling window.
-     *  Can be 0 if no next transfer is scheduled. */
-    uint64_t                tsTransferNext;
-    /** Total transfer size (in bytes) of a transfer period. */
-    uint32_t                cbTransferSize;
-    /** The size of an average transfer. */
-    uint32_t                cbAvgTransfer;
     /** The stream's current configuration (matches SDnFMT). */
     PDMAUDIOSTREAMCFG       Cfg;
     /** Timestamp (real time, in ns) of last DMA transfer. */
@@ -135,6 +127,20 @@ typedef struct HDASTREAMSTATE
 
     /** @name DMA engine
      * @{ */
+    /** Timestamp (absolute, in timer ticks) of the next DMA data transfer.
+     *  Next for determining the next scheduling window.
+     *  Can be 0 if no next transfer is scheduled. */
+    uint64_t                tsTransferNext;
+    /** Total transfer size (in bytes) of a transfer period. */
+    uint32_t                cbTransferSize;
+    /** The size of an average transfer. */
+    uint32_t                cbAvgTransfer;
+
+    /** Current circular buffer read offset (for tracing & logging). */
+    uint64_t                offRead;
+    /** Current circular buffer write offset (for tracing & logging). */
+    uint64_t                offWrite;
+
     /** The offset into the current BDLE. */
     uint32_t                offCurBdle;
     /** LVI + 1 */
@@ -180,9 +186,20 @@ typedef struct HDASTREAMSTATE
         uint8_t             cEntries;
         uint8_t             abPadding[2];
     }                       aSchedule[512+8];
+
+#ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+    /** Number of valid bytes in abDma.
+     * @note Volatile to prevent the compiler from re-reading it after we've
+     *       validated the value in ring-0. */
+    uint32_t volatile       cbDma;
+    /** Total number of bytes going via abDma this timer period. */
+    uint32_t                cbDmaTotal;
+    /** DMA bounce buffer for ring-0 register reads (LPIB). */
+    uint8_t                 abDma[2048 - 8];
+#endif
     /** @} */
 } HDASTREAMSTATE;
-AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
+AssertCompileSizeAlignment(HDASTREAMSTATE, 16);
 AssertCompileMemberAlignment(HDASTREAMSTATE, aBdl, 8);
 AssertCompileMemberAlignment(HDASTREAMSTATE, aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAMSTATE, aSchedule, 16);
@@ -235,8 +252,10 @@ typedef struct HDASTREAM
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
 
+#if 0
     /** Pad the structure size to a 64 byte alignment. */
     uint64_t                    au64Padding1[2];
+#endif
 } HDASTREAM;
 AssertCompileMemberAlignment(HDASTREAM, State.aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAM, State.aSchedule, 16);
@@ -264,10 +283,6 @@ typedef struct HDASTREAMR3
     {
         /** Circular buffer (FIFO) for holding DMA'ed data. */
         R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
-        /** Current circular buffer read offset (for tracing & logging). */
-        uint64_t                offRead;
-        /** Current circular buffer write offset (for tracing & logging). */
-        uint64_t                offWrite;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
         /** List of DMA handlers. */
         RTLISTANCHORR3          lstDMAHandlers;
@@ -295,15 +310,21 @@ typedef struct HDASTREAMR3
         STAMPROFILE             StatStart;
         STAMPROFILE             StatReset;
         STAMPROFILE             StatStop;
-        STAMPROFILE             StatUnusedPadding;
     } State;
     /** Debug bits. */
     HDASTREAMDEBUG              Dbg;
-    uint64_t                    au64Alignment[1+4];
+    uint64_t                    au64Alignment[3];
 } HDASTREAMR3;
 AssertCompileSizeAlignment(HDASTREAMR3, 64);
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAMR3 *PHDASTREAMR3;
+
+/** @name Stream functions (all contexts).
+ * @{
+ */
+VBOXSTRICTRC        hdaStreamDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
+                                                 uint32_t cbToTransfer);
+/** @} */
 
 #ifdef IN_RING3
 
