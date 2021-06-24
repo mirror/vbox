@@ -4165,6 +4165,39 @@ static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, uns
 
                 if (ppDrv)
                     *ppDrv = pDrv;
+
+                /*
+                 * While we're here, give the windows backends a hint about our typical playback
+                 * configuration.
+                 */
+                if (   pDrv->pConnector
+                    && pDrv->pConnector->pfnStreamConfigHint)
+                {
+                    /* 48kHz */
+                    PDMAUDIOSTREAMCFG Cfg;
+                    RT_ZERO(Cfg);
+                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
+                    Cfg.Device.cMsSchedulingHint      = 5;
+                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 48000);
+                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 48kHz 2ch S16 (HDA config hint)");
+
+                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+# if 0
+                    /* 44.1kHz */
+                    RT_ZERO(Cfg);
+                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
+                    Cfg.Device.cMsSchedulingHint      = 10;
+                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
+                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
+
+                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+# endif
+                }
+
                 LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", iLun, pDrv->pConnector));
                 return VINF_SUCCESS;
             }
