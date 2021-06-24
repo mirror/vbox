@@ -282,10 +282,6 @@ typedef struct HDASTREAMR3
     {
         /** Circular buffer (FIFO) for holding DMA'ed data. */
         R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-        /** List of DMA handlers. */
-        RTLISTANCHORR3          lstDMAHandlers;
-#endif
         /** The mixer sink this stream has registered AIO update callback with.
          * This is NULL till we register it, typically in hdaR3StreamEnable.
          * (The problem with following the pMixSink assignment is that hdaR3StreamReset
@@ -346,10 +342,6 @@ void                hdaR3StreamMarkStopped(PHDASTREAM pStreamShared);
 uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
 DECLCALLBACK(void)  hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-bool                hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
-void                hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
-# endif
 /** @} */
 
 #endif /* IN_RING3 */

@@ -80,9 +80,6 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
 
     pStreamShared->State.fInReset = false;
     pStreamShared->State.fRunning = false;
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-    RTListInit(&pStreamR3->State.lstDMAHandlers);
-# endif
 
     AssertPtr(pStreamR3->pHDAStateR3);
     AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
@@ -854,10 +851,6 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     HDA_STREAM_REG(pThis, FMT,   uSD) = 0;
     HDA_STREAM_REG(pThis, BDPU,  uSD) = 0;
     HDA_STREAM_REG(pThis, BDPL,  uSD) = 0;
-
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-    hdaR3StreamUnregisterDMAHandlers(pThis, pStream);
-# endif
 
     /* Assign the default mixer sink to the stream. */
     pStreamR3->pMixSink = hdaR3GetDefaultSink(pThisCC, uSD);
@@ -2599,177 +2592,5 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
     }
 }
 
-
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-/**
- * Registers access handlers for a stream's BDLE DMA accesses.
- *
- * @returns true if registration was successful, false if not.
- * @param   pStream             HDA stream to register BDLE access handlers for.
- */
-bool hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream)
-{
-    /* At least LVI and the BDL base must be set. */
-    if (   !pStreamShared->u16LVI
-        || !pStreamShared->u64BDLBase)
-    {
-        return false;
-    }
-
-    hdaR3StreamUnregisterDMAHandlers(pStream);
-
-    LogFunc(("Registering ...\n"));
-
-    int rc = VINF_SUCCESS;
-
-    /*
-     * Create BDLE ranges.
-     */
-
-    struct BDLERANGE
-    {
-        RTGCPHYS uAddr;
-        uint32_t uSize;
-    } arrRanges[16]; /** @todo Use a define. */
-
-    size_t cRanges = 0;
-
-    for (uint16_t i = 0; i < pStreamShared->u16LVI + 1; i++)
-    {
-        HDABDLE BDLE;
-        rc = hdaR3BDLEFetch(pDevIns, &BDLE, pStreamShared->u64BDLBase, i /* Index */);
-        if (RT_FAILURE(rc))
-            break;
-
-        bool fAddRange = true;
-        BDLERANGE *pRange;
-
-        if (cRanges)
-        {
-            pRange = &arrRanges[cRanges - 1];
-
-            /* Is the current range a direct neighbor of the current BLDE? */
-            if ((pRange->uAddr + pRange->uSize) == BDLE.Desc.u64BufAddr)
-            {
-                /* Expand the current range by the current BDLE's size. */
-                pRange->uSize += BDLE.Desc.u32BufSize;
-
-                /* Adding a new range in this case is not needed anymore. */
-                fAddRange = false;
-
-                LogFunc(("Expanding range %zu by %RU32 (%RU32 total now)\n", cRanges - 1, BDLE.Desc.u32BufSize, pRange->uSize));
-            }
-        }
-
-        /* Do we need to add a new range? */
-        if (   fAddRange
-            && cRanges < RT_ELEMENTS(arrRanges))
-        {
-            pRange = &arrRanges[cRanges];
-
-            pRange->uAddr = BDLE.Desc.u64BufAddr;
-            pRange->uSize = BDLE.Desc.u32BufSize;
-
-            LogFunc(("Adding range %zu - 0x%x (%RU32)\n", cRanges, pRange->uAddr, pRange->uSize));
-
-            cRanges++;
-        }
-    }
-
-    LogFunc(("%zu ranges total\n", cRanges));
-
-    /*
-     * Register all ranges as DMA access handlers.
-     */
-
-    for (size_t i = 0; i < cRanges; i++)
-    {
-        BDLERANGE *pRange = &arrRanges[i];
-
-        PHDADMAACCESSHANDLER pHandler = (PHDADMAACCESSHANDLER)RTMemAllocZ(sizeof(HDADMAACCESSHANDLER));
-        if (!pHandler)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        RTListAppend(&pStream->State.lstDMAHandlers, &pHandler->Node);
-
-        pHandler->pStream = pStream; /* Save a back reference to the owner. */
-
-        char szDesc[32];
-        RTStrPrintf(szDesc, sizeof(szDesc), "HDA[SD%RU8 - RANGE%02zu]", pStream->u8SD, i);
-
-        int rc2 = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pStream->pHDAState->pDevInsR3), PGMPHYSHANDLERKIND_WRITE,
-                                                   hdaDMAAccessHandler,
-                                                   NULL, NULL, NULL,
-                                                   NULL, NULL, NULL,
-                                                   szDesc, &pHandler->hAccessHandlerType);
-        AssertRCBreak(rc2);
-
-        pHandler->BDLEAddr  = pRange->uAddr;
-        pHandler->BDLESize  = pRange->uSize;
-
-        /* Get first and last pages of the BDLE range. */
-        RTGCPHYS pgFirst = pRange->uAddr & ~PAGE_OFFSET_MASK;
-        RTGCPHYS pgLast  = RT_ALIGN(pgFirst + pRange->uSize, PAGE_SIZE);
-
-        /* Calculate the region size (in pages). */
-        RTGCPHYS regionSize = RT_ALIGN(pgLast - pgFirst, PAGE_SIZE);
-
-        pHandler->GCPhysFirst = pgFirst;
-        pHandler->GCPhysLast  = pHandler->GCPhysFirst + (regionSize - 1);
-
-        LogFunc(("  Registering region '%s': %#RGp - %#RGp (region size: %#zx)\n",
-                 szDesc, pHandler->GCPhysFirst, pHandler->GCPhysLast, regionSize));
-        LogFunc(("  BDLE @ %#RGp - %#RGp (%#RX32)\n",
-                 pHandler->BDLEAddr, pHandler->BDLEAddr + pHandler->BDLESize, pHandler->BDLESize));
-
-        rc2 = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pStream->pHDAState->pDevInsR3),
-                                         pHandler->GCPhysFirst, pHandler->GCPhysLast,
-                                         pHandler->hAccessHandlerType, pHandler, NIL_RTR0PTR, NIL_RTRCPTR,
-                                         szDesc);
-        AssertRCBreak(rc2);
-
-        pHandler->fRegistered = true;
-    }
-
-    LogFunc(("Registration ended with rc=%Rrc\n", rc));
-
-    return RT_SUCCESS(rc);
-}
-
-/**
- * Unregisters access handlers of a stream's BDLEs.
- *
- * @param   pStream             HDA stream to unregister BDLE access handlers for.
- */
-void hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream)
-{
-    LogFunc(("\n"));
-
-    PHDADMAACCESSHANDLER pHandler, pHandlerNext;
-    RTListForEachSafe(&pStream->State.lstDMAHandlers, pHandler, pHandlerNext, HDADMAACCESSHANDLER, Node)
-    {
-        if (!pHandler->fRegistered) /* Handler not registered? Skip. */
-            continue;
-
-        LogFunc(("Unregistering 0x%x - 0x%x (%zu)\n",
-                 pHandler->GCPhysFirst, pHandler->GCPhysLast, pHandler->GCPhysLast - pHandler->GCPhysFirst));
-
-        int rc2 = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pStream->pHDAState->pDevInsR3),
-                                               pHandler->GCPhysFirst);
-        AssertRC(rc2);
-
-        RTListNodeRemove(&pHandler->Node);
-
-        RTMemFree(pHandler);
-        pHandler = NULL;
-    }
-
-    Assert(RTListIsEmpty(&pStream->State.lstDMAHandlers));
-}
-
-# endif /* HDA_USE_DMA_ACCESS_HANDLER */
-
 #endif /* IN_RING3 */
+

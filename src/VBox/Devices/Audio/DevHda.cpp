@@ -62,16 +62,6 @@
 *********************************************************************************************************************************/
 //#define HDA_AS_PCI_EXPRESS
 
-/* Installs a DMA access handler (via PGM callback) to monitor
- * HDA's DMA operations, that is, writing / reading audio stream data.
- *
- * !!! Note: Certain guests are *that* timing sensitive that when enabling  !!!
- * !!!       such a handler will mess up audio completely (e.g. Windows 7). !!! */
-//#define HDA_USE_DMA_ACCESS_HANDLER
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-# include <VBox/vmm/pgm.h>
-#endif
-
 /* Uses the DMA access handler to read the written DMA audio (output) data.
  * Only valid if HDA_USE_DMA_ACCESS_HANDLER is set.
  *
@@ -173,32 +163,6 @@ typedef struct HDADRIVERSTREAM
     /** Associated mixer handle. */
     R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
 } HDADRIVERSTREAM, *PHDADRIVERSTREAM;
-
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-/**
- * Struct for keeping an HDA DMA access handler context.
- */
-typedef struct HDADMAACCESSHANDLER
-{
-    /** Node for storing this handler in our list in HDASTREAMSTATE. */
-    RTLISTNODER3            Node;
-    /** Pointer to stream to which this access handler is assigned to. */
-    R3PTRTYPE(PHDASTREAM)   pStream;
-    /** Access handler type handle. */
-    PGMPHYSHANDLERTYPE      hAccessHandlerType;
-    /** First address this handler uses. */
-    RTGCPHYS                GCPhysFirst;
-    /** Last address this handler uses. */
-    RTGCPHYS                GCPhysLast;
-    /** Actual BDLE address to handle. */
-    RTGCPHYS                BDLEAddr;
-    /** Actual BDLE buffer size to handle. */
-    RTGCPHYS                BDLESize;
-    /** Whether the access handler has been registered or not. */
-    bool                    fRegistered;
-    uint8_t                 Padding[3];
-} HDADMAACCESSHANDLER, *PHDADMAACCESSHANDLER;
-#endif
 
 /**
  * Struct for maintaining a host backend driver.
@@ -344,11 +308,6 @@ static FNHDAREGWRITE hdaRegWriteU8;
 #ifdef IN_RING3
 static int                        hdaR3AddStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
 static int                        hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
-                                                        void *pvBuf, size_t cbBuf,
-                                                        PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
-# endif
 #endif /* IN_RING3 */
 /** @} */
 
@@ -1602,18 +1561,6 @@ static VBOXSTRICTRC hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     const size_t idxStream = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
     AssertReturn(idxStream < RT_ELEMENTS(pThis->aStreams), VERR_INTERNAL_ERROR_3); /* paranoia^2: Bad g_aHdaRegMap. */
 
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
-    {
-        /* Try registering the DMA handlers.
-         * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, idxStream);
-        if (   pStream
-            && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
-            LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-    }
-#endif
-
     ASSERT_GUEST_LOGREL_MSG(u32Value <= UINT8_MAX, /* Should be covered by the register write mask, but just to make sure. */
                             ("LVI for stream #%zu must not be bigger than %RU8\n", idxStream, UINT8_MAX - 1));
     return hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
@@ -1984,26 +1931,8 @@ static VBOXSTRICTRC hdaRegWriteSDFMT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
  */
 DECLINLINE(VBOXSTRICTRC) hdaRegWriteSDBDPX(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t uSD)
 {
-#ifndef HDA_USE_DMA_ACCESS_HANDLER
     RT_NOREF(uSD);
     return hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
-#else
-# ifdef IN_RING3
-    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
-    {
-        /* Try registering the DMA handlers.
-         * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-        if (   pStream
-            && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
-            LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-    }
-    return hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
-# else
-    RT_NOREF(pDevIns, pThis, iReg, u32Value, uSD);
-    return VINF_IOM_R3_MMIO_WRITE;
-# endif
-#endif
 }
 
 static VBOXSTRICTRC hdaRegWriteSDBDPL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2724,139 +2653,6 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
 
     hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
 }
-
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
-/**
- * HC access handler for the FIFO.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
-                                                        void *pvBuf, size_t cbBuf,
-                                                        PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    RT_NOREF(pVM, pVCpu, pvPhys, pvBuf, enmOrigin);
-
-    PHDADMAACCESSHANDLER pHandler = (PHDADMAACCESSHANDLER)pvUser;
-    AssertPtr(pHandler);
-
-    PHDASTREAM pStream = pHandler->pStream;
-    AssertPtr(pStream);
-
-    Assert(GCPhys >= pHandler->GCPhysFirst);
-    Assert(GCPhys <= pHandler->GCPhysLast);
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-
-    /* Not within BDLE range? Bail out. */
-    if (   (GCPhys         < pHandler->BDLEAddr)
-        || (GCPhys + cbBuf > pHandler->BDLEAddr + pHandler->BDLESize))
-    {
-        return VINF_PGM_HANDLER_DO_DEFAULT;
-    }
-
-    switch (enmAccessType)
-    {
-        case PGMACCESSTYPE_WRITE:
-        {
-#  ifdef DEBUG
-            const uint64_t tsNowNs     = RTTimeNanoTS();
-            const uint32_t tsElapsedMs = (tsNowNs - pStream->Dbg.tsWriteSlotBegin) / 1000 / 1000;
-
-            uint64_t cWritesHz   = ASMAtomicReadU64(&pStream->Dbg.cWritesHz);
-            uint64_t cbWrittenHz = ASMAtomicReadU64(&pStream->Dbg.cbWrittenHz);
-
-            if (tsElapsedMs >= (1000 / HDA_TIMER_HZ_DEFAULT))
-            {
-                LogFunc(("[SD%RU8] %RU32ms elapsed, cbWritten=%RU64, cWritten=%RU64 -- %RU32 bytes on average per time slot (%zums)\n",
-                         pStream->u8SD, tsElapsedMs, cbWrittenHz, cWritesHz,
-                         ASMDivU64ByU32RetU32(cbWrittenHz, cWritesHz ? cWritesHz : 1), 1000 / HDA_TIMER_HZ_DEFAULT));
-
-                pStream->Dbg.tsWriteSlotBegin = tsNowNs;
-
-                cWritesHz   = 0;
-                cbWrittenHz = 0;
-            }
-
-            cWritesHz   += 1;
-            cbWrittenHz += cbBuf;
-
-            ASMAtomicIncU64(&pStream->Dbg.cWritesTotal);
-            ASMAtomicAddU64(&pStream->Dbg.cbWrittenTotal, cbBuf);
-
-            ASMAtomicWriteU64(&pStream->Dbg.cWritesHz,   cWritesHz);
-            ASMAtomicWriteU64(&pStream->Dbg.cbWrittenHz, cbWrittenHz);
-
-            LogFunc(("[SD%RU8] Writing %3zu @ 0x%x (off %zu)\n",
-                     pStream->u8SD, cbBuf, GCPhys, GCPhys - pHandler->BDLEAddr));
-
-            LogFunc(("[SD%RU8] cWrites=%RU64, cbWritten=%RU64 -> %RU32 bytes on average\n",
-                     pStream->u8SD, pStream->Dbg.cWritesTotal, pStream->Dbg.cbWrittenTotal,
-                     ASMDivU64ByU32RetU32(pStream->Dbg.cbWrittenTotal, pStream->Dbg.cWritesTotal)));
-#  endif
-
-#  ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
-            if (pThis->fDebugEnabled)
-            {
-                RTFILE fh;
-                RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAAccessWrite.pcm",
-                           RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-                RTFileWrite(fh, pvBuf, cbBuf, NULL);
-                RTFileClose(fh);
-            }
-#  endif
-
-#  ifdef HDA_USE_DMA_ACCESS_HANDLER_WRITING
-            PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
-            AssertPtr(pCircBuf);
-
-            uint8_t *pbBuf = (uint8_t *)pvBuf;
-            while (cbBuf)
-            {
-                /* Make sure we only copy as much as the stream's FIFO can hold (SDFIFOS, 18.2.39). */
-                void *pvChunk;
-                size_t cbChunk;
-                RTCircBufAcquireWriteBlock(pCircBuf, cbBuf, &pvChunk, &cbChunk);
-
-                if (cbChunk)
-                {
-                    memcpy(pvChunk, pbBuf, cbChunk);
-
-                    pbBuf  += cbChunk;
-                    Assert(cbBuf >= cbChunk);
-                    cbBuf  -= cbChunk;
-                }
-                else
-                {
-                    //AssertMsg(RTCircBufFree(pCircBuf), ("No more space but still %zu bytes to write\n", cbBuf));
-                    break;
-                }
-
-                LogFunc(("[SD%RU8] cbChunk=%zu\n", pStream->u8SD, cbChunk));
-
-                RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
-            }
-#  endif /* HDA_USE_DMA_ACCESS_HANDLER_WRITING */
-            break;
-        }
-
-        default:
-            AssertMsgFailed(("Access type not implemented\n"));
-            break;
-    }
-
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-# endif /* HDA_USE_DMA_ACCESS_HANDLER */
 
 /**
  * Soft reset of the device triggered via GCTL.
@@ -3587,11 +3383,6 @@ static DECLCALLBACK(int) hdaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             /* Add the stream to the device setup. */
             rc2 = hdaR3AddStream(pThisCC, &pStreamShared->State.Cfg);
             AssertRC(rc2);
-
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-            /* (Re-)install the DMA handler. */
-            hdaR3StreamRegisterDMAHandlers(pThis, pStreamShared);
-#endif
 
             /* Use the LPIB to find the current scheduling position.  If this isn't
                exactly on a scheduling item adjust LPIB down to the start of the
