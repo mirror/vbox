@@ -682,8 +682,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
        least two max periods worth of data queued up due to the way we
        work the AIO thread. */
     pStreamShared->State.fInputPreBuffered = false;
-    pStreamShared->State.cbInputPreBuffer  = PDMAudioPropsMilliToBytes(&pCfg->Props, pThis->msInitialDelay);
-    pStreamShared->State.cbInputPreBuffer  = RT_MIN(cbMaxPeriod * 2, pStreamShared->State.cbInputPreBuffer);
+    pStreamShared->State.cbInputPreBuffer  = cbMaxPeriod * 2;
 
     /*
      * Set up data transfer stuff.
@@ -749,7 +748,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      *       samples we actually need, in other words, skipping the interleaved
      *       channels we don't support / need to save space.
      */
-    uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
+    uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, RT_MS_1SEC * 6 / uTransferHz);
     LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
              uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
 
@@ -860,7 +859,6 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     /* Initialize timestamps. */
     pStreamShared->State.tsLastTransferNs = 0;
     pStreamShared->State.tsLastReadNs     = 0;
-    pStreamShared->State.tsAioDelayEnd    = UINT64_MAX;
     pStreamShared->State.tsStart          = 0;
 
     RT_ZERO(pStreamShared->State.aBdl);
@@ -1006,10 +1004,9 @@ void hdaR3StreamMarkStarted(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStr
 {
     pStreamShared->State.tsLastReadNs  = RTTimeNanoTS();
     pStreamShared->State.tsStart       = tsNow;
-    pStreamShared->State.tsAioDelayEnd = tsNow + PDMDevHlpTimerFromMilli(pDevIns, pStreamShared->hTimer, pThis->msInitialDelay);
-    Log3Func(("#%u: tsStart=%RU64 tsAioDelayEnd=%RU64 tsLastReadNs=%RU64\n", pStreamShared->u8SD,
-              pStreamShared->State.tsStart, pStreamShared->State.tsAioDelayEnd, pStreamShared->State.tsLastReadNs));
-
+    Log3Func(("#%u: tsStart=%RU64 tsLastReadNs=%RU64\n",
+              pStreamShared->u8SD, pStreamShared->State.tsStart, pStreamShared->State.tsLastReadNs));
+    RT_NOREF(pDevIns, pThis);
 }
 
 /**
@@ -1018,7 +1015,7 @@ void hdaR3StreamMarkStarted(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStr
 void hdaR3StreamMarkStopped(PHDASTREAM pStreamShared)
 {
     Log3Func(("#%u\n", pStreamShared->u8SD));
-    pStreamShared->State.tsAioDelayEnd = UINT64_MAX;
+    RT_NOREF(pStreamShared);
 }
 
 #endif /* IN_RING3 */
@@ -1371,7 +1368,6 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
     return false;
 }
 #endif /* IN_RING3 || VBOX_HDA_WITH_ON_REG_ACCESS_DMA */
-
 
 #ifdef IN_RING3
 
@@ -2235,36 +2231,9 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
 
         /*
          * Should we push data to down thru the mixer to and to the host drivers?
-         *
-         * We initially delay this by pThis->msInitialDelay, but after than we'll
-         * kick the AIO thread every time we've put more data in the buffer (which is
-         * every time) as the host audio device needs to get data in a timely manner.
-         *
-         * (We used to try only wake up the AIO thread according to pThis->uIoTimer
-         * and host wall clock, but that meant we would miss a wakup after the DMA
-         * timer was called a little late or if TM entered into catch-up mode.)
          */
-        bool fKickAioThread;
-        if (!pStreamShared->State.tsAioDelayEnd)
-            fKickAioThread = pStreamShared->State.offWrite > offWriteBefore
-                          || hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbAvgTransfer * 2;
-        else if (PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer) >= pStreamShared->State.tsAioDelayEnd)
-        {
-            Log3Func(("Initial delay done: Passed tsAioDelayEnd.\n"));
-            pStreamShared->State.tsAioDelayEnd = 0;
-            fKickAioThread = true;
-        }
-        else if (hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbAvgTransfer * 2)
-        {
-            Log3Func(("Initial delay done: Passed running short on buffer.\n"));
-            pStreamShared->State.tsAioDelayEnd = 0;
-            fKickAioThread = true;
-        }
-        else
-        {
-            Log3Func(("Initial delay pending...\n"));
-            fKickAioThread = false;
-        }
+        bool fKickAioThread = pStreamShared->State.offWrite > offWriteBefore
+                           || hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbAvgTransfer * 2;
 
         Log3Func(("msDelta=%RU64 (vs %u) cbStreamFree=%#x (vs %#x) => fKickAioThread=%RTbool\n",
                   (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS,

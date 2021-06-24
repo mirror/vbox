@@ -4527,7 +4527,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
                                   "BufSizeInMs"
                                   "|BufSizeOutMs"
-                                  "|InitialDelayMs"
                                   "|DebugEnabled"
                                   "|DebugPathOut",
                                   "");
@@ -4551,20 +4550,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->cMsCircBufOut > 2000)
         return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
                                 N_("HDA configuration error: 'BufSizeOutMs' is out of bound, max 2000 ms"));
-
-    /** @devcfgm{hda,InitialDelayMs,uint16_t,0,256,12,ms}
-     * How long to delay when a stream starts before engaging the asynchronous I/O
-     * thread from the DMA timer callback.  Because it's used from the DMA timer
-     * callback, it will implicitly be rounded up to the next timer period.
-     * This is for adding a little host scheduling leeway into the playback. */
-    /** @todo InitialDelayMs is rather pointless, DrvAudio does pre-buffering in
-     * both directions now. (bird, 2021-06-08) */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "InitialDelayMs", &pThis->msInitialDelay, 12);
-    if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc, N_("HDA configuration error: failed to read 'InitialDelayMs' as uint16_t"));
-    if (pThis->msInitialDelay > 256)
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("HDA configuration error: Out of range: 0 <= InitialDelayMs < 256: %u"), pThis->msInitialDelay);
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThisCC->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))

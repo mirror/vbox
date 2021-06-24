@@ -115,9 +115,6 @@ typedef struct HDASTREAMSTATE
      *  because reading / processing will be done in a separate stream. */
     uint64_t                tsLastReadNs;
 
-    /** This is set to the timer clock time when the msInitialDelay period is over.
-     * Once reached, this is set to zero to avoid unnecessary time queries. */
-    uint64_t                tsAioDelayEnd;
     /** The start time for the playback (on the timer clock). */
     uint64_t                tsStart;
 
@@ -153,9 +150,6 @@ typedef struct HDASTREAMSTATE
     uint16_t                idxSchedule;
     /** Current loop number within the current scheduling step.  */
     uint32_t                idxScheduleLoop;
-
-    /** Aligning the next members on 16 bytes. */
-    uint64_t                u64Padding;
 
     /** Buffer descriptors and additional timer scheduling state.
      * (Same as HDABDLEDESC, with more sensible naming.)  */
@@ -251,10 +245,8 @@ typedef struct HDASTREAM
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
 
-#if 0
     /** Pad the structure size to a 64 byte alignment. */
     uint64_t                    au64Padding1[2];
-#endif
 } HDASTREAM;
 AssertCompileMemberAlignment(HDASTREAM, State.aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAM, State.aSchedule, 16);
