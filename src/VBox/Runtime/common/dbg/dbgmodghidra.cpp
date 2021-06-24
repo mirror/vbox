@@ -245,7 +245,8 @@ static int rtDbgModGhidraXmlParseSymbols(RTDBGMOD hCnt, const xml::ElementNode &
                 || *pszSymName == '\0')
                 pelmSym->getAttributeValue("name", &pszSymName);
 
-            if (pszSymName)
+            if (   pszSymName
+                && strlen(pszSymName) < RTDBG_SYMBOL_NAME_LENGTH)
             {
                 uint64_t u64Addr = 0;
                 uint64_t u64Length = 0;
@@ -253,9 +254,10 @@ static int rtDbgModGhidraXmlParseSymbols(RTDBGMOD hCnt, const xml::ElementNode &
                     && pelmSym->getAttributeValue("length", &u64Length))
                 {
                     int rc = RTDbgModSymbolAdd(hCnt, pszSymName, RTDBGSEGIDX_RVA, u64Addr, u64Length, 0 /*fFlags*/, NULL);
-                    if (    RT_FAILURE(rc)
-                        &&  rc != VERR_DBG_DUPLICATE_SYMBOL
-                        &&  rc != VERR_DBG_ADDRESS_CONFLICT) /* (don't be too strict) */
+                    if (   RT_FAILURE(rc)
+                        && rc != VERR_DBG_DUPLICATE_SYMBOL
+                        && rc != VERR_DBG_ADDRESS_CONFLICT
+                        && rc != VERR_DBG_INVALID_RVA) /* (don't be too strict) */
                         return rc;
                 }
             }
@@ -379,8 +381,7 @@ static DECLCALLBACK(int) rtDbgModGhidra_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enm
     /*
      * Fend off images.
      */
-    if (   !pMod->pszDbgFile
-        || pMod->pImgVt)
+    if (!pMod->pszDbgFile)
         return VERR_DBG_NO_MATCHING_INTERPRETER;
     pMod->pvDbgPriv = NULL;
 
