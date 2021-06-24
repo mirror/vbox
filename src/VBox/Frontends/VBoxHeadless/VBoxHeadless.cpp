@@ -57,8 +57,7 @@ using namespace com;
 # include <sys/mman.h>
 #endif
 
-//#define VBOX_WITH_SAVESTATE_ON_SIGNAL
-#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+#if !defined(RT_OS_WINDOWS)
 #include <signal.h>
 static void HandleSignal(int sig);
 #endif
@@ -395,7 +394,7 @@ typedef ListenerImpl<ConsoleEventListener> ConsoleEventListenerImpl;
 VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
-#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+#if !defined(RT_OS_WINDOWS)
 static void
 HandleSignal(int sig)
 {
@@ -403,7 +402,7 @@ HandleSignal(int sig)
     LogRel(("VBoxHeadless: received singal %d\n", sig));
     g_fTerminateFE = true;
 }
-#endif /* VBOX_WITH_SAVESTATE_ON_SIGNAL */
+#endif /* !RT_OS_WINDOWS */
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -982,6 +981,8 @@ ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
 
 /*
  * Simplified version of showProgress() borrowed from VBoxManage.
+ * Note that machine power up/down operations are not cancelable, so
+ * we don't bother checking for signals.
  */
 HRESULT
 showProgress(const ComPtr<IProgress> &progress)
@@ -1622,6 +1623,33 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: Powering up the machine...\n"));
 
+
+        /**
+         * @todo We should probably install handlers earlier so that
+         * we can undo any temporary settings we do above in case of
+         * an early signal and use RAII to ensure proper cleanup.
+         */
+#if !defined(RT_OS_WINDOWS)
+        signal(SIGPIPE, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
+
+        struct sigaction sa;
+        RT_ZERO(sa);
+        sa.sa_handler = HandleSignal;
+        sigaction(SIGHUP,  &sa, NULL);
+        sigaction(SIGINT,  &sa, NULL);
+        sigaction(SIGTERM, &sa, NULL);
+        sigaction(SIGUSR1, &sa, NULL);
+        sigaction(SIGUSR2, &sa, NULL);
+#else /* RT_OS_WINDOWS */
+        /*
+         * Register windows console signal handler to react to Ctrl-C,
+         * Ctrl-Break, Close, non-interactive session termination.
+         */
+        ::SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+#endif
+
+
         ComPtr <IProgress> progress;
         if (!fPaused)
             CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
@@ -1643,27 +1671,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
-#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
-        signal(SIGPIPE, SIG_IGN);
-        signal(SIGTTOU, SIG_IGN);
-
-        struct sigaction sa;
-        RT_ZERO(sa);
-        sa.sa_handler = HandleSignal;
-        sigaction(SIGHUP,  &sa, NULL);
-        sigaction(SIGINT,  &sa, NULL);
-        sigaction(SIGTERM, &sa, NULL);
-        sigaction(SIGUSR1, &sa, NULL);
-        sigaction(SIGUSR2, &sa, NULL);
-#endif
-
 #ifdef RT_OS_WINDOWS
-        /*
-         * Register windows console signal handler to react to Ctrl-C,
-         * Ctrl-Break, Close.
-         */
-        ::SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
-
         /*
          * Spawn windows message pump to monitor session events.
          */
