@@ -138,7 +138,9 @@ typedef struct HDAREGDESC
     const char     *desc;
 } HDAREGDESC;
 
+#ifdef VBOX_STRICT
 extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
+#endif
 
 
 /**
@@ -162,8 +164,13 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 /* Registers */
 #define HDA_REG_IND_NAME(x)         HDA_REG_##x
 #define HDA_MEM_IND_NAME(x)         HDA_RMX_##x
-#define HDA_REG_IND(pThis, x)       ((pThis)->au32Regs[g_aHdaRegMap[x].mem_idx])
-#define HDA_REG(pThis, x)           (HDA_REG_IND((pThis), HDA_REG_IND_NAME(x)))
+
+/** Direct register access by HDASTATE::au32Reg index. */
+#define HDA_REG_BY_IDX(a_pThis, a_idxReg)   ((a_pThis)->au32Regs[(a_idxReg)])
+/** Accesses register @a ShortRegNm. */
+#define HDA_REG(a_pThis, a_ShortRegNm)      HDA_REG_BY_IDX(a_pThis, HDA_MEM_IND_NAME(a_ShortRegNm))
+/** Indirect register access via g_aHdaRegMap[].mem_idx. */
+#define HDA_REG_IND(a_pThis, a_idxMap)      HDA_REG_BY_IDX(a_pThis, g_aHdaRegMap[(a_idxMap)].mem_idx)
 
 
 #define HDA_REG_GCAP                0           /* Range 0x00 - 0x01 */
@@ -329,7 +336,11 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_STREAM_REG_DEF(name, num)           (HDA_REG_SD##num##name)
 #define HDA_STREAM_RMX_DEF(name, num)           (HDA_RMX_SD##num##name)
 /** @note sdnum here _MUST_ be stream reg number [0,7]. */
-#define HDA_STREAM_REG(pThis, name, sdnum)      (HDA_REG_IND((pThis), HDA_REG_SD0##name + (sdnum) * 10))
+#ifdef VBOX_STRICT
+# define HDA_STREAM_REG(pThis, name, sdnum)      (*hdaStrictStreamRegAccessor((pThis), HDA_REG_SD0##name, HDA_RMX_SD0##name, (sdnum)))
+#else
+# define HDA_STREAM_REG(pThis, name, sdnum)      (HDA_REG_BY_IDX((pThis), HDA_RMX_SD0##name + (sdnum) * 10))
+#endif
 
 #define HDA_SD_NUM_FROM_REG(pThis, func, reg)   ((reg - HDA_STREAM_REG_DEF(func, 0)) / 10)
 
@@ -814,6 +825,16 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
     AssertReturn(uSD < HDA_MAX_STREAMS, PDMAUDIODIR_UNKNOWN);
     return PDMAUDIODIR_OUT;
 }
+
+#ifdef VBOX_STRICT
+DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxMap0, uint32_t idxReg0, size_t idxStream)
+{
+    AssertMsg(idxStream < RT_ELEMENTS(pThis->aStreams), ("%#zx\n", idxStream));
+    AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].mem_idx,
+              ("idxReg0=%d idxStream=%zx\n", idxReg0, idxStream));
+    return &pThis->au32Regs[idxReg0 + idxStream * 10];
+}
+#endif
 
 /* Used by hdaR3StreamSetUp: */
 uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
