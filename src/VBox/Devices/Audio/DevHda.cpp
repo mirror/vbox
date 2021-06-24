@@ -251,12 +251,13 @@ typedef struct HDAREGDESC
     FNHDAREGREAD   *pfnRead;
     /** Write callback. */
     FNHDAREGWRITE  *pfnWrite;
+#if defined(IN_RING3) || defined(LOG_ENABLED) /* Saves 0x2f23 - 0x1888 = 0x169B (5787) bytes in VBoxDDR0. */
     /** Abbreviated name. */
     const char     *abbrev;
     /** Descripton. */
     const char     *desc;
+#endif
 } HDAREGDESC;
-
 
 
 /*********************************************************************************************************************************
@@ -355,8 +356,13 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 /** Writes to SD are allowed while RUN bit is set. */
 #define HDA_RD_F_SD_WRITE_RUN       RT_BIT(0)
 
-#define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
+#if defined(IN_RING3) || defined(LOG_ENABLED)
+# define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
     { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_idxMap, a_pfnRead, a_pfnWrite, a_szName, a_szDesc }
+#else
+# define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
+    { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_idxMap, a_pfnRead, a_pfnWrite }
+#endif
 #define HDA_REG_ENTRY(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_ShortRegNm, a_szDesc) \
     HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, HDA_MEM_IND_NAME(a_ShortRegNm), #a_ShortRegNm, a_szDesc)
 #define HDA_REG_ENTRY_STR(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_StrPrefix, a_ShortRegNm, a_szDesc) \
@@ -3142,8 +3148,10 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     else
     {
         Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
+#if defined(IN_RING3) || defined(LOG_ENABLED)
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
                  g_aHdaRegMap[idxRegDsc].abbrev));
+#endif
         STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByReset);
         return VINF_SUCCESS;
     }
@@ -3166,8 +3174,10 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         else
         {
             Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
+#if defined(IN_RING3) || defined(LOG_ENABLED)
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
                      g_aHdaRegMap[idxRegDsc].abbrev));
+#endif
             STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByRun);
             return VINF_SUCCESS;
         }
