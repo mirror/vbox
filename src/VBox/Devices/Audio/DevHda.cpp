@@ -234,28 +234,30 @@ typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 typedef struct HDAREGDESC
 {
     /** Register offset in the register space. */
-    uint32_t        offset;
+    uint32_t        off;
     /** Size in bytes. Registers of size > 4 are in fact tables. */
-    uint8_t         size;
+    uint8_t         cb;
     /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
      *  specify the read/write handling policy of the register. */
     uint8_t         fFlags;
-    /** Index into the register storage array. */
-    uint8_t         mem_idx;
+    /** Index into the register storage array (HDASTATE::au32Regs). */
+    uint8_t         idxReg;
     uint8_t         bUnused;
     /** Readable bits. */
-    uint32_t        readable;
+    uint32_t        fReadableMask;
     /** Writable bits. */
-    uint32_t        writable;
+    uint32_t        fWritableMask;
     /** Read callback. */
     FNHDAREGREAD   *pfnRead;
     /** Write callback. */
     FNHDAREGWRITE  *pfnWrite;
 #if defined(IN_RING3) || defined(LOG_ENABLED) /* Saves 0x2f23 - 0x1888 = 0x169B (5787) bytes in VBoxDDR0. */
     /** Abbreviated name. */
-    const char     *abbrev;
-    /** Descripton. */
-    const char     *desc;
+    const char     *pszName;
+# ifdef IN_RING3
+    /** Description (for stats). */
+    const char     *pszDesc;
+# endif
 #endif
 } HDAREGDESC;
 
@@ -356,13 +358,22 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 /** Writes to SD are allowed while RUN bit is set. */
 #define HDA_RD_F_SD_WRITE_RUN       RT_BIT(0)
 
+/** @def HDA_REG_ENTRY_EX
+ * Maps the entry values to the actual HDAREGDESC layout, which is differs
+ * depending on context and build type. */
 #if defined(IN_RING3) || defined(LOG_ENABLED)
-# define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
+# ifdef IN_RING3
+#  define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
     { a_offBar, a_cbReg, a_fFlags, a_idxMap, 0, a_fReadMask, a_fWriteMask, a_pfnRead, a_pfnWrite, a_szName, a_szDesc }
+# else
+#  define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
+    { a_offBar, a_cbReg, a_fFlags, a_idxMap, 0, a_fReadMask, a_fWriteMask, a_pfnRead, a_pfnWrite, a_szName }
+# endif
 #else
 # define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
     { a_offBar, a_cbReg, a_fFlags, a_idxMap, 0, a_fReadMask, a_fWriteMask, a_pfnRead, a_pfnWrite }
 #endif
+
 #define HDA_REG_ENTRY(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_ShortRegNm, a_szDesc) \
     HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, HDA_MEM_IND_NAME(a_ShortRegNm), #a_ShortRegNm, a_szDesc)
 #define HDA_REG_ENTRY_STR(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_StrPrefix, a_ShortRegNm, a_szDesc) \
@@ -572,7 +583,7 @@ static uint32_t const g_afMasks[5] =
 DECLINLINE(uint32_t *) hdaStrictRegAccessor(PHDASTATE pThis, uint32_t idxMap, uint32_t idxReg)
 {
     Assert(idxMap < RT_ELEMENTS(g_aHdaRegMap));
-    AssertMsg(idxReg == g_aHdaRegMap[idxMap].mem_idx, ("idxReg=%d\n", idxReg));
+    AssertMsg(idxReg == g_aHdaRegMap[idxMap].idxReg, ("idxReg=%d\n", idxReg));
     return &pThis->au32Regs[idxReg];
 }
 
@@ -584,7 +595,7 @@ DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxM
 {
     Assert(idxMap0 < RT_ELEMENTS(g_aHdaRegMap));
     AssertMsg(idxStream < RT_ELEMENTS(pThis->aStreams), ("%#zx\n", idxStream));
-    AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].mem_idx,
+    AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].idxReg,
               ("idxReg0=%d idxStream=%zx\n", idxReg0, idxStream));
     return &pThis->au32Regs[idxReg0 + idxStream * 10];
 }
@@ -695,7 +706,7 @@ static int hdaRegLookup(uint32_t offReg)
         for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
             if (offReg == g_aHdaRegAliases[i].offReg)
                 return g_aHdaRegAliases[i].idxAlias;
-        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].offset < offReg);
+        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].off < offReg);
         return -1;
     }
 
@@ -707,13 +718,13 @@ static int hdaRegLookup(uint32_t offReg)
     for (;;)
     {
         int idxMiddle = idxLow + (idxEnd - idxLow) / 2;
-        if (offReg < g_aHdaRegMap[idxMiddle].offset)
+        if (offReg < g_aHdaRegMap[idxMiddle].off)
         {
             if (idxLow == idxMiddle)
                 break;
             idxEnd = idxMiddle;
         }
-        else if (offReg > g_aHdaRegMap[idxMiddle].offset)
+        else if (offReg > g_aHdaRegMap[idxMiddle].off)
         {
             idxLow = idxMiddle + 1;
             if (idxLow >= idxEnd)
@@ -725,7 +736,7 @@ static int hdaRegLookup(uint32_t offReg)
 
 #ifdef RT_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
-        Assert(g_aHdaRegMap[i].offset != offReg);
+        Assert(g_aHdaRegMap[i].off != offReg);
 #endif
     return -1;
 }
@@ -748,10 +759,10 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
         for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
         {
             uint32_t off = offReg - g_aHdaRegAliases[i].offReg;
-            if (off < 4 && off < g_aHdaRegMap[g_aHdaRegAliases[i].idxAlias].size)
+            if (off < 4 && off < g_aHdaRegMap[g_aHdaRegAliases[i].idxAlias].cb)
                 return g_aHdaRegAliases[i].idxAlias;
         }
-        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].offset < offReg);
+        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].off < offReg);
         return -1;
     }
 
@@ -763,13 +774,13 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
     for (;;)
     {
         int idxMiddle = idxLow + (idxEnd - idxLow) / 2;
-        if (offReg < g_aHdaRegMap[idxMiddle].offset)
+        if (offReg < g_aHdaRegMap[idxMiddle].off)
         {
             if (idxLow == idxMiddle)
                 break;
             idxEnd = idxMiddle;
         }
-        else if (offReg >= g_aHdaRegMap[idxMiddle].offset + g_aHdaRegMap[idxMiddle].size)
+        else if (offReg >= g_aHdaRegMap[idxMiddle].off + g_aHdaRegMap[idxMiddle].cb)
         {
             idxLow = idxMiddle + 1;
             if (idxLow >= idxEnd)
@@ -781,7 +792,7 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
 
 # ifdef RT_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
-        Assert(offReg - g_aHdaRegMap[i].offset >= g_aHdaRegMap[i].size);
+        Assert(offReg - g_aHdaRegMap[i].off >= g_aHdaRegMap[i].cb);
 # endif
     return -1;
 }
@@ -1048,7 +1059,7 @@ static VBOXSTRICTRC hdaRegWriteUnimpl(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
 /* U8 */
 static VBOXSTRICTRC hdaRegReadU8(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].mem_idx] & g_aHdaRegMap[iReg].readable) & 0xffffff00) == 0);
+    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].idxReg] & g_aHdaRegMap[iReg].fReadableMask) & UINT32_C(0xffffff00)) == 0);
     return hdaRegReadU32(pDevIns, pThis, iReg, pu32Value);
 }
 
@@ -1061,7 +1072,7 @@ static VBOXSTRICTRC hdaRegWriteU8(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t 
 /* U16 */
 static VBOXSTRICTRC hdaRegReadU16(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].mem_idx] & g_aHdaRegMap[iReg].readable) & 0xffff0000) == 0);
+    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].idxReg] & g_aHdaRegMap[iReg].fReadableMask) & UINT32_C(0xffff0000)) == 0);
     return hdaRegReadU32(pDevIns, pThis, iReg, pu32Value);
 }
 
@@ -1074,7 +1085,7 @@ static VBOXSTRICTRC hdaRegWriteU16(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 /* U24 */
 static VBOXSTRICTRC hdaRegReadU24(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].mem_idx] & g_aHdaRegMap[iReg].readable) & 0xff000000) == 0);
+    Assert(((pThis->au32Regs[g_aHdaRegMap[iReg].idxReg] & g_aHdaRegMap[iReg].fReadableMask) & UINT32_C(0xff000000)) == 0);
     return hdaRegReadU32(pDevIns, pThis, iReg, pu32Value);
 }
 
@@ -1091,8 +1102,8 @@ static VBOXSTRICTRC hdaRegReadU32(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t 
 {
     RT_NOREF(pDevIns);
 
-    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
-    *pu32Value = pThis->au32Regs[iRegMem] & g_aHdaRegMap[iReg].readable;
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].idxReg;
+    *pu32Value = pThis->au32Regs[iRegMem] & g_aHdaRegMap[iReg].fReadableMask;
     return VINF_SUCCESS;
 }
 
@@ -1100,9 +1111,9 @@ static VBOXSTRICTRC hdaRegWriteU32(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 {
     RT_NOREF(pDevIns);
 
-    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
-    pThis->au32Regs[iRegMem]  = (u32Value & g_aHdaRegMap[iReg].writable)
-                              | (pThis->au32Regs[iRegMem] & ~g_aHdaRegMap[iReg].writable);
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].idxReg;
+    pThis->au32Regs[iRegMem]  = (u32Value & g_aHdaRegMap[iReg].fWritableMask)
+                              | (pThis->au32Regs[iRegMem] & ~g_aHdaRegMap[iReg].fWritableMask);
     return VINF_SUCCESS;
 }
 
@@ -1361,8 +1372,8 @@ static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
      * scenario, we would run the first DMA transfers from here.
      */
     uint32_t const fOld     = HDA_REG(pThis, SSYNC);
-    uint32_t const fNew     = (u32Value &  g_aHdaRegMap[iReg].writable)
-                            | (fOld     & ~g_aHdaRegMap[iReg].writable);
+    uint32_t const fNew     = (u32Value &  g_aHdaRegMap[iReg].fWritableMask)
+                            | (fOld     & ~g_aHdaRegMap[iReg].fWritableMask);
     uint32_t const fChanged = (fNew ^ fOld) & (RT_BIT_32(HDA_MAX_STREAMS) - 1);
     if (fChanged)
     {
@@ -2243,7 +2254,7 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
     VBOXSTRICTRC rc = hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
-    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].idxReg;
     switch (iReg)
     {
         case HDA_REG_CORBLBASE:
@@ -2994,13 +3005,13 @@ DECLINLINE(bool) hdaIsMultiReadSafeInRZ(unsigned idxRegDsc)
         { /* okay */ }
         else
         {
-            Log4(("hdaIsMultiReadSafeInRZ: idxRegDsc=%u %s\n", idxRegDsc, g_aHdaRegMap[idxRegDsc].abbrev));
+            Log4(("hdaIsMultiReadSafeInRZ: idxRegDsc=%u %s\n", idxRegDsc, g_aHdaRegMap[idxRegDsc].pszName));
             return false;
         }
 
         idxRegDsc++;
         if (idxRegDsc < RT_ELEMENTS(g_aHdaRegMap))
-            cbLeft -= g_aHdaRegMap[idxRegDsc].offset - g_aHdaRegMap[idxRegDsc - 1].offset;
+            cbLeft -= g_aHdaRegMap[idxRegDsc].off - g_aHdaRegMap[idxRegDsc - 1].off;
         else
             break;
     } while (cbLeft > 0);
@@ -3055,13 +3066,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
         if (idxRegDsc >= 0)
         {
             /* ASSUMES gapless DWORD at end of map. */
-            if (g_aHdaRegMap[idxRegDsc].size == 4)
+            if (g_aHdaRegMap[idxRegDsc].cb == 4)
             {
                 /*
                  * Straight forward DWORD access.
                  */
                 rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, (uint32_t *)pv);
-                Log3Func(("  Read %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+                Log3Func(("  Read %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].pszName, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
                 STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
             }
 #ifndef IN_RING3
@@ -3079,16 +3090,16 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                  * ASSUMES that only DWORD reads have sideeffects.
                  */
                 STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiReads));
-                Log4(("hdaMmioRead: multi read: %#x LB %#x %s\n", off, cb, g_aHdaRegMap[idxRegDsc].abbrev));
+                Log4(("hdaMmioRead: multi read: %#x LB %#x %s\n", off, cb, g_aHdaRegMap[idxRegDsc].pszName));
                 uint32_t u32Value = 0;
                 unsigned cbLeft   = 4;
                 do
                 {
-                    uint32_t const  cbReg        = g_aHdaRegMap[idxRegDsc].size;
+                    uint32_t const  cbReg        = g_aHdaRegMap[idxRegDsc].cb;
                     uint32_t        u32Tmp       = 0;
 
                     rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, &u32Tmp);
-                    Log4Func(("  Read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
+                    Log4Func(("  Read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].pszName, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
                     STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
 #ifdef IN_RING3
                     if (rc != VINF_SUCCESS)
@@ -3101,7 +3112,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                     cbLeft -= cbReg;
                     off    += cbReg;
                     idxRegDsc++;
-                } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].offset == off);
+                } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].off == off);
 
                 if (rc == VINF_SUCCESS)
                     *(uint32_t *)pv = u32Value;
@@ -3147,10 +3158,10 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     { /* likely */ }
     else
     {
-        Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
+        Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].pszName));
 #if defined(IN_RING3) || defined(LOG_ENABLED)
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
-                 g_aHdaRegMap[idxRegDsc].abbrev));
+                 g_aHdaRegMap[idxRegDsc].pszName));
 #endif
         STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByReset);
         return VINF_SUCCESS;
@@ -3173,10 +3184,10 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         { /* likely */ }
         else
         {
-            Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
+            Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].pszName, uSDCTL));
 #if defined(IN_RING3) || defined(LOG_ENABLED)
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
-                     g_aHdaRegMap[idxRegDsc].abbrev));
+                     g_aHdaRegMap[idxRegDsc].pszName));
 #endif
             STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByRun);
             return VINF_SUCCESS;
@@ -3184,12 +3195,12 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     }
 
 #ifdef LOG_ENABLED
-    uint32_t const idxRegMem   = g_aHdaRegMap[idxRegDsc].mem_idx;
+    uint32_t const idxRegMem   = g_aHdaRegMap[idxRegDsc].idxReg;
     uint32_t const u32OldValue = pThis->au32Regs[idxRegMem];
 #endif
     VBOXSTRICTRC rc = g_aHdaRegMap[idxRegDsc].pfnWrite(pDevIns, pThis, idxRegDsc, u32Value);
-    Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s, rc=%d\n", u32Value, g_aHdaRegMap[idxRegDsc].abbrev,
-              g_aHdaRegMap[idxRegDsc].size, u32OldValue, pThis->au32Regs[idxRegMem], pszLog, VBOXSTRICTRC_VAL(rc)));
+    Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s, rc=%d\n", u32Value, g_aHdaRegMap[idxRegDsc].pszName,
+              g_aHdaRegMap[idxRegDsc].cb, u32OldValue, pThis->au32Regs[idxRegMem], pszLog, VBOXSTRICTRC_VAL(rc)));
 #ifndef IN_RING3
     if (rc == VINF_IOM_R3_MMIO_WRITE)
         STAM_COUNTER_INC(&pThis->aStatRegWritesToR3[idxRegDsc]);
@@ -3217,7 +3228,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
      */
     int         idxRegDsc = hdaRegLookup(off);
 #if defined(IN_RING3) || defined(LOG_ENABLED)
-    uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].mem_idx : UINT32_MAX;
+    uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].idxReg : UINT32_MAX;
 #endif
     uint64_t    u64Value;
     if (cb == 4)        u64Value = *(uint32_t const *)pv;
@@ -3250,11 +3261,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
      * Try for a direct hit first.
      */
     VBOXSTRICTRC rc;
-    if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size == cb)
+    if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].cb == cb)
     {
         DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
 
-        Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
+        Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].pszName));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log3Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
 
@@ -3264,17 +3275,17 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
      * Sub-register access.  Supply missing bits as needed.
      */
     else if (   idxRegDsc >= 0
-             && cb < g_aHdaRegMap[idxRegDsc].size)
+             && cb < g_aHdaRegMap[idxRegDsc].cb)
     {
         DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
 
-        u64Value |=   pThis->au32Regs[g_aHdaRegMap[idxRegDsc].mem_idx]
-                    & g_afMasks[g_aHdaRegMap[idxRegDsc].size]
+        u64Value |=   pThis->au32Regs[g_aHdaRegMap[idxRegDsc].idxReg]
+                    & g_afMasks[g_aHdaRegMap[idxRegDsc].cb]
                     & ~g_afMasks[cb];
         Log4Func(("@%#05x u%u=%#0*RX64 cb=%#x cbReg=%x %s\n"
                   "hdaMmioWrite: Supplying missing bits (%#x): %#llx -> %#llx ...\n",
-                  (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, cb, g_aHdaRegMap[idxRegDsc].size, g_aHdaRegMap[idxRegDsc].abbrev,
-                  g_afMasks[g_aHdaRegMap[idxRegDsc].size] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
+                  (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, cb, g_aHdaRegMap[idxRegDsc].cb, g_aHdaRegMap[idxRegDsc].pszName,
+                  g_afMasks[g_aHdaRegMap[idxRegDsc].cb] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log4Func(("  %#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegSubWrite));
@@ -3291,11 +3302,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 
         if (idxRegDsc == -1)
             Log4Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
-        else if (g_aHdaRegMap[idxRegDsc].size == cb)
-            Log4Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
+        else if (g_aHdaRegMap[idxRegDsc].cb == cb)
+            Log4Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].pszName));
         else
             Log4Func(("@%#05x u%u=%#0*RX64 %s - mismatch cbReg=%u\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value,
-                      g_aHdaRegMap[idxRegDsc].abbrev, g_aHdaRegMap[idxRegDsc].size));
+                      g_aHdaRegMap[idxRegDsc].pszName, g_aHdaRegMap[idxRegDsc].cb));
 
         /*
          * If it's an access beyond the start of the register, shift the input
@@ -3308,10 +3319,10 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
             idxRegDsc = hdaR3RegLookupWithin(off);
             if (idxRegDsc != -1)
             {
-                uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].offset;
+                uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].off;
                 Assert(cbBefore > 0 && cbBefore < 4);
                 off      -= cbBefore;
-                idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
+                idxRegMem = g_aHdaRegMap[idxRegDsc].idxReg;
                 u64Value <<= cbBefore * 8;
                 u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
                 Log4Func(("  Within register, supplied %u leading bits: %#llx -> %#llx ...\n",
@@ -3323,7 +3334,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
         }
         else
         {
-            Log4(("hdaMmioWrite: multi write: %s\n", g_aHdaRegMap[idxRegDsc].abbrev));
+            Log4(("hdaMmioWrite: multi write: %s\n", g_aHdaRegMap[idxRegDsc].pszName));
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiWrites));
         }
 
@@ -3334,8 +3345,8 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
             uint32_t cbReg;
             if (idxRegDsc >= 0)
             {
-                idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
-                cbReg     = g_aHdaRegMap[idxRegDsc].size;
+                idxRegMem = g_aHdaRegMap[idxRegDsc].idxReg;
+                cbReg     = g_aHdaRegMap[idxRegDsc].cb;
                 if (cb < cbReg)
                 {
                     u64Value |= pThis->au32Regs[idxRegMem] & g_afMasks[cbReg] & ~g_afMasks[cb];
@@ -3368,7 +3379,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
             {
                 idxRegDsc++;
                 if (   (unsigned)idxRegDsc >= RT_ELEMENTS(g_aHdaRegMap)
-                    || g_aHdaRegMap[idxRegDsc].offset != off)
+                    || g_aHdaRegMap[idxRegDsc].off != off)
                     idxRegDsc = -1;
             }
         }
@@ -4179,7 +4190,7 @@ static int hdaR3DbgLookupRegByName(const char *pszArgs)
 {
     if (pszArgs && *pszArgs != '\0')
         for (int iReg = 0; iReg < HDA_NUM_REGS; ++iReg)
-            if (!RTStrICmp(g_aHdaRegMap[iReg].abbrev, pszArgs))
+            if (!RTStrICmp(g_aHdaRegMap[iReg].pszName, pszArgs))
                 return iReg;
     return -1;
 }
@@ -4187,14 +4198,15 @@ static int hdaR3DbgLookupRegByName(const char *pszArgs)
 /** Worker for hdaR3DbgInfo.  */
 static void hdaR3DbgPrintRegister(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaIndex)
 {
-    /** @todo HDA_REG_IDX_NOMEM & GCAP both uses mem_idx zero, no flag or anything to tell them appart. */
-    if (g_aHdaRegMap[iHdaIndex].mem_idx != 0 || g_aHdaRegMap[iHdaIndex].pfnRead != hdaRegReadWALCLK)
-        pHlp->pfnPrintf(pHlp, "%s: 0x%x\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->au32Regs[g_aHdaRegMap[iHdaIndex].mem_idx]);
+    /** @todo HDA_REG_IDX_NOMEM & GCAP both uses idxReg zero, no flag or anything
+     *        to tell them appart. */
+    if (g_aHdaRegMap[iHdaIndex].idxReg != 0 || g_aHdaRegMap[iHdaIndex].pfnRead != hdaRegReadWALCLK)
+        pHlp->pfnPrintf(pHlp, "%s: 0x%x\n", g_aHdaRegMap[iHdaIndex].pszName, pThis->au32Regs[g_aHdaRegMap[iHdaIndex].idxReg]);
     else
     {
         uint64_t uWallNow = 0;
         hdaQueryWallClock(pDevIns, pThis, false /*fDoDma*/, &uWallNow);
-        pHlp->pfnPrintf(pHlp, "%s: 0x%RX64\n", g_aHdaRegMap[iHdaIndex].abbrev, uWallNow);
+        pHlp->pfnPrintf(pHlp, "%s: 0x%RX64\n", g_aHdaRegMap[iHdaIndex].pszName, uWallNow);
     }
 }
 
@@ -5061,34 +5073,34 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Asserting sanity.
      */
-    AssertCompile(RT_ELEMENTS(pThis->au32Regs) < 256 /* assumption by HDAREGDESC::mem_idx */);
+    AssertCompile(RT_ELEMENTS(pThis->au32Regs) < 256 /* assumption by HDAREGDESC::idxReg */);
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
     {
         struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
         struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ? &g_aHdaRegMap[i + 1] : NULL;
 
         /* binary search order. */
-        AssertReleaseMsg(!pNextReg || pReg->offset + pReg->size <= pNextReg->offset,
+        AssertReleaseMsg(!pNextReg || pReg->off + pReg->cb <= pNextReg->off,
                          ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
-                          i, pReg->offset, pReg->size, i + 1, pNextReg->offset, pNextReg->size));
+                          i, pReg->off, pReg->cb, i + 1, pNextReg->off, pNextReg->cb));
 
         /* alignment. */
-        AssertReleaseMsg(   pReg->size == 1
-                         || (pReg->size == 2 && (pReg->offset & 1) == 0)
-                         || (pReg->size == 3 && (pReg->offset & 3) == 0)
-                         || (pReg->size == 4 && (pReg->offset & 3) == 0),
-                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+        AssertReleaseMsg(   pReg->cb == 1
+                         || (pReg->cb == 2 && (pReg->off & 1) == 0)
+                         || (pReg->cb == 3 && (pReg->off & 3) == 0)
+                         || (pReg->cb == 4 && (pReg->off & 3) == 0),
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->off, pReg->cb));
 
         /* registers are packed into dwords - with 3 exceptions with gaps at the end of the dword. */
-        AssertRelease(((pReg->offset + pReg->size) & 3) == 0 || pNextReg);
-        if (pReg->offset & 3)
+        AssertRelease(((pReg->off + pReg->cb) & 3) == 0 || pNextReg);
+        if (pReg->off & 3)
         {
             struct HDAREGDESC const *pPrevReg = i > 0 ?  &g_aHdaRegMap[i - 1] : NULL;
-            AssertReleaseMsg(pPrevReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            AssertReleaseMsg(pPrevReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->off, pReg->cb));
             if (pPrevReg)
-                AssertReleaseMsg(pPrevReg->offset + pPrevReg->size == pReg->offset,
+                AssertReleaseMsg(pPrevReg->off + pPrevReg->cb == pReg->off,
                                  ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
-                                  i - 1, pPrevReg->offset, pPrevReg->size, i + 1, pReg->offset, pReg->size));
+                                  i - 1, pPrevReg->off, pPrevReg->cb, i + 1, pReg->off, pReg->cb));
         }
 #if 0
         if ((pReg->offset + pReg->size) & 3)
@@ -5101,8 +5113,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         }
 #endif
         /* The final entry is a full DWORD, no gaps! Allows shortcuts. */
-        AssertReleaseMsg(pNextReg || ((pReg->offset + pReg->size) & 3) == 0,
-                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+        AssertReleaseMsg(pNextReg || ((pReg->off + pReg->cb) & 3) == 0,
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->off, pReg->cb));
     }
 
 # ifdef VBOX_WITH_STATISTICS
@@ -5126,13 +5138,13 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     for (size_t i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
     {
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReads[i], STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Reads",       g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+                               g_aHdaRegMap[i].pszDesc, "Regs/%03x-%s-Reads",       g_aHdaRegMap[i].off, g_aHdaRegMap[i].pszName);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReadsToR3[i], STAMTYPE_COUNTER,  STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Reads-ToR3",  g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+                               g_aHdaRegMap[i].pszDesc, "Regs/%03x-%s-Reads-ToR3",  g_aHdaRegMap[i].off, g_aHdaRegMap[i].pszName);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWrites[i], STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Writes",      g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+                               g_aHdaRegMap[i].pszDesc, "Regs/%03x-%s-Writes",      g_aHdaRegMap[i].off, g_aHdaRegMap[i].pszName);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWritesToR3[i], STAMTYPE_COUNTER,  STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Writes-ToR3", g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+                               g_aHdaRegMap[i].pszDesc, "Regs/%03x-%s-Writes-ToR3", g_aHdaRegMap[i].off, g_aHdaRegMap[i].pszName);
     }
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReadsR3,   STAMTYPE_COUNTER, "RegMultiReadsR3",    STAMUNIT_OCCURENCES, "Register read not targeting just one register, handled in ring-3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReadsRZ,   STAMTYPE_COUNTER, "RegMultiReadsRZ",    STAMUNIT_OCCURENCES, "Register read not targeting just one register, handled in ring-0");
