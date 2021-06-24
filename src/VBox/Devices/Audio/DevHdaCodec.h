@@ -956,35 +956,5 @@ int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM);
 void hdaCodecDestruct(PHDACODEC pThis);
 void hdaCodecReset(PHDACODEC pThis);
 
-/** @name DevHDA saved state versions
- * @{ */
-/** The current staved state version. */
-#define HDA_SAVED_STATE_VERSION  HDA_SAVED_STATE_WITHOUT_PERIOD
-
-/** Removed period and redefined wall clock. */
-#define HDA_SAVED_STATE_WITHOUT_PERIOD 8
-/** Added (Controller):              Current wall clock value (this independent from WALCLK register value).
-  * Added (Controller):              Current IRQ level.
-  * Added (Per stream):              Ring buffer. This is optional and can be skipped if (not) needed.
-  * Added (Per stream):              Struct g_aSSMStreamStateFields7.
-  * Added (Per stream):              Struct g_aSSMStreamPeriodFields7.
-  * Added (Current BDLE per stream): Struct g_aSSMBDLEDescFields7.
-  * Added (Current BDLE per stream): Struct g_aSSMBDLEStateFields7. */
-#define HDA_SAVED_STATE_VERSION_7 7
-/** Saves the current BDLE state.
- * @since 5.0.14 (r104839) */
-#define HDA_SAVED_STATE_VERSION_6 6
-/** Introduced dynamic number of streams + stream identifiers for serialization.
- *  Bug: Did not save the BDLE states correctly.
- *  Those will be skipped on load then.
- * @since 5.0.12 (r104520)  */
-#define HDA_SAVED_STATE_VERSION_5 5
-/** Since this version the number of MMIO registers can be flexible. */
-#define HDA_SAVED_STATE_VERSION_4 4
-#define HDA_SAVED_STATE_VERSION_3 3
-#define HDA_SAVED_STATE_VERSION_2 2
-#define HDA_SAVED_STATE_VERSION_1 1
-/** @} */
-
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaCodec_h */
 
