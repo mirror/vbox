@@ -44,6 +44,20 @@
 //# define HDA_STRICT
 #endif
 
+/** @def HDA_AS_PCI_EXPRESS
+ * Enables PCI express hardware.  */
+#if defined(DOXYGEN_RUNNING) || 0
+# define HDA_AS_PCI_EXPRESS
+#endif
+
+/** @def HDA_DEBUG_SILENCE
+ * To debug silence coming from the guest in form of audio gaps.
+ * Very crude implementation for now.
+ * @todo probably borked atm */
+#if defined(DOXYGEN_RUNNING) || 0
+# define HDA_DEBUG_SILENCE
+#endif
+
 
 /*
  * Common pointer types.

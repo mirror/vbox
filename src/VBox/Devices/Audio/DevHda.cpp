@@ -60,15 +60,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-//#define HDA_AS_PCI_EXPRESS
-
-/* Useful to debug the device' timing. */
-//#define HDA_DEBUG_TIMING
-
-/* To debug silence coming from the guest in form of audio gaps.
- * Very crude implementation for now. */
-//#define HDA_DEBUG_SILENCE
-
 #if defined(VBOX_WITH_HP_HDA)
 /* HP Pavilion dv4t-1300 */
 # define HDA_PCI_VENDOR_ID 0x103c
