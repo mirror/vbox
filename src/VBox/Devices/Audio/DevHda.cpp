@@ -62,12 +62,6 @@
 *********************************************************************************************************************************/
 //#define HDA_AS_PCI_EXPRESS
 
-/* Uses the DMA access handler to read the written DMA audio (output) data.
- * Only valid if HDA_USE_DMA_ACCESS_HANDLER is set.
- *
- * Also see the note / warning for HDA_USE_DMA_ACCESS_HANDLER. */
-//# define HDA_USE_DMA_ACCESS_HANDLER_WRITING
-
 /* Useful to debug the device' timing. */
 //#define HDA_DEBUG_TIMING
 
