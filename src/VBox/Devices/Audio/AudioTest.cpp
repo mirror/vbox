@@ -1216,7 +1216,9 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     AssertRCReturn(rc, rc);
 
     memcpy(&pEntry->Parms, pParms, sizeof(AUDIOTESTPARMS));
+
     pEntry->pParent = pSet;
+    pEntry->rc      = VERR_IPE_UNINITIALIZED_STATUS;
 
     rc = audioTestManifestWrite(pSet, "\n");
     AssertRCReturn(rc, rc);
@@ -1271,6 +1273,7 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
     }
 
     RTListAppend(&pSet->lstTest, &pEntry->Node);
+
     pSet->cTests++;
     pSet->cTestsRunning++;
     pSet->pTestCur = pEntry;
@@ -1290,8 +1293,8 @@ int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPAR
  */
 int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
 {
-    AssertReturn(pEntry->pParent->cTestsRunning == 1,            VERR_WRONG_ORDER); /* No test nesting allowed. */
-    AssertReturn(pEntry->rc                     == VINF_SUCCESS, VERR_WRONG_ORDER);
+    AssertReturn(pEntry->pParent->cTestsRunning == 1,                             VERR_WRONG_ORDER); /* No test nesting allowed. */
+    AssertReturn(pEntry->rc                     == VERR_IPE_UNINITIALIZED_STATUS, VERR_WRONG_ORDER);
 
     pEntry->rc = rc;
 
@@ -1314,8 +1317,10 @@ int AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr)
  */
 int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
 {
-    AssertReturn(pEntry->pParent->cTestsRunning == 1,            VERR_WRONG_ORDER); /* No test nesting allowed. */
-    AssertReturn(pEntry->rc                     == VINF_SUCCESS, VERR_WRONG_ORDER);
+    AssertReturn(pEntry->pParent->cTestsRunning == 1,                             VERR_WRONG_ORDER); /* No test nesting allowed. */
+    AssertReturn(pEntry->rc                     == VERR_IPE_UNINITIALIZED_STATUS, VERR_WRONG_ORDER);
+
+    pEntry->rc = VINF_SUCCESS;
 
     int rc2 = audioTestManifestWrite(pEntry->pParent, "error_rc=%RI32\n", VINF_SUCCESS);
     AssertRCReturn(rc2, rc2);
@@ -1324,6 +1329,17 @@ int AudioTestSetTestDone(PAUDIOTESTENTRY pEntry)
     pEntry->pParent->pTestCur = NULL;
 
     return rc2;
+}
+
+/**
+ * Returns whether a test is still running or not.
+ *
+ * @returns \c true if test is still running, or \c false if not.
+ * @param   pEntry              Test to get running status for.
+ */
+bool AudioTestSetTestIsRunning(PAUDIOTESTENTRY pEntry)
+{
+    return (pEntry->rc == VERR_IPE_UNINITIALIZED_STATUS);
 }
 
 /**

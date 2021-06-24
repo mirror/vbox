@@ -357,6 +357,7 @@ int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
 int    AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry);
 int    AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr);
 int    AudioTestSetTestDone(PAUDIOTESTENTRY pEntry);
+bool   AudioTestSetTestIsRunning(PAUDIOTESTENTRY pEntry);
 
 int    AudioTestSetCreate(PAUDIOTESTSET pSet, const char *pszPath, const char *pszTag);
 int    AudioTestSetDestroy(PAUDIOTESTSET pSet);
