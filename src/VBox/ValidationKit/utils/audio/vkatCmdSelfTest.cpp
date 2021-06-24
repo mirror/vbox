@@ -55,42 +55,37 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     RT_NOREF(hThread);
     PSELFTESTCTX pCtx = (PSELFTESTCTX)pvUser;
 
-    AUDIOTESTPARMS TstCust;
-    audioTestParmsInit(&TstCust);
-
-    PAUDIOTESTENV pTstEnv = &pCtx->Guest.TstEnv;
+    PAUDIOTESTENV pTstEnvGst = &pCtx->Guest.TstEnv;
 
     /* Flag the environment for self test mode. */
-    pTstEnv->fSelftest = true;
+    pTstEnvGst->fSelftest = true;
 
     /* Generate tag for guest side. */
-    int rc = RTStrCopy(pTstEnv->szTag, sizeof(pTstEnv->szTag), pCtx->szTag);
+    int rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-guest");
+    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathTemp, sizeof(pTstEnvGst->szPathTemp), "selftest-guest");
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), "selftest-out");
+    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathOut, sizeof(pTstEnvGst->szPathOut), "selftest-out");
     AssertRCReturn(rc, rc);
 
-    pTstEnv->enmMode = AUDIOTESTMODE_GUEST;
+    pTstEnvGst->enmMode = AUDIOTESTMODE_GUEST;
 
     /** @todo Make this customizable. */
-    PDMAudioPropsInit(&TstCust.TestTone.Props,
+    PDMAudioPropsInit(&pTstEnvGst->Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    rc = audioTestEnvInit(pTstEnv, pTstEnv->DrvStack.pDrvReg, pCtx->fWithDrvAudio,
+    rc = audioTestEnvInit(pTstEnvGst, pTstEnvGst->DrvStack.pDrvReg, pCtx->fWithDrvAudio,
                           pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
                           pCtx->Guest.szAtsAddr, pCtx->Guest.uAtsPort);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
 
-        audioTestWorker(pTstEnv, &TstCust);
-        audioTestEnvDestroy(pTstEnv);
+        audioTestWorker(pTstEnvGst);
+        audioTestEnvDestroy(pTstEnvGst);
     }
-
-    audioTestParmsDestroy(&TstCust);
 
     return rc;
 }
@@ -117,27 +112,28 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
      * - 3. Executes a complete test run locally (e.g. without any guest (VM) involved).
      */
 
-    AUDIOTESTPARMS TstCust;
-    audioTestParmsInit(&TstCust);
-
     /* Generate a common tag for guest and host side. */
     int rc = AudioTestGenTag(pCtx->szTag, sizeof(pCtx->szTag));
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    PAUDIOTESTENV pTstEnv = &pCtx->Host.TstEnv;
+    PAUDIOTESTENV pTstEnvHst = &pCtx->Host.TstEnv;
 
     /* Flag the environment for self test mode. */
-    pTstEnv->fSelftest = true;
+    pTstEnvHst->fSelftest = true;
 
     /* Generate tag for host side. */
-    rc = RTStrCopy(pTstEnv->szTag, sizeof(pTstEnv->szTag), pCtx->szTag);
+    rc = RTStrCopy(pTstEnvHst->szTag, sizeof(pTstEnvHst->szTag), pCtx->szTag);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-tmp");
+    rc = AudioTestPathCreateTemp(pTstEnvHst->szPathTemp, sizeof(pTstEnvHst->szPathTemp), "selftest-tmp");
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), "selftest-out");
+    rc = AudioTestPathCreateTemp(pTstEnvHst->szPathOut, sizeof(pTstEnvHst->szPathOut), "selftest-out");
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    /* Initialize the PCM properties to some sane values. */
+    PDMAudioPropsInit(&pTstEnvHst->Props,
+                      2 /* 16-bit */, true /* fPcmSigned */, 2 /* cPcmChannels */, 44100 /* uPcmHz */);
 
     /*
      * Step 1.
@@ -160,24 +156,22 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
         /*
          * Steps 2 + 3.
          */
-        pTstEnv->enmMode = AUDIOTESTMODE_HOST;
+        pTstEnvHst->enmMode = AUDIOTESTMODE_HOST;
 
-        rc = audioTestEnvInit(pTstEnv, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */,
+        rc = audioTestEnvInit(pTstEnvHst, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */,
                               pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
                               pCtx->Host.szGuestAtsAddr, pCtx->Host.uGuestAtsPort);
         if (RT_SUCCESS(rc))
         {
-            rc = audioTestWorker(pTstEnv, &TstCust);
+            rc = audioTestWorker(pTstEnvHst);
             if (RT_SUCCESS(rc))
             {
 
             }
 
-            audioTestEnvDestroy(pTstEnv);
+            audioTestEnvDestroy(pTstEnvHst);
         }
     }
-
-    audioTestParmsDestroy(&TstCust);
 
     /*
      * Shutting down.

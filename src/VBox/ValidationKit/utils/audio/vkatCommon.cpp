@@ -67,8 +67,7 @@ typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps);
-static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps);
+static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer, uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev);
 
@@ -143,40 +142,46 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     return VINF_SUCCESS;
 }
 
-/**
- * Opens an audio device.
- *
- * @returns VBox status code.
- * @param   pDev                Audio device to open.
- */
-int audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev)
+static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream,
+                               PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer,
+                               uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    RTTestSubF(g_hTest, "Opening audio device '%s' ...", pDev->pszName);
+    if (enmDir == PDMAUDIODIR_IN)
+        rc = audioTestDriverStackStreamCreateInput(pDrvStack, pProps, cMsBufferSize,
+                                                   cMsPreBuffer, cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
+    else if (enmDir == PDMAUDIODIR_OUT)
+        rc = audioTestDriverStackStreamCreateOutput(pDrvStack, pProps, cMsBufferSize,
+                                                    cMsPreBuffer, cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
+    else
+        rc = VERR_NOT_SUPPORTED;
 
-    /** @todo Detect + open device here. */
+    if (RT_SUCCESS(rc))
+    {
+        if (!pDrvStack->pIAudioConnector)
+        {
+            pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
+        }
+        else
+            pStream->pBackend = NULL;
 
-    RTTestSubDone(g_hTest);
+        /*
+         * Automatically enable the mixer if the PCM properties don't match.
+         */
+        if (   !fWithMixer
+            && !PDMAudioPropsAreEqual(pProps, &pStream->Cfg.Props))
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,  "Enabling stream mixer\n");
+            fWithMixer = true;
+        }
 
-    return rc;
-}
+        rc = AudioTestMixStreamInit(&pStream->Mix, pDrvStack, pStream->pStream,
+                                    fWithMixer ? pProps : NULL, 100 /* ms */); /** @todo Configure mixer buffer? */
+    }
 
-/**
- * Closes an audio device.
- *
- * @returns VBox status code.
- * @param   pDev                Audio device to close.
- */
-int audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev)
-{
-    int rc = VINF_SUCCESS;
-
-    RTTestSubF(g_hTest, "Closing audio device '%s' ...", pDev->pszName);
-
-    /** @todo Close device here. */
-
-    RTTestSubDone(g_hTest);
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Initializing %s stream failed with %Rrc", enmDir == PDMAUDIODIR_IN ? "input" : "output", rc);
 
     return rc;
 }
@@ -200,44 +205,8 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
         pStream->pBackend = NULL;
     }
 
-    return rc;
-}
+    AudioTestMixStreamTerm(&pStream->Mix);
 
-/**
- * Creates an audio default input (recording) test stream.
- * Convenience function.
- *
- * @returns VBox status code.
- * @param   pTstEnv             Test environment to use for creating the stream.
- * @param   pStream             Audio stream to create.
- * @param   pProps              PCM properties to use for creation.
- */
-static int audioTestCreateStreamDefaultIn(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
-{
-    pStream->pBackend = NULL;
-    int rc = audioTestDriverStackStreamCreateInput(&pTstEnv->DrvStack, pProps, pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer,
-                                                   pTstEnv->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
-    if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
-        pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
-    return rc;
-}
-
-/**
- * Creates an audio default output (playback) test stream.
- * Convenience function.
- *
- * @returns VBox status code.
- * @param   pTstEnv             Test environment to use for creating the stream.
- * @param   pStream             Audio stream to create.
- * @param   pProps              PCM properties to use for creation.
- */
-static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PPDMAUDIOPCMPROPS pProps)
-{
-    pStream->pBackend = NULL;
-    int rc = audioTestDriverStackStreamCreateOutput(&pTstEnv->DrvStack, pProps, pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer,
-                                                    pTstEnv->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
-    if (RT_SUCCESS(rc) && !pTstEnv->DrvStack.pIAudioConnector)
-        pStream->pBackend = &((PAUDIOTESTDRVSTACKSTREAM)pStream->pStream)->Backend;
     return rc;
 }
 
@@ -245,6 +214,24 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
 /*********************************************************************************************************************************
 *   Test Primitives                                                                                                              *
 *********************************************************************************************************************************/
+
+/**
+ * Returns a random scheduling hint (in ms).
+ */
+DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
+{
+    static const unsigned s_aSchedulingHintsMs[] =
+    {
+        10,
+        25,
+        50,
+        100,
+        200,
+        250
+    };
+
+    return s_aSchedulingHintsMs[RTRandU32Ex(0, RT_ELEMENTS(s_aSchedulingHintsMs) - 1)];
+}
 
 /**
  * Plays a test tone on a specific audio test stream.
@@ -259,59 +246,71 @@ static int audioTestCreateStreamDefaultOut(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTRE
 static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     AUDIOTESTTONE TstTone;
-    AudioTestToneInit(&TstTone, &pParms->Props, pParms->dbFreqHz);
+    AudioTestToneInit(&TstTone, &pStream->Cfg.Props, pParms->dbFreqHz);
 
     const char *pcszPathOut = pTstEnv->Set.szPathAbs;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using %RU32ms stream scheduling hint\n", pStream->Cfg.Device.cMsSchedulingHint);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
 
     /** @todo Use .WAV here? */
     PAUDIOTESTOBJ pObj;
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
+    rc = AudioTestMixStreamEnable(&pStream->Mix);
+    if (   RT_SUCCESS(rc)
+        && AudioTestMixStreamIsOkay(&pStream->Mix))
     {
-        uint32_t cbBuf;
         uint8_t  abBuf[_4K];
 
-        const uint32_t cbPerSched = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
-        AssertStmt(cbPerSched, rc = VERR_INVALID_PARAMETER);
-              uint32_t cbToWrite  = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
-        AssertStmt(cbToWrite,  rc = VERR_INVALID_PARAMETER);
+        uint32_t cbToPlayTotal  = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
+        AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
 
-        if (RT_SUCCESS(rc))
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
+
+        AudioTestSetObjAddMetadataStr(pObj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
+        AudioTestSetObjAddMetadataStr(pObj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
+        AudioTestSetObjAddMetadataStr(pObj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
+        AudioTestSetObjAddMetadataStr(pObj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
+        /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
+         *       has nothing to do with the device emulation scheduling hint. */
+        AudioTestSetObjAddMetadataStr(pObj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
+
+        while (cbToPlayTotal)
         {
-            AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
-            AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
-            AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
-
-            while (cbToWrite)
+            uint32_t       cbPlayed   = 0;
+            uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
+            if (cbCanWrite)
             {
-                uint32_t cbWritten    = 0;
-                uint32_t cbToGenerate = RT_MIN(cbToWrite, RT_MIN(cbPerSched, sizeof(abBuf)));
-                Assert(cbToGenerate);
-
-                rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbBuf);
+                uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal, sizeof(abBuf)), cbCanWrite);
+                uint32_t       cbToPlay;
+                rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
                 if (RT_SUCCESS(rc))
                 {
+                    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes ...\n", cbToPlay);
+
                     /* Write stuff to disk before trying to play it. Help analysis later. */
-                    rc = AudioTestSetObjWrite(pObj, abBuf, cbBuf);
+                    rc = AudioTestSetObjWrite(pObj, abBuf, cbToPlay);
                     if (RT_SUCCESS(rc))
-                        rc = audioTestDriverStackStreamPlay(&pTstEnv->DrvStack, pStream->pStream,
-                                                            abBuf, cbBuf, &cbWritten);
+                        rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
                 }
 
                 if (RT_FAILURE(rc))
                     break;
-
-                RTThreadSleep(pTstEnv->cMsSchedulingHint);
-
-                Assert(cbToWrite >= cbWritten);
-                cbToWrite -= cbWritten;
             }
+            else if (AudioTestMixStreamIsOkay(&pStream->Mix))
+                RTThreadSleep(RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256));
+            else
+                AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
+
+            Assert(cbToPlayTotal >= cbPlayed);
+            cbToPlayTotal -= cbPlayed;
         }
+
+        if (cbToPlayTotal != 0)
+            RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32 bytes left)\n", cbToPlayTotal);
     }
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
@@ -321,7 +320,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
         rc = rc2;
 
     if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Playing tone done failed with %Rrc\n", rc);
+        RTTestFailed(g_hTest, "Playing tone failed with %Rrc\n", rc);
 
     return rc;
 }
@@ -443,7 +442,8 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestCreateStreamDefaultOut(pTstEnv, pTstStream, &pToneParms->Props);
+    int rc = audioTestStreamInit(&pTstEnv->DrvStack, pTstStream, PDMAUDIODIR_OUT, &pTstEnv->Props, false /* fWithMixer */,
+                                 pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
@@ -483,7 +483,8 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestCreateStreamDefaultIn(pTstEnv, pTstStream, &pToneParms->Props);
+    int rc = audioTestStreamInit(&pTstEnv->DrvStack, pTstStream, PDMAUDIODIR_IN, &pTstEnv->Props, false /* fWithMixer */,
+                                 pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
@@ -665,11 +666,14 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
 
-    PDMAudioHostEnumInit(&pTstEnv->DevEnum);
+    if (!pTstEnv->cMsBufferSize)
+        pTstEnv->cMsBufferSize     = UINT32_MAX;
+    if (!pTstEnv->cMsPreBuffer)
+        pTstEnv->cMsPreBuffer      = UINT32_MAX;
+    if (!pTstEnv->cMsSchedulingHint)
+        pTstEnv->cMsSchedulingHint = UINT32_MAX;
 
-    pTstEnv->cMsBufferSize     = 300; /* ms */ /** @todo Randomize this also? */
-    pTstEnv->cMsPreBuffer      = 150; /* ms */ /** @todo Ditto. */
-    pTstEnv->cMsSchedulingHint = RTRandU32Ex(10, 80); /* Choose a random scheduling (in ms). */
+    PDMAudioHostEnumInit(&pTstEnv->DevEnum);
 
     bool fUseDriverStack = false; /* Whether to init + use the audio driver stack or not. */
 
@@ -690,7 +694,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
             return rc;
 
         PPDMAUDIOHOSTDEV pDev;
-        rc = audioTestDevicesEnumerateAndCheck(pTstEnv, NULL /* pszDevice */, &pDev); /** @todo Implement device checking. */
+        rc = audioTestDevicesEnumerateAndCheck(pTstEnv, pTstEnv->szDev, &pDev);
         if (RT_FAILURE(rc))
             return rc;
     }

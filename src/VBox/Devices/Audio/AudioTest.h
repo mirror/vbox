@@ -339,9 +339,8 @@ typedef AUDIOTESTERRORDESC const *PCAUDIOTESTERRORDESC;
 
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq);
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
+double AudioTestToneGetRandomFreq(void);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-
-int    AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMPROPS pProps);
 
 int    AudioTestGenTag(char *pszTag, size_t cbTag);
 
@@ -366,6 +365,7 @@ int    AudioTestSetClose(PAUDIOTESTSET pSet);
 int    AudioTestSetWipe(PAUDIOTESTSET pSet);
 const char *AudioTestSetGetTag(PAUDIOTESTSET pSet);
 bool   AudioTestSetIsPacked(const char *pszPath);
+bool   AudioTestSetIsRunning(PAUDIOTESTSET pSet);
 int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName);
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 int    AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc);

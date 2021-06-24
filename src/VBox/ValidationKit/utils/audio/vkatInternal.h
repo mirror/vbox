@@ -164,6 +164,8 @@ typedef struct AUDIOTESTSTREAM
     PPDMAUDIOBACKENDSTREAM  pBackend;
     /** The stream config. */
     PDMAUDIOSTREAMCFG       Cfg;
+    /** Associated mixing stream. Optional. */
+    AUDIOTESTDRVMIXSTREAM   Mix;
 } AUDIOTESTSTREAM;
 /** Pointer to audio test stream. */
 typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
@@ -183,6 +185,14 @@ typedef struct AUDIOTESTENV
     bool                    fSelftest;
     /** Whether skip the actual verification or not. */
     bool                    fSkipVerify;
+    /** The PCM properties to use. */
+    PDMAUDIOPCMPROPS        Props;
+    /** Name of the audio device to use.
+     *  If empty the default audio device will be used. */
+    char                    szDev[128];
+    /** Audio volume to use (in percent).
+     *  Might not be available on all systems. */
+    uint8_t                 uVolumePercent;
     /** Output path for storing the test environment's final test files. */
     char                    szTag[AUDIOTEST_TAG_MAX];
     /** Output path for storing the test environment's final test files. */
@@ -426,7 +436,7 @@ void        audioTestParmsInit(PAUDIOTESTPARMS pTstParms);
 void        audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms);
 /** @}  */
 
-int         audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms);
+int         audioTestWorker(PAUDIOTESTENV pTstEnv);
 
 /** @name Command handlers
  * @{ */

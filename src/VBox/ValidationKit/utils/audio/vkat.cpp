@@ -60,7 +60,6 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms);
 static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB);
 
 
@@ -229,24 +228,6 @@ PCPDMDRVREG AudioTestFindBackendOpt(const char *pszBackend)
 }
 
 
-/**
- * Overrides audio test base parameters with another set.
- *
- * @returns VBox status code.
- * @param   pBaseParms          Base parameters to override.
- * @param   pOverrideParms      Override parameters to use for overriding the base parameters.
- *
- * @note    Overriding a parameter depends on its type / default values.
- */
-static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOverrideParms)
-{
-    RT_NOREF(pBaseParms, pOverrideParms);
-
-    /** @todo Implement parameter overriding. */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
 /*********************************************************************************************************************************
 *   Test callbacks                                                                                                               *
 *********************************************************************************************************************************/
@@ -256,21 +237,41 @@ static int audioTestCombineParms(PAUDIOTESTPARMS pBaseParms, PAUDIOTESTPARMS pOv
  */
 static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
 {
-    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
+    RT_NOREF(pTstDesc, ppvCtx);
+
+    int rc;
+
+    if (strlen(pTstEnv->szDev))
+    {
+        rc = audioTestDriverStackSetDevice(&pTstEnv->DrvStack, PDMAUDIODIR_OUT, pTstEnv->szDev);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_PLAY;
-
-    PDMAudioPropsInit(&pTstParmsAcq->Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
-
+    pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 2;
+    pTstParmsAcq->cIterations = 1;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif
     pTstParmsAcq->idxCurrent  = 0;
 
-    return VINF_SUCCESS;
+    PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
+
+    pToneParms->Props          = pTstParmsAcq->Props;
+    pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
+    pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
+#ifdef DEBUG_andy
+    pToneParms->msDuration     = 2000;
+#else
+    pToneParms->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
+#endif
+    pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
+    pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
+
+    return rc;
 }
 
 /**
@@ -284,12 +285,18 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
-        AudioTestToneParamsInitRandom(&pTstParms->TestTone, &pTstParms->Props);
-
+        /*
+         * 1. Arm the (host) ValKit ATS with the recording parameters.
+         */
         PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
         rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClValKit, pToneParms);
         if (RT_SUCCESS(rc))
+        {
+            /*
+             * 2. Tell the guest ATS to start playback.
+             */
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
+        }
 
         if (RT_FAILURE(rc))
             RTTestFailed(g_hTest, "Playing tone failed\n");
@@ -313,21 +320,28 @@ static DECLCALLBACK(int) audioTestPlayToneDestroy(PAUDIOTESTENV pTstEnv, void *p
  */
 static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, PAUDIOTESTPARMS pTstParmsAcq, void **ppvCtx)
 {
-    RT_NOREF(pTstEnv, pTstDesc, ppvCtx);
+    RT_NOREF(pTstDesc, ppvCtx);
+
+    int rc;
+
+    if (strlen(pTstEnv->szDev))
+    {
+        rc = audioTestDriverStackSetDevice(&pTstEnv->DrvStack, PDMAUDIODIR_IN, pTstEnv->szDev);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
-
-    PDMAudioPropsInit(&pTstParmsAcq->Props, 16 /* bit */ / 8, true /* fSigned */, 2 /* Channels */, 44100 /* Hz */);
-
+    pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 2;
+    pTstParmsAcq->cIterations = 1;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif
     pTstParmsAcq->idxCurrent  = 0;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -348,7 +362,7 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
 #endif
         /*
-         * 1. Arm the ValKit ATS with the recording parameters.
+         * 1. Arm the (host) ValKit ATS with the playback parameters.
          */
         rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClValKit, &pTstParms->TestTone);
         if (RT_SUCCESS(rc))
@@ -398,10 +412,8 @@ unsigned g_cTests = RT_ELEMENTS(g_aTests);
  * @param   pTstEnv             Test environment to use for running the test.
  * @param   pTstDesc            Test to run.
  * @param   uSeq                Test sequence # in case there are more tests.
- * @param   pOverrideParms      Test parameters for overriding the actual test parameters. Optional.
  */
-static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
-                        unsigned uSeq, PAUDIOTESTPARMS pOverrideParms)
+static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, unsigned uSeq)
 {
     RT_NOREF(uSeq);
 
@@ -430,12 +442,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
         }
     }
 
-    audioTestCombineParms(&TstParms, pOverrideParms);
-
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%u: %RU32 iterations\n", uSeq, TstParms.cIterations);
-
-    if (TstParms.Dev.pszName && strlen(TstParms.Dev.pszName)) /** @todo Refine this check. Use pszId for starters! */
-        rc = audioTestDeviceOpen(&TstParms.Dev);
 
     AssertPtr(pTstDesc->pfnExec);
     rc = pTstDesc->pfnExec(pTstEnv, pvCtx, &TstParms);
@@ -454,8 +461,6 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
             RTTestFailed(g_hTest, "Test destruction failed with %Rrc\n", rc2);
     }
 
-    rc = audioTestDeviceClose(&TstParms.Dev);
-
     audioTestParmsDestroy(&TstParms);
 
     return rc;
@@ -466,9 +471,8 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc,
  *
  * @returns VBox status code.
  * @param   pTstEnv             Test environment to use for running all tests.
- * @param   pOverrideParms      Test parameters for (some / all) specific test parameters. Optional.
  */
-int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
+int audioTestWorker(PAUDIOTESTENV pTstEnv)
 {
     int rc = VINF_SUCCESS;
 
@@ -500,7 +504,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv, PAUDIOTESTPARMS pOverrideParms)
             unsigned uSeq = 0;
             for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
             {
-                int rc2 = audioTestOne(pTstEnv, &g_aTests[i], uSeq, pOverrideParms);
+                int rc2 = audioTestOne(pTstEnv, &g_aTests[i], uSeq);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
 
@@ -630,9 +634,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
 
-    AUDIOTESTPARMS TstCust;
-    audioTestParmsInit(&TstCust);
-
     const char *pszDevice     = NULL; /* Custom device to use. Can be NULL if not being used. */
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
@@ -749,7 +750,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_VOL:
-                TstCust.TestTone.uVolumePercent = ValueUnion.u8;
+                TstEnv.uVolumePercent = ValueUnion.u8;
                 break;
 
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
@@ -765,7 +766,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     RTTestBanner(g_hTest);
 
     /* Initialize the custom test parameters with sensible defaults if nothing else is given. */
-    PDMAudioPropsInit(&TstCust.TestTone.Props,
+    PDMAudioPropsInit(&TstEnv.Props,
                       cPcmSampleBit ? cPcmSampleBit / 8 : 2 /* 16-bit */, fPcmSigned, cPcmChannels ? cPcmChannels : 2,
                       uPcmHz ? uPcmHz : 44100);
 
@@ -783,12 +784,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                           pszValKitTcpAddr, uValKitTcpPort,
                           pszGuestTcpAddr, uGuestTcpPort);
     if (RT_SUCCESS(rc))
-    {
-        audioTestWorker(&TstEnv, &TstCust);
-        audioTestEnvDestroy(&TstEnv);
-    }
+        rc = audioTestWorker(&TstEnv);
 
-    audioTestParmsDestroy(&TstCust);
+    audioTestEnvDestroy(&TstEnv);
 
     if (RT_FAILURE(rc)) /* Let us know that something went wrong in case we forgot to mention it. */
         RTTestFailed(g_hTest, "Testing failed with %Rrc\n", rc);

@@ -127,14 +127,6 @@ static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj);
 
 
 /**
- * Returns a random test tone frequency.
- */
-DECLINLINE(double) audioTestToneGetRandomFreq(void)
-{
-    return s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
-}
-
-/**
  * Initializes a test tone with a specific frequency (in Hz).
  *
  * @returns Used tone frequency (in Hz).
@@ -146,7 +138,7 @@ DECLINLINE(double) audioTestToneGetRandomFreq(void)
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq)
 {
     if (dbFreq == 0.0)
-        dbFreq = audioTestToneGetRandomFreq();
+        dbFreq = AudioTestToneGetRandomFreq();
 
     pTone->rdFreqHz = dbFreq;
     pTone->rdFixed  = 2.0 * M_PI * pTone->rdFreqHz / PDMAudioPropsHz(pProps);
@@ -289,29 +281,11 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
 }
 
 /**
- * Initializes an audio test tone parameters struct with random values.
- * @param   pToneParams         Test tone parameters to initialize.
- * @param   pProps              PCM properties to use for the test tone.
+ * Returns a random test tone frequency.
  */
-int AudioTestToneParamsInitRandom(PAUDIOTESTTONEPARMS pToneParams, PPDMAUDIOPCMPROPS pProps)
+double AudioTestToneGetRandomFreq(void)
 {
-    AssertReturn(PDMAudioPropsAreValid(pProps), VERR_INVALID_PARAMETER);
-
-    memcpy(&pToneParams->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
-
-    /** @todo Make this a bit more sophisticated later, e.g. muting and prequel/sequel are not very balanced. */
-
-    pToneParams->dbFreqHz       = audioTestToneGetRandomFreq();
-    pToneParams->msPrequel      = RTRandU32Ex(0, RT_MS_5SEC);
-#ifdef DEBUG_andy
-    pToneParams->msDuration     = RTRandU32Ex(0, RT_MS_1SEC);
-#else
-    pToneParams->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
-#endif
-    pToneParams->msSequel       = RTRandU32Ex(0, RT_MS_5SEC);
-    pToneParams->uVolumePercent = RTRandU32Ex(0, 100);
-
-    return VINF_SUCCESS;
+    return s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
 }
 
 /**
@@ -1410,6 +1384,17 @@ bool AudioTestSetIsPacked(const char *pszPath)
 }
 
 /**
+ * Returns whether a test set has running (active) tests or not.
+ *
+ * @returns \c true if it has running tests, or \c false if not.
+ * @param   pSet                Test set to return status for.
+ */
+bool AudioTestSetIsRunning(PAUDIOTESTSET pSet)
+{
+    return (pSet->cTestsRunning > 0);
+}
+
+/**
  * Unpacks a formerly packed audio test set.
  *
  * @returns VBox status code.
@@ -1712,12 +1697,34 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     AssertRCReturn(rc, rc);
     rc = RTFileQuerySize(pObjB->File.hFile, &cbSizeB);
     AssertRCReturn(rc, rc);
-    if (   cbSizeA != cbSizeB
-        || !audioTestFilesCompareBinary(pObjA->File.hFile, pObjB->File.hFile, cbSizeA))
+
+    if (!cbSizeA)
+    {
+        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty\n", pObjA->szName);
+        AssertRC(rc2);
+    }
+
+    if (!cbSizeB)
+    {
+        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty\n", pObjB->szName);
+        AssertRC(rc2);
+    }
+
+    if (cbSizeA != cbSizeB)
+    {
+        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes %s than '%s'\n",
+                                        pObjA->szName,
+                                        cbSizeA > cbSizeB ? cbSizeA - cbSizeB : cbSizeB - cbSizeA,
+                                        cbSizeA > cbSizeB ? "bigger" : "smaller",
+                                        pObjB->szName);
+        AssertRC(rc2);
+    }
+    else if (audioTestFilesCompareBinary(pObjA->File.hFile, pObjB->File.hFile, cbSizeA))
     {
         /** @todo Add more sophisticated stuff here. */
 
-        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' don't match\n", szObjA, szObjB);
+        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' have different content\n",
+                                        pObjA->szName, pObjB->szName);
         AssertRC(rc2);
     }
 
