@@ -128,9 +128,7 @@ typedef struct HDASTATE
     bool                    fDMAPosition;
     /** Current IRQ level. */
     uint8_t                 u8IRQL;
-    uint8_t                 abPadding[4];
-    /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
-    uint16_t                uTimerHz;
+    uint8_t                 abPadding[4 + 2];
     /** Number of milliseconds to delay kicking off the AIO when a stream starts.
      * @sa InitialDelayMs config value.  */
     uint16_t                msInitialDelay;

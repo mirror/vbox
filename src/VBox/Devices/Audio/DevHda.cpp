@@ -4752,7 +4752,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                   "BufSizeInMs"
                                   "|BufSizeOutMs"
                                   "|InitialDelayMs"
-                                  "|TimerHz"
                                   "|DebugEnabled"
                                   "|DebugPathOut",
                                   "");
@@ -4776,14 +4775,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->cMsCircBufOut > 2000)
         return PDMDEV_SET_ERROR(pDevIns, VERR_OUT_OF_RANGE,
                                 N_("HDA configuration error: 'BufSizeOutMs' is out of bound, max 2000 ms"));
-
-    /** @todo uTimerHz isn't used for anything anymore. */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
-    if (pThis->uTimerHz != HDA_TIMER_HZ_DEFAULT)
-        LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
     /** @devcfgm{hda,InitialDelayMs,uint16_t,0,256,12,ms}
      * How long to delay when a stream starts before engaging the asynchronous I/O

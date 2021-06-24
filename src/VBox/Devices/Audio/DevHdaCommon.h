@@ -106,35 +106,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
  * Other values not listed are not supported.
  */
 
-/** Default timer frequency (in Hz).
- *
- *  20 Hz now seems enough for most setups, even with load on the guest.
- *  Raising the rate will produce more I/O load on the guest and therefore
- *  also will affect the performance.
- */
-#define HDA_TIMER_HZ_DEFAULT        100
-
-/** Default position adjustment (in audio samples).
- *
- * For snd_hda_intel (Linux guests), the first BDL entry always is being used as
- * so-called BDL adjustment, which can vary, and is being used for chipsets which
- * misbehave and/or are incorrectly implemented.
- *
- * The BDL adjustment entry *always* has the IOC (Interrupt on Completion) bit set.
- *
- * For Intel Baytrail / Braswell implementations the BDL default adjustment is 32 frames, whereas
- * for ICH / PCH it's only one (1) frame.
- *
- * See default_bdl_pos_adj() and snd_hdac_stream_setup_periods() for more information.
- *
- * By default we apply some simple heuristics in hdaStreamInit().
- */
-#define HDA_POS_ADJUST_DEFAULT      0
-
-/** HDA's (fixed) audio frame size in bytes.
- *  We only support 16-bit stereo frames at the moment. */
-#define HDA_FRAME_SIZE_DEFAULT      4
-
 /** Offset of the SD0 register map. */
 #define HDA_REG_DESC_SD0_BASE       0x80
 

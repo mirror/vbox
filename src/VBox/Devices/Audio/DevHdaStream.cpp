@@ -650,18 +650,26 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     pStreamShared->State.cbCurDmaPeriod = pStreamShared->State.aSchedule[0].cbPeriod;
 
     /*
-     * Calculate the transfer Hz for use in the circular buffer calculation.
+     * Calculate the transfer Hz for use in the circular buffer calculation
+     * and the average period for the scheduling hint.
      */
     uint32_t cbMaxPeriod = 0;
     uint32_t cbMinPeriod = UINT32_MAX;
+    uint64_t cTicks      = 0;
     uint32_t cPeriods    = 0;
-    for (uint32_t i = 0; i < pStreamShared->State.cSchedule; i++)
+    for (uint32_t i = pStreamShared->State.cSchedulePrologue; i < pStreamShared->State.cSchedule; i++)
     {
         uint32_t cbPeriod = pStreamShared->State.aSchedule[i].cbPeriod;
         cbMaxPeriod = RT_MAX(cbMaxPeriod, cbPeriod);
         cbMinPeriod = RT_MIN(cbMinPeriod, cbPeriod);
         cPeriods   += pStreamShared->State.aSchedule[i].cLoops;
+        cTicks     += pStreamShared->State.aSchedule[i].cPeriodTicks * pStreamShared->State.aSchedule[i].cLoops;
     }
+    /* Only consider the prologue in relation to the max period. */
+    for (uint32_t i = 0; i < pStreamShared->State.cSchedulePrologue; i++)
+        cbMaxPeriod = RT_MAX(cbMaxPeriod, pStreamShared->State.aSchedule[i].cbPeriod);
+
+    AssertLogRelReturn(cPeriods > 0, VERR_INTERNAL_ERROR_3);
     uint64_t const cbTransferPerSec  = RT_MAX(PDMAudioPropsFramesToBytes(&pCfg->Props, pCfg->Props.uHz),
                                               4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
     unsigned uTransferHz = cbTransferPerSec * 1000 / cbMaxPeriod;
@@ -675,6 +683,12 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
     pStreamShared->State.cbAvgTransfer = (uint32_t)(cbTotal + cPeriods - 1) / cPeriods;
 
+    /* Calculate the average scheduling period length in nanoseconds. */
+    uint64_t const cTimerResolution = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
+    Assert(cTimerResolution <= UINT32_MAX);
+    uint64_t const cNsPerPeriod     = ASMMultU64ByU32DivByU32(cTicks / cPeriods, RT_NS_1SEC, cTimerResolution);
+    AssertLogRelReturn(cNsPerPeriod > 0, VERR_INTERNAL_ERROR_3);
+
     /* For input streams we must determin a pre-buffering requirement.
        We use the initial delay as a basis here, though we must have at
        least two max periods worth of data queued up due to the way we
@@ -686,23 +700,16 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     /*
      * Set up data transfer stuff.
      */
-
-    /* Assign the global device rate to the stream I/O timer as default. */
-    pStreamShared->State.uTimerIoHz = pThis->uTimerHz;
-    ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.uTimerIoHz,
-                                 ("I/O timer Hz rate for stream #%RU8 is invalid\n", uSD),
-                                 pStreamShared->State.uTimerIoHz = HDA_TIMER_HZ_DEFAULT);
-
     /* Set I/O scheduling hint for the backends. */
-    /** @todo r=bird: derive this from the schedule instead of using the
-     *        uTimerIoHz, as that's almost pure non-sense now. */
-    pCfg->Device.cMsSchedulingHint = RT_MS_1SEC / pStreamShared->State.uTimerIoHz;
+    pCfg->Device.cMsSchedulingHint = cNsPerPeriod > RT_NS_1MS ? (cNsPerPeriod + RT_NS_1MS / 2) / RT_NS_1MS : 1;
     LogRel2(("HDA: Stream #%RU8 set scheduling hint for the backends to %RU32ms\n", uSD, pCfg->Device.cMsSchedulingHint));
-
 
     /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
     /** @todo r=bird: We use LPIB as-is here, so if it's not zero we have to
-     *        locate the right place in the schedule and whatnot... */
+     * locate the right place in the schedule and whatnot...
+     *
+     * This is a similar scenario as when loading state saved, btw.
+     */
     if (HDA_STREAM_REG(pThis, LPIB, uSD) != 0)
         LogRel2(("HDA: Warning! Stream #%RU8 is set up with LPIB=%#RX32 instead of zero!\n", uSD, HDA_STREAM_REG(pThis, LPIB, uSD)));
     hdaStreamSetPositionAbs(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
@@ -754,10 +761,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      *       samples we actually need, in other words, skipping the interleaved
      *       channels we don't support / need to save space.
      */
-    uint32_t msCircBuf = RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
-    msCircBuf = RT_MAX(msCircBuf, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
-
-    uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBuf);
+    uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
     LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
              uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
 

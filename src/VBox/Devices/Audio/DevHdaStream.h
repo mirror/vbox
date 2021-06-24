@@ -95,19 +95,14 @@ typedef struct HDASTREAMSTATE
     volatile bool           fInReset;
     /** Flag indicating if the stream is in running state or not. */
     volatile bool           fRunning;
-    /** The stream's I/O timer Hz rate. */
-    uint16_t                uTimerIoHz;
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
-    /** Unused, padding. */
-    uint8_t                 abPadding1[2];
     /** Input streams only: Set when we switch from feeding the guest silence and
      *  commits to proving actual audio input bytes. */
     bool                    fInputPreBuffered;
     /** Input streams only: The number of bytes we need to prebuffer. */
     uint32_t                cbInputPreBuffer;
-    uint32_t                u32Padding2;
     /** Timestamp (absolute, in timer ticks) of the last DMA data transfer.
      * @note This is used for wall clock (WALCLK) calculations.  */
     uint64_t volatile       tsTransferLast;
@@ -158,6 +153,9 @@ typedef struct HDASTREAMSTATE
     uint16_t                idxSchedule;
     /** Current loop number within the current scheduling step.  */
     uint32_t                idxScheduleLoop;
+
+    /** Aligning the next members on 16 bytes. */
+    uint64_t                u64Padding;
 
     /** Buffer descriptors and additional timer scheduling state.
      * (Same as HDABDLEDESC, with more sensible naming.)  */
