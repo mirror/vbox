@@ -62,6 +62,8 @@ public:
 
 public slots:
 
+    /** Returns minimum text width. */
+    int minimumTextWidth() const;
     /** Defines @a iMinimumTextWidth. */
     void setMinimumTextWidth(int iMinimumTextWidth);
 

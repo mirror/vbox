@@ -99,6 +99,11 @@ void QIRichTextLabel::installEventFilter(QObject *pFilterObj)
     m_pTextBrowser->installEventFilter(pFilterObj);
 }
 
+int QIRichTextLabel::minimumTextWidth() const
+{
+    return m_iMinimumTextWidth;
+}
+
 void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
 {
     /* Remember minimum text width: */
