@@ -4753,9 +4753,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                   "|BufSizeOutMs"
                                   "|InitialDelayMs"
                                   "|TimerHz"
-                                  "|PosAdjustEnabled"
-                                  "|PosAdjustFrames"
-                                  "|TransferHeuristicsEnabled"
                                   "|DebugEnabled"
                                   "|DebugPathOut",
                                   "");
@@ -4801,30 +4798,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->msInitialDelay > 256)
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("HDA configuration error: Out of range: 0 <= InitialDelayMs < 256: %u"), pThis->msInitialDelay);
-
-    /** @todo fPosAdjustEnabled is not honored anymore.   */
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read position adjustment enabled as boolean"));
-    if (!pThis->fPosAdjustEnabled)
-        LogRel(("HDA: Position adjustment is disabled\n"));
-
-    /** @todo cPosAdjustFrames is not consulted anymore.   */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read position adjustment frames as unsigned integer"));
-    if (pThis->cPosAdjustFrames)
-        LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
-
-    /** @todo fTransferHeuristicsEnabled is not used anymore.   */
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TransferHeuristicsEnabled", &pThis->fTransferHeuristicsEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read data transfer heuristics enabled as boolean"));
-    if (!pThis->fTransferHeuristicsEnabled)
-        LogRel(("HDA: Data transfer heuristics are disabled\n"));
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThisCC->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))
