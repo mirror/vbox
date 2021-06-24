@@ -244,13 +244,13 @@ typedef struct HDAREGDESC
     /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
      *  specify the read/write handling policy of the register. */
     uint32_t        fFlags;
+    /** Index into the register storage array.
+     * @todo r=bird: Bad structure layout. Move up before pfnRead. */
+    uint32_t        mem_idx;
     /** Read callback. */
     FNHDAREGREAD   *pfnRead;
     /** Write callback. */
     FNHDAREGWRITE  *pfnWrite;
-    /** Index into the register storage array.
-     * @todo r=bird: Bad structure layout. Move up before pfnRead. */
-    uint32_t        mem_idx;
     /** Abbreviated name. */
     const char     *abbrev;
     /** Descripton. */
@@ -356,7 +356,7 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 #define HDA_RD_F_SD_WRITE_RUN       RT_BIT(0)
 
 #define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
-    { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc }
+    { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_idxMap, a_pfnRead, a_pfnWrite, a_szName, a_szDesc }
 #define HDA_REG_ENTRY(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_ShortRegNm, a_szDesc) \
     HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, HDA_MEM_IND_NAME(a_ShortRegNm), #a_ShortRegNm, a_szDesc)
 #define HDA_REG_ENTRY_STR(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_StrPrefix, a_ShortRegNm, a_szDesc) \
@@ -364,29 +364,29 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 
 /** Emits a single audio stream register set (e.g. OSD0) at a specified offset. */
 #define HDA_REG_MAP_STRM(offset, name) \
-    /* offset        size     read mask   write mask  flags                  read callback   write callback     index + abbrev                 description */ \
-    /* -------       -------  ----------  ----------  ---------------------- --------------  -----------------  -----------------------------  ----------- */ \
+                   /* offset         size     read mask   write mask  flags                  read callback   write callback     index, abbrev, description */ \
+                   /* -------        -------  ----------  ----------  ---------------------- --------------  -----------------  -----------------------------  ----------- */ \
     /* Offset 0x80 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset,        0x00003, 0x00FF001F, 0x00F0001F, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU24 , hdaRegWriteSDCTL  , name, CTL,  " Stream Descriptor Control"), \
+    HDA_REG_ENTRY_STR(offset,        0x00003, 0x00FF001F, 0x00F0001F, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU24 , hdaRegWriteSDCTL  , name, CTL  , "Stream Descriptor Control"), \
     /* Offset 0x83 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x3,  0x00001, 0x0000003C, 0x0000001C, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU8  , hdaRegWriteSDSTS  , name, STS  , " Status" ), \
+    HDA_REG_ENTRY_STR(offset + 0x3,  0x00001, 0x0000003C, 0x0000001C, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU8  , hdaRegWriteSDSTS  , name, STS  , "Status" ), \
     /* Offset 0x84 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE,         hdaRegReadLPIB, hdaRegWriteU32    , name, LPIB , " Link Position In Buffer" ), \
+    HDA_REG_ENTRY_STR(offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE,         hdaRegReadLPIB, hdaRegWriteU32    , name, LPIB , "Link Position In Buffer" ), \
     /* Offset 0x88 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDCBL  , name, CBL  , " Cyclic Buffer Length" ), \
+    HDA_REG_ENTRY_STR(offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDCBL  , name, CBL  , "Cyclic Buffer Length" ), \
     /* Offset 0x8C (SD0) -- upper 8 bits are reserved */ \
-    HDA_REG_ENTRY_STR(offset + 0xC,  0x00002, 0x0000FFFF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , name, LVI  , " Last Valid Index" ), \
+    HDA_REG_ENTRY_STR(offset + 0xC,  0x00002, 0x0000FFFF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , name, LVI  , "Last Valid Index" ), \
     /* Reserved: FIFO Watermark. ** @todo Document this! */ \
-    HDA_REG_ENTRY_STR(offset + 0xE,  0x00002, 0x00000007, 0x00000007, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOW, name, FIFOW, " FIFO Watermark" ), \
+    HDA_REG_ENTRY_STR(offset + 0xE,  0x00002, 0x00000007, 0x00000007, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOW, name, FIFOW, "FIFO Watermark" ), \
     /* Offset 0x90 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x10, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOS, name, FIFOS, " FIFO Size" ), \
+    HDA_REG_ENTRY_STR(offset + 0x10, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOS, name, FIFOS, "FIFO Size" ), \
     /* Offset 0x92 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x12, 0x00002, 0x00007F7F, 0x00007F7F, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFMT  , name, FMT  , " Stream Format" ), \
+    HDA_REG_ENTRY_STR(offset + 0x12, 0x00002, 0x00007F7F, 0x00007F7F, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFMT  , name, FMT  , "Stream Format" ), \
     /* Reserved: 0x94 - 0x98. */ \
     /* Offset 0x98 (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x18, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPL , name, BDPL , " Buffer Descriptor List Pointer-Lower Base Address" ), \
+    HDA_REG_ENTRY_STR(offset + 0x18, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPL , name, BDPL , "Buffer Descriptor List Pointer-Lower Base Address" ), \
     /* Offset 0x9C (SD0) */ \
-    HDA_REG_ENTRY_STR(offset + 0x1C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPU , name, BDPU , " Buffer Descriptor List Pointer-Upper Base Address" )
+    HDA_REG_ENTRY_STR(offset + 0x1C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPU , name, BDPU , "Buffer Descriptor List Pointer-Upper Base Address" )
 
 /** Defines a single audio stream register set (e.g. OSD0). */
 #define HDA_REG_MAP_DEF_STREAM(index, name) \
@@ -395,9 +395,8 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 /** See 302349 p 6.2. */
 static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 {
-    /* offset  size     read mask   write mask  flags          read callback     write callback       index + abbrev               */
-    /*-------  -------  ----------  ----------  -------------- ----------------  -------------------  ------------------------     */
-    //{ 0x00000, 0x00002, 0x0000FFFB, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(GCAP)         }, /* Global Capabilities */
+                /* offset  size     read mask   write mask  flags          read callback     write callback       index + abbrev               */
+                /*-------  -------  ----------  ----------  -------------- ----------------  -------------------  ------------------------     */
     HDA_REG_ENTRY(0x00000, 0x00002, 0x0000FFFB, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , GCAP,        "Global Capabilities" ),
     HDA_REG_ENTRY(0x00002, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , VMIN,        "Minor Version" ),
     HDA_REG_ENTRY(0x00003, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , VMAJ,        "Major Version" ),
