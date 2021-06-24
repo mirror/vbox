@@ -336,6 +336,14 @@ uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PH
 DECLCALLBACK(void)  hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser);
 /** @} */
 
+/** @name Helper functions associated with the stream code.
+ * @{ */
+int                 hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps);
+# ifdef LOG_ENABLED
+void                hdaR3BDLEDumpAll(PPDMDEVINS pDevIns, PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
+# endif
+/** @} */
+
 #endif /* IN_RING3 */
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaStream_h */
 

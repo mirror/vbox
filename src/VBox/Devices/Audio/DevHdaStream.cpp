@@ -208,6 +208,122 @@ void hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3)
 
 
 /**
+ * Converts an HDA stream's SDFMT register into a given PCM properties structure.
+ *
+ * @returns VBox status code.
+ * @param   u16SDFMT            The HDA stream's SDFMT value to convert.
+ * @param   pProps              PCM properties structure to hold converted result on success.
+ */
+int hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+
+# define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t u32Hz     = EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BASE_RATE_MASK, HDA_SDFMT_BASE_RATE_SHIFT)
+                       ? 44100 : 48000;
+    uint32_t u32HzMult = 1;
+    uint32_t u32HzDiv  = 1;
+
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT))
+    {
+        case 0: u32HzMult = 1; break;
+        case 1: u32HzMult = 2; break;
+        case 2: u32HzMult = 3; break;
+        case 3: u32HzMult = 4; break;
+        default:
+            LogFunc(("Unsupported multiplier %x\n",
+                     EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT)));
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT))
+    {
+        case 0: u32HzDiv = 1; break;
+        case 1: u32HzDiv = 2; break;
+        case 2: u32HzDiv = 3; break;
+        case 3: u32HzDiv = 4; break;
+        case 4: u32HzDiv = 5; break;
+        case 5: u32HzDiv = 6; break;
+        case 6: u32HzDiv = 7; break;
+        case 7: u32HzDiv = 8; break;
+        default:
+            LogFunc(("Unsupported divisor %x\n",
+                     EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT)));
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    uint8_t cbSample = 0;
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
+    {
+        case 0:
+            cbSample = 1;
+            break;
+        case 1:
+            cbSample = 2;
+            break;
+        case 4:
+            cbSample = 4;
+            break;
+        default:
+            AssertMsgFailed(("Unsupported bits per sample %x\n",
+                             EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT)));
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        PDMAudioPropsInit(pProps, cbSample, true /*fSigned*/, (u16SDFMT & 0xf) + 1 /*cChannels*/, u32Hz * u32HzMult / u32HzDiv);
+        /** @todo is there anything we need to / can do about channel assignments? */
+    }
+
+# undef EXTRACT_VALUE
+    return rc;
+}
+
+# ifdef LOG_ENABLED
+void hdaR3BDLEDumpAll(PPDMDEVINS pDevIns, PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
+{
+    LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BDLBase, cBDLE));
+    if (!u64BDLBase)
+        return;
+
+    uint32_t cbBDLE = 0;
+    for (uint16_t i = 0; i < cBDLE; i++)
+    {
+        HDABDLEDESC bd;
+        PDMDevHlpPhysRead(pDevIns, u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
+
+        LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
+                 i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC));
+
+        cbBDLE += bd.u32BufSize;
+    }
+
+    LogFlowFunc(("Total: %RU32 bytes\n", cbBDLE));
+
+    if (!pThis->u64DPBase) /* No DMA base given? Bail out. */
+        return;
+
+    LogFlowFunc(("DMA counters:\n"));
+
+    for (int i = 0; i < cBDLE; i++)
+    {
+        uint32_t uDMACnt;
+        PDMDevHlpPhysRead(pDevIns, (pThis->u64DPBase & DPBASE_ADDR_MASK) + (i * 2 * sizeof(uint32_t)),
+                          &uDMACnt, sizeof(uDMACnt));
+
+        LogFlowFunc(("\t#%03d DMA @ 0x%x\n", i , uDMACnt));
+    }
+}
+# endif /* LOG_ENABLED */
+
+
+/**
  * Appends a item to the scheduler.
  *
  * @returns VBox status code.
@@ -792,6 +908,49 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 # endif
     return rc;
 }
+
+
+/**
+ * Worker for hdaR3StreamReset().
+ *
+ * @returns The default mixer sink, NULL if none found.
+ * @param   pThisCC             The ring-3 HDA device state.
+ * @param   uSD                 SD# to return mixer sink for.
+ *                              NULL if not found / handled.
+ */
+static PHDAMIXERSINK hdaR3GetDefaultSink(PHDASTATER3 pThisCC, uint8_t uSD)
+{
+    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+    {
+        const uint8_t uFirstSDI = 0;
+
+        if (uSD == uFirstSDI) /* First SDI. */
+            return &pThisCC->SinkLineIn;
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+        if (uSD == uFirstSDI + 1)
+            return &pThisCC->SinkMicIn;
+# else
+        /* If we don't have a dedicated Mic-In sink, use the always present Line-In sink. */
+        return &pThisCC->SinkLineIn;
+# endif
+    }
+    else
+    {
+        const uint8_t uFirstSDO = HDA_MAX_SDI;
+
+        if (uSD == uFirstSDO)
+            return &pThisCC->SinkFront;
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+        if (uSD == uFirstSDO + 1)
+            return &pThisCC->SinkCenterLFE;
+        if (uSD == uFirstSDO + 2)
+            return &pThisCC->SinkRear;
+# endif
+    }
+
+    return NULL;
+}
+
 
 /**
  * Resets an HDA stream.

@@ -400,7 +400,17 @@ const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
     HDA_REG_MAP_DEF_STREAM(7, SD7)
 };
 
-const HDAREGALIAS g_aHdaRegAliases[] =
+/**
+ * HDA register aliases (HDA spec 3.3.45).
+ * @remarks Sorted by offReg.
+ */
+static struct HDAREGALIAS
+{
+    /** The alias register offset. */
+    uint32_t    offReg;
+    /** The register index. */
+    int         idxAlias;
+} const g_aHdaRegAliases[] =
 {
     { 0x2030, HDA_REG_WALCLK  },
     { 0x2084, HDA_REG_SD0LPIB },
@@ -496,6 +506,94 @@ static uint32_t const g_afMasks[5] =
 {
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
+
+
+
+/**
+ * Returns a new INTSTS value based on the current device state.
+ *
+ * @returns Determined INTSTS register value.
+ * @param   pThis               The shared HDA device state.
+ *
+ * @remarks This function does *not* set INTSTS!
+ */
+static uint32_t hdaGetINTSTS(PHDASTATE pThis)
+{
+    uint32_t intSts = 0;
+
+    /* Check controller interrupts (RIRB, STATEST). */
+    if (HDA_REG(pThis, RIRBSTS) & HDA_REG(pThis, RIRBCTL) & (HDA_RIRBCTL_ROIC | HDA_RIRBCTL_RINTCTL))
+    {
+        intSts |= HDA_INTSTS_CIS; /* Set the Controller Interrupt Status (CIS). */
+    }
+
+    /* Check SDIN State Change Status Flags. */
+    if (HDA_REG(pThis, STATESTS) & HDA_REG(pThis, WAKEEN))
+    {
+        intSts |= HDA_INTSTS_CIS; /* Touch Controller Interrupt Status (CIS). */
+    }
+
+    /* For each stream, check if any interrupt status bit is set and enabled. */
+    for (uint8_t iStrm = 0; iStrm < HDA_MAX_STREAMS; ++iStrm)
+    {
+        if (HDA_STREAM_REG(pThis, STS, iStrm) & HDA_STREAM_REG(pThis, CTL, iStrm) & (HDA_SDCTL_DEIE | HDA_SDCTL_FEIE  | HDA_SDCTL_IOCE))
+        {
+            Log3Func(("[SD%d] interrupt status set\n", iStrm));
+            intSts |= RT_BIT(iStrm);
+        }
+    }
+
+    if (intSts)
+        intSts |= HDA_INTSTS_GIS; /* Set the Global Interrupt Status (GIS). */
+
+    Log3Func(("-> 0x%x\n", intSts));
+
+    return intSts;
+}
+
+
+/**
+ * Processes (asserts/deasserts) the HDA interrupt according to the current state.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared HDA device state.
+ * @param   pszSource           Caller information.
+ */
+#if defined(LOG_ENABLED) || defined(DOXYGEN_RUNNING)
+void hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis, const char *pszSource)
+#else
+void hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis)
+#endif
+{
+    uint32_t uIntSts = hdaGetINTSTS(pThis);
+
+    HDA_REG(pThis, INTSTS) = uIntSts;
+
+    /* NB: It is possible to have GIS set even when CIE/SIEn are all zero; the GIS bit does
+     * not control the interrupt signal. See Figure 4 on page 54 of the HDA 1.0a spec.
+     */
+    /* Global Interrupt Enable (GIE) set? */
+    if (   (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
+        && (HDA_REG(pThis, INTSTS) & HDA_REG(pThis, INTCTL) & (HDA_INTCTL_CIE | HDA_STRMINT_MASK)))
+    {
+        Log3Func(("Asserted (%s)\n", pszSource));
+
+        PDMDevHlpPCISetIrq(pDevIns, 0, 1 /* Assert */);
+        pThis->u8IRQL = 1;
+
+#ifdef DEBUG
+        pThis->Dbg.IRQ.tsAssertedNs = RTTimeNanoTS();
+        pThis->Dbg.IRQ.tsProcessedLastNs = pThis->Dbg.IRQ.tsAssertedNs;
+#endif
+    }
+    else
+    {
+        Log3Func(("Deasserted (%s)\n", pszSource));
+
+        PDMDevHlpPCISetIrq(pDevIns, 0, 0 /* Deassert */);
+        pThis->u8IRQL = 0;
+    }
+}
 
 
 /**
@@ -1551,6 +1649,29 @@ static VBOXSTRICTRC hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     return hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
 }
 
+/**
+ * Calculates the number of bytes of a FIFOW register.
+ *
+ * @return Number of bytes of a given FIFOW register.
+ * @param  u16RegFIFOW          FIFOW register to convert.
+ */
+uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW)
+{
+    uint32_t cb;
+    switch (u16RegFIFOW)
+    {
+        case HDA_SDFIFOW_8B:  cb = 8;  break;
+        case HDA_SDFIFOW_16B: cb = 16; break;
+        case HDA_SDFIFOW_32B: cb = 32; break;
+        default:
+            AssertFailedStmt(cb = 32); /* Paranoia. */
+            break;
+    }
+
+    Assert(RT_IS_POWER_OF_TWO(cb));
+    return cb;
+}
+
 static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     size_t const idxStream = HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg);
@@ -2158,7 +2279,7 @@ static int hdaR3MixerAddDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER 
 {
     int rc = VINF_SUCCESS;
 
-    PHDASTREAM pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkLineIn);
+    PHDASTREAM pStream = pThisCC->SinkLineIn.pStreamShared;
     if (   pStream
         && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
@@ -2168,7 +2289,7 @@ static int hdaR3MixerAddDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER 
     }
 
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkMicIn);
+    pStream = pThisCC->SinkMicIn.pStreamShared;
     if (   pStream
         && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
@@ -2178,7 +2299,7 @@ static int hdaR3MixerAddDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER 
     }
 # endif
 
-    pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkFront);
+    pStream = pThisCC->SinkFront.pStreamShared;
     if (   pStream
         && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
@@ -2188,7 +2309,7 @@ static int hdaR3MixerAddDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER 
     }
 
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkCenterLFE);
+    pStream = pThisCC->SinkCenterLFE.pStreamShared;
     if (   pStream
         && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
@@ -2197,7 +2318,7 @@ static int hdaR3MixerAddDrv(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PHDADRIVER 
             rc = rc2;
     }
 
-    pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkRear);
+    pStream = pThisCC->SinkRear.pStreamShared;
     if (   pStream
         && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
@@ -4856,7 +4977,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
     {
         struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
-        struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ?  &g_aHdaRegMap[i + 1] : NULL;
+        struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ? &g_aHdaRegMap[i + 1] : NULL;
 
         /* binary search order. */
         AssertReleaseMsg(!pNextReg || pReg->offset + pReg->size <= pNextReg->offset,

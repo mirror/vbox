@@ -40,8 +40,6 @@
 #include "VBoxDD.h"
 #include "AudioMixer.h"
 #include "DevHda.h"
-#include "DevHdaCodec.h"
-#include "DevHdaCommon.h"
 
 
 /*********************************************************************************************************************************
