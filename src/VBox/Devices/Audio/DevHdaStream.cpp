@@ -214,13 +214,12 @@ void hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3)
  * @param   cbCur           The period length in guest bytes.
  * @param   cbMaxPeriod     The max period in guest bytes.
  * @param   idxLastBdle     The last BDLE in the period.
- * @param   pHostProps      The host PCM properties.
- * @param   pGuestProps     The guest PCM properties.
+ * @param   pProps          The PCM properties.
  * @param   pcbBorrow       Where to account for bytes borrowed across buffers
  *                          to align scheduling items on frame boundraries.
  */
-static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, uint32_t cbMaxPeriod, uint32_t idxLastBdle,
-                                      PCPDMAUDIOPCMPROPS pHostProps, PCPDMAUDIOPCMPROPS pGuestProps, uint32_t *pcbBorrow)
+static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, uint32_t cbMaxPeriod,
+                                      uint32_t idxLastBdle, PCPDMAUDIOPCMPROPS pProps, uint32_t *pcbBorrow)
 {
     /* Check that we've got room (shouldn't ever be a problem). */
     size_t idx = pStreamShared->State.cSchedule;
@@ -251,14 +250,13 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
         return VERR_OUT_OF_RANGE;
     }
 
-    uint32_t cbCurAligned = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbCur);
+    uint32_t cbCurAligned = PDMAudioPropsRoundUpBytesToFrame(pProps, cbCur);
     *pcbBorrow = cbCurAligned - cbCur;
 
     /* Do we need to split up the period? */
     if (cbCurAligned <= cbMaxPeriod)
     {
-        uint32_t cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbCurAligned));
-        pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+        pStreamShared->State.aSchedule[idx].cbPeriod = cbCurAligned;
         pStreamShared->State.aSchedule[idx].cLoops   = 1;
     }
     else
@@ -268,11 +266,10 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
         do
             cbLoop = cbCurAligned / 2;
         while (cbLoop > cbMaxPeriod);
-        cbLoop = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbLoop);
+        cbLoop = PDMAudioPropsRoundUpBytesToFrame(pProps, cbLoop);
 
         /* Complete the scheduling item. */
-        uint32_t cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbLoop));
-        pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+        pStreamShared->State.aSchedule[idx].cbPeriod = cbLoop;
         pStreamShared->State.aSchedule[idx].cLoops   = cbCurAligned / cbLoop;
 
         /* If there is a remainder, add it as a separate entry (this is
@@ -282,8 +279,7 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
         {
             pStreamShared->State.aSchedule[idx + 1] = pStreamShared->State.aSchedule[idx];
             idx++;
-            cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbCurAligned));
-            pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+            pStreamShared->State.aSchedule[idx].cbPeriod = cbCurAligned;
             pStreamShared->State.aSchedule[idx].cLoops   = 1;
         }
     }
@@ -309,12 +305,10 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
  *                              guest want to play the whole "Der Ring des
  *                              Nibelungen" cycle in one go.
  * @param   cTimerTicksPerSec   The DMA timer frequency.
- * @param   pHostProps          The host PCM properties.
- * @param   pGuestProps         The guest PCM properties.
+ * @param   pProps              The PCM properties.
  */
 static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegments, uint32_t cBufferIrqs, uint32_t cbTotal,
-                                     uint32_t cbMaxPeriod, uint64_t cTimerTicksPerSec,
-                                     PCPDMAUDIOPCMPROPS pHostProps, PCPDMAUDIOPCMPROPS pGuestProps)
+                                     uint32_t cbMaxPeriod, uint64_t cTimerTicksPerSec, PCPDMAUDIOPCMPROPS pProps)
 {
     int rc;
 
@@ -342,7 +336,7 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
             cbMin = pStreamShared->State.aBdl[i].cb;
         if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
         {
-            rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pHostProps, pGuestProps, &cbBorrow);
+            rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pProps, &cbBorrow);
             ASSERT_GUEST_RC_RETURN(rc, rc);
 
             if (cPotentialPrologue == 0)
@@ -382,12 +376,11 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
 
         /* Match the BDLEs 1:1 if there are 3 or more and that the smallest one
            is at least 5ms big. */
-        if (cSegments >= 3 && PDMAudioPropsBytesToMilli(pGuestProps, cbMin) >= 5 /*ms*/)
+        if (cSegments >= 3 && PDMAudioPropsBytesToMilli(pProps, cbMin) >= 5 /*ms*/)
         {
             for (uint32_t i = 0; i < cSegments; i++)
             {
-                rc = hdaR3StreamAddScheduleItem(pStreamShared, pStreamShared->State.aBdl[i].cb, cbMaxPeriod,
-                                                i, pHostProps, pGuestProps, &cbBorrow);
+                rc = hdaR3StreamAddScheduleItem(pStreamShared, pStreamShared->State.aBdl[i].cb, cbMaxPeriod, i, pProps, &cbBorrow);
                 ASSERT_GUEST_RC_RETURN(rc, rc);
             }
         }
@@ -398,9 +391,9 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
          * is read, assuming ofc that LPIB is read before each buffer update. */
         else
         {
-            uint32_t const cPeriods = cSegments != 3 && PDMAudioPropsBytesToMilli(pGuestProps, cbCur) >= 4 * 5 /*ms*/
+            uint32_t const cPeriods = cSegments != 3 && PDMAudioPropsBytesToMilli(pProps, cbCur) >= 4 * 5 /*ms*/
                                     ? 4 : cSegments != 2 ? 3 : 2;
-            uint32_t const cbPeriod = PDMAudioPropsFloorBytesToFrame(pGuestProps, cbCur / cPeriods);
+            uint32_t const cbPeriod = PDMAudioPropsFloorBytesToFrame(pProps, cbCur / cPeriods);
             uint32_t       iBdle    = 0;
             uint32_t       offBdle  = 0;
             for (uint32_t iPeriod = 0; iPeriod < cPeriods; iPeriod++)
@@ -411,11 +404,11 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
                     while (iBdle < cSegments && offBdle >= pStreamShared->State.aBdl[iBdle].cb)
                         offBdle -= pStreamShared->State.aBdl[iBdle++].cb;
                     rc = hdaR3StreamAddScheduleItem(pStreamShared, cbPeriod, cbMaxPeriod, offBdle != 0 ? iBdle : iBdle - 1,
-                                                    pHostProps, pGuestProps, &cbBorrow);
+                                                    pProps, &cbBorrow);
                 }
                 else
                     rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur - iPeriod * cbPeriod, cbMaxPeriod, cSegments - 1,
-                                                    pHostProps, pGuestProps, &cbBorrow);
+                                                    pProps, &cbBorrow);
                 ASSERT_GUEST_RC_RETURN(rc, rc);
             }
 
@@ -433,7 +426,7 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
             if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
                 break;
         }
-        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pHostProps, pGuestProps, &cbBorrow);
+        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pProps, &cbBorrow);
         ASSERT_GUEST_RC_RETURN(rc, rc);
 
         /* The initial scheduling items covering the wrap around area are
@@ -455,7 +448,7 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
         if (   i + 1 == pStreamShared->State.cSchedule
             && pStreamShared->State.aSchedule[i].cLoops == 1)
         {
-            uint32_t const cbFirstHalf = PDMAudioPropsFloorBytesToFrame(pHostProps, pStreamShared->State.aSchedule[i].cbPeriod / 2);
+            uint32_t const cbFirstHalf = PDMAudioPropsFloorBytesToFrame(pProps, pStreamShared->State.aSchedule[i].cbPeriod / 2);
             uint32_t const cbOtherHalf = pStreamShared->State.aSchedule[i].cbPeriod - cbFirstHalf;
             pStreamShared->State.aSchedule[i].cbPeriod = cbFirstHalf;
             if (cbFirstHalf == cbOtherHalf)
@@ -474,11 +467,10 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
      */
     LogRel2(("HDA: Stream #%u schedule: %u items, %u prologue\n",
              pStreamShared->u8SD, pStreamShared->State.cSchedule, pStreamShared->State.cSchedulePrologue));
-    uint64_t const cbHostPerSec = PDMAudioPropsFramesToBytes(pHostProps, pHostProps->uHz);
+    uint64_t const cbPerSec = PDMAudioPropsFramesToBytes(pProps, pProps->uHz);
     for (uint32_t i = 0; i < pStreamShared->State.cSchedule; i++)
     {
-        uint64_t const cTicks = ASMMultU64ByU32DivByU32(cTimerTicksPerSec, pStreamShared->State.aSchedule[i].cbPeriod,
-                                                        cbHostPerSec);
+        uint64_t const cTicks = ASMMultU64ByU32DivByU32(cTimerTicksPerSec, pStreamShared->State.aSchedule[i].cbPeriod, cbPerSec);
         AssertLogRelMsgReturn((uint32_t)cTicks == cTicks, ("cTicks=%RU64 (%#RX64)\n", cTicks, cTicks), VERR_INTERNAL_ERROR_4);
         pStreamShared->State.aSchedule[i].cPeriodTicks = RT_MAX((uint32_t)cTicks, 16);
         LogRel2(("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
@@ -636,11 +628,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     /*
      * Create a DMA timer schedule.
      */
-    /** @todo clean up this, pGuestProps and pHostProps are the same now. */
     rc = hdaR3StreamCreateSchedule(pStreamShared, cTransferFragments, cBufferIrqs, (uint32_t)cbTotal,
                                    PDMAudioPropsMilliToBytes(&pCfg->Props, 100 /** @todo make configurable */),
-                                   PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer),
-                                   &pCfg->Props, &pCfg->Props);
+                                   PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer), &pCfg->Props);
     if (RT_FAILURE(rc))
         return rc;
 
