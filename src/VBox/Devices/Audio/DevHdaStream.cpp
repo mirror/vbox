@@ -24,6 +24,7 @@
 
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
+#include <iprt/zero.h>
 
 #include <VBox/AssertGuest.h>
 #include <VBox/vmm/pdmdev.h>
@@ -1415,9 +1416,10 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
      *
      * The DMA copy loop.
      *
+     * Note! Unaligned BDLEs shouldn't be a problem since the circular buffer
+     *       doesn't care about alignment.  Only, we have to read the rest
+     *       of the incomplete frame from it ASAP.
      */
-    uint8_t    abBounce[4096 + 128];    /* Most guest does at most 4KB BDLE. So, 4KB + space for a partial frame to reduce loops. */
-    uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToConsume;
     Assert(cbLeft == pStreamShared->State.cbCurDmaPeriod);
@@ -1433,15 +1435,15 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
         uint32_t cbChunk = 0;
         RTGCPHYS GCPhys  = hdaStreamDmaBufGet(pStreamShared, &cbChunk);
 
+        if (cbChunk <= cbLeft)
+        { /* very likely */ }
+        else
+            cbChunk = cbLeft;
+
         /* If we're writing silence.  */
         uint32_t cbWritten = 0;
         if (!fWriteSilence)
         {
-            if (cbChunk <= cbLeft)
-            { /* very likely */ }
-            else
-                cbChunk = cbLeft;
-
             /*
              * Write the host data directly into the guest buffers.
              */
@@ -1479,61 +1481,26 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
             }
         }
         /*
-         * We've got some initial silence to write, or we need to do
-         * channel mapping.  We produce guest output into the bounce buffer,
-         * which is then copied into guest memory.  The bounce buffer may keep
-         * partial frames there for the next BDLE, if an BDLE isn't frame aligned.
-         *
-         * Note! cbLeft is relative to the input (host) frame size.
-         *       cbChunk OTOH is relative to output (guest) size.
+         * Write silence.  Since we only do signed formats, we can use the zero
+         * buffers from IPRT as source here.
          */
         else
         {
-/** @todo clean up host/guest props distinction, they're the same now w/o the
- *        mapping done by the mixer rather than us.  */
-            PCPDMAUDIOPCMPROPS pGuestProps = &pStreamShared->State.Cfg.Props;
-            Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
-            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(pGuestProps,
-                                                                    PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props,
-                                                                                               cbLeft));
-            if (cbChunk <= cbLeftGuest)
-            { /* very likely */ }
-            else
-                cbChunk = cbLeftGuest;
-
-            /*
-             * Work till we've covered the chunk.
-             */
-            Log5Func(("loop0:  GCPhys=%RGp cbChunk=%#x + cbBounce=%#x\n", GCPhys, cbChunk, cbBounce));
+            Assert(PDMAudioPropsIsSigned(&pStreamShared->State.Cfg.Props));
             while (cbChunk > 0)
             {
-                /* Figure out how much we need to convert into the bounce buffer: */
-                uint32_t cbGuest = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbChunk - cbBounce);
-                uint32_t cFrames = PDMAudioPropsBytesToFrames(pGuestProps, RT_MIN(cbGuest, sizeof(abBounce) - cbBounce));
-
-                cbGuest  = PDMAudioPropsFramesToBytes(pGuestProps, cFrames);
-                PDMAudioPropsClearBuffer(pGuestProps, &abBounce[cbBounce], cbGuest, cFrames);
-                cbGuest += cbBounce;
-
                 /* Write it to the guest buffer. */
-                uint32_t cbGuestActual = RT_MIN(cbGuest, cbChunk);
-                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, abBounce, cbGuestActual);
+                uint32_t cbToWrite = RT_MIN(sizeof(g_abRTZero64K), cbChunk);
+                int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, g_abRTZero64K, cbToWrite);
                 AssertRC(rc2);
-                STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbGuestActual);
+                STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbToWrite);
 
                 /* advance */
-                cbWritten                       += cbGuestActual;
-                cbChunk                         -= cbGuestActual;
-                GCPhys                          += cbGuestActual;
-                pStreamShared->State.offCurBdle += cbGuestActual;
-
-                cbBounce = cbGuest - cbGuestActual;
-                if (cbBounce)
-                    memmove(abBounce, &abBounce[cbGuestActual], cbBounce);
-
-                Log5Func((" loop1: GCPhys=%RGp cbGuestActual=%#x cbBounce=%#x cFrames=%#x\n", GCPhys, cbGuestActual, cbBounce, cFrames));
+                cbWritten                       += cbToWrite;
+                cbChunk                         -= cbToWrite;
+                GCPhys                          += cbToWrite;
+                pStreamShared->State.offCurBdle += cbToWrite;
             }
-            Log5Func(("loop0: GCPhys=%RGp cbBounce=%#x cbLeft=%#x\n", GCPhys, cbBounce, cbLeft - cbWritten));
         }
 
         cbLeft -= cbWritten;
@@ -1553,7 +1520,6 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
-    AssertMsg(cbBounce == 0, ("%#x\n", cbBounce));
 
     /*
      * Common epilogue.
