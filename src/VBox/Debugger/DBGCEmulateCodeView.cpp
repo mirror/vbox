@@ -6272,7 +6272,7 @@ static DECLCALLBACK(int) dbgcCmdListSymbols(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                         if (   RT_SUCCESS(rc)
                             && (   fDumpAll
                                 || RTStrSimplePatternMatch(pszSymbol, &SymInfo.szName[0])))
-                            DBGCCmdHlpPrintf(pCmdHlp, "%RGv    %s!%s\n", uMapping + (RTGCUINTPTR)SymInfo.Value, pszModName, &SymInfo.szName[0]);
+                            DBGCCmdHlpPrintf(pCmdHlp, "%RGv    %s!%s\n", uMapping + RTDbgModSegmentRva(hMod, SymInfo.iSeg) + (RTGCUINTPTR)SymInfo.Value, pszModName, &SymInfo.szName[0]);
                     }
                 }
                 RTDbgModRelease(hMod);
