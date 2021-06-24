@@ -236,17 +236,17 @@ typedef struct HDAREGDESC
     /** Register offset in the register space. */
     uint32_t        offset;
     /** Size in bytes. Registers of size > 4 are in fact tables. */
-    uint32_t        size;
+    uint8_t         size;
+    /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
+     *  specify the read/write handling policy of the register. */
+    uint8_t         fFlags;
+    /** Index into the register storage array. */
+    uint8_t         mem_idx;
+    uint8_t         bUnused;
     /** Readable bits. */
     uint32_t        readable;
     /** Writable bits. */
     uint32_t        writable;
-    /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
-     *  specify the read/write handling policy of the register. */
-    uint32_t        fFlags;
-    /** Index into the register storage array.
-     * @todo r=bird: Bad structure layout. Move up before pfnRead. */
-    uint32_t        mem_idx;
     /** Read callback. */
     FNHDAREGREAD   *pfnRead;
     /** Write callback. */
@@ -358,10 +358,10 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 
 #if defined(IN_RING3) || defined(LOG_ENABLED)
 # define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
-    { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_idxMap, a_pfnRead, a_pfnWrite, a_szName, a_szDesc }
+    { a_offBar, a_cbReg, a_fFlags, a_idxMap, 0, a_fReadMask, a_fWriteMask, a_pfnRead, a_pfnWrite, a_szName, a_szDesc }
 #else
 # define HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_idxMap, a_szName, a_szDesc) \
-    { a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_idxMap, a_pfnRead, a_pfnWrite }
+    { a_offBar, a_cbReg, a_fFlags, a_idxMap, 0, a_fReadMask, a_fWriteMask, a_pfnRead, a_pfnWrite }
 #endif
 #define HDA_REG_ENTRY(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, a_ShortRegNm, a_szDesc) \
     HDA_REG_ENTRY_EX(a_offBar, a_cbReg, a_fReadMask, a_fWriteMask, a_fFlags, a_pfnRead, a_pfnWrite, HDA_MEM_IND_NAME(a_ShortRegNm), #a_ShortRegNm, a_szDesc)
@@ -5061,6 +5061,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Asserting sanity.
      */
+    AssertCompile(RT_ELEMENTS(pThis->au32Regs) < 256 /* assumption by HDAREGDESC::mem_idx */);
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
     {
         struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
