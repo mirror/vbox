@@ -96,6 +96,19 @@ typedef struct HDAMIXERSINK *PHDAMIXERSINK;
 AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 
+/** @defgroup grp_hda_regs  HDA Register Definitions
+ *
+ * There are two variants for most register defines:
+ *      - HDA_REG_XXX: Index into g_aHdaRegMap
+ *      - HDA_RMX_XXX: Index into HDASTATE::au32Regs
+ *
+ * Use the HDA_REG and HDA_STREAM_REG macros to access registers where possible.
+ *
+ * @note The au32Regs[] layout is kept unchanged for saved state compatibility,
+ *       thus the HDA_RMX_XXX assignments are for all purposes set in stone.
+ *
+ * @{ */
+
 /** Number of general registers. */
 #define HDA_NUM_GENERAL_REGS        34
 /** Number of total registers in the HDA's register map. */
@@ -104,62 +117,8 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_MAX_TAGS                16
 
 
-/** Read callback. */
-typedef VBOXSTRICTRC FNHDAREGREAD(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
-/** Write callback. */
-typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
-
-/**
- * HDA register descriptor.
- */
-typedef struct HDAREGDESC
-{
-    /** Register offset in the register space. */
-    uint32_t        offset;
-    /** Size in bytes. Registers of size > 4 are in fact tables. */
-    uint32_t        size;
-    /** Readable bits. */
-    uint32_t        readable;
-    /** Writable bits. */
-    uint32_t        writable;
-    /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
-     *  specify the read/write handling policy of the register. */
-    uint32_t        fFlags;
-    /** Read callback. */
-    FNHDAREGREAD   *pfnRead;
-    /** Write callback. */
-    FNHDAREGWRITE  *pfnWrite;
-    /** Index into the register storage array.
-     * @todo r=bird: Bad structure layout. Move up before pfnRead. */
-    uint32_t        mem_idx;
-    /** Abbreviated name. */
-    const char     *abbrev;
-    /** Descripton. */
-    const char     *desc;
-} HDAREGDESC;
-
-#ifdef VBOX_STRICT
-extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
-#endif
-
-
-/**
- * ICH6 datasheet defines limits for FIFOS registers (18.2.39).
- * Formula: size - 1
- * Other values not listed are not supported.
- */
-
 /** Offset of the SD0 register map. */
 #define HDA_REG_DESC_SD0_BASE       0x80
-
-/*
- * NB: Register values stored in memory (au32Regs[]) are indexed through
- * the HDA_RMX_xxx macros (also HDA_MEM_IND_NAME()). On the other hand, the
- * register descriptors in g_aHdaRegMap[] are indexed through the
- * HDA_REG_xxx macros (also HDA_REG_IND_NAME()).
- *
- * The au32Regs[] layout is kept unchanged for saved state compatibility.
- */
 
 /* Registers */
 #define HDA_REG_IND_NAME(x)         HDA_REG_##x
@@ -169,7 +128,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_REG_BY_IDX(a_pThis, a_idxReg)   ((a_pThis)->au32Regs[(a_idxReg)])
 
 /** Accesses register @a ShortRegNm. */
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && defined(VBOX_HDA_CAN_ACCESS_REG_MAP)
 # define HDA_REG(a_pThis, a_ShortRegNm)     (*hdaStrictRegAccessor(a_pThis, HDA_REG_IND_NAME(a_ShortRegNm), HDA_MEM_IND_NAME(a_ShortRegNm)))
 #else
 # define HDA_REG(a_pThis, a_ShortRegNm)     HDA_REG_BY_IDX(a_pThis, HDA_MEM_IND_NAME(a_ShortRegNm))
@@ -342,7 +301,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_STREAM_REG_DEF(name, num)           (HDA_REG_SD##num##name)
 #define HDA_STREAM_RMX_DEF(name, num)           (HDA_RMX_SD##num##name)
 /** @note sdnum here _MUST_ be stream reg number [0,7]. */
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && defined(VBOX_HDA_CAN_ACCESS_REG_MAP)
 # define HDA_STREAM_REG(pThis, name, sdnum)      (*hdaStrictStreamRegAccessor((pThis), HDA_REG_SD0##name, HDA_RMX_SD0##name, (sdnum)))
 #else
 # define HDA_STREAM_REG(pThis, name, sdnum)      (HDA_REG_BY_IDX((pThis), HDA_RMX_SD0##name + (sdnum) * 10))
@@ -453,6 +412,10 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 60)
 #define HDA_RMX_SD7FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 70)
 
+/* The ICH6 datasheet defines limits for FIFOS registers (18.2.39).
+   Formula: size - 1
+   Other values not listed are not supported. */
+
 #define HDA_SDIFIFO_120B            0x77        /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
 #define HDA_SDIFIFO_160B            0x9F        /* 20-, 24-bit Input Streams Streams */
 
@@ -549,6 +512,8 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
      | (((_aDiv)      & HDA_SDFMT_DIV_MASK)       << HDA_SDFMT_DIV_SHIFT)       \
      | (((_aBits)     & HDA_SDFMT_BITS_MASK)      << HDA_SDFMT_BITS_SHIFT)      \
      | ( (_aChan)     & HDA_SDFMT_CHANNELS_MASK))
+
+/** @} */ /* grp_hda_regs */
 
 
 /**
@@ -835,34 +800,11 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
 /* Used by hdaR3StreamSetUp: */
 uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
 
-
-#ifdef VBOX_STRICT
-/**
- * Strict register accessor verifing defines and mapping table.
- * @see HDA_REG
- */
-DECLINLINE(uint32_t *) hdaStrictRegAccessor(PHDASTATE pThis, uint32_t idxMap, uint32_t idxReg)
-{
-    Assert(idxMap < RT_ELEMENTS(g_aHdaRegMap));
-    AssertMsg(idxReg == g_aHdaRegMap[idxMap].mem_idx, ("idxReg=%d\n", idxReg));
-    return &pThis->au32Regs[idxReg];
-}
-
-/**
- * Strict stream register accessor verifing defines and mapping table.
- * @see HDA_STREAM_REG
- */
-DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxMap0, uint32_t idxReg0, size_t idxStream)
-{
-    Assert(idxMap0 < RT_ELEMENTS(g_aHdaRegMap));
-    AssertMsg(idxStream < RT_ELEMENTS(pThis->aStreams), ("%#zx\n", idxStream));
-    AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].mem_idx,
-              ("idxReg0=%d idxStream=%zx\n", idxReg0, idxStream));
-    return &pThis->au32Regs[idxReg0 + idxStream * 10];
-}
-
-#endif /* VBOX_STRICT */
-
+#if defined(VBOX_STRICT) && defined(VBOX_HDA_CAN_ACCESS_REG_MAP)
+/* Only in DevHda.cpp: */
+DECLINLINE(uint32_t *) hdaStrictRegAccessor(PHDASTATE pThis, uint32_t idxMap, uint32_t idxReg);
+DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxMap0, uint32_t idxReg0, size_t idxStream);
+#endif /* VBOX_STRICT && VBOX_HDA_CAN_ACCESS_REG_MAP */
 
 
 /** @name Saved state versions for the HDA device

@@ -52,6 +52,7 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 
+#define VBOX_HDA_CAN_ACCESS_REG_MAP /* g_aHdaRegMap is accessible */
 #include "DevHda.h"
 
 #include "AudioHlp.h"
@@ -222,6 +223,42 @@ typedef struct HDABDLELEGACY
 AssertCompileSize(HDABDLELEGACY, 32);
 
 
+/** Read callback. */
+typedef VBOXSTRICTRC FNHDAREGREAD(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
+/** Write callback. */
+typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+
+/**
+ * HDA register descriptor.
+ */
+typedef struct HDAREGDESC
+{
+    /** Register offset in the register space. */
+    uint32_t        offset;
+    /** Size in bytes. Registers of size > 4 are in fact tables. */
+    uint32_t        size;
+    /** Readable bits. */
+    uint32_t        readable;
+    /** Writable bits. */
+    uint32_t        writable;
+    /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
+     *  specify the read/write handling policy of the register. */
+    uint32_t        fFlags;
+    /** Read callback. */
+    FNHDAREGREAD   *pfnRead;
+    /** Write callback. */
+    FNHDAREGWRITE  *pfnWrite;
+    /** Index into the register storage array.
+     * @todo r=bird: Bad structure layout. Move up before pfnRead. */
+    uint32_t        mem_idx;
+    /** Abbreviated name. */
+    const char     *abbrev;
+    /** Descripton. */
+    const char     *desc;
+} HDAREGDESC;
+
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -291,8 +328,8 @@ static FNHDAREGWRITE hdaRegWriteU8;
  * @{
  */
 #ifdef IN_RING3
-static int                        hdaR3AddStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
-static int                        hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
+static int hdaR3AddStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
+static int hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg);
 #endif /* IN_RING3 */
 /** @} */
 
@@ -357,7 +394,7 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
     HDA_REG_MAP_STRM(HDA_REG_DESC_SD0_BASE + (index * 32 /* 0x20 */), name)
 
 /** See 302349 p 6.2. */
-const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
+static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 {
     /* offset  size     read mask   write mask  flags          read callback     write callback       index + abbrev               */
     /*-------  -------  ----------  ----------  -------------- ----------------  -------------------  ------------------------     */
@@ -514,6 +551,34 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
+
+#ifdef VBOX_STRICT
+
+/**
+ * Strict register accessor verifing defines and mapping table.
+ * @see HDA_REG
+ */
+DECLINLINE(uint32_t *) hdaStrictRegAccessor(PHDASTATE pThis, uint32_t idxMap, uint32_t idxReg)
+{
+    Assert(idxMap < RT_ELEMENTS(g_aHdaRegMap));
+    AssertMsg(idxReg == g_aHdaRegMap[idxMap].mem_idx, ("idxReg=%d\n", idxReg));
+    return &pThis->au32Regs[idxReg];
+}
+
+/**
+ * Strict stream register accessor verifing defines and mapping table.
+ * @see HDA_STREAM_REG
+ */
+DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxMap0, uint32_t idxReg0, size_t idxStream)
+{
+    Assert(idxMap0 < RT_ELEMENTS(g_aHdaRegMap));
+    AssertMsg(idxStream < RT_ELEMENTS(pThis->aStreams), ("%#zx\n", idxStream));
+    AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].mem_idx,
+              ("idxReg0=%d idxStream=%zx\n", idxReg0, idxStream));
+    return &pThis->au32Regs[idxReg0 + idxStream * 10];
+}
+
+#endif /* VBOX_STRICT */
 
 
 /**
