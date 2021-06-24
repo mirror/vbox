@@ -344,9 +344,6 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
             cbCur = 0;
         }
     }
-    AssertLogRelMsgReturn(cbBorrow == 0, ("HDA: Internal scheduling error on stream #%u: cbBorrow=%#x cbTotal=%#x cbCur=%#x\n",
-                                          pStreamShared->u8SD, cbBorrow, cbTotal, cbCur),
-                          VERR_INTERNAL_ERROR_3);
 
     /*
      * Deal with any loose ends.
@@ -413,7 +410,6 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
             }
 
         }
-        Assert(cbBorrow == 0);
     }
     else if (cbCur)
     {
@@ -434,6 +430,10 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
         Assert(cPotentialPrologue);
         pStreamShared->State.cSchedulePrologue = (uint8_t)cPotentialPrologue;
     }
+
+    AssertLogRelMsgReturn(cbBorrow == 0, ("HDA: Internal scheduling error on stream #%u: cbBorrow=%#x cbTotal=%#x cbCur=%#x\n",
+                                          pStreamShared->u8SD, cbBorrow, cbTotal, cbCur),
+                          VERR_INTERNAL_ERROR_3);
 
     /*
      * If there is just one BDLE with IOC set, we have to make sure
@@ -1633,11 +1633,10 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
      *
      * The DMA copy loop.
      *
+     * Note! Unaligned BDLEs shouldn't be a problem since the circular buffer
+     *       doesn't care about alignment.  Only, we have to write the rest
+     *       of the incomplete frame to it ASAP.
      */
-# if 0
-    uint8_t    abBounce[4096 + 128];    /* Most guest does at most 4KB BDLE. So, 4KB + space for a partial frame to reduce loops. */
-    uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
-# endif
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     uint32_t   cbLeft   = cbToProduce;
 # ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
@@ -1657,143 +1656,47 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
         uint32_t cbChunk = 0;
         RTGCPHYS GCPhys  = hdaStreamDmaBufGet(pStreamShared, &cbChunk);
 
-        /* Need to diverge if the BDLEs contain misaligned entries.  */
+        if (cbChunk <= cbLeft)
+        { /* very likely */ }
+        else
+            cbChunk = cbLeft;
+
+        /*
+         * Read the guest data directly into the internal DMA buffer.
+         */
         uint32_t cbRead  = 0;
-# if 0
-        if (/** @todo pStreamShared->State.fFrameAlignedBuffers */)
-# endif
+        while (cbChunk > 0)
         {
-            if (cbChunk <= cbLeft)
-            { /* very likely */ }
-            else
-                cbChunk = cbLeft;
+            /* Grab internal DMA buffer space and read into it. */
+            void  *pvBufDst;
+            size_t cbBufDst;
+            RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvBufDst, &cbBufDst);
+            AssertBreakStmt(cbBufDst, RTCircBufReleaseWriteBlock(pCircBuf, 0));
 
-            /*
-             * Read the guest data directly into the internal DMA buffer.
-             */
-            while (cbChunk > 0)
-            {
-                /* Grab internal DMA buffer space and read into it. */
-                void  *pvBufDst;
-                size_t cbBufDst;
-                RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvBufDst, &cbBufDst);
-                AssertBreakStmt(cbBufDst, RTCircBufReleaseWriteBlock(pCircBuf, 0));
-
-                int rc2 = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBufDst, cbBufDst);
-                AssertRC(rc2);
+            int rc2 = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBufDst, cbBufDst);
+            AssertRC(rc2);
 
 # ifdef HDA_DEBUG_SILENCE
-                fix me if relevant;
+            fix me if relevant;
 # endif
-                if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
-                { /* likely */ }
-                else
-                    AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst, 0 /* fFlags */);
+            if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+            { /* likely */ }
+            else
+                AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst, 0 /* fFlags */);
 
 # ifdef VBOX_WITH_DTRACE
-                VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbBufDst, pStreamShared->State.offWrite);
+            VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbBufDst, pStreamShared->State.offWrite);
 # endif
-                pStreamShared->State.offWrite   += cbBufDst;
-                RTCircBufReleaseWriteBlock(pCircBuf, cbBufDst);
-                STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
+            pStreamShared->State.offWrite   += cbBufDst;
+            RTCircBufReleaseWriteBlock(pCircBuf, cbBufDst);
+            STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
 
-                /* advance */
-                cbChunk                         -= (uint32_t)cbBufDst;
-                cbRead                          += (uint32_t)cbBufDst;
-                GCPhys                          +=           cbBufDst;
-                pStreamShared->State.offCurBdle += (uint32_t)cbBufDst;
-            }
+            /* advance */
+            cbChunk                         -= (uint32_t)cbBufDst;
+            cbRead                          += (uint32_t)cbBufDst;
+            GCPhys                          +=           cbBufDst;
+            pStreamShared->State.offCurBdle += (uint32_t)cbBufDst;
         }
-# if 0
-        /*
-         * Need to map the frame content, so we need to read the guest data
-         * into a temporary buffer, though the output can be directly written
-         * into the internal buffer as it is assumed to be frame aligned.
-         *
-         * Note! cbLeft is relative to the output frame size.
-         *       cbChunk OTOH is relative to input size.
-         */
-        else
-        {
-/** @todo clean up host/guest props distinction, they're the same now w/o the
- *        mapping done by the mixer rather than us.  */
-            PCPDMAUDIOPCMPROPS pGuestProps = &pStreamShared->State.Cfg.Props;
-            Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
-            uint32_t const cbLeftGuest = PDMAudioPropsFramesToBytes(pGuestProps,
-                                                                    PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props,
-                                                                                               cbLeft));
-            if (cbChunk <= cbLeftGuest)
-            { /* very likely */ }
-            else
-                cbChunk = cbLeftGuest;
-
-            /*
-             * Loop till we've covered the chunk.
-             */
-            Log5Func(("loop0:  GCPhys=%RGp cbChunk=%#x + cbBounce=%#x\n", GCPhys, cbChunk, cbBounce));
-            while (cbChunk > 0)
-            {
-                /* Read into the bounce buffer. */
-                uint32_t const cbToRead = RT_MIN(cbChunk, sizeof(abBounce) - cbBounce);
-                int rc2 = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &abBounce[cbBounce], cbToRead);
-                AssertRC(rc2);
-                cbBounce += cbToRead;
-
-                /* Convert the size to whole frames and a remainder. */
-                uint32_t cFrames = PDMAudioPropsBytesToFrames(pGuestProps, cbBounce);
-                uint32_t const cbRemainder = cbBounce - PDMAudioPropsFramesToBytes(pGuestProps, cFrames);
-                Log5Func((" loop1: GCPhys=%RGp cbToRead=%#x cbBounce=%#x cFrames=%#x\n", GCPhys, cbToRead, cbBounce, cFrames));
-
-                /*
-                 * Convert from the bounce buffer and into the internal DMA buffer.
-                 */
-                uint32_t offBounce = 0;
-                while (cFrames > 0)
-                {
-                    void  *pvBufDst;
-                    size_t cbBufDst;
-                    RTCircBufAcquireWriteBlock(pCircBuf, PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFrames),
-                                               &pvBufDst, &cbBufDst);
-
-                    uint32_t const cFramesToConvert = PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props, (uint32_t)cbBufDst);
-                    Assert(PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFramesToConvert) == cbBufDst);
-                    Assert(cFramesToConvert > 0);
-                    Assert(cFramesToConvert <= cFrames);
-
-                    pStreamR3->State.Mapping.pfnGuestToHost(pvBufDst, &abBounce[offBounce], cFramesToConvert,
-                                                            &pStreamR3->State.Mapping);
-                    Log5Func(("  loop2: offBounce=%#05x cFramesToConvert=%#05x cbBufDst=%#x%s\n",
-                              offBounce, cFramesToConvert, cbBufDst, ASMMemIsZero(pvBufDst, cbBufDst) ? " all zero" : ""));
-
-#  ifdef HDA_DEBUG_SILENCE
-                    fix me if relevant;
-#  endif
-                    if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
-                    { /* likely */ }
-                    else
-                        AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst, 0 /* fFlags */);
-
-                    pStreamR3->State.offWrite += cbBufDst;
-                    RTCircBufReleaseWriteBlock(pCircBuf, cbBufDst);
-                    STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
-
-                    /* advance */
-                    cbLeft    -= (uint32_t)cbBufDst;
-                    cFrames   -= cFramesToConvert;
-                    offBounce += PDMAudioPropsFramesToBytes(pGuestProps, cFramesToConvert);
-                }
-
-                /* advance */
-                cbChunk                         -= cbToRead;
-                GCPhys                          += cbToRead;
-                pStreamShared->State.offCurBdle += cbToRead;
-                if (cbRemainder)
-                    memmove(&abBounce[0], &abBounce[cbBounce - cbRemainder], cbRemainder);
-                cbBounce = cbRemainder;
-            }
-            Log5Func(("loop0: GCPhys=%RGp cbBounce=%#x cbLeft=%#x\n", GCPhys, cbBounce, cbLeft));
-        }
-# endif
 
         cbLeft -= cbRead;
         STAM_PROFILE_STOP(&pThis->StatOut, a);
@@ -1812,9 +1715,6 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
-# if 0
-    AssertMsg(cbBounce == 0, ("%#x\n", cbBounce));
-# endif
 
     /*
      * Common epilogue.
