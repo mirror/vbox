@@ -2237,6 +2237,7 @@ endif
 VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeR3_DEFS)) \
 	IPRT_WITH_OPENSSL \
 	IPRT_WITH_XAR \
+	IPRT_WITH_GHIDRA_DBG_MOD \
 	$(if-expr !defined(VBOX_WITH_ALT_HASH_CODE),IPRT_WITHOUT_SHA512T224 IPRT_WITHOUT_SHA512T256,)
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT_DEFS                  += RT_NO_GIP
@@ -2261,6 +2262,7 @@ VBoxRT_SOURCES                := \
 		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeR3_SOURCES), \
 		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
+	common/dbg/dbgmodghidra.cpp \
 	common/fuzz/fuzz.cpp \
 	common/fuzz/fuzz-config.cpp \
 	common/fuzz/fuzz-observer.cpp \

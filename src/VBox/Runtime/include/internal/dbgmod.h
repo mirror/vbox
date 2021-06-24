@@ -694,6 +694,9 @@ extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgCodeView;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDwarf;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgNm;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgMapSym;
+#ifdef IPRT_WITH_GHIDRA_DBG_MOD
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgGhidra;
+#endif
 #ifdef RT_OS_WINDOWS
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDbgHelp;
 #endif
