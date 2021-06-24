@@ -215,6 +215,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 *   Test Primitives                                                                                                              *
 *********************************************************************************************************************************/
 
+#if 0 /* Unused */
 /**
  * Returns a random scheduling hint (in ms).
  */
@@ -232,6 +233,7 @@ DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
 
     return s_aSchedulingHintsMs[RTRandU32Ex(0, RT_ELEMENTS(s_aSchedulingHintsMs) - 1)];
 }
+#endif
 
 /**
  * Plays a test tone on a specific audio test stream.
