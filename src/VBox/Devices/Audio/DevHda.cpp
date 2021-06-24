@@ -316,22 +316,20 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 
 /** Turn a short global register name into an memory index and a stringized name. */
 #define HDA_REG_IDX(abbrev)         HDA_MEM_IND_NAME(abbrev), #abbrev
-
 /** Turns a short stream register name into an memory index and a stringized name. */
 #define HDA_REG_IDX_STRM(reg, suff) HDA_MEM_IND_NAME(reg ## suff), #reg #suff
-
 /** Same as above for a register *not* stored in memory. */
 #define HDA_REG_IDX_NOMEM(abbrev)   0, #abbrev
 
 /** No register description (RD) flags defined. */
-#define HDA_RD_F_NONE           0
+#define HDA_RD_F_NONE               0
 /** Writes to SD are allowed while RUN bit is set. */
-#define HDA_RD_F_SD_WRITE_RUN   RT_BIT(0)
+#define HDA_RD_F_SD_WRITE_RUN       RT_BIT(0)
 
 /** Emits a single audio stream register set (e.g. OSD0) at a specified offset. */
 #define HDA_REG_MAP_STRM(offset, name) \
-    /* offset        size     read mask   write mask  flags                     read callback   write callback     index + abbrev                 description */ \
-    /* -------       -------  ----------  ----------  ------------------------- --------------  -----------------  -----------------------------  ----------- */ \
+    /* offset        size     read mask   write mask  flags                  read callback   write callback     index + abbrev                 description */ \
+    /* -------       -------  ----------  ----------  ---------------------- --------------  -----------------  -----------------------------  ----------- */ \
     /* Offset 0x80 (SD0) */ \
     { offset,        0x00003, 0x00FF001F, 0x00F0001F, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU24 , hdaRegWriteSDCTL  , HDA_REG_IDX_STRM(name, CTL)  , #name " Stream Descriptor Control" }, \
     /* Offset 0x83 (SD0) */ \
@@ -361,8 +359,8 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 /** See 302349 p 6.2. */
 const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 {
-    /* offset  size     read mask   write mask  flags             read callback     write callback       index + abbrev              */
-    /*-------  -------  ----------  ----------  ----------------- ----------------  -------------------     ------------------------ */
+    /* offset  size     read mask   write mask  flags          read callback     write callback       index + abbrev               */
+    /*-------  -------  ----------  ----------  -------------- ----------------  -------------------  ------------------------     */
     { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(GCAP)         }, /* Global Capabilities */
     { 0x00002, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMIN)         }, /* Minor Version */
     { 0x00003, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMAJ)         }, /* Major Version */
