@@ -1170,21 +1170,6 @@ DECLINLINE(RTGCPHYS) hdaStreamDmaBufGet(PHDASTREAM pStreamShared, uint32_t *pcbL
     return pStreamShared->State.aBdl[idxBdle].GCPhys + offCurBdle;
 }
 
-#if 0 /* unused */
-/**
- * Get the size of the current BDLE.
- *
- * @returns The size (in bytes).
- * @param   pStreamShared   The stream to check.
- */
-DECLINLINE(RTGCPHYS) hdaStreamDmaBufGetSize(PHDASTREAM pStreamShared)
-{
-    uint8_t idxBdle = pStreamShared->State.idxCurBdle;
-    AssertStmt(idxBdle < pStreamShared->State.cBdles, idxBdle = 0);
-    return pStreamShared->State.aBdl[idxBdle].cb;
-}
-#endif
-
 /**
  * Checks if the current BDLE is completed.
  *
@@ -1368,19 +1353,6 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
               pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
               pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
               pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags));
-
-#if 0 /* Moved to the transfer loops */
-        /*
-         * Update the stream's current position.
-         *
-         * Do this as accurate and close to the actual data transfer as possible.
-         * All guests rely on this, depending on the mechanism they use (LPIB register or DMA counters).
-         *
-         * Note for Windows 10: The OS' driver is *very* picky about *when* the (DMA) positions get updated!
-         *                      Not doing this at the right time will result in ugly sound crackles!
-         */
-        hdaStreamSetPositionAdd(pStreamShared, pDevIns, pThis, hdaStreamDmaBufGetSize(pStreamShared));
-#endif
 
         /* Does the current BDLE require an interrupt to be sent? */
         if (hdaStreamDmaBufNeedsIrq(pStreamShared))
@@ -2627,42 +2599,6 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
     }
 }
 
-
-# if 0 /* unused - no prototype even */
-/**
- * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
- * updating its associated LPIB register and DMA position buffer (if enabled).
- *
- * @returns Set LPIB value.
- * @param   pDevIns             The device instance.
- * @param   pStream             HDA stream to update read / write position for.
- * @param   u32LPIB             New LPIB (position) value to set.
- */
-uint32_t hdaR3StreamUpdateLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint32_t u32LPIB)
-{
-    AssertMsg(u32LPIB <= pStreamShared->u32CBL,
-              ("[SD%RU8] New LPIB (%RU32) exceeds CBL (%RU32)\n", pStreamShared->u8SD, u32LPIB, pStreamShared->u32CBL));
-
-    u32LPIB = RT_MIN(u32LPIB, pStreamShared->u32CBL);
-
-    LogFlowFunc(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
-                 pStreamShared->u8SD, u32LPIB, pThis->fDMAPosition));
-
-    /* Update LPIB in any case. */
-    HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) = u32LPIB;
-
-    /* Do we need to tell the current DMA position? */
-    if (pThis->fDMAPosition)
-    {
-        int rc2 = PDMDevHlpPCIPhysWrite(pDevIns,
-                                        pThis->u64DPBase + (pStreamShared->u8SD * 2 * sizeof(uint32_t)),
-                                        (void *)&u32LPIB, sizeof(uint32_t));
-        AssertRC(rc2);
-    }
-
-    return u32LPIB;
-}
-# endif
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 /**
