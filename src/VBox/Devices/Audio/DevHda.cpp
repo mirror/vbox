@@ -4246,14 +4246,13 @@ static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStre
 /** Worker for hdaR3DbgInfoBDL. */
 static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
-    const PHDASTREAM   pStream     = &pThis->aStreams[idxStream];
-    PCPDMAUDIOPCMPROPS pGuestProps = &pStream->State.Cfg.Props; /** @todo We don't make a distinction any more. The mixer hides that now. */
-
-    uint64_t const u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
-                                            HDA_STREAM_REG(pThis, BDPU, idxStream));
-    uint16_t const u16LVI     = HDA_STREAM_REG(pThis, LVI, idxStream);
-    uint32_t const u32CBL     = HDA_STREAM_REG(pThis, CBL, idxStream);
-    uint8_t const  idxCurBdle = pStream->State.idxCurBdle;
+    const PHDASTREAM   pStream  = &pThis->aStreams[idxStream];
+    PCPDMAUDIOPCMPROPS pProps   = &pStream->State.Cfg.Props;
+    uint64_t const u64BaseDMA   = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
+                                              HDA_STREAM_REG(pThis, BDPU, idxStream));
+    uint16_t const u16LVI       = HDA_STREAM_REG(pThis, LVI, idxStream);
+    uint32_t const u32CBL       = HDA_STREAM_REG(pThis, CBL, idxStream);
+    uint8_t const  idxCurBdle   = pStream->State.idxCurBdle;
     pHlp->pfnPrintf(pHlp, "Stream #%d BDL: %s%#011RX64 LB %#x (LVI=%u)\n", idxStream, "%%" /*vboxdbg phys prefix*/,
                     u64BaseDMA, u16LVI * sizeof(HDABDLEDESC), u16LVI);
     if (u64BaseDMA || idxCurBdle != 0 || pStream->State.aBdl[idxCurBdle].GCPhys != 0 || pStream->State.aBdl[idxCurBdle].cb != 0)
@@ -4279,7 +4278,7 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP 
         if (bd.fFlags & ~HDA_BDLE_F_IOC)
             RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", bd.fFlags);
         pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %s%#011RX64 LB %#06x (%RU64 us) %s%s\n", idxCurBdle == i ? "=>" : "  ", i, "%%",
-                        bd.u64BufAddr, bd.u32BufSize, PDMAudioPropsBytesToMicro(pGuestProps, bd.u32BufSize),
+                        bd.u64BufAddr, bd.u32BufSize, PDMAudioPropsBytesToMicro(pProps, bd.u32BufSize),
                         bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
 
         if (memcmp(&bd, &pStream->State.aBdl[i], sizeof(bd)) != 0)
@@ -4294,7 +4293,7 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP 
         cbTotal += bd.u32BufSize;
     }
     pHlp->pfnPrintf(pHlp, "  Total: %#RX64 bytes (%RU64), %RU64 ms\n", cbTotal, cbTotal,
-                    PDMAudioPropsBytesToMilli(pGuestProps, (uint32_t)cbTotal));
+                    PDMAudioPropsBytesToMilli(pProps, (uint32_t)cbTotal));
     if (cbTotal != u32CBL)
         pHlp->pfnPrintf(pHlp, "  Warning: %#RX64 bytes does not match CBL (%#RX64)!\n", cbTotal, u32CBL);
 
@@ -4683,7 +4682,9 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
     PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-    DEVHDA_LOCK(pDevIns, pThis); /** @todo r=bird: this will fail on early constructor failure. */
+
+    if (PDMCritSectIsInitialized(&pThis->CritSect))
+        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThisCC->lstDrv))
@@ -4712,7 +4713,11 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
         pThisCC->pMixer = NULL;
     }
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
+    if (PDMCritSectIsInitialized(&pThis->CritSect))
+    {
+        PDMCritSectLeave(&pThis->CritSect);
+        PDMR3CritSectDelete(&pThis->CritSect);
+    }
     return VINF_SUCCESS;
 }
 

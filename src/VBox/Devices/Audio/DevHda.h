@@ -22,9 +22,7 @@
 #endif
 
 #include <iprt/path.h>
-
 #include <VBox/vmm/pdmdev.h>
-
 #include "AudioMixer.h"
 
 /*
