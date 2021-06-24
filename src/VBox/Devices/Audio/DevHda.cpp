@@ -314,6 +314,15 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
+/** Turn a short global register name into an memory index and a stringized name. */
+#define HDA_REG_IDX(abbrev)         HDA_MEM_IND_NAME(abbrev), #abbrev
+
+/** Turns a short stream register name into an memory index and a stringized name. */
+#define HDA_REG_IDX_STRM(reg, suff) HDA_MEM_IND_NAME(reg ## suff), #reg #suff
+
+/** Same as above for a register *not* stored in memory. */
+#define HDA_REG_IDX_NOMEM(abbrev)   0, #abbrev
+
 /** No register description (RD) flags defined. */
 #define HDA_RD_F_NONE           0
 /** Writes to SD are allowed while RUN bit is set. */

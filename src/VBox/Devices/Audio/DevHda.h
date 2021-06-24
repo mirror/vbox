@@ -150,15 +150,6 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 /** Offset of the SD0 register map. */
 #define HDA_REG_DESC_SD0_BASE       0x80
 
-/** Turn a short global register name into an memory index and a stringized name. */
-#define HDA_REG_IDX(abbrev)         HDA_MEM_IND_NAME(abbrev), #abbrev
-
-/** Turns a short stream register name into an memory index and a stringized name. */
-#define HDA_REG_IDX_STRM(reg, suff) HDA_MEM_IND_NAME(reg ## suff), #reg #suff
-
-/** Same as above for a register *not* stored in memory. */
-#define HDA_REG_IDX_NOMEM(abbrev)   0, #abbrev
-
 /*
  * NB: Register values stored in memory (au32Regs[]) are indexed through
  * the HDA_RMX_xxx macros (also HDA_MEM_IND_NAME()). On the other hand, the
@@ -542,13 +533,11 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
      | (((_aBits)     & HDA_SDFMT_BITS_MASK)      << HDA_SDFMT_BITS_SHIFT)      \
      | ( (_aChan)     & HDA_SDFMT_CHANNELS_MASK))
 
-/** Interrupt on completion (IOC) flag. */
-#define HDA_BDLE_F_IOC              RT_BIT(0)
-
 
 /**
- * BDL description structure.
- * Do not touch this, as this must match to the HDA specs.
+ * Buffer descriptor list entry (BDLE).
+ *
+ * See 3.6.3 in HDA specs rev 1.0a (2010-06-17).
  */
 typedef struct HDABDLEDESC
 {
@@ -556,15 +545,19 @@ typedef struct HDABDLEDESC
     uint64_t     u64BufAddr;
     /** Size of the actual buffer (in bytes). */
     uint32_t     u32BufSize;
-    /** Bit 0: Interrupt on completion; the controller will generate
-     *  an interrupt when the last byte of the buffer has been
-     *  fetched by the DMA engine.
+    /** HDA_BDLE_F_XXX.
      *
-     *  Rest is reserved for further use and must be 0. */
+     * Bit 0: IOC - Interrupt on completion / HDA_BDLE_F_IOC.
+     * The controller will generate an interrupt when the last byte of the buffer
+     * has been fetched by the DMA engine.
+     *
+     * Bits 31:1 are reserved for further use and must be 0. */
     uint32_t     fFlags;
 } HDABDLEDESC, *PHDABDLEDESC;
 AssertCompileSize(HDABDLEDESC, 16); /* Always 16 byte. Also must be aligned on 128-byte boundary. */
 
+/** Interrupt on completion (IOC) flag. */
+#define HDA_BDLE_F_IOC              RT_BIT(0)
 
 
 /**
