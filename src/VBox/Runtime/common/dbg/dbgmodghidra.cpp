@@ -267,7 +267,7 @@ static int rtDbgModGhidraXmlParseSymbols(RTDBGMOD hCnt, const xml::ElementNode &
 
 
 /**
- * @copydoc FNSORTCMP
+ * @copydoc FNRTSORTCMP
  */
 static DECLCALLBACK(int) rtDbgModGhidraSegmentsSortCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
 {
