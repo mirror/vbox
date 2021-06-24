@@ -167,8 +167,14 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 
 /** Direct register access by HDASTATE::au32Reg index. */
 #define HDA_REG_BY_IDX(a_pThis, a_idxReg)   ((a_pThis)->au32Regs[(a_idxReg)])
+
 /** Accesses register @a ShortRegNm. */
-#define HDA_REG(a_pThis, a_ShortRegNm)      HDA_REG_BY_IDX(a_pThis, HDA_MEM_IND_NAME(a_ShortRegNm))
+#ifdef VBOX_STRICT
+# define HDA_REG(a_pThis, a_ShortRegNm)     (*hdaStrictRegAccessor(a_pThis, HDA_REG_IND_NAME(a_ShortRegNm), HDA_MEM_IND_NAME(a_ShortRegNm)))
+#else
+# define HDA_REG(a_pThis, a_ShortRegNm)     HDA_REG_BY_IDX(a_pThis, HDA_MEM_IND_NAME(a_ShortRegNm))
+#endif
+
 /** Indirect register access via g_aHdaRegMap[].mem_idx. */
 #define HDA_REG_IND(a_pThis, a_idxMap)      HDA_REG_BY_IDX(a_pThis, g_aHdaRegMap[(a_idxMap)].mem_idx)
 
@@ -826,18 +832,36 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
     return PDMAUDIODIR_OUT;
 }
 
+/* Used by hdaR3StreamSetUp: */
+uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
+
+
 #ifdef VBOX_STRICT
+/**
+ * Strict register accessor verifing defines and mapping table.
+ * @see HDA_REG
+ */
+DECLINLINE(uint32_t *) hdaStrictRegAccessor(PHDASTATE pThis, uint32_t idxMap, uint32_t idxReg)
+{
+    Assert(idxMap < RT_ELEMENTS(g_aHdaRegMap));
+    AssertMsg(idxReg == g_aHdaRegMap[idxMap].mem_idx, ("idxReg=%d\n", idxReg));
+    return &pThis->au32Regs[idxReg];
+}
+
+/**
+ * Strict stream register accessor verifing defines and mapping table.
+ * @see HDA_STREAM_REG
+ */
 DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxMap0, uint32_t idxReg0, size_t idxStream)
 {
+    Assert(idxMap0 < RT_ELEMENTS(g_aHdaRegMap));
     AssertMsg(idxStream < RT_ELEMENTS(pThis->aStreams), ("%#zx\n", idxStream));
     AssertMsg(idxReg0 + idxStream * 10 == g_aHdaRegMap[idxMap0 + idxStream * 10].mem_idx,
               ("idxReg0=%d idxStream=%zx\n", idxReg0, idxStream));
     return &pThis->au32Regs[idxReg0 + idxStream * 10];
 }
-#endif
 
-/* Used by hdaR3StreamSetUp: */
-uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
+#endif /* VBOX_STRICT */
 
 
 
