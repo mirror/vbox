@@ -239,7 +239,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
 {
     RT_NOREF(pTstDesc, ppvCtx);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     if (strlen(pTstEnv->szDev))
     {
@@ -322,7 +322,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
 {
     RT_NOREF(pTstDesc, ppvCtx);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     if (strlen(pTstEnv->szDev))
     {
