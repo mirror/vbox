@@ -1440,7 +1440,6 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
         else
             cbChunk = cbLeft;
 
-        /* If we're writing silence.  */
         uint32_t cbWritten = 0;
         if (!fWriteSilence)
         {
