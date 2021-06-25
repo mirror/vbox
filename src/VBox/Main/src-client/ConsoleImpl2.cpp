@@ -1690,29 +1690,37 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         InsertConfigNode(pInst,    "Config", &pCfg);
 
-        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "QueueSize",            64);
+        KeyboardHIDType_T aKbdHID;
+        hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                               H();
+        if (aKbdHID != KeyboardHIDType_None)
+        {
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "QueueSize",            64);
 
-        InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-        InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
-        InsertConfigNode(pLunL1,   "Config", &pCfg);
-        Keyboard *pKeyboard = mKeyboard;
-        InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
+            InsertConfigNode(pLunL1,   "Config", &pCfg);
+            Keyboard *pKeyboard = mKeyboard;
+            InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
+        }
 
-        Mouse *pMouse = mMouse;
         PointingHIDType_T aPointingHID;
         hrc = pMachine->COMGETTER(PointingHIDType)(&aPointingHID);                          H();
-        InsertConfigNode(pInst,    "LUN#1", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "MouseQueue");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg, "QueueSize",            128);
+        if (aPointingHID != PointingHIDType_None)
+        {
+            InsertConfigNode(pInst,    "LUN#1", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",               "MouseQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg, "QueueSize",            128);
 
-        InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-        InsertConfigString(pLunL1, "Driver",               "MainMouse");
-        InsertConfigNode(pLunL1,   "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",               "MainMouse");
+            InsertConfigNode(pLunL1,   "Config", &pCfg);
+            Mouse *pMouse = mMouse;
+            InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+        }
 
         /*
          * i8254 Programmable Interval Timer And Dummy Speaker
@@ -2227,6 +2235,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                 InsertConfigString(pLunL1, "Driver",        "MainMouse");
                 InsertConfigNode(pLunL1,   "Config", &pCfg);
+                Mouse *pMouse = mMouse;
                 InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
             }
             if (aPointingHID == PointingHIDType_USBMultiTouch)
@@ -2243,12 +2252,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                 InsertConfigString(pLunL1, "Driver",        "MainMouse");
                 InsertConfigNode(pLunL1,   "Config", &pCfg);
+                Mouse *pMouse = mMouse;
                 InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
             }
 
             /* Virtual USB Keyboard */
-            KeyboardHIDType_T aKbdHID;
-            hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                       H();
             if (aKbdHID == KeyboardHIDType_USBKeyboard)
             {
                 InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
@@ -2263,7 +2271,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                 InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
                 InsertConfigNode(pLunL1,   "Config", &pCfg);
-                pKeyboard = mKeyboard;
+                Keyboard *pKeyboard = mKeyboard;
                 InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
             }
         }

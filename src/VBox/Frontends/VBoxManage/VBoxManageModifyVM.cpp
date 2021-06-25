@@ -2128,6 +2128,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     if (SUCCEEDED(rc))
                         fEnableUsb = true;
                 }
+                else if (!RTStrICmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_None));
+                }
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for pointing device", ValueUnion.psz);
@@ -2164,6 +2168,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "usb"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(KeyboardHIDType)(KeyboardHIDType_USBKeyboard));
+                    if (SUCCEEDED(rc))
+                        fEnableUsb = true;
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(KeyboardHIDType)(KeyboardHIDType_None));
                     if (SUCCEEDED(rc))
                         fEnableUsb = true;
                 }
