@@ -656,7 +656,7 @@ void UIWizardNewVM::setVirtualDisk(const CMedium &medium)
 
 void UIWizardNewVM::setVirtualDisk(const QUuid &mediumId)
 {
-    if (m_virtualDisk.GetId() == mediumId)
+    if (m_virtualDisk.isOk() && m_virtualDisk.GetId() == mediumId)
         return;
     CMedium medium = uiCommon().medium(mediumId).medium();
     if (!medium.isNull())
