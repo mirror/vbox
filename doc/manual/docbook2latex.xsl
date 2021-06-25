@@ -83,6 +83,10 @@
     </xsl:choose>
   </xsl:variable>
 
+  <!-- command synopsis -->
+  <xsl:variable name="arg.rep.repeat.str.tex">\ldots{}</xsl:variable>
+  <xsl:variable name="arg.or.sep.tex"> |~</xsl:variable>
+
   <xsl:output method="text"/>
 
   <xsl:strip-space elements="*"/>
@@ -902,9 +906,10 @@
 
   <xsl:template match="cmdsynopsis">
     <xsl:if test="preceding-sibling::cmdsynopsis">
-      <xsl:text>\par%cmdsynopsis</xsl:text>
+      <xsl:text>%cmdsynopsis</xsl:text>
     </xsl:if>
     <xsl:text>&#x0a;</xsl:text>
+    <xsl:text>\begin{flushleft}</xsl:text>
     <xsl:if test="parent::remark[@role='VBoxManage-overview']">
       <!-- Overview fontsize trick -->
       <xsl:text>{\footnotesize</xsl:text>
@@ -922,14 +927,15 @@
     </xsl:if>
     <!-- Special overview trick for the current VBoxManage command overview. -->
     <xsl:if test="parent::remark[@role='VBoxManage-overview']">
-      <xsl:text>\par}\vspace{1em}</xsl:text>
+      <xsl:text>\par}</xsl:text>
     </xsl:if>
+    <xsl:text>\end{flushleft}</xsl:text>
   </xsl:template>
 
   <xsl:template match="command">
     <xsl:choose>
       <xsl:when test="ancestor::cmdsynopsis">
-        <!-- Trigger a line break if this isn't the first command in a the synopsis -->
+        <!-- Trigger a line break if this isn't the first command in a synopsis -->
         <xsl:if test="preceding-sibling::command">
           <xsl:text>}\par%command&#x0a;</xsl:text>
           <xsl:text>\noindent\hspace{1em}</xsl:text>
@@ -963,45 +969,46 @@
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
       <xsl:choose>
-        <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
+        <xsl:when test="parent::group"><xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.or.sep.tex"/><xsl:text>}</xsl:text></xsl:when>
         <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
 
     <!-- open wrapping -->
-    <xsl:variable name="fWrappers" select="not(ancestor::group)"/>
-    <xsl:if test="$fWrappers">
-      <xsl:choose>
-        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
-        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
-        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
-        <xsl:when test="@choice = 'plain'"/>
-        <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
-      </xsl:choose>
-    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.def.open.str"/><xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.opt.open.str"/><xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.req.open.str"/><xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'plain'"/>
+      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
+    </xsl:choose>
 
-    <!-- render the arg (TODO: may need to do more work here) -->
     <xsl:apply-templates />
 
-    <!-- repeat wrapping -->
+    <!-- repeat indication -->
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
-      <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
+      <xsl:when test="@rep = 'repeat'">
+        <!-- add space padding if we're in a repeating group -->
+        <xsl:if test="self::group">
+          <xsl:text> </xsl:text>
+        </xsl:if>
+        <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.rep.repeat.str.tex"/><xsl:text>}</xsl:text>
+      </xsl:when>
       <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
 
     <!-- close wrapping -->
-    <xsl:if test="$fWrappers">
-      <xsl:choose>
-        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
-        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
-        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
-      </xsl:choose>
-      <!-- Add a space padding if we're the last element in a repeating arg or group -->
-      <xsl:if test="(parent::arg or parent::group) and not(following-sibiling)">
-        <xsl:text> </xsl:text>
-      </xsl:if>
+    <xsl:choose>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.def.close.str"/><xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.opt.close.str"/><xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.req.close.str"/><xsl:text>}</xsl:text></xsl:when>
+    </xsl:choose>
+
+    <!-- add space padding if we're the last element in a nested arg -->
+    <xsl:if test="parent::arg and not(following-sibling)">
+      <xsl:text> </xsl:text>
     </xsl:if>
   </xsl:template>
 

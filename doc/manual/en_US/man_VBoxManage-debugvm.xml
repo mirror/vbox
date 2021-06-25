@@ -99,7 +99,7 @@
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">setregisters</arg>
       <arg>--cpu=<replaceable>id</replaceable></arg>
-      <arg rep="repeat"><replaceable>reg-set.reg-name=value</replaceable></arg>
+      <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable>=<replaceable>value</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-show">
       <command>VBoxManage debugvm</command>

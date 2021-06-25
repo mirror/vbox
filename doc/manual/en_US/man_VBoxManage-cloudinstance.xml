@@ -12,8 +12,12 @@
     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
 <refentry id="vboxmanage-cloudinstance" lang="en">
-
   <refentryinfo>
     <pubdate>$Date$</pubdate>
     <title>VBoxManage cloud instance</title>
@@ -33,55 +37,55 @@
   <refsynopsisdiv>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-create" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">create</arg>
-      <arg choice="req" rep="norepeat">--domain-name=<replaceable>name</replaceable></arg>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">instance</arg>
+      <arg choice="plain">create</arg>
+      <arg choice="req">--domain-name=<replaceable>name</replaceable></arg>
       <group choice="req">
-          <arg choice="req" rep="norepeat">--image-id=<replaceable>id</replaceable></arg>
-          <arg choice="req" rep="norepeat">--boot-volume-id=<replaceable>id</replaceable></arg>
+          <arg choice="req">--image-id=<replaceable>id</replaceable></arg>
+          <arg choice="req">--boot-volume-id=<replaceable>id</replaceable></arg>
       </group>
-      <arg choice="req" rep="norepeat">--display-name=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--shape=<replaceable>type</replaceable></arg>
-      <arg choice="req" rep="norepeat">--subnet=<replaceable>id</replaceable></arg>
-      <arg rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
-      <arg rep="norepeat">--publicip=<replaceable>true/false</replaceable></arg>
-      <arg rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
+      <arg choice="req">--display-name=<replaceable>name</replaceable></arg>
+      <arg choice="req">--shape=<replaceable>type</replaceable></arg>
+      <arg choice="req">--subnet=<replaceable>id</replaceable></arg>
+      <arg>--boot-disk-size=<replaceable>size in GB</replaceable></arg>
+      <arg>--publicip=<replaceable>true/false</replaceable></arg>
+      <arg>--privateip=<replaceable>IP address</replaceable></arg>
       <arg rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
-      <arg rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
+      <arg>--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">info</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">instance</arg>
+      <arg choice="plain">info</arg>
+      <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-terminate" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">terminate</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">instance</arg>
+      <arg choice="plain">terminate</arg>
+      <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-start" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">start</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">instance</arg>
+      <arg choice="plain">start</arg>
+      <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-pause" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">pause</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">instance</arg>
+      <arg choice="plain">pause</arg>
+      <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
