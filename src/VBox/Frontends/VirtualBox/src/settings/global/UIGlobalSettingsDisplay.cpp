@@ -117,7 +117,9 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
     m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
     m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     m_pCheckBoxDisableHostScreenSaver->setChecked(oldData.m_fDisableHostScreenSaver);
+#endif
     m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
 }
@@ -130,7 +132,9 @@ void UIGlobalSettingsDisplay::putToCache()
     /* Cache new data: */
     newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
     newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     newData.m_fDisableHostScreenSaver = m_pCheckBoxDisableHostScreenSaver->isChecked();
+#endif
     newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
     m_pCache->cacheCurrentData(newData);
 }
@@ -157,8 +161,10 @@ void UIGlobalSettingsDisplay::retranslateUi()
     m_pLabelMachineWindows->setText(tr("Machine Windows:"));
     m_pCheckBoxActivateOnMouseHover->setWhatsThis(tr("When checked, machine windows will be raised when the mouse pointer moves over them."));
     m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse"));
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     m_pCheckBoxDisableHostScreenSaver->setWhatsThis(tr("When checked, screen saver of the host OS is disabled."));
     m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
+#endif
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -245,10 +251,12 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         if (m_pCheckBoxActivateOnMouseHover)
             pLayoutMain->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1);
 
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* Prepare 'disable host screen saver' check-box: */
         m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
         if (m_pCheckBoxDisableHostScreenSaver)
             pLayoutMain->addWidget(m_pCheckBoxDisableHostScreenSaver, 6, 1);
+#endif
     }
 }
 

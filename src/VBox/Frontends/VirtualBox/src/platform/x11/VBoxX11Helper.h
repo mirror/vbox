@@ -28,6 +28,8 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
+/* Forward declarations: */
+class QDBusConnection;
 
 /** X11: Known Window Manager types. */
 enum X11WMType
@@ -63,6 +65,9 @@ SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsSave();
 SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsRestore();
 /** X11: Returns true if XLib extension with name @p extensionName is avaible, false otherwise. */
 SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName);
+
+/** Returns the list of DBus services whose name contains the substring 'screensaver'. */
+QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection);
 
 /** Returns the list of Inhibit methods found by introspecting DBus services. */
 SHARED_LIBRARY_STUFF QVector<X11ScreenSaverInhibitMethod*> X11FindDBusScrenSaverInhibitMethods();

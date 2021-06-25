@@ -153,7 +153,7 @@ void X11ScreenSaverSettingsRestore()
         DPMSEnable(pDisplay);
 }
 
-SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName)
+bool X11CheckExtension(const char *extensionName)
 {
     Display *pDisplay = QX11Info::display();
     int major_opcode;
@@ -162,7 +162,7 @@ SHARED_LIBRARY_STUFF bool X11CheckExtension(const char *extensionName)
     return XQueryExtension(pDisplay, extensionName, &major_opcode, &first_event, &first_error);
 }
 
-static QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
+QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 {
     QStringList serviceNames;
 
