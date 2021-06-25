@@ -74,9 +74,13 @@ DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM)
         //pL2Chunk->paBpL2TblBaseSharedR0 = NULL;
     }
 
-    pGVM->dbgfr0.s.hMemObjBpLocL1 = NIL_RTR0MEMOBJ;
-    //pGVM->dbgfr0.s.paBpLocL1R0    = NULL;
-    //pGVM->dbgfr0.s.fInit          = false;
+    pGVM->dbgfr0.s.hMemObjBpLocL1     = NIL_RTR0MEMOBJ;
+    pGVM->dbgfr0.s.hMapObjBpLocL1     = NIL_RTR0MEMOBJ;
+    pGVM->dbgfr0.s.hMemObjBpLocPortIo = NIL_RTR0MEMOBJ;
+    pGVM->dbgfr0.s.hMapObjBpLocPortIo = NIL_RTR0MEMOBJ;
+    //pGVM->dbgfr0.s.paBpLocL1R0      = NULL;
+    //pGVM->dbgfr0.s.paBpLocPortIoR0  = NULL;
+    //pGVM->dbgfr0.s.fInit            = false;
 }
 
 
@@ -116,6 +120,21 @@ DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
         pGVM->dbgfr0.s.hMemObjBpLocL1 = NIL_RTR0MEMOBJ;
         pGVM->dbgfr0.s.paBpLocL1R0    = NULL;
         RTR0MemObjFree(hMemObj, true);
+
+        if (pGVM->dbgfr0.s.paBpLocPortIoR0)
+        {
+            Assert(pGVM->dbgfr0.s.hMemObjBpLocPortIo != NIL_RTR0MEMOBJ);
+            Assert(pGVM->dbgfr0.s.hMapObjBpLocPortIo != NIL_RTR0MEMOBJ);
+
+            hMemObj = pGVM->dbgfr0.s.hMapObjBpLocPortIo;
+            pGVM->dbgfr0.s.hMapObjBpLocPortIo = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(hMemObj, true);
+
+            hMemObj = pGVM->dbgfr0.s.hMemObjBpLocPortIo;
+            pGVM->dbgfr0.s.hMemObjBpLocPortIo = NIL_RTR0MEMOBJ;
+            pGVM->dbgfr0.s.paBpLocPortIoR0    = NULL;
+            RTR0MemObjFree(hMemObj, true);
+        }
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpChunks); i++)
         {
@@ -165,6 +184,9 @@ DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
     {
         Assert(pGVM->dbgfr0.s.hMemObjBpLocL1 == NIL_RTR0MEMOBJ);
         Assert(!pGVM->dbgfr0.s.paBpLocL1R0);
+
+        Assert(pGVM->dbgfr0.s.hMemObjBpLocPortIo == NIL_RTR0MEMOBJ);
+        Assert(!pGVM->dbgfr0.s.paBpLocPortIoR0);
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpChunks); i++)
         {
@@ -225,6 +247,49 @@ static int dbgfR0BpInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLo
          */
         *ppaBpLocL1R3 = RTR0MemObjAddressR3(hMapObj);
         pGVM->dbgfr0.s.fInit = true;
+        return rc;
+    }
+
+    RTR0MemObjFree(hMemObj, true);
+    return rc;
+}
+
+
+/**
+ * Worker for DBGFR0BpPortIoInitReqHandler() that does the actual initialization.
+ *
+ * @returns VBox status code.
+ * @param   pGVM                The global (ring-0) VM structure.
+ * @param   ppaBpLocPortIoR3    Where to return the ring-3 L1 lookup table address on success.
+ * @thread  EMT(0)
+ */
+static int dbgfR0BpPortIoInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLocPortIoR3)
+{
+    /*
+     * Figure out how much memory we need for the I/O port breakpoint lookup table and allocate it.
+     */
+    uint32_t const cbPortIoLoc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), PAGE_SIZE);
+
+    RTR0MEMOBJ hMemObj;
+    int rc = RTR0MemObjAllocPage(&hMemObj, cbPortIoLoc, false /*fExecutable*/);
+    if (RT_FAILURE(rc))
+        return rc;
+    RT_BZERO(RTR0MemObjAddress(hMemObj), cbPortIoLoc);
+
+    /* Map it. */
+    RTR0MEMOBJ hMapObj;
+    rc = RTR0MemObjMapUserEx(&hMapObj, hMemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf(),
+                             0 /*offSub*/, cbPortIoLoc);
+    if (RT_SUCCESS(rc))
+    {
+        pGVM->dbgfr0.s.hMemObjBpLocPortIo = hMemObj;
+        pGVM->dbgfr0.s.hMapObjBpLocPortIo = hMapObj;
+        pGVM->dbgfr0.s.paBpLocPortIoR0    = (volatile uint32_t *)RTR0MemObjAddress(hMemObj);
+
+        /*
+         * We're done.
+         */
+        *ppaBpLocPortIoR3 = RTR0MemObjAddressR3(hMapObj);
         return rc;
     }
 
@@ -407,6 +472,33 @@ VMMR0_INT_DECL(int) DBGFR0BpInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq)
     AssertReturn(!pGVM->dbgfr0.s.fInit, VERR_WRONG_ORDER);
 
     return dbgfR0BpInitWorker(pGVM, &pReq->paBpLocL1R3);
+}
+
+
+/**
+ * Used by ring-3 DBGF to initialize the breakpoint manager for port I/O breakpoint operation.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    The global (ring-0) VM structure.
+ * @param   pReq    Pointer to the request buffer.
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) DBGFR0BpPortIoInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq)
+{
+    LogFlow(("DBGFR0BpPortIoInitReqHandler:\n"));
+
+    /*
+     * Validate the request.
+     */
+    AssertReturn(pReq->Hdr.cbReq == sizeof(*pReq), VERR_INVALID_PARAMETER);
+
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    AssertRCReturn(rc, rc);
+
+    AssertReturn(!pGVM->dbgfr0.s.fInit, VERR_WRONG_ORDER);
+    AssertReturn(!pGVM->dbgfr0.s.paBpLocPortIoR0, VERR_WRONG_ORDER);
+
+    return dbgfR0BpPortIoInitWorker(pGVM, &pReq->paBpLocL1R3);
 }
 
 

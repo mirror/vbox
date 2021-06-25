@@ -77,8 +77,9 @@ typedef DBGFTRACERCREATEREQ *PDBGFTRACERCREATEREQ;
 VMMR0_INT_DECL(int) DBGFR0TracerCreateReqHandler(PGVM pGVM, PDBGFTRACERCREATEREQ pReq);
 
 /**
- * Request buffer for DBGFR0BpInitReqHandler / VMMR0_DO_DBGF_BP_INIT.
- * @see DBGFR0BpInitReqHandler.
+ * Request buffer for DBGFR0BpInitReqHandler / VMMR0_DO_DBGF_BP_INIT and
+ * DBGFR0BpPortIoInitReqHandler / VMMR0_DO_DBGF_BP_PORTIO_INIT.
+ * @see DBGFR0BpInitReqHandler, DBGFR0BpPortIoInitReqHandler.
  */
 typedef struct DBGFBPINITREQ
 {
@@ -91,6 +92,7 @@ typedef struct DBGFBPINITREQ
 typedef DBGFBPINITREQ *PDBGFBPINITREQ;
 
 VMMR0_INT_DECL(int) DBGFR0BpInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq);
+VMMR0_INT_DECL(int) DBGFR0BpPortIoInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq);
 
 /**
  * Request buffer for DBGFR0BpOwnerInitReqHandler / VMMR0_DO_DBGF_BP_OWNER_INIT.
@@ -1018,7 +1020,7 @@ VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uin
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                    RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
-                                   uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+                                   uint32_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
                                uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetMmioEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,

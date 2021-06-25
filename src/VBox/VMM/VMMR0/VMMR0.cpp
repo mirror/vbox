@@ -2378,6 +2378,16 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             break;
         }
 
+        case VMMR0_DO_DBGF_BP_PORTIO_INIT:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = DBGFR0BpPortIoInitReqHandler(pGVM, (PDBGFBPINITREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+
         /*
          * TM requests.
          */

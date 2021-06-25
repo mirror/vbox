@@ -1287,8 +1287,14 @@ typedef struct DBGFR0PERVM
     RTR0MEMOBJ                          hMemObjBpLocL1;
     /** The L1 lookup tables mapping object. */
     RTR0MEMOBJ                          hMapObjBpLocL1;
+    /** The I/O port breakpoint lookup tables memory object. */
+    RTR0MEMOBJ                          hMemObjBpLocPortIo;
+    /** The I/O port breakpoint lookup tables mapping object. */
+    RTR0MEMOBJ                          hMapObjBpLocPortIo;
     /** Base pointer to the L1 locator table. */
     R0PTRTYPE(volatile uint32_t *)      paBpLocL1R0;
+    /** Base pointer to the L1 locator table. */
+    R0PTRTYPE(volatile uint32_t *)      paBpLocPortIoR0;
     /** Flag whether the breakpoint manager was initialized (on demand). */
     bool                                fInit;
     /** @} */
@@ -1379,6 +1385,8 @@ typedef struct DBGFUSERPERVM
     DBGFBPL2TBLCHUNKR3              aBpL2TblChunks[DBGF_BP_L2_TBL_CHUNK_COUNT];
     /** Base pointer to the L1 locator table. */
     R3PTRTYPE(volatile uint32_t *)  paBpLocL1R3;
+    /** Base pointer to the Port I/O breakpoint locator table. */
+    R3PTRTYPE(volatile uint32_t *)  paBpLocPortIoR3;
     /** Fast mutex protecting the L2 table from concurrent write accesses (EMTs
      * can still do read accesses without holding it while traversing the trees). */
     RTSEMFASTMUTEX                  hMtxBpL2Wr;

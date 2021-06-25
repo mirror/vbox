@@ -112,6 +112,15 @@
  *        the breakpoint is being processed or again forwarded to the guest if it isn't successful.
  *        Each entry in the L2 table is 16 bytes big and densly packed to avoid excessive memory usage.
  *
+ * @section sec_dbgf_bp_ioport  Handling I/O port breakpoints
+ *
+ * Because of the limited amount of I/O ports being available (65536) a single table with 65536 entries,
+ * each 4 byte big will be allocated. This amounts to 256KiB of memory being used additionally as soon as
+ * an I/O breakpoint is enabled. The entries contain the breakpoint handle directly allowing only one breakpoint
+ * per port right now, which is something we accept as a limitation right now to keep things relatively simple.
+ * When there is at least one I/O breakpoint active IOM will be notified and it will afterwards call the DBGF API
+ * whenever the guest does an I/O port access to decide whether a breakpoint was hit. This keeps the overhead small
+ * when there is no I/O port breakpoint enabled.
  *
  * @section sec_dbgf_bp_note    Random thoughts and notes for the implementation
  *
@@ -216,7 +225,8 @@ DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM)
         pL2Chunk->idChunk = DBGF_BP_CHUNK_ID_INVALID; /* Not allocated. */
     }
 
-    //pUVM->dbgf.s.paBpLocL1R3 = NULL;
+    //pUVM->dbgf.s.paBpLocL1R3     = NULL;
+    //pUVM->dbgf.s.paBpLocPortIoR3 = NULL;
     pUVM->dbgf.s.hMtxBpL2Wr = NIL_RTSEMFASTMUTEX;
     return RTSemFastMutexCreate(&pUVM->dbgf.s.hMtxBpL2Wr);
 }
@@ -323,6 +333,64 @@ static int dbgfR3BpEnsureInit(PUVM pUVM)
 
     /* Gather all EMTs and call into ring-0 to initialize the breakpoint manager. */
     return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpInitEmtWorker, NULL /*pvUser*/);
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpPortIoInitEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * The initialization will be done on EMT(0). It is possible that multiple
+     * initialization attempts are done because dbgfR3BpPortIoEnsureInit() can be called
+     * from racing non EMT threads when trying to set a breakpoint for the first time.
+     * Just fake success if the L1 is already present which means that a previous rendezvous
+     * successfully initialized the breakpoint manager.
+     */
+    PUVM pUVM = pVM->pUVM;
+    if (   pVCpu->idCpu == 0
+        && !pUVM->dbgf.s.paBpLocPortIoR3)
+    {
+        DBGFBPINITREQ Req;
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq    = sizeof(Req);
+        Req.paBpLocL1R3  = NULL;
+        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_PORTIO_INIT, 0 /*u64Arg*/, &Req.Hdr);
+        AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_PORTIO_INIT failed: %Rrc\n", rc), rc);
+        pUVM->dbgf.s.paBpLocPortIoR3 = Req.paBpLocL1R3;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ensures that the breakpoint manager is initialized to handle I/O port breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpPortIoEnsureInit(PUVM pUVM)
+{
+    /* If the L1 lookup table is allocated initialization succeeded before. */
+    if (RT_LIKELY(pUVM->dbgf.s.paBpLocPortIoR3))
+        return VINF_SUCCESS;
+
+    /* Ensure that the breakpoint manager is initialized. */
+    int rc = dbgfR3BpEnsureInit(pUVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Gather all EMTs and call into ring-0 to initialize the breakpoint manager. */
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpPortIoInitEmtWorker, NULL /*pvUser*/);
 }
 
 
@@ -1357,6 +1425,40 @@ static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 
 
 /**
+ * Adds the given port I/O breakpoint to the appropriate lookup tables.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to add.
+ * @param   pBp                 The internal breakpoint state.
+ */
+static int dbgfR3BpPortIoAdd(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_PORT_IO, VERR_DBGF_BP_IPE_3);
+
+    uint16_t uPortExcl = pBp->Pub.u.PortIo.uPort + pBp->Pub.u.PortIo.cPorts;
+    uint32_t u32Entry  = DBGF_BP_INT3_L1_ENTRY_CREATE_BP_HND(hBp);
+    for (uint16_t idxPort = pBp->Pub.u.PortIo.uPort; idxPort < uPortExcl; idxPort++)
+    {
+        bool fXchg = ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocPortIoR3[idxPort], u32Entry, DBGF_BP_INT3_L1_ENTRY_TYPE_NULL);
+        if (!fXchg)
+        {
+            /* Something raced us, so roll back the other registrations. */
+            while (idxPort > pBp->Pub.u.PortIo.uPort)
+            {
+                fXchg = ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocPortIoR3[idxPort], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry);
+                Assert(fXchg); RT_NOREF(fXchg);
+            }
+
+            return VERR_DBGF_BP_INT3_ADD_TRIES_REACHED; /** @todo New status code */
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Get a breakpoint give by address.
  *
  * @returns The breakpoint handle on success or NIL_DBGF if not found.
@@ -1447,6 +1549,36 @@ static DBGFBP dbgfR3BpGetByAddr(PUVM pUVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr
 
 
 /**
+ * Get a port I/O breakpoint given by the range.
+ *
+ * @returns The breakpoint handle on success or NIL_DBGF if not found.
+ * @param   pUVM                The user mode VM handle.
+ * @param   uPort               First port in the range.
+ * @param   cPorts              Number of ports in the range.
+ * @param   ppBp                Where to store the pointer to the internal breakpoint state on success, optional.
+ */
+static DBGFBP dbgfR3BpPortIoGetByRange(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, PDBGFBPINT *ppBp)
+{
+    DBGFBP hBp = NIL_DBGFBP;
+
+    for (RTIOPORT idxPort = uPort; idxPort < uPort + cPorts; idxPort)
+    {
+        const uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.CTX_SUFF(paBpLocPortIo)[idxPort]);
+        if (u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
+        {
+            hBp = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32Entry);
+            break;
+        }
+    }
+
+    if (   hBp != NIL_DBGFBP
+        && ppBp)
+        *ppBp =  dbgfR3BpGetByHnd(pUVM, hBp);
+    return hBp;
+}
+
+
+/**
  * @callback_method_impl{FNVMMEMTRENDEZVOUS}
  */
 static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInt3RemoveEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1516,6 +1648,65 @@ static int dbgfR3BpInt3Remove(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
      * any L2 trees while it is being removed.
      */
     return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpInt3RemoveEmtWorker, (void *)(uintptr_t)hBp);
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpPortIoRemoveEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    DBGFBP hBp = (DBGFBP)(uintptr_t)pvUser;
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
+    AssertPtrReturn(pBp, VERR_DBGF_BP_IPE_8);
+
+    int rc = VINF_SUCCESS;
+    if (pVCpu->idCpu == 0)
+    {
+        /*
+         * Remove the whole range, there shouldn't be any other breakpoint configured for this range as this is not
+         * allowed right now.
+         */
+        uint16_t uPortExcl = pBp->Pub.u.PortIo.uPort + pBp->Pub.u.PortIo.cPorts;
+        for (uint16_t idxPort = pBp->Pub.u.PortIo.uPort; idxPort < uPortExcl; idxPort++)
+        {
+            uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocPortIoR3[idxPort]);
+            AssertReturn(u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, VERR_DBGF_BP_IPE_6);
+
+            uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+            AssertReturn(u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND, VERR_DBGF_BP_IPE_7);
+
+            bool fXchg = ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxPort], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry);
+            Assert(fXchg); RT_NOREF(fXchg);
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Removes the given port I/O breakpoint from all lookup tables.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to remove.
+ * @param   pBp                 The internal breakpoint state.
+ */
+static int dbgfR3BpPortIoRemove(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_PORT_IO, VERR_DBGF_BP_IPE_3);
+
+    /*
+     * This has to be done by an EMT rendezvous in order to not have an EMT accessing
+     * the breakpoint while it is removed.
+     */
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpPortIoRemoveEmtWorker, (void *)(uintptr_t)hBp);
 }
 
 
@@ -2062,7 +2253,7 @@ VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uin
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     return DBGFR3BpSetPortIoEx(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, uPort, cPorts,
-                               fAccess, iHitTrigger, iHitDisable, phBp);
+                               DBGF_BP_F_DEFAULT, fAccess, iHitTrigger, iHitDisable, phBp);
 }
 
 
@@ -2076,6 +2267,7 @@ VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uin
  * @param   uPort           The first I/O port.
  * @param   cPorts          The number of I/O ports, see DBGFBPIOACCESS_XXX.
  * @param   fAccess         The access we want to break on.
+ * @param   fFlags          Combination of DBGF_BP_F_XXX.
  * @param   iHitTrigger     The hit count at which the breakpoint start
  *                          triggering. Use 0 (or 1) if it's gonna trigger at
  *                          once.
@@ -2087,7 +2279,7 @@ VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uin
  */
 VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                    RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
-                                   uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
+                                   uint32_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
@@ -2098,10 +2290,55 @@ VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
     AssertReturn(cPorts > 0, VERR_OUT_OF_RANGE);
     AssertReturn((RTIOPORT)(uPort + cPorts) < uPort, VERR_OUT_OF_RANGE);
 
-    int rc = dbgfR3BpEnsureInit(pUVM);
+    int rc = dbgfR3BpPortIoEnsureInit(pUVM);
     AssertRCReturn(rc, rc);
 
-    return VERR_NOT_IMPLEMENTED;
+    PDBGFBPINT pBp = NULL;
+    DBGFBP hBp = dbgfR3BpPortIoGetByRange(pUVM, uPort, cPorts, &pBp);
+    if (   hBp != NIL_DBGFBP
+        && pBp->Pub.u.PortIo.uPort == uPort
+        && pBp->Pub.u.PortIo.cPorts == cPorts
+        && pBp->Pub.u.PortIo.fAccess == fAccess)
+    {
+        rc = VINF_SUCCESS;
+        if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
+            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VINF_DBGF_BP_ALREADY_EXIST;
+            if (phBp)
+                *phBp = hBp;
+        }
+        return rc;
+    }
+
+    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_PORT_IO, fFlags, iHitTrigger, iHitDisable, &hBp, &pBp);
+    if (RT_SUCCESS(rc))
+    {
+        pBp->Pub.u.PortIo.uPort   = uPort;
+        pBp->Pub.u.PortIo.cPorts  = cPorts;
+        pBp->Pub.u.PortIo.fAccess = fAccess;
+
+        /* Add the breakpoint to the lookup tables. */
+        rc = dbgfR3BpPortIoAdd(pUVM, hBp, pBp);
+        if (RT_SUCCESS(rc))
+        {
+            /* Enable the breakpoint if requested. */
+            if (fFlags & DBGF_BP_F_ENABLED)
+                rc = dbgfR3BpArm(pUVM, hBp, pBp);
+            if (RT_SUCCESS(rc))
+            {
+                *phBp = hBp;
+                return VINF_SUCCESS;
+            }
+
+            int rc2 = dbgfR3BpPortIoRemove(pUVM, hBp, pBp); AssertRC(rc2);
+        }
+
+        dbgfR3BpFree(pUVM, hBp, pBp);
+    }
+
+    return rc;
 }
 
 
@@ -2204,6 +2441,12 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp)
         case DBGFBPTYPE_INT3:
         {
             int rc = dbgfR3BpInt3Remove(pUVM, hBp, pBp);
+            AssertRC(rc);
+            break;
+        }
+        case DBGFBPTYPE_PORT_IO:
+        {
+            int rc = dbgfR3BpPortIoRemove(pUVM, hBp, pBp);
             AssertRC(rc);
             break;
         }

@@ -435,6 +435,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC,
     /** Call DBGFR0BpOwnerInitReqHandler(). */
     VMMR0_DO_DBGF_BP_OWNER_INIT,
+    /** Call DBGFR0BpPortIoInitReqHandler(). */
+    VMMR0_DO_DBGF_BP_PORTIO_INIT,
 
     /** Grow a timer queue. */
     VMMR0_DO_TM_GROW_TIMER_QUEUE = 768,
