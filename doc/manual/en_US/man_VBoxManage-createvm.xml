@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-createvm" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage createvm</title>
   </refentryinfo>
 
@@ -41,7 +41,7 @@
       <arg choice="req">--name=<replaceable>name</replaceable></arg>
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
       <arg>--default</arg>
-      <arg>--group=<replaceable>group-ID</replaceable>, ...</arg>
+      <arg>--group=<replaceable>group-ID</replaceable>,...</arg>
       <arg>--ostype=<replaceable>ostype</replaceable></arg>
       <arg>--register</arg>
       <arg>--uuid=<replaceable>uuid</replaceable></arg>
@@ -63,9 +63,12 @@
       directory.
     </para>
     <para>
-      Ensure that the VM name conforms to the host OS file name
-      requirements. If you later rename the VM, the file and folder
-      names will be updated to match the new name automatically.
+      The actual file name may not correspond directly to the VM name
+      if it violates the host OS file name requirements (such as using
+      the path separator or other reserved characters, they will be
+      substituted with a placeholder). If you later rename the VM, the
+      file and folder names will be updated to match the new name
+      automatically.
     </para>
   </refsect1>
 
@@ -95,7 +98,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--group=<replaceable>group-ID</replaceable>, ...</option></term>
+        <term><option>--group=<replaceable>group-ID</replaceable>,...</option></term>
         <listitem><para>
             Assigns the VM to the specified groups. If you specify more
             than one group, separate each group name with a comma.
@@ -132,7 +135,7 @@
             VM. Ensure that this UUID is unique within the
             &product-name; namespace of the host or of its VM group
             memberships if you decide to register the VM. By default,
-            &product-name; command provides the UUID.
+            &product-name; provides the UUID.
           </para></listitem>
       </varlistentry>
     </variablelist>

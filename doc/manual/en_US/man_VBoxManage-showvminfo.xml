@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-showvminfo" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage showvminfo</title>
   </refentryinfo>
 
@@ -74,8 +74,8 @@
       </para>
       <para>
         The <command>VBoxManage showvminfo</command> command shows the
-        same information as the <command>VBoxManage list vms
-        --long</command> command for the specified VM.
+        same information for the specified VM in the same format as the
+        <command>VBoxManage list vms --long</command> command.
       </para>
       <variablelist>
         <varlistentry>

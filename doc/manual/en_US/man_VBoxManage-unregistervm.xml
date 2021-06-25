@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-unregistervm" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage unregistervm</title>
   </refentryinfo>
 

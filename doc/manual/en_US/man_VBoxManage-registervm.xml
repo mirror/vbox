@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-registervm" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage registervm</title>
   </refentryinfo>
 
@@ -47,11 +47,10 @@
     <para>
       The <command>VBoxManage registervm</command> command enables you
       to create a virtual machine (VM) by importing an XML machine
-      configuration file into &product-name;. The VM cannot conflict
-      with a VM that is already registered in &product-name;. In
-      addition, the VM cannot have any hard disks or removable disks
-      attached. Ensure that the XML machine configuration file is in the
-      machines folder prior to registration.
+      configuration file into &product-name;. The VM cannot have the
+      same UUID as a VM that is already registered in &product-name;.
+      Ensure that the XML machine configuration file is in the machines
+      folder prior to registration.
     </para>
     <note>
       <para>
