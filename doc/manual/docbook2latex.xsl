@@ -699,7 +699,7 @@
       <xsl:text>\\&#x0a; </xsl:text>
       <xsl:apply-templates select="."/>
     </xsl:for-each>
-    <xsl:text>}}] \hfill \\&#x0a;</xsl:text>
+    <xsl:text>}}]\hfill\\</xsl:text>
     <xsl:apply-templates select="listitem/*"/>
   </xsl:template>
 
@@ -842,11 +842,7 @@
     <xsl:if test="name(*[1]) != 'cmdsynopsis'"><xsl:message terminate="yes">Expected refsynopsisdiv to start with cmdsynopsis</xsl:message></xsl:if>
     <xsl:if test="title"><xsl:message terminate="yes">No title element supported in refsynopsisdiv</xsl:message></xsl:if>
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:text>&#x0a;\subsection*{Synopsis}</xsl:text>
-    <xsl:if test="name(*[1]) != 'cmdsynopsis'"> <!-- just in case -->
-      <xsl:text>\hfill \\&#x0a;</xsl:text>
-    </xsl:if>
-    <xsl:text>&#x0a;</xsl:text>
+    <xsl:text>&#x0a;\subsection*{Synopsis}&#x0a;</xsl:text>
     <xsl:apply-templates />
   </xsl:template>
 
