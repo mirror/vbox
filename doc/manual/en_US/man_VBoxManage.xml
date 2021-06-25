@@ -17,9 +17,9 @@
 <!ENTITY % all.entities SYSTEM "all-entities.ent">
 %all.entities;
 ]>
-<refentry id="man_vboxmanage" lang="en">
+<refentry id="vboxmanage-common" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage</title>
   </refentryinfo>
 
@@ -35,15 +35,22 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage">
+    <cmdsynopsis id="synopsis-vboxmanage-common">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage</command>
-      <arg>--nologo</arg>
-      <arg>--settingspw=[<replaceable>password</replaceable>]</arg>
+      <group>
+        <arg choice="plain">-V</arg>
+        <arg choice="plain">--version</arg>
+      </group>
+      <arg>--dump-build-type</arg>
+      <group>
+        <arg choice="plain">-q</arg>
+        <arg choice="plain">--nologo</arg>
+      </group>
+      <arg>--settingspw=<replaceable>password</replaceable></arg>
       <arg>--settingspwfile=<replaceable>pw-file</replaceable></arg>
-      <arg>--version</arg>
       <arg>@<replaceable>response-file</replaceable></arg>
-      <arg><replaceable>subcommand</replaceable></arg>
+      <arg><arg>help</arg> <replaceable>subcommand</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -124,6 +131,8 @@
           <listitem><para>
               Suppresses the output of the logo information, which is
               useful for scripts.
+            </para><para>
+              The short version of this option is <option>-q</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -164,7 +173,7 @@
               Shows version information about the
               <command>VBoxManage</command> command.
             </para><para>
-              The short version of this option is <option>-v</option>.
+              The short version of this option is <option>-V</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
