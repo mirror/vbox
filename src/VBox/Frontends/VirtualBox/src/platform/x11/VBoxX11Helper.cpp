@@ -162,7 +162,24 @@ bool X11CheckExtension(const char *extensionName)
     return XQueryExtension(pDisplay, extensionName, &major_opcode, &first_event, &first_error);
 }
 
-QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
+static bool X11CheckDBusConnection(const QDBusConnection &connection)
+{
+    if (!connection.isConnected()) {
+        const QDBusError lastError = connection.lastError();
+        if (lastError.isValid())
+        {
+            LogRel(("QDBus error. Could not connect to D-Bus server: %s: %s\n",
+                    lastError.name().toUtf8().constData(),
+                    lastError.message().toUtf8().constData()));
+        }
+        else
+            LogRel(("QDBus error. Could not connect to D-Bus server: Unable to load dbus libraries\n"));
+        return false;
+    }
+    return true;
+}
+
+static QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 {
     QStringList serviceNames;
 
@@ -186,6 +203,31 @@ QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 
     return serviceNames;
 }
+
+bool X11CheckDBusScreenSaverServices()
+{
+    QDBusConnection connection = QDBusConnection::sessionBus();
+    if (!X11CheckDBusConnection(connection))
+        return false;
+
+    QDBusReply<QStringList> replyr = connection.interface()->registeredServiceNames();
+    if (!replyr.isValid())
+    {
+        const QDBusError replyError = replyr.error();
+        LogRel(("QDBus error. Could not query registered service names %s %s",
+                replyError.name().toUtf8().constData(), replyError.message().toUtf8().constData()));
+        return false;
+    }
+    for (int i = 0; i < replyr.value().size(); ++i)
+    {
+        const QString strServiceName = replyr.value()[i];
+        if (strServiceName.contains("screensaver", Qt::CaseInsensitive))
+            return true;
+    }
+    LogRel(("QDBus error. No screen saver service found among registered DBus services."));
+    return false;
+}
+
 
 static void X11IntrospectInterfaceNode(const QDomElement &interface,
                                          const QString &strServiceName, QVector<X11ScreenSaverInhibitMethod*> &methods)
@@ -234,23 +276,6 @@ static void X11IntrospectServices(const QDBusConnection &connection,
             X11IntrospectInterfaceNode(child, strService, methods);
         child = child.nextSiblingElement();
     }
-}
-
-static bool X11CheckDBusConnection(const QDBusConnection &connection)
-{
-    if (!connection.isConnected()) {
-        const QDBusError lastError = connection.lastError();
-        if (lastError.isValid())
-        {
-            LogRel(("QDBus error. Could not connect to D-Bus server: %s: %s\n",
-                    lastError.name().toUtf8().constData(),
-                    lastError.message().toUtf8().constData()));
-        }
-        else
-            LogRel(("QDBus error. Could not connect to D-Bus server: Unable to load dbus libraries\n"));
-        return false;
-    }
-    return true;
 }
 
 QVector<X11ScreenSaverInhibitMethod*> X11FindDBusScrenSaverInhibitMethods()

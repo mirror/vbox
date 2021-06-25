@@ -27,6 +27,9 @@
 #include "UIMaximumGuestScreenSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UIScaleFactorEditor.h"
+#ifdef VBOX_WS_X11
+# include "VBoxX11Helper.h"
+#endif
 
 
 /** Global settings: Display page data structure. */
@@ -80,9 +83,7 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     , m_pEditorScaleFactor(0)
     , m_pLabelMachineWindows(0)
     , m_pCheckBoxActivateOnMouseHover(0)
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     , m_pCheckBoxDisableHostScreenSaver(0)
-#endif
 {
     prepare();
 }
@@ -121,9 +122,8 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
     m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
     m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    m_pCheckBoxDisableHostScreenSaver->setChecked(oldData.m_fDisableHostScreenSaver);
-#endif
+    if (m_pCheckBoxDisableHostScreenSaver)
+        m_pCheckBoxDisableHostScreenSaver->setChecked(oldData.m_fDisableHostScreenSaver);
     m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
 }
@@ -136,9 +136,8 @@ void UIGlobalSettingsDisplay::putToCache()
     /* Cache new data: */
     newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
     newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    newData.m_fDisableHostScreenSaver = m_pCheckBoxDisableHostScreenSaver->isChecked();
-#endif
+    if (m_pCheckBoxDisableHostScreenSaver)
+        newData.m_fDisableHostScreenSaver = m_pCheckBoxDisableHostScreenSaver->isChecked();
     newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
     m_pCache->cacheCurrentData(newData);
 }
@@ -165,10 +164,11 @@ void UIGlobalSettingsDisplay::retranslateUi()
     m_pLabelMachineWindows->setText(tr("Machine Windows:"));
     m_pCheckBoxActivateOnMouseHover->setWhatsThis(tr("When checked, machine windows will be raised when the mouse pointer moves over them."));
     m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse"));
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    m_pCheckBoxDisableHostScreenSaver->setWhatsThis(tr("When checked, screen saver of the host OS is disabled."));
-    m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
-#endif
+    if (m_pCheckBoxDisableHostScreenSaver)
+    {
+        m_pCheckBoxDisableHostScreenSaver->setWhatsThis(tr("When checked, screen saver of the host OS is disabled."));
+        m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
+    }
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -255,12 +255,16 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         if (m_pCheckBoxActivateOnMouseHover)
             pLayoutMain->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1);
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* Prepare 'disable host screen saver' check-box: */
+#if defined(VBOX_WS_WIN)
         m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
+#elif defined(VBOX_WS_X11)
+        if (X11CheckDBusScreenSaverServices())
+            m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
+#endif
         if (m_pCheckBoxDisableHostScreenSaver)
             pLayoutMain->addWidget(m_pCheckBoxDisableHostScreenSaver, 6, 1);
-#endif
+
     }
 }
 
