@@ -101,6 +101,7 @@ private slots:
     void sltMediumFormatChanged();
     void sltMediumSizeChanged();
     void sltSelectedDiskSourceChanged();
+    void sltSelectLocationButtonClicked();
 
 private:
 

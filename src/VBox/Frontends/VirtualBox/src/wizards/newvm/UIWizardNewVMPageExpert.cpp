@@ -257,6 +257,9 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltValueModified);
     }
     connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
+
+    if (m_pLocationOpenButton)
+        connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVMPageExpert::sltSelectLocationButtonClicked);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -608,6 +611,11 @@ void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
     setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
     completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltSelectLocationButtonClicked()
+{
+    onSelectLocationButtonClicked();
 }
 
 void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
