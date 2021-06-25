@@ -80,7 +80,9 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     , m_pEditorScaleFactor(0)
     , m_pLabelMachineWindows(0)
     , m_pCheckBoxActivateOnMouseHover(0)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     , m_pCheckBoxDisableHostScreenSaver(0)
+#endif
 {
     prepare();
 }
@@ -103,7 +105,9 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldData.m_guiMaximumGuestScreenSizeValue = UIMaximumGuestScreenSizeValue(gEDataManager->maxGuestResolutionPolicy(),
                                                                              gEDataManager->maxGuestResolutionForPolicyFixed());
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
+#endif
     oldData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
     m_pCache->cacheInitialData(oldData);
 
@@ -289,10 +293,12 @@ bool UIGlobalSettingsDisplay::saveData()
         if (   fSuccess
             && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
             /* fSuccess = */ gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow);
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* Save whether the host screen saver is to be disable when a vm is running: */
         if (   fSuccess
             && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
             /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
+#endif
         /* Save guest-screen scale-factor: */
         if (   fSuccess
             && newData.m_scaleFactors != oldData.m_scaleFactors)
