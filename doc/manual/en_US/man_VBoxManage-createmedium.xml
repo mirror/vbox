@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-createmedium" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage createmedium</title>
   </refentryinfo>
 
@@ -44,7 +44,7 @@
         <arg choice="plain"><replaceable>floppy</replaceable></arg>
       </group>
       <arg choice="req">--filename=<replaceable>filename</replaceable></arg>
-      <group choice="opt">
+      <group>
         <arg choice="plain">--size=<replaceable>megabytes</replaceable></arg>
         <arg choice="plain">--sizebyte=<replaceable>bytes</replaceable></arg>
       </group>

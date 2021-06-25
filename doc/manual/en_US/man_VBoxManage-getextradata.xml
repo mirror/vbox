@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-getextradata" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage getextradata</title>
   </refentryinfo>
 
@@ -46,7 +46,7 @@
       </group>
       <group choice="plain">
         <arg choice="req"><replaceable>keyword</replaceable></arg>
-        <arg choice="opt">enumerate</arg>
+        <arg>enumerate</arg>
       </group>
     </cmdsynopsis>
   </refsynopsisdiv>
