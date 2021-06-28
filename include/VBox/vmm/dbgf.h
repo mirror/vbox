@@ -853,6 +853,10 @@ typedef enum DBGFBPTYPE
 
 /** All kind of access (read, write, all sizes). */
 #define DBGFBPIOACCESS_ALL                  UINT32_C(0x00001f1f)
+/** All kind of access for MMIO (read, write, all sizes). */
+#define DBGFBPIOACCESS_ALL_MMIO             DBGFBPIOACCESS_ALL
+/** All kind of access (read, write, all sizes). */
+#define DBGFBPIOACCESS_ALL_PORT_IO          UINT32_C(0x00000303)
 
 /** The acceptable mask for I/O ports.   */
 #define DBGFBPIOACCESS_VALID_MASK_PORT_IO   UINT32_C(0x00000303)
@@ -969,6 +973,8 @@ typedef const DBGFBPPUB *PCDBGFBPPUB;
 /** Flag indicating whether the action assoicated with the breakpoint should be carried out
  * after the instruction causing the breakpoint to hit was executed. */
 #define DBGF_BP_F_HIT_EXEC_AFTER            RT_BIT(2)
+/** The acceptable flags mask.   */
+#define DBGF_BP_F_VALID_MASK                UINT32_C(0x00000007)
 /** @} */
 
 
@@ -997,10 +1003,38 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void
 typedef FNDBGFBPHIT *PFNDBGFBPHIT;
 
 
+/**
+ * I/O breakpoint hit handler.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the breakpoint was handled and guest execution can resume.
+ * @retval  VINF_DBGF_BP_HALT if guest execution should be stopped and the debugger should be invoked.
+ * @retval  VINF_DBGF_R3_BP_OWNER_DEFER return to ring-3 and invoke the owner callback there again.
+ *
+ * @param   pVM         The cross-context VM structure pointer.
+ * @param   idCpu       ID of the vCPU triggering the breakpoint.
+ * @param   pvUserBp    User argument of the set breakpoint.
+ * @param   hBp         The breakpoint handle.
+ * @param   pBpPub      Pointer to the readonly public state of the breakpoint.
+ * @param   fFlags      Flags indicating when the handler was called (DBGF_BP_F_HIT_EXEC_BEFORE vs DBGF_BP_F_HIT_EXEC_AFTER).
+ * @param   fAccess     Access flags, see DBGFBPIOACCESS_XXX.
+ * @param   uAddr       The address of the access, for port I/O this will hold the port number.
+ * @param   uValue      The value read or written (the value for reads is only valid when DBGF_BP_F_HIT_EXEC_AFTER is set).
+ *
+ * @remarks The handler is called on the EMT of vCPU triggering the breakpoint and no locks are held.
+ * @remarks Any status code returned other than the ones mentioned will send the VM straight into a
+ *          guru meditation.
+ */
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPIOHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, DBGFBP hBp, PCDBGFBPPUB pBpPub,
+                                                      uint16_t fFlags, uint32_t fAccess, uint64_t uAddr, uint64_t uValue));
+/** Pointer to a FNDBGFBPIOHIT(). */
+typedef FNDBGFBPIOHIT *PFNDBGFBPIOHIT;
+
+
 #ifdef IN_RING3
 /** @defgroup grp_dbgf_bp_r3    The DBGF Breakpoint Host Context Ring-3 API
  * @{ */
-VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNER phBpOwner);
+VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PFNDBGFBPIOHIT pfnBpIoHit, PDBGFBPOWNER phBpOwner);
 VMMR3DECL(int) DBGFR3BpOwnerDestroy(PUVM pUVM, DBGFBPOWNER hBpOwner);
 
 VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
@@ -1025,7 +1059,7 @@ VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t
                                uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetMmioEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                  RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
-                                 uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+                                 uint32_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp);
 VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, DBGFBP hBp);
 VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp);
@@ -1057,7 +1091,7 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(void) DBGFR0CleanupVM(PGVM pGVM);
 
-VMMR0_INT_DECL(int)  DBGFR0BpOwnerSetUpContext(PGVM pGVM, DBGFBPOWNER hBpOwner, PFNDBGFBPHIT pfnBpHit);
+VMMR0_INT_DECL(int)  DBGFR0BpOwnerSetUpContext(PGVM pGVM, DBGFBPOWNER hBpOwner, PFNDBGFBPHIT pfnBpHit, PFNDBGFBPIOHIT pfnBpIoHit);
 VMMR0_INT_DECL(int)  DBGFR0BpOwnerDestroyContext(PGVM pGVM, DBGFBPOWNER hBpOwner);
 
 VMMR0_INT_DECL(int)  DBGFR0BpSetUpContext(PGVM pGVM, DBGFBP hBp, void *pvUser);
@@ -1075,6 +1109,8 @@ VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsInt3Armed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckPortIo(PVMCC pVM, PVMCPU pVCpu, RTIOPORT uIoPort,
+                                              uint32_t fAccess, uint32_t uValue, bool fBefore);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,
                                                      unsigned cArgs, ...);
 VMM_INT_DECL(int)           DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping);

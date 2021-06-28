@@ -168,6 +168,8 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBG
                                                           : NIL_DBGFBPOWNER);
     if (pBpOwnerR0)
     {
+        AssertReturn(pBpOwnerR0->pfnBpIoHitR0, VERR_DBGF_BP_IPE_1);
+
         VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
         if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
@@ -233,6 +235,90 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBG
 
 
 /**
+ * Executes the actions associated with the given port I/O breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   fBefore     Flag whether the check is done before the access is carried out,
+ *                      false if it is done after the access.
+ * @param   fAccess     Access flags, see DBGFBPIOACCESS_XXX.
+ * @param   uAddr       The address of the access, for port I/O this will hold the port number.
+ * @param   uValue      The value read or written (the value for reads is only valid when DBGF_BP_F_HIT_EXEC_AFTER is set).
+ * @param   hBp         The breakpoint handle which hit.
+ * @param   pBp         The shared breakpoint state.
+ * @param   pBpR0       The ring-0 only breakpoint state.
+ */
+#ifdef IN_RING0
+DECLINLINE(VBOXSTRICTRC) dbgfBpPortIoHit(PVMCC pVM, PVMCPU pVCpu, bool fBefore, uint32_t fAccess, uint64_t uAddr, uint64_t uValue,
+                                         DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
+#else
+DECLINLINE(VBOXSTRICTRC) dbgfBpPortIoHit(PVMCC pVM, PVMCPU pVCpu, bool fBefore, uint32_t fAccess, uint64_t uAddr, uint64_t uValue,
+                                         DBGFBP hBp, PDBGFBPINT pBp)
+#endif
+{
+    ASMAtomicIncU64(&pBp->Pub.cHits);
+
+    VBOXSTRICTRC rcStrict = VINF_EM_DBG_BREAKPOINT;
+#ifdef IN_RING0
+    PCDBGFBPOWNERINTR0 pBpOwnerR0 = dbgfR0BpOwnerGetByHnd(pVM,
+                                                            pBpR0->fInUse
+                                                          ? pBpR0->hOwner
+                                                          : NIL_DBGFBPOWNER);
+    if (pBpOwnerR0)
+    {
+        AssertReturn(pBpOwnerR0->pfnBpIoHitR0, VERR_DBGF_BP_IPE_1);
+        rcStrict = pBpOwnerR0->pfnBpIoHitR0(pVM, pVCpu->idCpuUnsafe, pBpR0->pvUserR0, hBp, &pBp->Pub,
+                                              fBefore
+                                            ? DBGF_BP_F_HIT_EXEC_BEFORE
+                                            : DBGF_BP_F_HIT_EXEC_AFTER,
+                                            fAccess, uAddr, uValue);
+    }
+    else
+    {
+        pVCpu->dbgf.s.fBpInvokeOwnerCallback = true; /* Need to check this for ring-3 only owners. */
+        pVCpu->dbgf.s.hBpActive              = hBp;
+        pVCpu->dbgf.s.fBpIoActive            = true;
+        pVCpu->dbgf.s.fBpIoBefore            = fBefore;
+        pVCpu->dbgf.s.uBpIoAddress           = uAddr;
+        pVCpu->dbgf.s.fBpIoAccess            = fAccess;
+        pVCpu->dbgf.s.uBpIoValue             = uValue;
+    }
+#else
+    /* Resolve owner (can be NIL_DBGFBPOWNER) and invoke callback if there is one. */
+    if (pBp->Pub.hOwner != NIL_DBGFBPOWNER)
+    {
+        PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
+        if (pBpOwner)
+        {
+            AssertReturn(pBpOwner->pfnBpIoHitR3, VERR_DBGF_BP_IPE_1);
+            rcStrict = pBpOwner->pfnBpIoHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub,
+                                                fBefore
+                                              ? DBGF_BP_F_HIT_EXEC_BEFORE
+                                              : DBGF_BP_F_HIT_EXEC_AFTER,
+                                              fAccess, uAddr, uValue);
+        }
+    }
+#endif
+    if (   rcStrict == VINF_DBGF_BP_HALT
+        || rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+    {
+        pVCpu->dbgf.s.hBpActive = hBp;
+        if (rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+            pVCpu->dbgf.s.fBpInvokeOwnerCallback = true;
+        else
+            pVCpu->dbgf.s.fBpInvokeOwnerCallback = false;
+        rcStrict = VINF_EM_DBG_BREAKPOINT;
+    }
+    else if (   rcStrict != VINF_SUCCESS
+             && rcStrict != VINF_EM_DBG_BREAKPOINT)
+        rcStrict = VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS; /* Guru meditation. */
+
+    return rcStrict;
+}
+
+
+/**
  * Walks the L2 table starting at the given root index searching for the given key.
  *
  * @returns VBox status code.
@@ -293,6 +379,87 @@ static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
     }
 
     return VERR_DBGF_BP_L2_LOOKUP_FAILED;
+}
+
+
+/**
+ * Checks whether there is a port I/O breakpoint for the given range and access size.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_EM_DBG_BREAKPOINT means there is a breakpoint pending.
+ * @retval  VINF_SUCCESS means everything is fine to continue.
+ * @retval  anything else means a fatal error causing a guru meditation.
+ *
+ * @param   pVM             The current context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uIoPort         The I/O port being accessed.
+ * @param   fAccess         Appropriate DBGFBPIOACCESS_XXX.
+ * @param   uValue          The value being written to or read from the device
+ *                          (The value is only valid for a read when the
+ *                          call is made after the access, writes are always valid).
+ * @param   fBefore         Flag whether the check is done before the access is carried out,
+ *                          false if it is done after the access.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) DBGFBpCheckPortIo(PVMCC pVM, PVMCPU pVCpu, RTIOPORT uIoPort,
+                                             uint32_t fAccess, uint32_t uValue, bool fBefore)
+{
+    RT_NOREF(uValue); /** @todo Trigger only on specific values. */
+
+    /* Don't trigger in single stepping mode. */
+    if (pVCpu->dbgf.s.fSingleSteppingRaw)
+        return VINF_SUCCESS;
+
+#if defined(IN_RING0)
+    uint32_t volatile *paBpLocPortIo = pVM->dbgfr0.s.CTX_SUFF(paBpLocPortIo);
+#elif defined(IN_RING3)
+    PUVM pUVM = pVM->pUVM;
+    uint32_t volatile *paBpLocPortIo = pUVM->dbgf.s.CTX_SUFF(paBpLocPortIo);
+#else
+# error "Unsupported host context"
+#endif
+    if (paBpLocPortIo)
+    {
+        const uint32_t u32Entry = ASMAtomicReadU32(&paBpLocPortIo[uIoPort]);
+        if (u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
+        {
+            uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+            if (RT_LIKELY(u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND))
+            {
+                DBGFBP hBp = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32Entry);
+
+                /* Query the internal breakpoint state from the handle. */
+#ifdef IN_RING3
+                PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp);
+#else
+                PDBGFBPINTR0 pBpR0 = NULL;
+                PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
+#endif
+                if (   pBp
+                    && DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_PORT_IO)
+                {
+                    if (   uIoPort >= pBp->Pub.u.PortIo.uPort
+                        && uIoPort < pBp->Pub.u.PortIo.uPort + pBp->Pub.u.PortIo.cPorts
+                        && pBp->Pub.u.PortIo.fAccess & fAccess
+                        && (   (   fBefore
+                                && DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
+                            || (   !fBefore
+                                && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))))
+#ifdef IN_RING3
+                        return dbgfBpPortIoHit(pVM, pVCpu, fBefore, fAccess, uIoPort, uValue, hBp, pBp);
+#else
+                        return dbgfBpPortIoHit(pVM, pVCpu, fBefore, fAccess, uIoPort, uValue, hBp, pBp, pBpR0);
+#endif
+                    /* else: No matching port I/O breakpoint. */
+                }
+                else /* Invalid breakpoint handle or not an port I/O breakpoint. */
+                    return VERR_DBGF_BP_L1_LOOKUP_FAILED;
+            }
+            else /* Some invalid type. */
+                return VERR_DBGF_BP_L1_LOOKUP_FAILED;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 

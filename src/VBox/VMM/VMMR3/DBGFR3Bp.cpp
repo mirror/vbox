@@ -90,7 +90,7 @@
  * |     .      |            |     .     |
  * |     .      |            |     .     |
  * +------------+            +-----------+
- *                            L2 idx AVL
+ *                            L2 idx BST
  * @endverbatim
  *
  *     -# Take the lowest 16 bits of the breakpoint address and use it as an direct index
@@ -106,7 +106,7 @@
  *            - A 2 in the topmost 4 bits means that there are multiple breakpoints registered
  *              matching the lowest 16bits and the search must continue in the L2 table with the
  *              remaining 28bits acting as an index into the L2 table indicating the search root.
- *     -# The L2 table consists of multiple index based AVL trees, there is one for each reference
+ *     -# The L2 table consists of multiple index based binary search trees, there is one for each reference
  *        from the L1 table. The key for the table are the upper 6 bytes of the breakpoint address
  *        used for searching. This tree is traversed until either a matching address is found and
  *        the breakpoint is being processed or again forwarded to the guest if it isn't successful.
@@ -132,13 +132,13 @@
  * - Index based tables and trees are used instead of pointers because the tables
  *   are always mapped into ring-0 and ring-3 with different base addresses.
  * - Efficent breakpoint allocation is done by having a global bitmap indicating free
- *   and occupied breakpoint entries. Same applies for the L2 AVL table.
+ *   and occupied breakpoint entries. Same applies for the L2 BST table.
  * - Special care must be taken when modifying the L1 and L2 tables as other EMTs
  *   might still access it (want to try a lockless approach first using
  *   atomic updates, have to resort to locking if that turns out to be too difficult).
  * - Each BP entry is supposed to be 64 byte big and each chunk should contain 65536
  *   breakpoints which results in 4MiB for each chunk plus the allocation bitmap.
- * - ring-0 has to take special care when traversing the L2 AVL tree to not run into cycles
+ * - ring-0 has to take special care when traversing the L2 BST to not run into cycles
  *   and do strict bounds checking before accessing anything. The L1 and L2 table
  *   are written to from ring-3 only. Same goes for the breakpoint table with the
  *   exception being the opaque user argument for ring-0 which is stored in ring-0 only
@@ -462,31 +462,15 @@ static int dbgfR3BpOwnerEnsureInit(PUVM pUVM)
 
 
 /**
- * Returns the internal breakpoint owner state for the given handle.
- *
- * @returns Pointer to the internal breakpoint owner state or NULL if the handle is invalid.
- * @param   pUVM                The user mode VM handle.
- * @param   hBpOwner            The breakpoint owner handle to resolve.
- */
-DECLINLINE(PDBGFBPOWNERINT) dbgfR3BpOwnerGetByHnd(PUVM pUVM, DBGFBPOWNER hBpOwner)
-{
-    AssertReturn(hBpOwner < DBGF_BP_OWNER_COUNT_MAX, NULL);
-    AssertPtrReturn(pUVM->dbgf.s.pbmBpOwnersAllocR3, NULL);
-
-    AssertReturn(ASMBitTest(pUVM->dbgf.s.pbmBpOwnersAllocR3, hBpOwner), NULL);
-    return &pUVM->dbgf.s.paBpOwnersR3[hBpOwner];
-}
-
-
-/**
  * Retains the given breakpoint owner handle for use.
  *
  * @returns VBox status code.
  * @retval VERR_INVALID_HANDLE if the given breakpoint owner handle is invalid.
  * @param   pUVM                The user mode VM handle.
  * @param   hBpOwner            The breakpoint owner handle to retain, NIL_DBGFOWNER is accepted without doing anything.
+ * @param   fIo                 Flag whether the owner must have the I/O handler set because it used by an I/O breakpoint.
  */
-DECLINLINE(int) dbgfR3BpOwnerRetain(PUVM pUVM, DBGFBPOWNER hBpOwner)
+DECLINLINE(int) dbgfR3BpOwnerRetain(PUVM pUVM, DBGFBPOWNER hBpOwner, bool fIo)
 {
     if (hBpOwner == NIL_DBGFBPOWNER)
         return VINF_SUCCESS;
@@ -494,6 +478,11 @@ DECLINLINE(int) dbgfR3BpOwnerRetain(PUVM pUVM, DBGFBPOWNER hBpOwner)
     PDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pUVM, hBpOwner);
     if (pBpOwner)
     {
+        AssertReturn (   (   fIo
+                          && pBpOwner->pfnBpIoHitR3)
+                      ||  (   !fIo
+                           && pBpOwner->pfnBpHitR3),
+                      VERR_INVALID_HANDLE);
         ASMAtomicIncU32(&pBpOwner->cRefs);
         return VINF_SUCCESS;
     }
@@ -649,7 +638,9 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
                          uint16_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp,
                          PDBGFBPINT *ppBp)
 {
-    int rc = dbgfR3BpOwnerRetain(pUVM, hOwner);
+    bool fIo =    enmType == DBGFBPTYPE_PORT_IO
+               || enmType == DBGFBPTYPE_MMIO;
+    int rc = dbgfR3BpOwnerRetain(pUVM, hOwner, fIo);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1681,7 +1672,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpPortIoRemoveEmtWorker(PVM pVM, PVMCPU 
             uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
             AssertReturn(u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND, VERR_DBGF_BP_IPE_7);
 
-            bool fXchg = ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxPort], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry);
+            bool fXchg = ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocPortIoR3[idxPort], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry);
             Assert(fXchg); RT_NOREF(fXchg);
         }
     }
@@ -1751,7 +1742,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
  */
 static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     PVM pVM = pUVM->pVM;
 
     Assert(!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
@@ -1801,6 +1792,12 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             break;
         }
         case DBGFBPTYPE_PORT_IO:
+        {
+            dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
+            ASMAtomicIncU32(&pUVM->dbgf.s.cPortIoBps);
+            IOMR3NotifyBreakpointCountChange(pVM, true /*fPortIo*/, false /*fMmio*/);
+            break;
+        }
         case DBGFBPTYPE_MMIO:
             rc = VERR_NOT_IMPLEMENTED;
             break;
@@ -1825,7 +1822,7 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  */
 static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     PVM pVM = pUVM->pVM;
 
     Assert(DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
@@ -1869,6 +1866,13 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             break;
         }
         case DBGFBPTYPE_PORT_IO:
+        {
+            dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
+            uint32_t cPortIoBps = ASMAtomicDecU32(&pUVM->dbgf.s.cPortIoBps);
+            if (!cPortIoBps) /** @todo Need to gather all EMTs to not have a stray EMT accessing BP data when it might go away. */
+                IOMR3NotifyBreakpointCountChange(pVM, false /*fPortIo*/, false /*fMmio*/);
+            break;
+        }
         case DBGFBPTYPE_MMIO:
             rc = VERR_NOT_IMPLEMENTED;
             break;
@@ -1882,23 +1886,95 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 
 
 /**
+ * Worker for DBGFR3BpHit() differnetiating on the breakpoint type.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The vCPU the breakpoint event happened on.
+ * @param   hBp         The breakpoint handle.
+ * @param   pBp         The breakpoint data.
+ * @param   pBpOwner    The breakpoint owner data.
+ *
+ * @thread EMT
+ */
+static VBOXSTRICTRC dbgfR3BpHit(PVM pVM, PVMCPU pVCpu, DBGFBP hBp, PDBGFBPINT pBp, PCDBGFBPOWNERINT pBpOwner)
+{
+    VBOXSTRICTRC rcStrict;
+
+    switch (DBGF_BP_PUB_GET_TYPE(&pBp->Pub))
+    {
+        case DBGFBPTYPE_REG:
+        case DBGFBPTYPE_INT3:
+        {
+            if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
+                rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                uint8_t abInstr[DBGF_BP_INSN_MAX];
+                RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+                int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Replace the int3 with the original instruction byte. */
+                    abInstr[0] = pBp->Pub.u.Int3.bOrg;
+                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
+                    if (   rcStrict == VINF_SUCCESS
+                        && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
+                    {
+                        VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
+                        if (rcStrict2 == VINF_SUCCESS)
+                            return VBOXSTRICTRC_VAL(rcStrict);
+                        else if (rcStrict2 != VINF_DBGF_BP_HALT)
+                            return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+                    }
+                    else
+                        return VBOXSTRICTRC_VAL(rcStrict);
+                }
+            }
+            break;
+        }
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+        {
+            pVCpu->dbgf.s.fBpIoActive = false;
+            rcStrict = pBpOwner->pfnBpIoHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub,
+                                                pVCpu->dbgf.s.fBpIoBefore
+                                              ? DBGF_BP_F_HIT_EXEC_BEFORE
+                                              : DBGF_BP_F_HIT_EXEC_AFTER,
+                                              pVCpu->dbgf.s.fBpIoAccess, pVCpu->dbgf.s.uBpIoAddress,
+                                              pVCpu->dbgf.s.uBpIoValue);
+
+            break;
+        }
+        default:
+            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(&pBp->Pub)),
+                                  VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Creates a new breakpoint owner returning a handle which can be used when setting breakpoints.
  *
  * @returns VBox status code.
  * @retval  VERR_DBGF_BP_OWNER_NO_MORE_HANDLES if there are no more free owner handles available.
  * @param   pUVM                The user mode VM handle.
  * @param   pfnBpHit            The R3 callback which is called when a breakpoint with the owner handle is hit.
+ * @param   pfnBpIoHit          The R3 callback which is called when a I/O breakpoint with the owner handle is hit.
  * @param   phBpOwner           Where to store the owner handle on success.
  *
  * @thread Any thread but might defer work to EMT on the first call.
  */
-VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNER phBpOwner)
+VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PFNDBGFBPIOHIT pfnBpIoHit, PDBGFBPOWNER phBpOwner)
 {
     /*
      * Validate the input.
      */
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertPtrReturn(pfnBpHit, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnBpHit || pfnBpIoHit, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBpOwner, VERR_INVALID_POINTER);
 
     int rc = dbgfR3BpOwnerEnsureInit(pUVM);
@@ -1918,8 +1994,9 @@ VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNE
             if (!ASMAtomicBitTestAndSet(pUVM->dbgf.s.pbmBpOwnersAllocR3, iClr))
             {
                 PDBGFBPOWNERINT pBpOwner = &pUVM->dbgf.s.paBpOwnersR3[iClr];
-                pBpOwner->cRefs      = 1;
-                pBpOwner->pfnBpHitR3 = pfnBpHit;
+                pBpOwner->cRefs        = 1;
+                pBpOwner->pfnBpHitR3   = pfnBpHit;
+                pBpOwner->pfnBpIoHitR3 = pfnBpIoHit;
 
                 *phBpOwner = (DBGFBPOWNER)iClr;
                 return VINF_SUCCESS;
@@ -2252,8 +2329,8 @@ VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
 VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
-    return DBGFR3BpSetPortIoEx(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, uPort, cPorts,
-                               DBGF_BP_F_DEFAULT, fAccess, iHitTrigger, iHitDisable, phBp);
+    return DBGFR3BpSetPortIoEx(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, uPort, cPorts, fAccess,
+                               DBGF_BP_F_DEFAULT, iHitTrigger, iHitDisable, phBp);
 }
 
 
@@ -2285,10 +2362,12 @@ VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
     AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_PORT_IO), VERR_INVALID_FLAGS);
     AssertReturn(fAccess, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~DBGF_BP_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(fFlags, VERR_INVALID_FLAGS);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBp, VERR_INVALID_POINTER);
     AssertReturn(cPorts > 0, VERR_OUT_OF_RANGE);
-    AssertReturn((RTIOPORT)(uPort + cPorts) < uPort, VERR_OUT_OF_RANGE);
+    AssertReturn((RTIOPORT)(uPort + (cPorts - 1)) >= uPort, VERR_OUT_OF_RANGE);
 
     int rc = dbgfR3BpPortIoEnsureInit(pUVM);
     AssertRCReturn(rc, rc);
@@ -2363,7 +2442,7 @@ VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t
                                uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     return DBGFR3BpSetMmioEx(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, GCPhys, cb, fAccess,
-                             iHitTrigger, iHitDisable, phBp);
+                             DBGF_BP_F_DEFAULT, iHitTrigger, iHitDisable, phBp);
 }
 
 
@@ -2377,6 +2456,7 @@ VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t
  * @param   GCPhys          The first MMIO address.
  * @param   cb              The size of the MMIO range to break on.
  * @param   fAccess         The access we want to break on.
+ * @param   fFlags          Combination of DBGF_BP_F_XXX.
  * @param   iHitTrigger     The hit count at which the breakpoint start
  *                          triggering. Use 0 (or 1) if it's gonna trigger at
  *                          once.
@@ -2388,12 +2468,14 @@ VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t
  */
 VMMR3DECL(int) DBGFR3BpSetMmioEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                  RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
-                                 uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
+                                 uint32_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_MMIO), VERR_INVALID_FLAGS);
     AssertReturn(fAccess, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~DBGF_BP_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(fFlags, VERR_INVALID_FLAGS);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBp, VERR_INVALID_POINTER);
     AssertReturn(cb, VERR_OUT_OF_RANGE);
@@ -2594,7 +2676,10 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->dbgf.s.fBpInvokeOwnerCallback)
     {
         DBGFBP hBp = pVCpu->dbgf.s.hBpActive;
-        PDBGFBPINT pBp = dbgfR3BpGetByHnd(pVM->pUVM, pVCpu->dbgf.s.hBpActive);
+        pVCpu->dbgf.s.hBpActive              = NIL_DBGFBP;
+        pVCpu->dbgf.s.fBpInvokeOwnerCallback = false;
+
+        PDBGFBPINT pBp = dbgfR3BpGetByHnd(pVM->pUVM, hBp);
         AssertReturn(pBp, VERR_DBGF_BP_IPE_9);
 
         /* Resolve owner (can be NIL_DBGFBPOWNER) and invoke callback if there is one. */
@@ -2603,35 +2688,10 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
             PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
             if (pBpOwner)
             {
-                VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-
-                if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
-                    rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
-                if (rcStrict == VINF_SUCCESS)
-                {
-                    uint8_t abInstr[DBGF_BP_INSN_MAX];
-                    RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
-                    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
-                    AssertRC(rc);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Replace the int3 with the original instruction byte. */
-                        abInstr[0] = pBp->Pub.u.Int3.bOrg;
-                        rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
-                        if (   rcStrict == VINF_SUCCESS
-                            && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
-                        {
-                            VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
-                            if (rcStrict2 == VINF_SUCCESS)
-                                return VBOXSTRICTRC_VAL(rcStrict);
-                            else if (rcStrict2 != VINF_DBGF_BP_HALT)
-                                return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
-                        }
-                        else
-                            return VBOXSTRICTRC_VAL(rcStrict);
-                    }
-                }
-                else if (rcStrict != VINF_DBGF_BP_HALT) /* Guru meditation. */
+                VBOXSTRICTRC rcStrict = dbgfR3BpHit(pVM, pVCpu, hBp, pBp, pBpOwner);
+                if (VBOXSTRICTRC_VAL(rcStrict) == VINF_SUCCESS)
+                    return VINF_SUCCESS;
+                else if (VBOXSTRICTRC_VAL(rcStrict) != VINF_DBGF_BP_HALT) /* Guru meditation. */
                     return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
                 /* else: Halt in the debugger. */
             }

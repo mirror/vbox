@@ -1208,7 +1208,7 @@ VMMR3DECL(int) DBGFR3FlowTraceModCreate(PUVM pUVM, VMCPUID idCpu,
         rc = RTSemFastMutexCreate(&pThis->hMtx);
         if (RT_SUCCESS(rc))
         {
-            rc = DBGFR3BpOwnerCreate(pUVM, dbgfR3FlowTraceModProbeFiredWorker, &pThis->hBpOwner);
+            rc = DBGFR3BpOwnerCreate(pUVM, dbgfR3FlowTraceModProbeFiredWorker, NULL /*pfnBpIoHit*/, &pThis->hBpOwner);
             if (RT_SUCCESS(rc))
             {
                 PDBGFFLOWTRACEPROBEINT pProbe = hFlowTraceProbeCommon;

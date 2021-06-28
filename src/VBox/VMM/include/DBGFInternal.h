@@ -823,8 +823,12 @@ typedef struct DBGFBPOWNERINT
     uint32_t                    u32Pad0;
     /** Callback to call when a breakpoint has hit, Ring-3 Ptr. */
     R3PTRTYPE(PFNDBGFBPHIT)     pfnBpHitR3;
+    /** Callback to call when a I/O breakpoint has hit, Ring-3 Ptr. */
+    R3PTRTYPE(PFNDBGFBPIOHIT)   pfnBpIoHitR3;
+    /** Padding. */
+    uint64_t                    u64Pad1;
 } DBGFBPOWNERINT;
-AssertCompileSize(DBGFBPOWNERINT, 16);
+AssertCompileSize(DBGFBPOWNERINT, 32);
 /** Pointer to an internal breakpoint owner state, shared part. */
 typedef DBGFBPOWNERINT *PDBGFBPOWNERINT;
 /** Pointer to a constant internal breakpoint owner state, shared part. */
@@ -842,8 +846,12 @@ typedef struct DBGFBPOWNERINTR0
     uint32_t                    u32Pad0;
     /** Callback to call when a breakpoint has hit, Ring-0 Ptr. */
     R0PTRTYPE(PFNDBGFBPHIT)     pfnBpHitR0;
+    /** Callback to call when a I/O breakpoint has hit, Ring-0 Ptr. */
+    R0PTRTYPE(PFNDBGFBPIOHIT)   pfnBpIoHitR0;
+    /** Padding. */
+    uint64_t                    u64Pad1;
 } DBGFBPOWNERINTR0;
-AssertCompileSize(DBGFBPOWNERINTR0, 16);
+AssertCompileSize(DBGFBPOWNERINTR0, 32);
 /** Pointer to an internal breakpoint owner state, shared part. */
 typedef DBGFBPOWNERINTR0 *PDBGFBPOWNERINTR0;
 /** Pointer to a constant internal breakpoint owner state, shared part. */
@@ -1210,14 +1218,22 @@ typedef struct DBGFCPU
     /** Set if we're singlestepping in raw mode.
      * This is checked and cleared in the \#DB handler. */
     bool                    fSingleSteppingRaw;
-    /** Alignment padding. */
-    bool                    afPadding[2];
+    /** Flag whether an I/O breakpoint is pending. */
+    bool                    fBpIoActive;
+    /** Flagh whether the I/O breakpoint hit before the access or after. */
+    bool                    fBpIoBefore;
     /** Current active breakpoint handle.
      * This is NIL_DBGFBP if not active. It is set when a execution engine
      * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT.
      *
      * @todo drop this in favor of aEvents!  */
     DBGFBP                  hBpActive;
+    /** The access mask for a pending I/O breakpoint. */
+    uint32_t                fBpIoAccess;
+    /** The address of the access. */
+    uint64_t                uBpIoAddress;
+    /** The value of the access. */
+    uint64_t                uBpIoValue;
 
     /** The number of events on the stack (aEvents).
      * The pending event is the last one (aEvents[cEvents - 1]), but only when
@@ -1390,6 +1406,8 @@ typedef struct DBGFUSERPERVM
     /** Fast mutex protecting the L2 table from concurrent write accesses (EMTs
      * can still do read accesses without holding it while traversing the trees). */
     RTSEMFASTMUTEX                  hMtxBpL2Wr;
+    /** Number of armed port I/O breakpoints. */
+    volatile uint32_t               cPortIoBps;
     /** @} */
 
     /** The type database lock. */
