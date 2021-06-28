@@ -1921,6 +1921,14 @@ BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelProtFar16DataToFlat,(uint32_t uFar1616)
 BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeDataToFlat,(uint32_t uFar1616));
 
 /**
+ * Converts a link-time pointer to a current context pointer.
+ *
+ * @returns Converted pointer.
+ * @param   pvLnkPtr    The pointer the linker produced.
+ */
+BS3_CMN_PROTO_FARSTUB(4, void BS3_FAR *, Bs3SelLnkPtrToCurPtr,(void BS3_FAR *pvLnkPtr));
+
+/**
  * Gets a flat address from a working poitner.
  *
  * @returns flat address (32-bit or 64-bit).
@@ -2669,17 +2677,17 @@ BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpSegFromFlat,(PBS3REGCTX pRegCtx, PBS3REG
  * @param   pSel        The selector register (points within @a pRegCtx).
  * @param   pvPtr       Current context pointer.
  */
-BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpSegFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, PRTSEL pSel, void  BS3_FAR *pvPtr));
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpSegFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, PRTSEL pSel, void BS3_FAR *pvPtr));
 
 /**
- * Sets a GPR and DS to point at the same location as @a ovPtr.
+ * Sets a GPR and DS to point at the same location as @a pvPtr.
  *
  * @param   pRegCtx     The register context.
  * @param   pGpr        The general purpose register to set (points within
  *                      @a pRegCtx).
  * @param   pvPtr       Current context pointer.
  */
-BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpDsFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, void  BS3_FAR *pvPtr));
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpDsFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, void BS3_FAR *pvPtr));
 
 /**
  * Sets CS:RIP to point at the same piece of code as @a uFlatCode.
@@ -3138,7 +3146,7 @@ BS3_CMN_PROTO_STUB(void, Bs3TrapPrintFrame,(PCBS3TRAPFRAME pTrapFrame));
 /**
  * Sets up a long jump from a trap handler.
  *
- * The long jump will only be performed onced, but will catch any kind of trap,
+ * The long jump will only be performed once, but will catch any kind of trap,
  * fault, interrupt or irq.
  *
  * @retval  true on the initial call.
@@ -3924,7 +3932,7 @@ BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t c
  *
  * @param   paEntries       The mode sub-test-by-one entries.
  * @param   cEntries        The number of sub-test-by-one entries.
- * @param   fFlags          Reserved for the future, MBZ.
+ * @param   fFlags          BS3TESTMODEBYONEENTRY_F_XXX.
  */
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_t cEntries, uint32_t fFlags));
 

@@ -125,6 +125,7 @@
 #undef Bs3SelFlatCodeToRealMode
 #undef Bs3SelFlatDataToProtFar16
 #undef Bs3SelFlatDataToRealMode
+#undef Bs3SelLnkPtrToCurPtr
 #undef Bs3SelProtFar16DataToFlat
 #undef Bs3SelProtFar16DataToRealMode
 #undef Bs3SelProtFar32ToFlat32
@@ -187,8 +188,8 @@
 #undef Bs3TrapSetDpl
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmp
 #undef Bs3TrapSetJmpAndRestore
+#undef Bs3TrapSetJmp
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
