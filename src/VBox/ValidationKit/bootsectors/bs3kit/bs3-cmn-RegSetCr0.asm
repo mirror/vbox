@@ -71,7 +71,7 @@ BS3_PROC_BEGIN_CMN Bs3RegSetCr0, BS3_PBC_HYBRID_SAFE
         push    xAX
 
         mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     xAX, BS3_SYSCALL_SET_DRX
+        mov     xAX, BS3_SYSCALL_SET_CRX
         mov     dl, 0
         call    Bs3Syscall
         pop     xAX

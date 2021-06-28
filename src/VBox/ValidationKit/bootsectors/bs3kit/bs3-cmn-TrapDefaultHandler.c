@@ -115,7 +115,7 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
         uint32_t uValue;
         switch (pTrapFrame->Ctx.rdx.u8)
         {
-            case 0: uValue = ASMGetDR0(); break;
+            case 0: uValue = ASMGetCR0(); break;
             case 2: uValue = ASMGetCR2(); break;
             case 3: uValue = ASMGetCR3(); break;
             case 4: uValue = ASMGetCR4(); break;
