@@ -396,10 +396,10 @@ static DECLCALLBACK(int) dbgSymSrvQueryInfo(PRTHTTPCALLBACKDATA pData, PRTHTTPSE
         {
             const char *pszFile = pszPathAbs;
 
-            if (   g_pszPdbExe
-                && !RTPathExists(pszPathAbsXml))
+            if (g_pszPdbExe)
             {
-                rc = rtDbgSymSrvConvertToGhidraXml(pszPathAbs, pszPathAbsXml);
+                if (!RTPathExists(pszPathAbsXml))
+                    rc = rtDbgSymSrvConvertToGhidraXml(pszPathAbs, pszPathAbsXml);
                 if (RT_SUCCESS(rc))
                     pszFile = pszPathAbsXml;
             }
