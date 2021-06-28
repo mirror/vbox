@@ -1899,7 +1899,7 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  */
 static VBOXSTRICTRC dbgfR3BpHit(PVM pVM, PVMCPU pVCpu, DBGFBP hBp, PDBGFBPINT pBp, PCDBGFBPOWNERINT pBpOwner)
 {
-    VBOXSTRICTRC rcStrict;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     switch (DBGF_BP_PUB_GET_TYPE(&pBp->Pub))
     {
