@@ -70,14 +70,17 @@ signals:
       * @param  iButton1          Brings the button 1 type.
       * @param  iButton2          Brings the button 2 type.
       * @param  iButton3          Brings the button 3 type.
+      * @param  iButton4          Brings the button 4 type.
       * @param  strButtonText1    Brings the button 1 text.
       * @param  strButtonText2    Brings the button 2 text.
       * @param  strButtonText3    Brings the button 3 text.
+      * @param  strButtonText4    Brings the button 4 text.
       * @param  strAutoConfirmId  Brings whether this message can be auto-confirmed. */
     void sigToShowMessageBox(QWidget *pParent, MessageType enmType,
                              const QString &strMessage, const QString &strDetails,
-                             int iButton1, int iButton2, int iButton3,
-                             const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
+                             int iButton1, int iButton2, int iButton3, int iButton4,
+                             const QString &strButtonText1, const QString &strButtonText2,
+                             const QString &strButtonText3, const QString &strButtonText4,
                              const QString &strAutoConfirmId) const;
 
 public:
@@ -101,16 +104,19 @@ public:
       * @param  iButton1           Brings the button 1 type.
       * @param  iButton2           Brings the button 2 type.
       * @param  iButton3           Brings the button 3 type.
+      * @param  iButton4           Brings the button 4 type.
       * @param  strButtonText1     Brings the button 1 text.
       * @param  strButtonText2     Brings the button 2 text.
-      * @param  strButtonText3     Brings the button 3 text. */
+      * @param  strButtonText3     Brings the button 3 text.
+      * @param  strButtonText3     Brings the button 4 text. */
     int message(QWidget *pParent, MessageType enmType,
                 const QString &strMessage, const QString &strDetails,
                 const char *pcszAutoConfirmId = 0,
-                int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, int iButton4 = 0,
                 const QString &strButtonText1 = QString(),
                 const QString &strButtonText2 = QString(),
-                const QString &strButtonText3 = QString()) const;
+                const QString &strButtonText3 = QString(),
+                const QString &strButtonText4 = QString()) const;
 
     /** Shows an 'Error' type of 'Message'.
       * Provides single Ok button.
@@ -159,16 +165,19 @@ public:
       * @param  iButton1           Brings the button 1 type.
       * @param  iButton2           Brings the button 2 type.
       * @param  iButton3           Brings the button 3 type.
+      * @param  iButton4           Brings the button 4 type.
       * @param  strButtonText1     Brings the button 1 text.
       * @param  strButtonText2     Brings the button 2 text.
-      * @param  strButtonText3     Brings the button 3 text. */
+      * @param  strButtonText3     Brings the button 3 text.
+      * @param  strButtonText4     Brings the button 4 text. */
     int question(QWidget *pParent, MessageType enmType,
                  const QString &strMessage,
                  const char *pcszAutoConfirmId = 0,
-                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, int iButton4 = 0,
                  const QString &strButtonText1 = QString(),
                  const QString &strButtonText2 = QString(),
-                 const QString &strButtonText3 = QString()) const;
+                 const QString &strButtonText3 = QString(),
+                 const QString &strButtonText4 = QString()) const;
 
     /** Shows a 'Binary' type of 'Question'.
       * Omit details. Provides Ok and Cancel buttons (called same way by default).
@@ -211,6 +220,7 @@ public:
       * @param  iButton1             Brings the button 1 type.
       * @param  iButton2             Brings the button 2 type.
       * @param  iButton3             Brings the button 3 type.
+      * @param  iButton4             Brings the button 4 type.
       * @param  strButtonText1       Brings the button 1 text.
       * @param  strButtonText2       Brings the button 2 text.
       * @param  strButtonText3       Brings the button 3 text. */
@@ -218,10 +228,11 @@ public:
                           const QString &strMessage,
                           const QString &strOptionText,
                           bool fDefaultOptionValue = true,
-                          int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                          int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, int iButton4 = 0,
                           const QString &strButtonText1 = QString(),
                           const QString &strButtonText2 = QString(),
-                          const QString &strButtonText3 = QString()) const;
+                          const QString &strButtonText3 = QString(),
+                          const QString &strButtonText4 = QString()) const;
 
     /** Shows modal progress-dialog.
       * @param  comProgress   Brings the progress this dialog is based on.
