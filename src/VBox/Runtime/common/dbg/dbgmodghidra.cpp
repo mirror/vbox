@@ -269,6 +269,44 @@ static int rtDbgModGhidraXmlParseSymbols(RTDBGMOD hCnt, const xml::ElementNode &
 
 
 /**
+ * Adds the symbols from the given \"functions\" table.
+ *
+ * @returns IPRT status code.
+ * @param   hCnt                Debug module container handle.
+ * @param   elmTbl              Reference to the XML node containing the symbols.
+ */
+static int rtDbgModGhidraXmlParseFunctions(RTDBGMOD hCnt, const xml::ElementNode &elmTbl)
+{
+    xml::NodesLoop nlFun(elmTbl, "function");
+    const xml::ElementNode *pelmFun;
+    while ((pelmFun = nlFun.forAllNodes()))
+    {
+        xml::NodesLoop nlLn(*pelmFun, "line_number");
+        const xml::ElementNode *pelmLn;
+        while ((pelmLn = nlLn.forAllNodes()))
+        {
+            const char *pszFile = NULL;
+            uint32_t uLineNo = 0;
+            uint64_t off = 0;
+            if (   pelmLn->getAttributeValue("source_file", &pszFile)
+                && pelmLn->getAttributeValue("start", &uLineNo)
+                && pelmLn->getAttributeValue("addr", &off))
+            {
+                int rc = RTDbgModLineAdd(hCnt, pszFile, uLineNo, RTDBGSEGIDX_RVA, off, NULL /*piOrdinal*/);
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_DBG_DUPLICATE_SYMBOL
+                    && rc != VERR_DBG_ADDRESS_CONFLICT
+                    && rc != VERR_DBG_INVALID_RVA) /* (don't be too strict) */
+                    return rc;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @copydoc FNRTSORTCMP
  */
 static DECLCALLBACK(int) rtDbgModGhidraSegmentsSortCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
@@ -365,7 +403,16 @@ static int rtDbgModGhidraXmlParse(RTDBGMOD hCnt, xml::Document *a_pDoc)
         {
             pelmTbl = rtDbgModGhidraGetTableByName(pelmTables, "Symbols");
             if (pelmTbl)
-                return rtDbgModGhidraXmlParseSymbols(hCnt, *pelmTbl);
+            {
+                rc = rtDbgModGhidraXmlParseSymbols(hCnt, *pelmTbl);
+                if (RT_SUCCESS(rc))
+                {
+                    pelmTbl = pelmRoot->findChildElement("functions"); /* Might not be there. */
+                    if (pelmTbl)
+                        rc = rtDbgModGhidraXmlParseFunctions(hCnt, *pelmTbl);
+                    return rc;
+                }
+            }
         }
     }
 
