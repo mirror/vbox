@@ -90,11 +90,12 @@ public:
     /** Constructs message-box passing @a pParent to the base-class.
       * @param  strTitle    Brings the title.
       * @param  strMessage  Brings the message.
+      * @param  strMessage  Brings the help keyword for context sensitive help
       * @param  iconType    Brings the icon-type.
       * @param  iButton1    Brings the integer-code for the 1st button.
       * @param  iButton2    Brings the integer-code for the 2nd button.
       * @param  iButton3    Brings the integer-code for the 3rd button. */
-    QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
+    QIMessageBox(const QString &strTitle, const QString &strMessage, const QString &strHelpKeyword, AlertIconType iconType,
                  int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
 
     /** Defines details-text. */
@@ -170,6 +171,9 @@ private:
     QString m_strMessage;
     /** Holds the message-label instance. */
     QIRichTextLabel *m_pLabelText;
+
+    /** Holds the help keyword. */
+    QString m_strHelpKeyword;
 
     /** Holds the flag check-box instance. */
     QCheckBox *m_pFlagCheckBox;

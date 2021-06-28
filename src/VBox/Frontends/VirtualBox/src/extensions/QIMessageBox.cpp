@@ -36,7 +36,7 @@
 #include <iprt/assert.h>
 
 
-QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
+QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, const QString &strHelpKeyword, AlertIconType iconType,
                            int iButton1 /* = 0*/, int iButton2 /* = 0*/, int iButton3 /* = 0*/, QWidget *pParent /* = 0*/)
     : QIDialog(pParent)
     , m_strTitle(strTitle)
@@ -44,6 +44,7 @@ QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, A
     , m_pLabelIcon(0)
     , m_strMessage(strMessage)
     , m_pLabelText(0)
+    , m_strHelpKeyword(strHelpKeyword)
     , m_pFlagCheckBox(0)
     , m_pDetailsContainer(0)
     , m_iButton1(iButton1)
