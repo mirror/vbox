@@ -46,7 +46,6 @@ enum AlertButton
     AlertButton_Choice1       =  0x4,  /* 00000000 00000100 */
     AlertButton_Choice2       =  0x8,  /* 00000000 00001000 */
     AlertButton_Copy          = 0x10,  /* 00000000 00010000 */
-    AlertButton_Help          = 0x11,  /* 00000000 00010001 */
     AlertButtonMask           = 0xFF   /* 00000000 11111111 */
 };
 

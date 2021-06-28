@@ -159,11 +159,9 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                              int iButton1 /* = 0*/,
                              int iButton2 /* = 0*/,
                              int iButton3 /* = 0*/,
-                             int iButton4 /* = 0*/,
                              const QString &strButtonText1 /* = QString() */,
                              const QString &strButtonText2 /* = QString() */,
-                             const QString &strButtonText3 /* = QString() */,
-                             const QString &strButtonText4 /* = QString() */) const
+                             const QString &strButtonText3 /* = QString() */) const
 {
     /* If this is NOT a GUI thread: */
     if (thread() != QThread::currentThread())
@@ -172,8 +170,8 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
          * to show a message-box in the GUI thread: */
         emit sigToShowMessageBox(pParent, enmType,
                                  strMessage, strDetails,
-                                 iButton1, iButton2, iButton3, iButton4,
-                                 strButtonText1, strButtonText2, strButtonText3, strButtonText4,
+                                 iButton1, iButton2, iButton3,
+                                 strButtonText1, strButtonText2, strButtonText3,
                                  QString(pcszAutoConfirmId));
         /* Inter-thread communications are not yet implemented: */
         return 0;
@@ -206,11 +204,9 @@ bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType enmType,
                     AlertButton_Ok | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
                     0 /* third button */,
-                    0 /* fourth button */,
                     strOkButtonText,
                     strCancelButtonText,
-                    QString() /* third button */,
-                    QString() /* fourth button */) &
+                    QString() /* third button */) &
             AlertButtonMask) == AlertButton_Ok;
 }
 
@@ -227,14 +223,12 @@ int UIMessageCenter::question(QWidget *pParent, MessageType enmType,
                               int iButton1 /* = 0*/,
                               int iButton2 /* = 0*/,
                               int iButton3 /* = 0*/,
-                              int iButton4 /* = 0*/,
                               const QString &strButtonText1 /* = QString()*/,
                               const QString &strButtonText2 /* = QString()*/,
-                              const QString &strButtonText3 /* = QString()*/,
-                              const QString &strButtonText4 /* = QString()*/) const
+                              const QString &strButtonText3 /* = QString()*/) const
 {
     return message(pParent, enmType, strMessage, QString(), pcszAutoConfirmId,
-                   iButton1, iButton2, iButton3, iButton4, strButtonText1, strButtonText2, strButtonText3, strButtonText4);
+                   iButton1, iButton2, iButton3, strButtonText1, strButtonText2, strButtonText3);
 }
 
 bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
@@ -249,21 +243,17 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
                       0 /* third button */,
-                      0 /* fourth button */,
                       strOkButtonText,
                       strCancelButtonText,
-                      QString() /* third button */,
-                      QString() /* fourth button */) &
+                      QString() /* third button */) &
              AlertButtonMask) == AlertButton_Ok) :
            ((question(pParent, enmType, strMessage, pcszAutoConfirmId,
                       AlertButton_Ok,
                       AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                       0 /* third button */,
-                      0 /* fourth button */,
                       strOkButtonText,
                       strCancelButtonText,
-                      QString() /* third button */,
-                      QString() /* fourth button */) &
+                      QString() /* third button */) &
              AlertButtonMask) == AlertButton_Ok);
 }
 
@@ -278,11 +268,9 @@ int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType enmType,
                     AlertButton_Choice1,
                     AlertButton_Choice2 | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
-                    0 /* fourth button */,
                     strChoice1ButtonText,
                     strChoice2ButtonText,
-                    strCancelButtonText,
-                    QString() /* fourth button text*/);
+                    strCancelButtonText);
 }
 
 int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
@@ -292,14 +280,12 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
                                        int iButton1 /* = 0*/,
                                        int iButton2 /* = 0*/,
                                        int iButton3 /* = 0*/,
-                                       int iButton4 /* = 0*/,
                                        const QString &strButtonName1 /* = QString() */,
                                        const QString &strButtonName2 /* = QString() */,
-                                       const QString &strButtonName3 /* = QString() */,
-                                       const QString &strButtonName4 /* = QString() */) const
+                                       const QString &strButtonName3 /* = QString() */) const
 {
     /* If no buttons are set, using single 'OK' button: */
-    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0 && iButton4 == 0)
+    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
         iButton1 = AlertButton_Ok | AlertButtonOption_Default;
 
     /* Assign corresponding title and icon: */
@@ -354,8 +340,6 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
         pBox->setButtonText(1, strButtonName2);
     if (!strButtonName3.isNull())
         pBox->setButtonText(2, strButtonName3);
-    if (!strButtonName4.isNull())
-        pBox->setButtonText(3, strButtonName4);
 
     /* Show box: */
     int rc = pBox->exec();
@@ -777,8 +761,7 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                    0 /* auto-confirm id */,
                    AlertButton_Ok,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                   0 /* button 3 */,
-                   0 /* button 4 */,
+                   0,
                    tr("Remove")) :
            message(0, MessageType_Question,
                    strText, QString(),
@@ -786,7 +769,6 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                    AlertButton_Choice1,
                    AlertButton_Choice2,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                   0 /* button 4 */,
                    tr("Delete all files"),
                    tr("Remove only"));
 }
@@ -815,7 +797,6 @@ int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mach
                    AlertButton_Choice1,
                    AlertButton_Choice2,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                   0 /* button 4 */,
                    tr("Delete everything"),
                    tr("Remove only"));
 }
@@ -1145,7 +1126,6 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                              AlertButton_Ok,
                              AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                              0 /* 3rd button */,
-                             0 /* 4th button */,
                              tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(0, MessageType_Question,
                    tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>")
@@ -1155,7 +1135,6 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                    AlertButton_Ok,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    0 /* 3rd button */,
-                   0 /* 4th button */,
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
 
@@ -2237,7 +2216,6 @@ int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 *
                     AlertButton_Choice1,
                     AlertButton_Choice2,
                     AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                    0 /* 4th button */,
                     tr("Accept", "cloud profile manager changes"),
                     tr("Reject", "cloud profile manager changes"));
 }
@@ -2774,8 +2752,7 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
                       "confirmInputCapture",
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
-                      0 /* 3rd button */,
-                      0 /* 4th button */,
+                      0,
                       tr("Capture", "do input capture"));
     /* Was the message auto-confirmed? */
     fAutoConfirmed = (rc & AlertOption_AutoConfirmed);
