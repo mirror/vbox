@@ -461,7 +461,7 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
     }
     else if (u8HidPage == USB_HID_CC_PAGE)
     {
-        for (int i = 0; i < RT_ELEMENTS(aHidCCKeys); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(aHidCCKeys); ++i)
             if (aHidCCKeys[i] == u16HidUsage)
             {
                 iKeyIndex = USBHID_PAGE_CC_START + i;
@@ -471,7 +471,7 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
     }
     else if (u8HidPage == USB_HID_DC_PAGE)
     {
-        for (int i = 0; i < RT_ELEMENTS(aHidDCKeys); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(aHidDCKeys); ++i)
             if (aHidCCKeys[i] == u16HidUsage)
             {
                 iKeyIndex = USBHID_PAGE_DC_START + i;
@@ -498,27 +498,27 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
  * @returns 32-bit USB HID code. Zero if not found.
  * @param   u32HidCode          32-bit USB HID code.
  */
-static uint32_t usbInternalCodeToHid(int iKeyCode)
+static uint32_t usbInternalCodeToHid(unsigned uKeyCode)
 {
     uint16_t    u16HidUsage;
     uint32_t    u32HidCode = 0;
 
-    if ((iKeyCode >= USBHID_PAGE_DC_START) && (iKeyCode <= USBHID_PAGE_DC_END))
+    if ((uKeyCode >= USBHID_PAGE_DC_START) && (uKeyCode <= USBHID_PAGE_DC_END))
     {
-        u16HidUsage = aHidDCKeys[iKeyCode - USBHID_PAGE_DC_START];
+        u16HidUsage = aHidDCKeys[uKeyCode - USBHID_PAGE_DC_START];
         u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_DC_PAGE);
     }
-    else if ((iKeyCode >= USBHID_PAGE_CC_START) && (iKeyCode <= USBHID_PAGE_CC_END))
+    else if ((uKeyCode >= USBHID_PAGE_CC_START) && (uKeyCode <= USBHID_PAGE_CC_END))
     {
-        u16HidUsage = aHidCCKeys[iKeyCode - USBHID_PAGE_CC_START];
+        u16HidUsage = aHidCCKeys[uKeyCode - USBHID_PAGE_CC_START];
         u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_CC_PAGE);
     }
     else    /* Must be the keyboard usage page. */
     {
-        if (iKeyCode <= VBOX_USB_MAX_USAGE_CODE)
-            u32HidCode = RT_MAKE_U32(iKeyCode, USB_HID_KB_PAGE);
+        if (uKeyCode <= VBOX_USB_MAX_USAGE_CODE)
+            u32HidCode = RT_MAKE_U32(uKeyCode, USB_HID_KB_PAGE);
         else
-            AssertMsgFailed(("iKeyCode out of range! (%d)\n", iKeyCode));
+            AssertMsgFailed(("uKeyCode out of range! (%u)\n", uKeyCode));
     }
 
     return u32HidCode;
