@@ -26,6 +26,7 @@
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-x11.h>
@@ -34,6 +35,8 @@
 
 #include "VBoxSharedClipboardSvc-internal.h"
 
+/* Number of currently extablished connections. */
+static volatile uint32_t g_cShClConnections;
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -75,6 +78,14 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     int rc;
 
+    /* Check if maximum allowed connections count has reached. */
+    if (ASMAtomicIncU32(&g_cShClConnections) > VBOX_SHARED_CLIPBOARD_X11_CONNECTIONS_MAX)
+    {
+        ASMAtomicDecU32(&g_cShClConnections);
+        LogRel(("Shared Clipboard: maximum amount for client connections reached\n"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     if (pCtx)
     {
@@ -95,11 +106,21 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
             if (RT_FAILURE(rc))
                 RTCritSectDelete(&pCtx->CritSect);
         }
-        else
+
+        if (RT_FAILURE(rc))
+        {
+            pClient->State.pCtx = NULL;
             RTMemFree(pCtx);
+        }
     }
     else
         rc = VERR_NO_MEMORY;
+
+    if (RT_FAILURE(rc))
+    {
+        /* Restore active connections count. */
+        ASMAtomicDecU32(&g_cShClConnections);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -140,6 +161,9 @@ int ShClBackendDisconnect(PSHCLCLIENT pClient)
     RTCritSectDelete(&pCtx->CritSect);
 
     RTMemFree(pCtx);
+
+    /* Decrease active connections count. */
+    ASMAtomicDecU32(&g_cShClConnections);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -252,19 +276,21 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
 {
     LogFlowFunc(("pCtx=%p, fFormats=%#x\n", pCtx, fFormats));
 
+    int rc = VINF_SUCCESS;
     PSHCLCLIENT pClient = pCtx->pClient;
     AssertPtr(pClient);
 
-    RTCritSectEnter(&pClient->CritSect);
+    rc = RTCritSectEnter(&pClient->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo r=bird: BUGBUG: Revisit this   */
+        if (fFormats != VBOX_SHCL_FMT_NONE) /* No formats to report? */
+        {
+            rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+        }
 
-    /** @todo r=bird: BUGBUG: Revisit this   */
-    if (fFormats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
-        return;
-
-    int rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
-    RT_NOREF(rc);
-
-    RTCritSectLeave(&pClient->CritSect);
+        RTCritSectLeave(&pClient->CritSect);
+    }
 
     LogFlowFuncLeaveRC(rc);
 }

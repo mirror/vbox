@@ -38,6 +38,15 @@
 # include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 
+/**
+ * The maximum number of simultaneous connections to shared clipboard service.
+ * This constant limits amount of GUEST -> HOST connections to shared clipboard host service
+ * for X11 host only. Once amount of connections reaches this number, all the
+ * further attempts to CONNECT will be dropped on an early stage. Possibility to connect
+ * is available again after one of existing connections is closed by DISCONNECT call.
+ */
+#define VBOX_SHARED_CLIPBOARD_X11_CONNECTIONS_MAX   (20)
+
 /** Enables the Xt busy / update handling. */
 #define VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY      1
 

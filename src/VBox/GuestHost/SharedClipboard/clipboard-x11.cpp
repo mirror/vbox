@@ -278,14 +278,6 @@ static SHCLX11FMTIDX clipEnumX11Formats(SHCLFORMATS uFormatsVBox,
 }
 
 /**
- * The number of simultaneous instances we support.  For all normal purposes
- * we should never need more than one.  For the testcase it is convenient to
- * have a second instance that the first can interact with in order to have
- * a more controlled environment.
- */
-enum { CLIP_MAX_CONTEXTS = 20 };
-
-/**
  * Array of structures for mapping Xt widgets to context pointers.  We
  * need this because the widget clipboard callbacks do not pass user data.
  */
@@ -295,7 +287,7 @@ static struct
     Widget      pWidget;
     /** Pointer to X11 context associated with the widget. */
     PSHCLX11CTX pCtx;
-} g_aContexts[CLIP_MAX_CONTEXTS];
+} g_aContexts[VBOX_SHARED_CLIPBOARD_X11_CONNECTIONS_MAX];
 
 /**
  * Registers a new X11 clipboard context.
@@ -406,6 +398,9 @@ static int clipThreadScheduleCall(PSHCLX11CTX pCtx,
     LogFlowFunc(("proc=%p, client_data=%p\n", proc, client_data));
 
 #ifndef TESTCASE
+    AssertReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->pAppContext, VERR_INVALID_POINTER);
+
     XtAppAddTimeOut(pCtx->pAppContext, 0, (XtTimerCallbackProc)proc,
                     (XtPointer)client_data);
     ssize_t cbWritten = write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
@@ -883,7 +878,13 @@ static DECLCALLBACK(int) clipThreadMain(RTTHREAD hThreadSelf, void *pvUser)
                 XtAppProcessEvent(pCtx->pAppContext, XtIMAll);
             }
 
+            LogRel(("Shared Clipboard: X11 event thread exiting\n"));
+
             clipUnregisterContext(pCtx);
+        }
+        else
+        {
+            LogRel(("Shared Clipboard: unable to register clip context: %Rrc\n", rc));
         }
 
         clipUninitInternal(pCtx);
@@ -1292,6 +1293,7 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
  */
 int ShClX11ThreadStop(PSHCLX11CTX pCtx)
 {
+    int rc;
     /*
      * Immediately return if we are not connected to the X server.
      */
@@ -1301,12 +1303,17 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx)
     LogRel2(("Shared Clipboard: Signalling the X11 event thread to stop\n"));
 
     /* Write to the "stop" pipe. */
-    clipThreadScheduleCall(pCtx, clipThreadSignalStop, (XtPointer)pCtx);
+    rc = clipThreadScheduleCall(pCtx, clipThreadSignalStop, (XtPointer)pCtx);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Shared Clipboard: cannot notify X11 event thread on shutdown with %Rrc\n", rc));
+        return rc;
+    }
 
     LogRel2(("Shared Clipboard: Waiting for X11 event thread to stop ...\n"));
 
     int rcThread;
-    int rc = RTThreadWait(pCtx->Thread, RT_MS_30SEC /* msTimeout */, &rcThread);
+    rc = RTThreadWait(pCtx->Thread, RT_MS_30SEC /* msTimeout */, &rcThread);
     if (RT_SUCCESS(rc))
         rc = rcThread;
     if (RT_SUCCESS(rc))
@@ -1869,6 +1876,8 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 
         rc = clipThreadScheduleCall(pCtx, ShClX11ReportFormatsToX11Worker,
                                     (XtPointer)pFormats);
+        if (RT_FAILURE(rc))
+            RTMemFree(pFormats);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -2273,6 +2282,8 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *p
 
         /* We use this to schedule a worker function on the event thread. */
         rc = clipThreadScheduleCall(pCtx, ShClX11ReadDataFromX11Worker, (XtPointer)pX11Req);
+        if (RT_FAILURE(rc))
+            RTMemFree(pX11Req);
     }
     else
         rc = VERR_NO_MEMORY;

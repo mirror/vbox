@@ -1994,6 +1994,9 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     int rc = shClSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
+        /* Assign weak pointer to client map .*/
+        g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
+
         rc = ShClBackendConnect(pClient, ShClSvcGetHeadless());
         if (RT_SUCCESS(rc))
         {
@@ -2013,9 +2016,6 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 
             if (RT_SUCCESS(rc))
             {
-                /* Assign weak pointer to client map .*/
-                g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
-
                 /* For now we ASSUME that the first client ever connected is in charge for
                  * communicating withe the service extension.
                  *
@@ -2024,6 +2024,12 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
                     g_ExtState.uClientID = u32ClientID;
             }
         }
+
+        if (RT_FAILURE(rc))
+        {
+            shClSvcClientDestroy(pClient);
+        }
+
     }
 
     LogFlowFuncLeaveRC(rc);
