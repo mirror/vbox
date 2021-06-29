@@ -1334,6 +1334,16 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnSTAMDeregisterByPrefix,(PPDMDRVINS pDrvIns, const char *pszPrefix));
 
+    /**
+     * Queries a generic object from the VMM user.
+     *
+     * @returns Pointer to the object if found, NULL if not.
+     * @param   pDrvIns     The driver instance.
+     * @param   pUuid       The UUID of what's being queried.  The UUIDs and
+     *                      the usage conventions are defined by the user.
+     */
+    DECLR3CALLBACKMEMBER(void *, pfnQueryGenericUserObject,(PPDMDRVINS pDrvIns, PCRTUUID pUuid));
+
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(PPDMDRVINS pDrvIns));
@@ -1341,7 +1351,6 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved7,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved8,(PPDMDRVINS pDrvIns));
-    DECLR3CALLBACKMEMBER(void, pfnReserved9,(PPDMDRVINS pDrvIns));
     /** @}  */
 
     /** Just a safety precaution. */
@@ -1861,6 +1870,14 @@ DECLINLINE(VMSUSPENDREASON) PDMDrvHlpVMGetSuspendReason(PPDMDRVINS pDrvIns)
 DECLINLINE(VMRESUMEREASON) PDMDrvHlpVMGetResumeReason(PPDMDRVINS pDrvIns)
 {
     return pDrvIns->pHlpR3->pfnVMGetResumeReason(pDrvIns);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnQueryGenericUserObject
+ */
+DECLINLINE(void *) PDMDrvHlpQueryGenericUserObject(PPDMDRVINS pDrvIns, PCRTUUID pUuid)
+{
+    return pDrvIns->pHlpR3->pfnQueryGenericUserObject(pDrvIns, pUuid);
 }
 
 
