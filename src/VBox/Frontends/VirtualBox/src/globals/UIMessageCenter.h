@@ -78,7 +78,7 @@ signals:
                              const QString &strMessage, const QString &strDetails,
                              int iButton1, int iButton2, int iButton3,
                              const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
-                             const QString &strAutoConfirmId) const;
+                             const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
 
 public:
 
@@ -103,14 +103,16 @@ public:
       * @param  iButton3           Brings the button 3 type.
       * @param  strButtonText1     Brings the button 1 text.
       * @param  strButtonText2     Brings the button 2 text.
-      * @param  strButtonText3     Brings the button 3 text. */
+      * @param  strButtonText3     Brings the button 3 text.
+      * @param  strHelpKeyword     Brings the help keyword string. */
     int message(QWidget *pParent, MessageType enmType,
                 const QString &strMessage, const QString &strDetails,
                 const char *pcszAutoConfirmId = 0,
                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
                 const QString &strButtonText1 = QString(),
                 const QString &strButtonText2 = QString(),
-                const QString &strButtonText3 = QString()) const;
+                const QString &strButtonText3 = QString(),
+                const QString &strHelpKeyword = QString()) const;
 
     /** Shows an 'Error' type of 'Message'.
       * Provides single Ok button.
@@ -118,11 +120,13 @@ public:
       * @param  enmType            Brings the message-box type.
       * @param  strMessage         Brings the message.
       * @param  strDetails         Brings the details.
-      * @param  pcszAutoConfirmId  Brings the auto-confirm ID. */
+      * @param  pcszAutoConfirmId  Brings the auto-confirm ID.
+      * @param  strHelpKeyword     Brings the help keyword string. */
     void error(QWidget *pParent, MessageType enmType,
                const QString &strMessage,
                const QString &strDetails,
-               const char *pcszAutoConfirmId = 0) const;
+               const char *pcszAutoConfirmId = 0,
+               const QString &strHelpKeyword = QString()) const;
 
     /** Shows an 'Error with Question' type of 'Message'.
       * Provides Ok and Cancel buttons (called same way by default).
@@ -593,12 +597,13 @@ private slots:
       * @param  strButtonText1    Brings the button 1 text.
       * @param  strButtonText2    Brings the button 2 text.
       * @param  strButtonText3    Brings the button 3 text.
-      * @param  strAutoConfirmId  Brings whether this message can be auto-confirmed. */
+      * @param  strAutoConfirmId  Brings whether this message can be auto-confirmed.
+      * @param  strHelpKeyword    Brings the help keyword string. */
     void sltShowMessageBox(QWidget *pParent, MessageType enmType,
                            const QString &strMessage, const QString &strDetails,
                            int iButton1, int iButton2, int iButton3,
                            const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
-                           const QString &strAutoConfirmId) const;
+                           const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
 
 private:
 
@@ -623,12 +628,13 @@ private:
       * @param  strButtonText1    Brings the button 1 text.
       * @param  strButtonText2    Brings the button 2 text.
       * @param  strButtonText3    Brings the button 3 text.
-      * @param  strAutoConfirmId  Brings whether this message can be auto-confirmed. */
+      * @param  strAutoConfirmId  Brings whether this message can be auto-confirmed.
+      * @param  strHelpKeyword    Brings the help keyowrd. */
     int showMessageBox(QWidget *pParent, MessageType type,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
-                       const QString &strAutoConfirmId) const;
+                       const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
     void showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent = 0);
 
     /** Holds the list of shown warnings. */

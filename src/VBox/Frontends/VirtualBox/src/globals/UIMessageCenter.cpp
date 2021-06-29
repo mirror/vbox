@@ -161,7 +161,8 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                              int iButton3 /* = 0*/,
                              const QString &strButtonText1 /* = QString() */,
                              const QString &strButtonText2 /* = QString() */,
-                             const QString &strButtonText3 /* = QString() */) const
+                             const QString &strButtonText3 /* = QString() */,
+                             const QString &strHelpKeyword /* = QString() */) const
 {
     /* If this is NOT a GUI thread: */
     if (thread() != QThread::currentThread())
@@ -172,7 +173,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                                  strMessage, strDetails,
                                  iButton1, iButton2, iButton3,
                                  strButtonText1, strButtonText2, strButtonText3,
-                                 QString(pcszAutoConfirmId));
+                                 QString(pcszAutoConfirmId), strHelpKeyword);
         /* Inter-thread communications are not yet implemented: */
         return 0;
     }
@@ -181,16 +182,18 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                           strMessage, strDetails,
                           iButton1, iButton2, iButton3,
                           strButtonText1, strButtonText2, strButtonText3,
-                          QString(pcszAutoConfirmId));
+                          QString(pcszAutoConfirmId), strHelpKeyword);
 }
 
 void UIMessageCenter::error(QWidget *pParent, MessageType enmType,
                            const QString &strMessage,
                            const QString &strDetails,
-                           const char *pcszAutoConfirmId /* = 0*/) const
+                           const char *pcszAutoConfirmId /* = 0*/,
+                           const QString &strHelpKeyword /* = QString() */) const
 {
     message(pParent, enmType, strMessage, strDetails, pcszAutoConfirmId,
-            AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape);
+            AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape, 0 /* Button 2 */, 0 /* Button 3 */,
+            QString() /* strButtonText1 */, QString() /* strButtonText2 */, QString() /* strButtonText3 */, strHelpKeyword);
 }
 
 bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType enmType,
@@ -629,7 +632,8 @@ void UIMessageCenter::cannotEnumerateHostUSBDevices(const CHost &comHost, QWidge
 {
     error(pParent, MessageType_Warning,
           tr("Failed to enumerate host USB devices."),
-          UIErrorString::formatErrorInfo(comHost), "USBEnumerationWarning");
+          UIErrorString::formatErrorInfo(comHost), "USBEnumerationWarning",
+          "install-linux-vboxusers" /* help keyword */);
 }
 
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
@@ -3436,14 +3440,14 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
                                         const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
-                                        const QString &strAutoConfirmId) const
+                                        const QString &strAutoConfirmId, const QString &strHelpKeyword) const
 {
     /* Now we can show a message-box directly: */
     showMessageBox(pParent, enmType,
                    strMessage, strDetails,
                    iButton1, iButton2, iButton3,
                    strButtonText1, strButtonText2, strButtonText3,
-                   strAutoConfirmId);
+                   strAutoConfirmId, strHelpKeyword);
 }
 
 UIMessageCenter::UIMessageCenter()
@@ -3505,7 +3509,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
                                     const QString &strMessage, const QString &strDetails,
                                     int iButton1, int iButton2, int iButton3,
                                     const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
-                                    const QString &strAutoConfirmId) const
+                                    const QString &strAutoConfirmId, const QString &strHelpKeyword) const
 {
     /* Choose the 'default' button: */
     if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
@@ -3570,7 +3574,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     QWidget *pMessageBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
                                                           iButton1, iButton2, iButton3,
-                                                          pMessageBoxParent);
+                                                          pMessageBoxParent, strHelpKeyword);
     windowManager().registerNewParent(pMessageBox, pMessageBoxParent);
 
     /* Prepare auto-confirmation check-box: */
