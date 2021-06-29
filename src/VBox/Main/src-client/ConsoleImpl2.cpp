@@ -4167,8 +4167,6 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "MainDisplay");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
-        Display *pDisplay = mDisplay;
-        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pDisplay);
     }
     catch (ConfigError &x)
     {
