@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QDialog>
 #include <QEvent>
 #include <QGraphicsWidget>
 #include <QObject>
@@ -66,7 +67,7 @@ protected:
     virtual void retranslateUi() = 0;
 };
 
-/** Explicit QIWithRetranslateUI instantiation for QWidget class.
+/** Explicit QIWithRetranslateUI instantiation for QWidget & QDialog classes.
   * @note  On Windows it's important that all template cases are instantiated just once across
   *        the linking space. In case we have particular template case instantiated from both
   *        library and executable sides, - we have multiple definition case and need to strictly
@@ -74,6 +75,7 @@ protected:
   *        I would also note that it would be incorrect to just make whole the template exported
   *        to library because latter can have lack of required instantiations (current case). */
 template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QWidget>;
+template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QDialog>;
 
 
 /** Template for automatic language translations of underlying QWidget with certain flags. */

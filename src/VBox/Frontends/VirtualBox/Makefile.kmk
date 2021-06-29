@@ -902,6 +902,8 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UISearchLineEdit.h \
 	src/widgets/UIToolBox.h \
 	src/widgets/UIWarningPane.h \
+	src/wizards/UINativeWizard.h \
+	src/wizards/UINativeWizardPage.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
 	src/wizards/newvd/UIWizardNewVD.h \
@@ -1444,6 +1446,8 @@ UICommon_SOURCES = \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp \
 	src/widgets/UIWarningPane.cpp \
+	src/wizards/UINativeWizard.cpp \
+	src/wizards/UINativeWizardPage.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
