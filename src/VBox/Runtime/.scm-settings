@@ -52,6 +52,7 @@
 /common/math/x86/fenv-x86.c                    : --external-copyright --no-convert-tabs
 
 /common/math/gcc/*                             : --external-copyright --no-convert-tabs --dont-set-svn-keywords
+/common/math/gcc/divmoddi4.c                   : --no-external-copyright --convert-tabs --set-svn-keywords
 /common/math/gcc/udivmoddi4.c                  : --no-external-copyright --convert-tabs --set-svn-keywords
 
 # No header guard for these:
