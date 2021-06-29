@@ -32,6 +32,7 @@
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -54,11 +55,11 @@ QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, c
     , m_pButton1(0)
     , m_pButton2(0)
     , m_pButton3(0)
+    , m_pButtonHelp(0)
     , m_pButtonBox(0)
+    , m_strHelpKeyword(strHelpKeyword)
     , m_fDone(false)
 {
-    if (!strHelpKeyword.isEmpty())
-        uiCommon().setHelpKeyword(this, strHelpKeyword);
     /* Prepare: */
     prepare();
 }
@@ -260,6 +261,17 @@ void QIMessageBox::prepare()
             m_pButton3 = createButton(m_iButton3);
             if (m_pButton3)
                 connect(m_pButton3, &QPushButton::clicked, this, &QIMessageBox::sltDone3);
+            /* Create the help button and connect it to relevant slot in case a help word is supplied: */
+            if (!m_strHelpKeyword.isEmpty())
+            {
+                m_pButtonHelp = createButton(AlertButton_Help);
+                if (m_pButtonHelp)
+                {
+                    uiCommon().setHelpKeyword(m_pButtonHelp, m_strHelpKeyword);
+                    connect(m_pButtonHelp, &QPushButton::clicked, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+                }
+            }
+
             /* Make sure Escape button always set: */
             Assert(m_iButtonEsc);
             /* If this is a critical message add a "Copy to clipboard" button: */
@@ -315,6 +327,7 @@ QPushButton *QIMessageBox::createButton(int iButton)
         case AlertButton_Choice1: strText = tr("Yes");    role = QDialogButtonBox::YesRole; break;
         case AlertButton_Choice2: strText = tr("No");     role = QDialogButtonBox::NoRole; break;
         case AlertButton_Copy:    strText = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
+        case AlertButton_Help:    strText = tr("Help");   role = QDialogButtonBox::HelpRole; break;
         default:
             AssertMsgFailed(("Type %d is not supported!", iButton));
             return 0;

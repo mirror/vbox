@@ -46,6 +46,7 @@ enum AlertButton
     AlertButton_Choice1       =  0x4,  /* 00000000 00000100 */
     AlertButton_Choice2       =  0x8,  /* 00000000 00001000 */
     AlertButton_Copy          = 0x10,  /* 00000000 00010000 */
+    AlertButton_Help          = 0x11,  /* 00000000 00010001 */
     AlertButtonMask           = 0xFF   /* 00000000 11111111 */
 };
 
@@ -192,8 +193,14 @@ private:
     QPushButton *m_pButton2;
     /** Holds the 3rd button instance. */
     QPushButton *m_pButton3;
+    /** Holds the help-button instance. */
+    QPushButton  *m_pButtonHelp;
+
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
+
+    /** Holds the help keyword string. */
+    QString m_strHelpKeyword;
 
     /** Defines whether message was accepted. */
     bool m_fDone : 1;
