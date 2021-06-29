@@ -436,7 +436,7 @@ DECLCALLBACK(int) Keyboard::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
+    if (!CFGMR3AreValuesValid(pCfg, ""))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -463,14 +463,15 @@ DECLCALLBACK(int) Keyboard::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /*
      * Get the Keyboard object pointer and update the mpDrv member.
      */
-    void *pv;
-    int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
-    if (RT_FAILURE(rc))
+    com::Guid uuid(COM_IIDOF(IKeyboard));
+    IKeyboard *pIKeyboard = (IKeyboard *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    if (!pIKeyboard)
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
-        return rc;
+        AssertMsgFailed(("Configuration error: No/bad Keyboard object!\n"));
+        return VERR_NOT_FOUND;
     }
-    pThis->pKeyboard = (Keyboard *)pv;        /** @todo Check this cast! */
+    pThis->pKeyboard = static_cast<Keyboard *>(pIKeyboard);
+
     unsigned cDev;
     for (cDev = 0; cDev < KEYBOARD_MAX_DEVICES; ++cDev)
         if (!pThis->pKeyboard->mpDrv[cDev])

@@ -10729,6 +10729,18 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
         return pIMachine;
     }
 
+    if (UuidCopy == COM_IIDOF(IKeyboard))
+    {
+        IKeyboard *pIKeyboard = pConsole->mKeyboard;
+        return pIKeyboard;
+    }
+
+    if (UuidCopy == COM_IIDOF(IMouse))
+    {
+        IMouse *pIMouse = pConsole->mMouse;
+        return pIMouse;
+    }
+
     if (UuidCopy == COM_IIDOF(ISnapshot))
         return ((MYVMM2USERMETHODS *)pThis)->pISnapshot;
 
