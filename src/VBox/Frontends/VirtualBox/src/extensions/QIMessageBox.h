@@ -172,9 +172,6 @@ private:
     /** Holds the message-label instance. */
     QIRichTextLabel *m_pLabelText;
 
-    /** Holds the help keyword. */
-    QString m_strHelpKeyword;
-
     /** Holds the flag check-box instance. */
     QCheckBox *m_pFlagCheckBox;
 
