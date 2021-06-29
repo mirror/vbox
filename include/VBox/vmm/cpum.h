@@ -151,9 +151,16 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Core7_CoffeeLake,
     kCpumMicroarch_Intel_Core7_WhiskeyLake,
     kCpumMicroarch_Intel_Core7_CascadeLake,
-    kCpumMicroarch_Intel_Core7_CannonLake,
-    kCpumMicroarch_Intel_Core7_IceLake,
-    kCpumMicroarch_Intel_Core7_TigerLake,
+    kCpumMicroarch_Intel_Core7_CannonLake,  /**< Limited 10nm. */
+    kCpumMicroarch_Intel_Core7_CometLake,   /**< 10th gen, 14nm desktop + high power mobile.  */
+    kCpumMicroarch_Intel_Core7_IceLake,     /**< 10th gen, 10nm mobile and some Xeons.  Actually 'Sunny Cove' march. */
+    kCpumMicroarch_Intel_Core7_SunnyCove = kCpumMicroarch_Intel_Core7_IceLake,
+    kCpumMicroarch_Intel_Core7_RocketLake,  /**< 11th gen, 14nm desktop + high power mobile.  Aka 'Cypress Cove', backport of 'Willow Cove' to 14nm. */
+    kCpumMicroarch_Intel_Core7_CypressCove = kCpumMicroarch_Intel_Core7_RocketLake,
+    kCpumMicroarch_Intel_Core7_TigerLake,   /**< 11th gen, 10nm mobile.  Actually 'Willow Cove' march. */
+    kCpumMicroarch_Intel_Core7_WillowCove = kCpumMicroarch_Intel_Core7_TigerLake,
+    kCpumMicroarch_Intel_Core7_AlderLake,   /**< 12th gen, 10nm all platforms(?). */
+    kCpumMicroarch_Intel_Core7_SapphireRapids, /**< 12th? gen, 10nm server? */
     kCpumMicroarch_Intel_Core7_End,
 
     kCpumMicroarch_Intel_Atom_First,

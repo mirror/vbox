@@ -162,9 +162,9 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[103(0x67)] = */ kCpumMicroarch_Intel_Unknown,
     /*[104(0x68)] = */ kCpumMicroarch_Intel_Unknown,
     /*[105(0x69)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[106(0x6a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[106(0x6a)] = */ kCpumMicroarch_Intel_Core7_IceLake,      /* unconfirmed server */
     /*[107(0x6b)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[108(0x6c)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[108(0x6c)] = */ kCpumMicroarch_Intel_Core7_IceLake,      /* unconfirmed server */
     /*[109(0x6d)] = */ kCpumMicroarch_Intel_Unknown,
     /*[110(0x6e)] = */ kCpumMicroarch_Intel_Atom_Airmount,      /* or silvermount? */
     /*[111(0x6f)] = */ kCpumMicroarch_Intel_Unknown,
@@ -181,8 +181,8 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[122(0x7a)] = */ kCpumMicroarch_Intel_Atom_GoldmontPlus,
     /*[123(0x7b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[124(0x7c)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[125(0x7d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[126(0x7e)] = */ kCpumMicroarch_Intel_Core7_IceLake, /* unconfirmed */
+    /*[125(0x7d)] = */ kCpumMicroarch_Intel_Core7_IceLake,      /* unconfirmed */
+    /*[126(0x7e)] = */ kCpumMicroarch_Intel_Core7_IceLake,      /* unconfirmed */
     /*[127(0x7f)] = */ kCpumMicroarch_Intel_Unknown,
     /*[128(0x80)] = */ kCpumMicroarch_Intel_Unknown,
     /*[129(0x81)] = */ kCpumMicroarch_Intel_Unknown,
@@ -196,10 +196,10 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[137(0x89)] = */ kCpumMicroarch_Intel_Unknown,
     /*[138(0x8a)] = */ kCpumMicroarch_Intel_Unknown,
     /*[139(0x8b)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[140(0x8c)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[141(0x8d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[142(0x8e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping >= 0xB is Whiskey Lake, 0xA is CoffeeLake. */
-    /*[143(0x8f)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[140(0x8c)] = */ kCpumMicroarch_Intel_Core7_TigerLake,    /* 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz (bird) */
+    /*[141(0x8d)] = */ kCpumMicroarch_Intel_Core7_TigerLake,    /* unconfirmed */
+    /*[142(0x8e)] = */ kCpumMicroarch_Intel_Core7_KabyLake,     /* Stepping >= 0xB is Whiskey Lake, 0xA is CoffeeLake. */
+    /*[143(0x8f)] = */ kCpumMicroarch_Intel_Core7_SapphireRapids,
     /*[144(0x90)] = */ kCpumMicroarch_Intel_Unknown,
     /*[145(0x91)] = */ kCpumMicroarch_Intel_Unknown,
     /*[146(0x92)] = */ kCpumMicroarch_Intel_Unknown,
@@ -207,24 +207,32 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[148(0x94)] = */ kCpumMicroarch_Intel_Unknown,
     /*[149(0x95)] = */ kCpumMicroarch_Intel_Unknown,
     /*[150(0x96)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[151(0x97)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[151(0x97)] = */ kCpumMicroarch_Intel_Core7_AlderLake,    /* unconfirmed, unreleased */
     /*[152(0x98)] = */ kCpumMicroarch_Intel_Unknown,
     /*[153(0x99)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[154(0x9a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[154(0x9a)] = */ kCpumMicroarch_Intel_Core7_AlderLake,    /* unconfirmed, unreleased */
     /*[155(0x9b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[156(0x9c)] = */ kCpumMicroarch_Intel_Unknown,
     /*[157(0x9d)] = */ kCpumMicroarch_Intel_Unknown,
     /*[158(0x9e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping >= 0xB is Whiskey Lake, 0xA is CoffeeLake. */
     /*[159(0x9f)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[160(0xa0)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[161(0xa1)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[162(0xa2)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[163(0xa3)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[164(0xa4)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[165(0xa5)] = */ kCpumMicroarch_Intel_Core7_CometLake,    /* unconfirmed */
+    /*[166(0xa6)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[167(0xa7)] = */ kCpumMicroarch_Intel_Core7_CypressCove, /* 14nm backport, unconfirmed */
 };
-AssertCompile(RT_ELEMENTS(g_aenmIntelFamily06) == 0x9f+1);
+AssertCompile(RT_ELEMENTS(g_aenmIntelFamily06) == 0xa7+1);
 
 
 /**
  * Figures out the (sub-)micro architecture given a bit of CPUID info.
  *
  * @returns Micro architecture.
- * @param   enmVendor           The CPU vendor .
+ * @param   enmVendor           The CPU vendor.
  * @param   bFamily             The CPU family.
  * @param   bModel              The CPU model.
  * @param   bStepping           The CPU stepping.
@@ -542,8 +550,12 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_WhiskeyLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_CascadeLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_CannonLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_CometLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_IceLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_RocketLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_TigerLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_AlderLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_SapphireRapids);
 
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Bonnell);
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Lincroft);
