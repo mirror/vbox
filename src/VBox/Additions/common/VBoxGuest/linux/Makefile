@@ -130,6 +130,7 @@ endif # VBOX_WITHOUT_COMBINED_SOURCES
 ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	common/math/gcc/divdi3.o \
+	common/math/gcc/divmoddi4.o \
 	common/math/gcc/moddi3.o \
 	common/math/gcc/udivdi3.o \
 	common/math/gcc/udivmoddi4.o \

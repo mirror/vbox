@@ -122,6 +122,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/log/logformat.cpp=>common/log/logformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/log/logcom.cpp=>common/log/logcom.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/divdi3.c=>common/math/gcc/divdi3.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/divmoddi4.c=>common/math/gcc/divmoddi4.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/moddi3.c=>common/math/gcc/moddi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/qdivrem.c=>common/math/gcc/qdivrem.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/quad.h=>common/math/gcc/quad.h \
