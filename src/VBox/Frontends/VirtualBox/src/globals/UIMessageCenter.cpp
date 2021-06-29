@@ -3483,12 +3483,12 @@ void UIMessageCenter::prepare()
                                              const QString&, const QString&,
                                              int, int, int,
                                              const QString&, const QString&, const QString&,
-                                             const QString&)),
+                                             const QString&, const QString&)),
             this, SLOT(sltShowMessageBox(QWidget*, MessageType,
                                          const QString&, const QString&,
                                          int, int, int,
                                          const QString&, const QString&, const QString&,
-                                         const QString&)),
+                                         const QString&, const QString&)),
             Qt::BlockingQueuedConnection);
 
     /* Translations for Main.
