@@ -732,7 +732,7 @@ static int ps2kR3HidToInternalCode(uint32_t u32HidCode, key_def const **ppKeyDef
     }
     else if (u8HidPage == USB_HID_CC_PAGE)
     {
-        for (int i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
             if (aPS2CCKeys[i].usageId == u16HidUsage)
             {
                 pKeyDef   = &aPS2CCKeys[i].kdef;
@@ -743,7 +743,7 @@ static int ps2kR3HidToInternalCode(uint32_t u32HidCode, key_def const **ppKeyDef
     }
     else if (u8HidPage == USB_HID_DC_PAGE)
     {
-        for (int i = 0; i < RT_ELEMENTS(aPS2DCKeys); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(aPS2DCKeys); ++i)
             if (aPS2CCKeys[i].usageId == u16HidUsage)
             {
                 pKeyDef   = &aPS2DCKeys[i].kdef;
@@ -763,27 +763,27 @@ static int ps2kR3HidToInternalCode(uint32_t u32HidCode, key_def const **ppKeyDef
     return iKeyIndex;
 }
 
-static uint32_t ps2kR3InternalCodeToHid(int iKeyCode)
+static uint32_t ps2kR3InternalCodeToHid(unsigned uKeyCode)
 {
     uint16_t    u16HidUsage;
     uint32_t    u32HidCode = 0;
 
-    if ((iKeyCode >= PS2K_PAGE_DC_START) && (iKeyCode <= PS2K_PAGE_DC_END))
+    if ((uKeyCode >= PS2K_PAGE_DC_START) && (uKeyCode <= PS2K_PAGE_DC_END))
     {
-        u16HidUsage = aPS2DCKeys[iKeyCode - PS2K_PAGE_DC_START].usageId;
+        u16HidUsage = aPS2DCKeys[uKeyCode - PS2K_PAGE_DC_START].usageId;
         u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_DC_PAGE);
     }
-    else if ((iKeyCode >= PS2K_PAGE_CC_START) && (iKeyCode <= PS2K_PAGE_CC_END))
+    else if ((uKeyCode >= PS2K_PAGE_CC_START) && (uKeyCode <= PS2K_PAGE_CC_END))
     {
-        u16HidUsage = aPS2CCKeys[iKeyCode - PS2K_PAGE_CC_START].usageId;
+        u16HidUsage = aPS2CCKeys[uKeyCode - PS2K_PAGE_CC_START].usageId;
         u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_CC_PAGE);
     }
     else    /* Must be the keyboard usage page. */
     {
-        if (iKeyCode <= VBOX_USB_MAX_USAGE_CODE)
-            u32HidCode = RT_MAKE_U32(iKeyCode, USB_HID_KB_PAGE);
+        if (uKeyCode <= VBOX_USB_MAX_USAGE_CODE)
+            u32HidCode = RT_MAKE_U32(uKeyCode, USB_HID_KB_PAGE);
         else
-            AssertMsgFailed(("iKeyCode out of range! (%d)\n", iKeyCode));
+            AssertMsgFailed(("uKeyCode out of range! (%u)\n", uKeyCode));
     }
 
     return u32HidCode;
@@ -1119,11 +1119,11 @@ static void ps2kR3ReleaseKeys(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Releasing keys...\n"));
 
-    for (int iKey = 0; iKey < sizeof(pThis->abDepressedKeys); ++iKey)
-        if (pThis->abDepressedKeys[iKey])
+    for (unsigned uKey = 0; uKey < RT_ELEMENTS(pThis->abDepressedKeys); ++uKey)
+        if (pThis->abDepressedKeys[uKey])
         {
-            ps2kR3ProcessKeyEvent(pDevIns, pThis, ps2kR3InternalCodeToHid(iKey), false /* key up */);
-            pThis->abDepressedKeys[iKey] = 0;
+            ps2kR3ProcessKeyEvent(pDevIns, pThis, ps2kR3InternalCodeToHid(uKey), false /* key up */);
+            pThis->abDepressedKeys[uKey] = 0;
         }
     LogFlowFunc(("Done releasing keys\n"));
 }
