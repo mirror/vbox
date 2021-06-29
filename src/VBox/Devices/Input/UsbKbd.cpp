@@ -496,7 +496,7 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
  * Converts an internal 8-bit key index back to a 32-bit USB HID code.
  *
  * @returns 32-bit USB HID code. Zero if not found.
- * @param   u32HidCode          32-bit USB HID code.
+ * @param   uKeyCode        Internal key code/index.
  */
 static uint32_t usbInternalCodeToHid(unsigned uKeyCode)
 {
