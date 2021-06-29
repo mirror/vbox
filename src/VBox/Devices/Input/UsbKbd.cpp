@@ -380,9 +380,149 @@ static const PDMUSBDESCCACHE g_UsbHidDescCache =
 };
 
 
+/**
+ * Conversion table for consumer control keys (HID Usage Page 12).
+ * Used to 'compress' the USB HID usage code into a single 8-bit
+ * value. See also PS2CCKeys in the PS/2 keyboard emulation.
+ */
+static const    uint16_t aHidCCKeys[] = {
+    0x00B5, /* Scan Next Track */
+    0x00B6, /* Scan Previous Track */
+    0x00B7, /* Stop */
+    0x00CD, /* Play/Pause */
+    0x00E2, /* Mute */
+    0x00E5, /* Bass Boost */
+    0x00E7, /* Loudness */
+    0x00E9, /* Volume Up */
+    0x00EA, /* Volume Down */
+    0x0152, /* Bass Up */
+    0x0153, /* Bass Down */
+    0x0154, /* Treble Up */
+    0x0155, /* Treble Down */
+    0x0183, /* Media Select  */
+    0x018A, /* Mail */
+    0x0192, /* Calculator */
+    0x0194, /* My Computer */
+    0x0221, /* WWW Search */
+    0x0223, /* WWW Home */
+    0x0224, /* WWW Back */
+    0x0225, /* WWW Forward */
+    0x0226, /* WWW Stop */
+    0x0227, /* WWW Refresh */
+    0x022A, /* WWW Favorites */
+};
+
+/**
+ * Conversion table for generic desktop control keys (HID Usage Page 1).
+ * Used to 'compress' the USB HID usage code into a single 8-bit
+ * value. See also PS2DCKeys in the PS/2 keyboard emulation.
+ */
+static const    uint16_t aHidDCKeys[] = {
+    0x81,   /* System Power */
+    0x82,   /* System Sleep */
+    0x83,   /* System Wake */
+};
+
+#define USBHID_PAGE_DC_START    0xb0
+#define USBHID_PAGE_DC_END      (USBHID_PAGE_DC_START + RT_ELEMENTS(aHidDCKeys))
+#define USBHID_PAGE_CC_START    0xc0
+#define USBHID_PAGE_CC_END      (USBHID_PAGE_CC_START + RT_ELEMENTS(aHidCCKeys))
+
+AssertCompile(RT_ELEMENTS(aHidCCKeys) <= 0x20); /* Must fit between 0xC0-0xDF. */
+AssertCompile(RT_ELEMENTS(aHidDCKeys) <= 0x10); /* Must fit between 0xB0-0xBF. */
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+
+/**
+ * Converts a 32-bit USB HID code to an internal 8-bit value.
+ *
+ * @returns 8-bit internal key code/index. -1 if not found.
+ * @param   u32HidCode          32-bit USB HID code.
+ */
+static int usbHidToInternalCode(uint32_t u32HidCode)
+{
+    uint8_t         u8HidPage;
+    uint16_t        u16HidUsage;
+    int             iKeyIndex = -1;
+
+    u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
+    u16HidUsage = RT_LOWORD(u32HidCode);
+
+    if (u8HidPage == USB_HID_KB_PAGE)
+    {
+        if (u16HidUsage <= VBOX_USB_MAX_USAGE_CODE)
+            iKeyIndex = u16HidUsage;    /* Direct mapping. */
+        else
+            AssertMsgFailed(("u16HidUsage out of range! (%04X)\n", u16HidUsage));
+    }
+    else if (u8HidPage == USB_HID_CC_PAGE)
+    {
+        for (int i = 0; i < RT_ELEMENTS(aHidCCKeys); ++i)
+            if (aHidCCKeys[i] == u16HidUsage)
+            {
+                iKeyIndex = USBHID_PAGE_CC_START + i;
+                break;
+            }
+        AssertMsg(iKeyIndex > -1, ("Unsupported code in USB_HID_CC_PAGE! (%04X)\n", u16HidUsage));
+    }
+    else if (u8HidPage == USB_HID_DC_PAGE)
+    {
+        for (int i = 0; i < RT_ELEMENTS(aHidDCKeys); ++i)
+            if (aHidCCKeys[i] == u16HidUsage)
+            {
+                iKeyIndex = USBHID_PAGE_DC_START + i;
+                break;
+            }
+        AssertMsg(iKeyIndex > -1, ("Unsupported code in USB_HID_DC_PAGE! (%04X)\n", u16HidUsage));
+    }
+    else
+    {
+        AssertMsgFailed(("Unsupported u8HidPage! (%02X)\n", u8HidPage));
+    }
+
+    /** @todo: We can currently only report the standard HID keyboard page.*/
+    if (u8HidPage != USB_HID_KB_PAGE)
+        return -1;
+
+    return iKeyIndex;
+}
+
+
+/**
+ * Converts an internal 8-bit key index back to a 32-bit USB HID code.
+ *
+ * @returns 32-bit USB HID code. Zero if not found.
+ * @param   u32HidCode          32-bit USB HID code.
+ */
+static uint32_t usbInternalCodeToHid(int iKeyCode)
+{
+    uint16_t    u16HidUsage;
+    uint32_t    u32HidCode = 0;
+
+    if ((iKeyCode >= USBHID_PAGE_DC_START) && (iKeyCode <= USBHID_PAGE_DC_END))
+    {
+        u16HidUsage = aHidDCKeys[iKeyCode - USBHID_PAGE_DC_START];
+        u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_DC_PAGE);
+    }
+    else if ((iKeyCode >= USBHID_PAGE_CC_START) && (iKeyCode <= USBHID_PAGE_CC_END))
+    {
+        u16HidUsage = aHidCCKeys[iKeyCode - USBHID_PAGE_CC_START];
+        u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_CC_PAGE);
+    }
+    else    /* Must be the keyboard usage page. */
+    {
+        if (iKeyCode <= VBOX_USB_MAX_USAGE_CODE)
+            u32HidCode = RT_MAKE_U32(iKeyCode, USB_HID_KB_PAGE);
+        else
+            AssertMsgFailed(("iKeyCode out of range! (%d)\n", iKeyCode));
+    }
+
+    return u32HidCode;
+}
 
 
 /**
@@ -628,8 +768,16 @@ static void usbHidBuildReport(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys
             }
             else
             {
-                pReport->aKeys[iBuf] = iKey;
-                ++iBuf;
+                /* Key index back to 32-bit HID code. */
+                uint32_t    u32HidCode  = usbInternalCodeToHid(iKey);
+                uint8_t     u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
+                uint8_t     u16HidUsage = RT_LOWORD(u32HidCode);
+
+                if (u8HidPage == USB_HID_KB_PAGE)
+                {
+                    pReport->aKeys[iBuf] = (uint8_t)u16HidUsage;
+                    ++iBuf;
+                }
             }
         }
     }
@@ -695,34 +843,32 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
     return NULL;
 }
 
-/* See the PS2K device. */
-#define KRSP_BAT_FAIL       0xFC    /* Also a 'release keys' signal. */
-
 /**
  * @interface_method_impl{PDMIKEYBOARDPORT,pfnPutEventHid}
  */
 static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-    uint8_t     u8HidCode;
     bool        fKeyDown;
     bool        fHaveEvent = true;
     int         rc = VINF_SUCCESS;
+    int         iKeyCode;
 
     /* Let's see what we got... */
-    fKeyDown  = !(idUsage & UINT32_C(0x80000000));
-    u8HidCode = idUsage & 0xFF;
-    AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+    fKeyDown  = !(idUsage & PDMIKBDPORT_KEY_UP);
+
+    iKeyCode = usbHidToInternalCode(idUsage);
+    AssertReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
 
     RTCritSectEnter(&pThis->CritSect);
 
-    LogFlowFunc(("key %s: 0x%x\n", fKeyDown ? "down" : "up", u8HidCode));
+    LogFlowFunc(("key %s: %08X (iKeyCode 0x%x)\n", fKeyDown ? "down" : "up", idUsage, iKeyCode));
 
     /*
      * Due to host key repeat, we can get key events for keys which are
      * already depressed. Drop those right here.
      */
-    if (fKeyDown && pThis->abDepressedKeys[u8HidCode])
+    if (fKeyDown && pThis->abDepressedKeys[iKeyCode])
         fHaveEvent = false;
 
     /* If there is already a pending event, we won't accept a new one yet. */
@@ -732,13 +878,13 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     }
     else if (fHaveEvent)
     {
-        if (RT_LIKELY(idUsage != KRSP_BAT_FAIL))
+        if (RT_LIKELY(!(idUsage & PDMIKBDPORT_RELEASE_KEYS)))
         {
             /* Regular key event - update keyboard state. */
             if (fKeyDown)
-                pThis->abDepressedKeys[u8HidCode] = 1;
+                pThis->abDepressedKeys[iKeyCode] = 1;
             else
-                pThis->abDepressedKeys[u8HidCode] = 0;
+                pThis->abDepressedKeys[iKeyCode] = 0;
         }
         else
         {

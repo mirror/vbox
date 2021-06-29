@@ -372,6 +372,36 @@ static const   ext_key_def  aPS2CCKeys[] = {
     {0x022A, {0x66, 0x18, UNKN, KF_E0, T_U}},   /* WWW Favorites */
 };
 
+/* USB to PS/2 conversion table for Generic Desktop Control keys (HID Usage Page 1). */
+/* This usage page is tiny. */
+static const   ext_key_def  aPS2DCKeys[] = {
+    {0x81,   {0x5E, 0x37, UNKN, KF_E0, T_U}},   /* System Power */
+    {0x82,   {0x5F, 0x3F, UNKN, KF_E0, T_U}},   /* System Sleep */
+    {0x83,   {0x63, 0x5E, UNKN, KF_E0, T_U}},   /* System Wake */
+};
+
+/* We somehow need to keep track of depressed keys. To keep the array size
+ * under control, and because the number of defined keys isn't massive, we'd
+ * like to use an 8-bit index into the array.
+ * For the main USB HID usage page 7 (keyboard), we deal with 8-bit HID codes
+ * in the range from 0 to 0xE7, and use the HID codes directly.
+ * There's a convenient gap in the 0xA5-0xDF range. We use that to stuff the
+ * USB HID usage page 12 (consumer control) into the gap starting at 0xC0;
+ * the consumer control codes are from 0xB5 to 0x22A, but very sparse, with
+ * only 24 codes defined. We use the aPS2CCKeys array to generate our own
+ * code in the 0xC0-0xD7 range.
+ * For the tiny USB HID usage page 1 (generic desktop system) we use a similar
+ * approach, translating these to codes 0xB0 to 0xB2.
+ */
+
+#define PS2K_PAGE_DC_START      0xb0
+#define PS2K_PAGE_DC_END        (PS2K_PAGE_DC_START + RT_ELEMENTS(aPS2DCKeys))
+#define PS2K_PAGE_CC_START      0xc0
+#define PS2K_PAGE_CC_END        (PS2K_PAGE_CC_START + RT_ELEMENTS(aPS2CCKeys))
+
+AssertCompile(RT_ELEMENTS(aPS2CCKeys) <= 0x20); /* Must fit between 0xC0-0xDF. */
+AssertCompile(RT_ELEMENTS(aPS2DCKeys) <= 0x10); /* Must fit between 0xB0-0xBF. */
+
 #endif /* IN_RING3 */
 
 #ifdef IN_RING3
@@ -680,6 +710,85 @@ int PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pb)
 
 #ifdef IN_RING3
 
+static int ps2kR3HidToInternalCode(uint32_t u32HidCode, key_def const **ppKeyDef)
+{
+    uint8_t         u8HidPage;
+    uint16_t        u16HidUsage;
+    int             iKeyIndex = -1;
+    key_def const   *pKeyDef = &aPS2Keys[0];    /* Dummy no-event key. */;
+
+    u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
+    u16HidUsage = RT_LOWORD(u32HidCode);
+
+    if (u8HidPage == USB_HID_KB_PAGE)
+    {
+        if (u16HidUsage <= VBOX_USB_MAX_USAGE_CODE)
+        {
+            iKeyIndex = u16HidUsage;    /* Direct mapping. */
+            pKeyDef   = iKeyIndex >= HID_MODIFIER_FIRST ? &aPS2ModKeys[iKeyIndex - HID_MODIFIER_FIRST] : &aPS2Keys[iKeyIndex];
+        }
+        else
+            AssertMsgFailed(("u16HidUsage out of range! (%04X)\n", u16HidUsage));
+    }
+    else if (u8HidPage == USB_HID_CC_PAGE)
+    {
+        for (int i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
+            if (aPS2CCKeys[i].usageId == u16HidUsage)
+            {
+                pKeyDef   = &aPS2CCKeys[i].kdef;
+                iKeyIndex = PS2K_PAGE_CC_START + i;
+                break;
+            }
+        AssertMsg(iKeyIndex > -1, ("Unsupported code in USB_HID_CC_PAGE! (%04X)\n", u16HidUsage));
+    }
+    else if (u8HidPage == USB_HID_DC_PAGE)
+    {
+        for (int i = 0; i < RT_ELEMENTS(aPS2DCKeys); ++i)
+            if (aPS2CCKeys[i].usageId == u16HidUsage)
+            {
+                pKeyDef   = &aPS2DCKeys[i].kdef;
+                iKeyIndex = PS2K_PAGE_DC_START + i;
+                break;
+            }
+        AssertMsg(iKeyIndex > -1, ("Unsupported code in USB_HID_DC_PAGE! (%04X)\n", u16HidUsage));
+    }
+    else
+    {
+        AssertMsgFailed(("Unsupported u8HidPage! (%02X)\n", u8HidPage));
+    }
+
+    if (ppKeyDef)
+        *ppKeyDef = pKeyDef;
+
+    return iKeyIndex;
+}
+
+static uint32_t ps2kR3InternalCodeToHid(int iKeyCode)
+{
+    uint16_t    u16HidUsage;
+    uint32_t    u32HidCode = 0;
+
+    if ((iKeyCode >= PS2K_PAGE_DC_START) && (iKeyCode <= PS2K_PAGE_DC_END))
+    {
+        u16HidUsage = aPS2DCKeys[iKeyCode - PS2K_PAGE_DC_START].usageId;
+        u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_DC_PAGE);
+    }
+    else if ((iKeyCode >= PS2K_PAGE_CC_START) && (iKeyCode <= PS2K_PAGE_CC_END))
+    {
+        u16HidUsage = aPS2CCKeys[iKeyCode - PS2K_PAGE_CC_START].usageId;
+        u32HidCode  = RT_MAKE_U32(u16HidUsage, USB_HID_CC_PAGE);
+    }
+    else    /* Must be the keyboard usage page. */
+    {
+        if (iKeyCode <= VBOX_USB_MAX_USAGE_CODE)
+            u32HidCode = RT_MAKE_U32(iKeyCode, USB_HID_KB_PAGE);
+        else
+            AssertMsgFailed(("iKeyCode out of range! (%d)\n", iKeyCode));
+    }
+
+    return u32HidCode;
+}
+
 static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
 {
     key_def const   *pKeyDef;
@@ -688,40 +797,14 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
     size_t          cbLeft;
     uint8_t         abScan[2];
     uint8_t         u8HidPage;
-    uint8_t         u8HidCode;
     uint16_t        u16HidUsage;
 
     u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
     u16HidUsage = RT_LOWORD(u32HidCode);
-    /* For the keyboard usage page (7) we use a 8-bit code. For other pages we use the full 16-bit ID. */
-    u8HidCode   = (u8HidPage == USB_HID_KB_PAGE) ? RT_LOBYTE(u32HidCode) : 0;
 
     LogFlowFunc(("key %s: page 0x%02x ID 0x%04x (set %d)\n", fKeyDown ? "down" : "up", u8HidPage, u16HidUsage, pThis->u8ScanSet));
 
-    /* Find the key definition in somewhat sparse storage. */
-    if (u8HidPage == USB_HID_KB_PAGE)
-        /* For the standard keyboard usage page, thre are just two arrays. */
-        pKeyDef = u8HidCode >= HID_MODIFIER_FIRST ? &aPS2ModKeys[u8HidCode - HID_MODIFIER_FIRST] : &aPS2Keys[u8HidCode];
-    else if (u8HidPage == USB_HID_CC_PAGE)
-    {
-        /* For the consumer control usage page, we need to search. */
-        unsigned    i;
-
-        pKeyDef = &aPS2Keys[0]; /* Dummy no-event key. */
-        for (i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
-        {
-            if (aPS2CCKeys[i].usageId == u16HidUsage)
-            {
-                pKeyDef = &aPS2CCKeys[i].kdef;
-                break;
-            }
-        }
-    }
-    else
-    {
-        LogFlow(("Unsupported HID usage page, ignoring key.\n"));
-        return VINF_SUCCESS;
-    }
+    ps2kR3HidToInternalCode(u32HidCode, &pKeyDef);
 
     /* Some keys are not processed at all; early return. */
     if (pKeyDef->makeS1 == NONE)
@@ -733,12 +816,11 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
     /* Handle modifier keys (Ctrl/Alt/Shift/GUI). We need to keep track
      * of their state in addition to sending the scan code.
      */
-    if (u8HidCode >= HID_MODIFIER_FIRST)
+    if ((u8HidPage == USB_HID_KB_PAGE) && (u16HidUsage >= HID_MODIFIER_FIRST))
     {
-        unsigned    mod_bit = 1 << (u8HidCode - HID_MODIFIER_FIRST);
+        unsigned    mod_bit = 1 << (u16HidUsage - HID_MODIFIER_FIRST);
 
-        Assert((u8HidPage == USB_HID_KB_PAGE));
-        Assert((u8HidCode <= HID_MODIFIER_LAST));
+        Assert((u16HidUsage <= HID_MODIFIER_LAST));
         if (fKeyDown)
             pThis->u8Modifiers |= mod_bit;
         else
@@ -1037,11 +1119,11 @@ static void ps2kR3ReleaseKeys(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Releasing keys...\n"));
 
-    for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
-        if (pThis->abDepressedKeys[uKey])
+    for (int iKey = 0; iKey < sizeof(pThis->abDepressedKeys); ++iKey)
+        if (pThis->abDepressedKeys[iKey])
         {
-            ps2kR3ProcessKeyEvent(pDevIns, pThis, RT_MAKE_U32(USB_HID_KB_PAGE, uKey), false /* key up */);
-            pThis->abDepressedKeys[uKey] = 0;
+            ps2kR3ProcessKeyEvent(pDevIns, pThis, ps2kR3InternalCodeToHid(iKey), false /* key up */);
+            pThis->abDepressedKeys[iKey] = 0;
         }
     LogFlowFunc(("Done releasing keys\n"));
 }
@@ -1091,36 +1173,32 @@ static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
 static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t idUsage)
 {
     uint32_t        u32HidCode;
-    uint8_t         u8KeyCode;
-    uint8_t         u8HidPage;
     bool            fKeyDown;
     bool            fHaveEvent = true;
+    int             iKeyCode;
     int             rc = VINF_SUCCESS;
 
     /* Extract the usage page and ID and ensure it's valid. */
-    fKeyDown   = !(idUsage & UINT32_C(0x80000000));
+    fKeyDown   = !(idUsage & PDMIKBDPORT_KEY_UP);
     u32HidCode = idUsage & 0xFFFFFF;
-    u8HidPage  = RT_LOBYTE(RT_HIWORD(idUsage));
-    u8KeyCode  = RT_LOBYTE(idUsage);
-    if (u8HidPage == USB_HID_KB_PAGE)
-        AssertReturn(u8KeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
-    else
-        AssertReturn(u8HidPage == USB_HID_CC_PAGE, VERR_INTERNAL_ERROR);
+
+    iKeyCode = ps2kR3HidToInternalCode(u32HidCode, NULL);
+    AssertReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
 
     if (fKeyDown)
     {
         /* Due to host key repeat, we can get key events for keys which are
          * already depressed. We need to ignore those. */
-        if (pThis->abDepressedKeys[u8KeyCode])
+        if (pThis->abDepressedKeys[iKeyCode])
             fHaveEvent = false;
-        pThis->abDepressedKeys[u8KeyCode] = 1;
+        pThis->abDepressedKeys[iKeyCode] = 1;
     }
     else
     {
         /* NB: We allow key release events for keys which aren't depressed.
          * That is unlikely to happen and should not cause trouble.
          */
-        pThis->abDepressedKeys[u8KeyCode] = 0;
+        pThis->abDepressedKeys[iKeyCode] = 0;
     }
 
     /* Unless this is a new key press/release, don't even bother. */
@@ -1152,7 +1230,7 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
     /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
      * key is allowed to use this scancode.
      */
-    if (RT_LIKELY(idUsage != KRSP_BAT_FAIL))
+    if (RT_LIKELY(!(idUsage & PDMIKBDPORT_RELEASE_KEYS)))
         ps2kR3PutEventWorker(pDevIns, pThis, idUsage);
     else
         ps2kR3ReleaseKeys(pDevIns, pThis);
@@ -1290,7 +1368,7 @@ int PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t u
     pHlp->pfnSSMGetU8(pSSM, &pThis->u8TypematicCfg);
     pHlp->pfnSSMGetU8(pSSM, &u8);
     /* Reconstruct the 32-bit code from the 8-bit value in saved state. */
-    pThis->u32TypematicKey = u8 ? RT_MAKE_U32(USB_HID_KB_PAGE, u8) : 0;
+    pThis->u32TypematicKey = u8 ? ps2kR3InternalCodeToHid(u8) : 0;
     pHlp->pfnSSMGetU8(pSSM, &pThis->u8Modifiers);
     pHlp->pfnSSMGetU8(pSSM, &pThis->u8ScanSet);
     pHlp->pfnSSMGetU8(pSSM, &u8);

@@ -295,10 +295,30 @@ HRESULT Keyboard::putCAD()
  */
 HRESULT Keyboard::releaseKeys()
 {
-    std::vector<LONG> scancodes;
-    scancodes.resize(1);
-    scancodes[0] = 0xFC;    /* Magic scancode, see PS/2 and USB keyboard devices. */
-    return putScancodes(scancodes, NULL);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Release all keys on the active keyboard in order to start with a clean slate.
+     * Note that this should mirror the logic in Keyboard::putScancodes() when choosing
+     * which keyboard to send the release event to.
+     */
+    PPDMIKEYBOARDPORT pUpPort = NULL;
+    for (int i = KEYBOARD_MAX_DEVICES - 1; i >= 0 ; --i)
+    {
+        if (mpDrv[i] && (mpDrv[i]->u32DevCaps & KEYBOARD_DEVCAP_ENABLED))
+        {
+            pUpPort = mpDrv[i]->pUpPort;
+            break;
+        }
+    }
+
+    if (pUpPort)
+    {
+        int rc = pUpPort->pfnReleaseKeys(pUpPort);
+        if (RT_FAILURE(rc))
+            AssertMsgFailed(("Failed to release keys on all keyboards! rc=%Rrc\n", rc));
+    }
+
+    return S_OK;
 }
 
 HRESULT Keyboard::getKeyboardLEDs(std::vector<KeyboardLED_T> &aKeyboardLEDs)
@@ -351,6 +371,11 @@ DECLCALLBACK(void) Keyboard::i_keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pI
 DECLCALLBACK(void) Keyboard::i_keyboardSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive)
 {
     PDRVMAINKEYBOARD pDrv = RT_FROM_MEMBER(pInterface, DRVMAINKEYBOARD, IConnector);
+
+    // Before activating a different keyboard, release all keys on the currently active one.
+    if (fActive)
+        pDrv->pKeyboard->releaseKeys();
+
     if (fActive)
         pDrv->u32DevCaps |= KEYBOARD_DEVCAP_ENABLED;
     else

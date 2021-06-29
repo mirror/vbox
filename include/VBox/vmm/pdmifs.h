@@ -398,6 +398,20 @@ typedef struct PDMIMOUSECONNECTOR
 #define PDMIMOUSECONNECTOR_IID                  "ce64d7bd-fa8f-41d1-a6fb-d102a2d6bffe"
 
 
+/** Flags for PDMIKEYBOARDPORT::pfnPutEventHid.
+ * @{ */
+#define PDMIKBDPORT_KEY_UP          RT_BIT(31)  /** Key release event if set. */
+#define PDMIKBDPORT_RELEASE_KEYS    RT_BIT(30)  /** Force all keys to be released. */
+/** @} */
+
+/** USB HID usage pages understood by PDMIKEYBOARDPORT::pfnPutEventHid.
+ * @{ */
+#define USB_HID_DC_PAGE             1       /** USB HID Generic Desktop Control Usage Page. */
+#define USB_HID_KB_PAGE             7       /** USB HID Keyboard Usage Page. */
+#define USB_HID_CC_PAGE             12      /** USB HID Consumer Control Usage Page. */
+/** @} */
+
+
 /** Pointer to a keyboard port interface. */
 typedef struct PDMIKEYBOARDPORT *PPDMIKEYBOARDPORT;
 /**
@@ -433,6 +447,19 @@ typedef struct PDMIKEYBOARDPORT
      * @param   idUsage             The HID usage code event to queue.
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEventHid,(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage));
+
+    /**
+     * Forcibly releases any pressed keys.
+     *
+     * This is called by the source of keyboard events in situations when a full
+     * release of all currently pressed keys must be forced, e.g. when activating
+     * a different keyboard, or when key-up events may have been lost.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pInterface          Pointer to this interface structure.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReleaseKeys,(PPDMIKEYBOARDPORT pInterface));
 } PDMIKEYBOARDPORT;
 /** PDMIKEYBOARDPORT interface ID. */
 #define PDMIKEYBOARDPORT_IID                    "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"

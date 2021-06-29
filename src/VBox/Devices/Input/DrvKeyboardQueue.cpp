@@ -31,8 +31,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Keyboard usage page bits to be OR-ed into the code. */
-#define HID_PG_KB_BITS  0x070000
-
+#define HID_PG_KB_BITS  RT_MAKE_U32(0, USB_HID_KB_PAGE)
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -151,7 +150,7 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
     Assert(pUsage);
 
     /* Isolate the scan code and key break flag. */
-    keyUp = (scanCode & 0x80) << 24;
+    keyUp = (scanCode & 0x80) ? PDMIKBDPORT_KEY_UP : 0;
 
     switch (state) {
     case SS_IDLE:
@@ -236,7 +235,7 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
              * only send break events for Hangul/Hanja keys -- convert a lone
              * key up into a key up/key down sequence.
              */
-            if (idUsage == UINT32_C(0x80000090) || idUsage == UINT32_C(0x80000091))
+            if (idUsage == UINT32_C(PDMIKBDPORT_KEY_UP | 0x90) || idUsage == UINT32_C(PDMIKBDPORT_KEY_UP & 0x91))
             {
                 PDRVKBDQUEUEITEM pItem2 = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
                 /*
@@ -246,7 +245,7 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
                 if (pItem2)
                 {
                     /* Manufacture a key down event. */
-                    pItem2->idUsage = idUsage & ~UINT32_C(0x80000000);
+                    pItem2->idUsage = idUsage & ~PDMIKBDPORT_KEY_UP;
                     PDMQueueInsert(pDrv->pQueue, &pItem2->Core);
                 }
             }
@@ -288,6 +287,38 @@ static DECLCALLBACK(int) drvKbdQueuePutEventHid(PPDMIKEYBOARDPORT pInterface, ui
     }
     if (!pDrv->fSuspended)
         AssertMsgFailed(("drvKbdQueuePutEventHid: Queue is full!!!!\n"));
+    return VERR_PDM_NO_QUEUE_ITEMS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIKEYBOARDPORT,pfnReleaseKeys}
+ *
+ * Because of the event queueing the EMT context requirement is lifted.
+ * @thread  Any thread.
+ */
+static DECLCALLBACK(int) drvKbdQueueReleaseKeys(PPDMIKEYBOARDPORT pInterface)
+{
+    PDRVKBDQUEUE pDrv = IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface);
+
+    /* Ignore any attempt to send events if queue is inactive. */
+    if (pDrv->fInactive)
+        return VINF_SUCCESS;
+
+    PDRVKBDQUEUEITEM pItem = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+    if (pItem)
+    {
+        /* Send a special key event that forces all keys to be released.
+         * Goes through the queue so that it would take effect only after
+         * any key events that might already be queued up.
+         */
+        pItem->idUsage = PDMIKBDPORT_RELEASE_KEYS | HID_PG_KB_BITS;
+        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+
+        return VINF_SUCCESS;
+    }
+    if (!pDrv->fSuspended)
+        AssertMsgFailed(("drvKbdQueueReleaseKeys: Queue is full!!!!\n"));
     return VERR_PDM_NO_QUEUE_ITEMS;
 }
 
@@ -456,6 +487,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IKeyboardPort. */
     pDrv->IPort.pfnPutEventScan             = drvKbdQueuePutEventScan;
     pDrv->IPort.pfnPutEventHid              = drvKbdQueuePutEventHid;
+    pDrv->IPort.pfnReleaseKeys              = drvKbdQueueReleaseKeys;
 
     /*
      * Get the IKeyboardPort interface of the above driver/device.

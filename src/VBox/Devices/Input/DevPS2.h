@@ -88,10 +88,6 @@ int  PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size
 #define VBOX_USB_MAX_USAGE_CODE     0xE7
 /** The size of an array needed to store all USB usage codes */
 #define VBOX_USB_USAGE_ARRAY_SIZE   (VBOX_USB_MAX_USAGE_CODE + 1)
-/** USB HID Keyboard Usage Page. */
-#define USB_HID_KB_PAGE             7
-/** USB HID Consumer Control Usage Page. */
-#define USB_HID_CC_PAGE             12
 /** @} */
 
 /* Internal keyboard queue sizes. The input queue doesn't need to be
