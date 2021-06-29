@@ -1517,7 +1517,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint16_t cons
 #endif /* convert me */
 
 
-static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, bool fAm,
+static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsigned cbCacheLine, bool fAm,
                                            BS3CPUBASIC2PFTTSTCMNMODE const BS3_FAR *pCmn)
 {
     BS3TRAPFRAME        TrapCtx;
@@ -1572,9 +1572,10 @@ static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, bool f
              */
             for (iTest = 0; iTest < pCmn->cEntries; iTest++)
             {
-                uint8_t const    cbMem  = pCmn->paEntries[iTest].cbMem;
                 uint8_t const    fOp    = pCmn->paEntries[iTest].fOp;
-                uint8_t          offMem;
+                uint8_t const    cbMem  = pCmn->paEntries[iTest].cbMem;
+                uint16_t const   cbMax  = cbCacheLine + cbMem;
+                uint16_t         offMem;
                 uint8_t BS3_FAR *poffUd = (uint8_t BS3_FAR *)Bs3SelLnkPtrToCurPtr(pCmn->paEntries[iTest].pfn);
                 Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, pCmn->paEntries[iTest].pfn);
                 CtxUdExpected.rip    = Ctx.rip;
@@ -1602,10 +1603,13 @@ if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo inv
 
                 /*
                  * Buffer misalignment loop.
+                 * Note! We must make sure to cross a cache line here to make sure
+                 *       to cover the split-lock scenario. (The buffer is cache
+                 *       line aligned.)
                  */
-                for (offMem = 0; offMem < cbMem; offMem++)
+                for (offMem = 0; offMem < cbMax; offMem++)
                 {
-                    unsigned offBuf = cbMem * 2 + cbMem;
+                    unsigned offBuf = cbMax + cbMem * 2;
                     while (offBuf-- > 0)
                         pbBuf[offBuf] = 1; /* byte-by-byte to make sure it doesn't trigger AC. */
 
@@ -1656,7 +1660,8 @@ if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo inv
  */
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_RaiseXcpt11)(uint8_t bMode)
 {
-    uint8_t             abBuf[4096 /** @todo 128 - but that went crazy in real mode; now it's long mode going wrong.  */];
+    unsigned            cbCacheLine = 128; /** @todo detect */
+    uint8_t             abBuf[4096 /** @todo 512 - but that went crazy in real mode; now it's long mode going wrong.  */];
     uint8_t BS3_FAR    *pbBuf;
     unsigned            idxCmnModes;
     uint32_t            fCr0;
@@ -1675,8 +1680,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_RaiseXcpt11)(uint8_t bMode)
 
     /* Get us a 64-byte aligned buffer. */
     pbBuf = abBuf;
-    if (BS3_FP_OFF(pbBuf) & 63)
-        pbBuf = &abBuf[64 - BS3_FP_OFF(pbBuf) & 63];
+    if (BS3_FP_OFF(pbBuf) & (cbCacheLine - 1))
+        pbBuf = &abBuf[cbCacheLine - BS3_FP_OFF(pbBuf) & (cbCacheLine - 1)];
     //Bs3TestPrintf("pbBuf=%p\n", pbBuf);
 
     /* Find the g_aCmnModes entry. */
@@ -1689,12 +1694,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_RaiseXcpt11)(uint8_t bMode)
     fCr0 = Bs3RegGetCr0();
     BS3_ASSERT(!(fCr0 & X86_CR0_AM));
     Bs3RegSetCr0(fCr0 & ~X86_CR0_AM);
-    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, false /*fAm*/, &g_aCmnModes[idxCmnModes]);
+    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, false /*fAm*/, &g_aCmnModes[idxCmnModes]);
 
 #if 1
     /* The second round is with aligment checks enabled. */
     Bs3RegSetCr0(Bs3RegGetCr0() | X86_CR0_AM);
-    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, true /*fAm*/, &g_aCmnModes[idxCmnModes]);
+    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, true /*fAm*/, &g_aCmnModes[idxCmnModes]);
 #endif
 
     Bs3RegSetCr0(fCr0);
