@@ -484,7 +484,7 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
         AssertMsgFailed(("Unsupported u8HidPage! (%02X)\n", u8HidPage));
     }
 
-    /** @todo: We can currently only report the standard HID keyboard page.*/
+    /** @todo We can currently only report the standard HID keyboard page.*/
     if (u8HidPage != USB_HID_KB_PAGE)
         return -1;
 
