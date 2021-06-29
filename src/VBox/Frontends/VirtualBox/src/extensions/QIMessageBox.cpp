@@ -38,8 +38,9 @@
 #include <iprt/assert.h>
 
 
-QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, const QString &strHelpKeyword, AlertIconType iconType,
-                           int iButton1 /* = 0*/, int iButton2 /* = 0*/, int iButton3 /* = 0*/, QWidget *pParent /* = 0*/)
+QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
+                           int iButton1 /* = 0*/, int iButton2 /* = 0*/, int iButton3 /* = 0*/, QWidget *pParent /* = 0*/,
+                           const QString &strHelpKeyword /* = QString() */)
     : QIDialog(pParent)
     , m_strTitle(strTitle)
     , m_iconType(iconType)

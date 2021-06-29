@@ -155,7 +155,6 @@ bool UIMessageCenter::warningShown(const QString &strWarningName) const
 int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                              const QString &strMessage,
                              const QString &strDetails,
-                             const QString &strHelpKeyword,
                              const char *pcszAutoConfirmId /* = 0*/,
                              int iButton1 /* = 0*/,
                              int iButton2 /* = 0*/,
@@ -170,7 +169,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
         /* We have to throw a blocking signal
          * to show a message-box in the GUI thread: */
         emit sigToShowMessageBox(pParent, enmType,
-                                 strMessage, strDetails, strHelpKeyword,
+                                 strMessage, strDetails,
                                  iButton1, iButton2, iButton3,
                                  strButtonText1, strButtonText2, strButtonText3,
                                  QString(pcszAutoConfirmId));
@@ -179,7 +178,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
     }
     /* In usual case we can chow a message-box directly: */
     return showMessageBox(pParent, enmType,
-                          strMessage, strDetails, strHelpKeyword,
+                          strMessage, strDetails,
                           iButton1, iButton2, iButton3,
                           strButtonText1, strButtonText2, strButtonText3,
                           QString(pcszAutoConfirmId));
@@ -188,22 +187,20 @@ int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
 void UIMessageCenter::error(QWidget *pParent, MessageType enmType,
                            const QString &strMessage,
                            const QString &strDetails,
-                           const QString &strHelpKeyword  /* = QString() */,
                            const char *pcszAutoConfirmId /* = 0*/) const
 {
-    message(pParent, enmType, strMessage, strDetails, strHelpKeyword, pcszAutoConfirmId,
+    message(pParent, enmType, strMessage, strDetails, pcszAutoConfirmId,
             AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape);
 }
 
 bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage,
                                         const QString &strDetails,
-                                        const QString &strHelpKeyword,
                                         const char *pcszAutoConfirmId /* = 0*/,
                                         const QString &strOkButtonText /* = QString()*/,
                                         const QString &strCancelButtonText /* = QString()*/) const
 {
-    return (message(pParent, enmType, strMessage, strDetails, strHelpKeyword, pcszAutoConfirmId,
+    return (message(pParent, enmType, strMessage, strDetails, pcszAutoConfirmId,
                     AlertButton_Ok | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
                     0 /* third button */,
@@ -222,7 +219,6 @@ void UIMessageCenter::alert(QWidget *pParent, MessageType enmType,
 
 int UIMessageCenter::question(QWidget *pParent, MessageType enmType,
                               const QString &strMessage,
-                              const QString &strHelpKeyword,
                               const char *pcszAutoConfirmId/* = 0*/,
                               int iButton1 /* = 0*/,
                               int iButton2 /* = 0*/,
@@ -231,20 +227,19 @@ int UIMessageCenter::question(QWidget *pParent, MessageType enmType,
                               const QString &strButtonText2 /* = QString()*/,
                               const QString &strButtonText3 /* = QString()*/) const
 {
-    return message(pParent, enmType, strMessage, QString()  /* details */, strHelpKeyword, pcszAutoConfirmId,
+    return message(pParent, enmType, strMessage, QString(), pcszAutoConfirmId,
                    iButton1, iButton2, iButton3, strButtonText1, strButtonText2, strButtonText3);
 }
 
 bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
                                      const QString &strMessage,
-                                     const QString &strHelpKeyword /* = QString() */,
                                      const char *pcszAutoConfirmId /* = 0*/,
                                      const QString &strOkButtonText /* = QString()*/,
                                      const QString &strCancelButtonText /* = QString()*/,
                                      bool fDefaultFocusForOk /* = true*/) const
 {
     return fDefaultFocusForOk ?
-           ((question(pParent, enmType, strMessage, strHelpKeyword, pcszAutoConfirmId,
+           ((question(pParent, enmType, strMessage, pcszAutoConfirmId,
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
                       0 /* third button */,
@@ -252,7 +247,7 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
                       strCancelButtonText,
                       QString() /* third button */) &
              AlertButtonMask) == AlertButton_Ok) :
-           ((question(pParent, enmType, strMessage, strHelpKeyword, pcszAutoConfirmId,
+           ((question(pParent, enmType, strMessage, pcszAutoConfirmId,
                       AlertButton_Ok,
                       AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                       0 /* third button */,
@@ -264,13 +259,12 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
 
 int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType enmType,
                                      const QString &strMessage,
-                                     const QString &strHelpKeyword /* = QString() */,
                                      const char *pcszAutoConfirmId /* = 0*/,
                                      const QString &strChoice1ButtonText /* = QString()*/,
                                      const QString &strChoice2ButtonText /* = QString()*/,
                                      const QString &strCancelButtonText /* = QString()*/) const
 {
-    return question(pParent, enmType, strMessage, strHelpKeyword, pcszAutoConfirmId,
+    return question(pParent, enmType, strMessage, pcszAutoConfirmId,
                     AlertButton_Choice1,
                     AlertButton_Choice2 | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
@@ -282,7 +276,6 @@ int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType enmType,
 int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
                                        const QString &strMessage,
                                        const QString &strOptionText,
-                                       const QString &strHelpKeyword,
                                        bool fDefaultOptionValue /* = true */,
                                        int iButton1 /* = 0*/,
                                        int iButton2 /* = 0*/,
@@ -329,7 +322,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
 
     /* Create message-box: */
     QWidget *pBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-    QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, strHelpKeyword, icon,
+    QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
                                                    iButton1, iButton2, iButton3, pBoxParent);
     windowManager().registerNewParent(pBox, pBoxParent);
 
@@ -670,7 +663,6 @@ bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, c
                              "<nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
                              "<p>Would you like to automatically rename it?</p>")
                              .arg(strName, strGroupName),
-                          QString() /* = QString() */,
                           0 /* auto-confirm id */,
                           tr("Rename"));
 }
@@ -694,7 +686,6 @@ bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names) const
                           tr("<p>You are about to remove following virtual machine items from the machine list:</p>"
                              "<p><b>%1</b></p><p>Do you wish to proceed?</p>")
                              .arg(names.join(", ")),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -766,14 +757,14 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
     /* Prepare message itself: */
     return cInacessibleMachineCount == machines.size() ?
            message(0, MessageType_Question,
-                   strText, QString(), QString() /* help keyword */,
+                   strText, QString(),
                    0 /* auto-confirm id */,
                    AlertButton_Ok,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    0,
                    tr("Remove")) :
            message(0, MessageType_Question,
-                   strText, QString(), QString() /* help keyword */,
+                   strText, QString(),
                    0 /* auto-confirm id */,
                    AlertButton_Choice1,
                    AlertButton_Choice2,
@@ -801,7 +792,7 @@ int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mach
 
     /* Prepare message itself: */
     return message(0, MessageType_Question,
-                   strText, QString(), QString() /* help keyword */,
+                   strText, QString(),
                    0 /* auto-confirm id */,
                    AlertButton_Choice1,
                    AlertButton_Choice2,
@@ -851,7 +842,6 @@ bool UIMessageCenter::warnAboutInaccessibleMedia() const
                              "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
                              "see which files are inaccessible, or press <b>Ignore</b> to "
                              "ignore this message.</p>"),
-                          QString() /* help keyword */,
                           "warnAboutInaccessibleMedia",
                           tr("Check", "inaccessible media message box"), tr("Ignore"));
 }
@@ -864,7 +854,6 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
                              "<p>This operation is equivalent to resetting or powering off "
                              "the machine without doing a proper shutdown of the guest OS.</p>")
                              .arg(strNames),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Discard", "saved state"));
 }
@@ -875,7 +864,6 @@ bool UIMessageCenter::confirmTerminateCloudInstance(const QString &strNames) con
                           tr("<p>Are you sure you want to terminate the cloud instance "
                              "of the following virtual machines?</p><p><b>%1</b></p>")
                              .arg(strNames),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Terminate", "cloud instance"));
 }
@@ -887,7 +875,6 @@ bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
                              "<p><b>%1</b></p><p>This will cause any unsaved data "
                              "in applications running inside it to be lost.</p>")
                              .arg(strNames),
-                          QString() /* help keyword */,
                           "confirmResetMachine" /* auto-confirm id */,
                           tr("Reset", "machine"));
 }
@@ -898,7 +885,6 @@ bool UIMessageCenter::confirmACPIShutdownMachine(const QString &strNames) const
                           tr("<p>Do you really want to send an ACPI shutdown signal "
                              "to the following virtual machines?</p><p><b>%1</b></p>")
                              .arg(strNames),
-                          QString() /* help keyword */,
                           "confirmACPIShutdownMachine" /* auto-confirm id */,
                           tr("ACPI Shutdown", "machine"));
 }
@@ -910,7 +896,6 @@ bool UIMessageCenter::confirmPowerOffMachine(const QString &strNames) const
                              "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
                              "running inside it to be lost.</p>")
                              .arg(strNames),
-                          QString() /* help keyword */,
                           "confirmPowerOffMachine" /* auto-confirm id */,
                           tr("Power Off", "machine"));
 }
@@ -1137,7 +1122,6 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
-                             QString() /* Help keyword */,
                              !gEDataManager->messagesWithInvertedOption().contains("confirmSnapshotRestoring"),
                              AlertButton_Ok,
                              AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
@@ -1147,7 +1131,6 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                    tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>")
                       .arg(strSnapshotName),
                    QString() /* details */,
-                   QString() /* help keyword */,
                    0 /* auto-confirm id */,
                    AlertButton_Ok,
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
@@ -1163,7 +1146,6 @@ bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName) con
                              "This can be a lengthy process, and the information in the snapshot cannot be recovered.</p>"
                              "</p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
                              .arg(strSnapshotName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Delete") /* ok button text */,
                           QString() /* cancel button text */,
@@ -1181,7 +1163,6 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                               "corruption of the image and the VM configuration, i.e. loss of the VM and its data.</p><p>You may continue with deleting "
                               "the snapshot at your own risk.</p>")
                               .arg(strSnapshotName, strTargetImageName, strTargetImageMaxSize, strTargetFileSystemFree),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Delete") /* ok button text */,
                           QString() /* cancel button text */,
@@ -1291,7 +1272,6 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                              "a different network name or a different adapter attachment "
                              "type.</p>")
                              .arg(strName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -1340,7 +1320,6 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
                           tr("<p>The machine settings were changed while you were editing them. "
                              "You currently have unsaved setting changes.</p>"
                              "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Reload settings"), tr("Keep changes"));
 }
@@ -1351,7 +1330,6 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                           tr("<p>Are you sure you want to delete the optical drive?</p>"
                              "<p>You will not be able to insert any optical disks or ISO images "
                              "or install the Guest Additions without it!</p>"),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("&Remove", "medium") /* ok button text */,
                           QString() /* cancel button text */,
@@ -1451,7 +1429,6 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* =
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
                              "<p>If you proceed your changes will be discarded.</p>"),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           QString() /* ok button text */,
                           QString() /* cancel button text */,
@@ -1559,7 +1536,6 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced
                             tr("<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
                                "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
                                .arg(medium.location(), usage.join(", ")),
-                            QString() /* help keyword */,
                             0 /* auto-confirm id */,
                             tr("Release", "detach medium"))
            : questionBinary(pParent, MessageType_Question,
@@ -1568,7 +1544,6 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced
                                "<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
                                "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
                                .arg(medium.location(), usage.join(", ")),
-                            QString() /* help keyword */,
                             0 /* auto-confirm id */,
                             tr("Release", "detach medium"));
 }
@@ -1620,7 +1595,6 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     /* Show the question: */
     return questionBinary(pParent, MessageType_Question,
                           strMessage.arg(medium.location()),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove", "medium") /* ok button text */,
                           QString() /* cancel button text */,
@@ -1640,7 +1614,6 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                               "will be left untouched which makes it possible to add this hard "
                               "disk to the list later again.</p>")
                               .arg(strLocation),
-                           QString() /* help keyword */,
                            0 /* auto-confirm id */,
                            tr("Delete", "hard disk storage"),
                            tr("Keep", "hard disk storage"));
@@ -1755,7 +1728,6 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
         return errorWithQuestion(pParent, MessageType_Question,
                                  strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
                                  UIErrorString::formatErrorInfo(machine),
-                                 QString() /* help keyword */,
                                  0 /* Auto Confirm ID */,
                                  tr("Force Unmount"));
     error(pParent, MessageType_Error,
@@ -1811,7 +1783,6 @@ bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QW
                              "you correct their settings by either choosing a different interface "
                              "name or a different adapter attachment type.</p>")
                              .arg(strName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -2182,7 +2153,6 @@ bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Do you want to remove the cloud profile <nobr><b>%1</b>?</nobr></p>")
                              .arg(strName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -2194,7 +2164,6 @@ bool UIMessageCenter::confirmCloudProfilesImport(QWidget *pParent /* = 0 */) con
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Do you want to import cloud profiles from external files?</p>"
                              "<p>VirtualBox cloud profiles will be overwritten and their data will be lost.</p>"),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Import") /* ok button text */,
                           QString() /* cancel button text */,
@@ -2243,7 +2212,6 @@ int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 *
                        "<p>There seems to be an unsaved changes. "
                        "You can choose to <b>Accept</b> or <b>Reject</b> them automatically "
                        "or cancel to keep the dialog opened.</p>"),
-                    QString() /* help keyword */,
                     0 /* auto-confirm id */,
                     AlertButton_Choice1,
                     AlertButton_Choice2,
@@ -2257,7 +2225,6 @@ bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strNa
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Do you want to remove the cloud console application <nobr><b>%1</b>?</nobr></p>")
                              .arg(strName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -2269,7 +2236,6 @@ bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, 
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Do you want to remove the cloud console profile <nobr><b>%1</b>?</nobr></p>")
                              .arg(strName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -2283,7 +2249,6 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                              "You will not be able to install an operating system on the machine "
                              "until you add one. In the mean time you will only be able to start the "
                              "machine using a virtual optical disk or from the network."),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Continue", "no hard disk attached"),
                           tr("Go Back", "no hard disk attached"));
@@ -2518,7 +2483,6 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machin
                              "we only included it because of problems with Qt Linguist (but the user can see "
                              "how many machines are in the list and doesn't need to be told).", machineNames.size())
                              .arg(machineNames.join(", ")),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Continue"));
 }
@@ -2685,7 +2649,6 @@ bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
                              "Please note that debugging requires special knowledge and tools, "
                              "so it is recommended to press <b>OK</b> now.</p>")
                              .arg(strLogFolder),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           QIMessageBox::tr("OK"),
                           tr("Ignore"));
@@ -2718,14 +2681,12 @@ bool UIMessageCenter::warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSuppor
                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
                                  "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</p>"
                                  "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              QString() /* help keyword */,
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
     else
         return questionBinary(0, MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                                  "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot."),
-                              QString() /* help keyword */,
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
 }
@@ -2737,14 +2698,12 @@ bool UIMessageCenter::warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExS
                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
                                  "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
                                  "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              QString() /* help keyword */,
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
     else
         return questionBinary(0, MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                                  "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
-                              QString() /* help keyword */,
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
 }
@@ -2756,7 +2715,6 @@ bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
                              "physical network interfaces were not found:</p><p><b>%2</b></p>"
                              "<p>You can either change the machine's network settings or stop the machine.</p>")
                              .arg(strMachineName, strIfNames),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Change Network Settings"), tr("Close VM"));
 }
@@ -2791,7 +2749,6 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
                          "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
                       tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
                          .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                      QString() /* help keyword */,
                       "confirmInputCapture",
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
@@ -2812,7 +2769,6 @@ bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
                              "<p>Note that the main menu bar is hidden in full-screen mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
                              .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          QString() /* help keyword */,
                           "confirmGoingFullscreen",
                           tr("Switch"));
 }
@@ -2826,7 +2782,6 @@ bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
                              "<p>Note that the main menu bar is hidden in seamless mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
                              .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          QString() /* help keyword */,
                           "confirmGoingSeamless",
                           tr("Switch"));
 }
@@ -2840,7 +2795,6 @@ bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
                              "<p>Note that the main menu bar is hidden in scaled mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
                              .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          QString() /* help keyword */,
                           "confirmGoingScale",
                           tr("Switch"));
 }
@@ -2852,7 +2806,6 @@ bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHe
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
                              .arg(UICommon::formatSize(uMinVRAM)),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2874,7 +2827,6 @@ bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
                              .arg(UICommon::formatSize(uMinVRAM)),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2939,7 +2891,6 @@ bool UIMessageCenter::cannotFindGuestAdditions() const
     return questionBinary(0, MessageType_Question,
                           tr("<p>Could not find the <b>VirtualBox Guest Additions</b> disk image file.</p>"
                              "<p>Do you wish to download this disk image file from the Internet?</p>"),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2950,7 +2901,6 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strUrl, QLocale(UICommon::languageId()).toString(uSize)),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2973,7 +2923,6 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
                              "<p>Do you wish to register this disk image file and insert it into the virtual optical drive?</p>")
                              .arg(strUrl, strSrc),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Insert", "additions"));
 }
@@ -3003,7 +2952,6 @@ bool UIMessageCenter::cannotFindUserManual(const QString &strMissedLocation) con
                           tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
                              "<p>Do you wish to download this file from the Internet?</p>")
                              .arg(strMissedLocation),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -3014,7 +2962,6 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
                           tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strURL, QLocale(UICommon::languageId()).toString(uSize)),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -3044,7 +2991,6 @@ bool UIMessageCenter::warnAboutOutdatedExtensionPack(const QString &strExtPackNa
                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                              "<p>Do you wish to download latest one from the Internet?</p>")
                              .arg(strExtPackVersion).arg(strExtPackName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -3055,7 +3001,6 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
                              .arg(strExtPackName, strURL, QLocale(UICommon::languageId()).toString(uSize)),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -3078,7 +3023,6 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
                              "and saved locally as <nobr><b>%3</b>.</nobr></p>"
                              "<p>Do you wish to install this extension pack?</p>")
                              .arg(strExtPackName, strFrom, strTo),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Install", "extension pack"));
 }
@@ -3099,7 +3043,6 @@ bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("Do you want to delete the downloaded file <nobr><b>%1</b></nobr>?")
                              .arg(strTo),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Delete", "extension pack"));
 }
@@ -3109,7 +3052,6 @@ bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("Do you want to delete following list of files <nobr><b>%1</b></nobr>?")
                              .arg(strFiles.join(",")),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Delete", "extension pack"));
 }
@@ -3129,7 +3071,6 @@ bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, co
                              "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
                              "</table></p>")
                              .arg(strPackName).arg(strPackVersion).arg(strPackDescription),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("Install", "extension pack"));
 }
@@ -3162,7 +3103,6 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%5</td></tr>"
                                 "</table></p>")
                                 .arg(strBelehrung).arg(strPackName).arg(strPackVersionNew).arg(strPackVersionOld).arg(strPackDescription),
-                             QString() /* help keyword */,
                              0 /* auto-confirm id */,
                              tr("&Upgrade"));
     else if (iVerCmp < 0)
@@ -3176,7 +3116,6 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%5</td></tr>"
                                 "</table></p>")
                                 .arg(strBelehrung).arg(strPackName).arg(strPackVersionNew).arg(strPackVersionOld).arg(strPackDescription),
-                             QString() /* help keyword */,
                              0 /* auto-confirm id */,
                              tr("&Downgrade"));
     else
@@ -3189,7 +3128,6 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
                                 "</table></p>")
                                 .arg(strBelehrung).arg(strPackName).arg(strPackVersionOld).arg(strPackDescription),
-                             QString() /* help keyword */,
                              0 /* auto-confirm id */,
                              tr("&Reinstall"));
     return fRc;
@@ -3201,7 +3139,6 @@ bool UIMessageCenter::confirmRemoveExtensionPack(const QString &strPackName, QWi
                           tr("<p>You are about to remove the VirtualBox extension pack <b>%1</b>.</p>"
                              "<p>Are you sure you want to proceed?</p>")
                              .arg(strPackName),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           tr("&Remove") /* ok button text */,
                           QString() /* cancel button text */,
@@ -3334,7 +3271,6 @@ bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pPa
                              "Are you sure you want to replace it?<br /><br />"
                              "Replacing it will overwrite its contents.")
                              .arg(strPath),
-                          QString() /* help keyword */,
                           0 /* auto-confirm id */,
                           QString() /* ok button text */,
                           QString() /* cancel button text */,
@@ -3352,7 +3288,6 @@ bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, Q
                                  "Are you sure you want to replace them? "
                                  "Replacing them will overwrite their contents.")
                                  .arg(QStringList(strPaths.toList()).join("<br />")),
-                              QString() /* help keyword */,
                               0 /* auto-confirm id */,
                               QString() /* ok button text */,
                               QString() /* cancel button text */,
@@ -3498,14 +3433,14 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 }
 
 void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
-                                        const QString &strMessage, const QString &strDetails, const QString &strHelpKeyword,
+                                        const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
                                         const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                                         const QString &strAutoConfirmId) const
 {
     /* Now we can show a message-box directly: */
     showMessageBox(pParent, enmType,
-                   strMessage, strDetails, strHelpKeyword,
+                   strMessage, strDetails,
                    iButton1, iButton2, iButton3,
                    strButtonText1, strButtonText2, strButtonText3,
                    strAutoConfirmId);
@@ -3567,7 +3502,7 @@ void UIMessageCenter::cleanup()
 }
 
 int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
-                                    const QString &strMessage, const QString &strDetails, const QString &strHelpKeyword,
+                                    const QString &strMessage, const QString &strDetails,
                                     int iButton1, int iButton2, int iButton3,
                                     const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                                     const QString &strAutoConfirmId) const
@@ -3633,7 +3568,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
 
     /* Create message-box: */
     QWidget *pMessageBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-    QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, strHelpKeyword, icon,
+    QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
                                                           iButton1, iButton2, iButton3,
                                                           pMessageBoxParent);
     windowManager().registerNewParent(pMessageBox, pMessageBoxParent);
@@ -3714,7 +3649,7 @@ void UIMessageCenter::sltHandleHelpRequest()
 {
 #if defined(VBOX_WITH_QHELP_VIEWER)
     sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
-#endif
+#endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
 
 void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
@@ -3727,5 +3662,5 @@ void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyw
         m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
 #else
     Q_UNUSED(strHelpKeyword);
-# endif
+# endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

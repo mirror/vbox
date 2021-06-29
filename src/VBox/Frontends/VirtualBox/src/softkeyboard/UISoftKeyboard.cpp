@@ -2714,7 +2714,6 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
     {
         if (!msgCenter().questionBinary(this, MessageType_Question,
                                         QString(UISoftKeyboard::tr("This will delete the keyboard layout file as well. Proceed?")),
-                                        QString() /* help keyword */,
                                         0 /* auto-confirm id */,
                                         QString("Delete") /* ok button text */,
                                         QString() /* cancel button text */,

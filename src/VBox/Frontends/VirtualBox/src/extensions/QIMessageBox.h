@@ -96,8 +96,9 @@ public:
       * @param  iButton1    Brings the integer-code for the 1st button.
       * @param  iButton2    Brings the integer-code for the 2nd button.
       * @param  iButton3    Brings the integer-code for the 3rd button. */
-    QIMessageBox(const QString &strTitle, const QString &strMessage, const QString &strHelpKeyword, AlertIconType iconType,
-                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
+    QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
+                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0,
+                 const QString &strHelpKeyword = QString());
 
     /** Defines details-text. */
     void setDetailsText(const QString &strText);

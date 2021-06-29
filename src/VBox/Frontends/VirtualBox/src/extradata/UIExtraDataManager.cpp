@@ -915,7 +915,6 @@ void UIExtraDataManagerWindow::sltDataHandleItemChanged(QStandardItem *pItem)
             /* Show warning and ask for overwriting approval: */
             if (!msgCenter().questionBinary(this, MessageType_Question,
                                             QString("Overwriting already existing key, Continue?"),
-                                            QString() /* help keyword */,
                                             0 /* auto-confirm id */,
                                             QString("Overwrite") /* ok button text */,
                                             QString() /* cancel button text */,
@@ -1106,7 +1105,6 @@ void UIExtraDataManagerWindow::sltAdd()
             /* Show warning and ask for overwriting approval: */
             if (!msgCenter().questionBinary(this, MessageType_Question,
                                             QString("Overwriting already existing key, Continue?"),
-                                            QString() /* help keyword */,
                                             0 /* auto-confirm id */,
                                             QString("Overwrite") /* ok button text */,
                                             QString() /* cancel button text */,
@@ -1152,8 +1150,7 @@ void UIExtraDataManagerWindow::sltDel()
     if (!msgCenter().errorWithQuestion(this, MessageType_Question,
                                        QString("<p>Do you really wish to "
                                                "remove chosen records?</p>"),
-                                       strDetails,
-                                       QString() /* help keyword */))
+                                       strDetails))
         return;
 
     /* Erase all the chosen extra-data records: */
