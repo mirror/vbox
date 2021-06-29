@@ -1054,7 +1054,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, ""))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -1106,17 +1106,16 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     /*
      * Get the Console object pointer and update the mpDrv member.
      */
-    void *pv;
-    int rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (RT_FAILURE(rc))
+    com::Guid uuid(VMMDEV_OID);
+    pThis->pVMMDev = (VMMDev*)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    if (!pThis->pVMMDev)
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
-        return rc;
+        AssertMsgFailed(("Configuration error: No/bad VMMDev object!\n"));
+        return VERR_NOT_FOUND;
     }
-
-    pThis->pVMMDev = (VMMDev*)pv;        /** @todo Check this cast! */
     pThis->pVMMDev->mpDrv = pThis;
 
+    int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_HGCM
     /*
      * Load & configure the shared folders service.

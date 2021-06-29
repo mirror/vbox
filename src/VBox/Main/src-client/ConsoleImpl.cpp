@@ -10741,6 +10741,9 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
         return pIMouse;
     }
 
+    if (UuidCopy == VMMDEV_OID)
+        return pConsole->m_pVMMDev;
+
     if (UuidCopy == COM_IIDOF(ISnapshot))
         return ((MYVMM2USERMETHODS *)pThis)->pISnapshot;
 

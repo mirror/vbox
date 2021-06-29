@@ -2957,7 +2957,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "HGCM");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pVMMDev);
 
         /*
          * Attach the status driver.

@@ -96,5 +96,8 @@ private:
 #endif /* VBOX_WITH_HGCM */
 };
 
+/** VMMDev object ID used by Console::i_vmm2User_QueryGenericObject and VMMDev::drvConstruct. */
+#define VMMDEV_OID                          "e2ff0c7b-c02b-46d0-aa90-b9caf0f60561"
+
 #endif /* !MAIN_INCLUDED_VMMDev_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
