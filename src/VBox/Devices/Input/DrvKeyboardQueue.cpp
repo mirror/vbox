@@ -235,7 +235,7 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
              * only send break events for Hangul/Hanja keys -- convert a lone
              * key up into a key up/key down sequence.
              */
-            if (idUsage == UINT32_C(PDMIKBDPORT_KEY_UP | 0x90) || idUsage == UINT32_C(PDMIKBDPORT_KEY_UP & 0x91))
+            if (idUsage == UINT32_C(PDMIKBDPORT_KEY_UP | 0x90) || idUsage == UINT32_C(PDMIKBDPORT_KEY_UP | 0x91))
             {
                 PDRVKBDQUEUEITEM pItem2 = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
                 /*
