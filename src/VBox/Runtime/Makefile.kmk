@@ -2628,6 +2628,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	common/math/gcc/ashrdi3.c \
 	common/math/gcc/cmpdi2.c \
 	common/math/gcc/divdi3.c \
+	common/math/gcc/divmoddi4.c \
 	common/math/gcc/iordi3.c \
 	common/math/gcc/lshldi3.c \
 	common/math/gcc/lshrdi3.c \
@@ -2790,6 +2791,7 @@ RuntimeR0_SOURCES += \
 	common/math/gcc/ashrdi3.c \
 	common/math/gcc/cmpdi2.c \
 	common/math/gcc/divdi3.c \
+	common/math/gcc/divmoddi4.c \
 	common/math/gcc/iordi3.c \
 	common/math/gcc/lshldi3.c \
 	common/math/gcc/lshrdi3.c \
@@ -3425,6 +3427,7 @@ ifndef VBOX_USE_WATCOM_FOR_OS2
  	common/math/gcc/ashrdi3.c \
  	common/math/gcc/cmpdi2.c \
  	common/math/gcc/divdi3.c \
+	common/math/gcc/divmoddi4.c \
  	common/math/gcc/iordi3.c \
  	common/math/gcc/lshldi3.c \
  	common/math/gcc/lshrdi3.c \
@@ -3713,6 +3716,7 @@ ifdef VBOX_WITH_RAW_MODE
   	common/math/gcc/ashrdi3.c \
   	common/math/gcc/cmpdi2.c \
   	common/math/gcc/divdi3.c \
+	common/math/gcc/divmoddi4.c \
   	common/math/gcc/iordi3.c \
   	common/math/gcc/lshldi3.c \
   	common/math/gcc/lshrdi3.c \
