@@ -721,6 +721,7 @@
 # define RTDbgCfgOpenDsymBundle                         RT_MANGLER(RTDbgCfgOpenDsymBundle)
 # define RTDbgCfgOpenMachOImage                         RT_MANGLER(RTDbgCfgOpenMachOImage)
 # define RTDbgCfgOpenDwo                                RT_MANGLER(RTDbgCfgOpenDwo)
+# define RTDbgCfgOpenDwoBuildId                         RT_MANGLER(RTDbgCfgOpenDwoBuildId)
 # define RTDbgCfgOpenPdb70                              RT_MANGLER(RTDbgCfgOpenPdb70)
 # define RTDbgCfgOpenPdb20                              RT_MANGLER(RTDbgCfgOpenPdb20)
 # define RTDbgCfgOpenPeImage                            RT_MANGLER(RTDbgCfgOpenPeImage)

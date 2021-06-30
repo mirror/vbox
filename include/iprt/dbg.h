@@ -703,6 +703,8 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
                             PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
                             PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
+RTDECL(int) RTDbgCfgOpenDwoBuildId(RTDBGCFG hDbgCfg, const char *pszFilename, const uint8_t *pbBuildId,
+                                   size_t cbBuildId, PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid,
                                    PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid,
@@ -712,6 +714,8 @@ RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszFilename, PC
  * @{ */
 /** The operative system mask.  The values are RT_OPSYS_XXX. */
 #define RTDBGCFG_O_OPSYS_MASK           UINT32_C(0x000000ff)
+/** Use debuginfod style symbol servers when encountered in the path. */
+#define RTDBGCFG_O_DEBUGINFOD           RT_BIT_32(24)
 /** Same as RTDBGCFG_FLAGS_NO_SYSTEM_PATHS. */
 #define RTDBGCFG_O_NO_SYSTEM_PATHS      RT_BIT_32(25)
 /** The files may be compressed MS styled. */
@@ -727,7 +731,7 @@ RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszFilename, PC
 /** Use Windbg style symbol servers when encountered in the path. */
 #define RTDBGCFG_O_SYMSRV               RT_BIT_32(31)
 /** Mask of valid flags. */
-#define RTDBGCFG_O_VALID_MASK           UINT32_C(0xfe0000ff)
+#define RTDBGCFG_O_VALID_MASK           UINT32_C(0xff0000ff)
 /** @} */
 
 
