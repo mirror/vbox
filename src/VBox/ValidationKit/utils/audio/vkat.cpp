@@ -1167,18 +1167,18 @@ int main(int argc, char **argv)
                         PRTGETOPTDEF paCombinedOptions = (PRTGETOPTDEF)RTMemAlloc(cCombinedOptions * sizeof(RTGETOPTDEF));
                         if (paCombinedOptions)
                         {
-                            unsigned idxOpts = 0;
+                            uint32_t idxOpts = 0;
                             memcpy(paCombinedOptions, g_aCmdCommonOptions, sizeof(g_aCmdCommonOptions));
                             idxOpts += RT_ELEMENTS(g_aCmdCommonOptions);
                             memcpy(&paCombinedOptions[idxOpts], pCmd->paOptions, pCmd->cOptions * sizeof(RTGETOPTDEF));
-                            idxOpts += pCmd->cOptions;
+                            idxOpts += (uint32_t)pCmd->cOptions;
                             if (pCmd->fNeedsTransport)
                             {
                                 for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
                                 {
                                     memcpy(&paCombinedOptions[idxOpts],
                                            g_apTransports[iTx]->paOpts, g_apTransports[iTx]->cOpts * sizeof(RTGETOPTDEF));
-                                    idxOpts += g_apTransports[iTx]->cOpts;
+                                    idxOpts += (uint32_t)g_apTransports[iTx]->cOpts;
                                 }
                             }
 
@@ -1210,4 +1210,3 @@ int main(int argc, char **argv)
     audioTestUsage(g_pStdErr);
     return RTEXITCODE_SYNTAX;
 }
-
