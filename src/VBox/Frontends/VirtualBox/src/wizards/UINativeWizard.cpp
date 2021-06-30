@@ -91,6 +91,7 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_enmType(enmType)
     , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
     , m_strHelpHashtag(strHelpHashtag)
+    , m_iLastIndex(-1)
     , m_pLabelPixmap(0)
 #ifdef VBOX_WS_MAC
     , m_pLabelPageTitle(0)
@@ -227,7 +228,11 @@ void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
 #ifdef VBOX_WS_MAC
     m_pLabelPageTitle->setText(pPage->title());
 #endif
-    pPage->initializePage();
+    if (iIndex > m_iLastIndex)
+        pPage->initializePage();
+
+    /* Update last index: */
+    m_iLastIndex = iIndex;
 }
 
 void UINativeWizard::sltCompleteChanged()
@@ -460,6 +465,9 @@ void UINativeWizard::cleanup()
         delete pLastWidget;
     }
     m_pWidgetStack->blockSignals(false);
+
+    /* Update last index: */
+    m_iLastIndex = -1;
 }
 
 void UINativeWizard::init()

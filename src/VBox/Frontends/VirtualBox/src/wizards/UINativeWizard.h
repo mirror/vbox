@@ -158,6 +158,8 @@ private:
     QString     m_strHelpHashtag;
     /** Holds the pixmap name. */
     QString     m_strPixmapName;
+    /** Holds the last entered page index. */
+    int         m_iLastIndex;
 
     /** Holds the pixmap label instance. */
     QLabel                               *m_pLabelPixmap;
