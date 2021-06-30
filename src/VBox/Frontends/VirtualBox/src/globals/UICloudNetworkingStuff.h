@@ -91,6 +91,11 @@ namespace UICloudNetworkingStuff
                                                         const QUuid &uMachineId,
                                                         QString &strErrorMessage);
 
+    /** Creates virtual system description, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(QWidget *pParent = 0);
+    /** Creates virtual system description, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(QString &strErrorMessage);
+
     /** Acquires cloud providers, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudProvider> listCloudProviders(QWidget *pParent = 0);
     /** Acquires cloud providers, using @a strErrorMessage to store messages to. */

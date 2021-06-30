@@ -253,6 +253,64 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
     return CCloudMachine();
 }
 
+CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription(QWidget *pParent /* = 0 */)
+{
+    /* Acquire VBox: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    if (comVBox.isNotNull())
+    {
+        /* Create appliance: */
+        CAppliance comAppliance = comVBox.CreateAppliance();
+        if (!comVBox.isOk())
+            msgCenter().cannotCreateAppliance(comVBox, pParent);
+        else
+        {
+            /* Append it with one (1) description we need: */
+            comAppliance.CreateVirtualSystemDescriptions(1);
+            if (!comAppliance.isOk())
+                msgCenter().cannotCreateVirtualSystemDescription(comAppliance, pParent);
+            else
+            {
+                /* Get received description: */
+                const QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+                AssertReturn(!descriptions.isEmpty(), CVirtualSystemDescription());
+                return descriptions.at(0);
+            }
+        }
+    }
+    /* Null by default: */
+    return CVirtualSystemDescription();
+}
+
+CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription(QString &strErrorMessage)
+{
+    /* Acquire VBox: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    if (comVBox.isNotNull())
+    {
+        /* Create appliance: */
+        CAppliance comAppliance = comVBox.CreateAppliance();
+        if (!comVBox.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comVBox);
+        else
+        {
+            /* Append it with one (1) description we need: */
+            comAppliance.CreateVirtualSystemDescriptions(1);
+            if (!comAppliance.isOk())
+                strErrorMessage = UIErrorString::formatErrorInfo(comAppliance);
+            else
+            {
+                /* Get received description: */
+                QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+                AssertReturn(!descriptions.isEmpty(), CVirtualSystemDescription());
+                return descriptions.at(0);
+            }
+        }
+    }
+    /* Null by default: */
+    return CVirtualSystemDescription();
+}
+
 QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud provider manager: */

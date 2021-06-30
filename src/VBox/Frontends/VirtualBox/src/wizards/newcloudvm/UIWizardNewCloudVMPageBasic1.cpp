@@ -283,34 +283,10 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
         /* Main API request sequence, can be interrupted after any step: */
         do
         {
-            /* Create appliance: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
-            CAppliance comAppliance = comVBox.CreateAppliance();
-            if (!comVBox.isOk())
-            {
-                msgCenter().cannotCreateAppliance(comVBox);
-                break;
-            }
-
             /* Create virtual system description: */
-            comAppliance.CreateVirtualSystemDescriptions(1);
-            if (!comAppliance.isOk())
-            {
-                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
+            CVirtualSystemDescription comVSD = createVirtualSystemDescription(wizardImp());
+            if (comVSD.isNull())
                 break;
-            }
-
-            /* Acquire virtual system description: */
-            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-            if (!comAppliance.isOk())
-            {
-                msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
-                break;
-            }
-
-            /* Make sure there is at least one virtual system description created: */
-            AssertReturnVoid(!descriptions.isEmpty());
-            CVirtualSystemDescription comVSD = descriptions.at(0);
 
             /* Remember Virtual System Description: */
             setVSD(comVSD);
