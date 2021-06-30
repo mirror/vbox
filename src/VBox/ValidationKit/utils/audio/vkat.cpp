@@ -878,15 +878,20 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
             rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
             if (RT_SUCCESS(rc))
             {
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%RU32 errors occurred while verifying\n", AudioTestErrorDescCount(&errDesc));
-                if (AudioTestErrorDescFailed(&errDesc))
+                uint32_t const cErr = AudioTestErrorDescCount(&errDesc);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%RU32 errors occurred while verifying\n", cErr);
+
+                /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
+                PAUDIOTESTERRORENTRY pErrEntry;
+                RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
                 {
-                    /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
-                    PAUDIOTESTERRORENTRY pErrEntry;
-                    RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
-                        RTTestFailed(g_hTest, pErrEntry->szDesc);
+                    if (RT_FAILURE(pErrEntry->rc))
+                        RTTestFailed(g_hTest, "%s\n", pErrEntry->szDesc);
+                    else
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%s\n", pErrEntry->szDesc);
                 }
-                else
+
+                if (cErr == 0)
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful\n");
 
                 AudioTestErrorDescDestroy(&errDesc);

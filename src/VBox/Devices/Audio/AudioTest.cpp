@@ -521,12 +521,9 @@ void AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr)
         RTListNodeRemove(&pErrEntry->Node);
 
         RTMemFree(pErrEntry);
-
-        Assert(pErr->cErrors);
-        pErr->cErrors--;
     }
 
-    Assert(pErr->cErrors == 0);
+    pErr->cErrors = 0;
 }
 
 /**
@@ -576,7 +573,8 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, in
     if (RTStrAPrintfV(&pszDescTmp, pszFormat, va) < 0)
         AssertFailedReturn(VERR_NO_MEMORY);
 
-    const ssize_t cch = RTStrPrintf2(pEntry->szDesc, sizeof(pEntry->szDesc), "Test #%RU32 failed: %s", idxTest, pszDescTmp);
+    const ssize_t cch = RTStrPrintf2(pEntry->szDesc, sizeof(pEntry->szDesc), "Test #%RU32 %s: %s",
+                                     idxTest, RT_FAILURE(rc) ? "failed" : "info", pszDescTmp);
     RTStrFree(pszDescTmp);
     AssertReturn(cch > 0, VERR_BUFFER_OVERFLOW);
 
@@ -584,13 +582,14 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, in
 
     RTListAppend(&pErr->List, &pEntry->Node);
 
-    pErr->cErrors++;
+    if (RT_FAILURE(rc))
+        pErr->cErrors++;
 
     return VINF_SUCCESS;
 }
 
 /**
- * Adds a single error entry to an audio test error description, va_list version.
+ * Adds a single error entry to an audio test error description.
  *
  * @returns VBox status code.
  * @param   pErr                Test error description to add entry for.
@@ -598,12 +597,32 @@ static int audioTestErrorDescAddV(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, in
  * @param   pszFormat           Error description format string to add.
  * @param   ...                 Optional format arguments of \a pszDesc to add.
  */
-static int audioTestErrorDescAdd(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszFormat, ...)
+static int audioTestErrorDescAddError(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
 
     int rc = audioTestErrorDescAddV(pErr, idxTest, VERR_GENERAL_FAILURE /** @todo Fudge! */, pszFormat, va);
+
+    va_end(va);
+    return rc;
+}
+
+/**
+ * Adds a single info entry to an audio test error description, va_list version.
+ *
+ * @returns VBox status code.
+ * @param   pErr                Test error description to add entry for.
+ * @param   idxTest             Index of failing test (zero-based).
+ * @param   pszFormat           Error description format string to add.
+ * @param   ...                 Optional format arguments of \a pszDesc to add.
+ */
+static int audioTestErrorDescAddInfo(PAUDIOTESTERRORDESC pErr, uint32_t idxTest, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+
+    int rc = audioTestErrorDescAddV(pErr, idxTest, VINF_SUCCESS, pszFormat, va);
 
     va_end(va);
     return rc;
@@ -1647,7 +1666,7 @@ static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t c
 #define CHECK_RC_MSG_MAYBE_RET(a_rc, a_pVerJob, a_Msg) \
     if (RT_FAILURE(a_rc)) \
     { \
-        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg); \
+        int rc3 = audioTestErrorDescAddError(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg); \
         AssertRC(rc3); \
         if (!a_pVerJob->fKeepGoing) \
             return VINF_SUCCESS; \
@@ -1656,7 +1675,7 @@ static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t c
 #define CHECK_RC_MSG_VA_MAYBE_RET(a_rc, a_pVerJob, a_Msg, ...) \
     if (RT_FAILURE(a_rc)) \
     { \
-        int rc3 = audioTestErrorDescAdd(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg, __VA_ARGS__); \
+        int rc3 = audioTestErrorDescAddError(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg, __VA_ARGS__); \
         AssertRC(rc3); \
         if (!a_pVerJob->fKeepGoing) \
             return VINF_SUCCESS; \
@@ -1700,31 +1719,32 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
 
     if (!cbSizeA)
     {
-        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty\n", pObjA->szName);
+        int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty", pObjA->szName);
         AssertRC(rc2);
     }
 
     if (!cbSizeB)
     {
-        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty\n", pObjB->szName);
+        int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "File '%s' is empty", pObjB->szName);
         AssertRC(rc2);
     }
 
     if (cbSizeA != cbSizeB)
     {
-        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes %s than '%s'\n",
-                                        pObjA->szName,
-                                        cbSizeA > cbSizeB ? cbSizeA - cbSizeB : cbSizeB - cbSizeA,
-                                        cbSizeA > cbSizeB ? "bigger" : "smaller",
-                                        pObjB->szName);
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes %s than '%s'",
+                                            pObjA->szName,
+                                            cbSizeA > cbSizeB ? cbSizeA - cbSizeB : cbSizeB - cbSizeA,
+                                            cbSizeA > cbSizeB ? "bigger" : "smaller",
+                                            pObjB->szName);
         AssertRC(rc2);
     }
-    else if (audioTestFilesCompareBinary(pObjA->File.hFile, pObjB->File.hFile, cbSizeA))
+
+    if (!audioTestFilesCompareBinary(pObjA->File.hFile, pObjB->File.hFile, cbSizeA))
     {
         /** @todo Add more sophisticated stuff here. */
 
-        int rc2 = audioTestErrorDescAdd(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' have different content\n",
-                                        pObjA->szName, pObjB->szName);
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' have different content",
+                                            pObjA->szName, pObjB->szName);
         AssertRC(rc2);
     }
 
@@ -1786,7 +1806,7 @@ static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJHAN
     rc = audioTestVerifyTestToneData(pVerify, phTest);
     if (RT_FAILURE(rc))
     {
-       int rc2 = audioTestErrorDescAdd(pVerify->pErr, pVerify->idxTest, "Verififcation of test tone data failed\n");
+       int rc2 = audioTestErrorDescAddError(pVerify->pErr, pVerify->idxTest, "Verififcation of test tone data failed\n");
        AssertRC(rc2);
     }
 
@@ -1869,8 +1889,8 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
                 if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_RECORD)
                     rc = audioTestVerifyTestTone(&VerJob, &hTest, VerJob.pSetA, VerJob.pSetB);
                 else
-                    rc = audioTestErrorDescAdd(pErrDesc, i, "Playback test types don't match (set A=%#x, set B=%#x)",
-                                               enmTestTypeA, enmTestTypeB);
+                    rc = audioTestErrorDescAddError(pErrDesc, i, "Playback test types don't match (set A=%#x, set B=%#x)",
+                                                    enmTestTypeA, enmTestTypeB);
                 break;
             }
 
@@ -1879,8 +1899,8 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
                 if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_PLAY)
                     rc = audioTestVerifyTestTone(&VerJob, &hTest, VerJob.pSetB, VerJob.pSetA);
                 else
-                    rc = audioTestErrorDescAdd(pErrDesc, i, "Recording test types don't match (set A=%#x, set B=%#x)",
-                                               enmTestTypeA, enmTestTypeB);
+                    rc = audioTestErrorDescAddError(pErrDesc, i, "Recording test types don't match (set A=%#x, set B=%#x)",
+                                                    enmTestTypeA, enmTestTypeB);
                 break;
             }
 
