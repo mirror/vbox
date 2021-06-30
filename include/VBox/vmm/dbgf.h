@@ -496,6 +496,12 @@ typedef enum DBGFEVENTTYPE
     /** @} */
 
 
+    /** @name Misc VT-x and AMD-V execution events.
+     * @{ */
+    DBGFEVENT_VMX_SPLIT_LOCK,           /**< VT-x: Split-lock \#AC triggered by host having detection enabled. */
+    /** @} */
+
+
     /** Access to an unassigned I/O port.
      * @todo not yet implemented. */
     DBGFEVENT_IOPORT_UNASSIGNED,

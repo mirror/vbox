@@ -360,6 +360,13 @@ provider vboxvmm
     /** @} */
 
 
+    /** @name Misc VT-x and AMD-V execution events.
+     * @{ */
+    /** VT-x: Split-lock \#AC triggered by host having detection enabled. */
+    probe vmx__split__lock(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** @} */
+
+
     /** @name IPRT tracepoints we link in.
      * @{ */
     probe iprt__critsect__entered(void *a_pvCritSect, const char *a_pszLaterNm, int32_t a_cLockers, uint32_t a_cNestings);

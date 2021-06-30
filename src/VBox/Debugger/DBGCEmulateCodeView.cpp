@@ -679,6 +679,7 @@ const DBGCSXEVT g_aDbgcSxEvents[] =
     { DBGFEVENT_EXIT_SVM_VMSAVE,        "exit_svm_vmsave",      NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
     { DBGFEVENT_EXIT_SVM_STGI,          "exit_svm_stgi",        NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
     { DBGFEVENT_EXIT_SVM_CLGI,          "exit_svm_clgi",        NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
+    { DBGFEVENT_VMX_SPLIT_LOCK,         "vmx_split_lock",       NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
     { DBGFEVENT_IOPORT_UNASSIGNED,      "pio_unassigned",       NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
     { DBGFEVENT_IOPORT_UNUSED,          "pio_unused",           NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },
     { DBGFEVENT_MEMORY_UNASSIGNED,      "mmio_unassigned",      NULL,       kDbgcSxEventKind_Plain,     kDbgcEvtState_Disabled, 0,                    NULL },

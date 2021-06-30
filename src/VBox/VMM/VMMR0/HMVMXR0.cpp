@@ -14152,21 +14152,49 @@ static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
            /* 3. When the EFLAGS.AC != 0 this can only be a split-lock case. */
         || !(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_AC) )
     {
+        /*
+         * Check for debug/trace events and import state accordingly.
+         */
         STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitGuestACSplitLock);
-#if 0
-        rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        PVM pVM = pVCpu->pVMR0;
+        if (   !DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK)
+            && !VBOXVMM_VMX_SPLIT_LOCK_ENABLED())
+        {
+#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
+            rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
 #else
-        rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+            rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
 #endif
-        AssertRCReturn(rc, rc);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+            AssertRCReturn(rc, rc);
+
+            VBOXVMM_XCPT_DF(pVCpu, &pVCpu->cpum.GstCtx);
+
+            if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK))
+            {
+                VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, DBGFEVENT_VMX_SPLIT_LOCK, DBGFEVENTCTX_HM, 0);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+            }
+        }
+
+        /*
+         * Emulate the instruction.
+         *
+         * We have to ignore the LOCK prefix here as we must not retrigger the
+         * detection on the host.  This isn't all that satisfactory, though...
+         */
         Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC?\n", pVCpu->cpum.GstCtx.cs.Sel,
                   pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
 
         /** @todo For SMP configs we should do a rendezvous here. */
         VBOXSTRICTRC rcStrict = IEMExecOneIgnoreLock(pVCpu);
         if (rcStrict == VINF_SUCCESS)
-#if 0       /** @todo r=bird: This is potentially wrong.  Might have to just do a whole
-             *        state sync above and mark everything changed to be safe... */
+#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
                                HM_CHANGED_GUEST_RIP
                              | HM_CHANGED_GUEST_RFLAGS
@@ -14174,14 +14202,14 @@ static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
                              | HM_CHANGED_GUEST_CS
                              | HM_CHANGED_GUEST_SS);
 #else
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
         else if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
             rcStrict = VINF_SUCCESS;
         }
-        return VBOXSTRICTRC_VAL(rcStrict);
+        return rcStrict;
     }
 
     STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);
