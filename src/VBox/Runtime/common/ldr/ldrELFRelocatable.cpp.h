@@ -1700,6 +1700,62 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
 }
 
 
+/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
+static DECLCALLBACK(int) RTLDRELF_NAME(QueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                                  void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
+
+    if (enmProp != RTLDRPROP_BUILDID)
+        return VERR_NOT_FOUND;
+
+    /*
+     * Map the image bits if not already done and setup pointer into it.
+     */
+    int rc = RTLDRELF_NAME(MapBits)(pThis, true);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Search for the build ID.
+     */
+    const Elf_Shdr *paShdrs = pThis->paOrgShdrs;
+    for (unsigned iShdr = 0; iShdr < pThis->Ehdr.e_shnum; iShdr++)
+    {
+        const char *pszSectName = ELF_SH_STR(pThis, paShdrs[iShdr].sh_name);
+
+        if (!strcmp(pszSectName, ".note.gnu.build-id"))
+        {
+            if ((paShdrs[iShdr].sh_size & 3) || paShdrs[iShdr].sh_size < sizeof(Elf_Nhdr))
+                return VERR_BAD_EXE_FORMAT;
+
+            Elf_Nhdr *pNHdr = (Elf_Nhdr *)((uintptr_t)pThis->pvBits + (uintptr_t)paShdrs[iShdr].sh_offset);
+            if (   pNHdr->n_namesz > paShdrs[iShdr].sh_size
+                || pNHdr->n_descsz > paShdrs[iShdr].sh_size
+                || (paShdrs[iShdr].sh_size - pNHdr->n_descsz) < pNHdr->n_namesz
+                || pNHdr->n_type != NT_GNU_BUILD_ID)
+                return VERR_BAD_EXE_FORMAT;
+
+            const char *pszOwner = (const char *)(pNHdr + 1);
+            if (   !RTStrEnd(pszOwner, pNHdr->n_namesz)
+                || strcmp(pszOwner, "GNU"))
+                return VERR_BAD_EXE_FORMAT;
+
+            if (cbBuf < pNHdr->n_descsz)
+                return VERR_BUFFER_OVERFLOW;
+
+            memcpy(pvBuf, pszOwner + pNHdr->n_namesz, pNHdr->n_descsz);
+            *pcbRet = pNHdr->n_descsz;
+            return VINF_SUCCESS;
+        }
+    }
+
+    NOREF(cbBuf);
+    RT_NOREF_PV(pvBits);
+    return VERR_NOT_FOUND;
+}
+
+
 /**
  * @interface_method_impl{RTLDROPS,pfnUnwindFrame}
  */
@@ -1808,7 +1864,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(SegOffsetToRva),
     RTLDRELF_NAME(RvaToSegOffset),
     RTLDRELF_NAME(ReadDbgInfo),
-    NULL /*pfnQueryProp*/,
+    RTLDRELF_NAME(QueryProp),
     NULL /*pfnVerifySignature*/,
     NULL /*pfnHashImage*/,
     RTLDRELF_NAME(UnwindFrame),

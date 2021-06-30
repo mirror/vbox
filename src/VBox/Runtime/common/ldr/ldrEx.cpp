@@ -657,6 +657,10 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, 
             *pcbRet = 0;
             break;
 
+        case RTLDRPROP_BUILDID:
+            *pcbRet = 0;
+            break;
+
         default:
             AssertFailedReturn(VERR_INVALID_FUNCTION);
     }

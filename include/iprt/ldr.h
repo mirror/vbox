@@ -1129,6 +1129,9 @@ typedef enum RTLDRPROP
      * as uint32_t in the buffer when making the call.
      * This is only implemented for PE.  */
     RTLDRPROP_UNWIND_INFO,
+    /** The image build-id (ELF/GNU).
+     * Returns usually a SHA1 checksum in the buffer. */
+    RTLDRPROP_BUILDID,
 
     /** End of valid properties.  */
     RTLDRPROP_END,
