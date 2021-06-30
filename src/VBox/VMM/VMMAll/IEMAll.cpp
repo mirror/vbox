@@ -5901,7 +5901,9 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaisePageFault(PVMCPUCC pVCpu, RTGCP
 #else
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
     {
-        if (!(fAccess & IEM_ACCESS_TYPE_READ))
+        /// @todo r=bird: bs3-cpu-basic-2 wants X86_TRAP_PF_RW for xchg and cmpxchg
+        /// (regardless of outcome of the comparison in the latter case).
+        //if (!(fAccess & IEM_ACCESS_TYPE_READ))
             uErr |= X86_TRAP_PF_RW;
     }
 #endif
