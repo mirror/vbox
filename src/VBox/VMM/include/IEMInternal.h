@@ -373,7 +373,8 @@ typedef struct IEMCPU
 
     /** Whether to bypass access handlers or not. */
     bool                    fBypassHandlers;                                                                /* 0x06 */
-    bool                    fUnusedWasInPatchCode;                                                          /* 0x07 */
+    /** Whether to disregard the lock prefix (implied or not). */
+    bool                    fDisregardLock;                                                                 /* 0x07 */
 
     /** @name Decoder state.
      * @{ */
@@ -1062,10 +1063,14 @@ FNIEMAIMPLBINU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
 
 /** @name Exchange memory with register operations.
  * @{ */
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16,(uint16_t *pu16Mem, uint16_t *pu16Reg));
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32,(uint32_t *pu32Mem, uint32_t *pu32Reg));
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *pu64Mem, uint64_t *pu64Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_locked,(uint16_t *pu16Mem, uint16_t *pu16Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32_locked,(uint32_t *pu32Mem, uint32_t *pu32Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64_locked,(uint64_t *pu64Mem, uint64_t *pu64Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_unlocked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_unlocked,(uint16_t *pu16Mem, uint16_t *pu16Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32_unlocked,(uint32_t *pu32Mem, uint32_t *pu32Reg));
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64_unlocked,(uint64_t *pu64Mem, uint64_t *pu64Reg));
 /** @}  */
 
 /** @name Exchange and add operations.
