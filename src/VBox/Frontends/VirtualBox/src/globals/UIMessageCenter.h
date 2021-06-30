@@ -136,23 +136,27 @@ public:
       * @param  strDetails           Brings the details.
       * @param  pcszAutoConfirmId    Brings the auto-confirm ID.
       * @param  strOkButtonText      Brings the Ok button text.
-      * @param  strCancelButtonText  Brings the Cancel button text. */
+      * @param  strCancelButtonText  Brings the Cancel button text.
+      * @param  strHelpKeyword     Brings the help keyword string. */
     bool errorWithQuestion(QWidget *pParent, MessageType enmType,
                            const QString &strMessage,
                            const QString &strDetails,
                            const char *pcszAutoConfirmId = 0,
                            const QString &strOkButtonText = QString(),
-                           const QString &strCancelButtonText = QString()) const;
+                           const QString &strCancelButtonText = QString(),
+                           const QString &strHelpKeyword = QString()) const;
 
     /** Shows an 'Alert' type of 'Error'.
       * Omit details.
       * @param  pParent            Brings the message-box parent.
       * @param  enmType            Brings the message-box type.
       * @param  strMessage         Brings the message.
-      * @param  pcszAutoConfirmId  Brings the auto-confirm ID. */
+      * @param  pcszAutoConfirmId  Brings the auto-confirm ID.
+      * @param  strHelpKeyword     Brings the help keyword string. */
     void alert(QWidget *pParent, MessageType enmType,
                const QString &strMessage,
-               const char *pcszAutoConfirmId = 0) const;
+               const char *pcszAutoConfirmId = 0,
+               const QString &strHelpKeyword = QString()) const;
 
     /** Shows a 'Question' type of 'Message'.
       * Omit details.
