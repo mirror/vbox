@@ -209,21 +209,6 @@ typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> > DESTDIRMAP, *PDESTDIRMAP
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> >::iterator DESTDIRMAPITER, *PDESTDIRMAPITER;
 
 
-/**
- * RTGetOpt-IDs for the guest execution control command line.
- */
-enum GETOPTDEF_EXEC
-{
-    GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES = 1000,
-    GETOPTDEF_EXEC_NO_PROFILE,
-    GETOPTDEF_EXEC_OUTPUTFORMAT,
-    GETOPTDEF_EXEC_DOS2UNIX,
-    GETOPTDEF_EXEC_UNIX2DOS,
-    GETOPTDEF_EXEC_WAITFOREXIT,
-    GETOPTDEF_EXEC_WAITFORSTDOUT,
-    GETOPTDEF_EXEC_WAITFORSTDERR
-};
-
 enum kStreamTransform
 {
     kStreamTransform_None = 0,
