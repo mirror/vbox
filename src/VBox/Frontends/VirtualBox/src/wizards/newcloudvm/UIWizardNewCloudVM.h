@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -31,37 +31,21 @@
 #include "CVirtualSystemDescriptionForm.h"
 
 /** New Cloud VM wizard. */
-class UIWizardNewCloudVM : public UIWizard
+class UIWizardNewCloudVM : public UINativeWizard
 {
     Q_OBJECT;
 
 public:
 
-    /** Basic page IDs. */
-    enum
-    {
-        Page1,
-        Page2
-    };
-
-    /** Expert page IDs. */
-    enum
-    {
-        PageExpert
-    };
-
     /** Constructs New Cloud VM wizard passing @a pParent to the base-class.
       * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in.
       * @param  comClient         Brings the Cloud Client object to work with.
-      * @param  comDescription    Brings the Virtual System Description object to use. */
+      * @param  comVSD            Brings the Virtual System Description object to use. */
     UIWizardNewCloudVM(QWidget *pParent,
                        const QString &strFullGroupName = QString(),
                        const CCloudClient &comClient = CCloudClient(),
-                       const CVirtualSystemDescription &comDescription = CVirtualSystemDescription(),
+                       const CVirtualSystemDescription &comVSD = CVirtualSystemDescription(),
                        WizardMode enmMode = WizardMode_Auto);
-
-    /** Prepares all. */
-    virtual void prepare() /* override */;
 
     /** Sets whether the final step is @a fPrevented. */
     void setFinalStepPrevented(bool fPrevented) { m_fFinalStepPrevented = fPrevented; }
@@ -69,13 +53,23 @@ public:
     /** Returns full group name. */
     QString fullGroupName() const { return m_strFullGroupName; }
 
+    /** Defines @a strShortProviderName. */
+    void setShortProviderName(const QString &strShortProviderName) { m_strShortProviderName = strShortProviderName; }
+    /** Returns short provider name. */
+    QString shortProviderName() const { return m_strShortProviderName; }
+
+    /** Defines @a strProfileName. */
+    void setProfileName(const QString &strProfileName) { m_strProfileName = strProfileName; }
+    /** Returns profile name. */
+    QString profileName() const { return m_strProfileName; }
+
     /** Defines Cloud @a comClient object. */
     void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
     /** Returns Cloud Client object. */
     CCloudClient client() const { return m_comClient; }
 
-    /** Defines Virtual System @a comDescription object. */
-    void setVSD(const CVirtualSystemDescription &comDescription) { m_comVSD = comDescription; }
+    /** Defines Virtual System @a comVSD object. */
+    void setVSD(const CVirtualSystemDescription &comVSD) { m_comVSD = comVSD; }
     /** Returns Virtual System Description object. */
     CVirtualSystemDescription vsd() const { return m_comVSD; }
 
@@ -96,8 +90,11 @@ public:
 
 protected:
 
+    /** Populates pages. */
+    virtual void populatePages() /* final */;
+
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* final */;
 
 private slots:
 
@@ -108,6 +105,10 @@ private:
 
     /** Holds the full group name (/provider/profile) to add VM to. */
     QString                        m_strFullGroupName;
+    /** Holds the short provider name. */
+    QString                        m_strShortProviderName;
+    /** Holds the profile name. */
+    QString                        m_strProfileName;
     /** Holds the Cloud Client object reference. */
     CCloudClient                   m_comClient;
     /** Holds the Virtual System Description object reference. */

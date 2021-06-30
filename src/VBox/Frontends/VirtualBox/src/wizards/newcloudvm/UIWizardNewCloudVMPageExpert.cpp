@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,12 +20,12 @@
 #include <QHeaderView>
 #include <QListWidget>
 #include <QTabBar>
-#include <QTableWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIToolButton.h"
+#include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -33,11 +33,20 @@
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageExpert.h"
 
+/* Namespaces: */
+using namespace UIWizardNewCloudVMPage1;
+using namespace UIWizardNewCloudVMPage2;
+
 
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
-    : UIWizardNewCloudVMPage2(fFullWizard)
+    : m_fFullWizard(fFullWizard)
     , m_pCntLocation(0)
+    , m_pProviderComboBox(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
     , m_pCntSource(0)
+    , m_pSourceTabBar(0)
+    , m_pSourceImageList(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */
@@ -60,11 +69,11 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             if (pLocationLayout)
             {
                 /* Create location combo-box: */
-                m_pLocationComboBox = new QIComboBox(m_pCntLocation);
-                if (m_pLocationComboBox)
+                m_pProviderComboBox = new QIComboBox(m_pCntLocation);
+                if (m_pProviderComboBox)
                 {
                     /* Add into layout: */
-                    pLocationLayout->addWidget(m_pLocationComboBox);
+                    pLocationLayout->addWidget(m_pProviderComboBox);
                 }
 
                 /* Create profile layout: */
@@ -121,8 +130,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                 {
                     m_pSourceTabBar->addTab(QString());
                     m_pSourceTabBar->addTab(QString());
-                    connect(m_pSourceTabBar, &QTabBar::currentChanged,
-                            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
 
                     /* Add into layout: */
                     pSourceLayout->addWidget(m_pSourceTabBar);
@@ -132,13 +139,15 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                 m_pSourceImageList = new QListWidget(m_pCntSource);
                 if (m_pSourceImageList)
                 {
+                    m_pSourceImageList->setSortingEnabled(true);
+                    /* Make source image list fit 50 symbols
+                     * horizontally and 8 lines vertically: */
                     const QFontMetrics fm(m_pSourceImageList->font());
                     const int iFontWidth = fm.width('x');
                     const int iTotalWidth = 50 * iFontWidth;
                     const int iFontHeight = fm.height();
-                    const int iTotalHeight = 4 * iFontHeight;
+                    const int iTotalHeight = 8 * iFontHeight;
                     m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                    //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                     m_pSourceImageList->setAlternatingRowColors(true);
 
                     /* Add into layout: */
@@ -162,12 +171,16 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                 m_pFormEditor = new UIFormEditorWidget(m_pSettingsCnt);
                 if (m_pFormEditor)
                 {
-                    /* Make form-editor fit 8 sections in height by default: */
-                    const int iDefaultSectionHeight = m_pFormEditor->verticalHeader()
-                                                    ? m_pFormEditor->verticalHeader()->defaultSectionSize()
-                                                    : 0;
-                    if (iDefaultSectionHeight > 0)
-                        m_pFormEditor->setMinimumHeight(8 * iDefaultSectionHeight);
+                    /* Make form editor fit fit 50 symbols
+                     * horizontally and 8 sections vertically: */
+                    const QFontMetrics fm(m_pSourceImageList->font());
+                    const int iFontWidth = fm.width('x');
+                    const int iTotalWidth = 50 * iFontWidth;
+                    const int iSectionHeight = m_pFormEditor->verticalHeader()
+                                             ? m_pFormEditor->verticalHeader()->defaultSectionSize()
+                                             : fm.height();
+                    const int iTotalHeight = 8 * iSectionHeight;
+                    m_pFormEditor->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
 
                     /* Add into layout: */
                     pSettingsLayout->addWidget(m_pFormEditor);
@@ -181,21 +194,19 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
 
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
-            this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
-            this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
-    connect(m_pLocationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
+    connect(m_pProviderComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick);
+    connect(m_pSourceTabBar, &QTabBar::currentChanged,
+            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
-            this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
-
-    /* Register fields: */
-    registerField("location", this, "location");
-    registerField("profileName", this, "profileName");
+            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange);
 }
 
 void UIWizardNewCloudVMPageExpert::retranslateUi()
@@ -205,10 +216,10 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
     /* Translate received values of Location combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pLocationComboBox->count(); ++i)
+    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
     {
-        m_pLocationComboBox->setItemText(i, m_pLocationComboBox->itemData(i, LocationData_Name).toString());
-        m_pLocationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
+        m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
+        m_pProviderComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
 
     /* Translate source container: */
@@ -225,32 +236,27 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
 
     /* Update tool-tips: */
-    updateLocationComboToolTip();
+    updateComboToolTip(m_pProviderComboBox);
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
-    /* If wasn't polished yet: */
-    if (!UIWizardNewCloudVMPage1::m_fPolished || !UIWizardNewCloudVMPage2::m_fPolished)
+    if (m_fFullWizard)
     {
-        if (m_fFullWizard)
-        {
-            /* Populate locations: */
-            populateLocations();
-            /* Choose one of them, asynchronously: */
-            QMetaObject::invokeMethod(this, "sltHandleLocationChange", Qt::QueuedConnection);
-        }
-        else
-        {
-            /* Generate VSD form, asynchronously: */
-            QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
-        }
-        UIWizardNewCloudVMPage1::m_fPolished = true;
-        UIWizardNewCloudVMPage2::m_fPolished = true;
+        /* Populate providers: */
+        populateProviders(m_pProviderComboBox);
+        /* Translate providers: */
+        retranslateUi();
+        /* Fetch it, asynchronously: */
+        QMetaObject::invokeMethod(this, "sltHandleProviderComboChange", Qt::QueuedConnection);
+        /* Make image list focused by default: */
+        m_pSourceImageList->setFocus();
     }
-
-    /* Translate page: */
-    retranslateUi();
+    else
+    {
+        /* Generate VSD form, asynchronously: */
+        QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
+    }
 }
 
 bool UIWizardNewCloudVMPageExpert::isComplete() const
@@ -259,8 +265,8 @@ bool UIWizardNewCloudVMPageExpert::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    UIWizardNewCloudVMPage1::client().isNotNull()
-              && UIWizardNewCloudVMPage1::vsd().isNotNull();
+    fResult =    client().isNotNull()
+              && vsd().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -271,14 +277,11 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Make sure table has own data committed: */
     m_pFormEditor->makeSureEditorDataCommitted();
 
     /* Check whether we have proper VSD form: */
-    CVirtualSystemDescriptionForm comForm = UIWizardNewCloudVMPage1::vsdForm();
+    CVirtualSystemDescriptionForm comForm = vsdForm();
     /* Give changed VSD back: */
     if (comForm.isNotNull())
     {
@@ -296,73 +299,141 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
         /* If the final step failed we could try
          * sugest user more valid form this time: */
         if (!fResult)
+        {
+            setVSDForm(CVirtualSystemDescriptionForm());
             sltInitShortWizardForm();
+        }
     }
-
-    /* Unlock finish button: */
-    endProcessing();
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
+void UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange()
 {
-    /* Update tool-tip: */
-    updateLocationComboToolTip();
-
-    /* Make image list focused by default: */
-    m_pSourceImageList->setFocus();
-
-    /* Refresh required settings: */
-    populateProfiles();
-    populateProfile();
-    populateSourceImages();
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    updateProvider();
     emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange()
 {
-    /* Refresh required settings: */
-    populateProfile();
-    populateSourceImages();
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    updateProfile();
     emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick()
 {
-    /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
 }
 
 void UIWizardNewCloudVMPageExpert::sltHandleSourceChange()
 {
-    /* Refresh required settings: */
-    populateSourceImages();
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    updateSource();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange()
+void UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange()
 {
-    /* Refresh required settings: */
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    updateSourceImage();
     emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
 {
-    /* Create Virtual System Description Form: */
-    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->createVSDForm();
-
-    /* Refresh form properties table: */
-    refreshFormPropertiesTable();
+    if (vsdForm().isNull())
+        qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+    updatePropertiesTable();
     emit completeChanged();
+}
+
+void UIWizardNewCloudVMPageExpert::setShortProviderName(const QString &strShortProviderName)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strShortProviderName);
+}
+
+QString UIWizardNewCloudVMPageExpert::shortProviderName() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->shortProviderName();
+}
+
+void UIWizardNewCloudVMPageExpert::setProfileName(const QString &strProfileName)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProfileName(strProfileName);
+}
+
+QString UIWizardNewCloudVMPageExpert::profileName() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->profileName();
+}
+
+void UIWizardNewCloudVMPageExpert::setClient(const CCloudClient &comClient)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setClient(comClient);
+}
+
+CCloudClient UIWizardNewCloudVMPageExpert::client() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
+}
+
+void UIWizardNewCloudVMPageExpert::setVSD(const CVirtualSystemDescription &comDescription)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSD(comDescription);
+}
+
+CVirtualSystemDescription UIWizardNewCloudVMPageExpert::vsd() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
+}
+
+void UIWizardNewCloudVMPageExpert::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSDForm(comForm);
+}
+
+CVirtualSystemDescriptionForm UIWizardNewCloudVMPageExpert::vsdForm() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
+}
+
+void UIWizardNewCloudVMPageExpert::updateProvider()
+{
+    updateComboToolTip(m_pProviderComboBox);
+    setShortProviderName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+    m_comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
+    populateProfiles(m_pProfileComboBox, m_comCloudProvider);
+    updateProfile();
+}
+
+void UIWizardNewCloudVMPageExpert::updateProfile()
+{
+    setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    setClient(cloudClientByName(shortProviderName(), profileName(), wizard()));
+    updateSource();
+}
+
+void UIWizardNewCloudVMPageExpert::updateSource()
+{
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, client());
+    updateSourceImage();
+}
+
+void UIWizardNewCloudVMPageExpert::updateSourceImage()
+{
+    m_strSourceImageId = currentListWidgetData(m_pSourceImageList);
+    updateVSDForm();
+}
+
+void UIWizardNewCloudVMPageExpert::updateVSDForm()
+{
+    setVSD(createVirtualSystemDescription(wizard()));
+    populateFormProperties(vsd(), m_pSourceTabBar, m_strSourceImageId);
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+    updatePropertiesTable();
+}
+
+void UIWizardNewCloudVMPageExpert::updatePropertiesTable()
+{
+    refreshFormPropertiesTable(m_pFormEditor, vsdForm());
 }

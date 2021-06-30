@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,14 +28,11 @@
 /* Forward declarations: */
 class QGroupBox;
 
-/** UIWizardPage extension for UIWizardNewCloudVMPage1 and UIWizardNewCloudVMPage2. */
-class UIWizardNewCloudVMPageExpert : public UIWizardPage,
-                                     public UIWizardNewCloudVMPage1,
-                                     public UIWizardNewCloudVMPage2
+/** UIWizardPage extension for Expert page of the New Cloud VM wizard,
+  * based on UIWizardNewCloudVMPage1 & UIWizardNewCloudVMPage2 namespace functions. */
+class UIWizardNewCloudVMPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(QString location READ location);
-    Q_PROPERTY(QString profileName READ profileName);
 
 public:
 
@@ -43,9 +40,6 @@ public:
     UIWizardNewCloudVMPageExpert(bool fFullWizard);
 
 protected:
-
-    /** Allows access wizard from base part. */
-    virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -61,8 +55,8 @@ protected:
 
 private slots:
 
-    /** Handles change in location combo-box. */
-    void sltHandleLocationChange();
+    /** Handles change in provider combo-box. */
+    void sltHandleProviderComboChange();
 
     /** Handles change in profile combo-box. */
     void sltHandleProfileComboChange();
@@ -73,19 +67,78 @@ private slots:
     void sltHandleSourceChange();
 
     /** Handles change in instance list. */
-    void sltHandleInstanceListChange();
+    void sltHandleSourceImageChange();
 
     /** Initializes short wizard form. */
     void sltInitShortWizardForm();
 
 private:
 
+    /** Defines short provider name. */
+    void setShortProviderName(const QString &strShortProviderName);
+    /** Returns profile name. */
+    QString shortProviderName() const;
+
+    /** Defines profile name. */
+    void setProfileName(const QString &strProfileName);
+    /** Returns profile name. */
+    QString profileName() const;
+
+    /** Defines Cloud @a comClient object. */
+    void setClient(const CCloudClient &comClient);
+    /** Returns Cloud Client object. */
+    CCloudClient client() const;
+
+    /** Defines Virtual System @a comDescription object. */
+    void setVSD(const CVirtualSystemDescription &comDescription);
+    /** Returns Virtual System Description object. */
+    CVirtualSystemDescription vsd() const;
+
+    /** Defines Virtual System Description @a comForm object. */
+    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const;
+
+    /** Updates provider. */
+    void updateProvider();
+    /** Updates profile. */
+    void updateProfile();
+    /** Updates source. */
+    void updateSource();
+    /** Updates source image. */
+    void updateSourceImage();
+    /** Updates VSD form. */
+    void updateVSDForm();
+    /** Updates properties table. */
+    void updatePropertiesTable();
+
+    /** Holds whether we want full wizard form or short one. */
+    bool            m_fFullWizard;
+    /** Holds the Cloud Provider object reference. */
+    CCloudProvider  m_comCloudProvider;
+    /** Holds the image ID. */
+    QString         m_strSourceImageId;
+
     /** Holds the location container instance. */
-    QGroupBox *m_pCntLocation;
+    QGroupBox    *m_pCntLocation;
+    /** Holds the location type combo-box instance. */
+    QIComboBox   *m_pProviderComboBox;
+    /** Holds the profile combo-box instance. */
+    QIComboBox   *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
+
     /** Holds the source container instance. */
-    QGroupBox *m_pCntSource;
+    QGroupBox    *m_pCntSource;
+    /** Holds the source tab-bar instance. */
+    QTabBar      *m_pSourceTabBar;
+    /** Holds the source image list instance. */
+    QListWidget  *m_pSourceImageList;
+
     /** Holds the settings container instance. */
-    QGroupBox *m_pSettingsCnt;
+    QGroupBox                 *m_pSettingsCnt;
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageExpert_h */

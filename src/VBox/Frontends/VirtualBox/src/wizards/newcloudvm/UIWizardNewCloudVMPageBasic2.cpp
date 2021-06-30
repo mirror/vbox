@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QHeaderView>
-#include <QLabel>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -26,44 +25,23 @@
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic2.h"
 
+/* Namespaces: */
+using namespace UIWizardNewCloudVMPage2;
+
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPage2 implementation.                                                                                *
+*   Namespace UIWizardNewCloudVMPage2 implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2(bool fFullWizard)
-    : m_fFullWizard(fFullWizard)
-    , m_fPolished(false)
+void UIWizardNewCloudVMPage2::refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor,
+                                                         const CVirtualSystemDescriptionForm &comForm)
 {
-}
+    /* Sanity check: */
+    AssertPtrReturnVoid(pFormEditor.data());
+    AssertReturnVoid(comForm.isNotNull());
 
-void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
-{
-    /* Acquire VSD form: */
-    CVirtualSystemDescriptionForm comForm = vsdForm();
     /* Make sure the properties table get the new description form: */
-    if (comForm.isNotNull())
-        m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
-}
-
-CCloudClient UIWizardNewCloudVMPage2::client() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->client();
-}
-
-CVirtualSystemDescription UIWizardNewCloudVMPage2::vsd() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsd();
-}
-
-void UIWizardNewCloudVMPage2::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->setVSDForm(comForm);
-}
-
-CVirtualSystemDescriptionForm UIWizardNewCloudVMPage2::vsdForm() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsdForm();
+    pFormEditor->setVirtualSystemDescriptionForm(comForm);
 }
 
 
@@ -71,8 +49,7 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPage2::vsdForm() const
 *   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(bool fFullWizard)
-    : UIWizardNewCloudVMPage2(fFullWizard)
+UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -117,22 +94,8 @@ void UIWizardNewCloudVMPageBasic2::retranslateUi()
 
 void UIWizardNewCloudVMPageBasic2::initializePage()
 {
-    /* If wasn't polished yet: */
-    if (!m_fPolished)
-    {
-        if (!m_fFullWizard)
-        {
-            /* Generate VSD form, asynchronously: */
-            QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
-        }
-        m_fPolished = true;
-    }
-
-    /* Refresh form properties: */
-    refreshFormPropertiesTable();
-
-    /* Translate page: */
-    retranslateUi();
+    /* Generate VSD form, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
 }
 
 bool UIWizardNewCloudVMPageBasic2::isComplete() const
@@ -152,9 +115,6 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
-
-    /* Lock finish button: */
-    startProcessing();
 
     /* Make sure table has own data committed: */
     m_pFormEditor->makeSureEditorDataCommitted();
@@ -178,11 +138,11 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
         /* If the final step failed we could try
          * sugest user more valid form this time: */
         if (!fResult)
+        {
+            setVSDForm(CVirtualSystemDescriptionForm());
             sltInitShortWizardForm();
+        }
     }
-
-    /* Unlock finish button: */
-    endProcessing();
 
     /* Return result: */
     return fResult;
@@ -191,9 +151,30 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
 void UIWizardNewCloudVMPageBasic2::sltInitShortWizardForm()
 {
     /* Create Virtual System Description Form: */
-    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->createVSDForm();
+    if (vsdForm().isNull())
+        qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
 
     /* Refresh form properties table: */
-    refreshFormPropertiesTable();
+    refreshFormPropertiesTable(m_pFormEditor, vsdForm());
     emit completeChanged();
+}
+
+CCloudClient UIWizardNewCloudVMPageBasic2::client() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
+}
+
+CVirtualSystemDescription UIWizardNewCloudVMPageBasic2::vsd() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
+}
+
+void UIWizardNewCloudVMPageBasic2::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSDForm(comForm);
+}
+
+CVirtualSystemDescriptionForm UIWizardNewCloudVMPageBasic2::vsdForm() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
 }

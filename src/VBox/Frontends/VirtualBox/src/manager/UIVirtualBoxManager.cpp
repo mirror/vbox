@@ -976,7 +976,6 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         QWidget *pWizardParent = windowManager().realParentWindow(this);
         UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName());
         windowManager().registerNewParent(pWizard, pWizardParent);
-        pWizard->prepare();
 
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
         AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
@@ -1007,7 +1006,6 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         QWidget *pWizardParent = windowManager().realParentWindow(this);
         UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, m_pWidget->fullGroupName());
         windowManager().registerNewParent(pWizard, pWizardParent);
-        pWizard->prepare();
 
         /* Execute wizard: */
         pWizard->exec();

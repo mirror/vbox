@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,7 @@
 
 /* GUI includes: */
 #include "UIFormEditorWidget.h"
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -34,50 +34,25 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/** UIWizardPageBase extension for 2nd page of the New Cloud VM wizard. */
-class UIWizardNewCloudVMPage2 : public UIWizardPageBase
+/** Namespace for 2nd page of the New Cloud VM wizard. */
+namespace UIWizardNewCloudVMPage2
 {
-protected:
+    /** Refreshes @a pFormEditor on the basis of comForm specified. */
+    void refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor, const CVirtualSystemDescriptionForm &comForm);
+}
 
-    /** Constructs 2nd page base. */
-    UIWizardNewCloudVMPage2(bool fFullWizard);
-
-    /** Refreshes form properties table. */
-    void refreshFormPropertiesTable();
-
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-    /** Returns Virtual System Description object. */
-    CVirtualSystemDescription vsd() const;
-
-    /** Defines Virtual System Description @a comForm object. */
-    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
-
-    /** Holds whether wizard should be in full form. */
-    bool  m_fFullWizard;
-    /** Holds whether starting page was polished. */
-    bool  m_fPolished;
-
-    /** Holds the Form Editor widget instance. */
-    UIFormEditorWidgetPointer  m_pFormEditor;
-};
-
-/** UIWizardPage extension for 2nd page of the New Cloud VM wizard, extends UIWizardNewCloudVMPage2 as well. */
-class UIWizardNewCloudVMPageBasic2 : public UIWizardPage, public UIWizardNewCloudVMPage2
+/** UIWizardPage extension for 2nd page of the New Cloud VM wizard,
+  * based on UIWizardNewCloudVMPage2 namespace functions. */
+class UIWizardNewCloudVMPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs 2nd basic page. */
-    UIWizardNewCloudVMPageBasic2(bool fFullWizard);
+    UIWizardNewCloudVMPageBasic2();
 
 protected:
-
-    /** Allows access wizard from base part. */
-    virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -98,8 +73,21 @@ private slots:
 
 private:
 
+    /** Returns Cloud Client object. */
+    CCloudClient client() const;
+    /** Returns Virtual System Description object. */
+    CVirtualSystemDescription vsd() const;
+
+    /** Defines Virtual System Description @a comForm object. */
+    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const;
+
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
+
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h */
