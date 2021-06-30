@@ -3623,7 +3623,10 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEM_MC_MEM_MAP(pu8Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
         IEM_MC_REF_GREG_U8(pu8Reg, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u8, pu8Mem, pu8Reg);
+        if (!pVCpu->iem.s.fDisregardLock)
+            IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u8_locked, pu8Mem, pu8Reg);
+        else
+            IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u8_unlocked, pu8Mem, pu8Reg);
         IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Mem, IEM_ACCESS_DATA_RW);
 
         IEM_MC_ADVANCE_RIP();
@@ -3712,7 +3715,10 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu16Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U16(pu16Reg, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16, pu16Mem, pu16Reg);
+                if (!pVCpu->iem.s.fDisregardLock)
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_unlocked, pu16Mem, pu16Reg);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_unlocked, pu16Mem, pu16Reg);
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Mem, IEM_ACCESS_DATA_RW);
 
                 IEM_MC_ADVANCE_RIP();
@@ -3728,7 +3734,10 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu32Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U32(pu32Reg, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32, pu32Mem, pu32Reg);
+                if (!pVCpu->iem.s.fDisregardLock)
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32_locked, pu32Mem, pu32Reg);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32_unlocked, pu32Mem, pu32Reg);
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Mem, IEM_ACCESS_DATA_RW);
 
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Reg);
@@ -3745,7 +3754,10 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu64Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U64(pu64Reg, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u64, pu64Mem, pu64Reg);
+                if (!pVCpu->iem.s.fDisregardLock)
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u64_locked, pu64Mem, pu64Reg);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u64_unlocked, pu64Mem, pu64Reg);
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Mem, IEM_ACCESS_DATA_RW);
 
                 IEM_MC_ADVANCE_RIP();
@@ -10591,7 +10603,8 @@ FNIEMOP_DEF(iemOp_out_DX_eAX)
 FNIEMOP_DEF(iemOp_lock)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("lock");
-    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_LOCK;
+    if (!pVCpu->iem.s.fDisregardLock)
+        pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_LOCK;
 
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
     return FNIEMOP_CALL(g_apfnOneByteMap[b]);

@@ -1193,8 +1193,9 @@ DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  * @param   fBypassHandlers     Whether to bypass access handlers.
+ * @param   fDisregardLock      Whether to disregard the LOCK prefix.
  */
-DECLINLINE(void) iemInitDecoder(PVMCPUCC pVCpu, bool fBypassHandlers)
+DECLINLINE(void) iemInitDecoder(PVMCPUCC pVCpu, bool fBypassHandlers, bool fDisregardLock)
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
@@ -1249,6 +1250,7 @@ DECLINLINE(void) iemInitDecoder(PVMCPUCC pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
     pVCpu->iem.s.fBypassHandlers    = fBypassHandlers;
+    pVCpu->iem.s.fDisregardLock     = fDisregardLock;
 
 #ifdef DBGFTRACE_ENABLED
     switch (enmMode)
@@ -1375,10 +1377,14 @@ DECLINLINE(void) iemReInitDecoder(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  * @param   fBypassHandlers     Whether to bypass access handlers.
+ * @param   fDisregardLock      Whether to disregard LOCK prefixes.
+ *
+ * @todo    Combine fDisregardLock and fBypassHandlers into a flag parameter and
+ *          store them as such.
  */
-IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fBypassHandlers)
+IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fBypassHandlers, bool fDisregardLock)
 {
-    iemInitDecoder(pVCpu, fBypassHandlers);
+    iemInitDecoder(pVCpu, fBypassHandlers, fDisregardLock);
 
 #ifdef IEM_WITH_CODE_TLB
     /** @todo Do ITLB lookup here. */
@@ -8148,7 +8154,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         /* Write to read only memory? */
         if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
             && !(fFlags & X86_PTE_RW)
-            && (       (pVCpu->iem.s.uCpl == 3
+            && (   (    pVCpu->iem.s.uCpl == 3
                     && !(fAccess & IEM_ACCESS_WHAT_SYS))
                 || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
         {
@@ -14041,7 +14047,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
         && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && EMIsInhibitInterruptsActive(pVCpu))
     {
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, pVCpu->iem.s.fBypassHandlers);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, pVCpu->iem.s.fBypassHandlers, pVCpu->iem.s.fDisregardLock);
         if (rcStrict == VINF_SUCCESS)
         {
 #ifdef LOG_ENABLED
@@ -14103,7 +14109,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPUCC pVCpu)
     /*
      * Do the decoding and emulation.
      */
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOne");
     else if (pVCpu->iem.s.cActiveMappings > 0)
@@ -14121,7 +14127,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneEx(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint32
     AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
 
     uint32_t const cbOldWritten = pVCpu->iem.s.cbWritten;
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOneEx");
@@ -14144,7 +14150,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE 
     if (   cbOpcodeBytes
         && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
     {
-        iemInitDecoder(pVCpu, false);
+        iemInitDecoder(pVCpu, false, false);
 #ifdef IEM_WITH_CODE_TLB
         pVCpu->iem.s.uInstrBufPc      = OpcodeBytesPC;
         pVCpu->iem.s.pbInstrBuf       = (uint8_t const *)pvOpcodeBytes;
@@ -14158,7 +14164,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE 
         rcStrict = VINF_SUCCESS;
     }
     else
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOneWithPrefetchedByPC");
     else if (pVCpu->iem.s.cActiveMappings > 0)
@@ -14173,7 +14179,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassEx(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, 
     AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
 
     uint32_t const cbOldWritten = pVCpu->iem.s.cbWritten;
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true, false);
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassEx");
@@ -14196,7 +14202,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCT
     if (   cbOpcodeBytes
         && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
     {
-        iemInitDecoder(pVCpu, true);
+        iemInitDecoder(pVCpu, true, false);
 #ifdef IEM_WITH_CODE_TLB
         pVCpu->iem.s.uInstrBufPc      = OpcodeBytesPC;
         pVCpu->iem.s.pbInstrBuf       = (uint8_t const *)pvOpcodeBytes;
@@ -14210,7 +14216,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCT
         rcStrict = VINF_SUCCESS;
     }
     else
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPC");
     else if (pVCpu->iem.s.cActiveMappings > 0)
@@ -14244,7 +14250,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPUCC pVCpu, 
     if (   cbOpcodeBytes
         && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
     {
-        iemInitDecoder(pVCpu, true);
+        iemInitDecoder(pVCpu, true, false);
 #ifdef IEM_WITH_CODE_TLB
         pVCpu->iem.s.uInstrBufPc      = OpcodeBytesPC;
         pVCpu->iem.s.pbInstrBuf       = (uint8_t const *)pvOpcodeBytes;
@@ -14258,7 +14264,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPUCC pVCpu, 
         rcStrict = VINF_SUCCESS;
     }
     else
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true, false);
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPCWritten");
@@ -14268,6 +14274,34 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPUCC pVCpu, 
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
+    return rcStrict;
+}
+
+
+/**
+ * For handling split cacheline lock operations when the host has split-lock
+ * detection enabled.
+ *
+ * This will cause the interpreter to disregard the lock prefix and implicit
+ * locking (xchg).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ */
+VMMDECL(VBOXSTRICTRC) IEMExecOneIgnoreLock(PVMCPUCC pVCpu)
+{
+    /*
+     * Do the decoding and emulation.
+     */
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, true /*fDisregardLock*/);
+    if (rcStrict == VINF_SUCCESS)
+        rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOneIgnoreLock");
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
+
+    if (rcStrict != VINF_SUCCESS)
+        LogFlow(("IEMExecOneIgnoreLock: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -14327,7 +14361,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
     /*
      * Initial decoder init w/ prefetch, then setup setjmp.
      */
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
     {
 #ifdef IEM_WITH_SETJMP
@@ -14470,7 +14504,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
     /*
      * Initial decoder init w/ prefetch, then setup setjmp.
      */
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
     {
 #ifdef IEM_WITH_SETJMP
@@ -14627,7 +14661,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
 VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2,
                                          uint8_t cbInstr)
 {
-    iemInitDecoder(pVCpu, false);
+    iemInitDecoder(pVCpu, false, false);
 #ifdef DBGFTRACE_ENABLED
     RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "IEMInjectTrap: %x %d %x %llx",
                       u8TrapNo, enmType, uErrCode, uCr2);

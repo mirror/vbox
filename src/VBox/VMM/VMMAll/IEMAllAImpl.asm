@@ -580,38 +580,78 @@ ENDPROC iemAImpl_imul_two_u64
 ; then the pointer to the register.  They all return void.
 ;
 BEGINCODE
-BEGINPROC_FASTCALL iemAImpl_xchg_u8, 8
+BEGINPROC_FASTCALL iemAImpl_xchg_u8_locked, 8
         PROLOGUE_2_ARGS
         mov     T0_8, [A1]
         xchg    [A0], T0_8
         mov     [A1], T0_8
         EPILOGUE_2_ARGS
-ENDPROC iemAImpl_xchg_u8
+ENDPROC iemAImpl_xchg_u8_locked
 
-BEGINPROC_FASTCALL iemAImpl_xchg_u16, 8
+BEGINPROC_FASTCALL iemAImpl_xchg_u16_locked, 8
         PROLOGUE_2_ARGS
         mov     T0_16, [A1]
         xchg    [A0], T0_16
         mov     [A1], T0_16
         EPILOGUE_2_ARGS
-ENDPROC iemAImpl_xchg_u16
+ENDPROC iemAImpl_xchg_u16_locked
 
-BEGINPROC_FASTCALL iemAImpl_xchg_u32, 8
+BEGINPROC_FASTCALL iemAImpl_xchg_u32_locked, 8
         PROLOGUE_2_ARGS
         mov     T0_32, [A1]
         xchg    [A0], T0_32
         mov     [A1], T0_32
         EPILOGUE_2_ARGS
-ENDPROC iemAImpl_xchg_u32
+ENDPROC iemAImpl_xchg_u32_locked
 
 %ifdef RT_ARCH_AMD64
-BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
+BEGINPROC_FASTCALL iemAImpl_xchg_u64_locked, 8
         PROLOGUE_2_ARGS
         mov     T0, [A1]
         xchg    [A0], T0
         mov     [A1], T0
         EPILOGUE_2_ARGS
-ENDPROC iemAImpl_xchg_u64
+ENDPROC iemAImpl_xchg_u64_locked
+%endif
+
+; Unlocked variants for fDisregardLock mode.
+
+BEGINPROC_FASTCALL iemAImpl_xchg_u8_unlocked, 8
+        PROLOGUE_2_ARGS
+        mov     T0_8, [A1]
+        mov     T1_8, [A0]
+        mov     [A0], T0_8
+        mov     [A1], T1_8
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_xchg_u8_unlocked
+
+BEGINPROC_FASTCALL iemAImpl_xchg_u16_unlocked, 8
+        PROLOGUE_2_ARGS
+        mov     T0_16, [A1]
+        mov     T1_16, [A0]
+        mov     [A0], T0_16
+        mov     [A1], T1_16
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_xchg_u16_unlocked
+
+BEGINPROC_FASTCALL iemAImpl_xchg_u32_unlocked, 8
+        PROLOGUE_2_ARGS
+        mov     T0_32, [A1]
+        mov     T1_32, [A0]
+        mov     [A0], T0_32
+        mov     [A1], T1_32
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_xchg_u32_unlocked
+
+%ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_xchg_u64_unlocked, 8
+        PROLOGUE_2_ARGS
+        mov     T0, [A1]
+        mov     T1, [A0]
+        mov     [A0], T0
+        mov     [A1], T1
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_xchg_u64_unlocked
 %endif
 
 
