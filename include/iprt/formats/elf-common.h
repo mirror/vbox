@@ -314,6 +314,8 @@ typedef struct {
 # define NT_AUXV         6   /* Process auxiliary vectors. */
 # define NT_PRXFPREG     0x46e62b7f /* from gdb5.1/include/elf/common.h */
 #endif
+/* GNU Build ID in a dedicated section. */
+#define NT_GNU_BUILD_ID  3
 
 /* VirtualBox specific NOTE sections (added by Ramshankar) */
 #ifdef VBOX
