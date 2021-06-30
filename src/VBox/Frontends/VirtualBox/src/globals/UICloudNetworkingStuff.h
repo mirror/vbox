@@ -126,6 +126,27 @@ namespace UICloudNetworkingStuff
                                                      QVector<QString> &values,
                                                      QWidget *pParent = 0);
 
+    /** Acquires cloud images of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
+                                              CStringArray &comNames,
+                                              CStringArray &comIDs,
+                                              QWidget *pParent = 0);
+    /** Acquires cloud images of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
+                                              CStringArray &comNames,
+                                              CStringArray &comIDs,
+                                              QString &strErrorMessage);
+    /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
+                                                         CStringArray &comNames,
+                                                         CStringArray &comIDs,
+                                                         QWidget *pParent = 0);
+    /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
+                                                         CStringArray &comNames,
+                                                         CStringArray &comIDs,
+                                                         QString &strErrorMessage);
+
     /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
                                                                   QWidget *pParent = 0);

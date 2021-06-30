@@ -401,6 +401,104 @@ bool UICloudNetworkingStuff::cloudProfileProperties(const CCloudProfile &comClou
     return false;
 }
 
+bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
+                                             CStringArray &comNames,
+                                             CStringArray &comIDs,
+                                             QWidget *pParent /* = 0 */)
+{
+    /* Currently we are interested in Available images only: */
+    const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
+                                                     << KCloudImageState_Available;
+    /* Execute ListImages async method: */
+    CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
+    else
+    {
+        /* Show "Acquire cloud images" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_reading_appliance_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
+                                             CStringArray &comNames,
+                                             CStringArray &comIDs,
+                                             QString &strErrorMessage)
+{
+    /* Currently we are interested in Available images only: */
+    const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
+                                                     << KCloudImageState_Available;
+    /* Execute ListImages async method: */
+    CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Wait for "Acquire cloud images" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
+                                                        CStringArray &comNames,
+                                                        CStringArray &comIDs,
+                                                        QWidget *pParent /* = 0 */)
+{
+    /* Execute ListSourceBootVolumes async method: */
+    CProgress comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
+    else
+    {
+        /* Show "Acquire cloud source boot volumes" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_reading_appliance_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
+                                                        CStringArray &comNames,
+                                                        CStringArray &comIDs,
+                                                        QString &strErrorMessage)
+{
+    /* Execute ListSourceBootVolumes async method: */
+    CProgress comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Wait for "Acquire cloud source boot volumes" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
 QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
                                                                  QWidget *pParent /* = 0 */)
 {

@@ -28,6 +28,7 @@
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+#include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -231,57 +232,30 @@ void UIWizardNewCloudVMPage1::populateSourceImages()
             /* Gather source names and ids, depending on current source tab-bar index: */
             CStringArray comNames;
             CStringArray comIDs;
-            CProgress comProgress;
+            bool fResult = false;
             switch (m_pSourceTabBar->currentIndex())
             {
-                case 0:
-                {
-                    /* Ask for cloud images, currently we are interested in Available images only: */
-                    const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
-                                                                     << KCloudImageState_Available;
-                    comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
-                    break;
-                }
-                case 1:
-                {
-                    /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
-                    comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
-                    break;
-                }
-                default:
-                    break;
-            }
-            if (!comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire cloud images" progress: */
-            msgCenter().showModalProgressDialog(comProgress, QString(),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (comProgress.GetCanceled())
-            {
-                wizardImp()->reject();
-                break;
-            }
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comProgress);
-                break;
+                /* Ask for cloud images, currently we are interested in Available images only: */
+                case 0: fResult = listCloudImages(comCloudClient, comNames, comIDs, wizardImp()); break;
+                /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
+                case 1: fResult = listCloudSourceBootVolumes(comCloudClient, comNames, comIDs, wizardImp()); break;
+                default: break;
             }
 
             /* Push acquired names to list rows: */
-            const QVector<QString> names = comNames.GetValues();
-            const QVector<QString> ids = comIDs.GetValues();
-            for (int i = 0; i < names.size(); ++i)
+            if (fResult)
             {
-                /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pSourceImageList);
-                if (pItem)
+                const QVector<QString> names = comNames.GetValues();
+                const QVector<QString> ids = comIDs.GetValues();
+                for (int i = 0; i < names.size(); ++i)
                 {
-                    pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                    pItem->setData(Qt::UserRole, ids.at(i));
+                    /* Create list item: */
+                    QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pSourceImageList);
+                    if (pItem)
+                    {
+                        pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                        pItem->setData(Qt::UserRole, ids.at(i));
+                    }
                 }
             }
 
