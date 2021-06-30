@@ -1183,7 +1183,8 @@ static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t idUsag
     u32HidCode = idUsage & 0xFFFFFF;
 
     iKeyCode = ps2kR3HidToInternalCode(u32HidCode, NULL);
-    AssertReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+    AssertMsgReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, ("iKeyCode=%#x idUsage=%#x\n", iKeyCode, idUsage),
+                    VERR_INTERNAL_ERROR);
 
     if (fKeyDown)
     {
