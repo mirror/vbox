@@ -156,6 +156,7 @@ const VKATCMD g_CmdEnum =
     g_aCmdEnumOptions,
     RT_ELEMENTS(g_aCmdEnumOptions),
     audioTestCmdEnumHelp,
+    false /* fNeedsTransport */
 };
 
 
@@ -485,6 +486,7 @@ const VKATCMD g_CmdPlay =
     g_aCmdPlayOptions,
     RT_ELEMENTS(g_aCmdPlayOptions),
     audioTestCmdPlayHelp,
+    false /* fNeedsTransport */
 };
 
 
@@ -865,5 +867,6 @@ const VKATCMD g_CmdRec =
     g_aCmdRecOptions,
     RT_ELEMENTS(g_aCmdRecOptions),
     audioTestCmdRecHelp,
+    false /* fNeedsTransport */
 };
 

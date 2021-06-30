@@ -174,6 +174,22 @@ typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
 #define AUDIOTESTENV_MAX_STREAMS 8
 
 /**
+ * Structure for keeping TCP/IP-specific options.
+ */
+typedef struct AUDIOTESTENVTCPOPTS
+{
+    /** Bind address (server mode). When empty, "0.0.0.0" (any host) will be used. */
+    char            szTcpBindAddr[128];
+    /** Bind port (server mode). */
+    uint16_t        uTcpBindPort;
+    /** Connection address (client mode). */
+    char            szTcpConnectAddr[128];
+    /** Connection port (client mode). */
+    uint16_t        uTcpConnectPort;
+} AUDIOTESTENVTCPOPTS;
+typedef AUDIOTESTENVTCPOPTS *PAUDIOTESTENVTCPOPTS;
+
+/**
  * Audio test environment parameters.
  * Not necessarily bound to a specific test (can be reused).
  */
@@ -217,11 +233,15 @@ typedef struct AUDIOTESTENV
     {
         struct
         {
+            AUDIOTESTENVTCPOPTS TcpOpts;
             /** ATS instance to use. */
-            ATSSERVER       Srv;
+            ATSSERVER           Srv;
         } Guest;
         struct
         {
+            AUDIOTESTENVTCPOPTS TcpOpts;
+            /** ATS instance to use. */
+            ATSSERVER           Srv;
             /** Client connected to the ATS on the guest side. */
             ATSCLIENT       AtsClGuest;
             /** Path to the guest's test set downloaded to the host. */
@@ -232,6 +252,7 @@ typedef struct AUDIOTESTENV
             char            szPathTestSetValKit[RTPATH_MAX];
         } Host;
     } u;
+    AUDIOTESTENVTCPOPTS         ValKitTcpOpts;
 } AUDIOTESTENV;
 
 /**
@@ -311,6 +332,9 @@ typedef struct VKATCMD
     size_t          cOptions;
     /** Gets help for an option. */
     DECLCALLBACKMEMBER(const char *, pfnOptionHelp,(PCRTGETOPTDEF pOpt));
+    /** Flag indicating if the command needs the ATS transport layer.
+     *  Needed for command line parsing. */
+    bool            fNeedsTransport;
 } VKATCMD;
 /** Pointer to a const VKAT command entry. */
 typedef VKATCMD const *PCVKATCMD;
@@ -422,13 +446,13 @@ int         audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev);
 
 /** @name ATS routines
  * @{ */
-int         audioTestEnvConnectToHostAts(PAUDIOTESTENV pTstEnv,
+int         audioTestEnvConnectToValKitAts(PAUDIOTESTENV pTstEnv,
                                          const char *pszHostTcpAddr, uint32_t uHostTcpPort);
 /** @}  */
 
 /** @name Test environment handling
  * @{ */
-int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio, const char *pszHostTcpAddr, uint32_t uHostTcpPort, const char *pszGuestTcpAddr, uint32_t uGuestTcpPort);
+int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
 void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
 int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszPackFile, size_t cbPackFile);
 

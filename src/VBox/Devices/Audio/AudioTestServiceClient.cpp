@@ -21,8 +21,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP RTLOGGROUP_DEFAULT
-#include <VBox/log.h>
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO /** @todo Add an own log group for this? */
 
 #include <iprt/crc.h>
 #include <iprt/err.h>
@@ -31,8 +30,10 @@
 #include <iprt/string.h>
 #include <iprt/tcp.h>
 
+#include <VBox/log.h>
+
 #include "AudioTestService.h"
-#include "AudioTestServiceProtocol.h"
+#include "AudioTestServiceInternal.h"
 #include "AudioTestServiceClient.h"
 
 /** @todo Use common defines between server protocol and this client. */
@@ -44,7 +45,11 @@
 typedef struct ATSSRVREPLY
 {
     char   szOp[ATSPKT_OPCODE_MAX_LEN];
+    /** Pointer to payload data.
+     *  This does *not* include the header! */
     void  *pvPayload;
+    /** Size (in bytes) of the payload data.
+     *  This does *not* include the header! */
     size_t cbPayload;
 } ATSSRVREPLY;
 /** Pointer to a generic ATS reply. */
@@ -58,8 +63,7 @@ typedef struct ATSSRVREPLY *PATSSRVREPLY;
  */
 static void audioTestSvcClientInit(PATSCLIENT pClient)
 {
-    pClient->cbHdr = 0;
-    pClient->hSock = NIL_RTSOCKET;
+    RT_BZERO(pClient, sizeof(ATSCLIENT));
 }
 
 /**
@@ -93,114 +97,35 @@ static void audioTestSvcClientReplyDestroy(PATSSRVREPLY pReply)
  */
 static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, bool fNoDataOk)
 {
-    int rc;
-
     LogFlowFuncEnter();
 
-    ATSPKTHDR Hdr;
-    RT_ZERO(Hdr);
-    size_t    cbHdr = 0;
-    if (pClient->cbHdr) /* Header already received? */
+    PATSPKTHDR pPktHdr;
+    int rc = pClient->pTransport->pfnRecvPkt(pClient->pTransportInst, pClient->pTransportClient, &pPktHdr);
+    if (RT_SUCCESS(rc))
     {
-        memcpy(&Hdr, &pClient->abHdr, sizeof(Hdr));
-        cbHdr = pClient->cbHdr;
-        pClient->cbHdr = 0;
-        rc = VINF_SUCCESS;
-    }
-    else /* No, receive header. */
-    {
-        rc = RTTcpRead(pClient->hSock, &Hdr, sizeof(Hdr), &cbHdr);
-    }
-
-    LogFlowFunc(("rc=%Rrc, hdr=%zu, hdr.cb=%zu, %.8s -> %.*Rhxd\n", rc, cbHdr, Hdr.cb, Hdr.achOpcode, RT_MIN(cbHdr, sizeof(ATSPKTHDR)), &Hdr));
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (cbHdr != sizeof(Hdr)) /* Check for bad packet sizes. */
-    {
-        AssertMsgFailed(("Packet is invalid (%RU32 bytes), must be at least %zu bytes\n", cbHdr, sizeof(Hdr)));
-        return VERR_NET_INCOMPLETE_TX_PACKET;
-    }
-
-    if (Hdr.cb < sizeof(ATSPKTHDR))
-    {
-        AssertMsgFailed(("Packet is too small (%RU32 bytes), must be at least %zu bytes\n", Hdr.cb, sizeof(Hdr)));
-        return VERR_NET_INCOMPLETE_TX_PACKET;
-    }
-
-    if (Hdr.cb > ATSPKT_MAX_SIZE)
-    {
-        AssertMsgFailed(("Packet is %RU32 bytes, only %zu bytes allowed\n", Hdr.cb, ATSPKT_MAX_SIZE));
-        return VERR_BUFFER_OVERFLOW;
-    }
-
-    if (Hdr.cb > ATSPKT_MAX_SIZE)
-    {
-        AssertMsgFailed(("Packet is %RU32 bytes, only %zu bytes allowed\n", Hdr.cb, ATSPKT_MAX_SIZE));
-        return VERR_BUFFER_OVERFLOW;
-    }
-
-    pReply->cbPayload = Hdr.cb - sizeof(ATSPKTHDR);
-    Log3Func(("cbHdr=%zu, Hdr.szOp=%s, Hdr.cb=%RU32 -> %zu bytes payload\n", cbHdr, Hdr.achOpcode, Hdr.cb, pReply->cbPayload));
-    if (pReply->cbPayload)
-    {
-        pReply->pvPayload = RTMemAlloc(pReply->cbPayload);
-        if (pReply->pvPayload)
+        AssertReturn(pPktHdr->cb >= sizeof(ATSPKTHDR), VERR_NET_PROTOCOL_ERROR);
+        pReply->cbPayload = pPktHdr->cb - sizeof(ATSPKTHDR);
+        Log3Func(("szOp=%.8s, cb=%RU32\n", pPktHdr->achOpcode, pPktHdr->cb));
+        if (pReply->cbPayload)
         {
-            uint32_t cbPayloadRead = 0;
-            while (cbPayloadRead < pReply->cbPayload)
-            {
-                size_t cbRead = 0;
-                rc = RTTcpRead(pClient->hSock, (uint8_t *)pReply->pvPayload + cbPayloadRead, pReply->cbPayload - cbPayloadRead, &cbRead);
-                if (RT_SUCCESS(rc))
-                {
-                    if (!cbRead)
-                    {
-                        memcpy(&pClient->abHdr, &Hdr, sizeof(pClient->abHdr));
-                        if (!fNoDataOk)
-                            rc = VERR_NET_PROTOCOL_ERROR;
-                    }
-
-                    cbPayloadRead += (uint32_t)cbRead;
-                    Assert(cbPayloadRead <= pReply->cbPayload);
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbPayloadRead == pReply->cbPayload);
-                if (Hdr.uCrc32) /* Checksum given? */
-                {
-                    uint32_t uMyCrc32 = RTCrc32Start();
-                             uMyCrc32 = RTCrc32Process(uMyCrc32, Hdr.achOpcode, sizeof(Hdr.achOpcode));
-                             uMyCrc32 = RTCrc32Process(uMyCrc32, pReply->pvPayload, pReply->cbPayload);
-
-                    if (Hdr.uCrc32 != RTCrc32Finish(uMyCrc32))
-                        AssertFailedStmt(rc = VERR_TAR_CHKSUM_MISMATCH /** @todo Fudge! */);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Make sure to align the payload data (if not done by the sender already). */
-                        size_t const cbRestAlignment = RT_ALIGN_Z(pReply->cbPayload, ATSPKT_ALIGNMENT) - pReply->cbPayload;
-                        if (cbRestAlignment)
-                        {
-                            uint8_t abAlignment[ATSPKT_ALIGNMENT];
-                            rc = RTTcpRead(pClient->hSock, abAlignment, RT_MIN(cbRestAlignment, sizeof(abAlignment)), NULL);
-                        }
-                    }
-                }
-            }
-
-            if (RT_FAILURE(rc))
-                audioTestSvcClientReplyDestroy(pReply);
+            pReply->pvPayload = RTMemDup((uint8_t *)pPktHdr + sizeof(ATSPKTHDR), pReply->cbPayload);
         }
         else
-            rc = VERR_NO_MEMORY;
-    }
+            pReply->pvPayload = NULL;
 
-    if (RT_SUCCESS(rc))
-        memcpy(pReply->szOp, Hdr.achOpcode, sizeof(pReply->szOp));
+        if (   !pReply->cbPayload
+            && !fNoDataOk)
+        {
+            rc = VERR_NET_PROTOCOL_ERROR;
+        }
+        else
+        {
+            memcpy(&pReply->szOp, &pPktHdr->achOpcode, sizeof(pReply->szOp));
+        }
+
+        RTMemFree(pPktHdr);
+        pPktHdr = NULL;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -231,40 +156,20 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
 }
 
 /**
- * Sends data over the transport to the server.
- * For now only TCP/IP is implemented.
- *
- * @returns VBox status code.
- * @param   pClient             Client to send data for.
- * @param   pvData              Pointer to data to send.
- * @param   cbData              Size (in bytes) of \a pvData to send.
- */
-static int audioTestSvcClientSend(PATSCLIENT pClient, const void *pvData, size_t cbData)
-{
-    return RTTcpWrite(pClient->hSock, pvData, cbData);
-}
-
-/**
  * Sends a message plus optional payload to an ATS server.
  *
  * @returns VBox status code.
  * @param   pClient             Client to send message for.
  * @param   pvHdr               Pointer to header data to send.
  * @param   cbHdr               Size (in bytes) of \a pvHdr to send.
- * @param   pvPayload           Pointer to payload to send. Optional.
- * @param   cbPayload           Size (in bytes) of \a pvPayload to send. Set to 0 if no payload needed.
  */
-static int audioTestSvcClientSendMsg(PATSCLIENT pClient,
-                                     void *pvHdr, size_t cbHdr, const void *pvPayload, size_t cbPayload)
+static int audioTestSvcClientSendMsg(PATSCLIENT pClient, void *pvHdr, size_t cbHdr)
 {
-    int rc = audioTestSvcClientSend(pClient, pvHdr, cbHdr);
-    if (   RT_SUCCESS(rc)
-        && cbPayload)
-    {
-        rc = audioTestSvcClientSend(pClient, (uint8_t *)pvPayload, cbPayload);
-    }
-
-    return rc;
+    RT_NOREF(cbHdr);
+    AssertPtrReturn(pClient->pTransport,       VERR_WRONG_ORDER);
+    AssertPtrReturn(pClient->pTransportInst,   VERR_WRONG_ORDER);
+    AssertPtrReturn(pClient->pTransportClient, VERR_NET_NOT_CONNECTED);
+    return pClient->pTransport->pfnSendPkt(pClient->pTransportInst, pClient->pTransportClient, (PCATSPKTHDR)pvHdr);
 }
 
 /**
@@ -303,7 +208,7 @@ static int audioTestSvcClientSendAck(PATSCLIENT pClient)
     ATSPKTHDR Req;
     audioTestSvcClientReqHdrInit(&Req, sizeof(Req), "ACK     ", 0);
 
-    return audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    return audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
 }
 
 /**
@@ -317,45 +222,74 @@ static int audioTestSvcClientDoGreet(PATSCLIENT pClient)
     ATSPKTREQHOWDY Req;
     Req.uVersion = ATS_PROTOCOL_VS;
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_HOWDY, 0);
-    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = audioTestSvcClientRecvAck(pClient);
     return rc;
 }
 
 /**
- * Sends a disconnect command to an ATS server.
+ * Creates an ATS client.
  *
  * @returns VBox status code.
- * @param   pClient             Client to send command for.
+ * @param   pClient             Client to create.
  */
-static int audioTestSvcClientDoBye(PATSCLIENT pClient)
-{
-    ATSPKTHDR Hdr;
-    audioTestSvcClientReqHdrInit(&Hdr, sizeof(Hdr), ATSPKT_OPCODE_BYE, 0);
-    int rc = audioTestSvcClientSendMsg(pClient, &Hdr, sizeof(Hdr), NULL, 0);
-    if (RT_SUCCESS(rc))
-        rc = audioTestSvcClientRecvAck(pClient);
-
-    return rc;
-}
-
-/**
- * Connects to an ATS server.
- *
- * @returns VBox status code.
- * @param   pClient             Client to connect.
- * @param   pszAddr             Address to connect to. If NULL, 127.0.0.1 (localhost) will be used.
- * @param   uPort               Port to connect. If set to 0, port 6052 (ATS_DEFAULT_PORT) will be used.
- */
-int AudioTestSvcClientConnect(PATSCLIENT pClient, const char *pszAddr, uint32_t uPort)
+int AudioTestSvcClientCreate(PATSCLIENT pClient)
 {
     audioTestSvcClientInit(pClient);
 
-    int rc = RTTcpClientConnect(pszAddr ? pszAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR, uPort == 0 ? ATS_TCP_HOST_DEFAULT_PORT : uPort, &pClient->hSock);
+    /*
+     * The default transporter is the first one.
+     */
+    pClient->pTransport = g_apTransports[0]; /** @todo Make this dynamic. */
+
+    return pClient->pTransport->pfnCreate(&pClient->pTransportInst);
+}
+
+/**
+ * Destroys an ATS client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to destroy.
+ */
+void AudioTestSvcClientDestroy(PATSCLIENT pClient)
+{
+    if (pClient->pTransport)
+        pClient->pTransport->pfnTerm(pClient->pTransportInst);
+}
+
+/**
+ * Handles a command line option.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle option for.
+ * @param   ch                  Option (short) to handle.
+ * @param   pVal                Option union to store the result in on success.
+ */
+int AudioTestSvcClientHandleOption(PATSCLIENT pClient, int ch, PCRTGETOPTUNION pVal)
+{
+    AssertPtrReturn(pClient->pTransport, VERR_WRONG_ORDER); /* Must be created first via AudioTestSvcClientCreate(). */
+    if (!pClient->pTransport->pfnOption)
+        return VERR_GETOPT_UNKNOWN_OPTION;
+    return pClient->pTransport->pfnOption(pClient->pTransportInst, ch, pVal);
+}
+
+/**
+ * Connects to an ATS peer.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to connect.
+ */
+int AudioTestSvcClientConnect(PATSCLIENT pClient)
+{
+    int rc = pClient->pTransport->pfnStart(pClient->pTransportInst);
     if (RT_SUCCESS(rc))
     {
-        rc = audioTestSvcClientDoGreet(pClient);
+        rc = pClient->pTransport->pfnWaitForConnect(pClient->pTransportInst, &pClient->pTransportClient);
+        if (RT_SUCCESS(rc))
+        {
+            rc = audioTestSvcClientDoGreet(pClient);
+        }
     }
 
     return rc;
@@ -377,7 +311,7 @@ int AudioTestSvcClientTestSetBegin(PATSCLIENT pClient, const char *pszTag)
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TESTSET_BEGIN, 0);
 
-    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = audioTestSvcClientRecvAck(pClient);
 
@@ -400,7 +334,7 @@ int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag)
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TESTSET_END, 0);
 
-    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = audioTestSvcClientRecvAck(pClient);
 
@@ -423,7 +357,7 @@ int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParm
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_PLAY, 0);
 
-    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = audioTestSvcClientRecvAck(pClient);
 
@@ -446,7 +380,7 @@ int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pTonePa
 
     audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_TONE_RECORD, 0);
 
-    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = audioTestSvcClientRecvAck(pClient);
 
@@ -475,21 +409,33 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
     rc = RTFileOpen(&hFile, pszPathOutAbs, RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
     AssertRCReturn(rc, rc);
 
-    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req), NULL, 0);
+    rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
     while (RT_SUCCESS(rc))
     {
         ATSSRVREPLY Reply;
         RT_ZERO(Reply);
+
         rc = audioTestSvcClientRecvReply(pClient, &Reply, false /* fNoDataOk */);
         if (RT_SUCCESS(rc))
         {
-            /* Calculate and validate checksum. */
-            uint32_t uDataCrc32;
-            memcpy(&uDataCrc32, Reply.pvPayload, sizeof(uint32_t));
+            /* Extract received CRC32 checksum. */
+            const size_t cbCrc32 = sizeof(uint32_t); /* Skip CRC32 in payload for actual CRC verification. */
 
-            if (   uDataCrc32
-                && uDataCrc32 != RTCrc32((uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4))
-                rc = VERR_TAR_CHKSUM_MISMATCH; /** @todo Fudge! */
+            uint32_t uSrcCrc32;
+            memcpy(&uSrcCrc32, Reply.pvPayload, cbCrc32);
+
+            if (uSrcCrc32)
+            {
+                const uint32_t uDstCrc32 = RTCrc32((uint8_t *)Reply.pvPayload + cbCrc32, Reply.cbPayload - cbCrc32);
+
+                Log2Func(("uSrcCrc32=%#x, cbRead=%zu -> uDstCrc32=%#x\n"
+                          "%.*Rhxd\n",
+                          uSrcCrc32, Reply.cbPayload - cbCrc32, uDstCrc32,
+                          RT_MIN(64, Reply.cbPayload - cbCrc32), (uint8_t *)Reply.pvPayload + cbCrc32));
+
+                if (uSrcCrc32 != uDstCrc32)
+                    rc = VERR_TAR_CHKSUM_MISMATCH; /** @todo Fudge! */
+            }
 
             if (RT_SUCCESS(rc))
             {
@@ -497,7 +443,7 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
                     && Reply.pvPayload
                     && Reply.cbPayload)
                 {
-                    rc = RTFileWrite(hFile, (uint8_t *)Reply.pvPayload + 4, Reply.cbPayload - 4, NULL);
+                    rc = RTFileWrite(hFile, (uint8_t *)Reply.pvPayload + cbCrc32, Reply.cbPayload - cbCrc32, NULL);
                 }
                 else if (RTStrNCmp(Reply.szOp, "DATA EOF", ATSPKT_OPCODE_MAX_LEN) == 0)
                 {
@@ -536,10 +482,8 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
  */
 int AudioTestSvcClientClose(PATSCLIENT pClient)
 {
-    int rc = audioTestSvcClientDoBye(pClient);
-    if (RT_SUCCESS(rc))
-        rc = RTTcpClientClose(pClient->hSock);
+    pClient->pTransport->pfnNotifyBye(pClient->pTransportInst, pClient->pTransportClient);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 

@@ -573,39 +573,158 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetSendEndCallback(void const *pvUse
 *   Implementation of audio test environment handling                                                                            *
 *********************************************************************************************************************************/
 
-int audioTestEnvConnectToHostAts(PAUDIOTESTENV pTstEnv,
-                                 const char *pszHostTcpAddr, uint32_t uHostTcpPort)
+/**
+ * Connects an ATS client via TCP/IP to a peer.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Test environment to use.
+ * @param   pClient             Client to connect.
+ * @param   pszWhat             Hint of what to connect to where.
+ * @param   pszTcpBindAddr      TCP/IP bind address. Optionl and can be NULL.
+ *                              Server mode will be disabled then.
+ * @param   uTcpBindPort        TCP/IP bind port. Optionl and can be 0.
+ *                              Server mode will be disabled then. *
+ * @param   pszTcpConnectAddr   TCP/IP connect address. Optionl and can be NULL.
+ *                              Client mode will be disabled then.
+ * @param   uTcpConnectPort     TCP/IP connect port. Optionl and can be 0.
+ *                              Client mode will be disabled then.
+ */
+int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const char *pszWhat,
+                              const char *pszTcpBindAddr, uint16_t uTcpBindPort,
+                              const char *pszTcpConnectAddr, uint16_t uTcpConnectPort)
 {
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to host ATS at %s:%RU32 ...\n",
-                 (pszHostTcpAddr && *pszHostTcpAddr) ? pszHostTcpAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
-                 uHostTcpPort ? uHostTcpPort : ATS_TCP_HOST_DEFAULT_PORT);
+    RT_NOREF(pTstEnv);
 
-    int rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClValKit, pszHostTcpAddr, uHostTcpPort);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting %s ...\n", pszWhat);
+
+    RTGETOPTUNION Val;
+    RT_ZERO(Val);
+
+    int rc;
+
+    if (   !pszTcpBindAddr
+        || !uTcpBindPort)
+    {
+        Val.psz = "client";
+    }
+    else if (   !pszTcpConnectAddr
+             || !uTcpConnectPort)
+    {
+        Val.psz = "server";
+    }
+    else
+        Val.psz = "both";
+
+    rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_MODE, &Val);
+    AssertRCReturn(rc, rc);
+
+    if (   !RTStrCmp(Val.psz, "client")
+        || !RTStrCmp(Val.psz, "both"))
+           RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting at %s:%RU32\n", pszTcpConnectAddr, uTcpConnectPort);
+
+    if (   !RTStrCmp(Val.psz, "server")
+        || !RTStrCmp(Val.psz, "both"))
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Listening at %s:%RU32\n", pszTcpBindAddr ? pszTcpBindAddr : "<None>", uTcpBindPort);
+
+    if (pszTcpBindAddr)
+    {
+        Val.psz = pszTcpBindAddr;
+        rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_BIND_ADDRESS, &Val);
+        AssertRCReturn(rc, rc);
+    }
+
+    if (uTcpBindPort)
+    {
+        Val.u16 = uTcpBindPort;
+        rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_BIND_PORT, &Val);
+        AssertRCReturn(rc, rc);
+    }
+
+    if (pszTcpConnectAddr)
+    {
+        Val.psz = pszTcpConnectAddr;
+        rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_CONNECT_ADDRESS, &Val);
+        AssertRCReturn(rc, rc);
+    }
+
+    if (uTcpConnectPort)
+    {
+        Val.u16 = uTcpConnectPort;
+        rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_CONNECT_PORT, &Val);
+        AssertRCReturn(rc, rc);
+    }
+
+    rc = AudioTestSvcClientConnect(pClient);
     if (RT_FAILURE(rc))
     {
-        RTTestFailed(g_hTest, "Connecting to host ATS failed with %Rrc\n", rc);
+        RTTestFailed(g_hTest, "Connecting %s failed with %Rrc\n", pszWhat, rc);
         return rc;
     }
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to host ATS\n");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected %s\n", pszWhat);
     return rc;
 }
 
-int audioTestEnvConnectToGuestAts(PAUDIOTESTENV pTstEnv,
-                                  const char *pszGuestTcpAddr, uint32_t uGuestTcpPort)
+/**
+ * Configures and starts an ATS TCP/IP server.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                ATS server instance to configure and start.
+ * @param   pCallbacks          ATS callback table to use.
+ * @param   pszDesc             Hint of server type which is being started.
+ * @param   pszTcpBindAddr      TCP/IP bind address. Optionl and can be NULL.
+ *                              Server mode will be disabled then.
+ * @param   uTcpBindPort        TCP/IP bind port. Optionl and can be 0.
+ *                              Server mode will be disabled then. *
+ * @param   pszTcpConnectAddr   TCP/IP connect address. Optionl and can be NULL.
+ *                              Client mode will be disabled then.
+ * @param   uTcpConnectPort     TCP/IP connect port. Optionl and can be 0.
+ *                              Client mode will be disabled then.
+ */
+int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCallbacks, const char *pszDesc,
+                                           const char *pszTcpBindAddr, uint16_t uTcpBindPort,
+                                           const char *pszTcpConnectAddr, uint16_t uTcpConnectPort)
 {
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Connecting to guest ATS at %s:%RU32 ...\n",
-                 (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "127.0.0.1",
-                 uGuestTcpPort ? uGuestTcpPort : ATS_TCP_GUEST_DEFAULT_PORT);
+    RTGETOPTUNION Val;
+    RT_ZERO(Val);
 
-    int rc = AudioTestSvcClientConnect(&pTstEnv->u.Host.AtsClGuest, pszGuestTcpAddr, uGuestTcpPort);
-    if (RT_FAILURE(rc))
+    if (pszTcpBindAddr)
     {
-        RTTestFailed(g_hTest, "Connecting to guest ATS failed with %Rrc\n", rc);
-        return rc;
+        Val.psz = pszTcpBindAddr;
+        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_ADDRESS, &Val);
     }
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected to guest ATS\n");
+    if (uTcpBindPort)
+    {
+        Val.u16 = uTcpBindPort;
+        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_PORT, &Val);
+    }
+
+    if (pszTcpConnectAddr)
+    {
+        Val.psz = pszTcpConnectAddr;
+        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_ADDRESS, &Val);
+    }
+
+    if (uTcpConnectPort)
+    {
+        Val.u16 = uTcpConnectPort;
+        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_PORT, &Val);
+    }
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Starting server for %s at %s:%RU32 ...\n",
+                 pszDesc, pszTcpBindAddr[0] ? pszTcpBindAddr : "0.0.0.0", uTcpBindPort);
+    if (pszTcpConnectAddr[0])
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Trying %s to connect as client to %s:%RU32 ...\n",
+                     pszDesc, pszTcpConnectAddr[0] ? pszTcpConnectAddr : "0.0.0.0", uTcpConnectPort);
+
+    int rc = AudioTestSvcInit(pSrv, pCallbacks);
+    if (RT_SUCCESS(rc))
+        rc = AudioTestSvcStart(pSrv);
+
+    if (RT_FAILURE(rc))
+        RTTestFailed(g_hTest, "Starting server for %s failed with %Rrc\n", pszDesc, rc);
+
     return rc;
 }
 
@@ -615,19 +734,9 @@ int audioTestEnvConnectToGuestAts(PAUDIOTESTENV pTstEnv,
  * @param   pTstEnv             Audio test environment to initialize.
  * @param   pDrvReg             Audio driver to use.
  * @param   fWithDrvAudio       Whether to include DrvAudio in the stack or not.
- * @param   pszHostTcpAddr      Host ATS TCP/IP address to connect to.
- *                              If NULL, ATS_TCP_HOST_DEFAULT_ADDR_STR will be used.
- * @param   uHostTcpPort        Host ATS TCP/IP port to connect to.
- *                              If 0, ATS_TCP_HOST_DEFAULT_PORT will be used.
- * @param   pszGuestTcpAddr     Guest ATS TCP/IP address to connect to.
- *                              If NULL, any address (0.0.0.0) will be used.
- * @param   uGuestTcpPort       Guest ATS TCP/IP port to connect to.
- *                              If 0, ATS_TCP_GUEST_DEFAULT_PORT will be used.
  */
 int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
-                     PCPDMDRVREG pDrvReg, bool fWithDrvAudio,
-                     const char *pszHostTcpAddr, uint32_t uHostTcpPort,
-                     const char *pszGuestTcpAddr, uint32_t uGuestTcpPort)
+                     PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
 {
     int rc = VINF_SUCCESS;
 
@@ -655,12 +764,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     /* Go with the platform's default backend if nothing else is set. */
     if (!pDrvReg)
         pDrvReg = AudioTestGetDefaultBackend();
-
-    if (!uHostTcpPort)
-        uHostTcpPort = ATS_TCP_HOST_DEFAULT_PORT;
-
-    if (!uGuestTcpPort)
-        uGuestTcpPort = ATS_TCP_GUEST_DEFAULT_PORT;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing environment for mode '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using backend '%s'\n", pDrvReg->szName);
@@ -731,7 +834,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
     if (RT_FAILURE(rc))
         return rc;
 
-    /** @todo Implement NAT mode like we do for TxS later? */
     if (pTstEnv->enmMode == AUDIOTESTMODE_GUEST)
     {
         ATSCALLBACKCTX Ctx;
@@ -748,6 +850,18 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         Callbacks.pfnTestSetSendEnd   = audioTestGstAtsTestSetSendEndCallback;
         Callbacks.pvUser              = &Ctx;
 
+        if (!pTstEnv->u.Guest.TcpOpts.uTcpBindPort)
+            pTstEnv->u.Guest.TcpOpts.uTcpBindPort = ATS_TCP_DEF_BIND_PORT_GUEST;
+
+        if (!pTstEnv->u.Guest.TcpOpts.szTcpBindAddr[0])
+            RTStrCopy(pTstEnv->u.Guest.TcpOpts.szTcpBindAddr, sizeof(pTstEnv->u.Guest.TcpOpts.szTcpBindAddr), "0.0.0.0");
+
+        if (!pTstEnv->u.Guest.TcpOpts.uTcpConnectPort)
+            pTstEnv->u.Guest.TcpOpts.uTcpConnectPort = ATS_TCP_DEF_CONNECT_PORT_GUEST;
+
+        if (!pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr[0])
+            RTStrCopy(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr, sizeof(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr), "10.0.2.2");
+
         /*
          * Start the ATS (Audio Test Service) on the guest side.
          * That service then will perform playback and recording operations on the guest, triggered from the host.
@@ -755,21 +869,58 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
          * When running this in self-test mode, that service also can be run on the host if nothing else is specified.
          * Note that we have to bind to "0.0.0.0" by default so that the host can connect to it.
          */
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Starting guest ATS at %s:%RU32...\n",
-                     (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "0.0.0.0", uGuestTcpPort);
-        rc = AudioTestSvcInit(&pTstEnv->u.Guest.Srv,
-                              (pszGuestTcpAddr && *pszGuestTcpAddr) ? pszGuestTcpAddr : "0.0.0.0", uGuestTcpPort, &Callbacks);
-        if (RT_SUCCESS(rc))
-            rc = AudioTestSvcStart(&pTstEnv->u.Guest.Srv);
+        rc = audioTestEnvConfigureAndStartTcpServer(&pTstEnv->u.Guest.Srv, &Callbacks, "Guest ATS",
+                                                    pTstEnv->u.Guest.TcpOpts.szTcpBindAddr, pTstEnv->u.Guest.TcpOpts.uTcpBindPort,
+                                                    pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr, pTstEnv->u.Guest.TcpOpts.uTcpConnectPort);
 
-        if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Starting ATS failed with %Rrc\n", rc);
     }
     else /* Host mode */
     {
-        rc = audioTestEnvConnectToHostAts(pTstEnv, pszHostTcpAddr, uHostTcpPort);
+
+        ATSCALLBACKCTX Ctx;
+        Ctx.pTstEnv = pTstEnv;
+
+        ATSCALLBACKS Callbacks;
+        RT_ZERO(Callbacks);
+        Callbacks.pvUser              = &Ctx;
+
+        if (!pTstEnv->u.Host.TcpOpts.uTcpBindPort)
+            pTstEnv->u.Host.TcpOpts.uTcpBindPort = ATS_TCP_DEF_BIND_PORT_HOST;
+
+        if (!pTstEnv->u.Host.TcpOpts.szTcpBindAddr[0])
+            RTStrCopy(pTstEnv->u.Host.TcpOpts.szTcpBindAddr, sizeof(pTstEnv->u.Host.TcpOpts.szTcpBindAddr), "0.0.0.0");
+
+        if (!pTstEnv->u.Host.TcpOpts.uTcpConnectPort)
+            pTstEnv->u.Host.TcpOpts.uTcpConnectPort = ATS_TCP_DEF_CONNECT_PORT_HOST_PORT_FWD;
+
+        if (!pTstEnv->u.Host.TcpOpts.szTcpConnectAddr[0])
+            RTStrCopy(pTstEnv->u.Host.TcpOpts.szTcpConnectAddr, sizeof(pTstEnv->u.Host.TcpOpts.szTcpConnectAddr),
+                      ATS_TCP_DEF_CONNECT_HOST_ADDR_STR); /** @todo Get VM IP? Needs port forwarding. */
+
+        /* We need to start a server on the host so that VMs configured with NAT networking
+         * can connect to it as well. */
+        rc = AudioTestSvcClientCreate(&pTstEnv->u.Host.AtsClGuest);
         if (RT_SUCCESS(rc))
-            rc = audioTestEnvConnectToGuestAts(pTstEnv, pszGuestTcpAddr, uGuestTcpPort);
+            rc = audioTestEnvConnectViaTcp(pTstEnv, &pTstEnv->u.Host.AtsClGuest,
+                                           "Host -> Guest ATS",
+                                           pTstEnv->u.Host.TcpOpts.szTcpBindAddr, pTstEnv->u.Host.TcpOpts.uTcpBindPort,
+                                           pTstEnv->u.Host.TcpOpts.szTcpConnectAddr, pTstEnv->u.Host.TcpOpts.uTcpConnectPort);
+        if (RT_SUCCESS(rc))
+        {
+            if (!pTstEnv->ValKitTcpOpts.uTcpConnectPort)
+                pTstEnv->ValKitTcpOpts.uTcpConnectPort = ATS_TCP_DEF_CONNECT_PORT_VALKIT;
+
+            if (!pTstEnv->ValKitTcpOpts.szTcpConnectAddr[0])
+                RTStrCopy(pTstEnv->ValKitTcpOpts.szTcpConnectAddr, sizeof(pTstEnv->ValKitTcpOpts.szTcpConnectAddr),
+                          ATS_TCP_DEF_CONNECT_HOST_ADDR_STR);
+
+            rc = AudioTestSvcClientCreate(&pTstEnv->u.Host.AtsClValKit);
+            if (RT_SUCCESS(rc))
+                rc = audioTestEnvConnectViaTcp(pTstEnv, &pTstEnv->u.Host.AtsClValKit,
+                                               "Host -> Validation Kit Host Audio Driver ATS",
+                                               pTstEnv->ValKitTcpOpts.szTcpBindAddr, pTstEnv->ValKitTcpOpts.uTcpBindPort,
+                                               pTstEnv->ValKitTcpOpts.szTcpConnectAddr, pTstEnv->ValKitTcpOpts.uTcpConnectPort);
+        }
     }
 
     if (   RT_FAILURE(rc)

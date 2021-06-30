@@ -1023,17 +1023,34 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     Callbacks.pvUser              = pThis;
 
     /** @todo Make this configurable via CFGM. */
-    const char *pszTcpAddr = ATS_TCP_HOST_DEFAULT_ADDR_STR;
-       uint32_t uTcpPort   = ATS_TCP_HOST_DEFAULT_PORT;
+    const char *pszTcpAddr = "127.0.0.1"; /* Only reachable for localhost for now. */
+    uint32_t    uTcpPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
 
     LogRel(("ValKit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
             pszTcpAddr, uTcpPort));
 
-    rc = AudioTestSvcInit(&pThis->Srv,
-                          /* We only allow connections from localhost for now. */
-                          pszTcpAddr, uTcpPort, &Callbacks);
+    rc = AudioTestSvcCreate(&pThis->Srv);
     if (RT_SUCCESS(rc))
-        rc = AudioTestSvcStart(&pThis->Srv);
+    {
+        RTGETOPTUNION Val;
+        RT_ZERO(Val);
+
+        Val.psz = "server"; /** @ŧodo No client connection mode needed here (yet). Make this configurable via CFGM. */
+        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_MODE, &Val);
+        AssertRC(rc);
+
+        Val.psz = pszTcpAddr;
+        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_ADDRESS, &Val);
+        AssertRC(rc);
+
+        Val.u16 = uTcpPort;
+        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_PORT, &Val);
+        AssertRC(rc);
+
+        rc = AudioTestSvcInit(&pThis->Srv, &Callbacks);
+        if (RT_SUCCESS(rc))
+            rc = AudioTestSvcStart(&pThis->Srv);
+    }
 
     if (RT_SUCCESS(rc))
     {

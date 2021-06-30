@@ -21,15 +21,30 @@
 # pragma once
 #endif
 
+#include <iprt/tcp.h>
+
 #include "AudioTestServiceInternal.h"
 
+extern const PCATSTRANSPORT g_apTransports[];
+extern const size_t         g_cTransports;
 
-/** Default TCP/IP port the host ATS (Audio Test Service) is running on. */
-#define ATS_TCP_HOST_DEFAULT_PORT        6052
-/** Default TCP/IP address the host ATS (Audio Test Service) is running on. */
-#define ATS_TCP_HOST_DEFAULT_ADDR_STR    "127.0.0.1"
-/** Default TCP/IP port the guest ATS (Audio Test Service) is running on. */
-#define ATS_TCP_GUEST_DEFAULT_PORT       6042
+/** Default TCP/IP bind port the guest ATS (Audio Test Service) is listening on. */
+#define ATS_TCP_DEF_BIND_PORT_GUEST       6052
+/** Default TCP/IP bind port the host ATS is listening on. */
+#define ATS_TCP_DEF_BIND_PORT_HOST        6042
+/** Default TCP/IP ATS bind port the ValidationKit Audio Driver ATS is listening on. */
+#define ATS_TCP_DEF_BIND_PORT_VALKIT      6052
+/** Default TCP/IP port the guest ATS is connecting to. */
+#define ATS_TCP_DEF_CONNECT_PORT_GUEST    ATS_TCP_DEF_BIND_PORT_HOST
+/** Default TCP/IP port the host ATS is connecting to the guest (needs NAT port forwarding). */
+#define ATS_TCP_DEF_CONNECT_PORT_HOST_PORT_FWD     6062
+/** Default TCP/IP port the host ATS is connecting to. */
+#define ATS_TCP_DEF_CONNECT_PORT_VALKIT   ATS_TCP_DEF_BIND_PORT_VALKIT
+/** Default TCP/IP address the host is connecting to. */
+#define ATS_TCP_DEF_CONNECT_HOST_ADDR_STR "127.0.0.1"
+/** Default TCP/IP address the guest ATS connects to when
+ *  running in client mode (reversed mode, needed for NATed VMs). */
+#define ATS_TCP_DEF_CONNECT_GUEST_STR     "10.0.2.2"
 
 /**
  * Structure for keeping an Audio Test Service (ATS) callback table.
@@ -109,31 +124,14 @@ typedef struct ATSCALLBACKS
 typedef const struct ATSCALLBACKS *PCATSCALLBACKS;
 
 /**
- * Structure for keeping Audio Test Service (ATS) transport instance-specific data.
- *
- * Currently only TCP/IP is supported.
- */
-typedef struct ATSTRANSPORTINST
-{
-    /** The addresses to bind to.  Empty string means any. */
-    char                 szTcpBindAddr[256];
-    /** The TCP port to listen to. */
-    uint32_t             uTcpBindPort;
-    /** Pointer to the TCP server instance. */
-    PRTTCPSERVER         pTcpServer;
-} ATSTRANSPORTINST;
-/** Pointer to an Audio Test Service (ATS) TCP/IP transport instance. */
-typedef ATSTRANSPORTINST *PATSTRANSPORTINSTTCP;
-
-/**
  * Structure for keeping an Audio Test Service (ATS) instance.
  */
 typedef struct ATSSERVER
 {
-    /** The selected transport layer. */
+    /** Pointer to the selected transport layer. */
     PCATSTRANSPORT       pTransport;
-    /** The transport instance. */
-    ATSTRANSPORTINST     TransportInst;
+    /** Pointer to the transport instance. */
+    PATSTRANSPORTINST    pTransportInst;
     /** The callbacks table. */
     ATSCALLBACKS         Callbacks;
     /** Whether server is in started state or not. */
@@ -158,10 +156,23 @@ typedef struct ATSSERVER
 /** Pointer to an Audio Test Service (ATS) instance. */
 typedef ATSSERVER *PATSSERVER;
 
-int AudioTestSvcInit(PATSSERVER pThis, const char *pszBindAddr, uint32_t uBindPort, PCATSCALLBACKS pCallbacks);
+int AudioTestSvcCreate(PATSSERVER pThis);
+int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks);
 int AudioTestSvcDestroy(PATSSERVER pThis);
+int AudioTestSvcHandleOption(PATSSERVER pThis, int ch, PCRTGETOPTUNION pVal);
 int AudioTestSvcStart(PATSSERVER pThis);
 int AudioTestSvcShutdown(PATSSERVER pThis);
+
+/** TCP/IP options for the ATS server.
+ *  @todo Make this more abstract later. */
+enum ATSTCPOPT
+{
+    ATSTCPOPT_MODE = 5000,
+    ATSTCPOPT_BIND_ADDRESS,
+    ATSTCPOPT_BIND_PORT,
+    ATSTCPOPT_CONNECT_ADDRESS,
+    ATSTCPOPT_CONNECT_PORT
+};
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestService_h */
 

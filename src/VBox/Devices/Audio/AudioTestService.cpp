@@ -19,7 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP RTLOGGROUP_DEFAULT
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO /** @todo Add an own log group for this? */
+
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -29,6 +30,7 @@
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/handle.h>
 #include <iprt/initterm.h>
@@ -46,6 +48,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
+#include <VBox/log.h>
+
 #include "AudioTestService.h"
 #include "AudioTestServiceInternal.h"
 
@@ -53,6 +57,18 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/**
+ * A generic ATS reply, used by the client
+ * to process the incoming packets.
+ */
+typedef struct ATSSRVREPLY
+{
+    char   szOp[ATSPKT_OPCODE_MAX_LEN];
+    void  *pvPayload;
+    size_t cbPayload;
+} ATSSRVREPLY;
+/** Pointer to a generic ATS reply. */
+typedef struct ATSSRVREPLY *PATSSRVREPLY;
 
 
 /*********************************************************************************************************************************
@@ -61,10 +77,12 @@
 /**
  * Transport layers.
  */
-static const PCATSTRANSPORT g_apTransports[] =
+const PCATSTRANSPORT g_apTransports[] =
 {
     &g_TcpTransport
 };
+/** Number of transport layers in \a g_apTransports. */
+const size_t g_cTransports = RT_ELEMENTS(g_apTransports);
 
 /**
  * ATS client state.
@@ -98,7 +116,7 @@ typedef struct ATSCLIENTINST
     char                  *pszHostname;
 } ATSCLIENTINST;
 /** Pointer to a ATS client instance. */
-typedef ATSCLIENTINST *PATSCLIENTINST;
+typedef ATSCLIENTINST *PATSSERVERINST;
 
 /**
  * Returns the string represenation of the given state.
@@ -129,11 +147,11 @@ static const char *atsClientStateStringify(ATSCLIENTSTATE enmState)
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The ATS client structure.
  * @param   pPkt                The packet to send.  Must point to a correctly
  *                              aligned buffer.
  */
-static int atsSendPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt)
+static int atsSendPkt(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPkt)
 {
     Assert(pPkt->cb >= sizeof(*pPkt));
     pPkt->uCrc32 = RTCrc32(pPkt->achOpcode, pPkt->cb - RT_UOFFSETOF(ATSPKTHDR, achOpcode));
@@ -141,11 +159,10 @@ static int atsSendPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt)
         memset((uint8_t *)pPkt + pPkt->cb, '\0', RT_ALIGN_32(pPkt->cb, ATSPKT_ALIGNMENT) - pPkt->cb);
 
     LogFlowFunc(("cb=%RU32 (%#x), payload=%RU32 (%#x), opcode=%.8s\n",
-            pPkt->cb, pPkt->cb, pPkt->cb - sizeof(ATSPKTHDR), pPkt->cb - sizeof(ATSPKTHDR), pPkt->achOpcode));
-    LogFlowFunc(("%.*Rhxd\n", RT_MIN(pPkt->cb, 256), pPkt));
-    int rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
+                 pPkt->cb, pPkt->cb, pPkt->cb - sizeof(ATSPKTHDR), pPkt->cb - sizeof(ATSPKTHDR), pPkt->achOpcode));
+    int rc = pThis->pTransport->pfnSendPkt(pThis->pTransportInst, pInst->pTransportClient, pPkt);
     while (RT_UNLIKELY(rc == VERR_INTERRUPTED) && !pThis->fTerminate)
-        rc = pThis->pTransport->pfnSendPkt(&pThis->TransportInst, pClient->pTransportClient, pPkt);
+        rc = pThis->pTransport->pfnSendPkt(pThis->pTransportInst, pInst->pTransportClient, pPkt);
 
     return rc;
 }
@@ -154,17 +171,17 @@ static int atsSendPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt)
  * Sends a babble reply and disconnects the client (if applicable).
  *
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The ATS server instance.
  * @param   pszOpcode           The BABBLE opcode.
  */
-static void atsReplyBabble(PATSSERVER pThis, PATSCLIENTINST pClient, const char *pszOpcode)
+static void atsReplyBabble(PATSSERVER pThis, PATSSERVERINST pInst, const char *pszOpcode)
 {
     ATSPKTHDR Reply;
     Reply.cb     = sizeof(Reply);
     Reply.uCrc32 = 0;
     memcpy(Reply.achOpcode, pszOpcode, sizeof(Reply.achOpcode));
 
-    pThis->pTransport->pfnBabble(&pThis->TransportInst, pClient->pTransportClient, &Reply, 20*1000);
+    pThis->pTransport->pfnBabble(pThis->pTransportInst, pInst->pTransportClient, &Reply, 20*1000);
 }
 
 /**
@@ -175,26 +192,25 @@ static void atsReplyBabble(PATSSERVER pThis, PATSCLIENTINST pClient, const char 
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   ppPktHdr            Where to return the packet on success.  Free
  *                              with RTMemFree.
  * @param   fAutoRetryOnFailure Whether to retry on error.
  */
-static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPktHdr, bool fAutoRetryOnFailure)
+static int atsRecvPkt(PATSSERVER pThis, PATSSERVERINST pInst, PPATSPKTHDR ppPktHdr, bool fAutoRetryOnFailure)
 {
     for (;;)
     {
         PATSPKTHDR pPktHdr;
-        int rc = pThis->pTransport->pfnRecvPkt(&pThis->TransportInst, pClient->pTransportClient, &pPktHdr);
+        int rc = pThis->pTransport->pfnRecvPkt(pThis->pTransportInst, pInst->pTransportClient, &pPktHdr);
         if (RT_SUCCESS(rc))
         {
             /* validate the packet. */
             if (   pPktHdr->cb >= sizeof(ATSPKTHDR)
                 && pPktHdr->cb < ATSPKT_MAX_SIZE)
             {
-                Log2(("atsRecvPkt: pPktHdr=%p cb=%#x crc32=%#x opcode=%.8s\n"
-                      "%.*Rhxd\n",
-                      pPktHdr, pPktHdr->cb, pPktHdr->uCrc32, pPktHdr->achOpcode, RT_MIN(pPktHdr->cb, 256), pPktHdr));
+                Log2Func(("pPktHdr=%p cb=%#x crc32=%#x opcode=%.8s\n",
+                          pPktHdr, pPktHdr->cb, pPktHdr->uCrc32, pPktHdr->achOpcode));
                 uint32_t uCrc32Calc = pPktHdr->uCrc32 != 0
                                     ? RTCrc32(&pPktHdr->achOpcode[0], pPktHdr->cb - RT_UOFFSETOF(ATSPKTHDR, achOpcode))
                                     : 0;
@@ -211,7 +227,7 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
                         && (RT_C_IS_PRINT(pPktHdr->achOpcode[7]) || pPktHdr->achOpcode[7] == ' ')
                        )
                     {
-                        Log(("atsRecvPkt: cb=%#x opcode=%.8s\n", pPktHdr->cb, pPktHdr->achOpcode));
+                        Log(("cb=%#x opcode=%.8s\n", pPktHdr->cb, pPktHdr->achOpcode));
                         *ppPktHdr = pPktHdr;
                         return rc;
                     }
@@ -220,7 +236,7 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
                 }
                 else
                 {
-                    Log(("atsRecvPkt: cb=%#x opcode=%.8s crc32=%#x actual=%#x\n",
+                    Log(("cb=%#x opcode=%.8s crc32=%#x actual=%#x\n",
                          pPktHdr->cb, pPktHdr->achOpcode, pPktHdr->uCrc32, uCrc32Calc));
                     rc = VERR_IO_CRC;
                 }
@@ -231,13 +247,13 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
             /* Send babble reply and disconnect the client if the transport is
                connection oriented. */
             if (rc == VERR_IO_BAD_LENGTH)
-                atsReplyBabble(pThis, pClient, "BABBLE L");
+                atsReplyBabble(pThis, pInst, "BABBLE L");
             else if (rc == VERR_IO_CRC)
-                atsReplyBabble(pThis, pClient, "BABBLE C");
+                atsReplyBabble(pThis, pInst, "BABBLE C");
             else if (rc == VERR_IO_BAD_COMMAND)
-                atsReplyBabble(pThis, pClient, "BABBLE O");
+                atsReplyBabble(pThis, pInst, "BABBLE O");
             else
-                atsReplyBabble(pThis, pClient, "BABBLE  ");
+                atsReplyBabble(pThis, pInst, "BABBLE  ");
             RTMemFree(pPktHdr);
         }
 
@@ -247,7 +263,7 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
             || !fAutoRetryOnFailure
             )
         {
-            Log(("atsRecvPkt: rc=%Rrc\n", rc));
+            Log(("rc=%Rrc\n", rc));
             return rc;
         }
     }
@@ -258,13 +274,13 @@ static int atsRecvPkt(PATSSERVER pThis, PATSCLIENTINST pClient, PPATSPKTHDR ppPk
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pReply              The reply packet.
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
  * @param   cbExtra             Bytes in addition to the header.
  */
-static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pReply, const char *pszOpcode, size_t cbExtra)
+static int atsReplyInternal(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pReply, const char *pszOpcode, size_t cbExtra)
 {
     /* copy the opcode, don't be too strict in case of a padding screw up. */
     size_t cchOpcode = strlen(pszOpcode);
@@ -283,7 +299,7 @@ static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
     pReply->cb     = (uint32_t)sizeof(ATSPKTHDR) + (uint32_t)cbExtra;
     pReply->uCrc32 = 0;
 
-    return atsSendPkt(pThis, pClient, pReply);
+    return atsSendPkt(pThis, pInst, pReply);
 }
 
 /**
@@ -291,14 +307,14 @@ static int atsReplyInternal(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The original packet (for future use).
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
  */
-static int atsReplySimple(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, const char *pszOpcode)
+static int atsReplySimple(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr, const char *pszOpcode)
 {
-    return atsReplyInternal(pThis, pClient, pPktHdr, pszOpcode, 0);
+    return atsReplyInternal(pThis, pInst, pPktHdr, pszOpcode, 0);
 }
 
 /**
@@ -306,12 +322,12 @@ static int atsReplySimple(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR p
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The original packet (for future use).
  */
-static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsReplyAck(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
-    return atsReplySimple(pThis, pClient, pPktHdr, "ACK     ");
+    return atsReplySimple(pThis, pInst, pPktHdr, "ACK     ");
 }
 
 /**
@@ -319,7 +335,7 @@ static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The original packet (for future use).
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
@@ -327,7 +343,7 @@ static int atsReplyAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPkt
  * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   va                  Format arguments.
  */
-static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr,
+static int atsReplyFailureV(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr,
                             const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
 {
     RT_NOREF(pPktHdr);
@@ -345,7 +361,7 @@ static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
 
     uPkt.rc = rcReq;
 
-    return atsReplyInternal(pThis, pClient, &uPkt.Hdr, pszOpcode, sizeof(int) + cchDetail + 1);
+    return atsReplyInternal(pThis, pInst, &uPkt.Hdr, pszOpcode, sizeof(int) + cchDetail + 1);
 }
 
 /**
@@ -353,7 +369,7 @@ static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The original packet (for future use).
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
@@ -361,12 +377,12 @@ static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
  * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   ...                 Format arguments.
  */
-static int atsReplyFailure(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr,
+static int atsReplyFailure(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr,
                            const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
 {
     va_list va;
     va_start(va, pszDetailFmt);
-    int rc = atsReplyFailureV(pThis, pClient, pPktHdr, pszOpcode, rcReq, pszDetailFmt, va);
+    int rc = atsReplyFailureV(pThis, pInst, pPktHdr, pszOpcode, rcReq, pszDetailFmt, va);
     va_end(va);
     return rc;
 }
@@ -376,7 +392,7 @@ static int atsReplyFailure(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet to reply to.
  * @param   rcOperation         The status code to report.
  * @param   pszOperationFmt     The operation that failed.  Typically giving the
@@ -384,10 +400,10 @@ static int atsReplyFailure(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
  * @param   ...                 Arguments to the format string.
  */
 static int atsReplyRC(PATSSERVER pThis,
-                      PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, int rcOperation, const char *pszOperationFmt, ...)
+                      PATSSERVERINST pInst, PATSPKTHDR pPktHdr, int rcOperation, const char *pszOperationFmt, ...)
 {
     if (RT_SUCCESS(rcOperation))
-        return atsReplyAck(pThis, pClient, pPktHdr);
+        return atsReplyAck(pThis, pInst, pPktHdr);
 
     char    szOperation[128];
     va_list va;
@@ -395,7 +411,7 @@ static int atsReplyRC(PATSSERVER pThis,
     RTStrPrintfV(szOperation, sizeof(szOperation), pszOperationFmt, va);
     va_end(va);
 
-    return atsReplyFailure(pThis, pClient, pPktHdr, "FAILED  ", rcOperation, "%s failed with rc=%Rrc (opcode '%.8s')",
+    return atsReplyFailure(pThis, pInst, pPktHdr, "FAILED  ", rcOperation, "%s failed with rc=%Rrc (opcode '%.8s')",
                            szOperation, rcOperation, pPktHdr->achOpcode);
 }
 
@@ -404,13 +420,13 @@ static int atsReplyRC(PATSSERVER pThis,
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet to reply to.
  * @param   cb                  The wanted size.
  */
-static int atsReplyBadSize(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr, size_t cb)
+static int atsReplyBadSize(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr, size_t cb)
 {
-    return atsReplyFailure(pThis, pClient, pPktHdr, "BAD SIZE", VERR_INVALID_PARAMETER, "Expected at %zu bytes, got %u  (opcode '%.8s')",
+    return atsReplyFailure(pThis, pInst, pPktHdr, "BAD SIZE", VERR_INVALID_PARAMETER, "Expected at %zu bytes, got %u  (opcode '%.8s')",
                            cb, pPktHdr->cb, pPktHdr->achOpcode);
 }
 
@@ -419,40 +435,26 @@ static int atsReplyBadSize(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet to reply to.
  */
-static int atsReplyUnknown(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsReplyUnknown(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
-    return atsReplyFailure(pThis, pClient, pPktHdr, "UNKNOWN ", VERR_NOT_FOUND, "Opcode '%.8s' is not known", pPktHdr->achOpcode);
+    return atsReplyFailure(pThis, pInst, pPktHdr, "UNKNOWN ", VERR_NOT_FOUND, "Opcode '%.8s' is not known", pPktHdr->achOpcode);
 }
-
-#if 0
-/**
- * Deals with a command which contains an unterminated string.
- *
- * @returns IPRT status code of the send.
- * @param   pClient             The ATS client structure.
- * @param   pPktHdr             The packet containing the unterminated string.
- */
-static int atsReplyBadStrTermination(PATSCLIENT pClient, PATSPKTHDR pPktHdr)
-{
-    return atsReplyFailure(pClient, pPktHdr, "BAD TERM", VERR_INVALID_PARAMETER, "Opcode '%.8s' contains an unterminated string", pPktHdr->achOpcode);
-}
-#endif
 
 /**
  * Deals with a command sent in an invalid client state.
  *
  * @returns IPRT status code of the send.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet containing the unterminated string.
  */
-static int atsReplyInvalidState(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsReplyInvalidState(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
-    return atsReplyFailure(pThis, pClient, pPktHdr, "INVSTATE", VERR_INVALID_STATE, "Opcode '%.8s' is not supported at client state '%s",
-                           pPktHdr->achOpcode, atsClientStateStringify(pClient->enmState));
+    return atsReplyFailure(pThis, pInst, pPktHdr, "INVSTATE", VERR_INVALID_STATE, "Opcode '%.8s' is not supported at client state '%s",
+                           pPktHdr->achOpcode, atsClientStateStringify(pInst->enmState));
 }
 
 /**
@@ -460,18 +462,18 @@ static int atsReplyInvalidState(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPK
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The bye packet.
  */
-static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoBye(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     int rc;
     if (pPktHdr->cb == sizeof(ATSPKTHDR))
     {
-        rc = atsReplyAck(pThis, pClient, pPktHdr);
+        rc = atsReplyAck(pThis, pInst, pPktHdr);
     }
     else
-        rc = atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTHDR));
+        rc = atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTHDR));
     return rc;
 }
 
@@ -480,34 +482,34 @@ static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The howdy packet.
  */
-static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoHowdy(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
     if (pPktHdr->cb != sizeof(ATSPKTREQHOWDY))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQHOWDY));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQHOWDY));
 
-    if (pClient->enmState != ATSCLIENTSTATE_INITIALISING)
-        return atsReplyInvalidState(pThis, pClient, pPktHdr);
+    if (pInst->enmState != ATSCLIENTSTATE_INITIALISING)
+        return atsReplyInvalidState(pThis, pInst, pPktHdr);
 
     PATSPKTREQHOWDY pReq = (PATSPKTREQHOWDY)pPktHdr;
 
     if (pReq->uVersion != ATS_PROTOCOL_VS)
-        return atsReplyRC(pThis, pClient, pPktHdr, VERR_VERSION_MISMATCH, "The given version %#x is not supported", pReq->uVersion);
+        return atsReplyRC(pThis, pInst, pPktHdr, VERR_VERSION_MISMATCH, "The given version %#x is not supported", pReq->uVersion);
 
     ATSPKTREPHOWDY Rep;
     RT_ZERO(Rep);
 
     Rep.uVersion = ATS_PROTOCOL_VS;
 
-    rc = atsReplyInternal(pThis, pClient, &Rep.Hdr, "ACK     ", sizeof(Rep) - sizeof(ATSPKTHDR));
+    rc = atsReplyInternal(pThis, pInst, &Rep.Hdr, "ACK     ", sizeof(Rep) - sizeof(ATSPKTHDR));
     if (RT_SUCCESS(rc))
     {
-        pThis->pTransport->pfnNotifyHowdy(&pThis->TransportInst, pClient->pTransportClient);
-        pClient->enmState = ATSCLIENTSTATE_READY;
+        pThis->pTransport->pfnNotifyHowdy(pThis->pTransportInst, pInst->pTransportClient);
+        pInst->enmState = ATSCLIENTSTATE_READY;
     }
 
     return rc;
@@ -518,13 +520,13 @@ static int atsDoHowdy(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktH
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The test set begin packet.
  */
-static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoTestSetBegin(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     if (pPktHdr->cb != sizeof(ATSPKTREQTSETBEG))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETBEG));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTSETBEG));
 
     PATSPKTREQTSETBEG pReq = (PATSPKTREQTSETBEG)pPktHdr;
 
@@ -534,15 +536,15 @@ static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHD
     {
         rc = pThis->Callbacks.pfnTestSetBegin(pThis->Callbacks.pvUser, pReq->szTag);
         if (RT_FAILURE(rc))
-            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning test set '%s' failed", pReq->szTag);
+            return atsReplyRC(pThis, pInst, pPktHdr, rc, "Beginning test set '%s' failed", pReq->szTag);
     }
 
     if (RT_SUCCESS(rc))
     {
-        rc = atsReplyAck(pThis, pClient, pPktHdr);
+        rc = atsReplyAck(pThis, pInst, pPktHdr);
     }
     else
-        rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning test set failed");
+        rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Beginning test set failed");
 
     return rc;
 }
@@ -552,13 +554,13 @@ static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHD
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The test set end packet.
  */
-static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoTestSetEnd(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     if (pPktHdr->cb != sizeof(ATSPKTREQTSETEND))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETEND));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTSETEND));
 
     PATSPKTREQTSETEND pReq = (PATSPKTREQTSETEND)pPktHdr;
 
@@ -568,14 +570,14 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
     {
         rc = pThis->Callbacks.pfnTestSetEnd(pThis->Callbacks.pvUser, pReq->szTag);
         if (RT_FAILURE(rc))
-            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Ending test set '%s' failed", pReq->szTag);
+            return atsReplyRC(pThis, pInst, pPktHdr, rc, "Ending test set '%s' failed", pReq->szTag);
     }
     if (RT_SUCCESS(rc))
     {
-        rc = atsReplyAck(pThis, pClient, pPktHdr);
+        rc = atsReplyAck(pThis, pInst, pPktHdr);
     }
     else
-        rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Ending test set failed");
+        rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Ending test set failed");
 
     return rc;
 }
@@ -587,15 +589,15 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
  *          VERR_NET_NOT_CONNECTED on unknown response (sending a bable reply),
  *          or whatever atsRecvPkt returns.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The original packet (for future use).
  */
-static int atsWaitForAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsWaitForAck(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     RT_NOREF(pPktHdr);
     /** @todo timeout? */
     PATSPKTHDR pReply;
-    int rc = atsRecvPkt(pThis, pClient, &pReply, false /*fAutoRetryOnFailure*/);
+    int rc = atsRecvPkt(pThis, pInst, &pReply, false /*fAutoRetryOnFailure*/);
     if (RT_SUCCESS(rc))
     {
         if (atsIsSameOpcode(pReply, "ACK"))
@@ -604,7 +606,7 @@ static int atsWaitForAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pP
             rc = VERR_GENERAL_FAILURE;
         else
         {
-            atsReplyBabble(pThis, pClient, "BABBLE  ");
+            atsReplyBabble(pThis, pInst, "BABBLE  ");
             rc = VERR_NET_NOT_CONNECTED;
         }
         RTMemFree(pReply);
@@ -617,26 +619,26 @@ static int atsWaitForAck(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pP
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The test set end packet.
  */
-static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoTestSetSend(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     if (pPktHdr->cb != sizeof(ATSPKTREQTSETSND))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTSETSND));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTSETSND));
 
     PATSPKTREQTSETSND pReq = (PATSPKTREQTSETSND)pPktHdr;
 
     int rc = VINF_SUCCESS;
 
     if (!pThis->Callbacks.pfnTestSetSendRead)
-        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Sending test set not implemented");
+        return atsReplyRC(pThis, pInst, pPktHdr, VERR_NOT_SUPPORTED, "Sending test set not implemented");
 
     if (pThis->Callbacks.pfnTestSetSendBegin)
     {
         rc = pThis->Callbacks.pfnTestSetSendBegin(pThis->Callbacks.pvUser, pReq->szTag);
         if (RT_FAILURE(rc))
-            return atsReplyRC(pThis, pClient, pPktHdr, rc, "Beginning sending test set '%s' failed", pReq->szTag);
+            return atsReplyRC(pThis, pInst, pPktHdr, rc, "Beginning sending test set '%s' failed", pReq->szTag);
     }
 
     for (;;)
@@ -649,6 +651,9 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
             char        ab[_64K];
             char        abPadding[ATSPKT_ALIGNMENT];
         }       Pkt;
+#ifdef DEBUG
+        RT_ZERO(Pkt);
+#endif
         size_t  cbRead = 0;
         rc = pThis->Callbacks.pfnTestSetSendRead(pThis->Callbacks.pvUser, pReq->szTag, &Pkt.ab, sizeof(Pkt.ab), &cbRead);
         if (   RT_FAILURE(rc)
@@ -658,25 +663,27 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
                 || (RT_SUCCESS(rc) && cbRead == 0))
             {
                 Pkt.uCrc32 = RTCrc32Finish(uMyCrc32);
-                rc = atsReplyInternal(pThis, pClient, &Pkt.Hdr, "DATA EOF", sizeof(uint32_t) /* uCrc32 */);
+                rc = atsReplyInternal(pThis, pInst, &Pkt.Hdr, "DATA EOF", sizeof(uint32_t) /* uCrc32 */);
                 if (RT_SUCCESS(rc))
-                    rc = atsWaitForAck(pThis, pClient, &Pkt.Hdr);
+                    rc = atsWaitForAck(pThis, pInst, &Pkt.Hdr);
             }
             else
-                rc = atsReplyRC(pThis, pClient, pPktHdr, rc, "Sending data for test set '%s' failed", pReq->szTag);
+                rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Sending data for test set '%s' failed", pReq->szTag);
             break;
         }
 
         uMyCrc32   = RTCrc32Process(uMyCrc32, &Pkt.ab[0], cbRead);
         Pkt.uCrc32 = RTCrc32Finish(uMyCrc32);
 
+        Log2Func(("cbRead=%zu -> uCrc32=%#x\n", cbRead, Pkt.uCrc32));
+
         Assert(cbRead <= sizeof(Pkt.ab));
 
-        rc = atsReplyInternal(pThis, pClient, &Pkt.Hdr, "DATA    ", sizeof(uint32_t) /* uCrc32 */ + cbRead);
+        rc = atsReplyInternal(pThis, pInst, &Pkt.Hdr, "DATA    ", sizeof(uint32_t) /* uCrc32 */ + cbRead);
         if (RT_FAILURE(rc))
             break;
 
-        rc = atsWaitForAck(pThis, pClient, &Pkt.Hdr);
+        rc = atsWaitForAck(pThis, pInst, &Pkt.Hdr);
         if (RT_FAILURE(rc))
             break;
     }
@@ -685,7 +692,7 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
     {
         int rc2 = pThis->Callbacks.pfnTestSetSendEnd(pThis->Callbacks.pvUser, pReq->szTag);
         if (RT_FAILURE(rc2))
-            return atsReplyRC(pThis, pClient, pPktHdr, rc2, "Ending sending test set '%s' failed", pReq->szTag);
+            return atsReplyRC(pThis, pInst, pPktHdr, rc2, "Ending sending test set '%s' failed", pReq->szTag);
     }
 
     return rc;
@@ -696,26 +703,26 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet header.
  */
-static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoTonePlay(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
     if (pPktHdr->cb < sizeof(ATSPKTREQTONEPLAY))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTONEPLAY));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTONEPLAY));
 
-    if (pClient->enmState != ATSCLIENTSTATE_READY)
-        return atsReplyInvalidState(pThis, pClient, pPktHdr);
+    if (pInst->enmState != ATSCLIENTSTATE_READY)
+        return atsReplyInvalidState(pThis, pInst, pPktHdr);
 
     if (!pThis->Callbacks.pfnTonePlay)
-        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Playing tones not supported");
+        return atsReplyRC(pThis, pInst, pPktHdr, VERR_NOT_SUPPORTED, "Playing tones not supported");
 
     PATSPKTREQTONEPLAY pReq = (PATSPKTREQTONEPLAY)pPktHdr;
     rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
-    int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
+    int rc2 = atsReplyAck(pThis, pInst, pPktHdr);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -727,26 +734,26 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pP
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  * @param   pPktHdr             The packet header.
  */
-static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR pPktHdr)
+static int atsDoToneRecord(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
 {
     int rc = VINF_SUCCESS;
 
     if (pPktHdr->cb < sizeof(ATSPKTREQTONEREC))
-        return atsReplyBadSize(pThis, pClient, pPktHdr, sizeof(ATSPKTREQTONEREC));
+        return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTONEREC));
 
-    if (pClient->enmState != ATSCLIENTSTATE_READY)
-        return atsReplyInvalidState(pThis, pClient, pPktHdr);
+    if (pInst->enmState != ATSCLIENTSTATE_READY)
+        return atsReplyInvalidState(pThis, pInst, pPktHdr);
 
     if (!pThis->Callbacks.pfnToneRecord)
-        return atsReplyRC(pThis, pClient, pPktHdr, VERR_NOT_SUPPORTED, "Recording tones not supported");
+        return atsReplyRC(pThis, pInst, pPktHdr, VERR_NOT_SUPPORTED, "Recording tones not supported");
 
     PATSPKTREQTONEREC pReq = (PATSPKTREQTONEREC)pPktHdr;
     rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
-    int rc2 = atsReplyAck(pThis, pClient, pPktHdr);
+    int rc2 = atsReplyAck(pThis, pInst, pPktHdr);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -758,15 +765,15 @@ static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pClient, PATSPKTHDR 
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pClient             The ATS client structure sending the request.
+ * @param   pInst             The ATS client structure sending the request.
  */
-static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
+static int atsClientReqProcess(PATSSERVER pThis, PATSSERVERINST pInst)
 {
     /*
      * Read client command packet and process it.
      */
     PATSPKTHDR pPktHdr = NULL;
-    int rc = atsRecvPkt(pThis, pClient, &pPktHdr, true /*fAutoRetryOnFailure*/);
+    int rc = atsRecvPkt(pThis, pInst, &pPktHdr, true /*fAutoRetryOnFailure*/);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -775,24 +782,24 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
      */
     /* Connection: */
     if (     atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_HOWDY))
-        rc = atsDoHowdy(pThis, pClient, pPktHdr);
+        rc = atsDoHowdy(pThis, pInst, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_BYE))
-        rc = atsDoBye(pThis, pClient, pPktHdr);
+        rc = atsDoBye(pThis, pInst, pPktHdr);
     /* Test set handling: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_BEGIN))
-        rc = atsDoTestSetBegin(pThis, pClient, pPktHdr);
+        rc = atsDoTestSetBegin(pThis, pInst, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_END))
-        rc = atsDoTestSetEnd(pThis, pClient, pPktHdr);
+        rc = atsDoTestSetEnd(pThis, pInst, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_SEND))
-        rc = atsDoTestSetSend(pThis, pClient, pPktHdr);
+        rc = atsDoTestSetSend(pThis, pInst, pPktHdr);
     /* Audio testing: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_PLAY))
-        rc = atsDoTonePlay(pThis, pClient, pPktHdr);
+        rc = atsDoTonePlay(pThis, pInst, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TONE_RECORD))
-        rc = atsDoToneRecord(pThis, pClient, pPktHdr);
+        rc = atsDoToneRecord(pThis, pInst, pPktHdr);
     /* Misc: */
     else
-        rc = atsReplyUnknown(pThis, pClient, pPktHdr);
+        rc = atsReplyUnknown(pThis, pInst, pPktHdr);
 
     RTMemFree(pPktHdr);
 
@@ -803,13 +810,13 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pClient)
  * Destroys a client instance.
  *
  * @returns nothing.
- * @param   pClient             The ATS client structure.
+ * @param   pInst               The opaque ATS instance structure.
  */
-static void atsClientDestroy(PATSCLIENTINST pClient)
+static void atsClientDestroy(PATSSERVERINST pInst)
 {
-    if (pClient->pszHostname)
-        RTStrFree(pClient->pszHostname);
-    RTMemFree(pClient);
+    if (pInst->pszHostname)
+        RTStrFree(pInst->pszHostname);
+    RTMemFree(pInst);
 }
 
 /**
@@ -824,7 +831,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
 
     unsigned    cClientsMax = 0;
     unsigned    cClientsCur = 0;
-    PATSCLIENTINST *papClients  = NULL;
+    PATSSERVERINST *papInsts  = NULL;
 
     /* Add the pipe to the poll set. */
     int rc = RTPollSetAddPipe(pThis->hPollSet, pThis->hPipeR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, 0);
@@ -852,7 +859,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
 
                     RTCritSectEnter(&pThis->CritSectClients);
                     /* Walk the list and add all new clients. */
-                    PATSCLIENTINST pIt, pItNext;
+                    PATSSERVERINST pIt, pItNext;
                     RTListForEachSafe(&pThis->LstClientsNew, pIt, pItNext, ATSCLIENTINST, NdLst)
                     {
                         RTListNodeRemove(&pIt->NdLst);
@@ -860,11 +867,11 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                         if (cClientsCur == cClientsMax)
                         {
                             /* Realloc to accommodate for the new clients. */
-                            PATSCLIENTINST *papClientsNew = (PATSCLIENTINST *)RTMemRealloc(papClients, (cClientsMax + 10) * sizeof(PATSCLIENTINST));
-                            if (RT_LIKELY(papClientsNew))
+                            PATSSERVERINST *papInstsNew = (PATSSERVERINST *)RTMemRealloc(papInsts, (cClientsMax + 10) * sizeof(PATSSERVERINST));
+                            if (RT_LIKELY(papInstsNew))
                             {
                                 cClientsMax += 10;
-                                papClients = papClientsNew;
+                                papInsts = papInstsNew;
                             }
                         }
                         if (cClientsCur < cClientsMax)
@@ -872,24 +879,24 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                             /* Find a free slot in the client array. */
                             unsigned idxSlt = 0;
                             while (   idxSlt < cClientsMax
-                                   && papClients[idxSlt] != NULL)
+                                   && papInsts[idxSlt] != NULL)
                                 idxSlt++;
 
-                            rc = pThis->pTransport->pfnPollSetAdd(&pThis->TransportInst, pThis->hPollSet, pIt->pTransportClient, idxSlt + 1);
+                            rc = pThis->pTransport->pfnPollSetAdd(pThis->pTransportInst, pThis->hPollSet, pIt->pTransportClient, idxSlt + 1);
                             if (RT_SUCCESS(rc))
                             {
                                 cClientsCur++;
-                                papClients[idxSlt] = pIt;
+                                papInsts[idxSlt] = pIt;
                             }
                             else
                             {
-                                pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pIt->pTransportClient);
+                                pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pIt->pTransportClient);
                                 atsClientDestroy(pIt);
                             }
                         }
                         else
                         {
-                            pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pIt->pTransportClient);
+                            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pIt->pTransportClient);
                             atsClientDestroy(pIt);
                         }
                     }
@@ -898,22 +905,22 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                 else
                 {
                     /* Client sends a request, pick the right client and process it. */
-                    PATSCLIENTINST pClient = papClients[uId - 1];
-                    AssertPtr(pClient);
+                    PATSSERVERINST pInst = papInsts[uId - 1];
+                    AssertPtr(pInst);
                     if (fEvts & RTPOLL_EVT_READ)
-                        rc = atsClientReqProcess(pThis, pClient);
+                        rc = atsClientReqProcess(pThis, pInst);
 
                     if (   (fEvts & RTPOLL_EVT_ERROR)
                         || RT_FAILURE(rc))
                     {
                         /* Close connection and remove client from array. */
-                        rc = pThis->pTransport->pfnPollSetRemove(&pThis->TransportInst, pThis->hPollSet, pClient->pTransportClient, uId);
+                        rc = pThis->pTransport->pfnPollSetRemove(pThis->pTransportInst, pThis->hPollSet, pInst->pTransportClient, uId);
                         AssertRC(rc);
 
-                        pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pClient->pTransportClient);
-                        papClients[uId - 1] = NULL;
+                        pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
+                        papInsts[uId - 1] = NULL;
                         cClientsCur--;
-                        atsClientDestroy(pClient);
+                        atsClientDestroy(pInst);
                     }
                 }
             }
@@ -928,7 +935,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
  *
  * @returns VBox status code.
  */
-static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) atsConnectThread(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread);
 
@@ -945,7 +952,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
          * for every new client.
          */
         PATSTRANSPORTCLIENT pTransportClient;
-        rc = pThis->pTransport->pfnWaitForConnect(&pThis->TransportInst, &pTransportClient);
+        rc = pThis->pTransport->pfnWaitForConnect(pThis->pTransportInst, &pTransportClient);
         if (RT_FAILURE(rc))
             continue;
 
@@ -953,16 +960,16 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
          * New connection, create new client structure and spin of
          * the request handling thread.
          */
-        PATSCLIENTINST pClient = (PATSCLIENTINST)RTMemAllocZ(sizeof(ATSCLIENTINST));
-        if (RT_LIKELY(pClient))
+        PATSSERVERINST pInst = (PATSSERVERINST)RTMemAllocZ(sizeof(ATSCLIENTINST));
+        if (RT_LIKELY(pInst))
         {
-            pClient->enmState         = ATSCLIENTSTATE_INITIALISING;
-            pClient->pTransportClient = pTransportClient;
-            pClient->pszHostname      = NULL;
+            pInst->enmState         = ATSCLIENTSTATE_INITIALISING;
+            pInst->pTransportClient = pTransportClient;
+            pInst->pszHostname      = NULL;
 
             /* Add client to the new list and inform the worker thread. */
             RTCritSectEnter(&pThis->CritSectClients);
-            RTListAppend(&pThis->LstClientsNew, &pClient->NdLst);
+            RTListAppend(&pThis->LstClientsNew, &pInst->NdLst);
             RTCritSectLeave(&pThis->CritSectClients);
 
             size_t cbWritten = 0;
@@ -973,7 +980,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
         else
         {
             RTMsgError("Creating new client structure failed with out of memory error\n");
-            pThis->pTransport->pfnNotifyBye(&pThis->TransportInst, pTransportClient);
+            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pTransportClient);
         }
     }
 
@@ -981,17 +988,29 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
 }
 
 /**
- * Initializes the global ATS state.
+ * Creates an ATS instance.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The ATS instance to create.
+ */
+int AudioTestSvcCreate(PATSSERVER pThis)
+{
+    /*
+     * The default transporter is the first one.
+     */
+    pThis->pTransport = g_apTransports[0]; /** @todo Make this dynamic. */
+
+    return pThis->pTransport->pfnCreate(&pThis->pTransportInst);
+}
+
+/**
+ * Initializes an ATS instance.
  *
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
- * @param   pszBindAddr         Bind address. Empty means any address.
- *                              If set to NULL, "127.0.0.1" will be used.
- * @param   uBindPort           Bind port. If set to 0, ATS_DEFAULT_PORT is being used.
  * @param   pCallbacks          The callbacks table to use.
- *  */
-int AudioTestSvcInit(PATSSERVER pThis,
-                     const char *pszBindAddr, uint32_t uBindPort, PCATSCALLBACKS pCallbacks)
+ */
+int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
 {
     memcpy(&pThis->Callbacks, pCallbacks, sizeof(ATSCALLBACKS));
 
@@ -1004,72 +1023,80 @@ int AudioTestSvcInit(PATSSERVER pThis,
     RTListInit(&pThis->LstClientsNew);
 
     /*
-     * The default transporter is the first one.
-     */
-    pThis->pTransport = g_apTransports[0];
-
-    /*
      * Initialize the transport layer.
      */
-    int rc = pThis->pTransport->pfnInit(&pThis->TransportInst, pszBindAddr ? pszBindAddr : ATS_TCP_HOST_DEFAULT_ADDR_STR,
-                                         uBindPort ? uBindPort : ATS_TCP_HOST_DEFAULT_PORT);
+    int rc = RTCritSectInit(&pThis->CritSectClients);
     if (RT_SUCCESS(rc))
     {
-        rc = RTCritSectInit(&pThis->CritSectClients);
+        rc = RTPollSetCreate(&pThis->hPollSet);
         if (RT_SUCCESS(rc))
         {
-            rc = RTPollSetCreate(&pThis->hPollSet);
+            rc = RTPipeCreate(&pThis->hPipeR, &pThis->hPipeW, 0);
             if (RT_SUCCESS(rc))
             {
-                rc = RTPipeCreate(&pThis->hPipeR, &pThis->hPipeW, 0);
+                /* Spin off the thread serving connections. */
+                rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                                    "AUDTSTSRVC");
                 if (RT_SUCCESS(rc))
-                {
-                    /* Spin off the thread serving connections. */
-                    rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-                                        "AUDTSTSRVC");
-                    if (RT_SUCCESS(rc))
-                        return VINF_SUCCESS;
-                    else
-                        RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
-
-                    RTPipeClose(pThis->hPipeR);
-                    RTPipeClose(pThis->hPipeW);
-                }
+                    return VINF_SUCCESS;
                 else
-                    RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+                    RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
 
-                RTPollSetDestroy(pThis->hPollSet);
+                RTPipeClose(pThis->hPipeR);
+                RTPipeClose(pThis->hPipeW);
             }
             else
-                RTMsgError("Creating pollset failed with %Rrc\n", rc);
+                RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
 
-            RTCritSectDelete(&pThis->CritSectClients);
+            RTPollSetDestroy(pThis->hPollSet);
         }
         else
-            RTMsgError("Creating global critical section failed with %Rrc\n", rc);
+            RTMsgError("Creating pollset failed with %Rrc\n", rc);
+
+        RTCritSectDelete(&pThis->CritSectClients);
     }
     else
-        RTMsgError("Initializing the transport layer failed with %Rrc\n", rc);
+        RTMsgError("Creating global critical section failed with %Rrc\n", rc);
 
     return rc;
+}
+
+/**
+ * Handles a command line option.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The ATS instance to handle option for.
+ * @param   ch                  Option (short) to handle.
+ * @param   pVal                Option union to store the result in on success.
+ */
+int AudioTestSvcHandleOption(PATSSERVER pThis, int ch, PCRTGETOPTUNION pVal)
+{
+    AssertPtrReturn(pThis->pTransport, VERR_WRONG_ORDER); /* Must be creatd first. */
+    if (!pThis->pTransport->pfnOption)
+        return VERR_GETOPT_UNKNOWN_OPTION;
+    return pThis->pTransport->pfnOption(pThis->pTransportInst, ch, pVal);
 }
 
 /**
  * Starts a formerly initialized ATS instance.
  *
  * @returns VBox status code.
- * @param   pThis               The ATS instance.
+ * @param   pThis               The ATS instance to start.
  */
 int AudioTestSvcStart(PATSSERVER pThis)
 {
-    /* Spin off the main thread. */
-    int rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "AUDTSTSRVM");
+    int rc = pThis->pTransport->pfnStart(pThis->pTransportInst);
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadUserWait(pThis->hThreadMain, RT_MS_30SEC);
+        /* Spin off the connection thread. */
+        rc = RTThreadCreate(&pThis->hThreadMain, atsConnectThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                            "AUDTSTSRVM");
         if (RT_SUCCESS(rc))
-            pThis->fStarted = true;
+        {
+            rc = RTThreadUserWait(pThis->hThreadMain, RT_MS_30SEC);
+            if (RT_SUCCESS(rc))
+                pThis->fStarted = true;
+        }
     }
 
     return rc;
@@ -1089,7 +1116,7 @@ int AudioTestSvcShutdown(PATSSERVER pThis)
     ASMAtomicXchgBool(&pThis->fTerminate, true);
 
     if (pThis->pTransport)
-        pThis->pTransport->pfnTerm(&pThis->TransportInst);
+        pThis->pTransport->pfnTerm(pThis->pTransportInst);
 
     size_t cbWritten;
     int rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);
@@ -1148,7 +1175,7 @@ static int audioTestSvcDestroyInternal(PATSSERVER pThis)
 
     pThis->pTransport = NULL;
 
-    PATSCLIENTINST pIt, pItNext;
+    PATSSERVERINST pIt, pItNext;
     RTListForEachSafe(&pThis->LstClientsNew, pIt, pItNext, ATSCLIENTINST, NdLst)
     {
         RTListNodeRemove(&pIt->NdLst);
@@ -1174,6 +1201,19 @@ static int audioTestSvcDestroyInternal(PATSSERVER pThis)
  */
 int AudioTestSvcDestroy(PATSSERVER pThis)
 {
-    return audioTestSvcDestroyInternal(pThis);
-}
+    int rc = audioTestSvcDestroyInternal(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        if (pThis->pTransport)
+        {
+            if (   pThis->pTransport->pfnDestroy
+                && pThis->pTransportInst)
+            {
+                pThis->pTransport->pfnDestroy(pThis->pTransportInst);
+                pThis->pTransportInst = NULL;
+            }
+        }
+    }
 
+    return rc;
+}

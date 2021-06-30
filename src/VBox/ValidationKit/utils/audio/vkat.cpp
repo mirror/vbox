@@ -634,6 +634,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
 
+    int rc = AudioTestSvcCreate(&TstEnv.u.Guest.Srv);
+
     const char *pszDevice     = NULL; /* Custom device to use. Can be NULL if not being used. */
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
@@ -644,15 +646,15 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     bool        fPcmSigned    = true;
 
     const char *pszGuestTcpAddr  = NULL;
-    uint16_t    uGuestTcpPort    = ATS_TCP_GUEST_DEFAULT_PORT;
+    uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
     const char *pszValKitTcpAddr = NULL;
-    uint16_t    uValKitTcpPort   = ATS_TCP_HOST_DEFAULT_PORT;
+    uint16_t    uValKitTcpPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
 
-    int           rc;
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)))
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)))
     {
-        switch (rc)
+        switch (ch)
         {
             case 'a':
                 for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
@@ -756,7 +758,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                rc = AudioTestSvcHandleOption(&TstEnv.u.Guest.Srv, ch, &ValueUnion);
+                if (RT_FAILURE(rc))
+                    return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
 
@@ -773,16 +777,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
 
-    if (TstEnv.enmMode == AUDIOTESTMODE_HOST)
-    {
-        if (!pszGuestTcpAddr)
-            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No guest ATS address (--guest-ats-addr) specified!\n");
-    }
-
     /* For now all tests have the same test environment. */
-    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio,
-                          pszValKitTcpAddr, uValKitTcpPort,
-                          pszGuestTcpAddr, uGuestTcpPort);
+    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio);
     if (RT_SUCCESS(rc))
         rc = audioTestWorker(&TstEnv);
 
@@ -805,7 +801,8 @@ const VKATCMD g_CmdTest =
     "Runs audio tests and creates an audio test set.",
     g_aCmdTestOptions,
     RT_ELEMENTS(g_aCmdTestOptions),
-    audioTestCmdTestHelp
+    audioTestCmdTestHelp,
+    true /* fNeedsTransport */
 };
 
 
@@ -984,6 +981,7 @@ const VKATCMD g_CmdVerify =
     g_aCmdVerifyOptions,
     RT_ELEMENTS(g_aCmdVerifyOptions),
     NULL,
+    false /* fNeedsTransport */
 };
 
 
@@ -1065,6 +1063,12 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                 pszHelp = pCmd->pfnOptionHelp(&paOptions[i]);
             if (pszHelp)
                 RTStrmPrintf(pStrm, "    %s\n", pszHelp);
+        }
+
+        if (pCmd->fNeedsTransport)
+        {
+            for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
+                g_apTransports[iTx]->pfnUsage(pStrm);
         }
     }
 
@@ -1154,13 +1158,29 @@ int main(int argc, char **argv)
                     PCVKATCMD const pCmd = g_apCommands[iCmd];
                     if (strcmp(ValueUnion.psz, pCmd->pszCommand) == 0)
                     {
-                        size_t const cCombinedOptions  = pCmd->cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
+                        size_t cCombinedOptions  = pCmd->cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
+                        if (pCmd->fNeedsTransport)
+                        {
+                            for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
+                                cCombinedOptions += g_apTransports[iTx]->cOpts;
+                        }
                         PRTGETOPTDEF paCombinedOptions = (PRTGETOPTDEF)RTMemAlloc(cCombinedOptions * sizeof(RTGETOPTDEF));
                         if (paCombinedOptions)
                         {
+                            unsigned idxOpts = 0;
                             memcpy(paCombinedOptions, g_aCmdCommonOptions, sizeof(g_aCmdCommonOptions));
-                            memcpy(&paCombinedOptions[RT_ELEMENTS(g_aCmdCommonOptions)],
-                                   pCmd->paOptions, pCmd->cOptions * sizeof(RTGETOPTDEF));
+                            idxOpts += RT_ELEMENTS(g_aCmdCommonOptions);
+                            memcpy(&paCombinedOptions[idxOpts], pCmd->paOptions, pCmd->cOptions * sizeof(RTGETOPTDEF));
+                            idxOpts += pCmd->cOptions;
+                            if (pCmd->fNeedsTransport)
+                            {
+                                for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
+                                {
+                                    memcpy(&paCombinedOptions[idxOpts],
+                                           g_apTransports[iTx]->paOpts, g_apTransports[iTx]->cOpts * sizeof(RTGETOPTDEF));
+                                    idxOpts += g_apTransports[iTx]->cOpts;
+                                }
+                            }
 
                             rc = RTGetOptInit(&GetState, argc, argv, paCombinedOptions, cCombinedOptions,
                                               GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);

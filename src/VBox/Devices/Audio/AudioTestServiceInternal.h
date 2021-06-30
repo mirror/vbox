@@ -45,20 +45,71 @@ typedef struct ATSTRANSPORT
     char            szName[16];
     /** The description. */
     const char     *pszDesc;
+    /** Pointer to an array of options. */
+    PCRTGETOPTDEF   paOpts;
+    /** The number of options in the array. */
+    size_t          cOpts;
 
     /**
-     * Initializes the transport layer.
+     * Print the usage information for this transport layer.
+     *
+     * @param   pStream             The stream to print the usage info to.
+     *
+     * @remarks This is only required if TXSTRANSPORT::cOpts is greater than 0.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnUsage,(PRTSTREAM pStream));
+
+    /**
+     * Creates a transport instance.
+     *
+     * @returns IPRT status code.  On errors, the transport layer shall call
+     *          RTMsgError to display the error details to the user.
+     * @param   ppThis              Where to return the created transport instance on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (PPATSTRANSPORTINST ppThis));
+
+    /**
+     * Destroys a transport instance.
+     *
+     * On errors, the transport layer shall call RTMsgError to display the error
+     * details to the user.
      *
      * @returns IPRT status code.  On errors, the transport layer shall call
      *          RTMsgError to display the error details to the user.
      * @param   pThis               The transport instance.
-     * @param   pszBindAddr         Bind address. Empty means any address.
-     * @param   uBindPort           Bind port. If set to 0, ATS_DEFAULT_PORT is being used.
+     *                              The pointer will be invalid on return.
      */
-    DECLR3CALLBACKMEMBER(int, pfnInit, (PATSTRANSPORTINST pThis, const char *pszBindAddr, uint32_t uBindPort));
+    DECLR3CALLBACKMEMBER(int, pfnDestroy, (PATSTRANSPORTINST pThis));
 
     /**
-     * Terminate the transport layer, closing and freeing resources.
+     * Handle an option.
+     *
+     * When encountering an options that is not part of the base options, we'll call
+     * this method for each transport layer until one handles it.
+     *
+     * @retval  VINF_SUCCESS if handled.
+     * @retval  VERR_TRY_AGAIN if not handled.
+     * @retval  VERR_INVALID_PARAMETER if we should exit with a non-zero status.
+     *
+     * @param   pThis               Transport instance to set options for.
+     * @param   ch                  The short option value.
+     * @param   pVal                Pointer to the value union.
+     *
+     * @remarks This is only required if TXSTRANSPORT::cOpts is greater than 0.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnOption,(PATSTRANSPORTINST pThis, int ch, PCRTGETOPTUNION pVal));
+
+    /**
+     * Starts a transport instance.
+     *
+     * @returns IPRT status code.  On errors, the transport layer shall call
+     *          RTMsgError to display the error details to the user.
+     * @param   pThis               Transport instance to initialize.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStart, (PATSTRANSPORTINST pThis));
+
+    /**
+     * Terminate a transport instance, closing and freeing resources.
      *
      * On errors, the transport layer shall call RTMsgError to display the error
      * details to the user.

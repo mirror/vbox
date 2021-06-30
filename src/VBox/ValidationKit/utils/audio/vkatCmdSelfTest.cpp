@@ -76,9 +76,7 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     PDMAudioPropsInit(&pTstEnvGst->Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    rc = audioTestEnvInit(pTstEnvGst, pTstEnvGst->DrvStack.pDrvReg, pCtx->fWithDrvAudio,
-                          pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
-                          pCtx->Guest.szAtsAddr, pCtx->Guest.uAtsPort);
+    rc = audioTestEnvInit(pTstEnvGst, pTstEnvGst->DrvStack.pDrvReg, pCtx->fWithDrvAudio);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
@@ -158,9 +156,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
          */
         pTstEnvHst->enmMode = AUDIOTESTMODE_HOST;
 
-        rc = audioTestEnvInit(pTstEnvHst, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */,
-                              pCtx->Host.szValKitAtsAddr, pCtx->Host.uValKitAtsPort,
-                              pCtx->Host.szGuestAtsAddr, pCtx->Host.uGuestAtsPort);
+        rc = audioTestEnvInit(pTstEnvHst, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestWorker(pTstEnvHst);
@@ -345,5 +341,6 @@ const VKATCMD g_CmdSelfTest =
     s_aCmdSelftestOptions,
     RT_ELEMENTS(s_aCmdSelftestOptions),
     audioTestCmdSelftestHelp,
+    true /* fNeedsTransport */
 };
 
