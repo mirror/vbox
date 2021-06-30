@@ -870,38 +870,39 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
     AUDIOTESTSET SetA, SetB;
     int rc = audioVerifyOpenTestSet(pszPathSetA, &SetA);
     if (RT_SUCCESS(rc))
-        rc = audioVerifyOpenTestSet(pszPathSetB, &SetB);
-
-    if (RT_SUCCESS(rc))
     {
-        AUDIOTESTERRORDESC errDesc;
-        rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
+        rc = audioVerifyOpenTestSet(pszPathSetB, &SetB);
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%RU32 errors occurred while verifying\n", AudioTestErrorDescCount(&errDesc));
-            if (AudioTestErrorDescFailed(&errDesc))
+            AUDIOTESTERRORDESC errDesc;
+            rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
+            if (RT_SUCCESS(rc))
             {
-                /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
-                PAUDIOTESTERRORENTRY pErrEntry;
-                RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
-                    RTTestFailed(g_hTest, pErrEntry->szDesc);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%RU32 errors occurred while verifying\n", AudioTestErrorDescCount(&errDesc));
+                if (AudioTestErrorDescFailed(&errDesc))
+                {
+                    /** @todo Use some AudioTestErrorXXX API for enumeration here later. */
+                    PAUDIOTESTERRORENTRY pErrEntry;
+                    RTListForEach(&errDesc.List, pErrEntry, AUDIOTESTERRORENTRY, Node)
+                        RTTestFailed(g_hTest, pErrEntry->szDesc);
+                }
+                else
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful\n");
+
+                AudioTestErrorDescDestroy(&errDesc);
             }
             else
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification successful\n");
+                RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
 
-            AudioTestErrorDescDestroy(&errDesc);
+            if (!g_fDrvAudioDebug) /* Don't wipe stuff when debugging. Can be useful for introspecting data. */
+                AudioTestSetWipe(&SetB);
+            AudioTestSetClose(&SetB);
         }
-        else
-            RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
+
+        if (!g_fDrvAudioDebug) /* Ditto. */
+            AudioTestSetWipe(&SetA);
+        AudioTestSetClose(&SetA);
     }
-
-    if (!g_fDrvAudioDebug) /* Don't wipe stuff when debugging. Can be useful for introspecting data. */
-        AudioTestSetWipe(&SetA);
-    AudioTestSetClose(&SetA);
-
-    if (!g_fDrvAudioDebug) /* Ditto. */
-        AudioTestSetWipe(&SetB);
-    AudioTestSetClose(&SetB);
 
     RTTestSubDone(g_hTest);
 
