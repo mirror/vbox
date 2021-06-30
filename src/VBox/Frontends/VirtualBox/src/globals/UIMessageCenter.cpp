@@ -630,10 +630,20 @@ void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const
 
 void UIMessageCenter::cannotEnumerateHostUSBDevices(const CHost &comHost, QWidget *pParent  /* = 0 */) const
 {
+    QString strHelpKeyword;
+    /* Refer users to manual's trouble shooting section depending on the host platform: */
+#if defined(RT_OS_LINUX)
+    strHelpKeyword = "ts_usb-linux";
+#elif defined(RT_OS_WINDOWS)
+    strHelpKeyword = "ts_win-guests";
+#elif defined(RT_OS_SOLARIS)
+    strHelpKeyword = "ts_sol-guests";
+#elif defined(RT_OS_DARWIN)
+#endif
     error(pParent, MessageType_Warning,
           tr("Failed to enumerate host USB devices."),
           UIErrorString::formatErrorInfo(comHost), "USBEnumerationWarning",
-          "install-linux-vboxusers" /* help keyword */);
+          strHelpKeyword);
 }
 
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
