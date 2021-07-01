@@ -1537,10 +1537,7 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
  * @param   pSet                Test set the section contains.
  * @param   pszSec              Name of section to retrieve object handle for.
  * @param   phSec               Where to store the object handle on success.
- * @note
  */
-
-/** @copydoc <struct>::pfnXXX */
 static int audioTestSetGetSection(PAUDIOTESTSET pSet, const char *pszSec, PAUDIOTESTOBJHANDLE phSec)
 {
     int rc = RTStrCopy(phSec->szSec, sizeof(phSec->szSec), pszSec);
@@ -1889,7 +1886,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
         rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %u%% (%zu bytes, %zums) %s than '%s'",
                                         pObjA->szName,
                                         cbSizeA > cbSizeB ? 100 - ((cbSizeB * 100) / cbSizeA) : 100 - ((cbSizeA * 100) / cbSizeB),
-                                        cbDiffAbs, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, cbDiffAbs),
+                                        cbDiffAbs, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, (uint32_t)cbDiffAbs),
                                         cbSizeA > cbSizeB ? "bigger" : "smaller",
                                         pObjB->szName);
         AssertRC(rc2);
