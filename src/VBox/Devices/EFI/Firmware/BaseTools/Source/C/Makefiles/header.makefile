@@ -28,6 +28,9 @@ ifndef HOST_ARCH
   else ifneq (,$(findstring arm,$(uname_m)))
     HOST_ARCH=ARM
   endif
+  ifneq (,$(findstring riscv64,$(uname_m)))
+    HOST_ARCH=RISCV64
+  endif
   ifndef HOST_ARCH
     $(info Could not detected HOST_ARCH from uname results)
     $(error HOST_ARCH is not defined!)
@@ -38,12 +41,19 @@ endif
 CYGWIN:=$(findstring CYGWIN, $(shell uname -s))
 LINUX:=$(findstring Linux, $(shell uname -s))
 DARWIN:=$(findstring Darwin, $(shell uname -s))
-
+ifeq ($(CXX), llvm)
+BUILD_CC ?= $(CLANG_BIN)clang
+BUILD_CXX ?= $(CLANG_BIN)clang++
+BUILD_AS ?= $(CLANG_BIN)clang
+BUILD_AR ?= $(CLANG_BIN)llvm-ar
+BUILD_LD ?= $(CLANG_BIN)llvm-ld
+else
 BUILD_CC ?= gcc
 BUILD_CXX ?= g++
 BUILD_AS ?= gcc
 BUILD_AR ?= ar
 BUILD_LD ?= ld
+endif
 LINKER ?= $(BUILD_CC)
 ifeq ($(HOST_ARCH), IA32)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/Ia32/
@@ -56,6 +66,9 @@ ARCH_INCLUDE = -I $(MAKEROOT)/Include/Arm/
 
 else ifeq ($(HOST_ARCH), AARCH64)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/AArch64/
+
+else ifeq ($(HOST_ARCH), RISCV64)
+ARCH_INCLUDE = -I $(MAKEROOT)/Include/RiscV64/
 
 else
 $(error Bad HOST_ARCH)
@@ -72,14 +85,25 @@ ifeq ($(DARWIN),Darwin)
 BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror \
 -Wno-deprecated-declarations -Wno-self-assign -Wno-unused-result -nostdlib -g
 else
+ifeq ($(CXX), llvm)
+BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
+-fno-delete-null-pointer-checks -Wall -Werror \
+-Wno-deprecated-declarations -Wno-self-assign \
+-Wno-unused-result -nostdlib -g
+else
 BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
 -fno-delete-null-pointer-checks -Wall -Werror \
 -Wno-deprecated-declarations -Wno-stringop-truncation -Wno-restrict \
 -Wno-unused-result -nostdlib -g
 endif
+endif
+ifeq ($(CXX), llvm)
+BUILD_LFLAGS =
+BUILD_CXXFLAGS = -Wno-deprecated-register -Wno-unused-result
+else
 BUILD_LFLAGS =
 BUILD_CXXFLAGS = -Wno-unused-result
-
+endif
 ifeq ($(HOST_ARCH), IA32)
 #
 # Snow Leopard  is a 32-bit and 64-bit environment. uname -m returns i386, but gcc defaults

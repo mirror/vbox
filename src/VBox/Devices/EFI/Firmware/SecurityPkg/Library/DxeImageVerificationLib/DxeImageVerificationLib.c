@@ -59,7 +59,11 @@ UINT8 mHashOidValue[] = {
   };
 
 HASH_TABLE mHash[] = {
+#ifndef DISABLE_SHA1_DEPRECATED_INTERFACES
   { L"SHA1",   20, &mHashOidValue[0],  5, Sha1GetContextSize,   Sha1Init,   Sha1Update,   Sha1Final  },
+#else
+  { L"SHA1",   20, &mHashOidValue[0],  5, NULL,                 NULL,       NULL,         NULL       },
+#endif
   { L"SHA224", 28, &mHashOidValue[5],  9, NULL,                 NULL,       NULL,         NULL       },
   { L"SHA256", 32, &mHashOidValue[14], 9, Sha256GetContextSize, Sha256Init, Sha256Update, Sha256Final},
   { L"SHA384", 48, &mHashOidValue[23], 9, Sha384GetContextSize, Sha384Init, Sha384Update, Sha384Final},
@@ -315,10 +319,12 @@ HashPeImage (
   ZeroMem (mImageDigest, MAX_DIGEST_SIZE);
 
   switch (HashAlg) {
+#ifndef DISABLE_SHA1_DEPRECATED_INTERFACES
   case HASHALG_SHA1:
     mImageDigestSize = SHA1_DIGEST_SIZE;
     mCertType        = gEfiCertSha1Guid;
     break;
+#endif
 
   case HASHALG_SHA256:
     mImageDigestSize = SHA256_DIGEST_SIZE;
@@ -1465,7 +1471,7 @@ IsAllowedByDb (
 
   //
   // Fetch 'dbx' content. If 'dbx' doesn't exist, continue to check 'db'.
-  // If any other errors occured, no need to check 'db' but just return
+  // If any other errors occurred, no need to check 'db' but just return
   // not-allowed-by-db (FALSE) to avoid bypass.
   //
   DbxDataSize = 0;
@@ -1652,6 +1658,8 @@ DxeImageVerificationHandler (
   UINT8                                *AuthData;
   UINTN                                AuthDataSize;
   EFI_IMAGE_DATA_DIRECTORY             *SecDataDir;
+  UINT32                               SecDataDirEnd;
+  UINT32                               SecDataDirLeft;
   UINT32                               OffSet;
   CHAR16                               *NameStr;
   RETURN_STATUS                        PeCoffStatus;
@@ -1849,12 +1857,18 @@ DxeImageVerificationHandler (
   // "Attribute Certificate Table".
   // The first certificate starts at offset (SecDataDir->VirtualAddress) from the start of the file.
   //
+  SecDataDirEnd = SecDataDir->VirtualAddress + SecDataDir->Size;
   for (OffSet = SecDataDir->VirtualAddress;
-       OffSet < (SecDataDir->VirtualAddress + SecDataDir->Size);
+       OffSet < SecDataDirEnd;
        OffSet += (WinCertificate->dwLength + ALIGN_SIZE (WinCertificate->dwLength))) {
+    SecDataDirLeft = SecDataDirEnd - OffSet;
+    if (SecDataDirLeft <= sizeof (WIN_CERTIFICATE)) {
+      break;
+    }
     WinCertificate = (WIN_CERTIFICATE *) (mImageBase + OffSet);
-    if ((SecDataDir->VirtualAddress + SecDataDir->Size - OffSet) <= sizeof (WIN_CERTIFICATE) ||
-        (SecDataDir->VirtualAddress + SecDataDir->Size - OffSet) < WinCertificate->dwLength) {
+    if (SecDataDirLeft < WinCertificate->dwLength ||
+        (SecDataDirLeft - WinCertificate->dwLength <
+         ALIGN_SIZE (WinCertificate->dwLength))) {
       break;
     }
 
@@ -1948,7 +1962,7 @@ DxeImageVerificationHandler (
     }
   }
 
-  if (OffSet != (SecDataDir->VirtualAddress + SecDataDir->Size)) {
+  if (OffSet != SecDataDirEnd) {
     //
     // The Size in Certificate Table or the attribute certificate table is corrupted.
     //

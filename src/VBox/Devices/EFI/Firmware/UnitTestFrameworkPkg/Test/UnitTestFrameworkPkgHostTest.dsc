@@ -18,6 +18,9 @@
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 
+[PcdsPatchableInModule]
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x17
+
 [Components]
   #
   # Build HOST_APPLICATION that tests the SampleUnitTest
@@ -25,7 +28,7 @@
   UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestHost.inf
 
   #
-  # Build Libraries
+  # Build HOST_APPLICATION Libraries
   #
   UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
   UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf

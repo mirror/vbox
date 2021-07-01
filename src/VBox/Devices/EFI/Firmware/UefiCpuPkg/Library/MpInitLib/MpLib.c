@@ -1,7 +1,7 @@
 /** @file
   CPU MP Initialize Library common functions.
 
-  Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2021, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2020, AMD Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,6 +9,9 @@
 **/
 
 #include "MpLib.h"
+#include <Library/VmgExitLib.h>
+#include <Register/Amd/Fam17Msr.h>
+#include <Register/Amd/Ghcb.h>
 #ifdef VBOX
 # include <Library/IoLib.h>
 # include "../../../../DevEFI.h"
@@ -16,29 +19,6 @@
 
 EFI_GUID mCpuInitMpLibHobGuid = CPU_INIT_MP_LIB_HOB_GUID;
 
-
-/**
-  Determine if the standard CPU signature is "AuthenticAMD".
-
-  @retval TRUE  The CPU signature matches.
-  @retval FALSE The CPU signature does not match.
-
-**/
-STATIC
-BOOLEAN
-StandardSignatureIsAuthenticAMD (
-  VOID
-  )
-{
-  UINT32  RegEbx;
-  UINT32  RegEcx;
-  UINT32  RegEdx;
-
-  AsmCpuid (CPUID_SIGNATURE, NULL, &RegEbx, &RegEcx, &RegEdx);
-  return (RegEbx == CPUID_SIGNATURE_AUTHENTIC_AMD_EBX &&
-          RegEcx == CPUID_SIGNATURE_AUTHENTIC_AMD_ECX &&
-          RegEdx == CPUID_SIGNATURE_AUTHENTIC_AMD_EDX);
-}
 
 /**
   The function will check if BSP Execute Disable is enabled.
@@ -318,6 +298,14 @@ GetApLoopMode (
       //
       ApLoopMode = ApInHltLoop;
     }
+
+    if (PcdGetBool (PcdSevEsIsEnabled)) {
+      //
+      // For SEV-ES, force AP in Hlt-loop mode in order to use the GHCB
+      // protocol for starting APs
+      //
+      ApLoopMode = ApInHltLoop;
+    }
   }
 
   if (ApLoopMode != ApInMwaitLoop) {
@@ -522,14 +510,12 @@ CollectProcessorCount (
   CpuMpData->InitFlag = ApInitConfig;
   WakeUpAP (CpuMpData, TRUE, 0, NULL, NULL, TRUE);
   CpuMpData->InitFlag = ApInitDone;
+  //
+  // When InitFlag == ApInitConfig, WakeUpAP () guarantees all APs are checked in.
+  // FinishedCount is the number of check-in APs.
+  //
+  CpuMpData->CpuCount = CpuMpData->FinishedCount + 1;
   ASSERT (CpuMpData->CpuCount <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
-  //
-  // Wait for all APs finished the initialization
-  //
-  while (CpuMpData->FinishedCount < (CpuMpData->CpuCount - 1)) {
-    CpuPause ();
-  }
-
 
   //
   // Enable x2APIC mode if
@@ -642,6 +628,117 @@ InitializeApData (
 }
 
 /**
+  Get Protected mode code segment with 16-bit default addressing
+  from current GDT table.
+
+  @return  Protected mode 16-bit code segment value.
+**/
+STATIC
+UINT16
+GetProtectedMode16CS (
+  VOID
+  )
+{
+  IA32_DESCRIPTOR          GdtrDesc;
+  IA32_SEGMENT_DESCRIPTOR  *GdtEntry;
+  UINTN                    GdtEntryCount;
+  UINT16                   Index;
+
+  Index = (UINT16) -1;
+  AsmReadGdtr (&GdtrDesc);
+  GdtEntryCount = (GdtrDesc.Limit + 1) / sizeof (IA32_SEGMENT_DESCRIPTOR);
+  GdtEntry = (IA32_SEGMENT_DESCRIPTOR *) GdtrDesc.Base;
+  for (Index = 0; Index < GdtEntryCount; Index++) {
+    if (GdtEntry->Bits.L == 0 &&
+        GdtEntry->Bits.DB == 0 &&
+        GdtEntry->Bits.Type > 8) {
+      break;
+    }
+    GdtEntry++;
+  }
+  ASSERT (Index != GdtEntryCount);
+  return Index * 8;
+}
+
+/**
+  Get Protected mode code segment with 32-bit default addressing
+  from current GDT table.
+
+  @return  Protected mode 32-bit code segment value.
+**/
+STATIC
+UINT16
+GetProtectedMode32CS (
+  VOID
+  )
+{
+  IA32_DESCRIPTOR          GdtrDesc;
+  IA32_SEGMENT_DESCRIPTOR  *GdtEntry;
+  UINTN                    GdtEntryCount;
+  UINT16                   Index;
+
+  Index = (UINT16) -1;
+  AsmReadGdtr (&GdtrDesc);
+  GdtEntryCount = (GdtrDesc.Limit + 1) / sizeof (IA32_SEGMENT_DESCRIPTOR);
+  GdtEntry = (IA32_SEGMENT_DESCRIPTOR *) GdtrDesc.Base;
+  for (Index = 0; Index < GdtEntryCount; Index++) {
+    if (GdtEntry->Bits.L == 0 &&
+        GdtEntry->Bits.DB == 1 &&
+        GdtEntry->Bits.Type > 8) {
+      break;
+    }
+    GdtEntry++;
+  }
+  ASSERT (Index != GdtEntryCount);
+  return Index * 8;
+}
+
+/**
+  Reset an AP when in SEV-ES mode.
+
+  If successful, this function never returns.
+
+  @param[in] Ghcb                 Pointer to the GHCB
+  @param[in] CpuMpData            Pointer to CPU MP Data
+
+**/
+STATIC
+VOID
+MpInitLibSevEsAPReset (
+  IN GHCB                         *Ghcb,
+  IN CPU_MP_DATA                  *CpuMpData
+  )
+{
+  EFI_STATUS       Status;
+  UINTN            ProcessorNumber;
+  UINT16           Code16, Code32;
+  AP_RESET         *APResetFn;
+  UINTN            BufferStart;
+  UINTN            StackStart;
+
+  Status = GetProcessorNumber (CpuMpData, &ProcessorNumber);
+  ASSERT_EFI_ERROR (Status);
+
+  Code16 = GetProtectedMode16CS ();
+  Code32 = GetProtectedMode32CS ();
+
+  if (CpuMpData->WakeupBufferHigh != 0) {
+    APResetFn = (AP_RESET *) (CpuMpData->WakeupBufferHigh + CpuMpData->AddressMap.SwitchToRealNoNxOffset);
+  } else {
+    APResetFn = (AP_RESET *) (CpuMpData->MpCpuExchangeInfo->BufferStart + CpuMpData->AddressMap.SwitchToRealOffset);
+  }
+
+  BufferStart = CpuMpData->MpCpuExchangeInfo->BufferStart;
+  StackStart = CpuMpData->SevEsAPResetStackStart -
+                 (AP_RESET_STACK_SIZE * ProcessorNumber);
+
+  //
+  // This call never returns.
+  //
+  APResetFn (BufferStart, Code16, Code32, StackStart);
+}
+
+/**
   This function will be called from AP reset code if BSP uses WakeUpAP.
 
   @param[in] ExchangeInfo     Pointer to the MP exchange info buffer
@@ -683,10 +780,6 @@ ApWakeupFunction (
   CurrentApicMode = GetApicMode ();
   while (TRUE) {
     if (CpuMpData->InitFlag == ApInitConfig) {
-      //
-      // Add CPU number
-      //
-      InterlockedIncrement ((UINT32 *) &CpuMpData->CpuCount);
       ProcessorNumber = ApIndex;
       //
       // This is first time AP wakeup, get BIST information from AP stack
@@ -701,8 +794,6 @@ ApWakeupFunction (
       RestoreVolatileRegisters (&CpuMpData->CpuData[0].VolatileRegisters, FALSE);
       InitializeApData (CpuMpData, ProcessorNumber, BistData, ApTopOfStack);
       ApStartupSignalBuffer = CpuMpData->CpuData[ProcessorNumber].StartupApSignal;
-
-      InterlockedDecrement ((UINT32 *) &CpuMpData->MpCpuExchangeInfo->NumApsExecuting);
     } else {
       //
       // Execute AP function if AP is ready
@@ -791,25 +882,83 @@ ApWakeupFunction (
       }
     }
 
+    if (CpuMpData->ApLoopMode == ApInHltLoop) {
+      //
+      // Save AP volatile registers
+      //
+      SaveVolatileRegisters (&CpuMpData->CpuData[ProcessorNumber].VolatileRegisters);
+    }
+
     //
     // AP finished executing C code
     //
     InterlockedIncrement ((UINT32 *) &CpuMpData->FinishedCount);
+
+    if (CpuMpData->InitFlag == ApInitConfig) {
+      //
+      // Delay decrementing the APs executing count when SEV-ES is enabled
+      // to allow the APs to issue an AP_RESET_HOLD before the BSP possibly
+      // performs another INIT-SIPI-SIPI sequence.
+      //
+      if (!CpuMpData->SevEsIsEnabled) {
+        InterlockedDecrement ((UINT32 *) &CpuMpData->MpCpuExchangeInfo->NumApsExecuting);
+      }
+    }
 
     //
     // Place AP is specified loop mode
     //
     if (CpuMpData->ApLoopMode == ApInHltLoop) {
       //
-      // Save AP volatile registers
-      //
-      SaveVolatileRegisters (&CpuMpData->CpuData[ProcessorNumber].VolatileRegisters);
-      //
       // Place AP in HLT-loop
       //
       while (TRUE) {
         DisableInterrupts ();
-        CpuSleep ();
+        if (CpuMpData->SevEsIsEnabled) {
+          MSR_SEV_ES_GHCB_REGISTER  Msr;
+          GHCB                      *Ghcb;
+          UINT64                    Status;
+          BOOLEAN                   DoDecrement;
+          BOOLEAN                   InterruptState;
+
+          DoDecrement = (BOOLEAN) (CpuMpData->InitFlag == ApInitConfig);
+
+          while (TRUE) {
+            Msr.GhcbPhysicalAddress = AsmReadMsr64 (MSR_SEV_ES_GHCB);
+            Ghcb = Msr.Ghcb;
+
+            VmgInit (Ghcb, &InterruptState);
+
+            if (DoDecrement) {
+              DoDecrement = FALSE;
+
+              //
+              // Perform the delayed decrement just before issuing the first
+              // VMGEXIT with AP_RESET_HOLD.
+              //
+              InterlockedDecrement ((UINT32 *) &CpuMpData->MpCpuExchangeInfo->NumApsExecuting);
+            }
+
+            Status = VmgExit (Ghcb, SVM_EXIT_AP_RESET_HOLD, 0, 0);
+            if ((Status == 0) && (Ghcb->SaveArea.SwExitInfo2 != 0)) {
+              VmgDone (Ghcb, InterruptState);
+              break;
+            }
+
+            VmgDone (Ghcb, InterruptState);
+          }
+
+          //
+          // Awakened in a new phase? Use the new CpuMpData
+          //
+          if (CpuMpData->NewCpuMpData != NULL) {
+            CpuMpData = CpuMpData->NewCpuMpData;
+          }
+
+          MpInitLibSevEsAPReset (Ghcb, CpuMpData);
+        } else {
+          CpuSleep ();
+        }
         CpuPause ();
       }
     }
@@ -888,7 +1037,6 @@ FillExchangeInfoData (
   IA32_CR4                         Cr4;
 
   ExchangeInfo                  = CpuMpData->MpCpuExchangeInfo;
-  ExchangeInfo->Lock            = 0;
   ExchangeInfo->StackStart      = CpuMpData->Buffer;
   ExchangeInfo->StackSize       = CpuMpData->CpuApStackSize;
   ExchangeInfo->BufferStart     = CpuMpData->WakeupBuffer;
@@ -922,6 +1070,9 @@ FillExchangeInfoData (
   ExchangeInfo->Enable5LevelPaging = (BOOLEAN) (Cr4.Bits.LA57 == 1);
   DEBUG ((DEBUG_INFO, "%a: 5-Level Paging = %d\n", gEfiCallerBaseName, ExchangeInfo->Enable5LevelPaging));
 
+  ExchangeInfo->SevEsIsEnabled  = CpuMpData->SevEsIsEnabled;
+  ExchangeInfo->GhcbBase        = (UINTN) CpuMpData->GhcbBase;
+
   //
   // Get the BSP's data of GDT and IDT
   //
@@ -948,8 +1099,9 @@ FillExchangeInfoData (
   // EfiBootServicesCode to avoid page fault if NX memory protection is enabled.
   //
   if (CpuMpData->WakeupBufferHigh != 0) {
-    Size = CpuMpData->AddressMap.RendezvousFunnelSize -
-           CpuMpData->AddressMap.ModeTransitionOffset;
+    Size = CpuMpData->AddressMap.RendezvousFunnelSize +
+             CpuMpData->AddressMap.SwitchToRealSize -
+             CpuMpData->AddressMap.ModeTransitionOffset;
     CopyMem (
       (VOID *)CpuMpData->WakeupBufferHigh,
       CpuMpData->AddressMap.RendezvousFunnelAddress +
@@ -1002,7 +1154,8 @@ BackupAndPrepareWakeupBuffer(
   CopyMem (
     (VOID *) CpuMpData->WakeupBuffer,
     (VOID *) CpuMpData->AddressMap.RendezvousFunnelAddress,
-    CpuMpData->AddressMap.RendezvousFunnelSize
+    CpuMpData->AddressMap.RendezvousFunnelSize +
+      CpuMpData->AddressMap.SwitchToRealSize
     );
 }
 
@@ -1024,6 +1177,42 @@ RestoreWakeupBuffer(
 }
 
 /**
+  Calculate the size of the reset vector.
+
+  @param[in]  AddressMap  The pointer to Address Map structure.
+
+  @return                 Total amount of memory required for the AP reset area
+**/
+STATIC
+UINTN
+GetApResetVectorSize (
+  IN MP_ASSEMBLY_ADDRESS_MAP  *AddressMap
+  )
+{
+  UINTN  Size;
+
+  Size = AddressMap->RendezvousFunnelSize +
+           AddressMap->SwitchToRealSize +
+           sizeof (MP_CPU_EXCHANGE_INFO);
+
+  //
+  // The AP reset stack is only used by SEV-ES guests. Do not add to the
+  // allocation if SEV-ES is not enabled.
+  //
+  if (PcdGetBool (PcdSevEsIsEnabled)) {
+    //
+    // Stack location is based on APIC ID, so use the total number of
+    // processors for calculating the total stack area.
+    //
+    Size += AP_RESET_STACK_SIZE * PcdGet32 (PcdCpuMaxLogicalProcessorNumber);
+
+    Size = ALIGN_VALUE (Size, CPU_STACK_ALIGNMENT);
+  }
+
+  return Size;
+}
+
+/**
   Allocate reset vector buffer.
 
   @param[in, out]  CpuMpData  The pointer to CPU MP Data structure.
@@ -1036,16 +1225,22 @@ AllocateResetVector (
   UINTN           ApResetVectorSize;
 
   if (CpuMpData->WakeupBuffer == (UINTN) -1) {
-    ApResetVectorSize = CpuMpData->AddressMap.RendezvousFunnelSize +
-                          sizeof (MP_CPU_EXCHANGE_INFO);
+    ApResetVectorSize = GetApResetVectorSize (&CpuMpData->AddressMap);
 
     CpuMpData->WakeupBuffer      = GetWakeupBuffer (ApResetVectorSize);
     CpuMpData->MpCpuExchangeInfo = (MP_CPU_EXCHANGE_INFO *) (UINTN)
-                    (CpuMpData->WakeupBuffer + CpuMpData->AddressMap.RendezvousFunnelSize);
+                    (CpuMpData->WakeupBuffer +
+                       CpuMpData->AddressMap.RendezvousFunnelSize +
+                       CpuMpData->AddressMap.SwitchToRealSize);
     CpuMpData->WakeupBufferHigh  = GetModeTransitionBuffer (
-                                    CpuMpData->AddressMap.RendezvousFunnelSize -
+                                    CpuMpData->AddressMap.RendezvousFunnelSize +
+                                    CpuMpData->AddressMap.SwitchToRealSize -
                                     CpuMpData->AddressMap.ModeTransitionOffset
                                     );
+    //
+    // The reset stack starts at the end of the buffer.
+    //
+    CpuMpData->SevEsAPResetStackStart = CpuMpData->WakeupBuffer + ApResetVectorSize;
   }
   BackupAndPrepareWakeupBuffer (CpuMpData);
 }
@@ -1060,7 +1255,80 @@ FreeResetVector (
   IN CPU_MP_DATA              *CpuMpData
   )
 {
-  RestoreWakeupBuffer (CpuMpData);
+  //
+  // If SEV-ES is enabled, the reset area is needed for AP parking and
+  // and AP startup in the OS, so the reset area is reserved. Do not
+  // perform the restore as this will overwrite memory which has data
+  // needed by SEV-ES.
+  //
+  if (!CpuMpData->SevEsIsEnabled) {
+    RestoreWakeupBuffer (CpuMpData);
+  }
+}
+
+/**
+  Allocate the SEV-ES AP jump table buffer.
+
+  @param[in, out]  CpuMpData  The pointer to CPU MP Data structure.
+**/
+VOID
+AllocateSevEsAPMemory (
+  IN OUT CPU_MP_DATA          *CpuMpData
+  )
+{
+  if (CpuMpData->SevEsAPBuffer == (UINTN) -1) {
+    CpuMpData->SevEsAPBuffer =
+      CpuMpData->SevEsIsEnabled ? GetSevEsAPMemory () : 0;
+  }
+}
+
+/**
+  Program the SEV-ES AP jump table buffer.
+
+  @param[in]  SipiVector  The SIPI vector used for the AP Reset
+**/
+VOID
+SetSevEsJumpTable (
+  IN UINTN  SipiVector
+  )
+{
+  SEV_ES_AP_JMP_FAR *JmpFar;
+  UINT32            Offset, InsnByte;
+  UINT8             LoNib, HiNib;
+
+  JmpFar = (SEV_ES_AP_JMP_FAR *) (UINTN) FixedPcdGet32 (PcdSevEsWorkAreaBase);
+  ASSERT (JmpFar != NULL);
+
+  //
+  // Obtain the address of the Segment/Rip location in the workarea.
+  // This will be set to a value derived from the SIPI vector and will
+  // be the memory address used for the far jump below.
+  //
+  Offset = FixedPcdGet32 (PcdSevEsWorkAreaBase);
+  Offset += sizeof (JmpFar->InsnBuffer);
+  LoNib = (UINT8) Offset;
+  HiNib = (UINT8) (Offset >> 8);
+
+  //
+  // Program the workarea (which is the initial AP boot address) with
+  // far jump to the SIPI vector (where XX and YY represent the
+  // address of where the SIPI vector is stored.
+  //
+  //   JMP FAR [CS:XXYY] => 2E FF 2E YY XX
+  //
+  InsnByte = 0;
+  JmpFar->InsnBuffer[InsnByte++] = 0x2E;  // CS override prefix
+  JmpFar->InsnBuffer[InsnByte++] = 0xFF;  // JMP (FAR)
+  JmpFar->InsnBuffer[InsnByte++] = 0x2E;  // ModRM (JMP memory location)
+  JmpFar->InsnBuffer[InsnByte++] = LoNib; // YY offset ...
+  JmpFar->InsnBuffer[InsnByte++] = HiNib; // XX offset ...
+
+  //
+  // Program the Segment/Rip based on the SIPI vector (always at least
+  // 16-byte aligned, so Rip is set to 0).
+  //
+  JmpFar->Rip = 0;
+  JmpFar->Segment = (UINT16) (SipiVector >> 4);
 }
 
 /**
@@ -1097,6 +1365,7 @@ WakeUpAP (
       CpuMpData->InitFlag   != ApInitDone) {
     ResetVectorRequired = TRUE;
     AllocateResetVector (CpuMpData);
+    AllocateSevEsAPMemory (CpuMpData);
     FillExchangeInfoData (CpuMpData);
     SaveLocalApicTimerSetting (CpuMpData);
   }
@@ -1133,6 +1402,15 @@ WakeUpAP (
       }
     }
     if (ResetVectorRequired) {
+      //
+      // For SEV-ES, the initial AP boot address will be defined by
+      // PcdSevEsWorkAreaBase. The Segment/Rip must be the jump address
+      // from the original INIT-SIPI-SIPI.
+      //
+      if (CpuMpData->SevEsIsEnabled) {
+        SetSevEsJumpTable (ExchangeInfo->BufferStart);
+      }
+
       //
       // Wakeup all APs
       //
@@ -1224,6 +1502,16 @@ WakeUpAP (
     *(UINT32 *) CpuData->StartupApSignal = WAKEUP_AP_SIGNAL;
     if (ResetVectorRequired) {
       CpuInfoInHob = (CPU_INFO_IN_HOB *) (UINTN) CpuMpData->CpuInfoInHob;
+
+      //
+      // For SEV-ES, the initial AP boot address will be defined by
+      // PcdSevEsWorkAreaBase. The Segment/Rip must be the jump address
+      // from the original INIT-SIPI-SIPI.
+      //
+      if (CpuMpData->SevEsIsEnabled) {
+        SetSevEsJumpTable (ExchangeInfo->BufferStart);
+      }
+
       SendInitSipiSipi (
         CpuInfoInHob[ProcessorNumber].ApicId,
         (UINT32) ExchangeInfo->BufferStart
@@ -1700,7 +1988,7 @@ MpInitLibInitialize (
   ASSERT (MaxLogicalProcessorNumber != 0);
 
   AsmGetAddressMap (&AddressMap);
-  ApResetVectorSize = AddressMap.RendezvousFunnelSize + sizeof (MP_CPU_EXCHANGE_INFO);
+  ApResetVectorSize = GetApResetVectorSize (&AddressMap);
   ApStackSize = PcdGet32(PcdCpuApStackSize);
   ApLoopMode  = GetApLoopMode (&MonitorFilterSize);
 
@@ -1758,6 +2046,9 @@ MpInitLibInitialize (
   CpuMpData->CpuData          = (CPU_AP_DATA *) (CpuMpData + 1);
   CpuMpData->CpuInfoInHob     = (UINT64) (UINTN) (CpuMpData->CpuData + MaxLogicalProcessorNumber);
   InitializeSpinLock(&CpuMpData->MpLock);
+  CpuMpData->SevEsIsEnabled = PcdGetBool (PcdSevEsIsEnabled);
+  CpuMpData->SevEsAPBuffer  = (UINTN) -1;
+  CpuMpData->GhcbBase       = PcdGet64 (PcdGhcbBase);
 
   //
   // Make sure no memory usage outside of the allocated buffer.
@@ -1816,6 +2107,7 @@ MpInitLibInitialize (
     // APs have been wakeup before, just get the CPU Information
     // from HOB
     //
+    OldCpuMpData->NewCpuMpData = CpuMpData;
     CpuMpData->CpuCount  = OldCpuMpData->CpuCount;
     CpuMpData->BspNumber = OldCpuMpData->BspNumber;
     CpuMpData->CpuInfoInHob = OldCpuMpData->CpuInfoInHob;
@@ -1874,6 +2166,31 @@ MpInitLibInitialize (
     }
   }
 
+  //
+  // Dump the microcode revision for each core.
+  //
+  DEBUG_CODE (
+    UINT32 ThreadId;
+    UINT32 ExpectedMicrocodeRevision;
+    CpuInfoInHob = (CPU_INFO_IN_HOB *) (UINTN) CpuMpData->CpuInfoInHob;
+    for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
+      GetProcessorLocationByApicId (CpuInfoInHob[Index].InitialApicId, NULL, NULL, &ThreadId);
+      if (ThreadId == 0) {
+        //
+        // MicrocodeDetect() loads microcode in first thread of each core, so,
+        // CpuMpData->CpuData[Index].MicrocodeEntryAddr is initialized only for first thread of each core.
+        //
+        ExpectedMicrocodeRevision = 0;
+        if (CpuMpData->CpuData[Index].MicrocodeEntryAddr != 0) {
+          ExpectedMicrocodeRevision = ((CPU_MICROCODE_HEADER *)(UINTN)CpuMpData->CpuData[Index].MicrocodeEntryAddr)->UpdateRevision;
+        }
+        DEBUG ((
+          DEBUG_INFO, "CPU[%04d]: Microcode revision = %08x, expected = %08x\n",
+          Index, CpuMpData->CpuData[Index].MicrocodeRevision, ExpectedMicrocodeRevision
+          ));
+      }
+    }
+  );
   //
   // Initialize global data for MP support
   //

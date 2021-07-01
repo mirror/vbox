@@ -4,11 +4,11 @@
 # and libraries instances, which are used for those modules.
 #
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
-# Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2016, Linaro Ltd. All rights reserved.<BR>
 # (C) Copyright 2016 - 2019 Hewlett Packard Enterprise Development LP<BR>
 # Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
-# Copyright (c) 2016, Microsoft Corporation<BR>
+# Copyright (c) Microsoft Corporation.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -30,6 +30,9 @@
 [LibraryClasses]
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
+
+  ##  @libraryclass  Business logic for storing and testing variable policies
+  VariablePolicyLib|Include/Library/VariablePolicyLib.h
 
   ##  @libraryclass  Defines a set of helper functions for resetting the system.
   ResetUtilityLib|Include/Library/ResetUtilityLib.h
@@ -145,6 +148,11 @@
   #  customize how a user is informed of completion progress.
   #
   DisplayUpdateProgressLib|Include/Library/DisplayUpdateProgressLib.h
+
+  ##  @libraryclass  This library contains helper functions for marshalling and
+  #   registering new policies with the VariablePolicy infrastructure.
+  #
+  VariablePolicyHelperLib|Include/Library/VariablePolicyHelperLib.h
 
 [Guids]
   ## MdeModule package token space guid
@@ -377,6 +385,10 @@
   ## Include/Guid/EndofS3Resume.h
   gEdkiiEndOfS3ResumeGuid = { 0x96f5296d, 0x05f7, 0x4f3c, {0x84, 0x67, 0xe4, 0x56, 0x89, 0x0e, 0x0c, 0xb5 } }
 
+  ## Used (similar to Variable Services) to communicate policies to the enforcement engine.
+  # {DA1B0D11-D1A7-46C4-9DC9-F3714875C6EB}
+  gVarCheckPolicyLibMmiHandlerGuid = { 0xda1b0d11, 0xd1a7, 0x46c4, { 0x9d, 0xc9, 0xf3, 0x71, 0x48, 0x75, 0xc6, 0xeb }}
+
   ## Include/Guid/S3SmmInitDone.h
   gEdkiiS3SmmInitDoneGuid = { 0x8f9d4825, 0x797d, 0x48fc, { 0x84, 0x71, 0x84, 0x50, 0x25, 0x79, 0x2e, 0xf6 } }
 
@@ -388,6 +400,9 @@
 
   ## GUID indicates the capsule is to store Capsule On Disk file names.
   gEdkiiCapsuleOnDiskNameGuid = { 0x98c80a4f, 0xe16b, 0x4d11, { 0x93, 0x9a, 0xab, 0xe5, 0x61, 0x26, 0x3, 0x30 } }
+
+  ## Include/Guid/MigratedFvInfo.h
+  gEdkiiMigratedFvInfoGuid = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
 
 [Ppis]
   ## Include/Ppi/AtaController.h
@@ -624,6 +639,9 @@
 #   0x80000006 | Incorrect error code provided.
 #
 
+  ## Include/Protocol/VariablePolicy.h
+  gEdkiiVariablePolicyProtocolGuid = { 0x81D1675C, 0x86F6, 0x48DF, { 0xBD, 0x95, 0x9A, 0x6E, 0x4F, 0x09, 0x25, 0xC3 } }
+
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
@@ -759,19 +777,6 @@
   #   FALSE - PciBus driver doesn't probe non-standard granularity for PCI to PCI bridge I/O window.<BR>
   # @Prompt Enable PCI bridge IO alignment probe.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciBridgeIoAlignmentProbe|FALSE|BOOLEAN|0x0001004e
-
-  ## Indicates if StatusCode is reported via Serial port.<BR><BR>
-  #   TRUE  - Reports StatusCode via Serial port.<BR>
-  #   FALSE - Does not report StatusCode via Serial port.<BR>
-  # @Prompt Enable StatusCode via Serial port.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE|BOOLEAN|0x00010022
-
-  ## Indicates if StatusCode is stored in memory.
-  #  The memory is boot time memory in PEI Phase and is runtime memory in DXE Phase.<BR><BR>
-  #   TRUE  - Stores StatusCode in memory.<BR>
-  #   FALSE - Does not store StatusCode in memory.<BR>
-  # @Prompt Enable StatusCode via memory.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseMemory|FALSE|BOOLEAN|0x00010023
 
   ## Indicates if PEI phase StatusCode will be replayed in DXE phase.<BR><BR>
   #   TRUE  - Replays PEI phase StatusCode in DXE phased.<BR>
@@ -1129,6 +1134,15 @@
   # @Prompt Variable storage size.
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize|0x10000|UINT32|0x30000005
 
+  ## Toggle for whether the VariablePolicy engine should allow disabling.
+  # The engine is enabled at power-on, but the interface allows the platform to
+  # disable enforcement for servicing flexibility. If this PCD is disabled, it will block the ability to
+  # disable the enforcement and VariablePolicy enforcement will always be ON.
+  #   TRUE - VariablePolicy can be disabled by request through the interface (until interface is locked)
+  #   FALSE - VariablePolicy interface will not accept requests to disable and is ALWAYS ON
+  # @Prompt Allow VariablePolicy enforcement to be disabled.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|FALSE|BOOLEAN|0x30000020
+
   ## FFS filename to find the ACPI tables.
   # @Prompt FFS name of ACPI tables storage.
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiTableStorageFile|{ 0x25, 0x4e, 0x37, 0x7e, 0x01, 0x8e, 0xee, 0x4f, 0x87, 0xf2, 0x39, 0xc, 0x23, 0xc6, 0x6, 0xcd }|VOID*|0x30000016
@@ -1232,6 +1246,15 @@
   #   FALSE - Not shadow PEIM after memory is ready.<BR>
   # @Prompt Shadow Peim and PeiCore on boot
   gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnBoot|TRUE|BOOLEAN|0x30001029
+
+  ## Enable the feature that evacuate temporary memory to permanent memory or not<BR><BR>
+  #  Set FALSE as default, if the developer need this feature to avoid this vulnerability, please
+  #  enable it to shadow all PEIMs no matter the behavior controled by PcdShadowPeimOnBoot or
+  #  PcdShadowPeimOnS3Boot<BR>
+  #  TRUE - Evacuate temporary memory, the actions include copy memory, convert PPI pointers and so on.<BR>
+  #  FALSE - Do nothing, for example, no copy memory, no convert PPI pointers and so on.<BR>
+  # @Prompt Evacuate temporary memory to permanent memory
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateTemporaryRamFirmwareVolumes|FALSE|BOOLEAN|0x3000102A
 
   ## The mask is used to control memory profile behavior.<BR><BR>
   #  BIT0 - Enable UEFI memory profile.<BR>
@@ -1337,7 +1360,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0x0000000|UINT64|0x00001048
 
   ## PCI Serial Device Info. It is an array of Device, Function, and Power Management
-  #  information that describes the path that contains zero or more PCI to PCI briges
+  #  information that describes the path that contains zero or more PCI to PCI bridges
   #  followed by a PCI serial device.  Each array entry is 4-bytes in length.  The
   #  first byte is the PCI Device Number, then second byte is the PCI Function Number,
   #  and the last two bytes are the offset to the PCI power management capabilities
@@ -1390,7 +1413,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0xdc, 0x5b, 0xc2, 0xee, 0xf2, 0x67, 0x95, 0x4d, 0xb1, 0xd5, 0xf8, 0x1b, 0x20, 0x39, 0xd1, 0x1d }|VOID*|0x0001006b
 
   ## This PCD points to the formset GUID of the driver health management form
-  #  The form will be popped up by BDS core when there are Configuration Required driver health intances.
+  #  The form will be popped up by BDS core when there are Configuration Required driver health instances.
   #  Platform can customize the PCD to point to different formset.
   # @Prompt Driver Health Management Form
   gEfiMdeModulePkgTokenSpaceGuid.PcdDriverHealthConfigureForm|{ 0xf4, 0xd9, 0x96, 0x42, 0xfc, 0xf6, 0xde, 0x4d, 0x86, 0x85, 0x8c, 0xe2, 0xd7, 0x9d, 0x90, 0xf0 }|VOID*|0x0001006c
@@ -1505,6 +1528,12 @@
   #  On Disk will be bypassed.
   # @Prompt Enable Capsule On Disk support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport|FALSE|BOOLEAN|0x0000002d
+
+  ## Maximum permitted encapsulation levels of sections in a firmware volume,
+  #  in the DXE phase. Minimum value is 1. Sections nested more deeply are
+  #  rejected.
+  # @Prompt Maximum permitted FwVol section nesting depth (exclusive).
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFwVolDxeMaxEncapsulationDepth|0x10|UINT32|0x00000030
 
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.
@@ -1987,7 +2016,7 @@
   # @Prompt Enable Capsule In Ram support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleInRamSupport|TRUE|BOOLEAN|0x0000002e
 
-  ## Full device path of plaform specific device to store Capsule On Disk temp relocation file.<BR>
+  ## Full device path of platform specific device to store Capsule On Disk temp relocation file.<BR>
   #  If this PCD is set, Capsule On Disk temp relocation file will be stored in the device specified
   #  by this PCD, instead of the EFI System Partition that stores capsule image file.
   # @Prompt Capsule On Disk relocation device path.
@@ -2000,6 +2029,25 @@
   #       EV_EFI_PLATFORM_FIRMWARE_BLOB2 and EV_EFI_HANDOFF_TABLES2.
   # @Prompt TCG Platform Firmware Profile revision.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision|0|UINT32|0x00010077
+
+  ## Indicates if StatusCode is reported via Serial port.<BR><BR>
+  #   TRUE  - Reports StatusCode via Serial port.<BR>
+  #   FALSE - Does not report StatusCode via Serial port.<BR>
+  # @Prompt Enable StatusCode via Serial port.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE|BOOLEAN|0x00010022
+
+  ## Indicates if StatusCode is stored in memory.
+  #  The memory is boot time memory in PEI Phase and is runtime memory in DXE Phase.<BR><BR>
+  #   TRUE  - Stores StatusCode in memory.<BR>
+  #   FALSE - Does not store StatusCode in memory.<BR>
+  # @Prompt Enable StatusCode via memory.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseMemory|FALSE|BOOLEAN|0x00010023
+
+  ## Indicates if the PCIe Resizable BAR Capability Supported.<BR><BR>
+  #   TRUE  - PCIe Resizable BAR Capability is supported.<BR>
+  #   FALSE - PCIe Resizable BAR Capability is not supported.<BR>
+  # @Prompt Enable PCIe Resizable BAR Capability support.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport|FALSE|BOOLEAN|0x10000024
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
@@ -2050,6 +2098,15 @@
   ## This dynamic PCD holds the information if there is any test key used by the platform.
   # @Prompt If there is any test key used by the platform.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed|FALSE|BOOLEAN|0x00030003
+
+  ## This dynamic PCD holds the base address of the Guest-Hypervisor Communication Block (GHCB) pool allocation.
+  # @Prompt GHCB Pool Base Address
+  gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase|0|UINT64|0x00030007
+
+  ## This dynamic PCD holds the total size of the Guest-Hypervisor Communication Block (GHCB) pool allocation.
+  #  The amount of memory allocated for GHCBs is dependent on the number of APs.
+  # @Prompt GHCB Pool Size
+  gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbSize|0|UINT64|0x00030008
 
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.

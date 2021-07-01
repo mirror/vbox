@@ -1,7 +1,7 @@
 /** @file
   ACPI parser
 
-  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2021, Arm Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -10,6 +10,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include "AcpiParser.h"
 #include "AcpiView.h"
+#include "AcpiViewConfig.h"
 
 STATIC UINT32   gIndent;
 STATIC UINT32   mTableErrorCount;
@@ -595,13 +596,12 @@ ParseAcpi (
               Parser[Index].Length
               );
         } // switch
-
-        // Validating only makes sense if we are tracing
-        // the parsed table entries, to report by table name.
-        if (GetConsistencyChecking () &&
-            (Parser[Index].FieldValidator != NULL)) {
-          Parser[Index].FieldValidator (Ptr, Parser[Index].Context);
-        }
+      }
+      // Validating only makes sense if we are tracing
+      // the parsed table entries, to report by table name.
+      if (GetConsistencyChecking () &&
+          (Parser[Index].FieldValidator != NULL)) {
+        Parser[Index].FieldValidator (Ptr, Parser[Index].Context);
       }
       Print (L"\n");
     } // if (Trace)
@@ -628,7 +628,7 @@ STATIC CONST ACPI_PARSER GasParser[] = {
   {L"Address Space ID", 1, 0, L"0x%x", NULL, NULL, NULL, NULL},
   {L"Register Bit Width", 1, 1, L"0x%x", NULL, NULL, NULL, NULL},
   {L"Register Bit Offset", 1, 2, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"Address Size", 1, 3, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Access Size", 1, 3, L"0x%x", NULL, NULL, NULL, NULL},
   {L"Address", 8, 4, L"0x%lx", NULL, NULL, NULL, NULL}
 };
 

@@ -5,7 +5,7 @@
     Most of services in this library instance are suggested to be invoked by BSP only,
     except for MtrrSetAllMtrrs() which is used to sync BSP's MTRR setting to APs.
 
-  Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2008 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -454,31 +454,6 @@ MtrrGetVariableMtrrWorker (
   }
 
   return  VariableSettings;
-}
-
-/**
-  This function will get the raw value in variable MTRRs
-
-  @param[out]  VariableSettings   A buffer to hold variable MTRRs content.
-
-  @return The VariableSettings input pointer
-
-**/
-MTRR_VARIABLE_SETTINGS*
-EFIAPI
-MtrrGetVariableMtrr (
-  OUT MTRR_VARIABLE_SETTINGS         *VariableSettings
-  )
-{
-  if (!IsMtrrSupported ()) {
-    return VariableSettings;
-  }
-
-  return MtrrGetVariableMtrrWorker (
-           NULL,
-           GetVariableMtrrCountWorker (),
-           VariableSettings
-           );
 }
 
 /**
@@ -2583,35 +2558,6 @@ MtrrSetVariableMtrrWorker (
   }
 }
 
-
-/**
-  This function sets variable MTRRs
-
-  @param[in]  VariableSettings   A buffer to hold variable MTRRs content.
-
-  @return The pointer of VariableSettings
-
-**/
-MTRR_VARIABLE_SETTINGS*
-EFIAPI
-MtrrSetVariableMtrr (
-  IN MTRR_VARIABLE_SETTINGS         *VariableSettings
-  )
-{
-  MTRR_CONTEXT  MtrrContext;
-
-  if (!IsMtrrSupported ()) {
-    return VariableSettings;
-  }
-
-  MtrrLibPreMtrrChange (&MtrrContext);
-  MtrrSetVariableMtrrWorker (VariableSettings);
-  MtrrLibPostMtrrChange (&MtrrContext);
-  MtrrDebugPrintAllMtrrs ();
-
-  return  VariableSettings;
-}
-
 /**
   Worker function setting fixed MTRRs
 
@@ -2631,35 +2577,6 @@ MtrrSetFixedMtrrWorker (
        FixedSettings->Mtrr[Index]
        );
   }
-}
-
-
-/**
-  This function sets fixed MTRRs
-
-  @param[in]  FixedSettings  A buffer to hold fixed MTRRs content.
-
-  @retval The pointer of FixedSettings
-
-**/
-MTRR_FIXED_SETTINGS*
-EFIAPI
-MtrrSetFixedMtrr (
-  IN MTRR_FIXED_SETTINGS          *FixedSettings
-  )
-{
-  MTRR_CONTEXT  MtrrContext;
-
-  if (!IsMtrrSupported ()) {
-    return FixedSettings;
-  }
-
-  MtrrLibPreMtrrChange (&MtrrContext);
-  MtrrSetFixedMtrrWorker (FixedSettings);
-  MtrrLibPostMtrrChange (&MtrrContext);
-  MtrrDebugPrintAllMtrrs ();
-
-  return FixedSettings;
 }
 
 

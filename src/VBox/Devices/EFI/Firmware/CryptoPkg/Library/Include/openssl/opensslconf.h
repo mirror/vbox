@@ -2,7 +2,7 @@
  * WARNING: do not edit!
  * Generated from include/openssl/opensslconf.h.in
  *
- * Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -247,9 +247,6 @@ extern "C" {
 #ifndef OPENSSL_NO_DYNAMIC_ENGINE
 # define OPENSSL_NO_DYNAMIC_ENGINE
 #endif
-#ifndef OPENSSL_NO_AFALGENG
-# define OPENSSL_NO_AFALGENG
-#endif
 
 
 /*
@@ -271,6 +268,11 @@ extern "C" {
 #   undef DECLARE_DEPRECATED
 #   define DECLARE_DEPRECATED(f)    f __attribute__ ((deprecated));
 #  endif
+#elif defined(__SUNPRO_C)
+#if (__SUNPRO_C >= 0x5130)
+#undef DECLARE_DEPRECATED
+#define DECLARE_DEPRECATED(f)    f __attribute__ ((deprecated));
+#endif
 # endif
 #endif
 

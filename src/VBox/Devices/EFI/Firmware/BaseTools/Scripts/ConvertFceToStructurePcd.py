@@ -52,6 +52,7 @@ infstatement = '''[Pcd]
 
 SECTION='PcdsDynamicHii'
 PCD_NAME='gStructPcdTokenSpaceGuid.Pcd'
+Max_Pcd_Len = 100
 
 WARNING=[]
 ERRORMSG=[]
@@ -196,6 +197,8 @@ class parser_lst(object):
     efitxt = efivarstore_format.findall(self.text)
     for i in efitxt:
       struct = struct_re.findall(i.replace(' ',''))
+      if struct[0] in self._ignore:
+          continue
       name = name_re.findall(i.replace(' ',''))
       if struct and name:
         efivarstore_dict[name[0]]=struct[0]
@@ -276,8 +279,12 @@ class Config(object):
     attribute_re=re.compile(r'attribute=(\w+)')
     value_re = re.compile(r'(//.*)')
     part = []
+    part_without_comment = []
     for x in section[1:]:
         line=x.split('\n')[0]
+        comment_list = value_re.findall(line) # the string \\... in "Q...." line
+        comment_list[0] = comment_list[0].replace('//', '')
+        comment = comment_list[0].strip()
         line=value_re.sub('',line) #delete \\... in "Q...." line
         list1=line.split(' ')
         value=self.value_parser(list1)
@@ -289,8 +296,18 @@ class Config(object):
           if attribute[0] in ['0x3','0x7']:
             offset = int(offset[0], 16)
             #help = help_re.findall(x)
-            text = offset, name[0], guid[0], value, attribute[0]
-            part.append(text)
+            text_without_comment = offset, name[0], guid[0], value, attribute[0]
+            if text_without_comment in part_without_comment:
+                # check if exists same Pcd with different comments, add different comments in one line with "|".
+                dupl_index = part_without_comment.index(text_without_comment)
+                part[dupl_index] = list(part[dupl_index])
+                if comment not in part[dupl_index][-1]:
+                    part[dupl_index][-1] += " | " + comment
+                part[dupl_index] = tuple(part[dupl_index])
+            else:
+                text = offset, name[0], guid[0], value, attribute[0], comment
+                part_without_comment.append(text_without_comment)
+                part.append(text)
     return(part)
 
   def value_parser(self, list1):
@@ -370,7 +387,7 @@ class PATH(object):
   def __init__(self,path):
     self.path=path
     self.rootdir=self.get_root_dir()
-    self.usefuldir=[]
+    self.usefuldir=set()
     self.lstinf = {}
     for path in self.rootdir:
       for o_root, o_dir, o_file in os.walk(os.path.join(path, "OUTPUT"), topdown=True, followlinks=False):
@@ -381,7 +398,7 @@ class PATH(object):
               for LST in l_file:
                 if os.path.splitext(LST)[1] == '.lst':
                   self.lstinf[os.path.join(l_root, LST)] = os.path.join(o_root, INF)
-                  self.usefuldir.append(path)
+                  self.usefuldir.add(path)
 
   def get_root_dir(self):
     rootdir=[]
@@ -410,7 +427,7 @@ class PATH(object):
 
   def header(self,struct):
     header={}
-    head_re = re.compile('typedef.*} %s;[\n]+(.*?)(?:typedef|formset)'%struct,re.M|re.S)
+    head_re = re.compile('typedef.*} %s;[\n]+(.*)(?:typedef|formset)'%struct,re.M|re.S)
     head_re2 = re.compile(r'#line[\s\d]+"(\S+h)"')
     for i in list(self.lstinf.keys()):
       with open(i,'r') as lst:
@@ -421,9 +438,21 @@ class PATH(object):
         if head:
           format = head[0].replace('\\\\','/').replace('\\','/')
           name =format.split('/')[-1]
-          head = self.makefile(name).replace('\\','/')
-          header[struct] = head
+          head = self.headerfileset.get(name)
+          if head:
+            head = head.replace('\\','/')
+            header[struct] = head
     return header
+  @property
+  def headerfileset(self):
+    headerset = dict()
+    for root,dirs,files in os.walk(self.path):
+      for file in files:
+        if os.path.basename(file) == 'deps.txt':
+          with open(os.path.join(root,file),"r") as fr:
+            for line in fr.readlines():
+              headerset[os.path.basename(line).strip()] = line.strip()
+    return headerset
 
   def makefile(self,filename):
     re_format = re.compile(r'DEBUG_DIR.*(?:\S+Pkg)\\(.*\\%s)'%filename)
@@ -433,6 +462,7 @@ class PATH(object):
       dir = re_format.findall(read)
       if dir:
         return dir[0]
+    return None
 
 class mainprocess(object):
 
@@ -466,7 +496,7 @@ class mainprocess(object):
       tmp_id=[id_key] #['0_0',[(struct,[name...]),(struct,[name...])]]
       tmp_info={} #{name:struct}
       for section in config_dict[id_key]:
-        c_offset,c_name,c_guid,c_value,c_attribute = section
+        c_offset,c_name,c_guid,c_value,c_attribute,c_comment = section
         if c_name in efi_dict:
           struct = efi_dict[c_name]
           title='%s%s|L"%s"|%s|0x00||%s\n'%(PCD_NAME,c_name,c_name,self.guid.guid_parser(c_guid),self.attribute_dict[c_attribute])
@@ -479,16 +509,21 @@ class mainprocess(object):
               WARNING.append("Warning: No <HeaderFiles> for struct %s"%struct)
               title2 = '%s%s|{0}|%s|0xFCD00000{\n <HeaderFiles>\n  %s\n <Packages>\n%s\n}\n' % (PCD_NAME, c_name, struct, '', self.LST.package()[self.lst_dict[lstfile]])
             header_list.append(title2)
-          else:
+          elif struct not in lst._ignore:
             struct_dict ={}
             print("ERROR: Struct %s can't found in lst file" %struct)
             ERRORMSG.append("ERROR: Struct %s can't found in lst file" %struct)
           if c_offset in struct_dict:
             offset_name=struct_dict[c_offset]
             info = "%s%s.%s|%s\n"%(PCD_NAME,c_name,offset_name,c_value)
+            blank_length = Max_Pcd_Len - len(info)
+            if blank_length <= 0:
+                info_comment = "%s%s.%s|%s%s# %s\n"%(PCD_NAME,c_name,offset_name,c_value,"     ",c_comment)
+            else:
+                info_comment = "%s%s.%s|%s%s# %s\n"%(PCD_NAME,c_name,offset_name,c_value,blank_length*" ",c_comment)
             inf = "%s%s\n"%(PCD_NAME,c_name)
             inf_list.append(inf)
-            tmp_info[info]=title
+            tmp_info[info_comment]=title
           else:
             print("ERROR: Can't find offset %s with struct name %s"%(c_offset,struct))
             ERRORMSG.append("ERROR: Can't find offset %s with name %s"%(c_offset,struct))
@@ -510,6 +545,18 @@ class mainprocess(object):
       i.sort()
     return keys,title_all,info_list,header_list,inf_list
 
+  def correct_sort(self, PcdString):
+    # sort the Pcd list with two rules:
+    # First sort through Pcd name;
+    # Second if the Pcd exists several elements, sort them through index value.
+    if ("]|") in PcdString:
+        Pcdname = PcdString.split("[")[0]
+        Pcdindex = int(PcdString.split("[")[1].split("]")[0])
+    else:
+        Pcdname = PcdString.split("|")[0]
+        Pcdindex = 0
+    return Pcdname, Pcdindex
+
   def remove_bracket(self,List):
     for i in List:
       for j in i:
@@ -521,7 +568,7 @@ class mainprocess(object):
           List[List.index(i)][i.index(j)] = j
     for i in List:
       if type(i) == type([0,0]):
-        i.sort()
+        i.sort(key = lambda x:(self.correct_sort(x)[0], self.correct_sort(x)[1]))
     return List
 
   def write_all(self):

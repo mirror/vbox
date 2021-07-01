@@ -1,7 +1,9 @@
 ## @file
 #  EFI/Framework Open Virtual Machine Firmware (OVMF) platform
 #
+#  Copyright (c) 2020, Rebecca Cran <rebecca@bsdio.com>
 #  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014, Pluribus Networks, Inc.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -18,6 +20,9 @@
   Csm/Include
 
 [LibraryClasses]
+  ##  @libraryclass  Access bhyve's firmware control interface.
+  BhyveFwCtlLib|Include/Library/BhyveFwCtlLib.h
+
   ##  @libraryclass  Loads and boots a Linux kernel image
   #
   LoadLinuxLib|Include/Library/LoadLinuxLib.h
@@ -43,6 +48,10 @@
   #                  PciSegmentLib backend into PciCapLib, for config space
   #                  access.
   PciCapPciSegmentLib|Include/Library/PciCapPciSegmentLib.h
+
+  ##  @libraryclass  Provide common utility functions to PciHostBridgeLib
+  #                  instances in ArmVirtPkg and OvmfPkg.
+  PciHostBridgeUtilityLib|Include/Library/PciHostBridgeUtilityLib.h
 
   ##  @libraryclass  Register a status code handler for printing the Boot
   #                  Manager's LoadImage() and StartImage() preparations, and
@@ -111,11 +120,17 @@
   gEfiLegacyDevOrderVariableGuid        = {0xa56074db, 0x65fe, 0x45f7, {0xbd, 0x21, 0x2d, 0x2b, 0xdd, 0x8e, 0x96, 0x52}}
   gLinuxEfiInitrdMediaGuid              = {0x5568e427, 0x68fc, 0x4f3d, {0xac, 0x74, 0xca, 0x55, 0x52, 0x31, 0xcc, 0x68}}
   gQemuKernelLoaderFsMediaGuid          = {0x1428f772, 0xb64a, 0x441e, {0xb8, 0xc3, 0x9e, 0xbd, 0xd7, 0xf8, 0x93, 0xc7}}
+  gGrubFileGuid                         = {0xb5ae312c, 0xbc8a, 0x43b1, {0x9c, 0x62, 0xeb, 0xb8, 0x26, 0xdd, 0x5d, 0x07}}
+  gConfidentialComputingSecretGuid      = {0xadf956ad, 0xe98c, 0x484c, {0xae, 0x11, 0xb5, 0x1c, 0x7d, 0x33, 0x64, 0x47}}
 
 [Ppis]
   # PPI whose presence in the PPI database signals that the TPM base address
   # has been discovered and recorded
   gOvmfTpmDiscoveredPpiGuid             = {0xb9a61ad0, 0x2802, 0x41f3, {0xb5, 0x13, 0x96, 0x51, 0xce, 0x6b, 0xd5, 0x75}}
+
+  # This PPI signals that accessing the MMIO range of the TPM is possible in
+  # the PEI phase, regardless of memory encryption
+  gOvmfTpmMmioAccessiblePpiGuid         = {0x35c84ff2, 0x7bfe, 0x453d, {0x84, 0x5f, 0x68, 0x3a, 0x49, 0x2c, 0xf7, 0xb7}}
 
 [Protocols]
   gVirtioDeviceProtocolGuid             = {0xfa920010, 0x6785, 0x4941, {0xb6, 0xec, 0x49, 0x8c, 0x57, 0x9f, 0x16, 0x0a}}
@@ -172,7 +187,15 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiMaxTargetLimit|7|UINT8|0x39
 
   ## Microseconds to stall between polling for MptScsi request result
-  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiStallPerPollUsec|5|UINT32|0x40
+  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiStallPerPollUsec|5|UINT32|0x3a
+
+  ## Set the *inclusive* number of targets and LUNs that LsiScsi exposes for
+  #  scan by ScsiBusDxe.
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiMaxTargetLimit|7|UINT8|0x3b
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiMaxLunLimit|0|UINT8|0x3c
+
+  ## Microseconds to stall between polling for LsiScsi request result
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiStallPerPollUsec|5|UINT32|0x3d
 
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogBase|0x0|UINT32|0x8
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogSize|0x0|UINT32|0x9
@@ -281,6 +304,23 @@
   ## Number of page frames to use for storing grant table entries.
   gUefiOvmfPkgTokenSpaceGuid.PcdXenGrantFrames|4|UINT32|0x33
 
+  ## Specify the extra page table needed to mark the GHCB as unencrypted.
+  #  The value should be a multiple of 4KB for each.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableBase|0x0|UINT32|0x3e
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableSize|0x0|UINT32|0x3f
+
+  ## The base address of the SEC GHCB page used by SEV-ES.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBase|0|UINT32|0x40
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbSize|0|UINT32|0x41
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupBase|0|UINT32|0x44
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupSize|0|UINT32|0x45
+
+  ## The base address and size of the SEV Launch Secret Area provisioned
+  #  after remote attestation.  If this is set in the .fdf, the platform
+  #  is responsible for protecting the area from DXE phase overwrites.
+  gUefiOvmfPkgTokenSpaceGuid.PcdSevLaunchSecretBase|0x0|UINT32|0x42
+  gUefiOvmfPkgTokenSpaceGuid.PcdSevLaunchSecretSize|0x0|UINT32|0x43
+
 [PcdsDynamic, PcdsDynamicEx]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent|0|UINT64|2
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashVariablesEnable|FALSE|BOOLEAN|0x10
@@ -315,6 +355,10 @@
   #
   #  This PCD is only accessed if PcdSmmSmramRequire is TRUE (see below).
   gUefiOvmfPkgTokenSpaceGuid.PcdQ35SmramAtDefaultSmbase|FALSE|BOOLEAN|0x34
+
+  ## This PCD adds a communication channel between OVMF's SmmCpuFeaturesLib
+  #  instance in PiSmmCpuDxeSmm, and CpuHotplugSmm.
+  gUefiOvmfPkgTokenSpaceGuid.PcdCpuHotEjectDataAddress|0|UINT64|0x46
 
 [PcdsFeatureFlag]
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderPciTranslation|TRUE|BOOLEAN|0x1c

@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryAllocationLib.h>
 #include <Library/CpuLib.h>
 #include <Library/BaseLib.h>
+#include <Guid/MigratedFvInfo.h>
 #ifdef VBOX
 # define IN_RING0
 # include <iprt/asm.h>
@@ -180,7 +181,7 @@ GetPhysicalAddressWidth (
   Get the type of top level page table.
 
   @retval Page512G  PML4 paging.
-  @retval Page1G    PAE paing.
+  @retval Page1G    PAE paging.
 
 **/
 PAGE_ATTRIBUTE
@@ -643,7 +644,7 @@ SetupStackGuardPage (
 }
 
 /**
-  Enabl/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
+  Enable/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
 
   Doing this in the memory-discovered callback is to make sure the Stack Guard
   feature to cover as most PEI code as possible.
@@ -663,8 +664,10 @@ MemoryDiscoveredPpiNotifyCallback (
   IN VOID                       *Ppi
   )
 {
-  EFI_STATUS      Status;
-  BOOLEAN         InitStackGuard;
+  EFI_STATUS              Status;
+  BOOLEAN                 InitStackGuard;
+  EDKII_MIGRATED_FV_INFO  *MigratedFvInfo;
+  EFI_PEI_HOB_POINTERS    Hob;
 
   //
   // Paging must be setup first. Otherwise the exception TSS setup during MP
@@ -672,9 +675,14 @@ MemoryDiscoveredPpiNotifyCallback (
   // the task switch (for the sake of stack switch).
   //
   InitStackGuard = FALSE;
-  if (IsIa32PaeSupported () && PcdGetBool (PcdCpuStackGuard)) {
+  Hob.Raw = NULL;
+  if (IsIa32PaeSupported ()) {
+    Hob.Raw  = GetFirstGuidHob (&gEdkiiMigratedFvInfoGuid);
+    InitStackGuard = PcdGetBool (PcdCpuStackGuard);
+  }
+
+  if (InitStackGuard || Hob.Raw != NULL) {
     EnablePaging ();
-    InitStackGuard = TRUE;
   }
 
   Status = InitializeCpuMpWorker ((CONST EFI_PEI_SERVICES **)PeiServices);
@@ -683,6 +691,20 @@ MemoryDiscoveredPpiNotifyCallback (
   if (InitStackGuard) {
     SetupStackGuardPage ();
   }
+
+  while (Hob.Raw != NULL) {
+    MigratedFvInfo = GET_GUID_HOB_DATA (Hob);
+
+    //
+    // Enable #PF exception, so if the code access SPI after disable NEM, it will generate
+    // the exception to avoid potential vulnerability.
+    //
+    ConvertMemoryPageAttributes (MigratedFvInfo->FvOrgBase, MigratedFvInfo->FvLength, 0);
+
+    Hob.Raw = GET_NEXT_HOB (Hob);
+    Hob.Raw = GetNextGuidHob (&gEdkiiMigratedFvInfoGuid, Hob.Raw);
+  }
+  CpuFlushTlb ();
 
   return Status;
 }

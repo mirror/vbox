@@ -7,7 +7,7 @@
   and MM driver) and/or specific dedicated hardware.
 
   Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.<BR>
+  Copyright (c) 2016 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -34,6 +34,27 @@ EFI_PHYSICAL_ADDRESS  mMmMemLibInternalMaximumSupportAddress = 0;
 **/
 VOID
 MmMemLibInternalCalculateMaximumSupportAddress (
+  VOID
+  );
+
+/**
+  Initialize cached Mmram Ranges from HOB.
+
+  @retval EFI_UNSUPPORTED   The routine is unable to extract MMRAM information.
+  @retval EFI_SUCCESS       MmRanges are populated successfully.
+
+**/
+EFI_STATUS
+MmMemLibInternalPopulateMmramRanges (
+  VOID
+  );
+
+/**
+  Deinitialize cached Mmram Ranges.
+
+**/
+VOID
+MmMemLibInternalFreeMmramRanges (
   VOID
   );
 
@@ -145,7 +166,7 @@ MmCopyMemToMmram (
   @param  SourceBuffer        The pointer to the source buffer of the memory copy.
   @param  Length              The number of bytes to copy from SourceBuffer to DestinationBuffer.
 
-  @retval EFI_SECURITY_VIOLATION The DesinationBuffer is invalid per processor architecture or overlap with MMRAM.
+  @retval EFI_SECURITY_VIOLATION The DestinationBuffer is invalid per processor architecture or overlap with MMRAM.
   @retval EFI_SUCCESS            Memory is copied.
 
 **/
@@ -179,7 +200,7 @@ MmCopyMemFromMmram (
   @param  SourceBuffer        The pointer to the source buffer of the memory copy.
   @param  Length              The number of bytes to copy from SourceBuffer to DestinationBuffer.
 
-  @retval EFI_SECURITY_VIOLATION The DesinationBuffer is invalid per processor architecture or overlap with MMRAM.
+  @retval EFI_SECURITY_VIOLATION The DestinationBuffer is invalid per processor architecture or overlap with MMRAM.
   @retval EFI_SECURITY_VIOLATION The SourceBuffer is invalid per processor architecture or overlap with MMRAM.
   @retval EFI_SUCCESS            Memory is copied.
 
@@ -240,8 +261,8 @@ MmSetMem (
 /**
   The constructor function initializes the Mm Mem library
 
-  @param  ImageHandle   The firmware allocated handle for the EFI image.
-  @param  SystemTable   A pointer to the EFI System Table.
+  @param  [in]  ImageHandle     The firmware allocated handle for the EFI image.
+  @param  [in]  MmSystemTable   A pointer to the EFI System Table.
 
   @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
 
@@ -253,11 +274,42 @@ MemLibConstructor (
   IN EFI_MM_SYSTEM_TABLE    *MmSystemTable
   )
 {
+  EFI_STATUS Status;
 
   //
   // Calculate and save maximum support address
   //
   MmMemLibInternalCalculateMaximumSupportAddress ();
+
+  //
+  // Initialize cached Mmram Ranges from HOB.
+  //
+  Status = MmMemLibInternalPopulateMmramRanges ();
+
+  return Status;
+}
+
+/**
+  Destructor for Mm Mem library.
+
+  @param ImageHandle    The image handle of the process.
+  @param MmSystemTable  The EFI System Table pointer.
+
+  @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
+
+**/
+EFI_STATUS
+EFIAPI
+MemLibDestructor (
+  IN EFI_HANDLE             ImageHandle,
+  IN EFI_MM_SYSTEM_TABLE    *MmSystemTable
+  )
+{
+
+  //
+  // Deinitialize cached Mmram Ranges.
+  //
+  MmMemLibInternalFreeMmramRanges ();
 
   return EFI_SUCCESS;
 }

@@ -281,9 +281,11 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None, Inclu
                         F = File.readlines()
                 break
         else:
-            EdkLogger.error("Trim", "Failed to find include file %s" % Source)
+            EdkLogger.warn("Trim", "Failed to find include file %s" % Source)
+            return []
     except:
-        EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
+        EdkLogger.warn("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
+        return []
 
 
     # avoid A "include" B and B "include" A
@@ -370,8 +372,7 @@ def TrimAslFile(Source, Target, IncludePathFile,AslDeps = False):
     AslIncludes = []
     Lines = DoInclude(Source, '', IncludePathList,IncludeFileList=AslIncludes,filetype='ASL')
     AslIncludes = [item for item in AslIncludes if item !=Source]
-    if AslDeps and AslIncludes:
-        SaveFileOnChange(os.path.join(os.path.dirname(Target),os.path.basename(Source))+".trim.deps", " \\\n".join([Source+":"] +AslIncludes),False)
+    SaveFileOnChange(os.path.join(os.path.dirname(Target),os.path.basename(Source))+".trim.deps", " \\\n".join([Source+":"] +AslIncludes),False)
 
     #
     # Undef MIN and MAX to avoid collision in ASL source code

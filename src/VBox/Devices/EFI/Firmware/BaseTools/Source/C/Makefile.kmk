@@ -34,7 +34,6 @@ include $(PATH_SUB_CURRENT)/LzmaCompress/Makefile.kmk
 include $(PATH_SUB_CURRENT)/GenFw/Makefile.kmk
 include $(PATH_SUB_CURRENT)/TianoCompress/Makefile.kmk
 include $(PATH_SUB_CURRENT)/EfiRom/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Split/Makefile.kmk
 include $(PATH_SUB_CURRENT)/GenSec/Makefile.kmk
 include $(PATH_SUB_CURRENT)/GenFfs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/GenCrc32/Makefile.kmk

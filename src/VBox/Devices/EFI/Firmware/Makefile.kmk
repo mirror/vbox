@@ -49,12 +49,14 @@ VBOX_EFI_BLDPROGS := $(filter-out $(VBOX_EFI_BLDPROGS),$(BLDPROGS)) VBoxEfiBldPy
 # Binary wrappers for python scripts.
 #
 VBOX_EFI_PYTHON_WRAPPERS = \
+	AmlToC \
 	BPDG \
 	build \
 	Ecc \
 	GenFds \
 	GenPatchPcdTable \
 	PatchPcdValue \
+	Split \
 	Trim \
 	TargetTool \
 	UPT

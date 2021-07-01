@@ -2,7 +2,7 @@
 
   Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   Copyright (c) 2016 HP Development Company, L.P.
-  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2021, Arm Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -44,6 +44,16 @@ EFI_MM_SYSTEM_TABLE *mMmst = NULL;
 //
 STATIC EFI_HANDLE            mMmCpuHandle = NULL;
 
+/** Returns the HOB data for the matching HOB GUID.
+
+  @param  [in]  HobList  Pointer to the HOB list.
+  @param  [in]  HobGuid  The GUID for the HOB.
+  @param  [out] HobData  Pointer to the HOB data.
+
+  @retval  EFI_SUCCESS            The function completed successfully.
+  @retval  EFI_INVALID_PARAMETER  Invalid parameter.
+  @retval  EFI_NOT_FOUND          Could not find HOB with matching GUID.
+**/
 EFI_STATUS
 GetGuidedHobData (
   IN  VOID *HobList,
@@ -53,23 +63,37 @@ GetGuidedHobData (
 {
   EFI_HOB_GUID_TYPE *Hob;
 
-  if (!HobList || !HobGuid || !HobData)
+  if ((HobList == NULL) || (HobGuid == NULL) || (HobData == NULL)) {
     return EFI_INVALID_PARAMETER;
+  }
 
   Hob = GetNextGuidHob (HobGuid, HobList);
-  if (!Hob)
+  if (Hob == NULL) {
     return EFI_NOT_FOUND;
+  }
 
   *HobData = GET_GUID_HOB_DATA (Hob);
-  if (!HobData)
+  if (*HobData == NULL) {
     return EFI_NOT_FOUND;
+  }
 
   return EFI_SUCCESS;
 }
 
+/** Entry point for the Standalone MM CPU driver.
+
+  @param  [in]  ImageHandle   Unused. Not actual image handle.
+  @param  [in]  SystemTable   Pointer to MM System table.
+
+  @retval  EFI_SUCCESS            The function completed successfully.
+  @retval  EFI_INVALID_PARAMETER  Invalid parameter.
+  @retval  EFI_OUT_OF_RESOURCES   Out of resources.
+  @retval  EFI_NOT_FOUND          Failed to find the HOB for the CPU
+                                  driver endpoint descriptor.
+**/
 EFI_STATUS
 StandaloneMmCpuInitialize (
-  IN EFI_HANDLE         ImageHandle,  // not actual imagehandle
+  IN EFI_HANDLE            ImageHandle,  // not actual imagehandle
   IN EFI_MM_SYSTEM_TABLE   *SystemTable  // not actual systemtable
   )
 {

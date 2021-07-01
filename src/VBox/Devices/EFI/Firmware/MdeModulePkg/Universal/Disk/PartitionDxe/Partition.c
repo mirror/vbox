@@ -35,14 +35,22 @@ EFI_DRIVER_BINDING_PROTOCOL gPartitionDriverBinding = {
 
 //
 // Prioritized function list to detect partition table.
+// Refer to UEFI Spec 13.3.2 Partition Discovery, the block device
+// should be scanned in below order:
+// 1. GPT
+// 2. ISO 9660 (El Torito) (or UDF)
+// 3. MBR
+// 4. no partiton found
+// Note: UDF is using a same method as booting from CD-ROM, so put it along
+//        with CD-ROM check.
 //
 PARTITION_DETECT_ROUTINE mPartitionDetectRoutineTable[] = {
 #ifdef VBOX
   PartitionInstallAppleChildHandles,
 #endif
   PartitionInstallGptChildHandles,
-  PartitionInstallMbrChildHandles,
   PartitionInstallUdfChildHandles,
+  PartitionInstallMbrChildHandles,
   NULL
 };
 
@@ -1331,6 +1339,15 @@ PartitionInstallChildHandle (
   } else {
     FreePool (Private->DevicePath);
     FreePool (Private);
+
+    //
+    // if the Status == EFI_ALREADY_STARTED, it means the child handles
+    // are already installed. So return EFI_SUCCESS to avoid do the next
+    // partition type check.
+    //
+    if (Status == EFI_ALREADY_STARTED) {
+      Status = EFI_SUCCESS;
+    }
   }
 
   return Status;
