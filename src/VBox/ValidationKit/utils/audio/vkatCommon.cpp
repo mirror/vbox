@@ -280,8 +280,27 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
          *       has nothing to do with the device emulation scheduling hint. */
         AudioTestSetObjAddMetadataStr(pObj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
 
+        PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
+
+        uint32_t const  cbPreBuffer        = PDMAudioPropsFramesToBytes(pMix->pProps, pStream->Cfg.Backend.cFramesPreBuffering);
+        uint64_t const  nsStarted          = RTTimeNanoTS();
+        uint64_t        nsDonePreBuffering = 0;
+
+        uint64_t        offStream          = 0;
+
         while (cbToPlayTotal)
         {
+            /* Pace ourselves a little. */
+            if (offStream >= cbPreBuffer)
+            {
+                if (!nsDonePreBuffering)
+                    nsDonePreBuffering = RTTimeNanoTS();
+                uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream - cbPreBuffer);
+                uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
+                if (cNsWritten > cNsElapsed + RT_NS_10MS)
+                    RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
+            }
+
             uint32_t       cbPlayed   = 0;
             uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
             if (cbCanWrite)
@@ -291,12 +310,16 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
                 if (RT_SUCCESS(rc))
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes ...\n", cbToPlay);
-
                     /* Write stuff to disk before trying to play it. Help analysis later. */
                     rc = AudioTestSetObjWrite(pObj, abBuf, cbToPlay);
                     if (RT_SUCCESS(rc))
+                    {
                         rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
+                        if (RT_SUCCESS(rc))
+                        {
+                            offStream += cbPlayed;
+                        }
+                    }
                 }
 
                 if (RT_FAILURE(rc))
@@ -310,6 +333,9 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
             Assert(cbToPlayTotal >= cbPlayed);
             cbToPlayTotal -= cbPlayed;
         }
+
+        if (RT_SUCCESS(rc))
+            rc = AudioTestMixStreamDrain(&pStream->Mix, true /*fSync*/);
 
         if (cbToPlayTotal != 0)
             RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32 bytes left)\n", cbToPlayTotal);
