@@ -1,14 +1,12 @@
-#/** @file
-#
+## @file
 #  Standalone MM CPU driver for ARM Standard Platforms
 #
 #  Copyright (c) 2009, Apple Inc. All rights reserved.<BR>
 #  Copyright (c) 2016 HP Development Company, L.P.
-#  Copyright (c) 2017 - 2018, ARM Limited. All rights reserved.
+#  Copyright (c) 2017 - 2021, Arm Limited. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
-#
-#**/
+##
 
 [Defines]
   INF_VERSION                    = 0x0001001A
@@ -21,6 +19,7 @@
 
 [Sources]
   StandaloneMmCpu.c
+  StandaloneMmCpu.h
   EventHandle.c
 
 [Packages]

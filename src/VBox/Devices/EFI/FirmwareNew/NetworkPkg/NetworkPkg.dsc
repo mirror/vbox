@@ -2,7 +2,7 @@
 # UEFI 2.4 Network Module Package for All Architectures
 #
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-# Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2021, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -17,6 +17,10 @@
   SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
+
+  DEFINE NETWORK_ISCSI_ENABLE    = TRUE
+
+!include MdePkg/MdeLibs.dsc.inc
 
 [LibraryClasses]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
@@ -40,6 +44,7 @@
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 !ifdef CONTINUOUS_INTEGRATION
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
@@ -106,6 +111,7 @@
   NetworkPkg/Application/VConfig/VConfig.inf
   NetworkPkg/Library/DxeDpcLib/DxeDpcLib.inf
   NetworkPkg/Library/DxeHttpLib/DxeHttpLib.inf
+  NetworkPkg/Library/DxeHttpIoLib/DxeHttpIoLib.inf
   NetworkPkg/Library/DxeIpIoLib/DxeIpIoLib.inf
   NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
   NetworkPkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf

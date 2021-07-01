@@ -1,7 +1,7 @@
 /** @file
   MTRR setting library
 
-  Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2008 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -186,36 +186,6 @@ MtrrGetMemoryAttribute (
 
 
 /**
-  This function will get the raw value in variable MTRRs
-
-  @param[out]  VariableSettings   A buffer to hold variable MTRRs content.
-
-  @return The buffer point to MTRR_VARIABLE_SETTINGS in which holds the content of the variable MTRR
-
-**/
-MTRR_VARIABLE_SETTINGS*
-EFIAPI
-MtrrGetVariableMtrr (
-  OUT MTRR_VARIABLE_SETTINGS         *VariableSettings
-  );
-
-
-/**
-  This function sets variable MTRRs
-
-  @param[in]  VariableSettings   A buffer to hold variable MTRRs content.
-
-  @return The pointer of VariableSettings
-
-**/
-MTRR_VARIABLE_SETTINGS*
-EFIAPI
-MtrrSetVariableMtrr (
-  IN MTRR_VARIABLE_SETTINGS         *VariableSettings
-  );
-
-
-/**
   This function gets the content in fixed MTRRs
 
   @param[out]  FixedSettings      A buffer to hold fixed MTRRs content.
@@ -227,21 +197,6 @@ MTRR_FIXED_SETTINGS*
 EFIAPI
 MtrrGetFixedMtrr (
   OUT MTRR_FIXED_SETTINGS         *FixedSettings
-  );
-
-
-/**
-  This function sets fixed MTRRs
-
-  @param[in]   FixedSettings      A buffer holding fixed MTRRs content.
-
-  @return  The pointer of FixedSettings
-
-**/
-MTRR_FIXED_SETTINGS*
-EFIAPI
-MtrrSetFixedMtrr (
-  IN MTRR_FIXED_SETTINGS          *FixedSettings
   );
 
 

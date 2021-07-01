@@ -48,3 +48,8 @@
   PrintLib
   LocalApicLib
   PeCoffGetEntryPointLib
+  VmgExitLib
+
+[FeaturePcd]
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackGuard                    ## CONSUMES
+

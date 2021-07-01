@@ -1,7 +1,7 @@
 ## @file
 # Module entry point library for DXE core.
 #
-# Copyright (c) 2017 - 2018, ARM Ltd. All rights reserved.<BR>
+# Copyright (c) 2017 - 2021, Arm Ltd. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -26,6 +26,9 @@
   AArch64/SetPermissions.c
   AArch64/CreateHobList.c
 
+[Sources.X64]
+  X64/StandaloneMmCoreEntryPoint.c
+
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
@@ -33,7 +36,6 @@
 
 [Packages.AARCH64]
   ArmPkg/ArmPkg.dec
-  ArmPlatformPkg/ArmPlatformPkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -48,3 +50,9 @@
   gEfiMmPeiMmramMemoryReserveGuid
   gEfiStandaloneMmNonSecureBufferGuid
   gEfiArmTfCpuDriverEpDescriptorGuid
+
+[FeaturePcd.AARCH64]
+  gArmTokenSpaceGuid.PcdFfaEnable
+
+[BuildOptions]
+  GCC:*_*_*_CC_FLAGS = -fpie

@@ -6,7 +6,7 @@
 
 **/
 
-#include "StatusCodeHandlerSmm.h"
+#include "StatusCodeHandlerMm.h"
 
 /**
   Convert status code value and extended data to readable ASCII string, send string to serial I/O device.
@@ -129,7 +129,7 @@ SerialStatusCodeReportWorker (
     CharCount = AsciiSPrint (
                   Buffer,
                   sizeof (Buffer),
-                  "%a\n\r",
+                  "%a",
                   ((EFI_STATUS_CODE_STRING_DATA *) Data)->String.Ascii
                   );
   } else {

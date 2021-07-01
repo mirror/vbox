@@ -2,7 +2,7 @@
   C based implementation of IA32 interrupt handling only
   requiring a minimal assembly interrupt entry point.
 
-  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -13,7 +13,7 @@
 //
 // Global descriptor table (GDT) Template
 //
-STATIC GDT_ENTRIES GdtTemplate = {
+STATIC GDT_ENTRIES mGdtTemplate = {
   //
   // NULL_SEL
   //
@@ -70,14 +70,14 @@ STATIC GDT_ENTRIES GdtTemplate = {
     0x0,
   },
   //
-  // SPARE4_SEL
+  // SYS_CODE16_SEL
   //
   {
-    0x0,            // limit 15:0
+    0x0FFFF,        // limit 15:0
     0x0,            // base 15:0
     0x0,            // base 23:16
-    0x0,            // type
-    0x0,            // limit 19:16, flags
+    0x09A,          // present, ring 0, code, execute/read
+    0x08F,          // page-granular, 16-bit
     0x0,            // base 31:24
   },
   //
@@ -124,14 +124,31 @@ InitGlobalDescriptorTable (
   VOID
   )
 {
-  GDT_ENTRIES *gdt;
-  IA32_DESCRIPTOR gdtPtr;
+#ifndef VBOX
+  EFI_STATUS            Status;
+#endif
+  GDT_ENTRIES           *Gdt;
+  IA32_DESCRIPTOR       Gdtr;
+#ifndef VBOX
+  EFI_PHYSICAL_ADDRESS  Memory;
+#endif
 
   //
-  // Allocate Runtime Data for the GDT
+  // Allocate Runtime Data below 4GB for the GDT
+  // AP uses the same GDT when it's waken up from real mode so
+  // the GDT needs to be below 4GB.
   //
 #ifndef VBOX
-  gdt = AllocateRuntimePool (sizeof (GdtTemplate) + 8);
+  Memory = SIZE_4GB - 1;
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  EfiRuntimeServicesData,
+                  EFI_SIZE_TO_PAGES (sizeof (mGdtTemplate)),
+                  &Memory
+                  );
+  ASSERT_EFI_ERROR (Status);
+  ASSERT ((Memory != 0) && (Memory < SIZE_4GB));
+  Gdt = (GDT_ENTRIES *) (UINTN) Memory;
 #else
   /*
    * Apples bootloader boot.efi for at least OS X Tiger, Leopard and Snow Leopard
@@ -141,22 +158,22 @@ InitGlobalDescriptorTable (
    * (search for PeiServicesAllocatePages()) for a more detailed explanation of a
    * related bug in Apples bootloader.
    */
-  gdt = AllocateReservedPool (sizeof (GdtTemplate) + 8);
+  Gdt = AllocateReservedPool (sizeof (mGdtTemplate) + 8);
+  ASSERT (Gdt != NULL);
+  Gdt = ALIGN_POINTER (Gdt, 8);
 #endif
-  ASSERT (gdt != NULL);
-  gdt = ALIGN_POINTER (gdt, 8);
 
   //
   // Initialize all GDT entries
   //
-  CopyMem (gdt, &GdtTemplate, sizeof (GdtTemplate));
+  CopyMem (Gdt, &mGdtTemplate, sizeof (mGdtTemplate));
 
   //
   // Write GDT register
   //
-  gdtPtr.Base = (UINT32)(UINTN)(VOID*) gdt;
-  gdtPtr.Limit = (UINT16) (sizeof (GdtTemplate) - 1);
-  AsmWriteGdtr (&gdtPtr);
+  Gdtr.Base  = (UINT32) (UINTN) Gdt;
+  Gdtr.Limit = (UINT16) (sizeof (mGdtTemplate) - 1);
+  AsmWriteGdtr (&Gdtr);
 
   //
   // Update selector (segment) registers base on new GDT
@@ -164,4 +181,3 @@ InitGlobalDescriptorTable (
   SetCodeSelector ((UINT16)CPU_CODE_SEL);
   SetDataSelectors ((UINT16)CPU_DATA_SEL);
 }
-

@@ -2,7 +2,7 @@
   Locate, get and update PE/COFF permissions during Standalone MM
   Foundation Entry point on ARM platforms.
 
-Copyright (c) 2017 - 2018, ARM Ltd. All rights reserved.<BR>
+Copyright (c) 2017 - 2021, Arm Ltd. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -25,10 +25,26 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <IndustryStandard/ArmStdSmc.h>
 
+/**
+  Privileged firmware assigns RO & Executable attributes to all memory occupied
+  by the Boot Firmware Volume. This function sets the correct permissions of
+  sections in the Standalone MM Core module to be able to access RO and RW data
+  and make further progress in the boot process.
+
+  @param  [in] ImageContext           Pointer to PE/COFF image context
+  @param  [in] ImageBase              Base of image in memory
+  @param  [in] SectionHeaderOffset    Offset of PE/COFF image section header
+  @param  [in] NumberOfSections       Number of Sections
+  @param  [in] TextUpdater            Function to change code permissions
+  @param  [in] ReadOnlyUpdater        Function to change RO permissions
+  @param  [in] ReadWriteUpdater       Function to change RW permissions
+
+**/
 EFI_STATUS
 EFIAPI
 UpdateMmFoundationPeCoffPermissions (
   IN  CONST PE_COFF_LOADER_IMAGE_CONTEXT      *ImageContext,
+  IN  EFI_PHYSICAL_ADDRESS                    ImageBase,
   IN  UINT32                                  SectionHeaderOffset,
   IN  CONST  UINT16                           NumberOfSections,
   IN  REGION_PERMISSION_UPDATE_FUNC           TextUpdater,
@@ -87,7 +103,7 @@ UpdateMmFoundationPeCoffPermissions (
     // if it is a writeable section then mark it appropriately as well.
     //
     if ((SectionHeader.Characteristics & EFI_IMAGE_SCN_MEM_EXECUTE) == 0) {
-      Base = ImageContext->ImageAddress + SectionHeader.VirtualAddress;
+      Base = ImageBase + SectionHeader.VirtualAddress;
 
       TextUpdater (Base, SectionHeader.Misc.VirtualSize);
 
@@ -112,6 +128,17 @@ UpdateMmFoundationPeCoffPermissions (
   return RETURN_SUCCESS;
 }
 
+/**
+  Privileged firmware assigns RO & Executable attributes to all memory occupied
+  by the Boot Firmware Volume. This function locates the Standalone MM Core
+  module PE/COFF image in the BFV and returns this information.
+
+  @param  [in]      BfvAddress         Base Address of Boot Firmware Volume
+  @param  [in, out] TeData             Pointer to address for allocating memory
+                                       for PE/COFF image data
+  @param  [in, out] TeDataSize         Pointer to size of PE/COFF image data
+
+**/
 EFI_STATUS
 EFIAPI
 LocateStandaloneMmCorePeCoffData (
@@ -120,9 +147,10 @@ LocateStandaloneMmCorePeCoffData (
   IN  OUT   UINTN                           *TeDataSize
   )
 {
-  EFI_FFS_FILE_HEADER             *FileHeader = NULL;
+  EFI_FFS_FILE_HEADER             *FileHeader;
   EFI_STATUS                      Status;
 
+  FileHeader = NULL;
   Status = FfsFindNextFile (
              EFI_FV_FILETYPE_SECURITY_CORE,
              BfvAddress,
@@ -149,10 +177,20 @@ LocateStandaloneMmCorePeCoffData (
   return Status;
 }
 
+/**
+  Returns the PC COFF section information.
+
+  @param  [in, out] ImageContext         Pointer to PE/COFF image context
+  @param  [out]     ImageBase            Base of image in memory
+  @param  [out]     SectionHeaderOffset  Offset of PE/COFF image section header
+  @param  [out]     NumberOfSections     Number of Sections
+
+**/
 STATIC
 EFI_STATUS
 GetPeCoffSectionInformation (
   IN  OUT   PE_COFF_LOADER_IMAGE_CONTEXT      *ImageContext,
+      OUT   EFI_PHYSICAL_ADDRESS              *ImageBase,
       OUT   UINT32                            *SectionHeaderOffset,
       OUT   UINT16                            *NumberOfSections
   )
@@ -212,6 +250,7 @@ GetPeCoffSectionInformation (
     return Status;
   }
 
+  *ImageBase = ImageContext->ImageAddress;
   if (!ImageContext->IsTeImage) {
     ASSERT (Hdr.Pe32->Signature == EFI_IMAGE_NT_SIGNATURE);
 
@@ -232,16 +271,30 @@ GetPeCoffSectionInformation (
   } else {
     *SectionHeaderOffset = (UINTN)(sizeof (EFI_TE_IMAGE_HEADER));
     *NumberOfSections = Hdr.Te->NumberOfSections;
-    ImageContext->ImageAddress -= (UINT32)Hdr.Te->StrippedSize - sizeof (EFI_TE_IMAGE_HEADER);
+    *ImageBase -= (UINT32)Hdr.Te->StrippedSize - sizeof (EFI_TE_IMAGE_HEADER);
   }
   return RETURN_SUCCESS;
 }
 
+/**
+  Privileged firmware assigns RO & Executable attributes to all memory occupied
+  by the Boot Firmware Volume. This function locates the section information of
+  the Standalone MM Core module to be able to change permissions of the
+  individual sections later in the boot process.
+
+  @param  [in]      TeData                Pointer to PE/COFF image data
+  @param  [in, out] ImageContext          Pointer to PE/COFF image context
+  @param  [out]     ImageBase             Pointer to ImageBase variable
+  @param  [in, out] SectionHeaderOffset   Offset of PE/COFF image section header
+  @param  [in, out] NumberOfSections      Number of Sections
+
+**/
 EFI_STATUS
 EFIAPI
 GetStandaloneMmCorePeCoffSections (
   IN        VOID                            *TeData,
   IN  OUT   PE_COFF_LOADER_IMAGE_CONTEXT    *ImageContext,
+      OUT   EFI_PHYSICAL_ADDRESS            *ImageBase,
   IN  OUT   UINT32                          *SectionHeaderOffset,
   IN  OUT   UINT16                          *NumberOfSections
   )
@@ -255,7 +308,8 @@ GetStandaloneMmCorePeCoffSections (
 
   DEBUG ((DEBUG_INFO, "Found Standalone MM PE data - 0x%x\n", TeData));
 
-  Status = GetPeCoffSectionInformation (ImageContext, SectionHeaderOffset, NumberOfSections);
+  Status = GetPeCoffSectionInformation (ImageContext, ImageBase,
+             SectionHeaderOffset, NumberOfSections);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "Unable to locate Standalone MM Core PE-COFF Section information - %r\n", Status));
     return Status;

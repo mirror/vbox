@@ -129,7 +129,7 @@ SerialStatusCodeReportWorker (
     CharCount = AsciiSPrint (
                   Buffer,
                   sizeof (Buffer),
-                  "%a\n\r",
+                  "%a",
                   ((EFI_STATUS_CODE_STRING_DATA *) Data)->String.Ascii
                   );
   } else {
@@ -150,6 +150,16 @@ SerialStatusCodeReportWorker (
   // Call SerialPort Lib function to do print.
   //
   SerialPortWrite ((UINT8 *) Buffer, CharCount);
+
+  //
+  // If register an unregister function of gEfiEventExitBootServicesGuid,
+  // then some log called in ExitBootServices() will be lost,
+  // so unregister the handler after receive the value of exit boot service.
+  //
+  if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE &&
+      Value == (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_BS_PC_EXIT_BOOT_SERVICES)) {
+    UnregisterSerialBootTimeHandlers();
+  }
 
   return EFI_SUCCESS;
 }

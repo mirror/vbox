@@ -49,7 +49,7 @@
 #define PRINT_STRUCT_VALUE(pStruct, type, element) \
   do { \
     ShellPrintEx(-1,-1,L"%a",#element); \
-    ShellPrintEx(-1,-1,L": %d\n", (pStruct->type->element)); \
+    ShellPrintEx(-1,-1,L": %u\n", (pStruct->type->element)); \
   } while (0);
 
 #define PRINT_STRUCT_VALUE_H(pStruct, type, element) \
@@ -280,6 +280,7 @@ SmbiosPrintStructure (
   )
 {
   UINT8 Index;
+  UINT8 Index2;
   UINT8 *Buffer;
 
   if (Struct == NULL) {
@@ -404,6 +405,21 @@ SmbiosPrintStructure (
       if (Struct->Hdr->Length > 0x12) {
         PRINT_STRUCT_VALUE (Struct, Type3, NumberofPowerCords);
       }
+      if (Struct->Hdr->Length > 0x13) {
+        PRINT_STRUCT_VALUE (Struct, Type3, ContainedElementCount);
+      }
+      if (Struct->Hdr->Length > 0x14) {
+        PRINT_STRUCT_VALUE (Struct, Type3, ContainedElementRecordLength);
+      }
+      if (Struct->Hdr->Length > 0x15) {
+        for (Index = 0; Index < Struct->Type3->ContainedElementCount; Index++) {
+          ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_CONTAINED_ELEMENT), gShellDebug1HiiHandle, Index+1);
+          for (Index2 = 0; Index2< Struct->Type3->ContainedElementRecordLength; Index2++) {
+            Print (L"%02X ", Buffer[0x15 + (Index * Struct->Type3->ContainedElementRecordLength) + Index2]);
+          }
+          Print (L"\n");
+        }
+      }
     }
     if (AE_SMBIOS_VERSION (0x2, 0x7) && (Struct->Hdr->Length > 0x13)) {
       if (Struct->Hdr->Length > (0x15 + (Struct->Type3->ContainedElementCount * Struct->Type3->ContainedElementRecordLength))) {
@@ -427,7 +443,7 @@ SmbiosPrintStructure (
     } else {
       DisplayProcessorFamily (Struct->Type4->ProcessorFamily, Option);
     }
-    PRINT_PENDING_STRING (Struct, Type4, ProcessorManufacture);
+    PRINT_PENDING_STRING (Struct, Type4, ProcessorManufacturer);
     PRINT_BIT_FIELD (Struct, Type4, ProcessorId, 8);
     PRINT_PENDING_STRING (Struct, Type4, ProcessorVersion);
     DisplayProcessorVoltage (*(UINT8 *) &(Struct->Type4->Voltage), Option);
@@ -634,8 +650,8 @@ SmbiosPrintStructure (
       NumOfItem = (Struct->Type14->Hdr.Length - 5) / 3;
       PRINT_PENDING_STRING (Struct, Type14, GroupName);
       for (Index = 0; Index < NumOfItem; Index++) {
-        ShellPrintEx(-1,-1,L"ItemType %d: %d\n", Index + 1, Struct->Type14->Group[Index].ItemType);
-        ShellPrintEx(-1,-1,L"ItemHandle %d: %d\n", Index + 1, Struct->Type14->Group[Index].ItemHandle);
+        ShellPrintEx(-1,-1,L"ItemType %u: %u\n", Index + 1, Struct->Type14->Group[Index].ItemType);
+        ShellPrintEx(-1,-1,L"ItemHandle %u: %u\n", Index + 1, Struct->Type14->Group[Index].ItemHandle);
       }
     }
     break;
@@ -746,8 +762,8 @@ SmbiosPrintStructure (
   case 17:
     PRINT_STRUCT_VALUE_H (Struct, Type17, MemoryArrayHandle);
     PRINT_STRUCT_VALUE_H (Struct, Type17, MemoryErrorInformationHandle);
-    PRINT_STRUCT_VALUE (Struct, Type17, TotalWidth);
-    PRINT_STRUCT_VALUE (Struct, Type17, DataWidth);
+    PRINT_STRUCT_VALUE_H (Struct, Type17, TotalWidth);
+    PRINT_STRUCT_VALUE_H (Struct, Type17, DataWidth);
     PRINT_STRUCT_VALUE (Struct, Type17, Size);
     DisplayMemoryDeviceFormFactor (Struct->Type17->FormFactor, Option);
     PRINT_STRUCT_VALUE_H (Struct, Type17, DeviceSet);
@@ -765,7 +781,7 @@ SmbiosPrintStructure (
     }
     if (AE_SMBIOS_VERSION (0x2, 0x7) && (Struct->Hdr->Length > 0x1C)) {
       PRINT_STRUCT_VALUE (Struct, Type17, ExtendedSize);
-      PRINT_STRUCT_VALUE (Struct, Type17, ConfiguredMemoryClockSpeed);
+      PRINT_STRUCT_VALUE_H (Struct, Type17, ConfiguredMemoryClockSpeed);
     }
     if (AE_SMBIOS_VERSION (0x2, 0x8) && (Struct->Hdr->Length > 0x22)) {
       PRINT_STRUCT_VALUE (Struct, Type17, MinimumVoltage);
@@ -776,23 +792,23 @@ SmbiosPrintStructure (
       if (Struct->Hdr->Length > 0x28) {
         DisplayMemoryDeviceMemoryTechnology (Struct->Type17->MemoryTechnology, Option);
         DisplayMemoryDeviceMemoryOperatingModeCapability (Struct->Type17->MemoryOperatingModeCapability.Uint16, Option);
-        PRINT_PENDING_STRING (Struct, Type17, FirwareVersion);
+        PRINT_PENDING_STRING (Struct, Type17, FirmwareVersion);
         PRINT_STRUCT_VALUE_H (Struct, Type17, ModuleManufacturerID);
         PRINT_STRUCT_VALUE_H (Struct, Type17, ModuleProductID);
         PRINT_STRUCT_VALUE_H (Struct, Type17, MemorySubsystemControllerManufacturerID);
         PRINT_STRUCT_VALUE_H (Struct, Type17, MemorySubsystemControllerProductID);
       }
       if (Struct->Hdr->Length > 0x34) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, NonVolatileSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, NonVolatileSize);
       }
       if (Struct->Hdr->Length > 0x3C) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, VolatileSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, VolatileSize);
       }
       if (Struct->Hdr->Length > 0x44) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, CacheSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, CacheSize);
       }
       if (Struct->Hdr->Length > 0x4C) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, LogicalSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, LogicalSize);
       }
     }
     break;
@@ -1284,7 +1300,7 @@ DisplayBiosCharacteristics (
   }
 
   if (BIT (Chara, 15) != 0) {
-    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BOOT_FORM_CD_SUPPORTED), gShellDebug1HiiHandle);
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BOOT_FROM_CD_SUPPORTED), gShellDebug1HiiHandle);
   }
 
   if (BIT (Chara, 16) != 0) {
@@ -3025,7 +3041,7 @@ DisplaySystemResetCapabilities (
     break;
 
   case 3:
-    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DO_NOT_REBOOT_BITS), gShellDebug1HiiHandle);
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DO_NOT_REBOOT), gShellDebug1HiiHandle);
     break;
   }
   //

@@ -5,7 +5,7 @@
   If a code construct is defined in the UEFI 2.7 specification it must be included
   by this include file.
 
-Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
 Portions Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -96,9 +96,9 @@ typedef enum {
 #define EFI_MEMORY_SP               0x0000000000040000ULL
 //
 // If this flag is set, the memory region is capable of being
-// protected with the CPU?s memory cryptographic
+// protected with the CPU's memory cryptographic
 // capabilities. If this flag is clear, the memory region is not
-// capable of being protected with the CPU?s memory
+// capable of being protected with the CPU's memory
 // cryptographic capabilities or the CPU does not support CPU
 // memory cryptographic capabilities.
 //
@@ -108,6 +108,13 @@ typedef enum {
 // Runtime memory attribute
 //
 #define EFI_MEMORY_RUNTIME          0x8000000000000000ULL
+
+//
+// Attributes bitmasks, grouped by type
+//
+#define EFI_CACHE_ATTRIBUTE_MASK (EFI_MEMORY_UC | EFI_MEMORY_WC | EFI_MEMORY_WT | EFI_MEMORY_WB | EFI_MEMORY_UCE | EFI_MEMORY_WP)
+#define EFI_MEMORY_ACCESS_MASK (EFI_MEMORY_RP | EFI_MEMORY_XP | EFI_MEMORY_RO)
+#define EFI_MEMORY_ATTRIBUTE_MASK (EFI_MEMORY_ACCESS_MASK | EFI_MEMORY_SP | EFI_MEMORY_CPU_CRYPTO)
 
 ///
 /// Memory descriptor version number.
@@ -2218,6 +2225,7 @@ typedef struct {
 #define EFI_REMOVABLE_MEDIA_FILE_NAME_AARCH64 L"\\EFI\\BOOT\\BOOTAA64.EFI"
 #define EFI_REMOVABLE_MEDIA_FILE_NAME_RISCV64 L"\\EFI\\BOOT\\BOOTRISCV64.EFI"
 
+#if !defined(EFI_REMOVABLE_MEDIA_FILE_NAME)
 #if   defined (MDE_CPU_IA32)
   #define EFI_REMOVABLE_MEDIA_FILE_NAME   EFI_REMOVABLE_MEDIA_FILE_NAME_IA32
 #elif defined (MDE_CPU_X64)
@@ -2231,6 +2239,7 @@ typedef struct {
   #define EFI_REMOVABLE_MEDIA_FILE_NAME   EFI_REMOVABLE_MEDIA_FILE_NAME_RISCV64
 #else
   #error Unknown Processor Type
+#endif
 #endif
 
 //

@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include <PiPei.h>
+#include <Library/VmgExitLib.h>
 #include "CpuExceptionCommon.h"
 
 CONST UINTN    mDoFarReturnFlag  = 0;
@@ -24,6 +25,24 @@ CommonExceptionHandler (
   IN EFI_SYSTEM_CONTEXT   SystemContext
   )
 {
+  if (ExceptionType == VC_EXCEPTION) {
+    EFI_STATUS  Status;
+    //
+    // #VC needs to be handled immediately upon enabling exception handling
+    // and therefore can't use the RegisterCpuInterruptHandler() interface
+    // (which isn't supported under Sec and Pei anyway).
+    //
+    // Handle the #VC:
+    //   On EFI_SUCCESS - Exception has been handled, return
+    //   On other       - ExceptionType contains (possibly new) exception
+    //                    value
+    //
+    Status = VmgExitHandleVc (&ExceptionType, SystemContext);
+    if (!EFI_ERROR (Status)) {
+      return;
+    }
+  }
+
   //
   // Initialize the serial port before dumping.
   //
@@ -87,7 +106,7 @@ InitializeCpuExceptionHandlers (
   IdtEntryCount = (IdtDescriptor.Limit + 1) / sizeof (IA32_IDT_GATE_DESCRIPTOR);
   if (IdtEntryCount > CPU_EXCEPTION_NUM) {
     //
-    // CPU exeption library only setup CPU_EXCEPTION_NUM exception handler at most
+    // CPU exception library only setup CPU_EXCEPTION_NUM exception handler at most
     //
     IdtEntryCount = CPU_EXCEPTION_NUM;
   }

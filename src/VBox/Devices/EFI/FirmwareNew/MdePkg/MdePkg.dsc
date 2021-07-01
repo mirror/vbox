@@ -1,7 +1,7 @@
 ## @file
 # EFI/PI MdePkg Package
 #
-# Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 # Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 # (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
 #
@@ -21,6 +21,8 @@
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
+!include MdePkg/MdeLibs.dsc.inc
+
 [PcdsFeatureFlag]
   gEfiMdePkgTokenSpaceGuid.PcdUgaConsumeSupport|TRUE
 
@@ -35,7 +37,9 @@
 [Components]
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
+  MdePkg/Library/BaseCacheMaintenanceLibNull/BaseCacheMaintenanceLibNull.inf
   MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
+  MdePkg/Library/BaseCpuLibNull/BaseCpuLibNull.inf
   MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
   MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
@@ -60,6 +64,10 @@
   MdePkg/Library/BasePostCodeLibPort80/BasePostCodeLibPort80.inf
   MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+  MdePkg/Library/DxeRngLib/DxeRngLib.inf
+  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
+  MdePkg/Library/BaseRngLibTimerLib/BaseRngLibTimerLib.inf
+
   MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
   MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
@@ -67,7 +75,6 @@
   MdePkg/Library/BaseUefiDecompressLib/BaseUefiTianoCustomDecompressLib.inf
   MdePkg/Library/BaseSmbusLibNull/BaseSmbusLibNull.inf
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
@@ -104,6 +111,7 @@
   MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
   MdePkg/Library/UefiDebugLibStdErr/UefiDebugLibStdErr.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+  MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
   MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
   MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -121,6 +129,8 @@
   MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
   MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
 
+  MdePkg/Library/RegisterFilterLibNull/RegisterFilterLibNull.inf
+
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #
   # Add UEFI Target Based Unit Tests
@@ -134,6 +144,9 @@
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibDxe.inf
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibSmm.inf
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibUefiShell.inf
+
+[Components.IA32, Components.X64, Components.AARCH64]
+  MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [Components.IA32, Components.X64]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -158,10 +171,10 @@
   MdePkg/Library/BaseS3StallLib/BaseS3StallLib.inf
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
-  MdePkg/Library/BaseRngLib/BaseRngLib.inf
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
   MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
+  MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
 
 [Components.EBC]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -172,4 +185,3 @@
   MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
 [BuildOptions]
-  *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES

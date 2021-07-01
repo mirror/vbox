@@ -9,6 +9,10 @@
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
 [LibraryClasses.common.HOST_APPLICATION]
+  BaseLib|MdePkg/Library/BaseLib/UnitTestHostBaseLib.inf
+  UnitTestHostBaseLib|MdePkg/Library/BaseLib/UnitTestHostBaseLib.inf
+  CpuLib|MdePkg/Library/BaseCpuLibNull/BaseCpuLibNull.inf
+  CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLibNull/BaseCacheMaintenanceLibNull.inf
   CmockaLib|UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
   UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf
   DebugLib|UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
@@ -16,12 +20,17 @@
 
 [BuildOptions]
   GCC:*_*_*_CC_FLAGS = -fno-pie
+!ifdef $(UNIT_TESTING_DEBUG)
+  MSFT:*_*_*_CC_FLAGS  = -D UNIT_TESTING_DEBUG=1
+  GCC:*_*_*_CC_FLAGS   = -D UNIT_TESTING_DEBUG=1
+  XCODE:*_*_*_CC_FLAGS = -D UNIT_TESTING_DEBUG=1
+!endif
 
 [BuildOptions.common.EDKII.HOST_APPLICATION]
   #
   # MSFT
   #
-  MSFT:*_*_*_DLINK_FLAGS            == /out:"$(BIN_DIR)\$(BASE_NAME).exe" /pdb:"$(BIN_DIR)\$(BASE_NAME).pdb" /IGNORE:4001 /NOLOGO /SUBSYSTEM:CONSOLE /DEBUG /NODEFAULTLIB:libcmt.lib libcmtd.lib
+  MSFT:*_*_*_DLINK_FLAGS            == /out:"$(BIN_DIR)\$(BASE_NAME).exe" /pdb:"$(BIN_DIR)\$(BASE_NAME).pdb" /IGNORE:4001 /NOLOGO /SUBSYSTEM:CONSOLE /DEBUG /STACK:0x40000,0x40000 /NODEFAULTLIB:libcmt.lib libcmtd.lib
   MSFT:*_*_IA32_DLINK_FLAGS         = /MACHINE:I386
   MSFT:*_*_X64_DLINK_FLAGS          = /MACHINE:AMD64
 

@@ -263,6 +263,7 @@ extern UINTN                  mMaxNumberOfCpus;
 extern UINTN                  mNumberOfCpus;
 extern EFI_SMM_CPU_PROTOCOL   mSmmCpu;
 extern EFI_MM_MP_PROTOCOL     mSmmMp;
+extern UINTN                  mInternalCr3;
 
 ///
 /// The mode of the CPU at the time an SMI occurs
@@ -336,7 +337,7 @@ This function supports reading a CPU Save State register in SMBase relocation ha
 
 @retval EFI_SUCCESS           The register was read from Save State.
 @retval EFI_NOT_FOUND         The register is not defined for the Save State of Processor.
-@retval EFI_INVALID_PARAMETER  This or Buffer is NULL.
+@retval EFI_INVALID_PARAMETER Buffer is NULL, or Width does not meet requirement per Register type.
 
 **/
 EFI_STATUS
@@ -942,13 +943,15 @@ SetPageTableAttributes (
   );
 
 /**
-  Return page table base.
+  Get page table base address and the depth of the page table.
 
-  @return page table base.
+  @param[out] Base        Page table base address.
+  @param[out] FiveLevels  TRUE means 5 level paging. FALSE means 4 level paging.
 **/
-UINTN
-GetPageTableBase (
-  VOID
+VOID
+GetPageTable (
+  OUT UINTN   *Base,
+  OUT BOOLEAN *FiveLevels OPTIONAL
   );
 
 /**

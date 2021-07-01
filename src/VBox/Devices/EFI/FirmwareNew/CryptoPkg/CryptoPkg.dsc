@@ -2,7 +2,7 @@
 #  Cryptographic Library Package for UEFI Security Implementation.
 #  PEIM, DXE Driver, and SMM Driver with all crypto services enabled.
 #
-#  Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2009 - 2021, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -45,11 +45,16 @@
   !error CRYPTO_SERVICES must be set to one of PACKAGE ALL NONE MIN_PEI MIN_DXE_MIN_SMM.
 !endif
 
+!include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
+
 ################################################################################
 #
 # Library Class section - list of all Library Classes needed by this Platform.
 #
 ################################################################################
+
+!include MdePkg/MdeLibs.dsc.inc
+
 [LibraryClasses]
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
@@ -60,6 +65,7 @@
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #
@@ -223,6 +229,10 @@
 #       generated for it, but the binary will not be put into any firmware volume.
 #
 ###################################################################################################
+[Components]
+  CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf
+
 !if $(CRYPTO_SERVICES) == PACKAGE
 [Components]
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
@@ -284,3 +294,9 @@
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
+!if $(CRYPTO_SERVICES) IN "PACKAGE ALL"
+  MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
+  INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
+  GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
+  RVCT:*_*_*_CC_FLAGS = -DENABLE_MD5_DEPRECATED_INTERFACES
+!endif

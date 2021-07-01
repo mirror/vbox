@@ -4,9 +4,9 @@
 # It also provides the definitions(including PPIs/PROTOCOLs/GUIDs) of
 # EFI1.10/UEFI2.7/PI1.7 and some Industry Standards.
 #
-# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 # Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-# (C) Copyright 2016 - 2020 Hewlett Packard Enterprise Development LP<BR>
+# (C) Copyright 2016 - 2021 Hewlett Packard Enterprise Development LP<BR>
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -23,6 +23,7 @@
 
 [Includes]
   Include
+  Test/UnitTest/Include
 
 [Includes.IA32]
   Include/Ia32
@@ -251,6 +252,26 @@
   #
   UnitTestLib|Include/Library/UnitTestLib.h
 
+  ## @libraryclass Extension to BaseLib for host based unit tests that allows a
+  #                subset of BaseLib services to be hooked for emulation.
+  #
+  UnitTestHostBaseLib|Test/UnitTest/Include/Library/UnitTestHostBaseLib.h
+
+  ##  @libraryclass  This library provides an interface to request non-MMRAM pages to be mapped
+  #                  or unblocked from inside MM environment.
+  #
+  MmUnblockMemoryLib|Include/Library/MmUnblockMemoryLib.h
+
+  ##  @libraryclass  This library provides interfances to filter and trace port IO/MMIO/MSR access.
+  #
+  #
+  RegisterFilterLib|Include/Library/RegisterFilterLib.h
+
+[LibraryClasses.IA32, LibraryClasses.X64, LibraryClasses.AARCH64]
+  ##  @libraryclass  Provides services to generate random number.
+  #
+  RngLib|Include/Library/RngLib.h
+
 [LibraryClasses.IA32, LibraryClasses.X64]
   ##  @libraryclass  Abstracts both S/W SMI generation and detection.
   ##
@@ -271,10 +292,6 @@
   ##  @libraryclass  Provides services to enable/disable periodic SMI handlers.
   #
   SmmPeriodicSmiLib|Include/Library/SmmPeriodicSmiLib.h
-
-  ##  @libraryclass  Provides services to generate random number.
-  #
-  RngLib|Include/Library/RngLib.h
 
   ##  @libraryclass  Provides services to log the SMI handler registration.
   SmiHandlerProfileLib|Include/Library/SmiHandlerProfileLib.h
@@ -663,12 +680,15 @@
   gEfiJsonCapsuleIdGuid            = { 0x67d6f4cd, 0xd6b8, 0x4573, { 0xbf, 0x4a, 0xde, 0x5e, 0x25, 0x2d, 0x61, 0xae }}
 
   ## Include/Guid/HiiPlatformSetupFormset.h
-  gEfiHiiResetStyleFormsetGuid     = { 0x790217bd, 0xbecf, 0x485b, { 0x91, 0x70, 0x5f, 0xf7, 0x11, 0x31, 0x8b, 0x27 }}
+  gEfiHiiRestStyleFormsetGuid      = { 0x790217bd, 0xbecf, 0x485b, { 0x91, 0x70, 0x5f, 0xf7, 0x11, 0x31, 0x8b, 0x27 }}
 
   # GUIDs defined in UEFI2.8a
   #
   ## Include/Guid/RtPropertiesTable.h
   gEfiRtPropertiesTableGuid      = { 0xeb66918a, 0x7eef, 0x402a, { 0x84, 0x2e, 0x93, 0x1d, 0x21, 0xc3, 0x8a, 0xe9 }}
+
+  ## Include/Protocol/SerilaIo.h
+  gEfiSerialTerminalDeviceTypeGuid = { 0x6AD9A60F, 0x5815, 0x4C7C, { 0x8A, 0x10, 0x50, 0x53, 0xD2, 0xBF, 0x7A, 0x1B }}
 
   #
   # GUID defined in PI1.0
@@ -1840,6 +1860,19 @@
   gEfiNvdimmLabelProtocolGuid               = { 0xd40b6b80, 0x97d5, 0x4282, { 0xbb, 0x1d, 0x22, 0x3a, 0x16, 0x91, 0x80, 0x58 }}
 
   #
+  # Protocols defined in UEFI2.8
+  #
+  ## Include/Protocol/RestEx.h
+  gEfiRestExProtocolGuid               = { 0x55648b91, 0xe7d, 0x40a3, { 0xa9, 0xb3, 0xa8, 0x15, 0xd7, 0xea, 0xdf, 0x97 }}
+  gEfiRestExServiceBindingProtocolGuid = { 0x456bbe01, 0x99d0, 0x45ea, { 0xbb, 0x5f, 0x16, 0xd8, 0x4b, 0xed, 0xc5, 0x59 }}
+
+  ## Include/Protocol/RestJsonStructure.h
+  gEfiRestJsonStructureProtocolGuid  = { 0xa9a048f6, 0x48a0, 0x4714, {0xb7, 0xda, 0xa9, 0xad,0x87, 0xd4, 0xda, 0xc9 }}
+
+  ## Include/Protocol/RedfishDiscover.h
+  gEfiRedfishDiscoverProtocolGuid      = { 0x5db12509, 0x4550, 0x4347, { 0x96, 0xb3, 0x73, 0xc0, 0xff, 0x6e, 0x86, 0x9f }}
+
+  #
   # Protocols defined in Shell2.0
   #
   ## Include/Protocol/Shell.h
@@ -2233,10 +2266,6 @@
   # @ValidList  0x80000001 | 8, 16, 32
   gEfiMdePkgTokenSpaceGuid.PcdPort80DataWidth|8|UINT8|0x0000002d
 
-  ## This value is used to configure X86 Processor FSB clock.
-  # @Prompt FSB Clock.
-  gEfiMdePkgTokenSpaceGuid.PcdFSBClock|200000000|UINT32|0x0000000c
-
   ## The maximum printable number of characters. UefLib functions: AsciiPrint(), AsciiErrorPrint(),
   #  PrintXY(), AsciiPrintXY(), Print(), ErrorPrint() base on this PCD value to print characters.
   # @Prompt Maximum Printable Number of Characters.
@@ -2264,6 +2293,10 @@
   ## This value is used to set the base address of PCI express hierarchy.
   # @Prompt PCI Express Base Address.
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0xE0000000|UINT64|0x0000000a
+
+  ## This value is used to set the size of PCI express hierarchy. The default is 256 MB.
+  # @Prompt PCI Express Base Size.
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize|0x10000000|UINT64|0x0000000f
 
   ## Default current ISO 639-2 language: English & French.
   # @Prompt Default Value of LangCodes Variable.
@@ -2335,6 +2368,10 @@
   #  The value of 0xFFFF then firmware will wait for user input before booting.
   # @Prompt Boot Timeout (s)
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|0xffff|UINT16|0x0000002c
+
+  ## This value is used to configure X86 Processor FSB clock.
+  # @Prompt FSB Clock.
+  gEfiMdePkgTokenSpaceGuid.PcdFSBClock|200000000|UINT32|0x0000000c
 
 [UserExtensions.TianoCore."ExtraFiles"]
   MdePkgExtra.uni

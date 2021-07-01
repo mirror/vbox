@@ -5,6 +5,22 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
+    ## options defined .pytool/Plugin/LicenseCheck
+    "LicenseCheck": {
+        "IgnoreFiles": []
+    },
+    "EccCheck": {
+        ## Exception sample looks like below:
+        ## "ExceptionList": [
+        ##     "<ErrorID>", "<KeyWord>"
+        ## ]
+        "ExceptionList": [
+        ],
+        ## Both file path and directory path are accepted.
+        "IgnoreFiles": [
+            "Library/CmockaLib/cmocka"
+        ]
+    },
     ## options defined .pytool/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "UnitTestFrameworkPkg.dsc"
@@ -62,6 +78,8 @@
             "Library/CmockaLib/cmocka/**/*.*"  # not going to spell check a submodule
         ],
         "ExtendWords": [             # words to extend to the dictionary for this package
+            "testcase",
+            "testsuites",
             "cmocka",
             "buildmodule",
             "criterium",

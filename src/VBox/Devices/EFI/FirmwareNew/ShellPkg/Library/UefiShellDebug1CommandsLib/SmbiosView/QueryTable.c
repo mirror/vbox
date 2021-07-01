@@ -188,19 +188,19 @@ TABLE_ITEM  SystemEnclosureTypeTable[] = {
   },
   {
     0x10,
-    L"  Main Server Chassis"
+    L"  Lunch Box"
   },
   {
     0x11,
-    L"  Expansion Chassis"
+    L"  Main Server Chassis"
   },
   {
     0x12,
-    L"  SubChassis"
+    L"  Expansion Chassis"
   },
   {
     0x13,
-    L"  Sub Notebook"
+    L"  SubChassis"
   },
   {
     0x14,
@@ -624,6 +624,10 @@ TABLE_ITEM  ProcessorCharacteristicsTable[] = {
   {
     8,
     L" 128-bit Capable"
+  },
+  {
+    9,
+    L" ARM64 SoC ID"
   }
 };
 
@@ -2550,6 +2554,14 @@ TABLE_ITEM  MemoryDeviceTypeTable[] = {
   {
     MemoryTypeHBM2,
     L"  HBM2 (High Bandwidth Memory Generation 2)"
+  },
+  {
+    MemoryTypeDdr5,
+    L"  DDR5"
+  },
+  {
+    MemoryTypeLpddr5,
+    L"  LPDDR5"
   }
 };
 
