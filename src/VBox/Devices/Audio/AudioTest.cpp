@@ -1990,7 +1990,7 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     VerJob.pErr       = pErrDesc;
     VerJob.pSetA      = pSetA;
     VerJob.pSetB      = pSetB;
-    VerJob.fKeepGoing = true;
+    VerJob.fKeepGoing = true; /** @todo Make this configurable. */
 
     PAUDIOTESTVERIFYJOB pVerJob = &VerJob;
 
@@ -2009,13 +2009,13 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
 
     rc = audioTestVerifyValue(&VerJob, &hHdrA, &hHdrB,   "magic",        "vkat_ini",    "Manifest magic wrong");
     CHECK_RC_MAYBE_RET(rc, pVerJob);
-    rc = audioTestVerifyValue(&VerJob, &hHdrB, &hHdrB,   "ver",          "1"       ,    "Manifest version wrong");
+    rc = audioTestVerifyValue(&VerJob, &hHdrA, &hHdrB,   "ver",          "1"       ,    "Manifest version wrong");
     CHECK_RC_MAYBE_RET(rc, pVerJob);
-    rc = audioTestVerifyValue(&VerJob, &hHdrB, &hHdrB,   "tag",          NULL,          "Manifest tags don't match");
+    rc = audioTestVerifyValue(&VerJob, &hHdrA, &hHdrB,   "tag",          NULL,          "Manifest tags don't match");
     CHECK_RC_MAYBE_RET(rc, pVerJob);
-    rc = audioTestVerifyValue(&VerJob, &hHdrB, &hHdrB,   "test_count",   NULL,          "Test counts don't match");
+    rc = audioTestVerifyValue(&VerJob, &hHdrA, &hHdrB,   "test_count",   NULL,          "Test counts don't match");
     CHECK_RC_MAYBE_RET(rc, pVerJob);
-    rc = audioTestVerifyValue(&VerJob, &hHdrB, &hHdrB,   "obj_count",    NULL,          "Object counts don't match");
+    rc = audioTestVerifyValue(&VerJob, &hHdrA, &hHdrB,   "obj_count",    NULL,          "Object counts don't match");
     CHECK_RC_MAYBE_RET(rc, pVerJob);
 
     /*
