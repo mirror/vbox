@@ -217,6 +217,8 @@ typedef struct AUDIOTESTOBJ
 {
     /** List node. */
     RTLISTNODE           Node;
+    /** The UUID of the object.
+     *  Used to identify an object within a test set. */
     RTUUID               Uuid;
     /** Number of references to this test object. */
     uint32_t             cRefs;
