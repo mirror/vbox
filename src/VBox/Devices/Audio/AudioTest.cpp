@@ -1274,13 +1274,13 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
  * Writes to a created audio test object.
  *
  * @returns VBox status code.
- * @param   Obj                 Audio test object to write to.
+ * @param   hObj                Handle to the audio test object to write to.
  * @param   pvBuf               Pointer to data to write.
  * @param   cbBuf               Size (in bytes) of \a pvBuf to write.
  */
-int AudioTestObjWrite(AUDIOTESTOBJ Obj, const void *pvBuf, size_t cbBuf)
+int AudioTestObjWrite(AUDIOTESTOBJ hObj, const void *pvBuf, size_t cbBuf)
 {
-    AUDIOTESTOBJINT *pThis = Obj;
+    AUDIOTESTOBJINT *pThis = hObj;
 
     /** @todo Generalize this function more once we have more object types. */
     AssertReturn(pThis->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
@@ -1292,7 +1292,7 @@ int AudioTestObjWrite(AUDIOTESTOBJ Obj, const void *pvBuf, size_t cbBuf)
  * Adds meta data to a test object as a string, va_list version.
  *
  * @returns VBox status code.
- * @param   Obj                 Test object to add meta data for.
+ * @param   pObj                Test object to add meta data for.
  * @param   pszFormat           Format string to add.
  * @param   va                  Variable arguments list to use for the format string.
  */
@@ -1316,13 +1316,13 @@ static int audioTestObjAddMetadataStrV(PAUDIOTESTOBJINT pObj, const char *pszFor
  * Adds meta data to a test object as a string.
  *
  * @returns VBox status code.
- * @param   Obj                 Test object to add meta data for.
+ * @param   hObj                Handle to the test object to add meta data for.
  * @param   pszFormat           Format string to add.
  * @param   ...                 Variable arguments for the format string.
  */
-int AudioTestObjAddMetadataStr(AUDIOTESTOBJ Obj, const char *pszFormat, ...)
+int AudioTestObjAddMetadataStr(AUDIOTESTOBJ hObj, const char *pszFormat, ...)
 {
-    AUDIOTESTOBJINT *pThis = Obj;
+    AUDIOTESTOBJINT *pThis = hObj;
 
     va_list va;
 
@@ -1337,11 +1337,11 @@ int AudioTestObjAddMetadataStr(AUDIOTESTOBJ Obj, const char *pszFormat, ...)
  * Closes an opened audio test object.
  *
  * @returns VBox status code.
- * @param   Obj                 Audio test object to close.
+ * @param   hObj                Handle to the audio test object to close.
  */
-int AudioTestObjClose(AUDIOTESTOBJ Obj)
+int AudioTestObjClose(AUDIOTESTOBJ hObj)
 {
-    AUDIOTESTOBJINT *pThis = Obj;
+    AUDIOTESTOBJINT *pThis = hObj;
 
     if (!pThis)
         return VINF_SUCCESS;
@@ -1780,7 +1780,7 @@ static int audioTestObjOpen(PAUDIOTESTOBJINT phObj, PAUDIOTESTOBJINT *ppObj)
  * Closes an audio test set object.
  *
  * @returns VBox status code.
- * @param   Obj                 Object to close.
+ * @param   pObj                Object to close.
  */
 static int audioTestObjCloseInternal(PAUDIOTESTOBJINT pObj)
 {
@@ -1804,7 +1804,7 @@ static int audioTestObjCloseInternal(PAUDIOTESTOBJINT pObj)
 /**
  * Finalizes an audio test set object.
  *
- * @param   Obj                 Test object to finalize.
+ * @param   pObj                Test object to finalize.
  */
 static void audioTestObjFinalize(PAUDIOTESTOBJINT pObj)
 {
