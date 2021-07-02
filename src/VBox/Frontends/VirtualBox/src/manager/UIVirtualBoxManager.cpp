@@ -1042,7 +1042,6 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
         QWidget *pWizardParent = windowManager().realParentWindow(this);
         UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent, m_pWidget->fullGroupName());
         windowManager().registerNewParent(pWizard, pWizardParent);
-        pWizard->prepare();
 
         /* Execute wizard: */
         pWizard->exec();

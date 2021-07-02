@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,30 +22,25 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
-#include "CCloudProfile.h"
-#include "CCloudProvider.h"
-#include "CCloudProviderManager.h"
 
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
 class QListWidget;
-class QTableWidget;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 
-/** Source combo data fields. */
+/** Provider combo data fields. */
 enum
 {
-    SourceData_ID        = Qt::UserRole + 1,
-    SourceData_Name      = Qt::UserRole + 2,
-    SourceData_ShortName = Qt::UserRole + 3
+    ProviderData_Name      = Qt::UserRole + 1,
+    ProviderData_ShortName = Qt::UserRole + 2
 };
 
 /** Profile combo data fields. */
@@ -54,81 +49,28 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** UIWizardPageBase extension for 1st page of the Add Cloud VM wizard. */
-class UIWizardAddCloudVMPage1 : public UIWizardPageBase
+/** Namespace for 1st page of the Add Cloud VM wizard. */
+namespace UIWizardAddCloudVMPage1
 {
-protected:
+    /** Populates @a pCombo with known providers. */
+    void populateProviders(QIComboBox *pCombo);
+    /** Populates @a pCombo with known profiles of @a comProvider specified. */
+    void populateProfiles(QIComboBox *pCombo, const CCloudProvider &comProvider);
+    /** Populates @a pList with profile instances available in @a comClient. */
+    void populateProfileInstances(QListWidget *pList, const CCloudClient &comClient);
 
-    /** Constructs 1st page base. */
-    UIWizardAddCloudVMPage1();
+    /** Updates @a pCombo tool-tips. */
+    void updateComboToolTip(QIComboBox *pCombo);
 
-    /** Populates sources. */
-    void populateSources();
-    /** Populates profiles. */
-    void populateProfiles();
-    /** Populates profile. */
-    void populateProfile();
-    /** Populates profile instances. */
-    void populateProfileInstances();
+    /** Returns current user data for @a pList specified. */
+    QStringList currentListWidgetData(QListWidget *pList);
+}
 
-    /** Updates source combo tool-tips. */
-    void updateSourceComboToolTip();
-
-    /** Defines @a strSource. */
-    void setSource(const QString &strSource);
-    /** Returns source. */
-    QString source() const;
-    /** Returns source ID. */
-    QUuid sourceId() const;
-
-    /** Returns profile name. */
-    QString profileName() const;
-    /** Returns instance IDs. */
-    QStringList instanceIds() const;
-
-    /** Defines Cloud @a comClient object. */
-    void setClient(const CCloudClient &comClient);
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-
-    /** Holds whether starting page was polished. */
-    bool  m_fPolished;
-
-    /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager  m_comCloudProviderManager;
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider         m_comCloudProvider;
-    /** Holds the Cloud Profile object reference. */
-    CCloudProfile          m_comCloudProfile;
-
-    /** Holds the source layout instance. */
-    QGridLayout *m_pSourceLayout;
-    /** Holds the source type label instance. */
-    QLabel      *m_pSourceLabel;
-    /** Holds the source type combo-box instance. */
-    QIComboBox  *m_pSourceComboBox;
-
-    /** Holds the cloud container layout instance. */
-    QGridLayout  *m_pCloudContainerLayout;
-    /** Holds the profile label instance. */
-    QLabel       *m_pProfileLabel;
-    /** Holds the profile combo-box instance. */
-    QIComboBox   *m_pProfileComboBox;
-    /** Holds the profile management tool-button instance. */
-    QIToolButton *m_pProfileToolButton;
-    /** Holds the profile instance label instance. */
-    QLabel       *m_pProfileInstanceLabel;
-    /** Holds the profile instance list instance. */
-    QListWidget  *m_pProfileInstanceList;
-};
-
-/** UIWizardPage extension for 1st page of the Add Cloud VM wizard, extends UIWizardAddCloudVMPage1 as well. */
-class UIWizardAddCloudVMPageBasic1 : public UIWizardPage, public UIWizardAddCloudVMPage1
+/** UINativeWizardPage extension for 1st page of the Add Cloud VM wizard,
+  * based on UIWizardAddCloudVMPage1 namespace functions. */
+class UIWizardAddCloudVMPageBasic1 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(QString source READ source);
-    Q_PROPERTY(QString profileName READ profileName);
-    Q_PROPERTY(QStringList instanceIds READ instanceIds);
 
 public:
 
@@ -137,38 +79,85 @@ public:
 
 protected:
 
-    /** Allows access wizard from base part. */
-    virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
-
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 
-    /** Handles change in source combo-box. */
-    void sltHandleSourceChange();
+    /** Handles change in provider combo-box. */
+    void sltHandleProviderComboChange();
 
     /** Handles change in profile combo-box. */
     void sltHandleProfileComboChange();
-
     /** Handles profile tool-button click. */
     void sltHandleProfileButtonClick();
 
+    /** Handles change in instance list. */
+    void sltHandleSourceInstanceChange();
+
 private:
+
+    /** Defines short provider name. */
+    void setShortProviderName(const QString &strShortProviderName);
+    /** Returns profile name. */
+    QString shortProviderName() const;
+
+    /** Defines profile name. */
+    void setProfileName(const QString &strProfileName);
+    /** Returns profile name. */
+    QString profileName() const;
+
+    /** Defines Cloud @a comClient object. */
+    void setClient(const CCloudClient &comClient);
+    /** Returns Cloud Client object. */
+    CCloudClient client() const;
+
+    /** Defines @a instanceIds. */
+    void setInstanceIds(const QStringList &instanceIds);
+    /** Returns instance IDs. */
+    QStringList instanceIds() const;
+
+    /** Updates provider. */
+    void updateProvider();
+    /** Updates profile. */
+    void updateProfile();
+    /** Updates source instance. */
+    void updateSourceInstance();
 
     /** Holds the main label instance. */
     QIRichTextLabel *m_pLabelMain;
+
+    /** Holds the provider layout instance. */
+    QGridLayout *m_pProviderLayout;
+    /** Holds the provider type label instance. */
+    QLabel      *m_pProviderLabel;
+    /** Holds the provider type combo-box instance. */
+    QIComboBox  *m_pProviderComboBox;
+
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabelDescription;
+
+    /** Holds the options layout instance. */
+    QGridLayout  *m_pOptionsLayout;
+    /** Holds the profile label instance. */
+    QLabel       *m_pProfileLabel;
+    /** Holds the profile combo-box instance. */
+    QIComboBox   *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
+    /** Holds the source instance label instance. */
+    QLabel       *m_pSourceInstanceLabel;
+    /** Holds the source instance list instance. */
+    QListWidget  *m_pSourceInstanceList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageBasic1_h */

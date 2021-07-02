@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,47 +23,23 @@
 #include "UIWizardAddCloudVMPageExpert.h"
 
 /* COM includes: */
+#include "CCloudMachine.h"
 #include "CProgress.h"
 
 
 UIWizardAddCloudVM::UIWizardAddCloudVM(QWidget *pParent,
                                        const QString &strFullGroupName /* = QString() */,
                                        WizardMode enmMode /* = WizardMode_Auto */)
-    : UIWizard(pParent, WizardType_AddCloudVM, enmMode)
+    : UINativeWizard(pParent, WizardType_AddCloudVM, enmMode)
     , m_strFullGroupName(strFullGroupName)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/wizard_new_cloud_vm.png");
+    setPixmapName(":/wizard_new_cloud_vm.png");
 #else
     /* Assign background image: */
-    assignBackground(":/wizard_new_cloud_vm_bg.png");
+    setPixmapName(":/wizard_new_cloud_vm_bg.png");
 #endif
-}
-
-void UIWizardAddCloudVM::prepare()
-{
-    /* Create corresponding pages: */
-    switch (mode())
-    {
-        case WizardMode_Basic:
-        {
-            setPage(Page1, new UIWizardAddCloudVMPageBasic1);
-            break;
-        }
-        case WizardMode_Expert:
-        {
-            setPage(PageExpert, new UIWizardAddCloudVMPageExpert);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("Invalid mode: %d", mode()));
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIWizard::prepare();
 }
 
 bool UIWizardAddCloudVM::addCloudVMs()
@@ -76,7 +52,7 @@ bool UIWizardAddCloudVM::addCloudVMs()
     AssertReturn(comClient.isNotNull(), fResult);
 
     /* For each cloud instance name we have: */
-    foreach (const QString &strInstanceName, field("instanceIds").toStringList())
+    foreach (const QString &strInstanceName, instanceIds())
     {
         /* Initiate cloud VM add procedure: */
         CCloudMachine comMachine;
@@ -108,9 +84,12 @@ bool UIWizardAddCloudVM::addCloudVMs()
                     /* Check whether VM really added: */
                     if (comMachine.isNotNull())
                     {
-                        uiCommon().notifyCloudMachineRegistered(field("source").toString(),
-                                                                field("profileName").toString(),
+                        /* Notify GUI about VM was added: */
+                        uiCommon().notifyCloudMachineRegistered(shortProviderName(),
+                                                                profileName(),
                                                                 comMachine);
+
+                        /* Finally, success: */
                         fResult = true;
                     }
                 }
@@ -122,12 +101,36 @@ bool UIWizardAddCloudVM::addCloudVMs()
     return fResult;
 }
 
+void UIWizardAddCloudVM::populatePages()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case WizardMode_Basic:
+        {
+            addPage(new UIWizardAddCloudVMPageBasic1);
+            break;
+        }
+        case WizardMode_Expert:
+        {
+            addPage(new UIWizardAddCloudVMPageExpert);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
+    }
+}
+
 void UIWizardAddCloudVM::retranslateUi()
 {
     /* Call to base-class: */
-    UIWizard::retranslateUi();
+    UINativeWizard::retranslateUi();
 
     /* Translate wizard: */
     setWindowTitle(tr("Add Cloud Virtual Machine"));
-    setButtonText(QWizard::FinishButton, tr("Add"));
+    /// @todo implement this?
+    //setButtonText(QWizard::FinishButton, tr("Add"));
 }

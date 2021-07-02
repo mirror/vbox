@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,31 +22,18 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
-#include "CCloudMachine.h"
 
 /** Add Cloud VM wizard. */
-class UIWizardAddCloudVM : public UIWizard
+class UIWizardAddCloudVM : public UINativeWizard
 {
     Q_OBJECT;
 
 public:
-
-    /** Basic page IDs. */
-    enum
-    {
-        Page1
-    };
-
-    /** Expert page IDs. */
-    enum
-    {
-        PageExpert
-    };
 
     /** Constructs Add Cloud VM wizard passing @a pParent & @a enmMode to the base-class.
       * @param  strFullGroupName  Brings full group name (/provider/profile) to add VM to. */
@@ -54,11 +41,23 @@ public:
                        const QString &strFullGroupName = QString(),
                        WizardMode enmMode = WizardMode_Auto);
 
-    /** Prepares all. */
-    virtual void prepare() /* override */;
-
     /** Returns full group name. */
     QString fullGroupName() const { return m_strFullGroupName; }
+
+    /** Defines @a strShortProviderName. */
+    void setShortProviderName(const QString &strShortProviderName) { m_strShortProviderName = strShortProviderName; }
+    /** Returns short provider name. */
+    QString shortProviderName() const { return m_strShortProviderName; }
+
+    /** Defines @a strProfileName. */
+    void setProfileName(const QString &strProfileName) { m_strProfileName = strProfileName; }
+    /** Returns profile name. */
+    QString profileName() const { return m_strProfileName; }
+
+    /** Defines @a instanceIds. */
+    void setInstanceIds(const QStringList &instanceIds) { m_instanceIds = instanceIds; }
+    /** Returns instance IDs. */
+    QStringList instanceIds() const { return m_instanceIds; }
 
     /** Defines Cloud @a comClient object wrapper. */
     void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
@@ -70,14 +69,22 @@ public:
 
 protected:
 
+    /** Populates pages. */
+    virtual void populatePages() /* override final */;
+
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
 private:
 
     /** Holds the full group name (/provider/profile) to add VM to. */
-    QString  m_strFullGroupName;
-
+    QString       m_strFullGroupName;
+    /** Holds the short provider name. */
+    QString       m_strShortProviderName;
+    /** Holds the profile name. */
+    QString       m_strProfileName;
+    /** Holds the instance ids. */
+    QStringList   m_instanceIds;
     /** Holds the Cloud Client object wrapper. */
     CCloudClient  m_comClient;
 };
