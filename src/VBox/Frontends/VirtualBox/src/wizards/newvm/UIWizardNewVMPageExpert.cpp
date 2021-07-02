@@ -47,20 +47,21 @@
 #include "CSystemProperties.h"
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
-    : UIWizardNewVMPageBaseNameOSType(strGroup)
-    , m_pToolBox(0)
+    : //UIWizardNewVMPageBaseNameOSType(strGroup)
+     m_pToolBox(0)
     , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
     , m_pLocationLabel(0)
 {
+    Q_UNUSED(strGroup);
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pToolBox = new UIToolBox;
-        m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(), "");
-        m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
-        m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
-        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        // m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(), "");
+        // m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
+        // m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
+        // m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
         pMainLayout->addStretch();
@@ -73,295 +74,298 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     qRegisterMetaType<SelectedDiskSource>();
 
     /* Register fields: */
-    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
-    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
-    registerField("machineFilePath", this, "machineFilePath");
-    registerField("machineFolder", this, "machineFolder");
-    registerField("machineBaseName", this, "machineBaseName");
-    registerField("baseMemory", this, "baseMemory");
-    registerField("guestOSFamiyId", this, "guestOSFamiyId");
-    registerField("ISOFilePath", this, "ISOFilePath");
-    registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    registerField("startHeadless", this, "startHeadless");
-    registerField("detectedOSTypeId", this, "detectedOSTypeId");
-    registerField("userName", this, "userName");
-    registerField("password", this, "password");
-    registerField("hostname", this, "hostname");
-    registerField("installGuestAdditions", this, "installGuestAdditions");
-    registerField("guestAdditionsISOPath", this, "guestAdditionsISOPath");
-    registerField("productKey", this, "productKey");
-    registerField("VCPUCount", this, "VCPUCount");
-    registerField("EFIEnabled", this, "EFIEnabled");
-    registerField("mediumPath", this, "mediumPath");
-    registerField("mediumFormat", this, "mediumFormat");
-    registerField("mediumSize", this, "mediumSize");
-    registerField("selectedDiskSource", this, "selectedDiskSource");
-    registerField("mediumVariant", this, "mediumVariant");
+//     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+//     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
+//     registerField("machineFilePath", this, "machineFilePath");
+//     registerField("machineFolder", this, "machineFolder");
+//     registerField("machineBaseName", this, "machineBaseName");
+//     registerField("baseMemory", this, "baseMemory");
+//     registerField("guestOSFamiyId", this, "guestOSFamiyId");
+//     registerField("ISOFilePath", this, "ISOFilePath");
+//     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+//     registerField("startHeadless", this, "startHeadless");
+//     registerField("detectedOSTypeId", this, "detectedOSTypeId");
+//     registerField("userName", this, "userName");
+//     registerField("password", this, "password");
+//     registerField("hostname", this, "hostname");
+//     registerField("installGuestAdditions", this, "installGuestAdditions");
+//     registerField("guestAdditionsISOPath", this, "guestAdditionsISOPath");
+//     registerField("productKey", this, "productKey");
+//     registerField("VCPUCount", this, "VCPUCount");
+//     registerField("EFIEnabled", this, "EFIEnabled");
+//     registerField("mediumPath", this, "mediumPath");
+//     registerField("mediumFormat", this, "mediumFormat");
+//     registerField("mediumSize", this, "mediumSize");
+//     registerField("selectedDiskSource", this, "selectedDiskSource");
+//     registerField("mediumVariant", this, "mediumVariant");
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 {
-    onNameChanged(strNewText);
-    composeMachineFilePath();
-    updateVirtualDiskPathFromMachinePathName();
-    emit completeChanged();
+    Q_UNUSED(strNewText);
+    // onNameChanged(strNewText);
+    // composeMachineFilePath();
+    // updateVirtualDiskPathFromMachinePathName();
+    // emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    composeMachineFilePath();
-    updateVirtualDiskPathFromMachinePathName();
+    // composeMachineFilePath();
+    // updateVirtualDiskPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
 {
-    onOsTypeChanged();
-    setOSTypeDependedValues();
-    emit completeChanged();
+    // onOsTypeChanged();
+    // setOSTypeDependedValues();
+    // emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 {
-    getWithFileOpenDialog();
+    //getWithFileOpenDialog();
 }
 
 void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strPath)
 {
-    determineOSType(strPath);
-    setTypeByISODetectedOSType(m_strDetectedOSTypeId);
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    Q_UNUSED(strPath);
+    // determineOSType(strPath);
+    // setTypeByISODetectedOSType(m_strDetectedOSTypeId);
+    // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 
-    /* Update the global recent ISO path: */
-    QFileInfo fileInfo(strPath);
-    if (fileInfo.exists() && fileInfo.isReadable())
-        uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
-    setSkipCheckBoxEnable();
-    emit completeChanged();
+    // /* Update the global recent ISO path: */
+    // QFileInfo fileInfo(strPath);
+    // if (fileInfo.exists() && fileInfo.isReadable())
+    //     uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
+    // setSkipCheckBoxEnable();
+    // emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
 {
     Q_UNUSED(strPath);
-    emit completeChanged();
+    //emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
 {
-    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    //disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::retranslateUi()
 {
-    UIWizardNewVMPageBaseNameOSType::retranslateWidgets();
-    UIWizardNewVMPageBaseUnattended::retranslateWidgets();
-    UIWizardNewVMPageHardwareBase::retranslateWidgets();
-    UIWizardNewVMPageDiskBase::retranslateWidgets();
-    UIWizardNewVDPageBaseFileType::retranslateWidgets();
-    UIWizardNewVDPageBaseVariant::retranslateWidgets();
-    UIWizardNewVDPageBaseSizeLocation::retranslateWidgets();
+    // UIWizardNewVMPageBaseNameOSType::retranslateWidgets();
+    // UIWizardNewVMPageBaseUnattended::retranslateWidgets();
+    // UIWizardNewVMPageHardwareBase::retranslateWidgets();
+    // UIWizardNewVMPageDiskBase::retranslateWidgets();
+    // UIWizardNewVDPageBaseFileType::retranslateWidgets();
+    // UIWizardNewVDPageBaseVariant::retranslateWidgets();
+    // UIWizardNewVDPageBaseSizeLocation::retranslateWidgets();
 
-    if (m_pToolBox)
-    {
-        m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and &Operating System")));
-        m_pToolBox->setPageTitle(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("&Unattended Install"));
-        m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard Dis&k"));
-        m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("H&ardware"));
-    }
+    // if (m_pToolBox)
+    // {
+    //     m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and &Operating System")));
+    //     m_pToolBox->setPageTitle(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("&Unattended Install"));
+    //     m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard Dis&k"));
+    //     m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("H&ardware"));
+    // }
 
-    if (m_pDiskFormatGroupBox)
-        m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard Disk File &Type"));
-    if (m_pFormatButtonGroup)
-    {
-        QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-        for (int i = 0; i < buttons.size(); ++i)
-        {
-            QAbstractButton *pButton = buttons[i];
-            UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-            pButton->setText(gpConverter->toString(enmFormat));
-        }
-    }
-    if (m_pDiskVariantGroupBox)
-        m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on Physical Hard Disk"));
-    if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIWizardNewVM::tr("Disk &Location:"));
+    // if (m_pDiskFormatGroupBox)
+    //     m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard Disk File &Type"));
+    // if (m_pFormatButtonGroup)
+    // {
+    //     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
+    //     for (int i = 0; i < buttons.size(); ++i)
+    //     {
+    //         QAbstractButton *pButton = buttons[i];
+    //         UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+    //         pButton->setText(gpConverter->toString(enmFormat));
+    //     }
+    // }
+    // if (m_pDiskVariantGroupBox)
+    //     m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on Physical Hard Disk"));
+    // if (m_pLocationLabel)
+    //     m_pLocationLabel->setText(UIWizardNewVM::tr("Disk &Location:"));
 
-    if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
-        m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
+    // if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
+    //     m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
 
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    disableEnableGAWidgets(fEnabled);
-    emit completeChanged();
+    Q_UNUSED(fEnabled);
+    // disableEnableGAWidgets(fEnabled);
+    // emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
-    if (m_pNameAndSystemEditor)
-    {
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
-                this, &UIWizardNewVMPageExpert::sltNameChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
-                this, &UIWizardNewVMPageExpert::sltPathChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
-                this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
-                this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
-                this, &UIWizardNewVMPageExpert::sltISOPathChanged);
-    }
+    // if (m_pNameAndSystemEditor)
+    // {
+    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+    //             this, &UIWizardNewVMPageExpert::sltNameChanged);
+    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
+    //             this, &UIWizardNewVMPageExpert::sltPathChanged);
+    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+    //             this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
+    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
+    //             this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
+    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
+    //             this, &UIWizardNewVMPageExpert::sltISOPathChanged);
+    // }
 
-    /* Connections for username, password, and hostname: */
-    if (m_pUserNamePasswordEditor)
-        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-                this, &UIWizardNewVMPageExpert::completeChanged);
-    if (m_pGAISOFilePathSelector)
-        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
-                this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
+    // /* Connections for username, password, and hostname: */
+    // if (m_pUserNamePasswordEditor)
+    //     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+    //             this, &UIWizardNewVMPageExpert::completeChanged);
+    // if (m_pGAISOFilePathSelector)
+    //     connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
+    //             this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
 
-    if (m_pGAInstallationISOContainer)
-        connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
-                this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
+    // if (m_pGAInstallationISOContainer)
+    //     connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
+    //             this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
-    if (m_pBaseMemoryEditor)
-        connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
-                this, &UIWizardNewVMPageExpert::sltValueModified);
-    if (m_pEFICheckBox)
-        connect(m_pEFICheckBox, &QCheckBox::toggled,
-                this, &UIWizardNewVMPageExpert::sltValueModified);
+    // if (m_pBaseMemoryEditor)
+    //     connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+    //             this, &UIWizardNewVMPageExpert::sltValueModified);
+    // if (m_pEFICheckBox)
+    //     connect(m_pEFICheckBox, &QCheckBox::toggled,
+    //             this, &UIWizardNewVMPageExpert::sltValueModified);
 
-    if (m_pFormatButtonGroup)
-        connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-                this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
+    // if (m_pFormatButtonGroup)
+    //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    //             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
 
-    /* Virtual disk related connections: */
-    if (m_pMediumSizeEditor)
-        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-                this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
+    // /* Virtual disk related connections: */
+    // if (m_pMediumSizeEditor)
+    //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+    //             this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
 
-    if (m_pDiskSelectionButton)
-        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-                this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+    // if (m_pDiskSelectionButton)
+    //     connect(m_pDiskSelectionButton, &QIToolButton::clicked,
+    //             this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 
-    if (m_pDiskSelector)
-        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-                this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
+    // if (m_pDiskSelector)
+    //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+    //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
-    if (m_pDiskSourceButtonGroup)
-    {
-        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-                this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
-        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-                this, &UIWizardNewVMPageExpert::sltValueModified);
-    }
-    connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
+    // if (m_pDiskSourceButtonGroup)
+    // {
+    //     connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+    //             this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
+    //     connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+    //             this, &UIWizardNewVMPageExpert::sltValueModified);
+    // }
+    // connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 
-    if (m_pLocationOpenButton)
-        connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVMPageExpert::sltSelectLocationButtonClicked);
+    // if (m_pLocationOpenButton)
+    //     connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVMPageExpert::sltSelectLocationButtonClicked);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 {
-    if (!field("type").canConvert<CGuestOSType>())
-        return;
+    // if (!field("type").canConvert<CGuestOSType>())
+    //     return;
 
-    /* Get recommended 'ram' field value: */
-    CGuestOSType type = field("type").value<CGuestOSType>();
-    ULONG recommendedRam = type.GetRecommendedRAM();
+    // /* Get recommended 'ram' field value: */
+    // CGuestOSType type = field("type").value<CGuestOSType>();
+    // ULONG recommendedRam = type.GetRecommendedRAM();
 
-    if (m_pBaseMemoryEditor && !m_userSetWidgets.contains(m_pBaseMemoryEditor))
-    {
-        m_pBaseMemoryEditor->blockSignals(true);
-        m_pBaseMemoryEditor->setValue(recommendedRam);
-        m_pBaseMemoryEditor->blockSignals(false);
-    }
+    // if (m_pBaseMemoryEditor && !m_userSetWidgets.contains(m_pBaseMemoryEditor))
+    // {
+    //     m_pBaseMemoryEditor->blockSignals(true);
+    //     m_pBaseMemoryEditor->setValue(recommendedRam);
+    //     m_pBaseMemoryEditor->blockSignals(false);
+    // }
 
-    KFirmwareType fwType = type.GetRecommendedFirmware();
-    if (m_pEFICheckBox && !m_userSetWidgets.contains(m_pEFICheckBox))
-    {
-        m_pEFICheckBox->blockSignals(true);
-        m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
-        m_pEFICheckBox->blockSignals(false);
-    }
-    LONG64 recommendedDiskSize = type.GetRecommendedHDD();
-    /* Prepare initial disk choice: */
-    if (!m_userSetWidgets.contains(m_pDiskSourceButtonGroup))
-    {
-        if (recommendedDiskSize != 0)
-        {
-            if (m_pDiskNew)
-                m_pDiskNew->setChecked(true);
-            setSelectedDiskSource(SelectedDiskSource_New);
-            setEnableDiskSelectionWidgets(false);
-            setEnableNewDiskWidgets(true);
-            m_fRecommendedNoDisk = false;
-        }
-        else
-        {
-            if (m_pDiskEmpty)
-                m_pDiskEmpty->setChecked(true);
-            setSelectedDiskSource(SelectedDiskSource_Empty);
-            setEnableDiskSelectionWidgets(false);
-            setEnableNewDiskWidgets(false);
-            m_fRecommendedNoDisk = true;
-        }
-        if (m_pDiskSelector)
-            m_pDiskSelector->setCurrentIndex(0);
-    }
+    // KFirmwareType fwType = type.GetRecommendedFirmware();
+    // if (m_pEFICheckBox && !m_userSetWidgets.contains(m_pEFICheckBox))
+    // {
+    //     m_pEFICheckBox->blockSignals(true);
+    //     m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
+    //     m_pEFICheckBox->blockSignals(false);
+    // }
+    // LONG64 recommendedDiskSize = type.GetRecommendedHDD();
+    // /* Prepare initial disk choice: */
+    // if (!m_userSetWidgets.contains(m_pDiskSourceButtonGroup))
+    // {
+    //     if (recommendedDiskSize != 0)
+    //     {
+    //         if (m_pDiskNew)
+    //             m_pDiskNew->setChecked(true);
+    //         setSelectedDiskSource(SelectedDiskSource_New);
+    //         setEnableDiskSelectionWidgets(false);
+    //         setEnableNewDiskWidgets(true);
+    //         m_fRecommendedNoDisk = false;
+    //     }
+    //     else
+    //     {
+    //         if (m_pDiskEmpty)
+    //             m_pDiskEmpty->setChecked(true);
+    //         setSelectedDiskSource(SelectedDiskSource_Empty);
+    //         setEnableDiskSelectionWidgets(false);
+    //         setEnableNewDiskWidgets(false);
+    //         m_fRecommendedNoDisk = true;
+    //     }
+    //     if (m_pDiskSelector)
+    //         m_pDiskSelector->setCurrentIndex(0);
+    // }
 
-    if (m_pMediumSizeEditor  && !m_userSetWidgets.contains(m_pMediumSizeEditor))
-    {
-        m_pMediumSizeEditor->blockSignals(true);
-        setMediumSize(recommendedDiskSize);
-        m_pMediumSizeEditor->blockSignals(false);
-    }
+    // if (m_pMediumSizeEditor  && !m_userSetWidgets.contains(m_pMediumSizeEditor))
+    // {
+    //     m_pMediumSizeEditor->blockSignals(true);
+    //     setMediumSize(recommendedDiskSize);
+    //     m_pMediumSizeEditor->blockSignals(false);
+    // }
 
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
-    if (m_pProductKeyLineEdit)
-        m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
+    // if (m_pProductKeyLabel)
+    //     m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
+    // if (m_pProductKeyLineEdit)
+    //     m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::initializePage()
 {
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    setOSTypeDependedValues();
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    updateVirtualDiskPathFromMachinePathName();
-    updateWidgetAterMediumFormatChange();
-    setSkipCheckBoxEnable();
-    retranslateUi();
+    // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    // setOSTypeDependedValues();
+    // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    // updateVirtualDiskPathFromMachinePathName();
+    // updateWidgetAterMediumFormatChange();
+    // setSkipCheckBoxEnable();
+    // retranslateUi();
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
 {
-    cleanupMachineFolder();
+    //cleanupMachineFolder();
 }
 
 void UIWizardNewVMPageExpert::markWidgets() const
 {
-    UIWizardNewVMPageBaseNameOSType::markWidgets();
-    UIWizardNewVMPageBaseUnattended::markWidgets();
+    // UIWizardNewVMPageBaseNameOSType::markWidgets();
+    // UIWizardNewVMPageBaseUnattended::markWidgets();
 }
 
 QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
 {
     QWidget *pContainerWidget = new QWidget;
-    QGridLayout *pLayout = new QGridLayout(pContainerWidget);
-    pLayout->setContentsMargins(0, 0, 0, 0);
-    int iRow = 0;
+    // QGridLayout *pLayout = new QGridLayout(pContainerWidget);
+    // pLayout->setContentsMargins(0, 0, 0, 0);
+    // int iRow = 0;
 
-    /* Username selector: */
-    pLayout->addWidget(createUserNameWidgets(), iRow, 0, 1, 2);
+    // /* Username selector: */
+    // pLayout->addWidget(createUserNameWidgets(), iRow, 0, 1, 2);
 
-    /* Additional options: */
-    pLayout->addWidget(createAdditionalOptionsWidgets(), iRow, 2, 1, 2);
+    // /* Additional options: */
+    // pLayout->addWidget(createAdditionalOptionsWidgets(), iRow, 2, 1, 2);
 
-    ++iRow;
-    /* Guest additions installation: */
-    pLayout->addWidget(createGAInstallWidgets(), iRow, 0, 1, 4);
+    // ++iRow;
+    // /* Guest additions installation: */
+    // pLayout->addWidget(createGAInstallWidgets(), iRow, 0, 1, 4);
 
     return pContainerWidget;
 }
@@ -417,70 +421,70 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
 bool UIWizardNewVMPageExpert::isComplete() const
 {
-    markWidgets();
+    //markWidgets();
     bool fIsComplete = true;
-    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType, QIcon());
-    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended, QIcon());
-    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
-    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
+    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType, QIcon());
+    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended, QIcon());
+    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
+    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
 
-    if (!UIWizardPage::isComplete())
-    {
-        m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
-                                     UIIconPool::iconSet(":/status_error_16px.png"),
-                                     UIWizardNewVM::tr("A valid VM name is required"));
-        fIsComplete = false;
-    }
+    // if (!UIWizardPage::isComplete())
+    // {
+    //     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
+    //                                  UIIconPool::iconSet(":/status_error_16px.png"),
+    //                                  UIWizardNewVM::tr("A valid VM name is required"));
+    //     fIsComplete = false;
+    // }
 
-    if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
-    {
-        m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
-                                     UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
-        fIsComplete = false;
-    }
+    // if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    // {
+    //     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
+    //                                  UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
+    //     fIsComplete = false;
+    // }
 
-    if (m_pDiskNew && m_pDiskNew->isChecked())
-    {
-        qulonglong uSize = field("mediumSize").toULongLong();
-        if (uSize <= 0)
-        {
-            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
-                                         UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
-            fIsComplete = false;
-        }
-    }
+    // if (m_pDiskNew && m_pDiskNew->isChecked())
+    // {
+    //     qulonglong uSize = field("mediumSize").toULongLong();
+    //     if (uSize <= 0)
+    //     {
+    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
+    //                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
+    //         fIsComplete = false;
+    //     }
+    // }
 
-    /* Check unattended install related stuff: */
-    if (isUnattendedEnabled())
-    {
-        /* Check the installation medium: */
-        if (!checkISOFile())
-        {
-            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
-                                         UIIconPool::iconSet(":/status_error_16px.png"),
-                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
-            fIsComplete = false;
-        }
-        /* Check the GA installation medium: */
-        if (m_pGAInstallationISOContainer && m_pGAInstallationISOContainer->isChecked() && !checkGAISOFile())
-        {
-            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-                                         UIIconPool::iconSet(":/status_error_16px.png"),
-                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
+    // /* Check unattended install related stuff: */
+    // if (isUnattendedEnabled())
+    // {
+    //     /* Check the installation medium: */
+    //     if (!checkISOFile())
+    //     {
+    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
+    //                                      UIIconPool::iconSet(":/status_error_16px.png"),
+    //                                      UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
+    //         fIsComplete = false;
+    //     }
+    //     /* Check the GA installation medium: */
+    //     if (m_pGAInstallationISOContainer && m_pGAInstallationISOContainer->isChecked() && !checkGAISOFile())
+    //     {
+    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+    //                                      UIIconPool::iconSet(":/status_error_16px.png"),
+    //                                      UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
 
-            fIsComplete = false;
-        }
-        if (m_pUserNamePasswordEditor)
-        {
-            if (!m_pUserNamePasswordEditor->isComplete())
-            {
-                m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-                                             UIIconPool::iconSet(":/status_error_16px.png"),
-                                             UIWizardNewVM::tr("Invalid username and/or password"));
-                fIsComplete = false;
-            }
-        }
-    }
+    //         fIsComplete = false;
+    //     }
+    //     if (m_pUserNamePasswordEditor)
+    //     {
+    //         if (!m_pUserNamePasswordEditor->isComplete())
+    //         {
+    //             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+    //                                          UIIconPool::iconSet(":/status_error_16px.png"),
+    //                                          UIWizardNewVM::tr("Invalid username and/or password"));
+    //             fIsComplete = false;
+    //         }
+    //     }
+    // }
 
      // return !mediumFormat().isNull() &&
      //       mediumVariant() != (qulonglong)KMediumVariant_Max &&
@@ -494,68 +498,70 @@ bool UIWizardNewVMPageExpert::validatePage()
 {
     bool fResult = true;
 
-    if (selectedDiskSource() == SelectedDiskSource_New)
-    {
-        /* Check if the path we will be using for hard drive creation exists: */
-        const QString strMediumPath(fieldImp("mediumPath").toString());
-        fResult = !QFileInfo(strMediumPath).exists();
-        if (!fResult)
-        {
-            msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-            return fResult;
-        }
-        /* Check FAT size limitation of the host hard drive: */
-        fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-                                                             fieldImp("mediumPath").toString(),
-                                                             fieldImp("mediumSize").toULongLong());
-        if (!fResult)
-        {
-            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-            return fResult;
-        }
-    }
+    // if (selectedDiskSource() == SelectedDiskSource_New)
+    // {
+    //     /* Check if the path we will be using for hard drive creation exists: */
+    //     const QString strMediumPath(fieldImp("mediumPath").toString());
+    //     fResult = !QFileInfo(strMediumPath).exists();
+    //     if (!fResult)
+    //     {
+    //         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+    //         return fResult;
+    //     }
+    //     /* Check FAT size limitation of the host hard drive: */
+    //     fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+    //                                                          fieldImp("mediumPath").toString(),
+    //                                                          fieldImp("mediumSize").toULongLong());
+    //     if (!fResult)
+    //     {
+    //         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+    //         return fResult;
+    //     }
+    // }
 
-    startProcessing();
-    UIWizardNewVM *pWizard = wizardImp();
-    AssertReturn(pWizard, false);
-    if (selectedDiskSource() == SelectedDiskSource_New)
-    {
-        /* Try to create the hard drive:*/
-        fResult = pWizard->createVirtualDisk();
-        /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
-        if (!fResult)
-            return fResult;
-    }
+    // startProcessing();
+    // UIWizardNewVM *pWizard = wizardImp();
+    // AssertReturn(pWizard, false);
+    // if (selectedDiskSource() == SelectedDiskSource_New)
+    // {
+    //     /* Try to create the hard drive:*/
+    //     fResult = pWizard->createVirtualDisk();
+    //     /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+    //     if (!fResult)
+    //         return fResult;
+    // }
 
-    fResult = pWizard->createVM();
-    /* Try to delete the hard disk: */
-    if (!fResult)
-        pWizard->deleteVirtualDisk();
+    // fResult = pWizard->createVM();
+    // /* Try to delete the hard disk: */
+    // if (!fResult)
+    //     pWizard->deleteVirtualDisk();
 
-    endProcessing();
+    // endProcessing();
 
     return fResult;
 }
 
 bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 {
-    UIWizardNewVM *pWizard = wizardImp();
-    AssertReturn(pWizard, false);
-    if (!pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
-        return false;
+    // UIWizardNewVM *pWizard = wizardImp();
+    // AssertReturn(pWizard, false);
+    // if (!pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
+    //     return false;
     return true;
 }
 
 void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
 {
-    if (m_pUserNameContainer)
-        m_pUserNameContainer->setEnabled(fEnabled);
-    if (m_pAdditionalOptionsContainer)
-        m_pAdditionalOptionsContainer->setEnabled(fEnabled);
-    if (m_pGAInstallationISOContainer)
-        m_pGAInstallationISOContainer->setEnabled(fEnabled);
-    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    disableEnableGAWidgets(isGAInstallEnabled());
+    Q_UNUSED(fEnabled);
+
+    // if (m_pUserNameContainer)
+    //     m_pUserNameContainer->setEnabled(fEnabled);
+    // if (m_pAdditionalOptionsContainer)
+    //     m_pAdditionalOptionsContainer->setEnabled(fEnabled);
+    // if (m_pGAInstallationISOContainer)
+    //     m_pGAInstallationISOContainer->setEnabled(fEnabled);
+    // disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    // disableEnableGAWidgets(isGAInstallEnabled());
 }
 
 void UIWizardNewVMPageExpert::sltValueModified()
@@ -568,7 +574,7 @@ void UIWizardNewVMPageExpert::sltValueModified()
 
 void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked()
 {
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    //disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
@@ -594,23 +600,23 @@ void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()
 
 void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 {
-    if (!m_pDiskSourceButtonGroup)
-        return;
-    m_userSetWidgets << m_pDiskSourceButtonGroup;
-    if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
-        setSelectedDiskSource(SelectedDiskSource_Empty);
-    else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
-    {
-        setSelectedDiskSource(SelectedDiskSource_Existing);
-        setVirtualDiskFromDiskCombo();
-    }
-    else
-        setSelectedDiskSource(SelectedDiskSource_New);
+    // if (!m_pDiskSourceButtonGroup)
+    //     return;
+    // m_userSetWidgets << m_pDiskSourceButtonGroup;
+    // if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
+    //     setSelectedDiskSource(SelectedDiskSource_Empty);
+    // else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
+    // {
+    //     setSelectedDiskSource(SelectedDiskSource_Existing);
+    //     setVirtualDiskFromDiskCombo();
+    // }
+    // else
+    //     setSelectedDiskSource(SelectedDiskSource_New);
 
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+    // setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    // setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
-    completeChanged();
+    // completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltSelectLocationButtonClicked()
@@ -620,18 +626,18 @@ void UIWizardNewVMPageExpert::sltSelectLocationButtonClicked()
 
 void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
 {
-    QString strDiskFileName = machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : machineBaseName();
-    QString strDiskPath = machineFolder();
-    if (strDiskPath.isEmpty())
-    {
-        if (m_pNameAndSystemEditor)
-            strDiskPath = m_pNameAndSystemEditor->path();
-        else
-            strDiskPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    }
-    QString strExtension = defaultExtension(mediumFormat());
-    if (m_pLocationEditor)
-        m_pLocationEditor->setText(absoluteFilePath(strDiskFileName, strDiskPath, strExtension));
+    // QString strDiskFileName = machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : machineBaseName();
+    // QString strDiskPath = machineFolder();
+    // if (strDiskPath.isEmpty())
+    // {
+    //     if (m_pNameAndSystemEditor)
+    //         strDiskPath = m_pNameAndSystemEditor->path();
+    //     else
+    //         strDiskPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    // }
+    // QString strExtension = defaultExtension(mediumFormat());
+    // if (m_pLocationEditor)
+    //     m_pLocationEditor->setText(absoluteFilePath(strDiskFileName, strDiskPath, strExtension));
 }
 
 void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
@@ -666,8 +672,8 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
 
 void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()
 {
-    AssertReturnVoid(m_pDiskSelector);
-    UIWizardNewVM *pWizard = wizardImp();
-    AssertReturnVoid(pWizard);
-    pWizard->setVirtualDisk(m_pDiskSelector->id());
+    // AssertReturnVoid(m_pDiskSelector);
+    // UIWizardNewVM *pWizard = wizardImp();
+    // AssertReturnVoid(pWizard);
+    // pWizard->setVirtualDisk(m_pDiskSelector->id());
 }

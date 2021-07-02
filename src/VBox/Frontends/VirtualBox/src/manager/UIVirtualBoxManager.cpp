@@ -956,6 +956,7 @@ void UIVirtualBoxManager::sltPerformExit()
 
 void UIVirtualBoxManager::sltOpenNewMachineWizard()
 {
+#if 0
     /* Lock the actions preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_New)
                                                          << actionPool()->action(UIActionIndexMN_M_Machine_S_New)
@@ -1012,6 +1013,7 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         pWizard->exec();
         delete pWizard;
     }
+#endif
 }
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()

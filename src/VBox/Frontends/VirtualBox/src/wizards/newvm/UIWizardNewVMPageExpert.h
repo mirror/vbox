@@ -25,10 +25,10 @@
 #include <QSet>
 
 /* Local includes: */
-#include "UIWizardNewVMPageNameOSType.h"
-#include "UIWizardNewVMPageUnattended.h"
-#include "UIWizardNewVMPageHardware.h"
-#include "UIWizardNewVMPageDisk.h"
+#include "UIWizardNewVMNameOSTypePageBasic.h"
+#include "UIWizardNewVMUnattendedPageBasic.h"
+#include "UIWizardNewVMHardwarePageBasic.h"
+#include "UIWizardNewVMDiskPageBasic.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 
 /* Forward declarations: */
@@ -37,39 +37,12 @@ class UIToolBox;
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UIWizardPage,
-                                public UIWizardNewVMPageBaseNameOSType,
-                                public UIWizardNewVMPageBaseUnattended,
-                                public UIWizardNewVMPageHardwareBase,
-                                public UIWizardNewVMPageDiskBase,
                                 public UIWizardNewVDPageBaseFileType,
                                 public UIWizardNewVDPageBaseVariant,
                                 public UIWizardNewVDPageBaseSizeLocation
 {
 
     Q_OBJECT;
-    Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
-    Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
-    Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
-    Q_PROPERTY(int baseMemory READ baseMemory);
-    Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
-    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
-    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
-    Q_PROPERTY(bool startHeadless READ startHeadless);
-    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
-    Q_PROPERTY(QString userName READ userName WRITE setUserName);
-    Q_PROPERTY(QString password READ password WRITE setPassword);
-    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions WRITE setInstallGuestAdditions);
-    Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
-    Q_PROPERTY(QString productKey READ productKey);
-    Q_PROPERTY(int VCPUCount READ VCPUCount);
-    Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
-
-    Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
-    Q_PROPERTY(QString mediumPath READ mediumPath);
-    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
@@ -78,12 +51,6 @@ public:
 
 protected:
 
-    /** Wrapper to access 'wizard' from base part. */
-    UIWizardNewVM *wizardImp() const { return qobject_cast<UIWizardNewVM*>(wizard()); }
-    /** Wrapper to access 'this' from base part. */
-    UIWizardPage* thisImp() { return this; }
-    /** Wrapper to access 'wizard-field' from base part. */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
