@@ -37,7 +37,7 @@ class UIWizardNewCloudVM : public UINativeWizard
 
 public:
 
-    /** Constructs New Cloud VM wizard passing @a pParent to the base-class.
+    /** Constructs New Cloud VM wizard passing @a pParent & @a enmMode to the base-class.
       * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in.
       * @param  comClient         Brings the Cloud Client object to work with.
       * @param  comVSD            Brings the Virtual System Description object to use. */
@@ -91,10 +91,10 @@ public:
 protected:
 
     /** Populates pages. */
-    virtual void populatePages() /* final */;
+    virtual void populatePages() /* override final */;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* final */;
+    virtual void retranslateUi() /* override final */;
 
 private slots:
 

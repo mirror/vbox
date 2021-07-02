@@ -57,38 +57,42 @@ bool UIWizardNewCloudVM::createVSDForm()
     /* Prepare result: */
     bool fResult = false;
 
-    /* Main API request sequence, can be interrupted after any step: */
-    do
+    /* Acquire prepared client and description: */
+    CCloudClient comClient = client();
+    CVirtualSystemDescription comVSD = vsd();
+    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+
+    /* Read Cloud Client description form: */
+    CVirtualSystemDescriptionForm comForm;
+    CProgress comProgress = comClient.GetLaunchDescriptionForm(comVSD, comForm);
+    /* Check for immediate errors: */
+    if (!comClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comClient);
+    else
     {
-        /* Acquire prepared client and description: */
-        CCloudClient comClient = client();
-        CVirtualSystemDescription comVSD = vsd();
-        AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
-
-        /* Read Cloud Client description form: */
-        CVirtualSystemDescriptionForm comForm;
-        CProgress comProgress = comClient.GetLaunchDescriptionForm(comVSD, comForm);
-        if (!comClient.isOk())
-        {
-            msgCenter().cannotAcquireCloudClientParameter(comClient);
-            break;
-        }
-
         /* Show "Acquire launch form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, QString(), ":/progress_refresh_90px.png", this, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        msgCenter().showModalProgressDialog(comProgress, QString(),
+                                            ":/progress_refresh_90px.png", this, 0);
+        /* Check for canceled progress: */
+        if (!comProgress.GetCanceled())
         {
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-            break;
+            /* Check for progress errors: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotAcquireCloudClientParameter(comProgress);
+            else
+            {
+                /* Check whether form really read: */
+                if (comForm.isNotNull())
+                {
+                    /* Remember Virtual System Description Form: */
+                    setVSDForm(comForm);
+
+                    /* Finally, success: */
+                    fResult = true;
+                }
+            }
         }
-
-        /* Remember Virtual System Description Form: */
-        setVSDForm(comForm);
-
-        /* Finally, success: */
-        fResult = true;
     }
-    while (0);
 
     /* Return result: */
     return fResult;
@@ -99,50 +103,51 @@ bool UIWizardNewCloudVM::createCloudVM()
     /* Prepare result: */
     bool fResult = false;
 
-    /* Main API request sequence, can be interrupted after any step: */
-    do
+    /* Do nothing if prevented: */
+    if (m_fFinalStepPrevented)
     {
-        /* Do nothing if prevented: */
-        if (m_fFinalStepPrevented)
-        {
-            fResult = true;
-            break;
-        }
-
-        /* Acquire prepared client and description: */
-        CCloudClient comClient = client();
-        CVirtualSystemDescription comVSD = vsd();
-        AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
-
-        /* Initiate cloud VM creation procedure: */
-        CCloudMachine comMachine;
-        CProgress comProgress = comClient.CreateCloudMachine(comVSD, comMachine);
-        if (!comClient.isOk())
-        {
-            msgCenter().cannotCreateCloudMachine(comClient, this);
-            break;
-        }
-
-        /* Show "Create Cloud Machine" progress: */
-        msgCenter().showModalProgressDialog(comProgress, QString(), ":/progress_new_cloud_vm_90px.png", this, 0);
-        if (comProgress.GetCanceled())
-            break;
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            msgCenter().cannotCreateCloudMachine(comProgress, this);
-            break;
-        }
-
-        /* Check whether VM really added: */
-        if (comMachine.isNotNull())
-            uiCommon().notifyCloudMachineRegistered(shortProviderName(),
-                                                    profileName(),
-                                                    comMachine);
-
-        /* Finally, success: */
         fResult = true;
+        return fResult;
     }
-    while (0);
+
+    /* Acquire prepared client and description: */
+    CCloudClient comClient = client();
+    CVirtualSystemDescription comVSD = vsd();
+    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+
+    /* Initiate cloud VM creation procedure: */
+    CCloudMachine comMachine;
+    CProgress comProgress = comClient.CreateCloudMachine(comVSD, comMachine);
+    /* Check for immediate errors: */
+    if (!comClient.isOk())
+        msgCenter().cannotCreateCloudMachine(comClient, this);
+    else
+    {
+        /* Show "Create Cloud Machine" progress: */
+        msgCenter().showModalProgressDialog(comProgress, QString(),
+                                            ":/progress_new_cloud_vm_90px.png", this, 0);
+        /* Check for canceled progress: */
+        if (!comProgress.GetCanceled())
+        {
+            /* Check for progress errors: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotCreateCloudMachine(comProgress, this);
+            else
+            {
+                /* Check whether VM really added: */
+                if (comMachine.isNotNull())
+                {
+                    /* Notify GUI about VM was added: */
+                    uiCommon().notifyCloudMachineRegistered(shortProviderName(),
+                                                            profileName(),
+                                                            comMachine);
+
+                    /* Finally, success: */
+                    fResult = true;
+                }
+            }
+        }
+    }
 
     /* Return result: */
     return fResult;
