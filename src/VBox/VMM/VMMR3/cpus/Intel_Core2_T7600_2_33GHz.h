@@ -122,9 +122,9 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core2_T7600_2_33GHz[] =
     MVO(0x0000014f, "P6_UNK_0000_014f", 0),
     MVO(0x00000151, "P6_UNK_0000_0151", 0x3bfcb56f),
     MFO(0x0000015f, "C1_DTS_CAL_CTRL", IntelCore1DtsCalControl), /* value=0x230613 */
-    MFO(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs), /* value=0x60 */
-    MFO(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp), /* value=0xf5a07c40 */
-    MFO(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip), /* value=0xc15af09c */
+    MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x60 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0xf5a07c40 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0xc15af09c */
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0x806, 0, 0), /* value=0x806 */
     MFO(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus), /* value=0x0 */
     RFN(0x00000186, 0x00000187, "IA32_PERFEVTSELn", Ia32PerfEvtSelN, ReadOnly),
