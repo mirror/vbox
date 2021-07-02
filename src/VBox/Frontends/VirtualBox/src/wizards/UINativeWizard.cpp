@@ -44,6 +44,9 @@ UIFrame::UIFrame(QWidget *pParent)
 
 void UIFrame::paintEvent(QPaintEvent *pEvent)
 {
+    /* Sanity check: */
+    AssertPtrReturnVoid(pEvent);
+
     /* Prepare painter: */
     QPainter painter(this);
 
@@ -113,6 +116,10 @@ void UINativeWizard::setPixmapName(const QString &strName)
 
 int UINativeWizard::addPage(UINativeWizardPage *pPage)
 {
+    /* Sanity check: */
+    AssertPtrReturn(pPage, -1);
+    AssertPtrReturn(pPage->layout(), -1);
+
     /* Adjust page layout: */
     const int iL = m_enmMode == WizardMode_Expert
                  ? qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin)
