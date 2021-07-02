@@ -1671,8 +1671,11 @@ static int audioTestObjGetChild(PAUDIOTESTOBJINT phParent, uint32_t idxObj, PAUD
     int rc = audioTestObjGetStr(phParent, szObj, szUuid, sizeof(szUuid));
     if (RT_SUCCESS(rc))
     {
+        /** @todo r=bird: see comment in audioTestObjOpen about how reckless it is to
+         * leave most of the phObj structure uninitialized. */
+
         if (RTStrPrintf2(phObj->szSec, sizeof(phObj->szSec), "obj_%s", szUuid) <= 0)
-            AssertFailedReturn(VERR_BUFFER_OVERFLOW);
+            AssertFailedReturn(VERR_BUFFER_OVERFLOW); /** @todo r=bird: AssertReturn(RTStrPrintf2() > 0); results in better code. */
 
         /** @todo Check test section existence. */
 
@@ -1735,12 +1738,23 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
  * Opens an existing audio test object.
  *
  * @returns VBox status code.
- * @param   pSet                Audio test set the object contains.
  * @param   phObj               Object handle to open.
  * @param   ppObj               Where to return the pointer of the allocated and registered audio test object.
  */
 static int audioTestObjOpen(PAUDIOTESTOBJINT phObj, PAUDIOTESTOBJINT *ppObj)
 {
+    /** @todo r=bird: phObj and ppObj: why the 'h' in the first and not the
+     * latter? They are of the same type, which is suffixed 'INT', so the 'h'
+     * is probably out of place.
+     *
+     * An immediate question just looking at this function, would why this isn't a
+     * 'duplicate' instead of a 'open' operation.  However, looking at how little
+     * audioTestObjGetChild actually does to the phObj we're getting from
+     * audioTestVerifyTestToneData, it looks more like phObj is just a convenient
+     * way of passing a PAUDIOTESTSET and a section name (szSec) around without
+     * actually initializing anything else in the structure.
+     *
+     * This is reckless (7+ uninitialized members) and 'ing confusing code! */
     PAUDIOTESTOBJINT pObj = (PAUDIOTESTOBJINT)RTMemAlloc(sizeof(AUDIOTESTOBJINT));
     AssertPtrReturn(pObj, VERR_NO_MEMORY);
 
