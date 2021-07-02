@@ -43,14 +43,14 @@ typedef enum MMCEVENTSTATUSTYPE
 {
     /** Medium event status not changed. */
     MMCEVENTSTATUSTYPE_UNCHANGED = 0,
+    /** Medium eject requested (eject button pressed). */
+    MMCEVENTSTATUSTYPE_MEDIA_EJECT_REQUESTED,
     /** New medium inserted. */
     MMCEVENTSTATUSTYPE_MEDIA_NEW,
     /** Medium removed. */
     MMCEVENTSTATUSTYPE_MEDIA_REMOVED,
     /** Medium was removed + new medium was inserted. */
     MMCEVENTSTATUSTYPE_MEDIA_CHANGED,
-    /** Medium eject requested (eject button pressed). */
-    MMCEVENTSTATUSTYPE_MEDIA_EJECT_REQUESTED,
     /** 32bit hack. */
     MMCEVENTSTATUSTYPE_32BIT_HACK = 0x7fffffff
 } MMCEVENTSTATUSTYPE;
