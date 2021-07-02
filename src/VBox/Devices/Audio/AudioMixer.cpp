@@ -17,8 +17,7 @@
 
 /** @page pg_audio_mixer    Audio Mixer
  *
- * Overview
- * ========
+ * @section sec_audio_mixer_overview    Overview
  *
  * This mixer acts as a layer between the audio connector interface and the
  * actual device emulation, providing mechanisms for audio input sinks (sometime
@@ -41,8 +40,7 @@
  * streams will convert to/from this as they write and read from it.
  *
  *
- * Playback
- * ========
+ * @section sec_audio_mixer_playback    Playback
  *
  * For output sinks there can be one or more mixing stream attached.
  *
@@ -58,8 +56,7 @@
  * This is called synchronous multiplexing.
  *
  *
- * Recording
- * =========
+ * @section sec_audio_mixer_recording   Recording
  *
  * For input sinks (sources) we blend the samples of all mixing streams
  * together, however ignoring silent ones to avoid too much of a hit on the
