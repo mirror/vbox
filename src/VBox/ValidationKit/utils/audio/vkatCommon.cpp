@@ -367,7 +367,7 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 {
     const char *pcszPathOut = pTstEnv->Set.szPathAbs;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (for %RU32ms)\n", pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
 
     /** @todo Use .WAV here? */
@@ -375,42 +375,61 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
     int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-rec.pcm", &pObj);
     AssertRCReturn(rc, rc);
 
-    if (audioTestDriverStackStreamIsOkay(&pTstEnv->DrvStack, pStream->pStream))
+    PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
+
+    rc = AudioTestMixStreamEnable(pMix);
+    if (RT_SUCCESS(rc))
     {
-        const uint32_t cbPerSched = PDMAudioPropsMilliToBytes(&pParms->Props, pTstEnv->cMsSchedulingHint);
-        AssertStmt(cbPerSched, rc = VERR_INVALID_PARAMETER);
-              uint32_t cbToRead   = PDMAudioPropsMilliToBytes(&pParms->Props, pParms->msDuration);
-        AssertStmt(cbToRead,   rc = VERR_INVALID_PARAMETER);
+        uint64_t cbToRecTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
 
-        if (RT_SUCCESS(rc))
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
+
+        AudioTestSetObjAddMetadataStr(pObj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
+        AudioTestSetObjAddMetadataStr(pObj, "stream_buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
+        AudioTestSetObjAddMetadataStr(pObj, "stream_prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+        /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
+         *       has nothing to do with the device emulation scheduling hint. */
+        AudioTestSetObjAddMetadataStr(pObj, "device_scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
+
+        uint8_t         abSamples[16384];
+        uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
+        uint64_t        cbRecTotal  = 0;
+        while (!g_fTerminate && cbRecTotal < cbToRecTotal)
         {
-            AudioTestSetObjAddMetadataStr(pObj, "buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
-            AudioTestSetObjAddMetadataStr(pObj, "prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
-            AudioTestSetObjAddMetadataStr(pObj, "scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
-
-            uint8_t abBuf[_4K];
-
-            while (cbToRead)
+            /*
+             * Anything we can read?
+             */
+            uint32_t const cbCanRead = AudioTestMixStreamGetReadable(pMix);
+            if (cbCanRead)
             {
-                const uint32_t cbChunk = RT_MIN(cbToRead, RT_MIN(cbPerSched, sizeof(abBuf)));
-
-                uint32_t cbRead = 0;
-                rc = audioTestDriverStackStreamCapture(&pTstEnv->DrvStack, pStream->pStream, (void *)abBuf, cbChunk, &cbRead);
+                uint32_t const cbToRead   = RT_MIN(cbCanRead, cbSamplesAligned);
+                uint32_t       cbRecorded = 0;
+                rc = AudioTestMixStreamCapture(pMix, abSamples, cbToRead, &cbRecorded);
                 if (RT_SUCCESS(rc))
-                    rc = AudioTestSetObjWrite(pObj, abBuf, cbRead);
+                {
+                    if (cbRecorded)
+                    {
+                        rc = AudioTestSetObjWrite(pObj, abSamples, cbRecorded);
+                        if (RT_SUCCESS(rc))
+                        {
+                            cbRecTotal += cbRecorded;
 
-                if (RT_FAILURE(rc))
-                    break;
-
-                RTThreadSleep(pTstEnv->cMsSchedulingHint);
-
-                Assert(cbToRead >= cbRead);
-                cbToRead -= cbRead;
+                            /** @todo Clamp result? */
+                        }
+                    }
+                }
             }
+            else if (AudioTestMixStreamIsOkay(pMix))
+                RTThreadSleep(RT_MIN(RT_MAX(1, pTstEnv->cMsSchedulingHint), 256));
+
+            if (RT_FAILURE(rc))
+                break;
         }
+
+        int rc2 = AudioTestMixStreamDisable(pMix);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
-    else
-        rc = VERR_AUDIO_STREAM_NOT_READY;
 
     int rc2 = AudioTestSetObjClose(pObj);
     if (RT_SUCCESS(rc))
@@ -464,9 +483,6 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 {
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
-
-    AUDIOTESTTONE TstTone;
-    AudioTestToneInitRandom(&TstTone, &pToneParms->Props);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 

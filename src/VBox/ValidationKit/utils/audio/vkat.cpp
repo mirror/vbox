@@ -252,7 +252,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 1;
+    pTstParmsAcq->cIterations = 4;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif
@@ -264,7 +264,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
 #ifdef DEBUG_andy
-    pToneParms->msDuration     = 2000;
+    pToneParms->msDuration     = RTRandU32Ex(50, 2500);
 #else
     pToneParms->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
 #endif
@@ -285,10 +285,14 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
+        PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32/%RU16: Playing test tone (%RU16Hz, %RU32ms)\n",
+                     pTstParms->idxCurrent, i, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
+
         /*
          * 1. Arm the (host) ValKit ATS with the recording parameters.
          */
-        PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
         rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClValKit, pToneParms);
         if (RT_SUCCESS(rc))
         {
@@ -298,8 +302,13 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
         }
 
-        if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Playing tone failed\n");
+        if (RT_SUCCESS(rc))
+        {
+            if (pTstParms->cIterations)
+                RTThreadSleep(RTRandU32Ex(2000, 5000));
+        }
+        else
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Playing tone failed\n", pTstParms->idxCurrent, i);
     }
 
     return rc;
@@ -335,11 +344,25 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 1;
+    pTstParmsAcq->cIterations = 4;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif
     pTstParmsAcq->idxCurrent  = 0;
+
+    PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
+
+    pToneParms->Props          = pTstParmsAcq->Props;
+    pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
+    pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
+    pToneParms->Props          = pTstParmsAcq->Props;
+#ifdef DEBUG_andy
+    pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, 2500);
+#else
+    pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
+#endif
+    pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
+    pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
 
     return rc;
 }
@@ -355,12 +378,11 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
-        pTstParms->TestTone.Props      = pTstParms->Props;
-#ifdef DEBUG_andy
-        pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, 2000);
-#else
-        pTstParms->TestTone.msDuration = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
-#endif
+        PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32/%RU16: Recording test tone (%RU16Hz, %RU32ms)\n",
+                     pTstParms->idxCurrent, i, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
+
         /*
          * 1. Arm the (host) ValKit ATS with the playback parameters.
          */
@@ -374,7 +396,11 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         }
 
         if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Recording tone failed\n");
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Recording tone failed\n", pTstParms->idxCurrent, i);
+
+        /* Wait a bit to let the left over audio bits being processed. */
+        if (pTstParms->cIterations)
+            RTThreadSleep(RTRandU32Ex(2000, 5000));
     }
 
     return rc;
@@ -426,7 +452,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, unsigned
 
     if (pTstDesc->fExcluded)
     {
-        RTTestSkipped(g_hTest, "Excluded from list");
+        RTTestSkipped(g_hTest, "Test #%u is excluded from list, skipping", uSeq);
         return VINF_SUCCESS;
     }
 
@@ -437,17 +463,17 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, unsigned
         rc = pTstDesc->pfnSetup(pTstEnv, pTstDesc, &TstParms, &pvCtx);
         if (RT_FAILURE(rc))
         {
-            RTTestFailed(g_hTest, "Test setup failed with %Rrc\n", rc);
+            RTTestFailed(g_hTest, "Test #%u setup failed with %Rrc\n", uSeq, rc);
             return rc;
         }
     }
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%u: %RU32 iterations\n", uSeq, TstParms.cIterations);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%u (%RU32 iterations total)\n", uSeq, TstParms.cIterations);
 
     AssertPtr(pTstDesc->pfnExec);
     rc = pTstDesc->pfnExec(pTstEnv, pvCtx, &TstParms);
     if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Test failed with %Rrc\n", rc);
+        RTTestFailed(g_hTest, "Test #%u failed with %Rrc\n", uSeq, rc);
 
     RTTestSubDone(g_hTest);
 
@@ -458,7 +484,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc, unsigned
             rc = rc2;
 
         if (RT_FAILURE(rc2))
-            RTTestFailed(g_hTest, "Test destruction failed with %Rrc\n", rc2);
+            RTTestFailed(g_hTest, "Test #%u destruction failed with %Rrc\n", uSeq, rc2);
     }
 
     audioTestParmsDestroy(&TstParms);

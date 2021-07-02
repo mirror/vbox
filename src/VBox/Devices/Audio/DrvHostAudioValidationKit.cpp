@@ -718,8 +718,6 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostValKitAudioHA_StreamGetState
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                          const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    RT_NOREF(pStream);
-
     if (cbBuf == 0)
     {
         /* Fend off draining calls. */
@@ -729,39 +727,45 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
 
-    PVALKITTESTDATA pTst = NULL;
+    bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         if (pThis->pTestCur == NULL)
+        {
             pThis->pTestCur = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
-
-        pTst = pThis->pTestCur;
+            if (pThis->pTestCur)
+                LogRel(("ValKit: Next guest playback test in queue is test #%RU32\n", pThis->pTestCur->idxTest));
+        }
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
     }
 
-    if (pTst == NULL) /* Empty list? */
+    if (pThis->pTestCur == NULL) /* Empty list? */
     {
-        LogRel(("ValKit: Warning: Guest is playing back data when no playback test is active\n"));
+#ifdef DEBUG_andy
+        if (!fIsSilence)
+#endif
+            LogRel(("ValKit: Warning: Guest is playing back audio (%s, %RU32 bytes, %RU64ms) when no playback test is active\n",
+                    fIsSilence ? "silence" : "audible", cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
 
         *pcbWritten = cbBuf;
         return VINF_SUCCESS;
     }
 
-#if 1
-    if (PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf))
-    {
-        LogRel(("ValKit: Skipping %RU32 bytes of silence\n", cbBuf));
-
-        *pcbWritten = cbBuf;
-        return VINF_SUCCESS;
-    }
+#ifndef DEBUG_andy
+    if (fIsSilence)
+        LogRel2(("ValKit: Guest is playing back %RU32 bytes (%RU64ms) silence\n",
+                 cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
 #endif
 
-    if (pTst->t.TestTone.u.Play.cbRead == 0)
+    PVALKITTESTDATA pTst = pThis->pTestCur;
+
+    const bool fHandleSilence = false; /** @todo Skip blocks of entire silence for now. */
+
+    if (pTst->pEntry == NULL)
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -769,7 +773,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         Parms.enmType  = AUDIOTESTTYPE_TESTTONE_RECORD;
         Parms.TestTone = pTst->t.TestTone.Parms;
 
-        Assert(pTst->pEntry == NULL);
         rc = AudioTestSetTestBegin(&pThis->Set, "Recording audio data from guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
@@ -787,12 +790,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (RT_SUCCESS(rc))
     {
-        rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbBuf);
-        if (RT_SUCCESS(rc))
+        if (   !fIsSilence
+            || (fIsSilence && fHandleSilence))
         {
+            rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbBuf);
             pTst->t.TestTone.u.Play.cbRead += cbBuf;
 
-        #if 0
             const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;
             if (fComplete)
             {
@@ -803,26 +806,25 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     LogRel(("ValKit: Warning: Test #%RU32 read %RU32 bytes more than announced\n",
                             pTst->idxTest, pTst->t.TestTone.u.Play.cbRead - pTst->t.TestTone.u.Play.cbToRead));
 
+                AudioTestSetTestDone(pTst->pEntry);
+
                 rc = RTCritSectEnter(&pThis->CritSect);
                 if (RT_SUCCESS(rc))
                 {
-                    AudioTestSetTestDone(pTst->pEntry);
+                    drvHostValKiUnregisterPlayTest(pThis, pTst);
 
                     pThis->pTestCur = NULL;
                     pTst            = NULL;
-
-                    if (pThis->fTestSetEnded)
-                        rc = RTSemEventSignal(pThis->EventSemEnded);
 
                     int rc2 = RTCritSectLeave(&pThis->CritSect);
                     if (RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
-        #endif
-
-            cbWritten = cbBuf;
         }
+
+        /* Always report everything as being played. */
+        cbWritten = cbBuf;
     }
 
     if (RT_FAILURE(rc))
@@ -847,13 +849,24 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 {
     RT_NOREF(pStream);
 
+    if (cbBuf == 0)
+    {
+        /* Fend off draining calls. */
+        *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
+
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         if (pThis->pTestCur == NULL)
+        {
             pThis->pTestCur = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
+            if (pThis->pTestCur)
+                LogRel(("ValKit: Next guest recording test in queue is test #%RU32\n", pThis->pTestCur->idxTest));
+        }
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
@@ -861,7 +874,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     if (pThis->pTestCur == NULL) /* Empty list? */
     {
-        LogRelMax(64, ("ValKit: Warning: Guest is recording audio data when no recording test is active\n"));
+        LogRelMax(64, ("ValKit: Warning: Guest is trying to record audio data when no recording test is active\n"));
 
         *pcbRead = 0;
         return VINF_SUCCESS;
@@ -869,7 +882,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     PVALKITTESTDATA pTst = pThis->pTestCur;
 
-    if (pTst->t.TestTone.u.Rec.cbWritten == 0)
+    if (pTst->pEntry == NULL)
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -877,7 +890,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         Parms.enmType  = AUDIOTESTTYPE_TESTTONE_PLAY;
         Parms.TestTone = pTst->t.TestTone.Parms;
 
-        Assert(pTst->pEntry == NULL);
         rc = AudioTestSetTestBegin(&pThis->Set, "Injecting audio input data to guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
@@ -908,12 +920,13 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                 pTst->t.TestTone.u.Rec.cbWritten += cbRead;
                 Assert(pTst->t.TestTone.u.Rec.cbWritten <= pTst->t.TestTone.u.Rec.cbToWrite);
 
-                const bool fComplete = pTst->t.TestTone.u.Rec.cbToWrite == pTst->t.TestTone.u.Rec.cbWritten;
-
+                const bool fComplete = pTst->t.TestTone.u.Rec.cbToWrite >= pTst->t.TestTone.u.Rec.cbWritten;
                 if (fComplete)
                 {
                     LogRel(("ValKit: Injecting audio input data done (took %RU32ms)\n",
                             RTTimeMilliTS() - pTst->msStartedTS));
+
+                    AudioTestSetTestDone(pTst->pEntry);
 
                     rc = RTCritSectEnter(&pThis->CritSect);
                     if (RT_SUCCESS(rc))
