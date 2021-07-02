@@ -27,7 +27,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
-#include "CCloudProvider.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
@@ -39,6 +38,7 @@ class QTabBar;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
+class CCloudProvider;
 
 /** Provider combo data fields. */
 enum
@@ -58,8 +58,7 @@ namespace UIWizardNewCloudVMPage1
 {
     /** Populates @a pCombo with known providers. */
     void populateProviders(QIComboBox *pCombo);
-    /** Populates @a pCombo with known profiles.
-      * @param  comProvider  Brings the cloud provider. */
+    /** Populates @a pCombo with known profiles of @a comProvider specified. */
     void populateProfiles(QIComboBox *pCombo, const CCloudProvider &comProvider);
     /** Populates @a pList with source images from tab of @a pTabBar available in @a comClient. */
     void populateSourceImages(QListWidget *pList, QTabBar *pTabBar, const CCloudClient &comClient);
@@ -73,7 +72,7 @@ namespace UIWizardNewCloudVMPage1
     QString currentListWidgetData(QListWidget *pList);
 }
 
-/** UIWizardPage extension for 1st page of the New Cloud VM wizard,
+/** UINativeWizardPage extension for 1st page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage1 namespace functions. */
 class UIWizardNewCloudVMPageBasic1 : public UINativeWizardPage
 {
@@ -87,16 +86,16 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 
@@ -111,7 +110,7 @@ private slots:
     /** Handles change in source tab-bar. */
     void sltHandleSourceChange();
 
-    /** Handles change in instance list. */
+    /** Handles change in image list. */
     void sltHandleSourceImageChange();
 
 private:
@@ -148,10 +147,8 @@ private:
     /** Updates source image. */
     void updateSourceImage();
 
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider  m_comCloudProvider;
     /** Holds the image ID. */
-    QString         m_strSourceImageId;
+    QString  m_strSourceImageId;
 
     /** Holds the main label instance. */
     QIRichTextLabel *m_pLabelMain;

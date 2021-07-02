@@ -41,7 +41,7 @@ namespace UIWizardNewCloudVMPage2
     void refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor, const CVirtualSystemDescriptionForm &comForm);
 }
 
-/** UIWizardPage extension for 2nd page of the New Cloud VM wizard,
+/** UINativeWizardPage extension for 2nd page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage2 namespace functions. */
 class UIWizardNewCloudVMPageBasic2 : public UINativeWizardPage
 {
@@ -55,16 +55,16 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 

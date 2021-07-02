@@ -49,14 +49,14 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     , m_pSourceImageList(0)
     , m_pSettingsCnt(0)
 {
-    /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
     {
-        pMainLayout->setRowStretch(0, 0);
-        pMainLayout->setRowStretch(1, 1);
+        pLayoutMain->setRowStretch(0, 0);
+        pLayoutMain->setRowStretch(1, 1);
 
-        /* Create location container: */
+        /* Prepare location container: */
         m_pCntLocation = new QGroupBox(this);
         if (m_pCntLocation)
         {
@@ -64,40 +64,33 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             if (!m_fFullWizard)
                 m_pCntLocation->setVisible(false);
 
-            /* Create location layout: */
+            /* Prepare location layout: */
             QVBoxLayout *pLocationLayout = new QVBoxLayout(m_pCntLocation);
             if (pLocationLayout)
             {
-                /* Create location combo-box: */
+                /* Prepare location combo-box: */
                 m_pProviderComboBox = new QIComboBox(m_pCntLocation);
                 if (m_pProviderComboBox)
-                {
-                    /* Add into layout: */
                     pLocationLayout->addWidget(m_pProviderComboBox);
-                }
 
-                /* Create profile layout: */
+                /* Prepare profile layout: */
                 QHBoxLayout *pProfileLayout = new QHBoxLayout;
                 if (pProfileLayout)
                 {
                     pProfileLayout->setContentsMargins(0, 0, 0, 0);
                     pProfileLayout->setSpacing(1);
 
-                    /* Create profile combo-box: */
+                    /* Prepare profile combo-box: */
                     m_pProfileComboBox = new QIComboBox(m_pCntLocation);
                     if (m_pProfileComboBox)
-                    {
-                        /* Add into layout: */
                         pProfileLayout->addWidget(m_pProfileComboBox);
-                    }
-                    /* Create profile tool-button: */
+
+                    /* Prepare profile tool-button: */
                     m_pProfileToolButton = new QIToolButton(m_pCntLocation);
                     if (m_pProfileToolButton)
                     {
                         m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                           ":/cloud_profile_manager_disabled_16px.png"));
-
-                        /* Add into layout: */
                         pProfileLayout->addWidget(m_pProfileToolButton);
                     }
 
@@ -107,10 +100,10 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pCntLocation, 0, 0);
+            pLayoutMain->addWidget(m_pCntLocation, 0, 0);
         }
 
-        /* Create source container: */
+        /* Prepare source container: */
         m_pCntSource = new QGroupBox(this);
         if (m_pCntSource)
         {
@@ -118,13 +111,13 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             if (!m_fFullWizard)
                 m_pCntSource->setVisible(false);
 
-            /* Create source layout: */
+            /* Prepare source layout: */
             QVBoxLayout *pSourceLayout = new QVBoxLayout(m_pCntSource);
             if (pSourceLayout)
             {
                 pSourceLayout->setSpacing(0);
 
-                /* Create source tab-bar: */
+                /* Prepare source tab-bar: */
                 m_pSourceTabBar = new QTabBar(this);
                 if (m_pSourceTabBar)
                 {
@@ -135,7 +128,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     pSourceLayout->addWidget(m_pSourceTabBar);
                 }
 
-                /* Create source image list: */
+                /* Prepare source image list: */
                 m_pSourceImageList = new QListWidget(m_pCntSource);
                 if (m_pSourceImageList)
                 {
@@ -156,18 +149,18 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pCntSource, 1, 0);
+            pLayoutMain->addWidget(m_pCntSource, 1, 0);
         }
 
-        /* Create settings container: */
+        /* Prepare settings container: */
         m_pSettingsCnt = new QGroupBox(this);
         if (m_pSettingsCnt)
         {
-            /* Create settings layout: */
+            /* Prepare settings layout: */
             QVBoxLayout *pSettingsLayout = new QVBoxLayout(m_pSettingsCnt);
             if (pSettingsLayout)
             {
-                /* Create form editor widget: */
+                /* Prepare form editor widget: */
                 m_pFormEditor = new UIFormEditorWidget(m_pSettingsCnt);
                 if (m_pFormEditor)
                 {
@@ -188,7 +181,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pSettingsCnt, 0, 1, 2, 1);
+            pLayoutMain->addWidget(m_pSettingsCnt, 0, 1, 2, 1);
         }
     }
 
@@ -401,8 +394,8 @@ void UIWizardNewCloudVMPageExpert::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
     setShortProviderName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    m_comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
-    populateProfiles(m_pProfileComboBox, m_comCloudProvider);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
+    populateProfiles(m_pProfileComboBox, comCloudProvider);
     updateProfile();
 }
 

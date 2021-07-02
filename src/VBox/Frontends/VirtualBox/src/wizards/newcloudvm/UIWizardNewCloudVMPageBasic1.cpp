@@ -192,7 +192,7 @@ void UIWizardNewCloudVMPage1::populateSourceImages(QListWidget *pList, QTabBar *
         /* Ask for cloud images, currently we are interested in Available images only: */
         case 0: fResult = listCloudImages(comClient, comNames, comIDs, pParent); break;
         /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
-        case 1: fResult = listCloudSourceBootVolumes(comClient, comNames, comIDs); break;
+        case 1: fResult = listCloudSourceBootVolumes(comClient, comNames, comIDs, pParent); break;
         default: break;
     }
     if (fResult)
@@ -282,19 +282,16 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
     , m_pSourceTabBar(0)
     , m_pSourceImageList(0)
 {
-    /* Create main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    if (pMainLayout)
+    /* Prepare main layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
     {
-        /* Create main label: */
+        /* Prepare main label: */
         m_pLabelMain = new QIRichTextLabel(this);
         if (m_pLabelMain)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pLabelMain);
-        }
+            pLayoutMain->addWidget(m_pLabelMain);
 
-        /* Create location layout: */
+        /* Prepare provider layout: */
         m_pProviderLayout = new QGridLayout;
         if (m_pProviderLayout)
         {
@@ -302,36 +299,29 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             m_pProviderLayout->setColumnStretch(0, 0);
             m_pProviderLayout->setColumnStretch(1, 1);
 
-            /* Create location label: */
+            /* Prepare provider label: */
             m_pProviderLabel = new QLabel(this);
             if (m_pProviderLabel)
-            {
-                /* Add into layout: */
                 m_pProviderLayout->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
-            }
-            /* Create location combo-box: */
+
+            /* Prepare provider combo-box: */
             m_pProviderComboBox = new QIComboBox(this);
             if (m_pProviderComboBox)
             {
                 m_pProviderLabel->setBuddy(m_pProviderComboBox);
-
-                /* Add into layout: */
                 m_pProviderLayout->addWidget(m_pProviderComboBox, 0, 1);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pProviderLayout);
+            pLayoutMain->addLayout(m_pProviderLayout);
         }
 
-        /* Create description label: */
+        /* Prepare description label: */
         m_pLabelDescription = new QIRichTextLabel(this);
         if (m_pLabelDescription)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pLabelDescription);
-        }
+            pLayoutMain->addWidget(m_pLabelDescription);
 
-        /* Create options layout: */
+        /* Prepare options layout: */
         m_pOptionsLayout = new QGridLayout;
         if (m_pOptionsLayout)
         {
@@ -341,37 +331,32 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             m_pOptionsLayout->setRowStretch(1, 0);
             m_pOptionsLayout->setRowStretch(2, 1);
 
-            /* Create profile label: */
+            /* Prepare profile label: */
             m_pProfileLabel = new QLabel(this);
             if (m_pProfileLabel)
-            {
-                /* Add into layout: */
                 m_pOptionsLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
-            }
-            /* Create profile layout: */
+
+            /* Prepare profile layout: */
             QHBoxLayout *pProfileLayout = new QHBoxLayout;
             if (pProfileLayout)
             {
                 pProfileLayout->setContentsMargins(0, 0, 0, 0);
                 pProfileLayout->setSpacing(1);
 
-                /* Create profile combo-box: */
+                /* Prepare profile combo-box: */
                 m_pProfileComboBox = new QIComboBox(this);
                 if (m_pProfileComboBox)
                 {
                     m_pProfileLabel->setBuddy(m_pProfileComboBox);
-
-                    /* Add into layout: */
                     pProfileLayout->addWidget(m_pProfileComboBox);
                 }
-                /* Create profile tool-button: */
+
+                /* Prepare profile tool-button: */
                 m_pProfileToolButton = new QIToolButton(this);
                 if (m_pProfileToolButton)
                 {
                     m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                       ":/cloud_profile_manager_disabled_16px.png"));
-
-                    /* Add into layout: */
                     pProfileLayout->addWidget(m_pProfileToolButton);
                 }
 
@@ -379,21 +364,19 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pOptionsLayout->addLayout(pProfileLayout, 0, 1);
             }
 
-            /* Create source image label: */
+            /* Prepare source image label: */
             m_pSourceImageLabel = new QLabel(this);
             if (m_pSourceImageLabel)
-            {
-                /* Add into layout: */
                 m_pOptionsLayout->addWidget(m_pSourceImageLabel, 1, 0, Qt::AlignRight);
-            }
-            /* Create source image layout: */
+
+            /* Prepare source image layout: */
             QVBoxLayout *pSourceImageLayout = new QVBoxLayout;
             if (pSourceImageLayout)
             {
                 pSourceImageLayout->setSpacing(0);
                 pSourceImageLayout->setContentsMargins(0, 0, 0, 0);
 
-                /* Create source tab-bar: */
+                /* Prepare source tab-bar: */
                 m_pSourceTabBar = new QTabBar(this);
                 if (m_pSourceTabBar)
                 {
@@ -404,12 +387,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                     pSourceImageLayout->addWidget(m_pSourceTabBar);
                 }
 
-                /* Create source image list: */
+                /* Prepare source image list: */
                 m_pSourceImageList = new QListWidget(this);
                 if (m_pSourceImageList)
                 {
                     m_pSourceImageLabel->setBuddy(m_pSourceImageList);
-                    m_pSourceImageList->setSortingEnabled(true);
                     /* Make source image list fit 50 symbols
                      * horizontally and 8 lines vertically: */
                     const QFontMetrics fm(m_pSourceImageList->font());
@@ -419,6 +401,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                     const int iTotalHeight = 8 * iFontHeight;
                     m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
                     m_pSourceImageList->setAlternatingRowColors(true);
+                    m_pSourceImageList->setSortingEnabled(true);
 
                     /* Add into layout: */
                     pSourceImageLayout->addWidget(m_pSourceImageList);
@@ -429,7 +412,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pOptionsLayout);
+            pLayoutMain->addLayout(m_pOptionsLayout);
         }
     }
 
@@ -459,7 +442,7 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the location to create cloud virtual machine in.  This can "
                                                  "be one of known cloud service providers below."));
 
-    /* Translate location label: */
+    /* Translate provider label: */
     m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
     /* Translate received values of Location combo-box.
      * We are enumerating starting from 0 for simplicity: */
@@ -621,8 +604,8 @@ void UIWizardNewCloudVMPageBasic1::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
     setShortProviderName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    m_comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
-    populateProfiles(m_pProfileComboBox, m_comCloudProvider);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
+    populateProfiles(m_pProfileComboBox, comCloudProvider);
     updateProfile();
 }
 

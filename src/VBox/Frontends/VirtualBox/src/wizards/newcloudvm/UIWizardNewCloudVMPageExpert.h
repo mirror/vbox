@@ -28,7 +28,7 @@
 /* Forward declarations: */
 class QGroupBox;
 
-/** UIWizardPage extension for Expert page of the New Cloud VM wizard,
+/** UINativeWizardPage extension for Expert page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage1 & UIWizardNewCloudVMPage2 namespace functions. */
 class UIWizardNewCloudVMPageExpert : public UINativeWizardPage
 {
@@ -42,16 +42,16 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 
@@ -113,11 +113,9 @@ private:
     void updatePropertiesTable();
 
     /** Holds whether we want full wizard form or short one. */
-    bool            m_fFullWizard;
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider  m_comCloudProvider;
+    bool     m_fFullWizard;
     /** Holds the image ID. */
-    QString         m_strSourceImageId;
+    QString  m_strSourceImageId;
 
     /** Holds the location container instance. */
     QGroupBox    *m_pCntLocation;
