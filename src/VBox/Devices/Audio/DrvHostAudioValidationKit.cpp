@@ -94,7 +94,7 @@ typedef struct VALKITTESTDATA
     /** Current test set entry to process. */
     PAUDIOTESTENTRY        pEntry;
     /** Current test object to process. */
-    PAUDIOTESTOBJ          pObj;
+    AUDIOTESTOBJ           Obj;
     /** Stream configuration to use for this test. */
     PDMAUDIOSTREAMCFG      StreamCfg;
     union
@@ -169,8 +169,8 @@ static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
 
     RTListNodeRemove(&pTst->Node);
 
-    AudioTestSetObjClose(pTst->pObj);
-    pTst->pObj = NULL;
+    AudioTestObjClose(pTst->Obj);
+    pTst->Obj = NULL;
 
     if (pTst->pEntry) /* Set set entry assign? Mark as done. */
     {
@@ -776,7 +776,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         rc = AudioTestSetTestBegin(&pThis->Set, "Recording audio data from guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
-            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-rec.pcm", &pTst->pObj);
+            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-rec.pcm", &pTst->Obj);
 
         if (RT_SUCCESS(rc))
         {
@@ -793,7 +793,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         if (   !fIsSilence
             || (fIsSilence && fHandleSilence))
         {
-            rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbBuf);
+            rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbBuf);
             pTst->t.TestTone.u.Play.cbRead += cbBuf;
 
             const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;
@@ -893,7 +893,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         rc = AudioTestSetTestBegin(&pThis->Set, "Injecting audio input data to guest",
                                     &Parms, &pTst->pEntry);
         if (RT_SUCCESS(rc))
-            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-play.pcm", &pTst->pObj);
+            rc = AudioTestSetObjCreateAndRegister(&pThis->Set, "host-tone-play.pcm", &pTst->Obj);
 
         if (RT_SUCCESS(rc))
         {
@@ -914,7 +914,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         if (   RT_SUCCESS(rc)
             && cbRead)
         {
-            rc = AudioTestSetObjWrite(pTst->pObj, pvBuf, cbRead);
+            rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbRead);
             if (RT_SUCCESS(rc))
             {
                 pTst->t.TestTone.u.Rec.cbWritten += cbRead;

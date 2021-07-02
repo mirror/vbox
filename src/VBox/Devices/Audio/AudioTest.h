@@ -151,92 +151,12 @@ typedef struct AUDIOTESTPARMS
 /** Pointer to a test parameter structure. */
 typedef AUDIOTESTPARMS *PAUDIOTESTPARMS;
 
-/**
- * Enumeration for an audio test object type.
- */
-typedef enum AUDIOTESTOBJTYPE
-{
-    /** Unknown / invalid, do not use. */
-    AUDIOTESTOBJTYPE_UNKNOWN = 0,
-    /** The test object is a file. */
-    AUDIOTESTOBJTYPE_FILE,
-    /** The usual 32-bit hack. */
-    AUDIOTESTOBJTYPE_32BIT_HACK = 0x7fffffff
-} AUDIOTESTOBJTYPE;
-
-/**
- * Structure for keeping an audio test object file.
- */
-typedef struct AUDIOTESTOBJFILE
-{
-    /** File handle. */
-    RTFILE              hFile;
-    /** Total size (in bytes). */
-    size_t              cbSize;
-} AUDIOTESTOBJFILE;
-/** Pointer to an audio test object file. */
-typedef AUDIOTESTOBJFILE *PAUDIOTESTOBJFILE;
-
-/**
- * Enumeration for an audio test object meta data type.
- */
-typedef enum AUDIOTESTOBJMETADATATYPE
-{
-    /** Unknown / invalid, do not use. */
-    AUDIOTESTOBJMETADATATYPE_INVALID = 0,
-    /** Meta data is an UTF-8 string. */
-    AUDIOTESTOBJMETADATATYPE_STRING,
-    /** The usual 32-bit hack. */
-    AUDIOTESTOBJMETADATATYPE_32BIT_HACK = 0x7fffffff
-} AUDIOTESTOBJMETADATATYPE;
-
-/**
- * Structure for keeping a meta data block.
- */
-typedef struct AUDIOTESTOBJMETA
-{
-    /** List node. */
-    RTLISTNODE                Node;
-    /** Meta data type. */
-    AUDIOTESTOBJMETADATATYPE  enmType;
-    /** Meta data block. */
-    void                     *pvMeta;
-    /** Size (in bytes) of \a pvMeta. */
-    size_t                    cbMeta;
-} AUDIOTESTOBJMETA;
-/** Pointer to an audio test object file. */
-typedef AUDIOTESTOBJMETA *PAUDIOTESTOBJMETA;
-
-/**
- * Structure for keeping a single audio test object.
- *
- * A test object is data which is needed in order to perform and verify one or
- * more audio test case(s).
- */
-typedef struct AUDIOTESTOBJ
-{
-    /** List node. */
-    RTLISTNODE           Node;
-    /** The UUID of the object.
-     *  Used to identify an object within a test set. */
-    RTUUID               Uuid;
-    /** Number of references to this test object. */
-    uint32_t             cRefs;
-    /** Name of the test object.
-     *  Must not contain a path and has to be able to serialize to disk. */
-    char                 szName[64];
-    /** The object type. */
-    AUDIOTESTOBJTYPE     enmType;
-    /** Meta data list. */
-    RTLISTANCHOR         lstMeta;
-    /** Union for holding the object type-specific data. */
-    union
-    {
-        AUDIOTESTOBJFILE File;
-    };
-} AUDIOTESTOBJ;
-/** Pointer to an audio test object. */
-typedef AUDIOTESTOBJ *PAUDIOTESTOBJ;
+/** Test object handle. */
+typedef R3R0PTRTYPE(struct AUDIOTESTOBJINT RT_FAR *)      AUDIOTESTOBJ;
+/** Pointer to test object handle. */
+typedef AUDIOTESTOBJ                              RT_FAR *PAUDIOTESTOBJ;
+/** Nil test object handle. */
+#define NIL_AUDIOTESTOBJ                                  ((AUDIOTESTOBJ)~(RTHCINTPTR)0)
 
 struct AUDIOTESTSET;
 
@@ -350,10 +270,11 @@ int    AudioTestPathGetTemp(char *pszPath, size_t cbPath);
 int    AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszUUID);
 int    AudioTestPathCreate(char *pszPath, size_t cbPath, const char *pszUUID);
 
-int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj);
-int    AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, const void *pvBuf, size_t cbBuf);
-int    AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...);
-int    AudioTestSetObjClose(PAUDIOTESTOBJ pObj);
+int    AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ pObj);
+
+int    AudioTestObjWrite(AUDIOTESTOBJ Obj, const void *pvBuf, size_t cbBuf);
+int    AudioTestObjAddMetadataStr(AUDIOTESTOBJ Obj, const char *pszFormat, ...);
+int    AudioTestObjClose(AUDIOTESTOBJ Obj);
 
 int    AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry);
 int    AudioTestSetTestFailed(PAUDIOTESTENTRY pEntry, int rc, const char *pszErr);

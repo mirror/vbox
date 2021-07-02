@@ -257,8 +257,8 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
 
     /** @todo Use .WAV here? */
-    PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &pObj);
+    AUDIOTESTOBJ Obj;
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &Obj);
     AssertRCReturn(rc, rc);
 
     rc = AudioTestMixStreamEnable(&pStream->Mix);
@@ -272,13 +272,13 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
-        AudioTestSetObjAddMetadataStr(pObj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
-        AudioTestSetObjAddMetadataStr(pObj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
-        AudioTestSetObjAddMetadataStr(pObj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
-        AudioTestSetObjAddMetadataStr(pObj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
+        AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
+        AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
+        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
+        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
-        AudioTestSetObjAddMetadataStr(pObj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
+        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
 
         PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
 
@@ -311,7 +311,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 if (RT_SUCCESS(rc))
                 {
                     /* Write stuff to disk before trying to play it. Help analysis later. */
-                    rc = AudioTestSetObjWrite(pObj, abBuf, cbToPlay);
+                    rc = AudioTestObjWrite(Obj, abBuf, cbToPlay);
                     if (RT_SUCCESS(rc))
                     {
                         rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
@@ -343,7 +343,7 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
 
-    int rc2 = AudioTestSetObjClose(pObj);
+    int rc2 = AudioTestObjClose(Obj);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -371,8 +371,8 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
 
     /** @todo Use .WAV here? */
-    PAUDIOTESTOBJ pObj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-rec.pcm", &pObj);
+    AUDIOTESTOBJ Obj;
+    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-rec.pcm", &Obj);
     AssertRCReturn(rc, rc);
 
     PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
@@ -384,12 +384,12 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
 
-        AudioTestSetObjAddMetadataStr(pObj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
-        AudioTestSetObjAddMetadataStr(pObj, "stream_buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
-        AudioTestSetObjAddMetadataStr(pObj, "stream_prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+        AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
+        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
+        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
-        AudioTestSetObjAddMetadataStr(pObj, "device_scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
+        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
 
         uint8_t         abSamples[16384];
         uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
@@ -409,7 +409,7 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
                 {
                     if (cbRecorded)
                     {
-                        rc = AudioTestSetObjWrite(pObj, abSamples, cbRecorded);
+                        rc = AudioTestObjWrite(Obj, abSamples, cbRecorded);
                         if (RT_SUCCESS(rc))
                         {
                             cbRecTotal += cbRecorded;
@@ -431,7 +431,7 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
             rc = rc2;
     }
 
-    int rc2 = AudioTestSetObjClose(pObj);
+    int rc2 = AudioTestObjClose(Obj);
     if (RT_SUCCESS(rc))
         rc = rc2;
 

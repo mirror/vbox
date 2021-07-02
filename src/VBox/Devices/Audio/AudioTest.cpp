@@ -74,18 +74,96 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * Structure for an internal object handle.
+ * Enumeration for an audio test object type.
  */
-typedef struct AUDIOTESTOBJHANDLE
+typedef enum AUDIOTESTOBJTYPE
 {
+    /** Unknown / invalid, do not use. */
+    AUDIOTESTOBJTYPE_UNKNOWN = 0,
+    /** The test object is a file. */
+    AUDIOTESTOBJTYPE_FILE,
+    /** The usual 32-bit hack. */
+    AUDIOTESTOBJTYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTOBJTYPE;
+
+/**
+ * Structure for keeping an audio test object file.
+ */
+typedef struct AUDIOTESTOBJFILE
+{
+    /** File handle. */
+    RTFILE              hFile;
+    /** Total size (in bytes). */
+    size_t              cbSize;
+} AUDIOTESTOBJFILE;
+/** Pointer to an audio test object file. */
+typedef AUDIOTESTOBJFILE *PAUDIOTESTOBJFILE;
+
+/**
+ * Enumeration for an audio test object meta data type.
+ */
+typedef enum AUDIOTESTOBJMETADATATYPE
+{
+    /** Unknown / invalid, do not use. */
+    AUDIOTESTOBJMETADATATYPE_INVALID = 0,
+    /** Meta data is an UTF-8 string. */
+    AUDIOTESTOBJMETADATATYPE_STRING,
+    /** The usual 32-bit hack. */
+    AUDIOTESTOBJMETADATATYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTOBJMETADATATYPE;
+
+/**
+ * Structure for keeping a meta data block.
+ */
+typedef struct AUDIOTESTOBJMETA
+{
+    /** List node. */
+    RTLISTNODE                Node;
+    /** Meta data type. */
+    AUDIOTESTOBJMETADATATYPE  enmType;
+    /** Meta data block. */
+    void                     *pvMeta;
+    /** Size (in bytes) of \a pvMeta. */
+    size_t                    cbMeta;
+} AUDIOTESTOBJMETA;
+/** Pointer to an audio test object file. */
+typedef AUDIOTESTOBJMETA *PAUDIOTESTOBJMETA;
+
+/**
+ * Structure for keeping a single audio test object.
+ *
+ * A test object is data which is needed in order to perform and verify one or
+ * more audio test case(s).
+ */
+typedef struct AUDIOTESTOBJINT
+{
+    /** List node. */
+    RTLISTNODE           Node;
     /** Pointer to test set this handle is bound to. */
-    PAUDIOTESTSET       pSet;
+    PAUDIOTESTSET        pSet;
     /** As we only support .INI-style files for now, this only has the object's section name in it. */
     /** @todo Make this more generic (union, ++). */
-    char                szSec[AUDIOTEST_MAX_SEC_LEN];
-} AUDIOTESTOBJHANDLE;
-/** Pointer to an audio test object handle. */
-typedef AUDIOTESTOBJHANDLE* PAUDIOTESTOBJHANDLE;
+    char                 szSec[AUDIOTEST_MAX_SEC_LEN];
+    /** The UUID of the object.
+     *  Used to identify an object within a test set. */
+    RTUUID               Uuid;
+    /** Number of references to this test object. */
+    uint32_t             cRefs;
+    /** Name of the test object.
+     *  Must not contain a path and has to be able to serialize to disk. */
+    char                 szName[64];
+    /** The object type. */
+    AUDIOTESTOBJTYPE     enmType;
+    /** Meta data list. */
+    RTLISTANCHOR         lstMeta;
+    /** Union for holding the object type-specific data. */
+    union
+    {
+        AUDIOTESTOBJFILE File;
+    };
+} AUDIOTESTOBJINT;
+/** Pointer to an audio test object. */
+typedef AUDIOTESTOBJINT *PAUDIOTESTOBJINT;
 
 /**
  * Structure for keeping an audio test verification job.
@@ -130,8 +208,8 @@ static const double s_aAudioTestToneFreqsHz[] =
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int  audioTestSetObjCloseInternal(PAUDIOTESTOBJ pObj);
-static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj);
+static int  audioTestObjCloseInternal(PAUDIOTESTOBJINT pObj);
+static void audioTestObjFinalize(PAUDIOTESTOBJINT pObj);
 
 
 /**
@@ -702,7 +780,7 @@ int AudioTestPathCreateTemp(char *pszPath, size_t cbPath, const char *pszTag)
  * @param   pszVal              Where to return the value on success.
  * @param   cbVal               Size (in bytes) of \a pszVal.
  */
-static int audioTestObjGetStr(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, char *pszVal, size_t cbVal)
+static int audioTestObjGetStr(PAUDIOTESTOBJINT phObj, const char *pszKey, char *pszVal, size_t cbVal)
 {
     /** @todo For now we only support .INI-style files. */
     AssertPtrReturn(phObj->pSet, VERR_WRONG_ORDER);
@@ -717,7 +795,7 @@ static int audioTestObjGetStr(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, cha
  * @param   pszKey              Key to get value from.
  * @param   pbVal               Where to return the value on success.
  */
-static int audioTestObjGetBool(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, bool *pbVal)
+static int audioTestObjGetBool(PAUDIOTESTOBJINT phObj, const char *pszKey, bool *pbVal)
 {
     char szVal[_1K];
     int rc = audioTestObjGetStr(phObj, pszKey, szVal, sizeof(szVal));
@@ -735,7 +813,7 @@ static int audioTestObjGetBool(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, bo
  * @param   pszKey              Key to get value from.
  * @param   puVal               Where to return the value on success.
  */
-static int audioTestObjGetUInt8(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, uint8_t *puVal)
+static int audioTestObjGetUInt8(PAUDIOTESTOBJINT phObj, const char *pszKey, uint8_t *puVal)
 {
     char szVal[_1K];
     int rc = audioTestObjGetStr(phObj, pszKey, szVal, sizeof(szVal));
@@ -753,7 +831,7 @@ static int audioTestObjGetUInt8(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, u
  * @param   pszKey              Key to get value from.
  * @param   puVal               Where to return the value on success.
  */
-static int audioTestObjGetUInt32(PAUDIOTESTOBJHANDLE phObj, const char *pszKey, uint32_t *puVal)
+static int audioTestObjGetUInt32(PAUDIOTESTOBJINT phObj, const char *pszKey, uint32_t *puVal)
 {
     char szVal[_1K];
     int rc = audioTestObjGetStr(phObj, pszKey, szVal, sizeof(szVal));
@@ -893,10 +971,10 @@ int AudioTestSetDestroy(PAUDIOTESTSET pSet)
     if (RT_FAILURE(rc))
         return rc;
 
-    PAUDIOTESTOBJ pObj, pObjNext;
-    RTListForEachSafe(&pSet->lstObj, pObj, pObjNext, AUDIOTESTOBJ, Node)
+    PAUDIOTESTOBJINT pObj, pObjNext;
+    RTListForEachSafe(&pSet->lstObj, pObj, pObjNext, AUDIOTESTOBJINT, Node)
     {
-        rc = audioTestSetObjCloseInternal(pObj);
+        rc = audioTestObjCloseInternal(pObj);
         if (RT_SUCCESS(rc))
         {
             PAUDIOTESTOBJMETA pMeta, pMetaNext;
@@ -1032,8 +1110,8 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
     rc = RTFileSeek(pSet->f.hFile, 0, RTFILE_SEEK_END, NULL);
     AssertRCReturn(rc, rc);
 
-    PAUDIOTESTOBJ pObj;
-    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJ, Node)
+    PAUDIOTESTOBJINT pObj;
+    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
     {
         rc = audioTestManifestWrite(pSet, "\n");
         AssertRCReturn(rc, rc);
@@ -1102,10 +1180,10 @@ int AudioTestSetWipe(PAUDIOTESTSET pSet)
     int rc = VINF_SUCCESS;
     char szFilePath[RTPATH_MAX];
 
-    PAUDIOTESTOBJ pObj;
-    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJ, Node)
+    PAUDIOTESTOBJINT pObj;
+    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
     {
-        int rc2 = audioTestSetObjCloseInternal(pObj);
+        int rc2 = audioTestObjCloseInternal(pObj);
         if (RT_SUCCESS(rc2))
         {
             rc2 = audioTestSetGetObjPath(pSet, szFilePath, sizeof(szFilePath), pObj->szName);
@@ -1138,42 +1216,42 @@ int AudioTestSetWipe(PAUDIOTESTSET pSet)
  * @returns VBox status code.
  * @param   pSet                Test set to create and register new object for.
  * @param   pszName             Name of new object to create.
- * @param   ppObj               Where to return the pointer to the newly created object on success.
+ * @param   pObj                Where to return the pointer to the newly created object on success.
  */
-int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ *ppObj)
+int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PAUDIOTESTOBJ pObj)
 {
     AssertReturn(pSet->cTestsRunning == 1, VERR_WRONG_ORDER); /* No test nesting allowed. */
 
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
-    PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
-    AssertPtrReturn(pObj, VERR_NO_MEMORY);
+    PAUDIOTESTOBJINT pThis = (PAUDIOTESTOBJINT)RTMemAlloc(sizeof(AUDIOTESTOBJINT));
+    AssertPtrReturn(pThis, VERR_NO_MEMORY);
 
-    RTListInit(&pObj->lstMeta);
+    RTListInit(&pThis->lstMeta);
 
-    if (RTStrPrintf2(pObj->szName, sizeof(pObj->szName), "%04RU32-%s", pSet->cObj, pszName) <= 0)
+    if (RTStrPrintf2(pThis->szName, sizeof(pThis->szName), "%04RU32-%s", pSet->cObj, pszName) <= 0)
         AssertFailedReturn(VERR_BUFFER_OVERFLOW);
 
     /** @todo Generalize this function more once we have more object types. */
 
     char szObjPathAbs[RTPATH_MAX];
-    int rc = audioTestSetGetObjPath(pSet, szObjPathAbs, sizeof(szObjPathAbs), pObj->szName);
+    int rc = audioTestSetGetObjPath(pSet, szObjPathAbs, sizeof(szObjPathAbs), pThis->szName);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileOpen(&pObj->File.hFile, szObjPathAbs, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&pThis->File.hFile, szObjPathAbs, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            pObj->enmType = AUDIOTESTOBJTYPE_FILE;
-            pObj->cRefs   = 1; /* Currently only 1:1 mapping. */
+            pThis->enmType = AUDIOTESTOBJTYPE_FILE;
+            pThis->cRefs   = 1; /* Currently only 1:1 mapping. */
 
-            RTListAppend(&pSet->lstObj, &pObj->Node);
+            RTListAppend(&pSet->lstObj, &pThis->Node);
             pSet->cObj++;
 
             /* Generate + set an UUID for the object and assign it to the current test. */
-            rc = RTUuidCreate(&pObj->Uuid);
+            rc = RTUuidCreate(&pThis->Uuid);
             AssertRCReturn(rc, rc);
             char szUuid[AUDIOTEST_MAX_OBJ_LEN];
-            rc = RTUuidToStr(&pObj->Uuid, szUuid, sizeof(szUuid));
+            rc = RTUuidToStr(&pThis->Uuid, szUuid, sizeof(szUuid));
             AssertRCReturn(rc, rc);
 
             rc = audioTestManifestWrite(pSet, "obj%RU32_uuid=%s\n", pSet->pTestCur->cObj, szUuid);
@@ -1182,12 +1260,12 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
             AssertPtr(pSet->pTestCur);
             pSet->pTestCur->cObj++;
 
-            *ppObj = pObj;
+            *pObj = pThis;
         }
     }
 
     if (RT_FAILURE(rc))
-        RTMemFree(pObj);
+        RTMemFree(pThis);
 
     return rc;
 }
@@ -1196,27 +1274,29 @@ int AudioTestSetObjCreateAndRegister(PAUDIOTESTSET pSet, const char *pszName, PA
  * Writes to a created audio test object.
  *
  * @returns VBox status code.
- * @param   pObj                Audio test object to write to.
+ * @param   Obj                 Audio test object to write to.
  * @param   pvBuf               Pointer to data to write.
  * @param   cbBuf               Size (in bytes) of \a pvBuf to write.
  */
-int AudioTestSetObjWrite(PAUDIOTESTOBJ pObj, const void *pvBuf, size_t cbBuf)
+int AudioTestObjWrite(AUDIOTESTOBJ Obj, const void *pvBuf, size_t cbBuf)
 {
-    /** @todo Generalize this function more once we have more object types. */
-    AssertReturn(pObj->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
+    AUDIOTESTOBJINT *pThis = Obj;
 
-    return RTFileWrite(pObj->File.hFile, pvBuf, cbBuf, NULL);
+    /** @todo Generalize this function more once we have more object types. */
+    AssertReturn(pThis->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
+
+    return RTFileWrite(pThis->File.hFile, pvBuf, cbBuf, NULL);
 }
 
 /**
  * Adds meta data to a test object as a string, va_list version.
  *
  * @returns VBox status code.
- * @param   pObj                Test object to add meta data for.
+ * @param   Obj                 Test object to add meta data for.
  * @param   pszFormat           Format string to add.
  * @param   va                  Variable arguments list to use for the format string.
  */
-static int audioTestSetObjAddMetadataStrV(PAUDIOTESTOBJ pObj, const char *pszFormat, va_list va)
+static int audioTestObjAddMetadataStrV(PAUDIOTESTOBJINT pObj, const char *pszFormat, va_list va)
 {
     PAUDIOTESTOBJMETA pMeta = (PAUDIOTESTOBJMETA)RTMemAlloc(sizeof(AUDIOTESTOBJMETA));
     AssertPtrReturn(pMeta, VERR_NO_MEMORY);
@@ -1236,16 +1316,18 @@ static int audioTestSetObjAddMetadataStrV(PAUDIOTESTOBJ pObj, const char *pszFor
  * Adds meta data to a test object as a string.
  *
  * @returns VBox status code.
- * @param   pObj                Test object to add meta data for.
+ * @param   Obj                 Test object to add meta data for.
  * @param   pszFormat           Format string to add.
  * @param   ...                 Variable arguments for the format string.
  */
-int AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...)
+int AudioTestObjAddMetadataStr(AUDIOTESTOBJ Obj, const char *pszFormat, ...)
 {
+    AUDIOTESTOBJINT *pThis = Obj;
+
     va_list va;
 
     va_start(va, pszFormat);
-    int rc = audioTestSetObjAddMetadataStrV(pObj, pszFormat, va);
+    int rc = audioTestObjAddMetadataStrV(pThis, pszFormat, va);
     va_end(va);
 
     return rc;
@@ -1255,16 +1337,18 @@ int AudioTestSetObjAddMetadataStr(PAUDIOTESTOBJ pObj, const char *pszFormat, ...
  * Closes an opened audio test object.
  *
  * @returns VBox status code.
- * @param   pObj                Audio test object to close.
+ * @param   Obj                 Audio test object to close.
  */
-int AudioTestSetObjClose(PAUDIOTESTOBJ pObj)
+int AudioTestObjClose(AUDIOTESTOBJ Obj)
 {
-    if (!pObj)
+    AUDIOTESTOBJINT *pThis = Obj;
+
+    if (!pThis)
         return VINF_SUCCESS;
 
-    audioTestSetObjFinalize(pObj);
+    audioTestObjFinalize(pThis);
 
-    return audioTestSetObjCloseInternal(pObj);
+    return audioTestObjCloseInternal(pThis);
 }
 
 /**
@@ -1274,7 +1358,7 @@ int AudioTestSetObjClose(PAUDIOTESTOBJ pObj)
  * @param   pSet                Test set to begin new test for.
  * @param   pszDesc             Test description.
  * @param   pParms              Test parameters to use.
- * @param   ppEntry             Where to return the new test handle.
+ * @param   ppEntry             Where to return the new test
  */
 int AudioTestSetTestBegin(PAUDIOTESTSET pSet, const char *pszDesc, PAUDIOTESTPARMS pParms, PAUDIOTESTENTRY *ppEntry)
 {
@@ -1538,7 +1622,7 @@ int AudioTestSetUnpack(const char *pszFile, const char *pszOutDir)
  * @param   pszSec              Name of section to retrieve object handle for.
  * @param   phSec               Where to store the object handle on success.
  */
-static int audioTestSetGetSection(PAUDIOTESTSET pSet, const char *pszSec, PAUDIOTESTOBJHANDLE phSec)
+static int audioTestSetGetSection(PAUDIOTESTSET pSet, const char *pszSec, PAUDIOTESTOBJINT phSec)
 {
     int rc = RTStrCopy(phSec->szSec, sizeof(phSec->szSec), pszSec);
     if (RT_FAILURE(rc))
@@ -1560,7 +1644,7 @@ static int audioTestSetGetSection(PAUDIOTESTSET pSet, const char *pszSec, PAUDIO
  * @param   idxTst              Index of test to retrieve the object handle for.
  * @param   phTst               Where to store the object handle on success.
  */
-static int audioTestSetGetTest(PAUDIOTESTSET pSet, uint32_t idxTst, PAUDIOTESTOBJHANDLE phTst)
+static int audioTestSetGetTest(PAUDIOTESTSET pSet, uint32_t idxTst, PAUDIOTESTOBJINT phTst)
 {
     char szSec[AUDIOTEST_MAX_SEC_LEN];
     if (RTStrPrintf2(szSec, sizeof(szSec), "test_%04RU32", idxTst) <= 0)
@@ -1570,14 +1654,14 @@ static int audioTestSetGetTest(PAUDIOTESTSET pSet, uint32_t idxTst, PAUDIOTESTOB
 }
 
 /**
- * Retrieves an object handle of a specific object.
+ * Retrieves a child object of a specific parent object.
  *
  * @returns VBox status code.
- * @param   phParent            Object handle (parent) the object contains.
+ * @param   phParent            Parent object the child object contains.
  * @param   idxObj              Index of object to retrieve the object handle for.
  * @param   phObj               Where to store the object handle on success.
  */
-static int audioTestSetGetObj(PAUDIOTESTOBJHANDLE phParent, uint32_t idxObj, PAUDIOTESTOBJHANDLE phObj)
+static int audioTestObjGetChild(PAUDIOTESTOBJINT phParent, uint32_t idxObj, PAUDIOTESTOBJINT phObj)
 {
     char szObj[AUDIOTEST_MAX_SEC_LEN];
     if (RTStrPrintf2(szObj, sizeof(szObj), "obj%RU32_uuid", idxObj) <= 0)
@@ -1612,7 +1696,7 @@ static int audioTestSetGetObj(PAUDIOTESTOBJHANDLE phParent, uint32_t idxObj, PAU
  * @param   ...                 Variable aruments for error format string.
  */
 static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
-                                PAUDIOTESTOBJHANDLE phObjA, PAUDIOTESTOBJHANDLE phObjB, const char *pszKey, const char *pszVal, const char *pszErrFmt, ...)
+                                PAUDIOTESTOBJINT phObjA, PAUDIOTESTOBJINT phObjB, const char *pszKey, const char *pszVal, const char *pszErrFmt, ...)
 {
     va_list va;
     va_start(va, pszErrFmt);
@@ -1655,9 +1739,9 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
  * @param   phObj               Object handle to open.
  * @param   ppObj               Where to return the pointer of the allocated and registered audio test object.
  */
-static int audioTestSetObjOpen(PAUDIOTESTOBJHANDLE phObj, PAUDIOTESTOBJ *ppObj)
+static int audioTestObjOpen(PAUDIOTESTOBJINT phObj, PAUDIOTESTOBJINT *ppObj)
 {
-    PAUDIOTESTOBJ pObj = (PAUDIOTESTOBJ)RTMemAlloc(sizeof(AUDIOTESTOBJ));
+    PAUDIOTESTOBJINT pObj = (PAUDIOTESTOBJINT)RTMemAlloc(sizeof(AUDIOTESTOBJINT));
     AssertPtrReturn(pObj, VERR_NO_MEMORY);
 
     char szFileName[AUDIOTEST_MAX_SEC_LEN];
@@ -1696,9 +1780,9 @@ static int audioTestSetObjOpen(PAUDIOTESTOBJHANDLE phObj, PAUDIOTESTOBJ *ppObj)
  * Closes an audio test set object.
  *
  * @returns VBox status code.
- * @param   pObj                Object to close.
+ * @param   Obj                 Object to close.
  */
-static int audioTestSetObjCloseInternal(PAUDIOTESTOBJ pObj)
+static int audioTestObjCloseInternal(PAUDIOTESTOBJINT pObj)
 {
     int rc;
 
@@ -1720,9 +1804,9 @@ static int audioTestSetObjCloseInternal(PAUDIOTESTOBJ pObj)
 /**
  * Finalizes an audio test set object.
  *
- * @param   pObj                Test object to finalize.
+ * @param   Obj                 Test object to finalize.
  */
-static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj)
+static void audioTestObjFinalize(PAUDIOTESTOBJINT pObj)
 {
     /** @todo Generalize this function more once we have more object types. */
     AssertReturnVoid(pObj->enmType == AUDIOTESTOBJTYPE_FILE);
@@ -1738,7 +1822,7 @@ static void audioTestSetObjFinalize(PAUDIOTESTOBJ pObj)
  * @param   phObj               Object to retrieve PCM properties for.
  * @param   pProps              Where to store the PCM properties on success.
  */
-static int audioTestSetObjGetTonePcmProps(PAUDIOTESTOBJHANDLE phObj, PPDMAUDIOPCMPROPS pProps)
+static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT phObj, PPDMAUDIOPCMPROPS pProps)
 {
     int rc;
 
@@ -1826,27 +1910,27 @@ static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t c
  * @param   phTestA             Test handle A of test to verify PCM data for.
  * @param   phTestB             Test handle B of test to verify PCM data for.
  */
-static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJHANDLE phTestA, PAUDIOTESTOBJHANDLE phTestB)
+static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJINT phTestA, PAUDIOTESTOBJINT phTestB)
 {
     int rc;
 
     /** @todo For now ASSUME that we only have one object per test. */
 
-    AUDIOTESTOBJHANDLE hObjA;
+    AUDIOTESTOBJINT hObjA;
 
-    rc = audioTestSetGetObj(phTestA, 0 /* idxObj */, &hObjA);
+    rc = audioTestObjGetChild(phTestA, 0 /* idxObj */, &hObjA);
     CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Unable to get object A");
 
-    PAUDIOTESTOBJ pObjA;
-    rc = audioTestSetObjOpen(&hObjA, &pObjA);
+    PAUDIOTESTOBJINT pObjA;
+    rc = audioTestObjOpen(&hObjA, &pObjA);
     CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Unable to open object A");
 
-    AUDIOTESTOBJHANDLE hObjB;
-    rc = audioTestSetGetObj(phTestB, 0 /* idxObj */, &hObjB);
+    AUDIOTESTOBJINT hObjB;
+    rc = audioTestObjGetChild(phTestB, 0 /* idxObj */, &hObjB);
     CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Unable to get object B");
 
-    PAUDIOTESTOBJ pObjB;
-    rc = audioTestSetObjOpen(&hObjB, &pObjB);
+    PAUDIOTESTOBJINT pObjB;
+    rc = audioTestObjOpen(&hObjB, &pObjB);
     CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Unable to open object B");
     AssertReturn(pObjA->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
     AssertReturn(pObjB->enmType == AUDIOTESTOBJTYPE_FILE, VERR_NOT_SUPPORTED);
@@ -1901,9 +1985,9 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
         AssertRC(rc2);
     }
 
-    rc = audioTestSetObjCloseInternal(pObjA);
+    rc = audioTestObjCloseInternal(pObjA);
     AssertRCReturn(rc, rc);
-    rc = audioTestSetObjCloseInternal(pObjB);
+    rc = audioTestObjCloseInternal(pObjB);
     AssertRCReturn(rc, rc);
 
     return rc;
@@ -1919,7 +2003,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
  * @param   phTestA             Test handle of test tone A to verify tone B with.
  * @param   phTestB             Test handle of test tone B to verify tone A with.*
  */
-static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJHANDLE phTestA, PAUDIOTESTOBJHANDLE phTestB)
+static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJINT phTestA, PAUDIOTESTOBJINT phTestB)
 {
     int rc;
 
@@ -1950,7 +2034,7 @@ static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJHAN
     rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_pcm_is_signed", NULL, "Tone PCM signed bit doesn't match");
     CHECK_RC_MAYBE_RET(rc, pVerify);
 
-    rc = audioTestSetObjGetTonePcmProps(phTestA, &pVerify->PCMProps);
+    rc = audioTestObjGetTonePcmProps(phTestA, &pVerify->PCMProps);
     CHECK_RC_MAYBE_RET(rc, pVerify);
 
     /*
@@ -1999,11 +2083,11 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     /*
      * Compare obvious values first.
      */
-    AUDIOTESTOBJHANDLE hHdrA;
+    AUDIOTESTOBJINT hHdrA;
     rc = audioTestSetGetSection(pVerJob->pSetA, AUDIOTEST_SEC_HDR_STR, &hHdrA);
     CHECK_RC_MAYBE_RET(rc, pVerJob);
 
-    AUDIOTESTOBJHANDLE hHdrB;
+    AUDIOTESTOBJINT hHdrB;
     rc = audioTestSetGetSection(pVerJob->pSetB, AUDIOTEST_SEC_HDR_STR, &hHdrB);
     CHECK_RC_MAYBE_RET(rc, pVerJob);
 
@@ -2029,11 +2113,11 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     {
         VerJob.idxTest = i;
 
-        AUDIOTESTOBJHANDLE hTestA;
+        AUDIOTESTOBJINT hTestA;
         rc = audioTestSetGetTest(VerJob.pSetA, i, &hTestA);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test A not found");
 
-        AUDIOTESTOBJHANDLE hTestB;
+        AUDIOTESTOBJINT hTestB;
         rc = audioTestSetGetTest(VerJob.pSetB, i, &hTestB);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test B not found");
 
