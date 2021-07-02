@@ -27,6 +27,7 @@
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+#include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -230,40 +231,20 @@ void UIWizardAddCloudVMPage1::populateProfileInstances()
             /* Gather instance names and ids: */
             CStringArray comNames;
             CStringArray comIDs;
-
-            /* Ask for cloud instances: */
-            CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
-            if (!comCloudClient.isOk())
+            if (listCloudSourceInstances(comCloudClient, comNames, comIDs, wizardImp()))
             {
-                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgress, QString(),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (comProgress.GetCanceled())
-            {
-                wizardImp()->reject();
-                break;
-            }
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comProgress);
-                break;
-            }
-
-            /* Push acquired names to list rows: */
-            const QVector<QString> names = comNames.GetValues();
-            const QVector<QString> ids = comIDs.GetValues();
-            for (int i = 0; i < names.size(); ++i)
-            {
-                /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pProfileInstanceList);
-                if (pItem)
+                /* Push acquired names to list rows: */
+                const QVector<QString> names = comNames.GetValues();
+                const QVector<QString> ids = comIDs.GetValues();
+                for (int i = 0; i < names.size(); ++i)
                 {
-                    pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                    pItem->setData(Qt::UserRole, ids.at(i));
+                    /* Create list item: */
+                    QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pProfileInstanceList);
+                    if (pItem)
+                    {
+                        pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                        pItem->setData(Qt::UserRole, ids.at(i));
+                    }
                 }
             }
 

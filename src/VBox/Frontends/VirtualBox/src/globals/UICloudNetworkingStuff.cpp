@@ -557,6 +557,52 @@ bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comC
     return false;
 }
 
+bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comCloudClient,
+                                                      CStringArray &comNames,
+                                                      CStringArray &comIDs,
+                                                      QWidget *pParent /* = 0 */)
+{
+    /* Execute ListSourceInstances async method: */
+    CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
+    else
+    {
+        /* Show "Acquire cloud source instances" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_reading_appliance_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comCloudClient,
+                                                      CStringArray &comNames,
+                                                      CStringArray &comIDs,
+                                                      QString &strErrorMessage)
+{
+    /* Execute ListSourceInstances async method: */
+    CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Wait for "Acquire cloud source instances" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return true;
+    }
+    /* Return false by default: */
+    return false;
+}
+
 QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
                                                                  QWidget *pParent /* = 0 */)
 {

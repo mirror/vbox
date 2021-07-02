@@ -151,6 +151,16 @@ namespace UICloudNetworkingStuff
                                                          CStringArray &comNames,
                                                          CStringArray &comIDs,
                                                          QString &strErrorMessage);
+    /** Acquires cloud source instances of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
+                                                       CStringArray &comNames,
+                                                       CStringArray &comIDs,
+                                                       QWidget *pParent = 0);
+    /** Acquires cloud source instances of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
+                                                       CStringArray &comNames,
+                                                       CStringArray &comIDs,
+                                                       QString &strErrorMessage);
 
     /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
