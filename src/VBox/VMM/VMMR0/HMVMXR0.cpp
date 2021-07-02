@@ -14188,7 +14188,8 @@ static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
          * We have to ignore the LOCK prefix here as we must not retrigger the
          * detection on the host.  This isn't all that satisfactory, though...
          */
-        Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC?\n", pVCpu->cpum.GstCtx.cs.Sel,
+#if 0
+        Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
                   pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
 
         /** @todo For SMP configs we should do a rendezvous here. */
@@ -14210,6 +14211,11 @@ static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
             rcStrict = VINF_SUCCESS;
         }
         return rcStrict;
+#else
+        Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC -> VINF_EM_EMULATE_SPLIT_LOCK\n",
+                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
+        return VINF_EM_EMULATE_SPLIT_LOCK;
+#endif
     }
 
     STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);

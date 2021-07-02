@@ -361,6 +361,7 @@ bool            emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 
 VBOXSTRICTRC    emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu);
 VBOXSTRICTRC    emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu);
+VBOXSTRICTRC    emR3ExecuteSplitLockInstruction(PVM pVM, PVMCPU pVCpu);
 
 RT_C_DECLS_END
 

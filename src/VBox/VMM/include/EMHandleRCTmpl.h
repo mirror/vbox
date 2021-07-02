@@ -167,6 +167,10 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
                 rc = emR3ExecuteInstruction(pVM, pVCpu, "EVENT: ");
             break;
 
+        case VINF_EM_EMULATE_SPLIT_LOCK:
+            rc = VBOXSTRICTRC_TODO(emR3ExecuteSplitLockInstruction(pVM, pVCpu));
+            break;
+
 
         /*
          * Up a level.
