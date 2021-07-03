@@ -50,6 +50,9 @@ struct UIUnattendedInstallData
     QString m_strGuestAdditionsISOPath;
 };
 
+
+
+
 enum SelectedDiskSource
 {
     SelectedDiskSource_Empty = 0,
@@ -67,24 +70,9 @@ class UIWizardNewVM : public UINativeWizard
 
 public:
 
-    /* Page IDs: */
-    enum
-    {
-        Page1,
-        Page2,
-        Page3,
-        Page4,
-        PageMax
-    };
-
-    /* Page IDs: */
-    enum
-    {
-        PageExpert
-    };
 
     /** Constructor: */
-    UIWizardNewVM(QWidget *pParent, const QString &strGroup = QString(), WizardMode enmMode = WizardMode_Auto);
+    UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(), WizardMode enmMode = WizardMode_Auto);
 
     /** Prepare routine. */
     void prepare();
@@ -98,6 +86,20 @@ public:
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
     void setVirtualDisk(const QUuid &mediumId);
+
+    const QString &machineGroup() const;
+
+    const QString &machineFilePath() const;
+    void setMachineFilePath(const QString &strMachineFilePath);
+
+    const QString &machineFolder() const;
+    void setMachineFolder(const QString &strMachineFolder);
+
+    const QString &machineBaseName() const;
+    void setMachineBaseName(const QString &strMachineBaseName);
+
+    const QString &detectedOSTypeId() const;
+    void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
 
 protected:
 
@@ -139,7 +141,7 @@ private:
      * @{ */
        CMedium m_virtualDisk;
        CMachine m_machine;
-       QString m_strGroup;
+       QString m_strMachineGroup;
        int m_iIDECount;
        int m_iSATACount;
        int m_iSCSICount;
@@ -148,6 +150,20 @@ private:
        int m_iUSBCount;
        mutable UIUnattendedInstallData m_unattendedInstallData;
     /** @} */
+
+    /** Path of the folder created by this wizard page. Used to remove previously created
+     *  folder. see cleanupMachineFolder();*/
+    QString m_strCreatedFolder;
+
+    /** Full path (including the file name) of the machine's configuration file. */
+    QString m_strMachineFilePath;
+    /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
+    QString m_strMachineFolder;
+    /** Base name of the machine is generated from the m_strMachineFilePath. */
+    QString m_strMachineBaseName;
+
+    /** Type Id od the OS detected from the ISO file by IUnattended. */
+    QString m_strDetectedOSTypeId;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

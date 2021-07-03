@@ -177,117 +177,106 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-// UIWizardNewVMNameOSTypePage::UIWizardNewVMNameOSTypePage(const QString &strGroup)
-//     : m_pNameAndSystemEditor(0)
-//     , m_pSkipUnattendedCheckBox(0)
-//     , m_strGroup(strGroup)
-// {
-//     CHost host = uiCommon().host();
-//     m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
-//     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
-// }
+void UIWizardNewVMNameOSTypePage::onNameChanged(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
+{
+    CHost host = uiCommon().host();
+    bool fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    bool fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 
-// void UIWizardNewVMNameOSTypePage::onNameChanged(QString strNewName)
-// {
-//     /* Do not forget about achitecture bits, if not yet specified: */
-//     if (!strNewName.contains("32") && !strNewName.contains("64"))
-//         strNewName += ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode ? "64" : "32";
+    /* Do not forget about achitecture bits, if not yet specified: */
+    if (!strNewName.contains("32") && !strNewName.contains("64"))
+        strNewName += ARCH_BITS == 64 && fSupportsHWVirtEx && fSupportsLongMode ? "64" : "32";
 
-//     /* Search for a matching OS type based on the string the user typed already. */
-//     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
-//         if (strNewName.contains(gs_OSTypePattern[i].pattern))
-//         {
-//             if (m_pNameAndSystemEditor)
-//                 m_pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-//             break;
-//         }
-// }
+    /* Search for a matching OS type based on the string the user typed already. */
+    for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
+        if (strNewName.contains(gs_OSTypePattern[i].pattern))
+        {
+            if (pNameAndSystemEditor)
+                pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            break;
+        }
+}
 
-// void UIWizardNewVMNameOSTypePage::onOsTypeChanged()
-// {
-//     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
-//      * So simply disconnect the text-edit signal. */
-//     if (m_pNameAndSystemEditor)
-//         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
-// }
+void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
+                                                         UINativeWizard *pWizard)
+{
+    UIWizardNewVM *pNewVMWizard = qobject_cast<UIWizardNewVM*>(pWizard);
+    if (!pNameAndSystemEditor || !pNewVMWizard)
+        return;
+    if (pNameAndSystemEditor->name().isEmpty() || pNameAndSystemEditor->path().isEmpty())
+        return;
+     /* Get VBox: */
+    CVirtualBox vbox = uiCommon().virtualBox();
 
-// void UIWizardNewVMNameOSTypePage::composeMachineFilePath()
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return;
-//     if (m_pNameAndSystemEditor->name().isEmpty() || m_pNameAndSystemEditor->path().isEmpty())
-//         return;
-//     /* Get VBox: */
-//     CVirtualBox vbox = uiCommon().virtualBox();
+    /* Compose machine filename: */
+    pNewVMWizard->setMachineFilePath(vbox.ComposeMachineFilename(pNameAndSystemEditor->name(),
+                                                                 pNewVMWizard->machineGroup(),
+                                                                 QString(),
+                                                                 pNameAndSystemEditor->path()));
+    /* Compose machine folder/basename: */
+    const QFileInfo fileInfo(pNewVMWizard->machineFilePath());
+    pNewVMWizard->setMachineFolder(fileInfo.absolutePath());
+    pNewVMWizard->setMachineBaseName(fileInfo.completeBaseName());
+}
 
-//     /* Compose machine filename: */
-//     m_strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
-//                                                        m_strGroup,
-//                                                        QString(),
-//                                                        m_pNameAndSystemEditor->path());
-//     /* Compose machine folder/basename: */
-//     const QFileInfo fileInfo(m_strMachineFilePath);
-//     m_strMachineFolder = fileInfo.absolutePath();
-//     m_strMachineBaseName = fileInfo.completeBaseName();
-// }
+bool UIWizardNewVMNameOSTypePage::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
+                                                      UINativeWizardPage *pCaller,
+                                                      const QString &strMachineFolder,
+                                                      QString &strCreatedFolder)
+{
+    if (!pNameAndSystemEditor)
+        return false;
+    /* Cleanup previosly created folder if any: */
+    if (!cleanupMachineFolder(strMachineFolder, strCreatedFolder))
+    {
+        msgCenter().cannotRemoveMachineFolder(strMachineFolder, pCaller);
+        return false;
+    }
 
+    /* Check if the folder already exists and check if it has been created by this wizard */
+    if (QDir(strMachineFolder).exists())
+    {
+        /* Looks like we have already created this folder for this run of the wizard. Just return */
+        if (strCreatedFolder == strMachineFolder)
+            return true;
+        /* The folder is there but not because of this wizard. Avoid overwriting a existing machine's folder */
+        else
+        {
+            msgCenter().cannotRewriteMachineFolder(strMachineFolder, pCaller);
+            return false;
+        }
+    }
 
-// bool UIWizardNewVMNameOSTypePage::createMachineFolder()
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return false;
-//     /* Cleanup previosly created folder if any: */
-//     if (!cleanupMachineFolder())
-//     {
-//         msgCenter().cannotRemoveMachineFolder(m_strMachineFolder, thisImp());
-//         return false;
-//     }
+    /* Try to create new folder (and it's predecessors): */
+    bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
+    if (!fMachineFolderCreated)
+    {
+        msgCenter().cannotCreateMachineFolder(strMachineFolder, pCaller);
+        return false;
+    }
+    strCreatedFolder = strMachineFolder;
+    return true;
+}
 
-//     composeMachineFilePath();
-
-//     /* Check if the folder already exists and check if it has been created by this wizard */
-//     if (QDir(m_strMachineFolder).exists())
-//     {
-//         /* Looks like we have already created this folder for this run of the wizard. Just return */
-//         if (m_strCreatedFolder == m_strMachineFolder)
-//             return true;
-//         /* The folder is there but not because of this wizard. Avoid overwriting a existing machine's folder */
-//         else
-//         {
-//             msgCenter().cannotRewriteMachineFolder(m_strMachineFolder, thisImp());
-//             return false;
-//         }
-//     }
-
-//     /* Try to create new folder (and it's predecessors): */
-//     bool fMachineFolderCreated = QDir().mkpath(m_strMachineFolder);
-//     if (!fMachineFolderCreated)
-//     {
-//         msgCenter().cannotCreateMachineFolder(m_strMachineFolder, thisImp());
-//         return false;
-//     }
-//     m_strCreatedFolder = m_strMachineFolder;
-//     return true;
-// }
-
-// bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(bool fWizardCancel /* = false */)
-// {
-//     /* Make sure folder was previosly created: */
-//     if (m_strCreatedFolder.isEmpty())
-//         return true;
-//     /* Clean this folder if the machine folder has been changed by the user or we are cancelling the wizard: */
-//     if (m_strCreatedFolder != m_strMachineFolder || fWizardCancel)
-//     {
-//         /* Try to cleanup folder (and it's predecessors): */
-//         bool fMachineFolderRemoved = QDir().rmpath(m_strCreatedFolder);
-//         /* Reset machine folder value: */
-//         if (fMachineFolderRemoved)
-//             m_strCreatedFolder = QString();
-//         /* Return cleanup result: */
-//         return fMachineFolderRemoved;
-//     }
-//     return true;
-// }
+bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(const QString &strMachineFolder,
+                                                       QString &strCreatedFolder, bool fWizardCancel /* = false */)
+{
+    /* Make sure folder was previosly created: */
+    if (strCreatedFolder.isEmpty())
+        return true;
+    /* Clean this folder if the machine folder has been changed by the user or we are cancelling the wizard: */
+    if (strCreatedFolder != strMachineFolder || fWizardCancel)
+    {
+        /* Try to cleanup folder (and it's predecessors): */
+        bool fMachineFolderRemoved = QDir().rmpath(strCreatedFolder);
+        /* Reset machine folder value: */
+        if (fMachineFolderRemoved)
+            strCreatedFolder = QString();
+        /* Return cleanup result: */
+        return fMachineFolderRemoved;
+    }
+    return true;
+}
 
 // QString UIWizardNewVMNameOSTypePage::machineFilePath() const
 // {
@@ -360,22 +349,24 @@ static const osTypePattern gs_OSTypePattern[] =
 //     return m_strDetectedOSTypeId;
 // }
 
-// bool UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath)
-// {
-//     QFileInfo isoFileInfo(strISOPath);
-//     if (!isoFileInfo.exists())
-//     {
-//         m_strDetectedOSTypeId.clear();
-//         return false;
-//     }
+void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UINativeWizard *pWizard)
+{
+    UIWizardNewVM *pNewVMWizard = qobject_cast<UIWizardNewVM*>(pWizard);
+    if (!pNewVMWizard)
+        return;
 
-//     CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
-//     comUnatteded.SetIsoPath(strISOPath);
-//     comUnatteded.DetectIsoOS();
+    QFileInfo isoFileInfo(strISOPath);
+    if (!isoFileInfo.exists())
+    {
+        pNewVMWizard->setDetectedOSTypeId(QString());
+        return;
+    }
 
-//     m_strDetectedOSTypeId = comUnatteded.GetDetectedOSTypeId();
-//     return true;
-// }
+    CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
+    comUnatteded.SetIsoPath(strISOPath);
+    comUnatteded.DetectIsoOS();
+    pNewVMWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
+}
 
 // bool UIWizardNewVMNameOSTypePage::skipUnattendedInstall() const
 // {
@@ -414,13 +405,12 @@ static const osTypePattern gs_OSTypePattern[] =
 // }
 
 
-UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic(const QString &strGroup)
+UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
     : m_pNameAndSystemLayout(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameOSTypeLabel(0)
 {
-    Q_UNUSED(strGroup);
     prepare();
 }
 
@@ -439,7 +429,7 @@ void UIWizardNewVMNameOSTypePageBasic::prepare()
         pPageLayout->addStretch();
     }
 
-    // createConnections();
+    createConnections();
     // /* Register fields: */
     // registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
     // registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
@@ -455,13 +445,13 @@ void UIWizardNewVMNameOSTypePageBasic::prepare()
 
 void UIWizardNewVMNameOSTypePageBasic::createConnections()
 {
-    // if (m_pNameAndSystemEditor)
-    // {
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltNameChanged);
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltPathChanged);
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged);
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
-    // }
+    if (m_pNameAndSystemEditor)
+    {
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltNameChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
+    }
 }
 
 bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
@@ -473,36 +463,29 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
     return true;
 }
 
-int UIWizardNewVMNameOSTypePageBasic::nextId() const
-{
-    // if (isUnattendedEnabled())
-    //     return UIWizardNewVM::Page2;
-    // return UIWizardNewVM::Page3;
-    return 0;
-}
-
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
     Q_UNUSED(strNewName);
-    // onNameChanged(strNewName);
-    // composeMachineFilePath();
+    UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizard());
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    //composeMachineFilePath();
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizard());
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
 {
-    /* Call to base-class: */
-    //onOsTypeChanged();
+    /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
+     * So simply disconnect the text-edit signal. */
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
 }
 
 void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
 {
-    // retranslateWidgets();
     setTitle(UIWizardNewVM::tr("Virtual machine Name and Operating System"));
 
     if (m_pNameOSTypeLabel)
@@ -525,10 +508,10 @@ void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
 void UIWizardNewVMNameOSTypePageBasic::initializePage()
 {
     /* Translate page: */
-    // retranslateUi();
-    // if (m_pNameAndSystemEditor)
-    //     m_pNameAndSystemEditor->setFocus();
-    // setSkipCheckBoxEnable();
+    retranslateUi();
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setFocus();
+    //setSkipCheckBoxEnable();
 }
 
 void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
@@ -542,14 +525,14 @@ void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
 bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 {
     /* Try to create machine folder: */
+    //composeMachineFilePath
     //return createMachineFolder();
     return true;
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 {
-    Q_UNUSED(strPath);
-    // determineOSType(strPath);
+    UIWizardNewVMNameOSTypePage::determineOSType(strPath, wizard());
     // setTypeByISODetectedOSType(m_strDetectedOSTypeId);
     // /* Update the global recent ISO path: */
     // QFileInfo fileInfo(strPath);

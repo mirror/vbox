@@ -35,24 +35,23 @@ class QGridLayout;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UINameAndSystemEditor;
+class UINativeWizard;
 
-// /** 1st page of the New Virtual Machine wizard (base part): */
-// class UIWizardNewVMNameOSTypePage  : public UIWizardPageBase
-// {
-// protected:
+namespace UIWizardNewVMNameOSTypePage
+{
+    void onNameChanged(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
+    bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
+                             UINativeWizardPage *pCaller,
+                             const QString &strMachineFolder,
+                             QString &strCreatedFolder);
 
-//     /** Constructor. */
-//     UIWizardNewVMNameOSTypePage(const QString &strGroup);
-
-//     /** Handlers. */
-//     void onNameChanged(QString strNewName);
-//     void onOsTypeChanged();
-
-//     bool createMachineFolder();
-//     /** Removes a previously created folder (if exists) before creating a new one.
-//      *  used during page cleanup and new folder creation. Called upon page Next/Back and
-//      *  wizard cancel */
-//     bool cleanupMachineFolder(bool fWizardCancel = false);
+    /** Removes a previously created folder (if exists) before creating a new one.
+     *  used during page cleanup and new folder creation. Called upon page Next/Back and
+     *  wizard cancel */
+    bool cleanupMachineFolder(const QString &strMachineFolder,
+                              QString &strCreatedFolder,bool fWizardCancel = false);
+    void composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor, UINativeWizard *pWizard);
+    void determineOSType(const QString &strISOPath, UINativeWizard *pWizard);
 
 //     /** @name Property getters/setters
 //       * @{ */
@@ -73,39 +72,24 @@ class UINameAndSystemEditor;
 //         bool skipUnattendedInstall() const;
 //     /** @} */
 
-//     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
-//     void composeMachineFilePath();
 
 //     /** Colors the widgets red if they cause isComplete to fail. */
 //     void markWidgets() const;
 //     void retranslateWidgets();
 //     QString ISOFilePath() const;
-//     bool determineOSType(const QString &strISOPath);
+
 //     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
 //     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
 //     bool checkISOFile() const;
 //     void setSkipCheckBoxEnable();
 
-//     QString m_strDetectedOSTypeId;
+//
 
 // private:
 
-//     /** Full path (including the file name) of the machine's configuration file. */
-//     QString m_strMachineFilePath;
-//     /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
-//     QString m_strMachineFolder;
-//     /** Path of the folder created by this wizard page. Used to remove previously created
-//      *  folder. see cleanupMachineFolder();*/
-//     QString m_strCreatedFolder;
-//     /** Base name of the machine is generated from the m_strMachineFilePath. */
-//     QString m_strMachineBaseName;
 
-//     QString m_strGroup;
-//     bool m_fSupportsHWVirtEx;
-//     bool m_fSupportsLongMode;
-
-//     friend class UIWizardNewVM;
 // };
+}
 
 /** 1st page of the New Virtual Machine wizard (basic extension). */
 class UIWizardNewVMNameOSTypePageBasic : public UINativeWizardPage
@@ -116,11 +100,14 @@ class UIWizardNewVMNameOSTypePageBasic : public UINativeWizardPage
 public:
 
     /** Constructor. */
-    UIWizardNewVMNameOSTypePageBasic(const QString &strGroup);
-    virtual bool isComplete() const; /* override */
-    virtual int nextId() const /* override */;
+    UIWizardNewVMNameOSTypePageBasic();
+
 
 protected:
+
+    virtual bool isComplete() const; /* override final */
+    /** Validation stuff. */
+    virtual bool validatePage() /* override */;
 
 private slots:
 
@@ -140,11 +127,7 @@ private:
     void createConnections();
     void initializePage();
     void cleanupPage();
-
     QWidget *createNameOSTypeWidgets();
-
-    /** Validation stuff. */
-    virtual bool validatePage() /* override */;
 
 
     /** @name Widgets

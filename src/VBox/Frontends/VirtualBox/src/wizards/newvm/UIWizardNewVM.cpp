@@ -50,10 +50,10 @@ UIUnattendedInstallData::UIUnattendedInstallData()
 {
 }
 
-UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QString() */,
+UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /* = QString() */,
                              WizardMode enmMode /* = WizardMode_Auto */)
     : UINativeWizard(pParent, WizardType_NewCloudVM, enmMode)
-    , m_strGroup(strGroup)
+    , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)
     , m_iSCSICount(0)
@@ -82,7 +82,7 @@ void UIWizardNewVM::prepare()
     // {
     //     case WizardMode_Basic:
     //     {
-    //         // setPage(Page1, new UIWizardNewVMPageNameOSType(m_strGroup));
+    //         // setPage(Page1, new UIWizardNewVMPageNameOSType(m_strMachineGroup));
     //         // setPage(Page2, new UIWizardNewVMPageUnattended);
     //         // setPage(Page3, new UIWizardNewVMPageHardware);
     //         // setPage(Page4, new UIWizardNewVMPageDisk);
@@ -92,7 +92,7 @@ void UIWizardNewVM::prepare()
     //     }
     //     case WizardMode_Expert:
     //     {
-    //         setPage(PageExpert, new UIWizardNewVMPageExpert(m_strGroup));
+    //         setPage(PageExpert, new UIWizardNewVMPageExpert(m_strMachineGroup));
     //         break;
     //     }
     //     default:
@@ -111,7 +111,7 @@ void UIWizardNewVM::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardNewVMNameOSTypePageBasic(m_strGroup));
+            addPage(new UIWizardNewVMNameOSTypePageBasic);
             addPage(new UIWizardNewVMUnattendedPageBasic);
             addPage(new UIWizardNewVMHardwarePageBasic);
             addPage(new UIWizardNewVMDiskPageBasic);
@@ -143,8 +143,8 @@ bool UIWizardNewVM::createVM()
 //     if (m_machine.isNull())
 //     {
 //         QVector<QString> groups;
-//         if (!m_strGroup.isEmpty())
-//             groups << m_strGroup;
+//         if (!m_strMachineGroup.isEmpty())
+//             groups << m_strMachineGroup;
 //         m_machine = vbox.CreateMachine(field("machineFilePath").toString(),
 //                                        field("name").toString(),
 //                                        groups, strTypeId, QString());
@@ -694,6 +694,51 @@ void UIWizardNewVM::setVirtualDisk(const QUuid &mediumId)
     CMedium medium = uiCommon().medium(mediumId).medium();
     if (!medium.isNull())
         setVirtualDisk(medium);
+}
+
+const QString &UIWizardNewVM::machineGroup() const
+{
+    return m_strMachineGroup;
+}
+
+const QString &UIWizardNewVM::machineFilePath() const
+{
+    return m_strMachineFilePath;
+}
+
+void UIWizardNewVM::setMachineFilePath(const QString &strMachineFilePath)
+{
+    m_strMachineFilePath = strMachineFilePath;
+}
+
+const QString &UIWizardNewVM::machineFolder() const
+{
+    return m_strMachineFolder;
+}
+
+void UIWizardNewVM::setMachineFolder(const QString &strMachineFolder)
+{
+    m_strMachineFolder = strMachineFolder;
+}
+
+const QString &UIWizardNewVM::machineBaseName() const
+{
+    return m_strMachineBaseName;
+}
+
+void UIWizardNewVM::setMachineBaseName(const QString &strMachineBaseName)
+{
+    m_strMachineBaseName = strMachineBaseName;
+}
+
+const QString &UIWizardNewVM::detectedOSTypeId() const
+{
+    return m_strDetectedOSTypeId;
+}
+
+void UIWizardNewVM::setDetectedOSTypeId(const QString &strDetectedOSTypeId)
+{
+    m_strDetectedOSTypeId = strDetectedOSTypeId;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
