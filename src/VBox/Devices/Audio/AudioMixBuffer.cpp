@@ -2092,7 +2092,7 @@ void AudioMixBufSetVolume(PAUDIOMIXBUF pMixBuf, PCPDMAUDIOVOLUME pVol)
         pMixBuf->Volume.fMuted  = false;
 
         AssertCompileSize(pVol->auChannels[0], sizeof(uint8_t));
-        for (uintptr_t i = 2; i < pMixBuf->cChannels; i++)
+        for (uintptr_t i = 0; i < pMixBuf->cChannels; i++)
             pMixBuf->Volume.auChannels[i] = s_aVolumeConv[pVol->auChannels[i]] * (AUDIOMIXBUF_VOL_0DB >> 16);
 
         pMixBuf->Volume.fAllMax = true;
