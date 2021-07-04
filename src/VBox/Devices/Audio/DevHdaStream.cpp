@@ -1566,7 +1566,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
 # ifdef HDA_DEBUG_SILENCE
                 fix me if relevant;
 # endif
-                if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+                if (RT_LIKELY(!pStreamR3->Dbg.Runtime.pFileDMARaw))
                 { /* likely */ }
                 else
                     AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufSrc, cbBufSrc);
@@ -1750,7 +1750,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
 # ifdef HDA_DEBUG_SILENCE
             fix me if relevant;
 # endif
-            if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+            if (RT_LIKELY(!pStreamR3->Dbg.Runtime.pFileDMARaw))
             { /* likely */ }
             else
                 AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst);
@@ -2173,7 +2173,7 @@ static void hdaR3StreamFlushDmaBounceBufferOutput(PHDASTREAM pStreamShared, PHDA
                  */
                 memcpy(pvBufDst, &pStreamShared->State.abDma[offDma], cbBufDst);
 
-                if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+                if (RT_LIKELY(!pStreamR3->Dbg.Runtime.pFileDMARaw))
                 { /* likely */ }
                 else
                     AudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pvBufDst, cbBufDst);

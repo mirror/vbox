@@ -1941,7 +1941,7 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDma
             return rc;
         }
 
-        if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
+        if (RT_LIKELY(!pStream->Dbg.Runtime.pFileDMA))
         { /* likely */ }
         else
             AudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, pv, cbRead);
