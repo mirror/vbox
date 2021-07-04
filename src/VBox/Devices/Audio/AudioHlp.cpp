@@ -28,6 +28,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/formats/riff.h>
 
 #define LOG_GROUP LOG_GROUP_DRV_AUDIO
 #include <VBox/log.h>
@@ -48,38 +49,12 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * Structure for building up a .WAV file header.
- */
-typedef struct AUDIOWAVFILEHDR
+typedef struct AUDIOWAVEFILEHDR
 {
-    uint32_t u32RIFF;
-    uint32_t u32Size;
-    uint32_t u32WAVE;
-
-    uint32_t u32Fmt;
-    uint32_t u32Size1;
-    uint16_t u16AudioFormat;
-    uint16_t u16NumChannels;
-    uint32_t u32SampleRate;
-    uint32_t u32ByteRate;
-    uint16_t u16BlockAlign;
-    uint16_t u16BitsPerSample;
-
-    uint32_t u32ID2;
-    uint32_t u32Size2;
-} AUDIOWAVFILEHDR, *PAUDIOWAVFILEHDR;
-AssertCompileSize(AUDIOWAVFILEHDR, 11*4);
-
-/**
- * Structure for keeeping the internal .WAV file data
- */
-typedef struct AUDIOWAVFILEDATA
-{
-    /** The file header/footer. */
-    AUDIOWAVFILEHDR Hdr;
-} AUDIOWAVFILEDATA, *PAUDIOWAVFILEDATA;
-
+    RTRIFFHDR               Hdr;
+    RTRIFFWAVEFMTEXTCHUNK   FmtExt;
+    RTRIFFCHUNK             Data;
+} AUDIOWAVEFILEHDR;
 
 
 #if 0 /* unused, no header prototypes */
@@ -345,11 +320,10 @@ static int audioHlpFileCreateWorker(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDI
     PAUDIOHLPFILE pFile = (PAUDIOHLPFILE)RTMemAllocVar(RT_UOFFSETOF_DYN(AUDIOHLPFILE, szName[cbPath]));
     AssertPtrReturn(pFile, VERR_NO_MEMORY);
 
-    pFile->enmType = enmType;
-    pFile->fFlags  = fFlags;
-    pFile->hFile   = NIL_RTFILE;
-    pFile->pvData  = NULL;
-    pFile->cbData  = 0;
+    pFile->enmType      = enmType;
+    pFile->fFlags       = fFlags;
+    pFile->cbWaveData   = 0;
+    pFile->hFile        = NIL_RTFILE;
     memcpy(pFile->szName, pszPath, cbPath);
 
     *ppFile = pFile;
@@ -404,13 +378,11 @@ int AudioHlpFileCreateF(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDIOHLPFILETYPE
  */
 void AudioHlpFileDestroy(PAUDIOHLPFILE pFile)
 {
-    if (!pFile)
-        return;
-
-    AudioHlpFileClose(pFile);
-
-    RTMemFree(pFile);
-    pFile = NULL;
+    if (pFile)
+    {
+        AudioHlpFileClose(pFile);
+        RTMemFree(pFile);
+    }
 }
 
 
@@ -423,74 +395,81 @@ void AudioHlpFileDestroy(PAUDIOHLPFILE pFile)
  *                              Use AUDIOHLPFILE_DEFAULT_OPEN_FLAGS for the default open flags.
  * @param   pProps              PCM properties to use.
  */
-int AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps)
+int AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint64_t fOpen, PCPDMAUDIOPCMPROPS pProps)
 {
+    int rc;
+
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);
     /** @todo Validate fOpen flags. */
     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
     Assert(PDMAudioPropsAreValid(pProps));
 
-    int rc;
-
+    /*
+     * Raw files just needs to be opened.
+     */
     if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
         rc = RTFileOpen(&pFile->hFile, pFile->szName, fOpen);
+    /*
+     * Wave files needs a header to be constructed and we need to take note of where
+     * there are sizes to update later when closing the file.
+     */
     else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
     {
-        pFile->pvData = (PAUDIOWAVFILEDATA)RTMemAllocZ(sizeof(AUDIOWAVFILEDATA));
-        if (pFile->pvData)
+        /* Construct the header. */
+        AUDIOWAVEFILEHDR FileHdr;
+        FileHdr.Hdr.uMagic                      = RTRIFFHDR_MAGIC;
+        FileHdr.Hdr.cbFile                      = 0; /* need to update this later */
+        FileHdr.Hdr.uFileType                   = RTRIFF_FILE_TYPE_WAVE;
+        FileHdr.FmtExt.Chunk.uMagic             = RTRIFFWAVEFMT_MAGIC;
+        FileHdr.FmtExt.Chunk.cbChunk            = sizeof(RTRIFFWAVEFMTEXTCHUNK) - sizeof(RTRIFFCHUNK);
+        FileHdr.FmtExt.Data.Core.uFormatTag     = RTRIFFWAVEFMT_TAG_EXTENSIBLE;
+        FileHdr.FmtExt.Data.Core.cChannels      = PDMAudioPropsChannels(pProps);
+        FileHdr.FmtExt.Data.Core.uHz            = PDMAudioPropsHz(pProps);
+        FileHdr.FmtExt.Data.Core.cbRate         = PDMAudioPropsFramesToBytes(pProps, PDMAudioPropsHz(pProps));
+        FileHdr.FmtExt.Data.Core.cbFrame        = PDMAudioPropsFrameSize(pProps);
+        FileHdr.FmtExt.Data.Core.cBitsPerSample = PDMAudioPropsSampleBits(pProps);
+        FileHdr.FmtExt.Data.cbExtra             = sizeof(FileHdr.FmtExt.Data) - sizeof(FileHdr.FmtExt.Data.Core);
+        FileHdr.FmtExt.Data.cValidBitsPerSample = PDMAudioPropsSampleBits(pProps);
+        FileHdr.FmtExt.Data.fChannelMask        = 0;
+        for (uintptr_t idxCh = 0; idxCh < FileHdr.FmtExt.Data.Core.cChannels; idxCh++)
         {
-            pFile->cbData = sizeof(PAUDIOWAVFILEDATA);
+            PDMAUDIOCHANNELID const idCh = (PDMAUDIOCHANNELID)pProps->aidChannels[idxCh];
+            AssertLogRelMsgReturn(idCh >= PDMAUDIOCHANNELID_FIRST_STANDARD && idCh < PDMAUDIOCHANNELID_END_STANDARD,
+                                  ("Invalid channel ID %d for channel #%u", idCh, idxCh), VERR_INVALID_PARAMETER);
+            AssertLogRelMsgReturn(!(FileHdr.FmtExt.Data.fChannelMask & RT_BIT_32(idCh - PDMAUDIOCHANNELID_FIRST_STANDARD)),
+                                  ("Channel #%u repeats channel ID %d", idxCh, idCh), VERR_INVALID_PARAMETER);
+            FileHdr.FmtExt.Data.fChannelMask |= RT_BIT_32(idCh - PDMAUDIOCHANNELID_FIRST_STANDARD);
+        }
 
-            PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-            AssertPtr(pData);
+        RTUUID UuidTmp;
+        rc = RTUuidFromStr(&UuidTmp, RTRIFFWAVEFMTEXT_SUBTYPE_PCM);
+        AssertRCReturn(rc, rc);
+        FileHdr.FmtExt.Data.SubFormat = UuidTmp; /* (64-bit field maybe unaligned) */
 
-            /* Header. */
-            pData->Hdr.u32RIFF          = AUDIO_MAKE_FOURCC('R','I','F','F');
-            pData->Hdr.u32Size          = 36;
-            pData->Hdr.u32WAVE          = AUDIO_MAKE_FOURCC('W','A','V','E');
+        FileHdr.Data.uMagic  = RTRIFFWAVEDATACHUNK_MAGIC;
+        FileHdr.Data.cbChunk = 0; /* need to update this later */
 
-            pData->Hdr.u32Fmt           = AUDIO_MAKE_FOURCC('f','m','t',' ');
-            pData->Hdr.u32Size1         = 16; /* Means PCM. */
-            pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
-            pData->Hdr.u16NumChannels   = PDMAudioPropsChannels(pProps);
-            pData->Hdr.u32SampleRate    = pProps->uHz;
-            pData->Hdr.u32ByteRate      = PDMAudioPropsGetBitrate(pProps) / 8;
-            pData->Hdr.u16BlockAlign    = PDMAudioPropsFrameSize(pProps);
-            pData->Hdr.u16BitsPerSample = PDMAudioPropsSampleBits(pProps);
-
-            /* Data chunk. */
-            pData->Hdr.u32ID2           = AUDIO_MAKE_FOURCC('d','a','t','a');
-            pData->Hdr.u32Size2         = 0;
-
-            rc = RTFileOpen(&pFile->hFile, pFile->szName, fOpen);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTFileWrite(pFile->hFile, &pData->Hdr, sizeof(pData->Hdr), NULL);
-                if (RT_FAILURE(rc))
-                {
-                    RTFileClose(pFile->hFile);
-                    pFile->hFile = NIL_RTFILE;
-                }
-            }
-
+        /* Open the file and write out the header. */
+        rc = RTFileOpen(&pFile->hFile, pFile->szName, fOpen);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(pFile->hFile, &FileHdr, sizeof(FileHdr), NULL);
             if (RT_FAILURE(rc))
             {
-                RTMemFree(pFile->pvData);
-                pFile->pvData = NULL;
-                pFile->cbData = 0;
+                RTFileClose(pFile->hFile);
+                pFile->hFile = NIL_RTFILE;
             }
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
     else
-        rc = VERR_INVALID_PARAMETER;
-
+        AssertFailedStmt(rc = VERR_INTERNAL_ERROR_3);
     if (RT_SUCCESS(rc))
+    {
+        pFile->cbWaveData = 0;
         LogRel2(("Audio: Opened file '%s'\n", pFile->szName));
+    }
     else
-        LogRel(("Audio: Failed opening file '%s', rc=%Rrc\n", pFile->szName, rc));
-
+        LogRel(("Audio: Failed opening file '%s': %Rrc\n", pFile->szName, rc));
     return rc;
 }
 
@@ -573,55 +552,43 @@ int AudioHlpFileCreateAndOpen(PAUDIOHLPFILE *ppFile, const char *pszDir, const c
  */
 int AudioHlpFileClose(PAUDIOHLPFILE pFile)
 {
-    if (!pFile)
+    if (!pFile || pFile->hFile == NIL_RTFILE)
         return VINF_SUCCESS;
 
-    size_t cbSize = AudioHlpFileGetDataSize(pFile);
-
-    int rc = VINF_SUCCESS;
-
-    if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
+    /*
+     * Wave files needs to update the data size and file size in the header.
+     */
+    if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
     {
-        if (RTFileIsValid(pFile->hFile))
-            rc = RTFileClose(pFile->hFile);
+        uint32_t const cbFile = sizeof(AUDIOWAVEFILEHDR) - sizeof(RTRIFFCHUNK) + (uint32_t)pFile->cbWaveData;
+        uint32_t const cbData = (uint32_t)pFile->cbWaveData;
+
+        int rc2;
+        rc2 = RTFileWriteAt(pFile->hFile, RT_UOFFSETOF(AUDIOWAVEFILEHDR, Hdr.cbFile),   &cbFile, sizeof(cbFile), NULL);
+        AssertRC(rc2);
+        rc2 = RTFileWriteAt(pFile->hFile, RT_UOFFSETOF(AUDIOWAVEFILEHDR, Data.cbChunk), &cbData, sizeof(cbData), NULL);
+        AssertRC(rc2);
     }
-    else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
-    {
-        if (RTFileIsValid(pFile->hFile))
-        {
-            PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-            if (pData) /* The .WAV file data only is valid when a file actually has been created. */
-            {
-                /* Update the header with the current data size. */
-                RTFileWriteAt(pFile->hFile, 0, &pData->Hdr, sizeof(pData->Hdr), NULL);
-            }
 
-            rc = RTFileClose(pFile->hFile);
-        }
-
-        if (pFile->pvData)
-        {
-            RTMemFree(pFile->pvData);
-            pFile->pvData = NULL;
-        }
-    }
-    else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-
-    if (   RT_SUCCESS(rc)
-        && !cbSize
-        && !(pFile->fFlags & AUDIOHLPFILE_FLAGS_KEEP_IF_EMPTY))
-        rc = AudioHlpFileDelete(pFile);
-
-    pFile->cbData = 0;
+    /*
+     * Do the closing.
+     */
+    int rc = RTFileClose(pFile->hFile);
+    if (RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE)
+        pFile->hFile = NIL_RTFILE;
 
     if (RT_SUCCESS(rc))
-    {
-        pFile->hFile = NIL_RTFILE;
-        LogRel2(("Audio: Closed file '%s' (%zu bytes)\n", pFile->szName, cbSize));
-    }
+        LogRel2(("Audio: Closed file '%s' (%'RU64 bytes PCM data)\n", pFile->szName, pFile->cbWaveData));
     else
-        LogRel(("Audio: Failed closing file '%s', rc=%Rrc\n", pFile->szName, rc));
+        LogRel(("Audio: Failed closing file '%s': %Rrc\n", pFile->szName, rc));
+
+    /*
+     * Delete empty file if requested.
+     */
+    if (   !(pFile->fFlags & AUDIOHLPFILE_FLAGS_KEEP_IF_EMPTY)
+        && pFile->cbWaveData == 0
+        && RT_SUCCESS(rc))
+        AudioHlpFileDelete(pFile);
 
     return rc;
 }
@@ -651,34 +618,6 @@ int AudioHlpFileDelete(PAUDIOHLPFILE pFile)
 
 
 /**
- * Returns the raw audio data size of an audio file.
- *
- * @note This does *not* include file headers and other data which does not
- *       belong to the actual PCM audio data.
- *
- * @returns Size (in bytes) of the raw PCM audio data.
- * @param   pFile               Audio file handle to retrieve the audio data size for.
- */
-size_t AudioHlpFileGetDataSize(PAUDIOHLPFILE pFile)
-{
-    AssertPtrReturn(pFile, 0);
-
-    size_t cbSize = 0;
-
-    if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
-        cbSize = RTFileTell(pFile->hFile);
-    else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
-    {
-        PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-        if (pData) /* The .WAV file data only is valid when a file actually has been created. */
-            cbSize = pData->Hdr.u32Size2;
-    }
-
-    return cbSize;
-}
-
-
-/**
  * Returns whether the given audio file is open and in use or not.
  *
  * @returnd True if open, false if not.
@@ -686,7 +625,7 @@ size_t AudioHlpFileGetDataSize(PAUDIOHLPFILE pFile)
  */
 bool AudioHlpFileIsOpen(PAUDIOHLPFILE pFile)
 {
-    if (!pFile)
+    if (!pFile || pFile->hFile == NIL_RTFILE)
         return false;
 
     return RTFileIsValid(pFile->hFile);
@@ -700,38 +639,18 @@ bool AudioHlpFileIsOpen(PAUDIOHLPFILE pFile)
  * @param   pFile               Audio file to write PCM data to.
  * @param   pvBuf               Audio data to write.
  * @param   cbBuf               Size (in bytes) of audio data to write.
- * @param   fFlags              Additional write flags. Not being used at the moment and must be 0.
  */
-int AudioHlpFileWrite(PAUDIOHLPFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags)
+int AudioHlpFileWrite(PAUDIOHLPFILE pFile, const void *pvBuf, size_t cbBuf)
 {
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
 
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /** @todo fFlags are currently not implemented. */
-
     if (!cbBuf)
         return VINF_SUCCESS;
 
-    AssertReturn(RTFileIsValid(pFile->hFile), VERR_WRONG_ORDER);
-
-    int rc;
-
-    if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
-        rc = RTFileWrite(pFile->hFile, pvBuf, cbBuf, NULL);
-    else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
-    {
-        PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-        AssertPtr(pData);
-
-        rc = RTFileWrite(pFile->hFile, pvBuf, cbBuf, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            pData->Hdr.u32Size  += (uint32_t)cbBuf;
-            pData->Hdr.u32Size2 += (uint32_t)cbBuf;
-        }
-    }
-    else
-        rc = VERR_NOT_SUPPORTED;
+    int rc = RTFileWrite(pFile->hFile, pvBuf, cbBuf, NULL);
+    if (RT_SUCCESS(rc))
+        pFile->cbWaveData += cbBuf;
 
     return rc;
 }

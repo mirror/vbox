@@ -93,13 +93,10 @@ typedef struct AUDIOHLPFILE
     AUDIOHLPFILETYPE    enmType;
     /** Audio file flags, AUDIOHLPFILE_FLAGS_XXX. */
     uint32_t            fFlags;
+    /** Amount of wave data written. */
+    uint64_t            cbWaveData;
     /** Actual file handle. */
     RTFILE              hFile;
-    /** Data needed for the specific audio file type implemented.
-     * Optional, can be NULL. */
-    void               *pvData;
-    /** Data size (in bytes). */
-    size_t              cbData;
     /** File name and path. */
     RT_FLEXIBLE_ARRAY_EXTENSION
     char                szName[RT_FLEXIBLE_ARRAY];
@@ -118,15 +115,12 @@ int     AudioHlpFileCreateF(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDIOHLPFILE
                             const char *pszPath, uint32_t fFilename, uint32_t uInstance, const char *pszFileFmt, ...);
 
 void    AudioHlpFileDestroy(PAUDIOHLPFILE pFile);
-int     AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps);
+int     AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint64_t fOpen, PCPDMAUDIOPCMPROPS pProps);
 int     AudioHlpFileClose(PAUDIOHLPFILE pFile);
 int     AudioHlpFileDelete(PAUDIOHLPFILE pFile);
-size_t  AudioHlpFileGetDataSize(PAUDIOHLPFILE pFile);
 bool    AudioHlpFileIsOpen(PAUDIOHLPFILE pFile);
-int     AudioHlpFileWrite(PAUDIOHLPFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags);
+int     AudioHlpFileWrite(PAUDIOHLPFILE pFile, const void *pvBuf, size_t cbBuf);
 /** @}  */
-
-#define AUDIO_MAKE_FOURCC(c0, c1, c2, c3) RT_H2LE_U32_C(RT_MAKE_U32_FROM_U8(c0, c1, c2, c3))
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioHlp_h */
 

@@ -1098,7 +1098,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
                 if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
                 { /* likely */ }
                 else
-                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvDst, cbDst, 0 /* fFlags */);
+                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvDst, cbDst);
             }
 
             RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
@@ -1122,7 +1122,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
                 if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
                 { /* likely */ }
                 else
-                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
+                    AudioHlpFileWrite(pStreamCC->Dbg.Runtime.pFileDMA, pvSrc, cbSrc);
             }
 
             RTCircBufReleaseReadBlock(pCircBuf, cbSrc);

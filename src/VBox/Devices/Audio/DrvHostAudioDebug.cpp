@@ -239,7 +239,7 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamPlay(PPDMIHOSTAUDIO pInterface, 
     RT_NOREF(pInterface);
     PDRVHSTAUDDEBUGSTREAM pStreamDbg = (PDRVHSTAUDDEBUGSTREAM)pStream;
 
-    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf, 0 /* fFlags */);
+    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbBuf);
     if (RT_SUCCESS(rc))
         *pcbWritten = cbBuf;
     else
@@ -277,7 +277,7 @@ static DECLCALLBACK(int) drvHstAudDebugHA_StreamCapture(PPDMIHOSTAUDIO pInterfac
         /*
          * Write it.
          */
-        rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbWritten, 0 /* fFlags */);
+        rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cbWritten);
         if (RT_SUCCESS(rc))
             *pcbRead = cbWritten;
     }
