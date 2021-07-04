@@ -107,46 +107,21 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
 
     if (pStreamR3->Dbg.Runtime.fEnabled)
     {
-        char szFile[64];
-        char szPath[RTPATH_MAX];
-
-        /* pFileStream */
-        if (fIsInput)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", uSD);
-        else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", uSD);
-
-        int rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                      0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
-        AssertRC(rc2);
-
-        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileStream);
+        int rc2 = AudioHlpFileCreateF(&pStreamR3->Dbg.Runtime.pFileStream, AUDIOHLPFILE_FLAGS_NONE, AUDIOHLPFILETYPE_WAV,
+                                      pThisCC->Dbg.pszOutPath, AUDIOHLPFILENAME_FLAGS_NONE, 0 /*uInstance*/,
+                                      fIsInput ? "hdaStreamWriteSD%RU8" : "hdaStreamReadSD%RU8", uSD);
         AssertRC(rc2);
 
         /* pFileDMARaw */
-        if (fIsInput)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawWriteSD%RU8", uSD);
-        else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", uSD);
-
-        rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                  0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
-        AssertRC(rc2);
-
-        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileDMARaw);
+        rc2 = AudioHlpFileCreateF(&pStreamR3->Dbg.Runtime.pFileDMARaw, AUDIOHLPFILE_FLAGS_NONE, AUDIOHLPFILETYPE_WAV,
+                                  pThisCC->Dbg.pszOutPath, AUDIOHLPFILENAME_FLAGS_NONE, 0 /*uInstance*/,
+                                  fIsInput ? "hdaDMARawWriteSD%RU8" : "hdaDMARawReadSD%RU8", uSD);
         AssertRC(rc2);
 
         /* pFileDMAMapped */
-        if (fIsInput)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteMappedSD%RU8", uSD);
-        else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", uSD);
-
-        rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                  0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
-        AssertRC(rc2);
-
-        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileDMAMapped);
+        rc2 = AudioHlpFileCreateF(&pStreamR3->Dbg.Runtime.pFileDMAMapped, AUDIOHLPFILE_FLAGS_NONE, AUDIOHLPFILETYPE_WAV,
+                                  pThisCC->Dbg.pszOutPath, AUDIOHLPFILENAME_FLAGS_NONE, 0 /*uInstance*/,
+                                  fIsInput ? "hdaDMAWriteMappedSD%RU8" : "hdaDMAReadMappedSD%RU8", uSD);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */

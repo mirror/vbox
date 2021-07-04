@@ -2410,29 +2410,16 @@ static int ichac97R3StreamConstruct(PAC97STATER3 pThisCC, PAC97STREAM pStream, P
     { /* likely */ }
     else
     {
-        char szFile[64];
-        if (ichac97R3GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
-            RTStrPrintf(szFile, sizeof(szFile), "ac97StreamWriteSD%RU8", pStream->u8SD);
-        else
-            RTStrPrintf(szFile, sizeof(szFile), "ac97StreamReadSD%RU8", pStream->u8SD);
-
-        char szPath[RTPATH_MAX];
-        int rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                      0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
-        AssertRC(rc2);
-        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileStream);
+        int rc2 = AudioHlpFileCreateF(&pStreamCC->Dbg.Runtime.pFileStream, AUDIOHLPFILE_FLAGS_NONE, AUDIOHLPFILETYPE_WAV,
+                                      pThisCC->Dbg.pszOutPath, AUDIOHLPFILENAME_FLAGS_NONE, 0 /*uInstance*/,
+                                      ichac97R3GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN
+                                      ? "ac97StreamWriteSD%RU8" : "ac97StreamReadSD%RU8", pStream->u8SD);
         AssertRC(rc2);
 
-        if (ichac97R3GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
-            RTStrPrintf(szFile, sizeof(szFile), "ac97DMAWriteSD%RU8", pStream->u8SD);
-        else
-            RTStrPrintf(szFile, sizeof(szFile), "ac97DMAReadSD%RU8", pStream->u8SD);
-
-        rc2 = AudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
-                                  0 /* uInst */, AUDIOHLPFILETYPE_WAV, AUDIOHLPFILENAME_FLAGS_NONE);
-        AssertRC(rc2);
-
-        rc2 = AudioHlpFileCreate(AUDIOHLPFILETYPE_WAV, szPath, AUDIOHLPFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileDMA);
+        rc2 = AudioHlpFileCreateF(&pStreamCC->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_FLAGS_NONE, AUDIOHLPFILETYPE_WAV,
+                                  pThisCC->Dbg.pszOutPath, AUDIOHLPFILENAME_FLAGS_NONE, 0 /*uInstance*/,
+                                  ichac97R3GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN
+                                  ? "ac97DMAWriteSD%RU8" : "ac97DMAReadSD%RU8", pStream->u8SD);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */

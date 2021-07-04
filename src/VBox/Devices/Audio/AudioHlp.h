@@ -74,12 +74,6 @@ typedef enum AUDIOHLPFILETYPE
     AUDIOHLPFILETYPE_32BIT_HACK = 0x7fffffff
 } AUDIOHLPFILETYPE;
 
-/** @name Audio file (name) helper methods.
- * @{ */
-int     AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
-                            uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags);
-/** @}  */
-
 /** @name AUDIOHLPFILENAME_FLAGS_XXX
  * @{ */
 /** No flags defined. */
@@ -107,7 +101,8 @@ typedef struct AUDIOHLPFILE
     /** Data size (in bytes). */
     size_t              cbData;
     /** File name and path. */
-    char                szName[RTPATH_MAX];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    char                szName[RT_FLEXIBLE_ARRAY];
 } AUDIOHLPFILE;
 /** Pointer to an audio file handle. */
 typedef AUDIOHLPFILE *PAUDIOHLPFILE;
@@ -116,10 +111,12 @@ typedef AUDIOHLPFILE *PAUDIOHLPFILE;
  * @{ */
 int     AudioHlpFileCreateAndOpen(PAUDIOHLPFILE *ppFile, const char *pszDir, const char *pszName,
                                   uint32_t iInstance, PCPDMAUDIOPCMPROPS pProps);
-int     AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType, const char *pszDir, const char *pszName,
+int     AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType, const char *pszDir,
                                     uint32_t iInstance, uint32_t fFilename, uint32_t fCreate,
-                                    PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen);
-int     AudioHlpFileCreate(AUDIOHLPFILETYPE enmType, const char *pszFile, uint32_t fFlags, PAUDIOHLPFILE *ppFile);
+                                    PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen, const char *pszName, ...);
+int     AudioHlpFileCreateF(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDIOHLPFILETYPE enmType,
+                            const char *pszPath, uint32_t fFilename, uint32_t uInstance, const char *pszFileFmt, ...);
+
 void    AudioHlpFileDestroy(PAUDIOHLPFILE pFile);
 int     AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps);
 int     AudioHlpFileClose(PAUDIOHLPFILE pFile);

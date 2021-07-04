@@ -241,20 +241,21 @@ bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
  * @param   cbDst       Size of the destination buffer (bytes; incl terminator).
  * @param   pszPath     Base path to use.  If NULL or empty, the user's
  *                      temporary directory will be used.
- * @param   pszName     A name for better identifying the file.
+ * @param   pszNameFmt  A name for better identifying the file.
+ * @param   va          Arguments for @a pszNameFmt.
  * @param   uInstance   Device / driver instance which is using this file.
  * @param   enmType     Audio file type to construct file name for.
  * @param   fFlags      File naming flags, AUDIOHLPFILENAME_FLAGS_XXX.
  * @param   chTweak     Retry tweak character.
  */
-static int audioHlpConstructPathWorker(char *pszDst, size_t cbDst, const char *pszPath, const char *pszName,
+static int audioHlpConstructPathWorker(char *pszDst, size_t cbDst, const char *pszPath, const char *pszNameFmt, va_list va,
                                        uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags, char chTweak)
 {
     /*
      * Validate input.
      */
     AssertPtrNullReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszNameFmt, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~AUDIOHLPFILENAME_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     /* Validate the type and translate it into a suffix. */
@@ -318,87 +319,83 @@ static int audioHlpConstructPathWorker(char *pszDst, size_t cbDst, const char *p
     }
 
     /* Append the filename, instance, retry-tweak and suffix. */
+    va_list vaCopy;
+    va_copy(vaCopy, va);
     ssize_t cchTail;
     if (chTweak == '\0')
-        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%s-%u%s", pszName, uInstance, pszSuffix);
+        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%N-%u%s", pszNameFmt, &vaCopy, uInstance, pszSuffix);
     else
-        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%s-%u%c%s", pszName, uInstance, chTweak, pszSuffix);
+        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%N-%u%c%s", pszNameFmt, &vaCopy, uInstance, chTweak, pszSuffix);
+    va_end(vaCopy);
     AssertReturn(cchTail > 0, VERR_BUFFER_OVERFLOW);
 
     return VINF_SUCCESS;
 }
 
-/**
- * Constructs an unique file name, based on the given path and the audio file type.
- *
- * @returns VBox status code.
- * @param   pszDst      Where to store the constructed file name.
- * @param   cbDst       Size of the destination buffer (bytes; incl terminator).
- * @param   pszPath     Base path to use.  If NULL or empty, the user's
- *                      temporary directory will be used.
- * @param   pszName     A name for better identifying the file.
- * @param   uInstance   Device / driver instance which is using this file.
- * @param   enmType     Audio file type to construct file name for.
- * @param   fFlags      File naming flags, AUDIOHLPFILENAME_FLAGS_XXX.
- */
-int AudioHlpFileNameGet(char *pszDst, size_t cbDst, const char *pszPath, const char *pszName,
-                        uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags)
-{
-    return audioHlpConstructPathWorker(pszDst, cbDst, pszPath, pszName, uInstance, enmType, fFlags, '\0');
-}
 
 /**
- * Creates an audio file.
+ * Worker for AudioHlpFileCreateF and AudioHlpFileCreateAndOpenEx that allocates
+ * and initializes a AUDIOHLPFILE instance.
+ */
+static int audioHlpFileCreateWorker(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDIOHLPFILETYPE enmType, const char *pszPath)
+{
+    AssertReturn(!(fFlags & ~AUDIOHLPFILE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+
+    size_t const cbPath = strlen(pszPath) + 1;
+    PAUDIOHLPFILE pFile = (PAUDIOHLPFILE)RTMemAllocVar(RT_UOFFSETOF_DYN(AUDIOHLPFILE, szName[cbPath]));
+    AssertPtrReturn(pFile, VERR_NO_MEMORY);
+
+    pFile->enmType = enmType;
+    pFile->fFlags  = fFlags;
+    pFile->hFile   = NIL_RTFILE;
+    pFile->pvData  = NULL;
+    pFile->cbData  = 0;
+    memcpy(pFile->szName, pszPath, cbPath);
+
+    *ppFile = pFile;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Creates an instance of AUDIOHLPFILE with the given filename and type.
+ *
+ * @note This does <b>NOT</b> create the file, see AudioHlpFileOpen for that.
  *
  * @returns VBox status code.
- * @param   enmType             Audio file type to open / create.
- * @param   pszFile             File path of file to open or create.
- * @param   fFlags              Audio file flags, AUDIOHLPFILE_FLAGS_XXX.
- * @param   ppFile              Where to store the created audio file handle.
- *                              Needs to be destroyed with AudioHlpFileDestroy().
+ * @param   ppFile      Where to return the pointer to the audio debug file
+ *                      instance on success.
+ * @param   fFlags      AUDIOHLPFILE_FLAGS_XXX.
+ * @param   enmType     The audio file type to produce.
+ * @param   pszPath     The directory path.  The temporary directory will be
+ *                      used if NULL or empty.
+ * @param   fFilename   AUDIOHLPFILENAME_FLAGS_XXX.
+ * @param   uInstance   The instance number (will be appended to the filename
+ *                      with a dash inbetween).
+ * @param   pszNameFmt  The filename format string.
+ * @param   ...         Arguments to the filename format string.
  */
-int AudioHlpFileCreate(AUDIOHLPFILETYPE enmType, const char *pszFile, uint32_t fFlags, PAUDIOHLPFILE *ppFile)
+int AudioHlpFileCreateF(PAUDIOHLPFILE *ppFile, uint32_t fFlags, AUDIOHLPFILETYPE enmType,
+                        const char *pszPath, uint32_t fFilename, uint32_t uInstance, const char *pszNameFmt, ...)
 {
-    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
-    /** @todo Validate fFlags. */
+    *ppFile = NULL;
 
-    PAUDIOHLPFILE pFile = (PAUDIOHLPFILE)RTMemAlloc(sizeof(AUDIOHLPFILE));
-    if (!pFile)
-        return VERR_NO_MEMORY;
+    /*
+     * Construct the filename first.
+     */
+    char szPath[RTPATH_MAX];
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = audioHlpConstructPathWorker(szPath, sizeof(szPath), pszPath, pszNameFmt, va, uInstance, enmType, fFilename, '\0');
+    va_end(va);
+    AssertRCReturn(rc, rc);
 
-    int rc = VINF_SUCCESS;
-
-    switch (enmType)
-    {
-        case AUDIOHLPFILETYPE_RAW:
-        case AUDIOHLPFILETYPE_WAV:
-            pFile->enmType = enmType;
-            break;
-
-        default:
-            rc = VERR_INVALID_PARAMETER;
-            break;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        RTStrPrintf(pFile->szName, RT_ELEMENTS(pFile->szName), "%s", pszFile);
-        pFile->hFile  = NIL_RTFILE;
-        pFile->fFlags = fFlags;
-        pFile->pvData = NULL;
-        pFile->cbData = 0;
-    }
-
-    if (RT_FAILURE(rc))
-    {
-        RTMemFree(pFile);
-        pFile = NULL;
-    }
-    else
-        *ppFile = pFile;
-
-    return rc;
+    /*
+     * Allocate and initializes a debug file instance with that filename path.
+     */
+    return audioHlpFileCreateWorker(ppFile, fFlags, enmType, szPath);
 }
+
 
 /**
  * Destroys a formerly created audio file.
@@ -415,6 +412,7 @@ void AudioHlpFileDestroy(PAUDIOHLPFILE pFile)
     RTMemFree(pFile);
     pFile = NULL;
 }
+
 
 /**
  * Opens or creates an audio file.
@@ -435,9 +433,7 @@ int AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
     int rc;
 
     if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
-    {
         rc = RTFileOpen(&pFile->hFile, pFile->szName, fOpen);
-    }
     else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
     {
         pFile->pvData = (PAUDIOWAVFILEDATA)RTMemAllocZ(sizeof(AUDIOWAVFILEDATA));
@@ -498,6 +494,7 @@ int AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
     return rc;
 }
 
+
 /**
  * Creates a debug file structure and opens a file for it, extended version.
  *
@@ -505,30 +502,37 @@ int AudioHlpFileOpen(PAUDIOHLPFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pPr
  * @param   ppFile      Where to return the debug file instance on success.
  * @param   enmType     The file type.
  * @param   pszDir      The directory to open the file in.
- * @param   pszName     The base filename.
  * @param   iInstance   The device/driver instance.
  * @param   fFilename   AUDIOHLPFILENAME_FLAGS_XXX.
  * @param   fCreate     AUDIOHLPFILE_FLAGS_XXX.
  * @param   pProps      PCM audio properties for the file.
  * @param   fOpen       RTFILE_O_XXX or AUDIOHLPFILE_DEFAULT_OPEN_FLAGS.
+ * @param   pszNameFmt  The base filename.
+ * @param   ...         Filename format arguments.
  */
-int AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType, const char *pszDir, const char *pszName,
+int AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType, const char *pszDir,
                                 uint32_t iInstance, uint32_t fFilename, uint32_t fCreate,
-                                PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen)
+                                PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen, const char *pszNameFmt, ...)
 {
     *ppFile = NULL;
 
     for (uint32_t iTry = 0; ; iTry++)
     {
+        /* Format the path to the filename. */
         char szFile[RTPATH_MAX];
-        int rc = audioHlpConstructPathWorker(szFile, sizeof(szFile), pszDir, pszName, iInstance, enmType, fFilename,
+        va_list va;
+        va_start(va, pszNameFmt);
+        int rc = audioHlpConstructPathWorker(szFile, sizeof(szFile), pszDir, pszNameFmt, va, iInstance, enmType, fFilename,
                                              iTry == 0 ? '\0' : iTry + 'a');
+        va_end(va);
         AssertRCReturn(rc, rc);
 
+        /* Create an debug audio file instance with the filename path. */
         PAUDIOHLPFILE pFile = NULL;
-        rc = AudioHlpFileCreate(enmType, szFile, fCreate, &pFile);
+        rc = audioHlpFileCreateWorker(&pFile, fCreate, enmType, szFile);
         AssertRCReturn(rc, rc);
 
+        /* Try open it. */
         rc = AudioHlpFileOpen(pFile, fOpen, pProps);
         if (RT_SUCCESS(rc))
         {
@@ -540,6 +544,7 @@ int AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType,
         AssertReturn(iTry < 16, rc);
     }
 }
+
 
 /**
  * Creates a debug wav-file structure and opens a file for it, default flags.
@@ -554,9 +559,9 @@ int AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType,
 int AudioHlpFileCreateAndOpen(PAUDIOHLPFILE *ppFile, const char *pszDir, const char *pszName,
                               uint32_t iInstance, PCPDMAUDIOPCMPROPS pProps)
 {
-    return AudioHlpFileCreateAndOpenEx(ppFile, AUDIOHLPFILETYPE_WAV, pszDir, pszName, iInstance,
+    return AudioHlpFileCreateAndOpenEx(ppFile, AUDIOHLPFILETYPE_WAV, pszDir, iInstance,
                                        AUDIOHLPFILENAME_FLAGS_NONE, AUDIOHLPFILE_FLAGS_NONE,
-                                       pProps, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS);
+                                       pProps, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS, "%s", pszName);
 }
 
 
@@ -606,9 +611,7 @@ int AudioHlpFileClose(PAUDIOHLPFILE pFile)
     if (   RT_SUCCESS(rc)
         && !cbSize
         && !(pFile->fFlags & AUDIOHLPFILE_FLAGS_KEEP_IF_EMPTY))
-    {
         rc = AudioHlpFileDelete(pFile);
-    }
 
     pFile->cbData = 0;
 
@@ -623,11 +626,12 @@ int AudioHlpFileClose(PAUDIOHLPFILE pFile)
     return rc;
 }
 
+
 /**
  * Deletes an audio file.
  *
  * @returns VBox status code.
- * @param   pFile               Audio file handle to delete.
+ * @param   pFile               Audio file to delete.
  */
 int AudioHlpFileDelete(PAUDIOHLPFILE pFile)
 {
@@ -635,10 +639,8 @@ int AudioHlpFileDelete(PAUDIOHLPFILE pFile)
 
     int rc = RTFileDelete(pFile->szName);
     if (RT_SUCCESS(rc))
-    {
         LogRel2(("Audio: Deleted file '%s'\n", pFile->szName));
-    }
-    else if (rc == VERR_FILE_NOT_FOUND) /* Don't bitch if the file is not around (anymore). */
+    else if (rc == VERR_FILE_NOT_FOUND) /* Don't bitch if the file is not around anymore. */
         rc = VINF_SUCCESS;
 
     if (RT_FAILURE(rc))
@@ -647,11 +649,12 @@ int AudioHlpFileDelete(PAUDIOHLPFILE pFile)
     return rc;
 }
 
+
 /**
  * Returns the raw audio data size of an audio file.
  *
- * Note: This does *not* include file headers and other data which does
- *       not belong to the actual PCM audio data.
+ * @note This does *not* include file headers and other data which does not
+ *       belong to the actual PCM audio data.
  *
  * @returns Size (in bytes) of the raw PCM audio data.
  * @param   pFile               Audio file handle to retrieve the audio data size for.
@@ -663,9 +666,7 @@ size_t AudioHlpFileGetDataSize(PAUDIOHLPFILE pFile)
     size_t cbSize = 0;
 
     if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
-    {
         cbSize = RTFileTell(pFile->hFile);
-    }
     else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
     {
         PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
@@ -676,11 +677,12 @@ size_t AudioHlpFileGetDataSize(PAUDIOHLPFILE pFile)
     return cbSize;
 }
 
+
 /**
  * Returns whether the given audio file is open and in use or not.
  *
- * @return  bool                True if open, false if not.
- * @param   pFile               Audio file handle to check open status for.
+ * @returnd True if open, false if not.
+ * @param   pFile               Audio file to check open status for.
  */
 bool AudioHlpFileIsOpen(PAUDIOHLPFILE pFile)
 {
@@ -690,11 +692,12 @@ bool AudioHlpFileIsOpen(PAUDIOHLPFILE pFile)
     return RTFileIsValid(pFile->hFile);
 }
 
+
 /**
  * Write PCM data to a wave (.WAV) file.
  *
  * @returns VBox status code.
- * @param   pFile               Audio file handle to write PCM data to.
+ * @param   pFile               Audio file to write PCM data to.
  * @param   pvBuf               Audio data to write.
  * @param   cbBuf               Size (in bytes) of audio data to write.
  * @param   fFlags              Additional write flags. Not being used at the moment and must be 0.
@@ -714,9 +717,7 @@ int AudioHlpFileWrite(PAUDIOHLPFILE pFile, const void *pvBuf, size_t cbBuf, uint
     int rc;
 
     if (pFile->enmType == AUDIOHLPFILETYPE_RAW)
-    {
         rc = RTFileWrite(pFile->hFile, pvBuf, cbBuf, NULL);
-    }
     else if (pFile->enmType == AUDIOHLPFILETYPE_WAV)
     {
         PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
