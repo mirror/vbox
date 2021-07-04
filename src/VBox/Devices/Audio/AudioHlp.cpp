@@ -620,7 +620,7 @@ int AudioHlpFileDelete(PAUDIOHLPFILE pFile)
 /**
  * Returns whether the given audio file is open and in use or not.
  *
- * @returnd True if open, false if not.
+ * @returns True if open, false if not.
  * @param   pFile               Audio file to check open status for.
  */
 bool AudioHlpFileIsOpen(PAUDIOHLPFILE pFile)
