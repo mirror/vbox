@@ -85,11 +85,6 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
     AssertPtr(pStreamR3->pHDAStateR3);
     AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
 
-# ifdef DEBUG
-    int rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
-    AssertRCReturn(rc, rc);
-# endif
-
     const bool fIsInput = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN;
 
     if (fIsInput)
@@ -157,14 +152,6 @@ void hdaR3StreamDestroy(PHDASTREAMR3 pStreamR3)
         pStreamR3->State.StatDmaBufSize = 0;
         pStreamR3->State.StatDmaBufUsed = 0;
     }
-
-# ifdef DEBUG
-    if (RTCritSectIsInitialized(&pStreamR3->Dbg.CritSect))
-    {
-        rc2 = RTCritSectDelete(&pStreamR3->Dbg.CritSect);
-        AssertRC(rc2);
-    }
-# endif
 
     if (pStreamR3->Dbg.Runtime.fEnabled)
     {
@@ -1010,17 +997,6 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
         RTCircBufReset(pStreamR3->State.pCircBuf);
     pStreamShared->State.offWrite = 0;
     pStreamShared->State.offRead  = 0;
-
-# ifdef DEBUG
-    pStreamR3->Dbg.cReadsTotal      = 0;
-    pStreamR3->Dbg.cbReadTotal      = 0;
-    pStreamR3->Dbg.tsLastReadNs     = 0;
-    pStreamR3->Dbg.cWritesTotal     = 0;
-    pStreamR3->Dbg.cbWrittenTotal   = 0;
-    pStreamR3->Dbg.cWritesHz        = 0;
-    pStreamR3->Dbg.cbWrittenHz      = 0;
-    pStreamR3->Dbg.tsWriteSlotBegin = 0;
-# endif
 
     /* Report that we're done resetting this stream. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0;

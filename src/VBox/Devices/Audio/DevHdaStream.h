@@ -53,36 +53,7 @@ typedef struct HDASTREAMDEBUG
 {
     /** Runtime debug info. */
     HDASTREAMDEBUGRT        Runtime;
-#ifdef DEBUG
-    /** Critical section to serialize access if needed. */
-    RTCRITSECT              CritSect;
-    uint32_t                Padding0[2];
-    /** Number of total read accesses. */
-    uint64_t                cReadsTotal;
-    /** Number of total DMA bytes read. */
-    uint64_t                cbReadTotal;
-    /** Timestamp (in ns) of last read access. */
-    uint64_t                tsLastReadNs;
-    /** Number of total write accesses. */
-    uint64_t                cWritesTotal;
-    /** Number of total DMA bytes written. */
-    uint64_t                cbWrittenTotal;
-    /** Number of total write accesses since last iteration (Hz). */
-    uint64_t                cWritesHz;
-    /** Number of total DMA bytes written since last iteration (Hz). */
-    uint64_t                cbWrittenHz;
-    /** Timestamp (in ns) of beginning a new write slot. */
-    uint64_t                tsWriteSlotBegin;
-    /** Number of current silence samples in a (consecutive) row. */
-    uint64_t                csSilence;
-    /** Number of silent samples in a row to consider an audio block as audio gap (silence). */
-    uint64_t                cSilenceThreshold;
-    /** How many bytes to skip in an audio stream before detecting silence.
-     *  (useful for intros and silence at the beginning of a song). */
-    uint64_t                cbSilenceReadMin;
-#else
     uint64_t                au64Alignment[2];
-#endif
 } HDASTREAMDEBUG;
 
 /**
