@@ -234,164 +234,117 @@ bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 *********************************************************************************************************************************/
 
 /**
- * Sanitizes the file name component so that unsupported characters
- * will be replaced by an underscore ("_").
+ * Constructs an unique file name, based on the given path and the audio file type.
  *
  * @returns VBox status code.
- * @param   pszPath             Path to sanitize.
- * @param   cbPath              Size (in bytes) of path to sanitize.
+ * @param   pszDst      Where to store the constructed file name.
+ * @param   cbDst       Size of the destination buffer (bytes; incl terminator).
+ * @param   pszPath     Base path to use.  If NULL or empty, the user's
+ *                      temporary directory will be used.
+ * @param   pszName     A name for better identifying the file.
+ * @param   uInstance   Device / driver instance which is using this file.
+ * @param   enmType     Audio file type to construct file name for.
+ * @param   fFlags      File naming flags, AUDIOHLPFILENAME_FLAGS_XXX.
+ * @param   chTweak     Retry tweak character.
  */
-int AudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
+static int audioHlpConstructPathWorker(char *pszDst, size_t cbDst, const char *pszPath, const char *pszName,
+                                       uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags, char chTweak)
 {
-    RT_NOREF(cbPath);
-    int rc = VINF_SUCCESS;
-#ifdef RT_OS_WINDOWS
-    /* Filter out characters not allowed on Windows platforms, put in by
-       RTTimeSpecToString(). */
-    /** @todo Use something like RTPathSanitize() if available later some time. */
-    static RTUNICP const s_uszValidRangePairs[] =
+    /*
+     * Validate input.
+     */
+    AssertPtrNullReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~AUDIOHLPFILENAME_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+
+    /* Validate the type and translate it into a suffix. */
+    const char *pszSuffix = NULL;
+    switch (enmType)
     {
-        ' ', ' ',
-        '(', ')',
-        '-', '.',
-        '0', '9',
-        'A', 'Z',
-        'a', 'z',
-        '_', '_',
-        0xa0, 0xd7af,
-        '\0'
-    };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* Replacement */);
-    if (cReplaced < 0)
-        rc = VERR_INVALID_UTF8_ENCODING;
-#else
-    RT_NOREF(pszPath);
-#endif
-    return rc;
+        case AUDIOHLPFILETYPE_RAW: pszSuffix = ".pcm"; break;
+        case AUDIOHLPFILETYPE_WAV: pszSuffix = ".wav"; break;
+        case AUDIOHLPFILETYPE_INVALID:
+        case AUDIOHLPFILETYPE_32BIT_HACK:
+            break; /* no default */
+    }
+    AssertMsgReturn(pszSuffix, ("enmType=%d\n", enmType), VERR_INVALID_PARAMETER);
+
+    /*
+     * The directory.  Make sure it exists and ends with a path separator.
+     */
+    int rc;
+    if (!pszPath || !*pszPath)
+        rc = RTPathTemp(pszDst, cbDst);
+    else
+    {
+        AssertPtrReturn(pszDst, VERR_INVALID_POINTER);
+        rc = RTStrCopy(pszDst, cbDst, pszPath);
+    }
+    AssertRCReturn(rc, rc);
+
+    if (!RTDirExists(pszDst))
+    {
+        rc = RTDirCreateFullPath(pszDst, RTFS_UNIX_IRWXU);
+        AssertRCReturn(rc, rc);
+    }
+
+    size_t offDst = RTPathEnsureTrailingSeparator(pszDst, cbDst);
+    AssertReturn(offDst > 0, VERR_BUFFER_OVERFLOW);
+    Assert(offDst < cbDst);
+
+    /*
+     * The filename.
+     */
+    /* Start with a ISO timestamp w/ colons replaced by dashes if requested. */
+    if (fFlags & AUDIOHLPFILENAME_FLAGS_TS)
+    {
+        RTTIMESPEC NowTimeSpec;
+        RTTIME     NowUtc;
+        AssertReturn(RTTimeToString(RTTimeExplode(&NowUtc, RTTimeNow(&NowTimeSpec)), &pszDst[offDst], cbDst - offDst),
+                     VERR_BUFFER_OVERFLOW);
+
+        /* Change the two colons in the time part to dashes.  */
+        char *pchColon = &pszDst[offDst];
+        while ((pchColon = strchr(pchColon, ':')) != NULL)
+            *pchColon++ = '-';
+
+        offDst += strlen(&pszDst[offDst]);
+        Assert(pszDst[offDst - 1] == 'Z');
+
+        /* Append a dash to separate the timestamp from the name. */
+        AssertReturn(offDst + 2 <= cbDst, VERR_BUFFER_OVERFLOW);
+        pszDst[offDst++] = '-';
+        pszDst[offDst]   = '\0';
+    }
+
+    /* Append the filename, instance, retry-tweak and suffix. */
+    ssize_t cchTail;
+    if (chTweak == '\0')
+        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%s-%u%s", pszName, uInstance, pszSuffix);
+    else
+        cchTail = RTStrPrintf2(&pszDst[offDst], cbDst - offDst, "%s-%u%c%s", pszName, uInstance, chTweak, pszSuffix);
+    AssertReturn(cchTail > 0, VERR_BUFFER_OVERFLOW);
+
+    return VINF_SUCCESS;
 }
 
 /**
  * Constructs an unique file name, based on the given path and the audio file type.
  *
  * @returns VBox status code.
- * @param   pszFile             Where to store the constructed file name.
- * @param   cchFile             Size (in characters) of the file name buffer.
- * @param   pszPath             Base path to use.
- *                              If NULL or empty, the system's temporary directory will be used.
- * @param   pszName             A name for better identifying the file.
- * @param   uInstance           Device / driver instance which is using this file.
- * @param   enmType             Audio file type to construct file name for.
- * @param   fFlags              File naming flags, AUDIOHLPFILENAME_FLAGS_XXX.
+ * @param   pszDst      Where to store the constructed file name.
+ * @param   cbDst       Size of the destination buffer (bytes; incl terminator).
+ * @param   pszPath     Base path to use.  If NULL or empty, the user's
+ *                      temporary directory will be used.
+ * @param   pszName     A name for better identifying the file.
+ * @param   uInstance   Device / driver instance which is using this file.
+ * @param   enmType     Audio file type to construct file name for.
+ * @param   fFlags      File naming flags, AUDIOHLPFILENAME_FLAGS_XXX.
  */
-int AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
+int AudioHlpFileNameGet(char *pszDst, size_t cbDst, const char *pszPath, const char *pszName,
                         uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags)
 {
-    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
-    AssertReturn(cchFile,    VERR_INVALID_PARAMETER);
-    /* pszPath can be NULL. */
-    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    /** @todo Validate fFlags. */
-
-    int rc;
-
-    char *pszPathTmp = NULL;
-
-    do
-    {
-        if (   pszPath == NULL
-            || !strlen(pszPath))
-        {
-            char szTemp[RTPATH_MAX];
-            rc = RTPathTemp(szTemp, sizeof(szTemp));
-            if (RT_SUCCESS(rc))
-            {
-                pszPathTmp = RTStrDup(szTemp);
-            }
-            else
-                break;
-        }
-        else
-            pszPathTmp = RTStrDup(pszPath);
-
-        AssertPtrBreakStmt(pszPathTmp, rc = VERR_NO_MEMORY);
-
-        char szFilePath[RTPATH_MAX];
-        rc = RTStrCopy(szFilePath, sizeof(szFilePath), pszPathTmp);
-        AssertRCBreak(rc);
-
-        /* Create it when necessary. */
-        if (!RTDirExists(szFilePath))
-        {
-            rc = RTDirCreateFullPath(szFilePath, RTFS_UNIX_IRWXU);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        char szFileName[RTPATH_MAX];
-        szFileName[0] = '\0';
-
-        if (fFlags & AUDIOHLPFILENAME_FLAGS_TS)
-        {
-            RTTIMESPEC time;
-            if (!RTTimeSpecToString(RTTimeNow(&time), szFileName, sizeof(szFileName)))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-
-            rc = AudioHlpFileNameSanitize(szFileName, sizeof(szFileName));
-            if (RT_FAILURE(rc))
-                break;
-
-            rc = RTStrCat(szFileName, sizeof(szFileName), "-");
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        rc = RTStrCat(szFileName, sizeof(szFileName), pszName);
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = RTStrCat(szFileName, sizeof(szFileName), "-");
-        if (RT_FAILURE(rc))
-            break;
-
-        char szInst[16];
-        RTStrPrintf2(szInst, sizeof(szInst), "%RU32", uInstance);
-        rc = RTStrCat(szFileName, sizeof(szFileName), szInst);
-        if (RT_FAILURE(rc))
-            break;
-
-        switch (enmType)
-        {
-            case AUDIOHLPFILETYPE_RAW:
-                rc = RTStrCat(szFileName, sizeof(szFileName), ".pcm");
-                break;
-
-            case AUDIOHLPFILETYPE_WAV:
-                rc = RTStrCat(szFileName, sizeof(szFileName), ".wav");
-                break;
-
-            default:
-                AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-                break;
-        }
-
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = RTPathAppend(szFilePath, sizeof(szFilePath), szFileName);
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = RTStrCopy(pszFile, cchFile, szFilePath);
-
-    } while (0);
-
-    RTStrFree(pszPathTmp);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return audioHlpConstructPathWorker(pszDst, cbDst, pszPath, pszName, uInstance, enmType, fFlags, '\0');
 }
 
 /**
@@ -563,25 +516,29 @@ int AudioHlpFileCreateAndOpenEx(PAUDIOHLPFILE *ppFile, AUDIOHLPFILETYPE enmType,
                                 uint32_t iInstance, uint32_t fFilename, uint32_t fCreate,
                                 PCPDMAUDIOPCMPROPS pProps, uint64_t fOpen)
 {
-    char szFile[RTPATH_MAX];
-    int rc = AudioHlpFileNameGet(szFile, sizeof(szFile), pszDir, pszName, iInstance, enmType, fFilename);
-    if (RT_SUCCESS(rc))
+    *ppFile = NULL;
+
+    for (uint32_t iTry = 0; ; iTry++)
     {
+        char szFile[RTPATH_MAX];
+        int rc = audioHlpConstructPathWorker(szFile, sizeof(szFile), pszDir, pszName, iInstance, enmType, fFilename,
+                                             iTry == 0 ? '\0' : iTry + 'a');
+        AssertRCReturn(rc, rc);
+
         PAUDIOHLPFILE pFile = NULL;
         rc = AudioHlpFileCreate(enmType, szFile, fCreate, &pFile);
+        AssertRCReturn(rc, rc);
+
+        rc = AudioHlpFileOpen(pFile, fOpen, pProps);
         if (RT_SUCCESS(rc))
         {
-            rc = AudioHlpFileOpen(pFile, fOpen, pProps);
-            if (RT_SUCCESS(rc))
-            {
-                *ppFile = pFile;
-                return rc;
-            }
-            AudioHlpFileDestroy(pFile);
+            *ppFile = pFile;
+            return rc;
         }
+        AudioHlpFileDestroy(pFile);
+
+        AssertReturn(iTry < 16, rc);
     }
-    *ppFile = NULL;
-    return rc;
 }
 
 /**

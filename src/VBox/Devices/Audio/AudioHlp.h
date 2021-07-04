@@ -66,8 +66,6 @@ typedef enum AUDIOHLPFILETYPE
 {
     /** The customary invalid zero value. */
     AUDIOHLPFILETYPE_INVALID = 0,
-    /** Unknown type, do not use. */
-    AUDIOHLPFILETYPE_UNKNOWN,
     /** Raw (PCM) file. */
     AUDIOHLPFILETYPE_RAW,
     /** Wave (.WAV) file. */
@@ -78,7 +76,6 @@ typedef enum AUDIOHLPFILETYPE
 
 /** @name Audio file (name) helper methods.
  * @{ */
-int     AudioHlpFileNameSanitize(char *pszPath, size_t cbPath);
 int     AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
                             uint32_t uInstance, AUDIOHLPFILETYPE enmType, uint32_t fFlags);
 /** @}  */
@@ -88,7 +85,9 @@ int     AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, 
 /** No flags defined. */
 #define AUDIOHLPFILENAME_FLAGS_NONE         UINT32_C(0)
 /** Adds an ISO timestamp to the file name. */
-#define AUDIOHLPFILENAME_FLAGS_TS           RT_BIT(0)
+#define AUDIOHLPFILENAME_FLAGS_TS           RT_BIT_32(0)
+/** Valid flag mask. */
+#define AUDIOHLPFILENAME_FLAGS_VALID_MASK   AUDIOHLPFILENAME_FLAGS_TS
 /** @} */
 
 /**
