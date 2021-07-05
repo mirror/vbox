@@ -830,7 +830,7 @@ static bool vusbDevStdReqGetDescriptor(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSet
                 unsigned int iIndex = (pSetup->wValue & 0xff);
                 if (iIndex >= pDev->pDescCache->pDevice->bNumConfigurations)
                 {
-                    LogFlow(("vusbDevStdReqGetDescriptor: %s: iIndex=%p >= bNumConfigurations=%d !!!\n",
+                    LogFlow(("vusbDevStdReqGetDescriptor: %s: iIndex=%u >= bNumConfigurations=%d !!!\n",
                              pDev->pUsbIns->pszName, iIndex, pDev->pDescCache->pDevice->bNumConfigurations));
                     return false;
                 }
