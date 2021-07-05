@@ -58,7 +58,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
     int cRetries = 0;
     uint16_t cbInitialHint = cbHint;
 
-    LogFlow(("GetStdDescSync: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
+    LogFlow(("GetStdDescSync: pProxyDev=%s, iDescType=%d, iIdx=%d, LangId=%04X, cbHint=%u\n", pProxyDev->pUsbIns->pszName, iDescType, iIdx, LangId, cbHint));
     for (;;)
     {
         /*
@@ -67,20 +67,16 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         int rc = VINF_SUCCESS;
         VUSBURB Urb;
         AssertCompile(RT_SIZEOFMEMB(VUSBURB, abData) >= _4K);
+        RT_ZERO(Urb);
         Urb.u32Magic      = VUSBURB_MAGIC;
         Urb.enmState      = VUSBURBSTATE_IN_FLIGHT;
         Urb.pszDesc       = (char*)"URB sync";
-        Urb.pHci          = NULL;
-        Urb.paTds         = NULL;
-        Urb.Dev.pvPrivate = NULL;
-        Urb.Dev.pNext     = NULL;
         Urb.DstAddress    = 0;
         Urb.EndPt         = 0;
         Urb.enmType       = VUSBXFERTYPE_MSG;
         Urb.enmDir        = VUSBDIRECTION_IN;
         Urb.fShortNotOk   = false;
         Urb.enmStatus     = VUSBSTATUS_INVALID;
-        Urb.pVUsb         = NULL;
         cbHint = RT_MIN(cbHint, sizeof(Urb.abData) - sizeof(VUSBSETUP));
         Urb.cbData = cbHint + sizeof(VUSBSETUP);
 
@@ -158,7 +154,11 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
             Log(("GetStdDescSync: Part descriptor, Urb.cbData=%u, cbDesc=%u cbHint=%u\n", Urb.cbData, cbDesc, cbHint));
 
             if (cbHint > sizeof(Urb.abData))
-                Log(("GetStdDescSync: cbHint=%u, Urb.abData=%u\n", cbHint, sizeof(Urb.abData)));
+            {
+                Log(("GetStdDescSync: cbHint=%u, Urb.abData=%u, retrying immediately\n", cbHint, sizeof(Urb.abData)));
+                /* Not an error, go again without incrementing retry count or delaying. */
+                continue;
+            }
 
             goto err;
         }
