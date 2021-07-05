@@ -143,8 +143,6 @@ protected:
 private slots:
 
     void sltHandleWizardCancel();
-    //void sltHandleDetectedOSTypeChange();
-    virtual void sltCustomButtonClicked(int iId) /* override */;
 
 private:
 
