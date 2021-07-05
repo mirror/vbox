@@ -245,7 +245,6 @@ protected:
     virtual void loadSettings();
 
     /* Cleanup helpers: */
-    virtual void saveSettings();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void cleanupDebugger();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
