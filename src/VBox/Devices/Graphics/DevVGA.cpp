@@ -7128,10 +7128,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     pThisCC->cbLogo = LogoHdr.cbLogo;
     if (g_cbVgaDefBiosLogo)
-        pThisCC->cbLogo = g_cbVgaDefBiosLogo;
+        pThisCC->cbLogo = RT_MAX(pThisCC->cbLogo, g_cbVgaDefBiosLogo);
 # ifndef VBOX_OSE
     if (g_cbVgaDefBiosLogoNY)
-        pThisCC->cbLogo = g_cbVgaDefBiosLogoNY;
+        pThisCC->cbLogo = RT_MAX(pThisCC->cbLogo, g_cbVgaDefBiosLogoNY);
 # endif
     pThisCC->cbLogo += sizeof(LogoHdr);
 
