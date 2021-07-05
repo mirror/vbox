@@ -3349,7 +3349,7 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_IO_PAGE_FAULT_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIoPageFault;
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    STAM_COUNTER_INC(&pThis->StatIopfs);
+    STAM_COUNTER_INC(&pThis->StatIopfs); NOREF(pThis);
 
 #ifdef IOMMU_WITH_DTE_CACHE
 # define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  iommuAmdDteCacheAddFlags((a_pDevIns), (a_DevId), \
@@ -3704,7 +3704,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             uint16_t const idxPte         = (uIova >> s_acIovaLevelShifts[uLevel]) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
             RTGCPHYS const GCPhysPtEntity = (PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK) + offPte;
-            int rc = PDMDevHlpPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
+            int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
             if (RT_FAILURE(rc))
             {
                 LogFunc(("Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
@@ -3802,7 +3802,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
                 pPageLookup->GCPhysSpa = GCPhysPte & X86_GET_PAGE_BASE_MASK(cShift);
                 pPageLookup->cShift    = cShift;
                 pPageLookup->fPerm     = fPtePerm;
-                STAM_COUNTER_INC(&pThis->StatNonStdPageSize);
+                STAM_COUNTER_INC(&pThis->StatNonStdPageSize); NOREF(pThis);
                 return VINF_SUCCESS;
             }
 
