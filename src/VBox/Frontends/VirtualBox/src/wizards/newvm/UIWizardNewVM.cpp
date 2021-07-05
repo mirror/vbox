@@ -518,56 +518,18 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     // return true;
 }
 
-QString UIWizardNewVM::getStringFieldValue(const QString &strFieldName) const
-{
-    Q_UNUSED(strFieldName);
-    // QVariant fieldValue = field(strFieldName);
-    // if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
-    //     return fieldValue.toString();
-    return QString();
-}
-
-bool UIWizardNewVM::getBoolFieldValue(const QString &strFieldName) const
-{
-    Q_UNUSED(strFieldName);
-    // QVariant fieldValue = field(strFieldName);
-    // if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
-    //     return fieldValue.toBool();
-    return false;
-}
-
 void UIWizardNewVM::sltHandleWizardCancel()
 {
-    // switch (mode())
-    // {
-    //     case WizardMode_Basic:
-    //     {
-    //         UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*> (page(Page1));
-    //         /* Make sure that we were able to find the page that created the folder. */
-    //         Assert(pPage);
-    //         if (pPage)
-    //             pPage->cleanupMachineFolder(true);
-    //         break;
-    //     }
-    //     case WizardMode_Expert:
-    //     {
-    //         UIWizardNewVMPageExpert *pPage = qobject_cast<UIWizardNewVMPageExpert*> (page(PageExpert));
-    //         if (pPage)
-    //             pPage->cleanupMachineFolder(true);
-    //         break;
-    //     }
-    //     default:
-    //         break;
-    // }
+    UIWizardNewVMNameOSTypePage::cleanupMachineFolder(this, true);
 }
 
-void UIWizardNewVM::sltHandleDetectedOSTypeChange()
-{
-    // UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*>(page(Page1));
-    // if (!pPage)
-    //     return;
-    // pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));
-}
+// void UIWizardNewVM::sltHandleDetectedOSTypeChange()
+// {
+//     // UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*>(page(Page1));
+//     // if (!pPage)
+//     //     return;
+//     // pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));
+// }
 
 void UIWizardNewVM::sltCustomButtonClicked(int iId)
 {
@@ -668,12 +630,12 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
 
 QString UIWizardNewVM::ISOFilePath() const
 {
-    QString strPath = getStringFieldValue("ISOFilePath");
-    if (strPath.isNull() || strPath.isEmpty())
-        return QString();
-    QFileInfo isoFileInfo(strPath);
-    if (isoFileInfo.exists() && isoFileInfo.isReadable())
-        return strPath;
+    // QString strPath = getStringFieldValue("ISOFilePath");
+    // if (strPath.isNull() || strPath.isEmpty())
+    //     return QString();
+    // QFileInfo isoFileInfo(strPath);
+    // if (isoFileInfo.exists() && isoFileInfo.isReadable())
+    //     return strPath;
     return QString();
 }
 
@@ -731,6 +693,16 @@ void UIWizardNewVM::setMachineBaseName(const QString &strMachineBaseName)
     m_strMachineBaseName = strMachineBaseName;
 }
 
+const QString &UIWizardNewVM::createdMachineFolder() const
+{
+    return m_strCreatedFolder;
+}
+
+void UIWizardNewVM::setCreatedMachineFolder(const QString &strCreatedMachineFolder)
+{
+    m_strCreatedFolder = strCreatedMachineFolder;
+}
+
 const QString &UIWizardNewVM::detectedOSTypeId() const
 {
     return m_strDetectedOSTypeId;
@@ -743,23 +715,23 @@ void UIWizardNewVM::setDetectedOSTypeId(const QString &strDetectedOSTypeId)
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
-    m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
-    m_unattendedInstallData.m_strUserName = getStringFieldValue("userName");
-    m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
-    m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
-    m_unattendedInstallData.m_strDetectedOSTypeId = getStringFieldValue("detectedOSTypeId");
-    // m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
-    // m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
-    // m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
-    // m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
-    m_unattendedInstallData.m_strProductKey = getStringFieldValue("productKey");
-    m_unattendedInstallData.m_strGuestAdditionsISOPath = getStringFieldValue("guestAdditionsISOPath");
+    // m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
+    // m_unattendedInstallData.m_strUserName = getStringFieldValue("userName");
+    // m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
+    // m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
+    // m_unattendedInstallData.m_strDetectedOSTypeId = getStringFieldValue("detectedOSTypeId");
+    // // m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
+    // // m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
+    // // m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
+    // // m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
+    // m_unattendedInstallData.m_strProductKey = getStringFieldValue("productKey");
+    // m_unattendedInstallData.m_strGuestAdditionsISOPath = getStringFieldValue("guestAdditionsISOPath");
 
-    m_unattendedInstallData.m_fUnattendedEnabled = getBoolFieldValue("isUnattendedEnabled");
-    m_unattendedInstallData.m_fStartHeadless = getBoolFieldValue("startHeadless");
-    m_unattendedInstallData.m_fInstallGuestAdditions = getBoolFieldValue("installGuestAdditions");
+    // m_unattendedInstallData.m_fUnattendedEnabled = getBoolFieldValue("isUnattendedEnabled");
+    // m_unattendedInstallData.m_fStartHeadless = getBoolFieldValue("startHeadless");
+    // m_unattendedInstallData.m_fInstallGuestAdditions = getBoolFieldValue("installGuestAdditions");
 
-    m_unattendedInstallData.m_uMachineUid = createdMachineId();
+    // m_unattendedInstallData.m_uMachineUid = createdMachineId();
 
     return m_unattendedInstallData;
 }
@@ -773,7 +745,7 @@ bool UIWizardNewVM::isUnattendedEnabled() const
     return true;
 }
 
-bool UIWizardNewVM::isGuestOSTypeWindows() const
-{
-    return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
-}
+// bool UIWizardNewVM::isGuestOSTypeWindows() const
+// {
+//     return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
+// }

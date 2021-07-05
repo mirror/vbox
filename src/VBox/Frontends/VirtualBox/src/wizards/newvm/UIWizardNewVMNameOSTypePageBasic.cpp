@@ -198,10 +198,9 @@ void UIWizardNewVMNameOSTypePage::onNameChanged(UINameAndSystemEditor *pNameAndS
 }
 
 void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
-                                                         UINativeWizard *pWizard)
+                                                         UIWizardNewVM *pWizard)
 {
-    UIWizardNewVM *pNewVMWizard = qobject_cast<UIWizardNewVM*>(pWizard);
-    if (!pNameAndSystemEditor || !pNewVMWizard)
+    if (!pNameAndSystemEditor || !pWizard)
         return;
     if (pNameAndSystemEditor->name().isEmpty() || pNameAndSystemEditor->path().isEmpty())
         return;
@@ -209,25 +208,27 @@ void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *
     CVirtualBox vbox = uiCommon().virtualBox();
 
     /* Compose machine filename: */
-    pNewVMWizard->setMachineFilePath(vbox.ComposeMachineFilename(pNameAndSystemEditor->name(),
-                                                                 pNewVMWizard->machineGroup(),
+    pWizard->setMachineFilePath(vbox.ComposeMachineFilename(pNameAndSystemEditor->name(),
+                                                                 pWizard->machineGroup(),
                                                                  QString(),
                                                                  pNameAndSystemEditor->path()));
     /* Compose machine folder/basename: */
-    const QFileInfo fileInfo(pNewVMWizard->machineFilePath());
-    pNewVMWizard->setMachineFolder(fileInfo.absolutePath());
-    pNewVMWizard->setMachineBaseName(fileInfo.completeBaseName());
+    const QFileInfo fileInfo(pWizard->machineFilePath());
+    pWizard->setMachineFolder(fileInfo.absolutePath());
+    pWizard->setMachineBaseName(fileInfo.completeBaseName());
 }
 
 bool UIWizardNewVMNameOSTypePage::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
                                                       UINativeWizardPage *pCaller,
-                                                      const QString &strMachineFolder,
-                                                      QString &strCreatedFolder)
+                                                      UIWizardNewVM *pWizard)
 {
-    if (!pNameAndSystemEditor)
+    if (!pNameAndSystemEditor || !pWizard)
         return false;
+    const QString &strMachineFolder = pWizard->machineFolder();
+    const QString &strCreatedFolder = pWizard->createdMachineFolder();
+
     /* Cleanup previosly created folder if any: */
-    if (!cleanupMachineFolder(strMachineFolder, strCreatedFolder))
+    if (!cleanupMachineFolder(pWizard))
     {
         msgCenter().cannotRemoveMachineFolder(strMachineFolder, pCaller);
         return false;
@@ -254,13 +255,16 @@ bool UIWizardNewVMNameOSTypePage::createMachineFolder(UINameAndSystemEditor *pNa
         msgCenter().cannotCreateMachineFolder(strMachineFolder, pCaller);
         return false;
     }
-    strCreatedFolder = strMachineFolder;
+    pWizard->setCreatedMachineFolder(strMachineFolder);
     return true;
 }
 
-bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(const QString &strMachineFolder,
-                                                       QString &strCreatedFolder, bool fWizardCancel /* = false */)
+bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(UIWizardNewVM *pWizard, bool fWizardCancel /* = false */)
 {
+    if (!pWizard)
+        return false;
+    const QString &strMachineFolder = pWizard->machineFolder();
+    const QString &strCreatedFolder = pWizard->createdMachineFolder();
     /* Make sure folder was previosly created: */
     if (strCreatedFolder.isEmpty())
         return true;
@@ -271,32 +275,12 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(const QString &strMachine
         bool fMachineFolderRemoved = QDir().rmpath(strCreatedFolder);
         /* Reset machine folder value: */
         if (fMachineFolderRemoved)
-            strCreatedFolder = QString();
+            pWizard->setCreatedMachineFolder(QString());
         /* Return cleanup result: */
         return fMachineFolderRemoved;
     }
     return true;
 }
-
-// QString UIWizardNewVMNameOSTypePage::machineFilePath() const
-// {
-//     return m_strMachineFilePath;
-// }
-
-// void UIWizardNewVMNameOSTypePage::setMachineFilePath(const QString &strMachineFilePath)
-// {
-//     m_strMachineFilePath = strMachineFilePath;
-// }
-
-// QString UIWizardNewVMNameOSTypePage::machineFolder() const
-// {
-//     return m_strMachineFolder;
-// }
-
-// void UIWizardNewVMNameOSTypePage::setMachineFolder(const QString &strMachineFolder)
-// {
-//     m_strMachineFolder = strMachineFolder;
-// }
 
 // QString UIWizardNewVMNameOSTypePage::machineBaseName() const
 // {
@@ -315,15 +299,6 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(const QString &strMachine
 //     return m_pNameAndSystemEditor->familyId();
 // }
 
-// void UIWizardNewVMNameOSTypePage::markWidgets() const
-// {
-//     if (m_pNameAndSystemEditor)
-//     {
-//         m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
-//         m_pNameAndSystemEditor->markImageEditor(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
-//     }
-// }
-
 
 // QString UIWizardNewVMNameOSTypePage::ISOFilePath() const
 // {
@@ -332,40 +307,23 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(const QString &strMachine
 //     return m_pNameAndSystemEditor->image();
 // }
 
-// bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return false;
-//     const QString &strPath = m_pNameAndSystemEditor->image();
-//     if (strPath.isNull() || strPath.isEmpty())
-//         return false;
-//     if (m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked())
-//         return false;
-//     return true;
-// }
 
-// const QString &UIWizardNewVMNameOSTypePage::detectedOSTypeId() const
-// {
-//     return m_strDetectedOSTypeId;
-// }
-
-void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UINativeWizard *pWizard)
+void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
 {
-    UIWizardNewVM *pNewVMWizard = qobject_cast<UIWizardNewVM*>(pWizard);
-    if (!pNewVMWizard)
+    if (!pWizard)
         return;
 
     QFileInfo isoFileInfo(strISOPath);
     if (!isoFileInfo.exists())
     {
-        pNewVMWizard->setDetectedOSTypeId(QString());
+        pWizard->setDetectedOSTypeId(QString());
         return;
     }
 
     CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
     comUnatteded.SetIsoPath(strISOPath);
     comUnatteded.DetectIsoOS();
-    pNewVMWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
+    pWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
 }
 
 // bool UIWizardNewVMNameOSTypePage::skipUnattendedInstall() const
@@ -373,37 +331,18 @@ void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIN
 //     return m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked();
 // }
 
-// bool UIWizardNewVMNameOSTypePage::checkISOFile() const
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return true;
-//     const QString &strPath = m_pNameAndSystemEditor->image();
-//     if (strPath.isNull() || strPath.isEmpty())
-//         return true;
-//     QFileInfo fileInfo(strPath);
-//     if (!fileInfo.exists() || !fileInfo.isReadable())
-//         return false;
-//     return true;
-// }
-
-// void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
-// {
-//     if (!m_pSkipUnattendedCheckBox)
-//         return;
-//     if (m_pNameAndSystemEditor)
-//     {
-//         const QString &strPath = m_pNameAndSystemEditor->image();
-//         m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
-//     }
-// }
-
-// void UIWizardNewVMNameOSTypePage::setTypeByISODetectedOSType(const QString &strDetectedOSType)
-// {
-//     Q_UNUSED(strDetectedOSType);
-//     if (!strDetectedOSType.isEmpty())
-//         onNameChanged(strDetectedOSType);
-// }
-
+bool UIWizardNewVMNameOSTypePage::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)
+{
+    if (!pNameAndSystemEditor)
+        return false;
+    const QString &strPath = pNameAndSystemEditor->image();
+    if (strPath.isNull() || strPath.isEmpty())
+        return true;
+    QFileInfo fileInfo(strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
+}
 
 UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
     : m_pNameAndSystemLayout(0)
@@ -411,6 +350,7 @@ UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameOSTypeLabel(0)
 {
+    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
 }
 
@@ -456,10 +396,10 @@ void UIWizardNewVMNameOSTypePageBasic::createConnections()
 
 bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 {
-    // markWidgets();
-    // if (m_pNameAndSystemEditor->name().isEmpty())
-    //     return false;
-    // return checkISOFile();
+    markWidgets();
+    if (m_pNameAndSystemEditor->name().isEmpty())
+        return false;
+    return UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor);
     return true;
 }
 
@@ -467,13 +407,13 @@ void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
     Q_UNUSED(strNewName);
     UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizard());
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, m_pWizard);
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizard());
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, m_pWizard);
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
@@ -516,7 +456,6 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
 
 void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
 {
-    /* Cleanup: */
     // cleanupMachineFolder();
     // /* Call to base-class: */
     // UIWizardPage::cleanupPage();
@@ -525,19 +464,18 @@ void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
 bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 {
     /* Try to create machine folder: */
-    //composeMachineFilePath
-    //return createMachineFolder();
-    return true;
+    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, m_pWizard);
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 {
-    UIWizardNewVMNameOSTypePage::determineOSType(strPath, wizard());
-    // setTypeByISODetectedOSType(m_strDetectedOSTypeId);
-    // /* Update the global recent ISO path: */
-    // QFileInfo fileInfo(strPath);
-    // if (fileInfo.exists() && fileInfo.isReadable())
-    //     uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
+    UIWizardNewVMNameOSTypePage::determineOSType(strPath, m_pWizard);
+    if (m_pWizard && !m_pWizard->detectedOSTypeId().isEmpty())
+        UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, m_pWizard->detectedOSTypeId());
+    /* Update the global recent ISO path: */
+    QFileInfo fileInfo(strPath);
+    if (fileInfo.exists() && fileInfo.isReadable())
+        uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
     // setSkipCheckBoxEnable();
     // emit completeChanged();
 }
@@ -572,4 +510,37 @@ QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()
 
     /* Return container widget: */
     return pContainerWidget;
+}
+
+void UIWizardNewVMNameOSTypePageBasic::markWidgets() const
+{
+    if (m_pNameAndSystemEditor)
+    {
+        m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
+        m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor),
+                                                UIWizardNewVM::tr("Invalid file path or unreadable file"));
+    }
+}
+
+void UIWizardNewVMNameOSTypePageBasic::setSkipCheckBoxEnable()
+{
+    if (!m_pSkipUnattendedCheckBox)
+        return;
+    if (m_pNameAndSystemEditor)
+    {
+        const QString &strPath = m_pNameAndSystemEditor->image();
+        m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
+    }
+}
+
+bool UIWizardNewVMNameOSTypePageBasic::isUnattendedEnabled() const
+{
+    if (!m_pNameAndSystemEditor)
+        return false;
+    const QString &strPath = m_pNameAndSystemEditor->image();
+    if (strPath.isNull() || strPath.isEmpty())
+        return false;
+    if (m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked())
+        return false;
+    return true;
 }
