@@ -462,8 +462,12 @@ bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 {
     UIWizardNewVMNameOSTypePage::determineOSType(strPath, m_pWizard);
-    if (m_pWizard && !m_pWizard->detectedOSTypeId().isEmpty())
-        UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, m_pWizard->detectedOSTypeId());
+    if (m_pWizard)
+    {
+        if (!m_pWizard->detectedOSTypeId().isEmpty())
+            UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, m_pWizard->detectedOSTypeId());
+        m_pWizard->setISOFilePath(strPath);
+    }
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())

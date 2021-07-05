@@ -110,6 +110,15 @@ public:
     bool installGuestAdditions() const;
     void setInstallGuestAdditions(bool fInstallGA);
 
+    const QString &ISOFilePath() const;
+    void setISOFilePath(const QString &strISOFilePath);
+
+    const QString &userName() const;
+    void setUserName(const QString &strUserName);
+
+    const QString &password() const;
+    void setPassword(const QString &strPassword);
+
 protected:
 
     /** Populates pages. */
@@ -137,8 +146,6 @@ private:
     /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
-    /* Returns ISO file path if a readable ISO file is selected. Returns an empty string otherwise. */
-    QString ISOFilePath() const;
 
     /** @name Variables
      * @{ */
@@ -153,6 +160,9 @@ private:
        int m_iUSBCount;
        mutable UIUnattendedInstallData m_unattendedInstallData;
     /** @} */
+
+    /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
+    QString m_strISOFilePath;
 
     /** Path of the folder created by this wizard page. Used to remove previously created
      *  folder. see cleanupMachineFolder();*/
@@ -173,6 +183,9 @@ private:
 
     /** True if guest additions are to be installed during unattended install. */
     bool m_fInstallGuestAdditions;
+
+    QString m_strUserName;
+    QString m_strPassword;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

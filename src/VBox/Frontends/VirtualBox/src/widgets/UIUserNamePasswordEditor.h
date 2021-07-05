@@ -41,8 +41,9 @@ class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /** this is emitted whenever the content of one of the line edits is changed. */
-    void sigSomeTextChanged();
+    void sigUserNameChanged(const QString &strUserName);
+    void sigPasswordChanged(const QString &strPassword);
+
 
 public:
 
@@ -56,8 +57,6 @@ public:
 
     /** Returns false if username or password fields are empty, or password fields do not match. */
     bool isComplete();
-    /** Sets m_fForceUnmark flag. see it for more info. */
-    void setForceUnmark(bool fForceUnmark);
 
     /** When fEnabled true place holder texts for the line edits are shown. */
     void setPlaceholderTextEnabled(bool fEnabled);
@@ -70,7 +69,8 @@ protected:
 private slots:
 
     void sltHandlePasswordVisibility(bool fPasswordVisible);
-    void sltSomeTextChanged();
+    void sltUserNameChanged();
+    void sltPasswordChanged();
 
 private:
 
@@ -89,8 +89,7 @@ private:
     QLabel *m_pPasswordLabel;
     QLabel *m_pPasswordRepeatLabel;
     QColor m_orginalLineEditBaseColor;
-    /** When true line edits are not marked even if they have to be. */
-    bool m_fForceUnmark;
+
     bool m_fShowPlaceholderText;
     bool m_fLabelsVisible;
 

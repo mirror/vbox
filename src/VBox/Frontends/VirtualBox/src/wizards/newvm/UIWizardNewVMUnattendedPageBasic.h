@@ -86,6 +86,8 @@ private slots:
 
     void sltInstallGACheckBoxToggle(bool fChecked);
     void sltGAISOPathChanged(const QString &strPath);
+    // void sltPasswordChanged(const QString &strPassword);
+    // void sltUserNameChanged(const QString &strUserName);
 
 private:
 

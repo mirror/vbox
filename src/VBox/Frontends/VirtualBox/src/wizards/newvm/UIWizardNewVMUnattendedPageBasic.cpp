@@ -84,11 +84,6 @@
 // }
 
 
-// void UIWizardNewVMUnattendedPage::setInstallGuestAdditions(bool fInstallGA)
-// {
-//     if (m_pGAInstallationISOContainer)
-//         m_pGAInstallationISOContainer->setChecked(fInstallGA);
-// }
 
 // QString UIWizardNewVMUnattendedPage::guestAdditionsISOPath() const
 // {
@@ -170,9 +165,9 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
 
 void UIWizardNewVMUnattendedPageBasic::createConnections()
 {
-    if (m_pUserNamePasswordEditor)
-        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-                this, &UIWizardNewVMUnattendedPageBasic::completeChanged);
+    // if (m_pUserNamePasswordEditor)
+    //     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+    //             this, &UIWizardNewVMUnattendedPageBasic::completeChanged);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);

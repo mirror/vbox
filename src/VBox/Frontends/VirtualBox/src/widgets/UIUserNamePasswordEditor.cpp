@@ -205,7 +205,6 @@ UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     , m_pUserNameLabel(0)
     , m_pPasswordLabel(0)
     , m_pPasswordRepeatLabel(0)
-    , m_fForceUnmark(false)
     , m_fShowPlaceholderText(true)
     , m_fLabelsVisible(true)
 {
@@ -255,9 +254,10 @@ bool UIUserNamePasswordEditor::isPasswordComplete()
     {
         if (m_pPasswordLineEdit->text() != m_pPasswordRepeatLineEdit->text())
             fPasswordOK = false;
+#if 0
         if (m_pPasswordLineEdit->text().isEmpty())
             fPasswordOK = false;
-
+#endif
         m_pPasswordLineEdit->mark(!fPasswordOK, m_strPasswordError);
         m_pPasswordRepeatLineEdit->mark(!fPasswordOK, m_strPasswordError);
     }
@@ -269,13 +269,6 @@ bool UIUserNamePasswordEditor::isComplete()
     bool fUserNameField = isUserNameComplete();
     bool fPasswordField = isPasswordComplete();
     return fUserNameField && fPasswordField;
-}
-
-void UIUserNamePasswordEditor::setForceUnmark(bool fForceUnmark)
-{
-    m_fForceUnmark = fForceUnmark;
-    isUserNameComplete();
-    isPasswordComplete();
 }
 
 void UIUserNamePasswordEditor::setPlaceholderTextEnabled(bool fEnabled)
@@ -354,7 +347,6 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
 
     pLayout->addWidget(pLabel, iRow, 0, 1, 1);
 
-
     pLineEdit = new T;
     if (!pLineEdit)
         return;
@@ -362,7 +354,6 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
 
     pLabel->setBuddy(pLineEdit);
     ++iRow;
-    connect(pLineEdit, &T::textChanged, this, &UIUserNamePasswordEditor::sltSomeTextChanged);
     return;
 }
 
@@ -384,6 +375,11 @@ void UIUserNamePasswordEditor::prepare()
             this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
     connect(m_pPasswordRepeatLineEdit, &UIPasswordLineEdit::sigTextVisibilityToggled,
             this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
+    connect(m_pPasswordLineEdit, &UIPasswordLineEdit::textChanged,
+            this, &UIUserNamePasswordEditor::sltPasswordChanged);
+    connect(m_pUserNameLineEdit, &QILineEdit::textChanged,
+            this, &UIUserNamePasswordEditor::sltUserNameChanged);
+
     /* Cache the original back color of the line edit to restore it correctly: */
     if (m_pUserNameLineEdit)
         m_orginalLineEditBaseColor = m_pUserNameLineEdit->palette().color(QPalette::Base);
@@ -399,11 +395,17 @@ void UIUserNamePasswordEditor::sltHandlePasswordVisibility(bool fPasswordVisible
         m_pPasswordRepeatLineEdit->toggleTextVisibility(fPasswordVisible);
 }
 
-void UIUserNamePasswordEditor::sltSomeTextChanged()
+void UIUserNamePasswordEditor::sltUserNameChanged()
 {
-    /* Check text lines edits and mark them accordingly: */
-    isComplete();
-    emit sigSomeTextChanged();
+    if (isUserNameComplete())
+        emit sigUserNameChanged(m_pUserNameLineEdit->text());
 }
+
+void UIUserNamePasswordEditor::sltPasswordChanged()
+{
+    if (isPasswordComplete())
+        emit sigPasswordChanged(m_pPasswordLineEdit->text());
+}
+
 
 #include "UIUserNamePasswordEditor.moc"

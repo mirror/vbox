@@ -629,17 +629,6 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     // setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 
-QString UIWizardNewVM::ISOFilePath() const
-{
-    // QString strPath = getStringFieldValue("ISOFilePath");
-    // if (strPath.isNull() || strPath.isEmpty())
-    //     return QString();
-    // QFileInfo isoFileInfo(strPath);
-    // if (isoFileInfo.exists() && isoFileInfo.isReadable())
-    //     return strPath;
-    return QString();
-}
-
 CMedium &UIWizardNewVM::virtualDisk()
 {
     return m_virtualDisk;
@@ -734,13 +723,43 @@ void UIWizardNewVM::setInstallGuestAdditions(bool fInstallGA)
     m_fInstallGuestAdditions = fInstallGA;
 }
 
+const QString &UIWizardNewVM::ISOFilePath() const
+{
+    return m_strISOFilePath;
+}
+
+void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
+{
+    m_strISOFilePath = strISOFilePath;
+}
+
+const QString &UIWizardNewVM::userName() const
+{
+    return m_strUserName;
+}
+
+void UIWizardNewVM::setUserName(const QString &strUserName)
+{
+    m_strUserName = strUserName;
+}
+
+const QString &UIWizardNewVM::password() const
+{
+    return m_strPassword;
+}
+
+void UIWizardNewVM::setPassword(const QString &strPassword)
+{
+    m_strPassword = strPassword;
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
-    // m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
+    m_unattendedInstallData.m_strISOPath = m_strISOFilePath;
     // m_unattendedInstallData.m_strUserName = getStringFieldValue("userName");
     // m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
     // m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
-    // m_unattendedInstallData.m_strDetectedOSTypeId = getStringFieldValue("detectedOSTypeId");
+    m_unattendedInstallData.m_strDetectedOSTypeId = m_strDetectedOSTypeId;
     // // m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
     // // m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
     // // m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");

@@ -52,28 +52,10 @@ namespace UIWizardNewVMNameOSTypePage
     void determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard);
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor);
-//     /** @name Property getters/setters
-//       * @{ */
 
 //         QString guestOSFamiyId() const;
-
 //         const QString &detectedOSTypeId() const;
-
 //         bool skipUnattendedInstall() const;
-//     /** @} */
-
-
-//     /** Colors the widgets red if they cause isComplete to fail. */
-//     void retranslateWidgets();
-//     QString ISOFilePath() const;
-
-
-//
-
-// private:
-
-
-// };
 }
 
 /** 1st page of the New Virtual Machine wizard (basic extension). */
