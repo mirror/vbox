@@ -96,9 +96,8 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_strHelpHashtag(strHelpHashtag)
     , m_iLastIndex(-1)
     , m_pLabelPixmap(0)
-#ifdef VBOX_WS_MAC
+    , m_pLayoutRight(0)
     , m_pLabelPageTitle(0)
-#endif
     , m_pWidgetStack(0)
 {
     prepare();
@@ -232,9 +231,7 @@ void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
     /* Initialize corresponding page: */
     UINativeWizardPage *pPage = qobject_cast<UINativeWizardPage*>(m_pWidgetStack->widget(iIndex));
     AssertPtrReturnVoid(pPage);
-#ifdef VBOX_WS_MAC
     m_pLabelPageTitle->setText(pPage->title());
-#endif
     if (iIndex > m_iLastIndex)
         pPage->initializePage();
 
@@ -344,10 +341,9 @@ void UINativeWizard::prepare()
 #endif /* !VBOX_WS_MAC */
             }
 
-#ifdef VBOX_WS_MAC
-            /* Prepare right layout on macOS for nativity purposes: */
-            QVBoxLayout *pLayoutRight = new QVBoxLayout;
-            if (pLayoutRight)
+            /* Prepare right layout: */
+            m_pLayoutRight = new QVBoxLayout;
+            if (m_pLayoutRight)
             {
                 /* Prepare page title label: */
                 m_pLabelPageTitle = new QLabel(this);
@@ -359,9 +355,10 @@ void UINativeWizard::prepare()
                     labelFont.setPointSize(labelFont.pointSize() + 4);
                     m_pLabelPageTitle->setFont(labelFont);
 
-                    pLayoutRight->addWidget(m_pLabelPageTitle);
+                    m_pLayoutRight->addWidget(m_pLabelPageTitle);
                 }
 
+#ifdef VBOX_WS_MAC
                 /* Prepare frame around widget-stack on macOS for nativity purposes: */
                 UIFrame *pFrame = new UIFrame(this);
                 if (pFrame)
@@ -380,21 +377,21 @@ void UINativeWizard::prepare()
                     }
 
                     /* Add to layout: */
-                    pLayoutRight->addWidget(pFrame);
+                    m_pLayoutRight->addWidget(pFrame);
                 }
+#else /* !VBOX_WS_MAC */
+                /* Prepare widget-stack directly on other platforms: */
+                m_pWidgetStack = new QStackedWidget(this);
+                if (m_pWidgetStack)
+                {
+                    connect(m_pWidgetStack, &QStackedWidget::currentChanged, this, &UINativeWizard::sltCurrentIndexChanged);
+                    m_pLayoutRight->addWidget(m_pWidgetStack);
+                }
+#endif /* !VBOX_WS_MAC */
 
                 /* Add to layout: */
-                pLayoutUpper->addLayout(pLayoutRight);
+                pLayoutUpper->addLayout(m_pLayoutRight);
             }
-#else /* !VBOX_WS_MAC */
-            /* Prepare widget-stack directly on other platforms: */
-            m_pWidgetStack = new QStackedWidget(this);
-            if (m_pWidgetStack)
-            {
-                connect(m_pWidgetStack, &QStackedWidget::currentChanged, this, &UINativeWizard::sltCurrentIndexChanged);
-                pLayoutUpper->addWidget(m_pWidgetStack);
-            }
-#endif /* !VBOX_WS_MAC */
 
             /* Add to layout: */
             pLayoutMain->addLayout(pLayoutUpper);
@@ -503,10 +500,14 @@ void UINativeWizard::retranslatePages()
 
 void UINativeWizard::resizeToGoldenRatio()
 {
-#ifdef VBOX_WS_MAC
-    /* Hide/show title label on macOS only, on Windows/X11 there is no title label. */
+    /* Standard top margin for Basic mode case: */
+    const int iT = m_enmMode == WizardMode_Basic
+                 ? qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin)
+                 : 0;
+    m_pLayoutRight->setContentsMargins(0, iT, 0, 0);
+    /* Show title label for Basic mode case: */
     m_pLabelPageTitle->setVisible(m_enmMode == WizardMode_Basic);
-#else
+#ifndef VBOX_WS_MAC
     /* Hide/show pixmap label on Windows/X11 only, on macOS it's in the background: */
     m_pLabelPixmap->setVisible(!m_strPixmapName.isEmpty() && m_enmMode == WizardMode_Basic);
 #endif /* !VBOX_WS_MAC */
@@ -541,6 +542,15 @@ void UINativeWizard::resizeToGoldenRatio()
             /* Advance width for standard watermark width: */
             if (!m_strPixmapName.isEmpty())
                 iWidth += 145;
+            /* Advance height for spacing & title height: */
+            if (m_pLayoutRight)
+            {
+                int iL, iT, iR, iB;
+                m_pLayoutRight->getContentsMargins(&iL, &iT, &iR, &iB);
+                iHeight += iT + m_pLayoutRight->spacing() + iB;
+            }
+            if (m_pLabelPageTitle)
+                iHeight += m_pLabelPageTitle->minimumSizeHint().height();
 #endif /* !VBOX_WS_MAC */
             const double dRatio = (double)iWidth / iHeight;
             if (dRatio > 1.6)
@@ -606,8 +616,13 @@ void UINativeWizard::assignWatermark()
     /* Use the right-top watermark pixel as frame color: */
     const QRgb rgbFrame = imageOld.pixel(imageOld.width() - 1, 0);
 
-    /* Upscale desired height up to pixmap device pixel ratio: */
-    const int iDesiredHeight = m_pWidgetStack->minimumSizeHint().height() * pixmapOld.devicePixelRatio();
+    /* Compose desired height up to pixmap device pixel ratio: */
+    int iL, iT, iR, iB;
+    m_pLayoutRight->getContentsMargins(&iL, &iT, &iR, &iB);
+    const int iSpacing = iT + m_pLayoutRight->spacing() + iB;
+    const int iTitleHeight = m_pLabelPageTitle->minimumSizeHint().height();
+    const int iStackHeight = m_pWidgetStack->minimumSizeHint().height();
+    const int iDesiredHeight = (iTitleHeight + iSpacing + iStackHeight) * pixmapOld.devicePixelRatio();
     /* Create final image on the basis of incoming, applying the rules: */
     QImage imageNew(imageOld.width(), qMax(imageOld.height(), iDesiredHeight), imageOld.format());
     for (int y = 0; y < imageNew.height(); ++y)

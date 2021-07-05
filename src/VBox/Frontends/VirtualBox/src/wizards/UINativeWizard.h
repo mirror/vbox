@@ -34,6 +34,7 @@
 class QLabel;
 class QPushButton;
 class QStackedWidget;
+class QVBoxLayout;
 class UINativeWizardPage;
 
 /** Native wizard buttons. */
@@ -163,9 +164,10 @@ private:
 
     /** Holds the pixmap label instance. */
     QLabel                               *m_pLabelPixmap;
-#ifdef VBOX_WS_MAC
+    /** Holds the right layout instance. */
+    QVBoxLayout                          *m_pLayoutRight;
+    /** Holds the title label instance. */
     QLabel                               *m_pLabelPageTitle;
-#endif
     /** Holds the widget-stack instance. */
     QStackedWidget                       *m_pWidgetStack;
     /** Holds button instance map. */
