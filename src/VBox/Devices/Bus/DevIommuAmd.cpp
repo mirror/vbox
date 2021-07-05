@@ -47,7 +47,7 @@
 
 /** Enable the IOTLBE cache only in ring-3 for now, see @bugref{9654#c95}. */
 #ifdef IN_RING3
-# define IOMMU_WITH_IOTLBE_CACHE
+//# define IOMMU_WITH_IOTLBE_CACHE      /* Disabled for now, see @bugref{9654#c107}. */
 #endif
 /** Enable the interrupt cache. */
 #define IOMMU_WITH_IRTE_CACHE
@@ -218,6 +218,9 @@
 /** Releases the PDM lock.   */
 # define IOMMU_UNLOCK(a_pDevIns, a_pThisCC)         (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnUnlock((a_pDevIns))
 
+/** Gets the maximum valid IOVA for the given I/O page-table level. */
+#define IOMMU_GET_MAX_VALID_IOVA(a_Level)           ((X86_PAGE_4K_SIZE << ((a_Level) * 9)) - 1)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -352,7 +355,9 @@ typedef struct IOMMU
     /** Whether the command thread has been signaled for wake up. */
     bool volatile               fCmdThreadSignaled;
     /** Padding. */
-    bool                        afPadding0[7];
+    bool                        afPadding0[3];
+    /** The IOMMU PCI address. */
+    PCIBDF                      uPciAddress;
 
 #ifdef IOMMU_WITH_DTE_CACHE
     /** The critsect that protects the cache from concurrent access. */
@@ -535,6 +540,9 @@ typedef struct IOMMU
 
     STAMCOUNTER                 StatIntrCacheHit;          /**< Number of interrupt cache hits. */
     STAMCOUNTER                 StatIntrCacheMiss;         /**< Number of interrupt cache misses. */
+
+    STAMCOUNTER                 StatNonStdPageSize;        /**< Number of non-standard page size translations. */
+    STAMCOUNTER                 StatIopfs;                 /**< Number of I/O page faults. */
     /** @} */
 #endif
 } IOMMU;
@@ -690,7 +698,7 @@ typedef IOMMUOPAUX const *PCIOMMUOPAUX;
 
 typedef DECLCALLBACKTYPE(int, FNIOPAGELOOKUP,(PPDMDEVINS pDevIns, uint64_t uIovaPage, uint8_t fPerm, PCIOMMUOPAUX pAux,
                                               PIOPAGELOOKUP pPageLookup));
-typedef FNIOPAGELOOKUP      *PFNIOPAGELOOKUP;
+typedef FNIOPAGELOOKUP *PFNIOPAGELOOKUP;
 
 
 /*********************************************************************************************************************************
@@ -802,23 +810,22 @@ static const char *iommuAmdMemAccessGetPermName(uint8_t fPerm)
  */
 static bool iommuAmdLookupIsAccessContig(PCIOPAGELOOKUP pPageLookupPrev, PCIOPAGELOOKUP pPageLookup)
 {
-    Assert(pPageLookupPrev->fPerm  == pPageLookup->fPerm);
     size_t const   cbPrev      = RT_BIT_64(pPageLookupPrev->cShift);
     RTGCPHYS const GCPhysPrev  = pPageLookupPrev->GCPhysSpa;
     RTGCPHYS const GCPhys      = pPageLookup->GCPhysSpa;
-#ifdef RT_STRICT
+
     /* Paranoia: Ensure offset bits are 0. */
-    {
-        uint64_t const fOffMaskPrev = X86_GET_PAGE_OFFSET_MASK(pPageLookupPrev->cShift);
-        uint64_t const fOffMask     = X86_GET_PAGE_OFFSET_MASK(pPageLookup->cShift);
-        Assert(!(GCPhysPrev & fOffMaskPrev));
-        Assert(!(GCPhys     & fOffMask));
-    }
-#endif
+    Assert(!(GCPhysPrev & X86_GET_PAGE_OFFSET_MASK(pPageLookupPrev->cShift)));
+    Assert(!(GCPhys     & X86_GET_PAGE_OFFSET_MASK(pPageLookup->cShift)));
+
+    /* Paranoia: Ensure permissions are identical. */
+    Assert(pPageLookupPrev->fPerm  == pPageLookup->fPerm);
+
     return GCPhysPrev + cbPrev == GCPhys;
 }
 
 
+#ifdef IOMMU_WITH_DTE_CACHE
 /**
  * Gets the basic I/O device flags for the given device table entry.
  *
@@ -859,6 +866,7 @@ static uint16_t iommuAmdGetBasicDevFlags(PCDTE_T pDte)
     }
     return fFlags;
 }
+#endif
 
 
 /**
@@ -1080,7 +1088,7 @@ static DECLCALLBACK(int) iommuAmdR3IotlbEntryInfo(PAVLU64NODECORE pNode, void *p
     AssertPtr(pArgs);
     AssertPtr(pArgs->pIommuR3);
     AssertPtr(pArgs->pHlp);
-    //Assert(pArgs->pIommuCC->u32Magic == IOMMU_MAGIC);
+    //Assert(pArgs->pIommuR3->u32Magic == IOMMU_MAGIC);
 
     uint16_t const idDomain = IOMMU_IOTLB_KEY_GET_DOMAIN_ID(pNode->Key);
     if (idDomain == pArgs->idDomain)
@@ -1131,6 +1139,26 @@ static DECLCALLBACK(int) iommuAmdIotlbEntryRemoveDomainId(PAVLU64NODECORE pNode,
         pIotlbe->fEvictPending = true;
         iommuAmdIotlbEntryMoveToLru(pArgs->pIommuR3, (PIOTLBE)pNode);
     }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Destroys an IOTLB entry that's in the tree.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pNode       Pointer to an IOTLBE.
+ * @param   pvUser      Opaque data. Currently not used, will be NULL.
+ */
+static DECLCALLBACK(int) iommuAmdIotlbEntryDestroy(PAVLU64NODECORE pNode, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    PIOTLBE pIotlbe = (PIOTLBE)pNode;
+    Assert(pIotlbe);
+    pIotlbe->NdLru.pNext = NULL;
+    pIotlbe->NdLru.pPrev = NULL;
+    RT_ZERO(pIotlbe->PageLookup);
+    pIotlbe->fEvictPending = false;
     return VINF_SUCCESS;
 }
 
@@ -1305,12 +1333,11 @@ static void iommuAmdIotlbRemoveAll(PPDMDEVINS pDevIns)
 
     if (pThisR3->cCachedIotlbes > 0)
     {
-        size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
-        RT_BZERO(pThisR3->paIotlbes, cbIotlbes);
+        RTAvlU64Destroy(&pThisR3->TreeIotlbe, iommuAmdIotlbEntryDestroy, NULL /* pvParam */);
+        RTListInit(&pThisR3->LstLruIotlbe);
         pThisR3->idxUnusedIotlbe = 0;
         pThisR3->cCachedIotlbes  = 0;
         STAM_COUNTER_RESET(&pThis->StatIotlbeCached);
-        RTListInit(&pThisR3->LstLruIotlbe);
     }
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
@@ -1408,6 +1435,9 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_
 
     size_t cPages = cbIova / X86_PAGE_4K_SIZE;
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
+
+    Assert((cbIova % X86_PAGE_4K_SIZE) == 0);
+    Assert(cPages > 0);
 
     IOMMU_CACHE_LOCK(pDevIns, pThis);
     /** @todo Re-check DTE cache? */
@@ -1555,6 +1585,7 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t 
 
     int rc = VINF_SUCCESS;
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(idDevice != pThis->uPciAddress);
     IOMMU_CACHE_LOCK(pDevIns, pThis);
 
     /* Find an existing entry or get an unused slot. */
@@ -2451,7 +2482,7 @@ static VBOXSTRICTRC iommuAmdEvtLogHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     /* Update the register. */
     pThis->EvtLogHeadPtr.au32[0] = offBuf;
 
-    LogFlowFunc(("Set EvtLogHeadPtr to %#RX32\n", offBuf));
+    Log4Func(("Set EvtLogHeadPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -2491,7 +2522,7 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     /* Update the register. */
     pThis->EvtLogTailPtr.au32[0] = offBuf;
 
-    LogFlowFunc(("Set EvtLogTailPtr to %#RX32\n", offBuf));
+    Log4Func(("Set EvtLogTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -3317,6 +3348,8 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_IO_PAGE_FAULT_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIoPageFault;
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_COUNTER_INC(&pThis->StatIopfs);
 
 #ifdef IOMMU_WITH_DTE_CACHE
 # define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  iommuAmdDteCacheAddFlags((a_pDevIns), (a_DevId), \
@@ -3644,28 +3677,24 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t idDevice, uin
 static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t fPerm, uint16_t idDevice, PCDTE_T pDte,
                                    IOMMUOP enmOp, PIOPAGELOOKUP pPageLookup)
 {
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     Assert(pDte->n.u1Valid);
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
 
     /* The virtual address bits indexing table. */
     static uint8_t const  s_acIovaLevelShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
-    static uint64_t const s_auIovaLevelMasks[]  = { UINT64_C(0x0000000000000000),
-                                                    UINT64_C(0x00000000001ff000),
-                                                    UINT64_C(0x000000003fe00000),
-                                                    UINT64_C(0x0000007fc0000000),
-                                                    UINT64_C(0x0000ff8000000000),
-                                                    UINT64_C(0x01ff000000000000),
-                                                    UINT64_C(0xfe00000000000000),
-                                                    UINT64_C(0x0000000000000000) };
-    AssertCompile(RT_ELEMENTS(s_acIovaLevelShifts) == RT_ELEMENTS(s_auIovaLevelMasks));
     AssertCompile(RT_ELEMENTS(s_acIovaLevelShifts) > IOMMU_MAX_HOST_PT_LEVEL);
 
-    /* Traverse the I/O page table starting with the page directory in the DTE. */
+    /*
+     * Traverse the I/O page table starting with the page directory in the DTE.
+     *
+     * The Valid (Present bit), Translation Valid and Mode (Next-Level bits) in
+     * the DTE have been validated already, see iommuAmdPreTranslateChecks.
+     */
     IOPTENTITY_T PtEntity;
     PtEntity.u64 = pDte->au64[0];
     for (;;)
     {
-        /* Figure out the system physical address of the page table at the current level. */
         uint8_t const uLevel = PtEntity.n.u3NextLevel;
 
         /* Read the page table entity at the current level. */
@@ -3675,7 +3704,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             uint16_t const idxPte         = (uIova >> s_acIovaLevelShifts[uLevel]) & UINT64_C(0x1ff);
             uint64_t const offPte         = idxPte << 3;
             RTGCPHYS const GCPhysPtEntity = (PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK) + offPte;
-            int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
+            int rc = PDMDevHlpPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
             if (RT_FAILURE(rc))
             {
                 LogFunc(("Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
@@ -3700,8 +3729,40 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
+        /* Validate the encoding of the next level. */
+        uint8_t const uNextLevel = PtEntity.n.u3NextLevel;
+#if IOMMU_MAX_HOST_PT_LEVEL < 6
+        if (uNextLevel <= IOMMU_MAX_HOST_PT_LEVEL)
+        { /* likely */ }
+        else
+        {
+            LogFunc(("Next-level/paging-mode field of the paging entity invalid. uNextLevel=%#x -> IOPF\n", uNextLevel));
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, true /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                                 kIoPageFaultType_PteInvalidLvlEncoding);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+#endif
+
+        /* Check reserved bits. */
+        uint64_t const fRsvdMask = uNextLevel == 0 || uNextLevel == 7 ? IOMMU_PTE_RSVD_MASK : IOMMU_PDE_RSVD_MASK;
+        if (!(PtEntity.u64 & fRsvdMask))
+        { /* likely */ }
+        else
+        {
+            LogFunc(("Page table entity (%#RX64 level=%u) reserved bits set -> IOPF\n", PtEntity.u64, uNextLevel));
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, true /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                                 kIoPageFaultType_PteRsvdNotZero);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+
         /* Check permission bits. */
-        uint8_t const fPtePerm  = (PtEntity.u64 >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+        uint8_t const fPtePerm = (PtEntity.u64 >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
         if ((fPerm & fPtePerm) == fPerm)
         { /* likely */ }
         else
@@ -3715,36 +3776,37 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             return VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
 
-        /* If this is a PTE, we're at the final level and we're done. */
-        uint8_t const uNextLevel = PtEntity.n.u3NextLevel;
+        /* If the next level is 0 or 7, this is the final level PTE. */
         if (uNextLevel == 0)
         {
-            /* The page size of the translation is the default (4K). */
-            pPageLookup->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
-            pPageLookup->cShift    = X86_PAGE_4K_SHIFT;
+            /* The page size of the translation is the default size for the level. */
+            uint8_t const  cShift    = s_acIovaLevelShifts[uLevel];
+            RTGCPHYS const GCPhysPte = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
+            pPageLookup->GCPhysSpa = GCPhysPte & X86_GET_PAGE_BASE_MASK(cShift);
+            pPageLookup->cShift    = cShift;
             pPageLookup->fPerm     = fPtePerm;
             return VINF_SUCCESS;
         }
         if (uNextLevel == 7)
         {
             /* The default page size of the translation is overridden. */
-            RTGCPHYS const GCPhysPte = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
             uint8_t        cShift    = X86_PAGE_4K_SHIFT;
+            RTGCPHYS const GCPhysPte = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
             while (GCPhysPte & RT_BIT_64(cShift++))
                 ;
 
             /* The page size must be larger than the default size and lower than the default size of the higher level. */
-            Assert(uLevel < IOMMU_MAX_HOST_PT_LEVEL);   /* PTE at level 6 handled outside the loop, uLevel should be <= 5. */
             if (   cShift > s_acIovaLevelShifts[uLevel]
                 && cShift < s_acIovaLevelShifts[uLevel + 1])
             {
-                pPageLookup->GCPhysSpa = GCPhysPte;
+                pPageLookup->GCPhysSpa = GCPhysPte & X86_GET_PAGE_BASE_MASK(cShift);
                 pPageLookup->cShift    = cShift;
                 pPageLookup->fPerm     = fPtePerm;
+                STAM_COUNTER_INC(&pThis->StatNonStdPageSize);
                 return VINF_SUCCESS;
             }
 
-            LogFunc(("Page size invalid cShift=%#x -> IOPF\n", cShift));
+            LogFunc(("Page size invalid cShift=%u -> IOPF\n", cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3752,24 +3814,6 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
                                                  kIoPageFaultType_PteInvalidPageSize);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
-
-        /* Validate the next level encoding of the PDE. */
-#if IOMMU_MAX_HOST_PT_LEVEL < 6
-        if (uNextLevel <= IOMMU_MAX_HOST_PT_LEVEL)
-        { /* likely */ }
-        else
-        {
-            LogFunc(("Next level of PDE invalid uNextLevel=%#x -> IOPF\n", uNextLevel));
-            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
-                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
-                                                 kIoPageFaultType_PteInvalidLvlEncoding);
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-        }
-#else
-        Assert(uNextLevel <= IOMMU_MAX_HOST_PT_LEVEL);
-#endif
 
         /* Validate level transition. */
         if (uNextLevel < uLevel)
@@ -3785,16 +3829,13 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
-        /* Ensure IOVA bits of skipped levels are zero. */
-        Assert(uLevel > 0);
-        uint64_t uIovaSkipMask = 0;
-        for (unsigned idxLevel = uLevel - 1; idxLevel > uNextLevel; idxLevel--)
-            uIovaSkipMask |= s_auIovaLevelMasks[idxLevel];
-        if (!(uIova & uIovaSkipMask))
+        /* Ensure IOVA bits of skipped levels (if any) are zero. */
+        uint64_t const fIovaSkipMask = IOMMU_GET_MAX_VALID_IOVA(uLevel - 1) - IOMMU_GET_MAX_VALID_IOVA(uNextLevel);
+        if (!(uIova & fIovaSkipMask))
         { /* likely */ }
         else
         {
-            LogFunc(("IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF\n", uIova, uIovaSkipMask));
+            LogFunc(("IOVA of skipped levels are not zero. uIova=%#RX64 fSkipMask=%#RX64 -> IOPF\n", uIova, fIovaSkipMask));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3803,7 +3844,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
-        /* Continue with traversing the page directory at this level. */
+        /* Traverse to the next level. */
     }
 }
 
@@ -3885,7 +3926,8 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             {
                 uint64_t const offMask = X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift);
                 uint64_t const offSpa  = uIova & offMask;
-                Assert(!(PageLookup.GCPhysSpa & offMask));
+                AssertMsg(!(PageLookup.GCPhysSpa & offMask), ("GCPhysSpa=%#RX64 offMask=%#RX64\n",
+                                                              PageLookup.GCPhysSpa, offMask));
                 GCPhysSpa = PageLookup.GCPhysSpa | offSpa;
             }
             /* Check if addresses translated so far result in a physically contiguous region. */
@@ -3907,7 +3949,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             {
                 cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
                 uIovaPage   += cbPage;              /* Update address of the next access. */
-                offIova      = 0;                   /* After first page, all pages are accessed from off 0. */
+                offIova      = 0;                   /* After first page, remaining pages are accessed from offset 0. */
             }
             else
             {
@@ -3924,7 +3966,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
     pAddrOut->cb    = cbIova - cbRemaining;     /* Update the size of the contiguous memory region. */
     pAddrOut->fPerm = PageLookupPrev.fPerm;     /* Update the allowed permissions for this access. */
     if (pcbPages)
-        *pcbPages = cbPages;                    /* Update the size of the pages accessed. */
+        *pcbPages = cbPages;                    /* Update the size (in bytes) of the pages accessed. */
     return rc;
 }
 
@@ -4748,6 +4790,10 @@ static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice,
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
+    /* If this MSI was generated by the IOMMU itself, it's not subject to remapping, see @bugref{9654#c104}. */
+    if (idDevice == pThis->uPciAddress)
+        return VERR_IOMMU_CANNOT_CALL_SELF;
+
     /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrlUnlocked(pThis);
     if (Ctrl.n.u1IommuEn)
@@ -5192,7 +5238,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
 static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pThread);
-    LogFlowFunc(("\n"));
+    Log4Func(("\n"));
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
@@ -6786,14 +6832,25 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    RT_NOREF(pCfg);
 
-    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    PIOMMU        pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUR3      pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
+
     pThis->u32Magic = IOMMU_MAGIC;
     pThisR3->pDevInsR3 = pDevIns;
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
+
+    /*
+     * Validate and read the configuration.
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "PCIAddress", "");
+    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "PCIAddress", &pThis->uPciAddress, NIL_PCIBDF);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query 32-bit integer \"PCIAddress\""));
+    if (!PCIBDF_IS_VALID(pThis->uPciAddress))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed \"PCIAddress\" of the AMD IOMMU cannot be invalid"));
 
     /*
      * Register the IOMMU with PDM.
@@ -6805,7 +6862,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     IommuReg.pfnMemBulkAccess = iommuAmdMemBulkAccess;
     IommuReg.pfnMsiRemap      = iommuAmdMsiRemap;
     IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
-    int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisR3->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
+    rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisR3->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
     if (pThisR3->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
@@ -7024,6 +7081,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntrCacheHit, STAMTYPE_COUNTER, "Interrupt/CacheHit", STAMUNIT_OCCURENCES, "Number of cache hits.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntrCacheMiss, STAMTYPE_COUNTER, "Interrupt/CacheMiss", STAMUNIT_OCCURENCES, "Number of cache misses.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatNonStdPageSize, STAMTYPE_COUNTER, "MemAccess/NonStdPageSize", STAMUNIT_OCCURENCES, "Number of non-standard page size translations.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIopfs, STAMTYPE_COUNTER, "MemAccess/IOPFs", STAMUNIT_OCCURENCES, "Number of I/O page faults.");
 # endif
 
     /*

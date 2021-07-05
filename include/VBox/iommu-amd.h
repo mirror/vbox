@@ -667,7 +667,11 @@ typedef IOPTENTITY_T *PIOPTENTITY_T;
 /** Pointer to a const IOPT_ENTITY_T struct. */
 typedef IOPTENTITY_T const *PCIOPTENTITY_T;
 /** Mask of the address field. */
-#define IOMMU_PTENTITY_ADDR_MASK     UINT64_C(0x000ffffffffff000)
+#define IOMMU_PTENTITY_ADDR_MASK                UINT64_C(0x000ffffffffff000)
+/** Reserved bits in the PDE (bits 60:52). */
+#define IOMMU_PDE_RSVD_MASK                     UINT64_C(0x1ff0000000000000)
+/** Reserved bits in the PTE (bits 58:52 - U, FC bits not reserved). */
+#define IOMMU_PTE_RSVD_MASK                     UINT64_C(0x07f0000000000000)
 
 /**
  * Interrupt Remapping Table Entry (IRTE) - Basic Format.

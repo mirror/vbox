@@ -1603,6 +1603,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                         H();
 
+                /* The AMD IOMMU device needs to know which PCI slot it's in, see @bugref{9654#c104}. */
+                {
+                    PCIBusAddress Address;
+                    if (pBusMgr->findPCIAddress("iommu-amd", 0, Address))
+                    {
+                        uint32_t const u32IommuAddress = (Address.miDevice << 16) | Address.miFn;
+                        InsertConfigInteger(pCfg, "PCIAddress", u32IommuAddress);
+                    }
+                    else
+                        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                            N_("Failed to find PCI address of the assigned IOMMU device!"));
+                }
+
                 PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
