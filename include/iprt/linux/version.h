@@ -153,9 +153,9 @@
 /** @def RTLNX_UBUNTU_ABI_MAX
  * Require Ubuntu release ABI to be older than specified version.
  *
- * The kernel version should exactly match the specified @a_iMajor, @a_iMinor
- * and @a a_iPatch. Number @a a_iAbi should be less than the current ABI
- * version.
+ * The kernel version should exactly match the specified @a a_iMajor, @a
+ * a_iMinor and @a a_iPatch.  The @a a_iAbi number should be less than the
+ * current ABI version.
  *
  * @param a_iMajor      The major kernel version number.
  * @param a_iMinor      The minor kernel version number.
