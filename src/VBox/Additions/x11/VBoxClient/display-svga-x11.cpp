@@ -765,10 +765,10 @@ static DECLCALLBACK(void) vbclSVGAStop(void)
 {
     int rc;
 
-    rc = stopX11MonitorThread(); /** @todo r=andy We ignore rc!? */
+    rc = stopX11MonitorThread();
     if (RT_FAILURE(rc))
     {
-        VBClLogFatalError("cannot stop X11 monitor thread (%Rrc)\n", rc);
+        VBClLogError("cannot stop X11 monitor thread (%Rrc)\n", rc);
         return;
     }
 
