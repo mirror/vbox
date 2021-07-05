@@ -44,7 +44,6 @@ signals:
     void sigUserNameChanged(const QString &strUserName);
     void sigPasswordChanged(const QString &strPassword);
 
-
 public:
 
     UIUserNamePasswordEditor(QWidget *pParent = 0);

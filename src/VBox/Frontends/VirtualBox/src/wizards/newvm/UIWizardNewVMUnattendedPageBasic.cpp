@@ -39,65 +39,6 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 
-// UIWizardNewVMUnattendedPage::UIWizardNewVMUnattendedPage()
-
-// {
-// }
-
-// QString UIWizardNewVMUnattendedPage::userName() const
-// {
-//     if (m_pUserNamePasswordEditor)
-//         return m_pUserNamePasswordEditor->userName();
-//     return QString();
-// }
-
-// void UIWizardNewVMUnattendedPage::setUserName(const QString &strName)
-// {
-//     if (m_pUserNamePasswordEditor)
-//         m_pUserNamePasswordEditor->setUserName(strName);
-// }
-
-// QString UIWizardNewVMUnattendedPage::password() const
-// {
-//     if (m_pUserNamePasswordEditor)
-//         return m_pUserNamePasswordEditor->password();
-//     return QString();
-// }
-
-// void UIWizardNewVMUnattendedPage::setPassword(const QString &strPassword)
-// {
-//     if (m_pUserNamePasswordEditor)
-//         return m_pUserNamePasswordEditor->setPassword(strPassword);
-// }
-
-// QString UIWizardNewVMUnattendedPage::hostname() const
-// {
-//     if (m_pHostnameLineEdit)
-//         return m_pHostnameLineEdit->text();
-//     return QString();
-// }
-
-// void UIWizardNewVMUnattendedPage::setHostname(const QString &strHostName)
-// {
-//     if (m_pHostnameLineEdit)
-//         return m_pHostnameLineEdit->setText(strHostName);
-// }
-
-
-
-// QString UIWizardNewVMUnattendedPage::guestAdditionsISOPath() const
-// {
-//     if (!m_pGAISOFilePathSelector)
-//         return QString();
-//     return m_pGAISOFilePathSelector->path();
-// }
-
-// void UIWizardNewVMUnattendedPage::setGuestAdditionsISOPath(const QString &strISOPath)
-// {
-//     if (m_pGAISOFilePathSelector)
-//         m_pGAISOFilePathSelector->setPath(strISOPath);
-// }
-
 // QString UIWizardNewVMUnattendedPage::productKey() const
 // {
 //     if (!m_pProductKeyLineEdit || !m_pProductKeyLineEdit->hasAcceptableInput())
@@ -165,15 +106,27 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
 
 void UIWizardNewVMUnattendedPageBasic::createConnections()
 {
-    // if (m_pUserNamePasswordEditor)
-    //     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-    //             this, &UIWizardNewVMUnattendedPageBasic::completeChanged);
+    if (m_pUserNamePasswordEditor)
+    {
+        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigPasswordChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltPasswordChanged);
+        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigUserNameChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltUserNameChanged);
+    }
+
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
                 this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
+    if (m_pHostnameLineEdit)
+        connect(m_pHostnameLineEdit, &QLineEdit::textChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltHostnameChanged);
+    if (m_pProductKeyLineEdit)
+        connect(m_pProductKeyLineEdit, &QLineEdit::textChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged);
+
 }
 
 
@@ -249,7 +202,22 @@ void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
-    Q_UNUSED(strPath);
+    if (m_pWizard)
+        m_pWizard->setGuestAdditionsISOPath(strPath);
+    emit completeChanged();
+}
+
+void UIWizardNewVMUnattendedPageBasic::sltPasswordChanged(const QString &strPassword)
+{
+    if (m_pWizard)
+        m_pWizard->setPassword(strPassword);
+    emit completeChanged();
+}
+
+void UIWizardNewVMUnattendedPageBasic::sltUserNameChanged(const QString &strUserName)
+{
+    if (m_pWizard)
+        m_pWizard->setUserName(strUserName);
     emit completeChanged();
 }
 
@@ -258,6 +226,18 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
     if (!m_pWizard || !m_pWizard->isUnattendedEnabled() || !m_pWizard->isGuestOSTypeWindows())
         return false;
     return true;
+}
+
+void UIWizardNewVMUnattendedPageBasic::sltHostnameChanged(const QString &strHostname)
+{
+    if (m_pWizard)
+        m_pWizard->setHostname(strHostname);
+}
+
+void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
+{
+    if (m_pWizard)
+        m_pWizard->setProductKey(strProductKey);
 }
 
 QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()

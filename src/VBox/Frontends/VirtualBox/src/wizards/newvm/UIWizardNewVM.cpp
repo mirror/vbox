@@ -753,24 +753,54 @@ void UIWizardNewVM::setPassword(const QString &strPassword)
     m_strPassword = strPassword;
 }
 
+const QString &UIWizardNewVM::guestAdditionsISOPath() const
+{
+    return m_strGuestAdditionsISOPath;
+}
+
+void UIWizardNewVM::setGuestAdditionsISOPath(const QString &strGAISOPath)
+{
+    m_strGuestAdditionsISOPath = strGAISOPath;
+}
+
+const QString &UIWizardNewVM::hostname() const
+{
+    return m_strHostname;
+}
+
+void UIWizardNewVM::setHostname(const QString &strHostname)
+{
+    m_strHostname = strHostname;
+}
+
+const QString &UIWizardNewVM::productKey() const
+{
+    return m_strProductKey;
+}
+
+void UIWizardNewVM::setProductKey(const QString &productKey)
+{
+    m_strProductKey = productKey;
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     m_unattendedInstallData.m_strISOPath = m_strISOFilePath;
-    // m_unattendedInstallData.m_strUserName = getStringFieldValue("userName");
-    // m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
-    // m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
+    m_unattendedInstallData.m_strUserName = m_strUserName;
+    m_unattendedInstallData.m_strPassword = m_strPassword;
+    m_unattendedInstallData.m_strHostname = m_strHostname;
+
     m_unattendedInstallData.m_strDetectedOSTypeId = m_strDetectedOSTypeId;
     // // m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
     // // m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
     // // m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
     // // m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
-    // m_unattendedInstallData.m_strProductKey = getStringFieldValue("productKey");
-    // m_unattendedInstallData.m_strGuestAdditionsISOPath = getStringFieldValue("guestAdditionsISOPath");
+    m_unattendedInstallData.m_strProductKey = m_strProductKey;
+    m_unattendedInstallData.m_strGuestAdditionsISOPath = m_strGuestAdditionsISOPath;
 
     // m_unattendedInstallData.m_fUnattendedEnabled = getBoolFieldValue("isUnattendedEnabled");
     // m_unattendedInstallData.m_fStartHeadless = getBoolFieldValue("startHeadless");
-    // m_unattendedInstallData.m_fInstallGuestAdditions = getBoolFieldValue("installGuestAdditions");
-
+    m_unattendedInstallData.m_fInstallGuestAdditions = m_fInstallGuestAdditions;
     // m_unattendedInstallData.m_uMachineUid = createdMachineId();
 
     return m_unattendedInstallData;
