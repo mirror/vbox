@@ -712,7 +712,7 @@ typedef FNIOPAGELOOKUP *PFNIOPAGELOOKUP;
 static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
 #endif
 
-#if defined(IN_RING3) || defined(LOG_ENABLED)
+#if (defined(IN_RING3) && defined(IOMMU_WITH_IOTLBE_CACHE)) || defined(LOG_ENABLED)
 /**
  * The IOMMU I/O permission names.
  */
