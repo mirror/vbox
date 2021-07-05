@@ -25,7 +25,7 @@
 #  NOSUBVER=1       disable generation of the sub-version field (which is
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
-#                   maybe VirtualBox.chm from $(vboxroot)/prebuild
+#                   maybe VirtualBox.qch and VirtualBox.qhc from $(vboxroot)/prebuild
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
 #  NOSDL=1          don't build VBoxSDL
@@ -35,15 +35,16 @@
 #  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
-#  STAGEDCHM=<path> use VirtualBox*.chm from this directory
+#  STAGEDQHELP=<path> use VirtualBox*.qch and VirtualBox*.qhc from this directory
 #  PKGDIR=<path>    where to store the final package(s)
 #  svn_revision=xxx do not depend on subversion being available, but use this
 #                   hard-coded revision number instead
 #
 # NODOCS will be set if UserManual*.pdf is placed in $(vboxroot)/prebuild.
 # STAGEDISO will be set if VBoxGuestAdditions.iso is placed there.
-# STAGEDCHM will be set if VirtualBox*.chm is placed there.
-# VirtualBox*.chm is used if it is provided, but never attempted to be built.
+# STAGEDQHELP will be set if VirtualBox*.qch and VirtualBox*.qhc is placed there.
+# VirtualBox*.qch and VirtualBox*.qhc are used if they are provided, but never
+# attempted to be built.
 #
 # Wine will not be required if either NODOCS or STAGEDISO are set.
 
@@ -70,7 +71,7 @@ NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
 NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),1,)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
-STAGEDCHM ?= $(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),$(vboxroot)/prebuild,)
+STAGEDQHELP ?= $(if $(and $(wildcard $(vboxroot)/prebuild/VirtualBox*.qch),$(wildcard $(vboxroot)/prebuild/VirtualBox*.qhc)),$(vboxroot)/prebuild,)
 NOWINE   := $(if $(NODOCS),1,$(if $(STAGEDISO),1,$(ose)))
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -182,7 +183,7 @@ bld_flags := AUTOCFG=$(bldbase)/AutoConfig.kmk \
 		$(firstword $(wildcard /usr/local/bin/python2.7) $(wildcard /usr/bin/python2.7) \
 		$(wildcard /usr/bin/python2.6) $(wildcard /usr/bin/python2) $(wildcard /usr/bin/python))),) \
 	     $(doc_dir) \
-	     $(if $(STAGEDCHM),VBOX_WITH_DOCS_CHM=1,VBOX_WITH_KCHMVIEWER=) \
+	     $(if $(STAGEDQHELP),VBOX_WITH_DOCS_QHELP=1,) \
 	     VBOX_PACKAGE_DIST=$(rpmdist) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
@@ -198,7 +199,7 @@ $(bldbase)/configure-stamp:
 $(bldbase)/build-stamp: $(bldbase)/configure-stamp
 	. $(bldbase)/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
-	$(if $(STAGEDCHM),cp $(STAGEDCHM)/VirtualBox*.chm $(builddir)/bin,)
+	$(if $(STAGEDQHELP),cp $(STAGEDQHELP)/VirtualBox*.qch $(STAGEDQHELP)/VirtualBox*.qhc $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
@@ -238,7 +239,7 @@ binary: $(bldbase)/build-stamp
 	    -e 's|%BUILDROOT%|$(bldbase)/buildroot|g' \
 	    -e 's|%OSE%|$(if $(ose),is_ose,not_ose)|g' \
 	    -e 's|%SPEC%|$(rpmspec)|g' \
-	    -e 's|%CHM%|$(if $(STAGEDCHM),with_chm,without_chm)|g' \
+	    -e 's|%QHELP%|$(if $(STAGEDQHELP),with_qhelp,without_qhelp)|g' \
 	    -e 's|%PYTHON%|$(if $(filter el5,$(rpmrel)),without_python,with_python)|g' \
 	    -e 's|%MACROSPYTHON%|$(if $(wildcard /usr/lib/rpm/macros.d/macros.python3),,$(if $(wildcard /usr/lib/rpm/macros.python),%include /usr/lib/rpm/macros.python,))|g' \
 	    -e 's|%INSTMOD%|$(instmod)|g' \

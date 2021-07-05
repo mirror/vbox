@@ -28,7 +28,7 @@ export DH_COMPAT=5
 #  NOSUBVER=1       disable generation of the sub-version field (which is
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
-#                   maybe VirtualBox.chm from $(vboxroot)/prebuild
+#                   maybe VirtualBox.qch and VirtualBox.qhc from $(vboxroot)/prebuild
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
 #  NOSDL=1          don't build VBoxSDL
@@ -37,13 +37,14 @@ export DH_COMPAT=5
 #  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
-#  STAGEDCHM=<path> use VirtualBox*.chm from this directory
+#  STAGEDQHELP=<path> use VirtualBox*.qch and VirtualBox*.qhc from this directory
 #  PKGDIR=<path>    where to store the final package(s)
 #
 # NODOCS will be set if UserManual*.pdf is placed in $(vboxroot)/prebuild.
 # STAGEDISO will be set if VBoxGuestAdditions.iso is placed there.
-# STAGEDCHM will be set if VirtualBox*.chm is placed there.
-# VirtualBox*.chm is used if it is provided, but never attempted to be built.
+# STAGEDQHELP will be set if VirtualBox*.qch and VirtualBox*.qhc is placed there.
+# VirtualBox*.qch and VirtualBox*.qhc are used if they are provided, but never
+# attempted to be built.
 #
 # Wine will not be required if either NODOCS or STAGEDISO are set.
 
@@ -65,7 +66,7 @@ NOSDL    ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
 NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),1,)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
-STAGEDCHM ?= $(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),$(vboxroot)/prebuild,)
+STAGEDQHELP ?= $(if $(and $(wildcard $(vboxroot)/prebuild/VirtualBox*.qch),$(wildcard $(vboxroot)/prebuild/VirtualBox*.qhc)),$(vboxroot)/prebuild,)
 NOWINE   := $(if $(NODOCS),1,$(if $(STAGEDISO),1,$(ose)))
 PYTHON   := $(firstword $(shell which python) $(shell which python3))
 
@@ -101,7 +102,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_WITH_VMSVGA3D=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
-	     $(if $(STAGEDCHM),VBOX_WITH_DOCS_CHM=1,VBOX_WITH_KCHMVIEWER=) \
+	     $(if $(STAGEDQHELP),VBOX_WITH_DOCS_QHELP=1,) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
@@ -118,7 +119,7 @@ debian/build-stamp $(verfile):
 	dh_testdir
 	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
-	$(if $(STAGEDCHM),cp $(STAGEDCHM)/VirtualBox*.chm $(builddir)/bin,)
+	$(if $(STAGEDQHELP),cp $(STAGEDQHELP)/VirtualBox*.qch $(STAGEDQHELP)/VirtualBox*.qhc $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
@@ -235,9 +236,9 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    done)
 ifeq ($(ose),)
 	dh_installdocs \
-	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
-	    $(addprefix $(archdir)/, LICENSE)
-	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm \
+	    $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.qch VirtualBox*.qhc \
+	    LICENSE)
+	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.qch VirtualBox*.qhc \
 	    LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
@@ -306,7 +307,7 @@ ifeq ($(DEBUG),)
 	mv $(prefix)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
 	$(firstword $(shell which dh_python2) $(shell which dh_python3))
-	dh_compress -X.pdf -X.chm -X LICENSE -X.py
+	dh_compress -X.pdf -X LICENSE -X.py
 	dh_fixperms
 	dh_makeshlibs
 	dh_installdeb
