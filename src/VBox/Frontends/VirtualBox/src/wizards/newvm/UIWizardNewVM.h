@@ -70,18 +70,12 @@ class UIWizardNewVM : public UINativeWizard
 
 public:
 
-
-    /** Constructor: */
     UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(), WizardMode enmMode = WizardMode_Auto);
-
-    /** Prepare routine. */
-    void prepare();
-
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const;
+    bool isUnattendedEnabled() const;
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
-    bool isUnattendedEnabled() const;
     bool isGuestOSTypeWindows() const;
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
@@ -110,6 +104,12 @@ public:
     bool installGuestAdditions() const;
     void setInstallGuestAdditions(bool fInstallGA);
 
+    bool startHeadless() const;
+    void setStartHeadless(bool fStartHeadless);
+
+    bool skipUnattendedInstall() const;
+    void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
+
     const QString &ISOFilePath() const;
     void setISOFilePath(const QString &strISOFilePath);
 
@@ -131,7 +131,7 @@ public:
 protected:
 
     /** Populates pages. */
-    virtual void populatePages() /* final */;
+    virtual void populatePages() /* final override */;
 
     bool createVM();
     bool createVirtualDisk();
@@ -148,11 +148,7 @@ private slots:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
-
-    /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
 
@@ -192,6 +188,8 @@ private:
 
     /** True if guest additions are to be installed during unattended install. */
     bool m_fInstallGuestAdditions;
+    bool m_fStartHeadless;
+    bool m_fSkipUnattendedInstall;
 
     QString m_strUserName;
     QString m_strPassword;

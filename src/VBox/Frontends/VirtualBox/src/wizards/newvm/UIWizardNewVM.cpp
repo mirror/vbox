@@ -61,6 +61,8 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_iSASCount(0)
     , m_iUSBCount(0)
     , m_fInstallGuestAdditions(false)
+    , m_fStartHeadless(false)
+    , m_fSkipUnattendedInstall(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -73,37 +75,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     qRegisterMetaType<CGuestOSType>();
 
     connect(this, &UIWizardNewVM::rejected, this, &UIWizardNewVM::sltHandleWizardCancel);
-}
-
-void UIWizardNewVM::prepare()
-{
-    // enableHelpButton("gui-createvm");
-    // /* Create corresponding pages: */
-    // switch (mode())
-    // {
-    //     case WizardMode_Basic:
-    //     {
-    //         // setPage(Page1, new UIWizardNewVMPageNameOSType(m_strMachineGroup));
-    //         // setPage(Page2, new UIWizardNewVMPageUnattended);
-    //         // setPage(Page3, new UIWizardNewVMPageHardware);
-    //         // setPage(Page4, new UIWizardNewVMPageDisk);
-
-    //         // setStartId(Page1);
-    //         break;
-    //     }
-    //     case WizardMode_Expert:
-    //     {
-    //         setPage(PageExpert, new UIWizardNewVMPageExpert(m_strMachineGroup));
-    //         break;
-    //     }
-    //     default:
-    //     {
-    //         AssertMsgFailed(("Invalid mode: %d", mode()));
-    //         break;
-    //     }
-    // }
-    // /* Call to base-class: */
-    // UIWizard::prepare();
 }
 
 void UIWizardNewVM::populatePages()
@@ -524,26 +495,9 @@ void UIWizardNewVM::sltHandleWizardCancel()
     UIWizardNewVMNameOSTypePage::cleanupMachineFolder(this, true);
 }
 
-// void UIWizardNewVM::sltHandleDetectedOSTypeChange()
-// {
-//     // UIWizardNewVMPageNameOSType *pPage = qobject_cast<UIWizardNewVMPageNameOSType*>(page(Page1));
-//     // if (!pPage)
-//     //     return;
-//     // pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));
-// }
-
-void UIWizardNewVM::sltCustomButtonClicked(int iId)
-{
-    Q_UNUSED(iId);
-    // UIWizard::sltCustomButtonClicked(iId);
-    // setFieldsFromDefaultUnttendedInstallData();
-}
-
 void UIWizardNewVM::retranslateUi()
 {
-    /* Call to base-class: */
     UINativeWizard::retranslateUi();
-
     setWindowTitle(tr("Create Virtual Machine"));
     // setButtonText(QWizard::FinishButton, tr("Create"));
 }
@@ -723,6 +677,26 @@ void UIWizardNewVM::setInstallGuestAdditions(bool fInstallGA)
     m_fInstallGuestAdditions = fInstallGA;
 }
 
+bool UIWizardNewVM::startHeadless() const
+{
+    return m_fStartHeadless;
+}
+
+void UIWizardNewVM::setStartHeadless(bool fStartHeadless)
+{
+    m_fStartHeadless = fStartHeadless;
+}
+
+bool UIWizardNewVM::skipUnattendedInstall() const
+{
+    return m_fSkipUnattendedInstall;
+}
+
+void UIWizardNewVM::setSkipUnattendedInstall(bool fSkipUnattendedInstall)
+{
+    m_fSkipUnattendedInstall = fSkipUnattendedInstall;
+}
+
 const QString &UIWizardNewVM::ISOFilePath() const
 {
     return m_strISOFilePath;
@@ -798,8 +772,8 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     m_unattendedInstallData.m_strProductKey = m_strProductKey;
     m_unattendedInstallData.m_strGuestAdditionsISOPath = m_strGuestAdditionsISOPath;
 
-    // m_unattendedInstallData.m_fUnattendedEnabled = getBoolFieldValue("isUnattendedEnabled");
-    // m_unattendedInstallData.m_fStartHeadless = getBoolFieldValue("startHeadless");
+    m_unattendedInstallData.m_fUnattendedEnabled = isUnattendedEnabled();
+    m_unattendedInstallData.m_fStartHeadless = m_fStartHeadless;
     m_unattendedInstallData.m_fInstallGuestAdditions = m_fInstallGuestAdditions;
     // m_unattendedInstallData.m_uMachineUid = createdMachineId();
 
@@ -808,10 +782,10 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 
 bool UIWizardNewVM::isUnattendedEnabled() const
 {
-    // QVariant fieldValue = field("isUnattendedEnabled");
-    // if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
-    //     return false;
-    // return fieldValue.toBool();
+    if (!m_fSkipUnattendedInstall)
+        return false;
+    if (m_strISOFilePath.isEmpty() || m_strISOFilePath.isNull())
+        return false;
     return true;
 }
 

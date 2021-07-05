@@ -39,14 +39,6 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 
-// QString UIWizardNewVMUnattendedPage::productKey() const
-// {
-//     if (!m_pProductKeyLineEdit || !m_pProductKeyLineEdit->hasAcceptableInput())
-//         return QString();
-//     return m_pProductKeyLineEdit->text();
-// }
-
-
 bool UIWizardNewVMUnattendedPage::checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector)
 {
     if (!pGAISOFilePathSelector)
@@ -60,16 +52,6 @@ bool UIWizardNewVMUnattendedPage::checkGAISOFile(UIFilePathSelector *pGAISOFileP
         return false;
     return true;
 }
-
-
-
-// bool UIWizardNewVMUnattendedPage::startHeadless() const
-// {
-//     if (!m_pStartHeadlessCheckBox)
-//         return false;
-//     return m_pStartHeadlessCheckBox->isChecked();
-// }
-
 
 UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     : m_pLabel(0)
@@ -113,7 +95,6 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
         connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigUserNameChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltUserNameChanged);
     }
-
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
@@ -126,7 +107,9 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
     if (m_pProductKeyLineEdit)
         connect(m_pProductKeyLineEdit, &QLineEdit::textChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged);
-
+    if (m_pStartHeadlessCheckBox)
+        connect(m_pStartHeadlessCheckBox, &QCheckBox::toggled,
+                this, &UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged);
 }
 
 
@@ -148,7 +131,7 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
     {
         m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Gu&est Additions"));
         m_pGAInstallationISOContainer->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
-                                                           "after the OS install.</p>"));
+                                                                    "after the OS install.</p>"));
     }
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
@@ -238,6 +221,12 @@ void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strPr
 {
     if (m_pWizard)
         m_pWizard->setProductKey(strProductKey);
+}
+
+void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
+{
+    if (m_pWizard)
+        m_pWizard->setStartHeadless(fStartHeadless);
 }
 
 QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()

@@ -40,32 +40,8 @@ struct UIUnattendedInstallData;
 
 namespace UIWizardNewVMUnattendedPage
 {
+    /** Returns false if ISO path selector is non empty but has invalid file path. */
     bool checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector);
-//     UIWizardNewVMUnattendedPage();
-
-//     /** @name Property getters/setters
-//       * @{ */
-//         QString userName() const;
-//         void setUserName(const QString &strName);
-//         QString password() const;
-//         void setPassword(const QString &strPassword);
-//         QString hostname() const;
-//         void setHostname(const QString &strHostName);
-//         QString guestAdditionsISOPath() const;
-//         void setGuestAdditionsISOPath(const QString &strISOPath);
-//         QString productKey() const;
-//     /** @} */
-
-
-//     /** Returns false if ISO path selector is non empty but has invalid file path. */
-//     bool checkGAISOFile() const;
-
-//     void retranslateWidgets();
-
-
-//     bool startHeadless() const;
-
-
 }
 
 class UIWizardNewVMUnattendedPageBasic : public UINativeWizardPage
@@ -90,6 +66,7 @@ private slots:
     void sltUserNameChanged(const QString &strUserName);
     void sltHostnameChanged(const QString &strHostname);
     void sltProductKeyChanged(const QString &strProductKey);
+    void sltStartHeadlessChanged(bool fStartHeadless);
 
 private:
 
