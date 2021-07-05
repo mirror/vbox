@@ -400,7 +400,6 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
     if (m_pNameAndSystemEditor->name().isEmpty())
         return false;
     return UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor);
-    return true;
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
