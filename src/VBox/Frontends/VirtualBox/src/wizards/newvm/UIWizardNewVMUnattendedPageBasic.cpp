@@ -83,12 +83,6 @@
 //         return m_pHostnameLineEdit->setText(strHostName);
 // }
 
-// bool UIWizardNewVMUnattendedPage::installGuestAdditions() const
-// {
-//     if (!m_pGAInstallationISOContainer)
-//         return false;
-//     return m_pGAInstallationISOContainer->isChecked();
-// }
 
 // void UIWizardNewVMUnattendedPage::setInstallGuestAdditions(bool fInstallGA)
 // {
@@ -117,42 +111,21 @@
 // }
 
 
-// bool UIWizardNewVMUnattendedPage::checkGAISOFile() const
-// {
-//     if (!m_pGAISOFilePathSelector)
-//         return false;
-//     /* GA ISO selector should not be empty since GA install check box is checked at this point: */
-//     const QString &strPath = m_pGAISOFilePathSelector->path();
-//     if (strPath.isNull() || strPath.isEmpty())
-//         return false;
-//     QFileInfo fileInfo(strPath);
-//     if (!fileInfo.exists() || !fileInfo.isReadable())
-//         return false;
-//     return true;
-// }
-
-// void UIWizardNewVMUnattendedPage::markWidgets() const
-// {
-//     if (installGuestAdditions())
-//         m_pGAISOFilePathSelector->mark(!checkGAISOFile());
-// }
+bool UIWizardNewVMUnattendedPage::checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector)
+{
+    if (!pGAISOFilePathSelector)
+        return false;
+    /* GA ISO selector should not be empty since GA install check box is checked at this point: */
+    const QString &strPath = pGAISOFilePathSelector->path();
+    if (strPath.isNull() || strPath.isEmpty())
+        return false;
+    QFileInfo fileInfo(strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
+}
 
 
-// void UIWizardNewVMUnattendedPage::disableEnableGAWidgets(bool fEnabled)
-// {
-//     if (m_pGAISOPathLabel)
-//         m_pGAISOPathLabel->setEnabled(fEnabled);
-//     if (m_pGAISOFilePathSelector)
-//         m_pGAISOFilePathSelector->setEnabled(fEnabled);
-// }
-
-// void UIWizardNewVMUnattendedPage::disableEnableProductKeyWidgets(bool fEnabled)
-// {
-//     if (m_pProductKeyLabel)
-//         m_pProductKeyLabel->setEnabled(fEnabled);
-//     if (m_pProductKeyLineEdit)
-//         m_pProductKeyLineEdit->setEnabled(fEnabled);
-// }
 
 // bool UIWizardNewVMUnattendedPage::startHeadless() const
 // {
@@ -161,13 +134,6 @@
 //     return m_pStartHeadlessCheckBox->isChecked();
 // }
 
-
-// bool UIWizardNewVMUnattendedPage::isGAInstallEnabled() const
-// {
-//     if (m_pGAInstallationISOContainer && m_pGAInstallationISOContainer->isChecked())
-//         return true;
-//     return false;
-// }
 
 UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     : m_pLabel(0)
@@ -183,6 +149,7 @@ UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     , m_pProductKeyLineEdit(0)
     , m_pProductKeyLabel(0)
 {
+    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
 }
 
@@ -198,21 +165,20 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
     pMainLayout->addWidget(createGAInstallWidgets(), 2, 0, 1, 2);
     pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
 
-
-    // createConnections();
+     createConnections();
 }
 
 void UIWizardNewVMUnattendedPageBasic::createConnections()
 {
-    // if (m_pUserNamePasswordEditor)
-    //     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-    //             this, &UIWizardNewVMUnattendedPageBasic::completeChanged);
-    // if (m_pGAISOFilePathSelector)
-    //     connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
-    //             this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
-    // if (m_pGAISOFilePathSelector)
-    //     connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
-    //             this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
+    if (m_pUserNamePasswordEditor)
+        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::completeChanged);
+    if (m_pGAISOFilePathSelector)
+        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
+    if (m_pGAISOFilePathSelector)
+        connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
+                this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
 }
 
 
@@ -253,29 +219,19 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
 
 void UIWizardNewVMUnattendedPageBasic::initializePage()
 {
-    // disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    // disableEnableGAWidgets(m_pGAInstallationISOContainer ? m_pGAInstallationISOContainer->isChecked() : false);
-    // retranslateUi();
+    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    disableEnableGAWidgets(m_pGAInstallationISOContainer ? m_pGAInstallationISOContainer->isChecked() : false);
+    retranslateUi();
 }
 
 bool UIWizardNewVMUnattendedPageBasic::isComplete() const
 {
-//     markWidgets();
-//     if (isGAInstallEnabled() && !checkGAISOFile())
-//         return false;
-// //     bool fIsComplete = true;
-// //     if (!checkGAISOFile())
-// //     {
-// //         m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, UIIconPool::iconSet(":/status_error_16px.png"));
-// //         fIsComplete = false;
-// //     }
-//     if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
-//         return false;
-// //     {
-// //         m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, UIIconPool::iconSet(":/status_error_16px.png"));
-// //         fIsComplete = false;
-// //     }
-// //     return fIsComplete;
+    markWidgets();
+    if (m_pWizard && m_pWizard->installGuestAdditions() &&
+        !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector))
+        return false;
+    if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
+        return false;
     return true;
 }
 
@@ -285,30 +241,27 @@ void UIWizardNewVMUnattendedPageBasic::cleanupPage()
 
 void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
-    // if (m_pToolBox)
-    //     m_pToolBox->setItemEnabled(ToolBoxItems_ProductKey, isProductKeyWidgetEnabled());
-    //UIWizardPage::showEvent(pEvent);
+    UINativeWizardPage::showEvent(pEvent);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    Q_UNUSED(fEnabled);
-    // disableEnableGAWidgets(fEnabled);
-    // emit completeChanged();
+    disableEnableGAWidgets(fEnabled);
+    if (m_pWizard)
+        m_pWizard->setInstallGuestAdditions(fEnabled);
+    emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
     Q_UNUSED(strPath);
-    // emit completeChanged();
+    emit completeChanged();
 }
 
 bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 {
-    // UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    // if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
-    //     return false;
+    if (!m_pWizard || !m_pWizard->isUnattendedEnabled() || !m_pWizard->isGuestOSTypeWindows())
+        return false;
     return true;
 }
 
@@ -417,4 +370,26 @@ QWidget *UIWizardNewVMUnattendedPageBasic::createGAInstallWidgets()
     }
 
     return m_pGAInstallationISOContainer;
+}
+
+void UIWizardNewVMUnattendedPageBasic::disableEnableGAWidgets(bool fEnabled)
+{
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setEnabled(fEnabled);
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setEnabled(fEnabled);
+}
+
+void UIWizardNewVMUnattendedPageBasic::disableEnableProductKeyWidgets(bool fEnabled)
+{
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(fEnabled);
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(fEnabled);
+}
+
+void UIWizardNewVMUnattendedPageBasic::markWidgets() const
+{
+    if (m_pWizard && m_pWizard->installGuestAdditions())
+        m_pGAISOFilePathSelector->mark(!UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector));
 }

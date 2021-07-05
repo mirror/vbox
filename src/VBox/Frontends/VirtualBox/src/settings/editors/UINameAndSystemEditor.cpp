@@ -385,7 +385,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     m_pComboType->blockSignals(false);
 
     /* Notify listeners about this change: */
-    emit sigOSFamilyChanged();
+    emit sigOSFamilyChanged(m_strFamilyId);
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)

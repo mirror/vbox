@@ -292,13 +292,6 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(UIWizardNewVM *pWizard, b
 //     m_strMachineBaseName = strMachineBaseName;
 // }
 
-// QString UIWizardNewVMNameOSTypePage::guestOSFamiyId() const
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return QString();
-//     return m_pNameAndSystemEditor->familyId();
-// }
-
 
 // QString UIWizardNewVMNameOSTypePage::ISOFilePath() const
 // {
@@ -391,6 +384,7 @@ void UIWizardNewVMNameOSTypePageBasic::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged);
     }
 }
 
@@ -404,7 +398,6 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
-    Q_UNUSED(strNewName);
     UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, m_pWizard);
 }
@@ -450,15 +443,15 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
     retranslateUi();
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->setFocus();
-    //setSkipCheckBoxEnable();
+    setSkipCheckBoxEnable();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
-{
-    // cleanupMachineFolder();
-    // /* Call to base-class: */
-    // UIWizardPage::cleanupPage();
-}
+// void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
+// {
+//     cleanupMachineFolder();
+//     /* Call to base-class: */
+//     UIWizardPage::cleanupPage();
+// }
 
 bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 {
@@ -475,8 +468,14 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
-    // setSkipCheckBoxEnable();
-    // emit completeChanged();
+    setSkipCheckBoxEnable();
+    emit completeChanged();
+}
+
+void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged(const QString &strGuestOSFamilyId)
+{
+    if (m_pWizard)
+        m_pWizard->setGuestOSFamilyId(strGuestOSFamilyId);
 }
 
 QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()

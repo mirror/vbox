@@ -60,6 +60,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_iFloppyCount(0)
     , m_iSASCount(0)
     , m_iUSBCount(0)
+    , m_fInstallGuestAdditions(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -713,6 +714,26 @@ void UIWizardNewVM::setDetectedOSTypeId(const QString &strDetectedOSTypeId)
     m_strDetectedOSTypeId = strDetectedOSTypeId;
 }
 
+const QString &UIWizardNewVM::guestOSFamilyId() const
+{
+    return m_strGuestOSFamilyId;
+}
+
+void UIWizardNewVM::setGuestOSFamilyId(const QString &strGuestOSFamilyId)
+{
+    m_strGuestOSFamilyId = strGuestOSFamilyId;
+}
+
+bool UIWizardNewVM::installGuestAdditions() const
+{
+    return m_fInstallGuestAdditions;
+}
+
+void UIWizardNewVM::setInstallGuestAdditions(bool fInstallGA)
+{
+    m_fInstallGuestAdditions = fInstallGA;
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     // m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
@@ -745,7 +766,7 @@ bool UIWizardNewVM::isUnattendedEnabled() const
     return true;
 }
 
-// bool UIWizardNewVM::isGuestOSTypeWindows() const
-// {
-//     return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
-// }
+bool UIWizardNewVM::isGuestOSTypeWindows() const
+{
+    return m_strGuestOSFamilyId.contains("windows", Qt::CaseInsensitive);
+}

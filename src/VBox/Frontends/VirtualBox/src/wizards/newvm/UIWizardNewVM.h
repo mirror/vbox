@@ -82,7 +82,7 @@ public:
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedEnabled() const;
-    //bool isGuestOSTypeWindows() const;
+    bool isGuestOSTypeWindows() const;
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
     void setVirtualDisk(const QUuid &mediumId);
@@ -104,6 +104,12 @@ public:
     const QString &detectedOSTypeId() const;
     void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
 
+    const QString &guestOSFamilyId() const;
+    void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
+
+    bool installGuestAdditions() const;
+    void setInstallGuestAdditions(bool fInstallGA);
+
 protected:
 
     /** Populates pages. */
@@ -115,9 +121,6 @@ protected:
 
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
-
-    friend class UIWizardNewVMPageDisk;
-    friend class UIWizardNewVMPageExpert;
 
 private slots:
 
@@ -164,6 +167,12 @@ private:
 
     /** Type Id od the OS detected from the ISO file by IUnattended. */
     QString m_strDetectedOSTypeId;
+
+    /** Holds the VM OS family ID. */
+    QString  m_strGuestOSFamilyId;
+
+    /** True if guest additions are to be installed during unattended install. */
+    bool m_fInstallGuestAdditions;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

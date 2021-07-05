@@ -31,17 +31,16 @@ class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QLineEdit;
-class QToolBox;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UIUserNamePasswordEditor;
+class UIWizardNewVM;
 struct UIUnattendedInstallData;
 
 
-// class UIWizardNewVMUnattendedPage : public UIWizardPageBase
-// {
-// public:
-
+namespace UIWizardNewVMUnattendedPage
+{
+    bool checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector);
 //     UIWizardNewVMUnattendedPage();
 
 //     /** @name Property getters/setters
@@ -52,38 +51,22 @@ struct UIUnattendedInstallData;
 //         void setPassword(const QString &strPassword);
 //         QString hostname() const;
 //         void setHostname(const QString &strHostName);
-//         bool installGuestAdditions() const;
-//         void setInstallGuestAdditions(bool fInstallGA);
 //         QString guestAdditionsISOPath() const;
 //         void setGuestAdditionsISOPath(const QString &strISOPath);
 //         QString productKey() const;
 //     /** @} */
 
-// protected:
-//     enum
-//     {
-//         ToolBoxItems_UserNameHostname,
-//         ToolBoxItems_GAInstall,
-//         ToolBoxItems_ProductKey
-//     };
-
 
 //     /** Returns false if ISO path selector is non empty but has invalid file path. */
 //     bool checkGAISOFile() const;
-//     void markWidgets() const;
+
 //     void retranslateWidgets();
-//     void disableEnableGAWidgets(bool fEnabled);
-//     void disableEnableProductKeyWidgets(bool fEnabled);
+
 
 //     bool startHeadless() const;
 
-//     bool isGAInstallEnabled() const;
 
-
-// private:
-
-//     friend class UIWizardNewVM;
-// };
+}
 
 class UIWizardNewVMUnattendedPageBasic : public UINativeWizardPage
 {
@@ -117,11 +100,15 @@ private:
     bool isComplete() const;
     /** Returns true if we show the widgets for guest os product key. */
     bool isProductKeyWidgetEnabled() const;
+    void disableEnableProductKeyWidgets(bool fEnabled);
+    void disableEnableGAWidgets(bool fEnabled);
+    void markWidgets() const;
 
-    QIRichTextLabel *m_pLabel;
+    UIWizardNewVM *m_pWizard;
 
     /** @name Widgets
       * @{ */
+        QIRichTextLabel *m_pLabel;
         QGroupBox *m_pUserNameContainer;
         QGroupBox *m_pAdditionalOptionsContainer;
         QGroupBox *m_pGAInstallationISOContainer;

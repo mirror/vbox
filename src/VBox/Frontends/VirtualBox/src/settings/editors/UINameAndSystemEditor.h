@@ -69,7 +69,7 @@ signals:
     /** Notifies listeners about VM OS type change. */
     void sigOsTypeChanged();
     /** Notifies listeners about VM OS family change. */
-    void sigOSFamilyChanged();
+    void sigOSFamilyChanged(const QString &strFamilyId);
 
 public:
 

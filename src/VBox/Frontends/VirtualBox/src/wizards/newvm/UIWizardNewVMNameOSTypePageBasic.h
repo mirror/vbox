@@ -101,6 +101,7 @@ private slots:
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltISOPathChanged(const QString &strPath);
+    void sltGuestOSFamilChanged(const QString &strGuestOSFamilyId);
 
 private:
 
@@ -111,12 +112,11 @@ private:
     void prepare();
     void createConnections();
     void initializePage();
-    void cleanupPage();
+    //void cleanupPage();
     QWidget *createNameOSTypeWidgets();
     void markWidgets() const;
     void setSkipCheckBoxEnable();
     bool isUnattendedEnabled() const;
-
 
     UIWizardNewVM *m_pWizard;
 
