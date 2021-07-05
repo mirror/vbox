@@ -1053,9 +1053,12 @@ void UIChooserModel::lookFor(const QString &strLookupText)
 
 void UIChooserModel::updateLayout()
 {
+    /* Sanity check.  This method can be called when invisible root is
+     * temporary deleted.  We should ignore request in such case. */
+    if (!view() || !root())
+        return;
+
     /* Initialize variables: */
-    AssertPtrReturnVoid(view());
-    AssertPtrReturnVoid(root());
     const QSize viewportSize = view()->size();
     const int iViewportWidth = viewportSize.width();
     const int iViewportHeight = root()->minimumSizeHint().toSize().height();
