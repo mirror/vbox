@@ -784,7 +784,7 @@ static uint32_t iommuAmdGetEvtLogEntryCount(PIOMMU pThis)
 }
 
 
-#if defined(IN_RING3) || defined(LOG_ENABLED)
+#if (defined(IN_RING3) && defined(IOMMU_WITH_IOTLBE_CACHE)) || defined(LOG_ENABLED)
 /**
  * Gets the descriptive I/O permission name for a memory access.
  *
