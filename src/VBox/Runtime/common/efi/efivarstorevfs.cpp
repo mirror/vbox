@@ -1403,7 +1403,7 @@ static int rtEfiVarStoreLoadAuthVar(PRTEFIVARSTORE pThis, uint64_t offVar, uint6
     RTUTF16 awchName[128]; RT_ZERO(awchName);
     if (RT_LE2H_U32(VarHdr.cbName) > sizeof(awchName) - sizeof(RTUTF16))
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable name is too long (%llu vs. %llu)\n",
-                                   RT_LE2H_U32(VarHdr.cbName), RT_LE2H_U32(VarHdr.cbName), sizeof(awchName));
+                                   RT_LE2H_U32(VarHdr.cbName), sizeof(awchName));
 
     rc = RTVfsFileReadAt(pThis->hVfsBacking, offVar + sizeof(VarHdr), &awchName[0], RT_LE2H_U32(VarHdr.cbName), NULL);
     if (RT_FAILURE(rc))
