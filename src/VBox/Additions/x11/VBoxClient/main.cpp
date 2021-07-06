@@ -118,9 +118,18 @@ void VBClShutdown(bool fExit /*=true*/)
     int rc = RTCritSectEnter(&g_critSect);
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failure while acquiring the global critical section, rc=%Rrc\n", rc);
-    if (   g_Service.pDesc
-        && g_Service.pDesc->pfnTerm)
-        g_Service.pDesc->pfnTerm();
+
+    /* Try to gracefuly terminate a service. Service needs
+     * to be stopped first and then terminated. */
+    if (g_Service.pDesc)
+    {
+        if (g_Service.pDesc->pfnStop)
+            g_Service.pDesc->pfnStop();
+
+        if (g_Service.pDesc->pfnTerm)
+            g_Service.pDesc->pfnTerm();
+    }
+
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
 
