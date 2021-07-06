@@ -1533,7 +1533,7 @@ static int rtEfiVarStoreLoad(PRTEFIVARSTORE pThis, PRTERRINFO pErrInfo)
 
         /* Align to 16bit boundary. */
         offData = RT_ALIGN_64(offData, 2);
-    } while (RT_SUCCESS(rc));
+    }
 
     if (rc == VERR_EOF) /* Reached end of variable store. */
         rc = VINF_SUCCESS;
