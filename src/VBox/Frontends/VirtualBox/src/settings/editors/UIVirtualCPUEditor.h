@@ -39,6 +39,10 @@ class SHARED_LIBRARY_STUFF UIVirtualCPUEditor : public QIWithRetranslateUI<QWidg
 {
     Q_OBJECT;
 
+ signals:
+
+    void sigValueChanged(int iValue);
+
 public:
 
     /** @param  fWithLabel  Determines whether we should add label ourselves. */

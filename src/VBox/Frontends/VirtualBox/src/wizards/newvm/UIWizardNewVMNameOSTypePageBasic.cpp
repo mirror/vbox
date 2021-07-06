@@ -480,7 +480,7 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 
 void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged(const QString &strGuestOSFamilyId)
 {
-    parentWizardSet(setGuestOSFamilyId, strGuestOSFamilyId);
+    newVMWizardPropertySet(GuestOSFamilyId, strGuestOSFamilyId);
 }
 
 QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()

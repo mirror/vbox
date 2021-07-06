@@ -60,7 +60,7 @@ protected:
 
 private slots:
 
-    void sltMemoryAmountChanged(int iValue);
+    void sltMemorySizeChanged(int iValue);
     void sltCPUCountChanged(int iCount);
 
 private:
@@ -73,8 +73,6 @@ private:
     void cleanupPage();
     QWidget *createHardwareWidgets();
     bool isComplete() const;
-
-    UIWizardNewVM *m_pWizard;
 
     /** @name Widgets
      * @{ */

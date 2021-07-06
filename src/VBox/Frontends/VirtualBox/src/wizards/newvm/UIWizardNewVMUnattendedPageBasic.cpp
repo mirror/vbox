@@ -178,25 +178,25 @@ void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     disableEnableGAWidgets(fEnabled);
-    parentWizardSet(setInstallGuestAdditions, fEnabled);
+    newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
-    parentWizardSet(setGuestAdditionsISOPath, strPath);
+    newVMWizardPropertySet(GuestAdditionsISOPath, strPath);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltPasswordChanged(const QString &strPassword)
 {
-    parentWizardSet(setPassword, strPassword);
+    newVMWizardPropertySet(Password, strPassword);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltUserNameChanged(const QString &strUserName)
 {
-    parentWizardSet(setUserName, strUserName);
+    newVMWizardPropertySet(UserName, strUserName);
     emit completeChanged();
 }
 
@@ -210,17 +210,17 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 
 void UIWizardNewVMUnattendedPageBasic::sltHostnameChanged(const QString &strHostname)
 {
-    parentWizardSet(setHostname, strHostname);
+    newVMWizardPropertySet(Hostname, strHostname);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
 {
-    parentWizardSet(setProductKey, strProductKey);
+    newVMWizardPropertySet(ProductKey, strProductKey);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
-    parentWizardSet(setStartHeadless, fStartHeadless);
+    newVMWizardPropertySet(StartHeadless, fStartHeadless);
 }
 
 QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()

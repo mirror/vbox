@@ -39,7 +39,6 @@ UIWizardNewVMHardwarePageBasic::UIWizardNewVMHardwarePageBasic()
     , m_pEFICheckBox(0)
     , m_pLabel(0)
 {
-    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
     qRegisterMetaType<CMedium>();
 }
@@ -58,9 +57,12 @@ void UIWizardNewVMHardwarePageBasic::prepare()
 
 void UIWizardNewVMHardwarePageBasic::createConnections()
 {
-    connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
-            this, &UIWizardNewVMHardwarePageBasic::sltMemoryAmountChanged);
-
+    if (m_pBaseMemoryEditor)
+        connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+                this, &UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged);
+    if (m_pVirtualCPUEditor)
+        connect(m_pVirtualCPUEditor, &UIVirtualCPUEditor::sigValueChanged,
+            this, &UIWizardNewVMHardwarePageBasic::sltCPUCountChanged);
 
 }
 
@@ -124,12 +126,12 @@ QWidget *UIWizardNewVMHardwarePageBasic::createHardwareWidgets()
     return pHardwareContainer;
 }
 
-void UIWizardNewVMHardwarePageBasic::sltMemoryAmountChanged(int iValue)
+void UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged(int iValue)
 {
-    Q_UNUSED(iValue);
+    newVMWizardPropertySet(MemorySize, iValue);
 }
 
 void UIWizardNewVMHardwarePageBasic::sltCPUCountChanged(int iCount)
 {
-    Q_UNUSED(iCount);
+    newVMWizardPropertySet(CPUCount, iCount);
 }

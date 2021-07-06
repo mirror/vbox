@@ -74,6 +74,7 @@ void UIVirtualCPUEditor::sltHandleSliderChange()
         m_pSpinBox->setValue(m_pSlider->value());
         m_pSpinBox->blockSignals(false);
     }
+    emit sigValueChanged(m_pSlider->value());
 }
 
 void UIVirtualCPUEditor::sltHandleSpinBoxChange()
@@ -84,6 +85,7 @@ void UIVirtualCPUEditor::sltHandleSpinBoxChange()
         m_pSlider->setValue(m_pSpinBox->value());
         m_pSlider->blockSignals(false);
     }
+    emit sigValueChanged(m_pSpinBox->value());
 }
 
 void UIVirtualCPUEditor::prepare()

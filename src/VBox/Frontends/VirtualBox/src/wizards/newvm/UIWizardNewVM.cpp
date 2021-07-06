@@ -64,7 +64,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_fStartHeadless(false)
     , m_fSkipUnattendedInstall(false)
     , m_iCPUCount(1)
-    , m_iMemoryAmount(0)
+    , m_iMemorySize(0)
 
 {
 #ifndef VBOX_WS_MAC
@@ -770,14 +770,14 @@ void UIWizardNewVM::setCPUCount(int iCPUCount)
     m_iCPUCount = iCPUCount;
 }
 
-int UIWizardNewVM::memoryAmount() const
+int UIWizardNewVM::memorySize() const
 {
-    return m_iMemoryAmount;
+    return m_iMemorySize;
 }
 
-void UIWizardNewVM::setMemoryCount(int iMemory)
+void UIWizardNewVM::setMemorySize(int iMemory)
 {
-    m_iMemoryAmount = iMemory;
+    m_iMemorySize = iMemory;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
