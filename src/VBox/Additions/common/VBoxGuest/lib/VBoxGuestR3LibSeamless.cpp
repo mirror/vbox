@@ -70,7 +70,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
 
     /** @todo r=andy The (similar / duplicate) Windows code does similar waiting. Merge / fix this. */
     uint32_t fEvent = 0;
-    int rc = VbglR3WaitEvent(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 5000 /* ms */, &fEvent);
+    int rc = VbglR3WaitEvent(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 1000 /* ms */, &fEvent);
     if (RT_SUCCESS(rc))
     {
         /* did we get the right event? */
