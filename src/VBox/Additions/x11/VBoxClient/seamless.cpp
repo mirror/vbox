@@ -157,24 +157,8 @@ void SeamlessMain::stop(void)
 /** @copydoc VBCLSERVICE::pfnTerm */
 int SeamlessMain::term(void)
 {
-    int rc;
-
-    if (mX11MonitorThread)
-    {
-        rc = RTThreadWait(mX11MonitorThread, RT_MS_30SEC, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            mX11MonitorThread = NIL_RTTHREAD;
-        }
-        else
-            VBClLogError("Failed to stop X11 monitor thread, rc=%Rrc\n", rc);
-    }
-    else
-        rc = VINF_SUCCESS;
-
     mX11Monitor.uninit();
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -297,7 +281,11 @@ int SeamlessMain::stopX11MonitorThread(void)
         return VINF_SUCCESS;
 
     mX11MonitorThreadStopping = true;
-    mX11Monitor.interruptEventWait();
+    if (!mX11Monitor.interruptEventWait())
+    {
+        VBClLogError("Unable to notify X11 monitor thread\n");
+        return VERR_INVALID_STATE;
+    }
 
     int rcThread;
     int rc = RTThreadWait(mX11MonitorThread, RT_MS_30SEC, &rcThread);
