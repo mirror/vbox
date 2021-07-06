@@ -460,6 +460,9 @@ RuntimeR3_SOURCES       = \
 	common/dvm/dvmgpt.cpp \
 	common/dvm/dvmmbr.cpp \
 	common/dvm/dvmvfs.cpp \
+	common/efi/efiguid.cpp \
+	common/efi/efitime.cpp \
+	common/efi/efivarstorevfs.cpp \
 	common/err/errinfo.cpp \
 	common/err/errinfolog.cpp \
 	common/err/errinfo-alloc.cpp \
