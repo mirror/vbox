@@ -925,6 +925,14 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
             else
                 RTTestFailed(g_hTest, "Verification failed with %Rrc", rc);
 
+#ifdef DEBUG
+            if (g_fDrvAudioDebug)
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                             "\n"
+                             "Use the following command line to re-run verification in the debugger:\n"
+                             "gdb --args ./VBoxAudioTest -vvvv --debug-audio verify \"%s\" \"%s\"\n",
+                             SetA.szPathAbs, SetB.szPathAbs);
+#endif
             if (!g_fDrvAudioDebug) /* Don't wipe stuff when debugging. Can be useful for introspecting data. */
                 AudioTestSetWipe(&SetB);
             AudioTestSetClose(&SetB);
