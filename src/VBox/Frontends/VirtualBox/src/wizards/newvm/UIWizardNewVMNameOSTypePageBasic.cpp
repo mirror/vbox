@@ -384,7 +384,7 @@ void UIWizardNewVMNameOSTypePageBasic::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged);
     }
 }
 
@@ -440,8 +440,12 @@ void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
 
 void UIWizardNewVMNameOSTypePageBasic::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
+
+    /* Make sure parameters are initialized correctly: */
+    if (m_pNameAndSystemEditor)
+        newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
+
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->setFocus();
     setSkipCheckBoxEnable();
@@ -478,7 +482,7 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged(const QString &strGuestOSFamilyId)
+void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId)
 {
     newVMWizardPropertySet(GuestOSFamilyId, strGuestOSFamilyId);
 }

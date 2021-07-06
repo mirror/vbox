@@ -78,12 +78,11 @@ protected:
 
 private slots:
 
-    /** Handlers. */
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltISOPathChanged(const QString &strPath);
-    void sltGuestOSFamilChanged(const QString &strGuestOSFamilyId);
+    void sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId);
 
 private:
 

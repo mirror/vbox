@@ -254,10 +254,8 @@ bool UIUserNamePasswordEditor::isPasswordComplete()
     {
         if (m_pPasswordLineEdit->text() != m_pPasswordRepeatLineEdit->text())
             fPasswordOK = false;
-#if 0
         if (m_pPasswordLineEdit->text().isEmpty())
             fPasswordOK = false;
-#endif
         m_pPasswordLineEdit->mark(!fPasswordOK, m_strPasswordError);
         m_pPasswordRepeatLineEdit->mark(!fPasswordOK, m_strPasswordError);
     }
@@ -316,11 +314,11 @@ void UIUserNamePasswordEditor::retranslateUi()
     if (m_fShowPlaceholderText)
     {
         if(m_pUserNameLineEdit)
-            m_pUserNameLineEdit->setPlaceholderText(strUsername);
+            m_pUserNameLineEdit->setPlaceholderText(strUsername.remove('&'));
         if (m_pPasswordLineEdit)
-            m_pPasswordLineEdit->setPlaceholderText(strPassword);
+            m_pPasswordLineEdit->setPlaceholderText(strPassword.remove('&'));
         if (m_pPasswordRepeatLineEdit)
-            m_pPasswordRepeatLineEdit->setPlaceholderText(strRepeatPassword);
+            m_pPasswordRepeatLineEdit->setPlaceholderText(strRepeatPassword.remove('&'));
     }
     else
     {
