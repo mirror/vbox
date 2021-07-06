@@ -1610,12 +1610,14 @@ RTDECL(int) RTEfiVarStoreCreate(RTVFSFILE hVfsFile, uint64_t offStore, uint64_t 
     }
     uint32_t const cBlocks = (uint32_t)(cbStore / cbBlock);
 
+    EFI_GUID                   GuidVarStore = EFI_VARSTORE_FILESYSTEM_GUID;
+    EFI_GUID                   GuidVarAuth  = EFI_VARSTORE_HEADER_GUID_AUTHENTICATED_VARIABLE;
     EFI_FIRMWARE_VOLUME_HEADER FvHdr;       RT_ZERO(FvHdr);
     EFI_FW_BLOCK_MAP           BlockMap;    RT_ZERO(BlockMap);
     EFI_VARSTORE_HEADER        VarStoreHdr; RT_ZERO(VarStoreHdr);
 
     /* Firmware volume header. */
-    FvHdr.GuidFilesystem = EFI_VARSTORE_FILESYSTEM_GUID;
+    memcpy(&FvHdr.GuidFilesystem, &GuidVarStore, sizeof(GuidVarStore));
     FvHdr.cbFv           = RT_H2LE_U64(cbStore);
     FvHdr.u32Signature   = RT_H2LE_U32(EFI_FIRMWARE_VOLUME_HEADER_SIGNATURE);
     FvHdr.fAttr          = RT_H2LE_U32(0x4feff); /** @todo */
@@ -1639,7 +1641,7 @@ RTDECL(int) RTEfiVarStoreCreate(RTVFSFILE hVfsFile, uint64_t offStore, uint64_t 
     FvHdr.u16Chksum      = RT_H2LE_U16(u16Chksum);
 
     /* Variable store header. */
-    VarStoreHdr.GuidVarStore = EFI_VARSTORE_HEADER_GUID_AUTHENTICATED_VARIABLE;
+    memcpy(&VarStoreHdr.GuidVarStore, &GuidVarAuth, sizeof(GuidVarAuth));
     VarStoreHdr.cbVarStore   = cbStore - sizeof(FvHdr) - sizeof(BlockMap);
     VarStoreHdr.bFmt         = EFI_VARSTORE_HEADER_FMT_FORMATTED;
     VarStoreHdr.bState       = EFI_VARSTORE_HEADER_STATE_HEALTHY;
