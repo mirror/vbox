@@ -266,7 +266,7 @@ extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE 
 #if RTLNX_VER_MIN(2,5,18)
 # if RTLNX_VER_MIN(5,12,0)
 extern int  vbsf_inode_getattr(struct user_namespace *ns, const struct path *path,
-    struct kstat *kstat, u32 request_mask, unsigned int query_flags);
+                               struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # elif RTLNX_VER_MIN(4,11,0)
 extern int  vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # else

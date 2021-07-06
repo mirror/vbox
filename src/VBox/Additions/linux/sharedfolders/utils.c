@@ -700,9 +700,9 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
    [generic_fillattr] */
 #if RTLNX_VER_MIN(2,5,18)
 
-#if RTLNX_VER_MIN(5,12,0)
+# if RTLNX_VER_MIN(5,12,0)
 int vbsf_inode_getattr(struct user_namespace *ns, const struct path *path,
-    struct kstat *kstat, u32 request_mask, unsigned int flags)
+                       struct kstat *kstat, u32 request_mask, unsigned int flags)
 # elif RTLNX_VER_MIN(4,11,0)
 int vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int flags)
 # else

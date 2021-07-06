@@ -1038,15 +1038,16 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
 /**
  * Create a new regular file.
  *
- * @param parent        inode of the directory
- * @param dentry        directory cache entry
- * @param mode          file mode
- * @param excl          Possible O_EXCL...
+ * @param   ns      The name space.
+ * @param   parent  inode of the directory
+ * @param   dentry  directory cache entry
+ * @param   mode    file mode
+ * @param   excl    Possible O_EXCL...
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_create(struct user_namespace *ns, struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
-#elif RTLNX_VER_MIN(3,6,0) || defined(DOXYGEN_RUNNING)
+#elif RTLNX_VER_MIN(3,6,0)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
 #elif RTLNX_VER_MIN(3,3,0)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
@@ -1078,12 +1079,13 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
 /**
  * Create a new directory.
  *
- * @param parent        inode of the directory
- * @param dentry        directory cache entry
- * @param mode          file mode
+ * @param   ns      The name space.
+ * @param   parent  inode of the directory
+ * @param   dentry  directory cache entry
+ * @param   mode    file mode
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_mkdir(struct user_namespace *ns, struct inode *parent, struct dentry *dentry, umode_t mode)
 #elif RTLNX_VER_MIN(3,3,0)
 static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, umode_t mode)
@@ -1190,14 +1192,15 @@ static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
 /**
  * Rename a regular file / directory.
  *
- * @param old_parent    inode of the old parent directory
- * @param old_dentry    old directory cache entry
- * @param new_parent    inode of the new parent directory
- * @param new_dentry    new directory cache entry
- * @param flags         flags
+ * @param   ns          The name space.
+ * @param   old_parent  inode of the old parent directory
+ * @param   old_dentry  old directory cache entry
+ * @param   new_parent  inode of the new parent directory
+ * @param   new_dentry  new directory cache entry
+ * @param   flags       flags
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_rename(struct user_namespace *ns,
                              struct inode *old_parent, struct dentry *old_dentry,
                              struct inode *new_parent, struct dentry *new_dentry, unsigned flags)
