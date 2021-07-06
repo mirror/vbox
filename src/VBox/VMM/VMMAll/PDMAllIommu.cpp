@@ -131,11 +131,11 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
             rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
             if (RT_SUCCESS(rc))
             {
+                Assert(cbContig > 0 && cbContig <= cbRead);
                 /** @todo Handle strict return codes from PGMPhysRead. */
                 rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(cbContig <= cbRead);
                     cbRead -= cbContig;
                     pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
                     GCPhys += cbContig;
@@ -199,11 +199,11 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
             rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
             if (RT_SUCCESS(rc))
             {
+                Assert(cbContig > 0 && cbContig <= cbWrite);
                 /** @todo Handle strict return codes from PGMPhysWrite. */
                 rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(cbContig <= cbWrite);
                     cbWrite -= cbContig;
                     pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
                     GCPhys  += cbContig;
@@ -213,8 +213,7 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
             }
             else
             {
-                LogFunc(("IOMMU memory write failed. idDevice=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", idDevice, GCPhys, cbWrite,
-                         rc));
+                LogFunc(("IOMMU memory write failed. idDevice=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", idDevice, GCPhys, cbWrite, rc));
                 break;
             }
         }
