@@ -104,6 +104,11 @@ protected:
     /** Defines pixmap @a strName. */
     void setPixmapName(const QString &strName);
 
+    /** Returns whether the page with certain @a iIndex is visible. */
+    bool isPageVisible(int iIndex) const;
+    /** Defines whether the page with certain @a iIndex is @a fVisible. */
+    void setPageVisible(int iIndex, bool fVisible);
+
     /** Appends wizard @a pPage.
       * @returns assigned page index. */
     int addPage(UINativeWizardPage *pPage);
@@ -161,6 +166,8 @@ private:
     QString     m_strPixmapName;
     /** Holds the last entered page index. */
     int         m_iLastIndex;
+    /** Holds the set of invisible pages. */
+    QSet<int>   m_invisiblePages;
 
     /** Holds the pixmap label instance. */
     QLabel                               *m_pLabelPixmap;

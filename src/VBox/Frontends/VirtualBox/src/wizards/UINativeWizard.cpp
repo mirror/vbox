@@ -113,6 +113,20 @@ void UINativeWizard::setPixmapName(const QString &strName)
     m_strPixmapName = strName;
 }
 
+bool UINativeWizard::isPageVisible(int iIndex) const
+{
+    return !m_invisiblePages.contains(iIndex);
+}
+
+void UINativeWizard::setPageVisible(int iIndex, bool fVisible)
+{
+    AssertMsgReturnVoid(iIndex || fVisible, ("Can't hide 1st wizard page!\n"));
+    if (fVisible)
+        m_invisiblePages.remove(iIndex);
+    else
+        m_invisiblePages.insert(iIndex);
+}
+
 int UINativeWizard::addPage(UINativeWizardPage *pPage)
 {
     /* Sanity check: */
@@ -275,9 +289,14 @@ void UINativeWizard::sltExpert()
 
 void UINativeWizard::sltPrevious()
 {
-    /* For all the pages besides the 1st one we going backward: */
-    AssertReturnVoid(m_pWidgetStack->currentIndex() > 0);
-    m_pWidgetStack->setCurrentIndex(m_pWidgetStack->currentIndex() - 1);
+    /* For all allowed pages besides the 1st one we going backward: */
+    bool fPreviousFound = false;
+    int iIteratedIndex = m_pWidgetStack->currentIndex();
+    while (!fPreviousFound && iIteratedIndex > 0)
+        if (isPageVisible(--iIteratedIndex))
+            fPreviousFound = true;
+    if (fPreviousFound)
+        m_pWidgetStack->setCurrentIndex(iIteratedIndex);
 }
 
 void UINativeWizard::sltNext()
@@ -296,9 +315,14 @@ void UINativeWizard::sltNext()
     if (!fIsPageValid)
         return;
 
-    /* For all the pages besides the last one we going forward: */
-    if (m_pWidgetStack->currentIndex() < m_pWidgetStack->count() - 1)
-        m_pWidgetStack->setCurrentIndex(m_pWidgetStack->currentIndex() + 1);
+    /* For all allowed pages besides the last one we going forward: */
+    bool fNextFound = false;
+    int iIteratedIndex = m_pWidgetStack->currentIndex();
+    while (!fNextFound && iIteratedIndex < m_pWidgetStack->count() - 1)
+        if (isPageVisible(++iIteratedIndex))
+            fNextFound = true;
+    if (fNextFound)
+        m_pWidgetStack->setCurrentIndex(iIteratedIndex);
     /* For last one we just accept the wizard: */
     else
         accept();
@@ -477,6 +501,8 @@ void UINativeWizard::cleanup()
 
     /* Update last index: */
     m_iLastIndex = -1;
+    /* Update invisible pages: */
+    m_invisiblePages.clear();
 }
 
 void UINativeWizard::init()
