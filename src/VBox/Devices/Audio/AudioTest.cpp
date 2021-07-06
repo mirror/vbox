@@ -1742,7 +1742,7 @@ static int audioTestObjGetChild(PAUDIOTESTOBJINT phParent, uint32_t idxObj, PAUD
  *
  * @returns VBox status code.
  * @returns Error if the verification failed and test verification job has fKeepGoing not set.
- * @param   pVerify             Verification job to verify value for.
+ * @param   pVerJob             Verification job to verify value for.
  * @param   phObjA              Object handle A to verify value for.
  * @param   phObjB              Object handle B to verify value for.
  * @param   pszKey              Key to verify.
@@ -1750,7 +1750,7 @@ static int audioTestObjGetChild(PAUDIOTESTOBJINT phParent, uint32_t idxObj, PAUD
  * @param   pszErrFmt           Error format string in case the verification failed.
  * @param   ...                 Variable aruments for error format string.
  */
-static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
+static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerJob,
                                 PAUDIOTESTOBJINT phObjA, PAUDIOTESTOBJINT phObjB, const char *pszKey, const char *pszVal, const char *pszErrFmt, ...)
 {
     va_list va;
@@ -1777,13 +1777,13 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerify,
 
     if (RT_FAILURE(rc))
     {
-        int rc2 = audioTestErrorDescAddV(pVerify->pErr, pVerify->idxTest, rc, pszErrFmt, va);
+        int rc2 = audioTestErrorDescAddV(pVerJob->pErr, pVerJob->idxTest, rc, pszErrFmt, va);
         AssertRC(rc2);
     }
 
     va_end(va);
 
-    return pVerify->fKeepGoing ? VINF_SUCCESS : rc;
+    return pVerJob->fKeepGoing ? VINF_SUCCESS : rc;
 }
 
 /**
@@ -2143,11 +2143,11 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
  * @returns VBox status code.
  * @returns Error if the verification failed and test verification job has fKeepGoing not set.
  * @retval  VERR_
- * @param   pVerify             Verification job to verify test tone for.
+ * @param   pVerJob             Verification job to verify test tone for.
  * @param   phTestA             Test handle of test tone A to verify tone B with.
  * @param   phTestB             Test handle of test tone B to verify tone A with.*
  */
-static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJINT phTestA, PAUDIOTESTOBJINT phTestB)
+static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJINT phTestA, PAUDIOTESTOBJINT phTestB)
 {
     int rc;
 
@@ -2155,39 +2155,39 @@ static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerify, PAUDIOTESTOBJINT
      * Verify test parameters.
      * More important items have precedence.
      */
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "error_rc", "0", "Test was reported as failed");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "obj_count", NULL, "Object counts don't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_freq_hz", NULL, "Tone frequency doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_prequel_ms", NULL, "Tone prequel (ms) doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_duration_ms", NULL, "Tone duration (ms) doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_sequel_ms", NULL, "Tone sequel (ms) doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_volume_percent", NULL, "Tone volume (percent) doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_pcm_hz", NULL, "Tone PCM Hz doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_pcm_channels", NULL, "Tone PCM channels don't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_pcm_bits", NULL, "Tone PCM bits don't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
-    rc = audioTestVerifyValue(pVerify, phTestA, phTestB, "tone_pcm_is_signed", NULL, "Tone PCM signed bit doesn't match");
-    CHECK_RC_MAYBE_RET(rc, pVerify);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "error_rc", "0", "Test was reported as failed");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "obj_count", NULL, "Object counts don't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_freq_hz", NULL, "Tone frequency doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_prequel_ms", NULL, "Tone prequel (ms) doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_duration_ms", NULL, "Tone duration (ms) doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_sequel_ms", NULL, "Tone sequel (ms) doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_volume_percent", NULL, "Tone volume (percent) doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_pcm_hz", NULL, "Tone PCM Hz doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_pcm_channels", NULL, "Tone PCM channels don't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_pcm_bits", NULL, "Tone PCM bits don't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
+    rc = audioTestVerifyValue(pVerJob, phTestA, phTestB, "tone_pcm_is_signed", NULL, "Tone PCM signed bit doesn't match");
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
 
-    rc = audioTestObjGetTonePcmProps(phTestA, &pVerify->PCMProps);
-    CHECK_RC_MAYBE_RET(rc, pVerify);
+    rc = audioTestObjGetTonePcmProps(phTestA, &pVerJob->PCMProps);
+    CHECK_RC_MAYBE_RET(rc, pVerJob);
 
     /*
      * Now the fun stuff, PCM data analysis.
      */
-    rc = audioTestVerifyTestToneData(pVerify, phTestA, phTestB);
+    rc = audioTestVerifyTestToneData(pVerJob, phTestA, phTestB);
     if (RT_FAILURE(rc))
     {
-       int rc2 = audioTestErrorDescAddError(pVerify->pErr, pVerify->idxTest, "Verififcation of test tone data failed\n");
+       int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "Verififcation of test tone data failed\n");
        AssertRC(rc2);
     }
 
