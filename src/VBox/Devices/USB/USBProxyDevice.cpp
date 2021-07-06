@@ -1207,9 +1207,12 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
         {
             Log(("usb-proxy: pProxyDev=%s configuration %d with bmAttr=%02X\n",
                  pUsbIns->pszName, paCfgs[iCfg].Core.bmAttributes, iCfg));
+            if (paCfgs[iCfg].Core.bmAttributes & RT_BIT(5))
+            {
                  paCfgs[iCfg].Core.bmAttributes = paCfgs[iCfg].Core.bmAttributes & ~RT_BIT(5); /* Remote wakeup. */
-            fEdited = true;
-            LogRel(("VUSB: Disabled '%s' remote wakeup for configuration %d\n", pUsbIns->pszName, iCfg));
+                 fEdited = true;
+                 LogRel(("VUSB: Disabled '%s' remote wakeup for configuration %d\n", pUsbIns->pszName, iCfg));
+            }
         }
     }
 
