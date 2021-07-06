@@ -317,7 +317,7 @@ int XNextEvent(Display *display, XEvent *event_return)
     return True;
 }
 
-/* Mock XNextEvent(): this also should not be needed. Just in case, always
+/* Mock XPending(): this also should not be needed. Just in case, always
  * return that at least one event is pending to be processed. */
 extern "C" int XPending(Display *display);
 int XPending(Display *display)
