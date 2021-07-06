@@ -809,9 +809,75 @@ static void ReadCachedDeviceDesc(PCVUSBDESCDEVICE pDevDesc, uint8_t *pbBuf, uint
 #undef COPY_DATA
 
 /**
+ * Checks whether a descriptor read can be satisfied by reading from the
+ * descriptor cache or has to be passed to the device.
+ * If we have descriptors cached, it is generally safe to satisfy descriptor reads
+ * from the cache. As usual, there is broken USB software and hardware out there
+ * and guests might try to read a nonexistent desciptor (out of range index for
+ * string or configuration descriptor) and rely on it not failing.
+ * Since we cannot very well guess if such invalid requests should really succeed,
+ * and what exactly should happen if they do, we pass such requests to the device.
+ * If the descriptor was cached because it was edited, and the guest bypasses the
+ * edited cache by reading a descriptor with an invalid index, it is probably
+ * best to smash the USB device with a large hammer.
+ *
+ * See @bugref{10016}.
+ *
+ * @returns false if request must be passed to device.
+ */
+bool vusbDevIsDescriptorInCache(PVUSBDEV pDev, PCVUSBSETUP pSetup)
+{
+    unsigned int iIndex = (pSetup->wValue & 0xff);
+    Assert(pSetup->bRequest == VUSB_REQ_GET_DESCRIPTOR);
+
+    if ((pSetup->bmRequestType & VUSB_RECIP_MASK) == VUSB_TO_DEVICE)
+    {
+        if (pDev->pDescCache->fUseCachedDescriptors)
+        {
+            switch (pSetup->wValue >> 8)
+            {
+            case VUSB_DT_DEVICE:
+                if (iIndex == 0)
+                    return true;
+
+                LogRelMax(10, ("VUSB: %s: Warning: Reading device descriptor with non-zero index %u (wLength=%u), passing request to device\n",
+                               pDev->pUsbIns->pszName, iIndex, pSetup->wLength));
+                break;
+
+            case VUSB_DT_CONFIG:
+                if (iIndex < pDev->pDescCache->pDevice->bNumConfigurations)
+                    return true;
+
+                LogRelMax(10, ("VUSB: %s: Warning: Reading configuration descriptor invalid index %u (bNumConfigurations=%u, wLength=%u), passing request to device\n",
+                               pDev->pUsbIns->pszName, iIndex, pDev->pDescCache->pDevice->bNumConfigurations, pSetup->wLength));
+                break;
+
+            case VUSB_DT_STRING:
+                if (pDev->pDescCache->fUseCachedStringsDescriptors)
+                {
+                    if (pSetup->wIndex == 0)    /* Language IDs. */
+                        return true;
+
+                    if (FindCachedString(pDev->pDescCache->paLanguages, pDev->pDescCache->cLanguages,
+                                         pSetup->wIndex, iIndex))
+                        return true;
+                }
+                break;
+
+            default:
+                break;
+            }
+            Log(("VUSB: %s: Descriptor not cached: type=%u descidx=%u lang=%u len=%u, passing request to device\n",
+                 pDev->pUsbIns->pszName, pSetup->wValue >> 8, iIndex, pSetup->wIndex, pSetup->wLength));
+        }
+    }
+    return false;
+}
+
+
+/**
  * Standard device request: GET_DESCRIPTOR
  * @returns success indicator.
- * @remark not really used yet as we consider GET_DESCRIPTOR 'safe'.
  */
 static bool vusbDevStdReqGetDescriptor(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {

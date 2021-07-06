@@ -532,6 +532,8 @@ DECLHIDDEN(uint64_t) vusbRhR3ProcessFrame(PVUSBROOTHUB pThis, bool fCallback);
 
 int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
 
+bool vusbDevIsDescriptorInCache(PVUSBDEV pDev, PCVUSBSETUP pSetup);
+
 /**
  * Initializes the given URB pool.
  *

@@ -409,19 +409,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
          * cache. Yeah, it's a bit weird to read.)
          */
         case VUSB_REQ_GET_DESCRIPTOR:
-            if (    !pUrb->pVUsb->pDev->pDescCache->fUseCachedDescriptors
-                ||  (pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
-                return true;
-            switch (pSetup->wValue >> 8)
-            {
-                case VUSB_DT_DEVICE:
-                case VUSB_DT_CONFIG:
-                    return false;
-                case VUSB_DT_STRING:
-                    return !pUrb->pVUsb->pDev->pDescCache->fUseCachedStringsDescriptors;
-                default:
-                    return true;
-            }
+            return !vusbDevIsDescriptorInCache(pUrb->pVUsb->pDev, pSetup);
 
         default:
             return true;
