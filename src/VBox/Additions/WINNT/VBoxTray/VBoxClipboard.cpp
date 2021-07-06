@@ -518,16 +518,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                 else
                 {
 #endif
-                    int rc = SharedClipboardWinOpen(hwnd);
-                    if (RT_SUCCESS(rc))
-                    {
-                        SharedClipboardWinClear();
-
-                        rc = SharedClipboardWinAnnounceFormats(pWinCtx, fFormats);
-                    }
-
-                    SharedClipboardWinClose();
-
+                    SharedClipboardWinClearAndAnnounceFormats(pWinCtx, fFormats, hwnd);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 }
 #endif

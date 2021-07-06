@@ -110,7 +110,11 @@ typedef struct _SHCLWINCTX
     HWND               hWnd;
     /** Window handle which is next to us in the clipboard chain. */
     HWND               hWndNextInChain;
-    /** Window handle of the clipboard owner *if* we are the owner. */
+    /** Window handle of the clipboard owner *if* we are the owner.
+     * @todo r=bird: Ignore the misleading statement above.  This is only set to
+     * NULL by the initialization code and then it's set to the clipboard owner
+     * after we announce data to the clipboard.  So, essentially this will be our
+     * windows handle or NULL.  End of story. */
     HWND               hWndClipboardOwnerUs;
     /** Structure for maintaining the new clipboard API. */
     SHCLWINAPINEW      newAPI;
@@ -151,7 +155,7 @@ int SharedClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
 int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
 int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
-int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
+int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);

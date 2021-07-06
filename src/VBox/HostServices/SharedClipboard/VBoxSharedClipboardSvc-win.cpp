@@ -382,16 +382,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             else
             {
 #endif
-                int rc = SharedClipboardWinOpen(hWnd);
-                if (RT_SUCCESS(rc))
-                {
-                    SharedClipboardWinClear();
-
-                    rc = SharedClipboardWinAnnounceFormats(pWinCtx, fFormats);
-
-                    SharedClipboardWinClose();
-                }
-
+                int rc = SharedClipboardWinClearAndAnnounceFormats(pWinCtx, fFormats, hWnd);
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Reporting clipboard formats %#x to Windows host failed with %Rrc\n", fFormats, rc));
 

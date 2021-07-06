@@ -818,7 +818,7 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
  * @param   pWinCtx             Windows context to use.
  * @param   fFormats            Clipboard format(s) to announce.
  */
-int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
+static int sharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
 {
     LogFunc(("fFormats=0x%x\n", fFormats));
 
@@ -892,7 +892,34 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
     return rc;
 }
 
+/**
+ * Opens the clipboard, clears it, announces @a fFormats and closes it.
+ *
+ * The actual rendering (setting) of the clipboard data will be done later with
+ * a separate WM_RENDERFORMAT message.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if the format is not supported / handled.
+ * @param   pWinCtx     Windows context to use.
+ * @param   fFormats    Clipboard format(s) to announce.
+ * @param   hWnd        The window handle to use as owner.
+ */
+int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd)
+{
+    int rc = SharedClipboardWinOpen(hWnd);
+    if (RT_SUCCESS(rc))
+    {
+        SharedClipboardWinClear();
+
+        rc = sharedClipboardWinAnnounceFormats(pWinCtx, fFormats);
+        Assert(pWinCtx->hWndClipboardOwnerUs == hWnd || pWinCtx->hWndClipboardOwnerUs == NULL);
+
+        SharedClipboardWinClose();
+    }
+    return rc;
+}
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+
 /**
  * Creates an Shared Clipboard transfer by announcing transfer data  (via IDataObject) to Windows.
  *
@@ -1207,5 +1234,6 @@ int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszL
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
