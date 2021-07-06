@@ -1051,7 +1051,7 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_ReadDir(void *pvThis, PRTDIRENTRYEX pD
         {
             memcpy(&pDirEntry->szName[0], pszName, cbName);
             pDirEntry->szName[cbName] = '\0';
-            pDirEntry->cbName         = cbName;
+            pDirEntry->cbName         = (uint16_t)cbName;
             rc = rtEfiVarStore_QueryInfo(cbObject, fIsDir, &Time, &pDirEntry->Info, enmAddAttr);
             if (RT_SUCCESS(rc))
             {
