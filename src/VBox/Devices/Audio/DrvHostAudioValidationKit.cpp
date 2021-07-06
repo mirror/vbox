@@ -130,12 +130,16 @@ typedef struct DRVHOSTVALKITAUDIO
     uint32_t            cTestsRec;
     /** List keeping the recording tests (FIFO). */
     RTLISTANCHOR        lstTestsRec;
+    /** Pointer to current recording test being processed.
+     *  NULL if no current test active. */
+    PVALKITTESTDATA     pTestCurRec;
     /** Number of tests in \a lstTestsPlay. */
     uint32_t            cTestsPlay;
     /** List keeping the recording tests (FIFO). */
     RTLISTANCHOR        lstTestsPlay;
-    /** Pointer to current test being processed. */
-    PVALKITTESTDATA     pTestCur;
+    /** Pointer to current playback test being processed.
+     *  NULL if no current test active. */
+    PVALKITTESTDATA     pTestCurPlay;
     /** Critical section for serializing access across threads. */
     RTCRITSECT          CritSect;
     bool                fTestSetEnded;
@@ -634,7 +638,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterf
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        PVALKITTESTDATA pTst = pThis->pTestCur;
+        PVALKITTESTDATA pTst = pThis->pTestCurPlay;
 
         if (pTst)
         {
@@ -647,8 +651,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterf
 
             AudioTestSetTestDone(pTst->pEntry);
 
-            pThis->pTestCur = NULL;
-            pTst            = NULL;
+            pThis->pTestCurPlay = NULL;
+            pTst                = NULL;
 
             if (pThis->fTestSetEnded)
                 rc = RTSemEventSignal(pThis->EventSemEnded);
@@ -670,20 +674,19 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
     RT_NOREF(pStream);
 
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITTESTDATA     pTst  = NULL;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        pThis->pTestCur = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
+        pTst = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
     }
 
-    if (pThis->pTestCur == NULL) /* Empty list? */
+    if (pTst == NULL) /* Empty list? */
         return 0;
-
-    PVALKITTESTDATA const pTst = pThis->pTestCur;
 
     Assert(pTst->t.TestTone.u.Rec.cbToWrite >= pTst->t.TestTone.u.Rec.cbWritten);
     return pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
@@ -726,24 +729,27 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     }
 
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITTESTDATA     pTst  = NULL;
 
     bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        if (pThis->pTestCur == NULL)
+        if (pThis->pTestCurPlay == NULL)
         {
-            pThis->pTestCur = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
-            if (pThis->pTestCur)
-                LogRel(("ValKit: Next guest playback test in queue is test #%RU32\n", pThis->pTestCur->idxTest));
+            pThis->pTestCurPlay = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
+            if (pThis->pTestCurPlay)
+                LogRel(("ValKit: Next guest playback test in queue is test #%RU32\n", pThis->pTestCurPlay->idxTest));
         }
+
+        pTst = pThis->pTestCurPlay;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
     }
 
-    if (pThis->pTestCur == NULL) /* Empty list? */
+    if (pTst == NULL) /* Empty list? */
     {
 #ifdef DEBUG_andy
         if (!fIsSilence)
@@ -761,11 +767,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                  cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
 #endif
 
-    PVALKITTESTDATA pTst = pThis->pTestCur;
-
     const bool fHandleSilence = false; /** @todo Skip blocks of entire silence for now. */
 
-    if (pTst->pEntry == NULL)
+    if (pTst->pEntry == NULL) /* Test not started yet? */
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -813,8 +817,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     drvHostValKiUnregisterPlayTest(pThis, pTst);
 
-                    pThis->pTestCur = NULL;
-                    pTst            = NULL;
+                    pThis->pTestCurPlay = NULL;
+                    pTst                = NULL;
 
                     int rc2 = RTCritSectLeave(&pThis->CritSect);
                     if (RT_SUCCESS(rc))
@@ -857,22 +861,25 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     }
 
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITTESTDATA     pTst  = NULL;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        if (pThis->pTestCur == NULL)
+        if (pThis->pTestCurRec == NULL)
         {
-            pThis->pTestCur = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
-            if (pThis->pTestCur)
-                LogRel(("ValKit: Next guest recording test in queue is test #%RU32\n", pThis->pTestCur->idxTest));
+            pThis->pTestCurRec = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
+            if (pThis->pTestCurRec)
+                LogRel(("ValKit: Next guest recording test in queue is test #%RU32\n", pThis->pTestCurRec->idxTest));
         }
+
+        pTst = pThis->pTestCurRec;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
     }
 
-    if (pThis->pTestCur == NULL) /* Empty list? */
+    if (pTst == NULL) /* Empty list? */
     {
         LogRelMax(64, ("ValKit: Warning: Guest is trying to record audio data when no recording test is active\n"));
 
@@ -880,9 +887,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         return VINF_SUCCESS;
     }
 
-    PVALKITTESTDATA pTst = pThis->pTestCur;
-
-    if (pTst->pEntry == NULL)
+    if (pTst->pEntry == NULL) /* Test not started yet? */
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -933,8 +938,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                     {
                         drvHostValKiUnregisterRecTest(pThis, pTst);
 
-                        pThis->pTestCur = NULL;
-                        pTst            = NULL;
+                        pThis->pTestCurRec = NULL;
+                        pTst               = NULL;
 
                         int rc2 = RTCritSectLeave(&pThis->CritSect);
                         AssertRC(rc2);
