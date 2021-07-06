@@ -82,7 +82,7 @@ RTDECL(PRTTIMESPEC) RTEfiTimeToTimeSpec(PRTTIMESPEC pTimeSpec, PCEFI_TIME pEfiTi
 }
 
 
-RTDECL(PEFI_TIME) RTEfiTimeToTimeSpec(PEFI_TIME pEfiTime, PCRTTIMESPEC pTimeSpec)
+RTDECL(PEFI_TIME) RTEfiTimeFromTimeSpec(PEFI_TIME pEfiTime, PCRTTIMESPEC pTimeSpec)
 {
     RTTIME Time; RT_ZERO(Time);
     if (!RTTimeExplode(&Time, pTimeSpec))
