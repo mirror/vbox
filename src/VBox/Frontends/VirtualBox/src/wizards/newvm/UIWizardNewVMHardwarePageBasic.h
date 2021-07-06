@@ -37,40 +37,22 @@ class QCheckBox;
 class QIRichTextLabel;
 class UIBaseMemoryEditor;
 class UIVirtualCPUEditor;
+class UIWizardNewVM;
 
-/** 3rd page of the New Virtual Machine wizard (base part). */
-// class UIWizardNewVMHardwarePage : public UIWizardPageBase
-// {
-
-// protected:
-
-//     /** Constructor. */
-//     UIWizardNewVMHardwarePage();
-
-
-//     /** @name Property getters/setters
-//      * @{ */
+namespace UIWizardNewVMHardwarePage
+{
+}
 //        int baseMemory() const;
 //        int VCPUCount() const;
 //        bool EFIEnabled() const;
-//     /** @} */
-
-//     QWidget *createHardwareWidgets();
-//     void retranslateWidgets();
 
 
-
-
-// };
-
-/** 3rd page of the New Virtual Machine wizard (basic extension). */
 class UIWizardNewVMHardwarePageBasic : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor. */
     UIWizardNewVMHardwarePageBasic();
 
 protected:
@@ -78,9 +60,10 @@ protected:
 
 private slots:
 
+    void sltMemoryAmountChanged(int iValue);
+    void sltCPUCountChanged(int iCount);
 
 private:
-
 
     /** Prepare stuff. */
     void prepare();
@@ -90,6 +73,8 @@ private:
     void cleanupPage();
     QWidget *createHardwareWidgets();
     bool isComplete() const;
+
+    UIWizardNewVM *m_pWizard;
 
     /** @name Widgets
      * @{ */

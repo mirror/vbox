@@ -38,6 +38,7 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 
+
 /* Defines some patterns to guess the right OS type. Should be in sync with
  * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The
  * first matching string found, will be used. */
@@ -343,7 +344,6 @@ UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameOSTypeLabel(0)
 {
-    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
 }
 
@@ -399,13 +399,14 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
     UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, m_pWizard);
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    emit completeChanged();
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, m_pWizard);
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
@@ -456,17 +457,18 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
 bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 {
     /* Try to create machine folder: */
-    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, m_pWizard);
+    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, qobject_cast<UIWizardNewVM*>(wizard()));
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 {
-    UIWizardNewVMNameOSTypePage::determineOSType(strPath, m_pWizard);
-    if (m_pWizard)
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(this->wizard());
+    UIWizardNewVMNameOSTypePage::determineOSType(strPath, pWizard);
+    if (pWizard)
     {
-        if (!m_pWizard->detectedOSTypeId().isEmpty())
-            UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, m_pWizard->detectedOSTypeId());
-        m_pWizard->setISOFilePath(strPath);
+        if (!pWizard->detectedOSTypeId().isEmpty())
+            UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+        pWizard->setISOFilePath(strPath);
     }
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strPath);
@@ -478,8 +480,7 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 
 void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilChanged(const QString &strGuestOSFamilyId)
 {
-    if (m_pWizard)
-        m_pWizard->setGuestOSFamilyId(strGuestOSFamilyId);
+    parentWizardSet(setGuestOSFamilyId, strGuestOSFamilyId);
 }
 
 QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()

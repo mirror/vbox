@@ -29,6 +29,11 @@
 #include "CMachine.h"
 #include "CMedium.h"
 
+#define parentWizardSet(functionName, value)                         \
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard()); \
+    if (pWizard)                                                     \
+        pWizard->functionName(value);
+
 /** Container for unattended install related data. */
 struct UIUnattendedInstallData
 {
@@ -128,6 +133,12 @@ public:
     const QString &productKey() const;
     void setProductKey(const QString &productKey);
 
+    int CPUCount() const;
+    void setCPUCount(int iCPUCount);
+
+    int memoryAmount() const;
+    void setMemoryCount(int iMemory);
+
 protected:
 
     /** Populates pages. */
@@ -194,6 +205,9 @@ private:
     QString m_strGuestAdditionsISOPath;
     QString m_strHostname;
     QString m_strProductKey;
+
+    int m_iCPUCount;
+    int m_iMemoryAmount;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

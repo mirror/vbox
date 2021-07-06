@@ -63,6 +63,9 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_fInstallGuestAdditions(false)
     , m_fStartHeadless(false)
     , m_fSkipUnattendedInstall(false)
+    , m_iCPUCount(1)
+    , m_iMemoryAmount(0)
+
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -84,9 +87,9 @@ void UIWizardNewVM::populatePages()
         case WizardMode_Basic:
         {
             addPage(new UIWizardNewVMNameOSTypePageBasic);
-            addPage(new UIWizardNewVMUnattendedPageBasic);
-            addPage(new UIWizardNewVMHardwarePageBasic);
-            addPage(new UIWizardNewVMDiskPageBasic);
+            // addPage(new UIWizardNewVMUnattendedPageBasic);
+            // addPage(new UIWizardNewVMHardwarePageBasic);
+            // addPage(new UIWizardNewVMDiskPageBasic);
             break;
         }
         case WizardMode_Expert:
@@ -755,6 +758,26 @@ const QString &UIWizardNewVM::productKey() const
 void UIWizardNewVM::setProductKey(const QString &productKey)
 {
     m_strProductKey = productKey;
+}
+
+int UIWizardNewVM::CPUCount() const
+{
+    return m_iCPUCount;
+}
+
+void UIWizardNewVM::setCPUCount(int iCPUCount)
+{
+    m_iCPUCount = iCPUCount;
+}
+
+int UIWizardNewVM::memoryAmount() const
+{
+    return m_iMemoryAmount;
+}
+
+void UIWizardNewVM::setMemoryCount(int iMemory)
+{
+    m_iMemoryAmount = iMemory;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

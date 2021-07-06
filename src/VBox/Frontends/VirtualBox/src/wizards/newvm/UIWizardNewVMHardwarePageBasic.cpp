@@ -33,38 +33,13 @@
 /* COM includes: */
 #include "CGuestOSType.h"
 
-// UIWizardNewVMHardwarePage::UIWizardNewVMHardwarePage()
-// {
-// }
-
-// int UIWizardNewVMHardwarePage::baseMemory() const
-// {
-//     if (!m_pBaseMemoryEditor)
-//         return 0;
-//     return m_pBaseMemoryEditor->value();
-// }
-
-// int UIWizardNewVMHardwarePage::VCPUCount() const
-// {
-//     if (!m_pVirtualCPUEditor)
-//         return 1;
-//     return m_pVirtualCPUEditor->value();
-// }
-
-// bool UIWizardNewVMHardwarePage::EFIEnabled() const
-// {
-//     if (!m_pEFICheckBox)
-//         return false;
-//     return m_pEFICheckBox->isChecked();
-// }
-
-
 UIWizardNewVMHardwarePageBasic::UIWizardNewVMHardwarePageBasic()
     : m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
     , m_pEFICheckBox(0)
     , m_pLabel(0)
 {
+    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
     qRegisterMetaType<CMedium>();
 }
@@ -78,11 +53,15 @@ void UIWizardNewVMHardwarePageBasic::prepare()
     pMainLayout->addWidget(createHardwareWidgets());
 
     pMainLayout->addStretch();
-    // createConnections();
+    createConnections();
 }
 
 void UIWizardNewVMHardwarePageBasic::createConnections()
 {
+    connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+            this, &UIWizardNewVMHardwarePageBasic::sltMemoryAmountChanged);
+
+
 }
 
 void UIWizardNewVMHardwarePageBasic::retranslateUi()
@@ -143,4 +122,14 @@ QWidget *UIWizardNewVMHardwarePageBasic::createHardwareWidgets()
     pHardwareLayout->addWidget(m_pEFICheckBox, 2, 0, 1, 1);
 
     return pHardwareContainer;
+}
+
+void UIWizardNewVMHardwarePageBasic::sltMemoryAmountChanged(int iValue)
+{
+    Q_UNUSED(iValue);
+}
+
+void UIWizardNewVMHardwarePageBasic::sltCPUCountChanged(int iCount)
+{
+    Q_UNUSED(iCount);
 }

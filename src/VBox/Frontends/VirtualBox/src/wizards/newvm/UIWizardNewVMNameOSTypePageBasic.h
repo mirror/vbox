@@ -100,8 +100,6 @@ private:
     void setSkipCheckBoxEnable();
     bool isUnattendedEnabled() const;
 
-    UIWizardNewVM *m_pWizard;
-
     /** @name Widgets
      * @{ */
         QGridLayout           *m_pNameAndSystemLayout;

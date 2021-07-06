@@ -67,7 +67,6 @@ UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     , m_pProductKeyLineEdit(0)
     , m_pProductKeyLabel(0)
 {
-    m_pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     prepare();
 }
 
@@ -158,7 +157,8 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
 bool UIWizardNewVMUnattendedPageBasic::isComplete() const
 {
     markWidgets();
-    if (m_pWizard && m_pWizard->installGuestAdditions() &&
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (pWizard && pWizard->installGuestAdditions() &&
         !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector))
         return false;
     if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
@@ -178,55 +178,49 @@ void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     disableEnableGAWidgets(fEnabled);
-    if (m_pWizard)
-        m_pWizard->setInstallGuestAdditions(fEnabled);
+    parentWizardSet(setInstallGuestAdditions, fEnabled);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
-    if (m_pWizard)
-        m_pWizard->setGuestAdditionsISOPath(strPath);
+    parentWizardSet(setGuestAdditionsISOPath, strPath);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltPasswordChanged(const QString &strPassword)
 {
-    if (m_pWizard)
-        m_pWizard->setPassword(strPassword);
+    parentWizardSet(setPassword, strPassword);
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltUserNameChanged(const QString &strUserName)
 {
-    if (m_pWizard)
-        m_pWizard->setUserName(strUserName);
+    parentWizardSet(setUserName, strUserName);
     emit completeChanged();
 }
 
 bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 {
-    if (!m_pWizard || !m_pWizard->isUnattendedEnabled() || !m_pWizard->isGuestOSTypeWindows())
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltHostnameChanged(const QString &strHostname)
 {
-    if (m_pWizard)
-        m_pWizard->setHostname(strHostname);
+    parentWizardSet(setHostname, strHostname);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
 {
-    if (m_pWizard)
-        m_pWizard->setProductKey(strProductKey);
+    parentWizardSet(setProductKey, strProductKey);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
-    if (m_pWizard)
-        m_pWizard->setStartHeadless(fStartHeadless);
+    parentWizardSet(setStartHeadless, fStartHeadless);
 }
 
 QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()
@@ -354,6 +348,7 @@ void UIWizardNewVMUnattendedPageBasic::disableEnableProductKeyWidgets(bool fEnab
 
 void UIWizardNewVMUnattendedPageBasic::markWidgets() const
 {
-    if (m_pWizard && m_pWizard->installGuestAdditions())
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (pWizard && pWizard->installGuestAdditions())
         m_pGAISOFilePathSelector->mark(!UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector));
 }

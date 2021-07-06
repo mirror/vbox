@@ -34,7 +34,6 @@ class QLineEdit;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UIUserNamePasswordEditor;
-class UIWizardNewVM;
 struct UIUnattendedInstallData;
 
 
@@ -84,8 +83,6 @@ private:
     void disableEnableProductKeyWidgets(bool fEnabled);
     void disableEnableGAWidgets(bool fEnabled);
     void markWidgets() const;
-
-    UIWizardNewVM *m_pWizard;
 
     /** @name Widgets
       * @{ */
