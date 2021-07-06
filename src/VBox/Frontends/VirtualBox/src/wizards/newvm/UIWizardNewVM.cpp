@@ -65,7 +65,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_fSkipUnattendedInstall(false)
     , m_iCPUCount(1)
     , m_iMemorySize(0)
-
+    , m_iUnattendedInstallPageIndex(-1)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -87,7 +87,8 @@ void UIWizardNewVM::populatePages()
         case WizardMode_Basic:
         {
             addPage(new UIWizardNewVMNameOSTypePageBasic);
-            addPage(new UIWizardNewVMUnattendedPageBasic);
+            m_iUnattendedInstallPageIndex = addPage(new UIWizardNewVMUnattendedPageBasic);
+            setUnattendedPageVisible(false);
             addPage(new UIWizardNewVMHardwarePageBasic);
             addPage(new UIWizardNewVMDiskPageBasic);
             break;
@@ -698,6 +699,8 @@ bool UIWizardNewVM::skipUnattendedInstall() const
 void UIWizardNewVM::setSkipUnattendedInstall(bool fSkipUnattendedInstall)
 {
     m_fSkipUnattendedInstall = fSkipUnattendedInstall;
+    /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
+    setUnattendedPageVisible(isUnattendedEnabled());
 }
 
 const QString &UIWizardNewVM::ISOFilePath() const
@@ -708,6 +711,8 @@ const QString &UIWizardNewVM::ISOFilePath() const
 void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 {
     m_strISOFilePath = strISOFilePath;
+    /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
+    setUnattendedPageVisible(isUnattendedEnabled());
 }
 
 const QString &UIWizardNewVM::userName() const
@@ -815,4 +820,10 @@ bool UIWizardNewVM::isUnattendedEnabled() const
 bool UIWizardNewVM::isGuestOSTypeWindows() const
 {
     return m_strGuestOSFamilyId.contains("windows", Qt::CaseInsensitive);
+}
+
+void UIWizardNewVM::setUnattendedPageVisible(bool fVisible)
+{
+    if (m_iUnattendedInstallPageIndex != -1)
+        setPageVisible(m_iUnattendedInstallPageIndex, fVisible);
 }

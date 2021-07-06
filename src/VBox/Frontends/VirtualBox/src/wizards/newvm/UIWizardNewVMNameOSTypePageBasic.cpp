@@ -320,11 +320,6 @@ void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIW
     pWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
 }
 
-// bool UIWizardNewVMNameOSTypePage::skipUnattendedInstall() const
-// {
-//     return m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked();
-// }
-
 bool UIWizardNewVMNameOSTypePage::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)
 {
     if (!pNameAndSystemEditor)
@@ -386,6 +381,8 @@ void UIWizardNewVMNameOSTypePageBasic::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged);
     }
+    if (m_pSkipUnattendedCheckBox)
+        connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged);
 }
 
 bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
@@ -485,6 +482,11 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId)
 {
     newVMWizardPropertySet(GuestOSFamilyId, strGuestOSFamilyId);
+}
+
+void UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged(bool fSkip)
+{
+    newVMWizardPropertySet(SkipUnattendedInstall, fSkip);
 }
 
 QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()

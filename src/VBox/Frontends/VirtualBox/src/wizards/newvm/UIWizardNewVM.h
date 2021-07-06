@@ -86,6 +86,7 @@ public:
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isGuestOSTypeWindows() const;
+
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
     void setVirtualDisk(const QUuid &mediumId);
@@ -164,6 +165,7 @@ private:
     void retranslateUi();
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
+    void setUnattendedPageVisible(bool fVisible);
 
     /** @name Variables
      * @{ */
@@ -212,6 +214,7 @@ private:
 
     int m_iCPUCount;
     int m_iMemorySize;
+    int m_iUnattendedInstallPageIndex;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;
