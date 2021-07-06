@@ -414,11 +414,12 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
         }
 
         default:
+            lresultRc = DefWindowProc(hWnd, uMsg, wParam, lParam);
             break;
     }
 
-    LogFlowFunc(("LEAVE hWnd=%p, WM_ %u\n", hWnd, uMsg));
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    LogFlowFunc(("LEAVE hWnd=%p, WM_ %u -> %#zx\n", hWnd, uMsg, lresultRc));
+    return lresultRc;
 }
 
 /**
