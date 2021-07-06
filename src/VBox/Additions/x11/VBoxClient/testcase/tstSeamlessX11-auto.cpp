@@ -317,6 +317,15 @@ int XNextEvent(Display *display, XEvent *event_return)
     return True;
 }
 
+/* Mock XNextEvent(): this also should not be needed. Just in case, always
+ * return that at least one event is pending to be processed. */
+extern "C" int XPending(Display *display);
+int XPending(Display *display)
+{
+    RT_NOREF1(display);
+    return 1;
+}
+
 static void smlsSetNextEvent(int type, Window window)
 {
     g_SmlsEventType = type;
