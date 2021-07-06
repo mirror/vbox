@@ -235,6 +235,11 @@ void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
     if (iIndex > m_iLastIndex)
         pPage->initializePage();
 
+    /* Disable/enable Next button: */
+    QPushButton *pButtonNext = wizardButton(WizardButtonType_Next);
+    AssertMsgReturnVoid(pButtonNext, ("No Next wizard button found!\n"));
+    pButtonNext->setEnabled(pPage->isComplete());
+
     /* Update last index: */
     m_iLastIndex = iIndex;
 }
