@@ -66,6 +66,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_AUDIO_MIXER,
     /** Audio mixer buffer group. */
     LOG_GROUP_AUDIO_MIXER_BUFFER,
+    /** Audio test group. */
+    LOG_GROUP_AUDIO_TEST,
     /** Auto-logon group. */
     LOG_GROUP_AUTOLOGON,
     /** CFGM group. */
@@ -787,6 +789,7 @@ typedef enum VBOXLOGGROUP
     "DEFAULT", \
     "AUDIO_MIXER", \
     "AUDIO_MIXER_BUFFER", \
+    "AUDIO_TEST", \
     "AUTOLOGON", \
     "CFGM", \
     "CPUM", \

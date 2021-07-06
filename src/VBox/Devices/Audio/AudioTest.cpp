@@ -44,7 +44,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h> /* sin, M_PI */
 
-#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO /** @todo Add an own log group for this? */
+#define LOG_GROUP LOG_GROUP_AUDIO_TEST
 #include <VBox/log.h>
 
 #include <VBox/version.h>

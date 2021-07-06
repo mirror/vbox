@@ -21,7 +21,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO /** @todo Add an own log group for this? */
+#define LOG_GROUP LOG_GROUP_AUDIO_TEST
 
 #include <iprt/crc.h>
 #include <iprt/err.h>
