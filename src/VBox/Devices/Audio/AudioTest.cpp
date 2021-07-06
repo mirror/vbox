@@ -44,6 +44,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h> /* sin, M_PI */
 
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO /** @todo Add an own log group for this? */
+#include <VBox/log.h>
+
 #include <VBox/version.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
@@ -180,6 +183,9 @@ typedef struct AUDIOTESTVERIFYJOB
     uint32_t            idxTest;
     /** Flag indicating whether to keep going after an error has occurred. */
     bool                fKeepGoing;
+    /** Threshold of file differences (chunks) at when we consider audio files
+     *  as not matching. */
+    uint32_t            cThresholdDiff;
     /** PCM properties to use for verification. */
     PDMAUDIOPCMPROPS    PCMProps;
 } AUDIOTESTVERIFYJOB;
@@ -372,6 +378,51 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
 double AudioTestToneGetRandomFreq(void)
 {
     return s_aAudioTestToneFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(s_aAudioTestToneFreqsHz) - 1)];
+}
+
+/**
+ * Finds the next audible *or* silent audio sample and returns its offset.
+ *
+ * @returns Offset (in bytes) of the next found sample.
+ * @param   hFile               File handle of file to search in.
+ * @param   fFindSilence        Whether to search for a silent sample or not (i.e. audible).
+ *                              What a silent sample is depends on \a pToneParms PCM parameters.
+ * @param   uOff                Absolute offset (in bytes) to start searching from.
+ * @param   pToneParms          Tone parameters to use.
+ */
+static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t uOff, PAUDIOTESTTONEPARMS pToneParms)
+{
+    int rc = RTFileSeek(hFile, uOff, RTFILE_SEEK_BEGIN, NULL);
+    AssertRCReturn(rc, 0);
+
+    uint64_t offFound       = 0;
+    int64_t  abSample[_4K];
+
+    size_t   cbRead;
+    uint32_t cConseqSilence = 0;
+    for (;;)
+    {
+        rc = RTFileRead(hFile, &abSample, sizeof(abSample), &cbRead);
+        if (   RT_FAILURE(rc)
+            || !cbRead)
+            break;
+
+        size_t const cbSample = PDMAudioPropsSampleSize(&pToneParms->Props);
+
+        for (size_t i = 0; i < cbRead / cbSample; i += cbSample) /** @todo Slow as heck, but works for now. */
+        {
+            bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pToneParms->Props, (const uint8_t *)abSample + i, cbSample);
+            if (fIsSilence == fFindSilence)
+            {
+                offFound += cbSample;
+                cConseqSilence++;
+            }
+            else
+                break;
+        }
+    }
+
+    return offFound;
 }
 
 /**
@@ -800,7 +851,8 @@ static int audioTestObjGetBool(PAUDIOTESTOBJINT phObj, const char *pszKey, bool 
     char szVal[_1K];
     int rc = audioTestObjGetStr(phObj, pszKey, szVal, sizeof(szVal));
     if (RT_SUCCESS(rc))
-        *pbVal = RT_BOOL(RTStrToUInt8(szVal));
+        *pbVal =    (RTStrICmp(szVal, "true") == 0)
+                 || (RTStrICmp(szVal, "1")    == 0) ? true : false;
 
     return rc;
 }
@@ -1839,7 +1891,6 @@ static void audioTestObjFinalize(PAUDIOTESTOBJINT pObj)
 static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT phObj, PPDMAUDIOPCMPROPS pProps)
 {
     int rc;
-
     uint32_t uHz;
     rc = audioTestObjGetUInt32(phObj, "tone_pcm_hz", &uHz);
     AssertRCReturn(rc, rc);
@@ -1859,37 +1910,84 @@ static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT phObj, PPDMAUDIOPCMPROPS
 }
 
 /**
- * Compares two (binary) files.
- *
- * @returns \c true if equal, or \c false if not.
- * @param   hFileA              File handle to file A to compare.
- * @param   hFileB              File handle to file B to compare file A with.
- * @param   cbToCompare         Number of bytes to compare starting the the both file's
- *                              current position.
+ * Structure for keeping file comparison parameters for one file.
  */
-static bool audioTestFilesCompareBinary(RTFILE hFileA, RTFILE hFileB, uint64_t cbToCompare)
+typedef struct AUDIOTESTFILECMPPARMS
 {
-    uint8_t auBufA[_32K];
-    uint8_t auBufB[_32K];
+    /** File handle to file to compare. */
+    RTFILE   hFile;
+    /** Absolute offset (in bytes) to start comparing.
+     *  Ignored when set to 0. */
+    uint64_t offStart;
+    /** Size (in bytes) of area to compare.
+     *  Starts at \a offStart. */
+    uint64_t cbSize;
+} AUDIOTESTFILECMPPARMS;
+/** Pointer to file comparison parameters for one file. */
+typedef AUDIOTESTFILECMPPARMS *PAUDIOTESTFILECMPPARMS;
 
-    int rc = VINF_SUCCESS;
+/**
+ * Finds differences in two audio test files by binary comparing chunks.
+ *
+ * @returns Number of differences. 0 means they are equal (but not necessarily identical).
+ * @param   pCmpA               File comparison parameters to file A to compare file B with.
+ * @param   pCmpB               File comparison parameters to file B to compare file A with.
+ * @param   pToneParms          Tone parameters to use for comparison.
+ */
+static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTFILECMPPARMS pCmpA, PAUDIOTESTFILECMPPARMS pCmpB,
+                                              PAUDIOTESTTONEPARMS pToneParms)
+{
+    uint8_t auBufA[_4K];
+    uint8_t auBufB[_4K];
 
+    int rc = RTFileSeek(pCmpA->hFile, pCmpA->offStart, RTFILE_SEEK_BEGIN, NULL);
+    AssertRC(rc);
+
+    rc = RTFileSeek(pCmpB->hFile, pCmpB->offStart, RTFILE_SEEK_BEGIN, NULL);
+    AssertRC(rc);
+
+    RT_NOREF(pToneParms);
+    uint32_t const cbChunkSize = 4; //PDMAudioPropsMilliToBytes(&pToneParms->Props, 5 /* ms */);
+
+    uint64_t offCur      = 0;
+    uint64_t offLastDiff = 0;
+    uint32_t cDiffs      = 0;
+    uint64_t cbToCompare = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
     while (cbToCompare)
     {
         size_t cbReadA;
-        rc = RTFileRead(hFileA, auBufA, RT_MIN(cbToCompare, sizeof(auBufA)), &cbReadA);
+        rc = RTFileRead(pCmpA->hFile, auBufA, RT_MIN(cbToCompare, cbChunkSize), &cbReadA);
         AssertRCBreak(rc);
         size_t cbReadB;
-        rc = RTFileRead(hFileB, auBufB, RT_MIN(cbToCompare, sizeof(auBufB)), &cbReadB);
+        rc = RTFileRead(pCmpB->hFile, auBufB, RT_MIN(cbToCompare, cbChunkSize), &cbReadB);
         AssertRCBreak(rc);
         AssertBreakStmt(cbReadA == cbReadB, rc = VERR_INVALID_PARAMETER); /** @todo Find a better rc. */
+
         if (memcmp(auBufA, auBufB, RT_MIN(cbReadA, cbReadB)) != 0)
-            return false;
-        Assert(cbToCompare >= cbReadA);
+        {
+            if (offLastDiff == 0) /* No consequitive different chunk? Count as new then. */
+            {
+                cDiffs++;
+                offLastDiff = offCur;
+            }
+        }
+        else /* Reset and count next difference as new then. */
+        {
+            if (cDiffs)
+            {
+                Log2Func(("Chunk A [%RU64-%RU64] vs. chunk B [%RU64-%RU64] (%RU64 bytes)\n",
+                          pCmpA->offStart + offLastDiff, pCmpA->offStart + offCur,
+                          pCmpB->offStart + offLastDiff, pCmpB->offStart + offCur, offCur - offLastDiff));
+            }
+            offLastDiff = 0;
+        }
+
+        AssertBreakStmt(cbToCompare >= cbReadA, VERR_INTERNAL_ERROR);
         cbToCompare -= cbReadA;
+        offCur      += cbReadA;
     }
 
-    return RT_SUCCESS(rc) && (cbToCompare == 0);
+    return cDiffs;
 }
 
 #define CHECK_RC_MAYBE_RET(a_rc, a_pVerJob) \
@@ -1990,12 +2088,44 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
         AssertRC(rc2);
     }
 
-    if (!audioTestFilesCompareBinary(pObjA->File.hFile, pObjB->File.hFile, cbSizeA))
-    {
-        /** @todo Add more sophisticated stuff here. */
+    /** @todo For now we only support comparison of data which do have identical PCM properties! */
 
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' have different content",
-                                            pObjA->szName, pObjB->szName);
+    AUDIOTESTTONEPARMS ToneParmsA;
+    RT_ZERO(ToneParmsA);
+    ToneParmsA.Props = pVerJob->PCMProps;
+
+    AUDIOTESTFILECMPPARMS FileA;
+    RT_ZERO(FileA);
+    FileA.hFile     = pObjA->File.hFile;
+    FileA.offStart  = audioTestToneFileFind(pObjA->File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsA);
+    FileA.cbSize    = RT_MIN(audioTestToneFileFind(pObjA->File.hFile, false /* fFindSilence */, FileA.offStart,  &ToneParmsA) + 1,
+                             cbSizeA);
+
+    AUDIOTESTTONEPARMS ToneParmsB;
+    RT_ZERO(ToneParmsB);
+    ToneParmsB.Props = pVerJob->PCMProps;
+
+    AUDIOTESTFILECMPPARMS FileB;
+    RT_ZERO(FileB);
+    FileB.hFile     = pObjB->File.hFile;
+    FileB.offStart  = audioTestToneFileFind(pObjB->File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsB);
+    FileB.cbSize    = RT_MIN(audioTestToneFileFind(pObjB->File.hFile, false /* fFindSilence */, FileB.offStart,  &ToneParmsB),
+                             cbSizeB);
+
+    Log2Func(("Test #%RU32\n", pVerJob->idxTest));
+    Log2Func(("File A ('%s'): cbOff=%RU64  cbSize=%RU64, cbFileSize=%RU64\n", pObjA->szName, FileA.offStart, FileA.cbSize - FileA.offStart, cbSizeA));
+    Log2Func(("File B ('%s'): cbOff=%RU64, cbSize=%RU64, cbFileSize=%RU64\n", pObjB->szName, FileB.offStart, FileB.cbSize - FileB.offStart, cbSizeB));
+
+    uint32_t const cDiffs = audioTestFilesFindDiffsBinary(&FileA, &FileB, &ToneParmsA);
+
+    int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' are %s (%RU32 different chunks, threshold is %RU32)",
+                                        pObjA->szName, pObjB->szName, cDiffs == 0 ? "equal" : "different", cDiffs, pVerJob->cThresholdDiff);
+    AssertRC(rc2);
+
+    if (cDiffs > pVerJob->cThresholdDiff)
+    {
+        rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' do not match",
+                                         pObjA->szName, pObjB->szName);
         AssertRC(rc2);
     }
 
@@ -2089,6 +2219,10 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     VerJob.pSetA      = pSetA;
     VerJob.pSetB      = pSetB;
     VerJob.fKeepGoing = true; /** @todo Make this configurable. */
+
+    /** @todo For now we're very strict and consider any diff as being erroneous.
+     *        We might want / need to change this depending on the test boxes lateron. */
+    VerJob.cThresholdDiff = 0;
 
     PAUDIOTESTVERIFYJOB pVerJob = &VerJob;
 
