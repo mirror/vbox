@@ -56,7 +56,7 @@ verpkg   := VirtualBox-6.1
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
-bldbase  := $(if $(VBOX_OUT_BASE),$(VBOX_OUT_BASE),$(vboxroot))/out/rpm
+bldbase  := $(if $(PATH_OUT_BASE),$(PATH_OUT_BASE),$(vboxroot))/out/rpm
 builddir := $(bldbase)/builddir
 stagedir := $(bldbase)/rpmbuild
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
