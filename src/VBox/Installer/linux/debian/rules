@@ -59,8 +59,9 @@ verpkg   := virtualbox-6.1
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
-builddir := $(vboxroot)/out/debian/builddir
-moddir   := $(vboxroot)/out/debian/modules
+bldbase  := $(if $(VBOX_OUT_BASE),$(VBOX_OUT_BASE),$(vboxroot))/out/debian
+builddir := $(bldbase)/builddir
+moddir   := $(bldbase)/modules
 prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
