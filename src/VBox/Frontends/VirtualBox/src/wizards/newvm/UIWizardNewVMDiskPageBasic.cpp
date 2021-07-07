@@ -168,12 +168,6 @@ CMediumFormat UIWizardNewVMDiskPageBasic::mediumFormat() const
     return m_mediumFormat;
 }
 
-QString UIWizardNewVMDiskPageBasic::mediumPath() const
-{
-    return UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(m_strDefaultName,
-                                                                                     m_strDefaultExtension), m_strDefaultPath);
-}
-
 void UIWizardNewVMDiskPageBasic::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -388,15 +382,20 @@ void UIWizardNewVMDiskPageBasic::initializePage()
     setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
     /* We set the medium name and path according to machine name/path and do not allow user change these in the guided mode: */
-    const QString &strDefaultName = pWizard->machineBaseName();
-    m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
-    m_strDefaultPath = pWizard->machineFolder();
+    QString strDefaultName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
+    const QString &strMachineFolder = pWizard->machineFolder();
+    QString strMediumPath = UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDefaultName,
+                                                                                                      m_strDefaultExtension),
+                                                                    strMachineFolder);
+    newVMWizardPropertySet(MediumPath, strMediumPath);
+
     /* Set the recommended disk size if user has already not done so: */
     if (m_pMediumSizeEditor && !m_userModifiedParameters.contains("MediumSize"))
     {
         m_pMediumSizeEditor->blockSignals(true);
         m_pMediumSizeEditor->setMediumSize(iRecommendedSize);
         m_pMediumSizeEditor->blockSignals(false);
+        newVMWizardPropertySet(MediumSize, iRecommendedSize);
     }
 }
 
@@ -443,7 +442,7 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
     else if (m_enmSelectedDiskSource == SelectedDiskSource_New)
     {
         /* Check if the path we will be using for hard drive creation exists: */
-        const QString strMediumPath(mediumPath());
+        const QString &strMediumPath = pWizard->mediumPath();
         fResult = !QFileInfo(strMediumPath).exists();
         if (!fResult)
         {
