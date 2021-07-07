@@ -71,7 +71,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();
-    qRegisterMetaType<SelectedDiskSource>();
+    //qRegisterMetaType<SelectedDiskSource>();
 
     /* Register fields: */
 //     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
