@@ -806,6 +806,47 @@ void UIWizardNewVM::setMemorySize(int iMemory)
     m_iMemorySize = iMemory;
 }
 
+
+KMediumVariant UIWizardNewVM::mediumVariant() const
+{
+    return m_enmMediumVariant;
+}
+
+void UIWizardNewVM::setMediumVariant(KMediumVariant enmMediumVariant)
+{
+    m_enmMediumVariant = enmMediumVariant;
+}
+
+const CMediumFormat &UIWizardNewVM::mediumFormat()
+{
+    return m_comMediumFormat;
+}
+
+void UIWizardNewVM::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    m_comMediumFormat = mediumFormat;
+}
+
+const QString &UIWizardNewVM::mediumPath() const
+{
+    return m_strMediumPath;
+}
+
+void UIWizardNewVM::setMediumPath(const QString &strMediumPath)
+{
+    m_strMediumPath = strMediumPath;
+}
+
+qulonglong UIWizardNewVM::mediumSize() const
+{
+    return m_uMediumSize;
+}
+
+void UIWizardNewVM::setMediumSize(qulonglong uMediumSize)
+{
+    m_uMediumSize = uMediumSize;
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     m_unattendedInstallData.m_strISOPath = m_strISOFilePath;

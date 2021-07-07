@@ -28,6 +28,7 @@
 #include "COMEnums.h"
 #include "CMachine.h"
 #include "CMedium.h"
+#include "CMediumFormat.h"
 #include "CGuestOSType.h"
 
 #define newVMWizardPropertySet(functionName, value)                     \
@@ -139,6 +140,18 @@ public:
     int memorySize() const;
     void setMemorySize(int iMemory);
 
+    KMediumVariant mediumVariant() const;
+    void setMediumVariant(KMediumVariant enmMediumVariant);
+
+    const CMediumFormat &mediumFormat();
+    void setMediumFormat(const CMediumFormat &mediumFormat);
+
+    const QString &mediumPath() const;
+    void setMediumPath(const QString &strMediumPath);
+
+    qulonglong mediumSize() const;
+    void setMediumSize(qulonglong mediumSize);
+
 protected:
 
     /** Populates pages. */
@@ -213,6 +226,11 @@ private:
     int m_iCPUCount;
     int m_iMemorySize;
     int m_iUnattendedInstallPageIndex;
+
+    KMediumVariant m_enmMediumVariant;
+    CMediumFormat m_comMediumFormat;
+    QString m_strMediumPath;
+    qulonglong m_uMediumSize;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

@@ -234,22 +234,22 @@ QWidget *UIWizardNewVMDiskPageBasic::createNewDiskWidgets()
 
 void UIWizardNewVMDiskPageBasic::createConnections()
 {
-    // if (m_pDiskSourceButtonGroup)
-    //     connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-    //             this, &UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged);
-    // if (m_pDiskSelector)
-    //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-    //             this, &UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged);
-    // if (m_pDiskSelectionButton)
-    //     connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-    //             this, &UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog);
-    // if (m_pMediumSizeEditor)
-    // {
-    //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-    //             this, &UIWizardNewVMDiskPageBasic::completeChanged);
-    //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-    //             this, &UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange);
-    // }
+    if (m_pDiskSourceButtonGroup)
+        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged);
+    if (m_pDiskSelector)
+        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+                this, &UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged);
+    if (m_pDiskSelectionButton)
+        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
+                this, &UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog);
+    if (m_pMediumSizeEditor)
+    {
+        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+                this, &UIWizardNewVMDiskPageBasic::completeChanged);
+        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+                this, &UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange);
+    }
 }
 
 void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
@@ -427,42 +427,43 @@ bool UIWizardNewVMDiskPageBasic::isComplete() const
 bool UIWizardNewVMDiskPageBasic::validatePage()
 {
     bool fResult = true;
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturn(pWizard, false);
 
-    // /* Make sure user really intents to creae a vm with no hard drive: */
-    // if (selectedDiskSource() == SelectedDiskSource_Empty)
-    // {
-    //     /* Ask user about disk-less machine unless that's the recommendation: */
-    //     if (!m_fRecommendedNoDisk)
-    //     {
-    //         if (!msgCenter().confirmHardDisklessMachine(thisImp()))
-    //             return false;
-    //     }
-    // }
-    // else if (selectedDiskSource() == SelectedDiskSource_New)
-    // {
-    //     /* Check if the path we will be using for hard drive creation exists: */
-    //     const QString strMediumPath(fieldImp("mediumPath").toString());
-    //     fResult = !QFileInfo(strMediumPath).exists();
-    //     if (!fResult)
-    //     {
-    //         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-    //         return fResult;
-    //     }
-    //     /* Check FAT size limitation of the host hard drive: */
-    //     fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-    //                                                          fieldImp("mediumPath").toString(),
-    //                                                          fieldImp("mediumSize").toULongLong());
-    //     if (!fResult)
-    //     {
-    //         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-    //         return fResult;
-    //     }
-    // }
+    /* Make sure user really intents to creae a vm with no hard drive: */
+    if (m_enmSelectedDiskSource == SelectedDiskSource_Empty)
+    {
+        /* Ask user about disk-less machine unless that's the recommendation: */
+        if (!m_fRecommendedNoDisk)
+        {
+            if (!msgCenter().confirmHardDisklessMachine(this))
+                return false;
+        }
+    }
+    else if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    {
+        /* Check if the path we will be using for hard drive creation exists: */
+        const QString strMediumPath(mediumPath());
+        fResult = !QFileInfo(strMediumPath).exists();
+        if (!fResult)
+        {
+            msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+            return fResult;
+        }
+        /* Check FAT size limitation of the host hard drive: */
+        fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(pWizard->mediumVariant(),
+                                                                            pWizard->mediumPath(),
+                                                                            pWizard->mediumSize());
+        if (!fResult)
+        {
+            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+            return fResult;
+        }
+    }
 
     // startProcessing();
-    // UIWizardNewVM *pWizard = wizardImp();
-    // if (pWizard)
-    // {
+    if (pWizard)
+    {
     //     if (selectedDiskSource() == SelectedDiskSource_New)
     //     {
     //         /* Try to create the hard drive:*/
@@ -476,7 +477,7 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
     //     /* Try to delete the hard disk: */
     //     if (!fResult)
     //         pWizard->deleteVirtualDisk();
-    // }
+    }
     // endProcessing();
 
     return fResult;
