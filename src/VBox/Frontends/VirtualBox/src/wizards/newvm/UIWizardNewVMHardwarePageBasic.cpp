@@ -63,6 +63,9 @@ void UIWizardNewVMHardwarePageBasic::createConnections()
     if (m_pVirtualCPUEditor)
         connect(m_pVirtualCPUEditor, &UIVirtualCPUEditor::sigValueChanged,
             this, &UIWizardNewVMHardwarePageBasic::sltCPUCountChanged);
+    if (m_pEFICheckBox)
+        connect(m_pEFICheckBox, &QCheckBox::toggled,
+                this, &UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged);
 
 }
 
@@ -87,17 +90,26 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
 {
     retranslateUi();
 
-    // if (!field("type").canConvert<CGuestOSType>())
-    //     return;
-
-    // CGuestOSType type = field("type").value<CGuestOSType>();
-    // ULONG recommendedRam = type.GetRecommendedRAM();
-    // if (m_pBaseMemoryEditor)
-    //     m_pBaseMemoryEditor->setValue(recommendedRam);
-
-    // KFirmwareType fwType = type.GetRecommendedFirmware();
-    // if (m_pEFICheckBox)
-    //     m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (pWizard)
+    {
+        CGuestOSType type = pWizard->guestOSType();
+        if (!type.isNull())
+        {
+            if (!m_userModifiedParameters.contains("MemorySize"))
+            {
+                ULONG recommendedRam = type.GetRecommendedRAM();
+                if (m_pBaseMemoryEditor)
+                    m_pBaseMemoryEditor->setValue(recommendedRam);
+            }
+            if (!m_userModifiedParameters.contains("EFIEnabled"))
+            {
+                KFirmwareType fwType = type.GetRecommendedFirmware();
+                if (m_pEFICheckBox)
+                    m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
+            }
+        }
+    }
 }
 
 void UIWizardNewVMHardwarePageBasic::cleanupPage()
@@ -129,9 +141,16 @@ QWidget *UIWizardNewVMHardwarePageBasic::createHardwareWidgets()
 void UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged(int iValue)
 {
     newVMWizardPropertySet(MemorySize, iValue);
+    m_userModifiedParameters << "MemorySize";
 }
 
 void UIWizardNewVMHardwarePageBasic::sltCPUCountChanged(int iCount)
 {
     newVMWizardPropertySet(CPUCount, iCount);
+}
+
+void UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged(bool fEnabled)
+{
+    newVMWizardPropertySet(EFIEnabled, fEnabled);
+    m_userModifiedParameters << "EFIEnabled";
 }

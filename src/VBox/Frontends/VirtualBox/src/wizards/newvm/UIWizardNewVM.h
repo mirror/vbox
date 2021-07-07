@@ -28,6 +28,7 @@
 #include "COMEnums.h"
 #include "CMachine.h"
 #include "CMedium.h"
+#include "CGuestOSType.h"
 
 #define newVMWizardPropertySet(functionName, value)                     \
     do                                                                  \
@@ -111,6 +112,9 @@ public:
     const QString &guestOSFamilyId() const;
     void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
 
+    const CGuestOSType &guestOSType() const;
+    void setGuestOSType(const CGuestOSType &guestOSType);
+
     bool installGuestAdditions() const;
     void setInstallGuestAdditions(bool fInstallGA);
 
@@ -119,6 +123,9 @@ public:
 
     bool skipUnattendedInstall() const;
     void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
+
+    bool EFIEnabled() const;
+    void setEFIEnabled(bool fEnabled);
 
     const QString &ISOFilePath() const;
     void setISOFilePath(const QString &strISOFilePath);
@@ -200,11 +207,14 @@ private:
 
     /** Holds the VM OS family ID. */
     QString  m_strGuestOSFamilyId;
+    /** Holds the VM OS type. */
+    CGuestOSType m_comGuestOSType;
 
     /** True if guest additions are to be installed during unattended install. */
     bool m_fInstallGuestAdditions;
     bool m_fStartHeadless;
     bool m_fSkipUnattendedInstall;
+    bool m_fEFIEnabled;
 
     QString m_strUserName;
     QString m_strPassword;

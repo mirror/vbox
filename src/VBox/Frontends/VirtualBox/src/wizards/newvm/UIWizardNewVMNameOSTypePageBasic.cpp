@@ -411,7 +411,10 @@ void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
     if (m_pNameAndSystemEditor)
+    {
         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
+        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+    }
 }
 
 void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
@@ -439,13 +442,22 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
 {
     retranslateUi();
 
-    /* Make sure parameters are initialized correctly: */
-    if (m_pNameAndSystemEditor)
-        newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
+    /* Initialize this page's widgets etc: */
+    {
+        if (m_pNameAndSystemEditor)
+            m_pNameAndSystemEditor->setFocus();
+        setSkipCheckBoxEnable();
+    }
 
-    if (m_pNameAndSystemEditor)
-        m_pNameAndSystemEditor->setFocus();
-    setSkipCheckBoxEnable();
+    /* Initialize some of the wizard's parameters: */
+    {
+        if (m_pNameAndSystemEditor)
+        {
+            newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
+            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
+        }
+    }
 }
 
 // void UIWizardNewVMNameOSTypePageBasic::cleanupPage()

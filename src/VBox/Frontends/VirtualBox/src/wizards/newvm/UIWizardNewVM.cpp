@@ -63,6 +63,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_fInstallGuestAdditions(false)
     , m_fStartHeadless(false)
     , m_fSkipUnattendedInstall(false)
+    , m_fEFIEnabled(false)
     , m_iCPUCount(1)
     , m_iMemorySize(0)
     , m_iUnattendedInstallPageIndex(-1)
@@ -671,6 +672,16 @@ void UIWizardNewVM::setGuestOSFamilyId(const QString &strGuestOSFamilyId)
     m_strGuestOSFamilyId = strGuestOSFamilyId;
 }
 
+const CGuestOSType &UIWizardNewVM::guestOSType() const
+{
+    return m_comGuestOSType;;
+}
+
+void UIWizardNewVM::setGuestOSType(const CGuestOSType &guestOSType)
+{
+    m_comGuestOSType= guestOSType;
+}
+
 bool UIWizardNewVM::installGuestAdditions() const
 {
     return m_fInstallGuestAdditions;
@@ -701,6 +712,16 @@ void UIWizardNewVM::setSkipUnattendedInstall(bool fSkipUnattendedInstall)
     m_fSkipUnattendedInstall = fSkipUnattendedInstall;
     /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
     setUnattendedPageVisible(isUnattendedEnabled());
+}
+
+bool UIWizardNewVM::EFIEnabled() const
+{
+    return m_fEFIEnabled;
+}
+
+void UIWizardNewVM::setEFIEnabled(bool fEnabled)
+{
+    m_fEFIEnabled = fEnabled;
 }
 
 const QString &UIWizardNewVM::ISOFilePath() const
