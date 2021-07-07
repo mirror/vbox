@@ -87,11 +87,7 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
  */
 static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
 {
-#ifdef DEBUG_andy
-    return VINF_SUCCESS;
-#endif
-
-    RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev ? pszDev : "<Default>");
+    RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev && *pszDev ? pszDev : "<Default>");
 
     if (!pTstEnv->DrvStack.pIHostAudio->pfnGetDevices)
     {
@@ -120,7 +116,7 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Input channels  = %RU8\n", pDev->cMaxInputChannels);
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Enum:   Output channels = %RU8\n", pDev->cMaxOutputChannels);
 
-            if (   pszDev
+            if (   (pszDev && *pszDev)
                 && !RTStrCmp(pDev->pszName, pszDev))
             {
                 *ppDev = pDev;
@@ -130,16 +126,18 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     else
         RTTestFailed(g_hTest, "Enumerating audio devices failed with %Rrc", rc);
 
-    RTTestSubDone(g_hTest);
-
-    if (   pszDev
-        && *ppDev == NULL)
+    if (RT_SUCCESS(rc))
     {
-        RTTestFailed(g_hTest, "Audio device '%s' not found", pszDev);
-        return VERR_NOT_FOUND;
+        if (   (pszDev && *pszDev)
+            && *ppDev == NULL)
+        {
+            RTTestFailed(g_hTest, "Audio device '%s' not found", pszDev);
+            rc = VERR_NOT_FOUND;
+        }
     }
 
-    return VINF_SUCCESS;
+    RTTestSubDone(g_hTest);
+    return rc;
 }
 
 static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream,
