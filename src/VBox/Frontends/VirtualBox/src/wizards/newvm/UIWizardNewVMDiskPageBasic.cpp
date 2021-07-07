@@ -114,10 +114,10 @@ QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
 //     return new QWidget();
 // }
 
-    // registerField("mediumFormat", this, "mediumFormat");
-    // registerField("mediumVariant" /* KMediumVariant */, this, "mediumVariant");
-    // registerField("mediumPath", this, "mediumPath");
-    // registerField("mediumSize", this, "mediumSize");
+// registerField("mediumFormat", this, "mediumFormat");
+// registerField("mediumVariant" /* KMediumVariant */, this, "mediumVariant");
+// registerField("mediumPath", this, "mediumPath");
+// registerField("mediumSize", this, "mediumSize");
 
 UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
     : m_pDiskSourceButtonGroup(0)
@@ -132,41 +132,17 @@ UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
     , m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
-    , m_pSplitLabel(0)
     , m_pFixedCheckBox(0)
-    , m_pSplitBox(0)
     , m_enmSelectedDiskSource(SelectedDiskSource_New)
     , m_fRecommendedNoDisk(false)
+    , m_fVDIFormatFound(false)
 {
     prepare();
     // qRegisterMetaType<CMedium>();
     // qRegisterMetaType<SelectedDiskSource>();
 
-    /* We do not have any UI elements for HDD format selection since we default to VDI in case of guided wizard mode: */
-    bool fFoundVDI = false;
-    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-    foreach (const CMediumFormat &format, formats)
-    {
-        if (format.GetName() == "VDI")
-        {
-            m_mediumFormat = format;
-            fFoundVDI = true;
-        }
-    }
-    if (!fFoundVDI)
-        AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
-
-    m_strDefaultExtension =  UIWizardNewVMDiskPage::defaultExtension(m_mediumFormat);
-
-    /* Since the medium format is static we can decide widget visibility here: */
-    setWidgetVisibility(m_mediumFormat);
 }
 
-CMediumFormat UIWizardNewVMDiskPageBasic::mediumFormat() const
-{
-    return m_mediumFormat;
-}
 
 void UIWizardNewVMDiskPageBasic::prepare()
 {
@@ -319,10 +295,6 @@ void UIWizardNewVMDiskPageBasic::retranslateUi()
                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
     }
 
-    if (m_pSplitBox)
-        m_pSplitBox->setText(UIWizardNewVD::tr("&Split Into Files of Less Than 2GB"));
-
-
     /* Translate rich text labels: */
     if (m_pDescriptionLabel)
         m_pDescriptionLabel->setText(UIWizardNewVD::tr("Please choose whether the new virtual hard disk file should grow as it is used "
@@ -334,59 +306,72 @@ void UIWizardNewVMDiskPageBasic::retranslateUi()
     if (m_pFixedLabel)
         m_pFixedLabel->setText(UIWizardNewVD::tr("<p>A <b>fixed size</b> hard disk file may take longer to create on some "
                                                  "systems but is often faster to use.</p>"));
-    if (m_pSplitLabel)
-        m_pSplitLabel->setText(UIWizardNewVD::tr("<p>You can also choose to <b>split</b> the hard disk file into several files "
-                                                 "of up to two gigabytes each. This is mainly useful if you wish to store the "
-                                                 "virtual machine on removable USB devices or old systems, some of which cannot "
-                                                 "handle very large files."));
-
 }
 
 void UIWizardNewVMDiskPageBasic::initializePage()
 {
-     retranslateUi();
+    retranslateUi();
 
-     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-     AssertReturnVoid(pWizard);
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
 
-     LONG64 iRecommendedSize = 0;
-     CGuestOSType type = pWizard->guestOSType();
-     if (!type.isNull())
-     {
-         iRecommendedSize = type.GetRecommendedHDD();
-         if (iRecommendedSize != 0)
-         {
-             if (m_pDiskNew)
-             {
-                 m_pDiskNew->setFocus();
-                 m_pDiskNew->setChecked(true);
-             }
-             m_enmSelectedDiskSource = SelectedDiskSource_New;
-             m_fRecommendedNoDisk = false;
-         }
-         else
-         {
-             if (m_pDiskEmpty)
-             {
-                 m_pDiskEmpty->setFocus();
-                 m_pDiskEmpty->setChecked(true);
-             }
-             m_enmSelectedDiskSource = SelectedDiskSource_Empty;
-             m_fRecommendedNoDisk = true;
-         }
-     }
+    LONG64 iRecommendedSize = 0;
+    CGuestOSType type = pWizard->guestOSType();
+    if (!type.isNull())
+    {
+        iRecommendedSize = type.GetRecommendedHDD();
+        if (iRecommendedSize != 0)
+        {
+            if (m_pDiskNew)
+            {
+                m_pDiskNew->setFocus();
+                m_pDiskNew->setChecked(true);
+            }
+            m_enmSelectedDiskSource = SelectedDiskSource_New;
+            m_fRecommendedNoDisk = false;
+        }
+        else
+        {
+            if (m_pDiskEmpty)
+            {
+                m_pDiskEmpty->setFocus();
+                m_pDiskEmpty->setChecked(true);
+            }
+            m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+            m_fRecommendedNoDisk = true;
+        }
+    }
 
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
     setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
     setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
+    if (!m_fVDIFormatFound)
+    {
+        /* We do not have any UI elements for HDD format selection since we default to VDI in case of guided wizard mode: */
+        CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+        const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+        foreach (const CMediumFormat &format, formats)
+        {
+            if (format.GetName() == "VDI")
+            {
+                newVMWizardPropertySet(MediumFormat, format);
+                m_fVDIFormatFound = true;
+            }
+        }
+        if (!m_fVDIFormatFound)
+            AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
+        setWidgetVisibility(pWizard->mediumFormat());
+    }
+    QString strDefaultExtension =  UIWizardNewVMDiskPage::defaultExtension(pWizard->mediumFormat());
+
     /* We set the medium name and path according to machine name/path and do not allow user change these in the guided mode: */
     QString strDefaultName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
     const QString &strMachineFolder = pWizard->machineFolder();
-    QString strMediumPath = UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDefaultName,
-                                                                                                      m_strDefaultExtension),
-                                                                    strMachineFolder);
+    QString strMediumPath =
+        UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDefaultName,
+                                                                                  strDefaultExtension), strMachineFolder);
     newVMWizardPropertySet(MediumPath, strMediumPath);
 
     /* Set the recommended disk size if user has already not done so: */
@@ -463,19 +448,19 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
     // startProcessing();
     if (pWizard)
     {
-    //     if (selectedDiskSource() == SelectedDiskSource_New)
-    //     {
-    //         /* Try to create the hard drive:*/
-    //         fResult = pWizard->createVirtualDisk();
-    //         /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
-    //         if (!fResult)
-    //             return fResult;
-    //     }
+        //     if (selectedDiskSource() == SelectedDiskSource_New)
+        //     {
+        //         /* Try to create the hard drive:*/
+        //         fResult = pWizard->createVirtualDisk();
+        //         /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+        //         if (!fResult)
+        //             return fResult;
+        //     }
 
-    //     fResult = pWizard->createVM();
-    //     /* Try to delete the hard disk: */
-    //     if (!fResult)
-    //         pWizard->deleteVirtualDisk();
+        //     fResult = pWizard->createVM();
+        //     /* Try to delete the hard disk: */
+        //     if (!fResult)
+        //         pWizard->deleteVirtualDisk();
     }
     // endProcessing();
 
@@ -551,22 +536,18 @@ QWidget *UIWizardNewVMDiskPageBasic::createMediumVariantWidgets(bool fWithLabels
             m_pDescriptionLabel = new QIRichTextLabel;
             m_pDynamicLabel = new QIRichTextLabel;
             m_pFixedLabel = new QIRichTextLabel;
-            m_pSplitLabel = new QIRichTextLabel;
         }
         QVBoxLayout *pVariantLayout = new QVBoxLayout;
         if (pVariantLayout)
         {
             m_pFixedCheckBox = new QCheckBox;
-            m_pSplitBox = new QCheckBox;
             pVariantLayout->addWidget(m_pFixedCheckBox);
-            pVariantLayout->addWidget(m_pSplitBox);
         }
         if (fWithLabels)
         {
             pMainLayout->addWidget(m_pDescriptionLabel);
             pMainLayout->addWidget(m_pDynamicLabel);
             pMainLayout->addWidget(m_pFixedLabel);
-            pMainLayout->addWidget(m_pSplitLabel);
         }
         pMainLayout->addLayout(pVariantLayout);
         pMainLayout->addStretch();
@@ -584,7 +565,7 @@ void UIWizardNewVMDiskPageBasic::setEnableDiskSelectionWidgets(bool fEnabled)
     m_pDiskSelectionButton->setEnabled(fEnabled);
 }
 
-void UIWizardNewVMDiskPageBasic::setWidgetVisibility(CMediumFormat &mediumFormat)
+void UIWizardNewVMDiskPageBasic::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
@@ -594,7 +575,6 @@ void UIWizardNewVMDiskPageBasic::setWidgetVisibility(CMediumFormat &mediumFormat
 
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
     if (m_pFixedCheckBox)
     {
         if (!fIsCreateDynamicPossible)
@@ -614,8 +594,4 @@ void UIWizardNewVMDiskPageBasic::setWidgetVisibility(CMediumFormat &mediumFormat
         m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
     if (m_pFixedCheckBox)
         m_pFixedCheckBox->setHidden(!fIsCreateFixedPossible);
-    if (m_pSplitLabel)
-        m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
-    if (m_pSplitBox)
-        m_pSplitBox->setHidden(!fIsCreateSplitPossible);
 }

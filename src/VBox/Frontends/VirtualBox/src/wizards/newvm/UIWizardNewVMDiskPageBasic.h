@@ -78,7 +78,6 @@ class UIWizardNewVMDiskPageBasic : public UINativeWizardPage
 public:
 
     UIWizardNewVMDiskPageBasic();
-    CMediumFormat mediumFormat() const;
 
 protected:
 
@@ -107,7 +106,7 @@ private:
     virtual bool validatePage() /* override final */;
 
     void setEnableDiskSelectionWidgets(bool fEnabled);
-    void setWidgetVisibility(CMediumFormat &mediumFormat);
+    void setWidgetVisibility(const CMediumFormat &mediumFormat);
 
     /** @name Widgets
      * @{ */
@@ -123,18 +122,15 @@ private:
        QIRichTextLabel *m_pDescriptionLabel;
        QIRichTextLabel *m_pDynamicLabel;
        QIRichTextLabel *m_pFixedLabel;
-       QIRichTextLabel *m_pSplitLabel;
        QCheckBox *m_pFixedCheckBox;
-       QCheckBox *m_pSplitBox;
     /** @} */
 
-    /** For guided new vm wizard VDI is the only format. Thus we have no UI item for it. */
-    CMediumFormat m_mediumFormat;
     SelectedDiskSource m_enmSelectedDiskSource;
     bool m_fRecommendedNoDisk;
 
     QString m_strDefaultExtension;
     QSet<QString> m_userModifiedParameters;
+    bool m_fVDIFormatFound;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPageBasic_h */
