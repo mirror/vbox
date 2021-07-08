@@ -1934,6 +1934,9 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, itemsToPowerOff)
     {
+        /* Sanity check: */
+        AssertPtrReturnVoid(pItem);
+
         /* For local machine: */
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
@@ -1954,6 +1957,15 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
                 msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                     msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
+                else
+                {
+                    /* Sanity check: */
+                    AssertPtrReturnVoid(pItem->toLocal());
+                    /* Restore snapshot if requested: */
+                    const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(pItem->id());
+                    if (fDiscardStateOnPowerOff && pItem->toLocal()->snapshotCount() > 0)
+                        uiCommon().restoreCurrentSnapshot(pItem->id());
+                }
             }
 
             /* Unlock machine finally: */
