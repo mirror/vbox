@@ -113,6 +113,8 @@ AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 enum
 {
     VKAT_TEST_OPT_COUNT = 900,
+    VKAT_TEST_OPT_DAEMONIZE,
+    VKAT_TEST_OPT_DAEMONIZED,
     VKAT_TEST_OPT_DEV,
     VKAT_TEST_OPT_GUEST_ATS_ADDR,
     VKAT_TEST_OPT_GUEST_ATS_PORT,
@@ -166,6 +168,8 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--include",           'i',                          RTGETOPT_REQ_UINT32  },
     { "--outdir",            VKAT_TEST_OPT_OUTDIR,         RTGETOPT_REQ_STRING  },
     { "--count",             VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
+    { "--daemonize",         VKAT_TEST_OPT_DAEMONIZE,      RTGETOPT_REQ_NOTHING },
+    { "--daemonized",        VKAT_TEST_OPT_DAEMONIZED,     RTGETOPT_REQ_NOTHING },
     { "--device",            VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
     { "--pause",             VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
     { "--pcm-bit",           VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
@@ -627,6 +631,7 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'e':                          return "Exclude the given test id from the list";
         case 'i':                          return "Include the given test id in the list";
+        case VKAT_TEST_OPT_DAEMONIZE:      return "Run in background (daemonized)";
         case VKAT_TEST_OPT_DEV:            return "Use the specified audio device";
         case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to";
         case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6042]";
@@ -669,6 +674,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint8_t     cPcmChannels  = 0;
     uint32_t    uPcmHz        = 0;
     bool        fPcmSigned    = true;
+
+    bool        fDaemonize    = false;
+    bool        fDaemonized   = false;
 
     const char *pszGuestTcpAddr  = NULL;
     uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
@@ -737,6 +745,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
             case VKAT_TEST_OPT_COUNT:
                 return RTMsgErrorExitFailure("Not yet implemented!");
 
+            case VKAT_TEST_OPT_DAEMONIZE:
+                fDaemonize = true;
+                break;
+
+            case VKAT_TEST_OPT_DAEMONIZED:
+                fDaemonized = true;
+                break;
+
             case VKAT_TEST_OPT_DEV:
                 rc = RTStrCopy(TstEnv.szDev, sizeof(TstEnv.szDev), ValueUnion.psz);
                 if (RT_FAILURE(rc))
@@ -788,6 +804,27 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 rc = AudioTestSvcHandleOption(&TstEnv.u.Guest.Srv, ch, &ValueUnion);
                 if (RT_FAILURE(rc))
                     return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Daemonize ourselves if asked to.
+     */
+    if (fDaemonize)
+    {
+        if (!fDaemonized)
+        {
+            if (g_uVerbosity > 0)
+                RTMsgInfo("Daemonizing...");
+            rc = RTProcDaemonize(pGetState->argv, "--daemonized");
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcDaemonize: %Rrc\n", rc);
+            return RTEXITCODE_SUCCESS;
+        }
+        else
+        {
+            if (g_uVerbosity > 0)
+                RTMsgInfo("Running daemonized ...");
         }
     }
 
