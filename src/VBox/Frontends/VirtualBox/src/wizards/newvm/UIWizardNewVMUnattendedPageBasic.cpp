@@ -153,16 +153,36 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
     disableEnableGAWidgets(m_pGAInstallationISOContainer ? m_pGAInstallationISOContainer->isChecked() : false);
     retranslateUi();
 
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
     /* Initialize user/password if they are not modified by the user: */
     if (m_pUserNamePasswordEditor)
     {
         m_pUserNamePasswordEditor->blockSignals(true);
         if (!m_userModifiedParameters.contains("UserName"))
-        {
-
-        }
+            m_pUserNamePasswordEditor->setUserName(pWizard->userName());
+        if (!m_userModifiedParameters.contains("Password"))
+            m_pUserNamePasswordEditor->setPassword(pWizard->password());
         m_pUserNamePasswordEditor->blockSignals(false);
+    }
+    if (m_pHostnameLineEdit && !m_userModifiedParameters.contains("Hostname"))
+    {
+        m_pHostnameLineEdit->blockSignals(true);
+        m_pHostnameLineEdit->setText(pWizard->hostname());
+        m_pHostnameLineEdit->blockSignals(false);
+    }
+    if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
+    {
+        m_pGAInstallationISOContainer->blockSignals(true);
+        m_pGAInstallationISOContainer->setChecked(pWizard->installGuestAdditions());
+        m_pGAInstallationISOContainer->blockSignals(false);
+    }
 
+    if (m_pGAISOFilePathSelector && !m_userModifiedParameters.contains("GuestAdditionsISOPath"))
+    {
+        m_pGAISOFilePathSelector->blockSignals(true);
+        m_pGAISOFilePathSelector->setPath(pWizard->guestAdditionsISOPath());
+        m_pGAISOFilePathSelector->blockSignals(false);
     }
 }
 
@@ -191,18 +211,21 @@ void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     disableEnableGAWidgets(fEnabled);
     newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
+    m_userModifiedParameters << "InstallGuestAdditions";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
     newVMWizardPropertySet(GuestAdditionsISOPath, strPath);
+    m_userModifiedParameters << "GuestAdditionsISOPath";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltPasswordChanged(const QString &strPassword)
 {
     newVMWizardPropertySet(Password, strPassword);
+    m_userModifiedParameters << "Password";
     emit completeChanged();
 }
 
@@ -224,6 +247,7 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 void UIWizardNewVMUnattendedPageBasic::sltHostnameChanged(const QString &strHostname)
 {
     newVMWizardPropertySet(Hostname, strHostname);
+    m_userModifiedParameters << "Hostname";
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
