@@ -803,7 +803,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
             default:
                 rc = AudioTestSvcHandleOption(&TstEnv.u.Guest.Srv, ch, &ValueUnion);
                 if (RT_FAILURE(rc))
-                    return RTGetOptPrintError(rc, &ValueUnion);
+                    return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
@@ -1000,11 +1000,11 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     const char *apszSets[2] = { NULL, NULL };
     unsigned    iTestSet    = 0;
 
-    int           rc;
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)))
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)))
     {
-        switch (rc)
+        switch (ch)
         {
             case VKAT_VERIFY_OPT_TAG:
                 break;
@@ -1020,12 +1020,14 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
     if (!iTestSet)
         return RTMsgErrorExitFailure("At least one test set must be specified");
+
+    int rc = VINF_SUCCESS;
 
     /*
      * If only test set A is given, default to the current directory
@@ -1222,10 +1224,11 @@ int main(int argc, char **argv)
                       RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (ch)
         {
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
@@ -1264,7 +1267,6 @@ int main(int argc, char **argv)
                                               GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
                             if (RT_SUCCESS(rc))
                             {
-
                                 rcExit = pCmd->pfnHandler(&GetState);
                                 RTMemFree(paCombinedOptions);
                                 return rcExit;
@@ -1280,7 +1282,7 @@ int main(int argc, char **argv)
             }
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 

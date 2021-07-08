@@ -74,11 +74,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
     PCPDMDRVREG pDrvReg = AudioTestGetDefaultBackend();
 
     /* Argument processing loop: */
-    int           rc;
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (ch)
         {
             case 'b':
                 pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
@@ -89,7 +89,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
@@ -98,7 +98,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
      */
     RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
     AUDIOTESTDRVSTACK   DrvStack;
-    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, false /*fWithDrvAudio*/);
     if (RT_SUCCESS(rc))
     {
         if (DrvStack.pIHostAudio->pfnGetDevices)
@@ -420,11 +420,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     uint32_t    uHz                 = 0;
 
     /* Argument processing loop: */
-    int           rc;
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (ch)
         {
             case 'b':
                 pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
@@ -468,7 +468,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
     return RTEXITCODE_SUCCESS;
@@ -771,11 +771,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
     uint64_t    cNsMaxDuration      = UINT64_MAX;
 
     /* Argument processing loop: */
-    int           rc;
+    int           ch;
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (ch)
         {
             case 'b':
                 pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
@@ -849,7 +849,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                return RTGetOptPrintError(rc, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
     return RTEXITCODE_SUCCESS;
