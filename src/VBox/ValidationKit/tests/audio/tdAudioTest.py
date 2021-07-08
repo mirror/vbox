@@ -2,8 +2,8 @@
 # $Id$
 
 """
-AudioTest test driver which invokes the AudioTest (VKAT) binary to
-perform the actual audio tests.
+AudioTest test driver which invokes the VKAT (Validation Kit Audio Test)
+binary to perform the actual audio tests.
 
 The generated test set archive on the guest will be downloaded by TXS
 to the host for later audio comparison / verification.
@@ -35,10 +35,14 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
-import re
 import subprocess
-import time
 import uuid
+
+# Only the main script needs to modify the path.
+try:    __file__
+except: __file__ = sys.argv[0];
+g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
+sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
 from testdriver import reporter
@@ -50,23 +54,232 @@ from testdriver import vboxtestvms
 # pylint: disable=unnecessary-semicolon
 
 class tdAudioTest(vbox.TestDriver):
-
+    """
+    Runs various audio tests.
+    """
     def __init__(self):
         vbox.TestDriver.__init__(self);
+        self.oTestVmSet       = self.oTestVmManager.getSmokeVmSet('nat');
+        self.asGstVkatPaths   = [
+            # Debugging stuff (SCP'd over to the guest).
+            '/tmp/vkat',
+            '/tmp/VBoxAudioTest',
+            # Validation Kit .ISO.
+            '${CDROM}/vboxvalidationkit/${OS/ARCH}/vkat${EXESUFF}',
+            '${CDROM}/${OS/ARCH}/vkat${EXESUFF}',
+            ## @odo VBoxAudioTest on Guest Additions?
+        ];
+
+        # Enable audio debug mode.
+        #
+        # This is needed in order to load and use the Validation Kit audio driver,
+        # which in turn is being used in conjunction with the guest side to record
+        # output (guest is playing back) and injecting input (guest is recording).
+        self.asOptExtraData   = [
+            'VBoxInternal2/Audio/Debug/Enabled:true',
+        ];
+
+        self.sRunningVmName = None
 
     def showUsage(self):
-        return vbox.TestDriver.showUsage(self);
+        """
+        Shows the audio test driver-specific command line options.
+        """
+        fRc = vbox.TestDriver.showUsage(self);
+        reporter.log('');
+        reporter.log('tdAudioTest Options:');
+        reporter.log(' --runningvmname <vmname>');
+        return fRc;
+
+    def parseOption(self, asArgs, iArg):
+        """
+        Parses the audio test driver-specific command line options.
+        """
+        if asArgs[iArg] == '--runningvmname':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('The "--runningvmname" needs VM name');
+
+            self.sRunningVmName = asArgs[iArg];
+        else:
+            return vbox.TestDriver.parseOption(self, asArgs, iArg);
+        return iArg + 1;
 
     def actionConfig(self):
+        """
+        Configures the test driver before running.
+        """
         return True
 
     def actionExecute(self):
-        if self.sVMname is None:
+        """
+        Executes the test driver.
+        """
+        if self.sRunningVmName is None:
             return self.oTestVmSet.actionExecute(self, self.testOneVmConfig);
         return self.actionExecuteOnRunnigVM();
 
-    def testOneVmConfig(self, oVM, oTestVm):
+    def actionExecuteOnRunnigVM(self):
+        """
+        Executes the tests in an already configured + running VM.
+        """
+        if not self.importVBoxApi():
+            return False;
 
+        fRc = True;
+
+        oVirtualBox = self.oVBoxMgr.getVirtualBox();
+        try:
+            oVM = oVirtualBox.findMachine(self.sRunningVmName);
+            if oVM.state != self.oVBoxMgr.constants.MachineState_Running:
+                reporter.error("Machine '%s' is not in Running state" % (self.sRunningVmName));
+                fRc = False;
+        except:
+            reporter.errorXcpt("Machine '%s' not found" % (self.sRunningVmName));
+            fRc = False;
+
+        if fRc:
+            oSession = self.openSession(oVM);
+            if oSession:
+                # Tweak this to your likings.
+                oTestVm = vboxtestvms.TestVm('runningvm', sKind = 'Ubuntu_64');
+                (fRc, oTxsSession) = self.txsDoConnectViaTcp(oSession, 30 * 1000);
+                if fRc:
+                    self.doTest(oTestVm, oSession, oTxsSession);
+            else:
+                reporter.error("Unable to open session for machine '%s'" % (self.sRunningVmName));
+                fRc = False;
+
+        del oVM;
+        del oVirtualBox;
+        return fRc;
+
+    def _locateGstVkat(self, oSession, oTxsSession):
+        """
+        Returns guest side path to VKAT.
+        """
+        for sVkatPath in self.asGstVkatPaths:
+            reporter.log2('Checking for VKAT at: %s ...' % (sVkatPath));
+            if self.txsIsFile(oSession, oTxsSession, sVkatPath):
+                return (True, sVkatPath);
+        reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
+        return (False, "");
+
+    def _getVkatResult(self, oTxsSession):
+        """
+        Extracts the VKAT exit code from a run before.
+        Assumes that nothing else has been run on the same TXS session in the meantime.
+        """
+        iRc = 0;
+        (_, sOpcode, abPayload) = oTxsSession.getLastReply();
+        if sOpcode.startswith('PROC NOK '): # Extract process rc
+            iRc = abPayload[0]; # ASSUMES 8-bit rc for now.
+        return iRc;
+
+    def startVkatOnGuest(self, oTestVm, oSession, oTxsSession):
+        """
+        Starts VKAT on the guest (running in background).
+        """
+        sDesc          = 'Starting VKAT on guest';
+
+        sPathTemp      = self.getGuestTempDir(oTestVm);
+        sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-guest-out');
+        sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-guest-temp');
+
+        reporter.log('Guest audio test temp path is \"%s\"' % (sPathAudioOut));
+        reporter.log('Guest audio test output path is \"%s\"' % (sPathAudioTemp));
+
+        fRc, sVkatExe = self._locateGstVkat(oSession, oTxsSession);
+        if fRc:
+            reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
+
+            aArgs     = [ sVkatExe, 'test', '-vvvv', '--mode', 'guest', \
+                                    '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+            #
+            # Start VKAT in the background (daemonized) on the guest side, so that we
+            # can continue starting VKAT on the host.
+            #
+            aArgs.extend(['--daemonize']);
+
+            fRc = self.txsRunTest(oTxsSession, sDesc, 15 * 60 * 1000,
+                                  sVkatExe, aArgs);
+            if not fRc:
+                reporter.error('VKAT on guest returned exit code error %d' % (self._getVkatResult(oTxsSession)));
+
+        return fRc;
+
+    def runTests(self, oTestVm, oSession, oTxsSession, sDesc, sTests):
+        """
+        Runs one or more tests using VKAT on the host, which in turn will
+        communicate with VKAT running on the guest and the Validation Kit
+        audio driver ATS (Audio Testing Service).
+        """
+        _              = oSession, oTxsSession;
+        sTag           = uuid.uuid4();
+
+        sPathTemp      = self.sScratchPath;
+        sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-host-out-%s' % (sTag));
+        sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-host-temp-%s' % (sTag));
+
+        reporter.log('Host audio test temp path is \"%s\"' % (sPathAudioOut));
+        reporter.log('Host audio test output path is \"%s\"' % (sPathAudioTemp));
+        reporter.log('Host audio test tag is \"%s\"' % (sTag));
+
+        sVkatExe = self.getBinTool('vkat');
+
+        reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
+
+        # Build the base command line, exclude all tests by default.
+        sArgs = '%s test -vvvv --mode host --tempdir %s --outdir %s -a' \
+                % (sVkatExe, sPathAudioTemp, sPathAudioOut);
+
+        # ... and extend it with wanted tests.
+        sArgs += " " + sTests;
+
+        fRc = True;
+
+        reporter.testStart(sDesc);
+
+        #
+        # Let VKAT on the host run synchronously.
+        #
+        procVkat = subprocess.Popen(sArgs, \
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True);
+        if procVkat:
+            while procVkat.poll() is None:
+                sLine = procVkat.stdout.readline().rstrip();
+                if sLine:
+                    reporter.log(sLine);
+
+            if procVkat.returncode != 0:
+                reporter.testFailure('VKAT on the host failed with exit code %d' % (procVkat.returncode));
+                fRc = False;
+        else:
+            reporter.testFailure('VKAT on the host failed to start');
+            fRc = False;
+
+        reporter.testDone();
+
+        return fRc;
+
+    def doTest(self, oTestVm, oSession, oTxsSession):
+        """
+        Executes the specified audio tests.
+        """
+        fRc = self.startVkatOnGuest(oTestVm, oSession, oTxsSession);
+        if fRc:
+            #
+            # Execute the tests using VKAT on the guest side (in guest mode).
+            #
+            fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', '-i0');
+            fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', '-i1');
+
+        return fRc;
+
+    def testOneVmConfig(self, oVM, oTestVm):
+        """
+        Runs tests using one specific VM config.
+        """
         fRc = False;
 
         self.logVmInfo(oVM);
@@ -75,45 +288,19 @@ class tdAudioTest(vbox.TestDriver):
         if  oTestVm.isWindows() \
         and oTestVm.sKind in ('WindowsNT4', 'Windows2000'): # Too old for DirectSound and WASAPI backends.
             fSkip = True;
-        elif oTestVm.isLinux():
-            pass;
-        else: # Implement others first.
-            fSkip = True;
 
         if not fSkip:
             reporter.testStart('Waiting for TXS');
-            sPathAutoTestExe = '${CDROM}/vboxvalidationkit/${OS/ARCH}/vkat${EXESUFF}';
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
                                                                     fCdWait = True,
                                                                     cMsTimeout = 3 * 60 * 1000,
                                                                     sFileCdWait = self.sFileCdWait);
             reporter.testDone();
-            if oSession is not None and oTxsSession is not None:
+            if  oSession    is not None \
+            and oTxsSession is not None:
                 self.addTask(oTxsSession);
 
-                sPathTemp      = self.getGuestTempDir(oTestVm);
-                sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-out');
-                sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-temp');
-                reporter.log("Audio test temp path is '%s'" % (sPathAudioOut));
-                reporter.log("Audio test output path is '%s'" % (sPathAudioTemp));
-                sTag           = uuid.uuid4();
-                reporter.log("Audio test tag is %s'" % (sTag));
-
-                reporter.testStart('Running vkat (Validation Kit Audio Test)');
-                fRc = self.txsRunTest(oTxsSession, 'vkat', 5 * 60 * 1000,
-                                      self.getGuestSystemShell(oTestVm),
-                                      (self.getGuestSystemShell(oTestVm),
-                                       sPathAutoTestExe, '-vvv', 'test', '--tag ' + sTag,
-                                       '--tempdir ' + sPathAudioTemp, '--outdir ' + sPathAudioOut));
-                reporter.testDone()
-
-                if fRc:
-                    sFileAudioTestArchive = oTestVm.pathJoin(sPathTemp, 'vkat-%s.tar.gz' % (sTag));
-                    fRc = self.txsDownloadFiles(oSession, oTxsSession,
-                                                [( sFileAudioTestArchive ), ], fIgnoreErrors = False);
-                    if fRc:
-                        ## @todo Add "AudioTest verify" here.
-                        pass;
+            fRc = self.doTest(oTestVm, oSessionWrapper.o, oTxsSession);
 
             if oSession is not None:
                 self.removeTask(oTxsSession);
@@ -137,6 +324,19 @@ class tdAudioTest(vbox.TestDriver):
 
         self.logVmInfo(oVM);
 
+        # Reconfigure the VM.
+        oSession = self.openSession(oVM);
+        if oSession is not None:
+            # Set extra data.
+            for sExtraData in self.asOptExtraData:
+                sKey, sValue = sExtraData.split(':');
+                reporter.log('Set extradata: %s => %s' % (sKey, sValue))
+                fRc = oSession.setExtraData(sKey, sValue) and fRc;
+
+            # Save the settings.
+            fRc = fRc and oSession.saveSettings()
+            fRc = oSession.close() and fRc;
+
         fRc = True;
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
         reporter.log("TxsSession: %s" % (oTxsSession,));
@@ -154,8 +354,9 @@ class tdAudioTest(vbox.TestDriver):
         return fRc;
 
     def onExit(self, iRc):
-        if self.aoSubTstDrvs[0].oDebug.fNoExit:
-            return True
+        """
+        Exit handler for this test driver.
+        """
         return vbox.TestDriver.onExit(self, iRc);
 
 if __name__ == '__main__':
