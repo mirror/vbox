@@ -343,7 +343,7 @@ static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, 
         /* Reduce till we've below the threshold. */
         uint32_t cbLoop = cbCurAligned;
         do
-            cbLoop = cbCurAligned / 2;
+            cbLoop = cbLoop / 2;
         while (cbLoop > cbMaxPeriod);
         cbLoop = PDMAudioPropsRoundUpBytesToFrame(pProps, cbLoop);
 
