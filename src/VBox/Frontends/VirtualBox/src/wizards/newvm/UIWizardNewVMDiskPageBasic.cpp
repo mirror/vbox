@@ -108,17 +108,6 @@ QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
     return uMediumId;
 }
 
-
-// QWidget *UIWizardNewVMDiskPage::createNewDiskWidgets()
-// {
-//     return new QWidget();
-// }
-
-// registerField("mediumFormat", this, "mediumFormat");
-// registerField("mediumVariant" /* KMediumVariant */, this, "mediumVariant");
-// registerField("mediumPath", this, "mediumPath");
-// registerField("mediumSize", this, "mediumSize");
-
 UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
     : m_pDiskSourceButtonGroup(0)
     , m_pDiskEmpty(0)
@@ -136,11 +125,10 @@ UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
     , m_enmSelectedDiskSource(SelectedDiskSource_New)
     , m_fRecommendedNoDisk(false)
     , m_fVDIFormatFound(false)
+    , m_uMediumSizeMin(_4M)
+    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
 {
     prepare();
-    // qRegisterMetaType<CMedium>();
-    // qRegisterMetaType<SelectedDiskSource>();
-
 }
 
 
@@ -391,19 +379,18 @@ void UIWizardNewVMDiskPageBasic::cleanupPage()
 
 bool UIWizardNewVMDiskPageBasic::isComplete() const
 {
-    // if (selectedDiskSource() == SelectedDiskSource_New)
-    //     return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
-    // UIWizardNewVM *pWizard = wizardImp();
-    // AssertReturn(pWizard, false);
-    // if (selectedDiskSource() == SelectedDiskSource_Existing)
-    //     return !pWizard->virtualDisk().isNull();
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturn(pWizard, false);
 
-    // if (m_pDiskNew && m_pDiskNew->isChecked())
-    // {
-    //     qulonglong uSize = field("mediumSize").toULongLong();
-    //     if (uSize <= 0)
-    //         return false;
-    // }
+    const qulonglong uSize = pWizard->mediumSize();
+    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+        return uSize >= m_uMediumSizeMin && uSize <= m_uMediumSizeMax;
+
+    if (m_enmSelectedDiskSource == SelectedDiskSource_Existing)
+        return !pWizard->virtualDisk().isNull();
+
+    if (m_pDiskNew && m_pDiskNew->isChecked() && uSize <= 0)
+        return false;
 
     return true;
 }

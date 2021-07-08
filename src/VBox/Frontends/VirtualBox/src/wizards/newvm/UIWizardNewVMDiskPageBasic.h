@@ -128,9 +128,11 @@ private:
     SelectedDiskSource m_enmSelectedDiskSource;
     bool m_fRecommendedNoDisk;
 
-    QString m_strDefaultExtension;
     QSet<QString> m_userModifiedParameters;
     bool m_fVDIFormatFound;
+    qulonglong m_uMediumSizeMin;
+    qulonglong m_uMediumSizeMax;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPageBasic_h */
