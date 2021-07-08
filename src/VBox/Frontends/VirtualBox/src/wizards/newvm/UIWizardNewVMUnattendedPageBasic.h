@@ -100,7 +100,7 @@ private:
         QLineEdit *m_pProductKeyLineEdit;
         QLabel     *m_pProductKeyLabel;
     /** @} */
-
+    QSet<QString> m_userModifiedParameters;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPageBasic_h */

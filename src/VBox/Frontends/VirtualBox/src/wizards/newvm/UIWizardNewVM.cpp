@@ -85,6 +85,7 @@ void UIWizardNewVM::populatePages()
 {
     switch (mode())
     {
+        case WizardMode_Expert:
         case WizardMode_Basic:
         {
             addPage(new UIWizardNewVMNameOSTypePageBasic);
@@ -94,11 +95,11 @@ void UIWizardNewVM::populatePages()
             addPage(new UIWizardNewVMDiskPageBasic);
             break;
         }
-        case WizardMode_Expert:
-        {
-            // addPage(new UIWizardNewCloudVMPageExpert(m_fFullWizard));
-            break;
-        }
+        // case WizardMode_Expert:
+        // {
+        //     // addPage(new UIWizardNewCloudVMPageExpert(m_fFullWizard));
+        //     break;
+        // }
         default:
         {
             AssertMsgFailed(("Invalid mode: %d", mode()));
@@ -567,11 +568,11 @@ void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallDat
 
 void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
 {
-    // setField("userName", m_unattendedInstallData.m_strUserName);
-    // setField("password", m_unattendedInstallData.m_strPassword);
-    // setField("hostname", m_unattendedInstallData.m_strHostname);
-    // setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
-    // setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
+    m_strUserName = m_unattendedInstallData.m_strUserName;
+    m_strPassword = m_unattendedInstallData.m_strPassword;
+    m_strHostname = m_unattendedInstallData.m_strHostname;
+    m_fInstallGuestAdditions = m_unattendedInstallData.m_fInstallGuestAdditions;
+    m_strGuestAdditionsISOPath = m_unattendedInstallData.m_strGuestAdditionsISOPath;
 }
 
 CMedium &UIWizardNewVM::virtualDisk()

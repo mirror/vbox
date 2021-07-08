@@ -283,25 +283,6 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(UIWizardNewVM *pWizard, b
     return true;
 }
 
-// QString UIWizardNewVMNameOSTypePage::machineBaseName() const
-// {
-//     return m_strMachineBaseName;
-// }
-
-// void UIWizardNewVMNameOSTypePage::setMachineBaseName(const QString &strMachineBaseName)
-// {
-//     m_strMachineBaseName = strMachineBaseName;
-// }
-
-
-// QString UIWizardNewVMNameOSTypePage::ISOFilePath() const
-// {
-//     if (!m_pNameAndSystemEditor)
-//         return QString();
-//     return m_pNameAndSystemEditor->image();
-// }
-
-
 void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
 {
     if (!pWizard)
@@ -358,17 +339,6 @@ void UIWizardNewVMNameOSTypePageBasic::prepare()
     }
 
     createConnections();
-    // /* Register fields: */
-    // registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
-    // registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
-    // registerField("machineFilePath", this, "machineFilePath");
-    // registerField("machineFolder", this, "machineFolder");
-    // registerField("machineBaseName", this, "machineBaseName");
-    // registerField("guestOSFamiyId", this, "guestOSFamiyId");
-    // registerField("startHeadless", this, "startHeadless");
-    // registerField("ISOFilePath", this, "ISOFilePath");
-    // registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    // registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 
 void UIWizardNewVMNameOSTypePageBasic::createConnections()
