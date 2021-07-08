@@ -619,11 +619,25 @@ void UIMessageCenter::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBo
           tr("Failed to acquire VirtualBox parameter."), UIErrorString::formatErrorInfo(comVBox));
 }
 
+void UIMessageCenter::cannotAcquireSessionParameter(const CSession &comSession, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire session parameter."), UIErrorString::formatErrorInfo(comSession));
+}
+
 void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
     error(pParent, MessageType_Error,
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire snapshot parameter."), UIErrorString::formatErrorInfo(comSnapshot));
 }
 
 void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const

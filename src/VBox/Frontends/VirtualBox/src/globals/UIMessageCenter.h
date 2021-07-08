@@ -272,7 +272,9 @@ public:
     void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
+    void cannotAcquireSessionParameter(const CSession &comSession, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
+    void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot, QWidget *pParent = 0) const;
     void cannotFindHelpFile(const QString &strFileLocation) const;
     void cannotEnumerateHostUSBDevices(const CHost &comHost, QWidget *pParent = 0) const;
 

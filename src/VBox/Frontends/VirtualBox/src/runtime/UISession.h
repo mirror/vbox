@@ -79,7 +79,6 @@ public:
     bool saveState();
     bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
-    bool restoreCurrentSnapshot();
 
     /** Returns the session instance. */
     CSession& session() { return m_session; }

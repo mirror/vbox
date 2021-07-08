@@ -2625,6 +2625,80 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
+bool UICommon::restoreCurrentSnapshot(const QUuid &uMachineId)
+{
+    /* Prepare result: */
+    bool fResult = false;
+
+    /* Open a session to modify VM: */
+    const bool fDirectSessionAvailable = (m_enmType == UIType_RuntimeUI) && isSeparateProcess();
+    CSession comSession = openSession(uMachineId, fDirectSessionAvailable ? KLockType_Write : KLockType_Shared);
+    if (!comSession.isNull())
+    {
+        /* Simulate try-catch block: */
+        do
+        {
+            /* Acquire session machine: */
+            CMachine comMachine = comSession.GetMachine();
+            if (!comSession.isOk())
+            {
+                msgCenter().cannotAcquireSessionParameter(comSession);
+                break;
+            }
+
+            /* Acquire machine name: */
+            const QString strMachineName = comMachine.GetName();
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotAcquireMachineParameter(comMachine);
+                break;
+            }
+
+            /* Acquire current snapshot: */
+            const CSnapshot comSnapshot = comMachine.GetCurrentSnapshot();
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotAcquireMachineParameter(comMachine);
+                break;
+            }
+
+            /* Acquire snapshot name: */
+            const QString strSnapshotName = comSnapshot.GetName();
+            if (!comSnapshot.isOk())
+            {
+                msgCenter().cannotAcquireSnapshotParameter(comSnapshot);
+                break;
+            }
+
+            /* Prepare the snapshot-discard progress: */
+            CProgress comProgress = comMachine.RestoreSnapshot(comSnapshot);
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotRestoreSnapshot(comMachine, strSnapshotName, strMachineName);
+                break;
+            }
+
+            /* Show the snapshot-discard progress: */
+            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_snapshot_discard_90px.png");
+            if (comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotRestoreSnapshot(comProgress, strSnapshotName, strMachineName);
+                break;
+            }
+
+            /* Success: */
+            fResult = true;
+        }
+        while (0);
+
+        /* Unlock machine finally: */
+        comSession.UnlockMachine();
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
 void UICommon::notifyCloudMachineUnregistered(const QString &strProviderShortName,
                                               const QString &strProfileName,
                                               const QUuid &uId)

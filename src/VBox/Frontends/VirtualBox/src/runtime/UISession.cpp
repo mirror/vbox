@@ -378,7 +378,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
         {
             /* Discard the current state if requested: */
             if (fIncludingDiscard)
-                return restoreCurrentSnapshot();
+                return uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
         }
         else
         {
@@ -404,79 +404,6 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     }
     /* Passed: */
     return true;
-}
-
-bool UISession::restoreCurrentSnapshot()
-{
-    /* Prepare result: */
-    bool fResult = false;
-
-    /* Simulate try-catch block: */
-    do
-    {
-        /* Search for corresponding VM: */
-        CVirtualBox vbox = uiCommon().virtualBox();
-        const QUuid uMachineID = uiCommon().managedVMUuid();
-        const CMachine mach = vbox.FindMachine(uMachineID.toString());
-        if (!vbox.isOk() || mach.isNull())
-        {
-            /* Unable to find VM: */
-            msgCenter().cannotFindMachineById(vbox, uMachineID);
-            break;
-        }
-
-        /* Open a direct session to modify that VM: */
-        CSession sess = uiCommon().openSession(uiCommon().managedVMUuid(),
-                                                 uiCommon().isSeparateProcess()
-                                                 ? KLockType_Write : KLockType_Shared);
-        if (sess.isNull())
-        {
-            /* Unable to open session: */
-            break;
-        }
-
-        /* Simulate try-catch block: */
-        do
-        {
-            /* Acquire machine for this session: */
-            CMachine machine = sess.GetMachine();
-            if (machine.isNull())
-            {
-                /* Unable to acquire machine: */
-                break;
-            }
-
-            /* Prepare the snapshot-discard progress: */
-            const CSnapshot snap = machine.GetCurrentSnapshot();
-            CProgress prog = machine.RestoreSnapshot(snap);
-            if (!machine.isOk() || prog.isNull())
-            {
-                /* Unable to restore snapshot: */
-                msgCenter().cannotRestoreSnapshot(machine, snap.GetName(), machineName());
-                break;
-            }
-
-            /* Show the snapshot-discard progress: */
-            msgCenter().showModalProgressDialog(prog, machine.GetName(), ":/progress_snapshot_discard_90px.png");
-            if (prog.GetResultCode() != 0)
-            {
-                /* Unable to restore snapshot: */
-                msgCenter().cannotRestoreSnapshot(prog, snap.GetName(), machine.GetName());
-                break;
-            }
-
-            /* Success: */
-            fResult = true;
-        }
-        while (0);
-
-        /* Unlock machine finally: */
-        sess.UnlockMachine();
-    }
-    while (0);
-
-    /* Return result: */
-    return fResult;
 }
 
 UIMachineLogic* UISession::machineLogic() const
