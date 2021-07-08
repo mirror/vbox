@@ -128,6 +128,7 @@ enum
     VKAT_TEST_OPT_PCM_BIT,
     VKAT_TEST_OPT_PCM_CHAN,
     VKAT_TEST_OPT_PCM_SIGNED,
+    VKAT_TEST_OPT_PIDFILE,
     VKAT_TEST_OPT_TAG,
     VKAT_TEST_OPT_TEMPDIR,
     VKAT_TEST_OPT_VOL
@@ -176,6 +177,7 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
     { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
     { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
+    { "--pidfile",           VKAT_TEST_OPT_PIDFILE,        RTGETOPT_REQ_STRING  },
     { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
     { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,      RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
@@ -645,6 +647,7 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case VKAT_TEST_OPT_PCM_BIT:        return "Specifies the PCM sample bits (i.e. 16) to use [16]";
         case VKAT_TEST_OPT_PCM_CHAN:       return "Specifies the number of PCM channels to use [2]";
         case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples [true]";
+        case VKAT_TEST_OPT_PIDFILE:        return "Specifies the PID file to use (for daemonizing)";
         case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
         case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
         case VKAT_TEST_OPT_VOL:            return "Specifies the audio volume (in percent, 0-100) to use";
@@ -675,6 +678,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint32_t    uPcmHz        = 0;
     bool        fPcmSigned    = true;
 
+    const char *pszPidFile    = NULL;
     bool        fDaemonize    = false;
     bool        fDaemonized   = false;
 
@@ -784,6 +788,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 fPcmSigned = ValueUnion.f;
                 break;
 
+            case VKAT_TEST_OPT_PIDFILE:
+                pszPidFile = ValueUnion.psz;
+                break;
+
             case VKAT_TEST_OPT_TAG:
                 pszTag = ValueUnion.psz;
                 break;
@@ -815,16 +823,19 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         if (!fDaemonized)
         {
             if (g_uVerbosity > 0)
-                RTMsgInfo("Daemonizing...");
-            rc = RTProcDaemonize(pGetState->argv, "--daemonized");
+            {
+                RTMsgInfo("Starting in background (as daemon) ...");
+                if (pszPidFile)
+                    RTMsgInfo("Using PID file '%s'", pszPidFile);
+            }
+            rc = RTProcDaemonizeUsingFork(true /* fNoChDir */, false /* fNoClose */, pszPidFile);
             if (RT_FAILURE(rc))
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcDaemonize: %Rrc\n", rc);
-            return RTEXITCODE_SUCCESS;
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to daemonize: %Rrc\n", rc);
         }
         else
         {
             if (g_uVerbosity > 0)
-                RTMsgInfo("Running daemonized ...");
+                RTMsgInfo("Running in background (as daemon) ...");
         }
     }
 
