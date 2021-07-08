@@ -199,12 +199,8 @@ void UIWizardNewVMDiskPageBasic::createConnections()
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
                 this, &UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog);
     if (m_pMediumSizeEditor)
-    {
-        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-                this, &UIWizardNewVMDiskPageBasic::completeChanged);
         connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange);
-    }
     if (m_pFixedCheckBox)
         connect(m_pFixedCheckBox, &QCheckBox::toggled,
                 this, &UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled);
@@ -467,9 +463,11 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
     return fResult;
 }
 
-void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange()
+void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange(qulonglong uSize)
 {
+    newVMWizardPropertySet(MediumSize, uSize);
     m_userModifiedParameters << "MediumSize";
+    emit completeChanged();
 }
 
 void UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled(bool fChecked)

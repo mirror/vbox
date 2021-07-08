@@ -87,7 +87,7 @@ private slots:
     void sltSelectedDiskSourceChanged();
     void sltMediaComboBoxIndexChanged();
     void sltGetWithFileOpenDialog();
-    void sltHandleSizeEditorChange();
+    void sltHandleSizeEditorChange(qulonglong uSize);
     void sltFixedCheckBoxToggled(bool fChecked);
 
 private:
