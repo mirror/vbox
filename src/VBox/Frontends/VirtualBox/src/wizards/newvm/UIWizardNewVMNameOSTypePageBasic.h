@@ -71,6 +71,7 @@ protected:
     virtual bool isComplete() const; /* override final */
     /** Validation stuff. */
     virtual bool validatePage() /* override */;
+    virtual void showEvent(QShowEvent *pEvent) /* override final*/;
 
 private slots:
 

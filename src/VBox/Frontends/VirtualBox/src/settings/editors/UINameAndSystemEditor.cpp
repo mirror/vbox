@@ -453,6 +453,7 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pNameLabel->setBuddy(m_pNameLineEdit);
                 m_pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
+                setFocusProxy(m_pNameLineEdit);
             }
 
             ++iRow;

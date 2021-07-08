@@ -473,6 +473,13 @@ bool UIWizardNewVMNameOSTypePageBasic::validatePage()
     return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, qobject_cast<UIWizardNewVM*>(wizard()));
 }
 
+void UIWizardNewVMNameOSTypePageBasic::showEvent(QShowEvent *pEvent)
+{
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setFocus();
+    UINativeWizardPage::showEvent(pEvent);
+}
+
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(this->wizard());
