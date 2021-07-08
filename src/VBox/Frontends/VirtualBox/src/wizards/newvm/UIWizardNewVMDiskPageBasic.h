@@ -88,6 +88,7 @@ private slots:
     void sltMediaComboBoxIndexChanged();
     void sltGetWithFileOpenDialog();
     void sltHandleSizeEditorChange();
+    void sltFixedCheckBoxToggled(bool fChecked);
 
 private:
 

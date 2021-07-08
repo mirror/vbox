@@ -205,6 +205,9 @@ void UIWizardNewVMDiskPageBasic::createConnections()
         connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange);
     }
+    if (m_pFixedCheckBox)
+        connect(m_pFixedCheckBox, &QCheckBox::toggled,
+                this, &UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled);
 }
 
 void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
@@ -366,6 +369,20 @@ void UIWizardNewVMDiskPageBasic::initializePage()
         m_pMediumSizeEditor->blockSignals(false);
         newVMWizardPropertySet(MediumSize, iRecommendedSize);
     }
+
+    /* Initialize medium variant parameter of the wizard (only if user has not touched the checkbox yet): */
+    if (!m_userModifiedParameters.contains("MediumVariant"))
+    {
+        if (m_pFixedCheckBox)
+        {
+            if (m_pFixedCheckBox->isChecked())
+                newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Fixed);
+            else
+                newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Standard);
+        }
+        else
+            newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Standard);
+    }
 }
 
 void UIWizardNewVMDiskPageBasic::cleanupPage()
@@ -453,6 +470,17 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
 void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange()
 {
     m_userModifiedParameters << "MediumSize";
+}
+
+void UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled(bool fChecked)
+{
+    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
+    if (fChecked)
+        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
+    else
+        uMediumVariant = (qulonglong)KMediumVariant_Standard;
+    newVMWizardPropertySet(MediumVariant, uMediumVariant);
+    m_userModifiedParameters << "MediumVariant";
 }
 
 void UIWizardNewVMDiskPageBasic::setEnableNewDiskWidgets(bool fEnable)
