@@ -387,9 +387,11 @@ static int rtSocketNetAddrFromAddr(RTSOCKADDRUNION const *pSrc, size_t cbSrc, PR
 static int rtSocketAddrFromNetAddr(PCRTNETADDR pAddr, RTSOCKADDRUNION *pDst, size_t cbDst, int *pcbAddr)
 {
     RT_BZERO(pDst, cbDst);
-    if (   pAddr->enmType == RTNETADDRTYPE_IPV4
-        && cbDst >= sizeof(struct sockaddr_in))
+    if (pAddr->enmType == RTNETADDRTYPE_IPV4)
     {
+        if (cbDst < sizeof(struct sockaddr_in))
+            return VERR_BUFFER_OVERFLOW;
+
         pDst->Addr.sa_family       = AF_INET;
         pDst->IPv4.sin_port        = RT_H2N_U16(pAddr->uPort);
         pDst->IPv4.sin_addr.s_addr = pAddr->uAddr.IPv4.u;
@@ -397,9 +399,11 @@ static int rtSocketAddrFromNetAddr(PCRTNETADDR pAddr, RTSOCKADDRUNION *pDst, siz
             *pcbAddr = sizeof(pDst->IPv4);
     }
 #ifdef IPRT_WITH_TCPIP_V6
-    else if (   pAddr->enmType == RTNETADDRTYPE_IPV6
-             && cbDst >= sizeof(struct sockaddr_in6))
+    else if (pAddr->enmType == RTNETADDRTYPE_IPV6)
     {
+        if (cbDst >= sizeof(struct sockaddr_in6))
+            return VERR_BUFFER_OVERFLOW;
+
         pDst->Addr.sa_family              = AF_INET6;
         pDst->IPv6.sin6_port              = RT_H2N_U16(pAddr->uPort);
         pSrc->IPv6.sin6_addr.s6_addr32[0] = pAddr->uAddr.IPv6.au32[0];
