@@ -324,8 +324,24 @@ void UIVirtualBoxManagerWidget::retranslateUi()
 #endif
 }
 
-void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &)
+void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
 {
+    // WORKAROUND:
+    // In certain intermediate states VM info can be NULL which
+    // causing annoying assertions, such updates can be ignored?
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CMachine comMachine = comVBox.FindMachine(uId.toString());
+    if (comVBox.isOk() && comMachine.isNotNull())
+    {
+        switch (comMachine.GetState())
+        {
+            case KMachineState_DeletingSnapshot:
+                return;
+            default:
+                break;
+        }
+    }
+
     /* Recache current item info if machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
         recacheCurrentItemInformation();
