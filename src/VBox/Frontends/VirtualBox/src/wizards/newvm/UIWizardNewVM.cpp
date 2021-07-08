@@ -109,71 +109,66 @@ void UIWizardNewVM::populatePages()
 
 bool UIWizardNewVM::createVM()
 {
-//     /* Get VBox object: */
-//     CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
+    QString strTypeId = m_comGuestOSType.GetId();
 
-//     /* OS type: */
-//     CGuestOSType type = field("type").value<CGuestOSType>();
-//     QString strTypeId = type.GetId();
+    /* Create virtual machine: */
+    if (m_machine.isNull())
+    {
+        QVector<QString> groups;
+        if (!m_strMachineGroup.isEmpty())
+            groups << m_strMachineGroup;
+        m_machine = vbox.CreateMachine(m_strMachineFilePath,
+                                       m_strMachineBaseName,
+                                       groups, strTypeId, QString());
+        if (!vbox.isOk())
+        {
+            msgCenter().cannotCreateMachine(vbox, this);
+            return false;
+        }
 
-//     /* Create virtual machine: */
-//     if (m_machine.isNull())
-//     {
-//         QVector<QString> groups;
-//         if (!m_strMachineGroup.isEmpty())
-//             groups << m_strMachineGroup;
-//         m_machine = vbox.CreateMachine(field("machineFilePath").toString(),
-//                                        field("name").toString(),
-//                                        groups, strTypeId, QString());
-//         if (!vbox.isOk())
-//         {
-//             msgCenter().cannotCreateMachine(vbox, this);
-//             return false;
-//         }
+        /* The First RUN Wizard is to be shown:
+         * 1. if we don't attach any virtual hard-drive
+         * 2. or attach a new (empty) one.
+         * 3. and if the unattended install is not enabled
+         * 4. User did not select an ISO image file
+         * Usually we are assigning extra-data values through UIExtraDataManager,
+         * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
+        if (ISOFilePath().isEmpty() &&
+            !isUnattendedEnabled() &&
+            !m_virtualDisk.isNull())
+            m_machine.SetExtraData(GUI_FirstRun, "yes");
+    }
 
-//         /* The First RUN Wizard is to be shown:
-//          * 1. if we don't attach any virtual hard-drive
-//          * 2. or attach a new (empty) one.
-//          * 3. and if the unattended install is not enabled
-//          * 4. User did not select an ISO image file
-//          * Usually we are assigning extra-data values through UIExtraDataManager,
-//          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
-//         if (ISOFilePath().isEmpty() &&
-//             !isUnattendedEnabled() &&
-//             !m_virtualDisk.isNull())
-//             m_machine.SetExtraData(GUI_FirstRun, "yes");
-//     }
+#if 0
+    /* Configure the newly created vm here in GUI by several calls to API: */
+    configureVM(strTypeId, m_comGuestOSType);
+#else
+    /* The newer and less tested way of configuring vms: */
+    m_machine.ApplyDefaults(QString());
+    /* Apply user preferences again. IMachine::applyDefaults may have overwritten the user setting: */
+    m_machine.SetMemorySize(m_iMemorySize);
+    int iVPUCount = qMax(1, m_iCPUCount);
+    m_machine.SetCPUCount(iVPUCount);
+    /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
+    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
+    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
+    /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
+    if (iVPUCount > 1)
+        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
 
-// #if 0
-//     /* Configure the newly created vm here in GUI by several calls to API: */
-//     configureVM(strTypeId, type);
-// #else
-//     /* The newer and less tested way of configuring vms: */
-//     m_machine.ApplyDefaults(QString());
-//     /* Apply user preferences again. IMachine::applyDefaults may have overwritten the user setting: */
-//     m_machine.SetMemorySize(field("baseMemory").toUInt());
-//     int iVPUCount = qMax((unsigned)1, field("VCPUCount").toUInt());
-//     m_machine.SetCPUCount(iVPUCount);
-//     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
-//     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
-//     comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
-//     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
-//     if (iVPUCount > 1)
-//         m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
+    /* Set recommended firmware type: */
+    m_machine.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+#endif
 
-//     /* Set recommended firmware type: */
-//     m_machine.SetFirmwareType(getBoolFieldValue("EFIEnabled") ? KFirmwareType_EFI : KFirmwareType_BIOS);
-// #endif
-
-//     /* Register the VM prior to attaching hard disks: */
-//     vbox.RegisterMachine(m_machine);
-//     if (!vbox.isOk())
-//     {
-//         msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
-//         return false;
-//     }
-//     return attachDefaultDevices(type);
-    return true;
+    /* Register the VM prior to attaching hard disks: */
+    vbox.RegisterMachine(m_machine);
+    if (!vbox.isOk())
+    {
+        msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
+        return false;
+    }
+    return attachDefaultDevices();
 }
 
 bool UIWizardNewVM::createVirtualDisk()
@@ -256,236 +251,234 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 {
     Q_UNUSED(strGuestTypeId);
     Q_UNUSED(comGuestType);
-    // /* Get graphics adapter: */
-    // CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
+    /* Get graphics adapter: */
+    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
 
-    // /* RAM size: */
-    // m_machine.SetMemorySize(field("baseMemory").toInt());
+    /* RAM size: */
+    m_machine.SetMemorySize(m_iMemorySize);
 
-    // /* VCPU count: */
-    // int iVPUCount = qMax((unsigned)1, field("VCPUCount").toUInt());
-    // m_machine.SetCPUCount(iVPUCount);
+    /* VCPU count: */
+    int iVPUCount = qMax(1, m_iCPUCount);
+    m_machine.SetCPUCount(iVPUCount);
 
-    // /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
-    // if (iVPUCount > 1)
-    //     m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
+    /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
+    if (iVPUCount > 1)
+        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
 
-    // /* Graphics Controller type: */
-    // comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
+    /* Graphics Controller type: */
+    comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
 
-    // /* VRAM size - select maximum between recommended and minimum for fullscreen: */
-    // comGraphics.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
+    /* VRAM size - select maximum between recommended and minimum for fullscreen: */
+    comGraphics.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
 
-    // /* Selecting recommended chipset type: */
-    // m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
+    /* Selecting recommended chipset type: */
+    m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
 
-    // /* Selecting recommended Audio Controller: */
-    // m_machine.GetAudioAdapter().SetAudioController(comGuestType.GetRecommendedAudioController());
-    // /* And the Audio Codec: */
-    // m_machine.GetAudioAdapter().SetAudioCodec(comGuestType.GetRecommendedAudioCodec());
-    // /* Enabling audio by default: */
-    // m_machine.GetAudioAdapter().SetEnabled(true);
-    // m_machine.GetAudioAdapter().SetEnabledOut(true);
+    /* Selecting recommended Audio Controller: */
+    m_machine.GetAudioAdapter().SetAudioController(comGuestType.GetRecommendedAudioController());
+    /* And the Audio Codec: */
+    m_machine.GetAudioAdapter().SetAudioCodec(comGuestType.GetRecommendedAudioCodec());
+    /* Enabling audio by default: */
+    m_machine.GetAudioAdapter().SetEnabled(true);
+    m_machine.GetAudioAdapter().SetEnabledOut(true);
 
-    // /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
-    // CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
-    // bool fOhciEnabled = false;
-    // if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
-    // {
-    //     /* USB 3.0 is only available if the proper ExtPack is installed: */
-    //     CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-    //     if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
-    //     {
-    //         m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
-    //         /* xHCI includes OHCI */
-    //         fOhciEnabled = true;
-    //     }
-    // }
-    // if (   !fOhciEnabled
-    //     && !usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
-    // {
-    //     m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-    //     fOhciEnabled = true;
-    //     /* USB 2.0 is only available if the proper ExtPack is installed.
-    //      * Note. Configuring EHCI here and providing messages about
-    //      * the missing extpack isn't exactly clean, but it is a
-    //      * necessary evil to patch over legacy compatability issues
-    //      * introduced by the new distribution model. */
-    //     CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-    //     if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
-    //         m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
-    // }
+    /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
+    CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
+    bool fOhciEnabled = false;
+    if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
+    {
+        /* USB 3.0 is only available if the proper ExtPack is installed: */
+        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+        if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
+        {
+            m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
+            /* xHCI includes OHCI */
+            fOhciEnabled = true;
+        }
+    }
+    if (   !fOhciEnabled
+        && !usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
+    {
+        m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+        fOhciEnabled = true;
+        /* USB 2.0 is only available if the proper ExtPack is installed.
+         * Note. Configuring EHCI here and providing messages about
+         * the missing extpack isn't exactly clean, but it is a
+         * necessary evil to patch over legacy compatability issues
+         * introduced by the new distribution model. */
+        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+        if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
+            m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
+    }
 
-    // /* Create a floppy controller if recommended: */
-    // QString strFloppyName = getNextControllerName(KStorageBus_Floppy);
-    // if (comGuestType.GetRecommendedFloppy())
-    // {
-    //     m_machine.AddStorageController(strFloppyName, KStorageBus_Floppy);
-    //     CStorageController flpCtr = m_machine.GetStorageControllerByName(strFloppyName);
-    //     flpCtr.SetControllerType(KStorageControllerType_I82078);
-    // }
+    /* Create a floppy controller if recommended: */
+    QString strFloppyName = getNextControllerName(KStorageBus_Floppy);
+    if (comGuestType.GetRecommendedFloppy())
+    {
+        m_machine.AddStorageController(strFloppyName, KStorageBus_Floppy);
+        CStorageController flpCtr = m_machine.GetStorageControllerByName(strFloppyName);
+        flpCtr.SetControllerType(KStorageControllerType_I82078);
+    }
 
-    // /* Create recommended DVD storage controller: */
-    // KStorageBus strDVDBus = comGuestType.GetRecommendedDVDStorageBus();
-    // QString strDVDName = getNextControllerName(strDVDBus);
-    // m_machine.AddStorageController(strDVDName, strDVDBus);
+    /* Create recommended DVD storage controller: */
+    KStorageBus strDVDBus = comGuestType.GetRecommendedDVDStorageBus();
+    QString strDVDName = getNextControllerName(strDVDBus);
+    m_machine.AddStorageController(strDVDName, strDVDBus);
 
-    // /* Set recommended DVD storage controller type: */
-    // CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDVDName);
-    // KStorageControllerType dvdStorageControllerType = comGuestType.GetRecommendedDVDStorageController();
-    // dvdCtr.SetControllerType(dvdStorageControllerType);
+    /* Set recommended DVD storage controller type: */
+    CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDVDName);
+    KStorageControllerType dvdStorageControllerType = comGuestType.GetRecommendedDVDStorageController();
+    dvdCtr.SetControllerType(dvdStorageControllerType);
 
-    // /* Create recommended HD storage controller if it's not the same as the DVD controller: */
-    // KStorageBus ctrHDBus = comGuestType.GetRecommendedHDStorageBus();
-    // KStorageControllerType hdStorageControllerType = comGuestType.GetRecommendedHDStorageController();
-    // CStorageController hdCtr;
-    // QString strHDName;
-    // if (ctrHDBus != strDVDBus || hdStorageControllerType != dvdStorageControllerType)
-    // {
-    //     strHDName = getNextControllerName(ctrHDBus);
-    //     m_machine.AddStorageController(strHDName, ctrHDBus);
-    //     hdCtr = m_machine.GetStorageControllerByName(strHDName);
-    //     hdCtr.SetControllerType(hdStorageControllerType);
-    // }
-    // else
-    // {
-    //     /* The HD controller is the same as DVD: */
-    //     hdCtr = dvdCtr;
-    //     strHDName = strDVDName;
-    // }
+    /* Create recommended HD storage controller if it's not the same as the DVD controller: */
+    KStorageBus ctrHDBus = comGuestType.GetRecommendedHDStorageBus();
+    KStorageControllerType hdStorageControllerType = comGuestType.GetRecommendedHDStorageController();
+    CStorageController hdCtr;
+    QString strHDName;
+    if (ctrHDBus != strDVDBus || hdStorageControllerType != dvdStorageControllerType)
+    {
+        strHDName = getNextControllerName(ctrHDBus);
+        m_machine.AddStorageController(strHDName, ctrHDBus);
+        hdCtr = m_machine.GetStorageControllerByName(strHDName);
+        hdCtr.SetControllerType(hdStorageControllerType);
+    }
+    else
+    {
+        /* The HD controller is the same as DVD: */
+        hdCtr = dvdCtr;
+        strHDName = strDVDName;
+    }
 
-    // /* Limit the AHCI port count if it's used because windows has trouble with
-    //    too many ports and other guest (OS X in particular) may take extra long
-    //    to boot: */
-    // if (hdStorageControllerType == KStorageControllerType_IntelAhci)
-    //     hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
-    // else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
-    //     dvdCtr.SetPortCount(1);
+    /* Limit the AHCI port count if it's used because windows has trouble with
+       too many ports and other guest (OS X in particular) may take extra long
+       to boot: */
+    if (hdStorageControllerType == KStorageControllerType_IntelAhci)
+        hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
+    else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
+        dvdCtr.SetPortCount(1);
 
-    // /* Turn on PAE, if recommended: */
-    // m_machine.SetCPUProperty(KCPUPropertyType_PAE, comGuestType.GetRecommendedPAE());
+    /* Turn on PAE, if recommended: */
+    m_machine.SetCPUProperty(KCPUPropertyType_PAE, comGuestType.GetRecommendedPAE());
 
-    // /* Set the recommended triple fault behavior: */
-    // m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, comGuestType.GetRecommendedTFReset());
+    /* Set the recommended triple fault behavior: */
+    m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, comGuestType.GetRecommendedTFReset());
 
-    // /* Set recommended firmware type: */
-    // m_machine.SetFirmwareType(getBoolFieldValue("EFIEnabled") ? KFirmwareType_EFI : KFirmwareType_BIOS);
+    /* Set recommended firmware type: */
+    m_machine.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
 
-    // /* Set recommended human interface device types: */
-    // if (comGuestType.GetRecommendedUSBHID())
-    // {
-    //     m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
-    //     m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
-    //     if (!fOhciEnabled && !usbDeviceFilters.isNull())
-    //         m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-    // }
+    /* Set recommended human interface device types: */
+    if (comGuestType.GetRecommendedUSBHID())
+    {
+        m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
+        m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
+        if (!fOhciEnabled && !usbDeviceFilters.isNull())
+            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+    }
 
-    // if (comGuestType.GetRecommendedUSBTablet())
-    // {
-    //     m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
-    //     if (!fOhciEnabled && !usbDeviceFilters.isNull())
-    //         m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-    // }
+    if (comGuestType.GetRecommendedUSBTablet())
+    {
+        m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
+        if (!fOhciEnabled && !usbDeviceFilters.isNull())
+            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+    }
 
-    // /* Set HPET flag: */
-    // m_machine.SetHPETEnabled(comGuestType.GetRecommendedHPET());
+    /* Set HPET flag: */
+    m_machine.SetHPETEnabled(comGuestType.GetRecommendedHPET());
 
-    // /* Set UTC flags: */
-    // m_machine.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
+    /* Set UTC flags: */
+    m_machine.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
 
-    // /* Set graphic bits: */
-    // if (comGuestType.GetRecommended2DVideoAcceleration())
-    //     comGraphics.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
+    /* Set graphic bits: */
+    if (comGuestType.GetRecommended2DVideoAcceleration())
+        comGraphics.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
 
-    // if (comGuestType.GetRecommended3DAcceleration())
-    //     comGraphics.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
+    if (comGuestType.GetRecommended3DAcceleration())
+        comGraphics.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
 }
 
-bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
+bool UIWizardNewVM::attachDefaultDevices()
 {
-    Q_UNUSED(comGuestType);
+    bool success = false;
+    QUuid uMachineId = m_machine.GetId();
+    CSession session = uiCommon().openSession(uMachineId);
+    if (!session.isNull())
+    {
+        CMachine machine = session.GetMachine();
+        if (!m_virtualDisk.isNull())
+        {
+            KStorageBus enmHDDBus = m_comGuestOSType.GetRecommendedHDStorageBus();
+            CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
+            if (!comHDDController.isNull())
+            {
+                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, m_virtualDisk);
+                if (!machine.isOk())
+                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, m_strMediumPath,
+                                                   StorageSlot(enmHDDBus, 0, 0), this);
+            }
+        }
+
+        /* Attach optical drive: */
+        KStorageBus enmDVDBus = m_comGuestOSType.GetRecommendedDVDStorageBus();
+        CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
+        if (!comDVDController.isNull())
+        {
+            CMedium opticalDisk;
+            QString strISOFilePath = ISOFilePath();
+            if (!strISOFilePath.isEmpty() && !isUnattendedEnabled())
+            {
+                CVirtualBox vbox = uiCommon().virtualBox();
+                opticalDisk =
+                    vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
+                if (!vbox.isOk())
+                    msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
+            }
+            machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, opticalDisk);
+            if (!machine.isOk())
+                msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
+                                               StorageSlot(enmDVDBus, 1, 0), this);
+        }
+
+        /* Attach an empty floppy drive if recommended */
+        if (m_comGuestOSType.GetRecommendedFloppy()) {
+            CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
+            if (!comFloppyController.isNull())
+            {
+                machine.AttachDevice(comFloppyController.GetName(), 0, 0, KDeviceType_Floppy, CMedium());
+                if (!machine.isOk())
+                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
+                                                   StorageSlot(KStorageBus_Floppy, 0, 0), this);
+            }
+        }
+
+        if (machine.isOk())
+        {
+            machine.SaveSettings();
+            if (machine.isOk())
+                success = true;
+            else
+                msgCenter().cannotSaveMachineSettings(machine, this);
+        }
+
+        session.UnlockMachine();
+    }
+    if (!success)
+    {
+        CVirtualBox vbox = uiCommon().virtualBox();
+        /* Unregister on failure */
+        QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
+        if (vbox.isOk())
+        {
+            CProgress progress = m_machine.DeleteConfig(aMedia);
+            progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
+        }
+        return false;
+    }
+
+    /* Ensure we don't try to delete a newly created virtual hard drive on success: */
+    if (!m_virtualDisk.isNull())
+        m_virtualDisk.detach();
+
     return true;
-    // bool success = false;
-    // QUuid uMachineId = m_machine.GetId();
-    // CSession session = uiCommon().openSession(uMachineId);
-    // if (!session.isNull())
-    // {
-    //     CMachine machine = session.GetMachine();
-    //     if (!m_virtualDisk.isNull())
-    //     {
-    //         KStorageBus enmHDDBus = comGuestType.GetRecommendedHDStorageBus();
-    //         CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
-    //         if (!comHDDController.isNull())
-    //         {
-    //             machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, m_virtualDisk);
-    //             if (!machine.isOk())
-    //                 msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("mediumPath").toString(),
-    //                                                StorageSlot(enmHDDBus, 0, 0), this);
-    //         }
-    //     }
-
-    //     /* Attach optical drive: */
-    //     KStorageBus enmDVDBus = comGuestType.GetRecommendedDVDStorageBus();
-    //     CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
-    //     if (!comDVDController.isNull())
-    //     {
-    //         CMedium opticalDisk;
-    //         QString strISOFilePath = ISOFilePath();
-    //         if (!strISOFilePath.isEmpty() && !getBoolFieldValue("isUnattendedEnabled"))
-    //         {
-    //             CVirtualBox vbox = uiCommon().virtualBox();
-    //             opticalDisk =
-    //                 vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
-    //             if (!vbox.isOk())
-    //                 msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
-    //         }
-    //         machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, opticalDisk);
-    //         if (!machine.isOk())
-    //             msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
-    //                                            StorageSlot(enmDVDBus, 1, 0), this);
-    //     }
-
-    //     /* Attach an empty floppy drive if recommended */
-    //     if (comGuestType.GetRecommendedFloppy()) {
-    //         CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
-    //         if (!comFloppyController.isNull())
-    //         {
-    //             machine.AttachDevice(comFloppyController.GetName(), 0, 0, KDeviceType_Floppy, CMedium());
-    //             if (!machine.isOk())
-    //                 msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
-    //                                                StorageSlot(KStorageBus_Floppy, 0, 0), this);
-    //         }
-    //     }
-
-    //     if (machine.isOk())
-    //     {
-    //         machine.SaveSettings();
-    //         if (machine.isOk())
-    //             success = true;
-    //         else
-    //             msgCenter().cannotSaveMachineSettings(machine, this);
-    //     }
-
-    //     session.UnlockMachine();
-    // }
-    // if (!success)
-    // {
-    //     CVirtualBox vbox = uiCommon().virtualBox();
-    //     /* Unregister on failure */
-    //     QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
-    //     if (vbox.isOk())
-    //     {
-    //         CProgress progress = m_machine.DeleteConfig(aMedia);
-    //         progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
-    //     }
-    //     return false;
-    // }
-
-    // /* Ensure we don't try to delete a newly created virtual hard drive on success: */
-    // if (!m_virtualDisk.isNull())
-    //     m_virtualDisk.detach();
-
-    // return true;
 }
 
 void UIWizardNewVM::sltHandleWizardCancel()

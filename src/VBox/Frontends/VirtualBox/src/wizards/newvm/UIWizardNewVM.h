@@ -77,6 +77,11 @@ public:
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isGuestOSTypeWindows() const;
 
+    bool createVM();
+    bool createVirtualDisk();
+    void deleteVirtualDisk();
+
+
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
     void setVirtualDisk(const QUuid &mediumId);
@@ -156,13 +161,8 @@ protected:
 
     /** Populates pages. */
     virtual void populatePages() /* final override */;
-
-    bool createVM();
-    bool createVirtualDisk();
-    void deleteVirtualDisk();
-
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
-    bool attachDefaultDevices(const CGuestOSType &comGuestType);
+    bool attachDefaultDevices();
 
 private slots:
 
