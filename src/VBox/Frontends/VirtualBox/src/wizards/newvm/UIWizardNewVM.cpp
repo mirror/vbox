@@ -178,59 +178,52 @@ bool UIWizardNewVM::createVM()
 
 bool UIWizardNewVM::createVirtualDisk()
 {
-    // /* Gather attributes: */
-    // CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    // /* uVariant is of type KMediumVariant*/
-    // qulonglong uMediumVariant = field("mediumVariant").toULongLong();
-    // QString strMediumPath = field("mediumPath").toString();
-    // qulonglong uSize = field("mediumSize").toULongLong();
-    // /* Check attributes: */
-    // AssertReturn(!strMediumPath.isNull(), false);
-    // AssertReturn(uSize > 0, false);
+    /* Check attributes: */
+    AssertReturn(!m_strMediumPath.isNull(), false);
+    AssertReturn(m_uMediumSize > 0, false);
 
-    // /* Get VBox object: */
-    // CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
 
-    // /* Create new virtual hard-disk: */
-    // CMedium newVirtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
-    // if (!vbox.isOk())
-    // {
-    //     msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
-    //     return false;
-    // }
+    /* Create new virtual hard-disk: */
+    CMedium newVirtualDisk = vbox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    if (!vbox.isOk())
+    {
+        msgCenter().cannotCreateHardDiskStorage(vbox, m_strMediumPath, this);
+        return false;
+    }
 
-    // /* Compose medium-variant: */
-    // QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
-    // for (int i = 0; i < variants.size(); ++i)
-    // {
-    //     qulonglong temp = uMediumVariant;
-    //     temp &= UINT64_C(1)<<i;
-    //     variants[i] = (KMediumVariant)temp;
-    // }
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    for (int i = 0; i < variants.size(); ++i)
+    {
+        qulonglong temp = m_uMediumVariant;
+        temp &= UINT64_C(1)<<i;
+        variants[i] = (KMediumVariant)temp;
+    }
 
-    // /* Create base storage for the new virtual-disk: */
-    // CProgress progress = newVirtualDisk.CreateBaseStorage(uSize, variants);
-    // if (!newVirtualDisk.isOk())
-    // {
-    //     msgCenter().cannotCreateHardDiskStorage(newVirtualDisk, strMediumPath, this);
-    //     return false;
-    // }
+    /* Create base storage for the new virtual-disk: */
+    CProgress progress = newVirtualDisk.CreateBaseStorage(m_uMediumSize, variants);
+    if (!newVirtualDisk.isOk())
+    {
+        msgCenter().cannotCreateHardDiskStorage(newVirtualDisk, m_strMediumPath, this);
+        return false;
+    }
 
-    // /* Show creation progress: */
-    // msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this);
-    // if (progress.GetCanceled())
-    //     return false;
-    // if (!progress.isOk() || progress.GetResultCode() != 0)
-    // {
-    //     msgCenter().cannotCreateHardDiskStorage(progress, strMediumPath, this);
-    //     return false;
-    // }
+    /* Show creation progress: */
+    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this);
+    if (progress.GetCanceled())
+        return false;
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+    {
+        msgCenter().cannotCreateHardDiskStorage(progress, m_strMediumPath, this);
+        return false;
+    }
 
-    // /* Inform UICommon about it: */
-    // uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    /* Inform UICommon about it: */
+    uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
-    // /* Remember created virtual-disk: */
-    // m_virtualDisk = newVirtualDisk;
+    /* Remember created virtual-disk: */
+    m_virtualDisk = newVirtualDisk;
 
     return true;
 }
@@ -807,14 +800,14 @@ void UIWizardNewVM::setMemorySize(int iMemory)
 }
 
 
-KMediumVariant UIWizardNewVM::mediumVariant() const
+qulonglong UIWizardNewVM::mediumVariant() const
 {
-    return m_enmMediumVariant;
+    return m_uMediumVariant;
 }
 
-void UIWizardNewVM::setMediumVariant(KMediumVariant enmMediumVariant)
+void UIWizardNewVM::setMediumVariant(qulonglong uMediumVariant)
 {
-    m_enmMediumVariant = enmMediumVariant;
+    m_uMediumVariant = uMediumVariant;
 }
 
 const CMediumFormat &UIWizardNewVM::mediumFormat()
