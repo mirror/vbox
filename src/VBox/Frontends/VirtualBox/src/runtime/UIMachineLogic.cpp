@@ -513,7 +513,7 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 
     /* Power VM off: */
     LogRel(("GUI: Request to power VM off due to VBoxSVC is unavailable.\n"));
-    powerOff(false);
+    powerOff(false /* do NOT restore current snapshot */);
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
@@ -1934,6 +1934,7 @@ void UIMachineLogic::sltDetach()
         return;
     }
 
+    LogRel(("GUI: User requested to detach GUI.\n"));
     detach();
 }
 
@@ -1946,6 +1947,7 @@ void UIMachineLogic::sltSaveState()
         return;
     }
 
+    LogRel(("GUI: User requested to save VM state.\n"));
     saveState();
 }
 
@@ -1958,6 +1960,7 @@ void UIMachineLogic::sltShutdown()
         return;
     }
 
+    LogRel(("GUI: User requested to shutdown VM.\n"));
     shutdown();
 }
 
@@ -1970,9 +1973,9 @@ void UIMachineLogic::sltPowerOff()
         return;
     }
 
-    LogRel(("GUI: User request to power VM off.\n"));
-    MachineCloseAction enmLastCloseAction = gEDataManager->lastMachineCloseAction(uiCommon().managedVMUuid());
-    powerOff(machine().GetSnapshotCount() > 0 && enmLastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot);
+    LogRel(("GUI: User requested to power VM off.\n"));
+    const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
+    powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
 }
 
 void UIMachineLogic::sltClose()

@@ -2208,11 +2208,10 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
     QString strResult;
     switch (machineCloseAction)
     {
-        case MachineCloseAction_Detach:                     strResult = "Detach"; break;
-        case MachineCloseAction_SaveState:                  strResult = "SaveState"; break;
-        case MachineCloseAction_Shutdown:                   strResult = "Shutdown"; break;
-        case MachineCloseAction_PowerOff:                   strResult = "PowerOff"; break;
-        case MachineCloseAction_PowerOff_RestoringSnapshot: strResult = "PowerOffRestoringSnapshot"; break;
+        case MachineCloseAction_Detach:    strResult = "Detach"; break;
+        case MachineCloseAction_SaveState: strResult = "SaveState"; break;
+        case MachineCloseAction_Shutdown:  strResult = "Shutdown"; break;
+        case MachineCloseAction_PowerOff:  strResult = "PowerOff"; break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", machineCloseAction));
@@ -2227,12 +2226,11 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                    QList<MachineCloseAction> values;
-    keys << "Detach";                    values << MachineCloseAction_Detach;
-    keys << "SaveState";                 values << MachineCloseAction_SaveState;
-    keys << "Shutdown";                  values << MachineCloseAction_Shutdown;
-    keys << "PowerOff";                  values << MachineCloseAction_PowerOff;
-    keys << "PowerOffRestoringSnapshot"; values << MachineCloseAction_PowerOff_RestoringSnapshot;
+    QStringList keys;    QList<MachineCloseAction> values;
+    keys << "Detach";    values << MachineCloseAction_Detach;
+    keys << "SaveState"; values << MachineCloseAction_SaveState;
+    keys << "Shutdown";  values << MachineCloseAction_Shutdown;
+    keys << "PowerOff";  values << MachineCloseAction_PowerOff;
     /* Invalid type for unknown words: */
     if (!keys.contains(strMachineCloseAction, Qt::CaseInsensitive))
         return MachineCloseAction_Invalid;

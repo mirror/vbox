@@ -748,6 +748,9 @@ public:
 
         /** Returns machine close hook script name as simple string. */
         QString machineCloseHookScript(const QUuid &uID);
+
+        /** Returns whether machine should discard state on power off. */
+        bool discardStateOnPowerOff(const QUuid &uID);
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

@@ -3456,8 +3456,6 @@ void UIActionPoolRuntime::updateConfiguration()
                                       && (restrictedCloseActions & MachineCloseAction_SaveState)
                                       && (restrictedCloseActions & MachineCloseAction_Shutdown)
                                       && (restrictedCloseActions & MachineCloseAction_PowerOff);
-                                      // Close VM Dialog hides PowerOff_RestoringSnapshot implicitly if PowerOff is hidden..
-                                      // && (m_restrictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
     if (fAllCloseActionsRestricted)
     {
         m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuApplicationActionType)

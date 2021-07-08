@@ -224,6 +224,7 @@ const char *UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
 const char *UIExtraDataDefs::GUI_RestrictedCloseActions = "GUI/RestrictedCloseActions";
 const char *UIExtraDataDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
 const char *UIExtraDataDefs::GUI_CloseActionHook = "GUI/CloseActionHook";
+const char *UIExtraDataDefs::GUI_DiscardStateOnPowerOff = "GUI/DiscardStateOnPowerOff";
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 /* Virtual Machine: Debug UI: */

@@ -1976,7 +1976,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_GuestControl_FileManagerOptions
            << GUI_GuestControl_ProcessControlDialogGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
-           << GUI_LastCloseAction << GUI_CloseActionHook
+           << GUI_LastCloseAction << GUI_CloseActionHook << GUI_DiscardStateOnPowerOff
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_Dbg_Enabled << GUI_Dbg_AutoShow
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -4441,6 +4441,12 @@ void UIExtraDataManager::setLastMachineCloseAction(MachineCloseAction machineClo
 QString UIExtraDataManager::machineCloseHookScript(const QUuid &uID)
 {
     return extraDataString(GUI_CloseActionHook, uID);
+}
+
+bool UIExtraDataManager::discardStateOnPowerOff(const QUuid &uID)
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_DiscardStateOnPowerOff, uID);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
