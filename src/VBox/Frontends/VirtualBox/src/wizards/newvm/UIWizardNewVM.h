@@ -44,21 +44,23 @@
 struct UIUnattendedInstallData
 {
     UIUnattendedInstallData();
-    bool m_fUnattendedEnabled;
     QUuid m_uMachineUid;
     QString m_strISOPath;
+
+    bool m_fUnattendedEnabled;
     bool m_fStartHeadless;
     QString m_strUserName;
     QString m_strPassword;
     QString m_strHostname;
-    QString m_strDetectedOSTypeId;
+    QString m_strProductKey;
+    bool m_fInstallGuestAdditions;
+    QString m_strGuestAdditionsISOPath;
+#if 0
     QString m_strDetectedOSVersion;
     QString m_strDetectedOSFlavor;
     QString m_strDetectedOSLanguages;
     QString m_strDetectedOSHints;
-    QString m_strProductKey;
-    bool m_fInstallGuestAdditions;
-    QString m_strGuestAdditionsISOPath;
+#endif
 };
 
 
@@ -170,7 +172,6 @@ private:
 
     void retranslateUi();
     QString getNextControllerName(KStorageBus type);
-    void setFieldsFromDefaultUnttendedInstallData();
     void setUnattendedPageVisible(bool fVisible);
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const;
@@ -213,15 +214,8 @@ private:
 
     /** True if guest additions are to be installed during unattended install. */
     bool m_fInstallGuestAdditions;
-    bool m_fStartHeadless;
     bool m_fSkipUnattendedInstall;
     bool m_fEFIEnabled;
-
-    QString m_strUserName;
-    QString m_strPassword;
-    QString m_strGuestAdditionsISOPath;
-    QString m_strHostname;
-    QString m_strProductKey;
 
     int m_iCPUCount;
     int m_iMemorySize;
