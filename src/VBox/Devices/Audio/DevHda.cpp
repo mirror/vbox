@@ -936,27 +936,11 @@ static int hdaR3CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC 
          * Execute the command.
          */
         uint64_t uResp = 0;
-#ifndef IN_RING3
-        rc = pThisCC->Codec.pfnLookup(&pThis->Codec, &pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
-#else
-        rc = pThisCC->pCodec->pfnLookup(&pThis->Codec, pThisCC->pCodec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
-#endif
+        rc = pThisCC->Codec.pfnLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
         if (RT_SUCCESS(rc))
             AssertRCSuccess(rc); /* no informational statuses */
         else
-        {
-#ifndef IN_RING3
-            if (rc == VERR_INVALID_CONTEXT)
-            {
-                corbRp = corbRp == 0 ? cCorbEntries - 1 : corbRp - 1;
-                LogFunc(("->R3 CORB - uCmd=%#x\n", uCmd));
-                rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCorbDmaTask);
-                AssertRCReturn(rc, rc);
-                break; /* take the normal way out. */
-            }
-#endif
             Log3Func(("Lookup for codec verb %08x failed: %Rrc\n", uCmd, rc));
-        }
         Log3Func(("Codec verb %08x -> response %016RX64\n", uCmd, uResp));
 
         if (   (uResp & CODEC_RESPONSE_UNSOLICITED)
@@ -1926,7 +1910,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->enmPath = PDMAUDIOPATH_OUT_FRONT;
             /// @todo PDMAudioPropsSetChannels(&pCfg->Props, 2); ?
 
-            rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
+            rc = hdaR3CodecAddStream(&pThisCC->Codec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
 
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
@@ -1938,7 +1922,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->enmPath = PDMAUDIOPATH_OUT_CENTER_LFE;
             PDMAudioPropsSetChannels(&pCfg->Props, fUseCenter && fUseLFE ? 2 : 1);
 
-            rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
+            rc = hdaR3CodecAddStream(&pThisCC->Codec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
         }
 
         if (   RT_SUCCESS(rc)
@@ -1949,7 +1933,7 @@ static int hdaR3AddStreamOut(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->enmPath = PDMAUDIOPATH_OUT_REAR;
             PDMAudioPropsSetChannels(&pCfg->Props, 2);
 
-            rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
+            rc = hdaR3CodecAddStream(&pThisCC->Codec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
 # endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
@@ -1978,11 +1962,11 @@ static int hdaR3AddStreamIn(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
     switch (pCfg->enmPath)
     {
         case PDMAUDIOPATH_IN_LINE:
-            rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
+            rc = hdaR3CodecAddStream(&pThisCC->Codec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIOPATH_IN_MIC:
-            rc = hdaR3CodecAddStream(pThisCC->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
+            rc = hdaR3CodecAddStream(&pThisCC->Codec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
             break;
 # endif
         default:
@@ -2092,7 +2076,7 @@ static int hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
     if (   RT_SUCCESS(rc)
         && enmMixerCtl != PDMAUDIOMIXERCTL_UNKNOWN)
     {
-        rc = hdaR3CodecRemoveStream(pThisCC->pCodec, enmMixerCtl, false /*fImmediate*/);
+        rc = hdaR3CodecRemoveStream(&pThisCC->Codec, enmMixerCtl, false /*fImmediate*/);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2182,7 +2166,7 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 
         PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
         uint64_t    uResp   = 0;
-        int rc2 = pThisCC->pCodec->pfnLookup(&pThis->Codec, pThisCC->pCodec, HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
+        int rc2 = pThisCC->Codec.pfnLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
         if (RT_FAILURE(rc2))
             LogFunc(("Codec lookup failed with rc2=%Rrc\n", rc2));
 
@@ -2937,7 +2921,7 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
     /*
      * Reset the codec.
      */
-    hdaCodecReset(&pThis->Codec);
+    hdaCodecReset(&pThisCC->Codec);
 
     /*
      * Set some sensible defaults for which HDA sinks
@@ -3535,7 +3519,7 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
 
     /* Save Codec nodes states. */
-    hdaCodecSaveState(pDevIns, &pThis->Codec, pSSM);
+    hdaCodecSaveState(pDevIns, &pThisCC->Codec, pSSM);
 
     /* Save MMIO registers. */
     pHlp->pfnSSMPutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
@@ -3903,7 +3887,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /*
      * Load Codec nodes states.
      */
-    int rc = hdaR3CodecLoadState(pDevIns, &pThis->Codec, pThisCC->pCodec, pSSM, uVersion);
+    int rc = hdaR3CodecLoadState(pDevIns, &pThisCC->Codec, pSSM, uVersion);
     if (RT_FAILURE(rc))
     {
         LogRel(("HDA: Failed loading codec state (version %RU32, pass 0x%x), rc=%Rrc\n", uVersion, uPass, rc));
@@ -4384,11 +4368,10 @@ static DECLCALLBACK(void) hdaR3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
 
-    if (pThisCC->pCodec->pfnDbgListNodes)
-        pThisCC->pCodec->pfnDbgListNodes(&pThis->Codec, pThisCC->pCodec, pHlp, pszArgs);
+    if (pThisCC->Codec.pfnDbgListNodes)
+        pThisCC->Codec.pfnDbgListNodes(&pThisCC->Codec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
 }
@@ -4398,11 +4381,10 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOH
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
 
-    if (pThisCC->pCodec->pfnDbgSelector)
-        pThisCC->pCodec->pfnDbgSelector(&pThis->Codec, pThisCC->pCodec, pHlp, pszArgs);
+    if (pThisCC->Codec.pfnDbgSelector)
+        pThisCC->Codec.pfnDbgSelector(&pThisCC->Codec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
 }
@@ -4619,7 +4601,7 @@ static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
  *        PDMDEVREG flag. */
 
     /* Ditto goes for the codec, which in turn uses the mixer. */
-    hdaR3CodecPowerOff(pThisCC->pCodec);
+    hdaR3CodecPowerOff(&pThisCC->Codec);
 
     /* This is to prevent us from calling into the mixer and mixer sink code
        after it has been destroyed below. */
@@ -4691,13 +4673,7 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
         RTMemFree(pDrv);
     }
 
-    if (pThisCC->pCodec)
-    {
-        RTMemFree(pThisCC->pCodec);
-        pThisCC->pCodec = NULL;
-    }
-
-    hdaCodecDestruct(&pThis->Codec);
+    hdaCodecDestruct(&pThisCC->Codec);
 
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
         hdaR3StreamDestroy(&pThisCC->aStreams[i]);
@@ -4984,29 +4960,27 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = AudioMixerSetMasterVolume(pThisCC->pMixer, &Vol);
     AssertRCReturn(rc, rc);
 
-    /* Allocate codec. */
-    PHDACODECR3 pCodecR3 = (PHDACODECR3)RTMemAllocZ(sizeof(HDACODECR3));
-    AssertPtrReturn(pCodecR3, VERR_NO_MEMORY);
+    /*
+     * Initialize the codec.
+     */
 
     /* Set codec callbacks to this controller. */
-    pCodecR3->pDevIns                = pDevIns;
-    pCodecR3->pfnCbMixerAddStream    = hdaR3MixerAddStream;
-    pCodecR3->pfnCbMixerRemoveStream = hdaR3MixerRemoveStream;
-    pCodecR3->pfnCbMixerControl      = hdaR3MixerControl;
-    pCodecR3->pfnCbMixerSetVolume    = hdaR3MixerSetVolume;
+    pThisCC->Codec.pDevIns                = pDevIns;
+    pThisCC->Codec.pfnCbMixerAddStream    = hdaR3MixerAddStream;
+    pThisCC->Codec.pfnCbMixerRemoveStream = hdaR3MixerRemoveStream;
+    pThisCC->Codec.pfnCbMixerControl      = hdaR3MixerControl;
+    pThisCC->Codec.pfnCbMixerSetVolume    = hdaR3MixerSetVolume;
 
     /* Construct the common + R3 codec part. */
-    rc = hdaR3CodecConstruct(pDevIns, &pThis->Codec, pCodecR3, 0 /* Codec index */, pCfg);
+    rc = hdaR3CodecConstruct(pDevIns, &pThisCC->Codec, 0 /* Codec index */, pCfg);
     AssertRCReturn(rc, rc);
-
-    pThisCC->pCodec = pCodecR3;
 
     /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
        verb F20 should provide device/codec recognition. */
-    Assert(pThis->Codec.u16VendorId);
-    Assert(pThis->Codec.u16DeviceId);
-    PDMPciDevSetSubSystemVendorId(pPciDev, pThis->Codec.u16VendorId); /* 2c ro - intel.) */
-    PDMPciDevSetSubSystemId(      pPciDev, pThis->Codec.u16DeviceId); /* 2e ro. */
+    Assert(pThisCC->Codec.State.u16VendorId);
+    Assert(pThisCC->Codec.State.u16DeviceId);
+    PDMPciDevSetSubSystemVendorId(pPciDev, pThisCC->Codec.State.u16VendorId); /* 2c ro - intel.) */
+    PDMPciDevSetSubSystemId(      pPciDev, pThisCC->Codec.State.u16DeviceId); /* 2e ro. */
 
     /*
      * Create the per stream timers and the asso.

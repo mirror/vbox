@@ -625,9 +625,6 @@ typedef struct HDASTATE
     /** PCI Region \#0: 16KB of MMIO stuff. */
     IOMMMIOHANDLE           hMmio;
 
-    /** Shared R0/R3 HDA codec to use. */
-    HDACODEC                Codec;
-
 #ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
     STAMCOUNTER             StatAccessDmaOutput;
     STAMCOUNTER             StatAccessDmaOutputToR3;
@@ -729,8 +726,6 @@ typedef struct HDASTATER3
     PPDMDEVINSR3            pDevIns;
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
-    /** Pointer to HDA codec to use. */
-    R3PTRTYPE(PHDACODECR3)  pCodec;
     /** List of associated LUN drivers (HDADRIVER). */
     RTLISTANCHORR3          lstDrv;
     /** The device' software mixer. */
@@ -758,6 +753,9 @@ typedef struct HDASTATER3
          *  Can be NULL, in which the system's temporary directory will be used then. */
         R3PTRTYPE(char *)       pszOutPath;
     } Dbg;
+
+    /** The HDA codec state. */
+    HDACODECR3              Codec;
 } HDASTATER3;
 
 

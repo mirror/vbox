@@ -1469,7 +1469,7 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint
     RT_NOREF(pThisCC);
     Assert(CODEC_CAD(uCmd) == pThis->id);
 
-    if (pThis->enmType == CODEC_TYPE_STAC9220)
+    if (pThis->enmType == CODECTYPE_STAC9220)
     {
         Assert(CODEC_NID(uCmd) == STAC9220_NID_AFG);
 
@@ -2289,14 +2289,15 @@ static const CODECVERB g_aCodecVerbs[] =
  *
  * @returns VBox status code (not strict).
  */
-static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) codecLookup(PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
+    PHDACODEC pThis = &pThisCC->State;
+
     /*
      * Clear the return value and assert some sanity.
      */
     AssertPtr(puResp);
     *puResp = 0;
-    AssertPtr(pThis);
     AssertPtr(pThisCC);
     AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
                     ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
@@ -2370,11 +2371,11 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint3
 typedef struct CODECDEBUG
 {
     /** DBGF info helpers. */
-    PCDBGFINFOHLP pHlp;
+    PCDBGFINFOHLP   pHlp;
     /** Current recursion level. */
-    uint8_t uLevel;
+    uint8_t         uLevel;
     /** Pointer to codec state. */
-    PHDACODEC pThis;
+    PHDACODEC       pThis;
 } CODECDEBUG;
 /** Pointer to the debug info item printing state for the codec. */
 typedef CODECDEBUG *PCODECDEBUG;
@@ -2573,23 +2574,23 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
 }
 
 
-static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThisCC, pszArgs);
 
     pHlp->pfnPrintf(pHlp, "HDA LINK / INPUTS\n");
 
     CODECDEBUG DbgInfo;
-    DbgInfo.pHlp   = pHlp;
-    DbgInfo.pThis  = pThis;
-    DbgInfo.uLevel = 0;
+    DbgInfo.pHlp    = pHlp;
+    DbgInfo.pThis   = &pThisCC->State;
+    DbgInfo.uLevel  = 0;
 
     PCODECDEBUG pInfo = &DbgInfo;
 
     CODECDBG_INDENT
-        for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+        for (uint8_t i = 0; i < pThisCC->State.cTotalNodes; i++)
         {
-            PCODECNODE pNode = &pThis->aNodes[i];
+            PCODECNODE pNode = &pThisCC->State.aNodes[i];
 
             /* Start with all nodes which have connection entries set. */
             if (CODEC_F00_0E_COUNT(pNode->node.au32F00_param[0xE]))
@@ -2599,9 +2600,9 @@ static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODEC pThis, PHDACODECR3 pThis
 }
 
 
-static DECLCALLBACK(void) codecR3DbgSelector(PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) codecR3DbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RT_NOREF(pThis, pThisCC, pHlp, pszArgs);
+    RT_NOREF(pThisCC, pHlp, pszArgs);
 }
 
 
@@ -2676,9 +2677,18 @@ int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bo
 }
 
 
-int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM)
+/**
+ * Saved the codec state.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance of the HDA device.
+ * @param   pThisCC             The codec instance data.
+ * @param   pSSM                The saved state handle.
+ */
+int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM)
 {
-    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    PHDACODEC       pThis   = &pThisCC->State;
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     AssertLogRelMsgReturn(pThis->cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
                           VERR_INTERNAL_ERROR);
     pHlp->pfnSSMPutU32(pSSM, pThis->cTotalNodes);
@@ -2689,11 +2699,21 @@ int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM)
 }
 
 
-int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
+/**
+ * Loads the codec state.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance of the HDA device.
+ * @param   pThisCC             The codec instance data.
+ * @param   pSSM                The saved state handle.
+ * @param   uVersion            The state version.
+ */
+int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
-    PCSSMFIELD pFields = NULL;
-    uint32_t   fFlags  = 0;
+    PHDACODEC       pThis   = &pThisCC->State;
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    PCSSMFIELD      pFields = NULL;
+    uint32_t        fFlags  = 0;
     if (uVersion >= HDA_SAVED_STATE_VERSION_4)
     {
         /* Since version 4 a flexible node count is supported. */
@@ -2758,15 +2778,11 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
 /**
  * Powers off the codec (ring-3).
  *
- * @param   pThisCC             Context-specific codec data (ring-3) to power off.
+ * @param   pThisCC     The codec data.
  */
 void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
 {
-    if (!pThisCC)
-        return;
-
     LogFlowFuncEnter();
-
     LogRel2(("HDA: Powering off codec ...\n"));
 
     int rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_FRONT, true /*fImmediate*/);
@@ -2791,27 +2807,26 @@ void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
  * Constructs a codec (ring-3).
  *
  * @returns VBox status code.
- * @param   pDevIns             Associated device instance.
- * @param   pThis               Shared codec data beteen r0/r3.
- * @param   pThisCC             Context-specific codec data (ring-3).
- * @param   uLUN                Device LUN to assign.
- * @param   pCfg                CFGM node to use for configuration.
+ * @param   pDevIns     The associated device instance.
+ * @param   pThisCC     The codec data.
+ * @param   uLUN        Device LUN to assign.
+ * @param   pCfg        CFGM node to use for configuration.
  */
-int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg)
+int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg)
 {
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
+    PHDACODEC pThis = &pThisCC->State;
 
     pThis->id      = uLUN;
-    pThis->enmType = CODEC_TYPE_STAC9220; /** @todo Make this dynamic. */
+    pThis->enmType = CODECTYPE_STAC9220; /** @todo Make this dynamic. */
 
     int rc;
 
     switch (pThis->enmType)
     {
-        case CODEC_TYPE_STAC9220:
+        case CODECTYPE_STAC9220:
         {
             rc = stac9220Construct(pThis);
             AssertRCReturn(rc, rc);
@@ -2857,30 +2872,28 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
 /**
  * Destructs a codec.
  *
- * @param   pThis           Codec to destruct.
+ * @param   pThisCC     Codec to destruct.
  */
-void hdaCodecDestruct(PHDACODEC pThis)
+void hdaCodecDestruct(PHDACODECR3 pThisCC)
 {
-    if (!pThis)
-        return;
+    LogFlowFuncEnter();
 
     /* Nothing to do here atm. */
-
-    LogFlowFuncEnter();
+    RT_NOREF(pThisCC);
 }
 
 
 /**
  * Resets a codec.
  *
- * @param   pThis           Codec to reset.
+ * @param   pThisCC     Codec to reset.
  */
-void hdaCodecReset(PHDACODEC pThis)
+void hdaCodecReset(PHDACODECR3 pThisCC)
 {
-    switch (pThis->enmType)
+    switch (pThisCC->State.enmType)
     {
-        case CODEC_TYPE_STAC9220:
-            stac9220Reset(pThis);
+        case CODECTYPE_STAC9220:
+            stac9220Reset(&pThisCC->State);
             break;
 
         default:
