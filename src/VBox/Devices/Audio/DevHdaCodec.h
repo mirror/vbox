@@ -854,7 +854,7 @@ typedef struct HDACODECR3
     /** @} */
 
     /** The CODEC_NODE_CLS_XXX flags for each node. */
-    uint16_t        afNodeClassifications[CODEC_NODES_MAX];
+    uint16_t const  afNodeClassifications[CODEC_NODES_MAX];
 
     CODECNODE       aNodes[CODEC_NODES_MAX];
 
