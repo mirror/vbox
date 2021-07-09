@@ -144,25 +144,9 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 #endif /* IN_RING3 */
 
 
-
-#if 0 /* unused */
-static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    RT_NOREF(pszArgs);
-    uint8_t const cTotalNodes = RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
-    for (uint8_t i = 1; i < cTotalNodes; i++)
-    {
-        PCODECNODE pNode = &pThis->aNodes[i];
-        AMPLIFIER *pAmp = &pNode->dac.B_params;
-
-        uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & 0x7f;
-        uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & 0x7f;
-
-        pHlp->pfnPrintf(pHlp, "0x%x: lVol=%RU8, rVol=%RU8\n", i, lVol, rVol);
-    }
-}
-#endif
-
+/*********************************************************************************************************************************
+*   STAC9220 Constructor / Reset                                                                                                 *
+*********************************************************************************************************************************/
 
 /**
  * Resets a single node of the codec.
@@ -740,6 +724,7 @@ static void stac9220NodeReset(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
     }
 }
 
+
 /**
  * Resets the codec with all its connected nodes.
  *
@@ -823,45 +808,49 @@ static int stac9220Construct(PHDACODEC pThis)
 
 #endif /* IN_RING3 */
 
+
+/*********************************************************************************************************************************
+*   Common Helpers                                                                                                               *
+*********************************************************************************************************************************/
+
 /*
  * Some generic predicate functions.
  */
-
-#define DECLISNODEOFTYPE(type)                                              \
-    DECLINLINE(bool) hdaCodecIs##type##Node(PHDACODEC pThis, uint8_t cNode) \
-    {                                                                       \
-        Assert(pThis->au8##type##s);                                        \
-        for (int i = 0; pThis->au8##type##s[i] != 0; ++i)                   \
-            if (pThis->au8##type##s[i] == cNode)                            \
-                return true;                                                \
-        return false;                                                       \
+#define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
+    DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODEC pThis, uint8_t idNode) \
+    { \
+        Assert(pThis->au8##a_Type##s); \
+        for (uintptr_t i = 0; i < RT_ELEMENTS(pThis->au8##a_Type##s) && pThis->au8##a_Type##s[i] != 0; i++) \
+            if (pThis->au8##a_Type##s[i] == idNode) \
+                return true; \
+        return false; \
     }
 /* hdaCodecIsPortNode */
-DECLISNODEOFTYPE(Port)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Port)
 /* hdaCodecIsDacNode */
-DECLISNODEOFTYPE(Dac)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Dac)
 /* hdaCodecIsAdcVolNode */
-DECLISNODEOFTYPE(AdcVol)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(AdcVol)
 /* hdaCodecIsAdcNode */
-DECLISNODEOFTYPE(Adc)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Adc)
 /* hdaCodecIsAdcMuxNode */
-DECLISNODEOFTYPE(AdcMux)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(AdcMux)
 /* hdaCodecIsPcbeepNode */
-DECLISNODEOFTYPE(Pcbeep)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Pcbeep)
 /* hdaCodecIsSpdifOutNode */
-DECLISNODEOFTYPE(SpdifOut)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(SpdifOut)
 /* hdaCodecIsSpdifInNode */
-DECLISNODEOFTYPE(SpdifIn)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(SpdifIn)
 /* hdaCodecIsDigInPinNode */
-DECLISNODEOFTYPE(DigInPin)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(DigInPin)
 /* hdaCodecIsDigOutPinNode */
-DECLISNODEOFTYPE(DigOutPin)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(DigOutPin)
 /* hdaCodecIsCdNode */
-DECLISNODEOFTYPE(Cd)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Cd)
 /* hdaCodecIsVolKnobNode */
-DECLISNODEOFTYPE(VolKnob)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(VolKnob)
 /* hdaCodecIsReservedNode */
-DECLISNODEOFTYPE(Reserved)
+HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Reserved)
 
 #ifdef IN_RING3
 
@@ -936,11 +925,14 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 }
 
 
-/*
- * Verb processor functions.
- */
+/*********************************************************************************************************************************
+*   Verb Processor Functions.                                                                                                    *
+*********************************************************************************************************************************/
 #if 0 /* unused */
 
+/**
+ * @interface_method_impl{CODECVERB, pfn, Unimplemented}
+ */
 static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, pThisCC, cmd);
@@ -950,6 +942,10 @@ static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThis
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, ???}
+ */
 static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     int rc;
@@ -960,8 +956,9 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint
 
 #endif /* unused */
 
-
-/* B-- */
+/**
+ * @interface_method_impl{CODECVERB, pfn, b--}
+ */
 static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -974,40 +971,44 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisC
     PCODECNODE pNode = &pThis->aNodes[CODEC_NID(cmd)];
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->port.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->adc.B_params,
-                            CODEC_GET_AMP_DIRECTION(cmd),
-                            CODEC_GET_AMP_SIDE(cmd),
-                            u8Index);
+                                    CODEC_GET_AMP_DIRECTION(cmd),
+                                    CODEC_GET_AMP_SIDE(cmd),
+                                    u8Index);
     else
         LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd), CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, ???}
+ */
 static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1024,7 +1025,10 @@ static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisC
     return VINF_SUCCESS;
 }
 
-/* F01 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f01}
+ */
 static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1046,7 +1050,10 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
     return VINF_SUCCESS;
 }
 
-/* 701 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 701}
+ */
 static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1072,7 +1079,10 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
     return VINF_SUCCESS;
 }
 
-/* F07 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f07}
+ */
 static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1096,7 +1106,10 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
     return VINF_SUCCESS;
 }
 
-/* 707 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 707}
+ */
 static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1125,7 +1138,10 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
     return VINF_SUCCESS;
 }
 
-/* F08 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f08}
+ */
 static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1149,7 +1165,10 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
     return VINF_SUCCESS;
 }
 
-/* 708 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 708}
+ */
 static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1177,7 +1196,10 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
     return VINF_SUCCESS;
 }
 
-/* F09 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f09}
+ */
 static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1196,7 +1218,10 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
     return VINF_SUCCESS;
 }
 
-/* 709 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 709}
+ */
 static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1216,6 +1241,10 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, ???}
+ */
 static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1231,7 +1260,10 @@ static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODE
     return VINF_SUCCESS;
 }
 
-/* F03 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f03}
+ */
 static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1243,7 +1275,10 @@ static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* 703 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 703}
+ */
 static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1254,7 +1289,10 @@ static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* F0D */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f0d}
+ */
 static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1268,6 +1306,7 @@ static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC
     return VINF_SUCCESS;
 }
 
+
 static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset, uint64_t *pResp)
 {
     *pResp = 0;
@@ -1279,21 +1318,30 @@ static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint8_t u8Off
     return VINF_SUCCESS;
 }
 
-/* 70D */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 70d}
+ */
 static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
     return codecSetDigitalConverter(pThis, cmd, 0, pResp);
 }
 
-/* 70E */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 70e}
+ */
 static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
     return codecSetDigitalConverter(pThis, cmd, 8, pResp);
 }
 
-/* F20 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f20}
+ */
 static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1312,6 +1360,7 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, u
         *pResp = 0;
     return VINF_SUCCESS;
 }
+
 
 static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
 {
@@ -1332,7 +1381,10 @@ static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     return VINF_SUCCESS;
 }
 
-/* 720 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 720}
+ */
 static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1340,7 +1392,10 @@ static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, 
     return codecSetSubIdX(pThis, cmd, 0);
 }
 
-/* 721 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 721}
+ */
 static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1348,7 +1403,10 @@ static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, 
     return codecSetSubIdX(pThis, cmd, 8);
 }
 
-/* 722 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 722}
+ */
 static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1356,7 +1414,10 @@ static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, 
     return codecSetSubIdX(pThis, cmd, 16);
 }
 
-/* 723 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 723}
+ */
 static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1364,6 +1425,10 @@ static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, 
     return codecSetSubIdX(pThis, cmd, 24);
 }
 
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, ???}
+ */
 static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1383,7 +1448,10 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint
     return VINF_SUCCESS;
 }
 
-/* F05 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f05}
+ */
 static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1413,8 +1481,11 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThis
     return VINF_SUCCESS;
 }
 
-/* 705 */
 #if 1
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 705}
+ */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1468,18 +1539,22 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
         /* Propagate to all other nodes under this AFG. */
         LogFunc(("Propagating Act=D%RU8 (AFG), Set=D%RU8 to all AFG child nodes ...\n", uAFGPwrAct, uPwrCmd));
 
-#define PROPAGATE_PWR_STATE(_aList, _aMember) \
-        { \
-            const uint8_t *pu8NodeIndex = &_aList[0]; \
-            while (*(++pu8NodeIndex)) \
+#define PROPAGATE_PWR_STATE(a_abList, a_Member) \
+        do { \
+            for (uintptr_t idxList = 0; idxList < RT_ELEMENTS(a_abList); idxList++) \
             { \
-                pThis->aNodes[*pu8NodeIndex]._aMember.u32F05_param = \
-                    CODEC_MAKE_F05(fReset, fStopOk, 0, uAFGPwrAct, uPwrCmd); \
-                LogFunc(("\t[NID0x%02x]: Act=D%RU8, Set=D%RU8\n", *pu8NodeIndex, \
-                         CODEC_F05_ACT(pThis->aNodes[*pu8NodeIndex]._aMember.u32F05_param), \
-                         CODEC_F05_SET(pThis->aNodes[*pu8NodeIndex]._aMember.u32F05_param))); \
+                uint8_t const idxNode = a_abList[idxList]; \
+                if (idxNode) \
+                { \
+                    pThis->aNodes[idxNode].a_Member.u32F05_param = CODEC_MAKE_F05(fReset, fStopOk, 0, uAFGPwrAct, uPwrCmd); \
+                    LogFunc(("\t[NID0x%02x]: Act=D%RU8, Set=D%RU8\n", idxNode, \
+                             CODEC_F05_ACT(pThis->aNodes[idxNode].a_Member.u32F05_param), \
+                             CODEC_F05_SET(pThis->aNodes[idxNode].a_Member.u32F05_param))); \
+                } \
+                else \
+                    break; \
             } \
-        }
+        } while (0)
 
         PROPAGATE_PWR_STATE(pThis->au8Dacs,       dac);
         PROPAGATE_PWR_STATE(pThis->au8Adcs,       adc);
@@ -1506,7 +1581,9 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 
     return VINF_SUCCESS;
 }
+
 #else
+
 DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
 {
     Assert(pu32F05_param);
@@ -1518,6 +1595,10 @@ DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
     *pu32F05_param = CODEC_MAKE_F05(fReset, fStopOk, 0, u8SetPowerState, u8SetPowerState);
 }
 
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 705}
+ */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1586,9 +1667,12 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
     }
     return VINF_SUCCESS;
 }
+
 #endif
 
-/* F06 */
+/**
+ * @interface_method_impl{CODECVERB, pfn, f06}
+ */
 static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1613,7 +1697,10 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC
     return VINF_SUCCESS;
 }
 
-/* A0 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, a0}
+ */
 static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1635,7 +1722,10 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* Also see section 3.7.1. */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, ??? - Also see section 3.7.1.}
+ */
 static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1655,7 +1745,10 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* F0C */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f0c}
+ */
 static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1673,7 +1766,10 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* 70C */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 70c}
+ */
 static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1695,7 +1791,10 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
     return VINF_SUCCESS;
 }
 
-/* F0F */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f0f}
+ */
 static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1709,7 +1808,10 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
     return VINF_SUCCESS;
 }
 
-/* 70F */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 70f}
+ */
 static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1727,7 +1829,10 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
     return VINF_SUCCESS;
 }
 
-/* F15 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f15}
+ */
 static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, pThisCC, cmd);
@@ -1735,7 +1840,10 @@ static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
     return VINF_SUCCESS;
 }
 
-/* 715 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 715}
+ */
 static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, pThisCC, cmd);
@@ -1743,7 +1851,10 @@ static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
     return VINF_SUCCESS;
 }
 
-/* F16 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f16}
+ */
 static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, pThisCC, cmd);
@@ -1751,7 +1862,10 @@ static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
     return VINF_SUCCESS;
 }
 
-/* 716 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 716}
+ */
 static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, pThisCC, cmd);
@@ -1759,7 +1873,10 @@ static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
     return VINF_SUCCESS;
 }
 
-/* F17 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f17}
+ */
 static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1774,7 +1891,10 @@ static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
     return VINF_SUCCESS;
 }
 
-/* 717 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 717}
+ */
 static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1792,7 +1912,10 @@ static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
     return VINF_SUCCESS;
 }
 
-/* F1C */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f1c}
+ */
 static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1840,7 +1963,10 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     return VINF_SUCCESS;
 }
 
-/* 71C */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 71c}
+ */
 static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1848,7 +1974,10 @@ static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC,
     return codecSetConfigX(pThis, cmd, 0);
 }
 
-/* 71D */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 71d}
+ */
 static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1856,7 +1985,10 @@ static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC,
     return codecSetConfigX(pThis, cmd, 8);
 }
 
-/* 71E */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 71e}
+ */
 static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1864,7 +1996,10 @@ static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC,
     return codecSetConfigX(pThis, cmd, 16);
 }
 
-/* 71E */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 71e}
+ */
 static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1872,7 +2007,10 @@ static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC,
     return codecSetConfigX(pThis, cmd, 24);
 }
 
-/* F04 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, f04}
+ */
 static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1886,7 +2024,10 @@ static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
     return VINF_SUCCESS;
 }
 
-/* 704 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 704}
+ */
 static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThisCC);
@@ -1906,7 +2047,9 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 
 #ifdef IN_RING3
 
-/* 3-- */
+/**
+ * @interface_method_impl{CODECVERB, pfn, 3--}
+ */
 static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
@@ -1971,7 +2114,10 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
     return VINF_SUCCESS;
 }
 
-/* 706 */
+
+/**
+ * @interface_method_impl{CODECVERB, pfn, 706}
+ */
 static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
@@ -2104,6 +2250,92 @@ static const CODECVERB g_aCodecVerbs[] =
 };
 
 
+/**
+ * Implements
+ */
+static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+{
+    /*
+     * Clear the return value and assert some sanity.
+     */
+    AssertPtr(puResp);
+    *puResp = 0;
+    AssertPtr(pThis);
+    AssertPtr(pThisCC);
+    AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
+                    ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
+                    VERR_INVALID_PARAMETER);
+    uint32_t const uCmdData = CODEC_VERBDATA(uCmd);
+    AssertMsgReturn(   uCmdData != 0
+                    && CODEC_NID(uCmd) < RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes)),
+                    ("[NID0x%02x] Unknown / invalid node or data (0x%x)\n", CODEC_NID(uCmd), uCmdData),
+                    VERR_INVALID_PARAMETER);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatLookups));
+
+    /*
+     * Do a binary lookup of the verb.
+     * Note! if we want other verb tables, add a table selector before the loop.
+     */
+    size_t iFirst = 0;
+    size_t iEnd   = RT_ELEMENTS(g_aCodecVerbs);
+    for (;;)
+    {
+        size_t const   iCur  = iFirst + (iEnd - iFirst) / 2;
+        uint32_t const uVerb = g_aCodecVerbs[iCur].uVerb;
+        if (uCmdData < uVerb)
+        {
+            if (iCur > iFirst)
+                iEnd = iCur;
+            else
+                break;
+        }
+        else if ((uCmdData & g_aCodecVerbs[iCur].fMask) != uVerb)
+        {
+            if (iCur + 1 < iEnd)
+                iFirst = iCur + 1;
+            else
+                break;
+        }
+        else
+        {
+            /*
+             * Found it!  Run the callback and return.
+             */
+#ifndef IN_RING3
+            if (!g_aCodecVerbs[iCur].pfn)
+            {
+                Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> VERR_INVALID_CONTEXT\n", /* -> ring-3 */
+                          CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd)));
+                return VERR_INVALID_CONTEXT;
+            }
+#endif
+            AssertPtrReturn(g_aCodecVerbs[iCur].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
+
+            int rc = g_aCodecVerbs[iCur].pfn(pThis, pThisCC, uCmd, puResp);
+            AssertRC(rc);
+            Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> 0x%x\n",
+                      CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd), *puResp));
+            return rc;
+        }
+    }
+
+#ifdef VBOX_STRICT
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCodecVerbs); i++)
+    {
+        AssertMsg(i == 0 || g_aCodecVerbs[i - 1].uVerb < g_aCodecVerbs[i].uVerb,
+                  ("i=%#x uVerb[-1]=%#x uVerb=%#x - buggy table!\n", i, g_aCodecVerbs[i - 1].uVerb, g_aCodecVerbs[i].uVerb));
+        AssertMsg((uCmdData & g_aCodecVerbs[i].fMask) != g_aCodecVerbs[i].uVerb,
+                  ("i=%#x uVerb=%#x uCmd=%#x - buggy binary search or table!\n", i, g_aCodecVerbs[i].uVerb, uCmd));
+    }
+#endif
+    LogFunc(("[NID0x%02x] Callback for %x not found\n", CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)));
+    return VERR_NOT_FOUND;
+}
+
+
+/*********************************************************************************************************************************
+*   Debug                                                                                                                        *
+*********************************************************************************************************************************/
 #ifdef IN_RING3
 
 /**
@@ -2121,11 +2353,12 @@ typedef struct CODECDEBUG
 /** Pointer to the debug info item printing state for the codec. */
 typedef CODECDEBUG *PCODECDEBUG;
 
-#define CODECDBG_INDENT         pInfo->uLevel++;
-#define CODECDBG_UNINDENT       if (pInfo->uLevel) pInfo->uLevel--;
+# define CODECDBG_INDENT        pInfo->uLevel++;
+# define CODECDBG_UNINDENT      if (pInfo->uLevel) pInfo->uLevel--;
 
-#define CODECDBG_PRINT(...)     pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
-#define CODECDBG_PRINTI(...)    codecDbgPrintf(pInfo, __VA_ARGS__)
+# define CODECDBG_PRINT(...)    pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
+# define CODECDBG_PRINTI(...)   codecDbgPrintf(pInfo, __VA_ARGS__)
+
 
 /** Wrapper around DBGFINFOHLP::pfnPrintf that adds identation. */
 static void codecDbgPrintf(PCODECDEBUG pInfo, const char *pszFormat, ...)
@@ -2136,6 +2369,7 @@ static void codecDbgPrintf(PCODECDEBUG pInfo, const char *pszFormat, ...)
     va_end(va);
 }
 
+
 /** Power state */
 static void codecDbgPrintNodeRegF05(PCODECDEBUG pInfo, uint32_t u32Reg)
 {
@@ -2143,10 +2377,12 @@ static void codecDbgPrintNodeRegF05(PCODECDEBUG pInfo, uint32_t u32Reg)
                    CODEC_F05_IS_RESET(u32Reg), CODEC_F05_IS_STOPOK(u32Reg), CODEC_F05_SET(u32Reg), CODEC_F05_ACT(u32Reg));
 }
 
+
 static void codecDbgPrintNodeRegA(PCODECDEBUG pInfo, uint32_t u32Reg)
 {
     codecDbgPrintf(pInfo, "RegA: %x\n", u32Reg);
 }
+
 
 static void codecDbgPrintNodeRegF00(PCODECDEBUG pInfo, uint32_t *paReg00)
 {
@@ -2173,6 +2409,7 @@ static void codecDbgPrintNodeRegF00(PCODECDEBUG pInfo, uint32_t *paReg00)
     CODECDBG_UNINDENT
 }
 
+
 static void codecDbgPrintNodeAmp(PCODECDEBUG pInfo, uint32_t *paReg, uint8_t uIdx, uint8_t uDir)
 {
 # define CODECDBG_AMP(reg, chan) \
@@ -2190,6 +2427,7 @@ static void codecDbgPrintNodeAmp(PCODECDEBUG pInfo, uint32_t *paReg, uint8_t uId
 # undef CODECDBG_AMP
 }
 
+
 # if 0 /* unused */
 static void codecDbgPrintNodeConnections(PCODECDEBUG pInfo, PCODECNODE pNode)
 {
@@ -2201,14 +2439,13 @@ static void codecDbgPrintNodeConnections(PCODECDEBUG pInfo, PCODECNODE pNode)
 }
 # endif
 
+
 static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursive)
 {
     codecDbgPrintf(pInfo, "Node 0x%02x (%02RU8): ", pNode->node.uID, pNode->node.uID);
 
     if (pNode->node.uID == STAC9220_NID_ROOT)
-    {
         CODECDBG_PRINT("ROOT\n");
-    }
     else if (pNode->node.uID == STAC9220_NID_AFG)
     {
         CODECDBG_PRINT("AFG\n");
@@ -2218,9 +2455,7 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
         CODECDBG_UNINDENT
     }
     else if (hdaCodecIsPortNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("PORT\n");
-    }
     else if (hdaCodecIsDacNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("DAC\n");
@@ -2311,18 +2546,19 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
    }
 }
 
+
 static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThisCC, pszArgs);
 
     pHlp->pfnPrintf(pHlp, "HDA LINK / INPUTS\n");
 
-    CODECDEBUG dbgInfo;
-    dbgInfo.pHlp   = pHlp;
-    dbgInfo.pThis  = pThis;
-    dbgInfo.uLevel = 0;
+    CODECDEBUG DbgInfo;
+    DbgInfo.pHlp   = pHlp;
+    DbgInfo.pThis  = pThis;
+    DbgInfo.uLevel = 0;
 
-    PCODECDEBUG pInfo = &dbgInfo;
+    PCODECDEBUG pInfo = &DbgInfo;
 
     CODECDBG_INDENT
         for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
@@ -2331,104 +2567,43 @@ static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODEC pThis, PHDACODECR3 pThis
 
             /* Start with all nodes which have connection entries set. */
             if (CODEC_F00_0E_COUNT(pNode->node.au32F00_param[0xE]))
-                codecDbgPrintNode(&dbgInfo, pNode, true /* fRecursive */);
+                codecDbgPrintNode(&DbgInfo, pNode, true /* fRecursive */);
         }
     CODECDBG_UNINDENT
 }
+
 
 static DECLCALLBACK(void) codecR3DbgSelector(PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThis, pThisCC, pHlp, pszArgs);
 }
 
+
+# if 0 /* unused */
+static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    uint8_t const cTotalNodes = RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    for (uint8_t i = 1; i < cTotalNodes; i++)
+    {
+        PCODECNODE pNode = &pThis->aNodes[i];
+        AMPLIFIER *pAmp = &pNode->dac.B_params;
+
+        uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & 0x7f;
+        uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & 0x7f;
+
+        pHlp->pfnPrintf(pHlp, "0x%x: lVol=%RU8, rVol=%RU8\n", i, lVol, rVol);
+    }
+}
+# endif
+
 #endif /* IN_RING3 */
 
-/**
- * Implements
- */
-static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
-{
-    /*
-     * Clear the return value and assert some sanity.
-     */
-    AssertPtr(puResp);
-    *puResp = 0;
-    AssertPtr(pThis);
-    AssertPtr(pThisCC);
-    AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
-                    ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
-                    VERR_INVALID_PARAMETER);
-    uint32_t const uCmdData = CODEC_VERBDATA(uCmd);
-    AssertMsgReturn(   uCmdData != 0
-                    && CODEC_NID(uCmd) < RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes)),
-                    ("[NID0x%02x] Unknown / invalid node or data (0x%x)\n", CODEC_NID(uCmd), uCmdData),
-                    VERR_INVALID_PARAMETER);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatLookups));
-
-    /*
-     * Do a binary lookup of the verb.
-     * Note! if we want other verb tables, add a table selector before the loop.
-     */
-    size_t iFirst = 0;
-    size_t iEnd   = RT_ELEMENTS(g_aCodecVerbs);
-    for (;;)
-    {
-        size_t const   iCur  = iFirst + (iEnd - iFirst) / 2;
-        uint32_t const uVerb = g_aCodecVerbs[iCur].uVerb;
-        if (uCmdData < uVerb)
-        {
-            if (iCur > iFirst)
-                iEnd = iCur;
-            else
-                break;
-        }
-        else if ((uCmdData & g_aCodecVerbs[iCur].fMask) != uVerb)
-        {
-            if (iCur + 1 < iEnd)
-                iFirst = iCur + 1;
-            else
-                break;
-        }
-        else
-        {
-            /*
-             * Found it!  Run the callback and return.
-             */
-#ifndef IN_RING3
-            if (!g_aCodecVerbs[iCur].pfn)
-            {
-                Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> VERR_INVALID_CONTEXT\n", /* -> ring-3 */
-                          CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd)));
-                return VERR_INVALID_CONTEXT;
-            }
-#endif
-            AssertPtrReturn(g_aCodecVerbs[iCur].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
-
-            int rc = g_aCodecVerbs[iCur].pfn(pThis, pThisCC, uCmd, puResp);
-            AssertRC(rc);
-            Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> 0x%x\n",
-                      CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd), *puResp));
-            return rc;
-        }
-    }
-
-#ifdef VBOX_STRICT
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCodecVerbs); i++)
-    {
-        AssertMsg(i == 0 || g_aCodecVerbs[i - 1].uVerb < g_aCodecVerbs[i].uVerb,
-                  ("i=%#x uVerb[-1]=%#x uVerb=%#x - buggy table!\n", i, g_aCodecVerbs[i - 1].uVerb, g_aCodecVerbs[i].uVerb));
-        AssertMsg((uCmdData & g_aCodecVerbs[i].fMask) != g_aCodecVerbs[i].uVerb,
-                  ("i=%#x uVerb=%#x uCmd=%#x - buggy binary search or table!\n", i, g_aCodecVerbs[i].uVerb, uCmd));
-    }
-#endif
-    LogFunc(("[NID0x%02x] Callback for %x not found\n", CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)));
-    return VERR_NOT_FOUND;
-}
 
 
-/*
- * APIs exposed to DevHDA.
- */
+/*********************************************************************************************************************************
+*   DevHDA API                                                                                                                   *
+*********************************************************************************************************************************/
 
 #ifdef IN_RING3
 
@@ -2468,6 +2643,7 @@ int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMA
     return rc;
 }
 
+
 int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
     AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
@@ -2477,6 +2653,7 @@ int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bo
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM)
 {
@@ -2489,6 +2666,7 @@ int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM)
                                 0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
     return VINF_SUCCESS;
 }
+
 
 int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
 {
@@ -2555,6 +2733,7 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
     return VINF_SUCCESS;
 }
 
+
 /**
  * Powers off the codec (ring-3).
  *
@@ -2585,6 +2764,7 @@ void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
     rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_LINE_IN, true /*fImmediate*/);
     AssertRC(rc2);
 }
+
 
 /**
  * Constructs a codec (ring-3).
