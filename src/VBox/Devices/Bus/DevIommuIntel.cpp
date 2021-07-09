@@ -2460,7 +2460,10 @@ static int dmarDrLegacyModeRemapAddr(PPDMDEVINS pDevIns, uint64_t uRtaddrReg, PD
                                              */
                                             pMemReqAux->cPagingLevel = cPagingLevel;
                                             pMemReqAux->GCPhysSlPt   = uCtxEntryQword0 & VTD_BF_0_CONTEXT_ENTRY_SLPTPTR_MASK;
-                                            return dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
+                                            rc = dmarDrMemRangeLookup(pDevIns, dmarDrSecondLevelTranslate, pMemReqRemap);
+                                            if (rc == VERR_OUT_OF_RANGE)
+                                                rc = VINF_SUCCESS;
+                                            return rc;
                                         }
                                         dmarAtFaultRecord(pDevIns, kDmarDiag_At_Lm_Ut_Aw_Invalid, pMemReqIn, pMemReqAux);
                                     }
