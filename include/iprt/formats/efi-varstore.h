@@ -114,19 +114,37 @@ typedef EFI_AUTH_VAR_HEADER *PEFI_AUTH_VAR_HEADER;
 typedef const EFI_AUTH_VAR_HEADER *PCEFI_AUTH_VAR_HEADER;
 
 /** Value in EFI_AUTH_VAR_HEADER::u16StartId for a valid variable header. */
-#define EFI_AUTH_VAR_HEADER_START                       0x55aa
+#define EFI_AUTH_VAR_HEADER_START                               0x55aa
 /** @name Possible variable states.
  * @{ */
 /** Variable is in the process of being deleted. */
-#define EFI_AUTH_VAR_HEADER_STATE_IN_DELETED_TRANSITION 0xfe
+#define EFI_AUTH_VAR_HEADER_STATE_IN_DELETED_TRANSITION         0xfe
 /** Variable was deleted. */
-#define EFI_AUTH_VAR_HEADER_STATE_DELETED               0xfd
+#define EFI_AUTH_VAR_HEADER_STATE_DELETED                       0xfd
 /** Variable has only a valid header right now. */
-#define EFI_AUTH_VAR_HEADER_STATE_HDR_VALID_ONLY        0x7f
+#define EFI_AUTH_VAR_HEADER_STATE_HDR_VALID_ONLY                0x7f
 /** Variable header, name and data are all valid. */
-#define EFI_AUTH_VAR_HEADER_STATE_ADDED                 0x3f
+#define EFI_AUTH_VAR_HEADER_STATE_ADDED                         0x3f
 /** @} */
 
+
+/** @name Possible variable attributes.
+ * @{ */
+/** The variable is stored in non volatile memory. */
+#define EFI_VAR_HEADER_ATTR_NON_VOLATILE                        RT_BIT_32(0)
+/** The variable is accessible by the EFI bootservice stage. */
+#define EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS                  RT_BIT_32(1)
+/** The variable is accessible during runtime. */
+#define EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS                      RT_BIT_32(2)
+/** The variable contains an hardware error record. */
+#define EFI_VAR_HEADER_ATTR_HW_ERROR_RECORD                     RT_BIT_32(3)
+/** The variable can be modified only by an authenticated source. */
+#define EFI_AUTH_VAR_HEADER_ATTR_AUTH_WRITE_ACCESS              RT_BIT_32(4)
+/** The variable was written with a time based authentication. */
+#define EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS   RT_BIT_32(5)
+/** The variable can be appended. */
+#define EFI_AUTH_VAR_HEADER_ATTR_APPEND_WRITE                   RT_BIT_32(6)
+/** @} */
 
 #endif /* !IPRT_INCLUDED_formats_efi_varstore_h */
 
