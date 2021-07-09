@@ -2296,35 +2296,6 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
 
 
 /**
- * Checks whether two consecutive I/O page results of a DMA memory request
- * translates to a physically contiguous region.
- *
- * @returns @c true if the I/O pages are contiguous, @c false otherwise.
- * @param   pIoPagePrev     The previous I/O page.
- * @param   pIoPage         The current I/O page.
- */
-static bool dmarIsIoPageAccessContig(PCDMARIOPAGE pIoPagePrev, PCDMARIOPAGE pIoPage)
-{
-    /* Paranoia: Permissions for pages of a DMA memory request must be identical. */
-    Assert(pIoPagePrev->fPerm  == pIoPage->fPerm);
-
-    size_t const   cbPrev     = RT_BIT_64(pIoPagePrev->cShift);
-    RTGCPHYS const GCPhysPrev = pIoPagePrev->GCPhysBase;
-    RTGCPHYS const GCPhys     = pIoPage->GCPhysBase;
-#ifdef RT_STRICT
-    /* Paranoia: Ensure offset bits are 0. */
-    {
-        uint64_t const fOffMaskPrev = X86_GET_PAGE_OFFSET_MASK(pIoPagePrev->cShift);
-        uint64_t const fOffMask     = X86_GET_PAGE_OFFSET_MASK(pIoPage->cShift);
-        Assert(!(GCPhysPrev & fOffMaskPrev));
-        Assert(!(GCPhys     & fOffMask));
-    }
-#endif
-    return GCPhysPrev + cbPrev == GCPhys;
-}
-
-
-/**
  * Looks up the range of addresses for a DMA memory request remapping.
  *
  * @returns VBox status code.
@@ -2343,6 +2314,7 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
     uint64_t       uAddrInBase = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
     uint64_t       offAddrIn   = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_OFFSET_MASK;
     size_t         cbRemaining = cbAddrIn;
+    size_t const   cbPage      = X86_PAGE_4K_SIZE;
 
     int rc;
     DMARIOPAGE IoPagePrev;
@@ -2353,11 +2325,15 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
         MemReqIn.AddrRange.uAddr = uAddrInBase;
         MemReqIn.AddrRange.cb    = cbRemaining;  /* Not currently accessed by pfnLookup, but keep things consistent. */
 
+        /* Lookup the physical page corresponding to the I/O virtual address. */
         DMARIOPAGE IoPage;
         rc = pfnLookup(pDevIns, &MemReqIn, &pMemReqRemap->Aux, &IoPage);
         if (RT_SUCCESS(rc))
         {
+            /* Validate results of the translation. */
             Assert(IoPage.cShift >= X86_PAGE_4K_SHIFT && IoPage.cShift <= X86_PAGE_1G_SHIFT);
+            Assert(!(IoPage.GCPhysBase & X86_GET_PAGE_OFFSET_MASK(IoPage.cShift)));
+            Assert((IoPage.fPerm & MemReqIn.AddrRange.fPerm) == MemReqIn.AddrRange.fPerm);
 
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbAddrIn)
@@ -2368,7 +2344,11 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
                 GCPhysAddr = IoPage.GCPhysBase | offAddrOut;
             }
             /* Check if addresses translated so far result in a physically contiguous region. */
-            else if (!dmarIsIoPageAccessContig(&IoPagePrev, &IoPage))
+            /** @todo Ensure permissions are identical as well if we implementing IOTLB caching
+             *        that relies on it being so. */
+            else if (IoPagePrev.GCPhysBase + cbPage == IoPage.GCPhysBase)
+            { /* likely */ }
+            else
             {
                 rc = VERR_OUT_OF_RANGE;
                 break;
@@ -2378,7 +2358,6 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
             IoPagePrev = IoPage;
 
             /* Check if we need to access more pages. */
-            size_t const cbPage = RT_BIT_64(IoPage.cShift);
             if (cbRemaining > cbPage - offAddrIn)
             {
                 cbRemaining -= (cbPage - offAddrIn); /* Calculate how much more we need to access. */
