@@ -944,7 +944,7 @@ static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThis
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ??? }
  */
 static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -957,7 +957,7 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint
 #endif /* unused */
 
 /**
- * @interface_method_impl{CODECVERB,pfn, b--}
+ * @interface_method_impl{CODECVERB,pfn, b-- }
  */
 static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1007,7 +1007,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ??? }
  */
 static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1027,7 +1027,7 @@ static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f01}
+ * @interface_method_impl{CODECVERB,pfn, f01 }
  */
 static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1052,7 +1052,7 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 701}
+ * @interface_method_impl{CODECVERB,pfn, 701 }
  */
 static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1081,7 +1081,7 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f07}
+ * @interface_method_impl{CODECVERB,pfn, f07 }
  */
 static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1108,7 +1108,7 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 707}
+ * @interface_method_impl{CODECVERB,pfn, 707 }
  */
 static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1140,7 +1140,7 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f08}
+ * @interface_method_impl{CODECVERB,pfn, f08 }
  */
 static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1167,7 +1167,7 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 708}
+ * @interface_method_impl{CODECVERB,pfn, 708 }
  */
 static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1198,7 +1198,7 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f09}
+ * @interface_method_impl{CODECVERB,pfn, f09 }
  */
 static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1220,7 +1220,7 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 709}
+ * @interface_method_impl{CODECVERB,pfn, 709 }
  */
 static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1243,7 +1243,7 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ??? }
  */
 static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1262,7 +1262,7 @@ static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODE
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f03}
+ * @interface_method_impl{CODECVERB,pfn, f03 }
  */
 static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1277,7 +1277,7 @@ static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 703}
+ * @interface_method_impl{CODECVERB,pfn, 703 }
  */
 static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1291,7 +1291,7 @@ static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f0d}
+ * @interface_method_impl{CODECVERB,pfn, f0d }
  */
 static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1319,7 +1319,7 @@ static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Of
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 70d}
+ * @interface_method_impl{CODECVERB,pfn, 70d }
  */
 static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1329,7 +1329,7 @@ static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 70e}
+ * @interface_method_impl{CODECVERB,pfn, 70e }
  */
 static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1339,7 +1339,7 @@ static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f20}
+ * @interface_method_impl{CODECVERB,pfn, f20 }
  */
 static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1382,7 +1382,7 @@ static int codecSetSubIdX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 720}
+ * @interface_method_impl{CODECVERB,pfn, 720 }
  */
 static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1393,7 +1393,7 @@ static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 721}
+ * @interface_method_impl{CODECVERB,pfn, 721 }
  */
 static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1404,7 +1404,7 @@ static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 722}
+ * @interface_method_impl{CODECVERB,pfn, 722 }
  */
 static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1415,7 +1415,7 @@ static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 723}
+ * @interface_method_impl{CODECVERB,pfn, 723 }
  */
 static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1426,7 +1426,7 @@ static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ??? }
  */
 static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1449,7 +1449,7 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f05}
+ * @interface_method_impl{CODECVERB,pfn, f05 }
  */
 static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1483,7 +1483,7 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 #if 1
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 705}
+ * @interface_method_impl{CODECVERB,pfn, 705 }
  */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1596,7 +1596,7 @@ DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 705}
+ * @interface_method_impl{CODECVERB,pfn, 705 }
  */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1670,7 +1670,7 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 #endif
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f06}
+ * @interface_method_impl{CODECVERB,pfn, f06 }
  */
 static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1698,7 +1698,7 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, a0}
+ * @interface_method_impl{CODECVERB,pfn, a0 }
  */
 static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1723,7 +1723,7 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, ??? - Also see section 3.7.1.}
+ * @interface_method_impl{CODECVERB,pfn, ??? - Also see section 3.7.1. }
  */
 static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1746,7 +1746,7 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f0c}
+ * @interface_method_impl{CODECVERB,pfn, f0c }
  */
 static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1767,7 +1767,7 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 70c}
+ * @interface_method_impl{CODECVERB,pfn, 70c }
  */
 static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1792,7 +1792,7 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f0f}
+ * @interface_method_impl{CODECVERB,pfn, f0f }
  */
 static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1809,7 +1809,7 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 70f}
+ * @interface_method_impl{CODECVERB,pfn, 70f }
  */
 static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1830,7 +1830,7 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f15}
+ * @interface_method_impl{CODECVERB,pfn, f15 }
  */
 static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1841,7 +1841,7 @@ static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 715}
+ * @interface_method_impl{CODECVERB,pfn, 715 }
  */
 static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1852,7 +1852,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f16}
+ * @interface_method_impl{CODECVERB,pfn, f16 }
  */
 static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1863,7 +1863,7 @@ static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 716}
+ * @interface_method_impl{CODECVERB,pfn, 716 }
  */
 static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1874,7 +1874,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f17}
+ * @interface_method_impl{CODECVERB,pfn, f17 }
  */
 static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1892,7 +1892,7 @@ static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 717}
+ * @interface_method_impl{CODECVERB,pfn, 717 }
  */
 static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1913,7 +1913,7 @@ static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f1c}
+ * @interface_method_impl{CODECVERB,pfn, f1c }
  */
 static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1964,7 +1964,7 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 71c}
+ * @interface_method_impl{CODECVERB,pfn, 71c }
  */
 static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1975,7 +1975,7 @@ static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 71d}
+ * @interface_method_impl{CODECVERB,pfn, 71d }
  */
 static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1986,7 +1986,7 @@ static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 71e}
+ * @interface_method_impl{CODECVERB,pfn, 71e }
  */
 static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -1997,7 +1997,7 @@ static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 71e}
+ * @interface_method_impl{CODECVERB,pfn, 71e }
  */
 static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -2008,7 +2008,7 @@ static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC,
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, f04}
+ * @interface_method_impl{CODECVERB,pfn, f04 }
  */
 static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -2025,7 +2025,7 @@ static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 704}
+ * @interface_method_impl{CODECVERB,pfn, 704 }
  */
 static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -2047,7 +2047,7 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 #ifdef IN_RING3
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 3--}
+ * @interface_method_impl{CODECVERB,pfn, 3-- }
  */
 static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
@@ -2115,7 +2115,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
 
 
 /**
- * @interface_method_impl{CODECVERB,pfn, 706}
+ * @interface_method_impl{CODECVERB,pfn, 706 }
  */
 static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
