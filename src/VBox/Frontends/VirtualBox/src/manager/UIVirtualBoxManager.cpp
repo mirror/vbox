@@ -2652,10 +2652,15 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     comUnattendedInstaller.SetMachine(comMachine);
     checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetUser(unattendedData.m_strUserName);
+    checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetPassword(unattendedData.m_strPassword);
+    checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetHostname(unattendedData.m_strHostname);
+    checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetProductKey(unattendedData.m_strProductKey);
+    checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetInstallGuestAdditions(unattendedData.m_fInstallGuestAdditions);
+    checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetAdditionsIsoPath(unattendedData.m_strGuestAdditionsISOPath);
 
     comUnattendedInstaller.Prepare();
