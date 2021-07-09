@@ -271,6 +271,7 @@ QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()
     if (m_pUserNamePasswordEditor)
     {
         m_pUserNamePasswordEditor->setLabelsVisible(true);
+        m_pUserNamePasswordEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         pUserNameContainerLayout->addWidget(m_pUserNamePasswordEditor);
     }
     return m_pUserNameContainer;
