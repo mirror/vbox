@@ -797,7 +797,10 @@ static int stac9220Construct(PHDACODECR3 pThis)
 
     pThis->fInReset = false;
 
-#define STAC9220WIDGET(type) memcpy(&pThis->au8##type##s, &g_abStac9220##type##s, sizeof(uint8_t) * RT_ELEMENTS(g_abStac9220##type##s));
+#define STAC9220WIDGET(a_Type) do { \
+            AssertCompile(RT_ELEMENTS(g_abStac9220##a_Type##s) <= RT_ELEMENTS(pThis->ab##a_Type##s)); \
+            memcpy(&pThis->ab##a_Type##s, &g_abStac9220##a_Type##s, sizeof(uint8_t) * RT_ELEMENTS(g_abStac9220##a_Type##s)); \
+        } while (0)
     STAC9220WIDGET(Port);
     STAC9220WIDGET(Dac);
     STAC9220WIDGET(Adc);
@@ -848,14 +851,15 @@ static int stac9220Construct(PHDACODECR3 pThis)
 *********************************************************************************************************************************/
 
 /*
- * Some generic predicate functions.
+ * Some generic predicate functions. 
  */
+/** @todo r=bird: we could use memchr here if we knew the array always ended with zeros */
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
     DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODECR3 pThis, uint8_t idNode) \
     { \
-        Assert(pThis->au8##a_Type##s); \
-        for (uintptr_t i = 0; i < RT_ELEMENTS(pThis->au8##a_Type##s) && pThis->au8##a_Type##s[i] != 0; i++) \
-            if (pThis->au8##a_Type##s[i] == idNode) \
+        Assert(pThis->ab##a_Type##s); \
+        for (uintptr_t i = 0; i < RT_ELEMENTS(pThis->ab##a_Type##s) && pThis->ab##a_Type##s[i] != 0; i++) \
+            if (pThis->ab##a_Type##s[i] == idNode) \
                 return true; \
         return false; \
     }
@@ -1563,13 +1567,13 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, 
             } \
         } while (0)
 
-        PROPAGATE_PWR_STATE(pThis->au8Dacs,       dac);
-        PROPAGATE_PWR_STATE(pThis->au8Adcs,       adc);
-        PROPAGATE_PWR_STATE(pThis->au8DigInPins,  digin);
-        PROPAGATE_PWR_STATE(pThis->au8DigOutPins, digout);
-        PROPAGATE_PWR_STATE(pThis->au8SpdifIns,   spdifin);
-        PROPAGATE_PWR_STATE(pThis->au8SpdifOuts,  spdifout);
-        PROPAGATE_PWR_STATE(pThis->au8Reserveds,  reserved);
+        PROPAGATE_PWR_STATE(pThis->abDacs,       dac);
+        PROPAGATE_PWR_STATE(pThis->abAdcs,       adc);
+        PROPAGATE_PWR_STATE(pThis->abDigInPins,  digin);
+        PROPAGATE_PWR_STATE(pThis->abDigOutPins, digout);
+        PROPAGATE_PWR_STATE(pThis->abSpdifIns,   spdifin);
+        PROPAGATE_PWR_STATE(pThis->abSpdifOuts,  spdifout);
+        PROPAGATE_PWR_STATE(pThis->abReserveds,  reserved);
 
 #undef PROPAGATE_PWR_STATE
     }
@@ -1658,15 +1662,15 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, 
             && (CODEC_F05_SET(uCmd)) == CODEC_F05_D0)
         {
             /* now we're powered on AFG and may propogate power states on nodes */
-            const uint8_t *pu8NodeIndex = &pThis->au8Dacs[0];
+            const uint8_t *pu8NodeIndex = &pThis->abDacs[0];
             while (*(++pu8NodeIndex))
                 codecPropogatePowerState(&pThis->aNodes[*pu8NodeIndex].dac.u32F05_param);
 
-            pu8NodeIndex = &pThis->au8Adcs[0];
+            pu8NodeIndex = &pThis->abAdcs[0];
             while (*(++pu8NodeIndex))
                 codecPropogatePowerState(&pThis->aNodes[*pu8NodeIndex].adc.u32F05_param);
 
-            pu8NodeIndex = &pThis->au8DigInPins[0];
+            pu8NodeIndex = &pThis->abDigInPins[0];
             while (*(++pu8NodeIndex))
                 codecPropogatePowerState(&pThis->aNodes[*pu8NodeIndex].digin.u32F05_param);
         }
@@ -2328,7 +2332,7 @@ typedef struct CODECDEBUG
     /** Current recursion level. */
     uint8_t         uLevel;
     /** Pointer to codec state. */
-    PHDACODECR3       pThis;
+    PHDACODECR3     pThis;
 } CODECDEBUG;
 /** Pointer to the debug info item printing state for the codec. */
 typedef CODECDEBUG *PCODECDEBUG;

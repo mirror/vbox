@@ -815,19 +815,19 @@ typedef struct HDACODECR3
      *  CODEC_NODES_MAX is 32). */
     uint8_t     abPadding1[CODEC_NODES_MAX - 20];
 
-    uint8_t     au8Ports[CODEC_NODES_MAX];
-    uint8_t     au8Dacs[CODEC_NODES_MAX];
-    uint8_t     au8AdcVols[CODEC_NODES_MAX];
-    uint8_t     au8Adcs[CODEC_NODES_MAX];
-    uint8_t     au8AdcMuxs[CODEC_NODES_MAX];
-    uint8_t     au8Pcbeeps[CODEC_NODES_MAX];
-    uint8_t     au8SpdifIns[CODEC_NODES_MAX];
-    uint8_t     au8SpdifOuts[CODEC_NODES_MAX];
-    uint8_t     au8DigInPins[CODEC_NODES_MAX];
-    uint8_t     au8DigOutPins[CODEC_NODES_MAX];
-    uint8_t     au8Cds[CODEC_NODES_MAX];
-    uint8_t     au8VolKnobs[CODEC_NODES_MAX];
-    uint8_t     au8Reserveds[CODEC_NODES_MAX];
+    uint8_t     abPorts[CODEC_NODES_MAX];
+    uint8_t     abDacs[CODEC_NODES_MAX];
+    uint8_t     abAdcVols[CODEC_NODES_MAX];
+    uint8_t     abAdcs[CODEC_NODES_MAX];
+    uint8_t     abAdcMuxs[CODEC_NODES_MAX];
+    uint8_t     abPcbeeps[CODEC_NODES_MAX];
+    uint8_t     abSpdifIns[CODEC_NODES_MAX];
+    uint8_t     abSpdifOuts[CODEC_NODES_MAX];
+    uint8_t     abDigInPins[CODEC_NODES_MAX];
+    uint8_t     abDigOutPins[CODEC_NODES_MAX];
+    uint8_t     abCds[CODEC_NODES_MAX];
+    uint8_t     abVolKnobs[CODEC_NODES_MAX];
+    uint8_t     abReserveds[CODEC_NODES_MAX];
 
     /** Safty zero padding before the nodes start. */
     uint8_t     abSaftyPadding2[CODEC_NODES_MAX * 2];
@@ -838,7 +838,7 @@ typedef struct HDACODECR3
     uint64_t    au64Padding3[7];
 } HDACODECR3;
 AssertCompile(RT_IS_POWER_OF_TWO(CODEC_NODES_MAX));
-AssertCompileMemberAlignment(HDACODECR3, au8Ports, CODEC_NODES_MAX);
+AssertCompileMemberAlignment(HDACODECR3, abPorts, CODEC_NODES_MAX);
 AssertCompileMemberAlignment(HDACODECR3, aNodes, 64);
 AssertCompileSizeAlignment(HDACODECR3, 8);
 AssertCompileSizeAlignment(HDACODECR3, 16);
