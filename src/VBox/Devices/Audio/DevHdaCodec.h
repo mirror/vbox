@@ -48,7 +48,7 @@ typedef enum CODEC_TYPE
     /** SigmaTel 9220 (922x). */
     CODEC_TYPE_STAC9220,
     /** Hack to blow the type up to 32-bit. */
-    CODEC_TYPE__32BIT_HACK = 0x7fffffff
+    CODEC_TYPE_32BIT_HACK = 0x7fffffff
 } CODEC_TYPE;
 
 /* PRM 5.3.1 */
@@ -557,42 +557,6 @@ typedef enum CODEC_TYPE
 
 /* PRM 5.3.1 */
 #define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
-
-/**
- * A codec verb descriptor.
- */
-typedef struct CODECVERB
-{
-    /** Verb. */
-    uint32_t                   uVerb;
-    /** Verb mask. */
-    uint32_t                   fMask;
-    /**
-     * Function pointer for implementation callback.
-     *
-     * This is always a valid pointer in ring-3, while elsewhere a NULL indicates
-     * that we must return to ring-3 to process it.
-     *
-     * @returns VINF_SUCCESS
-     * @todo    r=bird: I couldn't spot a single handler not returning VINF_SUCCESS,
-     *          nor could I see what purpose the return code would have other than
-     *          maybe something in VERR_INTERNAL_ERROR area...  Get rid of it and
-     *          make it return @a *puResp instead?
-     *
-     * @param   pThis   The shared codec intance data.
-     * @param   pThisCC The codec instance data for the current context (ring-3).
-     * @param   uCmd    The command.
-     * @param   puResp  Where to return the response value.
-     *
-     * @thread  EMT or task worker thread (see HDASTATE::hCorbDmaTask).
-     */
-    DECLCALLBACKMEMBER(int,    pfn, (PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp));
-    /** Friendly name, for debugging. */
-    const char                *pszName;
-} CODECVERB;
-/** Pointer to a const codec verb descriptor. */
-typedef CODECVERB const *PCCODECVERB;
-
 
 #define AMPLIFIER_SIZE 60
 

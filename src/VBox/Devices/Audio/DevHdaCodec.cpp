@@ -45,8 +45,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
-
 #define AMPLIFIER_IN    0
 #define AMPLIFIER_OUT   1
 #define AMPLIFIER_LEFT  1
@@ -54,9 +52,6 @@
 #define AMPLIFIER_REGISTER(amp, inout, side, index) ((amp)[30*(inout) + 15*(side) + (index)])
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
 /* STAC9220 - Nodes IDs / names. */
 #define STAC9220_NID_ROOT                                  0x0  /* Root node */
 #define STAC9220_NID_AFG                                   0x1  /* Audio Configuration Group */
@@ -94,6 +89,45 @@
 
 /** Number of total nodes emulated. */
 #define STAC9221_NUM_NODES                                 0x1C
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+/**
+ * A codec verb descriptor.
+ */
+typedef struct CODECVERB
+{
+    /** Verb. */
+    uint32_t                   uVerb;
+    /** Verb mask. */
+    uint32_t                   fMask;
+    /**
+     * Function pointer for implementation callback.
+     *
+     * This is always a valid pointer in ring-3, while elsewhere a NULL indicates
+     * that we must return to ring-3 to process it.
+     *
+     * @returns VINF_SUCCESS
+     * @todo    r=bird: I couldn't spot a single handler not returning VINF_SUCCESS,
+     *          nor could I see what purpose the return code would have other than
+     *          maybe something in VERR_INTERNAL_ERROR area...  Get rid of it and
+     *          make it return @a *puResp instead?
+     *
+     * @param   pThis   The shared codec intance data.
+     * @param   pThisCC The codec instance data for the current context (ring-3).
+     * @param   uCmd    The command.
+     * @param   puResp  Where to return the response value.
+     *
+     * @thread  EMT or task worker thread (see HDASTATE::hCorbDmaTask).
+     */
+    DECLCALLBACKMEMBER(int,    pfn, (PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp));
+    /** Friendly name, for debugging. */
+    const char                *pszName;
+} CODECVERB;
+/** Pointer to a const codec verb descriptor. */
+typedef CODECVERB const *PCCODECVERB;
 
 
 /*********************************************************************************************************************************
