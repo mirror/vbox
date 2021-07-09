@@ -798,10 +798,10 @@ typedef struct HDACODECR3
     CODECTYPE   enmType;
     /** Codec ID. */
     uint16_t    id;
-    uint16_t    u16VendorId;
-    uint16_t    u16DeviceId;
-    uint8_t     u8BSKU;
-    uint8_t     u8AssemblyId;
+    uint16_t    idVendor;
+    uint16_t    idDevice;
+    uint8_t     bBSKU;
+    uint8_t     idAssembly;
 
     bool        fInReset;
 

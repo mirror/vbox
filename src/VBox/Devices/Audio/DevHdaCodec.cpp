@@ -785,15 +785,15 @@ static void stac9220Reset(PHDACODECR3 pThis)
 
 static int stac9220Construct(PHDACODECR3 pThis)
 {
-    pThis->u16VendorId  = 0x8384; /* SigmaTel */
+    pThis->idVendor     = 0x8384; /* SigmaTel */
     /*
      * Note: The Linux kernel uses "patch_stac922x" for the fixups,
      *       which in turn uses "ref922x_pin_configs" for the configuration
      *       defaults tweaking in sound/pci/hda/patch_sigmatel.c.
      */
-    pThis->u16DeviceId  = 0x7680; /* STAC9221 A1 */
-    pThis->u8BSKU       = 0x76;
-    pThis->u8AssemblyId = 0x80;
+    pThis->idDevice     = 0x7680; /* STAC9221 A1 */
+    pThis->bBSKU        = 0x76;
+    pThis->idAssembly   = 0x80;
 
     pThis->fInReset = false;
 
@@ -833,14 +833,14 @@ static int stac9220Construct(PHDACODECR3 pThis)
         stac9220NodeReset(pThis, i, &pThis->aNodes[i]);
 
     /* Common root node initializers. */
-    pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->u16VendorId, pThis->u16DeviceId);
+    pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->idVendor, pThis->idDevice);
     pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
 
     /* Common AFG node initializers. */
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x4] = CODEC_MAKE_F00_04(0x2, STAC9221_NUM_NODES - 2);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
-    pThis->aNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
+    pThis->aNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pThis->idVendor, pThis->bBSKU, pThis->idAssembly);
 
     return VINF_SUCCESS;
 }
@@ -851,7 +851,7 @@ static int stac9220Construct(PHDACODECR3 pThis)
 *********************************************************************************************************************************/
 
 /*
- * Some generic predicate functions. 
+ * Some generic predicate functions.
  */
 /** @todo r=bird: we could use memchr here if we knew the array always ended with zeros */
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
