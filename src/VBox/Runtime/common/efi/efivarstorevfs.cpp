@@ -219,7 +219,7 @@ typedef enum RTEFIVARSTOREFILETYPE
     /** The monotonic counter (deprecated). */
     RTEFIVARSTOREFILETYPE_MONOTONIC,
     /** 32bit hack. */
-    RTEFIVARSTOREFILETYPE_32BIT_HACK = 0x7fffffff,
+    RTEFIVARSTOREFILETYPE_32BIT_HACK = 0x7fffffff
 } RTEFIVARSTOREFILETYPE;
 
 
