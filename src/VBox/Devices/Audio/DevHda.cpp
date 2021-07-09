@@ -2597,20 +2597,20 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
  * streams to that sink.
  *
  * @return  VBox status code.
- * @param   pDevIns             The device instance.
+ * @param   pCodec              The codec instance data.
  * @param   enmMixerCtl         Mixer control to assign new stream to.
  * @param   pCfg                Stream configuration for the new stream.
  */
-DECLHIDDEN(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg)
+DECLHIDDEN(int) hdaR3MixerAddStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg)
 {
-    PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
     int rc;
     PHDAMIXERSINK pSink = hdaR3MixerControlToSink(pThisCC, enmMixerCtl);
     if (pSink)
     {
-        rc = hdaR3MixerAddDrvStreams(pDevIns, pThisCC, pSink->pMixSink, pCfg);
+        rc = hdaR3MixerAddDrvStreams(pThisCC->pDevIns, pThisCC, pSink->pMixSink, pCfg);
 
         AssertPtr(pSink->pMixSink);
         LogFlowFunc(("Sink=%s, Mixer control=%s\n", pSink->pMixSink->pszName, PDMAudioMixerCtlGetName(enmMixerCtl)));
@@ -2626,15 +2626,15 @@ DECLHIDDEN(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixe
  * Removes a specified mixer control from the HDA's mixer.
  *
  * @return  VBox status code.
- * @param   pDevIns             The device instance.
+ * @param   pCodec              The codec instance data.
  * @param   enmMixerCtl         Mixer control to remove.
  * @param   fImmediate          Whether the backend should be allowed to
  *                              finished draining (@c false) or if it must be
  *                              destroyed immediately (@c true).
  */
-DECLHIDDEN(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
+DECLHIDDEN(int) hdaR3MixerRemoveStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
-    PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
     int         rc;
 
     PHDAMIXERSINK pSink = hdaR3MixerControlToSink(pThisCC, enmMixerCtl);
@@ -2684,7 +2684,7 @@ DECLHIDDEN(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmM
             if (pMixStream)
             {
                 AudioMixerSinkRemoveStream(pSink->pMixSink, pMixStream);
-                AudioMixerStreamDestroy(pMixStream, pDevIns, fImmediate);
+                AudioMixerStreamDestroy(pMixStream, pThisCC->pDevIns, fImmediate);
 
                 pMixStream = NULL;
             }
@@ -2705,17 +2705,17 @@ DECLHIDDEN(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmM
  * connected to which stream (and channel).
  *
  * @return  VBox status code.
- * @param   pDevIns             The device instance.
+ * @param   pCodec              The codec instance data.
  * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
  * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
  * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
  *
  * @note Is also called directly by the DevHDA code.
  */
-DECLHIDDEN(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
+DECLHIDDEN(int) hdaR3MixerControl(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
-    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+    PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
+    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PHDASTATE);
     LogFunc(("enmMixerCtl=%s, uSD=%RU8, uChannel=%RU8\n", PDMAudioMixerCtlGetName(enmMixerCtl), uSD, uChannel));
 
     if (uSD == 0) /* Stream number 0 is reserved. */
@@ -2819,14 +2819,14 @@ DECLHIDDEN(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerC
  * Sets the volume of a specified mixer control.
  *
  * @return  IPRT status code.
- * @param   pDevIns             The device instance.
+ * @param   pCodec              The codec instance data.
  * @param   enmMixerCtl         Mixer control to set volume for.
  * @param   pVol                Pointer to volume data to set.
  */
-DECLHIDDEN(int) hdaR3MixerSetVolume(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
+DECLHIDDEN(int) hdaR3MixerSetVolume(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
 {
-    PHDASTATER3   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-    int           rc;
+    PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
+    int         rc;
 
     PHDAMIXERSINK pSink = hdaR3MixerControlToSink(pThisCC, enmMixerCtl);
     if (   pSink
@@ -2961,14 +2961,14 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
      */
     ASMCompilerBarrier(); /* paranoia */
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    hdaR3MixerControl(pDevIns, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
+    hdaR3MixerControl(&pThisCC->Codec, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
 # endif
-    hdaR3MixerControl(pDevIns, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
+    hdaR3MixerControl(&pThisCC->Codec, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
 
-    hdaR3MixerControl(pDevIns, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
+    hdaR3MixerControl(&pThisCC->Codec, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    hdaR3MixerControl(pDevIns, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
-    hdaR3MixerControl(pDevIns, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
+    hdaR3MixerControl(&pThisCC->Codec, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
+    hdaR3MixerControl(&pThisCC->Codec, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
 # endif
     ASMCompilerBarrier(); /* paranoia */
 
@@ -4984,8 +4984,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize the codec.
      */
-    pThisCC->Codec.pDevIns = pDevIns;
-
     /* Construct the common + R3 codec part. */
     rc = hdaR3CodecConstruct(pDevIns, &pThisCC->Codec, 0 /* Codec index */, pCfg);
     AssertRCReturn(rc, rc);

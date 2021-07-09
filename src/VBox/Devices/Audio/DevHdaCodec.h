@@ -847,13 +847,12 @@ typedef struct HDACODEC
  */
 typedef struct HDACODECR3
 {
-    /** The parent device instance. */
-    PPDMDEVINS              pDevIns;
-
     /** The state (was shared with ring-0 for a while). */
     HDACODEC                State;
 } HDACODECR3;
 
+/** @name HDA Codec API used by the device emulation.
+ * @{ */
 int     hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg);
 void    hdaR3CodecPowerOff(PHDACODECR3 pThisCC);
 int     hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion);
@@ -867,6 +866,7 @@ void    hdaCodecReset(PHDACODECR3 pThisCC);
 DECLHIDDEN(int)  hdaR3CodecLookup(PHDACODECR3 pThisCC, uint32_t uCmd, uint64_t *puResp);
 DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaCodec_h */
 

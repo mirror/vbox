@@ -939,7 +939,7 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
     LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8%s\n",
              PDMAudioMixerCtlGetName(enmMixerCtl), bLeft, bRight, Vol.fMuted ? "- Muted!" : ""));
 
-    return hdaR3MixerSetVolume(pThisCC->pDevIns, enmMixerCtl, &Vol);
+    return hdaR3MixerSetVolume(pThisCC, enmMixerCtl, &Vol);
 }
 
 
@@ -2203,17 +2203,17 @@ static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThis
         /** @todo Check if non-interleaved streams need a different channel / SDn? */
 
         /* Propagate to the controller. */
-        hdaR3MixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-        hdaR3MixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-        hdaR3MixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 # endif
     }
     else if (enmDir == PDMAUDIODIR_IN)
     {
-        hdaR3MixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        hdaR3MixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 # endif
     }
 
@@ -2632,7 +2632,7 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 
 
 /*********************************************************************************************************************************
-*   DevHDA API                                                                                                                   *
+*   Stream and State Management                                                                                                  *
 *********************************************************************************************************************************/
 
 int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
@@ -2665,7 +2665,7 @@ int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMA
     }
 
     if (RT_SUCCESS(rc))
-        rc = hdaR3MixerAddStream(pThisCC->pDevIns, enmMixerCtl, pCfg);
+        rc = hdaR3MixerAddStream(pThisCC, enmMixerCtl, pCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2676,7 +2676,7 @@ int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bo
 {
     AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
 
-    int rc = hdaR3MixerRemoveStream(pThisCC->pDevIns, enmMixerCtl, fImmediate);
+    int rc = hdaR3MixerRemoveStream(pThisCC, enmMixerCtl, fImmediate);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
