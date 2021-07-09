@@ -103,7 +103,7 @@ void QILineEdit::paintEvent(QPaintEvent *pPaintEvent)
 
     if (m_fMarkForError)
     {
-        const int iIconMargin = 0.5 * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+        const int iIconMargin = 1. * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
         int iIconSize = height() - 2 * iIconMargin;
         if (!m_pIconLabel)
             m_pIconLabel = new QLabel(this);

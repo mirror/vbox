@@ -162,7 +162,7 @@ void UIPasswordLineEdit::paintEvent(QPaintEvent *pPaintEvent)
     QLineEdit::paintEvent(pPaintEvent);
     if (m_fMarkForError)
     {
-        const int iIconMargin = 0.5 * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+        const int iIconMargin = 1. * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
         int iIconSize = height() - 2 * iIconMargin;
         if (!m_pErrorIconLabel)
             m_pErrorIconLabel = new QLabel(this);
