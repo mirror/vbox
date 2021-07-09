@@ -789,6 +789,24 @@ AssertNodeSize(CODECNODE, 60 + 6);
 
 #define CODEC_NODES_MAX     32
 
+/** @name CODEC_NODE_CLS_XXX - node classification flags.
+ * @{ */
+#define CODEC_NODE_CLS_Port         UINT16_C(0x0001)
+#define CODEC_NODE_CLS_Dac          UINT16_C(0x0002)
+#define CODEC_NODE_CLS_AdcVol       UINT16_C(0x0004)
+#define CODEC_NODE_CLS_Adc          UINT16_C(0x0008)
+#define CODEC_NODE_CLS_AdcMux       UINT16_C(0x0010)
+#define CODEC_NODE_CLS_Pcbeep       UINT16_C(0x0020)
+#define CODEC_NODE_CLS_SpdifIn      UINT16_C(0x0040)
+#define CODEC_NODE_CLS_SpdifOut     UINT16_C(0x0080)
+#define CODEC_NODE_CLS_DigInPin     UINT16_C(0x0100)
+#define CODEC_NODE_CLS_DigOutPin    UINT16_C(0x0200)
+#define CODEC_NODE_CLS_Cd           UINT16_C(0x0400)
+#define CODEC_NODE_CLS_VolKnob      UINT16_C(0x0800)
+#define CODEC_NODE_CLS_Reserved     UINT16_C(0x1000)
+/** @} */
+
+
 /**
  * HDA codec state (ring-3, no shared state).
  */
@@ -835,8 +853,8 @@ typedef struct HDACODECR3
     uint8_t const   abReserveds[CODEC_NODES_MAX];
     /** @} */
 
-    /** Safty zero padding before the nodes start. */
-    uint8_t const   abSaftyPadding2[CODEC_NODES_MAX * 2];
+    /** The CODEC_NODE_CLS_XXX flags for each node. */
+    uint16_t        afNodeClassifications[CODEC_NODES_MAX];
 
     CODECNODE       aNodes[CODEC_NODES_MAX];
 

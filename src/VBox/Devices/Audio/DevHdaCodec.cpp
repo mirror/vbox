@@ -799,8 +799,20 @@ static int stac9220Construct(PHDACODECR3 pThis)
 
 #define STAC9220WIDGET(a_Type) do { \
             AssertCompile(RT_ELEMENTS(g_abStac9220##a_Type##s) <= RT_ELEMENTS(pThis->ab##a_Type##s)); \
-            memcpy((void *)&pThis->ab##a_Type##s[0], &g_abStac9220##a_Type##s[0], \
-                   sizeof(uint8_t) * RT_ELEMENTS(g_abStac9220##a_Type##s)); \
+            uint8_t  *pbDst = (uint8_t *)&pThis->ab##a_Type##s[0]; \
+            uintptr_t i; \
+            for (i = 0; i < RT_ELEMENTS(g_abStac9220##a_Type##s); i++) \
+            { \
+                uint8_t const idNode = g_abStac9220##a_Type##s[i]; \
+                if (idNode != 0) \
+                { \
+                    AssertReturn(idNode < RT_ELEMENTS(pThis->aNodes), VERR_INTERNAL_ERROR_3); \
+                    pThis->afNodeClassifications[idNode] |= RT_CONCAT(CODEC_NODE_CLS_,a_Type); \
+                } \
+                pbDst[i] = idNode; \
+            } \
+            for (; i < RT_ELEMENTS(pThis->ab##a_Type##s); i++) \
+                pbDst[i] = 0; \
         } while (0)
     STAC9220WIDGET(Port);
     STAC9220WIDGET(Dac);
@@ -854,17 +866,13 @@ static int stac9220Construct(PHDACODECR3 pThis)
 /*
  * Some generic predicate functions.
  */
-/** @todo r=bird: we could use memchr here if we knew the array always ended with zeros
- * What would be even quicker would be an array of 16-bit flag masks for each node,
- * compiled by STAC9220WIDGET at construction time. */
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
     DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODECR3 pThis, uint8_t idNode) \
     { \
-        Assert(pThis->ab##a_Type##s); \
-        for (uintptr_t i = 0; i < RT_ELEMENTS(pThis->ab##a_Type##s) && pThis->ab##a_Type##s[i] != 0; i++) \
-            if (pThis->ab##a_Type##s[i] == idNode) \
-                return true; \
-        return false; \
+        Assert(idNode < RT_ELEMENTS(pThis->afNodeClassifications)); \
+        Assert(   (memchr(&pThis->RT_CONCAT3(ab,a_Type,s)[0], idNode, sizeof(pThis->RT_CONCAT3(ab,a_Type,s))) != NULL) \
+               == RT_BOOL(pThis->afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type))); \
+        return RT_BOOL(pThis->afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type)); \
     }
 /* hdaCodecIsPortNode */
 HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Port)
