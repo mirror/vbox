@@ -154,7 +154,7 @@ class tdAudioTest(vbox.TestDriver):
         del oVirtualBox;
         return fRc;
 
-    def _locateGstVkat(self, oSession, oTxsSession):
+    def locateGstVkat(self, oSession, oTxsSession):
         """
         Returns guest side path to VKAT.
         """
@@ -181,9 +181,9 @@ class tdAudioTest(vbox.TestDriver):
         self.killProcessByName("vkat");
         self.killProcessByName("VBoxAudioTest");
 
-    def _getVkatResult(self, oTxsSession):
+    def getLastRcFromTxs(self, oTxsSession):
         """
-        Extracts the VKAT exit code from a run before.
+        Extracts the last exit code reported by TXS from a run before.
         Assumes that nothing else has been run on the same TXS session in the meantime.
         """
         iRc = 0;
@@ -203,7 +203,7 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Guest audio test temp path is \"%s\"' % (sPathAudioOut));
         reporter.log('Guest audio test output path is \"%s\"' % (sPathAudioTemp));
 
-        fRc, sVkatExe = self._locateGstVkat(oSession, oTxsSession);
+        fRc, sVkatExe = self.locateGstVkat(oSession, oTxsSession);
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
@@ -218,7 +218,7 @@ class tdAudioTest(vbox.TestDriver):
             fRc = self.txsRunTest(oTxsSession, 'Starting VKAT on guest', 15 * 60 * 1000,
                                   sVkatExe, aArgs);
             if not fRc:
-                reporter.error('VKAT on guest returned exit code error %d' % (self._getVkatResult(oTxsSession)));
+                reporter.error('VKAT on guest returned exit code error %d' % (self.getLastRcFromTxs(oTxsSession)));
         else:
             reporter.error('VKAT on guest not found');
 
