@@ -800,31 +800,6 @@ static const char *iommuAmdMemAccessGetPermName(uint8_t fPerm)
 #endif
 
 
-/**
- * Checks whether two consecutive I/O page lookup results translates to a physically
- * contiguous region.
- *
- * @returns @c true if they are contiguous, @c false otherwise.
- * @param   pPageLookupPrev     The I/O page lookup result of the previous page.
- * @param   pPageLookup         The I/O page lookup result of the current page.
- */
-static bool iommuAmdLookupIsAccessContig(PCIOPAGELOOKUP pPageLookupPrev, PCIOPAGELOOKUP pPageLookup)
-{
-    size_t const   cbPrev      = RT_BIT_64(pPageLookupPrev->cShift);
-    RTGCPHYS const GCPhysPrev  = pPageLookupPrev->GCPhysSpa;
-    RTGCPHYS const GCPhys      = pPageLookup->GCPhysSpa;
-
-    /* Paranoia: Ensure offset bits are 0. */
-    Assert(!(GCPhysPrev & X86_GET_PAGE_OFFSET_MASK(pPageLookupPrev->cShift)));
-    Assert(!(GCPhys     & X86_GET_PAGE_OFFSET_MASK(pPageLookup->cShift)));
-
-    /* Paranoia: Ensure permissions are identical. */
-    Assert(pPageLookupPrev->fPerm  == pPageLookup->fPerm);
-
-    return GCPhysPrev + cbPrev == GCPhys;
-}
-
-
 #ifdef IOMMU_WITH_DTE_CACHE
 /**
  * Gets the basic I/O device flags for the given device table entry.
@@ -3534,7 +3509,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp,
         Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
         int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
         if (RT_SUCCESS(rc))
-            return rc;
+            return VINF_SUCCESS;
 
         /* Raise a device table hardware error. */
         LogFunc(("Failed to read device table entry at %#RGp. rc=%Rrc -> DevTabHwError\n", GCPhysDte, rc));
@@ -3605,7 +3580,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t idDevice, uin
      * Check permissions bits in the DTE.
      * Note: This MUST be checked prior to checking the root page table level below!
      */
-    uint8_t const fDtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+    uint8_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
     if ((fPerm & fDtePerm) == fPerm)
     { /* likely */ }
     else
@@ -3897,10 +3872,6 @@ static DECLCALLBACK(int) iommuAmdDteLookupPage(PPDMDEVINS pDevIns, uint64_t uIov
 static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPageLookup, PCIOADDRRANGE pAddrIn,
                                      PCIOMMUOPAUX pAux, PIOADDRRANGE pAddrOut, size_t *pcbPages)
 {
-    AssertPtr(pfnIoPageLookup);
-    AssertPtr(pAddrIn);
-    AssertPtr(pAddrOut);
-
     int            rc;
     size_t const   cbIova      = pAddrIn->cb;
     uint8_t const  fPerm       = pAddrIn->fPerm;
@@ -3909,30 +3880,42 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
     size_t         cbRemaining = cbIova;
     uint64_t       uIovaPage   = pAddrIn->uAddr & X86_PAGE_4K_BASE_MASK;
     uint64_t       offIova     = pAddrIn->uAddr & X86_PAGE_4K_OFFSET_MASK;
-    uint64_t       cbPages     = 0;
+    size_t         cbPages     = 0;
+    size_t const   cbPage      = X86_PAGE_4K_SIZE;
 
     IOPAGELOOKUP PageLookupPrev;
     RT_ZERO(PageLookupPrev);
     for (;;)
     {
+        /* Lookup the physical page corresponding to the I/O virtual address. */
         IOPAGELOOKUP PageLookup;
         rc = pfnIoPageLookup(pDevIns, uIovaPage, fPerm, pAux, &PageLookup);
         if (RT_SUCCESS(rc))
         {
-            Assert(PageLookup.cShift >= X86_PAGE_4K_SHIFT);
+            /* Validate results of the translation. */
+            Assert(PageLookup.cShift >= X86_PAGE_4K_SHIFT && PageLookup.cShift <= 51);
+            Assert(!(PageLookup.GCPhysSpa & X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift)));
+            Assert((PageLookup.fPerm & fPerm) == fPerm);
 
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbIova)
             {
                 uint64_t const offMask = X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift);
                 uint64_t const offSpa  = uIova & offMask;
-                AssertMsg(!(PageLookup.GCPhysSpa & offMask), ("GCPhysSpa=%#RX64 offMask=%#RX64\n",
-                                                              PageLookup.GCPhysSpa, offMask));
                 GCPhysSpa = PageLookup.GCPhysSpa | offSpa;
             }
-            /* Check if addresses translated so far result in a physically contiguous region. */
-            else if (!iommuAmdLookupIsAccessContig(&PageLookupPrev, &PageLookup))
+            /*
+             * Check if translated address results in a physically contiguous region.
+             * Also ensure that the permissions for all pages in this range are identical
+             * because we specify a common permission while adding pages in this range
+             * to the IOTLB cache.
+             */
+            else if (   PageLookupPrev.GCPhysSpa + cbPage == PageLookup.GCPhysSpa
+                     && PageLookupPrev.fPerm              == PageLookup.fPerm)
+            { /* likely */ }
+            else
             {
+                Assert(cbRemaining > 0);
                 rc = VERR_OUT_OF_RANGE;
                 break;
             }
@@ -3941,15 +3924,14 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             PageLookupPrev = PageLookup;
 
             /* Update size of all pages read thus far. */
-            uint64_t const cbPage = RT_BIT_64(PageLookup.cShift);
             cbPages += cbPage;
 
             /* Check if we need to access more pages. */
             if (cbRemaining > cbPage - offIova)
             {
-                cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
-                uIovaPage   += cbPage;              /* Update address of the next access. */
-                offIova      = 0;                   /* After first page, remaining pages are accessed from offset 0. */
+                cbRemaining -= (cbPage - offIova); /* Calculate how much more we need to access. */
+                uIovaPage   += cbPage;             /* Update address of the next access. */
+                offIova      = 0;                  /* After the first page, remaining pages are accessed from offset 0. */
             }
             else
             {
@@ -3962,11 +3944,11 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             break;
     }
 
-    pAddrOut->uAddr = GCPhysSpa;                /* Update the translated address. */
-    pAddrOut->cb    = cbIova - cbRemaining;     /* Update the size of the contiguous memory region. */
-    pAddrOut->fPerm = PageLookupPrev.fPerm;     /* Update the allowed permissions for this access. */
+    pAddrOut->uAddr = GCPhysSpa;                   /* Update the translated address. */
+    pAddrOut->cb    = cbIova - cbRemaining;        /* Update the size of the contiguous memory region. */
+    pAddrOut->fPerm = PageLookupPrev.fPerm;        /* Update the allowed permissions for this access. */
     if (pcbPages)
-        *pcbPages = cbPages;                    /* Update the size (in bytes) of the pages accessed. */
+        *pcbPages = cbPages;                       /* Update the size (in bytes) of the pages accessed. */
     return rc;
 }
 
@@ -4026,34 +4008,36 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
                     Aux.idDevice = idDevice;
                     Aux.idDomain = Dte.n.u16DomainId;
 
+                    size_t cbPages;
                     IOADDRRANGE AddrOut;
 
                     /* Lookup the address from the DTE and I/O page tables.*/
-                    size_t cbPages = 0;
                     rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdDteLookupPage, &AddrIn, &Aux, &AddrOut, &cbPages);
                     GCPhysSpa    = AddrOut.uAddr;
                     cbContiguous = AddrOut.cb;
 
-                    /* If we stopped since translation resulted in non-contiguous physical addresses,
-                       what we translated so far is still valid. */
+                    /*
+                     * If we stopped since translation resulted in non-contiguous physical addresses
+                     * or permissions aren't identical for all pages in the access, what we translated
+                     * thus far is still valid.
+                     */
                     if (rc == VERR_OUT_OF_RANGE)
                     {
                         Assert(cbContiguous > 0 && cbContiguous < cbIova);
                         rc = VINF_SUCCESS;
                         STAM_COUNTER_INC(&pThis->StatAccessDteNonContig); NOREF(pThis);
                     }
-
-                    if (rc == VERR_IOMMU_ADDR_ACCESS_DENIED)
+                    else if (rc == VERR_IOMMU_ADDR_ACCESS_DENIED)
                         STAM_COUNTER_INC(&pThis->StatAccessDtePermDenied);
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
                     if (RT_SUCCESS(rc))
                     {
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
-                        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
+                        iommuAmdDteCacheAdd(pDevIns, Aux.idDevice, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
-                        iommuAmdIotlbAddRange(pDevIns, Dte.n.u16DomainId, uIova & X86_PAGE_4K_BASE_MASK, cbPages,
-                                              GCPhysSpa & X86_PAGE_4K_BASE_MASK, AddrOut.fPerm);
+                        iommuAmdIotlbAddRange(pDevIns, Aux.idDomain, AddrIn.uAddr & X86_PAGE_4K_BASE_MASK, cbPages,
+                                              AddrOut.uAddr & X86_PAGE_4K_BASE_MASK, AddrOut.fPerm);
                     }
 #endif
                 }
