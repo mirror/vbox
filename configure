@@ -70,8 +70,8 @@ esac
 OSE=1
 ODIR="`pwd`/"
 ODIR_OVERRIDE=0
-OUT_PATH=""
-OUT_PATH_OVERRIDE=0
+OUT_BASE_PATH=""
+OUT_BASE_PATH_OVERRIDE=0
 SETUP_WINE=
 ONLY_ADDITIONS=0
 TARGET_MACHINE=""
@@ -2415,8 +2415,8 @@ EOF
 cat << EOF
   --with-openssl-dir=DIR   directory for OpenSSL headers/libraries
   --with-ow-dir=DIR        directory where Open Watcom can be found [$WATCOM]
-  --out-path=PATH          the folder to which configuration and build output
-                           should go
+  --out-base-dir=DIR       directory where configuration and build output
+                           should go, in subdirectory out
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
@@ -2662,20 +2662,20 @@ for option in "$@"; do
       ODIR="`echo $option | cut -d'=' -f2`/"
       ODIR_OVERRIDE=1
       ;;
-    --out-path=*)
-      out_path="`echo $option | cut -d'=' -f2`/"
-      if [ -d $out_path ]; then
-        saved_path="`pwd`"
-        cd $out_path
-        OUT_PATH="`pwd`"
-        cd $saved_path
-        OUT_PATH_OVERRIDE=1
+    --out-base-dir=*)
+      out_base_dir="`echo $option | cut -d'=' -f2`/"
+      if [ -d $out_base_dir ]; then
+        saved_pwd="$PWD"
+        cd $out_base_dir
+        OUT_BASE_PATH="`pwd`"
+        cd $saved_pwd
+        OUT_BASE_PATH_OVERRIDE=1
         if [ $ODIR_OVERRIDE -eq 0 ]; then
           # This variable has not *yet* been overridden.  That can still happen.
-          ODIR=$OUT_PATH/
+          ODIR=$OUT_BASE_PATH/
         fi
       else
-        echo "Error: invalid folder \"$out_path\" in option \"$option\""
+        echo "Error: invalid folder \"$out_base_dir\" in option \"$option\""
         exit 1
       fi
       ;;
@@ -2754,12 +2754,12 @@ echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
 export PATH
 
 # if we will be writing to a different out directory then set this up now
-if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
-  echo "AUTOCFG=$OUT_PATH/AutoConfig.kmk" >> $ENV
+if [ $ODIR_OVERRIDE -eq 1 ]; then
+  echo "AUTOCFG=$CFG" >> $ENV
   echo "export AUTOCFG" >> $ENV
-  echo "LOCALCFG=$OUT_PATH/LocalConfig.kmk" >> $ENV
-  echo "export LOCALCFG" >> $ENV
-  echo "PATH_OUT_BASE=$OUT_PATH" >> $ENV
+fi
+if [ $OUT_BASE_PATH_OVERRIDE -eq 1 ]; then
+  echo "PATH_OUT_BASE=$OUT_BASE_PATH" >> $ENV
   echo "export PATH_OUT_BASE" >> $ENV
 fi
 
@@ -2956,14 +2956,14 @@ echo "  source $ENV"
 echo "  kmk"
 echo ""
 if [ "$OS" = "linux" ]; then
-    if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
-      vbox_out_path=$OUT_PATH
+    if [ $OUT_BASE_PATH_OVERRIDE -eq 1 ]; then
+      out_base_dir=$OUT_BASE_PATH
     else
-      vbox_out_path=./out
+      out_base_dir=.
     fi
     echo "To compile the kernel modules, do:"
     echo ""
-    echo "  cd $vbox_out_path/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src"
+    echo "  cd $out_base_dir/out/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src"
     echo "  make"
     echo ""
 fi
