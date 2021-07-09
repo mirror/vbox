@@ -795,41 +795,55 @@ AssertNodeSize(CODECNODE, 60 + 6);
 typedef struct HDACODECR3
 {
     /** Codec implementation type. */
-    CODECTYPE  enmType;
+    CODECTYPE   enmType;
     /** Codec ID. */
-    uint16_t   id;
-    uint16_t   u16VendorId;
-    uint16_t   u16DeviceId;
-    uint8_t    u8BSKU;
-    uint8_t    u8AssemblyId;
+    uint16_t    id;
+    uint16_t    u16VendorId;
+    uint16_t    u16DeviceId;
+    uint8_t     u8BSKU;
+    uint8_t     u8AssemblyId;
 
-    CODECNODE  aNodes[CODEC_NODES_MAX];
-    uint32_t   cNodes;
+    bool        fInReset;
 
-    bool       fInReset;
-    uint8_t    abPadding1[3]; /**< @todo r=bird: Merge with bPadding2 and eliminate both */
+    uint8_t     cTotalNodes;
+    uint8_t     u8AdcVolsLineIn;
+    uint8_t     u8DacLineOut;
 
-    uint8_t    cTotalNodes;
-    uint8_t    u8AdcVolsLineIn;
-    uint8_t    u8DacLineOut;
-    uint8_t    bPadding2;
+    uint32_t    cNodes;
 
-    uint8_t    au8Ports[CODEC_NODES_MAX];
-    uint8_t    au8Dacs[CODEC_NODES_MAX];
-    uint8_t    au8AdcVols[CODEC_NODES_MAX];
-    uint8_t    au8Adcs[CODEC_NODES_MAX];
-    uint8_t    au8AdcMuxs[CODEC_NODES_MAX];
-    uint8_t    au8Pcbeeps[CODEC_NODES_MAX];
-    uint8_t    au8SpdifIns[CODEC_NODES_MAX];
-    uint8_t    au8SpdifOuts[CODEC_NODES_MAX];
-    uint8_t    au8DigInPins[CODEC_NODES_MAX];
-    uint8_t    au8DigOutPins[CODEC_NODES_MAX];
-    uint8_t    au8Cds[CODEC_NODES_MAX];
-    uint8_t    au8VolKnobs[CODEC_NODES_MAX];
-    uint8_t    au8Reserveds[CODEC_NODES_MAX];
+    /** Align the lists below so they don't cross cache lines (assumes
+     *  CODEC_NODES_MAX is 32). */
+    uint8_t     abPadding1[CODEC_NODES_MAX - 20];
+
+    uint8_t     au8Ports[CODEC_NODES_MAX];
+    uint8_t     au8Dacs[CODEC_NODES_MAX];
+    uint8_t     au8AdcVols[CODEC_NODES_MAX];
+    uint8_t     au8Adcs[CODEC_NODES_MAX];
+    uint8_t     au8AdcMuxs[CODEC_NODES_MAX];
+    uint8_t     au8Pcbeeps[CODEC_NODES_MAX];
+    uint8_t     au8SpdifIns[CODEC_NODES_MAX];
+    uint8_t     au8SpdifOuts[CODEC_NODES_MAX];
+    uint8_t     au8DigInPins[CODEC_NODES_MAX];
+    uint8_t     au8DigOutPins[CODEC_NODES_MAX];
+    uint8_t     au8Cds[CODEC_NODES_MAX];
+    uint8_t     au8VolKnobs[CODEC_NODES_MAX];
+    uint8_t     au8Reserveds[CODEC_NODES_MAX];
+
+    /** Safty zero padding before the nodes start. */
+    uint8_t     abSaftyPadding2[CODEC_NODES_MAX * 2];
+
+    CODECNODE   aNodes[CODEC_NODES_MAX];
 
     STAMCOUNTER StatLookupsR3;
+    uint64_t    au64Padding3[7];
 } HDACODECR3;
+AssertCompile(RT_IS_POWER_OF_TWO(CODEC_NODES_MAX));
+AssertCompileMemberAlignment(HDACODECR3, au8Ports, CODEC_NODES_MAX);
+AssertCompileMemberAlignment(HDACODECR3, aNodes, 64);
+AssertCompileSizeAlignment(HDACODECR3, 8);
+AssertCompileSizeAlignment(HDACODECR3, 16);
+AssertCompileSizeAlignment(HDACODECR3, 32);
+AssertCompileSizeAlignment(HDACODECR3, 64);
 
 
 /** @name HDA Codec API used by the device emulation.

@@ -753,10 +753,12 @@ typedef struct HDASTATER3
          *  Can be NULL, in which the system's temporary directory will be used then. */
         R3PTRTYPE(char *)       pszOutPath;
     } Dbg;
-
+    /** Align the codec state on a cache line. */
+    uint64_t                au64Padding[3];
     /** The HDA codec state. */
     HDACODECR3              Codec;
 } HDASTATER3;
+AssertCompileMemberAlignment(HDASTATER3, Codec, 64);
 
 
 /** Pointer to the context specific HDA state (HDASTATER3 or HDASTATER0). */
