@@ -113,8 +113,6 @@ AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
 enum
 {
     VKAT_TEST_OPT_COUNT = 900,
-    VKAT_TEST_OPT_DAEMONIZE,
-    VKAT_TEST_OPT_DAEMONIZED,
     VKAT_TEST_OPT_DEV,
     VKAT_TEST_OPT_GUEST_ATS_ADDR,
     VKAT_TEST_OPT_GUEST_ATS_PORT,
@@ -148,6 +146,8 @@ static const RTGETOPTDEF g_aCmdCommonOptions[] =
 {
     { "--quiet",            'q',                                        RTGETOPT_REQ_NOTHING },
     { "--verbose",          'v',                                        RTGETOPT_REQ_NOTHING },
+    { "--daemonize",        AUDIO_TEST_OPT_CMN_DAEMONIZE,               RTGETOPT_REQ_NOTHING },
+    { "--daemonized",       AUDIO_TEST_OPT_CMN_DAEMONIZED,              RTGETOPT_REQ_NOTHING },
     { "--debug-audio",      AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE,      RTGETOPT_REQ_NOTHING },
     { "--debug-audio-path", AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH,        RTGETOPT_REQ_STRING  },
 };
@@ -168,8 +168,6 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--include",           'i',                          RTGETOPT_REQ_UINT32  },
     { "--outdir",            VKAT_TEST_OPT_OUTDIR,         RTGETOPT_REQ_STRING  },
     { "--count",             VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
-    { "--daemonize",         VKAT_TEST_OPT_DAEMONIZE,      RTGETOPT_REQ_NOTHING },
-    { "--daemonized",        VKAT_TEST_OPT_DAEMONIZED,     RTGETOPT_REQ_NOTHING },
     { "--device",            VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
     { "--pause",             VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
     { "--pcm-bit",           VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
@@ -631,8 +629,6 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'e':                          return "Exclude the given test id from the list";
         case 'i':                          return "Include the given test id in the list";
-        case VKAT_TEST_OPT_DAEMONIZE:      return "Run in background (daemonized)";
-        case VKAT_TEST_OPT_DEV:            return "Use the specified audio device";
         case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to";
         case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6042]";
         case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to";
@@ -674,9 +670,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint8_t     cPcmChannels  = 0;
     uint32_t    uPcmHz        = 0;
     bool        fPcmSigned    = true;
-
-    bool        fDaemonize    = false;
-    bool        fDaemonized   = false;
 
     const char *pszGuestTcpAddr  = NULL;
     uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
@@ -745,14 +738,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
             case VKAT_TEST_OPT_COUNT:
                 return RTMsgErrorExitFailure("Not yet implemented!");
 
-            case VKAT_TEST_OPT_DAEMONIZE:
-                fDaemonize = true;
-                break;
-
-            case VKAT_TEST_OPT_DAEMONIZED:
-                fDaemonized = true;
-                break;
-
             case VKAT_TEST_OPT_DEV:
                 rc = RTStrCopy(TstEnv.szDev, sizeof(TstEnv.szDev), ValueUnion.psz);
                 if (RT_FAILURE(rc))
@@ -804,27 +789,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 rc = AudioTestSvcHandleOption(&TstEnv.u.Guest.Srv, ch, &ValueUnion);
                 if (RT_FAILURE(rc))
                     return RTGetOptPrintError(ch, &ValueUnion);
-        }
-    }
-
-    /*
-     * Daemonize ourselves if asked to.
-     */
-    if (fDaemonize)
-    {
-        if (!fDaemonized)
-        {
-            if (g_uVerbosity > 0)
-                RTMsgInfo("Daemonizing...");
-            rc = RTProcDaemonize(pGetState->argv, "--daemonized");
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcDaemonize: %Rrc\n", rc);
-            return RTEXITCODE_SUCCESS;
-        }
-        else
-        {
-            if (g_uVerbosity > 0)
-                RTMsgInfo("Running daemonized ...");
         }
     }
 
@@ -1181,11 +1145,57 @@ void audioTestShowLogo(PRTSTREAM pStream)
 int main(int argc, char **argv)
 {
     /*
-     * Init IPRT and globals.
+     * Init IPRT.
      */
-    RTEXITCODE rcExit = RTTestInitAndCreate("AudioTest", &g_hTest);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("RTR3InitExe() failed with %Rrc\n", rc);
+        return RTMsgInitFailure(rc);
+    }
+
+    /*
+     * Daemonize ourselves if asked to.
+     */
+    bool fDaemonize  = false;
+    bool fDaemonized = false;
+
+    for (int i = 1; i < argc; i++)
+    {
+        const char *psz = argv[i];
+        if (!RTStrICmp(psz, "--daemonize"))
+        {
+            fDaemonize = true;
+            continue;
+        }
+        else if (!RTStrICmp(psz, "--daemonized"))
+        {
+            fDaemonized = true;
+            continue;
+        }
+    }
+
+    if (fDaemonize)
+    {
+        if (!fDaemonized)
+        {
+            rc = RTProcDaemonize(argv, "--daemonized");
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcDaemonize() failed with %Rrc\n", rc);
+
+            RTMsgInfo("Starting in background (daemonizing) ...");
+            return RTEXITCODE_SUCCESS;
+        }
+        /* else continue running in background. */
+    }
+
+    /*
+     * Init test and globals.
+     * Note: Needs to be done *after* daemonizing, otherwise the child will fail!
+     */
+    rc = RTTestCreate("AudioTest", &g_hTest);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTTestCreate() failed with %Rrc\n", rc);
 
 #ifdef RT_OS_WINDOWS
     HRESULT hrc = CoInitializeEx(NULL /*pReserved*/, COINIT_MULTITHREADED | COINIT_SPEED_OVER_MEMORY | COINIT_DISABLE_OLE1DDE);
@@ -1197,8 +1207,8 @@ int main(int argc, char **argv)
      * Configure release logging to go to stderr.
      */
     static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
-    int rc = RTLogCreate(&g_pRelLogger, RTLOGFLAGS_PREFIX_THREAD, "all.e.l", "VKAT_RELEASE_LOG",
-                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, NULL /*"vkat-release.log"*/);
+    rc = RTLogCreate(&g_pRelLogger, RTLOGFLAGS_PREFIX_THREAD, "all.e.l", "VKAT_RELEASE_LOG",
+                     RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(g_pRelLogger);
     else
@@ -1267,7 +1277,7 @@ int main(int argc, char **argv)
                                               GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
                             if (RT_SUCCESS(rc))
                             {
-                                rcExit = pCmd->pfnHandler(&GetState);
+                                RTEXITCODE rcExit = pCmd->pfnHandler(&GetState);
                                 RTMemFree(paCombinedOptions);
                                 return rcExit;
                             }

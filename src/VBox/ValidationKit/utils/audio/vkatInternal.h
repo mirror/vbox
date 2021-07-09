@@ -477,7 +477,9 @@ RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
  */
 enum
 {
-    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE = 256,
+    AUDIO_TEST_OPT_CMN_DAEMONIZE = 256,
+    AUDIO_TEST_OPT_CMN_DAEMONIZED,
+    AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE,
     AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH
 };
 
@@ -508,7 +510,11 @@ enum
             \
             case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_PATH: \
                 g_pszDrvAudioDebug = (a_ValueUnion).psz; \
-                break
+                break; \
+            case AUDIO_TEST_OPT_CMN_DAEMONIZE: \
+                break; \
+            case AUDIO_TEST_OPT_CMN_DAEMONIZED: \
+                break;
 
 #endif /* !VBOX_INCLUDED_SRC_audio_vkatInternal_h */
 
