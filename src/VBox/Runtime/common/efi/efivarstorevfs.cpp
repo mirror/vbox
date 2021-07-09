@@ -65,10 +65,10 @@ typedef struct RTEFIVAR
 {
     /** Pointer to the owning variable store. */
     PRTEFIVARSTORE      pVarStore;
-    /** Offset of the variable header located in the backing image - 0 if not written yet. */
-    uint64_t            offVarHdr;
     /** Offset of the variable data located in the backing image - 0 if not written yet. */
     uint64_t            offVarData;
+    /** Pointer to the in memory data, NULL if not yet read. */
+    void                *pvData;
     /** Monotonic counter value. */
     uint64_t            cMonotonic;
     /** Size of the variable data in bytes. */
@@ -385,8 +385,10 @@ static int rtEfiVarStore_QueryInfo(uint64_t cbObject, bool fIsDir, PCRTTIMESPEC 
     pObjInfo->ChangeTime            = *pTime;
     pObjInfo->BirthTime             = *pTime;
     pObjInfo->Attr.fMode            =   fIsDir
-                                      ? RTFS_TYPE_DIRECTORY | RTFS_UNIX_ALL_PERMS
-                                      : RTFS_TYPE_FILE | RTFS_UNIX_ALL_PERMS;
+                                      ? RTFS_TYPE_DIRECTORY | RTFS_UNIX_ALL_ACCESS_PERMS
+                                      : RTFS_TYPE_FILE | RTFS_UNIX_IWOTH | RTFS_UNIX_IROTH
+                                                       | RTFS_UNIX_IWGRP | RTFS_UNIX_IRGRP
+                                                       | RTFS_UNIX_IWUSR | RTFS_UNIX_IRUSR;
     pObjInfo->Attr.enmAdditional    = enmAddAttr;
 
     switch (enmAddAttr)
@@ -531,7 +533,7 @@ static int rtEfiVarStoreFile_ReadMem(PRTEFIVARFILE pThis, const void *pvData, si
 
         if (RT_SUCCESS(rc))
             pThis->offFile = off + cbThisRead;
-        Log6(("rtFsEfiVarStore_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+        Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
     }
     else
     {
@@ -550,6 +552,58 @@ static int rtEfiVarStoreFile_ReadMem(PRTEFIVARFILE pThis, const void *pvData, si
             *pcbRead = cbThisRead;
         }
         Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbRead));
+    }
+
+    return rc;
+}
+
+
+/**
+ * Writes variable data from the given memory area.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The EFI variable file instance.
+ * @param   pvData              Pointer to the start of the data.
+ * @param   cbData              Size of the variable data in bytes.
+ * @param   off                 Where to start writing relative from the data start offset.
+ * @param   pSgBuf              The data to write.
+ * @param   pcbWritten          Where to return the number of bytes written, optional.
+ */
+static int rtEfiVarStoreFile_WriteMem(PRTEFIVARFILE pThis, void *pvData, size_t cbData,
+                                      RTFOFF off, PCRTSGBUF pSgBuf, size_t *pcbWritten)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbWrite = pSgBuf->paSegs[0].cbSeg;
+    size_t cbThisWrite = RT_MIN(cbData - off, cbWrite);
+    uint8_t *pbData = (uint8_t *)pvData;
+    if (!pcbWritten)
+    {
+        if (cbThisWrite == cbWrite)
+            memcpy(&pbData[off], pSgBuf->paSegs[0].pvSeg, cbThisWrite);
+        else
+            rc = VERR_EOF;
+
+        if (RT_SUCCESS(rc))
+            pThis->offFile = off + cbThisWrite;
+        Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+    }
+    else
+    {
+        if ((uint64_t)off >= cbData)
+        {
+            *pcbWritten = 0;
+            rc = VINF_EOF;
+        }
+        else
+        {
+            memcpy(&pbData[off], pSgBuf->paSegs[0].pvSeg, cbThisWrite);
+            /* Return VINF_EOF if beyond end-of-file. */
+            if (cbThisWrite < cbWrite)
+                rc = VINF_EOF;
+            pThis->offFile = off + cbThisWrite;
+            *pcbWritten = cbThisWrite;
+        }
+        Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbWritten=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbWritten));
     }
 
     return rc;
@@ -615,6 +669,89 @@ static int rtEfiVarStoreFile_ReadFile(PRTEFIVARFILE pThis, uint64_t offData, siz
 
 
 /**
+ * Ensures that the variable data is available before any modification.
+ *
+ * @returns IPRT status code.
+ * @param   pVar                The variable instance.
+ */
+static int rtEfiVarStore_VarReadData(PRTEFIVAR pVar)
+{
+    if (RT_LIKELY(   !pVar->offVarData
+                  || !pVar->cbData))
+        return VINF_SUCCESS;
+
+    Assert(!pVar->pvData);
+    pVar->pvData = RTMemAlloc(pVar->cbData);
+    if (RT_UNLIKELY(!pVar->pvData))
+        return VERR_NO_MEMORY;
+
+    PRTEFIVARSTORE pVarStore = pVar->pVarStore;
+    int rc = RTVfsFileReadAt(pVarStore->hVfsBacking, pVar->offVarData, pVar->pvData, pVar->cbData, NULL);
+    if (RT_SUCCESS(rc))
+        pVar->offVarData = 0; /* Marks the variable data as in memory. */
+    else
+    {
+        RTMemFree(pVar->pvData);
+        pVar->pvData = NULL;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Ensures that the given variable has the given data size.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DISK_FULL if the new size would exceed the variable storage size.
+ * @param   pVar                The variable instance.
+ * @param   cbData              New number of bytes of data for the variable.
+ */
+static int rtEfiVarStore_VarEnsureDataSz(PRTEFIVAR pVar, size_t cbData)
+{
+    PRTEFIVARSTORE pVarStore = pVar->pVarStore;
+
+    if (pVar->cbData == cbData)
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+    if (cbData < pVar->cbData)
+    {
+        /* Shrink. */
+        void *pvNew = RTMemRealloc(pVar->pvData, cbData);
+        if (pvNew)
+        {
+            pVar->pvData = pvNew;
+            pVarStore->cbVarData -= pVar->cbData - cbData;
+            pVar->cbData = cbData;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (cbData > pVar->cbData)
+    {
+        /* Grow. */
+        if (pVarStore->cbVarStore - pVarStore->cbVarData >= cbData - pVar->cbData)
+        {
+            void *pvNew = RTMemRealloc(pVar->pvData, cbData);
+            if (pvNew)
+            {
+                pVar->pvData = pvNew;
+                pVarStore->cbVarData += cbData - pVar->cbData;
+                pVar->cbData          = cbData;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_DISK_FULL;
+    }
+
+    return rc;
+}
+
+
+/**
  * Flush the variable store to the backing storage. This will remove any
  * deleted variables in the backing storage.
  *
@@ -625,9 +762,6 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
 {
     int rc = VINF_SUCCESS;
     uint64_t offCur = pThis->offStoreData;
-    void *pvData = NULL;
-    size_t cbData = 0;
-    size_t cbDataMax = 0;
 
     for (uint32_t i = 0; i < pThis->cVars && RT_SUCCESS(rc); i++)
     {
@@ -641,30 +775,10 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
             cwcLen++; /* Include the terminator. */
 
             /* Read in the data of the variable if it exists. */
-            if (pVar->offVarData)
-            {
-                if (cbDataMax < pVar->cbData)
-                {
-                    size_t cbDataMaxNew = pVar->cbData;
-                    void *pvDataNew = RTMemRealloc(pvData, cbDataMaxNew);
-                    if (pvDataNew)
-                    {
-                        pvData = pvDataNew;
-                        cbDataMax = cbDataMaxNew;
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-
-                cbData = pVar->cbData;
-
-                if (RT_SUCCESS(rc))
-                    rc = RTVfsFileReadAt(pThis->hVfsBacking, pVar->offVarData, pvData, cbData, NULL);
-            }
-
-            /* Write out the variable. */
+            rc = rtEfiVarStore_VarReadData(pVar);
             if (RT_SUCCESS(rc))
             {
+                /* Write out the variable. */
                 EFI_AUTH_VAR_HEADER VarHdr;
                 size_t cbName = cwcLen * sizeof(RTUTF16);
 
@@ -683,10 +797,10 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
                 if (RT_SUCCESS(rc))
                     rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr), pwszName, cbName, NULL);
                 if (RT_SUCCESS(rc))
-                    rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr) + cbName, pvData, cbData, NULL);
+                    rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr) + cbName, pVar->pvData, pVar->cbData, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    offCur += sizeof(VarHdr) + cbName + cbData;
+                    offCur += sizeof(VarHdr) + cbName + pVar->cbData;
                     uint64_t offCurAligned = RT_ALIGN_64(offCur, sizeof(uint16_t));
                     if (offCurAligned > offCur)
                     {
@@ -720,9 +834,6 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
             offStart += cbThisWrite;
         }
     }
-
-    if (pvData)
-        RTMemFree(pvData);
 
     return rc;
 }
@@ -780,7 +891,13 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PCRTSG
     if (pThis->pEntry->cbObject)
         rc = rtEfiVarStoreFile_ReadMem(pThis, (const uint8_t *)pVar + pThis->pEntry->offObject, pThis->pEntry->cbObject, off, pSgBuf, pcbRead);
     else
-        rc = rtEfiVarStoreFile_ReadFile(pThis, pVar->offVarData, pVar->cbData, off, pSgBuf, pcbRead);
+    {
+        /* Data section. */
+        if (!pVar->offVarData)
+            rc = rtEfiVarStoreFile_ReadMem(pThis, pVar->pvData, pVar->cbData, off, pSgBuf, pcbRead);
+        else
+            rc = rtEfiVarStoreFile_ReadFile(pThis, pVar->offVarData, pVar->cbData, off, pSgBuf, pcbRead);
+    }
 
     return rc;
 }
@@ -791,8 +908,38 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PCRTSG
  */
 static DECLCALLBACK(int) rtEfiVarStoreFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
-    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
-    return VERR_WRITE_PROTECT;
+    PRTEFIVARFILE pThis = (PRTEFIVARFILE)pvThis;
+    PRTEFIVARSTORE pVarStore = pThis->pVarStore;
+    PRTEFIVAR pVar = pThis->pVar;
+    AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    if (pVarStore->fMntFlags & RTVFSMNT_F_READ_ONLY)
+        return VERR_WRITE_PROTECT;
+
+    if (off == -1)
+        off = pThis->offFile;
+    else
+        AssertReturn(off >= 0, VERR_INTERNAL_ERROR_3);
+
+    int rc;
+    if (pThis->pEntry->cbObject) /* These can't grow. */
+        rc = rtEfiVarStoreFile_WriteMem(pThis, (uint8_t *)pVar + pThis->pEntry->offObject, pThis->pEntry->cbObject,
+                                        off, pSgBuf, pcbWritten);
+    else
+    {
+        /* Writing data section. */
+        rc = rtEfiVarStore_VarReadData(pVar);
+        if (RT_SUCCESS(rc))
+        {
+            if (off + pSgBuf->paSegs[0].cbSeg > pVar->cbData)
+                rc = rtEfiVarStore_VarEnsureDataSz(pVar, off + pSgBuf->paSegs[0].cbSeg);
+            if (RT_SUCCESS(rc))
+                rc = rtEfiVarStoreFile_WriteMem(pThis, pVar->pvData, pVar->cbData, off, pSgBuf, pcbWritten);
+        }
+    }
+
+    return rc;
 }
 
 
@@ -898,8 +1045,20 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_QuerySize(void *pvThis, uint64_t *pcb
  */
 static DECLCALLBACK(int) rtEfiVarStoreFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
 {
-    RT_NOREF(pvThis, cbFile, fFlags);
-    return VERR_WRITE_PROTECT;
+    PRTEFIVARFILE pThis = (PRTEFIVARFILE)pvThis;
+    PRTEFIVAR pVar = pThis->pVar;
+    PRTEFIVARSTORE pVarStore = pThis->pVarStore;
+
+    RT_NOREF(fFlags);
+
+    if (pVarStore->fMntFlags & RTVFSMNT_F_READ_ONLY)
+        return VERR_WRITE_PROTECT;
+
+    int rc = rtEfiVarStore_VarReadData(pVar);
+    if (RT_SUCCESS(rc))
+        rc = rtEfiVarStore_VarEnsureDataSz(pVar, cbFile);
+
+    return rc;
 }
 
 
@@ -915,7 +1074,7 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_QueryMaxSize(void *pvThis, uint64_t *
 
 
 /**
- * EXT file operations.
+ * EFI variable store file operations.
  */
 static const RTVFSFILEOPS g_rtEfiVarStoreFileOps =
 {
@@ -923,7 +1082,7 @@ static const RTVFSFILEOPS g_rtEfiVarStoreFileOps =
         { /* Obj */
             RTVFSOBJOPS_VERSION,
             RTVFSOBJTYPE_FILE,
-            "EFiVarStore File",
+            "EfiVarStore File",
             rtEfiVarStoreFile_Close,
             rtEfiVarStoreFile_QueryInfo,
             RTVFSOBJOPS_VERSION
@@ -1111,7 +1270,8 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_Open(void *pvThis, const char *pszEntr
      * We cannot create or replace anything, just open stuff.
      */
     if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
-        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE)
+        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
     { /* likely */ }
     else
         return VERR_WRITE_PROTECT;
@@ -1279,7 +1439,7 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_RewindDir(void *pvThis)
     PRTEFIVARSTOREDIR pThis = (PRTEFIVARSTOREDIR)pvThis;
     LogFlowFunc(("\n"));
 
-    pThis->idxNext      = 0;
+    pThis->idxNext = 0;
     return VINF_SUCCESS;
 }
 
@@ -1787,12 +1947,12 @@ static int rtEfiVarStoreLoadAuthVar(PRTEFIVARSTORE pThis, uint64_t offVar, uint6
 
     PRTEFIVAR pVar = &pThis->paVars[pThis->cVars++];
     pVar->pVarStore  = pThis;
-    pVar->offVarHdr  = offVar;
     pVar->offVarData = offVar + sizeof(VarHdr) + RT_LE2H_U32(VarHdr.cbName);
     pVar->fAttr      = RT_LE2H_U32(VarHdr.fAttr);
     pVar->cMonotonic = RT_LE2H_U64(VarHdr.cMonotonic);
     pVar->idPubKey   = RT_LE2H_U32(VarHdr.idPubKey);
     pVar->cbData     = RT_LE2H_U32(VarHdr.cbData);
+    pVar->pvData     = NULL;
     memcpy(&pVar->EfiTimestamp, &VarHdr.Timestamp, sizeof(VarHdr.Timestamp));
 
     if (VarHdr.Timestamp.u8Month)
