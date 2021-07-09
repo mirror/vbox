@@ -401,7 +401,7 @@ static int rtSocketAddrFromNetAddr(PCRTNETADDR pAddr, RTSOCKADDRUNION *pDst, siz
 #ifdef IPRT_WITH_TCPIP_V6
     else if (pAddr->enmType == RTNETADDRTYPE_IPV6)
     {
-        if (cbDst >= sizeof(struct sockaddr_in6))
+        if (cbDst < sizeof(struct sockaddr_in6))
             return VERR_BUFFER_OVERFLOW;
 
         pDst->Addr.sa_family              = AF_INET6;
