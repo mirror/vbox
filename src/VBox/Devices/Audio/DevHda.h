@@ -805,7 +805,7 @@ DECLINLINE(uint32_t *) hdaStrictStreamRegAccessor(PHDASTATE pThis, uint32_t idxM
 #endif /* VBOX_STRICT && VBOX_HDA_CAN_ACCESS_REG_MAP */
 
 
-/** @name DevHDA.cpp functions used by the codec.
+/** @name HDA device functions used by the codec.
  * @{ */
 DECLHIDDEN(int)     hdaR3MixerAddStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg);
 DECLHIDDEN(int)     hdaR3MixerRemoveStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate);

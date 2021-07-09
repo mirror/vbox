@@ -29,15 +29,8 @@
 #include "AudioMixer.h"
 
 
-/** The ICH HDA (Intel) common codec state. */
-typedef struct HDACODEC *PHDACODEC;
 /** The ICH HDA (Intel) ring-3 codec state. */
 typedef struct HDACODECR3 *PHDACODECR3;
-#ifdef IN_RING3 /* (A leftover from attempt at running the codec in ring-0.  Deemed unsafe
-                    and not a help with performance when it mattered.) */
-/** The ICH HDA (Intel) current context codec state. */
-typedef CTX_SUFF(PHDACODEC) PHDACODECCC;
-#endif
 
 /**
  * Enumeration specifying the codec type to use.
@@ -797,9 +790,9 @@ AssertNodeSize(CODECNODE, 60 + 6);
 #define CODEC_NODES_MAX     32
 
 /**
- * HDA codec state (shared).
+ * HDA codec state (ring-3, no shared state).
  */
-typedef struct HDACODEC
+typedef struct HDACODECR3
 {
     /** Codec implementation type. */
     CODECTYPE  enmType;
@@ -836,36 +829,24 @@ typedef struct HDACODEC
     uint8_t    au8Reserveds[CODEC_NODES_MAX];
 
     STAMCOUNTER StatLookupsR3;
-#if 0 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
-    STAMCOUNTER StatLookupsR0;
-#endif
-} HDACODEC;
-
-
-/**
- * HDA codec state (ring-3).
- */
-typedef struct HDACODECR3
-{
-    /** The state (was shared with ring-0 for a while). */
-    HDACODEC                State;
 } HDACODECR3;
+
 
 /** @name HDA Codec API used by the device emulation.
  * @{ */
-int     hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg);
-void    hdaR3CodecPowerOff(PHDACODECR3 pThisCC);
-int     hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion);
-int     hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
-int     hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate);
+int     hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThis, uint16_t uLUN, PCFGMNODE pCfg);
+void    hdaR3CodecPowerOff(PHDACODECR3 pThis);
+int     hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+int     hdaR3CodecAddStream(PHDACODECR3 pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
+int     hdaR3CodecRemoveStream(PHDACODECR3 pThis, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate);
 
-int     hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM);
-void    hdaCodecDestruct(PHDACODECR3 pThisCC);
-void    hdaCodecReset(PHDACODECR3 pThisCC);
+int     hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM);
+void    hdaCodecDestruct(PHDACODECR3 pThis);
+void    hdaCodecReset(PHDACODECR3 pThis);
 
-DECLHIDDEN(int)  hdaR3CodecLookup(PHDACODECR3 pThisCC, uint32_t uCmd, uint64_t *puResp);
-DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
-DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
+DECLHIDDEN(int)  hdaR3CodecLookup(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp);
+DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs);
+DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs);
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaCodec_h */

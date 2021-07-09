@@ -118,13 +118,12 @@ typedef struct CODECVERB
      *          make it return @a *puResp instead?
      *
      * @param   pThis   The shared codec intance data.
-     * @param   pThisCC The codec instance data for the current context (ring-3).
      * @param   uCmd    The command.
      * @param   puResp  Where to return the response value.
      *
      * @thread  EMT or task worker thread (see HDASTATE::hCorbDmaTask).
      */
-    DECLCALLBACKMEMBER(int,    pfn, (PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp));
+    DECLCALLBACKMEMBER(int,    pfn, (PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp));
     /** Friendly name, for debugging. */
     const char                *pszName;
 } CODECVERB;
@@ -196,7 +195,7 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
  * @param   uNID                Node ID to set node to.
  * @param   pNode               Node to reset.
  */
-static void stac9220NodeReset(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
+static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
 {
     LogFlowFunc(("NID=0x%x (%RU8)\n", uNID, uNID));
 
@@ -771,7 +770,7 @@ static void stac9220NodeReset(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
  *
  * @param   pThis               HDA codec to reset.
  */
-static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
+static void stac9220Reset(PHDACODECR3 pThis)
 {
     AssertPtrReturnVoid(pThis->aNodes);
 
@@ -787,7 +786,7 @@ static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
 }
 
 
-static int stac9220Construct(PHDACODEC pThis)
+static int stac9220Construct(PHDACODECR3 pThis)
 {
     pThis->u16VendorId  = 0x8384; /* SigmaTel */
     /*
@@ -855,7 +854,7 @@ static int stac9220Construct(PHDACODEC pThis)
  * Some generic predicate functions.
  */
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
-    DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODEC pThis, uint8_t idNode) \
+    DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODECR3 pThis, uint8_t idNode) \
     { \
         Assert(pThis->au8##a_Type##s); \
         for (uintptr_t i = 0; i < RT_ELEMENTS(pThis->au8##a_Type##s) && pThis->au8##a_Type##s[i] != 0; i++) \
@@ -894,7 +893,7 @@ HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Reserved)
 /*
  * Misc helpers.
  */
-static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL enmMixerCtl)
+static int hdaR3CodecToAudVolume(PHDACODECR3 pThis, PCODECNODE pNode, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL enmMixerCtl)
 {
     RT_NOREF(pNode);
 
@@ -939,7 +938,7 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
     LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8%s\n",
              PDMAudioMixerCtlGetName(enmMixerCtl), bLeft, bRight, Vol.fMuted ? "- Muted!" : ""));
 
-    return hdaR3MixerSetVolume(pThisCC, enmMixerCtl, &Vol);
+    return hdaR3MixerSetVolume(pThis, enmMixerCtl, &Vol);
 }
 
 
@@ -969,9 +968,9 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 /**
  * @interface_method_impl{CODECVERB,pfn, Unimplemented}
  */
-static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, uCmd);
+    RT_NOREF(pThis, uCmd);
     LogFlowFunc(("uCmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", uCmd,
                  CODEC_CAD(uCmd), CODEC_DIRECT(uCmd) ? 'N' : 'Y', CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)));
     *puResp = 0;
@@ -982,10 +981,10 @@ static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThis
 /**
  * @interface_method_impl{CODECVERB,pfn, ??? }
  */
-static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcBreak(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
     int rc;
-    rc = vrbProcUnimplemented(pThis, pThisCC, uCmd, puResp);
+    rc = vrbProcUnimplemented(pThis, uCmd, puResp);
     *puResp |= CODEC_RESPONSE_UNSOLICITED;
     return rc;
 }
@@ -995,9 +994,8 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint
 /**
  * @interface_method_impl{CODECVERB,pfn, b-- }
  */
-static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     /* HDA spec 7.3.3.7 Note A */
@@ -1045,9 +1043,8 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisC
 /**
  * @interface_method_impl{CODECVERB,pfn, ??? }
  */
-static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetParameter(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     Assert((uCmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F00_PARAM_LENGTH);
     if ((uCmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F00_PARAM_LENGTH)
     {
@@ -1065,9 +1062,8 @@ static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisC
 /**
  * @interface_method_impl{CODECVERB,pfn, f01 }
  */
-static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(uCmd)))
@@ -1090,9 +1086,8 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
 /**
  * @interface_method_impl{CODECVERB,pfn, 701 }
  */
-static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1119,9 +1114,8 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pT
 /**
  * @interface_method_impl{CODECVERB,pfn, f07 }
  */
-static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
@@ -1146,9 +1140,8 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, 707 }
  */
-static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1178,9 +1171,8 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, f08 }
  */
-static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
@@ -1205,9 +1197,8 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
 /**
  * @interface_method_impl{CODECVERB,pfn, 708 }
  */
-static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1236,9 +1227,8 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODEC
 /**
  * @interface_method_impl{CODECVERB,pfn, f09 }
  */
-static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
@@ -1258,9 +1248,8 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
 /**
  * @interface_method_impl{CODECVERB,pfn, 709 }
  */
-static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1281,9 +1270,8 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
 /**
  * @interface_method_impl{CODECVERB,pfn, ??? }
  */
-static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     Assert((uCmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F02_PARAM_LENGTH);
@@ -1300,9 +1288,8 @@ static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODE
 /**
  * @interface_method_impl{CODECVERB,pfn, f03 }
  */
-static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
@@ -1315,9 +1302,8 @@ static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, 703 }
  */
-static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
@@ -1329,9 +1315,8 @@ static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, f0d }
  */
-static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
@@ -1342,7 +1327,7 @@ static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC
 }
 
 
-static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset, uint64_t *puResp)
+static int codecSetDigitalConverter(PHDACODECR3 pThis, uint32_t uCmd, uint8_t u8Offset, uint64_t *puResp)
 {
     *puResp = 0;
 
@@ -1357,9 +1342,8 @@ static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Of
 /**
  * @interface_method_impl{CODECVERB,pfn, 70d }
  */
-static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     return codecSetDigitalConverter(pThis, uCmd, 0, puResp);
 }
 
@@ -1367,9 +1351,8 @@ static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECC
 /**
  * @interface_method_impl{CODECVERB,pfn, 70e }
  */
-static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     return codecSetDigitalConverter(pThis, uCmd, 8, puResp);
 }
 
@@ -1377,9 +1360,8 @@ static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECC
 /**
  * @interface_method_impl{CODECVERB,pfn, f20 }
  */
-static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetSubId(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     Assert(CODEC_NID(uCmd) < cTotalNodes);
@@ -1397,7 +1379,7 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, u
 }
 
 
-static int codecSetSubIdX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
+static int codecSetSubIdX(PHDACODECR3 pThis, uint32_t uCmd, uint8_t u8Offset)
 {
     Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
@@ -1420,9 +1402,8 @@ static int codecSetSubIdX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 /**
  * @interface_method_impl{CODECVERB,pfn, 720 }
  */
-static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetSubIdX(pThis, uCmd, 0);
 }
@@ -1431,9 +1412,8 @@ static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, 
 /**
  * @interface_method_impl{CODECVERB,pfn, 721 }
  */
-static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetSubIdX(pThis, uCmd, 8);
 }
@@ -1442,9 +1422,8 @@ static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, 
 /**
  * @interface_method_impl{CODECVERB,pfn, 722 }
  */
-static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetSubIdX(pThis, uCmd, 16);
 }
@@ -1453,9 +1432,8 @@ static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, 
 /**
  * @interface_method_impl{CODECVERB,pfn, 723 }
  */
-static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetSubIdX(pThis, uCmd, 24);
 }
@@ -1464,9 +1442,8 @@ static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, 
 /**
  * @interface_method_impl{CODECVERB,pfn, ??? }
  */
-static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcReset(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     Assert(CODEC_CAD(uCmd) == pThis->id);
 
     if (pThis->enmType == CODECTYPE_STAC9220)
@@ -1487,9 +1464,8 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint
 /**
  * @interface_method_impl{CODECVERB,pfn, f05 }
  */
-static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
@@ -1521,9 +1497,8 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 /**
  * @interface_method_impl{CODECVERB,pfn, 705 }
  */
-static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1634,9 +1609,8 @@ DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
 /**
  * @interface_method_impl{CODECVERB,pfn, 705 }
  */
-static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     Assert(CODEC_NID(uCmd) < cTotalNodes);
@@ -1708,9 +1682,8 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 /**
  * @interface_method_impl{CODECVERB,pfn, f06 }
  */
-static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
@@ -1736,9 +1709,8 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC
 /**
  * @interface_method_impl{CODECVERB,pfn, a0 }
  */
-static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
@@ -1761,9 +1733,8 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, ??? - Also see section 3.7.1. }
  */
-static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
@@ -1784,9 +1755,8 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, f0c }
  */
-static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
@@ -1805,9 +1775,8 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, 70c }
  */
-static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1830,9 +1799,8 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC 
 /**
  * @interface_method_impl{CODECVERB,pfn, f0f }
  */
-static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(uCmd)))
@@ -1847,9 +1815,8 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
 /**
  * @interface_method_impl{CODECVERB,pfn, 70f }
  */
-static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1868,9 +1835,9 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC p
 /**
  * @interface_method_impl{CODECVERB,pfn, f15 }
  */
-static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, uCmd);
+    RT_NOREF(pThis, uCmd);
     *puResp = 0;
     return VINF_SUCCESS;
 }
@@ -1879,9 +1846,9 @@ static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
 /**
  * @interface_method_impl{CODECVERB,pfn, 715 }
  */
-static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, uCmd);
+    RT_NOREF(pThis, uCmd);
     *puResp = 0;
     return VINF_SUCCESS;
 }
@@ -1890,9 +1857,9 @@ static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC
 /**
  * @interface_method_impl{CODECVERB,pfn, f16 }
  */
-static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, uCmd);
+    RT_NOREF(pThis, uCmd);
     *puResp = 0;
     return VINF_SUCCESS;
 }
@@ -1901,9 +1868,9 @@ static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
 /**
  * @interface_method_impl{CODECVERB,pfn, 716 }
  */
-static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, uCmd);
+    RT_NOREF(pThis, uCmd);
     *puResp = 0;
     return VINF_SUCCESS;
 }
@@ -1912,9 +1879,8 @@ static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC p
 /**
  * @interface_method_impl{CODECVERB,pfn, f17 }
  */
-static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     /* Note: this is true for ALC885. */
@@ -1930,9 +1896,8 @@ static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
 /**
  * @interface_method_impl{CODECVERB,pfn, 717 }
  */
-static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -1951,9 +1916,8 @@ static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pT
 /**
  * @interface_method_impl{CODECVERB,pfn, f1c }
  */
-static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetConfig(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
@@ -1974,7 +1938,7 @@ static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, 
     return VINF_SUCCESS;
 }
 
-static int codecSetConfigX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
+static int codecSetConfigX(PHDACODECR3 pThis, uint32_t uCmd, uint8_t u8Offset)
 {
     uint32_t *pu32Reg = NULL;
     if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
@@ -2002,9 +1966,8 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 /**
  * @interface_method_impl{CODECVERB,pfn, 71c }
  */
-static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetConfigX(pThis, uCmd, 0);
 }
@@ -2013,9 +1976,8 @@ static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, 71d }
  */
-static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetConfigX(pThis, uCmd, 8);
 }
@@ -2024,9 +1986,8 @@ static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, 71e }
  */
-static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetConfigX(pThis, uCmd, 16);
 }
@@ -2035,9 +1996,8 @@ static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, 71e }
  */
-static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
     return codecSetConfigX(pThis, uCmd, 24);
 }
@@ -2046,9 +2006,8 @@ static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC,
 /**
  * @interface_method_impl{CODECVERB,pfn, f04 }
  */
-static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
@@ -2063,9 +2022,8 @@ static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 /**
  * @interface_method_impl{CODECVERB,pfn, 704 }
  */
-static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThisCC);
     *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
@@ -2084,7 +2042,7 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 /**
  * @interface_method_impl{CODECVERB,pfn, 3-- }
  */
-static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
     *puResp = 0;
 
@@ -2131,7 +2089,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
 
     //    if (CODEC_NID(uCmd) == pThis->u8AdcVolsLineIn)
     //    {
-            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+            hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
     //    }
     }
     if (fIsOut)
@@ -2142,7 +2100,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
         if (CODEC_NID(uCmd) == pThis->u8DacLineOut)
-            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
+            hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
     return VINF_SUCCESS;
@@ -2152,7 +2110,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
 /**
  * @interface_method_impl{CODECVERB,pfn, 706 }
  */
-static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
     *puResp = 0;
 
@@ -2203,17 +2161,17 @@ static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThis
         /** @todo Check if non-interleaved streams need a different channel / SDn? */
 
         /* Propagate to the controller. */
-        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+        hdaR3MixerControl(pThis, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+        hdaR3MixerControl(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+        hdaR3MixerControl(pThis, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 # endif
     }
     else if (enmDir == PDMAUDIODIR_IN)
     {
-        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+        hdaR3MixerControl(pThis, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        hdaR3MixerControl(pThisCC, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+        hdaR3MixerControl(pThis, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 # endif
     }
 
@@ -2289,16 +2247,14 @@ static const CODECVERB g_aCodecVerbs[] =
  *
  * @returns VBox status code (not strict).
  */
-DECLHIDDEN(int) hdaR3CodecLookup(PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+DECLHIDDEN(int) hdaR3CodecLookup(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    PHDACODEC pThis = &pThisCC->State;
-
     /*
      * Clear the return value and assert some sanity.
      */
     AssertPtr(puResp);
     *puResp = 0;
-    AssertPtr(pThisCC);
+    AssertPtr(pThis);
     AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
                     ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
                     VERR_INVALID_PARAMETER);
@@ -2340,7 +2296,7 @@ DECLHIDDEN(int) hdaR3CodecLookup(PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *p
              */
             AssertPtrReturn(g_aCodecVerbs[iCur].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
 
-            int rc = g_aCodecVerbs[iCur].pfn(pThis, pThisCC, uCmd, puResp);
+            int rc = g_aCodecVerbs[iCur].pfn(pThis, uCmd, puResp);
             AssertRC(rc);
             Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> 0x%x\n",
                       CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd), *puResp));
@@ -2375,7 +2331,7 @@ typedef struct CODECDEBUG
     /** Current recursion level. */
     uint8_t         uLevel;
     /** Pointer to codec state. */
-    PHDACODEC       pThis;
+    PHDACODECR3       pThis;
 } CODECDEBUG;
 /** Pointer to the debug info item printing state for the codec. */
 typedef CODECDEBUG *PCODECDEBUG;
@@ -2577,23 +2533,23 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
 /**
  * Worker for hdaR3DbgInfoCodecNodes implementing the 'hdcnodes' info item.
  */
-DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RT_NOREF(pThisCC, pszArgs);
+    RT_NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "HDA LINK / INPUTS\n");
 
     CODECDEBUG DbgInfo;
     DbgInfo.pHlp    = pHlp;
-    DbgInfo.pThis   = &pThisCC->State;
+    DbgInfo.pThis   = pThis;
     DbgInfo.uLevel  = 0;
 
     PCODECDEBUG pInfo = &DbgInfo;
 
     CODECDBG_INDENT
-        for (uint8_t i = 0; i < pThisCC->State.cTotalNodes; i++)
+        for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
         {
-            PCODECNODE pNode = &pThisCC->State.aNodes[i];
+            PCODECNODE pNode = &pThis->aNodes[i];
 
             /* Start with all nodes which have connection entries set. */
             if (CODEC_F00_0E_COUNT(pNode->node.au32F00_param[0xE]))
@@ -2606,14 +2562,14 @@ DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp,
 /**
  * Worker for hdaR3DbgInfoCodecSelector implementing the 'hdcselector' info item.
  */
-DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RT_NOREF(pThisCC, pHlp, pszArgs);
+    RT_NOREF(pThis, pHlp, pszArgs);
 }
 
 
 #if 0 /* unused */
-static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) stac9220DbgNodes(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
     uint8_t const cTotalNodes = RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
@@ -2635,9 +2591,9 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 *   Stream and State Management                                                                                                  *
 *********************************************************************************************************************************/
 
-int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
+int hdaR3CodecAddStream(PHDACODECR3 pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -2665,18 +2621,18 @@ int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMA
     }
 
     if (RT_SUCCESS(rc))
-        rc = hdaR3MixerAddStream(pThisCC, enmMixerCtl, pCfg);
+        rc = hdaR3MixerAddStream(pThis, enmMixerCtl, pCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 
-int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
+int hdaR3CodecRemoveStream(PHDACODECR3 pThis, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
-    AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc = hdaR3MixerRemoveStream(pThisCC, enmMixerCtl, fImmediate);
+    int rc = hdaR3MixerRemoveStream(pThis, enmMixerCtl, fImmediate);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2688,13 +2644,12 @@ int hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, bo
  *
  * @returns VBox status code.
  * @param   pDevIns             The device instance of the HDA device.
- * @param   pThisCC             The codec instance data.
+ * @param   pThis               The codec instance data.
  * @param   pSSM                The saved state handle.
  */
-int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM)
+int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM)
 {
-    PHDACODEC       pThis   = &pThisCC->State;
-    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     AssertLogRelMsgReturn(pThis->cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
                           VERR_INTERNAL_ERROR);
     pHlp->pfnSSMPutU32(pSSM, pThis->cTotalNodes);
@@ -2710,13 +2665,12 @@ int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pDevIns             The device instance of the HDA device.
- * @param   pThisCC             The codec instance data.
+ * @param   pThis               The codec instance data.
  * @param   pSSM                The saved state handle.
  * @param   uVersion            The state version.
  */
-int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
+int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    PHDACODEC       pThis   = &pThisCC->State;
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     PCSSMFIELD      pFields = NULL;
     uint32_t        fFlags  = 0;
@@ -2765,16 +2719,16 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM
     if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
     {
         pNode = &pThis->aNodes[pThis->u8DacLineOut];
-        hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
+        hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
     else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
     {
         pNode = &pThis->aNodes[pThis->u8DacLineOut];
-        hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
+        hdaR3CodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
 
     pNode = &pThis->aNodes[pThis->u8AdcVolsLineIn];
-    hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+    hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -2784,27 +2738,27 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM
 /**
  * Powers off the codec (ring-3).
  *
- * @param   pThisCC     The codec data.
+ * @param   pThis       The codec data.
  */
-void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
+void hdaR3CodecPowerOff(PHDACODECR3 pThis)
 {
     LogFlowFuncEnter();
     LogRel2(("HDA: Powering off codec ...\n"));
 
-    int rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_FRONT, true /*fImmediate*/);
+    int rc2 = hdaR3CodecRemoveStream(pThis, PDMAUDIOMIXERCTL_FRONT, true /*fImmediate*/);
     AssertRC(rc2);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_CENTER_LFE, true /*fImmediate*/);
+    rc2 = hdaR3CodecRemoveStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, true /*fImmediate*/);
     AssertRC(rc2);
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_REAR, true /*fImmediate*/);
+    rc2 = hdaR3CodecRemoveStream(pThis, PDMAUDIOMIXERCTL_REAR, true /*fImmediate*/);
     AssertRC(rc2);
 #endif
 
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_MIC_IN, true /*fImmediate*/);
+    rc2 = hdaR3CodecRemoveStream(pThis, PDMAUDIOMIXERCTL_MIC_IN, true /*fImmediate*/);
     AssertRC(rc2);
 #endif
-    rc2 = hdaR3CodecRemoveStream(pThisCC, PDMAUDIOMIXERCTL_LINE_IN, true /*fImmediate*/);
+    rc2 = hdaR3CodecRemoveStream(pThis, PDMAUDIOMIXERCTL_LINE_IN, true /*fImmediate*/);
     AssertRC(rc2);
 }
 
@@ -2814,16 +2768,15 @@ void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
  *
  * @returns VBox status code.
  * @param   pDevIns     The associated device instance.
- * @param   pThisCC     The codec data.
+ * @param   pThis       The codec data.
  * @param   uLUN        Device LUN to assign.
  * @param   pCfg        CFGM node to use for configuration.
  */
-int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, PCFGMNODE pCfg)
+int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThis, uint16_t uLUN, PCFGMNODE pCfg)
 {
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
-    PHDACODEC pThis = &pThisCC->State;
 
     pThis->id      = uLUN;
     pThis->enmType = CODECTYPE_STAC9220; /** @todo Make this dynamic. */
@@ -2848,11 +2801,11 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, 
      * Set initial volume.
      */
     PCODECNODE pNode = &pThis->aNodes[pThis->u8DacLineOut];
-    rc = hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
+    rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     AssertRCReturn(rc, rc);
 
     pNode = &pThis->aNodes[pThis->u8AdcVolsLineIn];
-    rc = hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+    rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
@@ -2874,28 +2827,28 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, 
 /**
  * Destructs a codec.
  *
- * @param   pThisCC     Codec to destruct.
+ * @param   pThis       Codec to destruct.
  */
-void hdaCodecDestruct(PHDACODECR3 pThisCC)
+void hdaCodecDestruct(PHDACODECR3 pThis)
 {
     LogFlowFuncEnter();
 
     /* Nothing to do here atm. */
-    RT_NOREF(pThisCC);
+    RT_NOREF(pThis);
 }
 
 
 /**
  * Resets a codec.
  *
- * @param   pThisCC     Codec to reset.
+ * @param   pThis       Codec to reset.
  */
-void hdaCodecReset(PHDACODECR3 pThisCC)
+void hdaCodecReset(PHDACODECR3 pThis)
 {
-    switch (pThisCC->State.enmType)
+    switch (pThis->enmType)
     {
         case CODECTYPE_STAC9220:
-            stac9220Reset(&pThisCC->State);
+            stac9220Reset(pThis);
             break;
 
         default:
