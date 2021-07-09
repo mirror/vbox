@@ -131,8 +131,8 @@ typedef CODECVERB const *PCCODECVERB;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** @name STAC9220 Values
- * @note Referenced through STAC9220WIDGET in the constructor below
+/** @name STAC9220 Node Classifications.
+ * @note Referenced through STAC9220WIDGET in the constructor below.
  * @{ */
 static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0 };
 static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0 };
@@ -799,7 +799,8 @@ static int stac9220Construct(PHDACODECR3 pThis)
 
 #define STAC9220WIDGET(a_Type) do { \
             AssertCompile(RT_ELEMENTS(g_abStac9220##a_Type##s) <= RT_ELEMENTS(pThis->ab##a_Type##s)); \
-            memcpy(&pThis->ab##a_Type##s, &g_abStac9220##a_Type##s, sizeof(uint8_t) * RT_ELEMENTS(g_abStac9220##a_Type##s)); \
+            memcpy((void *)&pThis->ab##a_Type##s[0], &g_abStac9220##a_Type##s[0], \
+                   sizeof(uint8_t) * RT_ELEMENTS(g_abStac9220##a_Type##s)); \
         } while (0)
     STAC9220WIDGET(Port);
     STAC9220WIDGET(Dac);
@@ -853,7 +854,9 @@ static int stac9220Construct(PHDACODECR3 pThis)
 /*
  * Some generic predicate functions.
  */
-/** @todo r=bird: we could use memchr here if we knew the array always ended with zeros */
+/** @todo r=bird: we could use memchr here if we knew the array always ended with zeros
+ * What would be even quicker would be an array of 16-bit flag masks for each node,
+ * compiled by STAC9220WIDGET at construction time. */
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
     DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODECR3 pThis, uint8_t idNode) \
     { \
