@@ -2289,7 +2289,7 @@ static const CODECVERB g_aCodecVerbs[] =
  *
  * @returns VBox status code (not strict).
  */
-static DECLCALLBACK(int) codecLookup(PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
+DECLHIDDEN(int) hdaR3CodecLookup(PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     PHDACODEC pThis = &pThisCC->State;
 
@@ -2574,7 +2574,10 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
 }
 
 
-static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+/**
+ * Worker for hdaR3DbgInfoCodecNodes implementing the 'hdcnodes' info item.
+ */
+DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThisCC, pszArgs);
 
@@ -2600,7 +2603,10 @@ static DECLCALLBACK(void) codecR3DbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP
 }
 
 
-static DECLCALLBACK(void) codecR3DbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
+/**
+ * Worker for hdaR3DbgInfoCodecSelector implementing the 'hdcselector' info item.
+ */
+DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThisCC, pHlp, pszArgs);
 }
@@ -2837,10 +2843,6 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, uint16_t uLUN, 
             AssertFailedReturn(VERR_NOT_IMPLEMENTED);
             break;
     }
-
-    pThisCC->pfnDbgSelector  = codecR3DbgSelector;
-    pThisCC->pfnDbgListNodes = codecR3DbgListNodes;
-    pThisCC->pfnLookup       = codecLookup;
 
     /*
      * Set initial volume.

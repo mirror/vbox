@@ -847,13 +847,6 @@ typedef struct HDACODEC
  */
 typedef struct HDACODECR3
 {
-    /** @name Public codec functions.
-     *  @{  */
-    DECLR3CALLBACKMEMBER(int,  pfnLookup, (PHDACODECR3 pThisCC, uint32_t uVerb, uint64_t *puResp));
-    DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
-    DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
-    /** @} */
-
     /** The parent device instance. */
     PPDMDEVINS              pDevIns;
 
@@ -920,6 +913,10 @@ int     hdaR3CodecRemoveStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl
 int     hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThisCC, PSSMHANDLE pSSM);
 void    hdaCodecDestruct(PHDACODECR3 pThisCC);
 void    hdaCodecReset(PHDACODECR3 pThisCC);
+
+DECLHIDDEN(int)  hdaR3CodecLookup(PHDACODECR3 pThisCC, uint32_t uCmd, uint64_t *puResp);
+DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
+DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaCodec_h */
 

@@ -936,7 +936,7 @@ static int hdaR3CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATECC 
          * Execute the command.
          */
         uint64_t uResp = 0;
-        rc = pThisCC->Codec.pfnLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
+        rc = hdaR3CodecLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
         if (RT_SUCCESS(rc))
             AssertRCSuccess(rc); /* no informational statuses */
         else
@@ -2166,7 +2166,7 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 
         PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
         uint64_t    uResp   = 0;
-        int rc2 = pThisCC->Codec.pfnLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
+        int rc2 = hdaR3CodecLookup(&pThisCC->Codec, HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
         if (RT_FAILURE(rc2))
             LogFunc(("Codec lookup failed with rc2=%Rrc\n", rc2));
 
@@ -4369,11 +4369,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
 static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-
-    if (pThisCC->Codec.pfnDbgListNodes)
-        pThisCC->Codec.pfnDbgListNodes(&pThisCC->Codec, pHlp, pszArgs);
-    else
-        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
+    hdaR3CodecDbgListNodes(&pThisCC->Codec, pHlp, pszArgs);
 }
 
 /**
@@ -4382,11 +4378,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOH
 static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-
-    if (pThisCC->Codec.pfnDbgSelector)
-        pThisCC->Codec.pfnDbgSelector(&pThisCC->Codec, pHlp, pszArgs);
-    else
-        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
+    hdaR3CodecDbgSelector(&pThisCC->Codec, pHlp, pszArgs);
 }
 
 /**
