@@ -714,6 +714,9 @@ static int rtEfiVarStore_VarEnsureDataSz(PRTEFIVAR pVar, size_t cbData)
     if (pVar->cbData == cbData)
         return VINF_SUCCESS;
 
+    if ((uint32_t)cbData != cbData)
+        return VERR_FILE_TOO_BIG;
+
     int rc = VINF_SUCCESS;
     if (cbData < pVar->cbData)
     {
@@ -723,7 +726,7 @@ static int rtEfiVarStore_VarEnsureDataSz(PRTEFIVAR pVar, size_t cbData)
         {
             pVar->pvData = pvNew;
             pVarStore->cbVarData -= pVar->cbData - cbData;
-            pVar->cbData = cbData;
+            pVar->cbData = (uint32_t)cbData;
         }
         else
             rc = VERR_NO_MEMORY;
@@ -738,7 +741,7 @@ static int rtEfiVarStore_VarEnsureDataSz(PRTEFIVAR pVar, size_t cbData)
             {
                 pVar->pvData = pvNew;
                 pVarStore->cbVarData += cbData - pVar->cbData;
-                pVar->cbData          = cbData;
+                pVar->cbData          = (uint32_t)cbData;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -1068,7 +1071,7 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_SetSize(void *pvThis, uint64_t cbFile
 static DECLCALLBACK(int) rtEfiVarStoreFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
 {
     RT_NOREF(pvThis);
-    *pcbMax = INT64_MAX; /** @todo */
+    *pcbMax = UINT32_MAX;
     return VINF_SUCCESS;
 }
 
