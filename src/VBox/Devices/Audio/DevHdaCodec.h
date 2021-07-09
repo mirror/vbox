@@ -850,56 +850,6 @@ typedef struct HDACODECR3
     /** The parent device instance. */
     PPDMDEVINS              pDevIns;
 
-    /** @name Callbacks to the HDA controller, mostly used for multiplexing to the
-     *        various host backends.
-     * @{ */
-    /**
-     *
-     * Adds a new audio stream to a specific mixer control.
-     *
-     * Depending on the mixer control the stream then gets assigned to one of the
-     * internal mixer sinks, which in turn then handle the mixing of all connected
-     * streams to that sink.
-     *
-     * @return  VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   enmMixerCtl         Mixer control to assign new stream to.
-     * @param   pCfg                Stream configuration for the new stream.
-     */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerAddStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg));
-    /**
-     * Removes a specified mixer control from the HDA's mixer.
-     *
-     * @return  VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   enmMixerCtl         Mixer control to remove.
-     * @param   fImmediate          Whether the backend should be allowed to
-     *                              finished draining (@c false) or if it must be
-     *                              destroyed immediately (@c true).
-     */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate));
-    /**
-     * Controls an input / output converter widget, that is, which converter is
-     * connected to which stream (and channel).
-     *
-     * @return  VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
-     * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
-     * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
-     */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerControl, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel));
-    /**
-     * Sets the volume of a specified mixer control.
-     *
-     * @return  IPRT status code.
-     * @param   pDevIns             The device instance.
-     * @param   enmMixerCtl         Mixer control to set volume for.
-     * @param   pVol                Pointer to volume data to set.
-     */
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetVolume, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
-    /** @} */
-
     /** The state (was shared with ring-0 for a while). */
     HDACODEC                State;
 } HDACODECR3;

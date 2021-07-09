@@ -2588,10 +2588,20 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
     return rc;
 }
 
+
 /**
- * @interface_method_impl{HDACODECR3,pfnCbMixerAddStream}
+ * Adds a new audio stream to a specific mixer control.
+ *
+ * Depending on the mixer control the stream then gets assigned to one of the
+ * internal mixer sinks, which in turn then handle the mixing of all connected
+ * streams to that sink.
+ *
+ * @return  VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   enmMixerCtl         Mixer control to assign new stream to.
+ * @param   pCfg                Stream configuration for the new stream.
  */
-static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg)
+DECLHIDDEN(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PCPDMAUDIOSTREAMCFG pCfg)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
@@ -2613,9 +2623,16 @@ static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCT
 }
 
 /**
- * @interface_method_impl{HDACODECR3,pfnCbMixerRemoveStream}
+ * Removes a specified mixer control from the HDA's mixer.
+ *
+ * @return  VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   enmMixerCtl         Mixer control to remove.
+ * @param   fImmediate          Whether the backend should be allowed to
+ *                              finished draining (@c false) or if it must be
+ *                              destroyed immediately (@c true).
  */
-static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
+DECLHIDDEN(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, bool fImmediate)
 {
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     int         rc;
@@ -2684,11 +2701,18 @@ static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXE
 }
 
 /**
- * @interface_method_impl{HDACODECR3,pfnCbMixerControl}
+ * Controls an input / output converter widget, that is, which converter is
+ * connected to which stream (and channel).
+ *
+ * @return  VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
+ * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
+ * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
  *
  * @note Is also called directly by the DevHDA code.
  */
-static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
+DECLHIDDEN(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
     PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
@@ -2792,9 +2816,14 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 }
 
 /**
- * @interface_method_impl{HDACODECR3,pfnCbMixerSetVolume}
+ * Sets the volume of a specified mixer control.
+ *
+ * @return  IPRT status code.
+ * @param   pDevIns             The device instance.
+ * @param   enmMixerCtl         Mixer control to set volume for.
+ * @param   pVol                Pointer to volume data to set.
  */
-static DECLCALLBACK(int) hdaR3MixerSetVolume(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
+DECLHIDDEN(int) hdaR3MixerSetVolume(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
 {
     PHDASTATER3   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     int           rc;
@@ -4955,13 +4984,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize the codec.
      */
-
-    /* Set codec callbacks to this controller. */
-    pThisCC->Codec.pDevIns                = pDevIns;
-    pThisCC->Codec.pfnCbMixerAddStream    = hdaR3MixerAddStream;
-    pThisCC->Codec.pfnCbMixerRemoveStream = hdaR3MixerRemoveStream;
-    pThisCC->Codec.pfnCbMixerControl      = hdaR3MixerControl;
-    pThisCC->Codec.pfnCbMixerSetVolume    = hdaR3MixerSetVolume;
+    pThisCC->Codec.pDevIns = pDevIns;
 
     /* Construct the common + R3 codec part. */
     rc = hdaR3CodecConstruct(pDevIns, &pThisCC->Codec, 0 /* Codec index */, pCfg);
