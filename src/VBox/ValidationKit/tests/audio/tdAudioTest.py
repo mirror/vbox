@@ -165,6 +165,22 @@ class tdAudioTest(vbox.TestDriver):
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
 
+    def killProcessByName(self, sProcName):
+        """
+        Kills processes by their name.
+        """
+        if sys.platform == 'win32':
+            os.system('taskkill /IM "%s.exe" /F' % (sProcName));
+        else:
+            os.system('killall -9 %s' % (sProcName));
+
+    def killHstVkat(self):
+        """
+        Kills VKAT (VBoxAudioTest) on the host side.
+        """
+        self.killProcessByName("vkat");
+        self.killProcessByName("VBoxAudioTest");
+
     def _getVkatResult(self, oTxsSession):
         """
         Extracts the VKAT exit code from a run before.
@@ -180,8 +196,6 @@ class tdAudioTest(vbox.TestDriver):
         """
         Starts VKAT on the guest (running in background).
         """
-        sDesc          = 'Starting VKAT on guest';
-
         sPathTemp      = self.getGuestTempDir(oTestVm);
         sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-guest-out');
         sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-guest-temp');
@@ -201,10 +215,12 @@ class tdAudioTest(vbox.TestDriver):
             #
             aArgs.extend(['--daemonize']);
 
-            fRc = self.txsRunTest(oTxsSession, sDesc, 15 * 60 * 1000,
+            fRc = self.txsRunTest(oTxsSession, 'Starting VKAT on guest', 15 * 60 * 1000,
                                   sVkatExe, aArgs);
             if not fRc:
                 reporter.error('VKAT on guest returned exit code error %d' % (self._getVkatResult(oTxsSession)));
+        else:
+            reporter.error('VKAT on guest not found');
 
         return fRc;
 
@@ -244,15 +260,24 @@ class tdAudioTest(vbox.TestDriver):
         # Let VKAT on the host run synchronously.
         #
         procVkat = subprocess.Popen(sArgs, \
-                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True);
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True);
         if procVkat:
-            while procVkat.poll() is None:
-                sLine = procVkat.stdout.readline().rstrip();
-                if sLine:
-                    reporter.log(sLine);
+            reporter.log('VKAT on host started');
 
-            if procVkat.returncode != 0:
-                reporter.testFailure('VKAT on the host failed with exit code %d' % (procVkat.returncode));
+            out, err = procVkat.communicate();
+            rc = procVkat.poll();
+
+            out = out.decode(sys.stdin.encoding);
+            for line in out.split('\n'):
+                reporter.log(line);
+
+            err = err.decode(sys.stdin.encoding);
+            for line in err.split('\n'):
+                reporter.log(line);
+
+            reporter.log('VKAT on host ended with exit code %d' % rc);
+            if rc != 0:
+                reporter.testFailure('VKAT on the host failed');
                 fRc = False;
         else:
             reporter.testFailure('VKAT on the host failed to start');
@@ -266,6 +291,11 @@ class tdAudioTest(vbox.TestDriver):
         """
         Executes the specified audio tests.
         """
+
+        # First try to kill any old VKAT / VBoxAudioTest processes lurking around on the host.
+        # Might happen because of former (aborted) runs.
+        self.killHstVkat();
+
         fRc = self.startVkatOnGuest(oTestVm, oSession, oTxsSession);
         if fRc:
             #
