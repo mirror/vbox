@@ -572,6 +572,19 @@ typedef struct CODECVERB
      *
      * This is always a valid pointer in ring-3, while elsewhere a NULL indicates
      * that we must return to ring-3 to process it.
+     *
+     * @returns VINF_SUCCESS
+     * @todo    r=bird: I couldn't spot a single handler not returning VINF_SUCCESS,
+     *          nor could I see what purpose the return code would have other than
+     *          maybe something in VERR_INTERNAL_ERROR area...  Get rid of it and
+     *          make it return @a *puResp instead?
+     *
+     * @param   pThis   The shared codec intance data.
+     * @param   pThisCC The codec instance data for the current context (ring-3).
+     * @param   uCmd    The command.
+     * @param   puResp  Where to return the response value.
+     *
+     * @thread  EMT or task worker thread (see HDASTATE::hCorbDmaTask).
      */
     DECLCALLBACKMEMBER(int,    pfn, (PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp));
     /** Friendly name, for debugging. */
