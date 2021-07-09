@@ -70,8 +70,6 @@ class UIWizardNewVM : public UINativeWizard
 public:
 
     UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(), WizardMode enmMode = WizardMode_Auto);
-    /** Returns the Id of newly created VM. */
-    QUuid createdMachineId() const;
     bool isUnattendedEnabled() const;
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
@@ -174,6 +172,8 @@ private:
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
     void setUnattendedPageVisible(bool fVisible);
+    /** Returns the Id of newly created VM. */
+    QUuid createdMachineId() const;
 
     /** @name Variables
      * @{ */

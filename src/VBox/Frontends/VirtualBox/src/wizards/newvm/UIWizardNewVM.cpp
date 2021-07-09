@@ -848,11 +848,10 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     // // m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
     m_unattendedInstallData.m_strProductKey = m_strProductKey;
     m_unattendedInstallData.m_strGuestAdditionsISOPath = m_strGuestAdditionsISOPath;
-
     m_unattendedInstallData.m_fUnattendedEnabled = isUnattendedEnabled();
     m_unattendedInstallData.m_fStartHeadless = m_fStartHeadless;
     m_unattendedInstallData.m_fInstallGuestAdditions = m_fInstallGuestAdditions;
-    // m_unattendedInstallData.m_uMachineUid = createdMachineId();
+    m_unattendedInstallData.m_uMachineUid = createdMachineId();
 
     return m_unattendedInstallData;
 }
