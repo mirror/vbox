@@ -77,6 +77,8 @@ typedef struct RTEFIVAR
     uint32_t            idPubKey;
     /** Attributes for the variable. */
     uint32_t            fAttr;
+    /** Flag whether the variable was deleted. */
+    bool                fDeleted;
     /** Name of the variable. */
     char                *pszName;
     /** The raw EFI timestamp as read from the header. */
@@ -772,52 +774,55 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
         size_t cwcLen = 0;
         PRTEFIVAR pVar = &pThis->paVars[i];
 
-        rc = RTStrToUtf16Ex(pVar->pszName, RTSTR_MAX, &pwszName, 0, &cwcLen);
-        if (RT_SUCCESS(rc))
+        if (!pVar->fDeleted)
         {
-            cwcLen++; /* Include the terminator. */
-
-            /* Read in the data of the variable if it exists. */
-            rc = rtEfiVarStore_VarReadData(pVar);
+            rc = RTStrToUtf16Ex(pVar->pszName, RTSTR_MAX, &pwszName, 0, &cwcLen);
             if (RT_SUCCESS(rc))
             {
-                /* Write out the variable. */
-                EFI_AUTH_VAR_HEADER VarHdr;
-                size_t cbName = cwcLen * sizeof(RTUTF16);
+                cwcLen++; /* Include the terminator. */
 
-                VarHdr.u16StartId = RT_H2LE_U16(EFI_AUTH_VAR_HEADER_START);
-                VarHdr.bState     = EFI_AUTH_VAR_HEADER_STATE_ADDED;
-                VarHdr.bRsvd      = 0;
-                VarHdr.fAttr      = RT_H2LE_U32(pVar->fAttr);
-                VarHdr.cMonotonic = RT_H2LE_U64(pVar->cMonotonic);
-                VarHdr.idPubKey   = RT_H2LE_U32(pVar->idPubKey);
-                VarHdr.cbName     = RT_H2LE_U32((uint32_t)cbName);
-                VarHdr.cbData     = RT_H2LE_U32(pVar->cbData);
-                RTEfiGuidFromUuid(&VarHdr.GuidVendor, &pVar->Uuid);
-                memcpy(&VarHdr.Timestamp, &pVar->EfiTimestamp, sizeof(pVar->EfiTimestamp));
-
-                rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur, &VarHdr, sizeof(VarHdr), NULL);
-                if (RT_SUCCESS(rc))
-                    rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr), pwszName, cbName, NULL);
-                if (RT_SUCCESS(rc))
-                    rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr) + cbName, pVar->pvData, pVar->cbData, NULL);
+                /* Read in the data of the variable if it exists. */
+                rc = rtEfiVarStore_VarReadData(pVar);
                 if (RT_SUCCESS(rc))
                 {
-                    offCur += sizeof(VarHdr) + cbName + pVar->cbData;
-                    uint64_t offCurAligned = RT_ALIGN_64(offCur, sizeof(uint16_t));
-                    if (offCurAligned > offCur)
+                    /* Write out the variable. */
+                    EFI_AUTH_VAR_HEADER VarHdr;
+                    size_t cbName = cwcLen * sizeof(RTUTF16);
+
+                    VarHdr.u16StartId = RT_H2LE_U16(EFI_AUTH_VAR_HEADER_START);
+                    VarHdr.bState     = EFI_AUTH_VAR_HEADER_STATE_ADDED;
+                    VarHdr.bRsvd      = 0;
+                    VarHdr.fAttr      = RT_H2LE_U32(pVar->fAttr);
+                    VarHdr.cMonotonic = RT_H2LE_U64(pVar->cMonotonic);
+                    VarHdr.idPubKey   = RT_H2LE_U32(pVar->idPubKey);
+                    VarHdr.cbName     = RT_H2LE_U32((uint32_t)cbName);
+                    VarHdr.cbData     = RT_H2LE_U32(pVar->cbData);
+                    RTEfiGuidFromUuid(&VarHdr.GuidVendor, &pVar->Uuid);
+                    memcpy(&VarHdr.Timestamp, &pVar->EfiTimestamp, sizeof(pVar->EfiTimestamp));
+
+                    rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur, &VarHdr, sizeof(VarHdr), NULL);
+                    if (RT_SUCCESS(rc))
+                        rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr), pwszName, cbName, NULL);
+                    if (RT_SUCCESS(rc))
+                        rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur + sizeof(VarHdr) + cbName, pVar->pvData, pVar->cbData, NULL);
+                    if (RT_SUCCESS(rc))
                     {
-                        /* Should be at most 1 byte to align the next variable to a 16bit boundary. */
-                        Assert(offCurAligned - offCur == 1);
-                        uint8_t bFill = 0xff;
-                        rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur, &bFill, sizeof(bFill), NULL);
+                        offCur += sizeof(VarHdr) + cbName + pVar->cbData;
+                        uint64_t offCurAligned = RT_ALIGN_64(offCur, sizeof(uint16_t));
+                        if (offCurAligned > offCur)
+                        {
+                            /* Should be at most 1 byte to align the next variable to a 16bit boundary. */
+                            Assert(offCurAligned - offCur == 1);
+                            uint8_t bFill = 0xff;
+                            rc = RTVfsFileWriteAt(pThis->hVfsBacking, offCur, &bFill, sizeof(bFill), NULL);
+                        }
+
+                        offCur = offCurAligned;
                     }
-
-                    offCur = offCurAligned;
                 }
-            }
 
-            RTUtf16Free(pwszName);
+                RTUtf16Free(pwszName);
+            }
         }
     }
 
@@ -839,6 +844,139 @@ static int rtEfiVarStore_Flush(PRTEFIVARSTORE pThis)
     }
 
     return rc;
+}
+
+
+/**
+ * Tries to find a variable with the given name.
+ *
+ * @returns Pointer to the variable if found or NULL otherwise.
+ * @param   pThis               The variable store instance.
+ * @param   pszName             Name of the variable to look for.
+ * @param   pidVar              Where to store the index of the variable, optional.
+ */
+static PRTEFIVAR rtEfiVarStore_VarGet(PRTEFIVARSTORE pThis, const char *pszName, uint32_t *pidVar)
+{
+    for (uint32_t i = 0; i < pThis->cVars; i++)
+        if (   !pThis->paVars[i].fDeleted
+            && !strcmp(pszName, pThis->paVars[i].pszName))
+        {
+            if (pidVar)
+                *pidVar = i;
+            return &pThis->paVars[i];
+        }
+
+    return NULL;
+}
+
+
+/**
+ * Maybe grows the array of variables to hold more entries.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The variable store instance.
+ */
+static int rtEfiVarStore_VarMaybeGrowEntries(PRTEFIVARSTORE pThis)
+{
+    if (pThis->cVars == pThis->cVarsMax)
+    {
+        /* Grow the variable array. */
+        uint32_t cVarsMaxNew = pThis->cVarsMax + 10;
+        PRTEFIVAR paVarsNew = (PRTEFIVAR)RTMemRealloc(pThis->paVars, cVarsMaxNew * sizeof(RTEFIVAR));
+        if (!paVarsNew)
+            return VERR_NO_MEMORY;
+
+        pThis->paVars   = paVarsNew;
+        pThis->cVarsMax = cVarsMaxNew;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Add a variable with the given name.
+ *
+ * @returns Pointer to the entry or NULL if out of memory.
+ * @param   pThis               The variable store instance.
+ * @param   pszName             Name of the variable to add.
+ * @param   pidVar              Where to store the variable index on success, optional
+ */
+static PRTEFIVAR rtEfiVarStore_VarAdd(PRTEFIVARSTORE pThis, const char *pszName, uint32_t *pidVar)
+{
+    Assert(!rtEfiVarStore_VarGet(pThis, pszName, NULL));
+
+    int rc = rtEfiVarStore_VarMaybeGrowEntries(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        PRTEFIVAR pVar = &pThis->paVars[pThis->cVars];
+        RT_ZERO(*pVar);
+
+        pVar->pszName = RTStrDup(pszName);
+        if (pVar->pszName)
+        {
+            pVar->pVarStore  = pThis;
+            pVar->offVarData = 0;
+            pVar->fDeleted   = false;
+            RTTimeNow(&pVar->Time);
+
+            if (pidVar)
+                *pidVar = pThis->cVars;
+            pThis->cVars++;
+            return pVar;
+        }
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Delete the given variable.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The variable store instance.
+ * @param   pVar                The variable.
+ */
+static int rtEfiVarStore_VarDel(PRTEFIVARSTORE pThis, PRTEFIVAR pVar)
+{
+    pVar->fDeleted = true;
+    if (pVar->pvData)
+        RTMemFree(pVar->pvData);
+    pVar->pvData = NULL;
+    pThis->cbVarData -= sizeof(EFI_AUTH_VAR_HEADER) + pVar->cbData;
+    /** @todo Delete from GUID entry. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Delete the variable with the given index.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The variable store instance.
+ * @param   idVar               The variable index.
+ */
+static int rtEfiVarStore_VarDelById(PRTEFIVARSTORE pThis, uint32_t idVar)
+{
+    return rtEfiVarStore_VarDel(pThis, &pThis->paVars[idVar]);
+}
+
+
+/**
+ * Delete the variable with the given name.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The variable store instance.
+ * @param   pszName             Name of the variable to delete.
+ */
+static int rtEfiVarStore_VarDelByName(PRTEFIVARSTORE pThis, const char *pszName)
+{
+    PRTEFIVAR pVar = rtEfiVarStore_VarGet(pThis, pszName, NULL);
+    if (pVar)
+        return rtEfiVarStore_VarDel(pThis, pVar);
+
+    return VERR_FILE_NOT_FOUND;
 }
 
 
@@ -1301,16 +1439,17 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_Open(void *pvThis, const char *pszEntr
         case RTEFIVARSTOREDIRTYPE_RAW:
         {
             /* Look for the name. */
-            for (uint32_t i = 0; i < pVarStore->cVars; i++)
-                if (!strcmp(pszEntry, pVarStore->paVars[i].pszName))
-                {
-                    if (pThis->enmType == RTEFIVARSTOREDIRTYPE_RAW)
-                        return rtEfiVarStore_NewDirByType(pVarStore, RTEFIVARSTOREDIRTYPE_RAW_ENTRY,
-                                                          NULL /*pGuid*/, i /*idVar*/, phVfsObj);
-                    else
-                        return rtEfiVarStore_NewFile(pVarStore, fOpen, &pVarStore->paVars[i],
-                                                     &g_aRawFiles[RTEFIVARSTORE_FILE_ENTRY_DATA], phVfsObj);
-                }
+            uint32_t idVar = 0;
+            PRTEFIVAR pVar = rtEfiVarStore_VarGet(pVarStore, pszEntry, &idVar);
+            if (pVar)
+            {
+                if (pThis->enmType == RTEFIVARSTOREDIRTYPE_RAW)
+                    return rtEfiVarStore_NewDirByType(pVarStore, RTEFIVARSTOREDIRTYPE_RAW_ENTRY,
+                                                      NULL /*pGuid*/, idVar, phVfsObj);
+                else
+                    return rtEfiVarStore_NewFile(pVarStore, fOpen, pVar,
+                                                 &g_aRawFiles[RTEFIVARSTORE_FILE_ENTRY_DATA], phVfsObj);
+            }
 
             rc = VERR_FILE_NOT_FOUND;
             break;
@@ -1363,29 +1502,52 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_CreateDir(void *pvThis, const char *ps
     PRTEFIVARSTORE    pVarStore = pThis->pVarStore;
     LogFlowFunc(("\n"));
 
-    RT_NOREF(pszSubDir, fMode, phVfsDir);
+    RT_NOREF(fMode, phVfsDir);
 
     if (pVarStore->fMntFlags & RTVFSMNT_F_READ_ONLY)
         return VERR_WRITE_PROTECT;
 
-    /* We support creating directories only for GUIDs. */
-    if (pThis->enmType != RTEFIVARSTOREDIRTYPE_BY_GUID)
-        return VERR_NOT_SUPPORTED;
+    /* We support creating directories only for GUIDs and RAW variable entries. */
+    int rc = VINF_SUCCESS;
+    if (pThis->enmType == RTEFIVARSTOREDIRTYPE_BY_GUID)
+    {
+        RTUUID Uuid;
+        rc = RTUuidFromStr(&Uuid, pszSubDir);
+        if (RT_FAILURE(rc))
+            return VERR_NOT_SUPPORTED;
 
-    RTUUID Uuid;
-    int rc = RTUuidFromStr(&Uuid, pszSubDir);
-    if (RT_FAILURE(rc))
-        return VERR_NOT_SUPPORTED;
+        PRTEFIGUID pGuid = rtEfiVarStore_GetGuid(pVarStore, &Uuid);
+        if (pGuid)
+            return VERR_ALREADY_EXISTS;
 
-    PRTEFIGUID pGuid = rtEfiVarStore_GetGuid(pVarStore, &Uuid);
-    if (pGuid)
-        return VERR_ALREADY_EXISTS;
+        pGuid = rtEfiVarStore_AddGuid(pVarStore, &Uuid);
+        if (!pGuid)
+            return VERR_NO_MEMORY;
+    }
+    else if (pThis->enmType == RTEFIVARSTOREDIRTYPE_RAW)
+    {
+        PRTEFIVAR pVar = rtEfiVarStore_VarGet(pVarStore, pszSubDir, NULL /*pidVar*/);
+        if (!pVar)
+        {
+            if (sizeof(EFI_AUTH_VAR_HEADER) < pVarStore->cbVarStore - pVarStore->cbVarData)
+            {
+                uint32_t idVar = 0;
+                pVar = rtEfiVarStore_VarAdd(pVarStore, pszSubDir, &idVar);
+                if (pVar)
+                    pVarStore->cbVarData += sizeof(EFI_AUTH_VAR_HEADER);
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            else
+                rc = VERR_DISK_FULL;
+        }
+        else
+            rc = VERR_ALREADY_EXISTS;
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
-    pGuid = rtEfiVarStore_AddGuid(pVarStore, &Uuid);
-    if (!pGuid)
-        return VERR_NO_MEMORY;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1417,9 +1579,48 @@ static DECLCALLBACK(int) rtEfiVarStoreDir_CreateSymlink(void *pvThis, const char
  */
 static DECLCALLBACK(int) rtEfiVarStoreDir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
-    RT_NOREF(pvThis, pszEntry, fType);
+    PRTEFIVARSTOREDIR pThis     = (PRTEFIVARSTOREDIR)pvThis;
+    PRTEFIVARSTORE    pVarStore = pThis->pVarStore;
     LogFlowFunc(("\n"));
-    return VERR_WRITE_PROTECT;
+
+    RT_NOREF(fType);
+
+    if (pVarStore->fMntFlags & RTVFSMNT_F_READ_ONLY)
+        return VERR_WRITE_PROTECT;
+
+    if (   pThis->enmType == RTEFIVARSTOREDIRTYPE_RAW
+        || pThis->enmType == RTEFIVARSTOREDIRTYPE_BY_NAME
+        || pThis->enmType == RTEFIVARSTOREDIRTYPE_GUID)
+        return rtEfiVarStore_VarDelByName(pVarStore, pszEntry);
+    else if (pThis->enmType == RTEFIVARSTOREDIRTYPE_BY_GUID)
+    {
+        /* Look for the name. */
+        for (uint32_t i = 0; i < pVarStore->cGuids; i++)
+        {
+            PRTEFIGUID pGuid = &pVarStore->paGuids[i];
+            char szUuid[RTUUID_STR_LENGTH];
+            int rc = RTUuidToStr(&pGuid->Uuid, szUuid, sizeof(szUuid));
+            AssertRC(rc); RT_NOREF(rc);
+
+            if (!strcmp(pszEntry, szUuid))
+            {
+                for (uint32_t iVar = 0; iVar < pGuid->cVars; iVar++)
+                    rtEfiVarStore_VarDelById(pVarStore, pGuid->paidxVars[iVar]);
+
+                if (pGuid->paidxVars)
+                    RTMemFree(pGuid->paidxVars);
+                pGuid->paidxVars = NULL;
+                pGuid->cVars     = 0;
+                pGuid->cVarsMax  = 0;
+                RTUuidClear(&pGuid->Uuid);
+                return VINF_SUCCESS;
+            }
+        }
+
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1695,9 +1896,11 @@ static DECLCALLBACK(int) rtEfiVarStore_Close(void *pvThis)
         {
             PRTEFIGUID pGuid = &pThis->paGuids[i];
 
-            AssertPtr(pGuid->paidxVars);
-            RTMemFree(pGuid->paidxVars);
-            pGuid->paidxVars = NULL;
+            if (pGuid->paidxVars)
+            {
+                RTMemFree(pGuid->paidxVars);
+                pGuid->paidxVars = NULL;
+            }
         }
 
         RTMemFree(pThis->paGuids);
@@ -1936,17 +2139,9 @@ static int rtEfiVarStoreLoadAuthVar(PRTEFIVARSTORE pThis, uint64_t offVar, uint6
         return rc;
 
     Log2(("Variable name '%ls'\n", &awchName[0]));
-    if (pThis->cVars == pThis->cVarsMax)
-    {
-        /* Grow the variable array. */
-        uint32_t cVarsMaxNew = pThis->cVarsMax + 10;
-        PRTEFIVAR paVarsNew = (PRTEFIVAR)RTMemRealloc(pThis->paVars, cVarsMaxNew * sizeof(RTEFIVAR));
-        if (!paVarsNew)
-            return VERR_NO_MEMORY;
-
-        pThis->paVars   = paVarsNew;
-        pThis->cVarsMax = cVarsMaxNew;
-    }
+    rc = rtEfiVarStore_VarMaybeGrowEntries(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     PRTEFIVAR pVar = &pThis->paVars[pThis->cVars++];
     pVar->pVarStore  = pThis;
@@ -1956,6 +2151,7 @@ static int rtEfiVarStoreLoadAuthVar(PRTEFIVARSTORE pThis, uint64_t offVar, uint6
     pVar->idPubKey   = RT_LE2H_U32(VarHdr.idPubKey);
     pVar->cbData     = RT_LE2H_U32(VarHdr.cbData);
     pVar->pvData     = NULL;
+    pVar->fDeleted   = false;
     memcpy(&pVar->EfiTimestamp, &VarHdr.Timestamp, sizeof(VarHdr.Timestamp));
 
     if (VarHdr.Timestamp.u8Month)
