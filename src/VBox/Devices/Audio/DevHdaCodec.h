@@ -31,12 +31,13 @@
 
 /** The ICH HDA (Intel) common codec state. */
 typedef struct HDACODEC *PHDACODEC;
-/** The ICH HDA (Intel) ring-0 codec state. */
-typedef struct HDACODECR0 *PHDACODECR0;
 /** The ICH HDA (Intel) ring-3 codec state. */
 typedef struct HDACODECR3 *PHDACODECR3;
+#ifdef IN_RING3 /* (A leftover from attempt at running the codec in ring-0.  Deemed unsafe
+                    and not help with performance when it mattered.) */
 /** The ICH HDA (Intel) current context codec state. */
 typedef CTX_SUFF(PHDACODEC) PHDACODECCC;
+#endif
 
 /**
  * Enumeration specifying the codec type to use.
@@ -840,22 +841,6 @@ typedef struct HDACODEC
 #endif
 } HDACODEC;
 
-/**
- * HDA codec state (ring-0).
- */
-typedef struct HDACODECR0
-{
-    /** @name Public codec functions.
-     *  @{  */
-#if 0 /** @todo r=bird: why can I just disable these and not get compile errors?  Unfinished code?  No comments.  Not at all amused! */
-    DECLR0CALLBACKMEMBER(void, pfnReset, (PHDACODEC pThis, PHDACODECR0 pThisCC));
-    DECLR0CALLBACKMEMBER(int,  pfnNodeReset, (PHDACODEC pThis, uint8_t nID, PCODECNODE pNode));
-#endif
-    DECLR0CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t uVerb, uint64_t *puResp));
-    /** @} */
-} HDACODECR0;
-
-int hdaR0CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR0 pThisCC);
 
 /**
  * HDA codec state (ring-3).

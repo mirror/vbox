@@ -52,7 +52,8 @@
 #define AMPLIFIER_REGISTER(amp, inout, side, index) ((amp)[30*(inout) + 15*(side) + (index)])
 
 
-/* STAC9220 - Nodes IDs / names. */
+/** @name STAC9220 - Nodes IDs / Names.
+ * @{  */
 #define STAC9220_NID_ROOT                                  0x0  /* Root node */
 #define STAC9220_NID_AFG                                   0x1  /* Audio Configuration Group */
 #define STAC9220_NID_DAC0                                  0x2  /* Out */
@@ -89,6 +90,7 @@
 
 /** Number of total nodes emulated. */
 #define STAC9221_NUM_NODES                                 0x1C
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -133,9 +135,9 @@ typedef CODECVERB const *PCCODECVERB;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef IN_RING3
-
-/* STAC9220 - Referenced through STAC9220WIDGET in the constructor below. */
+/** @name STAC9220 Values
+ * @note Referenced through STAC9220WIDGET in the constructor below
+ * @{ */
 static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0 };
 static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0 };
 static uint8_t const g_abStac9220Adcs[]       = { STAC9220_NID_ADC0, STAC9220_NID_ADC1, 0 };
@@ -148,9 +150,15 @@ static uint8_t const g_abStac9220AdcMuxs[]    = { STAC9220_NID_ADC0_MUX, STAC922
 static uint8_t const g_abStac9220Pcbeeps[]    = { STAC9220_NID_PCBEEP, 0 };
 static uint8_t const g_abStac9220Cds[]        = { STAC9220_NID_PIN_CD, 0 };
 static uint8_t const g_abStac9220VolKnobs[]   = { STAC9220_NID_VOL_KNOB, 0 };
-/* STAC 9221. */
+/** @} */
+
+/** @name STAC 9221 Values.
+ * @note Referenced through STAC9220WIDGET in the constructor below
+ * @{ */
 /** @todo Is STAC9220_NID_SPDIF_IN really correct for reserved nodes? */
 static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
+/** @} */
+
 
 /** SSM description of CODECCOMMONNODE. */
 static SSMFIELD const g_aCodecNodeFields[] =
@@ -175,7 +183,6 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-#endif /* IN_RING3 */
 
 
 /*********************************************************************************************************************************
@@ -779,7 +786,6 @@ static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
     pThis->fInReset = false;
 }
 
-#ifdef IN_RING3
 
 static int stac9220Construct(PHDACODEC pThis)
 {
@@ -840,8 +846,6 @@ static int stac9220Construct(PHDACODEC pThis)
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
-
 
 /*********************************************************************************************************************************
 *   Common Helpers                                                                                                               *
@@ -886,7 +890,6 @@ HDA_CODEC_IS_NODE_OF_TYPE_FUNC(VolKnob)
 /* hdaCodecIsReservedNode */
 HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Reserved)
 
-#ifdef IN_RING3
 
 /*
  * Misc helpers.
@@ -939,7 +942,6 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
     return pThisCC->pfnCbMixerSetVolume(pThisCC->pDevIns, enmMixerCtl, &Vol);
 }
 
-#endif /* IN_RING3 */
 
 DECLINLINE(void) hdaCodecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
 {
@@ -2078,7 +2080,6 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
 
 /**
  * @interface_method_impl{CODECVERB,pfn, 3-- }
@@ -2221,7 +2222,6 @@ static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThis
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
 
 
 /**
@@ -2234,12 +2234,12 @@ static const CODECVERB g_aCodecVerbs[] =
     /* Verb        Verb mask            Callback                                   Name
        ---------- --------------------- ------------------------------------------------------------------- */
     { 0x00020000, CODEC_VERB_16BIT_CMD, vrbProcSetConverterFormat                , "SetConverterFormat    " },
-    { 0x00030000, CODEC_VERB_16BIT_CMD, CTX_EXPR(vrbProcR3SetAmplifier,NULL,NULL), "SetAmplifier          " },
+    { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcR3SetAmplifier                    , "SetAmplifier          " },
     { 0x00070100, CODEC_VERB_8BIT_CMD , vrbProcSetConSelectCtrl                  , "SetConSelectCtrl      " },
     { 0x00070300, CODEC_VERB_8BIT_CMD , vrbProcSetProcessingState                , "SetProcessingState    " },
     { 0x00070400, CODEC_VERB_8BIT_CMD , vrbProcSetSDISelect                      , "SetSDISelect          " },
     { 0x00070500, CODEC_VERB_8BIT_CMD , vrbProcSetPowerState                     , "SetPowerState         " },
-    { 0x00070600, CODEC_VERB_8BIT_CMD , CTX_EXPR(vrbProcR3SetStreamId,NULL,NULL) , "SetStreamId           " },
+    { 0x00070600, CODEC_VERB_8BIT_CMD , vrbProcR3SetStreamId                     , "SetStreamId           " },
     { 0x00070700, CODEC_VERB_8BIT_CMD , vrbProcSetPinCtrl                        , "SetPinCtrl            " },
     { 0x00070800, CODEC_VERB_8BIT_CMD , vrbProcSetUnsolicitedEnabled             , "SetUnsolicitedEnabled " },
     { 0x00070900, CODEC_VERB_8BIT_CMD , vrbProcSetPinSense                       , "SetPinSense           " },
@@ -2337,14 +2337,6 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint3
             /*
              * Found it!  Run the callback and return.
              */
-#ifndef IN_RING3
-            if (!g_aCodecVerbs[iCur].pfn)
-            {
-                Log3Func(("[NID0x%02x] (0x%x) %s: 0x%x -> VERR_INVALID_CONTEXT\n", /* -> ring-3 */
-                          CODEC_NID(uCmd), g_aCodecVerbs[iCur].uVerb, g_aCodecVerbs[iCur].pszName, CODEC_VERB_PAYLOAD8(uCmd)));
-                return VERR_INVALID_CONTEXT;
-            }
-#endif
             AssertPtrReturn(g_aCodecVerbs[iCur].pfn, VERR_INTERNAL_ERROR_5); /* Paranoia^2. */
 
             int rc = g_aCodecVerbs[iCur].pfn(pThis, pThisCC, uCmd, puResp);
@@ -2372,8 +2364,6 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint3
 /*********************************************************************************************************************************
 *   Debug                                                                                                                        *
 *********************************************************************************************************************************/
-#ifdef IN_RING3
-
 /**
  * CODEC debug info item printing state.
  */
@@ -2389,11 +2379,11 @@ typedef struct CODECDEBUG
 /** Pointer to the debug info item printing state for the codec. */
 typedef CODECDEBUG *PCODECDEBUG;
 
-# define CODECDBG_INDENT        pInfo->uLevel++;
-# define CODECDBG_UNINDENT      if (pInfo->uLevel) pInfo->uLevel--;
+#define CODECDBG_INDENT         pInfo->uLevel++;
+#define CODECDBG_UNINDENT       if (pInfo->uLevel) pInfo->uLevel--;
 
-# define CODECDBG_PRINT(...)    pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
-# define CODECDBG_PRINTI(...)   codecDbgPrintf(pInfo, __VA_ARGS__)
+#define CODECDBG_PRINT(...)     pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
+#define CODECDBG_PRINTI(...)    codecDbgPrintf(pInfo, __VA_ARGS__)
 
 
 /** Wrapper around DBGFINFOHLP::pfnPrintf that adds identation. */
@@ -2448,7 +2438,7 @@ static void codecDbgPrintNodeRegF00(PCODECDEBUG pInfo, uint32_t *paReg00)
 
 static void codecDbgPrintNodeAmp(PCODECDEBUG pInfo, uint32_t *paReg, uint8_t uIdx, uint8_t uDir)
 {
-# define CODECDBG_AMP(reg, chan) \
+#define CODECDBG_AMP(reg, chan) \
         codecDbgPrintf(pInfo, "Amp %RU8 %s %s: In=%RTbool, Out=%RTbool, Left=%RTbool, Right=%RTbool, Idx=%RU8, fMute=%RTbool, uGain=%RU8\n", \
                        uIdx, chan, uDir == AMPLIFIER_IN ? "In" : "Out", \
                        RT_BOOL(CODEC_SET_AMP_IS_IN_DIRECTION(reg)), RT_BOOL(CODEC_SET_AMP_IS_OUT_DIRECTION(reg)), \
@@ -2460,11 +2450,11 @@ static void codecDbgPrintNodeAmp(PCODECDEBUG pInfo, uint32_t *paReg, uint8_t uId
     regAmp = AMPLIFIER_REGISTER(paReg, uDir, AMPLIFIER_RIGHT, uIdx);
     CODECDBG_AMP(regAmp, "Right");
 
-# undef CODECDBG_AMP
+#undef CODECDBG_AMP
 }
 
 
-# if 0 /* unused */
+#if 0 /* unused */
 static void codecDbgPrintNodeConnections(PCODECDEBUG pInfo, PCODECNODE pNode)
 {
     if (pNode->node.au32F00_param[0xE] == 0) /* Directly connected to HDA link. */
@@ -2473,7 +2463,7 @@ static void codecDbgPrintNodeConnections(PCODECDEBUG pInfo, PCODECNODE pNode)
          return;
     }
 }
-# endif
+#endif
 
 
 static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursive)
@@ -2551,7 +2541,7 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
 
     if (fRecursive)
     {
-# define CODECDBG_PRINT_CONLIST_ENTRY(_aNode, _aEntry) \
+#define CODECDBG_PRINT_CONLIST_ENTRY(_aNode, _aEntry) \
             if (cCnt >= _aEntry) \
             { \
                 const uint8_t uID = RT_BYTE##_aEntry(_aNode->node.au32F02_param[0x0]); \
@@ -2578,7 +2568,7 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
             CODECDBG_UNINDENT
         }
 
-# undef CODECDBG_PRINT_CONLIST_ENTRY
+#undef CODECDBG_PRINT_CONLIST_ENTRY
    }
 }
 
@@ -2615,7 +2605,7 @@ static DECLCALLBACK(void) codecR3DbgSelector(PHDACODEC pThis, PHDACODECR3 pThisC
 }
 
 
-# if 0 /* unused */
+#if 0 /* unused */
 static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
@@ -2631,17 +2621,12 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, "0x%x: lVol=%RU8, rVol=%RU8\n", i, lVol, rVol);
     }
 }
-# endif
-
-#endif /* IN_RING3 */
-
+#endif
 
 
 /*********************************************************************************************************************************
 *   DevHDA API                                                                                                                   *
 *********************************************************************************************************************************/
-
-#ifdef IN_RING3
 
 int hdaR3CodecAddStream(PHDACODECR3 pThisCC, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -2853,45 +2838,21 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
     rc = hdaR3CodecToAudVolume(pThisCC, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
     AssertRCReturn(rc, rc);
 
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-#  error "Implement mic-in support!"
-# endif
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# error "Implement mic-in support!"
+#endif
 
     /*
      * Statistics
      */
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLookupsR3, STAMTYPE_COUNTER, "Codec/LookupsR0", STAMUNIT_OCCURENCES, "Number of R0 codecLookup calls");
-# if 0 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
+#if 0 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLookupsR0, STAMTYPE_COUNTER, "Codec/LookupsR3", STAMUNIT_OCCURENCES, "Number of R3 codecLookup calls");
-# endif
+#endif
 
     return rc;
 }
 
-#else /* IN_RING0 */
-
-/**
- * Constructs a codec (ring-0).
- *
- * @returns VBox status code.
- * @param   pDevIns             Associated device instance.
- * @param   pThis               Shared codec data beteen r0/r3.
- * @param   pThisCC             Context-specific codec data (ring-0).
- */
-int hdaR0CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR0 pThisCC)
-{
-    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
-
-    pThisCC->pfnLookup = codecLookup;
-
-    /* Note: Everything else is done in the R3 part. */
-
-    return VINF_SUCCESS;
-}
-
-#endif /* IN_RING0 */
 
 /**
  * Destructs a codec.
@@ -2907,6 +2868,7 @@ void hdaCodecDestruct(PHDACODEC pThis)
 
     LogFlowFuncEnter();
 }
+
 
 /**
  * Resets a codec.
