@@ -931,288 +931,288 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 #if 0 /* unused */
 
 /**
- * @interface_method_impl{CODECVERB, pfn, Unimplemented}
+ * @interface_method_impl{CODECVERB,pfn, Unimplemented}
  */
-static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, cmd);
-    LogFlowFunc(("cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
-                 CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
-    *pResp = 0;
+    RT_NOREF(pThis, pThisCC, uCmd);
+    LogFlowFunc(("uCmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", uCmd,
+                 CODEC_CAD(uCmd), CODEC_DIRECT(uCmd) ? 'N' : 'Y', CODEC_NID(uCmd), CODEC_VERBDATA(uCmd)));
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ???}
  */
-static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     int rc;
-    rc = vrbProcUnimplemented(pThis, pThisCC, cmd, pResp);
-    *pResp |= CODEC_RESPONSE_UNSOLICITED;
+    rc = vrbProcUnimplemented(pThis, pThisCC, uCmd, puResp);
+    *puResp |= CODEC_RESPONSE_UNSOLICITED;
     return rc;
 }
 
 #endif /* unused */
 
 /**
- * @interface_method_impl{CODECVERB, pfn, b--}
+ * @interface_method_impl{CODECVERB,pfn, b--}
  */
-static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     /* HDA spec 7.3.3.7 Note A */
     /** @todo If index out of range response should be 0. */
-    uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT ? 0 : CODEC_GET_AMP_INDEX(cmd);
+    uint8_t u8Index = CODEC_GET_AMP_DIRECTION(uCmd) == AMPLIFIER_OUT ? 0 : CODEC_GET_AMP_INDEX(uCmd);
 
-    PCODECNODE pNode = &pThis->aNodes[CODEC_NID(cmd)];
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
-    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
-    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
-    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->port.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = AMPLIFIER_REGISTER(pNode->adc.B_params,
-                                    CODEC_GET_AMP_DIRECTION(cmd),
-                                    CODEC_GET_AMP_SIDE(cmd),
-                                    u8Index);
+    PCODECNODE pNode = &pThis->aNodes[CODEC_NID(uCmd)];
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
+    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
+    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
+    else if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->port.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = AMPLIFIER_REGISTER(pNode->adc.B_params,
+                                     CODEC_GET_AMP_DIRECTION(uCmd),
+                                     CODEC_GET_AMP_SIDE(uCmd),
+                                     u8Index);
     else
-        LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", uCmd, CODEC_NID(uCmd), CODEC_NID(uCmd)));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ???}
  */
-static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F00_PARAM_LENGTH);
-    if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F00_PARAM_LENGTH)
+    Assert((uCmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F00_PARAM_LENGTH);
+    if ((uCmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F00_PARAM_LENGTH)
     {
-        *pResp = 0;
+        *puResp = 0;
 
-        LogFlowFunc(("invalid F00 parameter %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
+        LogFlowFunc(("invalid F00 parameter %d\n", (uCmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
     }
 
-    *pResp = pThis->aNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
+    *puResp = pThis->aNodes[CODEC_NID(uCmd)].node.au32F00_param[uCmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f01}
+ * @interface_method_impl{CODECVERB,pfn, f01}
  */
-static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digout.u32F01_param;
-    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].port.u32F01_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adc.u32F01_param;
-    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
+    if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adcmux.u32F01_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digout.u32F01_param;
+    else if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].port.u32F01_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adc.u32F01_param;
+    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get connection select control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get connection select control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 701}
+ * @interface_method_impl{CODECVERB,pfn, 701}
  */
-static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digout.u32F01_param;
-    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].port.u32F01_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F01_param;
-    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
+    if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adcmux.u32F01_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digout.u32F01_param;
+    else if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].port.u32F01_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adc.u32F01_param;
+    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set connection select control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set connection select control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f07}
+ * @interface_method_impl{CODECVERB,pfn, f07}
  */
-static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digout.u32F07_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F07_param;
-    else if (hdaCodecIsCdNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].pcbeep.u32F07_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].reserved.u32F07_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].port.u32F07_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digout.u32F07_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F07_param;
+    else if (hdaCodecIsCdNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].cdnode.u32F07_param;
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].pcbeep.u32F07_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get pin control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get pin control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 707}
+ * @interface_method_impl{CODECVERB,pfn, 707}
  */
-static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F07_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digout.u32F07_param;
-    else if (hdaCodecIsCdNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].pcbeep.u32F07_param;
-    else if (   hdaCodecIsReservedNode(pThis, CODEC_NID(cmd))
-             && CODEC_NID(cmd) == 0x1b)
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].reserved.u32F07_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].port.u32F07_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F07_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digout.u32F07_param;
+    else if (hdaCodecIsCdNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].cdnode.u32F07_param;
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].pcbeep.u32F07_param;
+    else if (   hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd))
+             && CODEC_NID(uCmd) == 0x1b)
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set pin control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set pin control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f08}
+ * @interface_method_impl{CODECVERB,pfn, f08}
  */
-static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if ((cmd) == STAC9220_NID_AFG)
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].afg.u32F08_param;
-    else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digout.u32F08_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F08_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].port.u32F08_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F08_param;
+    else if ((uCmd) == STAC9220_NID_AFG)
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].afg.u32F08_param;
+    else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].volumeKnob.u32F08_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digout.u32F08_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F08_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get unsolicited enabled command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get unsolicited enabled command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 708}
+ * @interface_method_impl{CODECVERB,pfn, 708}
  */
-static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].afg.u32F08_param;
-    else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digout.u32F08_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].port.u32F08_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F08_param;
+    else if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].afg.u32F08_param;
+    else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].volumeKnob.u32F08_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F08_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digout.u32F08_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set unsolicited enabled command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set unsolicited enabled command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f09}
+ * @interface_method_impl{CODECVERB,pfn, f09}
  */
-static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].port.u32F09_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F09_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].port.u32F09_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F09_param;
     else
     {
         AssertFailed();
-        LogRel2(("HDA: Warning: Unhandled get pin sense command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get pin sense command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
     }
 
     return VINF_SUCCESS;
@@ -1220,303 +1220,302 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 709}
+ * @interface_method_impl{CODECVERB,pfn, 709}
  */
-static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].port.u32F09_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F09_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].port.u32F09_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F09_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set pin sense command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set pin sense command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ???}
  */
-static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F02_PARAM_LENGTH);
-    if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F02_PARAM_LENGTH)
+    Assert((uCmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F02_PARAM_LENGTH);
+    if ((uCmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F02_PARAM_LENGTH)
     {
-        LogFlowFunc(("access to invalid F02 index %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
+        LogFlowFunc(("access to invalid F02 index %d\n", (uCmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
     }
-    *pResp = pThis->aNodes[CODEC_NID(cmd)].node.au32F02_param[cmd & CODEC_VERB_8BIT_DATA];
+    *puResp = pThis->aNodes[CODEC_NID(uCmd)].node.au32F02_param[uCmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f03}
+ * @interface_method_impl{CODECVERB,pfn, f03}
  */
-static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adc.u32F03_param;
+    if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adc.u32F03_param;
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 703}
+ * @interface_method_impl{CODECVERB,pfn, 703}
  */
-static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(cmd)].adc.u32F03_param, cmd, 0);
+    if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(uCmd)].adc.u32F03_param, uCmd, 0);
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f0d}
+ * @interface_method_impl{CODECVERB,pfn, f0d}
  */
-static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F0d_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F0d_param;
-
+    if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F0d_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F0d_param;
     return VINF_SUCCESS;
 }
 
 
-static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset, uint64_t *pResp)
+static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset, uint64_t *puResp)
 {
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F0d_param, cmd, u8Offset);
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F0d_param, cmd, u8Offset);
+    if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F0d_param, uCmd, u8Offset);
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU8(&pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F0d_param, uCmd, u8Offset);
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 70d}
+ * @interface_method_impl{CODECVERB,pfn, 70d}
  */
-static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetDigitalConverter1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    return codecSetDigitalConverter(pThis, cmd, 0, pResp);
+    return codecSetDigitalConverter(pThis, uCmd, 0, puResp);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 70e}
+ * @interface_method_impl{CODECVERB,pfn, 70e}
  */
-static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    return codecSetDigitalConverter(pThis, cmd, 8, pResp);
+    return codecSetDigitalConverter(pThis, uCmd, 8, puResp);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f20}
+ * @interface_method_impl{CODECVERB,pfn, f20}
  */
-static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    Assert(CODEC_CAD(cmd) == pThis->id);
+    Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
-    Assert(CODEC_NID(cmd) < cTotalNodes);
-    if (CODEC_NID(cmd) >= cTotalNodes)
+    Assert(CODEC_NID(uCmd) < cTotalNodes);
+    if (CODEC_NID(uCmd) >= cTotalNodes)
     {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
-        *pResp = 0;
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(uCmd)));
+        *puResp = 0;
         return VINF_SUCCESS;
     }
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].afg.u32F20_param;
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].afg.u32F20_param;
     else
-        *pResp = 0;
+        *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
-static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
+static int codecSetSubIdX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
+    Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
-    Assert(CODEC_NID(cmd) < cTotalNodes);
-    if (CODEC_NID(cmd) >= cTotalNodes)
+    Assert(CODEC_NID(uCmd) < cTotalNodes);
+    if (CODEC_NID(uCmd) >= cTotalNodes)
     {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(uCmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg;
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].afg.u32F20_param;
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].afg.u32F20_param;
     else
         AssertFailedReturn(VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, u8Offset);
+    hdaCodecSetRegisterU8(pu32Reg, uCmd, u8Offset);
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 720}
+ * @interface_method_impl{CODECVERB,pfn, 720}
  */
-static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetSubId0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetSubIdX(pThis, cmd, 0);
+    *puResp = 0;
+    return codecSetSubIdX(pThis, uCmd, 0);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 721}
+ * @interface_method_impl{CODECVERB,pfn, 721}
  */
-static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetSubId1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetSubIdX(pThis, cmd, 8);
+    *puResp = 0;
+    return codecSetSubIdX(pThis, uCmd, 8);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 722}
+ * @interface_method_impl{CODECVERB,pfn, 722}
  */
-static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetSubId2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetSubIdX(pThis, cmd, 16);
+    *puResp = 0;
+    return codecSetSubIdX(pThis, uCmd, 16);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 723}
+ * @interface_method_impl{CODECVERB,pfn, 723}
  */
-static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetSubIdX(pThis, cmd, 24);
+    *puResp = 0;
+    return codecSetSubIdX(pThis, uCmd, 24);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, ???}
+ * @interface_method_impl{CODECVERB,pfn, ???}
  */
-static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    Assert(CODEC_CAD(cmd) == pThis->id);
+    Assert(CODEC_CAD(uCmd) == pThis->id);
 
     if (pThis->enmType == CODEC_TYPE_STAC9220)
     {
-        Assert(CODEC_NID(cmd) == STAC9220_NID_AFG);
+        Assert(CODEC_NID(uCmd) == STAC9220_NID_AFG);
 
-        if (CODEC_NID(cmd) == STAC9220_NID_AFG)
+        if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
             stac9220Reset(pThis);
     }
     else
         AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
-    *pResp = 0;
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f05}
+ * @interface_method_impl{CODECVERB,pfn, f05}
  */
-static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adc.u32F05_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digout.u32F05_param;
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F05_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].reserved.u32F05_param;
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].afg.u32F05_param;
+    else if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].dac.u32F05_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adc.u32F05_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F05_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digout.u32F05_param;
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F05_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F05_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F05_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get power state command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get power state command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     LogFunc(("[NID0x%02x]: fReset=%RTbool, fStopOk=%RTbool, Act=D%RU8, Set=D%RU8\n",
-             CODEC_NID(cmd), CODEC_F05_IS_RESET(*pResp), CODEC_F05_IS_STOPOK(*pResp), CODEC_F05_ACT(*pResp), CODEC_F05_SET(*pResp)));
+             CODEC_NID(uCmd), CODEC_F05_IS_RESET(*puResp), CODEC_F05_IS_STOPOK(*puResp), CODEC_F05_ACT(*puResp), CODEC_F05_SET(*puResp)));
     return VINF_SUCCESS;
 }
 
 #if 1
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 705}
+ * @interface_method_impl{CODECVERB,pfn, 705}
  */
-static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digout.u32F05_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F05_param;
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F05_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].reserved.u32F05_param;
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].afg.u32F05_param;
+    else if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].dac.u32F05_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F05_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digout.u32F05_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adc.u32F05_param;
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F05_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F05_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F05_param;
     else
     {
-        LogRel2(("HDA: Warning: Unhandled set power state command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set power state command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
     }
 
     if (!pu32Reg)
         return VINF_SUCCESS;
 
-    uint8_t uPwrCmd = CODEC_F05_SET      (cmd);
+    uint8_t uPwrCmd = CODEC_F05_SET      (uCmd);
     bool    fReset  = CODEC_F05_IS_RESET (*pu32Reg);
     bool    fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
 #ifdef LOG_ENABLED
@@ -1524,13 +1523,13 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
     uint8_t uPwrAct = CODEC_F05_ACT      (*pu32Reg);
     uint8_t uPwrSet = CODEC_F05_SET      (*pu32Reg);
     LogFunc(("[NID0x%02x] Cmd=D%RU8, fReset=%RTbool, fStopOk=%RTbool, fError=%RTbool, uPwrAct=D%RU8, uPwrSet=D%RU8\n",
-             CODEC_NID(cmd), uPwrCmd, fReset, fStopOk, fError, uPwrAct, uPwrSet));
+             CODEC_NID(uCmd), uPwrCmd, fReset, fStopOk, fError, uPwrAct, uPwrSet));
     LogFunc(("AFG: Act=D%RU8, Set=D%RU8\n",
             CODEC_F05_ACT(pThis->aNodes[STAC9220_NID_AFG].afg.u32F05_param),
             CODEC_F05_SET(pThis->aNodes[STAC9220_NID_AFG].afg.u32F05_param)));
 #endif
 
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
         *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, uPwrCmd /* PS-Act */, uPwrCmd /* PS-Set */);
 
     const uint8_t uAFGPwrAct = CODEC_F05_ACT(pThis->aNodes[STAC9220_NID_AFG].afg.u32F05_param);
@@ -1576,7 +1575,7 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
     }
 
     LogFunc(("[NID0x%02x] fReset=%RTbool, fStopOk=%RTbool, Act=D%RU8, Set=D%RU8\n",
-             CODEC_NID(cmd),
+             CODEC_NID(uCmd),
              CODEC_F05_IS_RESET(*pu32Reg), CODEC_F05_IS_STOPOK(*pu32Reg), CODEC_F05_ACT(*pu32Reg), CODEC_F05_SET(*pu32Reg)));
 
     return VINF_SUCCESS;
@@ -1597,59 +1596,59 @@ DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 705}
+ * @interface_method_impl{CODECVERB,pfn, 705}
  */
-static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    Assert(CODEC_CAD(cmd) == pThis->id);
+    Assert(CODEC_CAD(uCmd) == pThis->id);
     uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
-    Assert(CODEC_NID(cmd) < cTotalNodes);
-    if (CODEC_NID(cmd) >= cTotalNodes)
+    Assert(CODEC_NID(uCmd) < cTotalNodes);
+    if (CODEC_NID(uCmd) >= cTotalNodes)
     {
-        *pResp = 0;
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+        *puResp = 0;
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(uCmd)));
         return VINF_SUCCESS;
     }
-    *pResp = 0;
+    *puResp = 0;
     uint32_t *pu32Reg;
-    if (CODEC_NID(cmd) == 1 /* AFG */)
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F05_param;
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F05_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].reserved.u32F05_param;
+    if (CODEC_NID(uCmd) == 1 /* AFG */)
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].afg.u32F05_param;
+    else if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].dac.u32F05_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F05_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adc.u32F05_param;
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F05_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F05_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F05_param;
     else
         AssertFailedReturn(VINF_SUCCESS);
 
     bool fReset = CODEC_F05_IS_RESET(*pu32Reg);
     bool fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
 
-    if (CODEC_NID(cmd) != 1 /* AFG */)
+    if (CODEC_NID(uCmd) != 1 /* AFG */)
     {
         /*
          * We shouldn't propogate actual power state, which actual for AFG
          */
         *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0,
                                   CODEC_F05_ACT(pThis->aNodes[1].afg.u32F05_param),
-                                  CODEC_F05_SET(cmd));
+                                  CODEC_F05_SET(uCmd));
     }
 
     /* Propagate next power state only if AFG is on or verb modifies AFG power state */
-    if (   CODEC_NID(cmd) == 1 /* AFG */
+    if (   CODEC_NID(uCmd) == 1 /* AFG */
         || !CODEC_F05_ACT(pThis->aNodes[1].afg.u32F05_param))
     {
-        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, CODEC_F05_SET(cmd), CODEC_F05_SET(cmd));
-        if (   CODEC_NID(cmd) == 1 /* AFG */
-            && (CODEC_F05_SET(cmd)) == CODEC_F05_D0)
+        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, CODEC_F05_SET(uCmd), CODEC_F05_SET(uCmd));
+        if (   CODEC_NID(uCmd) == 1 /* AFG */
+            && (CODEC_F05_SET(uCmd)) == CODEC_F05_D0)
         {
             /* now we're powered on AFG and may propogate power states on nodes */
             const uint8_t *pu8NodeIndex = &pThis->au8Dacs[0];
@@ -1671,376 +1670,376 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, PHDACODECCC pThis
 #endif
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f06}
+ * @interface_method_impl{CODECVERB,pfn, f06}
  */
-static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].dac.u32F06_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adc.u32F06_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
-    else if (CODEC_NID(cmd) == STAC9221_NID_I2S_OUT)
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].reserved.u32F06_param;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].dac.u32F06_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adc.u32F06_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F06_param;
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F06_param;
+    else if (CODEC_NID(uCmd) == STAC9221_NID_I2S_OUT)
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F06_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     LogFlowFunc(("[NID0x%02x] Stream ID=%RU8, channel=%RU8\n",
-                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(cmd), CODEC_F00_06_GET_CHANNEL_ID(cmd)));
+                 CODEC_NID(uCmd), CODEC_F00_06_GET_STREAM_ID(uCmd), CODEC_F00_06_GET_CHANNEL_ID(uCmd)));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, a0}
+ * @interface_method_impl{CODECVERB,pfn, a0}
  */
-static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].dac.u32A_param;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adc.u32A_param;
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifout.u32A_param;
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].spdifin.u32A_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].reserved.u32A_param;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].dac.u32A_param;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adc.u32A_param;
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32A_param;
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32A_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].reserved.u32A_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get converter format command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get converter format command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, ??? - Also see section 3.7.1.}
+ * @interface_method_impl{CODECVERB,pfn, ??? - Also see section 3.7.1.}
  */
-static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(cmd)].dac.u32A_param, cmd, 0);
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(cmd)].adc.u32A_param, cmd, 0);
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(cmd)].spdifout.u32A_param, cmd, 0);
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(uCmd)].dac.u32A_param, uCmd, 0);
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(uCmd)].adc.u32A_param, uCmd, 0);
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32A_param, uCmd, 0);
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
+        hdaCodecSetRegisterU16(&pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32A_param, uCmd, 0);
     else
-        LogRel2(("HDA: Warning: Unhandled set converter format command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set converter format command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f0c}
+ * @interface_method_impl{CODECVERB,pfn, f0c}
  */
-static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
-    else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F0c_param;
+    if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].adcvol.u32F0c_param;
+    else if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].dac.u32F0c_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get EAPD/BTL enabled command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get EAPD/BTL enabled command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 70c}
+ * @interface_method_impl{CODECVERB,pfn, 70c}
  */
-static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
-    else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F0c_param;
+    if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].adcvol.u32F0c_param;
+    else if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].dac.u32F0c_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set EAPD/BTL enabled command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set EAPD/BTL enabled command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f0f}
+ * @interface_method_impl{CODECVERB,pfn, f0f}
  */
-static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
+    if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get volume knob control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get volume knob control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 70f}
+ * @interface_method_impl{CODECVERB,pfn, 70f}
  */
-static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
+    if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set volume knob control command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set volume knob control command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f15}
+ * @interface_method_impl{CODECVERB,pfn, f15}
  */
-static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, cmd);
-    *pResp = 0;
+    RT_NOREF(pThis, pThisCC, uCmd);
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 715}
+ * @interface_method_impl{CODECVERB,pfn, 715}
  */
-static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, cmd);
-    *pResp = 0;
+    RT_NOREF(pThis, pThisCC, uCmd);
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f16}
+ * @interface_method_impl{CODECVERB,pfn, f16}
  */
-static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, cmd);
-    *pResp = 0;
+    RT_NOREF(pThis, pThisCC, uCmd);
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 716}
+ * @interface_method_impl{CODECVERB,pfn, 716}
  */
-static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    RT_NOREF(pThis, pThisCC, cmd);
-    *pResp = 0;
+    RT_NOREF(pThis, pThisCC, uCmd);
+    *puResp = 0;
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f17}
+ * @interface_method_impl{CODECVERB,pfn, f17}
  */
-static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     /* Note: this is true for ALC885. */
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
-        *pResp = pThis->aNodes[1].afg.u32F17_param;
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
+        *puResp = pThis->aNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get GPIO direction command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get GPIO direction command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 717}
+ * @interface_method_impl{CODECVERB,pfn, 717}
  */
-static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetGPIODirection(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
+    if (CODEC_NID(uCmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->aNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set GPIO direction command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set GPIO direction command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f1c}
+ * @interface_method_impl{CODECVERB,pfn, f1c}
  */
-static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digout.u32F1c_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].digin.u32F1c_param;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].pcbeep.u32F1c_param;
-    else if (hdaCodecIsCdNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].port.u32F1c_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digout.u32F1c_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].digin.u32F1c_param;
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].pcbeep.u32F1c_param;
+    else if (hdaCodecIsCdNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].cdnode.u32F1c_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get config command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get config command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
-static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
+static int codecSetConfigX(PHDACODEC pThis, uint32_t uCmd, uint8_t u8Offset)
 {
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digin.u32F1c_param;
-    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].digout.u32F1c_param;
-    else if (hdaCodecIsCdNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].pcbeep.u32F1c_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
+    if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].port.u32F1c_param;
+    else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digin.u32F1c_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].digout.u32F1c_param;
+    else if (hdaCodecIsCdNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].cdnode.u32F1c_param;
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].pcbeep.u32F1c_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set config command (%RU8) for NID0x%02x: 0x%x\n", u8Offset, CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set config command (%RU8) for NID0x%02x: 0x%x\n", u8Offset, CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, u8Offset);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, u8Offset);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 71c}
+ * @interface_method_impl{CODECVERB,pfn, 71c}
  */
-static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetConfigX(pThis, cmd, 0);
+    *puResp = 0;
+    return codecSetConfigX(pThis, uCmd, 0);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 71d}
+ * @interface_method_impl{CODECVERB,pfn, 71d}
  */
-static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetConfigX(pThis, cmd, 8);
+    *puResp = 0;
+    return codecSetConfigX(pThis, uCmd, 8);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 71e}
+ * @interface_method_impl{CODECVERB,pfn, 71e}
  */
-static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetConfigX(pThis, cmd, 16);
+    *puResp = 0;
+    return codecSetConfigX(pThis, uCmd, 16);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 71e}
+ * @interface_method_impl{CODECVERB,pfn, 71e}
  */
-static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
-    return codecSetConfigX(pThis, cmd, 24);
+    *puResp = 0;
+    return codecSetConfigX(pThis, uCmd, 24);
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, f04}
+ * @interface_method_impl{CODECVERB,pfn, f04}
  */
-static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        *pResp = pThis->aNodes[CODEC_NID(cmd)].dac.u32F04_param;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        *puResp = pThis->aNodes[CODEC_NID(uCmd)].dac.u32F04_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get SDI select command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get SDI select command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 704}
+ * @interface_method_impl{CODECVERB,pfn, 704}
  */
-static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
     RT_NOREF(pThisCC);
-    *pResp = 0;
+    *puResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pu32Reg = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F04_param;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
+        pu32Reg = &pThis->aNodes[CODEC_NID(uCmd)].dac.u32F04_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set SDI select command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set SDI select command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
 
     if (pu32Reg)
-        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        hdaCodecSetRegisterU8(pu32Reg, uCmd, 0);
 
     return VINF_SUCCESS;
 }
@@ -2048,54 +2047,54 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, PHDACODECCC pThisC
 #ifdef IN_RING3
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 3--}
+ * @interface_method_impl{CODECVERB,pfn, 3--}
  */
-static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    *pResp = 0;
+    *puResp = 0;
 
-    PCODECNODE pNode      = &pThis->aNodes[CODEC_NID(cmd)];
+    PCODECNODE pNode      = &pThis->aNodes[CODEC_NID(uCmd)];
     AMPLIFIER *pAmplifier = NULL;
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->dac.B_params;
-    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->adcvol.B_params;
-    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->adcmux.B_params;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->pcbeep.B_params;
-    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsPortNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->port.B_params;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
         pAmplifier = &pNode->adc.B_params;
     else
         LogRel2(("HDA: Warning: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd), CODEC_NID(cmd)));
+                 uCmd, CODEC_VERB_PAYLOAD16(uCmd), CODEC_NID(uCmd), CODEC_NID(uCmd)));
 
     if (!pAmplifier)
         return VINF_SUCCESS;
 
-    bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
-    bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
-    bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
-    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
-    uint8_t u8Index = CODEC_SET_AMP_INDEX(cmd);
+    bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(uCmd);
+    bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(uCmd);
+    bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(uCmd);
+    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(uCmd);
+    uint8_t u8Index = CODEC_SET_AMP_INDEX(uCmd);
 
     if (   (!fIsLeft && !fIsRight)
         || (!fIsOut && !fIsIn))
         return VINF_SUCCESS;
 
     LogFunc(("[NID0x%02x] fIsOut=%RTbool, fIsIn=%RTbool, fIsLeft=%RTbool, fIsRight=%RTbool, Idx=%RU8\n",
-             CODEC_NID(cmd), fIsOut, fIsIn, fIsLeft, fIsRight, u8Index));
+             CODEC_NID(uCmd), fIsOut, fIsIn, fIsLeft, fIsRight, u8Index));
 
     if (fIsIn)
     {
         if (fIsLeft)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), uCmd, 0);
         if (fIsRight)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-    //    if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn)
+    //    if (CODEC_NID(uCmd) == pThis->u8AdcVolsLineIn)
     //    {
             hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
     //    }
@@ -2103,11 +2102,11 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
     if (fIsOut)
     {
         if (fIsLeft)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd, 0);
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), uCmd, 0);
         if (fIsRight)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-        if (CODEC_NID(cmd) == pThis->u8DacLineOut)
+        if (CODEC_NID(uCmd) == pThis->u8DacLineOut)
             hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
@@ -2116,53 +2115,53 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECCC pThi
 
 
 /**
- * @interface_method_impl{CODECVERB, pfn, 706}
+ * @interface_method_impl{CODECVERB,pfn, 706}
  */
-static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
-    *pResp = 0;
+    *puResp = 0;
 
-    uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
-    uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
+    uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(uCmd);
+    uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(uCmd);
 
     LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8\n",
-                 CODEC_NID(cmd), uSD, uChannel));
+                 CODEC_NID(uCmd), uSD, uChannel));
 
     ASSERT_GUEST_LOGREL_MSG_RETURN(uSD < HDA_MAX_STREAMS,
                                    ("Setting stream ID #%RU8 is invalid\n", uSD), VERR_INVALID_PARAMETER);
 
     PDMAUDIODIR enmDir;
     uint32_t   *pu32Addr;
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(uCmd)))
     {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F06_param;
+        pu32Addr = &pThis->aNodes[CODEC_NID(uCmd)].dac.u32F06_param;
         enmDir = PDMAUDIODIR_OUT;
     }
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(uCmd)))
     {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F06_param;
+        pu32Addr = &pThis->aNodes[CODEC_NID(uCmd)].adc.u32F06_param;
         enmDir = PDMAUDIODIR_IN;
     }
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(uCmd)))
     {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+        pu32Addr = &pThis->aNodes[CODEC_NID(uCmd)].spdifout.u32F06_param;
         enmDir = PDMAUDIODIR_OUT;
     }
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(uCmd)))
     {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
+        pu32Addr = &pThis->aNodes[CODEC_NID(uCmd)].spdifin.u32F06_param;
         enmDir = PDMAUDIODIR_IN;
     }
     else
     {
         enmDir = PDMAUDIODIR_UNKNOWN;
-        LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(uCmd), uCmd));
         return VINF_SUCCESS;
     }
 
     /* Do we (re-)assign our input/output SDn (SDI/SDO) IDs? */
-    pThis->aNodes[CODEC_NID(cmd)].node.uSD      = uSD;
-    pThis->aNodes[CODEC_NID(cmd)].node.uChannel = uChannel;
+    pThis->aNodes[CODEC_NID(uCmd)].node.uSD      = uSD;
+    pThis->aNodes[CODEC_NID(uCmd)].node.uChannel = uChannel;
 
     if (enmDir == PDMAUDIODIR_OUT)
     {
@@ -2183,7 +2182,7 @@ static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECCC pThis
 # endif
     }
 
-    hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
+    hdaCodecSetRegisterU8(pu32Addr, uCmd, 0);
 
     return VINF_SUCCESS;
 }
@@ -2251,7 +2250,10 @@ static const CODECVERB g_aCodecVerbs[] =
 
 
 /**
- * Implements
+ * Implements codec lookup and will call the handler on the verb it finds,
+ * returning the handler response.
+ *
+ * @returns VBox status code (not strict).
  */
 static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, PHDACODECCC pThisCC, uint32_t uCmd, uint64_t *puResp)
 {
