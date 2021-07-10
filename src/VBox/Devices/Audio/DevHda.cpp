@@ -4745,7 +4745,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                   "BufSizeInMs"
                                   "|BufSizeOutMs"
                                   "|DebugEnabled"
-                                  "|DebugPathOut",
+                                  "|DebugPathOut"
+                                  "|DeviceName",
                                   "");
 
     /** @devcfgm{hda,BufSizeInMs,uint16_t,0,2000,0,ms}
@@ -4780,6 +4781,32 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThisCC->Dbg.fEnabled)
         LogRel2(("HDA: Debug output will be saved to '%s'\n", pThisCC->Dbg.pszOutPath));
 
+    /** @devcfgm{hda,DeviceName,string}
+     * Override the default device/vendor IDs for the emulated device:
+     *      - "" - default
+     *      - "Intel ICH6"
+     *      - "Intel Sunrise Point" - great for macOS 10.15
+     */
+    char szDeviceName[32];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DeviceName", szDeviceName, sizeof(szDeviceName), "");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("HDA configuration error: failed to read 'DeviceName' name string"));
+    enum
+    {
+        kDevice_Default,
+        kDevice_IntelIch6,
+        kDevice_IntelSunrisePoint /*skylake timeframe*/
+    } enmDevice;
+    if (strcmp(szDeviceName, "") == 0)
+        enmDevice = kDevice_Default;
+    else if (strcmp(szDeviceName, "Intel ICH6") == 0)
+        enmDevice = kDevice_IntelIch6;
+    else if (strcmp(szDeviceName, "Intel Sunrise Point") == 0)
+        enmDevice = kDevice_IntelSunrisePoint;
+    else
+        return  PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                    N_("HDA configuration error: Unknown 'DeviceName' name '%s'"), szDeviceName);
+
     /*
      * Use our own critical section for the device instead of the default
      * one provided by PDM. This allows fine-grained locking in combination
@@ -4802,8 +4829,21 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    PDMPciDevSetVendorId(      pPciDev, HDA_PCI_VENDOR_ID); /* nVidia */
-    PDMPciDevSetDeviceId(      pPciDev, HDA_PCI_DEVICE_ID); /* HDA */
+    switch (enmDevice)
+    {
+        case kDevice_Default:
+            PDMPciDevSetVendorId(pPciDev, HDA_PCI_VENDOR_ID);
+            PDMPciDevSetDeviceId(pPciDev, HDA_PCI_DEVICE_ID);
+            break;
+        case kDevice_IntelIch6: /* Our default intel device. */
+            PDMPciDevSetVendorId(pPciDev, 0x8086);
+            PDMPciDevSetDeviceId(pPciDev, 0x2668);
+            break;
+        case kDevice_IntelSunrisePoint: /* this is supported by more recent macOS version, at least 10.15 */
+            PDMPciDevSetVendorId(pPciDev, 0x8086);
+            PDMPciDevSetDeviceId(pPciDev, 0x9d70);
+            break;
+    }
 
     PDMPciDevSetCommand(       pPciDev, 0x0000); /* 04 rw,ro - pcicmd. */
     PDMPciDevSetStatus(        pPciDev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
