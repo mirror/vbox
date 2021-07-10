@@ -807,7 +807,7 @@ AssertNodeSize(CODECNODE, 60 + 6);
 /** @} */
 
 /**
- * Code configuration.
+ * Codec configuration.
  *
  * This will not change after construction and is therefore kept in a const
  * member of HDACODECR3 to encourage compiler optimizations and avoid accidental
@@ -825,8 +825,8 @@ typedef struct HDACODECCFG
     uint8_t         idAssembly;
 
     uint8_t         cTotalNodes;
-    uint8_t         u8AdcVolsLineIn;
-    uint8_t         u8DacLineOut;
+    uint8_t         idxAdcVolsLineIn;
+    uint8_t         idxDacLineOut;
 
     /** Align the lists below so they don't cross cache lines (assumes
      *  CODEC_NODES_MAX is 32). */
@@ -856,6 +856,7 @@ typedef struct HDACODECCFG
     uint16_t        afNodeClassifications[CODEC_NODES_MAX];
 } HDACODECCFG;
 AssertCompileMemberAlignment(HDACODECCFG, abPorts, CODEC_NODES_MAX);
+AssertCompileSizeAlignment(HDACODECCFG, 64);
 
 
 /**
@@ -865,7 +866,7 @@ typedef struct HDACODECR3
 {
     /** The codec configuration - initialized at construction time. */
     HDACODECCFG const   Cfg;
-    /** The node data. */
+    /** The state data for each node. */
     CODECNODE           aNodes[CODEC_NODES_MAX];
     /** Statistics. */
     STAMCOUNTER         StatLookupsR3;
@@ -874,9 +875,6 @@ typedef struct HDACODECR3
 } HDACODECR3;
 AssertCompile(RT_IS_POWER_OF_TWO(CODEC_NODES_MAX));
 AssertCompileMemberAlignment(HDACODECR3, aNodes, 64);
-AssertCompileSizeAlignment(HDACODECR3, 8);
-AssertCompileSizeAlignment(HDACODECR3, 16);
-AssertCompileSizeAlignment(HDACODECR3, 32);
 AssertCompileSizeAlignment(HDACODECR3, 64);
 
 

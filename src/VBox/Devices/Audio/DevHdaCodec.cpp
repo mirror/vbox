@@ -795,8 +795,8 @@ static int stac9220Construct(PHDACODECR3 pThis, HDACODECCFG *pCfg)
 
     AssertCompile(STAC9221_NUM_NODES <= RT_ELEMENTS(pThis->aNodes));
     pCfg->cTotalNodes       = STAC9221_NUM_NODES;
-    pCfg->u8AdcVolsLineIn   = STAC9220_NID_AMP_ADC0;
-    pCfg->u8DacLineOut      = STAC9220_NID_DAC1;
+    pCfg->idxAdcVolsLineIn  = STAC9220_NID_AMP_ADC0;
+    pCfg->idxDacLineOut     = STAC9220_NID_DAC1;
 
     /* Copy over the node class lists and popuplate afNodeClassifications. */
 #define STAC9220WIDGET(a_Type) do { \
@@ -2107,7 +2107,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd,
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-        if (CODEC_NID(uCmd) == pThis->Cfg.u8DacLineOut)
+        if (CODEC_NID(uCmd) == pThis->Cfg.idxDacLineOut)
             hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
@@ -2724,18 +2724,18 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM, 
      * Update stuff after changing the state.
      */
     PCODECNODE pNode;
-    if (hdaCodecIsDacNode(pThis, pThis->Cfg.u8DacLineOut))
+    if (hdaCodecIsDacNode(pThis, pThis->Cfg.idxDacLineOut))
     {
-        pNode = &pThis->aNodes[pThis->Cfg.u8DacLineOut];
+        pNode = &pThis->aNodes[pThis->Cfg.idxDacLineOut];
         hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
-    else if (hdaCodecIsSpdifOutNode(pThis, pThis->Cfg.u8DacLineOut))
+    else if (hdaCodecIsSpdifOutNode(pThis, pThis->Cfg.idxDacLineOut))
     {
-        pNode = &pThis->aNodes[pThis->Cfg.u8DacLineOut];
+        pNode = &pThis->aNodes[pThis->Cfg.idxDacLineOut];
         hdaR3CodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
 
-    pNode = &pThis->aNodes[pThis->Cfg.u8AdcVolsLineIn];
+    pNode = &pThis->aNodes[pThis->Cfg.idxAdcVolsLineIn];
     hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
@@ -2809,11 +2809,11 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThis, uint16_t uLUN, PC
     /*
      * Set initial volume.
      */
-    PCODECNODE pNode = &pThis->aNodes[pCodecCfg->u8DacLineOut];
+    PCODECNODE pNode = &pThis->aNodes[pCodecCfg->idxDacLineOut];
     rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     AssertRCReturn(rc, rc);
 
-    pNode = &pThis->aNodes[pCodecCfg->u8AdcVolsLineIn];
+    pNode = &pThis->aNodes[pCodecCfg->idxAdcVolsLineIn];
     rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
     AssertRCReturn(rc, rc);
 
