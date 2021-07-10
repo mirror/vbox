@@ -4990,10 +4990,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
        verb F20 should provide device/codec recognition. */
-    Assert(pThisCC->Codec.idVendor);
-    Assert(pThisCC->Codec.idDevice);
-    PDMPciDevSetSubSystemVendorId(pPciDev, pThisCC->Codec.idVendor); /* 2c ro - intel.) */
-    PDMPciDevSetSubSystemId(      pPciDev, pThisCC->Codec.idDevice); /* 2e ro. */
+    Assert(pThisCC->Codec.Cfg.idVendor);
+    Assert(pThisCC->Codec.Cfg.idDevice);
+    PDMPciDevSetSubSystemVendorId(pPciDev, pThisCC->Codec.Cfg.idVendor); /* 2c ro - intel.) */
+    PDMPciDevSetSubSystemId(      pPciDev, pThisCC->Codec.Cfg.idDevice); /* 2e ro. */
 
     /*
      * Create the per stream timers and the asso.

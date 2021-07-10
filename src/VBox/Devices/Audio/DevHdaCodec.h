@@ -806,11 +806,14 @@ AssertNodeSize(CODECNODE, 60 + 6);
 #define CODEC_NODE_CLS_Reserved     UINT16_C(0x1000)
 /** @} */
 
-
 /**
- * HDA codec state (ring-3, no shared state).
+ * Code configuration.
+ *
+ * This will not change after construction and is therefore kept in a const
+ * member of HDACODECR3 to encourage compiler optimizations and avoid accidental
+ * modification.
  */
-typedef struct HDACODECR3
+typedef struct HDACODECCFG
 {
     /** Codec implementation type. */
     CODECTYPE       enmType;
@@ -821,46 +824,55 @@ typedef struct HDACODECR3
     uint8_t         bBSKU;
     uint8_t         idAssembly;
 
-    bool            fInReset;
-
     uint8_t         cTotalNodes;
     uint8_t         u8AdcVolsLineIn;
     uint8_t         u8DacLineOut;
 
     /** Align the lists below so they don't cross cache lines (assumes
      *  CODEC_NODES_MAX is 32). */
-    uint8_t const   abPadding1[CODEC_NODES_MAX - 16];
+    uint8_t const   abPadding1[CODEC_NODES_MAX - 15];
 
     /** @name Node classifications.
      * @note These are copies of the g_abStac9220Xxxx arrays in DevHdaCodec.cpp.
      *       They are used both for classifying a node and for processing a class of
      *       nodes.
      * @{ */
-    uint8_t const   abPorts[CODEC_NODES_MAX];
-    uint8_t const   abDacs[CODEC_NODES_MAX];
-    uint8_t const   abAdcVols[CODEC_NODES_MAX];
-    uint8_t const   abAdcs[CODEC_NODES_MAX];
-    uint8_t const   abAdcMuxs[CODEC_NODES_MAX];
-    uint8_t const   abPcbeeps[CODEC_NODES_MAX];
-    uint8_t const   abSpdifIns[CODEC_NODES_MAX];
-    uint8_t const   abSpdifOuts[CODEC_NODES_MAX];
-    uint8_t const   abDigInPins[CODEC_NODES_MAX];
-    uint8_t const   abDigOutPins[CODEC_NODES_MAX];
-    uint8_t const   abCds[CODEC_NODES_MAX];
-    uint8_t const   abVolKnobs[CODEC_NODES_MAX];
-    uint8_t const   abReserveds[CODEC_NODES_MAX];
+    uint8_t         abPorts[CODEC_NODES_MAX];
+    uint8_t         abDacs[CODEC_NODES_MAX];
+    uint8_t         abAdcVols[CODEC_NODES_MAX];
+    uint8_t         abAdcs[CODEC_NODES_MAX];
+    uint8_t         abAdcMuxs[CODEC_NODES_MAX];
+    uint8_t         abPcbeeps[CODEC_NODES_MAX];
+    uint8_t         abSpdifIns[CODEC_NODES_MAX];
+    uint8_t         abSpdifOuts[CODEC_NODES_MAX];
+    uint8_t         abDigInPins[CODEC_NODES_MAX];
+    uint8_t         abDigOutPins[CODEC_NODES_MAX];
+    uint8_t         abCds[CODEC_NODES_MAX];
+    uint8_t         abVolKnobs[CODEC_NODES_MAX];
+    uint8_t         abReserveds[CODEC_NODES_MAX];
     /** @} */
 
     /** The CODEC_NODE_CLS_XXX flags for each node. */
-    uint16_t const  afNodeClassifications[CODEC_NODES_MAX];
+    uint16_t        afNodeClassifications[CODEC_NODES_MAX];
+} HDACODECCFG;
+AssertCompileMemberAlignment(HDACODECCFG, abPorts, CODEC_NODES_MAX);
 
-    CODECNODE       aNodes[CODEC_NODES_MAX];
 
-    STAMCOUNTER     StatLookupsR3;
-    uint64_t const  au64Padding3[7];
+/**
+ * HDA codec state (ring-3, no shared state).
+ */
+typedef struct HDACODECR3
+{
+    /** The codec configuration - initialized at construction time. */
+    HDACODECCFG const   Cfg;
+    /** The node data. */
+    CODECNODE           aNodes[CODEC_NODES_MAX];
+    /** Statistics. */
+    STAMCOUNTER         StatLookupsR3;
+    /** Size alignment padding. */
+    uint64_t const      au64Padding1[7];
 } HDACODECR3;
 AssertCompile(RT_IS_POWER_OF_TWO(CODEC_NODES_MAX));
-AssertCompileMemberAlignment(HDACODECR3, abPorts, CODEC_NODES_MAX);
 AssertCompileMemberAlignment(HDACODECR3, aNodes, 64);
 AssertCompileSizeAlignment(HDACODECR3, 8);
 AssertCompileSizeAlignment(HDACODECR3, 16);

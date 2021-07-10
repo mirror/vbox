@@ -188,15 +188,17 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 /**
  * Resets a single node of the codec.
  *
- * @param   pThis               HDA codec of node to reset.
- * @param   uNID                Node ID to set node to.
- * @param   pNode               Node to reset.
+ * @param   pThis       HDA codec of node to reset.
+ * @param   uNID        Node ID to set node to.
+ * @param   pNode       Node to reset.
+ * @param   fInReset    Set if we're called from hdaCodecReset via
+ *                      stac9220Reset, clear if called from stac9220Construct.
  */
-static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
+static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode, bool const fInReset)
 {
     LogFlowFunc(("NID=0x%x (%RU8)\n", uNID, uNID));
 
-    if (   !pThis->fInReset
+    if (   !fInReset
         && (   uNID != STAC9220_NID_ROOT
             && uNID != STAC9220_NID_AFG)
        )
@@ -390,7 +392,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             /* Connection list entry 0: Goes to DAC0. */
             pNode->port.node.au32F02_param[0]   = STAC9220_NID_DAC0;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_FRONT,
                                                           CODEC_F1C_DEVICE_HP,
@@ -414,7 +416,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             /* Connection list entry 0: Goes to DAC2. */
             pNode->port.node.au32F02_param[0]   = STAC9220_NID_DAC2;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
@@ -438,7 +440,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             /* Connection list entry 0: Goes to DAC1. */
             pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC1;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
@@ -463,7 +465,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             /* Connection list entry 0: Goes to DAC1. */
             pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC0;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_FRONT,
                                                           CODEC_F1C_DEVICE_MIC,
@@ -504,7 +506,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->port.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_PRESENCE_DETECT;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_LINE_IN,
@@ -534,7 +536,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->port.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
             pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC3;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_INTERNAL,
                                                           CODEC_F1C_DEVICE_SPEAKER,
@@ -560,7 +562,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->digout.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 3 /* Entries */);
             pNode->digout.node.au32F02_param[0x0] = RT_MAKE_U32_FROM_U8(STAC9220_NID_SPDIF_OUT,
                                                                         STAC9220_NID_AMP_ADC0, STAC9221_NID_ADAT_OUT, 0);
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->digout.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                             CODEC_F1C_LOCATION_REAR,
                                                             CODEC_F1C_DEVICE_SPDIF_OUT,
@@ -588,7 +590,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->digin.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_EAPD
                                                  | CODEC_F00_0C_CAP_INPUT
                                                  | CODEC_F00_0C_CAP_PRESENCE_DETECT;
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->digin.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                            CODEC_F1C_LOCATION_REAR,
                                                            CODEC_F1C_DEVICE_SPDIF_IN,
@@ -655,7 +657,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
                                                   | CODEC_F00_09_CAP_STEREO;
             pNode->cdnode.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->cdnode.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_FIXED,
                                                             CODEC_F1C_LOCATION_INTERNAL,
                                                             CODEC_F1C_DEVICE_CD,
@@ -744,7 +746,7 @@ static void stac9220NodeReset(PHDACODECR3 pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
             pNode->node.au32F02_param[0]   = STAC9221_NID_I2S_OUT;
 
-            if (!pThis->fInReset)
+            if (!fInReset)
                 pNode->reserved.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_NO_PHYS,
                                                               CODEC_F1C_LOCATION_NA,
                                                               CODEC_F1C_DEVICE_LINE_OUT,
@@ -773,46 +775,45 @@ static void stac9220Reset(PHDACODECR3 pThis)
 
     LogRel(("HDA: Codec reset\n"));
 
-    pThis->fInReset = true;
-
-    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     for (uint8_t i = 0; i < cTotalNodes; i++)
-        stac9220NodeReset(pThis, i, &pThis->aNodes[i]);
-
-    pThis->fInReset = false;
+        stac9220NodeReset(pThis, i, &pThis->aNodes[i], true /*fInReset*/);
 }
 
 
-static int stac9220Construct(PHDACODECR3 pThis)
+static int stac9220Construct(PHDACODECR3 pThis, HDACODECCFG *pCfg)
 {
-    pThis->idVendor     = 0x8384; /* SigmaTel */
     /*
      * Note: The Linux kernel uses "patch_stac922x" for the fixups,
      *       which in turn uses "ref922x_pin_configs" for the configuration
      *       defaults tweaking in sound/pci/hda/patch_sigmatel.c.
      */
-    pThis->idDevice     = 0x7680; /* STAC9221 A1 */
-    pThis->bBSKU        = 0x76;
-    pThis->idAssembly   = 0x80;
+    pCfg->idVendor          = 0x8384; /* SigmaTel */
+    pCfg->idDevice          = 0x7680; /* STAC9221 A1 */
+    pCfg->bBSKU             = 0x76;
+    pCfg->idAssembly        = 0x80;
 
-    pThis->fInReset = false;
+    AssertCompile(STAC9221_NUM_NODES <= RT_ELEMENTS(pThis->aNodes));
+    pCfg->cTotalNodes       = STAC9221_NUM_NODES;
+    pCfg->u8AdcVolsLineIn   = STAC9220_NID_AMP_ADC0;
+    pCfg->u8DacLineOut      = STAC9220_NID_DAC1;
 
-    uint16_t *pafNodeClassifications = (uint16_t *)&pThis->afNodeClassifications[0];
+    /* Copy over the node class lists and popuplate afNodeClassifications. */
 #define STAC9220WIDGET(a_Type) do { \
-            AssertCompile(RT_ELEMENTS(g_abStac9220##a_Type##s) <= RT_ELEMENTS(pThis->ab##a_Type##s)); \
-            uint8_t  *pbDst = (uint8_t *)&pThis->ab##a_Type##s[0]; \
+            AssertCompile(RT_ELEMENTS(g_abStac9220##a_Type##s) <= RT_ELEMENTS(pCfg->ab##a_Type##s)); \
+            uint8_t  *pbDst = (uint8_t *)&pCfg->ab##a_Type##s[0]; \
             uintptr_t i; \
             for (i = 0; i < RT_ELEMENTS(g_abStac9220##a_Type##s); i++) \
             { \
                 uint8_t const idNode = g_abStac9220##a_Type##s[i]; \
-                if (idNode != 0) \
-                { \
-                    AssertReturn(idNode < RT_ELEMENTS(pThis->aNodes), VERR_INTERNAL_ERROR_3); \
-                    pafNodeClassifications[idNode] |= RT_CONCAT(CODEC_NODE_CLS_,a_Type); \
-                } \
+                if (idNode == 0) \
+                    break; \
+                AssertReturn(idNode < RT_ELEMENTS(pThis->aNodes), VERR_INTERNAL_ERROR_3); \
+                pCfg->afNodeClassifications[idNode] |= RT_CONCAT(CODEC_NODE_CLS_,a_Type); \
                 pbDst[i] = idNode; \
             } \
-            for (; i < RT_ELEMENTS(pThis->ab##a_Type##s); i++) \
+            Assert(i + 1 == RT_ELEMENTS(g_abStac9220##a_Type##s)); \
+            for (; i < RT_ELEMENTS(pCfg->ab##a_Type##s); i++) \
                 pbDst[i] = 0; \
         } while (0)
     STAC9220WIDGET(Port);
@@ -830,12 +831,6 @@ static int stac9220Construct(PHDACODECR3 pThis)
     STAC9220WIDGET(Reserved);
 #undef STAC9220WIDGET
 
-    AssertCompile(STAC9221_NUM_NODES <= RT_ELEMENTS(pThis->aNodes));
-    pThis->cTotalNodes = STAC9221_NUM_NODES;
-
-    pThis->u8AdcVolsLineIn = STAC9220_NID_AMP_ADC0;
-    pThis->u8DacLineOut    = STAC9220_NID_DAC1;
-
     /*
      * Initialize all codec nodes.
      * This is specific to the codec, so do this here.
@@ -844,17 +839,17 @@ static int stac9220Construct(PHDACODECR3 pThis)
      *       initialize the node default configuration values then!
      */
     for (uint8_t i = 0; i < STAC9221_NUM_NODES; i++)
-        stac9220NodeReset(pThis, i, &pThis->aNodes[i]);
+        stac9220NodeReset(pThis, i, &pThis->aNodes[i], false /*fInReset*/);
 
     /* Common root node initializers. */
-    pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->idVendor, pThis->idDevice);
+    pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[0] = CODEC_MAKE_F00_00(pCfg->idVendor, pCfg->idDevice);
     pThis->aNodes[STAC9220_NID_ROOT].root.node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
 
     /* Common AFG node initializers. */
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x4] = CODEC_MAKE_F00_04(0x2, STAC9221_NUM_NODES - 2);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->aNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
-    pThis->aNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pThis->idVendor, pThis->bBSKU, pThis->idAssembly);
+    pThis->aNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pCfg->idVendor, pCfg->bBSKU, pCfg->idAssembly);
 
     return VINF_SUCCESS;
 }
@@ -870,10 +865,10 @@ static int stac9220Construct(PHDACODECR3 pThis)
 #define HDA_CODEC_IS_NODE_OF_TYPE_FUNC(a_Type) \
     DECLINLINE(bool) hdaCodecIs##a_Type##Node(PHDACODECR3 pThis, uint8_t idNode) \
     { \
-        Assert(idNode < RT_ELEMENTS(pThis->afNodeClassifications)); \
-        Assert(   (memchr(&pThis->RT_CONCAT3(ab,a_Type,s)[0], idNode, sizeof(pThis->RT_CONCAT3(ab,a_Type,s))) != NULL) \
-               == RT_BOOL(pThis->afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type))); \
-        return RT_BOOL(pThis->afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type)); \
+        Assert(idNode < RT_ELEMENTS(pThis->Cfg.afNodeClassifications)); \
+        Assert(   (memchr(&pThis->Cfg.RT_CONCAT3(ab,a_Type,s)[0], idNode, sizeof(pThis->Cfg.RT_CONCAT3(ab,a_Type,s))) != NULL) \
+               == RT_BOOL(pThis->Cfg.afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type))); \
+        return RT_BOOL(pThis->Cfg.afNodeClassifications[idNode] & RT_CONCAT(CODEC_NODE_CLS_,a_Type)); \
     }
 /* hdaCodecIsPortNode */
 HDA_CODEC_IS_NODE_OF_TYPE_FUNC(Port)
@@ -1375,8 +1370,8 @@ static DECLCALLBACK(int) vrbProcSetDigitalConverter2(PHDACODECR3 pThis, uint32_t
  */
 static DECLCALLBACK(int) vrbProcGetSubId(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    Assert(CODEC_CAD(uCmd) == pThis->id);
-    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_CAD(uCmd) == pThis->Cfg.id);
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     Assert(CODEC_NID(uCmd) < cTotalNodes);
     if (CODEC_NID(uCmd) >= cTotalNodes)
     {
@@ -1394,8 +1389,8 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODECR3 pThis, uint32_t uCmd, uint6
 
 static int codecSetSubIdX(PHDACODECR3 pThis, uint32_t uCmd, uint8_t u8Offset)
 {
-    Assert(CODEC_CAD(uCmd) == pThis->id);
-    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_CAD(uCmd) == pThis->Cfg.id);
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     Assert(CODEC_NID(uCmd) < cTotalNodes);
     if (CODEC_NID(uCmd) >= cTotalNodes)
     {
@@ -1457,9 +1452,9 @@ static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODECR3 pThis, uint32_t uCmd, uint
  */
 static DECLCALLBACK(int) vrbProcReset(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    Assert(CODEC_CAD(uCmd) == pThis->id);
+    Assert(CODEC_CAD(uCmd) == pThis->Cfg.id);
 
-    if (pThis->enmType == CODECTYPE_STAC9220)
+    if (pThis->Cfg.enmType == CODECTYPE_STAC9220)
     {
         Assert(CODEC_NID(uCmd) == STAC9220_NID_AFG);
 
@@ -1579,13 +1574,13 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, 
             } \
         } while (0)
 
-        PROPAGATE_PWR_STATE(pThis->abDacs,       dac);
-        PROPAGATE_PWR_STATE(pThis->abAdcs,       adc);
-        PROPAGATE_PWR_STATE(pThis->abDigInPins,  digin);
-        PROPAGATE_PWR_STATE(pThis->abDigOutPins, digout);
-        PROPAGATE_PWR_STATE(pThis->abSpdifIns,   spdifin);
-        PROPAGATE_PWR_STATE(pThis->abSpdifOuts,  spdifout);
-        PROPAGATE_PWR_STATE(pThis->abReserveds,  reserved);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abDacs,       dac);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abAdcs,       adc);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abDigInPins,  digin);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abDigOutPins, digout);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abSpdifIns,   spdifin);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abSpdifOuts,  spdifout);
+        PROPAGATE_PWR_STATE(pThis->Cfg.abReserveds,  reserved);
 
 #undef PROPAGATE_PWR_STATE
     }
@@ -1624,8 +1619,8 @@ DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
  */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puResp)
 {
-    Assert(CODEC_CAD(uCmd) == pThis->id);
-    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    Assert(CODEC_CAD(uCmd) == pThis->Cfg.id);
+    uint8_t const cTotalNodes = (uint8_t)RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     Assert(CODEC_NID(uCmd) < cTotalNodes);
     if (CODEC_NID(uCmd) >= cTotalNodes)
     {
@@ -2100,7 +2095,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd,
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-    //    if (CODEC_NID(uCmd) == pThis->u8AdcVolsLineIn)
+    //    if (CODEC_NID(uCmd) == pThis->Cfg.u8AdcVolsLineIn)
     //    {
             hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
     //    }
@@ -2112,7 +2107,7 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd,
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-        if (CODEC_NID(uCmd) == pThis->u8DacLineOut)
+        if (CODEC_NID(uCmd) == pThis->Cfg.u8DacLineOut)
             hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
@@ -2268,12 +2263,12 @@ DECLHIDDEN(int) hdaR3CodecLookup(PHDACODECR3 pThis, uint32_t uCmd, uint64_t *puR
     AssertPtr(puResp);
     *puResp = 0;
     AssertPtr(pThis);
-    AssertMsgReturn(CODEC_CAD(uCmd) == pThis->id,
+    AssertMsgReturn(CODEC_CAD(uCmd) == pThis->Cfg.id,
                     ("Unknown codec address 0x%x\n", CODEC_CAD(uCmd)),
                     VERR_INVALID_PARAMETER);
     uint32_t const uCmdData = CODEC_VERBDATA(uCmd);
     AssertMsgReturn(   uCmdData != 0
-                    && CODEC_NID(uCmd) < RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes)),
+                    && CODEC_NID(uCmd) < RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes)),
                     ("[NID0x%02x] Unknown / invalid node or data (0x%x)\n", CODEC_NID(uCmd), uCmdData),
                     VERR_INVALID_PARAMETER);
     STAM_COUNTER_INC(&pThis->CTX_SUFF(StatLookups));
@@ -2520,7 +2515,7 @@ static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursi
             }
 
         /* Slow recursion, but this is debug stuff anyway. */
-        for (uint8_t i = 0; i < pInfo->pThis->cTotalNodes; i++)
+        for (uint8_t i = 0; i < pInfo->pThis->Cfg.cTotalNodes; i++)
         {
             const PCODECNODE pSubNode = &pInfo->pThis->aNodes[i];
             if (pSubNode->node.uID == pNode->node.uID)
@@ -2560,7 +2555,7 @@ DECLHIDDEN(void) hdaR3CodecDbgListNodes(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, c
     PCODECDEBUG pInfo = &DbgInfo;
 
     CODECDBG_INDENT
-        for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+        for (uint8_t i = 0; i < pThis->Cfg.cTotalNodes; i++)
         {
             PCODECNODE pNode = &pThis->aNodes[i];
 
@@ -2585,7 +2580,7 @@ DECLHIDDEN(void) hdaR3CodecDbgSelector(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, co
 static DECLCALLBACK(void) stac9220DbgNodes(PHDACODECR3 pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    uint8_t const cTotalNodes = RT_MIN(pThis->cTotalNodes, RT_ELEMENTS(pThis->aNodes));
+    uint8_t const cTotalNodes = RT_MIN(pThis->Cfg.cTotalNodes, RT_ELEMENTS(pThis->aNodes));
     for (uint8_t i = 1; i < cTotalNodes; i++)
     {
         PCODECNODE pNode = &pThis->aNodes[i];
@@ -2663,10 +2658,10 @@ int hdaR3CodecRemoveStream(PHDACODECR3 pThis, PDMAUDIOMIXERCTL enmMixerCtl, bool
 int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
-    AssertLogRelMsgReturn(pThis->cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
+    AssertLogRelMsgReturn(pThis->Cfg.cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->Cfg.cTotalNodes),
                           VERR_INTERNAL_ERROR);
-    pHlp->pfnSSMPutU32(pSSM, pThis->cTotalNodes);
-    for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
+    pHlp->pfnSSMPutU32(pSSM, pThis->Cfg.cTotalNodes);
+    for (unsigned idxNode = 0; idxNode < pThis->Cfg.cTotalNodes; ++idxNode)
         pHlp->pfnSSMPutStructEx(pSSM, &pThis->aNodes[idxNode].SavedState, sizeof(pThis->aNodes[idxNode].SavedState),
                                 0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
     return VINF_SUCCESS;
@@ -2694,27 +2689,27 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM, 
         int rc2 = pHlp->pfnSSMGetU32(pSSM, &cNodes);
         AssertRCReturn(rc2, rc2);
         AssertReturn(cNodes == 0x1c, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        AssertReturn(pThis->Cfg.cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
 
         pFields = g_aCodecNodeFields;
         fFlags  = 0;
     }
     else if (uVersion >= HDA_SAVED_STATE_VERSION_2)
     {
-        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        AssertReturn(pThis->Cfg.cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
         pFields = g_aCodecNodeFields;
         fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
     }
     else if (uVersion >= HDA_SAVED_STATE_VERSION_1)
     {
-        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        AssertReturn(pThis->Cfg.cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
         pFields = g_aCodecNodeFieldsV1;
         fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
     }
     else
         AssertFailedReturn(VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
-    for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
+    for (unsigned idxNode = 0; idxNode < pThis->Cfg.cTotalNodes; ++idxNode)
     {
         uint8_t idOld = pThis->aNodes[idxNode].SavedState.Core.uID;
         int rc = pHlp->pfnSSMGetStructEx(pSSM, &pThis->aNodes[idxNode].SavedState, sizeof(pThis->aNodes[idxNode].SavedState),
@@ -2729,18 +2724,18 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODECR3 pThis, PSSMHANDLE pSSM, 
      * Update stuff after changing the state.
      */
     PCODECNODE pNode;
-    if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
+    if (hdaCodecIsDacNode(pThis, pThis->Cfg.u8DacLineOut))
     {
-        pNode = &pThis->aNodes[pThis->u8DacLineOut];
+        pNode = &pThis->aNodes[pThis->Cfg.u8DacLineOut];
         hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
-    else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
+    else if (hdaCodecIsSpdifOutNode(pThis, pThis->Cfg.u8DacLineOut))
     {
-        pNode = &pThis->aNodes[pThis->u8DacLineOut];
+        pNode = &pThis->aNodes[pThis->Cfg.u8DacLineOut];
         hdaR3CodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
     }
 
-    pNode = &pThis->aNodes[pThis->u8AdcVolsLineIn];
+    pNode = &pThis->aNodes[pThis->Cfg.u8AdcVolsLineIn];
     hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
@@ -2790,17 +2785,18 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThis, uint16_t uLUN, PC
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
+    HDACODECCFG *pCodecCfg = (HDACODECCFG *)&pThis->Cfg;
 
-    pThis->id      = uLUN;
-    pThis->enmType = CODECTYPE_STAC9220; /** @todo Make this dynamic. */
+    pCodecCfg->id      = uLUN;
+    pCodecCfg->enmType = CODECTYPE_STAC9220; /** @todo Make this dynamic. */
 
     int rc;
 
-    switch (pThis->enmType)
+    switch (pCodecCfg->enmType)
     {
         case CODECTYPE_STAC9220:
         {
-            rc = stac9220Construct(pThis);
+            rc = stac9220Construct(pThis, pCodecCfg);
             AssertRCReturn(rc, rc);
             break;
         }
@@ -2813,11 +2809,11 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODECR3 pThis, uint16_t uLUN, PC
     /*
      * Set initial volume.
      */
-    PCODECNODE pNode = &pThis->aNodes[pThis->u8DacLineOut];
+    PCODECNODE pNode = &pThis->aNodes[pCodecCfg->u8DacLineOut];
     rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     AssertRCReturn(rc, rc);
 
-    pNode = &pThis->aNodes[pThis->u8AdcVolsLineIn];
+    pNode = &pThis->aNodes[pCodecCfg->u8AdcVolsLineIn];
     rc = hdaR3CodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
     AssertRCReturn(rc, rc);
 
@@ -2858,7 +2854,7 @@ void hdaCodecDestruct(PHDACODECR3 pThis)
  */
 void hdaCodecReset(PHDACODECR3 pThis)
 {
-    switch (pThis->enmType)
+    switch (pThis->Cfg.enmType)
     {
         case CODECTYPE_STAC9220:
             stac9220Reset(pThis);
