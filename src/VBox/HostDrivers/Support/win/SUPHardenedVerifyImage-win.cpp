@@ -1266,10 +1266,19 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
             /* There are a couple of failures we can tollerate if there are more than
                one signature and one of them works out fine.  The RTLdrVerifySignature
                caller will have to check the failure counts though to make sure
-               something succeeded. */
+               something succeeded.
+
+               VERR_CR_PKCS7_KEY_USAGE_MISMATCH: Nvidia 391.35 nvldumpx.dll has an misconfigured
+               certificate "CN=NVIDIA Corporation PE Sign v2016" without valid Key Usage.  It is
+               rooted by "CN=NVIDIA Subordinate CA 2016 v2,DC=nvidia,DC=com", so homebrewn.
+               Sysinternals' sigcheck util ignores it, while MS sigtool doesn't trust the root.
+               It's possible we're being too strict, but well, it's the only case so far, so no
+               need to relax the Key Usage restrictions just for a certificate w/o a trusted root.
+               */
             pNtViRdr->rcLastSignatureFailure = rc;
             if (   rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME
-                || rc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
+                || rc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS
+                || rc == VERR_CR_PKCS7_KEY_USAGE_MISMATCH)
             {
                 SUP_DPRINTF(("%s: Signature #%u/%u: %s (%d) w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures,
                              rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME ? "VERR_CR_X509_CPV_NOT_VALID_AT_TIME" : "VERR_CR_X509_CPV_NO_TRUSTED_PATHS", rc,
