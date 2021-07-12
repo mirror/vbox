@@ -96,7 +96,7 @@ void UIHostnameDomainNameEditor::retranslateUi()
         m_pHostnameLineEdit->setToolTip(strHostnameTooltip);
     if (m_pDomainNameLabel)
     {
-        m_pDomainNameLabel->setText(tr("&Domain"));
+        m_pDomainNameLabel->setText(tr("&Domain Name"));
         m_pDomainNameLabel->setToolTip(strDomainTooltip);
     }
     m_pDomainNameLineEdit->setToolTip(strDomainTooltip);

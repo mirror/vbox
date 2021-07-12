@@ -24,30 +24,36 @@
 /* Qt includes: */
 #include <QSet>
 
-/* Local includes: */
-#include "UIWizardNewVMNameOSTypePageBasic.h"
-#include "UIWizardNewVMUnattendedPageBasic.h"
-#include "UIWizardNewVMHardwarePageBasic.h"
-#include "UIWizardNewVMDiskPageBasic.h"
-#include "UIWizardNewVDPageSizeLocation.h"
+#include "UINativeWizardPage.h"
+
+#include "COMEnums.h"
+#include "CMediumFormat.h"
 
 /* Forward declarations: */
+class QButtonGroup;
+class QCheckBox;
+class QGridLayout;
 class QGroupBox;
+class QLabel;
+class QLineEdit;
+class QVBoxLayout;
+class UIFilePathSelector;
+class UIHostnameDomainNameEditor;
+class UIMediumSizeEditor;
+class UINameAndSystemEditor;
 class UIToolBox;
+class UIUserNamePasswordEditor;
+class QIToolButton;
 
 /** Expert page of the New Virtual Machine wizard. */
-class UIWizardNewVMPageExpert : public UIWizardPage,
-                                public UIWizardNewVDPageBaseFileType,
-                                public UIWizardNewVDPageBaseVariant,
-                                public UIWizardNewVDPageBaseSizeLocation
+class UIWizardNewVMPageExpert : public UINativeWizardPage
 {
 
     Q_OBJECT;
 
 public:
 
-    /** Constructor. */
-    UIWizardNewVMPageExpert(const QString &strGroup);
+    UIWizardNewVMPageExpert();
 
 protected:
 
@@ -102,10 +108,21 @@ private:
     void markWidgets() const;
     QWidget *createUnattendedWidgets();
     virtual QWidget *createNewDiskWidgets() /* override */;
+    QWidget *createFormatButtonGroup(bool fExpertMode);
+    QWidget *createMediumVariantWidgets();
+    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout,
+                                                  CMediumFormat medFormat, bool fPreferred /* = false */);
+    QWidget *createNameOSTypeWidgets();
+    QWidget *createUserNameWidgets();
+    QWidget *createAdditionalOptionsWidgets();
+    QWidget *createGAInstallWidgets();
+
     void updateVirtualDiskPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
     void setEnableNewDiskWidgets(bool fEnable);
     void setVirtualDiskFromDiskCombo();
+
+
 
     /** @name Variables
      * @{ */
@@ -113,9 +130,29 @@ private:
        QGroupBox *m_pDiskFormatGroupBox;
        QGroupBox *m_pDiskVariantGroupBox;
        QLabel *m_pLocationLabel;
-       /** Set of widgets which user explicitly modified their values. They are exempt from
-         * adjusting when OS type changes. */
-       QSet<QObject*> m_userSetWidgets;
+       QLineEdit *m_pLocationEditor;
+       QIToolButton *m_pLocationOpenButton;
+       QLabel *m_pMediumSizeEditorLabel;
+       UIMediumSizeEditor *m_pMediumSizeEditor;
+       QButtonGroup *m_pFormatButtonGroup;
+       QCheckBox *m_pFixedCheckBox;
+       QCheckBox *m_pSplitBox;
+       UINameAndSystemEditor *m_pNameAndSystemEditor;
+       QCheckBox *m_pSkipUnattendedCheckBox;
+       QGridLayout *m_pNameAndSystemLayout;
+       QGroupBox *m_pAdditionalOptionsContainer;
+       QLabel *m_pProductKeyLabel;
+       QLineEdit *m_pProductKeyLineEdit;
+       UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
+
+
+    QCheckBox *m_pStartHeadlessCheckBox;
+    QGroupBox *m_pGAInstallationISOContainer;
+    QLabel *m_pGAISOPathLabel;
+    UIFilePathSelector *m_pGAISOFilePathSelector;
+    QGroupBox *m_pUserNameContainer;
+    UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
+
     /** @} */
 };
 

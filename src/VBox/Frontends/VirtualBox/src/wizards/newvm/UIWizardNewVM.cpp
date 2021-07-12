@@ -83,7 +83,6 @@ void UIWizardNewVM::populatePages()
 {
     switch (mode())
     {
-        case WizardMode_Expert:
         case WizardMode_Basic:
         {
             addPage(new UIWizardNewVMNameOSTypePageBasic);
@@ -93,11 +92,11 @@ void UIWizardNewVM::populatePages()
             addPage(new UIWizardNewVMDiskPageBasic);
             break;
         }
-        // case WizardMode_Expert:
-        // {
-        //     // addPage(new UIWizardNewCloudVMPageExpert(m_fFullWizard));
-        //     break;
-        // }
+        case WizardMode_Expert:
+        {
+            addPage(new UIWizardNewVMPageExpert());
+            break;
+        }
         default:
         {
             AssertMsgFailed(("Invalid mode: %d", mode()));

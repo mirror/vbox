@@ -123,9 +123,6 @@ QWidget *UIWizardNewVDPageBaseFileType::createFormatButtonGroup(bool fExpertMode
             m_pFormatButtonGroup->button(0)->setFocus();
         }
     }
-
-
-
     return pContainerWidget;
 }
 
