@@ -1483,7 +1483,8 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                              * assertions are going to panic the host since we're outside the setjmp/longjmp zone.
                              */
                             if (RT_UNLIKELY(   VMCPU_GET_STATE(pGVCpu) != VMCPUSTATE_STARTED_HM
-                                            && RT_SUCCESS_NP(rc)  && rc !=  VINF_VMM_CALL_HOST ))
+                                            && RT_SUCCESS_NP(rc)
+                                            && rc != VINF_VMM_CALL_HOST ))
                             {
                                 pGVM->vmm.s.szRing0AssertMsg1[0] = '\0';
                                 RTStrPrintf(pGVM->vmm.s.szRing0AssertMsg2, sizeof(pGVM->vmm.s.szRing0AssertMsg2),
@@ -1496,7 +1497,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                                 pGVM->vmm.s.szRing0AssertMsg1[0] = '\0';
                                 RTStrPrintf(pGVM->vmm.s.szRing0AssertMsg2, sizeof(pGVM->vmm.s.szRing0AssertMsg2),
                                             "Thread-context hooks still enabled! VCPU=%p Id=%u rc=%d.\n", pGVCpu, pGVCpu->idCpu, rc);
-                                rc = VERR_INVALID_STATE;
+                                rc = VERR_VMM_CONTEXT_HOOK_STILL_ENABLED;
                             }
 
                             VMCPU_SET_STATE(pGVCpu, VMCPUSTATE_STARTED);

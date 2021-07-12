@@ -1299,6 +1299,8 @@
 #define VERR_VMM_SMAP_BUT_AC_CLEAR          (-2717)
 /** NEM returned in the wrong state. */
 #define VERR_VMM_WRONG_NEM_VMCPU_STATE      (-2718)
+/** Got back from vmmR0CallRing3SetJmp with the context hook still enabled. */
+#define VERR_VMM_CONTEXT_HOOK_STILL_ENABLED (-2719)
 /** @} */
 
 
