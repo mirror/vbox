@@ -94,8 +94,6 @@ private:
         QCheckBox *m_pStartHeadlessCheckBox;
         UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
         UIHostnameDomainEditor *m_pHostnameDomainEditor;
-        // QLineEdit *m_pHostnameLineEdit;
-        // QLabel    *m_pHostnameLabel;
         QLabel    *m_pGAISOPathLabel;
         UIFilePathSelector *m_pGAISOFilePathSelector;
         /** Product key stuff. */

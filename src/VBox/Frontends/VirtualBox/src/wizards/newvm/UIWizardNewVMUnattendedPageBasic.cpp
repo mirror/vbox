@@ -313,14 +313,7 @@ QWidget *UIWizardNewVMUnattendedPageBasic::createAdditionalOptionsWidgets()
 
     m_pHostnameDomainEditor = new UIHostnameDomainEditor;
     if (m_pHostnameDomainEditor)
-    {
-        // if (m_pHostnameLabel)
-        //     m_pHostnameLabel->setBuddy(m_pHostnameLineEdit);
-        // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
-        // m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(hostNameRegex, this));
-        // m_pHostnameLineEdit->setInputMask("NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
         pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainEditor, 1, 0, 2, 3);
-    }
 
     m_pStartHeadlessCheckBox = new QCheckBox;
     if (m_pStartHeadlessCheckBox)
