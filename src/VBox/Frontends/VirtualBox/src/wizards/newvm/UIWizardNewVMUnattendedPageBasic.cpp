@@ -101,8 +101,8 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
         connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
                 this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
     if (m_pHostnameDomainNameEditor)
-        connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainChanged,
-                this, &UIWizardNewVMUnattendedPageBasic::sltHostnameDomainChanged);
+        connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainNameChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged);
     if (m_pProductKeyLineEdit)
         connect(m_pProductKeyLineEdit, &QLineEdit::textChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged);
@@ -166,12 +166,12 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
     {
         m_pHostnameDomainNameEditor->blockSignals(true);
 
-        if (!m_userModifiedParameters.contains("HostnameDomain"))
+        if (!m_userModifiedParameters.contains("HostnameDomainName"))
         {
             m_pHostnameDomainNameEditor->setHostname(pWizard->machineBaseName());
-            m_pHostnameDomainNameEditor->setDomain("myguest.virtualbox.org");
+            m_pHostnameDomainNameEditor->setDomainName("myguest.virtualbox.org");
             /* Initialize unattended hostname here since we cannot get the efault value from CUnattended this early (unlike username etc): */
-            newVMWizardPropertySet(HostnameDomain, m_pHostnameDomainNameEditor->hostnameDomain());
+            newVMWizardPropertySet(HostnameDomainName, m_pHostnameDomainNameEditor->hostnameDomainName());
         }
 
         m_pHostnameDomainNameEditor->blockSignals(false);
@@ -251,10 +251,10 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
     return true;
 }
 
-void UIWizardNewVMUnattendedPageBasic::sltHostnameDomainChanged(const QString &strHostnameDomain)
+void UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
 {
-    newVMWizardPropertySet(HostnameDomain, strHostnameDomain);
-    m_userModifiedParameters << "HostnameDomain";
+    newVMWizardPropertySet(HostnameDomainName, strHostnameDomainName);
+    m_userModifiedParameters << "HostnameDomainName";
     emit completeChanged();
 }
 

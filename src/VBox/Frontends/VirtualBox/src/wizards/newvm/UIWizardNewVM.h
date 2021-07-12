@@ -51,7 +51,7 @@ struct UIUnattendedInstallData
     bool m_fStartHeadless;
     QString m_strUserName;
     QString m_strPassword;
-    QString m_strHostnameDomain;
+    QString m_strHostnameDomainName;
     QString m_strProductKey;
     bool m_fInstallGuestAdditions;
     QString m_strGuestAdditionsISOPath;
@@ -133,8 +133,8 @@ public:
     const QString &guestAdditionsISOPath() const;
     void setGuestAdditionsISOPath(const QString &strGAISOPath);
 
-    const QString &hostnameDomain() const;
-    void setHostnameDomain(const QString &strHostname);
+    const QString &hostnameDomainName() const;
+    void setHostnameDomainName(const QString &strHostnameDomainName);
 
     const QString &productKey() const;
     void setProductKey(const QString &productKey);

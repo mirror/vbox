@@ -741,14 +741,14 @@ void UIWizardNewVM::setGuestAdditionsISOPath(const QString &strGAISOPath)
     m_unattendedInstallData.m_strGuestAdditionsISOPath = strGAISOPath;
 }
 
-const QString &UIWizardNewVM::hostnameDomain() const
+const QString &UIWizardNewVM::hostnameDomainName() const
 {
-    return m_unattendedInstallData.m_strHostnameDomain;
+    return m_unattendedInstallData.m_strHostnameDomainName;
 }
 
-void UIWizardNewVM::setHostnameDomain(const QString &strHostnameDomain)
+void UIWizardNewVM::setHostnameDomainName(const QString &strHostnameDomain)
 {
-    m_unattendedInstallData.m_strHostnameDomain = strHostnameDomain;
+    m_unattendedInstallData.m_strHostnameDomainName = strHostnameDomain;
 }
 
 const QString &UIWizardNewVM::productKey() const

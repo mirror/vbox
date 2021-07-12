@@ -41,7 +41,7 @@ class UIHostnameDomainNameEditor : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigHostnameDomainChanged(const QString &strHostNameDomain);
+    void sigHostnameDomainNameChanged(const QString &strHostNameDomain);
 
 public:
 
@@ -50,10 +50,10 @@ public:
     QString hostname() const;
     void setHostname(const QString &strHostname);
 
-    QString domain() const;
-    void setDomain(const QString &strDomain);
+    QString domainName() const;
+    void setDomainName(const QString &strDomain);
 
-    QString hostnameDomain() const;
+    QString hostnameDomainName() const;
 
     bool isComplete() const;
 
@@ -72,10 +72,10 @@ private:
     void addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout);
 
     QILineEdit  *m_pHostnameLineEdit;
-    QILineEdit  *m_pDomainLineEdit;
+    QILineEdit  *m_pDomainNameLineEdit;
 
     QLabel *m_pHostnameLabel;
-    QLabel *m_pDomainLabel;
+    QLabel *m_pDomainNameLabel;
 
 };
 

@@ -37,9 +37,9 @@
 UIHostnameDomainNameEditor::UIHostnameDomainNameEditor(QWidget *pParent /*  = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHostnameLineEdit(0)
-    , m_pDomainLineEdit(0)
+    , m_pDomainNameLineEdit(0)
     , m_pHostnameLabel(0)
-    , m_pDomainLabel(0)
+    , m_pDomainNameLabel(0)
 {
     prepare();
 }
@@ -54,7 +54,7 @@ QString UIHostnameDomainNameEditor::hostname() const
 bool UIHostnameDomainNameEditor::isComplete() const
 {
     return m_pHostnameLineEdit && m_pHostnameLineEdit->hasAcceptableInput() &&
-        m_pDomainLineEdit && m_pDomainLineEdit->hasAcceptableInput();
+        m_pDomainNameLineEdit && m_pDomainNameLineEdit->hasAcceptableInput();
 }
 
 void UIHostnameDomainNameEditor::setHostname(const QString &strHostname)
@@ -63,23 +63,23 @@ void UIHostnameDomainNameEditor::setHostname(const QString &strHostname)
         m_pHostnameLineEdit->setText(strHostname);
 }
 
-QString UIHostnameDomainNameEditor::domain() const
+QString UIHostnameDomainNameEditor::domainName() const
 {
-    if (m_pDomainLineEdit)
-        return m_pDomainLineEdit->text();
+    if (m_pDomainNameLineEdit)
+        return m_pDomainNameLineEdit->text();
     return QString();
 }
 
-void UIHostnameDomainNameEditor::setDomain(const QString &strDomain)
+void UIHostnameDomainNameEditor::setDomainName(const QString &strDomain)
 {
-    if (m_pDomainLineEdit)
-        m_pDomainLineEdit->setText(strDomain);
+    if (m_pDomainNameLineEdit)
+        m_pDomainNameLineEdit->setText(strDomain);
 }
 
-QString UIHostnameDomainNameEditor::hostnameDomain() const
+QString UIHostnameDomainNameEditor::hostnameDomainName() const
 {
-    if (m_pHostnameLineEdit && m_pDomainLineEdit)
-        return QString("%1.%2").arg(m_pHostnameLineEdit->text()).arg(m_pDomainLineEdit->text());
+    if (m_pHostnameLineEdit && m_pDomainNameLineEdit)
+        return QString("%1.%2").arg(m_pHostnameLineEdit->text()).arg(m_pDomainNameLineEdit->text());
     return QString();
 }
 
@@ -94,12 +94,12 @@ void UIHostnameDomainNameEditor::retranslateUi()
     }
     if (m_pHostnameLineEdit)
         m_pHostnameLineEdit->setToolTip(strHostnameTooltip);
-    if (m_pDomainLabel)
+    if (m_pDomainNameLabel)
     {
-        m_pDomainLabel->setText(tr("&Domain"));
-        m_pDomainLabel->setToolTip(strDomainTooltip);
+        m_pDomainNameLabel->setText(tr("&Domain"));
+        m_pDomainNameLabel->setToolTip(strDomainTooltip);
     }
-    m_pDomainLineEdit->setToolTip(strDomainTooltip);
+    m_pDomainNameLineEdit->setToolTip(strDomainTooltip);
 }
 
 void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout)
@@ -139,11 +139,11 @@ void UIHostnameDomainNameEditor::prepare()
     setLayout(pMainLayout);
     int iRow = 0;
     addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, pMainLayout);
-    addLineEdit(iRow, m_pDomainLabel, m_pDomainLineEdit, pMainLayout);
+    addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, pMainLayout);
 
     connect(m_pHostnameLineEdit, &QILineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltHostnameChanged);
-    connect(m_pDomainLineEdit, &QILineEdit::textChanged,
+    connect(m_pDomainNameLineEdit, &QILineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltDomainChanged);
 
 
@@ -154,13 +154,13 @@ void UIHostnameDomainNameEditor::sltHostnameChanged()
 {
     m_pHostnameLineEdit->mark(!m_pHostnameLineEdit->hasAcceptableInput(),
                               tr("Hostname should be a string of length 2. Allowed characters are alphanumerics, '-', and '.'" ));
-    emit sigHostnameDomainChanged(hostnameDomain());
+    emit sigHostnameDomainNameChanged(hostnameDomainName());
 }
 
 void UIHostnameDomainNameEditor::sltDomainChanged()
 {
-    m_pDomainLineEdit->mark(!m_pDomainLineEdit->hasAcceptableInput(),
+    m_pDomainNameLineEdit->mark(!m_pDomainNameLineEdit->hasAcceptableInput(),
                               tr("Domain name should be a string of length 2. Allowed characters are alphanumerics, '-', and '.'" ));
 
-    emit sigHostnameDomainChanged(hostnameDomain());
+    emit sigHostnameDomainNameChanged(hostnameDomainName());
 }
