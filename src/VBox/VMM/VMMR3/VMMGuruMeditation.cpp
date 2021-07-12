@@ -606,8 +606,23 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             break;
         }
 
+        /*
+         * For some problems (e.g. VERR_INVALID_STATE in VMMR0.cpp), there could be
+         * additional details in the assertion messages.
+         */
         default:
         {
+            const char *pszMsg1 = VMMR3GetRZAssertMsg1(pVM);
+            while (pszMsg1 && *pszMsg1 == '\n')
+                pszMsg1++;
+            if (pszMsg1 && *pszMsg1 != '\0')
+                pHlp->pfnPrintf(pHlp, "AssertMsg1: %s\n", pszMsg1);
+
+            const char *pszMsg2 = VMMR3GetRZAssertMsg2(pVM);
+            while (pszMsg2 && *pszMsg2 == '\n')
+                pszMsg2++;
+            if (pszMsg2 && *pszMsg2 != '\0')
+                pHlp->pfnPrintf(pHlp, "AssertMsg2: %s\n", pszMsg2);
             break;
         }
 
