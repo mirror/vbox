@@ -284,6 +284,7 @@ static FNHDAREGWRITE hdaRegWriteGCTL;
 static FNHDAREGREAD  hdaRegReadLPIB;
 static FNHDAREGREAD  hdaRegReadWALCLK;
 static FNHDAREGWRITE hdaRegWriteSSYNC;
+static FNHDAREGWRITE hdaRegWriteNewSSYNC;
 static FNHDAREGWRITE hdaRegWriteCORBWP;
 static FNHDAREGWRITE hdaRegWriteCORBRP;
 static FNHDAREGWRITE hdaRegWriteCORBCTL;
@@ -298,7 +299,7 @@ static FNHDAREGREAD  hdaRegReadIRS;
 static FNHDAREGWRITE hdaRegWriteBase;
 /** @} */
 
-/** @name {IOB}SDn write functions.
+/** @name {IOB}SDn read/write functions.
  * @{
  */
 static FNHDAREGWRITE hdaRegWriteSDCBL;
@@ -310,6 +311,8 @@ static FNHDAREGWRITE hdaRegWriteSDFIFOS;
 static FNHDAREGWRITE hdaRegWriteSDFMT;
 static FNHDAREGWRITE hdaRegWriteSDBDPL;
 static FNHDAREGWRITE hdaRegWriteSDBDPU;
+static FNHDAREGREAD  hdaRegReadSDnPIB;
+static FNHDAREGREAD  hdaRegReadSDnEFIFOS;
 /** @} */
 
 /** @name Generic register read/write functions.
@@ -409,6 +412,16 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 #define HDA_REG_MAP_DEF_STREAM(index, name) \
     HDA_REG_MAP_STRM(HDA_REG_DESC_SD0_BASE + (index * 32 /* 0x20 */), name)
 
+/** Skylake stream registers. */
+#define HDA_REG_MAP_SKYLAKE_STRM(a_off, a_StrPrefix) \
+                   /* offset        size     read mask   write mask  flags          read callback        write callback     index, abbrev, description */ \
+                   /* -------       -------  ----------  ----------  -------------- --------------       -----------------  -----------------------------  ----------- */ \
+    /* 0x1084 */ \
+    HDA_REG_ENTRY_STR(a_off + 0x04, 0x00004, 0xffffffff, 0x00000000, HDA_RD_F_NONE, hdaRegReadSDnPIB,    hdaRegWriteUnimpl, a_StrPrefix, DPIB,   "DMA Position In Buffer" ), \
+    /* 0x1094 */ \
+    HDA_REG_ENTRY_STR(a_off + 0x14, 0x00004, 0xffffffff, 0x00000000, HDA_RD_F_NONE, hdaRegReadSDnEFIFOS, hdaRegWriteUnimpl, a_StrPrefix, EFIFOS, "Extended FIFO Size" )
+
+
 /** See 302349 p 6.2. */
 static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 {
@@ -423,12 +436,14 @@ static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
     HDA_REG_ENTRY(0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteU16     , WAKEEN,      "Wake Enable" ),
     HDA_REG_ENTRY(0x0000e, 0x00002, 0x00000007, 0x00000007, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteSTATESTS, STATESTS,    "State Change Status" ),
     HDA_REG_ENTRY(0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadUnimpl, hdaRegWriteUnimpl  , GSTS,        "Global Status" ),
+    HDA_REG_ENTRY(0x00014, 0x00002, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , LLCH,        "Linked List Capabilities Header" ),
     HDA_REG_ENTRY(0x00018, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteU16     , OUTSTRMPAY,  "Output Stream Payload Capability" ),
     HDA_REG_ENTRY(0x0001A, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , INSTRMPAY,   "Input Stream Payload Capability" ),
     HDA_REG_ENTRY(0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , INTCTL,      "Interrupt Control" ),
     HDA_REG_ENTRY(0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , INTSTS,      "Interrupt Status" ),
  HDA_REG_ENTRY_EX(0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , 0, "WALCLK", "Wall Clock Counter" ),
-    HDA_REG_ENTRY(0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteSSYNC   , SSYNC,       "Stream Synchronization" ),
+    HDA_REG_ENTRY(0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteSSYNC   , SSYNC,       "Stream Synchronization (old)" ),
+    HDA_REG_ENTRY(0x00038, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteNewSSYNC, SSYNC,       "Stream Synchronization (new)" ),
     HDA_REG_ENTRY(0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , CORBLBASE,   "CORB Lower Base Address" ),
     HDA_REG_ENTRY(0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , CORBUBASE,   "CORB Upper Base Address" ),
     HDA_REG_ENTRY(0x00048, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteCORBWP  , CORBWP,      "CORB Write Pointer" ),
@@ -457,7 +472,17 @@ static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
     HDA_REG_MAP_DEF_STREAM(4, SD4),
     HDA_REG_MAP_DEF_STREAM(5, SD5),
     HDA_REG_MAP_DEF_STREAM(6, SD6),
-    HDA_REG_MAP_DEF_STREAM(7, SD7)
+    HDA_REG_MAP_DEF_STREAM(7, SD7),
+    HDA_REG_ENTRY(0x00c00, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , MLCH,        "Multiple Links Capability Header" ),
+    HDA_REG_ENTRY(0x00c04, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , MLCD,        "Multiple Links Capability Declaration" ),
+    HDA_REG_MAP_SKYLAKE_STRM(0x01080, SD0),
+    HDA_REG_MAP_SKYLAKE_STRM(0x010a0, SD1),
+    HDA_REG_MAP_SKYLAKE_STRM(0x010c0, SD2),
+    HDA_REG_MAP_SKYLAKE_STRM(0x010e0, SD3),
+    HDA_REG_MAP_SKYLAKE_STRM(0x01100, SD4),
+    HDA_REG_MAP_SKYLAKE_STRM(0x01120, SD5),
+    HDA_REG_MAP_SKYLAKE_STRM(0x01140, SD6),
+    HDA_REG_MAP_SKYLAKE_STRM(0x01160, SD7),
 };
 
 #undef HDA_REG_ENTRY_EX
@@ -469,6 +494,7 @@ static const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 /**
  * HDA register aliases (HDA spec 3.3.45).
  * @remarks Sorted by offReg.
+ * @remarks Lookup code ASSUMES this starts somewhere after g_aHdaRegMap ends.
  */
 static struct HDAREGALIAS
 {
@@ -720,14 +746,17 @@ static int hdaRegLookup(uint32_t offReg)
         int idxMiddle = idxLow + (idxEnd - idxLow) / 2;
         if (offReg < g_aHdaRegMap[idxMiddle].off)
         {
-            if (idxLow == idxMiddle)
+            if (idxLow != idxMiddle)
+                idxEnd = idxMiddle;
+            else
                 break;
-            idxEnd = idxMiddle;
         }
         else if (offReg > g_aHdaRegMap[idxMiddle].off)
         {
             idxLow = idxMiddle + 1;
-            if (idxLow >= idxEnd)
+            if (idxLow < idxEnd)
+            { /* likely */ }
+            else
                 break;
         }
         else
@@ -1342,8 +1371,10 @@ static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     return rcStrict;
 }
 
-static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+static VBOXSTRICTRC hdaRegWriteSSYNCWorker(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, const char *pszCaller)
 {
+    RT_NOREF(pszCaller);
+
     /*
      * The SSYNC register is a DMA pause mask where each bit represents a stream.
      * There should be no DMA transfers going down the driver chains when the a
@@ -1362,8 +1393,7 @@ static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     if (fChanged)
     {
 #if 0 /** @todo implement SSYNC: ndef IN_RING3 */
-        RT_NOREF(pDevIns);
-        Log3Func(("Going to ring-3 to handle SSYNC change: %#x\n", fChanged));
+        Log3(("%s: Going to ring-3 to handle SSYNC change: %#x\n", pszCaller, fChanged));
         return VINF_IOM_R3_MMIO_WRITE;
 #else
         for (uint32_t fMask = 1, i = 0; fMask < RT_BIT_32(HDA_MAX_STREAMS); i++, fMask <<= 1)
@@ -1371,20 +1401,31 @@ static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             { /* nothing */ }
             else if (fNew & fMask)
             {
-                Log3Func(("SSYNC bit %u set\n", i));
+                Log3(("%Rfn: SSYNC bit %u set\n", pszCaller, i));
                 /* See code in SDCTL around hdaR3StreamTimerMain call. */
             }
             else
             {
-                Log3Func(("SSYNC bit %u cleared\n", i));
+                Log3(("%Rfn: SSYNC bit %u cleared\n", pszCaller, i));
                 /* The next DMA timer callout will not do anything. */
             }
-        RT_NOREF(pDevIns);
 #endif
     }
 
     HDA_REG(pThis, SSYNC) = fNew;
     return VINF_SUCCESS;
+}
+
+static VBOXSTRICTRC hdaRegWriteSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+{
+    RT_NOREF(pDevIns);
+    return hdaRegWriteSSYNCWorker(pThis, iReg, u32Value, __FUNCTION__);
+}
+
+static VBOXSTRICTRC hdaRegWriteNewSSYNC(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+{
+    RT_NOREF(pDevIns);
+    return hdaRegWriteSSYNCWorker(pThis, iReg, u32Value, __FUNCTION__);
 }
 
 static VBOXSTRICTRC hdaRegWriteCORBRP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2128,6 +2169,25 @@ static VBOXSTRICTRC hdaRegWriteSDBDPU(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
 {
     return hdaRegWriteSDBDPX(pDevIns, pThis, iReg, u32Value, HDA_SD_NUM_FROM_REG(pThis, BDPU, iReg));
 }
+
+/** Skylake specific. */
+static VBOXSTRICTRC hdaRegReadSDnPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
+{
+    uint8_t const uSD = HDA_SD_NUM_FROM_SKYLAKE_REG(DPIB, iReg);
+    LogFlowFunc(("uSD=%u -> SDnLPIB\n", uSD));
+    return hdaRegReadLPIB(pDevIns, pThis, HDA_SD_TO_REG(LPIB, uSD), pu32Value);
+}
+
+/** Skylake specific. */
+static VBOXSTRICTRC hdaRegReadSDnEFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
+{
+    /** @todo This is not implemented as I have found no specs yet.  */
+    RT_NOREF(pDevIns, pThis, iReg);
+    LogFunc(("TODO - need register spec: uSD=%u\n", HDA_SD_NUM_FROM_SKYLAKE_REG(DPIB, iReg)));
+    *pu32Value = 256;
+    return VINF_SUCCESS;
+}
+
 
 static VBOXSTRICTRC hdaRegReadIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
@@ -2919,6 +2979,14 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
     /* Some guests (like Haiku) don't set RINTCNT explicitly but expect an interrupt after each
      * RIRB response -- so initialize RINTCNT to 1 by default. */
     HDA_REG(pThis, RINTCNT)  = 0x1;
+    /* For newer devices, there is a capability list offset word at 0x14, linux read it, does
+       no checking and simply reads the dword it specifies.  The list terminates when the lower
+       16 bits are zero.  See snd_hdac_bus_parse_capabilities.  Table 5-2 in intel 341081-002
+       specifies this to be 0xc00 and chaining with 0x800, 0x500 and 0x1f00. We just terminate
+       it at 0xc00 for now. */
+    HDA_REG(pThis, LLCH)     = 0xc00;
+    HDA_REG(pThis, MLCH)     = 0x0;
+    HDA_REG(pThis, MLCD)     = 0x0;
 
     /*
      * Stop any audio currently playing and/or recording.
@@ -5143,11 +5211,16 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertReleaseMsg(pNextReg || ((pReg->off + pReg->cb) & 3) == 0,
                          ("[%#x] = {%#x LB %#x}\n", i, pReg->off, pReg->cb));
     }
+    Assert(strcmp(g_aHdaRegMap[HDA_REG_SSYNC].pszName, "SSYNC") == 0);
+    Assert(strcmp(g_aHdaRegMap[HDA_REG_DPUBASE].pszName, "DPUBASE") == 0);
+    Assert(strcmp(g_aHdaRegMap[HDA_REG_MLCH].pszName, "MLCH") == 0);
+    Assert(strcmp(g_aHdaRegMap[HDA_REG_SD3DPIB].pszName, "SD3DPIB") == 0);
+    Assert(strcmp(g_aHdaRegMap[HDA_REG_SD7EFIFOS].pszName, "SD7EFIFOS") == 0);
 
-# ifdef VBOX_WITH_STATISTICS
     /*
      * Register statistics.
      */
+# ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read (DMA) from the guest.");
