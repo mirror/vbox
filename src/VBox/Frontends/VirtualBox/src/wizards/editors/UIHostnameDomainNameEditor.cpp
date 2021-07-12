@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostnameDomainEditor class implementation.
+ * VBox Qt GUI - UIHostnameDomainNameEditor class implementation.
  */
 
 /*
@@ -29,12 +29,12 @@
 #include "QIToolButton.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
-#include "UIHostnameDomainEditor.h"
+#include "UIHostnameDomainNameEditor.h"
 #include "UIWizardNewVM.h"
 
 
 
-UIHostnameDomainEditor::UIHostnameDomainEditor(QWidget *pParent /*  = 0 */)
+UIHostnameDomainNameEditor::UIHostnameDomainNameEditor(QWidget *pParent /*  = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHostnameLineEdit(0)
     , m_pDomainLineEdit(0)
@@ -44,46 +44,46 @@ UIHostnameDomainEditor::UIHostnameDomainEditor(QWidget *pParent /*  = 0 */)
     prepare();
 }
 
-QString UIHostnameDomainEditor::hostname() const
+QString UIHostnameDomainNameEditor::hostname() const
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->text();
     return QString();
 }
 
-bool UIHostnameDomainEditor::isComplete() const
+bool UIHostnameDomainNameEditor::isComplete() const
 {
     return m_pHostnameLineEdit && m_pHostnameLineEdit->hasAcceptableInput() &&
         m_pDomainLineEdit && m_pDomainLineEdit->hasAcceptableInput();
 }
 
-void UIHostnameDomainEditor::setHostname(const QString &strHostname)
+void UIHostnameDomainNameEditor::setHostname(const QString &strHostname)
 {
     if (m_pHostnameLineEdit)
         m_pHostnameLineEdit->setText(strHostname);
 }
 
-QString UIHostnameDomainEditor::domain() const
+QString UIHostnameDomainNameEditor::domain() const
 {
     if (m_pDomainLineEdit)
         return m_pDomainLineEdit->text();
     return QString();
 }
 
-void UIHostnameDomainEditor::setDomain(const QString &strDomain)
+void UIHostnameDomainNameEditor::setDomain(const QString &strDomain)
 {
     if (m_pDomainLineEdit)
         m_pDomainLineEdit->setText(strDomain);
 }
 
-QString UIHostnameDomainEditor::hostnameDomain() const
+QString UIHostnameDomainNameEditor::hostnameDomain() const
 {
     if (m_pHostnameLineEdit && m_pDomainLineEdit)
         return QString("%1.%2").arg(m_pHostnameLineEdit->text()).arg(m_pDomainLineEdit->text());
     return QString();
 }
 
-void UIHostnameDomainEditor::retranslateUi()
+void UIHostnameDomainNameEditor::retranslateUi()
 {
     QString strHostnameTooltip(tr("Type the hostname which will be used in attended install:"));
     QString strDomainTooltip(tr("The domain name"));
@@ -102,7 +102,7 @@ void UIHostnameDomainEditor::retranslateUi()
     m_pDomainLineEdit->setToolTip(strDomainTooltip);
 }
 
-void UIHostnameDomainEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout)
+void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout)
 {
     AssertReturnVoid(pLayout);
     if (pLabel || pLineEdit)
@@ -128,7 +128,7 @@ void UIHostnameDomainEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit 
     return;
 }
 
-void UIHostnameDomainEditor::prepare()
+void UIHostnameDomainNameEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
     pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -142,22 +142,22 @@ void UIHostnameDomainEditor::prepare()
     addLineEdit(iRow, m_pDomainLabel, m_pDomainLineEdit, pMainLayout);
 
     connect(m_pHostnameLineEdit, &QILineEdit::textChanged,
-            this, &UIHostnameDomainEditor::sltHostnameChanged);
+            this, &UIHostnameDomainNameEditor::sltHostnameChanged);
     connect(m_pDomainLineEdit, &QILineEdit::textChanged,
-            this, &UIHostnameDomainEditor::sltDomainChanged);
+            this, &UIHostnameDomainNameEditor::sltDomainChanged);
 
 
     retranslateUi();
 }
 
-void UIHostnameDomainEditor::sltHostnameChanged()
+void UIHostnameDomainNameEditor::sltHostnameChanged()
 {
     m_pHostnameLineEdit->mark(!m_pHostnameLineEdit->hasAcceptableInput(),
                               tr("Hostname should be a string of length 2. Allowed characters are alphanumerics, '-', and '.'" ));
     emit sigHostnameDomainChanged(hostnameDomain());
 }
 
-void UIHostnameDomainEditor::sltDomainChanged()
+void UIHostnameDomainNameEditor::sltDomainChanged()
 {
     m_pDomainLineEdit->mark(!m_pDomainLineEdit->hasAcceptableInput(),
                               tr("Domain name should be a string of length 2. Allowed characters are alphanumerics, '-', and '.'" ));

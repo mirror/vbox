@@ -34,7 +34,7 @@ class QLineEdit;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UIUserNamePasswordEditor;
-class UIHostnameDomainEditor;
+class UIHostnameDomainNameEditor;
 struct UIUnattendedInstallData;
 
 
@@ -93,7 +93,7 @@ private:
         QGroupBox *m_pGAInstallationISOContainer;
         QCheckBox *m_pStartHeadlessCheckBox;
         UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
-        UIHostnameDomainEditor *m_pHostnameDomainEditor;
+        UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
         QLabel    *m_pGAISOPathLabel;
         UIFilePathSelector *m_pGAISOFilePathSelector;
         /** Product key stuff. */
