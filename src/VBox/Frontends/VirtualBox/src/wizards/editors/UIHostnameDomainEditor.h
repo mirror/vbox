@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNameDomainEditor class declaration.
+ * VBox Qt GUI - UIHostnameDomainEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_editors_UIHostNameDomainEditor_h
-#define FEQT_INCLUDED_SRC_wizards_editors_UIHostNameDomainEditor_h
+#ifndef FEQT_INCLUDED_SRC_wizards_editors_UIHostnameDomainEditor_h
+#define FEQT_INCLUDED_SRC_wizards_editors_UIHostnameDomainEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,7 +34,7 @@ class QLabel;
 class QILineEdit;
 class UIPasswordLineEdit;
 
-class UIHostNameDomainEditor : public QIWithRetranslateUI<QWidget>
+class UIHostnameDomainEditor : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
@@ -45,7 +45,7 @@ signals:
 
 public:
 
-    UIHostNameDomainEditor(QWidget *pParent = 0);
+    UIHostnameDomainEditor(QWidget *pParent = 0);
 
     QString hostname() const;
     void setHostname(const QString &strHostname);
@@ -79,4 +79,4 @@ private:
 
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIHostNameDomainEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIHostnameDomainEditor_h */
