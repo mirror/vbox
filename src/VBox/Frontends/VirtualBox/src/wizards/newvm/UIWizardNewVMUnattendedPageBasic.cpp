@@ -31,6 +31,7 @@
 #include "UIFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
+#include "UIHostNameDomainEditor.h"
 #include "UIWizardNewVMUnattendedPageBasic.h"
 #include "UIWizardNewVM.h"
 
@@ -60,8 +61,7 @@ UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     , m_pGAInstallationISOContainer(0)
     , m_pStartHeadlessCheckBox(0)
     , m_pUserNamePasswordEditor(0)
-    , m_pHostnameLineEdit(0)
-    , m_pHostnameLabel(0)
+    , m_pHostnameDomainEditor(0)
     , m_pGAISOPathLabel(0)
     , m_pGAISOFilePathSelector(0)
     , m_pProductKeyLineEdit(0)
@@ -100,9 +100,9 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
     if (m_pGAISOFilePathSelector)
         connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
                 this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
-    if (m_pHostnameLineEdit)
-        connect(m_pHostnameLineEdit, &QLineEdit::textChanged,
-                this, &UIWizardNewVMUnattendedPageBasic::sltHostnameChanged);
+    if (m_pHostnameDomainEditor)
+        connect(m_pHostnameDomainEditor, &UIHostNameDomainEditor::sigHostnameDomainChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltHostnameDomainChanged);
     if (m_pProductKeyLineEdit)
         connect(m_pProductKeyLineEdit, &QLineEdit::textChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged);
@@ -119,9 +119,6 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can configure the unattended guest OS install by modifying username, password, and "
                                             "hostname. Additionally you can enable guest additions install. "
                                             "For Microsoft Windows guests it is possible to provide a product key.</p>"));
-    if (m_pHostnameLabel)
-        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostna&me:"));
-
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     if (m_pGAISOFilePathSelector)
@@ -165,11 +162,19 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
             m_pUserNamePasswordEditor->setPassword(pWizard->password());
         m_pUserNamePasswordEditor->blockSignals(false);
     }
-    if (m_pHostnameLineEdit && !m_userModifiedParameters.contains("Hostname"))
+    if (m_pHostnameDomainEditor)
     {
-        m_pHostnameLineEdit->blockSignals(true);
-        m_pHostnameLineEdit->setText(pWizard->hostname());
-        m_pHostnameLineEdit->blockSignals(false);
+        m_pHostnameDomainEditor->blockSignals(true);
+
+        if (!m_userModifiedParameters.contains("HostnameDomain"))
+        {
+            m_pHostnameDomainEditor->setHostname(pWizard->machineBaseName());
+            m_pHostnameDomainEditor->setDomain("myguest.virtualbox.org");
+            /* Initialize unattended hostname here since we cannot get the efault value from CUnattended this early (unlike username etc): */
+            newVMWizardPropertySet(HostnameDomain, m_pHostnameDomainEditor->hostnameDomain());
+        }
+
+        m_pHostnameDomainEditor->blockSignals(false);
     }
     if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
     {
@@ -194,6 +199,8 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
         !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector))
         return false;
     if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
+        return false;
+    if (m_pHostnameDomainEditor && !m_pHostnameDomainEditor->isComplete())
         return false;
     return true;
 }
@@ -244,10 +251,11 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
     return true;
 }
 
-void UIWizardNewVMUnattendedPageBasic::sltHostnameChanged(const QString &strHostname)
+void UIWizardNewVMUnattendedPageBasic::sltHostnameDomainChanged(const QString &strHostnameDomain)
 {
-    newVMWizardPropertySet(Hostname, strHostname);
-    m_userModifiedParameters << "Hostname";
+    newVMWizardPropertySet(HostnameDomain, strHostnameDomain);
+    m_userModifiedParameters << "HostnameDomain";
+    emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
@@ -303,24 +311,20 @@ QWidget *UIWizardNewVMUnattendedPageBasic::createAdditionalOptionsWidgets()
         pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
     }
 
-    m_pHostnameLabel = new QLabel;
-    if (m_pHostnameLabel)
+    m_pHostnameDomainEditor = new UIHostNameDomainEditor;
+    if (m_pHostnameDomainEditor)
     {
-        m_pHostnameLabel->setAlignment(Qt::AlignRight);
-        m_pHostnameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLabel, 1, 0);
-    }
-    m_pHostnameLineEdit = new QLineEdit;
-    if (m_pHostnameLineEdit)
-    {
-        if (m_pHostnameLabel)
-            m_pHostnameLabel->setBuddy(m_pHostnameLineEdit);
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 1, 1, 1, 2);
+        // if (m_pHostnameLabel)
+        //     m_pHostnameLabel->setBuddy(m_pHostnameLineEdit);
+        // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
+        // m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(hostNameRegex, this));
+        // m_pHostnameLineEdit->setInputMask("NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
+        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainEditor, 1, 0, 2, 3);
     }
 
     m_pStartHeadlessCheckBox = new QCheckBox;
     if (m_pStartHeadlessCheckBox)
-        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 2, 1);
+        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
 
     return m_pAdditionalOptionsContainer;
 }

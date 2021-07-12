@@ -983,7 +983,6 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         UIUnattendedInstallData unattendedInstallData;
         unattendedInstallData.m_strUserName = comUnattendedInstaller.GetUser();
         unattendedInstallData.m_strPassword = comUnattendedInstaller.GetPassword();
-        unattendedInstallData.m_strHostname = comUnattendedInstaller.GetHostname();
         unattendedInstallData.m_fInstallGuestAdditions = comUnattendedInstaller.GetInstallGuestAdditions();
         unattendedInstallData.m_strGuestAdditionsISOPath = comUnattendedInstaller.GetAdditionsIsoPath();
         pWizard->setDefaultUnattendedInstallData(unattendedInstallData);
@@ -2655,7 +2654,7 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetPassword(unattendedData.m_strPassword);
     checkUnattendedInstallError(comUnattendedInstaller);
-    comUnattendedInstaller.SetHostname(unattendedData.m_strHostname);
+    comUnattendedInstaller.SetHostname(unattendedData.m_strHostnameDomain);
     checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetProductKey(unattendedData.m_strProductKey);
     checkUnattendedInstallError(comUnattendedInstaller);

@@ -87,7 +87,6 @@ private:
     QLabel *m_pUserNameLabel;
     QLabel *m_pPasswordLabel;
     QLabel *m_pPasswordRepeatLabel;
-    QColor m_orginalLineEditBaseColor;
 
     bool m_fShowPlaceholderText;
     bool m_fLabelsVisible;

@@ -380,10 +380,6 @@ void UIUserNamePasswordEditor::prepare()
     connect(m_pUserNameLineEdit, &QILineEdit::textChanged,
             this, &UIUserNamePasswordEditor::sltUserNameChanged);
 
-    /* Cache the original back color of the line edit to restore it correctly: */
-    if (m_pUserNameLineEdit)
-        m_orginalLineEditBaseColor = m_pUserNameLineEdit->palette().color(QPalette::Base);
-
     retranslateUi();
 }
 
