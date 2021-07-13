@@ -70,6 +70,7 @@
 #include "CHostNetworkInterface.h"
 #include "CVRDEServer.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CHostVideoInputDevice.h"
 #include "CSnapshot.h"
@@ -1813,7 +1814,15 @@ bool UISession::preprocessInitialization()
     /* Check for USB enumeration warning. Don't return false even if we have a warning: */
     CHost comHost = uiCommon().host();
     if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
-        msgCenter().cannotEnumerateHostUSBDevices(comHost, activeMachineWindow());
+    {
+        /* Do not bitch if USB disabled: */
+        if (!machine().GetUSBControllers().isEmpty())
+        {
+            /* Do not bitch if there are no filters (check if enabled too?): */
+            if (!machine().GetUSBDeviceFilters().GetDeviceFilters().isEmpty())
+                msgCenter().cannotEnumerateHostUSBDevices(comHost, activeMachineWindow());
+        }
+    }
 
     /* True by default: */
     return true;
