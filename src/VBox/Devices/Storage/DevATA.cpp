@@ -5327,7 +5327,7 @@ ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
 
         if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
         {
-            Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
+            AssertMsg(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE, ("%#x\n", s->uTxDir));
             uint32_t const iIOBufferPIODataStart = RT_MIN(s->iIOBufferPIODataStart, sizeof(s->abIOBuffer));
             uint32_t const iIOBufferPIODataEnd   = RT_MIN(s->iIOBufferPIODataEnd,   sizeof(s->abIOBuffer));
             uint8_t const *pbSrc = &s->abIOBuffer[iIOBufferPIODataStart];
