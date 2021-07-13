@@ -29,8 +29,9 @@
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
+
 /*********************************************************************************************************************************
-*   UIUserNamePasswordGroupBox implementation.                                                                                           *
+*   UIUserNamePasswordGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
 UIUserNamePasswordGroupBox::UIUserNamePasswordGroupBox(QWidget *pParent /* = 0 */)
@@ -94,8 +95,9 @@ void UIUserNamePasswordGroupBox::setLabelsVisible(bool fVisible)
         m_pUserNamePasswordEditor->setLabelsVisible(fVisible);
 }
 
+
 /*********************************************************************************************************************************
-*   UIUserNamePasswordGroupBox implementation.                                                                                           *
+*   UIUserNamePasswordGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
 UIGAInstallationGroupBox::UIGAInstallationGroupBox(QWidget *pParent /* = 0 */)
