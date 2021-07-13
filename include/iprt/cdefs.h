@@ -4283,14 +4283,23 @@
 #   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
                                      || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#  elif defined(RT_OS_LINUX) /* May use 5-level paging  (see Documentation/x86/x86_64/mm.rst). */
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U /* one invalid page at the bottom */ \
+                                 && !((uintptr_t)(ptr) & 0xff00000000000000ULL) )
 #  else
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U \
                                  && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
 #  endif
 # else /* !IN_RING3 */
-#  define RT_VALID_PTR(ptr)     (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+#  if defined(RT_OS_LINUX) /* May use 5-level paging (see Documentation/x86/x86_64/mm.rst). */
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x200000 >= 0x201000U /* one invalid page at the bottom and 2MB at the top */ \
+                                 && (   ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0xff00000000000000ULL \
+                                     || ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0) )
+#  else
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
                                      || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#  endif
 # endif /* !IN_RING3 */
 
 #elif defined(RT_ARCH_X86)
