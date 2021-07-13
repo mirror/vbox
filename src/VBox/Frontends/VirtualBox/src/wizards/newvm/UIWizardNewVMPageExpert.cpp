@@ -42,6 +42,7 @@
 #include "UIToolBox.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
+#include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMPageExpert.h"
 
 /* COM includes: */
@@ -263,8 +264,8 @@ void UIWizardNewVMPageExpert::createConnections()
     // }
 
     // /* Connections for username, password, and hostname: */
-    // if (m_pUserNamePasswordEditor)
-    //     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+    // if (m_pUserNamePasswordGroupBox)
+    //     connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordEditor::sigSomeTextChanged,
     //             this, &UIWizardNewVMPageExpert::completeChanged);
     // if (m_pGAISOFilePathSelector)
     //     connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
@@ -401,9 +402,9 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     QGridLayout *pLayout = new QGridLayout(pContainerWidget);
     pLayout->setContentsMargins(0, 0, 0, 0);
     int iRow = 0;
-
-    /* Username selector: */
-    pLayout->addWidget(createUserNameWidgets(), iRow, 0, 1, 2);
+    m_pUserNamePasswordGroupBox = new UIUserNamePasswordGroupBox;
+    AssertReturn(m_pUserNamePasswordGroupBox, 0);
+    pLayout->addWidget(m_pUserNamePasswordGroupBox, iRow, 0, 1, 2);
 
     /* Additional options: */
     pLayout->addWidget(createAdditionalOptionsWidgets(), iRow, 2, 1, 2);
@@ -519,9 +520,9 @@ bool UIWizardNewVMPageExpert::isComplete() const
 
     //         fIsComplete = false;
     //     }
-    //     if (m_pUserNamePasswordEditor)
+    //     if (m_pUserNamePasswordGroupBox)
     //     {
-    //         if (!m_pUserNamePasswordEditor->isComplete())
+    //         if (!m_pUserNamePasswordGroupBox->isComplete())
     //         {
     //             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
     //                                          UIIconPool::iconSet(":/status_error_16px.png"),
@@ -857,23 +858,6 @@ QWidget *UIWizardNewVMPageExpert::createNameOSTypeWidgets()
     if (m_pSkipUnattendedCheckBox)
         m_pNameAndSystemLayout->addWidget(m_pSkipUnattendedCheckBox, 1, 1);
     return pContainerWidget;
-}
-
-QWidget *UIWizardNewVMPageExpert::createUserNameWidgets()
-{
-    if (m_pUserNameContainer)
-        return m_pUserNameContainer;
-
-    m_pUserNameContainer = new QGroupBox;
-    QVBoxLayout *pUserNameContainerLayout = new QVBoxLayout(m_pUserNameContainer);
-    m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
-    AssertReturn(m_pUserNamePasswordEditor, 0);
-
-    m_pUserNamePasswordEditor->setLabelsVisible(true);
-    m_pUserNamePasswordEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    pUserNameContainerLayout->addWidget(m_pUserNamePasswordEditor);
-
-    return m_pUserNameContainer;
 }
 
 QWidget *UIWizardNewVMPageExpert::createAdditionalOptionsWidgets()

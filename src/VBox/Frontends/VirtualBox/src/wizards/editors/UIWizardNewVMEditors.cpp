@@ -78,3 +78,9 @@ bool UIUserNamePasswordGroupBox::isComplete()
         return m_pUserNamePasswordEditor->isComplete();
     return false;
 }
+
+void UIUserNamePasswordGroupBox::setLabelsVisible(bool fVisible)
+{
+    if (m_pUserNamePasswordEditor)
+        m_pUserNamePasswordEditor->setLabelsVisible(fVisible);
+}

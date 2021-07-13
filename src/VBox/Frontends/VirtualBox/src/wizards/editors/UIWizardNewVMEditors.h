@@ -56,6 +56,7 @@ public:
        QString password() const;
        void setPassword(const QString &strPassword);
        bool isComplete();
+       void setLabelsVisible(bool fVisible);
     /** @} */
 
 private:

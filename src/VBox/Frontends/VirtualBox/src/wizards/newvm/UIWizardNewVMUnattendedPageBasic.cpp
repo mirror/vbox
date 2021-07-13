@@ -30,7 +30,7 @@
 #include "UICommon.h"
 #include "UIFilePathSelector.h"
 #include "UIIconPool.h"
-#include "UIUserNamePasswordEditor.h"
+#include "UIWizardNewVMEditors.h"
 #include "UIHostnameDomainNameEditor.h"
 #include "UIWizardNewVMUnattendedPageBasic.h"
 #include "UIWizardNewVM.h"
@@ -56,11 +56,10 @@ bool UIWizardNewVMUnattendedPage::checkGAISOFile(UIFilePathSelector *pGAISOFileP
 
 UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     : m_pLabel(0)
-    , m_pUserNameContainer(0)
     , m_pAdditionalOptionsContainer(0)
     , m_pGAInstallationISOContainer(0)
     , m_pStartHeadlessCheckBox(0)
-    , m_pUserNamePasswordEditor(0)
+    , m_pUserNamePasswordGroupBox(0)
     , m_pHostnameDomainNameEditor(0)
     , m_pGAISOPathLabel(0)
     , m_pGAISOFilePathSelector(0)
@@ -77,21 +76,23 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
     m_pLabel = new QIRichTextLabel(this);
     if (m_pLabel)
         pMainLayout->addWidget(m_pLabel, 0, 0, 1, 2);
-    pMainLayout->addWidget(createUserNameWidgets(), 1, 0, 1, 1);
+    m_pUserNamePasswordGroupBox = new UIUserNamePasswordGroupBox;
+    AssertReturnVoid(m_pUserNamePasswordGroupBox);
+    pMainLayout->addWidget(m_pUserNamePasswordGroupBox, 1, 0, 1, 1);
     pMainLayout->addWidget(createAdditionalOptionsWidgets(), 1, 1, 1, 1);
     pMainLayout->addWidget(createGAInstallWidgets(), 2, 0, 1, 2);
     pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
 
-     createConnections();
+    createConnections();
 }
 
 void UIWizardNewVMUnattendedPageBasic::createConnections()
 {
-    if (m_pUserNamePasswordEditor)
+    if (m_pUserNamePasswordGroupBox)
     {
-        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigPasswordChanged,
+        connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordGroupBox::sigPasswordChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltPasswordChanged);
-        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigUserNameChanged,
+        connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordGroupBox::sigUserNameChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltUserNameChanged);
     }
     if (m_pGAISOFilePathSelector)
@@ -131,8 +132,8 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
     }
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
-    if (m_pUserNameContainer)
-        m_pUserNameContainer->setTitle(UIWizardNewVM::tr("Username and Password"));
+    if (m_pUserNamePasswordGroupBox)
+        m_pUserNamePasswordGroupBox->setTitle(UIWizardNewVM::tr("Username and Password"));
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional Options"));
     if (m_pStartHeadlessCheckBox)
@@ -153,14 +154,14 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     AssertReturnVoid(pWizard);
     /* Initialize user/password if they are not modified by the user: */
-    if (m_pUserNamePasswordEditor)
+    if (m_pUserNamePasswordGroupBox)
     {
-        m_pUserNamePasswordEditor->blockSignals(true);
+        m_pUserNamePasswordGroupBox->blockSignals(true);
         if (!m_userModifiedParameters.contains("UserName"))
-            m_pUserNamePasswordEditor->setUserName(pWizard->userName());
+            m_pUserNamePasswordGroupBox->setUserName(pWizard->userName());
         if (!m_userModifiedParameters.contains("Password"))
-            m_pUserNamePasswordEditor->setPassword(pWizard->password());
-        m_pUserNamePasswordEditor->blockSignals(false);
+            m_pUserNamePasswordGroupBox->setPassword(pWizard->password());
+        m_pUserNamePasswordGroupBox->blockSignals(false);
     }
     if (m_pHostnameDomainNameEditor)
     {
@@ -198,7 +199,7 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
     if (pWizard && pWizard->installGuestAdditions() &&
         !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector))
         return false;
-    if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
+    if (m_pUserNamePasswordGroupBox && !m_pUserNamePasswordGroupBox->isComplete())
         return false;
     if (m_pHostnameDomainNameEditor && !m_pHostnameDomainNameEditor->isComplete())
         return false;
@@ -266,23 +267,6 @@ void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strPr
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
     newVMWizardPropertySet(StartHeadless, fStartHeadless);
-}
-
-QWidget *UIWizardNewVMUnattendedPageBasic::createUserNameWidgets()
-{
-    if (m_pUserNameContainer)
-        return m_pUserNameContainer;
-
-    m_pUserNameContainer = new QGroupBox;
-    QVBoxLayout *pUserNameContainerLayout = new QVBoxLayout(m_pUserNameContainer);
-    m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
-    if (m_pUserNamePasswordEditor)
-    {
-        m_pUserNamePasswordEditor->setLabelsVisible(true);
-        m_pUserNamePasswordEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pUserNameContainerLayout->addWidget(m_pUserNamePasswordEditor);
-    }
-    return m_pUserNameContainer;
 }
 
 QWidget *UIWizardNewVMUnattendedPageBasic::createAdditionalOptionsWidgets()
