@@ -1590,7 +1590,7 @@ EOF
           echo "(Qt5 from pkg-config)" >> $LOG
           FLGQT5=`pkg-config Qt5Core --cflags`
           # gcc 4.8 is able to compile with C++11 (see also VBOX_GCC_std in Config.kmk)
-          [ $cc_maj -eq 4 -a $cc_min -eq 8 ] && FLGQT5="$FLGQT5 -std=c++11"
+          [ $(($cc_maj * 100 + $cc_min) -ge 408 ] && FLGQT5="$FLGQT5 -std=c++11"
           INCQT5=`strip_I "$FLGQT5"`
           LIBDIR5=`pkg-config Qt5Core --variable=libdir`
           LIBQT5=`pkg-config Qt5Core --libs`
