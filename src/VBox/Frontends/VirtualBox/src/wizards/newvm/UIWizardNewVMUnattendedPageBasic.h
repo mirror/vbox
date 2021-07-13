@@ -32,6 +32,7 @@ class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QIRichTextLabel;
+class UIGAInstallationGroupBox;
 class UIFilePathSelector;
 class UIUserNamePasswordGroupBox;
 class UIHostnameDomainNameEditor;
@@ -41,7 +42,7 @@ struct UIUnattendedInstallData;
 namespace UIWizardNewVMUnattendedPage
 {
     /** Returns false if ISO path selector is non empty but has invalid file path. */
-    bool checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector);
+    bool checkGAISOFile(const QString &strPatho);
 }
 
 class UIWizardNewVMUnattendedPageBasic : public UINativeWizardPage
@@ -73,7 +74,6 @@ private:
     void prepare();
     void createConnections();
     QWidget *createAdditionalOptionsWidgets();
-    QWidget *createGAInstallWidgets();
 
     void retranslateUi();
     void initializePage();
@@ -81,19 +81,16 @@ private:
     /** Returns true if we show the widgets for guest os product key. */
     bool isProductKeyWidgetEnabled() const;
     void disableEnableProductKeyWidgets(bool fEnabled);
-    void disableEnableGAWidgets(bool fEnabled);
     void markWidgets() const;
 
     /** @name Widgets
       * @{ */
         QIRichTextLabel *m_pLabel;
         QGroupBox *m_pAdditionalOptionsContainer;
-        QGroupBox *m_pGAInstallationISOContainer;
+        UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         QCheckBox *m_pStartHeadlessCheckBox;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
         UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
-        QLabel    *m_pGAISOPathLabel;
-        UIFilePathSelector *m_pGAISOFilePathSelector;
         /** Product key stuff. */
         QLineEdit *m_pProductKeyLineEdit;
         QLabel     *m_pProductKeyLabel;

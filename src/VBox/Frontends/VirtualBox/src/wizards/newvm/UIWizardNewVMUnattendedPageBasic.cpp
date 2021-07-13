@@ -40,12 +40,8 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 
-bool UIWizardNewVMUnattendedPage::checkGAISOFile(UIFilePathSelector *pGAISOFilePathSelector)
+bool UIWizardNewVMUnattendedPage::checkGAISOFile(const QString &strPath)
 {
-    if (!pGAISOFilePathSelector)
-        return false;
-    /* GA ISO selector should not be empty since GA install check box is checked at this point: */
-    const QString &strPath = pGAISOFilePathSelector->path();
     if (strPath.isNull() || strPath.isEmpty())
         return false;
     QFileInfo fileInfo(strPath);
@@ -61,8 +57,6 @@ UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     , m_pStartHeadlessCheckBox(0)
     , m_pUserNamePasswordGroupBox(0)
     , m_pHostnameDomainNameEditor(0)
-    , m_pGAISOPathLabel(0)
-    , m_pGAISOFilePathSelector(0)
     , m_pProductKeyLineEdit(0)
     , m_pProductKeyLabel(0)
 {
@@ -80,7 +74,8 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
     AssertReturnVoid(m_pUserNamePasswordGroupBox);
     pMainLayout->addWidget(m_pUserNamePasswordGroupBox, 1, 0, 1, 1);
     pMainLayout->addWidget(createAdditionalOptionsWidgets(), 1, 1, 1, 1);
-    pMainLayout->addWidget(createGAInstallWidgets(), 2, 0, 1, 2);
+    m_pGAInstallationISOContainer = new UIGAInstallationGroupBox;
+    pMainLayout->addWidget(m_pGAInstallationISOContainer, 2, 0, 1, 2);
     pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
 
     createConnections();
@@ -95,12 +90,13 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
         connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordGroupBox::sigUserNameChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltUserNameChanged);
     }
-    if (m_pGAISOFilePathSelector)
-        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
-                this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
-    if (m_pGAISOFilePathSelector)
-        connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
+    if (m_pGAInstallationISOContainer)
+    {
+        connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::toggled,
                 this, &UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle);
+        connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::sigPathChanged,
+                this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
+    }
     if (m_pHostnameDomainNameEditor)
         connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainNameChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged);
@@ -120,16 +116,6 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can configure the unattended guest OS install by modifying username, password, and "
                                             "hostname. Additionally you can enable guest additions install. "
                                             "For Microsoft Windows guests it is possible to provide a product key.</p>"));
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
-    if (m_pGAInstallationISOContainer)
-    {
-        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-        m_pGAInstallationISOContainer->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
-                                                                    "after the OS install.</p>"));
-    }
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
     if (m_pUserNamePasswordGroupBox)
@@ -148,7 +134,8 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
 void UIWizardNewVMUnattendedPageBasic::initializePage()
 {
     disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    disableEnableGAWidgets(m_pGAInstallationISOContainer ? m_pGAInstallationISOContainer->isChecked() : false);
+    if (m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->sltToggleWidgetsEnabled(m_pGAInstallationISOContainer->isChecked());
     retranslateUi();
 
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
@@ -184,11 +171,11 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
         m_pGAInstallationISOContainer->blockSignals(false);
     }
 
-    if (m_pGAISOFilePathSelector && !m_userModifiedParameters.contains("GuestAdditionsISOPath"))
+    if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("GuestAdditionsISOPath"))
     {
-        m_pGAISOFilePathSelector->blockSignals(true);
-        m_pGAISOFilePathSelector->setPath(pWizard->guestAdditionsISOPath());
-        m_pGAISOFilePathSelector->blockSignals(false);
+        m_pGAInstallationISOContainer->blockSignals(true);
+        m_pGAInstallationISOContainer->setPath(pWizard->guestAdditionsISOPath());
+        m_pGAInstallationISOContainer->blockSignals(false);
     }
 }
 
@@ -197,7 +184,8 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
     markWidgets();
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (pWizard && pWizard->installGuestAdditions() &&
-        !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector))
+        m_pGAInstallationISOContainer &&
+        !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAInstallationISOContainer->path()))
         return false;
     if (m_pUserNamePasswordGroupBox && !m_pUserNamePasswordGroupBox->isComplete())
         return false;
@@ -217,7 +205,8 @@ void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    disableEnableGAWidgets(fEnabled);
+    if (m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->sltToggleWidgetsEnabled(fEnabled);
     newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
     m_userModifiedParameters << "InstallGuestAdditions";
     emit completeChanged();
@@ -306,57 +295,6 @@ QWidget *UIWizardNewVMUnattendedPageBasic::createAdditionalOptionsWidgets()
     return m_pAdditionalOptionsContainer;
 }
 
-QWidget *UIWizardNewVMUnattendedPageBasic::createGAInstallWidgets()
-{
-    if (m_pGAInstallationISOContainer)
-        return m_pGAInstallationISOContainer;
-
-    /* Prepare GA Installation ISO container: */
-    m_pGAInstallationISOContainer = new QGroupBox;
-    if (m_pGAInstallationISOContainer)
-    {
-        m_pGAInstallationISOContainer->setCheckable(true);
-
-        /* Prepare GA Installation ISO layout: */
-        QHBoxLayout *pGAInstallationISOLayout = new QHBoxLayout(m_pGAInstallationISOContainer);
-        if (pGAInstallationISOLayout)
-        {
-            /* Prepare GA ISO path label: */
-            m_pGAISOPathLabel = new QLabel;
-            if (m_pGAISOPathLabel)
-            {
-                m_pGAISOPathLabel->setAlignment(Qt::AlignRight);
-                m_pGAISOPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
-                pGAInstallationISOLayout->addWidget(m_pGAISOPathLabel);
-            }
-            /* Prepare GA ISO path editor: */
-            m_pGAISOFilePathSelector = new UIFilePathSelector;
-            {
-                m_pGAISOFilePathSelector->setResetEnabled(false);
-                m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-                m_pGAISOFilePathSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
-                m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                m_pGAISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-                if (m_pGAISOPathLabel)
-                    m_pGAISOPathLabel->setBuddy(m_pGAISOFilePathSelector);
-
-                pGAInstallationISOLayout->addWidget(m_pGAISOFilePathSelector);
-            }
-        }
-    }
-
-    return m_pGAInstallationISOContainer;
-}
-
-void UIWizardNewVMUnattendedPageBasic::disableEnableGAWidgets(bool fEnabled)
-{
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setEnabled(fEnabled);
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setEnabled(fEnabled);
-}
-
 void UIWizardNewVMUnattendedPageBasic::disableEnableProductKeyWidgets(bool fEnabled)
 {
     if (m_pProductKeyLabel)
@@ -368,6 +306,6 @@ void UIWizardNewVMUnattendedPageBasic::disableEnableProductKeyWidgets(bool fEnab
 void UIWizardNewVMUnattendedPageBasic::markWidgets() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (pWizard && pWizard->installGuestAdditions())
-        m_pGAISOFilePathSelector->mark(!UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAISOFilePathSelector));
+    if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->mark(!UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAInstallationISOContainer->path()));
 }

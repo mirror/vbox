@@ -38,6 +38,7 @@ class QLabel;
 class QLineEdit;
 class QVBoxLayout;
 class UIFilePathSelector;
+class UIGAInstallationGroupBox;
 class UIHostnameDomainNameEditor;
 class UIMediumSizeEditor;
 class UINameAndSystemEditor;
@@ -114,7 +115,6 @@ private:
                                                   CMediumFormat medFormat, bool fPreferred /* = false */);
     QWidget *createNameOSTypeWidgets();
     QWidget *createAdditionalOptionsWidgets();
-    QWidget *createGAInstallWidgets();
 
     void updateVirtualDiskPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
@@ -146,9 +146,7 @@ private:
 
 
     QCheckBox *m_pStartHeadlessCheckBox;
-    QGroupBox *m_pGAInstallationISOContainer;
-    QLabel *m_pGAISOPathLabel;
-    UIFilePathSelector *m_pGAISOFilePathSelector;
+    UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
     QGroupBox *m_pUserNameContainer;
     UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
 

@@ -32,6 +32,7 @@
 class QGridLayout;
 class QLabel;
 class QILineEdit;
+class UIFilePathSelector;
 class UIPasswordLineEdit;
 class UIUserNamePasswordEditor;
 
@@ -64,6 +65,40 @@ private:
     void prepare();
 
     UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
+};
+
+
+class UIGAInstallationGroupBox : public QIWithRetranslateUI<QGroupBox>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigPathChanged(const QString &strPath);
+
+public:
+
+    UIGAInstallationGroupBox(QWidget *pParent = 0);
+
+    /** @name Wrappers for UIFilePathSelector
+     * @{ */
+       QString path() const;
+       void setPath(const QString &strPath, bool fRefreshText = true);
+       void mark(bool fError, const QString &strErrorMessage = QString());
+    /** @} */
+
+public slots:
+
+    void sltToggleWidgetsEnabled(bool fEnabled);
+
+private:
+
+    virtual void retranslateUi() /* override final */;
+    void prepare();
+
+    QLabel *m_pGAISOPathLabel;
+    UIFilePathSelector *m_pGAISOFilePathSelector;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardNewVMEditors_h */
