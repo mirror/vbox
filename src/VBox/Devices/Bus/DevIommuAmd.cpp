@@ -3521,6 +3521,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp,
     }
 
     /* Raise an I/O page fault for out-of-bounds acccess. */
+    LogFunc(("Out-of-bounds device table entry. idDevice=%#x offDte=%u cbDevTabSeg=%u -> IOPF\n", idDevice, offDte, cbDevTabSeg));
     EVT_IO_PAGE_FAULT_T EvtIoPageFault;
     iommuAmdIoPageFaultEventInit(idDevice, 0 /* idDomain */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
                                  false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3695,7 +3696,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry not present (idDevice=%#x) -> IOPF\n", idDevice));
+            LogFunc(("Page table entry not present. idDevice=%#x uIova=%#RX64 -> IOPF\n", idDevice));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3742,7 +3743,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry access denied (idDevice=%#x fPerm=%#x fPtePerm=%#x) -> IOPF\n", idDevice, fPerm, fPtePerm));
+            LogFunc(("Page table entry access denied. idDevice=%#x fPerm=%#x fPtePerm=%#x -> IOPF\n", idDevice, fPerm, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3781,7 +3782,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
                 return VINF_SUCCESS;
             }
 
-            LogFunc(("Page size invalid cShift=%u -> IOPF\n", cShift));
+            LogFunc(("Page size invalid. idDevice=%#x cShift=%u -> IOPF\n", idDevice, cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
