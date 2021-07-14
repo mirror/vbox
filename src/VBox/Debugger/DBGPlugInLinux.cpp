@@ -102,6 +102,14 @@ typedef struct DBGDIGGERLINUX
     /** The relative base when kernel symbols use offsets rather than
      * absolute addresses. */
     RTGCUINTPTR uKernelRelativeBase;
+    /** The guest kernel version used for version comparisons. */
+    uint32_t    uKrnlVer;
+    /** The guest kernel major version. */
+    uint32_t    uKrnlVerMaj;
+    /** The guest kernel minor version. */
+    uint32_t    uKrnlVerMin;
+    /** The guest kernel build version. */
+    uint32_t    uKrnlVerBld;
 
     /** The address of the linux banner.
      * This is set during probing. */
@@ -204,6 +212,8 @@ typedef LNXPRINTKHDR const *PCLNXPRINTKHDR;
 
 /** Module tag for linux ('linuxmod' on little endian ASCII systems). */
 #define DIG_LNX_MOD_TAG                     UINT64_C(0x545f5d78758e898c)
+/** Macro for building a Linux kernel version which can be used for comparisons. */
+#define LNX_MK_VER(major, minor, build)     (((major) << 22) | ((minor) << 12) | (build))
 
 
 /*********************************************************************************************************************************
@@ -1468,6 +1478,13 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
          * addresses absolute addresses are assumed. If this is not the case but the first entry before
          * kallsyms_num_syms is a valid kernel address we check whether the data before and the possible
          * relative base form a valid kernel address and assume relative offsets.
+         *
+         * Other notable changes between various Linux kernel versions:
+         *
+         *     4.20.0+: Commit 80ffbaa5b1bd98e80e3239a3b8cfda2da433009a made kallsyms_num_syms 32bit
+         *              even on 64bit systems but the alignment of the variables makes the code below work for now
+         *              (tested with a 5.4 and 5.12 kernel) do we keep it that way to avoid making the code even
+         *              messy.
          */
         if (pThis->f64Bit)
         {
@@ -1650,8 +1667,12 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
          * Note! We could also have walked kallsyms_names by skipping
          *       kallsyms_num_syms names, but this is faster and we will
          *       validate the encoded names later.
+         *
+         * git commit 80ffbaa5b1bd98e80e3239a3b8cfda2da433009a (which became 4.20+) makes kallsyms_markers
+         * and kallsyms_num_syms uint32_t, even on 64bit systems. Take that into account.
          */
-        if (pThis->f64Bit)
+        if (   pThis->f64Bit
+            && pThis->uKrnlVer < LNX_MK_VER(4, 20, 0))
         {
             if (   RT_UNLIKELY(fPendingZeroHit)
                 && uBuf.au64[0] >= (LNX_MIN_KALLSYMS_ENC_LENGTH + 1) * 256
@@ -2176,42 +2197,9 @@ static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
         uListAnchor.u64Pair[0] = uListAnchor.u32Pair[0];
     }
 
-    /*
-     * Get a numerical version number.
-     */
-    char szVersion[256] = "Linux version 4.19.0";
-    bool fValid = pThis->fValid;
-    pThis->fValid = true;
-    dbgDiggerLinuxQueryVersion(pUVM, pThis, szVersion, sizeof(szVersion));
-    pThis->fValid = fValid;
-
-    const char *pszVersion = szVersion;
-    while (*pszVersion && !RT_C_IS_DIGIT(*pszVersion))
-        pszVersion++;
-
-    size_t   offVersion = 0;
-    uint32_t uMajor = 0;
-    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
-        uMajor = uMajor * 10 + pszVersion[offVersion++] - '0';
-
-    if (pszVersion[offVersion] == '.')
-        offVersion++;
-
-    uint32_t uMinor = 0;
-    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
-        uMinor = uMinor * 10 + pszVersion[offVersion++] - '0';
-
-    if (pszVersion[offVersion] == '.')
-        offVersion++;
-
-    uint32_t uBuild = 0;
-    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
-        uBuild = uBuild * 10 + pszVersion[offVersion++] - '0';
-
-    uint32_t const uGuestVer = LNX_MK_VER(uMajor, uMinor, uBuild);
-    if (uGuestVer == 0)
+    if (pThis->uKrnlVer == 0)
     {
-        LogRel(("dbgDiggerLinuxLoadModules: Failed to parse version string: %s\n", pszVersion));
+        LogRel(("dbgDiggerLinuxLoadModules: No valid kernel version given: %#x\n", pThis->uKrnlVer));
         return VERR_NOT_FOUND;
     }
 
@@ -2226,12 +2214,12 @@ static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
             i++;
     while (   i < RT_ELEMENTS(g_aModVersions)
            && g_aModVersions[i].f64Bit == pThis->f64Bit
-           && uGuestVer < g_aModVersions[i].uVersion)
+           && pThis->uKrnlVer < g_aModVersions[i].uVersion)
         i++;
     if (i >= RT_ELEMENTS(g_aModVersions))
     {
-        LogRel(("dbgDiggerLinuxLoadModules: Failed to find anything matching version: %u.%u.%u (%s)\n",
-                uMajor, uMinor, uBuild, pszVersion));
+        LogRel(("dbgDiggerLinuxLoadModules: Failed to find anything matching version: %u.%u.%u\n",
+                pThis->uKrnlVerMaj, pThis->uKrnlVerMin, pThis->uKrnlVerBld));
         return VERR_NOT_FOUND;
     }
 
@@ -2871,6 +2859,44 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(!pThis->fValid);
 
+    char szVersion[256] = "Linux version 4.19.0";
+    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, &szVersion[0], sizeof(szVersion));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Get a numerical version number.
+         */
+        const char *pszVersion = szVersion;
+        while (*pszVersion && !RT_C_IS_DIGIT(*pszVersion))
+            pszVersion++;
+
+        size_t   offVersion = 0;
+        uint32_t uMajor = 0;
+        while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+            uMajor = uMajor * 10 + pszVersion[offVersion++] - '0';
+
+        if (pszVersion[offVersion] == '.')
+            offVersion++;
+
+        uint32_t uMinor = 0;
+        while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+            uMinor = uMinor * 10 + pszVersion[offVersion++] - '0';
+
+        if (pszVersion[offVersion] == '.')
+            offVersion++;
+
+        uint32_t uBuild = 0;
+        while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+            uBuild = uBuild * 10 + pszVersion[offVersion++] - '0';
+
+        pThis->uKrnlVer = LNX_MK_VER(uMajor, uMinor, uBuild);
+        pThis->uKrnlVerMaj = uMajor;
+        pThis->uKrnlVerMin = uMinor;
+        pThis->uKrnlVerBld = uBuild;
+        if (pThis->uKrnlVer == 0)
+            LogRel(("dbgDiggerLinuxInit: Failed to parse version string: %s\n", pszVersion));
+    }
+
     /*
      * Assume 64-bit kernels all live way beyond 32-bit address space.
      */
@@ -2884,7 +2910,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
      * to get the symbol table, the config database is required to select
      * the method to use.
      */
-    int rc = dbgDiggerLinuxCfgFind(pThis, pUVM);
+    rc = dbgDiggerLinuxCfgFind(pThis, pUVM);
     if (RT_FAILURE(rc))
         LogFlowFunc(("Failed to find kernel config (%Rrc), no config database available\n", rc));
 
