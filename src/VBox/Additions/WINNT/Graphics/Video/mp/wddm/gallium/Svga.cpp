@@ -26,6 +26,50 @@
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 
+static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
+{
+    int rc = STATUS_SUCCESS;
+
+    if (enable)
+    {
+        rc = RTR0MemObjAllocPageTag(&pSvga->hMemObj, 2 << PAGE_SHIFT,
+                                false /* executable R0 mapping */, "WDDMGA");
+
+        pSvga->pvR0Hdr = RTR0MemObjAddress(pSvga->hMemObj);
+        pSvga->paHdr   = RTR0MemObjGetPagePhysAddr(pSvga->hMemObj, 0/*iPage*/);
+
+        pSvga->pvR0Cmd = (uint8_t *)pSvga->pvR0Hdr + PAGE_SIZE;
+        pSvga->paCmd   = RTR0MemObjGetPagePhysAddr(pSvga->hMemObj, 1/*iPage*/);
+    }
+
+    SVGACBHeader *pHdr = (SVGACBHeader *)pSvga->pvR0Hdr;
+
+    pHdr->status = SVGA_CB_STATUS_NONE;
+    pHdr->errorOffset = 0;
+    pHdr->id = 0;
+    pHdr->flags = SVGA_CB_FLAG_NONE;
+    pHdr->length = sizeof(uint32_t) + sizeof(SVGADCCmdStartStop);
+    pHdr->ptr.pa = pSvga->paCmd;
+
+    uint32_t *pu32Id = (uint32_t *)pSvga->pvR0Cmd;
+    SVGADCCmdStartStop *pCommand = (SVGADCCmdStartStop *)&pu32Id[1];
+
+    *pu32Id = SVGA_DC_CMD_START_STOP_CONTEXT;
+    pCommand->enable = enable;
+    pCommand->context = SVGA_CB_CONTEXT_0;
+
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_HIGH, (uint32_t)(pSvga->paHdr >> 32));
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_LOW, (uint32_t)pSvga->paHdr | 0x3f);
+
+    if (!enable)
+    {
+        RTR0MemObjFree(pSvga->hMemObj, true);
+        pSvga->hMemObj = NIL_RTR0MEMOBJ;
+    }
+
+    return rc;
+}
+
 static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
 {
     pSvga->u32Caps      = SVGARegRead(pSvga, SVGA_REG_CAPABILITIES);
@@ -69,6 +113,11 @@ static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
         SVGARegWrite(pSvga, SVGA_REG_IRQMASK, SVGA_IRQFLAG_ANY_FENCE);
     }
 
+    if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
+    {
+        SvgaCmdBufCtxInit(pSvga, true);
+    }
+
     return Status;
 }
 
@@ -94,6 +143,11 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
             GaMemFree(pSvga->pu32GMRBits);
             pSvga->pu32GMRBits = NULL;
             pSvga->cbGMRBits = 0;
+        }
+
+        if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
+        {
+            SvgaCmdBufCtxInit(pSvga, false);
         }
 
         /* Disable SVGA device. */
