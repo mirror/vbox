@@ -413,11 +413,17 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
     /*
      * Figure out where the payload is and where the header starts before we
      * do the protocol specific carving.
+     *
+     * UDP GSO uses IPv4 fragmentation, meaning that UDP header is present in
+     * the first fragment only. When computing the total frame size of the
+     * first fragment we need to use PDMNETWORKGSO::cbHdrsTotal instead of
+     * PDMNETWORKGSO::cbHdrsSeg. In case of TCP GSO both cbHdrsTotal and
+     * cbHdrsSeg have the same value, so it will work as well.
      */
     uint8_t * const pbSegHdrs    = pbFrame + pGso->cbMaxSeg * iSeg;
     uint8_t * const pbSegPayload = pbSegHdrs + pGso->cbHdrsSeg;
     uint32_t const  cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, (uint32_t)cbFrame);
-    uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrsSeg;
+    uint32_t const  cbSegFrame   = cbSegPayload + (iSeg ? pGso->cbHdrsSeg : pGso->cbHdrsTotal);
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
