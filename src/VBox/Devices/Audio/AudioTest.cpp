@@ -1564,6 +1564,9 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
     AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
     AssertReturn(!audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
 
+    AssertMsgReturn(pSet->cTests, ("No tests run yet"), VERR_WRONG_ORDER);
+    AssertMsgReturn(pSet->cTestsRunning == 0 , ("Some tests are still running"), VERR_WRONG_ORDER);
+
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
     int rc = RTDirCreateFullPath(pszOutDir, 0755);
