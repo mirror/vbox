@@ -3696,7 +3696,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry not present. idDevice=%#x uIova=%#RX64 -> IOPF\n", idDevice));
+            LogFunc(("Page table entry not present. idDevice=%#x uIova=%#RX64 -> IOPF\n", idDevice, uIova));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
