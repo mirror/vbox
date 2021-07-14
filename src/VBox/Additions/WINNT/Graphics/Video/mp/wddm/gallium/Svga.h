@@ -64,6 +64,7 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     /** Pointer to FIFO MMIO region. */
     volatile uint32_t *pu32FIFO;
 
+    /** Used only with SVGA_CAP_COMMAND_BUFFERS capability. */
     RTR0MEMOBJ hMemObj;
     RTR0PTR  pvR0Hdr, pvR0Cmd;
     RTHCPHYS paHdr, paCmd;

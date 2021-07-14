@@ -30,6 +30,8 @@ static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
 {
     int rc = STATUS_SUCCESS;
 
+    AssertReturn(enable == (pSvga->hMemObj == NIL_RTR0MEMOBJ), STATUS_INVALID_PARAMETER);
+
     if (enable)
     {
         rc = RTR0MemObjAllocPageTag(&pSvga->hMemObj, 2 << PAGE_SHIFT,
@@ -63,10 +65,11 @@ static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
 
     if (!enable)
     {
-        RTR0MemObjFree(pSvga->hMemObj, true);
+        rc = RTR0MemObjFree(pSvga->hMemObj, true);
         pSvga->hMemObj = NIL_RTR0MEMOBJ;
     }
 
+    AssertRC(rc);
     return rc;
 }
 
