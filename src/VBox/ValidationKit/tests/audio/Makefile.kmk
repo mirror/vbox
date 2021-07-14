@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# VirtualBox Validation Kit.
+# VirtualBox Validation Kit - Audio tests.
 #
 
 #
-# Copyright (C) 2006-2021 Oracle Corporation
+# Copyright (C) 2021 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,27 +24,17 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-SUB_DEPTH = ../../../..
+SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-#
-# Include sub-makefiles.
-#
-include $(PATH_SUB_CURRENT)/additions/Makefile.kmk
-include $(PATH_SUB_CURRENT)/api/Makefile.kmk
-include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
-include $(PATH_SUB_CURRENT)/autostart/Makefile.kmk
-include $(PATH_SUB_CURRENT)/benchmarks/Makefile.kmk
-include $(PATH_SUB_CURRENT)/cpu/Makefile.kmk
-include $(PATH_SUB_CURRENT)/network/Makefile.kmk
-include $(PATH_SUB_CURRENT)/selftests/Makefile.kmk
-include $(PATH_SUB_CURRENT)/smoketests/Makefile.kmk
-include $(PATH_SUB_CURRENT)/storage/Makefile.kmk
-include $(PATH_SUB_CURRENT)/teleportation/Makefile.kmk
-include $(PATH_SUB_CURRENT)/unittests/Makefile.kmk
-include $(PATH_SUB_CURRENT)/installation/Makefile.kmk
-include $(PATH_SUB_CURRENT)/usb/Makefile.kmk
-include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
+
+INSTALLS += ValidationKitTestsAudio
+ValidationKitTestsAudio_TEMPLATE = VBoxValidationKitR3
+ValidationKitTestsAudio_INST = $(INST_VALIDATIONKIT)tests/audio/
+ValidationKitTestsAudio_EXEC_SOURCES := \
+	$(PATH_SUB_CURRENT)/tdAudioTest.py
+
+VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsAudio_EXEC_SOURCES)
 
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
