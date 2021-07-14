@@ -145,6 +145,10 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     if (RT_LIKELY( cbFrame - pGso->cbHdrsTotal >= pGso->cbMaxSeg ))
     { /* likely */ } else return false;
 
+    /* Make sure the segment size is enough to fit a UDP header. */
+    if (RT_LIKELY(enmType != PDMNETWORKGSOTYPE_IPV4_UDP || pGso->cbMaxSeg >= RTNETUDP_MIN_LEN))
+    { /* likely */ } else return false;
+
     return true;
 }
 
@@ -449,8 +453,24 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
             if (iSeg == 0)
+            {
+                /* uh_ulen shall not exceed cbFrame - pGso->offHdr2 (offset of UDP header) */
+                PRTNETUDP pUdpHdr = (PRTNETUDP)&pbFrame[pGso->offHdr2];
+                Assert(pGso->offHdr2 + RT_UOFFSET_AFTER(RTNETUDP, uh_ulen) <= cbFrame);
+                if ((unsigned)(pGso->offHdr2 + RT_BE2H_U16(pUdpHdr->uh_ulen)) > cbFrame)
+                {
+                    size_t cbUdp = cbFrame - pGso->offHdr2;
+                    if (cbUdp >= UINT16_MAX)
+                        pUdpHdr->uh_ulen = UINT16_MAX;
+                    else
+                        pUdpHdr->uh_ulen = RT_H2BE_U16((uint16_t)cbUdp);
+                }
+                /* uh_ulen shall be at least the size of UDP header */
+                if (RT_BE2H_U16(pUdpHdr->uh_ulen) < sizeof(RTNETUDP))
+                    pUdpHdr->uh_ulen = RT_H2BE_U16(sizeof(RTNETUDP));
                 pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
                                          pbSegHdrs, pbFrame, pGso->offHdr2);
+            }
             pdmNetGsoUpdateIPv4HdrUfo(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg * pGso->cbMaxSeg,
                                       pdmNetSegHdrLen(pGso, iSeg), iSeg + 1 == cSegs);
             break;
@@ -559,6 +579,9 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
                     else
                         pUdpHdr->uh_ulen = RT_H2BE_U16((uint16_t)cbUdp);
                 }
+                /* uh_ulen shall be at least the size of UDP header */
+                if (RT_BE2H_U16(pUdpHdr->uh_ulen) < sizeof(RTNETUDP))
+                    pUdpHdr->uh_ulen = RT_H2BE_U16(sizeof(RTNETUDP));
                 pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
                                          pbSegHdrs, pbFrame, pGso->offHdr2);
             }
