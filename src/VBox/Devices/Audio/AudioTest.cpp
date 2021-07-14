@@ -407,7 +407,7 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
             || !cbRead)
             break;
 
-        Assert(PDMAudioPropsIsSizeAligned(&pToneParms->Props, cbRead));
+        Assert(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbRead));
 
         size_t const cbFrame = PDMAudioPropsFrameSize(&pToneParms->Props);
 
