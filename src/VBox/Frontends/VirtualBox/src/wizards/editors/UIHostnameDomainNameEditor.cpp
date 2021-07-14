@@ -131,7 +131,6 @@ void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineE
 void UIHostnameDomainNameEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
     pMainLayout->setColumnStretch(0, 0);
     pMainLayout->setColumnStretch(1, 1);
     if (!pMainLayout)

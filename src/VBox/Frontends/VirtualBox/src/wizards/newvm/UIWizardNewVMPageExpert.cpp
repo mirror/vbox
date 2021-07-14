@@ -42,6 +42,7 @@
 #include "UIToolBox.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
+#include "UIWizardDiskEditors.h"
 #include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMPageExpert.h"
 
@@ -50,7 +51,6 @@
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     : m_pToolBox(0)
-    , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
     , m_pLocationLabel(0)
     , m_pLocationEditor(0)
@@ -58,8 +58,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     , m_pMediumSizeEditorLabel(0)
     , m_pMediumSizeEditor(0)
     , m_pFormatButtonGroup(0)
-    , m_pFixedCheckBox(0)
-    , m_pSplitBox(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameAndSystemLayout(0)
@@ -73,7 +71,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
         m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "");
         //m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
-        // m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createNewDiskWidgets(), "");
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
         pMainLayout->addStretch();
@@ -185,8 +183,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("H&ardware"));
     }
 
-    // if (m_pDiskFormatGroupBox)
-    //     m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard Disk File &Type"));
     // if (m_pFormatButtonGroup)
     // {
     //     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
@@ -197,8 +193,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
     //         pButton->setText(gpConverter->toString(enmFormat));
     //     }
     // }
-    // if (m_pDiskVariantGroupBox)
-    //     m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on Physical Hard Disk"));
     // if (m_pLocationLabel)
     //     m_pLocationLabel->setText(UIWizardNewVM::tr("Disk &Location:"));
 
@@ -412,16 +406,8 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     m_pMediumSizeEditor = new UIMediumSizeEditor;
     m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
 
-    /* Disk file format widgets: */
-    m_pDiskFormatGroupBox = new QGroupBox;
-    QHBoxLayout *pDiskFormatLayout = new QHBoxLayout(m_pDiskFormatGroupBox);
-    m_pMediumSizeEditor = new UIMediumSizeEditor;
-    pDiskFormatLayout->addWidget(createFormatButtonGroup(true));
 
-    /* Disk variant and dik split widgets: */
-    m_pDiskVariantGroupBox  = new QGroupBox;
-    QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(m_pDiskVariantGroupBox);
-    pDiskVariantLayout->addWidget(createMediumVariantWidgets());
+    m_pMediumSizeEditor = new UIMediumSizeEditor;
 
     pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
@@ -430,7 +416,9 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
     pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
 
-    pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 3, 0, 6, 2);
+    m_pFormatButtonGroup = new UIDiskFormatsGroupBox;
+    pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 3, 0, 6, 2);
+    m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox;
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 3, 2, 6, 2);
 
     return pNewDiskContainerWidget;
@@ -675,8 +663,8 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
         m_pMediumSizeEditor->setEnabled(fEnable);
     if (m_pMediumSizeEditorLabel)
         m_pMediumSizeEditorLabel->setEnabled(fEnable);
-    if (m_pDiskFormatGroupBox)
-        m_pDiskFormatGroupBox->setEnabled(fEnable);
+    if (m_pFormatButtonGroup)
+        m_pFormatButtonGroup->setEnabled(fEnable);
     if (m_pDiskVariantGroupBox)
         m_pDiskVariantGroupBox->setEnabled(fEnable);
     if (m_pLocationLabel)
@@ -695,121 +683,6 @@ void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()
     // pWizard->setVirtualDisk(m_pDiskSelector->id());
 }
 
-void UIWizardNewVMPageExpert::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
-{
-    Q_UNUSED(pParent);
-    Q_UNUSED(pFormatLayout);
-    Q_UNUSED(medFormat);
-    Q_UNUSED(fPreferred);
-
-    // /* Check that medium format supports creation: */
-    // ULONG uFormatCapabilities = 0;
-    // QVector<KMediumFormatCapabilities> capabilities;
-    // capabilities = medFormat.GetCapabilities();
-    // for (int i = 0; i < capabilities.size(); i++)
-    //     uFormatCapabilities |= capabilities[i];
-
-    // if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
-    //       uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
-    //     return;
-
-    // /* Check that medium format supports creation of virtual hard-disks: */
-    // QVector<QString> fileExtensions;
-    // QVector<KDeviceType> deviceTypes;
-    // medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    // if (!deviceTypes.contains(KDeviceType_HardDisk))
-    //     return;
-
-    // /* Create/add corresponding radio-button: */
-    // QRadioButton *pFormatButton = new QRadioButton(pParent);
-    // AssertPtrReturnVoid(pFormatButton);
-    // {
-    //     /* Make the preferred button font bold: */
-    //     if (fPreferred)
-    //     {
-    //         QFont font = pFormatButton->font();
-    //         font.setBold(true);
-    //         pFormatButton->setFont(font);
-    //     }
-    //     pFormatLayout->addWidget(pFormatButton);
-    //     m_formats << medFormat;
-    //     m_formatNames << medFormat.GetName();
-    //     m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-    //     m_formatExtensions << UIWizardNewVDPageBaseSizeLocation::defaultExtension(medFormat);
-    // }
-}
-
-QWidget *UIWizardNewVMPageExpert::createFormatButtonGroup(bool fExpertMode)
-{
-    Q_UNUSED(fExpertMode);
-    QWidget *pContainerWidget = new QWidget;
-    QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
-    pContainerLayout->setContentsMargins(0, 0, 0, 0);
-
-    m_pFormatButtonGroup = new QButtonGroup;
-    if (m_pFormatButtonGroup)
-    {
-        /* Enumerate medium formats in special order: */
-        CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-        const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-        QMap<QString, CMediumFormat> vdi, preferred, others;
-        foreach (const CMediumFormat &format, formats)
-        {
-            /* VDI goes first: */
-            if (format.GetName() == "VDI")
-                vdi[format.GetId()] = format;
-            else
-            {
-                const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-                /* Then goes preferred: */
-                if (capabilities.contains(KMediumFormatCapabilities_Preferred))
-                    preferred[format.GetId()] = format;
-                /* Then others: */
-                else
-                    others[format.GetId()] = format;
-            }
-        }
-
-    //     /* Create buttons for VDI, preferred and others: */
-    //     foreach (const QString &strId, vdi.keys())
-    //         addFormatButton(pContainerWidget, pContainerLayout, vdi.value(strId), true);
-    //     foreach (const QString &strId, preferred.keys())
-    //         addFormatButton(pContainerWidget, pContainerLayout, preferred.value(strId), true);
-    //     if (fExpertMode)
-    //     {
-    //         foreach (const QString &strId, others.keys())
-    //             addFormatButton(pContainerWidget, pContainerLayout, others.value(strId));
-    //     }
-
-    //     if (!m_pFormatButtonGroup->buttons().isEmpty())
-    //     {
-    //         m_pFormatButtonGroup->button(0)->click();
-    //         m_pFormatButtonGroup->button(0)->setFocus();
-    //     }
-    }
-    return pContainerWidget;
-}
-
-QWidget *UIWizardNewVMPageExpert::createMediumVariantWidgets()
-{
-    QWidget *pContainerWidget = new QWidget;
-    QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
-    if (pMainLayout)
-    {
-        QVBoxLayout *pVariantLayout = new QVBoxLayout;
-        if (pVariantLayout)
-        {
-            m_pFixedCheckBox = new QCheckBox;
-            m_pSplitBox = new QCheckBox;
-            pVariantLayout->addWidget(m_pFixedCheckBox);
-            pVariantLayout->addWidget(m_pSplitBox);
-        }
-        pMainLayout->addLayout(pVariantLayout);
-        pMainLayout->addStretch();
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-    }
-    return pContainerWidget;
-}
 
 QWidget *UIWizardNewVMPageExpert::createNameOSTypeWidgets()
 {
