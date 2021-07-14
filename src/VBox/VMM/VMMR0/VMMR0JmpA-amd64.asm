@@ -127,6 +127,11 @@ SEH64_END_PROLOGUE
     test    byte [xDX + VMMR0JMPBUF.fInRing3Call], 1
     jnz     .resume
 
+.different_call_continue:
+    mov     [xDX + VMMR0JMPBUF.pfn], r11
+    mov     [xDX + VMMR0JMPBUF.pvUser1], r8
+    mov     [xDX + VMMR0JMPBUF.pvUser2], r9
+
  %ifdef VMM_R0_SWITCH_STACK
     mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
     test    r15, r15
@@ -223,9 +228,26 @@ SEH64_END_PROLOGUE
     ret
 
     ;
+    ; Not the same call as went to ring-3.
+    ;
+.different_call:
+    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 0
+    ;; @todo or should we fail here instead?
+    jmp     .different_call_continue
+
+    ;
     ; Resume VMMRZCallRing3 the call.
     ;
 .resume:
+    ; Check if it's actually the same call, if not just continue with it
+    ; as a regular call (ring-0 assert, then VM destroy).
+    cmp     [xDX + VMMR0JMPBUF.pfn], r11
+    jne     .different_call
+    cmp     [xDX + VMMR0JMPBUF.pvUser1], r8
+    jne     .different_call
+    cmp     [xDX + VMMR0JMPBUF.pvUser2], r9
+    jne     .different_call
+
  %ifndef VMM_R0_SWITCH_STACK
     ; Sanity checks incoming stack, applying fuzz if needed.
     sub     r10, [xDX + VMMR0JMPBUF.SpCheck]

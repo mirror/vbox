@@ -163,6 +163,14 @@ typedef struct VMMR0JMPBUF
     RTHCUINTREG                 UnwindRetPcValue;
     /** Unwind: The vmmR0CallRing3SetJmp return address stack location. */
     RTHCUINTREG                 UnwindRetPcLocation;
+
+    /** The function last being executed here. */
+    RTHCUINTREG                 pfn;
+    /** The first argument to the function. */
+    RTHCUINTREG                 pvUser1;
+    /** The second argument to the function. */
+    RTHCUINTREG                 pvUser2;
+
 #if HC_ARCH_BITS == 32
     /** Alignment padding. */
     uint32_t                    uPadding;
@@ -447,6 +455,25 @@ AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 /** Pointer to VMMCPU. */
 typedef VMMCPU *PVMMCPU;
 
+/**
+ * VMM per-VCpu ring-0 only instance data.
+ */
+typedef struct VMMR0PERVCPU
+{
+    /** @name Arguments passed by VMMR0EntryEx via vmmR0CallRing3SetJmpEx.
+     * @note Cannot be put on the stack as the location may change and upset the
+     *       validation of resume-after-ring-3-call logic.
+     * @{ */
+    PGVM                pGVM;
+    VMCPUID             idCpu;
+    VMMR0OPERATION      enmOperation;
+    PSUPVMMR0REQHDR     pReq;
+    uint64_t            u64Arg;
+    PSUPDRVSESSION      pSession;
+    /** @} */
+} VMMR0PERVCPU;
+/** Pointer to VMM ring-0 VMCPU instance data. */
+typedef VMMR0PERVCPU *PVMMR0PERVCPU;
 
 
 RT_C_DECLS_BEGIN
@@ -538,8 +565,10 @@ typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
  * @param   pJmpBuf     The jmp_buf to set.
  * @param   pfn         The function to be called when not resuming.
  * @param   pvUser      The argument of that function.
+ * @param   uCallKey    Unused call parameter that should be used to help
+ *                      uniquely identify the call.
  */
-DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser);
+DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser, uintptr_t uCallKey);
 
 
 /**

@@ -52,6 +52,9 @@ struc VMMR0JMPBUF
     .SavedEipForUnwind      resd 1
     .UnwindRetPcValue       resd 1
     .UnwindRetPcLocation    resd 1
+    .pfn            resd 1
+    .pvUser1        resd 1
+    .pvUser2        resd 1
 %endif
 %ifdef RT_ARCH_AMD64
     ; traditional jmp_buf
@@ -92,6 +95,9 @@ struc VMMR0JMPBUF
     .SavedEipForUnwind      resq 1
     .UnwindRetPcValue       resq 1
     .UnwindRetPcLocation    resq 1
+    .pfn            resq 1
+    .pvUser1        resq 1
+    .pvUser2        resq 1
 %endif
 
     ; Statistics

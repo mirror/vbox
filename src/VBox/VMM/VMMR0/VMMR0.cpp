@@ -1677,8 +1677,8 @@ DECLINLINE(bool) vmmR0IsValidSession(PGVM pGVM, PSUPDRVSESSION pClaimedSession, 
  *
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
-                              PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
+DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
+                                               PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Validate pGVM and idCpu for consistency and validity.
@@ -2428,21 +2428,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
 
 
 /**
- * Argument for vmmR0EntryExWrapper containing the arguments for VMMR0EntryEx.
- */
-typedef struct VMMR0ENTRYEXARGS
-{
-    PGVM                pGVM;
-    VMCPUID             idCpu;
-    VMMR0OPERATION      enmOperation;
-    PSUPVMMR0REQHDR     pReq;
-    uint64_t            u64Arg;
-    PSUPDRVSESSION      pSession;
-} VMMR0ENTRYEXARGS;
-/** Pointer to a vmmR0EntryExWrapper argument package. */
-typedef VMMR0ENTRYEXARGS *PVMMR0ENTRYEXARGS;
-
-/**
  * This is just a longjmp wrapper function for VMMR0EntryEx calls.
  *
  * @returns VBox status code.
@@ -2450,12 +2435,13 @@ typedef VMMR0ENTRYEXARGS *PVMMR0ENTRYEXARGS;
  */
 static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
 {
-    return vmmR0EntryExWorker(((PVMMR0ENTRYEXARGS)pvArgs)->pGVM,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->idCpu,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->enmOperation,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->pReq,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->u64Arg,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->pSession);
+    PGVMCPU pGVCpu = (PGVMCPU)pvArgs;
+    return vmmR0EntryExWorker(pGVCpu->vmmr0.s.pGVM,
+                              pGVCpu->vmmr0.s.idCpu,
+                              pGVCpu->vmmr0.s.enmOperation,
+                              pGVCpu->vmmr0.s.pReq,
+                              pGVCpu->vmmr0.s.u64Arg,
+                              pGVCpu->vmmr0.s.pSession);
 }
 
 
@@ -2515,15 +2501,14 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
                     if (!pGVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack)
                         break;
 
-                    /** @todo validate this EMT claim... GVM knows. */
-                    VMMR0ENTRYEXARGS Args;
-                    Args.pGVM = pGVM;
-                    Args.idCpu = idCpu;
-                    Args.enmOperation = enmOperation;
-                    Args.pReq = pReq;
-                    Args.u64Arg = u64Arg;
-                    Args.pSession = pSession;
-                    return vmmR0CallRing3SetJmpEx(&pGVCpu->vmm.s.CallRing3JmpBufR0, vmmR0EntryExWrapper, &Args);
+                    pGVCpu->vmmr0.s.pGVM         = pGVM;
+                    pGVCpu->vmmr0.s.idCpu        = idCpu;
+                    pGVCpu->vmmr0.s.enmOperation = enmOperation;
+                    pGVCpu->vmmr0.s.pReq         = pReq;
+                    pGVCpu->vmmr0.s.u64Arg       = u64Arg;
+                    pGVCpu->vmmr0.s.pSession     = pSession;
+                    return vmmR0CallRing3SetJmpEx(&pGVCpu->vmm.s.CallRing3JmpBufR0, vmmR0EntryExWrapper, pGVCpu,
+                                                  ((uintptr_t)u64Arg << 16) | (uintptr_t)enmOperation);
                 }
                 return VERR_VM_THREAD_NOT_EMT;
             }
