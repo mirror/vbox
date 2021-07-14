@@ -53,6 +53,8 @@ static unsigned volatile    g_cJmps;
 static size_t volatile      g_cbFoo;
 /** Number of bytes used last time we called foo(). */
 static intptr_t volatile    g_cbFooUsed;
+/** Set if we're in a long jump. */
+static bool                 g_fInLongJmp;
 
 
 int foo(int i, int iZero, int iMinusOne)
@@ -79,7 +81,9 @@ int foo(int i, int iZero, int iMinusOne)
     if ((i % 7) <= 1)
     {
         g_cJmps++;
+        g_fInLongJmp = true;
         int rc = vmmR0CallRing3LongJmp(&g_Jmp, 42);
+        g_fInLongJmp = false;
         if (!rc)
             return i + 10000;
         return -1;
@@ -129,11 +133,17 @@ void tst(int iFrom, int iTo, int iInc)
     g_cbFoo = 0;
     g_cJmps = 0;
     g_cbFooUsed = 0;
+    g_fInLongJmp = false;
 
+    int iOrg = iFrom;
     for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
-        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tst2, (PVM)(uintptr_t)i, 0);
-        RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x\n", i, rc, g_cbFoo, g_cbFooUsed));
+        if (!g_fInLongJmp)
+            iOrg = i;
+        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tst2, (PVM)(uintptr_t)iOrg, 0);
+        RTTESTI_CHECK_MSG_RETV(rc == (g_fInLongJmp ? 42 : 0),
+                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
+                                i, iOrg, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
 
 #ifdef VMM_R0_SWITCH_STACK
         /* Make the stack pointer slide for the second half of the calls. */
@@ -167,7 +177,11 @@ int main()
      * Init.
      */
     RTTEST hTest;
+#ifdef VMM_R0_NO_SWITCH_STACK
     RTEXITCODE rcExit = RTTestInitAndCreate("tstVMMR0CallHost-1", &hTest);
+#else
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstVMMR0CallHost-2", &hTest);
+#endif
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
