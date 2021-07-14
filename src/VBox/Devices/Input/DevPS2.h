@@ -33,11 +33,11 @@ typedef struct KBDSTATE *PKBDSTATE;
  * @{ */
 typedef struct PS2QHDR
 {
-    uint32_t volatile   rpos;
-    uint32_t volatile   wpos;
-    uint32_t volatile   cUsed;
-    uint32_t            uPadding;
-    const char          *pszDesc;
+    uint32_t volatile       rpos;
+    uint32_t volatile       wpos;
+    uint32_t volatile       cUsed;
+    uint32_t                uPadding;
+    R3PTRTYPE(const char *) pszDescR3;
 } PS2QHDR;
 /** Pointer to a queue header. */
 typedef PS2QHDR *PPS2QHDR;

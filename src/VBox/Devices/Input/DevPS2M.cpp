@@ -1061,8 +1061,8 @@ int PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC)
 {
     LogFlowFunc(("\n"));
 
-    pThis->cmdQ.Hdr.pszDesc = "Aux Cmd";
-    pThis->evtQ.Hdr.pszDesc = "Aux Evt";
+    pThis->cmdQ.Hdr.pszDescR3 = "Aux Cmd";
+    pThis->evtQ.Hdr.pszDescR3 = "Aux Evt";
 
 #ifdef RT_STRICT
     ps2mR3TestAccumulation();
@@ -1126,8 +1126,8 @@ static void ps2mR3TestAccumulation(void)
     RT_ZERO(This);
     This.u8State = AUX_STATE_ENABLED;
     This.fThrottleActive = true;
-    This.cmdQ.Hdr.pszDesc = "Test Aux Cmd";
-    This.evtQ.Hdr.pszDesc = "Test Aux Evt";
+    This.cmdQ.Hdr.pszDescR3 = "Test Aux Cmd";
+    This.evtQ.Hdr.pszDescR3 = "Test Aux Evt";
     /* Certain Windows touch pad drivers report a double tap as a press, then
      * a release-press-release all within a single 10ms interval.  Simulate
      * this to check that it is handled right. */
