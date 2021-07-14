@@ -3856,6 +3856,7 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
     /*
      * Get bitmap header data
      */
+    PCLOGOHDR        pLogoHdr = (PCLOGOHDR)pThisCC->pbLogo;
     PBMPFILEHDR      pFileHdr = (PBMPFILEHDR)(pThisCC->pbLogo + sizeof(LOGOHDR));
     PBMPWIN3XINFOHDR pCoreHdr = (PBMPWIN3XINFOHDR)(pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPFILEHDR));
 
@@ -3919,21 +3920,25 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
                               VERR_INVALID_PARAMETER);
 
         AssertLogRelMsgReturn(pThisCC->LogoCompression == BMP_COMPRESSION_TYPE_NONE,
-                               ("Unsupported %u compression.\n", pThisCC->LogoCompression),
-                               VERR_INVALID_PARAMETER);
+                              ("Unsupported %u compression.\n", pThisCC->LogoCompression),
+                              VERR_INVALID_PARAMETER);
 
-        AssertLogRelMsgReturn(pFileHdr->cbFileSize > pFileHdr->offBits,
-                               ("Wrong bitmap data offset %u.\n", pFileHdr->offBits),
-                               VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pLogoHdr->cbLogo > pFileHdr->offBits,
+                              ("Wrong bitmap data offset %u, cbLogo=%u.\n", pFileHdr->offBits, pLogoHdr->cbLogo),
+                              VERR_INVALID_PARAMETER);
 
-        uint32_t const cbFileData  = pFileHdr->cbFileSize - pFileHdr->offBits;
+        uint32_t const cbFileData  = pLogoHdr->cbLogo - pFileHdr->offBits;
         uint32_t       cbImageData = (uint32_t)pThisCC->cxLogo * pThisCC->cyLogo * pThisCC->cLogoPlanes;
         if (pThisCC->cLogoBits == 4)
             cbImageData /= 2;
         else if (pThisCC->cLogoBits == 24)
             cbImageData *= 3;
         AssertLogRelMsgReturn(cbImageData <= cbFileData,
-                              ("Wrong BMP header data %u\n", cbImageData),
+                              ("Wrong BMP header data %u (cbLogo=%u offBits=%u)\n", cbImageData, pFileHdr->offBits, pLogoHdr->cbLogo),
+                              VERR_INVALID_PARAMETER);
+
+        AssertLogRelMsgReturn(pLogoHdr->cbLogo == pFileHdr->cbFileSize,
+                              ("Wrong bitmap file size %u, cbLogo=%u.\n", pFileHdr->cbFileSize, pLogoHdr->cbLogo),
                               VERR_INVALID_PARAMETER);
 
         /*
