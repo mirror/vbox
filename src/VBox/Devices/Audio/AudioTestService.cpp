@@ -935,7 +935,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
  *
  * @returns VBox status code.
  */
-static DECLCALLBACK(int) atsConnectThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread);
 
@@ -1089,7 +1089,7 @@ int AudioTestSvcStart(PATSSERVER pThis)
     if (RT_SUCCESS(rc))
     {
         /* Spin off the connection thread. */
-        rc = RTThreadCreate(&pThis->hThreadMain, atsConnectThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+        rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                             "AUDTSTSRVM");
         if (RT_SUCCESS(rc))
         {
@@ -1172,8 +1172,6 @@ static int audioTestSvcDestroyInternal(PATSSERVER pThis)
 
     RTPollSetDestroy(pThis->hPollSet);
     pThis->hPollSet = NIL_RTPOLLSET;
-
-    pThis->pTransport = NULL;
 
     PATSSERVERINST pIt, pItNext;
     RTListForEachSafe(&pThis->LstClientsNew, pIt, pItNext, ATSCLIENTINST, NdLst)

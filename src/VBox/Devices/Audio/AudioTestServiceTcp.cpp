@@ -687,10 +687,6 @@ static DECLCALLBACK(void) atsTcpTerm(PATSTRANSPORTINST pThis)
     /* Wait for the thread (they should've had some time to quit by now). */
     atsTcpConnectWaitOnThreads(pThis, 15000);
 
-    /* Finally, clean up the critical section. */
-    if (RTCritSectIsInitialized(&pThis->CritSect))
-        RTCritSectDelete(&pThis->CritSect);
-
     LogFunc(("Done\n"));
 }
 
@@ -711,7 +707,10 @@ static DECLCALLBACK(int) atsTcpCreate(PATSTRANSPORTINST *ppThis)
  */
 static DECLCALLBACK(int) atsTcpDestroy(PATSTRANSPORTINST pThis)
 {
-    /** @todo Anything else to do here? */
+    /* Finally, clean up the critical section. */
+    if (RTCritSectIsInitialized(&pThis->CritSect))
+        RTCritSectDelete(&pThis->CritSect);
+
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
