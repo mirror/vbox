@@ -397,10 +397,9 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
     AssertRCReturn(rc, 0);
 
     uint64_t offFound       = 0;
-    int64_t  abSample[_4K];
+    int64_t  abSample[_16K];
 
     size_t   cbRead;
-    uint32_t cConseqSilence = 0;
     for (;;)
     {
         rc = RTFileRead(hFile, &abSample, sizeof(abSample), &cbRead);
@@ -408,15 +407,16 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
             || !cbRead)
             break;
 
-        size_t const cbSample = PDMAudioPropsSampleSize(&pToneParms->Props);
+        Assert(PDMAudioPropsIsSizeAligned(&pToneParms->Props, cbRead));
 
-        for (size_t i = 0; i < cbRead / cbSample; i += cbSample) /** @todo Slow as heck, but works for now. */
+        size_t const cbFrame = PDMAudioPropsFrameSize(&pToneParms->Props);
+
+        for (size_t i = 0; i < cbRead / cbFrame; i += cbFrame) /** @todo Slow as heck, but works for now. */
         {
-            bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pToneParms->Props, (const uint8_t *)abSample + i, cbSample);
+            bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pToneParms->Props, (const uint8_t *)abSample + i, cbFrame);
             if (fIsSilence == fFindSilence)
             {
-                offFound += cbSample;
-                cConseqSilence++;
+                offFound += cbFrame;
             }
             else
                 break;
@@ -2086,7 +2086,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     RT_ZERO(FileA);
     FileA.hFile     = ObjA.File.hFile;
     FileA.offStart  = audioTestToneFileFind(ObjA.File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsA);
-    FileA.cbSize    = RT_MIN(audioTestToneFileFind(ObjA.File.hFile, false /* fFindSilence */, FileA.offStart,  &ToneParmsA) + 1,
+    FileA.cbSize    = RT_MIN(audioTestToneFileFind(ObjA.File.hFile, false /* fFindSilence */, FileA.offStart, &ToneParmsA),
                              cbSizeA);
 
     AUDIOTESTTONEPARMS ToneParmsB;
@@ -2097,12 +2097,12 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     RT_ZERO(FileB);
     FileB.hFile     = ObjB.File.hFile;
     FileB.offStart  = audioTestToneFileFind(ObjB.File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsB);
-    FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile, false /* fFindSilence */, FileB.offStart,  &ToneParmsB),
+    FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile, false /* fFindSilence */, FileB.offStart, &ToneParmsB),
                              cbSizeB);
 
     Log2Func(("Test #%RU32\n", pVerJob->idxTest));
-    Log2Func(("File A ('%s'): cbOff=%RU64  cbSize=%RU64, cbFileSize=%RU64\n", ObjA.szName, FileA.offStart, FileA.cbSize - FileA.offStart, cbSizeA));
-    Log2Func(("File B ('%s'): cbOff=%RU64, cbSize=%RU64, cbFileSize=%RU64\n", ObjB.szName, FileB.offStart, FileB.cbSize - FileB.offStart, cbSizeB));
+    Log2Func(("File A ('%s'): cbOff=%RU64  cbSize=%RU64, cbFileSize=%RU64\n", ObjA.szName, FileA.offStart, FileA.cbSize, cbSizeA));
+    Log2Func(("File B ('%s'): cbOff=%RU64, cbSize=%RU64, cbFileSize=%RU64\n", ObjB.szName, FileB.offStart, FileB.cbSize, cbSizeB));
 
     uint32_t const cDiffs = audioTestFilesFindDiffsBinary(&FileA, &FileB, &ToneParmsA);
 
