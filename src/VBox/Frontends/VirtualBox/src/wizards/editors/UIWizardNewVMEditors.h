@@ -29,14 +29,16 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QCheckBox;
 class QGridLayout;
 class QLabel;
 class QILineEdit;
 class UIFilePathSelector;
+class UIHostnameDomainNameEditor;
 class UIPasswordLineEdit;
 class UIUserNamePasswordEditor;
 
-class UIUserNamePasswordGroupBox : public QGroupBox
+class UIUserNamePasswordGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
@@ -50,19 +52,20 @@ public:
     UIUserNamePasswordGroupBox(QWidget *pParent = 0);
 
     /** @name Wrappers for UIUserNamePasswordEditor
-     * @{ */
-       QString userName() const;
-       void setUserName(const QString &strUserName);
+      * @{ */
+        QString userName() const;
+        void setUserName(const QString &strUserName);
 
-       QString password() const;
-       void setPassword(const QString &strPassword);
-       bool isComplete();
-       void setLabelsVisible(bool fVisible);
+        QString password() const;
+        void setPassword(const QString &strPassword);
+        bool isComplete();
+        void setLabelsVisible(bool fVisible);
     /** @} */
 
 private:
 
     void prepare();
+    virtual void retranslateUi() /* override final */;
 
     UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
 };
@@ -81,10 +84,10 @@ public:
     UIGAInstallationGroupBox(QWidget *pParent = 0);
 
     /** @name Wrappers for UIFilePathSelector
-     * @{ */
-       QString path() const;
-       void setPath(const QString &strPath, bool fRefreshText = true);
-       void mark(bool fError, const QString &strErrorMessage = QString());
+      * @{ */
+        QString path() const;
+        void setPath(const QString &strPath, bool fRefreshText = true);
+        void mark(bool fError, const QString &strErrorMessage = QString());
     /** @} */
 
 public slots:
@@ -99,6 +102,42 @@ private:
     QLabel *m_pGAISOPathLabel;
     UIFilePathSelector *m_pGAISOFilePathSelector;
 
+};
+
+class UIAdditionalUnattendedOptions : public QIWithRetranslateUI<QGroupBox>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigHostnameDomainNameChanged(const QString &strHostnameDomainName);
+    void sigProductKeyChanged(const QString &strHostnameDomainName);
+    void sigStartHeadlessChanged(bool fChecked);
+
+public:
+
+    UIAdditionalUnattendedOptions(QWidget *pParent = 0);
+
+    /** @name Wrappers for UIFilePathSelector
+      * @{ */
+        QString hostname() const;
+        void setHostname(const QString &strHostname);
+        QString domainName() const;
+        void setDomainName(const QString &strDomain);
+        QString hostnameDomainName() const;
+        bool isComplete() const;
+        void disableEnableProductKeyWidgets(bool fEnabled);
+    /** @} */
+
+private:
+
+    void prepare();
+    virtual void retranslateUi() /* override final */;
+
+    QLabel *m_pProductKeyLabel;
+    QILineEdit *m_pProductKeyLineEdit;
+    UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
+    QCheckBox *m_pStartHeadlessCheckBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardNewVMEditors_h */

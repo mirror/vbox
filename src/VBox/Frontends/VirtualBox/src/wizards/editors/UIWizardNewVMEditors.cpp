@@ -16,11 +16,14 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QLabel>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QILineEdit.h"
 #include "UICommon.h"
+#include "UIHostnameDomainNameEditor.h"
 #include "UIFilePathSelector.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
@@ -35,7 +38,7 @@
 *********************************************************************************************************************************/
 
 UIUserNamePasswordGroupBox::UIUserNamePasswordGroupBox(QWidget *pParent /* = 0 */)
-    :QGroupBox(pParent)
+    : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pUserNamePasswordEditor(0)
 {
     prepare();
@@ -54,6 +57,12 @@ void UIUserNamePasswordGroupBox::prepare()
             this, &UIUserNamePasswordGroupBox::sigPasswordChanged);
     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigUserNameChanged,
             this, &UIUserNamePasswordGroupBox::sigUserNameChanged);
+    retranslateUi();
+}
+
+void UIUserNamePasswordGroupBox::retranslateUi()
+{
+    setTitle(UIWizardNewVM::tr("Username and Password"));
 }
 
 QString UIUserNamePasswordGroupBox::userName() const
@@ -97,7 +106,7 @@ void UIUserNamePasswordGroupBox::setLabelsVisible(bool fVisible)
 
 
 /*********************************************************************************************************************************
-*   UIUserNamePasswordGroupBox implementation.                                                                                   *
+*   UIGAInstallationGroupBox implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 UIGAInstallationGroupBox::UIGAInstallationGroupBox(QWidget *pParent /* = 0 */)
@@ -180,4 +189,126 @@ void UIGAInstallationGroupBox::sltToggleWidgetsEnabled(bool fEnabled)
 
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setEnabled(m_pGAISOFilePathSelector);
+}
+
+
+/*********************************************************************************************************************************
+*   UIAdditionalUnattendedOptions implementation.                                                                                *
+*********************************************************************************************************************************/
+
+UIAdditionalUnattendedOptions::UIAdditionalUnattendedOptions(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pProductKeyLabel(0)
+    , m_pProductKeyLineEdit(0)
+    , m_pHostnameDomainNameEditor(0)
+    , m_pStartHeadlessCheckBox(0)
+{
+    prepare();
+}
+
+void UIAdditionalUnattendedOptions::prepare()
+{
+    QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(this);
+    pAdditionalOptionsContainerLayout->setColumnStretch(0, 0);
+    pAdditionalOptionsContainerLayout->setColumnStretch(1, 1);
+
+    m_pProductKeyLabel = new QLabel;
+    if (m_pProductKeyLabel)
+    {
+        m_pProductKeyLabel->setAlignment(Qt::AlignRight);
+        m_pProductKeyLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 0, 0);
+    }
+    m_pProductKeyLineEdit = new QILineEdit;
+    if (m_pProductKeyLineEdit)
+    {
+        m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
+        if (m_pProductKeyLabel)
+            m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
+        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
+    }
+
+    m_pHostnameDomainNameEditor = new UIHostnameDomainNameEditor;
+    if (m_pHostnameDomainNameEditor)
+        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainNameEditor, 1, 0, 2, 3);
+
+    m_pStartHeadlessCheckBox = new QCheckBox;
+    if (m_pStartHeadlessCheckBox)
+        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
+
+    if (m_pHostnameDomainNameEditor)
+        connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainNameChanged,
+                this, &UIAdditionalUnattendedOptions::sigHostnameDomainNameChanged);
+    if (m_pProductKeyLineEdit)
+        connect(m_pProductKeyLineEdit, &QILineEdit::textChanged,
+                this, &UIAdditionalUnattendedOptions::sigProductKeyChanged);
+    if (m_pStartHeadlessCheckBox)
+        connect(m_pStartHeadlessCheckBox, &QCheckBox::toggled,
+                this, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged);
+
+
+    retranslateUi();
+}
+
+void UIAdditionalUnattendedOptions::retranslateUi()
+{
+    setTitle(UIWizardNewVM::tr("Additional Options"));
+
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
+
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
+                                                               "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
+    }
+}
+
+QString UIAdditionalUnattendedOptions::hostname() const
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->hostname();
+    return QString();
+}
+
+void UIAdditionalUnattendedOptions::setHostname(const QString &strHostname)
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->setHostname(strHostname);
+}
+
+QString UIAdditionalUnattendedOptions::domainName() const
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->domainName();
+    return QString();
+}
+
+void UIAdditionalUnattendedOptions::setDomainName(const QString &strDomainName)
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->setDomainName(strDomainName);
+}
+
+QString UIAdditionalUnattendedOptions::hostnameDomainName() const
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->hostnameDomainName();
+    return QString();
+}
+
+bool UIAdditionalUnattendedOptions::isComplete() const
+{
+    if (m_pHostnameDomainNameEditor)
+        return m_pHostnameDomainNameEditor->isComplete();
+    return false;
+}
+
+void UIAdditionalUnattendedOptions::disableEnableProductKeyWidgets(bool fEnabled)
+{
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(fEnabled);
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(fEnabled);
 }

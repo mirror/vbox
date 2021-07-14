@@ -54,11 +54,7 @@ UIWizardNewVMUnattendedPageBasic::UIWizardNewVMUnattendedPageBasic()
     : m_pLabel(0)
     , m_pAdditionalOptionsContainer(0)
     , m_pGAInstallationISOContainer(0)
-    , m_pStartHeadlessCheckBox(0)
     , m_pUserNamePasswordGroupBox(0)
-    , m_pHostnameDomainNameEditor(0)
-    , m_pProductKeyLineEdit(0)
-    , m_pProductKeyLabel(0)
 {
     prepare();
 }
@@ -70,12 +66,19 @@ void UIWizardNewVMUnattendedPageBasic::prepare()
     m_pLabel = new QIRichTextLabel(this);
     if (m_pLabel)
         pMainLayout->addWidget(m_pLabel, 0, 0, 1, 2);
+
     m_pUserNamePasswordGroupBox = new UIUserNamePasswordGroupBox;
     AssertReturnVoid(m_pUserNamePasswordGroupBox);
     pMainLayout->addWidget(m_pUserNamePasswordGroupBox, 1, 0, 1, 1);
-    pMainLayout->addWidget(createAdditionalOptionsWidgets(), 1, 1, 1, 1);
+
+    m_pAdditionalOptionsContainer = new UIAdditionalUnattendedOptions;
+    AssertReturnVoid(m_pAdditionalOptionsContainer);
+    pMainLayout->addWidget(m_pAdditionalOptionsContainer, 1, 1, 1, 1);
+
     m_pGAInstallationISOContainer = new UIGAInstallationGroupBox;
+    AssertReturnVoid(m_pGAInstallationISOContainer);
     pMainLayout->addWidget(m_pGAInstallationISOContainer, 2, 0, 1, 2);
+
     pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
 
     createConnections();
@@ -97,15 +100,16 @@ void UIWizardNewVMUnattendedPageBasic::createConnections()
         connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::sigPathChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged);
     }
-    if (m_pHostnameDomainNameEditor)
-        connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainNameChanged,
+
+    if (m_pAdditionalOptionsContainer)
+    {
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigHostnameDomainNameChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged);
-    if (m_pProductKeyLineEdit)
-        connect(m_pProductKeyLineEdit, &QLineEdit::textChanged,
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigProductKeyChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged);
-    if (m_pStartHeadlessCheckBox)
-        connect(m_pStartHeadlessCheckBox, &QCheckBox::toggled,
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged,
                 this, &UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged);
+    }
 }
 
 
@@ -116,24 +120,15 @@ void UIWizardNewVMUnattendedPageBasic::retranslateUi()
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can configure the unattended guest OS install by modifying username, password, and "
                                             "hostname. Additionally you can enable guest additions install. "
                                             "For Microsoft Windows guests it is possible to provide a product key.</p>"));
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
     if (m_pUserNamePasswordGroupBox)
         m_pUserNamePasswordGroupBox->setTitle(UIWizardNewVM::tr("Username and Password"));
-    if (m_pAdditionalOptionsContainer)
-        m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional Options"));
-    if (m_pStartHeadlessCheckBox)
-    {
-        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
-                                                               "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
-    }
 }
 
 
 void UIWizardNewVMUnattendedPageBasic::initializePage()
 {
-    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    if (m_pAdditionalOptionsContainer)
+        m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
     if (m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->sltToggleWidgetsEnabled(m_pGAInstallationISOContainer->isChecked());
     retranslateUi();
@@ -150,19 +145,19 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
             m_pUserNamePasswordGroupBox->setPassword(pWizard->password());
         m_pUserNamePasswordGroupBox->blockSignals(false);
     }
-    if (m_pHostnameDomainNameEditor)
+    if (m_pAdditionalOptionsContainer)
     {
-        m_pHostnameDomainNameEditor->blockSignals(true);
+        m_pAdditionalOptionsContainer->blockSignals(true);
 
         if (!m_userModifiedParameters.contains("HostnameDomainName"))
         {
-            m_pHostnameDomainNameEditor->setHostname(pWizard->machineBaseName());
-            m_pHostnameDomainNameEditor->setDomainName("myguest.virtualbox.org");
+            m_pAdditionalOptionsContainer->setHostname(pWizard->machineBaseName());
+            m_pAdditionalOptionsContainer->setDomainName("myguest.virtualbox.org");
             /* Initialize unattended hostname here since we cannot get the efault value from CUnattended this early (unlike username etc): */
-            newVMWizardPropertySet(HostnameDomainName, m_pHostnameDomainNameEditor->hostnameDomainName());
+            newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
         }
 
-        m_pHostnameDomainNameEditor->blockSignals(false);
+        m_pAdditionalOptionsContainer->blockSignals(false);
     }
     if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
     {
@@ -189,7 +184,7 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
         return false;
     if (m_pUserNamePasswordGroupBox && !m_pUserNamePasswordGroupBox->isComplete())
         return false;
-    if (m_pHostnameDomainNameEditor && !m_pHostnameDomainNameEditor->isComplete())
+    if (m_pAdditionalOptionsContainer && !m_pAdditionalOptionsContainer->isComplete())
         return false;
     return true;
 }
@@ -256,51 +251,6 @@ void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strPr
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
     newVMWizardPropertySet(StartHeadless, fStartHeadless);
-}
-
-QWidget *UIWizardNewVMUnattendedPageBasic::createAdditionalOptionsWidgets()
-{
-    if (m_pAdditionalOptionsContainer)
-        return m_pAdditionalOptionsContainer;
-
-    m_pAdditionalOptionsContainer = new QGroupBox;
-    QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(m_pAdditionalOptionsContainer);
-    pAdditionalOptionsContainerLayout->setColumnStretch(0, 0);
-    pAdditionalOptionsContainerLayout->setColumnStretch(1, 1);
-
-    m_pProductKeyLabel = new QLabel;
-    if (m_pProductKeyLabel)
-    {
-        m_pProductKeyLabel->setAlignment(Qt::AlignRight);
-        m_pProductKeyLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 0, 0);
-    }
-    m_pProductKeyLineEdit = new QLineEdit;
-    if (m_pProductKeyLineEdit)
-    {
-        m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
-        if (m_pProductKeyLabel)
-            m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
-    }
-
-    m_pHostnameDomainNameEditor = new UIHostnameDomainNameEditor;
-    if (m_pHostnameDomainNameEditor)
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainNameEditor, 1, 0, 2, 3);
-
-    m_pStartHeadlessCheckBox = new QCheckBox;
-    if (m_pStartHeadlessCheckBox)
-        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
-
-    return m_pAdditionalOptionsContainer;
-}
-
-void UIWizardNewVMUnattendedPageBasic::disableEnableProductKeyWidgets(bool fEnabled)
-{
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setEnabled(fEnabled);
-    if (m_pProductKeyLineEdit)
-        m_pProductKeyLineEdit->setEnabled(fEnabled);
 }
 
 void UIWizardNewVMUnattendedPageBasic::markWidgets() const

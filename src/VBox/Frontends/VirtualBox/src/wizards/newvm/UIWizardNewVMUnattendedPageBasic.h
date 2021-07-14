@@ -32,6 +32,7 @@ class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QIRichTextLabel;
+class UIAdditionalUnattendedOptions;
 class UIGAInstallationGroupBox;
 class UIFilePathSelector;
 class UIUserNamePasswordGroupBox;
@@ -73,27 +74,21 @@ private:
 
     void prepare();
     void createConnections();
-    QWidget *createAdditionalOptionsWidgets();
 
     void retranslateUi();
     void initializePage();
     bool isComplete() const;
     /** Returns true if we show the widgets for guest os product key. */
     bool isProductKeyWidgetEnabled() const;
-    void disableEnableProductKeyWidgets(bool fEnabled);
     void markWidgets() const;
 
     /** @name Widgets
       * @{ */
         QIRichTextLabel *m_pLabel;
-        QGroupBox *m_pAdditionalOptionsContainer;
+        UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
-        QCheckBox *m_pStartHeadlessCheckBox;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
-        UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
-        /** Product key stuff. */
-        QLineEdit *m_pProductKeyLineEdit;
-        QLabel     *m_pProductKeyLabel;
+
     /** @} */
     QSet<QString> m_userModifiedParameters;
 };

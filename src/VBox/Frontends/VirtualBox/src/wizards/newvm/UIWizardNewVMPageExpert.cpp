@@ -64,12 +64,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameAndSystemLayout(0)
     , m_pAdditionalOptionsContainer(0)
-    , m_pProductKeyLabel(0)
-    , m_pProductKeyLineEdit(0)
-    , m_pHostnameDomainNameEditor(0)
-    , m_pStartHeadlessCheckBox(0)
     , m_pGAInstallationISOContainer(0)
-    , m_pUserNameContainer(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -181,21 +176,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
                                                                 "drive of the virtual machine but the unattended installation "
                                                                 "will not start.</p>"));
     }
-
-    if (m_pStartHeadlessCheckBox)
-    {
-        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
-                                                               "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
-    }
-
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
-
-    if (m_pUserNameContainer)
-        m_pUserNameContainer->setTitle(UIWizardNewVM::tr("Username and Password"));
-    if (m_pAdditionalOptionsContainer)
-        m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional Options"));
 
     if (m_pToolBox)
     {
@@ -393,13 +373,15 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     AssertReturn(m_pUserNamePasswordGroupBox, 0);
     pLayout->addWidget(m_pUserNamePasswordGroupBox, iRow, 0, 1, 2);
 
-    /* Additional options: */
-    pLayout->addWidget(createAdditionalOptionsWidgets(), iRow, 2, 1, 2);
+    m_pAdditionalOptionsContainer = new UIAdditionalUnattendedOptions;
+    AssertReturn(m_pAdditionalOptionsContainer, 0);
+    pLayout->addWidget(m_pAdditionalOptionsContainer, iRow, 2, 1, 2);
 
     ++iRow;
+
     /* Guest additions installation: */
     m_pGAInstallationISOContainer = new UIGAInstallationGroupBox;
-
+    AssertReturn(m_pGAInstallationISOContainer, 0);
     pLayout->addWidget(m_pGAInstallationISOContainer, iRow, 0, 1, 4);
 
     return pContainerWidget;
@@ -847,41 +829,4 @@ QWidget *UIWizardNewVMPageExpert::createNameOSTypeWidgets()
     if (m_pSkipUnattendedCheckBox)
         m_pNameAndSystemLayout->addWidget(m_pSkipUnattendedCheckBox, 1, 1);
     return pContainerWidget;
-}
-
-QWidget *UIWizardNewVMPageExpert::createAdditionalOptionsWidgets()
-{
-    if (m_pAdditionalOptionsContainer)
-        return m_pAdditionalOptionsContainer;
-
-    m_pAdditionalOptionsContainer = new QGroupBox;
-    QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(m_pAdditionalOptionsContainer);
-    pAdditionalOptionsContainerLayout->setColumnStretch(0, 0);
-    pAdditionalOptionsContainerLayout->setColumnStretch(1, 1);
-
-    m_pProductKeyLabel = new QLabel;
-    if (m_pProductKeyLabel)
-    {
-        m_pProductKeyLabel->setAlignment(Qt::AlignRight);
-        m_pProductKeyLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 0, 0);
-    }
-    m_pProductKeyLineEdit = new QLineEdit;
-    if (m_pProductKeyLineEdit)
-    {
-        m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
-        if (m_pProductKeyLabel)
-            m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
-    }
-
-    m_pHostnameDomainNameEditor = new UIHostnameDomainNameEditor;
-    if (m_pHostnameDomainNameEditor)
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainNameEditor, 1, 0, 2, 3);
-
-    m_pStartHeadlessCheckBox = new QCheckBox;
-    if (m_pStartHeadlessCheckBox)
-        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
-
-    return m_pAdditionalOptionsContainer;
 }
