@@ -9740,8 +9740,8 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
                              targetId.raw(),
                              VD_OPEN_FLAGS_NORMAL,
                              NULL /* pVDIfsOperation */,
-                             NULL,
-                             NULL);
+                             pTarget->m->vdImageIfaces,
+                             task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
                                        tr("Could not move medium '%s'%s"),
