@@ -68,6 +68,10 @@ class tdAudioTest(vbox.TestDriver):
             '${CDROM}/${OS/ARCH}/vkat${EXESUFF}',
             ## @odo VBoxAudioTest on Guest Additions?
         ];
+        self.asTestsDef       = [
+            'guest_tone_playback', 'guest_tone_recording'
+        ];
+        self.asTests          = self.asTestsDef;
 
         # Enable audio debug mode.
         #
@@ -87,7 +91,9 @@ class tdAudioTest(vbox.TestDriver):
         fRc = vbox.TestDriver.showUsage(self);
         reporter.log('');
         reporter.log('tdAudioTest Options:');
-        reporter.log(' --runningvmname <vmname>');
+        reporter.log('  --runningvmname <vmname>');
+        reporter.log('  --audio-tests   <s1[:s2[:]]>');
+        reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
         return fRc;
 
     def parseOption(self, asArgs, iArg):
@@ -100,6 +106,16 @@ class tdAudioTest(vbox.TestDriver):
                 raise base.InvalidOption('The "--runningvmname" needs VM name');
 
             self.sRunningVmName = asArgs[iArg];
+        elif asArgs[iArg] == '--audio-tests':
+            iArg += 1;
+            if asArgs[iArg] == 'all': # Nice for debugging scripts.
+                self.asTests = self.asTestsDef;
+            else:
+                self.asTests = asArgs[iArg].split(':');
+                for s in self.asTests:
+                    if s not in self.asTestsDef:
+                        raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
+                                                    % (s, ' '.join(self.asTestsDef)));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -295,13 +311,17 @@ class tdAudioTest(vbox.TestDriver):
         # Might happen because of former (aborted) runs.
         self.killHstVkat();
 
+        reporter.log("Active tests: %s" % (self.asTests,));
+
         fRc = self.startVkatOnGuest(oTestVm, oSession, oTxsSession);
         if fRc:
             #
             # Execute the tests using VKAT on the guest side (in guest mode).
             #
-            fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', '-i0');
-            fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', '-i1');
+            if "guest_tone_playback" in self.asTests:
+                fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', '-i0');
+            if "guest_tone_recording" in self.asTests:
+                fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', '-i1');
 
         return fRc;
 
