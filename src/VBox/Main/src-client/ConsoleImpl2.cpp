@@ -3089,8 +3089,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pInst,      "Trusted",              1); /* boolean */
                     hrc = pBusMgr->assignPCIDevice(pszAudioDevice, pInst);              H();
                     InsertConfigNode(pInst,         "Config",               &pCfg);
-                    if (uTimerHz)
-                        InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
                     if (uBufSizeInMs)
                         InsertConfigInteger(pCfg,   "BufSizeInMs",          uBufSizeInMs);
                     if (uBufSizeOutMs)
