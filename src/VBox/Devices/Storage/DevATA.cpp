@@ -109,10 +109,10 @@
 
 /* MediaEventStatus */
 #define ATA_EVENT_STATUS_UNCHANGED              0    /**< medium event status not changed */
-#define ATA_EVENT_STATUS_MEDIA_NEW              1    /**< new medium inserted */
-#define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
-#define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
-#define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
+#define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  1    /**< medium eject requested (eject button pressed) */
+#define ATA_EVENT_STATUS_MEDIA_NEW              2    /**< new medium inserted */
+#define ATA_EVENT_STATUS_MEDIA_REMOVED          3    /**< medium removed */
+#define ATA_EVENT_STATUS_MEDIA_CHANGED          4    /**< medium was removed + new medium was inserted */
 
 /* Media track type */
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
@@ -3031,7 +3031,7 @@ static bool atapiR3GetEventStatusNotificationSS(PPDMDEVINS pDevIns, PATACONTROLL
                 scsiH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
                 pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
-                pbBuf[4] = 0x03; /* media removal */
+                pbBuf[4] = OldStatus == ATA_EVENT_STATUS_MEDIA_CHANGED ? 0x04 /* media changed */ : 0x03; /* media removed */
                 pbBuf[5] = 0x00; /* medium absent / door closed */
                 pbBuf[6] = 0x00;
                 pbBuf[7] = 0x00;
