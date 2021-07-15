@@ -203,7 +203,9 @@ typedef enum
     kDmarDiag_At_Rta_Smts_Not_Supported,
     kDmarDiag_At_Xm_AddrIn_Invalid,
     kDmarDiag_At_Xm_AddrOut_Invalid,
-    kDmarDiag_At_Xm_Perm_Denied,
+    kDmarDiag_At_Xm_Perm_Read_Denied,
+    kDmarDiag_At_Xm_Perm_Write_Denied,
+    kDmarDiag_At_Xm_Pte_Not_Present,
     kDmarDiag_At_Xm_Pte_Rsvd,
     kDmarDiag_At_Xm_Pte_Sllps_Invalid,
     kDmarDiag_At_Xm_Read_Pte_Failed,
@@ -278,7 +280,9 @@ static const char *const g_apszDmarDiagDesc[] =
     DMARDIAG_DESC(At_Rta_Smts_Not_Supported  ),
     DMARDIAG_DESC(At_Xm_AddrIn_Invalid       ),
     DMARDIAG_DESC(At_Xm_AddrOut_Invalid      ),
-    DMARDIAG_DESC(At_Xm_Perm_Denied          ),
+    DMARDIAG_DESC(At_Xm_Perm_Read_Denied     ),
+    DMARDIAG_DESC(At_Xm_Perm_Write_Denied    ),
+    DMARDIAG_DESC(At_Xm_Pte_Not_Present      ),
     DMARDIAG_DESC(At_Xm_Pte_Rsvd             ),
     DMARDIAG_DESC(At_Xm_Pte_Sllps_Invalid    ),
     DMARDIAG_DESC(At_Xm_Read_Pte_Failed      ),
@@ -1643,8 +1647,10 @@ static void dmarAtFaultRecord(PPDMDEVINS pDevIns, DMARDIAG enmDiag, PCDMARMEMREQ
             /* XM (Legacy mode or Scalable Mode) faults. */
             case kDmarDiag_At_Xm_AddrIn_Invalid:             enmAtFault = fLm ? VTDATFAULT_LGN_1_1 : VTDATFAULT_SGN_5; break;
             case kDmarDiag_At_Xm_AddrOut_Invalid:            enmAtFault = fLm ? VTDATFAULT_LGN_4 : VTDATFAULT_SGN_8;   break;
-            case kDmarDiag_At_Xm_Perm_Denied:                enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_2;   break;
-            case kDmarDiag_At_Xm_Pte_Rsvd:
+            case kDmarDiag_At_Xm_Perm_Read_Denied:           enmAtFault = fLm ? VTDATFAULT_LGN_3 : VTDATFAULT_SGN_7;   break;
+            case kDmarDiag_At_Xm_Perm_Write_Denied:          enmAtFault = fLm ? VTDATFAULT_LGN_2 : VTDATFAULT_SGN_6;   break;
+            case kDmarDiag_At_Xm_Pte_Not_Present:
+            case kDmarDiag_At_Xm_Pte_Rsvd:                   enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_2;   break;
             case kDmarDiag_At_Xm_Pte_Sllps_Invalid:          enmAtFault = fLm ? VTDATFAULT_LSL_2 : VTDATFAULT_SSL_3;   break;
             case kDmarDiag_At_Xm_Read_Pte_Failed:            enmAtFault = fLm ? VTDATFAULT_LSL_1 : VTDATFAULT_SSL_1;   break;
             case kDmarDiag_At_Xm_Slpptr_Read_Failed:         enmAtFault = fLm ? VTDATFAULT_LCT_4_3 : VTDATFAULT_SSL_4; break;
@@ -2240,7 +2246,12 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
         { /* likely */ }
         else
         {
-            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Denied, pMemReqIn, pMemReqAux);
+            if ((fPtPerm & (VTD_BF_SL_PTE_R_MASK | VTD_BF_SL_PTE_W_MASK)) == 0)
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Not_Present, pMemReqIn, pMemReqAux);
+            else if (!(pMemReqIn->AddrRange.fPerm & DMAR_PERM_READ))
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Read_Denied, pMemReqIn, pMemReqAux);
+            else
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Write_Denied, pMemReqIn, pMemReqAux);
             break;
         }
 
