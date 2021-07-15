@@ -104,6 +104,7 @@ ifndef VBOX_ONLY_DOCS
  	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
  	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,) \
  	VBoxManageCloud.cpp \
+ 	VBoxManageCloudMachine.cpp \
  	../Common/PasswordInput.cpp
  VBoxManage_SOURCES.win = \
  	VBoxManage.rc

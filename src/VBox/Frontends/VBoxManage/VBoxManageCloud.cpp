@@ -41,6 +41,15 @@
 
 using namespace com;//at least for Bstr
 
+
+/*
+ * "cloud machine" handling is in VBoxManageCloudMachine.cpp to make
+ * this file less crowded.
+ */
+RTEXITCODE handleCloudMachine(HandlerArg *a, int iFirst, const ComPtr<ICloudProfile> &pCloudProfile);
+RTEXITCODE listCloudMachines(HandlerArg *a, int iFirst, const ComPtr<ICloudProfile> &pCloudProfile);
+
+
 /**
  * Common Cloud options.
  */
@@ -452,7 +461,8 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "vcns",                1004, RTGETOPT_REQ_NOTHING },
         { "objects",             1005, RTGETOPT_REQ_NOTHING },
         { "help",                1006, RTGETOPT_REQ_NOTHING },
-        { "--help",              1007, RTGETOPT_REQ_NOTHING }
+        { "--help",              1007, RTGETOPT_REQ_NOTHING },
+        { "machines",            1008, RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -475,6 +485,11 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 1007:
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
+
+            case 1008:          /* machines */
+                return listCloudMachines(a, GetState.iNext,
+                                         pCommonOpts->profile.pCloudProfile);
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -2747,7 +2762,8 @@ RTEXITCODE handleCloud(HandlerArg *a)
         { "instance",         1002, RTGETOPT_REQ_NOTHING },
         { "network",          1003, RTGETOPT_REQ_NOTHING },
         { "volume",           1004, RTGETOPT_REQ_NOTHING },
-        { "object",           1005, RTGETOPT_REQ_NOTHING }
+        { "object",           1005, RTGETOPT_REQ_NOTHING },
+        { "machine",          1006, RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -2778,6 +2794,10 @@ RTEXITCODE handleCloud(HandlerArg *a)
             case 1003:
                 return handleCloudNetwork(a, GetState.iNext, &commonOpts);
 #endif /* VBOX_WITH_CLOUD_NET */
+            case 1006:
+                return handleCloudMachine(a, GetState.iNext,
+                                          commonOpts.profile.pCloudProfile);
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
