@@ -3096,6 +3096,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
                     if (strDebugPathOut.isNotEmpty())
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
+
+                    /* macOS guests uses a different HDA variant to make 10.14+ (or maybe 10.13?) recognize the device. */
+                    if (fOsXGuest)
+                        InsertConfigString(pCfg,    "DeviceName",           "Intel Sunrise Point");
                     break;
                 }
                 default:
