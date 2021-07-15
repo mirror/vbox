@@ -2307,14 +2307,14 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
 {
     AssertPtr(pfnLookup);
 
-    RTGCPHYS       GCPhysAddr  = NIL_RTGCPHYS;
-    DMARMEMREQIN   MemReqIn    = pMemReqRemap->In;
-    uint64_t const uAddrIn     = MemReqIn.AddrRange.uAddr;
-    size_t const   cbAddrIn    = MemReqIn.AddrRange.cb;
-    uint64_t       uAddrInBase = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
-    uint64_t       offAddrIn   = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_OFFSET_MASK;
-    size_t         cbRemaining = cbAddrIn;
-    size_t const   cbPage      = X86_PAGE_4K_SIZE;
+    RTGCPHYS       GCPhysAddrOut = NIL_RTGCPHYS;
+    DMARMEMREQIN   MemReqIn      = pMemReqRemap->In;
+    uint64_t const uAddrIn       = MemReqIn.AddrRange.uAddr;
+    size_t const   cbAddrIn      = MemReqIn.AddrRange.cb;
+    uint64_t       uAddrInBase   = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_BASE_MASK;
+    uint64_t       offAddrIn     = MemReqIn.AddrRange.uAddr & X86_PAGE_4K_OFFSET_MASK;
+    size_t         cbRemaining   = cbAddrIn;
+    size_t const   cbPage        = X86_PAGE_4K_SIZE;
 
     int rc;
     DMARIOPAGE IoPagePrev;
@@ -2325,7 +2325,7 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
         MemReqIn.AddrRange.uAddr = uAddrInBase;
         MemReqIn.AddrRange.cb    = cbRemaining;  /* Not currently accessed by pfnLookup, but keep things consistent. */
 
-        /* Lookup the physical page corresponding to the I/O virtual address. */
+        /* Lookup the physical page corresponding to the DMA virtual address. */
         DMARIOPAGE IoPage;
         rc = pfnLookup(pDevIns, &MemReqIn, &pMemReqRemap->Aux, &IoPage);
         if (RT_SUCCESS(rc))
@@ -2335,13 +2335,11 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
             Assert(!(IoPage.GCPhysBase & X86_GET_PAGE_OFFSET_MASK(IoPage.cShift)));
             Assert((IoPage.fPerm & MemReqIn.AddrRange.fPerm) == MemReqIn.AddrRange.fPerm);
 
-            /* Store the translated address before continuing to access more pages. */
+            /* Store the translated address and permissions before continuing to access more pages. */
             if (cbRemaining == cbAddrIn)
             {
-                uint64_t const fOffMask   = X86_GET_PAGE_OFFSET_MASK(IoPage.cShift);
-                uint64_t const offAddrOut = uAddrIn & fOffMask;
-                Assert(!(IoPage.GCPhysBase & fOffMask));
-                GCPhysAddr = IoPage.GCPhysBase | offAddrOut;
+                uint64_t const offAddrOut = uAddrIn & X86_GET_PAGE_OFFSET_MASK(IoPage.cShift);
+                GCPhysAddrOut = IoPage.GCPhysBase | offAddrOut;
             }
             /* Check if addresses translated so far result in a physically contiguous region. */
             /** @todo Ensure permissions are identical as well if we implementing IOTLB caching
@@ -2360,9 +2358,9 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
             /* Check if we need to access more pages. */
             if (cbRemaining > cbPage - offAddrIn)
             {
-                cbRemaining -= (cbPage - offAddrIn); /* Calculate how much more we need to access. */
-                uAddrInBase += cbPage;               /* Update address of the next access. */
-                offAddrIn    = 0;                    /* After first page, all pages are accessed from offset 0. */
+                cbRemaining -= (cbPage - offAddrIn);  /* Calculate how much more we need to access. */
+                uAddrInBase += cbPage;                /* Update address of the next access. */
+                offAddrIn    = 0;                     /* After the first page, remaining pages are accessed from offset 0. */
             }
             else
             {
@@ -2375,7 +2373,7 @@ static int dmarDrMemRangeLookup(PPDMDEVINS pDevIns, PFNDMADDRLOOKUP pfnLookup, P
             break;
     }
 
-    pMemReqRemap->Out.AddrRange.uAddr = GCPhysAddr;
+    pMemReqRemap->Out.AddrRange.uAddr = GCPhysAddrOut;
     pMemReqRemap->Out.AddrRange.cb    = cbAddrIn - cbRemaining;
     pMemReqRemap->Out.AddrRange.fPerm = IoPagePrev.fPerm;
     return rc;
