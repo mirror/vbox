@@ -52,12 +52,8 @@
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     : m_pToolBox(0)
     , m_pDiskVariantGroupBox(0)
-    , m_pLocationLabel(0)
-    , m_pLocationEditor(0)
-    , m_pLocationOpenButton(0)
-    , m_pMediumSizeEditorLabel(0)
-    , m_pMediumSizeEditor(0)
     , m_pFormatButtonGroup(0)
+    , m_pSizeAndLocationGroup(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameAndSystemLayout(0)
@@ -388,38 +384,38 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
     /* Disk location widgets: */
 
-    m_pLocationLabel = new QLabel;
-    m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-    m_pLocationEditor = new QLineEdit;
-    m_pLocationOpenButton = new QIToolButton;
-    if (m_pLocationOpenButton)
-    {
-        m_pLocationOpenButton->setAutoRaise(true);
-        m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
-    }
-    m_pLocationLabel->setBuddy(m_pLocationEditor);
+    // m_pLocationLabel = new QLabel;
+    // m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    // m_pLocationEditor = new QLineEdit;
+    // m_pLocationOpenButton = new QIToolButton;
+    // if (m_pLocationOpenButton)
+    // {
+    //     m_pLocationOpenButton->setAutoRaise(true);
+    //     m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
+    // }
+    // m_pLocationLabel->setBuddy(m_pLocationEditor);
 
-    /* Disk file size widgets: */
-    m_pMediumSizeEditorLabel = new QLabel;
-    m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
-    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    m_pMediumSizeEditor = new UIMediumSizeEditor;
-    m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
+    // /* Disk file size widgets: */
+    // m_pMediumSizeEditorLabel = new QLabel;
+    // m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
+    // m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    // m_pMediumSizeEditor = new UIMediumSizeEditor;
+    // m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
+    // m_pMediumSizeEditor = new UIMediumSizeEditor;
 
+    // pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
+    // pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
+    // pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
-    m_pMediumSizeEditor = new UIMediumSizeEditor;
+    // pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
+    // pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
 
-    pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
-    pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
-    pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
-
-    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
-    pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
-
+    m_pSizeAndLocationGroup = new UIDiskSizeAndLocationGroupBox;
+    pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
     m_pFormatButtonGroup = new UIDiskFormatsGroupBox;
-    pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 3, 0, 6, 2);
+    pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 2, 0, 4, 1);
     m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox;
-    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 3, 2, 6, 2);
+    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 2, 1);
 
     return pNewDiskContainerWidget;
 }
@@ -590,9 +586,6 @@ void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 
 void UIWizardNewVMPageExpert::sltMediumSizeChanged()
 {
-    if (!m_pMediumSizeEditor)
-        return;
-
     completeChanged();
 }
 
@@ -659,20 +652,12 @@ void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
 
 void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
 {
-    if (m_pMediumSizeEditor)
-        m_pMediumSizeEditor->setEnabled(fEnable);
-    if (m_pMediumSizeEditorLabel)
-        m_pMediumSizeEditorLabel->setEnabled(fEnable);
+    if (m_pSizeAndLocationGroup)
+        m_pSizeAndLocationGroup->setEnabled(fEnable);
     if (m_pFormatButtonGroup)
         m_pFormatButtonGroup->setEnabled(fEnable);
     if (m_pDiskVariantGroupBox)
         m_pDiskVariantGroupBox->setEnabled(fEnable);
-    if (m_pLocationLabel)
-        m_pLocationLabel->setEnabled(fEnable);
-    if (m_pLocationEditor)
-        m_pLocationEditor->setEnabled(fEnable);
-    if (m_pLocationOpenButton)
-        m_pLocationOpenButton->setEnabled(fEnable);
 }
 
 void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()

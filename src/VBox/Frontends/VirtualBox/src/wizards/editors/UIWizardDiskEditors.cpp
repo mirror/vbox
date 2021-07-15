@@ -24,13 +24,16 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
+#include "QIToolButton.h"
 #include "UICommon.h"
 #include "UIConverter.h"
-#include "UIHostnameDomainNameEditor.h"
 #include "UIFilePathSelector.h"
+#include "UIHostnameDomainNameEditor.h"
+#include "UIIconPool.h"
+#include "UIMediumSizeEditor.h"
 #include "UIUserNamePasswordEditor.h"
-#include "UIWizardNewVM.h"
 #include "UIWizardDiskEditors.h"
+#include "UIWizardNewVM.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -93,7 +96,7 @@ void UIDiskFormatsGroupBox::prepare()
 
 void UIDiskFormatsGroupBox::retranslateUi()
 {
-    setTitle(UIDiskFormatsGroupBox::tr("Hard Disk File &Type"));
+    setTitle(tr("Hard Disk File &Type"));
 
     if (m_pFormatButtonGroup)
     {
@@ -190,13 +193,67 @@ void UIDiskVariantGroupBox::prepare()
 
 void UIDiskVariantGroupBox::retranslateUi()
 {
-    setTitle(UIDiskVariantGroupBox::tr("Storage on Physical Hard Disk"));
+    setTitle(tr("Storage on Physical Hard Disk"));
     if (m_pFixedCheckBox)
     {
-        m_pFixedCheckBox->setText(UIDiskVariantGroupBox::tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(UIDiskVariantGroupBox::tr("<p>When checked, the virtual disk image will be fully allocated at "
+        m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
+        m_pFixedCheckBox->setToolTip(tr("<p>When checked, the virtual disk image will be fully allocated at "
                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
     }
-    m_pSplitBox->setText(UIDiskVariantGroupBox::tr("&Split into files of less than 2GB"));
+    m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
 
+}
+
+
+/*********************************************************************************************************************************
+*   UIDiskSizeAndLocationGroupBox implementation.                                                                                *
+*********************************************************************************************************************************/
+
+UIDiskSizeAndLocationGroupBox::UIDiskSizeAndLocationGroupBox(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pLocationLabel(0)
+    , m_pLocationEditor(0)
+    , m_pLocationOpenButton(0)
+    , m_pMediumSizeEditorLabel(0)
+    , m_pMediumSizeEditor(0)
+{
+    prepare();
+}
+
+void UIDiskSizeAndLocationGroupBox::prepare()
+{
+    QGridLayout *pDiskContainerLayout = new QGridLayout(this);
+
+    /* Disk location widgets: */
+    m_pLocationLabel = new QLabel;
+    m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    m_pLocationEditor = new QILineEdit;
+    m_pLocationOpenButton = new QIToolButton;
+    if (m_pLocationOpenButton)
+    {
+        m_pLocationOpenButton->setAutoRaise(true);
+        m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
+    }
+    m_pLocationLabel->setBuddy(m_pLocationEditor);
+
+    /* Disk file size widgets: */
+    m_pMediumSizeEditorLabel = new QLabel;
+    m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
+    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    m_pMediumSizeEditor = new UIMediumSizeEditor;
+    m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
+
+
+    pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
+    pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
+
+    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
+    pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
+
+    retranslateUi();
+}
+void UIDiskSizeAndLocationGroupBox::retranslateUi()
+{
+    setTitle(tr("Hard Disk File Location and Size"));
 }
