@@ -778,15 +778,27 @@ static DECLCALLBACK(void) vbclSVGAStop(void)
         mpMonitorPositions = NULL;
     }
 
+    if (x11Context.pDisplayRandRMonitoring)
+    {
 #ifdef WITH_DISTRO_XRAND_XINERAMA
-    XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
+        XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
 #else
-    if (x11Context.pXRRSelectInput)
-        x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
+        if (x11Context.pXRRSelectInput)
+            x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
 #endif
+    }
 
-    XCloseDisplay(x11Context.pDisplay);
-    XCloseDisplay(x11Context.pDisplayRandRMonitoring);
+    if (x11Context.pDisplay)
+    {
+        XCloseDisplay(x11Context.pDisplay);
+        x11Context.pDisplay = NULL;
+    }
+
+    if (x11Context.pDisplayRandRMonitoring)
+    {
+        XCloseDisplay(x11Context.pDisplayRandRMonitoring);
+        x11Context.pDisplayRandRMonitoring = NULL;
+    }
 
     if (x11Context.pRandLibraryHandle)
     {
