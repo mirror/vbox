@@ -24,6 +24,21 @@
 #include <VBox/com/errorprint.h>
 
 
+RTEXITCODE listCloudMachines(HandlerArg *a, int iFirst, const ComPtr<ICloudProfile> &pCloudProfile);
+
+
+/*
+ * RTGETOPTINIT_FLAGS_NO_STD_OPTS recognizes both --help and --version
+ * and we don't want the latter.  It's easier to add one line of this
+ * macro to the s_aOptions initializers than to filter out --version.
+ */
+#define CLOUD_MACHINE_RTGETOPTDEF_HELP                                      \
+        { "--help",         'h',                    RTGETOPT_REQ_NOTHING }, \
+        { "-help",          'h',                    RTGETOPT_REQ_NOTHING }, \
+        { "help",           'h',                    RTGETOPT_REQ_NOTHING }, \
+        { "-?",             'h',                    RTGETOPT_REQ_NOTHING }
+
+
 /*
  * VBoxManage cloud machine ...
  *
@@ -33,16 +48,67 @@
 RTEXITCODE handleCloudMachine(HandlerArg *a, int iFirst,
                               const ComPtr<ICloudProfile> &pCloudProfile)
 {
-    RT_NOREF(a, iFirst, pCloudProfile);
+    enum
+    {
+        kMachineIota = 1000,
+        kMachine_Info,
+        kMachine_List,
+    };
 
-    return RTMsgErrorExit(RTEXITCODE_FAILURE,
-               "cloud machine - not yet implemented");
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "info",           kMachine_Info,          RTGETOPT_REQ_NOTHING },
+        { "list",           kMachine_List,          RTGETOPT_REQ_NOTHING },
+          CLOUD_MACHINE_RTGETOPTDEF_HELP
+    };
+
+    int rc;
+
+    RTGETOPTSTATE OptState;
+    rc = RTGetOptInit(&OptState, a->argc, a->argv,
+                      s_aOptions, RT_ELEMENTS(s_aOptions),
+                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCStmt(rc,
+        return RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */
+                   "cloud machine: RTGetOptInit: %Rra", rc));
+
+    int ch;
+    RTGETOPTUNION Val;
+    while ((ch = RTGetOpt(&OptState, &Val)) != 0)
+    {
+        switch (ch)
+        {
+            case kMachine_Info:
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "cloud machine info: not yet implemented");
+
+            case kMachine_List:
+                return listCloudMachines(a, OptState.iNext, pCloudProfile);
+
+
+            case 'h':           /* --help */
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
+
+
+            case VINF_GETOPT_NOT_OPTION:
+                return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                           "Invalid sub-command: %s", Val.psz);
+
+            default:
+                return RTGetOptPrintError(ch, &Val);
+        }
+    }
+
+    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+               "cloud machine: command required\n"
+               "Try '--help' for more information.");
 }
 
 
 /*
  * VBoxManage cloud list machines
- * VBoxManage cloud machine list
+ * VBoxManage cloud machine list # convenience alias
  *
  * The "cloud list" prefix handling is in VBoxManageCloud.cpp, so this
  * function is not static.
