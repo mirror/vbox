@@ -5551,7 +5551,10 @@ static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPV
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
                                    "Logical block size for joliet volume descriptor differs from primary: %#RX16 vs %#RX16\n",
                                    ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock), pThis->cbBlock);
-    if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) != pThis->cBlocksInPrimaryVolumeSpace)
+    /* Used to be !=, changed to > for ubuntu 20.10 and later.  Wonder if they exclude a few files
+       and thus end up with a different total.  Obviously, this test is a big bogus, as we don't
+       really seem to care about the value at all... */
+    if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) > pThis->cBlocksInPrimaryVolumeSpace)
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
                                    "Volume space size for joliet volume descriptor differs from primary: %#RX32 vs %#RX32\n",
                                    ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
