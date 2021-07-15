@@ -60,6 +60,12 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     , m_pHardwareWidgetContainer(0)
     , m_pAdditionalOptionsContainer(0)
     , m_pGAInstallationISOContainer(0)
+    , m_pDiskSourceButtonGroup(0)
+    , m_pDiskEmpty(0)
+    , m_pDiskNew(0)
+    , m_pDiskExisting(0)
+    , m_pDiskSelector(0)
+    , m_pDiskSelectionButton(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -69,7 +75,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "");
         m_pHardwareWidgetContainer = new UINewVMHardwareContainer;
         m_pToolBox->insertPage(ExpertToolboxItems_Hardware, m_pHardwareWidgetContainer, "");
-        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createNewDiskWidgets(), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
         pMainLayout->addStretch();
@@ -180,6 +186,17 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard Dis&k"));
         m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("H&ardware"));
     }
+
+    if (m_pDiskEmpty)
+        m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do Not Add a Virtual Hard Disk"));
+    if (m_pDiskNew)
+        m_pDiskNew->setText(UIWizardNewVM::tr("&Create a Virtual Hard Disk Now"));
+    if (m_pDiskExisting)
+        m_pDiskExisting->setText(UIWizardNewVM::tr("U&se an Existing Virtual Hard Disk File"));
+    if (m_pDiskSelectionButton)
+        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
+
+
 
     // if (m_pFormatButtonGroup)
     // {
@@ -384,34 +401,6 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     QWidget *pNewDiskContainerWidget = new QWidget;
     QGridLayout *pDiskContainerLayout = new QGridLayout(pNewDiskContainerWidget);
 
-    /* Disk location widgets: */
-
-    // m_pLocationLabel = new QLabel;
-    // m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-    // m_pLocationEditor = new QLineEdit;
-    // m_pLocationOpenButton = new QIToolButton;
-    // if (m_pLocationOpenButton)
-    // {
-    //     m_pLocationOpenButton->setAutoRaise(true);
-    //     m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
-    // }
-    // m_pLocationLabel->setBuddy(m_pLocationEditor);
-
-    // /* Disk file size widgets: */
-    // m_pMediumSizeEditorLabel = new QLabel;
-    // m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
-    // m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    // m_pMediumSizeEditor = new UIMediumSizeEditor;
-    // m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
-    // m_pMediumSizeEditor = new UIMediumSizeEditor;
-
-    // pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
-    // pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
-    // pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
-
-    // pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
-    // pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
-
     m_pSizeAndLocationGroup = new UIDiskSizeAndLocationGroupBox;
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
     m_pFormatButtonGroup = new UIDiskFormatsGroupBox;
@@ -420,6 +409,41 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 2, 1);
 
     return pNewDiskContainerWidget;
+}
+
+QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
+{
+    QWidget *pDiskContainer = new QWidget;
+    QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
+    pDiskLayout->setContentsMargins(0, 0, 0, 0);
+    m_pDiskSourceButtonGroup = new QButtonGroup;
+    m_pDiskEmpty = new QRadioButton;
+    m_pDiskNew = new QRadioButton;
+    m_pDiskExisting = new QRadioButton;
+    m_pDiskSourceButtonGroup->addButton(m_pDiskEmpty);
+    m_pDiskSourceButtonGroup->addButton(m_pDiskNew);
+    m_pDiskSourceButtonGroup->addButton(m_pDiskExisting);
+    QStyleOptionButton options;
+    options.initFrom(m_pDiskExisting);
+    int iWidth = m_pDiskExisting->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskExisting);
+    pDiskLayout->setColumnMinimumWidth(0, iWidth);
+    m_pDiskSelector = new UIMediaComboBox;
+    {
+        m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
+        m_pDiskSelector->repopulate();
+    }
+    m_pDiskSelectionButton = new QIToolButton;
+    {
+        m_pDiskSelectionButton->setAutoRaise(true);
+        m_pDiskSelectionButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
+    }
+    pDiskLayout->addWidget(m_pDiskNew, 0, 0, 1, 6);
+    pDiskLayout->addWidget(createNewDiskWidgets(), 1, 2, 3, 4);
+    pDiskLayout->addWidget(m_pDiskExisting, 4, 0, 1, 6);
+    pDiskLayout->addWidget(m_pDiskSelector, 5, 2, 1, 3);
+    pDiskLayout->addWidget(m_pDiskSelectionButton, 5, 5, 1, 1);
+    pDiskLayout->addWidget(m_pDiskEmpty, 6, 0, 1, 6);
+    return pDiskContainer;
 }
 
 bool UIWizardNewVMPageExpert::isComplete() const

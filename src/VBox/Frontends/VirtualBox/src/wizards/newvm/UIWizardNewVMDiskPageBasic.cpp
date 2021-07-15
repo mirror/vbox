@@ -540,12 +540,6 @@ QWidget *UIWizardNewVMDiskPageBasic::createMediumVariantWidgets(bool fWithLabels
     QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
     if (pMainLayout)
     {
-        if (fWithLabels)
-        {
-            m_pDescriptionLabel = new QIRichTextLabel;
-            m_pDynamicLabel = new QIRichTextLabel;
-            m_pFixedLabel = new QIRichTextLabel;
-        }
         QVBoxLayout *pVariantLayout = new QVBoxLayout;
         if (pVariantLayout)
         {
@@ -554,6 +548,10 @@ QWidget *UIWizardNewVMDiskPageBasic::createMediumVariantWidgets(bool fWithLabels
         }
         if (fWithLabels)
         {
+            m_pDescriptionLabel = new QIRichTextLabel;
+            m_pDynamicLabel = new QIRichTextLabel;
+            m_pFixedLabel = new QIRichTextLabel;
+
             pMainLayout->addWidget(m_pDescriptionLabel);
             pMainLayout->addWidget(m_pDynamicLabel);
             pMainLayout->addWidget(m_pFixedLabel);

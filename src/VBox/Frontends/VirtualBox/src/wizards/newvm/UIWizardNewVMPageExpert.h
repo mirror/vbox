@@ -36,7 +36,9 @@ class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QLineEdit;
+class QRadioButton;
 class QVBoxLayout;
+class QIToolButton;
 class UIAdditionalUnattendedOptions;
 class UIDiskFormatsGroupBox;
 class UIDiskSizeAndLocationGroupBox;
@@ -44,12 +46,13 @@ class UIDiskVariantGroupBox;
 class UIFilePathSelector;
 class UIGAInstallationGroupBox;
 class UIHostnameDomainNameEditor;
+class UIMediaComboBox;
 class UIMediumSizeEditor;
 class UINameAndSystemEditor;
 class UINewVMHardwareContainer;
 class UIToolBox;
 class UIUserNamePasswordGroupBox;
-class QIToolButton;
+
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UINativeWizardPage
@@ -113,13 +116,10 @@ private:
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
     void markWidgets() const;
     QWidget *createUnattendedWidgets();
-    virtual QWidget *createNewDiskWidgets() /* override */;
-    QWidget *createFormatButtonGroup(bool fExpertMode);
-    QWidget *createMediumVariantWidgets();
-    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout,
-                                                  CMediumFormat medFormat, bool fPreferred /* = false */);
+    QWidget *createNewDiskWidgets();
+    QWidget *createDiskWidgets();
+
     QWidget *createNameOSTypeWidgets();
-    QWidget *createAdditionalOptionsWidgets();
 
     void updateVirtualDiskPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
@@ -139,6 +139,16 @@ private:
         UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
+
+
+    QButtonGroup *m_pDiskSourceButtonGroup;
+    QRadioButton *m_pDiskEmpty;
+    QRadioButton *m_pDiskNew;
+    QRadioButton *m_pDiskExisting;
+    UIMediaComboBox *m_pDiskSelector;
+    QIToolButton *m_pDiskSelectionButton;
+
+
     /** @} */
 };
 
