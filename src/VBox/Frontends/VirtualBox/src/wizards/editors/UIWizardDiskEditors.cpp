@@ -50,6 +50,21 @@ UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(QWidget *pParent /* = 0 */)
     prepare();
 }
 
+CMediumFormat UIDiskFormatsGroupBox::mediumFormat() const
+{
+    return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
+}
+
+void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    int iPosition = m_formats.indexOf(mediumFormat);
+    if (iPosition >= 0)
+    {
+        m_pFormatButtonGroup->button(iPosition)->click();
+        m_pFormatButtonGroup->button(iPosition)->setFocus();
+    }
+}
+
 void UIDiskFormatsGroupBox::prepare()
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
@@ -256,4 +271,17 @@ void UIDiskSizeAndLocationGroupBox::prepare()
 void UIDiskSizeAndLocationGroupBox::retranslateUi()
 {
     setTitle(tr("Hard Disk File Location and Size"));
+}
+
+QString UIDiskSizeAndLocationGroupBox::location() const
+{
+    if (m_pLocationEditor)
+        return m_pLocationEditor->text();
+    return QString();
+}
+
+void UIDiskSizeAndLocationGroupBox::setLocation(const QString &strLocation)
+{
+    if (m_pLocationEditor)
+        m_pLocationEditor->setText(strLocation);
 }

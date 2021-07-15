@@ -58,7 +58,8 @@ signals:
 public:
 
     UIDiskFormatsGroupBox(QWidget *pParent = 0);
-
+    CMediumFormat mediumFormat() const;
+    void setMediumFormat(const CMediumFormat &mediumFormat);
 
 private:
 
@@ -105,6 +106,9 @@ signals:
 public:
 
     UIDiskSizeAndLocationGroupBox(QWidget *pParent = 0);
+
+    QString location() const;
+    void setLocation(const QString &strLocation);
 
 private:
 

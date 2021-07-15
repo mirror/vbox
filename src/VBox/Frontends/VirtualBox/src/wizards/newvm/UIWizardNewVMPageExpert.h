@@ -69,7 +69,7 @@ protected:
 
 private slots:
 
-    void sltNameChanged(const QString &strNewText);
+    void sltNameChanged(const QString &strNewName);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltMediaComboBoxIndexChanged();
@@ -139,16 +139,13 @@ private:
         UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
-
-
-    QButtonGroup *m_pDiskSourceButtonGroup;
-    QRadioButton *m_pDiskEmpty;
-    QRadioButton *m_pDiskNew;
-    QRadioButton *m_pDiskExisting;
-    UIMediaComboBox *m_pDiskSelector;
-    QIToolButton *m_pDiskSelectionButton;
-
-
+        QButtonGroup *m_pDiskSourceButtonGroup;
+        QRadioButton *m_pDiskEmpty;
+        QRadioButton *m_pDiskNew;
+        QRadioButton *m_pDiskExisting;
+        UIMediaComboBox *m_pDiskSelector;
+        QIToolButton *m_pDiskSelectionButton;
+        QSet<QString> m_userModifiedParameters;
     /** @} */
 };
 

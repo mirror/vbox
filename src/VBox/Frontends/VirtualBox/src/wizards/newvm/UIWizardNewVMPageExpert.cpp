@@ -45,6 +45,8 @@
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMPageExpert.h"
+#include "UIWizardNewVMNameOSTypePageBasic.h"
+#include "UIWizardNewVMDiskPageBasic.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -115,20 +117,19 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
 
 }
 
-void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
+void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
 {
-    Q_UNUSED(strNewText);
-    // onNameChanged(strNewText);
-    // composeMachineFilePath();
-    // updateVirtualDiskPathFromMachinePathName();
-    // emit completeChanged();
+    UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    updateVirtualDiskPathFromMachinePathName();
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    // composeMachineFilePath();
-    // updateVirtualDiskPathFromMachinePathName();
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    updateVirtualDiskPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
@@ -196,21 +197,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
     if (m_pDiskSelectionButton)
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
 
-
-
-    // if (m_pFormatButtonGroup)
-    // {
-    //     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-    //     for (int i = 0; i < buttons.size(); ++i)
-    //     {
-    //         QAbstractButton *pButton = buttons[i];
-    //         UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-    //         pButton->setText(gpConverter->toString(enmFormat));
-    //     }
-    // }
-    // if (m_pLocationLabel)
-    //     m_pLocationLabel->setText(UIWizardNewVM::tr("Disk &Location:"));
-
     if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
@@ -225,10 +211,10 @@ void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
-    // if (m_pNameAndSystemEditor)
-    // {
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
-    //             this, &UIWizardNewVMPageExpert::sltNameChanged);
+    if (m_pNameAndSystemEditor)
+    {
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+                this, &UIWizardNewVMPageExpert::sltNameChanged);
     //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
     //             this, &UIWizardNewVMPageExpert::sltPathChanged);
     //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
@@ -237,7 +223,7 @@ void UIWizardNewVMPageExpert::createConnections()
     //             this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
     //             this, &UIWizardNewVMPageExpert::sltISOPathChanged);
-    // }
+    }
 
     // /* Connections for username, password, and hostname: */
     // if (m_pUserNamePasswordGroupBox)
@@ -352,10 +338,17 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 
 void UIWizardNewVMPageExpert::initializePage()
 {
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
+    /* Initialize wizard properties: */
+    if (m_pFormatButtonGroup)
+        newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+
+
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     // setOSTypeDependedValues();
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    // updateVirtualDiskPathFromMachinePathName();
+    updateVirtualDiskPathFromMachinePathName();
     // updateWidgetAterMediumFormatChange();
     // setSkipCheckBoxEnable();
     retranslateUi();
@@ -650,18 +643,27 @@ void UIWizardNewVMPageExpert::sltSelectLocationButtonClicked()
 
 void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
 {
-    // QString strDiskFileName = machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : machineBaseName();
-    // QString strDiskPath = machineFolder();
-    // if (strDiskPath.isEmpty())
-    // {
-    //     if (m_pNameAndSystemEditor)
-    //         strDiskPath = m_pNameAndSystemEditor->path();
-    //     else
-    //         strDiskPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    // }
-    // QString strExtension = defaultExtension(mediumFormat());
-    // if (m_pLocationEditor)
-    //     m_pLocationEditor->setText(absoluteFilePath(strDiskFileName, strDiskPath, strExtension));
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
+    QString strDiskFileName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
+    QString strDiskPath = pWizard->machineFolder();
+    if (strDiskPath.isEmpty())
+    {
+        if (m_pNameAndSystemEditor)
+            strDiskPath = m_pNameAndSystemEditor->path();
+        else
+            strDiskPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    }
+    QString strExtension = UIWizardNewVMDiskPage::defaultExtension(pWizard->mediumFormat());
+
+
+    if (m_pSizeAndLocationGroup)
+    {
+        QString strMediumPath =
+            UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDiskFileName,
+                                                                                      strExtension), strDiskPath);
+        m_pSizeAndLocationGroup->setLocation(strMediumPath);
+    }
 }
 
 void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
