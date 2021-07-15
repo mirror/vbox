@@ -7170,6 +7170,10 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                 uint32_t uEAX = pCurLeaf->uEax;
                 uint32_t uECX = pCurLeaf->uEcx;
 
+                /** @todo 0x80000008:EAX[23:16] is only defined for AMD. We'll get 0 on Intel. On
+                 *        AMD if we get 0, the guest physical address width should be taken from
+                 *        0x80000008:EAX[7:0] instead. Guest Physical address width is relevant
+                 *        for guests using nested paging. */
                 pHlp->pfnPrintf(pHlp,
                                 "Physical Address Width:          %d bits\n"
                                 "Virtual Address Width:           %d bits\n"
