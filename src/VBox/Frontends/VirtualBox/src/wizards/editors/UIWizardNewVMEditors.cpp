@@ -22,12 +22,14 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
+#include "UIBaseMemoryEditor.h"
 #include "UICommon.h"
 #include "UIHostnameDomainNameEditor.h"
 #include "UIFilePathSelector.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMEditors.h"
+#include "UIVirtualCPUEditor.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -311,4 +313,67 @@ void UIAdditionalUnattendedOptions::disableEnableProductKeyWidgets(bool fEnabled
         m_pProductKeyLabel->setEnabled(fEnabled);
     if (m_pProductKeyLineEdit)
         m_pProductKeyLineEdit->setEnabled(fEnabled);
+}
+
+/*********************************************************************************************************************************
+*   UINewVMHardwareContainer implementation.                                                                                *
+*********************************************************************************************************************************/
+
+UINewVMHardwareContainer::UINewVMHardwareContainer(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pBaseMemoryEditor(0)
+    , m_pVirtualCPUEditor(0)
+    , m_pEFICheckBox(0)
+{
+    prepare();
+}
+
+void UINewVMHardwareContainer::setMemorySize(int iSize)
+{
+    if (m_pBaseMemoryEditor)
+        m_pBaseMemoryEditor->setValue(iSize);
+}
+
+void UINewVMHardwareContainer::setEFIEnabled(bool fEnabled)
+{
+    if (m_pEFICheckBox)
+        m_pEFICheckBox->setChecked(fEnabled);
+}
+
+void UINewVMHardwareContainer::prepare()
+{
+    QGridLayout *pHardwareLayout = new QGridLayout(this);
+    pHardwareLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
+    m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
+    m_pEFICheckBox      = new QCheckBox;
+    pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
+    pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
+    pHardwareLayout->addWidget(m_pEFICheckBox, 2, 0, 1, 1);
+
+
+    if (m_pBaseMemoryEditor)
+        connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+                this, &UINewVMHardwareContainer::sigMemorySizeChanged);
+    if (m_pVirtualCPUEditor)
+        connect(m_pVirtualCPUEditor, &UIVirtualCPUEditor::sigValueChanged,
+            this, &UINewVMHardwareContainer::sigCPUCountChanged);
+    if (m_pEFICheckBox)
+        connect(m_pEFICheckBox, &QCheckBox::toggled,
+                this, &UINewVMHardwareContainer::sigEFIEnabledChanged);
+
+
+    retranslateUi();
+}
+
+void UINewVMHardwareContainer::retranslateUi()
+{
+    if (m_pEFICheckBox)
+    {
+        m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
+        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the guest will support the "
+                                                       "Extended Firmware Interface (EFI), which is required to boot certain "
+                                                       "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
+    }
 }

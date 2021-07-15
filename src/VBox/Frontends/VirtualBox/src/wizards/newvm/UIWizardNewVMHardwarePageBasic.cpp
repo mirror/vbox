@@ -27,6 +27,7 @@
 #include "UIMessageCenter.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
+#include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMHardwarePageBasic.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 
@@ -34,10 +35,8 @@
 #include "CGuestOSType.h"
 
 UIWizardNewVMHardwarePageBasic::UIWizardNewVMHardwarePageBasic()
-    : m_pBaseMemoryEditor(0)
-    , m_pVirtualCPUEditor(0)
-    , m_pEFICheckBox(0)
-    , m_pLabel(0)
+    : m_pLabel(0)
+    , m_pHardwareWidgetContainer(0)
 {
     prepare();
     qRegisterMetaType<CMedium>();
@@ -49,7 +48,9 @@ void UIWizardNewVMHardwarePageBasic::prepare()
 
     m_pLabel = new QIRichTextLabel(this);
     pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(createHardwareWidgets());
+    m_pHardwareWidgetContainer = new UINewVMHardwareContainer;
+    AssertReturnVoid(m_pHardwareWidgetContainer);
+    pMainLayout->addWidget(m_pHardwareWidgetContainer);
 
     pMainLayout->addStretch();
     createConnections();
@@ -57,16 +58,15 @@ void UIWizardNewVMHardwarePageBasic::prepare()
 
 void UIWizardNewVMHardwarePageBasic::createConnections()
 {
-    if (m_pBaseMemoryEditor)
-        connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+    if (m_pHardwareWidgetContainer)
+    {
+        connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigMemorySizeChanged,
                 this, &UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged);
-    if (m_pVirtualCPUEditor)
-        connect(m_pVirtualCPUEditor, &UIVirtualCPUEditor::sigValueChanged,
-            this, &UIWizardNewVMHardwarePageBasic::sltCPUCountChanged);
-    if (m_pEFICheckBox)
-        connect(m_pEFICheckBox, &QCheckBox::toggled,
+        connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigCPUCountChanged,
+                this, &UIWizardNewVMHardwarePageBasic::sltCPUCountChanged);
+        connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigEFIEnabledChanged,
                 this, &UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged);
-
+    }
 }
 
 void UIWizardNewVMHardwarePageBasic::retranslateUi()
@@ -76,14 +76,6 @@ void UIWizardNewVMHardwarePageBasic::retranslateUi()
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify virtual machine's hardware by changing amount of RAM and "
                                             "virtual CPU count. Enabling EFI is also possible.</p>"));
-
-    if (m_pEFICheckBox)
-    {
-        m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
-        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the guest will support the "
-                                                       "Extended Firmware Interface (EFI), which is required to boot certain "
-                                                       "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
-    }
 }
 
 void UIWizardNewVMHardwarePageBasic::initializePage()
@@ -91,7 +83,7 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
     retranslateUi();
 
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (pWizard)
+    if (pWizard && m_pHardwareWidgetContainer)
     {
         CGuestOSType type = pWizard->guestOSType();
         if (!type.isNull())
@@ -99,14 +91,12 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
             if (!m_userModifiedParameters.contains("MemorySize"))
             {
                 ULONG recommendedRam = type.GetRecommendedRAM();
-                if (m_pBaseMemoryEditor)
-                    m_pBaseMemoryEditor->setValue(recommendedRam);
+                m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
             }
             if (!m_userModifiedParameters.contains("EFIEnabled"))
             {
                 KFirmwareType fwType = type.GetRecommendedFirmware();
-                if (m_pEFICheckBox)
-                    m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
+                m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
             }
         }
     }
@@ -120,22 +110,6 @@ void UIWizardNewVMHardwarePageBasic::cleanupPage()
 bool UIWizardNewVMHardwarePageBasic::isComplete() const
 {
     return true;
-}
-
-QWidget *UIWizardNewVMHardwarePageBasic::createHardwareWidgets()
-{
-    QWidget *pHardwareContainer = new QWidget;
-    QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
-    pHardwareLayout->setContentsMargins(0, 0, 0, 0);
-
-    m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
-    m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
-    m_pEFICheckBox      = new QCheckBox;
-    pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
-    pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
-    pHardwareLayout->addWidget(m_pEFICheckBox, 2, 0, 1, 1);
-
-    return pHardwareContainer;
 }
 
 void UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged(int iValue)

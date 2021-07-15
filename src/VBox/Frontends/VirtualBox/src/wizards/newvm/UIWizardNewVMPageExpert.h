@@ -46,6 +46,7 @@ class UIGAInstallationGroupBox;
 class UIHostnameDomainNameEditor;
 class UIMediumSizeEditor;
 class UINameAndSystemEditor;
+class UINewVMHardwareContainer;
 class UIToolBox;
 class UIUserNamePasswordGroupBox;
 class QIToolButton;
@@ -134,6 +135,7 @@ private:
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QCheckBox *m_pSkipUnattendedCheckBox;
         QGridLayout *m_pNameAndSystemLayout;
+        UINewVMHardwareContainer *m_pHardwareWidgetContainer;
         UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;

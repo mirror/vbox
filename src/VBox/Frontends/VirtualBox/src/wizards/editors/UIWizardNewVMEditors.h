@@ -33,10 +33,12 @@ class QCheckBox;
 class QGridLayout;
 class QLabel;
 class QILineEdit;
+class UIBaseMemoryEditor;
 class UIFilePathSelector;
 class UIHostnameDomainNameEditor;
 class UIPasswordLineEdit;
 class UIUserNamePasswordEditor;
+class UIVirtualCPUEditor;
 
 class UIUserNamePasswordGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
@@ -138,6 +140,37 @@ private:
     QILineEdit *m_pProductKeyLineEdit;
     UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
     QCheckBox *m_pStartHeadlessCheckBox;
+};
+
+
+class UINewVMHardwareContainer : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigMemorySizeChanged(int iSize);
+    void sigCPUCountChanged(int iCount);
+    void sigEFIEnabledChanged(bool fEnabled);
+
+public:
+
+    UINewVMHardwareContainer(QWidget *pParent = 0);
+
+    /** @name Wrappers for UIFilePathSelector
+      * @{ */
+        void setMemorySize(int size);
+        void setEFIEnabled(bool fEnabled);
+    /** @} */
+
+private:
+
+    void prepare();
+    virtual void retranslateUi() /* override final */;
+
+    UIBaseMemoryEditor *m_pBaseMemoryEditor;
+    UIVirtualCPUEditor *m_pVirtualCPUEditor;
+    QCheckBox *m_pEFICheckBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardNewVMEditors_h */
