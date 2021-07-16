@@ -46,8 +46,12 @@ using namespace com;//at least for Bstr
  * "cloud machine" handling is in VBoxManageCloudMachine.cpp to make
  * this file less crowded.
  */
-RTEXITCODE handleCloudMachine(HandlerArg *a, int iFirst, const ComPtr<ICloudProfile> &pCloudProfile);
-RTEXITCODE listCloudMachines(HandlerArg *a, int iFirst, const ComPtr<ICloudProfile> &pCloudProfile);
+RTEXITCODE handleCloudMachine(HandlerArg *a, int iFirst,
+                              const char *pszProviderName,
+                              const char *pszProfileName);
+RTEXITCODE listCloudMachines(HandlerArg *a, int iFirst,
+                              const char *pszProviderName,
+                              const char *pszProfileName);
 
 
 /**
@@ -488,7 +492,8 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
             case 1008:          /* machines */
                 return listCloudMachines(a, GetState.iNext,
-                                         pCommonOpts->profile.pCloudProfile);
+                                         pCommonOpts->provider.pszProviderName,
+                                         pCommonOpts->profile.pszProfileName);
 
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -2796,7 +2801,8 @@ RTEXITCODE handleCloud(HandlerArg *a)
 #endif /* VBOX_WITH_CLOUD_NET */
             case 1006:
                 return handleCloudMachine(a, GetState.iNext,
-                                          commonOpts.profile.pCloudProfile);
+                                          commonOpts.provider.pszProviderName,
+                                          commonOpts.profile.pszProfileName);
 
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
