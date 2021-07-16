@@ -119,7 +119,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
 {
-    UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
+    if (!m_userModifiedParameters.contains("GuestOSType"))
+        UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
     updateVirtualDiskPathFromMachinePathName();
     emit completeChanged();
@@ -134,9 +135,10 @@ void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
 {
-    // onOsTypeChanged();
-    // setOSTypeDependedValues();
-    // emit completeChanged();
+    m_userModifiedParameters << "GuestOSType";
+    if (m_pNameAndSystemEditor)
+        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+    //setOSTypeDependedValues() ??!!!
 }
 
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
@@ -215,10 +217,10 @@ void UIWizardNewVMPageExpert::createConnections()
     {
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
                 this, &UIWizardNewVMPageExpert::sltNameChanged);
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
-    //             this, &UIWizardNewVMPageExpert::sltPathChanged);
-    //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
-    //             this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
+                this, &UIWizardNewVMPageExpert::sltPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+                this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
     //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
     //             this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     //     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
@@ -276,19 +278,17 @@ void UIWizardNewVMPageExpert::createConnections()
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 {
-    // if (!field("type").canConvert<CGuestOSType>())
-    //     return;
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
 
-    // /* Get recommended 'ram' field value: */
-    // CGuestOSType type = field("type").value<CGuestOSType>();
-    // ULONG recommendedRam = type.GetRecommendedRAM();
+    /* Get recommended 'ram' field value: */
+    const CGuestOSType &type = pWizard->guestOSType();
+    ULONG recommendedRam = type.GetRecommendedRAM();
 
-    // if (m_pBaseMemoryEditor && !m_userSetWidgets.contains(m_pBaseMemoryEditor))
-    // {
-    //     m_pBaseMemoryEditor->blockSignals(true);
-    //     m_pBaseMemoryEditor->setValue(recommendedRam);
-    //     m_pBaseMemoryEditor->blockSignals(false);
-    // }
+    /* Set memory size of the widget and (through signals) wizard: */
+    if (m_pHardwareWidgetContainer && !m_userModifiedParameters.contains("MemorySize"))
+        m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
+
 
     // KFirmwareType fwType = type.GetRecommendedFirmware();
     // if (m_pEFICheckBox && !m_userSetWidgets.contains(m_pEFICheckBox))
@@ -341,14 +341,24 @@ void UIWizardNewVMPageExpert::initializePage()
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     AssertReturnVoid(pWizard);
     /* Initialize wizard properties: */
+    if (m_pNameAndSystemEditor)
+    {
+        /* Guest OS type: */
+        newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
+        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+        /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
+    }
+
+
     if (m_pFormatButtonGroup)
         newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
 
 
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    // setOSTypeDependedValues();
+    setOSTypeDependedValues();
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateVirtualDiskPathFromMachinePathName();
+
     // updateWidgetAterMediumFormatChange();
     // setSkipCheckBoxEnable();
     retranslateUi();
@@ -668,14 +678,12 @@ void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
 
 void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
 {
-    // CMediumFormat comMediumFormat = mediumFormat();
-    // if (comMediumFormat.isNull())
-    // {
-    //     AssertMsgFailed(("No medium format set!"));
-    //     return;
-    // }
-    // updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
-    // updateLocationEditorAfterFormatChange(comMediumFormat, m_formatExtensions);
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard && m_pDiskVariantGroupBox && m_pSizeAndLocationGroup && m_pFormatButtonGroup);
+    const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
+    AssertReturnVoid(!comMediumFormat.isNull());
+    m_pDiskVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    m_pSizeAndLocationGroup->updateLocationEditorAfterFormatChange(comMediumFormat, m_pFormatButtonGroup->formatExtensions());
 }
 
 void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)

@@ -60,15 +60,19 @@ public:
     UIDiskFormatsGroupBox(QWidget *pParent = 0);
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
+    const CMediumFormat &VDIMeiumFormat() const;
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+    const QStringList formatExtensions() const;
 
 private:
 
     void prepare();
     void addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred = false);
-    QString defaultExtension(const CMediumFormat &mediumFormatRef);
+
     virtual void retranslateUi() /* override final */;
 
     QList<CMediumFormat>  m_formats;
+    CMediumFormat m_comVDIMediumFormat;
     QStringList           m_formatNames;
     QStringList m_formatExtensions;
     QButtonGroup *m_pFormatButtonGroup;
@@ -84,6 +88,11 @@ signals:
 public:
 
     UIDiskVariantGroupBox(QWidget *pParent = 0);
+    void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
+    void setWidgetVisibility(CMediumFormat &mediumFormat);
+    bool isComplete() const;
 
 private:
 
@@ -109,11 +118,15 @@ public:
 
     QString location() const;
     void setLocation(const QString &strLocation);
+    void updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
 
 private:
 
     void prepare();
     virtual void retranslateUi() /* override final */;
+    static QString stripFormatExtension(const QString &strFileName,
+                                        const QStringList &formatExtensions);
+
 
     QLabel *m_pLocationLabel;
     QILineEdit *m_pLocationEditor;

@@ -178,7 +178,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-void UIWizardNewVMNameOSTypePage::onNameChanged(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
+void UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
 {
     CHost host = uiCommon().host();
     bool fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -365,7 +365,8 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
-    UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, strNewName);
+    if (!m_userModifiedParameters.contains("GuestOSType"))
+        UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
     emit completeChanged();
 }
@@ -378,13 +379,9 @@ void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
 
 void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
 {
-    /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
-     * So simply disconnect the text-edit signal. */
+    m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
-    {
-        m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
         newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
-    }
 }
 
 void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
@@ -452,8 +449,8 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
     UIWizardNewVMNameOSTypePage::determineOSType(strPath, pWizard);
     if (pWizard)
     {
-        if (!pWizard->detectedOSTypeId().isEmpty())
-            UIWizardNewVMNameOSTypePage::onNameChanged(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+        if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
+            UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
         pWizard->setISOFilePath(strPath);
     }
     /* Update the global recent ISO path: */

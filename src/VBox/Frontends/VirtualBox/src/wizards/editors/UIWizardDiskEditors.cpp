@@ -18,6 +18,8 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QDir>
+#include <QFileInfo>
 #include <QLabel>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -65,6 +67,11 @@ void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
     }
 }
 
+const CMediumFormat &UIDiskFormatsGroupBox::VDIMeiumFormat() const
+{
+    return m_comVDIMediumFormat;
+}
+
 void UIDiskFormatsGroupBox::prepare()
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
@@ -77,16 +84,16 @@ void UIDiskFormatsGroupBox::prepare()
     QMap<QString, CMediumFormat> vdi, preferred, others;
     foreach (const CMediumFormat &format, formats)
     {
-        /* VDI goes first: */
         if (format.GetName() == "VDI")
+        {
             vdi[format.GetId()] = format;
+            m_comVDIMediumFormat = format;
+        }
         else
         {
             const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-            /* Then goes preferred: */
             if (capabilities.contains(KMediumFormatCapabilities_Preferred))
                 preferred[format.GetId()] = format;
-            /* Then others: */
             else
                 others[format.GetId()] = format;
         }
@@ -164,6 +171,7 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
     }
 }
 
+/* static */
 QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
     if (!mediumFormatRef.isNull())
@@ -179,6 +187,11 @@ QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumForma
     }
     AssertMsgFailed(("Extension can't be NULL!\n"));
     return QString();
+}
+
+const QStringList UIDiskFormatsGroupBox::formatExtensions() const
+{
+    return m_formatExtensions;
 }
 
 /*********************************************************************************************************************************
@@ -217,6 +230,98 @@ void UIDiskVariantGroupBox::retranslateUi()
     }
     m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
 
+}
+
+qulonglong UIDiskVariantGroupBox::mediumVariant() const
+{
+    /* Initial value: */
+    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
+
+    /* Exclusive options: */
+    if (m_pFixedCheckBox && m_pFixedCheckBox->isChecked())
+        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
+    else
+        uMediumVariant = (qulonglong)KMediumVariant_Standard;
+
+    /* Additional options: */
+    if (m_pSplitBox && m_pSplitBox->isChecked())
+        uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
+
+    /* Return options: */
+    return uMediumVariant;
+}
+
+void UIDiskVariantGroupBox::setMediumVariant(qulonglong uMediumVariant)
+{
+    /* Exclusive options: */
+    if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
+    {
+        m_pFixedCheckBox->click();
+        m_pFixedCheckBox->setFocus();
+    }
+
+    /* Additional options: */
+    m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
+}
+
+void UIDiskVariantGroupBox::setWidgetVisibility(CMediumFormat &mediumFormat)
+{
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+    if (m_pFixedCheckBox)
+    {
+        if (!fIsCreateDynamicPossible)
+        {
+            m_pFixedCheckBox->setChecked(true);
+            m_pFixedCheckBox->setEnabled(false);
+        }
+        if (!fIsCreateFixedPossible)
+        {
+            m_pFixedCheckBox->setChecked(false);
+            m_pFixedCheckBox->setEnabled(false);
+        }
+    }
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setHidden(!fIsCreateFixedPossible);
+    if (m_pSplitBox)
+        m_pSplitBox->setHidden(!fIsCreateSplitPossible);
+}
+
+void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
+{
+    /* Enable/disable widgets: */
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+
+    if (m_pFixedCheckBox)
+    {
+        m_pFixedCheckBox->setEnabled(fIsCreateDynamicPossible || fIsCreateFixedPossible);
+        if (!fIsCreateDynamicPossible)
+            m_pFixedCheckBox->setChecked(true);
+        if (!fIsCreateFixedPossible)
+            m_pFixedCheckBox->setChecked(false);
+    }
+    m_pSplitBox->setEnabled(fIsCreateSplitPossible);
+}
+
+bool UIDiskVariantGroupBox::isComplete() const
+{
+    /* Make sure medium variant is correct: */
+    return mediumVariant() != (qulonglong)KMediumVariant_Max;
 }
 
 
@@ -284,4 +389,41 @@ void UIDiskSizeAndLocationGroupBox::setLocation(const QString &strLocation)
 {
     if (m_pLocationEditor)
         m_pLocationEditor->setText(strLocation);
+}
+
+void UIDiskSizeAndLocationGroupBox::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
+{
+    /* Compose virtual-disk extension: */
+    QString strDefaultExtension = UIDiskFormatsGroupBox::defaultExtension(mediumFormat);
+    /* Update m_pLocationEditor's text if necessary: */
+    if (!m_pLocationEditor->text().isEmpty() && !strDefaultExtension.isEmpty())
+    {
+        QFileInfo fileInfo(m_pLocationEditor->text());
+        if (fileInfo.suffix() != strDefaultExtension)
+        {
+            QFileInfo newFileInfo(QDir(fileInfo.absolutePath()),
+                                  QString("%1.%2").
+                                  arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
+                                  arg(strDefaultExtension));
+            m_pLocationEditor->setText(newFileInfo.absoluteFilePath());
+        }
+    }
+}
+
+/* static */
+QString UIDiskSizeAndLocationGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
+{
+    QString result(strFileName);
+    foreach (const QString &strExtension, formatExtensions)
+    {
+        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
+        {
+            /* Add the dot to extenstion: */
+            QString strExtensionWithDot(strExtension);
+            strExtensionWithDot.prepend('.');
+            int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
+            result.remove(iIndex, strExtensionWithDot.length());
+        }
+    }
+    return result;
 }

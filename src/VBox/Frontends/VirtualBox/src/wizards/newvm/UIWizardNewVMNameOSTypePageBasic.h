@@ -39,7 +39,7 @@ class UIWizardNewVM;
 
 namespace UIWizardNewVMNameOSTypePage
 {
-    void onNameChanged(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
+    void guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
     bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
                              UINativeWizardPage *pCaller,
                              UIWizardNewVM *pWizard);
@@ -103,6 +103,7 @@ private:
         QCheckBox             *m_pSkipUnattendedCheckBox;
         QIRichTextLabel       *m_pNameOSTypeLabel;
     /** @} */
+    QSet<QString> m_userModifiedParameters;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePageBasic_h */
