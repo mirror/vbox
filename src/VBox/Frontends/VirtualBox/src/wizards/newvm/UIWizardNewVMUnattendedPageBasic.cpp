@@ -129,8 +129,6 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
 {
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    if (m_pGAInstallationISOContainer)
-        m_pGAInstallationISOContainer->sltToggleWidgetsEnabled(m_pGAInstallationISOContainer->isChecked());
     retranslateUi();
 
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
@@ -156,7 +154,6 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
             /* Initialize unattended hostname here since we cannot get the efault value from CUnattended this early (unlike username etc): */
             newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
         }
-
         m_pAdditionalOptionsContainer->blockSignals(false);
     }
     if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
@@ -200,8 +197,6 @@ void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    if (m_pGAInstallationISOContainer)
-        m_pGAInstallationISOContainer->sltToggleWidgetsEnabled(fEnabled);
     newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
     m_userModifiedParameters << "InstallGuestAdditions";
     emit completeChanged();
@@ -245,11 +240,13 @@ void UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged(const QStrin
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
 {
+    m_userModifiedParameters << "ProductKey";
     newVMWizardPropertySet(ProductKey, strProductKey);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
+    m_userModifiedParameters << "StartHeadless";
     newVMWizardPropertySet(StartHeadless, fStartHeadless);
 }
 

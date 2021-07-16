@@ -124,6 +124,8 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
     if (!m_userModifiedParameters.contains("MediumPath"))
         updateVirtualMediumPathFromMachinePathName();
+    if (!m_userModifiedParameters.contains("HostnameDomainName"))
+        updateHostnameDomainNameFromMachineName();
     emit completeChanged();
 }
 
@@ -175,6 +177,13 @@ void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
+void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
+{
+    newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
+    m_userModifiedParameters << "InstallGuestAdditions";
+    emit completeChanged();
+}
+
 void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged(const QString &strGuestOSFamilyType)
 {
     if (m_pAdditionalOptionsContainer)
@@ -214,12 +223,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
 
-void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
-{
-    Q_UNUSED(fEnabled);
-    emit completeChanged();
-}
-
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
@@ -255,9 +258,25 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
     }
-    // if (m_pUserNamePasswordGroupBox)
-    //     connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordEditor::sigSomeTextChanged,
-    //             this, &UIWizardNewVMPageExpert::completeChanged);
+
+    if (m_pUserNamePasswordGroupBox)
+    {
+        connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordGroupBox::sigPasswordChanged,
+                this, &UIWizardNewVMPageExpert::sltPasswordChanged);
+        connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordGroupBox::sigUserNameChanged,
+                this, &UIWizardNewVMPageExpert::sltUserNameChanged);
+    }
+
+
+    if (m_pAdditionalOptionsContainer)
+    {
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigHostnameDomainNameChanged,
+                this, &UIWizardNewVMPageExpert::sltHostnameDomainNameChanged);
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigProductKeyChanged,
+                this, &UIWizardNewVMPageExpert::sltProductKeyChanged);
+        connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged,
+                this, &UIWizardNewVMPageExpert::sltStartHeadlessChanged);
+    }
 
 
     // if (m_pFormatButtonGroup)
@@ -355,19 +374,35 @@ void UIWizardNewVMPageExpert::initializePage()
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     AssertReturnVoid(pWizard);
     /* Initialize wizard properties: */
-    if (m_pNameAndSystemEditor)
     {
-        /* Guest OS type: */
-        newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
-        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
-        /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
+        if (m_pNameAndSystemEditor)
+        {
+            /* Guest OS type: */
+            newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
+            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
+        }
+
+        /* Medium related properties: */
+        if (m_pFormatButtonGroup)
+            newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+        if (!m_userModifiedParameters.contains("MediumPath"))
+            updateVirtualMediumPathFromMachinePathName();
     }
 
-    /* Medium related properties: */
-    if (m_pFormatButtonGroup)
-        newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
-    if (!m_userModifiedParameters.contains("MediumPath"))
-        updateVirtualMediumPathFromMachinePathName();
+    /* Initialize user/password if they are not modified by the user: */
+    if (m_pUserNamePasswordGroupBox)
+    {
+        m_pUserNamePasswordGroupBox->blockSignals(true);
+        if (!m_userModifiedParameters.contains("UserName"))
+            m_pUserNamePasswordGroupBox->setUserName(pWizard->userName());
+        if (!m_userModifiedParameters.contains("Password"))
+            m_pUserNamePasswordGroupBox->setPassword(pWizard->password());
+        m_pUserNamePasswordGroupBox->blockSignals(false);
+    }
+    if (!m_userModifiedParameters.contains("HostnameDomainName"))
+        updateHostnameDomainNameFromMachineName();
+
 
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     setOSTypeDependedValues();
@@ -673,6 +708,40 @@ void UIWizardNewVMPageExpert::sltEFIEnabledChanged(bool fEnabled)
     m_userModifiedParameters << "EFIEnabled";
 }
 
+void UIWizardNewVMPageExpert::sltPasswordChanged(const QString &strPassword)
+{
+    newVMWizardPropertySet(Password, strPassword);
+    m_userModifiedParameters << "Password";
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltUserNameChanged(const QString &strUserName)
+{
+    newVMWizardPropertySet(UserName, strUserName);
+    m_userModifiedParameters << "UserName";
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
+{
+    newVMWizardPropertySet(HostnameDomainName, strHostnameDomainName);
+    m_userModifiedParameters << "HostnameDomainName";
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltProductKeyChanged(const QString &strProductKey)
+{
+    m_userModifiedParameters << "ProductKey";
+    newVMWizardPropertySet(ProductKey, strProductKey);
+}
+
+void UIWizardNewVMPageExpert::sltStartHeadlessChanged(bool fStartHeadless)
+{
+    m_userModifiedParameters << "StartHeadless";
+    newVMWizardPropertySet(StartHeadless, fStartHeadless);
+}
+
+
 void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
@@ -754,4 +823,20 @@ void UIWizardNewVMPageExpert::setSkipCheckBoxEnable()
         const QString &strPath = m_pNameAndSystemEditor->image();
         m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
     }
+}
+
+void UIWizardNewVMPageExpert::updateHostnameDomainNameFromMachineName()
+{
+    if (!m_pAdditionalOptionsContainer)
+        return;
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(pWizard);
+
+    m_pAdditionalOptionsContainer->blockSignals(true);
+    m_pAdditionalOptionsContainer->setHostname(pWizard->machineBaseName());
+    m_pAdditionalOptionsContainer->setDomainName("myguest.virtualbox.org");
+    /* Initialize unattended hostname here since we cannot get the default value from CUnattended this early (unlike username etc): */
+    newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
+
+    m_pAdditionalOptionsContainer->blockSignals(false);
 }

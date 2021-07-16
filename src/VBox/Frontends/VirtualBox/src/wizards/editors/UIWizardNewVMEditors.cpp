@@ -190,7 +190,7 @@ void UIGAInstallationGroupBox::sltToggleWidgetsEnabled(bool fEnabled)
         m_pGAISOPathLabel->setEnabled(fEnabled);
 
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setEnabled(m_pGAISOFilePathSelector);
+        m_pGAISOFilePathSelector->setEnabled(fEnabled);
 }
 
 

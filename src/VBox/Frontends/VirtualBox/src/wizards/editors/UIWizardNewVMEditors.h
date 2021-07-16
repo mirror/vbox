@@ -92,7 +92,7 @@ public:
         void mark(bool fError, const QString &strErrorMessage = QString());
     /** @} */
 
-public slots:
+private slots:
 
     void sltToggleWidgetsEnabled(bool fEnabled);
 

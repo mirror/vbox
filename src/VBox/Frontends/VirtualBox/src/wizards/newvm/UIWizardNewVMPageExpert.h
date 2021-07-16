@@ -87,7 +87,12 @@ private slots:
     void sltMemorySizeChanged(int iValue);
     void sltCPUCountChanged(int iCount);
     void sltEFIEnabledChanged(bool fEnabled);
+    void sltPasswordChanged(const QString &strPassword);
+    void sltUserNameChanged(const QString &strUserName);
 
+    void sltHostnameDomainNameChanged(const QString &strHostnameDomainName);
+    void sltProductKeyChanged(const QString &strProductKey);
+    void sltStartHeadlessChanged(bool fStartHeadless);
 
 private:
 
@@ -127,6 +132,7 @@ private:
 
     void updateVirtualMediumPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
+    void updateHostnameDomainNameFromMachineName();
     void setEnableNewDiskWidgets(bool fEnable);
     void setVirtualDiskFromDiskCombo();
     void setSkipCheckBoxEnable();
