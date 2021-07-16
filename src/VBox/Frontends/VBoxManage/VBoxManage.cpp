@@ -201,11 +201,20 @@ static void showProgressSignalHandler(int iSignal) RT_NOTHROW_DEF
  * unhandled things (which doesn't cause real problems, just makes things
  * react a little slower than in the ideal case).
  */
-HRESULT showProgress(ComPtr<IProgress> progress)
+HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
 {
     using namespace com;
+    HRESULT hrc;
 
     AssertReturn(progress.isNotNull(), E_FAIL);
+
+    /* grandfather the old callers */
+    if (g_fDetailedProgress)
+        fFlags = SHOW_PROGRESS_DETAILS;
+
+    const bool fDetailed = RT_BOOL(fFlags & SHOW_PROGRESS_DETAILS);
+    const bool fQuiet = !RT_BOOL(fFlags & (SHOW_PROGRESS | SHOW_PROGRESS_DETAILS));
+
 
     BOOL fCompleted = FALSE;
     ULONG ulCurrentPercent = 0;
@@ -219,12 +228,32 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     NativeEventQueue::getMainEventQueue()->processEventQueue(0);
 
     ULONG cOperations = 1;
-    HRESULT hrc = progress->COMGETTER(OperationCount)(&cOperations);
+    hrc = progress->COMGETTER(OperationCount)(&cOperations);
     if (FAILED(hrc))
     {
         RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
         RTStrmFlush(g_pStdErr);
         return hrc;
+    }
+
+    if (fFlags & SHOW_PROGRESS_DESC)
+    {
+        com::Bstr bstrDescription;
+        hrc = progress->COMGETTER(Description(bstrDescription.asOutParam()));
+        if (FAILED(hrc))
+        {
+            RTStrmPrintf(g_pStdErr, "Failed to get progress description: %Rhrc\n", hrc);
+            return hrc;
+        }
+
+        const char *pcszDescSep;
+        if (fFlags & SHOW_PROGRESS_DETAILS)
+            pcszDescSep = "\n";
+        else
+            pcszDescSep = ": ";
+
+        RTStrmPrintf(g_pStdErr, "%ls%s", bstrDescription.raw(), pcszDescSep);
+        RTStrmFlush(g_pStdErr);
     }
 
     /*
@@ -233,7 +262,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
      *       written in the meanwhile.
      */
 
-    if (!g_fDetailedProgress)
+    if (!fQuiet && !fDetailed)
     {
         RTStrmPrintf(g_pStdErr, "0%%...");
         RTStrmFlush(g_pStdErr);
@@ -259,7 +288,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     {
         progress->COMGETTER(Percent(&ulCurrentPercent));
 
-        if (g_fDetailedProgress)
+        if (fDetailed)
         {
             ULONG ulOperation = 1;
             hrc = progress->COMGETTER(Operation)(&ulOperation);
@@ -292,7 +321,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 ulLastOperationPercent = ulCurrentOperationPercent;
             }
         }
-        else
+        else if (!fQuiet)
         {
             /* did we cross a 10% mark? */
             if (ulCurrentPercent / 10  >  ulLastPercent / 10)
@@ -344,13 +373,22 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     hrc = progress->COMGETTER(ResultCode)(&iRc);
     if (SUCCEEDED(hrc))
     {
+        /* async operation completed successfully */
         if (SUCCEEDED(iRc))
-            RTStrmPrintf(g_pStdErr, "100%%\n");
+        {
+            if (!fDetailed)
+            {
+                if (fFlags == SHOW_PROGRESS_DESC)
+                    RTStrmPrintf(g_pStdErr, "ok\n");
+                else if (!fQuiet)
+                    RTStrmPrintf(g_pStdErr, "100%%\n");
+            }
+        }
         else if (g_fCanceled)
             RTStrmPrintf(g_pStdErr, "CANCELED\n");
         else
         {
-            if (!g_fDetailedProgress)
+            if (!fDetailed)
                 RTStrmPrintf(g_pStdErr, "\n");
             RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
         }
@@ -358,7 +396,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     }
     else
     {
-        if (!g_fDetailedProgress)
+        if (!fDetailed)
             RTStrmPrintf(g_pStdErr, "\n");
         RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
     }
