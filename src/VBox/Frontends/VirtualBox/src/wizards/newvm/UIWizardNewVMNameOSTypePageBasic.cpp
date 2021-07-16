@@ -468,6 +468,7 @@ void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged(const QString &st
 
 void UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged(bool fSkip)
 {
+    m_userModifiedParameters << "SkipUnattendedInstall";
     newVMWizardPropertySet(SkipUnattendedInstall, fSkip);
 }
 

@@ -46,7 +46,7 @@
 #include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "UIWizardNewVMNameOSTypePageBasic.h"
-#include "UIWizardNewVMDiskPageBasic.h"
+
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -68,6 +68,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     , m_pDiskExisting(0)
     , m_pDiskSelector(0)
     , m_pDiskSelectionButton(0)
+    , m_enmSelectedDiskSource(SelectedDiskSource_New)
+    , m_fRecommendedNoDisk(false)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -166,7 +168,7 @@ void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strISOPath)
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strISOPath);
     setSkipCheckBoxEnable();
-    disableEnableUnattendedRelatedWidgets(pWizard->isUnattendedEnabled());
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
 }
 
@@ -278,6 +280,11 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltStartHeadlessChanged);
     }
 
+    if (m_pDiskSourceButtonGroup)
+        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
+
+    connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 
     // if (m_pFormatButtonGroup)
     //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
@@ -296,14 +303,6 @@ void UIWizardNewVMPageExpert::createConnections()
     //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
     //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
-    // if (m_pDiskSourceButtonGroup)
-    // {
-    //     connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-    //             this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
-    //     connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-    //             this, &UIWizardNewVMPageExpert::sltValueModified);
-    // }
-    // connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 
     // if (m_pLocationOpenButton)
     //     connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVMPageExpert::sltSelectLocationButtonClicked);
@@ -330,31 +329,31 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
         m_pHardwareWidgetContainer->blockSignals(false);
     }
-    // LONG64 recommendedDiskSize = type.GetRecommendedHDD();
-    // /* Prepare initial disk choice: */
-    // if (!m_userSetWidgets.contains(m_pDiskSourceButtonGroup))
-    // {
-    //     if (recommendedDiskSize != 0)
-    //     {
-    //         if (m_pDiskNew)
-    //             m_pDiskNew->setChecked(true);
-    //         setSelectedDiskSource(SelectedDiskSource_New);
-    //         setEnableDiskSelectionWidgets(false);
-    //         setEnableNewDiskWidgets(true);
-    //         m_fRecommendedNoDisk = false;
-    //     }
-    //     else
-    //     {
-    //         if (m_pDiskEmpty)
-    //             m_pDiskEmpty->setChecked(true);
-    //         setSelectedDiskSource(SelectedDiskSource_Empty);
-    //         setEnableDiskSelectionWidgets(false);
-    //         setEnableNewDiskWidgets(false);
-    //         m_fRecommendedNoDisk = true;
-    //     }
-    //     if (m_pDiskSelector)
-    //         m_pDiskSelector->setCurrentIndex(0);
-    // }
+    LONG64 recommendedDiskSize = type.GetRecommendedHDD();
+    /* Prepare initial disk choice: */
+    if (!m_userModifiedParameters.contains("SelectedDiskSource"))
+    {
+        if (recommendedDiskSize != 0)
+        {
+            if (m_pDiskNew)
+                m_pDiskNew->setChecked(true);
+            m_enmSelectedDiskSource = SelectedDiskSource_New;
+            setEnableDiskSelectionWidgets(false);
+            setEnableNewDiskWidgets(true);
+            m_fRecommendedNoDisk = false;
+        }
+        else
+        {
+            if (m_pDiskEmpty)
+                m_pDiskEmpty->setChecked(true);
+            m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+            setEnableDiskSelectionWidgets(false);
+            setEnableNewDiskWidgets(false);
+            m_fRecommendedNoDisk = true;
+        }
+        if (m_pDiskSelector)
+            m_pDiskSelector->setCurrentIndex(0);
+    }
 
     // if (m_pMediumSizeEditor  && !m_userSetWidgets.contains(m_pMediumSizeEditor))
     // {
@@ -404,11 +403,8 @@ void UIWizardNewVMPageExpert::initializePage()
         updateHostnameDomainNameFromMachineName();
 
 
-    // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     setOSTypeDependedValues();
-    // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-
-
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     // updateWidgetAterMediumFormatChange();
     // setSkipCheckBoxEnable();
     retranslateUi();
@@ -624,27 +620,28 @@ bool UIWizardNewVMPageExpert::validatePage()
 bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
+    if (!pWizard || !isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
 }
 
 void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
 {
-    Q_UNUSED(fEnabled);
-
-    // if (m_pUserNameContainer)
-    //     m_pUserNameContainer->setEnabled(fEnabled);
-    // if (m_pAdditionalOptionsContainer)
-    //     m_pAdditionalOptionsContainer->setEnabled(fEnabled);
-    // if (m_pGAInstallationISOContainer)
-    //     m_pGAInstallationISOContainer->setEnabled(fEnabled);
-    // disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    if (m_pUserNamePasswordGroupBox)
+        m_pUserNamePasswordGroupBox->setEnabled(fEnabled);
+    if (m_pAdditionalOptionsContainer)
+        m_pAdditionalOptionsContainer->setEnabled(fEnabled);
+    if (m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->setEnabled(fEnabled);
+    m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
 }
 
-void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked()
+void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked(bool fSkip)
 {
-    //disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    m_userModifiedParameters << "SkipUnattendedInstall";
+    newVMWizardPropertySet(SkipUnattendedInstall, fSkip);
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
@@ -667,23 +664,23 @@ void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()
 
 void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 {
-    // if (!m_pDiskSourceButtonGroup)
-    //     return;
-    // m_userSetWidgets << m_pDiskSourceButtonGroup;
-    // if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
-    //     setSelectedDiskSource(SelectedDiskSource_Empty);
-    // else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
-    // {
-    //     setSelectedDiskSource(SelectedDiskSource_Existing);
-    //     setVirtualDiskFromDiskCombo();
-    // }
-    // else
-    //     setSelectedDiskSource(SelectedDiskSource_New);
+    if (!m_pDiskSourceButtonGroup)
+        return;
+    m_userModifiedParameters << "SelectedDiskSource";
+    if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
+        m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+    else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
+    {
+        m_enmSelectedDiskSource = SelectedDiskSource_Existing;
+        setVirtualDiskFromDiskCombo();
+    }
+    else
+        m_enmSelectedDiskSource = SelectedDiskSource_New;
 
-    // setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    // setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
-    // completeChanged();
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltSelectLocationButtonClicked()
@@ -839,4 +836,20 @@ void UIWizardNewVMPageExpert::updateHostnameDomainNameFromMachineName()
     newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
 
     m_pAdditionalOptionsContainer->blockSignals(false);
+}
+
+bool UIWizardNewVMPageExpert::isUnattendedEnabled() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturn(pWizard, false);
+    return pWizard->isUnattendedEnabled();
+}
+
+void UIWizardNewVMPageExpert::setEnableDiskSelectionWidgets(bool fEnabled)
+{
+    if (!m_pDiskSelector || !m_pDiskSelectionButton)
+        return;
+
+    m_pDiskSelector->setEnabled(fEnabled);
+    m_pDiskSelectionButton->setEnabled(fEnabled);
 }
