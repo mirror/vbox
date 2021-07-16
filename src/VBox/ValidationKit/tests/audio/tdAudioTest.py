@@ -332,51 +332,15 @@ class tdAudioTest(vbox.TestDriver):
         """
         Runs tests using one specific VM config.
         """
-        fRc = False;
 
         self.logVmInfo(oVM);
 
-        fSkip = False;
         if  oTestVm.isWindows() \
         and oTestVm.sKind in ('WindowsNT4', 'Windows2000'): # Too old for DirectSound and WASAPI backends.
-            fSkip = True;
+            reporter.log('Audio testing skipped, not implemented/available for that OS yet.');
+            return True;
 
-        if not fSkip:
-            reporter.testStart('Waiting for TXS');
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
-                                                                    fCdWait = True,
-                                                                    cMsTimeout = 3 * 60 * 1000,
-                                                                    sFileCdWait = '${CDROM}/${OS/ARCH}/vkat${EXESUFF}');
-            reporter.testDone();
-            if  oSession    is not None \
-            and oTxsSession is not None:
-                self.addTask(oTxsSession);
-
-            fRc = self.doTest(oTestVm, oSession, oTxsSession);
-
-            if oSession is not None:
-                self.removeTask(oTxsSession);
-                self.terminateVmBySession(oSession);
-
-            return fRc;
-
-        reporter.log('Audio testing skipped, not implemented/available for that OS yet.');
-        return True;
-
-    #
-    # Test execution helpers.
-    #
-    def testOneCfg(self, oVM, oTestVm):
-        """
-        Runs the specified VM thru the tests.
-
-        Returns a success indicator on the general test execution. This is not
-        the actual test result.
-        """
-
-        self.logVmInfo(oVM);
-
-        fRc = True;
+        fRc = False;
 
         # Reconfigure the VM.
         oSession = self.openSession(oVM);
@@ -391,20 +355,21 @@ class tdAudioTest(vbox.TestDriver):
             fRc = fRc and oSession.saveSettings()
             fRc = oSession.close() and fRc;
 
-        if fRc:
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
-            reporter.log("TxsSession: %s" % (oTxsSession,));
-            if oSession is not None:
-                self.addTask(oTxsSession);
+        reporter.testStart('Waiting for TXS');
+        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
+                                                                fCdWait = True,
+                                                                cMsTimeout = 3 * 60 * 1000,
+                                                                sFileCdWait = '${CDROM}/${OS/ARCH}/vkat${EXESUFF}');
+        reporter.testDone();
+        if  oSession    is not None \
+        and oTxsSession is not None:
+            self.addTask(oTxsSession);
 
-                fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
+        fRc = self.doTest(oTestVm, oSession, oTxsSession);
 
-                # Cleanup.
-                self.removeTask(oTxsSession);
-                if not self.aoSubTstDrvs[0].oDebug.fNoExit:
-                    self.terminateVmBySession(oSession);
-            else:
-                fRc = False;
+        if oSession is not None:
+            self.removeTask(oTxsSession);
+            self.terminateVmBySession(oSession);
 
         return fRc;
 
