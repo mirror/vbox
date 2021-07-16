@@ -862,7 +862,7 @@ SecCoreStartupWithStack (
   //
   IdtTableInStack.PeiService = NULL;
   for (Index = 0; Index < SEC_IDT_ENTRY_COUNT; Index ++) {
-    UINT8  *Src;
+    UINT8  volatile *Src;   // prevent too-clever-by-half compiler from stupidly using aligned SSE instructions
     UINT8  *Dst;
     UINTN  Byte;
 
