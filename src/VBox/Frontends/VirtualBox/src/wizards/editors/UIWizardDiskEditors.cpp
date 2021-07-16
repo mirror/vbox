@@ -36,6 +36,7 @@
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVM.h"
+#include "UIWizardNewVMDiskPageBasic.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -167,26 +168,8 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
         m_formats << medFormat;
         m_formatNames << medFormat.GetName();
         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-        m_formatExtensions << defaultExtension(medFormat);
+        m_formatExtensions << UIWizardNewVMDiskPage::defaultExtension(medFormat);
     }
-}
-
-/* static */
-QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef)
-{
-    if (!mediumFormatRef.isNull())
-    {
-        /* Load extension / device list: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        CMediumFormat mediumFormat(mediumFormatRef);
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == KDeviceType_HardDisk)
-                return fileExtensions[i].toLower();
-    }
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
 }
 
 const QStringList UIDiskFormatsGroupBox::formatExtensions() const
@@ -326,10 +309,10 @@ bool UIDiskVariantGroupBox::isComplete() const
 
 
 /*********************************************************************************************************************************
-*   UIDiskSizeAndLocationGroupBox implementation.                                                                                *
+*   UIMediumSizeAndPathGroupBox implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIDiskSizeAndLocationGroupBox::UIDiskSizeAndLocationGroupBox(QWidget *pParent /* = 0 */)
+UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pLocationLabel(0)
     , m_pLocationEditor(0)
@@ -340,7 +323,7 @@ UIDiskSizeAndLocationGroupBox::UIDiskSizeAndLocationGroupBox(QWidget *pParent /*
     prepare();
 }
 
-void UIDiskSizeAndLocationGroupBox::prepare()
+void UIMediumSizeAndPathGroupBox::prepare()
 {
     QGridLayout *pDiskContainerLayout = new QGridLayout(this);
 
@@ -373,28 +356,28 @@ void UIDiskSizeAndLocationGroupBox::prepare()
 
     retranslateUi();
 }
-void UIDiskSizeAndLocationGroupBox::retranslateUi()
+void UIMediumSizeAndPathGroupBox::retranslateUi()
 {
     setTitle(tr("Hard Disk File Location and Size"));
 }
 
-QString UIDiskSizeAndLocationGroupBox::location() const
+QString UIMediumSizeAndPathGroupBox::mediumPath() const
 {
     if (m_pLocationEditor)
         return m_pLocationEditor->text();
     return QString();
 }
 
-void UIDiskSizeAndLocationGroupBox::setLocation(const QString &strLocation)
+void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
 {
     if (m_pLocationEditor)
-        m_pLocationEditor->setText(strLocation);
+        m_pLocationEditor->setText(strMediumPath);
 }
 
-void UIDiskSizeAndLocationGroupBox::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
+void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
 {
     /* Compose virtual-disk extension: */
-    QString strDefaultExtension = UIDiskFormatsGroupBox::defaultExtension(mediumFormat);
+    QString strDefaultExtension = UIWizardNewVMDiskPage::defaultExtension(mediumFormat);
     /* Update m_pLocationEditor's text if necessary: */
     if (!m_pLocationEditor->text().isEmpty() && !strDefaultExtension.isEmpty())
     {
@@ -411,7 +394,7 @@ void UIDiskSizeAndLocationGroupBox::updateLocationEditorAfterFormatChange(const 
 }
 
 /* static */
-QString UIDiskSizeAndLocationGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
+QString UIMediumSizeAndPathGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
 {
     QString result(strFileName);
     foreach (const QString &strExtension, formatExtensions)

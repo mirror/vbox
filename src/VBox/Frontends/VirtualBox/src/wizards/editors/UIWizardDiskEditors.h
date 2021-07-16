@@ -61,7 +61,6 @@ public:
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
     const CMediumFormat &VDIMeiumFormat() const;
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
     const QStringList formatExtensions() const;
 
 private:
@@ -105,7 +104,7 @@ private:
 };
 
 
-class UIDiskSizeAndLocationGroupBox : public QIWithRetranslateUI<QGroupBox>
+class UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
@@ -114,11 +113,11 @@ signals:
 
 public:
 
-    UIDiskSizeAndLocationGroupBox(QWidget *pParent = 0);
+    UIMediumSizeAndPathGroupBox(QWidget *pParent = 0);
 
-    QString location() const;
-    void setLocation(const QString &strLocation);
-    void updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
+    QString mediumPath() const;
+    void setMediumPath(const QString &strMediumPath);
+    void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
 
 private:
 

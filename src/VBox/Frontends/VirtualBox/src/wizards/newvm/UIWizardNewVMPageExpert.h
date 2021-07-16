@@ -41,7 +41,7 @@ class QVBoxLayout;
 class QIToolButton;
 class UIAdditionalUnattendedOptions;
 class UIDiskFormatsGroupBox;
-class UIDiskSizeAndLocationGroupBox;
+class UIMediumSizeAndPathGroupBox;
 class UIDiskVariantGroupBox;
 class UIFilePathSelector;
 class UIGAInstallationGroupBox;
@@ -76,14 +76,18 @@ private slots:
     void sltGetWithFileOpenDialog();
     void sltISOPathChanged(const QString &strPath);
     void sltGAISOPathChanged(const QString &strPath);
-    void sltOSFamilyTypeChanged();
+    void sltOSFamilyTypeChanged(const QString &strGuestOSFamilyType);
     void sltInstallGACheckBoxToggle(bool fEnabled);
-    void sltValueModified();
     void sltSkipUnattendedCheckBoxChecked();
     void sltMediumFormatChanged();
     void sltMediumSizeChanged();
     void sltSelectedDiskSourceChanged();
     void sltSelectLocationButtonClicked();
+
+    void sltMemorySizeChanged(int iValue);
+    void sltCPUCountChanged(int iCount);
+    void sltEFIEnabledChanged(bool fEnabled);
+
 
 private:
 
@@ -121,17 +125,18 @@ private:
 
     QWidget *createNameOSTypeWidgets();
 
-    void updateVirtualDiskPathFromMachinePathName();
+    void updateVirtualMediumPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
     void setEnableNewDiskWidgets(bool fEnable);
     void setVirtualDiskFromDiskCombo();
+    void setSkipCheckBoxEnable();
 
     /** @name Variables
       * @{ */
         UIToolBox  *m_pToolBox;
         UIDiskVariantGroupBox *m_pDiskVariantGroupBox;
         UIDiskFormatsGroupBox *m_pFormatButtonGroup;
-        UIDiskSizeAndLocationGroupBox *m_pSizeAndLocationGroup;
+        UIMediumSizeAndPathGroupBox *m_pSizeAndLocationGroup;
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QCheckBox *m_pSkipUnattendedCheckBox;
         QGridLayout *m_pNameAndSystemLayout;
