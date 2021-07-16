@@ -72,8 +72,6 @@ struct _HGCMSVCEXTHANDLEDATA
     /* The service name follows. */
 };
 
-class HGCMClient;
-
 /** Internal helper service object. HGCM code would use it to
  *  hold information about services and communicate with services.
  *  The HGCMService is an (in future) abstract class that implements
@@ -171,7 +169,7 @@ class HGCMService
         static int LoadState(PSSMHANDLE pSSM, uint32_t uVersion);
 
         int CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn, uint32_t fRequestor, bool fRestoring);
-        int DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMClient *pClient);
+        int DisconnectClient(uint32_t u32ClientId, bool fFromService);
 
         int HostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
         static void BroadcastNotify(HGCMNOTIFYEVENT enmEvent);
@@ -433,10 +431,8 @@ class HGCMMsgSvcConnect: public HGCMMsgCore
 class HGCMMsgSvcDisconnect: public HGCMMsgCore
 {
     public:
-        /** client identifier */
+        /* client identifier */
         uint32_t u32ClientId;
-        /** The client instance. */
-        HGCMClient *pClient;
 };
 
 class HGCMMsgHeader: public HGCMMsgCore
@@ -635,12 +631,16 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
             {
                 HGCMMsgSvcDisconnect *pMsg = (HGCMMsgSvcDisconnect *)pMsgCore;
 
-                LogFlowFunc(("SVC_MSG_DISCONNECT u32ClientId = %d, pClient = %p\n", pMsg->u32ClientId, pMsg->pClient));
+                LogFlowFunc(("SVC_MSG_DISCONNECT u32ClientId = %d\n", pMsg->u32ClientId));
 
-                if (pMsg->pClient)
+                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+
+                if (pClient)
                 {
                     rc = pSvc->m_fntable.pfnDisconnect(pSvc->m_fntable.pvService, pMsg->u32ClientId,
-                                                       HGCM_CLIENT_DATA(pSvc, pMsg->pClient));
+                                                       HGCM_CLIENT_DATA(pSvc, pClient));
+
+                    hgcmObjDereference(pClient);
                 }
                 else
                 {
@@ -867,12 +867,9 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 {
      HGCMService *pService = static_cast <HGCMService *> (pvInstance);
 
-     AssertMsgFailed(("This is unused code with a serialization issue.\n"
-                      "It touches data which is normally serialized by only running on the HGCM thread!\n"));
-
      if (pService)
      {
-         pService->DisconnectClient(u32ClientId, true, NULL);
+         pService->DisconnectClient(u32ClientId, true);
      }
 }
 
@@ -1382,14 +1379,8 @@ void HGCMService::ReleaseService(void)
     {
         while (pSvc->m_cClients && pSvc->m_paClientIds)
         {
-            uint32_t const     idClient = pSvc->m_paClientIds[0];
-            HGCMClient * const pClient  = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
-            Assert(pClient);
-            LogFlowFunc(("handle %d/%p\n", pSvc->m_paClientIds[0], pClient));
-
-            pSvc->DisconnectClient(pSvc->m_paClientIds[0], false, pClient);
-
-            hgcmObjDereference(pClient);
+            LogFlowFunc(("handle %d\n", pSvc->m_paClientIds[0]));
+            pSvc->DisconnectClient(pSvc->m_paClientIds[0], false);
         }
 
         pSvc = pSvc->m_pSvcNext;
@@ -1656,58 +1647,17 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
     return rc;
 }
 
-/**
- * Disconnect the client from the service and delete the client handle.
+/* Disconnect the client from the service and delete the client handle.
  *
- * @param   u32ClientId     The handle of the client.
- * @param   fFromService    Set if called by the service via
- *                          svcHlpDisconnectClient().  pClient can be NULL when
- *                          this is @c true.
- * @param   pClient         The client disconnecting.  NULL if from service.
- * @return  VBox status code.
+ * @param u32ClientId  The handle of the client.
+ * @return VBox rc.
  */
-int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMClient *pClient)
+int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService)
 {
-    Assert(pClient || !fFromService);
+    int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("client id = %d, fFromService = %d, pClient = %p\n", u32ClientId, fFromService, pClient));
+    LogFlowFunc(("client id = %d, fFromService = %d\n", u32ClientId, fFromService));
 
-    /*
-     * Destroy the client handle prior to the disconnecting to avoid creating
-     * a race with other messages from the same client.  See @bugref{10038}
-     * for further details. 
-     */
-    bool fReleaseService = false;
-    int  rc              = VERR_NOT_FOUND;
-    for (uint32_t i = 0; i < m_cClients; i++)
-    {
-        if (m_paClientIds[i] == u32ClientId)
-        {
-            m_cClients--;
-
-            if (m_cClients > i)
-                memmove(&m_paClientIds[i], &m_paClientIds[i + 1], sizeof(m_paClientIds[0]) * (m_cClients - i));
-
-            /* Delete the client handle. */
-            hgcmObjDeleteHandle(u32ClientId);
-            fReleaseService = true;
-
-            rc = VINF_SUCCESS;
-            break;
-        }
-    }
-
-    /* Some paranoia wrt to not trusting the client ID array. */
-    Assert(rc == VINF_SUCCESS || fFromService);
-    if (rc == VERR_NOT_FOUND && !fFromService)
-    {
-        hgcmObjDeleteHandle(u32ClientId);
-        fReleaseService = true;
-    }
-
-    /*
-     * Call the service.
-     */
     if (!fFromService)
     {
         /* Call the service. */
@@ -1720,7 +1670,6 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMC
             HGCMMsgSvcDisconnect *pMsg = (HGCMMsgSvcDisconnect *)pCoreMsg;
 
             pMsg->u32ClientId = u32ClientId;
-            pMsg->pClient = pClient;
 
             rc = hgcmMsgSend(pMsg);
         }
@@ -1731,12 +1680,27 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMC
         }
     }
 
+    /* Remove the client id from the array in any case, rc does not matter. */
+    uint32_t i;
 
-    /*
-     * Release the pClient->pService reference.
-     */
-    if (fReleaseService)
-        ReleaseService();
+    for (i = 0; i < m_cClients; i++)
+    {
+        if (m_paClientIds[i] == u32ClientId)
+        {
+            m_cClients--;
+
+            if (m_cClients > i)
+                memmove(&m_paClientIds[i], &m_paClientIds[i + 1], sizeof(m_paClientIds[0]) * (m_cClients - i));
+
+            /* Delete the client handle. */
+            hgcmObjDeleteHandle(u32ClientId);
+
+            /* The service must be released. */
+            ReleaseService();
+
+            break;
+        }
+    }
 
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
@@ -2124,7 +2088,7 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
                 HGCMService *pService = pClient->pService;
 
                 /* Call the service instance to disconnect the client. */
-                rc = pService->DisconnectClient(pMsg->u32ClientId, false, pClient);
+                rc = pService->DisconnectClient(pMsg->u32ClientId, false);
 
                 hgcmObjDereference(pClient);
             } break;
