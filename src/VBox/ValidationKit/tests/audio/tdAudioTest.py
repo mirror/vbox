@@ -121,13 +121,28 @@ class tdAudioTest(vbox.TestDriver):
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
 
+    def actionVerify(self):
+        """
+        Verifies the test driver before running.
+        """
+        if self.sVBoxValidationKitIso is None or not os.path.isfile(self.sVBoxValidationKitIso):
+            reporter.error('Cannot find the VBoxValidationKit.iso! (%s)'
+                           'Please unzip a Validation Kit build in the current directory or in some parent one.'
+                           % (self.sVBoxValidationKitIso,) );
+            return False;
+        return vbox.TestDriver.actionVerify(self);
+
     def actionConfig(self):
         """
         Configures the test driver before running.
         """
         if not self.importVBoxApi(): # So we can use the constant below.
             return False;
-        return self.oTestVmSet.actionConfig(self);
+
+        # Make sure that the Validation Kit .ISO is mounted
+        # to find the VKAT (Validation Kit Audio Test) binary on it.
+        assert self.sVBoxValidationKitIso is not None;
+        return self.oTestVmSet.actionConfig(self, sDvdImage = self.sVBoxValidationKitIso);
 
     def actionExecute(self):
         """
