@@ -122,7 +122,8 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
     if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
-    updateVirtualMediumPathFromMachinePathName();
+    if (!m_userModifiedParameters.contains("MediumPath"))
+        updateVirtualMediumPathFromMachinePathName();
     emit completeChanged();
 }
 
@@ -130,7 +131,8 @@ void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
-    updateVirtualMediumPathFromMachinePathName();
+    if (!m_userModifiedParameters.contains("MediumPath"))
+        updateVirtualMediumPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
@@ -168,8 +170,9 @@ void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strISOPath)
 
 void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
 {
-    Q_UNUSED(strPath);
-    //emit completeChanged();
+    m_userModifiedParameters << "GuestAdditionsISOPath";
+    newVMWizardPropertySet(GuestAdditionsISOPath, strPath);
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged(const QString &strGuestOSFamilyType)
@@ -214,8 +217,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     Q_UNUSED(fEnabled);
-    // disableEnableGAWidgets(fEnabled);
-    // emit completeChanged();
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::createConnections()
@@ -244,17 +246,19 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigEFIEnabledChanged,
                 this, &UIWizardNewVMPageExpert::sltEFIEnabledChanged);
     }
-    // /* Connections for username, password, and hostname: */
+    /* Connections for username, password, and hostname, etc: */
+    if (m_pGAInstallationISOContainer)
+    {
+        connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::sigPathChanged,
+                this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
+        connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::toggled,
+                this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
+
+    }
     // if (m_pUserNamePasswordGroupBox)
     //     connect(m_pUserNamePasswordGroupBox, &UIUserNamePasswordEditor::sigSomeTextChanged,
     //             this, &UIWizardNewVMPageExpert::completeChanged);
-    // if (m_pGAISOFilePathSelector)
-    //     connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
-    //             this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
 
-    // if (m_pGAInstallationISOContainer)
-    //     connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
-    //             this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
     // if (m_pFormatButtonGroup)
     //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
@@ -362,7 +366,8 @@ void UIWizardNewVMPageExpert::initializePage()
     /* Medium related properties: */
     if (m_pFormatButtonGroup)
         newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
-    updateVirtualMediumPathFromMachinePathName();
+    if (!m_userModifiedParameters.contains("MediumPath"))
+        updateVirtualMediumPathFromMachinePathName();
 
     // disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     setOSTypeDependedValues();
@@ -600,7 +605,6 @@ void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnable
     // if (m_pGAInstallationISOContainer)
     //     m_pGAInstallationISOContainer->setEnabled(fEnabled);
     // disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    // disableEnableGAWidgets(isGAInstallEnabled());
 }
 
 void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked()
@@ -683,14 +687,12 @@ void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
             strMediumPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     }
     QString strExtension = UIWizardNewVMDiskPage::defaultExtension(pWizard->mediumFormat());
-
-
     if (m_pSizeAndLocationGroup)
     {
-        QString strMediumPath =
+        QString strMediumFilePath =
             UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDiskFileName,
                                                                                       strExtension), strMediumPath);
-        m_pSizeAndLocationGroup->setMediumPath(strMediumPath);
+        m_pSizeAndLocationGroup->setMediumPath(strMediumFilePath);
     }
 }
 

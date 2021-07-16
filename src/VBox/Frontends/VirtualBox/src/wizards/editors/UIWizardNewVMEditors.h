@@ -103,7 +103,6 @@ private:
 
     QLabel *m_pGAISOPathLabel;
     UIFilePathSelector *m_pGAISOFilePathSelector;
-
 };
 
 class UIAdditionalUnattendedOptions : public QIWithRetranslateUI<QGroupBox>
