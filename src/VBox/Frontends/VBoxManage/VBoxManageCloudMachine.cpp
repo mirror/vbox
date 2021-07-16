@@ -397,7 +397,7 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
         ReadCloudMachineList(pListProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
-    hrc = showProgress(pListProgress); // XXX: don't show
+    hrc = showProgress(pListProgress, SHOW_PROGRESS_NONE);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
