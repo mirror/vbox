@@ -82,7 +82,8 @@ class tdAudioTest(vbox.TestDriver):
             'VBoxInternal2/Audio/Debug/Enabled:true',
         ];
 
-        self.sRunningVmName = None
+        # Name of the running VM to use for running the test driver. Optional, and None if not being used.
+        self.sRunningVmName   = None;
 
     def showUsage(self):
         """
@@ -124,7 +125,9 @@ class tdAudioTest(vbox.TestDriver):
         """
         Configures the test driver before running.
         """
-        return True
+        if not self.importVBoxApi(): # So we can use the constant below.
+            return False;
+        return self.oTestVmSet.actionConfig(self);
 
     def actionExecute(self):
         """
