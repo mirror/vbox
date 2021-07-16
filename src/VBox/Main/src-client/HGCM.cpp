@@ -1675,7 +1675,7 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMC
     /*
      * Destroy the client handle prior to the disconnecting to avoid creating
      * a race with other messages from the same client.  See @bugref{10038}
-     * for further details. 
+     * for further details.
      */
     bool fReleaseService = false;
     int  rc              = VERR_NOT_FOUND;
