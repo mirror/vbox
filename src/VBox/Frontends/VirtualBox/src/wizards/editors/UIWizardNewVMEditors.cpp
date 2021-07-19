@@ -27,9 +27,10 @@
 #include "UIHostnameDomainNameEditor.h"
 #include "UIFilePathSelector.h"
 #include "UIUserNamePasswordEditor.h"
+#include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMEditors.h"
-#include "UIVirtualCPUEditor.h"
+#include "UIWizardNewVMUnattendedPageBasic.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -177,12 +178,19 @@ void UIGAInstallationGroupBox::setPath(const QString &strPath, bool fRefreshText
         m_pGAISOFilePathSelector->setPath(strPath, fRefreshText);
 }
 
-void UIGAInstallationGroupBox::mark(bool fError, const QString &strErrorMessage /* = QString() */)
+void UIGAInstallationGroupBox::mark()
 {
+    bool fError = !UIWizardNewVMUnattendedPage::checkGAISOFile(path());
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->mark(fError, strErrorMessage);
+        m_pGAISOFilePathSelector->mark(fError, tr("Invalid Guest Additions installation media"));
 }
 
+bool UIGAInstallationGroupBox::isComplete() const
+{
+    if (!isChecked())
+        return true;
+    return UIWizardNewVMUnattendedPage::checkGAISOFile(path());
+}
 
 void UIGAInstallationGroupBox::sltToggleWidgetsEnabled(bool fEnabled)
 {
@@ -248,7 +256,6 @@ void UIAdditionalUnattendedOptions::prepare()
         connect(m_pStartHeadlessCheckBox, &QCheckBox::toggled,
                 this, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged);
 
-
     retranslateUi();
 }
 
@@ -305,6 +312,12 @@ bool UIAdditionalUnattendedOptions::isComplete() const
     if (m_pHostnameDomainNameEditor)
         return m_pHostnameDomainNameEditor->isComplete();
     return false;
+}
+
+void UIAdditionalUnattendedOptions::mark()
+{
+    if (m_pHostnameDomainNameEditor)
+        m_pHostnameDomainNameEditor->mark();
 }
 
 void UIAdditionalUnattendedOptions::disableEnableProductKeyWidgets(bool fEnabled)

@@ -56,6 +56,7 @@ public:
     QString hostnameDomainName() const;
 
     bool isComplete() const;
+    void mark();
 
 protected:
 

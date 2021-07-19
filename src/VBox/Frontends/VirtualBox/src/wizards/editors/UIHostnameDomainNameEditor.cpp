@@ -57,6 +57,16 @@ bool UIHostnameDomainNameEditor::isComplete() const
         m_pDomainNameLineEdit && m_pDomainNameLineEdit->hasAcceptableInput();
 }
 
+void UIHostnameDomainNameEditor::mark()
+{
+    if (m_pHostnameLineEdit)
+        m_pHostnameLineEdit->mark(!m_pHostnameLineEdit->hasAcceptableInput(),
+                                  tr("Hostname should be at least 2 character lomg. Allowed characters are alphanumerics, \"-\" and \".\""));
+    if (m_pDomainNameLineEdit)
+        m_pDomainNameLineEdit->mark(!m_pDomainNameLineEdit->hasAcceptableInput(),
+                                  tr("Domain name should be at least 2 character lomg. Allowed characters are alphanumerics, \"-\" and \".\""));
+}
+
 void UIHostnameDomainNameEditor::setHostname(const QString &strHostname)
 {
     if (m_pHostnameLineEdit)
@@ -119,10 +129,6 @@ void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineE
     AssertReturnVoid(pLineEdit);
 
     pLayout->addWidget(pLineEdit, iRow, 1, 1, 3);
-    // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
-    /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.': */
-    m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}"), this));
-
     pLabel->setBuddy(pLineEdit);
     ++iRow;
     return;
@@ -139,6 +145,11 @@ void UIHostnameDomainNameEditor::prepare()
     int iRow = 0;
     addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, pMainLayout);
     addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, pMainLayout);
+
+    // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
+    /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.': */
+    m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}"), this));
+    m_pDomainNameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}"), this));
 
     connect(m_pHostnameLineEdit, &QILineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltHostnameChanged);

@@ -254,5 +254,5 @@ void UIWizardNewVMUnattendedPageBasic::markWidgets() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
-        m_pGAInstallationISOContainer->mark(!UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAInstallationISOContainer->path()));
+        m_pGAInstallationISOContainer->mark();
 }

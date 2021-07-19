@@ -402,6 +402,12 @@ void UIWizardNewVMPageExpert::initializePage()
     if (!m_userModifiedParameters.contains("HostnameDomainName"))
         updateHostnameDomainNameFromMachineName();
 
+    if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
+    {
+        m_pGAInstallationISOContainer->blockSignals(true);
+        m_pGAInstallationISOContainer->setChecked(pWizard->installGuestAdditions());
+        m_pGAInstallationISOContainer->blockSignals(false);
+    }
 
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
@@ -417,8 +423,17 @@ void UIWizardNewVMPageExpert::cleanupPage()
 
 void UIWizardNewVMPageExpert::markWidgets() const
 {
-    // UIWizardNewVMPageBaseNameOSType::markWidgets();
-    // UIWizardNewVMPageBaseUnattended::markWidgets();
+    if (m_pNameAndSystemEditor)
+    {
+        m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
+        m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor),
+                                                UIWizardNewVM::tr("Invalid file path or unreadable file"));
+    }
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->mark();
+    if (isUnattendedEnabled())
+        m_pAdditionalOptionsContainer->mark();
 }
 
 QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
@@ -497,70 +512,94 @@ QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
 
 bool UIWizardNewVMPageExpert::isComplete() const
 {
-    //markWidgets();
+    markWidgets();
     bool fIsComplete = true;
-    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType, QIcon());
-    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended, QIcon());
-    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
-    // m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
 
-    // if (!UIWizardPage::isComplete())
-    // {
-    //     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
-    //                                  UIIconPool::iconSet(":/status_error_16px.png"),
-    //                                  UIWizardNewVM::tr("A valid VM name is required"));
-    //     fIsComplete = false;
-    // }
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturn(pWizard, false);
 
-    // if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
-    // {
-    //     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
-    //                                  UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
-    //     fIsComplete = false;
-    // }
+    /* Check unattended install related stuff: */
+    if (isUnattendedEnabled())
+    {
+        /* Check the installation medium: */
+        if (!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor))
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
+            fIsComplete = false;
+        }
+        /* Check the GA installation medium: */
+        if (m_pGAInstallationISOContainer && !m_pGAInstallationISOContainer->isComplete())
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
 
-    // if (m_pDiskNew && m_pDiskNew->isChecked())
-    // {
-    //     qulonglong uSize = field("mediumSize").toULongLong();
-    //     if (uSize <= 0)
-    //     {
-    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
-    //                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
-    //         fIsComplete = false;
-    //     }
-    // }
+            fIsComplete = false;
+        }
+        if (m_pUserNamePasswordGroupBox)
+        {
+            if (!m_pUserNamePasswordGroupBox->isComplete())
+            {
+                m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+                                             UIIconPool::iconSet(":/status_error_16px.png"),
+                                             UIWizardNewVM::tr("Invalid username and/or password"));
+                fIsComplete = false;
+            }
+        }
+        if (m_pAdditionalOptionsContainer)
+        {
+            if (!m_pAdditionalOptionsContainer->isComplete())
+            {
+                m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+                                             UIIconPool::iconSet(":/status_error_16px.png"),
+                                             UIWizardNewVM::tr("Invalid hostname or domain name"));
+                fIsComplete = false;
+            }
+        }
+    }
 
-    // /* Check unattended install related stuff: */
-    // if (isUnattendedEnabled())
-    // {
-    //     /* Check the installation medium: */
-    //     if (!checkISOFile())
-    //     {
-    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
-    //                                      UIIconPool::iconSet(":/status_error_16px.png"),
-    //                                      UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
-    //         fIsComplete = false;
-    //     }
-    //     /* Check the GA installation medium: */
-    //     if (m_pGAInstallationISOContainer && m_pGAInstallationISOContainer->isChecked() && !checkGAISOFile())
-    //     {
-    //         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-    //                                      UIIconPool::iconSet(":/status_error_16px.png"),
-    //                                      UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
+    if (m_pNameAndSystemEditor)
+    {
+        if (m_pNameAndSystemEditor->name().isEmpty())
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Virtual machine name is invalid"));
+            fIsComplete = false;
+        }
+        if (!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor))
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Invalid ISO file"));
+            fIsComplete = false;
+        }
+    }
 
-    //         fIsComplete = false;
-    //     }
-    //     if (m_pUserNamePasswordGroupBox)
-    //     {
-    //         if (!m_pUserNamePasswordGroupBox->isComplete())
-    //         {
-    //             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-    //                                          UIIconPool::iconSet(":/status_error_16px.png"),
-    //                                          UIWizardNewVM::tr("Invalid username and/or password"));
-    //             fIsComplete = false;
-    //         }
-    //     }
-    // }
+    if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    {
+        m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
+                                     UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
+        fIsComplete = false;
+    }
+
+    if (m_pDiskNew && m_pDiskNew->isChecked())
+    {
+        qulonglong uSize = pWizard->mediumSize();
+        if (uSize <= 0)
+        {
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
+                                         UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
+            fIsComplete = false;
+        }
+    }
+
 
      // return !mediumFormat().isNull() &&
      //       mediumVariant() != (qulonglong)KMediumVariant_Max &&
