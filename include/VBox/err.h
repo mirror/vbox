@@ -1622,7 +1622,10 @@
 #define VINF_HGCM_SAVE_STATE                        (2906)
 /** Requested service already exists. */
 #define VERR_HGCM_SERVICE_EXISTS                    (-2907)
-
+/** Too many clients for the service. */
+#define VERR_HGCM_TOO_MANY_CLIENTS                  (-2908)
+/** Too many calls to the service from a client. */
+#define VERR_HGCM_TOO_MANY_CLIENT_CALLS             (-2909)
 /** @} */
 
 

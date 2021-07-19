@@ -51,7 +51,7 @@ static int setupTable(VBOXHGCMSVCFNTABLE *pTable)
     return VBoxHGCMSvcLoad(pTable);
 }
 
-int ShClBackendInit(void) { return VINF_SUCCESS; }
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *) { return VINF_SUCCESS; }
 void ShClBackendDestroy(void) { }
 int ShClBackendDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
 int ShClBackendConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }

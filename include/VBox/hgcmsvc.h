@@ -80,8 +80,10 @@
  *          parameter (VBox 6.0).
  * 6.5->7.1 Because pfnNotify was added (VBox 6.0).
  * 7.1->8.1 Because pfnCancelled & pfnIsCallCancelled were added (VBox 6.0).
+ * 8.1->9.1 Because pfnDisconnectClient was (temporarily) removed, and
+ *          acMaxClients and acMaxCallsPerClient added (VBox 6.1.26).
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0008)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0009)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
@@ -98,8 +100,10 @@ typedef struct VBOXHGCMSVCHELPERS
 
     void *pvInstance;
 
+#if 0 /* Not thread safe. */
     /** The service disconnects the client. */
     DECLR3CALLBACKMEMBER(void, pfnDisconnectClient, (void *pvInstance, uint32_t u32ClientID));
+#endif
 
     /**
      * Check if the @a callHandle is for a call restored and re-submitted from saved state.
@@ -593,6 +597,14 @@ typedef enum HGCMNOTIFYEVENT
     HGCMNOTIFYEVENT_32BIT_HACK = 0x7fffffff
 } HGCMNOTIFYEVENT;
 
+/** @name HGCM_CLIENT_CATEGORY_XXX - Client categories
+ * @{ */
+#define HGCM_CLIENT_CATEGORY_KERNEL 0   /**< Guest kernel mode and legacy client. */
+#define HGCM_CLIENT_CATEGORY_ROOT   1   /**< Guest root or admin client. */
+#define HGCM_CLIENT_CATEGORY_USER   2   /**< Regular guest user client. */
+#define HGCM_CLIENT_CATEGORY_MAX    3   /**< Max number of categories. */
+/** @} */
+
 
 /** The Service DLL entry points.
  *
@@ -609,23 +621,28 @@ typedef struct VBOXHGCMSVCFNTABLE
      * @{ */
 
     /** Size of the structure. */
-    uint32_t                 cbSize;
+    uint32_t                cbSize;
 
-    /** Version of the structure, including the helpers. */
-    uint32_t                 u32Version;
+    /** Version of the structure, including the helpers. (VBOX_HGCM_SVC_VERSION) */
+    uint32_t                u32Version;
 
-    PVBOXHGCMSVCHELPERS      pHelpers;
+    PVBOXHGCMSVCHELPERS     pHelpers;
     /** @} */
 
     /** @name Filled in by the service.
      * @{ */
 
     /** Size of client information the service want to have. */
-    uint32_t                 cbClient;
-#if ARCH_BITS == 64
-    /** Ensure that the following pointers are properly aligned on 64-bit system. */
-    uint32_t                 u32Alignment0;
-#endif
+    uint32_t                cbClient;
+
+    /** The maximum number of clients per category.  Leave entries as zero for defaults. */
+    uint32_t                acMaxClients[HGCM_CLIENT_CATEGORY_MAX];
+    /** The maximum number of concurrent calls per client for each category.
+     *  Leave entries as as zero for default. */
+    uint32_t                acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_MAX];
+    /** The HGCM_CLIENT_CATEGORY_XXX value for legacy clients.
+     *  Defaults to HGCM_CLIENT_CATEGORY_KERNEL. */
+    uint32_t                idxLegacyClientCategory;
 
     /** Uninitialize service */
     DECLR3CALLBACKMEMBER(int, pfnUnload, (void *pvService));

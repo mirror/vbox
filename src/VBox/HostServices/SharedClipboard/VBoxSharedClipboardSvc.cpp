@@ -1931,7 +1931,7 @@ int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
     return rc;
 }
 
-static int svcInit(void)
+static int svcInit(VBOXHGCMSVCFNTABLE *pTable)
 {
     int rc = RTCritSectInit(&g_CritSect);
 
@@ -1939,7 +1939,7 @@ static int svcInit(void)
     {
         shClSvcModeSet(VBOX_SHCL_MODE_OFF);
 
-        rc = ShClBackendInit();
+        rc = ShClBackendInit(pTable);
 
         /* Clean up on failure, because 'svnUnload' will not be called
          * if the 'svcInit' returns an error.
@@ -2721,6 +2721,19 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
 
             pTable->cbClient = sizeof(SHCLCLIENT);
 
+            /* Map legacy clients to root. */
+            pTable->idxLegacyClientCategory = HGCM_CLIENT_CATEGORY_ROOT;
+
+            /* Limit the number of clients to 128 in each category (should be enough),
+               but set kernel clients to 1 (zero would be default). */
+            for (uintptr_t i = 0; i < RT_ELEMENTS(pTable->acMaxClients); i++)
+                pTable->acMaxClients[i] = 128;
+            pTable->acMaxClients[HGCM_CLIENT_CATEGORY_KERNEL] = 1;
+
+            /* Only 16 pending calls per client (1 should be enough). */
+            for (uintptr_t i = 0; i < RT_ELEMENTS(pTable->acMaxClients); i++)
+                pTable->acMaxCallsPerClient[i] = 16;
+
             pTable->pfnUnload            = svcUnload;
             pTable->pfnConnect           = svcConnect;
             pTable->pfnDisconnect        = svcDisconnect;
@@ -2733,7 +2746,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
             pTable->pvService            = NULL;
 
             /* Service specific initialization. */
-            rc = svcInit();
+            rc = svcInit(pTable);
         }
     }
 

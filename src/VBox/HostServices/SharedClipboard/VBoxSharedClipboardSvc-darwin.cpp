@@ -118,8 +118,9 @@ static DECLCALLBACK(int) vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-int ShClBackendInit(void)
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
 {
+    RT_NOREF(pTable);
     g_ctx.fTerminate = false;
 
     int rc = initPasteboard(&g_ctx.hPasteboard);

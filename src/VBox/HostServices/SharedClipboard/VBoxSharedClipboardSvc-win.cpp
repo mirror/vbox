@@ -603,8 +603,9 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
  * Public platform dependent functions.
  */
 
-int ShClBackendInit(void)
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
 {
+    RT_NOREF(pTable);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hr = OleInitialize(NULL);
     if (FAILED(hr))

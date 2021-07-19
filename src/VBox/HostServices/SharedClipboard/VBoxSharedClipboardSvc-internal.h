@@ -305,8 +305,11 @@ void ShClSvcUnlock(void);
  */
 /**
  * Called on initialization.
+ *
+ * @param   pTable      The HGCM service call and parameter table.  Mainly for
+ *                      adjusting the limits.
  */
-int ShClBackendInit(void);
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable);
 
 /**
  * Called on destruction.

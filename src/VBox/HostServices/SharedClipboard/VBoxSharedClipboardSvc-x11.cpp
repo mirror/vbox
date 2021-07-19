@@ -60,9 +60,14 @@ struct SHCLCONTEXT
 };
 
 
-int ShClBackendInit(void)
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
 {
     LogFlowFuncEnter();
+
+    /* Override the connection limit. */
+    for (uintptr_t i = 0; i < RT_ELEMENTS(pTable->acMaxClients); i++)
+        pTable->acMaxClients[i] = RT_MIN(VBOX_SHARED_CLIPBOARD_X11_CONNECTIONS_MAX, pTable->acMaxClients[i]);
+
     return VINF_SUCCESS;
 }
 

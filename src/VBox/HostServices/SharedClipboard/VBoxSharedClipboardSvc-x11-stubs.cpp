@@ -40,8 +40,9 @@
 /*
  * Initialise the host side of the shared clipboard - called by the hgcm layer.
  */
-int ShClBackendInit(void)
+int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
 {
+    RT_NOREF(pTable);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
