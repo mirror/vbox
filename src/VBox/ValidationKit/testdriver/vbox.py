@@ -2102,6 +2102,8 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  GraphicsController: %s"
                          % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));              # pylint: disable=not-callable
         reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));             # pylint: disable=not-callable
+        if self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_None'):
+            reporter.log("  IOMMU:              %s" % (self.oVBoxMgr.getEnumValueName('IommuType', oVM.iommuType),));             # pylint: disable=not-callable
         reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));           # pylint: disable=not-callable
         reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
         reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
@@ -2396,6 +2398,7 @@ class TestDriver(base.TestDriver):                                              
                      fVmmDevTestingMmio = False,
                      sFirmwareType = 'bios',
                      sChipsetType = 'piix3',
+                     sIommuType = 'none',
                      sDvdControllerType = 'IDE Controller',
                      sCom1RawFile = None):
         """
@@ -2460,6 +2463,10 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setChipsetType(vboxcon.ChipsetType_ICH9);
             if fRc and sCom1RawFile:
                 fRc = oSession.setupSerialToRawFile(0, sCom1RawFile);
+            if fRc and self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_AMD') and sIommuType == 'amd':
+                fRc = oSession.setIommuType(vboxcon.IommuType_AMD);
+            elif fRc and self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_Intel') and sIommuType == 'intel':
+                fRc = oSession.setIommuType(vboxcon.IommuType_Intel);
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);

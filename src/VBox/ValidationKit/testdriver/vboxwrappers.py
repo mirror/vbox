@@ -1236,6 +1236,25 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def setIommuType(self, eType):
+        """
+        Sets the IOMMU type.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        # Supported.
+        if self.fpApiVer < 6.2 or not hasattr(vboxcon, 'IommuType_Intel') or not hasattr(vboxcon, 'IommuType_AMD'):
+            return True;
+        fRc = True;
+        try:
+            self.o.machine.iommuType = eType;
+        except:
+            reporter.errorXcpt('failed to set iommuType=%s for "%s"' % (eType, self.sName));
+            fRc = False;
+        else:
+            reporter.log('set iommuType=%s for "%s"' % (eType, self.sName));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
     def setupBootLogo(self, fEnable, cMsLogoDisplay = 0):
         """
         Sets up the boot logo.  fEnable toggles the fade and boot menu
