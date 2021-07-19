@@ -1412,15 +1412,18 @@ class TestDriver(base.TestDriver):                                              
                 raise base.GenError('Malformed version "%s" - 3rd component is out of bounds 0..99: %u'
                                     % (sVer, aiVerComponents[2]));
 
-            # Convert the three integers into a floating point value.  The API is table witin a
+            # Convert the three integers into a floating point value.  The API is stable within a
             # x.y release, so the third component only indicates whether it's a stable or
             # development build of the next release.
             self.fpApiVer = aiVerComponents[0] + 0.1 * aiVerComponents[1];
             if aiVerComponents[2] >= 51:
-                if self.fpApiVer not in [4.3, 3.2,]:
+                if self.fpApiVer not in [6.1, 5.2, 4.3, 3.2,]:
                     self.fpApiVer += 0.1;
                 else:
-                    self.fpApiVer += 1.1;
+                    self.fpApiVer = int(self.fpApiVer) + 1.0;
+            # fudge value to be always bigger than the nominal value (0.1 gets rounded down)
+            if round(self.fpApiVer, 1) > self.fpApiVer:
+                self.fpApiVer += sys.float_info.epsilon * self.fpApiVer / 2.0;
 
             try:
                 self.uRevision = oVBox.revision;
