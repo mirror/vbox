@@ -1623,13 +1623,13 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         {
             if (fFlags & KeyPressed)
             {
-                static LONG PrintMake[] = { 0xE0, 0x2A, 0xE0, 0x37 };
+                static LONG PrintMake[] = { 0xE0, 0x37 };
                 pCodes = PrintMake;
                 uCodesCount = RT_ELEMENTS(PrintMake);
             }
             else
             {
-                static LONG PrintBreak[] = { 0xE0, 0xB7, 0xE0, 0xAA };
+                static LONG PrintBreak[] = { 0xE0, 0xB7 };
                 pCodes = PrintBreak;
                 uCodesCount = RT_ELEMENTS(PrintBreak);
             }
