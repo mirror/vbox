@@ -162,12 +162,14 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
             state = SS_EXT1;
         } else {
             usage = aScancode2Hid[scanCode & 0x7F];
+            AssertMsg(usage, ("SS_IDLE: scanCode=%02X\n", scanCode));
             *pUsage = usage | keyUp | HID_PG_KB_BITS;
             /* Remain in SS_IDLE state. */
         }
         break;
     case SS_EXT:
         usage = aExtScan2Hid[scanCode & 0x7F];
+        AssertMsg(usage, ("SS_EXT: scanCode=%02X\n", scanCode));
         *pUsage = usage | keyUp | HID_PG_KB_BITS;
         state = SS_IDLE;
         break;
@@ -237,7 +239,8 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
              * only send break events for Hangul/Hanja keys -- convert a lone
              * key up into a key up/key down sequence.
              */
-            if ((idUsage == (PDMIKBDPORT_KEY_UP | 0x90)) || (idUsage == (PDMIKBDPORT_KEY_UP | 0x91)))
+            if (   (idUsage == (PDMIKBDPORT_KEY_UP | HID_PG_KB_BITS | 0x90))
+                || (idUsage == (PDMIKBDPORT_KEY_UP | HID_PG_KB_BITS | 0x91)))
             {
                 PDRVKBDQUEUEITEM pItem2 = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
                 /*
