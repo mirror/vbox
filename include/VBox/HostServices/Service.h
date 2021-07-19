@@ -180,6 +180,11 @@ public:
                 {
                     /* We don't need an additional client data area on the host,
                        because we're a class which can have members for that :-). */
+                    /** @todo r=bird: What the comment above says is that we can duplicate the
+                     * work of associating data with a client ID already done by the HGCM and create
+                     * additional bugs because we think that's cool.   It's not. Utterly
+                     * appalling as well as inefficient.  Just a structure with a pointer to a
+                     * client base class would go a long way here. */
                     pTable->cbClient              = 0;
 
                     /* These functions are mandatory */
