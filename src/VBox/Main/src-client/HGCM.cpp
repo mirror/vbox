@@ -1767,7 +1767,7 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
                     m_paClientIds[m_cClients] = handle;
                     m_cClients++;
                     m_acClients[idxClientCategory]++;
-                    LogFunc(("idClient=%u m_cClients=%u m_acClients[%u]=%u %s\n", 
+                    LogFunc(("idClient=%u m_cClients=%u m_acClients[%u]=%u %s\n",
                              handle, m_cClients, idxClientCategory, m_acClients[idxClientCategory], m_pszSvcName));
                 }
             }
