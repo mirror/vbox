@@ -2029,12 +2029,31 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
      *       with HDA, so this is just a general idea of what the guest is
      *       up to and we cannot really make much of a plan out of it.
      */
+    uint8_t const  bLvi     = pStream->Regs.lvi % AC97_MAX_BDLE /* paranoia */;
+    uint8_t const  bCiv     = pStream->Regs.civ % AC97_MAX_BDLE /* paranoia */;
+    uint32_t const uAddrBdl = pStream->Regs.bdbar;
+
+    /* Linux does this a number of times while probing/whatever the device. The
+       IOMMU usually does allow us to read address zero, so let's skip and hope
+       for a better config before the guest actually wants to play/record.
+       (Note that bLvi and bCiv are also zero then, but I'm not entirely sure if
+       that can be taken to mean anything as such, as it still indicates that
+       BDLE00 is valid (LVI == last valid index).) */
+    /** @todo Instead of refusing to read address zero, we should probably allow
+     * reading address zero if explicitly programmed.  But, too much work now. */
+    if (uAddrBdl != 0)
+        LogFlowFunc(("bdbar=%#x bLvi=%#x bCiv=%#x\n", uAddrBdl, bLvi, bCiv));
+    else
+    {
+        LogFunc(("Invalid stream #%u: bdbar=%#x bLvi=%#x bCiv=%#x (%s)\n", pStreamCC->u8SD, uAddrBdl, bLvi, bCiv,
+                 PDMAudioStrmCfgToString(&Cfg, szTmp, sizeof(szTmp))));
+        return VERR_OUT_OF_RANGE;
+    }
+
     AC97BDLE aBdl[AC97_MAX_BDLE];
     RT_ZERO(aBdl);
-    PDMDevHlpPCIPhysRead(pDevIns, pStream->Regs.bdbar, aBdl, sizeof(aBdl));
+    PDMDevHlpPCIPhysRead(pDevIns, uAddrBdl, aBdl, sizeof(aBdl));
 
-    uint8_t const bLvi          = pStream->Regs.lvi % AC97_MAX_BDLE /* paranoia */;
-    uint8_t const bCiv          = pStream->Regs.civ % AC97_MAX_BDLE /* paranoia */;
     uint32_t      cSamplesMax   = 0;
     uint32_t      cSamplesMin   = UINT32_MAX;
     uint32_t      cSamplesCur   = 0;
@@ -2042,6 +2061,7 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     uint32_t      cBuffers      = 1;
     for (uintptr_t i = bCiv; ; cBuffers++)
     {
+        Log2Func(("BDLE%02u: %#x LB %#x; %#x\n", i, aBdl[i].addr, aBdl[i].ctl_len & AC97_BD_LEN_MASK, aBdl[i].ctl_len >> 16));
         cSamplesTotal += aBdl[i].ctl_len & AC97_BD_LEN_MASK;
         cSamplesCur   += aBdl[i].ctl_len & AC97_BD_LEN_MASK;
         if (aBdl[i].ctl_len & AC97_BD_IOC)
