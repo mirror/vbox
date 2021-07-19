@@ -2311,9 +2311,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
 
-            if (key.keyboardRegion() == KeyboardRegion_NumPad)
-                painter.translate(m_iBeforeNumPadWidth, 0);
-
             if(&key  == m_pKeyBeingEdited)
                 painter.setBrush(QBrush(color(KeyboardColorType_Edit)));
             else if (&key  == m_pKeyUnderMouse)
@@ -2334,12 +2331,22 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             if (key.type() != KeyType_Ordinary)
             {
                 QColor ledColor;
-                if (key.state() == KeyState_NotPressed)
-                    ledColor = color(KeyboardColorType_Font);
-                else if (key.state() == KeyState_Pressed)
-                    ledColor = QColor(0, 191, 204);
+                if (key.type() == KeyType_Lock)
+                {
+                    if (key.state() == KeyState_NotPressed)
+                        ledColor = color(KeyboardColorType_Font);
+                    else
+                        ledColor = QColor(0, 255, 0);
+                }
                 else
-                    ledColor = QColor(255, 50, 50);
+                {
+                    if (key.state() == KeyState_NotPressed)
+                        ledColor = color(KeyboardColorType_Font);
+                    else if (key.state() == KeyState_Pressed)
+                        ledColor = QColor(0, 191, 204);
+                    else
+                        ledColor = QColor(255, 50, 50);
+                }
                 if (m_enmMode == Mode_LayoutEdit)
                     ledColor = color(KeyboardColorType_Font);
                 painter.setBrush(ledColor);
@@ -2352,8 +2359,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y() + m_multiMediaKeysLayout.totalHeight());
             else
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
-            if (key.keyboardRegion() == KeyboardRegion_NumPad)
-                painter.translate(-m_iBeforeNumPadWidth, 0);
         }
     }
 }
@@ -3011,7 +3016,11 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 key.position() == iCapsLockPosition)
                 newPhysicalLayout->setLockKey(key.position(), &key);
 
-            key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
+            if (key.keyboardRegion() == KeyboardRegion_NumPad)
+                key.setKeyGeometry(QRect(iX + m_iBeforeNumPadWidth, iY, key.width(), key.height()));
+            else
+                key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
+
             key.setCornerRadius(0.1 * newPhysicalLayout->defaultKeyWidth());
             key.setPoints(UIPhysicalLayoutReader::computeKeyVertices(key));
             key.setParentWidget(this);
