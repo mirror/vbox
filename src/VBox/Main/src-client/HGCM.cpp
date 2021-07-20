@@ -348,6 +348,16 @@ int HGCMService::loadServiceDLL(void)
             m_fntable.u32Version = VBOX_HGCM_SVC_VERSION;
             m_fntable.pHelpers   = &m_svcHelpers;
 
+            /*  Total max calls: (2048 + 1024 + 1024) * 8192 = 33 554 432 */
+            m_fntable.idxLegacyClientCategory = HGCM_CLIENT_CATEGORY_KERNEL;
+            m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_KERNEL] = _2K;
+            m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_ROOT]   = _1K;
+            m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_USER]   = _1K;
+            m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_KERNEL] = _8K;
+            m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_ROOT]   = _4K;
+            m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_USER]   = _2K;
+            /** @todo provide way to configure different values via extra data.   */
+
             rc = m_pfnLoad(&m_fntable);
 
             LogFlowFunc(("m_pfnLoad rc = %Rrc\n", rc));
@@ -360,28 +370,7 @@ int HGCMService::loadServiceDLL(void)
                     && m_fntable.pfnCall != NULL
                    )
                 {
-                    /*
-                     * Set default limits if not filled in by the service.
-                     *  Total max calls: (2048 + 1024 + 1024) * 8192 = 33 554 432
-                     */
                     Assert(m_fntable.idxLegacyClientCategory < RT_ELEMENTS(m_fntable.acMaxClients));
-
-                    if (m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_KERNEL] == 0)
-                        m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_KERNEL] = _2K;
-                    if (m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_ROOT]   == 0)
-                        m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_ROOT]   = _1K;
-                    if (m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_USER]   == 0)
-                        m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_USER]   = _1K;
-
-                    if (m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_KERNEL] == 0)
-                        m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_KERNEL] = _8K;
-                    if (m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_ROOT]   == 0)
-                        m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_ROOT]   = _4K;
-                    if (m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_USER]   == 0)
-                        m_fntable.acMaxCallsPerClient[HGCM_CLIENT_CATEGORY_USER]   = _2K;
-
-                    /** @todo provide way to configure different values via extra data.   */
-
                     LogRel2(("HGCMService::loadServiceDLL: acMaxClients={%u,%u,%u} acMaxCallsPerClient={%u,%u,%u} => %RU64 calls; idxLegacyClientCategory=%d; %s\n",
                              m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_KERNEL],
                              m_fntable.acMaxClients[HGCM_CLIENT_CATEGORY_ROOT],

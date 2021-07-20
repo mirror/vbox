@@ -2534,8 +2534,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
                 pTable->cbClient = sizeof(ClientState);
 
                 /* Limit pending calls to 8 pending per connection (doubt we need more than
-                   one).  Map legacy clients to the root and limit kernel to 1 (zero would
-                   be default) and use defaults for root and user clients. */
+                   one).  Map legacy clients to the root and limit kernel to 1.  Use defaults
+                   for root and user clients. */
                 for (uintptr_t i = 0; i < RT_ELEMENTS(pTable->acMaxClients); i++)
                     pTable->acMaxCallsPerClient[i] = 8;
 
