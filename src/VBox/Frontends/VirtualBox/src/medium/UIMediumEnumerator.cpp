@@ -155,7 +155,8 @@ void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
     /* Do not create UIMedium(s) with incorrect ID: */
     AssertReturnVoid(!uMediumID.isNull());
     /* Make sure UIMedium doesn't exist already: */
-    AssertReturnVoid(!m_media.contains(uMediumID));
+    if (m_media.contains(uMediumID))
+        return;
 
     /* Insert UIMedium: */
     m_media[uMediumID] = guiMedium;
