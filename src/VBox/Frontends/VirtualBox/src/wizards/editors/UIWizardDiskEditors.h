@@ -110,6 +110,8 @@ class UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
+    void sigMediumSizeChanged(qulonglong uSize);
+    void sigMediumPathChanged(const QString &strPath);
 
 public:
 
@@ -118,6 +120,9 @@ public:
     QString mediumPath() const;
     void setMediumPath(const QString &strMediumPath);
     void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
+    qulonglong mediumSize() const;
+    void setMediumSize(qulonglong uSize);
+
 
 private:
 
@@ -132,7 +137,6 @@ private:
     QIToolButton *m_pLocationOpenButton;
     QLabel *m_pMediumSizeEditorLabel;
     UIMediumSizeEditor *m_pMediumSizeEditor;
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardDiskEditors_h */

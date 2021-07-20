@@ -346,13 +346,18 @@ void UIMediumSizeAndPathGroupBox::prepare()
     m_pMediumSizeEditor = new UIMediumSizeEditor;
     m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
 
-
     pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
     pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
     pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
     pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
+
+    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+            this, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged);
+
+    connect(m_pLocationEditor, &QILineEdit::textChanged,
+            this, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged);
 
     retranslateUi();
 }
@@ -392,6 +397,20 @@ void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFo
         }
     }
 }
+
+qulonglong UIMediumSizeAndPathGroupBox::mediumSize() const
+{
+    if (m_pMediumSizeEditor)
+        return m_pMediumSizeEditor->mediumSize();
+    return 0;
+}
+
+void UIMediumSizeAndPathGroupBox::setMediumSize(qulonglong uSize)
+{
+    if (m_pMediumSizeEditor)
+        return m_pMediumSizeEditor->setMediumSize(uSize);
+}
+
 
 /* static */
 QString UIMediumSizeAndPathGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)

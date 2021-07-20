@@ -82,7 +82,8 @@ private slots:
     void sltInstallGACheckBoxToggle(bool fEnabled);
     void sltSkipUnattendedCheckBoxChecked(bool fSkip);
     void sltMediumFormatChanged();
-    void sltMediumSizeChanged();
+    void sltMediumSizeChanged(qulonglong uSize);
+    void sltMediumPathChanged(const QString &strPath);
     void sltSelectedDiskSourceChanged();
     void sltSelectLocationButtonClicked();
 
@@ -162,7 +163,9 @@ private:
         QIToolButton *m_pDiskSelectionButton;
         QSet<QString> m_userModifiedParameters;
         SelectedDiskSource m_enmSelectedDiskSource;
-    bool m_fRecommendedNoDisk;
+        bool m_fRecommendedNoDisk;
+        qulonglong m_uMediumSizeMin;
+        qulonglong m_uMediumSizeMax;
     /** @} */
 };
 

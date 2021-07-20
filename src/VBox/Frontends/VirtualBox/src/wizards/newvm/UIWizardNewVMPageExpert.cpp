@@ -70,6 +70,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     , m_pDiskSelectionButton(0)
     , m_enmSelectedDiskSource(SelectedDiskSource_New)
     , m_fRecommendedNoDisk(false)
+    , m_uMediumSizeMin(_4M)
+    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -286,14 +288,14 @@ void UIWizardNewVMPageExpert::createConnections()
 
     connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 
-    // if (m_pFormatButtonGroup)
-    //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-    //             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
+    if (m_pSizeAndLocationGroup)
+    {
+        connect(m_pSizeAndLocationGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
+                this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
+        connect(m_pSizeAndLocationGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+                this, &UIWizardNewVMPageExpert::sltMediumPathChanged);
 
     // /* Virtual disk related connections: */
-    // if (m_pMediumSizeEditor)
-    //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-    //             this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
 
     // if (m_pDiskSelectionButton)
     //     connect(m_pDiskSelectionButton, &QIToolButton::clicked,
@@ -302,6 +304,12 @@ void UIWizardNewVMPageExpert::createConnections()
     // if (m_pDiskSelector)
     //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
     //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
+
+    }
+    // if (m_pFormatButtonGroup)
+    //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    //             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
+
 
 
     // if (m_pLocationOpenButton)
@@ -329,11 +337,11 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
         m_pHardwareWidgetContainer->blockSignals(false);
     }
-    LONG64 recommendedDiskSize = type.GetRecommendedHDD();
+    LONG64 iRecommendedDiskSize = type.GetRecommendedHDD();
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
-        if (recommendedDiskSize != 0)
+        if (iRecommendedDiskSize != 0)
         {
             if (m_pDiskNew)
                 m_pDiskNew->setChecked(true);
@@ -355,12 +363,8 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
             m_pDiskSelector->setCurrentIndex(0);
     }
 
-    // if (m_pMediumSizeEditor  && !m_userSetWidgets.contains(m_pMediumSizeEditor))
-    // {
-    //     m_pMediumSizeEditor->blockSignals(true);
-    //     setMediumSize(recommendedDiskSize);
-    //     m_pMediumSizeEditor->blockSignals(false);
-    // }
+    if (m_pSizeAndLocationGroup  && !m_userModifiedParameters.contains("MediumSize"))
+        m_pSizeAndLocationGroup->setMediumSize(iRecommendedDiskSize);
 
     // if (m_pProductKeyLabel)
     //     m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
@@ -582,17 +586,18 @@ bool UIWizardNewVMPageExpert::isComplete() const
         }
     }
 
-    if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (m_enmSelectedDiskSource == SelectedDiskSource_New && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
         fIsComplete = false;
     }
 
-    if (m_pDiskNew && m_pDiskNew->isChecked())
+    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
     {
+
         qulonglong uSize = pWizard->mediumSize();
-        if (uSize <= 0)
+        if( uSize >= m_uMediumSizeMin && uSize <= m_uMediumSizeMax)
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                          UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
@@ -600,11 +605,6 @@ bool UIWizardNewVMPageExpert::isComplete() const
         }
     }
 
-
-     // return !mediumFormat().isNull() &&
-     //       mediumVariant() != (qulonglong)KMediumVariant_Max &&
-     //       !m_pLocationEditor->text().trimmed().isEmpty() &&
-     //       mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
 
     return fIsComplete;
 }
@@ -686,12 +686,21 @@ void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked(bool fSkip)
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 {
     updateWidgetAterMediumFormatChange();
-    completeChanged();
+    emit completeChanged();
 }
 
-void UIWizardNewVMPageExpert::sltMediumSizeChanged()
+void UIWizardNewVMPageExpert::sltMediumSizeChanged(qulonglong uSize)
 {
-    completeChanged();
+    m_userModifiedParameters << "MediumSize";
+    newVMWizardPropertySet(MemorySize, uSize);
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltMediumPathChanged(const QString &strPath)
+{
+    m_userModifiedParameters << "MediumPath";
+    newVMWizardPropertySet(MediumPath, strPath);
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()

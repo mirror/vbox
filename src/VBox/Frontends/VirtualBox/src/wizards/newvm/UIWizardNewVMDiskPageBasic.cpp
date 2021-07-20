@@ -398,9 +398,6 @@ bool UIWizardNewVMDiskPageBasic::isComplete() const
     if (m_enmSelectedDiskSource == SelectedDiskSource_Existing)
         return !pWizard->virtualDisk().isNull();
 
-    if (m_pDiskNew && m_pDiskNew->isChecked() && uSize <= 0)
-        return false;
-
     return true;
 }
 
