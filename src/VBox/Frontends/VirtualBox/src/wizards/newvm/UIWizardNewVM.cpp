@@ -65,6 +65,8 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_iCPUCount(1)
     , m_iMemorySize(0)
     , m_iUnattendedInstallPageIndex(-1)
+    , m_uMediumVariant(0)
+    , m_uMediumSize(0)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */

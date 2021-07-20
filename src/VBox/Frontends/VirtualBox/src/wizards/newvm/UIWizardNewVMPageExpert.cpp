@@ -361,9 +361,12 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         if (m_pDiskSelector)
             m_pDiskSelector->setCurrentIndex(0);
     }
-
+    /* Initialize the medium size widgets and the member parameter of the wizard: */
     if (m_pSizeAndLocationGroup  && !m_userModifiedParameters.contains("MediumSize"))
+    {
         m_pSizeAndLocationGroup->setMediumSize(iRecommendedDiskSize);
+        newVMWizardPropertySet(MediumSize, iRecommendedDiskSize);
+    }
 
     // if (m_pProductKeyLabel)
     //     m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
@@ -595,7 +598,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (m_enmSelectedDiskSource == SelectedDiskSource_New)
     {
         qulonglong uSize = pWizard->mediumSize();
-        if( uSize >= m_uMediumSizeMin && uSize <= m_uMediumSizeMax)
+        if( uSize < m_uMediumSizeMin || uSize > m_uMediumSizeMax)
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                          UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
@@ -687,7 +690,7 @@ void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 void UIWizardNewVMPageExpert::sltMediumSizeChanged(qulonglong uSize)
 {
     m_userModifiedParameters << "MediumSize";
-    newVMWizardPropertySet(MemorySize, uSize);
+    newVMWizardPropertySet(MediumSize, uSize);
     emit completeChanged();
 }
 
