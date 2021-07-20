@@ -80,6 +80,8 @@ void UIProgressTask::start()
         if (m_pProgressObject)
         {
             /* Setup connections: */
+            connect(m_pProgressObject.data(), &UIProgressObject::sigProgressChange,
+                    this, &UIProgressTask::sltHandleProgressChange);
             connect(m_pProgressObject.data(), &UIProgressObject::sigProgressEventHandlingFinished,
                     this, &UIProgressTask::sltHandleProgressEventHandlingFinished);
 
@@ -93,6 +95,13 @@ void UIProgressTask::cancel()
 {
     if (m_pProgressObject)
         m_pProgressObject->cancel();
+}
+
+void UIProgressTask::sltHandleProgressChange(ulong /*uOperations*/, QString /*strOperation*/,
+                                             ulong /*uOperation*/, ulong uPercent)
+{
+    /* Notify external listeners: */
+    emit sigProgressChange(uPercent);
 }
 
 void UIProgressTask::sltHandleProgressEventHandlingFinished()

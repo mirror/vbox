@@ -45,6 +45,9 @@ signals:
 
     /** Notifies listeners about progress has started. */
     void sigProgressStarted();
+    /** Notifies listeners about progress has changed.
+      * @param  uPercent  Brings the progress percentage. */
+    void sigProgressChange(ulong uPercent);
     /** Notifies listeners about progress has finished. */
     void sigProgressFinished();
 
@@ -84,6 +87,13 @@ protected:
 
 private slots:
 
+    /** Handles progress change.
+      * @param  iOperations   Brings the number of operations CProgress have.
+      * @param  strOperation  Brings the description of the current CProgress operation.
+      * @param  iOperation    Brings the index of the current CProgress operation.
+      * @param  iPercent      Brings the percentage of the current CProgress operation. */
+    void sltHandleProgressChange(ulong uOperations, QString strOperation,
+                                 ulong uOperation, ulong uPercent);
     /** Handles progress event handling finished signal. */
     void sltHandleProgressEventHandlingFinished();
 
