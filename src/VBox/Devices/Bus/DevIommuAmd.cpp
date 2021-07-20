@@ -1250,12 +1250,12 @@ static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, PIOMMUR3 pThisR3, uint64_t idDo
  * @param   pThis           The shared IOMMU device state.
  * @param   pThisR3         The ring-3 IOMMU device state.
  * @param   idDomain        The domain ID.
- * @param   uIova           The I/O virtual address.
+ * @param   uIovaPage       The I/O virtual address (must be 4K aligned).
  * @param   pPageLookup     The I/O page lookup result of the access.
  */
-static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, uint64_t uIova, PCIOPAGELOOKUP pPageLookup)
+static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, uint64_t uIovaPage, PCIOPAGELOOKUP pPageLookup)
 {
-    Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
+    Assert(!(uIovaPage & X86_PAGE_4K_OFFSET_MASK));
     Assert(pPageLookup);
     Assert(pPageLookup->cShift <= 31);
     Assert(pPageLookup->fPerm != IOMMU_IO_PERM_NONE);
@@ -1275,7 +1275,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, 
             iommuAmdIotlbEntryRemove(pThis, pThisR3, pIotlbe->Core.Key);
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIova, pPageLookup);
+        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIovaPage, pPageLookup);
 
         /* Move the entry to the most recently used slot. */
         iommuAmdIotlbEntryMoveToMru(pThisR3, pIotlbe);
@@ -1287,7 +1287,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, 
         ++pThisR3->idxUnusedIotlbe;
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIova, pPageLookup);
+        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIovaPage, pPageLookup);
 
         /* Add the entry to the most recently used slot. */
         RTListAppend(&pThisR3->LstLruIotlbe, &pIotlbe->NdLru);
@@ -1383,46 +1383,49 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t idDomain)
 /**
  * Adds or updates IOTLB entries for the given range of I/O virtual addresses.
  *
- * @param   pDevIns     The IOMMU instance data.
- * @param   idDomain    The domain ID.
- * @param   uIova       The I/O virtual address.
- * @param   cbIova      The size of the access (must be 4K aligned).
- * @param   GCPhysSpa   The translated system-physical address.
- * @param   fPerm       The I/O permissions for the access, see IOMMU_IO_PERM_XXX.
+ * @param   pDevIns         The IOMMU instance data.
+ * @param   idDomain        The domain ID.
+ * @param   uIovaPage       The I/O virtual address (must be 4K aligned).
+ * @param   cbContiguous    The size of the access.
+ * @param   pAddrOut        The translated I/O address lookup.
+ *
+ * @remarks All pages in the range specified by @c cbContiguous must have identical
+ *          permissions and page sizes.
  */
-static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_t uIova, size_t cbIova, RTGCPHYS GCPhysSpa,
-                                  uint8_t fPerm)
+static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_t uIovaPage, size_t cbContiguous,
+                                  PCIOPAGELOOKUP pAddrOut)
 {
-    Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
-    Assert(!(GCPhysSpa & X86_PAGE_4K_OFFSET_MASK));
-    Assert(!(cbIova & X86_PAGE_4K_OFFSET_MASK));
-    Assert(cbIova >= X86_PAGE_4K_SIZE);
+    Assert(!(uIovaPage & X86_PAGE_4K_OFFSET_MASK));
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
 
-    /* Add IOTLB entries for every page in the access. */
     IOPAGELOOKUP PageLookup;
-    RT_ZERO(PageLookup);
-    PageLookup.cShift    = X86_PAGE_4K_SHIFT;
-    PageLookup.fPerm     = fPerm;
-    PageLookup.GCPhysSpa = GCPhysSpa;
+    PageLookup.GCPhysSpa = pAddrOut->GCPhysSpa & X86_PAGE_4K_BASE_MASK;;
+    PageLookup.cShift    = pAddrOut->cShift;
+    PageLookup.fPerm     = pAddrOut->fPerm;
+
+    size_t const cbIova = RT_ALIGN_Z(cbContiguous, X86_PAGE_4K_SIZE);
+    Assert(!(cbIova & X86_PAGE_4K_OFFSET_MASK));
+    Assert(cbIova >= X86_PAGE_4K_SIZE);
 
     size_t cPages = cbIova / X86_PAGE_4K_SIZE;
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
 
-    Assert((cbIova % X86_PAGE_4K_SIZE) == 0);
-    Assert(cPages > 0);
-
     IOMMU_CACHE_LOCK(pDevIns, pThis);
     /** @todo Re-check DTE cache? */
-    do
+    /*
+     * Add IOTLB entries for every page in the access.
+     * The page size and permissions are assumed to be identical to every
+     * page in this access.
+     */
+    while (cPages > 0)
     {
-        iommuAmdIotlbAdd(pThis, pThisR3, idDomain, uIova, &PageLookup);
-        uIova                += X86_PAGE_4K_SIZE;
+        iommuAmdIotlbAdd(pThis, pThisR3, idDomain, uIovaPage, &PageLookup);
+        uIovaPage            += X86_PAGE_4K_SIZE;
         PageLookup.GCPhysSpa += X86_PAGE_4K_SIZE;
         --cPages;
-    } while (cPages > 0);
+    }
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
@@ -3866,12 +3869,12 @@ static DECLCALLBACK(int) iommuAmdDteLookupPage(PPDMDEVINS pDevIns, uint64_t uIov
  * @param   pAddrIn             The I/O address range to lookup.
  * @param   pAux                The auxiliary information required by the lookup
  *                              function.
- * @param   pAddrOut            Where to store the translated I/O address range.
- * @param   pcbPages            Where to store the size of the access (round up to
- *                              the page size). Optional, can be NULL.
+ * @param   pAddrOut            Where to store the translated I/O address page
+ *                              lookup.
+ * @param   pcbContiguous       Where to store the size of the access.
  */
 static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPageLookup, PCIOADDRRANGE pAddrIn,
-                                     PCIOMMUOPAUX pAux, PIOADDRRANGE pAddrOut, size_t *pcbPages)
+                                     PCIOMMUOPAUX pAux, PIOPAGELOOKUP pAddrOut, size_t *pcbContiguous)
 {
     int            rc;
     size_t const   cbIova      = pAddrIn->cb;
@@ -3881,7 +3884,6 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
     size_t         cbRemaining = cbIova;
     uint64_t       uIovaPage   = pAddrIn->uAddr & X86_PAGE_4K_BASE_MASK;
     uint64_t       offIova     = pAddrIn->uAddr & X86_PAGE_4K_OFFSET_MASK;
-    size_t         cbPages     = 0;
     size_t const   cbPage      = X86_PAGE_4K_SIZE;
 
     IOPAGELOOKUP PageLookupPrev;
@@ -3901,18 +3903,23 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             /* Store the translated address before continuing to access more pages. */
             if (cbRemaining == cbIova)
             {
-                uint64_t const offMask = X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift);
-                uint64_t const offSpa  = uIova & offMask;
+                uint64_t const offSpa = uIova & X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift);
                 GCPhysSpa = PageLookup.GCPhysSpa | offSpa;
             }
             /*
              * Check if translated address results in a physically contiguous region.
+             *
              * Also ensure that the permissions for all pages in this range are identical
              * because we specify a common permission while adding pages in this range
              * to the IOTLB cache.
+             *
+             * The page size must also be identical since we need to know how many offset
+             * bits to copy into the final translated address (while retrieving 4K sized
+             * pages from the IOTLB cache).
              */
-            else if (   PageLookupPrev.GCPhysSpa + cbPage == PageLookup.GCPhysSpa
-                     && PageLookupPrev.fPerm              == PageLookup.fPerm)
+            else if (   PageLookup.GCPhysSpa == PageLookupPrev.GCPhysSpa + cbPage
+                     && PageLookup.fPerm     == PageLookupPrev.fPerm
+                     && PageLookup.cShift    == PageLookupPrev.cShift)
             { /* likely */ }
             else
             {
@@ -3923,9 +3930,6 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
 
             /* Store the page lookup result from the first/previous page. */
             PageLookupPrev = PageLookup;
-
-            /* Update size of all pages read thus far. */
-            cbPages += cbPage;
 
             /* Check if we need to access more pages. */
             if (cbRemaining > cbPage - offIova)
@@ -3945,11 +3949,10 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             break;
     }
 
-    pAddrOut->uAddr = GCPhysSpa;                   /* Update the translated address. */
-    pAddrOut->cb    = cbIova - cbRemaining;        /* Update the size of the contiguous memory region. */
-    pAddrOut->fPerm = PageLookupPrev.fPerm;        /* Update the allowed permissions for this access. */
-    if (pcbPages)
-        *pcbPages = cbPages;                       /* Update the size (in bytes) of the pages accessed. */
+    pAddrOut->GCPhysSpa = GCPhysSpa;                  /* Update the translated address. */
+    pAddrOut->cShift    = PageLookupPrev.cShift;      /* Update the page size of the lookup. */
+    pAddrOut->fPerm     = PageLookupPrev.fPerm;       /* Update the allowed permissions for this access. */
+    *pcbContiguous      = cbIova - cbRemaining;       /* Update the size of the contiguous memory region. */
     return rc;
 }
 
@@ -4009,13 +4012,10 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
                     Aux.idDevice = idDevice;
                     Aux.idDomain = Dte.n.u16DomainId;
 
-                    size_t cbPages;
-                    IOADDRRANGE AddrOut;
-
                     /* Lookup the address from the DTE and I/O page tables.*/
-                    rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdDteLookupPage, &AddrIn, &Aux, &AddrOut, &cbPages);
-                    GCPhysSpa    = AddrOut.uAddr;
-                    cbContiguous = AddrOut.cb;
+                    IOPAGELOOKUP AddrOut;
+                    rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdDteLookupPage, &AddrIn, &Aux, &AddrOut, &cbContiguous);
+                    GCPhysSpa = AddrOut.GCPhysSpa;
 
                     /*
                      * If we stopped since translation resulted in non-contiguous physical addresses
@@ -4037,8 +4037,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
                         iommuAmdDteCacheAdd(pDevIns, Aux.idDevice, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
-                        iommuAmdIotlbAddRange(pDevIns, Aux.idDomain, AddrIn.uAddr & X86_PAGE_4K_BASE_MASK, cbPages,
-                                              AddrOut.uAddr & X86_PAGE_4K_BASE_MASK, AddrOut.fPerm);
+                        iommuAmdIotlbAddRange(pDevIns, Aux.idDomain, uIova & X86_PAGE_4K_BASE_MASK, cbContiguous, &AddrOut);
                     }
 #endif
                 }
@@ -4210,11 +4209,10 @@ static int iommuAmdIotlbCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint6
             Aux.idDevice = idDevice;
             Aux.idDomain = pDteCache->idDomain;
 
-            IOADDRRANGE AddrOut;
-            rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdCacheLookupPage, &AddrIn, &Aux, &AddrOut, NULL /* pcbPages */);
-            Assert(AddrOut.cb <= cbIova);
-            *pGCPhysSpa    = AddrOut.uAddr;
-            *pcbContiguous = AddrOut.cb;
+            IOPAGELOOKUP AddrOut;
+            rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdCacheLookupPage, &AddrIn, &Aux, &AddrOut, pcbContiguous);
+            *pGCPhysSpa = AddrOut.GCPhysSpa;
+            Assert(*pcbContiguous <= cbIova);
         }
         else if ((pDteCache->fFlags & (IOMMU_DTE_CACHE_F_PRESENT | IOMMU_DTE_CACHE_F_VALID | IOMMU_DTE_CACHE_F_IO_PERM))
                                    == (IOMMU_DTE_CACHE_F_PRESENT | IOMMU_DTE_CACHE_F_VALID | IOMMU_DTE_CACHE_F_IO_PERM))
