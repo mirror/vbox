@@ -181,6 +181,12 @@ typedef struct VBOXHGCMCMD
     /** The PGM lock for GCPhys if pvReqLocked is not NULL. */
     PGMPAGEMAPLOCK      ReqMapLock;
 
+    /** The accounting index (into VMMDEVR3::aHgcmAcc). */
+    uint8_t             idxHeapAcc;
+    uint8_t             abPadding[3];
+    /** The heap cost of this command. */
+    uint32_t            cbHeapCost;
+
     /** The STAM_GET_TS() value when the request arrived. */
     uint64_t            tsArrival;
     /** The STAM_GET_TS() value when the hgcmR3Completed() is called. */
@@ -230,15 +236,22 @@ typedef struct VBOXHGCMCMD
  */
 typedef struct VBOXHGCMCMDCACHED
 {
-    VBOXHGCMCMD         Core;           /**< 112 */
+    VBOXHGCMCMD         Core;           /**< 120 */
     VBOXHGCMGUESTPARM   aGuestParms[6]; /**< 40 * 6 = 240 */
     VBOXHGCMSVCPARM     aHostParms[6];  /**< 24 * 6 = 144 */
-} VBOXHGCMCMDCACHED;                    /**< 112+240+144 = 496 */
-AssertCompile(sizeof(VBOXHGCMCMD) <= 112);
+} VBOXHGCMCMDCACHED;                    /**< 120+240+144 = 504 */
+AssertCompile(sizeof(VBOXHGCMCMD) <= 120);
 AssertCompile(sizeof(VBOXHGCMGUESTPARM) <= 40);
 AssertCompile(sizeof(VBOXHGCMSVCPARM) <= 24);
 AssertCompile(sizeof(VBOXHGCMCMDCACHED) <= 512);
 AssertCompile(sizeof(VBOXHGCMCMDCACHED) > sizeof(VBOXHGCMCMD) + sizeof(HGCMServiceLocation));
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+DECLINLINE(void *) vmmdevR3HgcmCallMemAllocZ(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, size_t cbRequested);
+
 
 
 DECLINLINE(int) vmmdevR3HgcmCmdListLock(PVMMDEVCC pThisCC)
@@ -267,6 +280,10 @@ DECLINLINE(void) vmmdevR3HgcmCmdListUnlock(PVMMDEVCC pThisCC)
 static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPhys,
                                          uint32_t cbRequest, uint32_t cParms, uint32_t fRequestor)
 {
+    /* For heap accounting. */
+    uintptr_t const idxHeapAcc = fRequestor != VMMDEV_REQUESTOR_LEGACY
+                               ? fRequestor & VMMDEV_REQUESTOR_USR_MASK
+                               : VMMDEV_REQUESTOR_USR_NOT_GIVEN;
 #if 1
     /*
      * Try use the cache.
@@ -275,26 +292,41 @@ static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmC
     AssertCompile(sizeof(*pCmdCached) >= sizeof(VBOXHGCMCMD) + sizeof(HGCMServiceLocation));
     if (cParms <= RT_ELEMENTS(pCmdCached->aGuestParms))
     {
-        int rc = RTMemCacheAllocEx(pThisCC->hHgcmCmdCache, (void **)&pCmdCached);
-        if (RT_SUCCESS(rc))
+        if (sizeof(*pCmdCached) <= pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget)
         {
-            RT_ZERO(*pCmdCached);
-            pCmdCached->Core.fMemCache  = true;
-            pCmdCached->Core.GCPhys     = GCPhys;
-            pCmdCached->Core.cbRequest  = cbRequest;
-            pCmdCached->Core.enmCmdType = enmCmdType;
-            pCmdCached->Core.fRequestor = fRequestor;
-            if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
+            int rc = RTMemCacheAllocEx(pThisCC->hHgcmCmdCache, (void **)&pCmdCached);
+            if (RT_SUCCESS(rc))
             {
-                pCmdCached->Core.u.call.cParms       = cParms;
-                pCmdCached->Core.u.call.paGuestParms = pCmdCached->aGuestParms;
-                pCmdCached->Core.u.call.paHostParms  = pCmdCached->aHostParms;
-            }
-            else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
-                pCmdCached->Core.u.connect.pLoc = (HGCMServiceLocation *)(&pCmdCached->Core + 1);
+                RT_ZERO(*pCmdCached);
+                pCmdCached->Core.fMemCache  = true;
+                pCmdCached->Core.GCPhys     = GCPhys;
+                pCmdCached->Core.cbRequest  = cbRequest;
+                pCmdCached->Core.enmCmdType = enmCmdType;
+                pCmdCached->Core.fRequestor = fRequestor;
+                pCmdCached->Core.idxHeapAcc = (uint8_t)idxHeapAcc;
+                pCmdCached->Core.cbHeapCost = sizeof(*pCmdCached);
+                Log5Func(("aHgcmAcc[%zu] %#RX64 -= %#zx (%p)\n",
+                          idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, sizeof(*pCmdCached), &pCmdCached->Core));
+                pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget -= sizeof(*pCmdCached);
 
-            return &pCmdCached->Core;
+                if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
+                {
+                    pCmdCached->Core.u.call.cParms       = cParms;
+                    pCmdCached->Core.u.call.paGuestParms = pCmdCached->aGuestParms;
+                    pCmdCached->Core.u.call.paHostParms  = pCmdCached->aHostParms;
+                }
+                else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
+                    pCmdCached->Core.u.connect.pLoc = (HGCMServiceLocation *)(&pCmdCached->Core + 1);
+
+                Assert(!pCmdCached->Core.pvReqLocked);
+
+                Log3Func(("returns %p (enmCmdType=%d GCPhys=%RGp)\n", &pCmdCached->Core, enmCmdType, GCPhys));
+                return &pCmdCached->Core;
+            }
         }
+        else
+            LogFunc(("Heap budget overrun: sizeof(*pCmdCached)=%#zx aHgcmAcc[%zu].cbHeapBudget=%#RX64 - enmCmdType=%d\n",
+                     sizeof(*pCmdCached), idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, enmCmdType));
         return NULL;
     }
     STAM_REL_COUNTER_INC(&pThisCC->StatHgcmLargeCmdAllocs);
@@ -306,42 +338,57 @@ static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmC
     /* Size of required memory buffer. */
     const uint32_t cbCmd = sizeof(VBOXHGCMCMD) + cParms * (sizeof(VBOXHGCMGUESTPARM) + sizeof(VBOXHGCMSVCPARM))
                          + (enmCmdType == VBOXHGCMCMDTYPE_CONNECT ? sizeof(HGCMServiceLocation) : 0);
-
-    PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ(cbCmd);
-    if (pCmd)
+    if (cbCmd <= pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget)
     {
-        pCmd->enmCmdType = enmCmdType;
-        pCmd->GCPhys     = GCPhys;
-        pCmd->cbRequest  = cbRequest;
-        pCmd->fRequestor = fRequestor;
-
-        if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
+        PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ(cbCmd);
+        if (pCmd)
         {
-            pCmd->u.call.cParms = cParms;
-            if (cParms)
+            pCmd->enmCmdType = enmCmdType;
+            pCmd->GCPhys     = GCPhys;
+            pCmd->cbRequest  = cbRequest;
+            pCmd->fRequestor = fRequestor;
+            pCmd->idxHeapAcc = (uint8_t)idxHeapAcc;
+            pCmd->cbHeapCost = cbCmd;
+            Log5Func(("aHgcmAcc[%zu] %#RX64 -= %#x (%p)\n", idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, cbCmd, pCmd));
+            pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget -= cbCmd;
+
+            if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
             {
-                pCmd->u.call.paGuestParms = (VBOXHGCMGUESTPARM *)((uint8_t *)pCmd
-                                                                  + sizeof(struct VBOXHGCMCMD));
-                pCmd->u.call.paHostParms = (VBOXHGCMSVCPARM *)((uint8_t *)pCmd->u.call.paGuestParms
-                                                               + cParms * sizeof(VBOXHGCMGUESTPARM));
+                pCmd->u.call.cParms = cParms;
+                if (cParms)
+                {
+                    pCmd->u.call.paGuestParms = (VBOXHGCMGUESTPARM *)((uint8_t *)pCmd
+                                                                      + sizeof(struct VBOXHGCMCMD));
+                    pCmd->u.call.paHostParms = (VBOXHGCMSVCPARM *)((uint8_t *)pCmd->u.call.paGuestParms
+                                                                   + cParms * sizeof(VBOXHGCMGUESTPARM));
+                }
             }
+            else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
+                pCmd->u.connect.pLoc = (HGCMServiceLocation *)(pCmd + 1);
         }
-        else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
-            pCmd->u.connect.pLoc = (HGCMServiceLocation *)(pCmd + 1);
+        Log3Func(("returns %p (enmCmdType=%d GCPhys=%RGp cbCmd=%#x)\n", pCmd, enmCmdType, GCPhys, cbCmd));
+        return pCmd;
     }
-    return pCmd;
+    LogFunc(("Heap budget overrun: cbCmd=%#x aHgcmAcc[%zu].cbHeapBudget=%#RX64 - enmCmdType=%d\n",
+             cbCmd, idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, enmCmdType));
+    return NULL;
 }
 
 /** Deallocate VBOXHGCMCMD memory.
  *
  * @param   pDevIns         The device instance.
+ * @param   pThis           The VMMDev shared instance data.
  * @param   pThisCC         The VMMDev ring-3 instance data.
  * @param   pCmd            Command to deallocate.
  */
-static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd)
+static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd)
 {
     if (pCmd)
     {
+        Assert(   pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL
+               || pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT
+               || pCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT
+               || pCmd->enmCmdType == VBOXHGCMCMDTYPE_LOADSTATE);
         if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL)
         {
             uint32_t i;
@@ -389,12 +436,35 @@ static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCM
             pCmd->pvReqLocked = NULL;
         }
 
+        pCmd->enmCmdType = UINT8_MAX; /* poison */
+
+        /* Update heap budget.  Need the critsect to do this safely. */
+        Assert(pCmd->cbHeapCost != 0);
+        uintptr_t idx = pCmd->idxHeapAcc;
+        AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
+
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+
+        Log5Func(("aHgcmAcc[%zu] %#RX64 += %#x (%p)\n", idx, pThisCC->aHgcmAcc[idx].cbHeapBudget, pCmd->cbHeapCost, pCmd));
+        pThisCC->aHgcmAcc[idx].cbHeapBudget += pCmd->cbHeapCost;
+        AssertMsg(pThisCC->aHgcmAcc[idx].cbHeapBudget <= pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig,
+                  ("idx=%d (%d) fRequestor=%#x pCmd=%p: %#RX64 vs %#RX64 -> %#RX64\n", idx, pCmd->idxHeapAcc, pCmd->fRequestor, pCmd,
+                   pThisCC->aHgcmAcc[idx].cbHeapBudget,  pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig,
+                   pThisCC->aHgcmAcc[idx].cbHeapBudget - pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig));
+        pCmd->cbHeapCost = 0;
+
 #if 1
         if (pCmd->fMemCache)
+        {
             RTMemCacheFree(pThisCC->hHgcmCmdCache, pCmd);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* releasing it after just to be on the safe side. */
+        }
         else
 #endif
+        {
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             RTMemFree(pCmd);
+        }
     }
 }
 
@@ -414,6 +484,12 @@ static int vmmdevR3HgcmAddCommand(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC p
     LogFlowFunc(("%p type %d\n", pCmd, pCmd->enmCmdType));
 
     RTListPrepend(&pThisCC->listHGCMCmd, &pCmd->node);
+
+    /* stats */
+    uintptr_t idx = pCmd->idxHeapAcc;
+    AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
+    STAM_REL_COUNTER_ADD(&pThisCC->aHgcmAcc[idx].cbHeapTotal, pCmd->cbHeapCost);
+    STAM_REL_COUNTER_INC(&pThisCC->aHgcmAcc[idx].cTotalMessages);
 
     /* Automatically enable HGCM events, if there are HGCM commands. */
     if (   pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT
@@ -682,10 +758,11 @@ static int vmmdevR3HgcmGuestBufferWrite(PPDMDEVINSR3 pDevIns, const VBOXHGCMPARM
  *
  * @returns VBox status code that the guest should see.
  * @param   pDevIns         The device instance.
+ * @param   pThisCC         The VMMDev ring-3 instance data.
  * @param   pCmd            Command structure where host parameters needs initialization.
  * @param   pbReq           The request buffer.
  */
-static int vmmdevR3HgcmInitHostParameters(PPDMDEVINS pDevIns, PVBOXHGCMCMD pCmd, uint8_t const *pbReq)
+static int vmmdevR3HgcmInitHostParameters(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, uint8_t const *pbReq)
 {
     AssertReturn(pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL, VERR_INTERNAL_ERROR);
 
@@ -727,7 +804,7 @@ static int vmmdevR3HgcmInitHostParameters(PPDMDEVINS pDevIns, PVBOXHGCMCMD pCmd,
                 if (cbData)
                 {
                     /* Zero memory, the buffer content is potentially copied to the guest. */
-                    void *pv = RTMemAllocZ(cbData);
+                    void *pv = vmmdevR3HgcmCallMemAllocZ(pThisCC, pCmd, cbData);
                     AssertReturn(pv, VERR_NO_MEMORY);
                     pHostParm->u.pointer.addr = pv;
 
@@ -830,6 +907,58 @@ static int vmmdevR3HgcmCallAlloc(PVMMDEVCC pThisCC, const VMMDevHGCMCall *pHGCMC
     return VINF_SUCCESS;
 }
 
+/**
+ * Heap budget wrapper around RTMemAlloc and RTMemAllocZ.
+ */
+static void *vmmdevR3HgcmCallMemAllocEx(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, size_t cbRequested, bool fZero)
+{
+    /* Check against max heap costs for this request. */
+    Assert(pCmd->cbHeapCost <= VMMDEV_MAX_HGCM_DATA_SIZE);
+    if (cbRequested <= VMMDEV_MAX_HGCM_DATA_SIZE - pCmd->cbHeapCost)
+    {
+        /* Check heap budget (we're under lock). */
+        uintptr_t idx = pCmd->idxHeapAcc;
+        AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
+        if (cbRequested <= pThisCC->aHgcmAcc[idx].cbHeapBudget)
+        {
+            /* Do the actual allocation. */
+            void *pv = fZero ? RTMemAllocZ(cbRequested) : RTMemAlloc(cbRequested);
+            if (pv)
+            {
+                /* Update the request cost and heap budget. */
+                Log5Func(("aHgcmAcc[%zu] %#RX64 += %#x (%p)\n", idx, pThisCC->aHgcmAcc[idx].cbHeapBudget, cbRequested, pCmd));
+                pThisCC->aHgcmAcc[idx].cbHeapBudget -=           cbRequested;
+                pCmd->cbHeapCost                    += (uint32_t)cbRequested;
+                return pv;
+            }
+            LogFunc(("Heap alloc failed: cbRequested=%#zx - enmCmdType=%d\n", cbRequested, pCmd->enmCmdType));
+        }
+        else
+            LogFunc(("Heap budget overrun: cbRequested=%#zx cbHeapCost=%#x aHgcmAcc[%u].cbHeapBudget=%#RX64 - enmCmdType=%d\n",
+                     cbRequested, pCmd->cbHeapCost, pCmd->idxHeapAcc, pThisCC->aHgcmAcc[idx].cbHeapBudget, pCmd->enmCmdType));
+    }
+    else
+        LogFunc(("Request too big: cbRequested=%#zx cbHeapCost=%#x - enmCmdType=%d\n",
+                 cbRequested, pCmd->cbHeapCost, pCmd->enmCmdType));
+    return NULL;
+}
+
+/**
+ * Heap budget wrapper around RTMemAlloc.
+ */
+DECLINLINE(void *) vmmdevR3HgcmCallMemAlloc(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, size_t cbRequested)
+{
+    return vmmdevR3HgcmCallMemAllocEx(pThisCC, pCmd, cbRequested, false /*fZero*/);
+}
+
+/**
+ * Heap budget wrapper around RTMemAllocZ.
+ */
+DECLINLINE(void *) vmmdevR3HgcmCallMemAllocZ(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, size_t cbRequested)
+{
+    return vmmdevR3HgcmCallMemAllocEx(pThisCC, pCmd, cbRequested, true /*fZero*/);
+}
+
 /** Copy VMMDevHGCMCall request data from the guest to VBOXHGCMCMD command.
  *
  * @returns VBox status code that the guest should see.
@@ -863,7 +992,6 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
     /* Pointer to the next HGCM parameter of the request. */
     const uint8_t *pu8HGCMParm = (uint8_t *)pHGCMCall + offHGCMParms;
 
-    uint32_t cbTotalData = 0;
     for (uint32_t i = 0; i < cParms; ++i, pu8HGCMParm += cbHGCMParmStruct)
     {
         VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
@@ -926,8 +1054,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
 #endif
                 LogFunc(("LinAddr guest parameter %RGv, cb %u\n", GCPtr, cbData));
 
-                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE - cbTotalData, VERR_INVALID_PARAMETER);
-                cbTotalData += cbData;
+                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE, VERR_INVALID_PARAMETER);
 
                 const uint32_t offFirstPage = cbData > 0 ? GCPtr & PAGE_OFFSET_MASK : 0;
                 const uint32_t cPages       = cbData > 0 ? (offFirstPage + cbData + PAGE_SIZE - 1) / PAGE_SIZE : 0;
@@ -943,7 +1070,9 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                         pGuestParm->u.ptr.paPages = &pGuestParm->u.ptr.GCPhysSinglePage;
                     else
                     {
-                        pGuestParm->u.ptr.paPages = (RTGCPHYS *)RTMemAlloc(cPages * sizeof(RTGCPHYS));
+                        /* (Max 262144 bytes with current limits.) */
+                        pGuestParm->u.ptr.paPages = (RTGCPHYS *)vmmdevR3HgcmCallMemAlloc(pThisCC, pCmd,
+                                                                                         cPages * sizeof(RTGCPHYS));
                         AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
                     }
 
@@ -985,8 +1114,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
 #endif
                 LogFunc(("PageList guest parameter cb %u, offset %u\n", cbData, offPageListInfo));
 
-                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE - cbTotalData, VERR_INVALID_PARAMETER);
-                cbTotalData += cbData;
+                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE, VERR_INVALID_PARAMETER);
 
 /** @todo respect zero byte page lists...    */
                 /* Check that the page list info is within the request. */
@@ -1047,8 +1175,9 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                     pGuestParm->u.Pages.fFlags       = pPageListInfo->flags;
                     pGuestParm->u.Pages.cPages       = (uint16_t)cPages;
                     pGuestParm->u.Pages.fLocked      = false;
-                    pGuestParm->u.Pages.paPgLocks    = (PPGMPAGEMAPLOCK)RTMemAllocZ(  (sizeof(PGMPAGEMAPLOCK) + sizeof(void *))
-                                                                                    * cPages);
+                    pGuestParm->u.Pages.paPgLocks    = (PPGMPAGEMAPLOCK)vmmdevR3HgcmCallMemAllocZ(pThisCC, pCmd,
+                                                                                                  (  sizeof(PGMPAGEMAPLOCK)
+                                                                                                   + sizeof(void *)) * cPages);
                     AssertReturn(pGuestParm->u.Pages.paPgLocks, VERR_NO_MEMORY);
 
                     /* Make sure the page offsets are sensible. */
@@ -1089,7 +1218,8 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                 }
                 else
                 {
-                    pGuestParm->u.ptr.paPages   = (RTGCPHYS *)RTMemAlloc(pPageListInfo->cPages * sizeof(RTGCPHYS));
+                    pGuestParm->u.ptr.paPages   = (RTGCPHYS *)vmmdevR3HgcmCallMemAlloc(pThisCC, pCmd,
+                                                                                       pPageListInfo->cPages * sizeof(RTGCPHYS));
                     AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
 
                     for (uint32_t iPage = 0; iPage < pGuestParm->u.ptr.cPages; ++iPage)
@@ -1112,8 +1242,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
 #endif
                 LogFunc(("Embedded guest parameter cb %u, offset %u, flags %#x\n", cbData, offData, fFlags));
 
-                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE - cbTotalData, VERR_INVALID_PARAMETER);
-                cbTotalData += cbData;
+                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE, VERR_INVALID_PARAMETER);
 
                 /* Check flags and buffer range. */
                 ASSERT_GUEST_MSG_RETURN(VBOX_HGCM_F_PARM_ARE_VALID(fFlags), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
@@ -1196,7 +1325,7 @@ int vmmdevR3HgcmCall(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, const
         if (RT_SUCCESS(rc))
         {
             /* Copy guest data to host parameters, so HGCM services can use the data. */
-            rc = vmmdevR3HgcmInitHostParameters(pDevIns, pCmd, (uint8_t const *)pHGCMCall);
+            rc = vmmdevR3HgcmInitHostParameters(pDevIns, pThisCC, pCmd, (uint8_t const *)pHGCMCall);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1254,7 +1383,7 @@ int vmmdevR3HgcmCall(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, const
                 vmmdevR3HgcmRemoveCommand(pThisCC, pCmd);
             }
         }
-        vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+        vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
     }
     return rc;
 }
@@ -1687,9 +1816,9 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
     uint64_t const tsComplete = pCmd->tsComplete;
 #endif
 
-    /* Deallocate the command memory. */
+    /* Deallocate the command memory. Enter the critsect for proper  */
     VBOXDD_HGCMCALL_COMPLETED_DONE(pCmd, idFunction, idClient, result);
-    vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+    vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
 
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
     /* Update stats. */
@@ -2003,7 +2132,8 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                             {
                                 AssertReturn(   pGuestParm->enmType != VMMDevHGCMParmType_Embedded
                                              && pGuestParm->enmType != VMMDevHGCMParmType_ContiguousPageList, VERR_INTERNAL_ERROR_3);
-                                pPtr->paPages = (RTGCPHYS *)RTMemAlloc(pPtr->cPages * sizeof(RTGCPHYS));
+                                pPtr->paPages = (RTGCPHYS *)vmmdevR3HgcmCallMemAlloc(pThisCC, pCmd,
+                                                                                     pPtr->cPages * sizeof(RTGCPHYS));
                                 AssertStmt(pPtr->paPages, rc = VERR_NO_MEMORY);
                             }
 
@@ -2063,7 +2193,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             {
                 Log(("vmmdevR3HgcmLoadState: Skipping cancelled request: enmCmdType=%d GCPhys=%#RX32 LB %#x\n",
                      enmCmdType, GCPhys, cbRequest));
-                vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+                vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
             }
         }
 
@@ -2127,7 +2257,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                     rc = SSMR3GetU32(pSSM, &pPtr->cPages);
                     AssertRCReturn(rc, rc);
 
-                    pPtr->paPages = (RTGCPHYS *)RTMemAlloc(pPtr->cPages * sizeof(RTGCPHYS));
+                    pPtr->paPages = (RTGCPHYS *)vmmdevR3HgcmCallMemAlloc(pThisCC, pCmd, pPtr->cPages * sizeof(RTGCPHYS));
                     AssertReturn(pPtr->paPages, VERR_NO_MEMORY);
 
                     uint32_t iPage;
@@ -2147,7 +2277,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             {
                 Log(("vmmdevR3HgcmLoadState: Skipping cancelled request: enmCmdType=%d GCPhys=%#RX32 LB %#x\n",
                      enmCmdType, GCPhys, cbRequest));
-                vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+                vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
             }
         }
 
@@ -2254,6 +2384,7 @@ static int vmmdevR3HgcmRestoreDisconnect(PVMMDEVCC pThisCC, uint32_t uSavedState
  *
  * @returns VBox status code that the guest should see.
  * @param   pDevIns         The device instance.
+ * @param   pThis           The VMMDev shared instance data.
  * @param   pThisCC         The VMMDev ring-3 instance data.
  * @param   uSavedStateVersion   The saved state version the command has been loaded from.
  * @param   pLoadedCmd      Command loaded from saved state, it is imcomplete and needs restoration.
@@ -2262,9 +2393,9 @@ static int vmmdevR3HgcmRestoreDisconnect(PVMMDEVCC pThisCC, uint32_t uSavedState
  * @param   enmRequestType  Type of the HGCM request.
  * @param   ppRestoredCmd   Where to store pointer to newly allocated restored command.
  */
-static int vmmdevR3HgcmRestoreCall(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uint32_t uSavedStateVersion, const VBOXHGCMCMD *pLoadedCmd,
-                                   VMMDevHGCMCall *pReq, uint32_t cbReq, VMMDevRequestType enmRequestType,
-                                   VBOXHGCMCMD **ppRestoredCmd)
+static int vmmdevR3HgcmRestoreCall(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, uint32_t uSavedStateVersion,
+                                   const VBOXHGCMCMD *pLoadedCmd, VMMDevHGCMCall *pReq, uint32_t cbReq,
+                                   VMMDevRequestType enmRequestType, VBOXHGCMCMD **ppRestoredCmd)
 {
     /* Verify the request.  */
     ASSERT_GUEST_RETURN(cbReq >= sizeof(*pReq), VERR_MISMATCH);
@@ -2314,7 +2445,7 @@ static int vmmdevR3HgcmRestoreCall(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uint32
     if (RT_SUCCESS(rc))
         *ppRestoredCmd = pCmd;
     else
-        vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+        vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
 
     return rc;
 }
@@ -2324,6 +2455,7 @@ static int vmmdevR3HgcmRestoreCall(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uint32
  *
  * @returns VBox status code that the guest should see.
  * @param   pDevIns         The device instance.
+ * @param   pThis           The VMMDev shared instance data.
  * @param   pThisCC         The VMMDev ring-3 instance data.
  * @param   uSavedStateVersion   Saved state version.
  * @param   pLoadedCmd      HGCM command which needs restoration.
@@ -2331,7 +2463,7 @@ static int vmmdevR3HgcmRestoreCall(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uint32
  * @param   cbReq           Size of the entire request (including HGCM parameters).
  * @param   ppRestoredCmd   Where to store pointer to restored command.
  */
-static int vmmdevR3HgcmRestoreCommand(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uint32_t uSavedStateVersion,
+static int vmmdevR3HgcmRestoreCommand(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, uint32_t uSavedStateVersion,
                                       const VBOXHGCMCMD *pLoadedCmd, const VMMDevHGCMRequestHeader *pReqHdr, uint32_t cbReq,
                                       VBOXHGCMCMD **ppRestoredCmd)
 {
@@ -2364,7 +2496,8 @@ static int vmmdevR3HgcmRestoreCommand(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, uin
         case VMMDevReq_HGCMCall32:
         {
             VMMDevHGCMCall *pReq = (VMMDevHGCMCall *)pReqHdr;
-            rc = vmmdevR3HgcmRestoreCall(pDevIns, pThisCC, uSavedStateVersion, pLoadedCmd, pReq, cbReq, enmRequestType, ppRestoredCmd);
+            rc = vmmdevR3HgcmRestoreCall(pDevIns, pThis, pThisCC, uSavedStateVersion, pLoadedCmd,
+                                         pReq, cbReq, enmRequestType, ppRestoredCmd);
             break;
         }
 
@@ -2424,7 +2557,7 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
          *   * report an error to the guest if resubmit failed.
          */
         VMMDevHGCMRequestHeader *pReqHdr = (VMMDevHGCMRequestHeader *)RTMemAlloc(pCmd->cbRequest);
-        AssertBreakStmt(pReqHdr, vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd); rcFunc = VERR_NO_MEMORY);
+        AssertBreakStmt(pReqHdr, vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd); rcFunc = VERR_NO_MEMORY);
 
         PDMDevHlpPhysRead(pDevIns, pCmd->GCPhys, pReqHdr, pCmd->cbRequest);
         RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
@@ -2440,12 +2573,12 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
             else
             {
                 PVBOXHGCMCMD pRestoredCmd = NULL;
-                rcCmd = vmmdevR3HgcmRestoreCommand(pDevIns, pThisCC, pThisCC->uSavedStateVersion, pCmd,
+                rcCmd = vmmdevR3HgcmRestoreCommand(pDevIns, pThis, pThisCC, pThisCC->uSavedStateVersion, pCmd,
                                                    pReqHdr, pCmd->cbRequest, &pRestoredCmd);
                 if (RT_SUCCESS(rcCmd))
                 {
                     Assert(pCmd != pRestoredCmd); /* vmmdevR3HgcmRestoreCommand must allocate restored command. */
-                    vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+                    vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
                     pCmd = pRestoredCmd;
                 }
             }
@@ -2476,7 +2609,7 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
 
                     case VBOXHGCMCMDTYPE_CALL:
                     {
-                        rcCmd = vmmdevR3HgcmInitHostParameters(pDevIns, pCmd, (uint8_t const *)pReqHdr);
+                        rcCmd = vmmdevR3HgcmInitHostParameters(pDevIns, pThisCC, pCmd, (uint8_t const *)pReqHdr);
                         if (RT_SUCCESS(rcCmd))
                         {
                             vmmdevR3HgcmAddCommand(pDevIns, pThis, pThisCC, pCmd);
@@ -2519,7 +2652,7 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
             VMMDevNotifyGuest(pDevIns, pThis, pThisCC, VMMDEV_EVENT_HGCM);
 
             /* Deallocate the command memory. */
-            vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+            vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
         }
 
         RTMemFree(pReqHdr);
@@ -2530,7 +2663,7 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
         RTListForEachSafe(&listLoadedCommands, pCmd, pNext, VBOXHGCMCMD, node)
         {
             RTListNodeRemove(&pCmd->node);
-            vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+            vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
         }
     }
 
@@ -2542,9 +2675,10 @@ int vmmdevR3HgcmLoadStateDone(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
  * Counterpart to vmmdevR3HgcmInit().
  *
  * @param   pDevIns         The device instance.
+ * @param   pThis           The VMMDev shared instance data.
  * @param   pThisCC         The VMMDev ring-3 instance data.
  */
-void vmmdevR3HgcmDestroy(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC)
+void vmmdevR3HgcmDestroy(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC)
 {
     LogFlowFunc(("\n"));
 
@@ -2554,7 +2688,7 @@ void vmmdevR3HgcmDestroy(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC)
         RTListForEachSafe(&pThisCC->listHGCMCmd, pCmd, pNext, VBOXHGCMCMD, node)
         {
             vmmdevR3HgcmRemoveCommand(pThisCC, pCmd);
-            vmmdevR3HgcmCmdFree(pDevIns, pThisCC, pCmd);
+            vmmdevR3HgcmCmdFree(pDevIns, pThis, pThisCC, pCmd);
         }
 
         RTCritSectDelete(&pThisCC->critsectHGCMCmdList);

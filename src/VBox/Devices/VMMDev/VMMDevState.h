@@ -399,6 +399,19 @@ typedef struct VMMDEVR3
     /** Saved state version of restored commands. */
     uint32_t                        uSavedStateVersion;
     RTMEMCACHE                      hHgcmCmdCache;
+    /** Accounting by for each requestor VMMDEV_REQUESTOR_USR_XXX group.
+     * Legacy requests ends up with VMMDEV_REQUESTOR_USR_NOT_GIVEN */
+    struct
+    {
+        /** The configured heap budget. */
+        uint64_t                    cbHeapBudgetConfig;
+        /** The currently available heap budget.   */
+        uint64_t                    cbHeapBudget;
+        /** Total sum of all heap usage.   */
+        STAMCOUNTER                 cbHeapTotal;
+        /** Total number of message. */
+        STAMCOUNTER                 cTotalMessages;
+    } aHgcmAcc[VMMDEV_REQUESTOR_USR_MASK + 1];
     STAMPROFILE                     StatHgcmCmdArrival;
     STAMPROFILE                     StatHgcmCmdCompletion;
     STAMPROFILE                     StatHgcmCmdTotal;

@@ -103,6 +103,7 @@
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/time.h>
 #ifndef IN_RC
 # include <iprt/mem.h>
@@ -4412,7 +4413,7 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
     /*
      * Everything HGCM.
      */
-    vmmdevR3HgcmDestroy(pDevIns, pThisCC);
+    vmmdevR3HgcmDestroy(pDevIns, PDMDEVINS_2_DATA(pDevIns, PVMMDEV), pThisCC);
 #endif
 
     /*
@@ -4562,7 +4563,16 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "HeartbeatTimeout|"
                                   "TestingEnabled|"
                                   "TestingMMIO|"
-                                  "TestintXmlOutputFile"
+                                  "TestintXmlOutputFile|"
+                                  "HGCMHeapBudgetDefault|"
+                                  "HGCMHeapBudgetLegacy|"
+                                  "HGCMHeapBudgetVBoxGuest|"
+                                  "HGCMHeapBudgetOtherDrv|"
+                                  "HGCMHeapBudgetRoot|"
+                                  "HGCMHeapBudgetSystem|"
+                                  "HGCMHeapBudgetReserved1|"
+                                  "HGCMHeapBudgetUser|"
+                                  "HGCMHeapBudgetGuest"
                                   ,
                                   "");
 
@@ -4641,6 +4651,70 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /** @todo image-to-load-filename? */
 #endif
 
+#ifdef VBOX_WITH_HGCM
+    /*
+     * Heap budgets for HGCM requestor categories.  Take the available host
+     * memory as a rough hint of how much we can handle.
+     */
+    /** @todo If we reduced the number of categories here, we could alot more to
+     *        each... */
+    uint64_t cbDefaultBudget = 0;
+    if (RT_FAILURE(RTSystemQueryTotalRam(&cbDefaultBudget)))
+        cbDefaultBudget = 16 * _1G64;
+    LogFunc(("RTSystemQueryTotalRam -> %'RU64 (%RX64)\n", cbDefaultBudget, cbDefaultBudget));
+# if ARCH_BITS == 32
+    cbDefaultBudget  = RT_MIN(cbDefaultBudget, _512M);
+# endif
+    cbDefaultBudget /= 8;                               /* One eighth of physical memory ... */
+    cbDefaultBudget /= RT_ELEMENTS(pThisCC->aHgcmAcc);  /* over 8 accounting categories. (8GiB -> 64MiB) */
+    cbDefaultBudget  = RT_MIN(cbDefaultBudget, _512M);  /* max 512MiB */
+    cbDefaultBudget  = RT_MAX(cbDefaultBudget, _32M);   /* min  32MiB */
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "HGCMHeapBudgetDefault", &cbDefaultBudget, cbDefaultBudget);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed querying \"HGCMHeapBudgetDefault\" as a 64-bit unsigned integer"));
+
+    LogRel(("VMMDev: cbDefaultBudget: %'RU64 (%RX64)\n", cbDefaultBudget, cbDefaultBudget));
+    static const struct { const char *pszName; unsigned idx; } s_aCfgHeapBudget[] =
+    {
+        { "HGCMHeapBudgetLegacy",       VMMDEV_REQUESTOR_USR_NOT_GIVEN  },
+        { "HGCMHeapBudgetVBoxGuest",    VMMDEV_REQUESTOR_USR_DRV        },
+        { "HGCMHeapBudgetOtherDrv",     VMMDEV_REQUESTOR_USR_DRV_OTHER  },
+        { "HGCMHeapBudgetRoot",         VMMDEV_REQUESTOR_USR_ROOT       },
+        { "HGCMHeapBudgetSystem",       VMMDEV_REQUESTOR_USR_SYSTEM     },
+        { "HGCMHeapBudgetReserved1",    VMMDEV_REQUESTOR_USR_RESERVED1  },
+        { "HGCMHeapBudgetUser",         VMMDEV_REQUESTOR_USR_USER       },
+        { "HGCMHeapBudgetGuest",        VMMDEV_REQUESTOR_USR_GUEST      },
+    };
+    AssertCompile(RT_ELEMENTS(s_aCfgHeapBudget) == RT_ELEMENTS(pThisCC->aHgcmAcc));
+    for (uintptr_t i = 0; i < RT_ELEMENTS(s_aCfgHeapBudget); i++)
+    {
+        uintptr_t const idx = s_aCfgHeapBudget[i].idx;
+        rc = pHlp->pfnCFGMQueryU64Def(pCfg, s_aCfgHeapBudget[i].pszName,
+                                      &pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig, cbDefaultBudget);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Failed querying \"%s\" as a 64-bit unsigned integer"),
+                                       s_aCfgHeapBudget[i].pszName);
+        pThisCC->aHgcmAcc[idx].cbHeapBudget = pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig;
+        if (pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig != cbDefaultBudget)
+            LogRel(("VMMDev: %s: %'RU64 (%#RX64)\n", s_aCfgHeapBudget[i].pszName,
+                    pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig, pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig));
+
+        const char * const pszCatName = &s_aCfgHeapBudget[i].pszName[sizeof("HGCMHeapBudget") - 1];
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cbHeapBudget, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_BYTES, "Currently available budget", "HGCM-%s/BudgetAvailable", pszCatName);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_BYTES, "Configured budget",          "HGCM-%s/BudgetConfig", pszCatName);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cbHeapTotal, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_BYTES, "Total heap usage",           "HGCM-%s/cbHeapTotal", pszCatName);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cTotalMessages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_COUNT, "Total messages",             "HGCM-%s/cTotalMessages", pszCatName);
+    }
+#endif
+
+    /*
+     * <missing comment>
+     */
     pThis->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
 
     /*
