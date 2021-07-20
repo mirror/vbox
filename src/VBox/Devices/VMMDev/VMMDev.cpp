@@ -4656,19 +4656,17 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Heap budgets for HGCM requestor categories.  Take the available host
      * memory as a rough hint of how much we can handle.
      */
-    /** @todo If we reduced the number of categories here, we could alot more to
-     *        each... */
     uint64_t cbDefaultBudget = 0;
     if (RT_FAILURE(RTSystemQueryTotalRam(&cbDefaultBudget)))
-        cbDefaultBudget = 16 * _1G64;
+        cbDefaultBudget = 8 * _1G64;
     LogFunc(("RTSystemQueryTotalRam -> %'RU64 (%RX64)\n", cbDefaultBudget, cbDefaultBudget));
 # if ARCH_BITS == 32
     cbDefaultBudget  = RT_MIN(cbDefaultBudget, _512M);
 # endif
     cbDefaultBudget /= 8;                               /* One eighth of physical memory ... */
-    cbDefaultBudget /= RT_ELEMENTS(pThisCC->aHgcmAcc);  /* over 8 accounting categories. (8GiB -> 64MiB) */
-    cbDefaultBudget  = RT_MIN(cbDefaultBudget, _512M);  /* max 512MiB */
-    cbDefaultBudget  = RT_MAX(cbDefaultBudget, _32M);   /* min  32MiB */
+    cbDefaultBudget /= RT_ELEMENTS(pThisCC->aHgcmAcc);  /* over 3 accounting categories. (8GiB -> 341MiB) */
+    cbDefaultBudget  = RT_MIN(cbDefaultBudget, _1G);    /* max 1024MiB */
+    cbDefaultBudget  = RT_MAX(cbDefaultBudget, _32M);   /* min   32MiB */
     rc = pHlp->pfnCFGMQueryU64Def(pCfg, "HGCMHeapBudgetDefault", &cbDefaultBudget, cbDefaultBudget);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed querying \"HGCMHeapBudgetDefault\" as a 64-bit unsigned integer"));
@@ -4676,14 +4674,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     LogRel(("VMMDev: cbDefaultBudget: %'RU64 (%RX64)\n", cbDefaultBudget, cbDefaultBudget));
     static const struct { const char *pszName; unsigned idx; } s_aCfgHeapBudget[] =
     {
-        { "HGCMHeapBudgetLegacy",       VMMDEV_REQUESTOR_USR_NOT_GIVEN  },
-        { "HGCMHeapBudgetVBoxGuest",    VMMDEV_REQUESTOR_USR_DRV        },
-        { "HGCMHeapBudgetOtherDrv",     VMMDEV_REQUESTOR_USR_DRV_OTHER  },
-        { "HGCMHeapBudgetRoot",         VMMDEV_REQUESTOR_USR_ROOT       },
-        { "HGCMHeapBudgetSystem",       VMMDEV_REQUESTOR_USR_SYSTEM     },
-        { "HGCMHeapBudgetReserved1",    VMMDEV_REQUESTOR_USR_RESERVED1  },
-        { "HGCMHeapBudgetUser",         VMMDEV_REQUESTOR_USR_USER       },
-        { "HGCMHeapBudgetGuest",        VMMDEV_REQUESTOR_USR_GUEST      },
+        { "HGCMHeapBudgetKernel",       VMMDEV_HGCM_CATEGORY_KERNEL },
+        { "HGCMHeapBudgetRoot",         VMMDEV_HGCM_CATEGORY_ROOT   },
+        { "HGCMHeapBudgetUser",         VMMDEV_HGCM_CATEGORY_USER   },
     };
     AssertCompile(RT_ELEMENTS(s_aCfgHeapBudget) == RT_ELEMENTS(pThisCC->aHgcmAcc));
     for (uintptr_t i = 0; i < RT_ELEMENTS(s_aCfgHeapBudget); i++)

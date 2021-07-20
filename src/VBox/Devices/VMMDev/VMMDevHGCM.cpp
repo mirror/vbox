@@ -280,10 +280,37 @@ DECLINLINE(void) vmmdevR3HgcmCmdListUnlock(PVMMDEVCC pThisCC)
 static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPhys,
                                          uint32_t cbRequest, uint32_t cParms, uint32_t fRequestor)
 {
-    /* For heap accounting. */
-    uintptr_t const idxHeapAcc = fRequestor != VMMDEV_REQUESTOR_LEGACY
-                               ? fRequestor & VMMDEV_REQUESTOR_USR_MASK
-                               : VMMDEV_REQUESTOR_USR_NOT_GIVEN;
+    /*
+     * Pick the heap accounting category.
+     *
+     * Initial idea was to just use what VMMDEV_REQUESTOR_USR_MASK yields directly,
+     * but there are so many unused categories then (DRV, RESERVED1, GUEST).  Better
+     * to have fewer and more heap available in each.
+     */
+    uintptr_t idxHeapAcc;
+    if (fRequestor != VMMDEV_REQUESTOR_LEGACY)
+        switch (fRequestor & VMMDEV_REQUESTOR_USR_MASK)
+        {
+            case VMMDEV_REQUESTOR_USR_NOT_GIVEN:
+            case VMMDEV_REQUESTOR_USR_DRV:
+            case VMMDEV_REQUESTOR_USR_DRV_OTHER:
+                idxHeapAcc = VMMDEV_HGCM_CATEGORY_KERNEL;
+                break;
+            case VMMDEV_REQUESTOR_USR_ROOT:
+            case VMMDEV_REQUESTOR_USR_SYSTEM:
+                idxHeapAcc = VMMDEV_HGCM_CATEGORY_ROOT;
+                break;
+            default:
+                AssertFailed(); RT_FALL_THRU();
+            case VMMDEV_REQUESTOR_USR_RESERVED1:
+            case VMMDEV_REQUESTOR_USR_USER:
+            case VMMDEV_REQUESTOR_USR_GUEST:
+                idxHeapAcc = VMMDEV_HGCM_CATEGORY_USER;
+                break;
+        }
+    else
+        idxHeapAcc = VMMDEV_HGCM_CATEGORY_KERNEL;
+
 #if 1
     /*
      * Try use the cache.

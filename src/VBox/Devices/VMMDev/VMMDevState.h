@@ -354,6 +354,20 @@ AssertCompileMemberAlignment(VMMDEV, TestingData.Value.u64Value, 8);
 #endif
 
 
+/** @name VMMDev/HGCM accounting categories (indexes into VMMDEVR3::aHgcmAcc)
+ * @{  */
+/** Legacy, VMMDEV_REQUESTOR_USR_NOT_GIVEN, VMMDEV_REQUESTOR_USR_DRV,
+ *  VMMDEV_REQUESTOR_USR_DRV_OTHER. */
+#define VMMDEV_HGCM_CATEGORY_KERNEL   0
+/** VMMDEV_REQUESTOR_USR_ROOT, VMMDEV_REQUESTOR_USR_SYSTEM   */
+#define VMMDEV_HGCM_CATEGORY_ROOT     1
+/** VMMDEV_REQUESTOR_USR_RESERVED1, VMMDEV_REQUESTOR_USR_USER,
+ *  VMMDEV_REQUESTOR_USR_GUEST */
+#define VMMDEV_HGCM_CATEGORY_USER     2
+/** Array size. */
+#define VMMDEV_HGCM_CATEGORY_MAX      3
+/** @} */
+
 /**
  * State structure for the VMM device, ring-3 edition.
  */
@@ -411,7 +425,7 @@ typedef struct VMMDEVR3
         STAMCOUNTER                 cbHeapTotal;
         /** Total number of message. */
         STAMCOUNTER                 cTotalMessages;
-    } aHgcmAcc[VMMDEV_REQUESTOR_USR_MASK + 1];
+    } aHgcmAcc[VMMDEV_HGCM_CATEGORY_MAX];
     STAMPROFILE                     StatHgcmCmdArrival;
     STAMPROFILE                     StatHgcmCmdCompletion;
     STAMPROFILE                     StatHgcmCmdTotal;
