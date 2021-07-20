@@ -35,12 +35,15 @@
 #include "UIMediumSelector.h"
 #include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
-#include "UIWizardNewVD.h"
 #include "UIWizardNewVMDiskPageBasic.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
 #include "CSystemProperties.h"
+
+/* Other VBox includes: */
+#include <iprt/path.h>
+
 
 QString UIWizardNewVMDiskPage::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
@@ -106,6 +109,28 @@ QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
     if (returnCode != static_cast<int>(UIMediumSelector::ReturnCode_Accepted))
         return QUuid();
     return uMediumId;
+}
+
+bool UIWizardNewVMDiskPage::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
+{
+    /* If the hard disk is split into 2GB parts then no need to make further checks: */
+    if (uVariant & KMediumVariant_VmdkSplit2G)
+        return true;
+
+    RTFSTYPE enmType;
+    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
+    if (RT_SUCCESS(rc))
+    {
+        if (enmType == RTFSTYPE_FAT)
+        {
+            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
+            qulonglong fatLimit = _4G - _128M;
+            if (uSize >= fatLimit)
+                return false;
+        }
+    }
+
+    return true;
 }
 
 UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
@@ -269,25 +294,25 @@ void UIWizardNewVMDiskPageBasic::retranslateUi()
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
 
     if (m_pMediumSizeEditorLabel)
-        m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
+        m_pMediumSizeEditorLabel->setText(UIWizardNewVM::tr("D&isk Size:"));
 
     if (m_pFixedCheckBox)
     {
-        m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(UIWizardNewVD::tr("<p>When checked, the virtual disk image will be fully allocated at "
+        m_pFixedCheckBox->setText(UIWizardNewVM::tr("Pre-allocate &Full Size"));
+        m_pFixedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the virtual disk image will be fully allocated at "
                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
     }
 
     /* Translate rich text labels: */
     if (m_pDescriptionLabel)
-        m_pDescriptionLabel->setText(UIWizardNewVD::tr("Please choose whether the new virtual hard disk file should grow as it is used "
+        m_pDescriptionLabel->setText(UIWizardNewVM::tr("Please choose whether the new virtual hard disk file should grow as it is used "
                                                        "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
     if (m_pDynamicLabel)
-        m_pDynamicLabel->setText(UIWizardNewVD::tr("<p>A <b>dynamically allocated</b> hard disk file will only use space "
+        m_pDynamicLabel->setText(UIWizardNewVM::tr("<p>A <b>dynamically allocated</b> hard disk file will only use space "
                                                    "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
                                                    "although it will not shrink again automatically when space on it is freed.</p>"));
     if (m_pFixedLabel)
-        m_pFixedLabel->setText(UIWizardNewVD::tr("<p>A <b>fixed size</b> hard disk file may take longer to create on some "
+        m_pFixedLabel->setText(UIWizardNewVM::tr("<p>A <b>fixed size</b> hard disk file may take longer to create on some "
                                                  "systems but is often faster to use.</p>"));
 }
 
@@ -428,9 +453,9 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
             return fResult;
         }
         /* Check FAT size limitation of the host hard drive: */
-        fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(pWizard->mediumVariant(),
-                                                                            pWizard->mediumPath(),
-                                                                            pWizard->mediumSize());
+        fResult = UIWizardNewVMDiskPage::checkFATSizeLimitation(pWizard->mediumVariant(),
+                                                                strMediumPath,
+                                                                pWizard->mediumSize());
         if (!fResult)
         {
             msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

@@ -60,6 +60,7 @@ namespace UIWizardNewVMDiskPage
                                 const QString &strMachineBaseName,
                                 QWidget *pCaller);
     QString absoluteFilePath(const QString &strFileName, const QString &strPath);
+    bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
 }
 
 //     SelectedDiskSource selectedDiskSource() const;

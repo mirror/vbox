@@ -47,7 +47,6 @@
 #include "UIWizardNewVMPageExpert.h"
 #include "UIWizardNewVMNameOSTypePageBasic.h"
 
-
 /* COM includes: */
 #include "CSystemProperties.h"
 
@@ -595,7 +594,6 @@ bool UIWizardNewVMPageExpert::isComplete() const
 
     if (m_enmSelectedDiskSource == SelectedDiskSource_New)
     {
-
         qulonglong uSize = pWizard->mediumSize();
         if( uSize >= m_uMediumSizeMin && uSize <= m_uMediumSizeMax)
         {
@@ -611,47 +609,44 @@ bool UIWizardNewVMPageExpert::isComplete() const
 
 bool UIWizardNewVMPageExpert::validatePage()
 {
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturn(pWizard, false);
     bool fResult = true;
 
-    // if (selectedDiskSource() == SelectedDiskSource_New)
-    // {
-    //     /* Check if the path we will be using for hard drive creation exists: */
-    //     const QString strMediumPath(fieldImp("mediumPath").toString());
-    //     fResult = !QFileInfo(strMediumPath).exists();
-    //     if (!fResult)
-    //     {
-    //         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-    //         return fResult;
-    //     }
-    //     /* Check FAT size limitation of the host hard drive: */
-    //     fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-    //                                                          fieldImp("mediumPath").toString(),
-    //                                                          fieldImp("mediumSize").toULongLong());
-    //     if (!fResult)
-    //     {
-    //         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-    //         return fResult;
-    //     }
-    // }
+    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    {
+        /* Check if the path we will be using for hard drive creation exists: */
+        const QString &strMediumPath = pWizard->mediumPath();
+        fResult = !QFileInfo(strMediumPath).exists();
+        if (!fResult)
+        {
+            msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+            return fResult;
+        }
+        qulonglong uSize = pWizard->mediumSize();
+        qulonglong uVariant = pWizard->mediumVariant();
+        /* Check FAT size limitation of the host hard drive: */
+        fResult =  UIWizardNewVMDiskPage::checkFATSizeLimitation(uVariant, strMediumPath, uSize);
+        if (!fResult)
+        {
+            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+            return fResult;
+        }
+    }
 
-    // startProcessing();
-    // UIWizardNewVM *pWizard = wizardImp();
-    // AssertReturn(pWizard, false);
-    // if (selectedDiskSource() == SelectedDiskSource_New)
-    // {
-    //     /* Try to create the hard drive:*/
-    //     fResult = pWizard->createVirtualDisk();
-    //     /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
-    //     if (!fResult)
-    //         return fResult;
-    // }
+    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    {
+        /* Try to create the hard drive:*/
+        fResult = pWizard->createVirtualDisk();
+        /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+        if (!fResult)
+            return fResult;
+    }
 
-    // fResult = pWizard->createVM();
-    // /* Try to delete the hard disk: */
-    // if (!fResult)
-    //     pWizard->deleteVirtualDisk();
-
-    // endProcessing();
+    fResult = pWizard->createVM();
+    /* Try to delete the hard disk: */
+    if (!fResult)
+        pWizard->deleteVirtualDisk();
 
     return fResult;
 }
