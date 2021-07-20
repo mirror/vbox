@@ -305,10 +305,8 @@ void UIWizardNewVMPageExpert::createConnections()
     //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
     }
-    // if (m_pFormatButtonGroup)
-    //     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-    //             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
-
+    connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+            this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
 
 
     // if (m_pLocationOpenButton)
@@ -417,7 +415,7 @@ void UIWizardNewVMPageExpert::initializePage()
 
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    // updateWidgetAterMediumFormatChange();
+    updateWidgetAfterMediumFormatChange();
     // setSkipCheckBoxEnable();
     retranslateUi();
 }
@@ -683,7 +681,13 @@ void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked(bool fSkip)
 
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 {
-    updateWidgetAterMediumFormatChange();
+    if (!m_pFormatButtonGroup)
+        return;
+
+    m_userModifiedParameters << "MediumFormat";
+    newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+
+    updateWidgetAfterMediumFormatChange();
     emit completeChanged();
 }
 
@@ -808,7 +812,7 @@ void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
     }
 }
 
-void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
+void UIWizardNewVMPageExpert::updateWidgetAfterMediumFormatChange()
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     AssertReturnVoid(pWizard && m_pDiskVariantGroupBox && m_pSizeAndLocationGroup && m_pFormatButtonGroup);

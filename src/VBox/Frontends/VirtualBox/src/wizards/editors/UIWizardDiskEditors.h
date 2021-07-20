@@ -54,13 +54,14 @@ class UIDiskFormatsGroupBox : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
+    void sigMediumFormatChanged();
 
 public:
 
     UIDiskFormatsGroupBox(QWidget *pParent = 0);
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
-    const CMediumFormat &VDIMeiumFormat() const;
+    const CMediumFormat &VDIMediumFormat() const;
     const QStringList formatExtensions() const;
 
 private:
