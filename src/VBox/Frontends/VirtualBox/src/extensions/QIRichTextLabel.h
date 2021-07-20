@@ -60,6 +60,11 @@ public:
     /** Installs event filter for a passed @ pFilterObj. */
     void installEventFilter(QObject *pFilterObj);
 
+    /** Returns browser font. */
+    QFont browserFont() const;
+    /** Defines @a newFont for browser. */
+    void setBrowserFont(const QFont &newFont);
+
 public slots:
 
     /** Returns minimum text width. */

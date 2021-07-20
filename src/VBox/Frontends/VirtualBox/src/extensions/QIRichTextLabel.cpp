@@ -99,6 +99,16 @@ void QIRichTextLabel::installEventFilter(QObject *pFilterObj)
     m_pTextBrowser->installEventFilter(pFilterObj);
 }
 
+QFont QIRichTextLabel::browserFont() const
+{
+    return m_pTextBrowser->font();
+}
+
+void QIRichTextLabel::setBrowserFont(const QFont &newFont)
+{
+    m_pTextBrowser->setFont(newFont);
+}
+
 int QIRichTextLabel::minimumTextWidth() const
 {
     return m_iMinimumTextWidth;
