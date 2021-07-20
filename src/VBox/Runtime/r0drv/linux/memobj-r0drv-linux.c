@@ -1957,7 +1957,7 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         case RTR0MEMOBJTYPE_PAGE:
         default:
             AssertMsgFailed(("%d\n", pMemLnx->Core.enmType));
-            /* fall thru */
+            RT_FALL_THROUGH();
 
         case RTR0MEMOBJTYPE_RES_VIRT:
             return NIL_RTHCPHYS;

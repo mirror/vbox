@@ -733,7 +733,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
     {
         default:
             AssertMsgFailed(("%u (%s)\n", pSG->GsoCtx.u8Type, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pSG->GsoCtx.u8Type) ));
-            /* fall thru */
+            RT_FALL_THRU();
         case PDMNETWORKGSOTYPE_INVALID:
             fGsoType = 0;
             break;
