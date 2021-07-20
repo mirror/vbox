@@ -354,6 +354,7 @@ static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmC
         else
             LogFunc(("Heap budget overrun: sizeof(*pCmdCached)=%#zx aHgcmAcc[%zu].cbHeapBudget=%#RX64 - enmCmdType=%d\n",
                      sizeof(*pCmdCached), idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, enmCmdType));
+        STAM_REL_COUNTER_INC(&pThisCC->aHgcmAcc[idxHeapAcc].StatBudgetOverruns);
         return NULL;
     }
     STAM_REL_COUNTER_INC(&pThisCC->StatHgcmLargeCmdAllocs);
@@ -396,6 +397,7 @@ static PVBOXHGCMCMD vmmdevR3HgcmCmdAlloc(PVMMDEVCC pThisCC, VBOXHGCMCMDTYPE enmC
         Log3Func(("returns %p (enmCmdType=%d GCPhys=%RGp cbCmd=%#x)\n", pCmd, enmCmdType, GCPhys, cbCmd));
         return pCmd;
     }
+    STAM_REL_COUNTER_INC(&pThisCC->aHgcmAcc[idxHeapAcc].StatBudgetOverruns);
     LogFunc(("Heap budget overrun: cbCmd=%#x aHgcmAcc[%zu].cbHeapBudget=%#RX64 - enmCmdType=%d\n",
              cbCmd, idxHeapAcc, pThisCC->aHgcmAcc[idxHeapAcc].cbHeapBudget, enmCmdType));
     return NULL;
@@ -515,8 +517,7 @@ static int vmmdevR3HgcmAddCommand(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC p
     /* stats */
     uintptr_t idx = pCmd->idxHeapAcc;
     AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
-    STAM_REL_COUNTER_ADD(&pThisCC->aHgcmAcc[idx].cbHeapTotal, pCmd->cbHeapCost);
-    STAM_REL_COUNTER_INC(&pThisCC->aHgcmAcc[idx].cTotalMessages);
+    STAM_REL_PROFILE_ADD_PERIOD(&pThisCC->aHgcmAcc[idx].StateMsgHeapUsage, pCmd->cbHeapCost);
 
     /* Automatically enable HGCM events, if there are HGCM commands. */
     if (   pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT
@@ -939,13 +940,14 @@ static int vmmdevR3HgcmCallAlloc(PVMMDEVCC pThisCC, const VMMDevHGCMCall *pHGCMC
  */
 static void *vmmdevR3HgcmCallMemAllocEx(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, size_t cbRequested, bool fZero)
 {
+    uintptr_t idx = pCmd->idxHeapAcc;
+    AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
+
     /* Check against max heap costs for this request. */
     Assert(pCmd->cbHeapCost <= VMMDEV_MAX_HGCM_DATA_SIZE);
     if (cbRequested <= VMMDEV_MAX_HGCM_DATA_SIZE - pCmd->cbHeapCost)
     {
         /* Check heap budget (we're under lock). */
-        uintptr_t idx = pCmd->idxHeapAcc;
-        AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
         if (cbRequested <= pThisCC->aHgcmAcc[idx].cbHeapBudget)
         {
             /* Do the actual allocation. */
@@ -967,6 +969,7 @@ static void *vmmdevR3HgcmCallMemAllocEx(PVMMDEVCC pThisCC, PVBOXHGCMCMD pCmd, si
     else
         LogFunc(("Request too big: cbRequested=%#zx cbHeapCost=%#x - enmCmdType=%d\n",
                  cbRequested, pCmd->cbHeapCost, pCmd->enmCmdType));
+    STAM_REL_COUNTER_INC(&pThisCC->aHgcmAcc[idx].StatBudgetOverruns);
     return NULL;
 }
 

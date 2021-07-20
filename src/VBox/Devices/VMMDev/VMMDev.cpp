@@ -4698,10 +4698,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                STAMUNIT_BYTES, "Currently available budget", "HGCM-%s/BudgetAvailable", pszCatName);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cbHeapBudgetConfig, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
                                STAMUNIT_BYTES, "Configured budget",          "HGCM-%s/BudgetConfig", pszCatName);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cbHeapTotal, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                               STAMUNIT_BYTES, "Total heap usage",           "HGCM-%s/cbHeapTotal", pszCatName);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].cTotalMessages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                               STAMUNIT_COUNT, "Total messages",             "HGCM-%s/cTotalMessages", pszCatName);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].StateMsgHeapUsage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_BYTES, "Message heap usage",         "HGCM-%s/MessageHeapUsage", pszCatName);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aHgcmAcc[idx].StatBudgetOverruns, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_BYTES, "Budget overruns and allocation errors", "HGCM-%s/BudgetOverruns", pszCatName);
     }
 #endif
 

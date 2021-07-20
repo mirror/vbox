@@ -421,10 +421,10 @@ typedef struct VMMDEVR3
         uint64_t                    cbHeapBudgetConfig;
         /** The currently available heap budget.   */
         uint64_t                    cbHeapBudget;
-        /** Total sum of all heap usage.   */
-        STAMCOUNTER                 cbHeapTotal;
-        /** Total number of message. */
-        STAMCOUNTER                 cTotalMessages;
+        /** Message stats. */
+        STAMPROFILE                 StateMsgHeapUsage;
+        /** Budget overruns.   */
+        STAMCOUNTER                 StatBudgetOverruns;
     } aHgcmAcc[VMMDEV_HGCM_CATEGORY_MAX];
     STAMPROFILE                     StatHgcmCmdArrival;
     STAMPROFILE                     StatHgcmCmdCompletion;
