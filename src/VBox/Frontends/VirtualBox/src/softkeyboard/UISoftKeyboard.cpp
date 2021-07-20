@@ -2436,8 +2436,8 @@ void UISoftKeyboardWidget::retranslateUi()
     m_keyTooltips[316] = UISoftKeyboard::tr("Show Media folder");
 
     m_keyTooltips[304] = UISoftKeyboard::tr("Mute");
-    m_keyTooltips[305] = UISoftKeyboard::tr("Volume up");
-    m_keyTooltips[306] = UISoftKeyboard::tr("Volume down");
+    m_keyTooltips[305] = UISoftKeyboard::tr("Volume down");
+    m_keyTooltips[306] = UISoftKeyboard::tr("Volume up");
 }
 
 void UISoftKeyboardWidget::saveCurentLayoutToFile()
