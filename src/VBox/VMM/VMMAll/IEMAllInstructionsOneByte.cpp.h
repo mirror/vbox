@@ -3716,7 +3716,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_MEM_MAP(pu16Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U16(pu16Reg, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
                 if (!pVCpu->iem.s.fDisregardLock)
-                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_unlocked, pu16Mem, pu16Reg);
+                    IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_locked, pu16Mem, pu16Reg);
                 else
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_unlocked, pu16Mem, pu16Reg);
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Mem, IEM_ACCESS_DATA_RW);
