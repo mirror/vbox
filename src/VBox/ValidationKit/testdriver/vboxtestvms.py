@@ -1936,10 +1936,10 @@ class TestVmManager(object):
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True,
                asParavirtModesSup = [g_ksParavirtProviderKVM,], sNic0AttachType = 'nat', sChipsetType = 'ich9',
                sIommuType = 'amd'),
-        #TestVm('tst-ubuntu-20_04-64-vtd',     kfGrpStdSmoke,      sHd = '6.1/ubuntu-20_04-64.vdi',
-        #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True,
-        #       asParavirtModesSup = [g_ksParavirtProviderKVM,], sNic0AttachType = 'nat', sChipsetType = 'ich9',
-        #       sIommuType = 'intel'),
+        TestVm('tst-ubuntu-20_04-64-vtd',     kfGrpStdSmoke,      sHd = '6.1/ubuntu-20_04-64.vdi',
+               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True,
+               asParavirtModesSup = [g_ksParavirtProviderKVM,], sNic0AttachType = 'nat', sChipsetType = 'ich9',
+               sIommuType = 'intel'),
 
         # Solaris
         TestVm('tst-sol10',                 kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
