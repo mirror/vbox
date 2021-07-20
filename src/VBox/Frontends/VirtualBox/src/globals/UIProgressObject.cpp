@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 UIProgressObject::UIProgressObject(CProgress &comProgress, QObject *pParent /* = 0 */)
     : QObject(pParent)
     , m_comProgress(comProgress)
+    , m_fCancelable(false)
     , m_pEventHandler(0)
 {
     prepare();
@@ -96,6 +97,10 @@ void UIProgressObject::cancel()
 
 void UIProgressObject::sltHandleProgressPercentageChange(const QUuid &, const int iPercent)
 {
+    /* Update cancelable value: */
+    m_fCancelable = m_comProgress.GetCancelable();
+
+    /* Notify listeners: */
     emit sigProgressChange(m_comProgress.GetOperationCount(),
                            m_comProgress.GetOperationDescription(),
                            m_comProgress.GetOperation(),
@@ -120,6 +125,9 @@ void UIProgressObject::sltHandleProgressTaskComplete(const QUuid &)
 
 void UIProgressObject::prepare()
 {
+    /* Init cancelable value: */
+    m_fCancelable = m_comProgress.GetCancelable();
+
     /* Create CProgress event handler: */
     m_pEventHandler = new UIProgressEventHandler(this, m_comProgress);
     if (m_pEventHandler)

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2020 Oracle Corporation
+ * Copyright (C) 2020-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,6 +43,11 @@ bool UIProgressTask::isScheduled() const
 bool UIProgressTask::isRunning() const
 {
     return m_pProgressObject;
+}
+
+bool UIProgressTask::isCancelable() const
+{
+    return m_pProgressObject ? m_pProgressObject->isCancelable() : false;
 }
 
 void UIProgressTask::schedule(int iMsec)

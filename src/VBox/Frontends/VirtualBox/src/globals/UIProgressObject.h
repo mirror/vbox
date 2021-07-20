@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -70,6 +70,9 @@ public:
     /** Destructs progress handler. */
     virtual ~UIProgressObject() /* override */;
 
+    /** Returns whether progress is cancelable. */
+    bool isCancelable() const { return m_fCancelable; }
+
     /** Executes the progress within local event-loop. */
     void exec();
     /** Cancels the progress within local event-loop. */
@@ -91,6 +94,9 @@ private:
 
     /** Holds the progress reference. */
     CProgress &m_comProgress;
+
+    /** Holds whether progress is cancelable. */
+    bool  m_fCancelable;
 
     /** Holds the progress event handler instance. */
     UIProgressEventHandler *m_pEventHandler;
