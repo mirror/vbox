@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,8 +55,6 @@ public:
 
     /** Returns source virtual-disk. */
     const CMedium &sourceVirtualDisk() const { return m_comSourceVirtualDisk; }
-    /** Returns target virtual-disk. */
-    CMedium targetVirtualDisk() const { return m_comTargetVirtualDisk; }
 
     /** Returns the source virtual-disk device type. */
     KDeviceType sourceVirtualDiskDeviceType() const { return m_enmSourceVirtualDiskDeviceType; }
@@ -74,8 +72,6 @@ private:
 
     /** Holds the source virtual disk wrapper. */
     CMedium m_comSourceVirtualDisk;
-    /** Holds the target virtual disk wrapper. */
-    CMedium m_comTargetVirtualDisk;
 
     /** Holds the source virtual-disk device type. */
     KDeviceType m_enmSourceVirtualDiskDeviceType;

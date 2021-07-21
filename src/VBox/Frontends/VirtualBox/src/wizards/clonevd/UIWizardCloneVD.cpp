@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,14 +16,14 @@
  */
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIMedium.h"
+#include "UIMessageCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageExpert.h"
-#include "UICommon.h"
-#include "UIMessageCenter.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
@@ -46,7 +46,6 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtu
 bool UIWizardCloneVD::copyVirtualDisk()
 {
     /* Gather attributes: */
-
     const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
     const qulonglong uVariant = field("mediumVariant").toULongLong();
     const QString strMediumPath = field("mediumPath").toString();
@@ -93,12 +92,10 @@ bool UIWizardCloneVD::copyVirtualDisk()
         return false;
     }
 
-    /* Save created image as target one: */
-    m_comTargetVirtualDisk = comVirtualDisk;
-
     /* Make sure we register the medium to VBox: */
-    uiCommon().createMedium(UIMedium(m_comTargetVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    uiCommon().createMedium(UIMedium(comVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
+    /* Positive: */
     return true;
 }
 
