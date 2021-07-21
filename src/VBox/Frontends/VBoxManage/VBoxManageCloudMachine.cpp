@@ -637,7 +637,7 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to obtain boolean value\n", bstrLabel.raw());
+                    "%ls: unable to convert to boolean value\n", bstrLabel.raw());
                 break;
             }
 
@@ -662,7 +662,7 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to obtain string value\n", bstrLabel.raw());
+                    "%ls: unable to convert to string value\n", bstrLabel.raw());
                 break;
             }
 
@@ -697,16 +697,77 @@ printFormValue(const ComPtr<IFormValue> &pValue)
         }
 
         case FormValueType_RangedInteger:
-            RTStrmPrintf(g_pStdOut, "integer\n");
+        {
+            ComPtr<IRangedIntegerFormValue> pIntValue;
+            hrc = pValue.queryInterfaceTo(pIntValue.asOutParam());
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdErr,
+                    "%ls: unable to convert to integer value\n", bstrLabel.raw());
+                break;
+            }
+
+            LONG lValue;
+            hrc = pIntValue->GetInteger(&lValue);
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: %Rhra", bstrLabel.raw(), hrc);
+                break;
+            }
+
+            RTPrintf("%ls: %RI64\n",
+                bstrLabel.raw(), (int64_t)lValue);
             break;
+        }
 
         case FormValueType_Choice:
-            RTStrmPrintf(g_pStdOut, "choice\n");
+        {
+            ComPtr<IChoiceFormValue> pChoiceValue;
+            hrc = pValue.queryInterfaceTo(pChoiceValue.asOutParam());
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdErr,
+                    "%ls: unable to convert to choice value\n", bstrLabel.raw());
+                break;
+            }
+
+            com::SafeArray<BSTR> aValues;
+            hrc = pChoiceValue->COMGETTER(Values)(ComSafeArrayAsOutParam(aValues));
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: values: %Rhra", bstrLabel.raw(), hrc);
+                break;
+            }
+
+            LONG idxSelected = -1;
+            hrc = pChoiceValue->GetSelectedIndex(&idxSelected);
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: selectedIndex: %Rhra", bstrLabel.raw(), hrc);
+                break;
+            }
+
+            if (idxSelected < 0 || (size_t)idxSelected >  aValues.size())
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: selected index %RI64 out of range [0, %zu)\n",
+                             bstrLabel.raw(), (int64_t)idxSelected, aValues.size());
+                break;
+            }
+
+            RTPrintf("%ls: %ls\n",
+                bstrLabel.raw(), aValues[idxSelected]);
             break;
+        }
 
         default:
+        {
             RTStrmPrintf(g_pStdOut, "unknown value type %RU32\n", enmType);
             break;
+        }
     }
 
     return S_OK;
