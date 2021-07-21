@@ -811,6 +811,7 @@ const QString &UIWizardNewVM::mediumPath() const
 void UIWizardNewVM::setMediumPath(const QString &strMediumPath)
 {
     m_strMediumPath = strMediumPath;
+    printf("%s\n", qPrintable(m_strMediumPath));
 }
 
 qulonglong UIWizardNewVM::mediumSize() const

@@ -381,9 +381,7 @@ void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
 {
     if (!m_pLocationEditor)
         return;
-    m_pLocationEditor->blockSignals(true);
     m_pLocationEditor->setText(strMediumPath);
-    m_pLocationEditor->blockSignals(false);
 }
 
 void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)

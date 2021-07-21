@@ -134,7 +134,7 @@ private:
     QWidget *createNameOSTypeWidgets();
 
     void updateVirtualMediumPathFromMachinePathName();
-    void updateWidgetAfterMediumFormatChange();
+    void updateDiskWidgetsAfterMediumFormatChange();
     void updateHostnameDomainNameFromMachineName();
     void setEnableNewDiskWidgets(bool fEnable);
     void setVirtualDiskFromDiskCombo();
