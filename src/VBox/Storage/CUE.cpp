@@ -237,6 +237,7 @@ static const CUEKEYWORDDESC g_aCueKeywords[] =
 {
     {RT_STR_TUPLE("FILE"),       CUEKEYWORD_FILE},
     {RT_STR_TUPLE("BINARY"),     CUEKEYWORD_BINARY},
+    {RT_STR_TUPLE("MOTOROLA"),   CUEKEYWORD_MOTOROLA},
     {RT_STR_TUPLE("WAVE"),       CUEKEYWORD_WAVE},
     {RT_STR_TUPLE("MP3"),        CUEKEYWORD_MP3},
     {RT_STR_TUPLE("AIFF"),       CUEKEYWORD_AIFF},
@@ -1039,6 +1040,16 @@ static int cueParseTrackList(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
 {
     int rc = VINF_SUCCESS;
 
+    /*
+     * Sometimes there is a TITLE/PERFORMER/SONGWRITER directive before the start of the track list,
+     * skip and ignore those.
+     */
+    while (   RT_SUCCESS(rc)
+           && (   cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_TITLE)
+               || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_PERFORMER)
+               || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_SONGWRITER)))
+        rc = cueParseAndSkipStringRemainder(pThis, pTokenizer, "TITLE/PERFORMER/SONGWRITER");
+
     while (   RT_SUCCESS(rc)
            && cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_TRACK))
         rc = cueParseTrack(pThis, pTokenizer);
@@ -1107,12 +1118,6 @@ static int cueParseKeyword(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
 
     if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_FILE))
         rc = cueParseFile(pThis, pTokenizer);
-    else if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_TITLE))
-        rc = cueParseAndSkipStringRemainder(pThis, pTokenizer, "TITLE");
-    else if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_PERFORMER))
-        rc = cueParseAndSkipStringRemainder(pThis, pTokenizer, "PERFORMER");
-    else if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_SONGWRITER))
-        rc = cueParseAndSkipStringRemainder(pThis, pTokenizer, "SONGWRITER");
     else /* Skip all other keywords we don't need/support. */
         cueTokenizerConsume(pTokenizer);
 
@@ -1540,7 +1545,7 @@ static DECLCALLBACK(int) cueRead(void *pBackendData, uint64_t uOffset, size_t cb
 
         /* Need to convert audio data samples to big endian. */
         if (   pRegion->enmDataForm == VDREGIONDATAFORM_CDDA
-            && pThis->fLittleEndian)
+            && !pThis->fLittleEndian)
         {
             *pcbActuallyRead = cbToRead;
 
