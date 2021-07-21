@@ -672,7 +672,7 @@ printFormValue(const ComPtr<IFormValue> &pValue)
              * first.  Make this selectable with an option?
              */
             com::Bstr bstrValue;
-            hrc = pStrValue->GetClipboardString(bstrValue.asOutParam());
+            hrc = pStrValue->COMGETTER(ClipboardString)(bstrValue.asOutParam());
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdOut,
