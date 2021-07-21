@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,17 +22,17 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "QIMessageBox.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMediumItem.h"
 #include "UIMessageCenter.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CMachine.h"
 #include "CMediumAttachment.h"
-#include "CStorageController.h"
 #include "CMediumFormat.h"
+#include "CStorageController.h"
 
 
 /*********************************************************************************************************************************
@@ -69,12 +69,13 @@ bool UIMediumItem::move()
                                                               treeWidget(),
                                                               tr("Choose the location of this medium"),
                                                                  0, true, true);
-    /* Negative if nothing changed: */
-    if (strFileName.isNull())
+    if (strFileName.isNull() || strFileName == location())
         return false;
 
     /* Search for corresponding medium: */
     CMedium comMedium = medium().medium();
+    if (comMedium.isNull() || !comMedium.isOk())
+        return false;
 
     /* Try to assign new medium location: */
     if (   comMedium.isOk()
