@@ -379,8 +379,11 @@ QString UIMediumSizeAndPathGroupBox::mediumPath() const
 
 void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
 {
-    if (m_pLocationEditor)
-        m_pLocationEditor->setText(strMediumPath);
+    if (!m_pLocationEditor)
+        return;
+    m_pLocationEditor->blockSignals(true);
+    m_pLocationEditor->setText(strMediumPath);
+    m_pLocationEditor->blockSignals(false);
 }
 
 void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
@@ -397,7 +400,7 @@ void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFo
                                   QString("%1.%2").
                                   arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
                                   arg(strDefaultExtension));
-            m_pLocationEditor->setText(newFileInfo.absoluteFilePath());
+            setMediumPath(newFileInfo.absoluteFilePath());
         }
     }
 }

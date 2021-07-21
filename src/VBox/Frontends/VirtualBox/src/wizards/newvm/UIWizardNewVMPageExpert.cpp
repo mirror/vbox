@@ -125,8 +125,11 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
     if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
-    if (!m_userModifiedParameters.contains("MediumPath"))
+    if (!m_userModifiedParameters.contains("MediumPath") && m_pSizeAndLocationGroup)
+    {
         updateVirtualMediumPathFromMachinePathName();
+        newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
+    }
     if (!m_userModifiedParameters.contains("HostnameDomainName"))
         updateHostnameDomainNameFromMachineName();
     emit completeChanged();
@@ -136,8 +139,11 @@ void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
-    if (!m_userModifiedParameters.contains("MediumPath"))
+    if (!m_userModifiedParameters.contains("MediumPath") && m_pSizeAndLocationGroup)
+    {
         updateVirtualMediumPathFromMachinePathName();
+        newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
+    }
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
@@ -374,6 +380,8 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 
 void UIWizardNewVMPageExpert::initializePage()
 {
+    /* We need not to check existence of parameter within m_userModifiedParameters since initializePage() runs
+        once the page loads before user has a chance to modify parameters explicitly: */
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     AssertReturnVoid(pWizard);
     /* Initialize wizard properties: */
@@ -389,24 +397,22 @@ void UIWizardNewVMPageExpert::initializePage()
         /* Medium related properties: */
         if (m_pFormatButtonGroup)
             newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
-        if (!m_userModifiedParameters.contains("MediumPath"))
-            updateVirtualMediumPathFromMachinePathName();
+        /* First set value for medium path in widget the wizard: */
+        updateVirtualMediumPathFromMachinePathName();
+        newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
     }
 
     /* Initialize user/password if they are not modified by the user: */
     if (m_pUserNamePasswordGroupBox)
     {
         m_pUserNamePasswordGroupBox->blockSignals(true);
-        if (!m_userModifiedParameters.contains("UserName"))
-            m_pUserNamePasswordGroupBox->setUserName(pWizard->userName());
-        if (!m_userModifiedParameters.contains("Password"))
-            m_pUserNamePasswordGroupBox->setPassword(pWizard->password());
+        m_pUserNamePasswordGroupBox->setUserName(pWizard->userName());
+        m_pUserNamePasswordGroupBox->setPassword(pWizard->password());
         m_pUserNamePasswordGroupBox->blockSignals(false);
     }
-    if (!m_userModifiedParameters.contains("HostnameDomainName"))
-        updateHostnameDomainNameFromMachineName();
+    updateHostnameDomainNameFromMachineName();
 
-    if (m_pGAInstallationISOContainer && !m_userModifiedParameters.contains("InstallGuestAdditions"))
+    if (m_pGAInstallationISOContainer)
     {
         m_pGAInstallationISOContainer->blockSignals(true);
         m_pGAInstallationISOContainer->setChecked(pWizard->installGuestAdditions());
