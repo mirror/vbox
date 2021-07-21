@@ -138,7 +138,6 @@ private:
     void updateDiskWidgetsAfterMediumFormatChange();
     void updateHostnameDomainNameFromMachineName();
     void setEnableNewDiskWidgets(bool fEnable);
-    void setVirtualDiskFromDiskCombo();
     void setSkipCheckBoxEnable();
     bool isUnattendedEnabled() const;
     void setEnableDiskSelectionWidgets(bool fEnabled);

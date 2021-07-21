@@ -682,22 +682,23 @@ void UIWizardNewVMPageExpert::sltMediumVariantChanged(qulonglong uVariant)
 
 void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()
 {
+    AssertReturnVoid(m_pDiskSelector);
     /* Make sure to set m_virtualDisk: */
-    setVirtualDiskFromDiskCombo();
+    newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 {
-    if (!m_pDiskSourceButtonGroup)
-        return;
+    AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup);
+
     m_userModifiedParameters << "SelectedDiskSource";
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         m_enmSelectedDiskSource = SelectedDiskSource_Empty;
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
         m_enmSelectedDiskSource = SelectedDiskSource_Existing;
-        setVirtualDiskFromDiskCombo();
+        newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
     }
     else
         m_enmSelectedDiskSource = SelectedDiskSource_New;
@@ -819,15 +820,6 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
     if (m_pDiskVariantGroupBox)
         m_pDiskVariantGroupBox->setEnabled(fEnable);
 }
-
-void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()
-{
-    // AssertReturnVoid(m_pDiskSelector);
-    // UIWizardNewVM *pWizard = wizardImp();
-    // AssertReturnVoid(pWizard);
-    // pWizard->setVirtualDisk(m_pDiskSelector->id());
-}
-
 
 QWidget *UIWizardNewVMPageExpert::createNameOSTypeWidgets()
 {

@@ -98,7 +98,6 @@ private:
     QWidget *createNewDiskWidgets();
     void cleanupPage();
     void setEnableNewDiskWidgets(bool fEnable);
-    void setVirtualDiskFromDiskCombo();
     QWidget *createDiskWidgets();
     QWidget *createMediumVariantWidgets(bool fWithLabels);
 

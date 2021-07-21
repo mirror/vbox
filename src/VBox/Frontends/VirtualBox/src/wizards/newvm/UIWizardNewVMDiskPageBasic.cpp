@@ -233,15 +233,14 @@ void UIWizardNewVMDiskPageBasic::createConnections()
 
 void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
 {
-    if (!m_pDiskSourceButtonGroup)
-        return;
+    AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup);
 
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         m_enmSelectedDiskSource = SelectedDiskSource_Empty;
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
         m_enmSelectedDiskSource = SelectedDiskSource_Existing;
-        setVirtualDiskFromDiskCombo();
+        newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
     }
     else
         m_enmSelectedDiskSource = SelectedDiskSource_New;
@@ -254,7 +253,8 @@ void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
 
 void UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged()
 {
-    setVirtualDiskFromDiskCombo();
+    AssertReturnVoid(m_pDiskSelector);
+    newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
     emit completeChanged();
 }
 
@@ -511,14 +511,6 @@ void UIWizardNewVMDiskPageBasic::setEnableNewDiskWidgets(bool fEnable)
         m_pMediumSizeEditorLabel->setEnabled(fEnable);
     if (m_pFixedCheckBox)
         m_pFixedCheckBox->setEnabled(fEnable);
-}
-
-void UIWizardNewVMDiskPageBasic::setVirtualDiskFromDiskCombo()
-{
-    AssertReturnVoid(m_pDiskSelector);
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    AssertReturnVoid(pWizard);
-    pWizard->setVirtualDisk(m_pDiskSelector->id());
 }
 
 QWidget *UIWizardNewVMDiskPageBasic::createDiskWidgets()
