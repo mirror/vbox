@@ -23,6 +23,9 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/errorprint.h>
 
+#include <algorithm>
+#include <vector>
+
 
 static int selectCloudProvider(ComPtr<ICloudProvider> &pProvider,
                                const ComPtr<IVirtualBox> &pVirtualBox,
@@ -35,6 +38,11 @@ static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
                                          const ComPtr<ICloudProfile> &pProfile);
 static RTEXITCODE listCloudMachinesImpl(HandlerArg *a, int iFirst,
                                         const ComPtr<ICloudProfile> &pProfile);
+static RTEXITCODE handleCloudMachineInfo(HandlerArg *a, int iFirst,
+                                          const ComPtr<ICloudProfile> &pProfile);
+
+static HRESULT printMachineInfo(const ComPtr<ICloudMachine> &pMachine);
+static HRESULT printFormValue(const ComPtr<IFormValue> &pValue);
 
 
 
@@ -207,6 +215,35 @@ selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 }
 
 
+static HRESULT
+getMachineById(ComPtr<ICloudMachine> &pMachineOut,
+               const ComPtr<ICloudProfile> &pProfile,
+               const char *pcszStrId)
+{
+    HRESULT hrc;
+
+    ComPtr<ICloudClient> pCloudClient;
+    CHECK_ERROR2_RET(hrc, pProfile,
+        CreateCloudClient(pCloudClient.asOutParam()), hrc);
+
+    ComPtr<ICloudMachine> pMachine;
+    CHECK_ERROR2_RET(hrc, pCloudClient,
+        GetCloudMachine(com::Bstr(pcszStrId).raw(),
+                        pMachine.asOutParam()), hrc);
+
+    ComPtr<IProgress> pRefreshProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        Refresh(pRefreshProgress.asOutParam()), hrc);
+
+    hrc = showProgress(pRefreshProgress, SHOW_PROGRESS_NONE);
+    if (FAILED(hrc))
+        return hrc;
+
+    pMachineOut = pMachine;
+    return S_OK;
+}
+
+
 /*
  * RTGETOPTINIT_FLAGS_NO_STD_OPTS recognizes both --help and --version
  * and we don't want the latter.  It's easier to add one line of this
@@ -265,8 +302,7 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         switch (ch)
         {
             case kMachine_Info:
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "cloud machine info: not yet implemented");
+                return handleCloudMachineInfo(a, OptState.iNext, pProfile);
 
             case kMachine_List:
                 return listCloudMachinesImpl(a, OptState.iNext, pProfile);
@@ -334,21 +370,18 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--long",         'l',                    RTGETOPT_REQ_NOTHING },
-        { "--short",        's',                    RTGETOPT_REQ_NOTHING },
+        { "--sort",         's',                    RTGETOPT_REQ_NOTHING },
           CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
-    enum kFormatEnum
-    {
-        kFormat_Default,
-        kFormat_Short,
-        kFormat_Long
-    };
+    enum kFormatEnum { kFormat_Short, kFormat_Long };
+    kFormatEnum enmFormat = kFormat_Short;
+
+    enum kSortOrderEnum { kSortOrder_None, kSortOrder_Name, kSortOrder_Id };
+    kSortOrderEnum enmSortOrder = kSortOrder_None;
 
     HRESULT hrc;
     int rc;
-
-    kFormatEnum enmFormat = kFormat_Default;
 
 
     RTGETOPTSTATE OptState;
@@ -370,7 +403,8 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
                 break;
 
             case 's':
-                enmFormat = kFormat_Short;
+                /** @todo optional argument to select the sort key? */
+                enmSortOrder = kSortOrder_Name;
                 break;
 
             case 'h':           /* --help */
@@ -406,22 +440,274 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
         COMGETTER(CloudMachineList)(ComSafeArrayAsOutParam(aMachines)),
             RTEXITCODE_FAILURE);
 
-    for (size_t i = 0; i < aMachines.size(); ++i)
+    const size_t cMachines = aMachines.size();
+    if (cMachines == 0)
+        return RTEXITCODE_SUCCESS;
+
+
+    /*
+     * Get names/ids that we need for the short output and to sort the
+     * list.
+     */
+    std::vector<ComPtr<ICloudMachine> > vMachines(cMachines);
+    std::vector<com::Bstr> vBstrNames(cMachines);
+    std::vector<com::Bstr> vBstrIds(cMachines);
+    for (size_t i = 0; i < cMachines; ++i)
     {
-        const ComPtr<ICloudMachine> pMachine = aMachines[i];
+        vMachines[i] = aMachines[i];
 
-        com::Bstr bstrId;
-        CHECK_ERROR2_RET(hrc, pMachine,
-            COMGETTER(Id)(bstrId.asOutParam()),
+        CHECK_ERROR2_RET(hrc, vMachines[i],
+            COMGETTER(Name)(vBstrNames[i].asOutParam()),
                 RTEXITCODE_FAILURE);
 
-        com::Bstr bstrName;
-        CHECK_ERROR2_RET(hrc, pMachine,
-            COMGETTER(Name)(bstrName.asOutParam()),
+        CHECK_ERROR2_RET(hrc, vMachines[i],
+            COMGETTER(Id)(vBstrIds[i].asOutParam()),
                 RTEXITCODE_FAILURE);
+    }
 
-        RTPrintf("%ls %ls\n", bstrId.raw(), bstrName.raw());
+
+    /*
+     * Sort the list if necessary.  The sort is indirect via an
+     * intermediate array of indexes.
+     */
+    std::vector<size_t> vIndexes(cMachines);
+    for (size_t i = 0; i < cMachines; ++i)
+        vIndexes[i] = i;
+
+    if (enmSortOrder != kSortOrder_None)
+    {
+        struct SortBy {
+            const std::vector<com::Bstr> &ks;
+            SortBy(const std::vector<com::Bstr> &aKeys) : ks(aKeys) {}
+            bool operator() (size_t l, size_t r) { return ks[l] < ks[r]; }
+        };
+
+        std::sort(vIndexes.begin(), vIndexes.end(),
+                  SortBy(enmSortOrder == kSortOrder_Name
+                         ? vBstrNames : vBstrIds));
+    }
+
+
+    if (enmFormat == kFormat_Short)
+    {
+        for (size_t i = 0; i < cMachines; ++i)
+        {
+            const size_t idx = vIndexes[i];
+            const com::Bstr &bstrId = vBstrIds[idx];
+            const com::Bstr &bstrName = vBstrNames[idx];
+
+            RTPrintf("%ls %ls\n", bstrId.raw(), bstrName.raw());
+        }
+    }
+    else // kFormat_Long
+    {
+        for (size_t i = 0; i < cMachines; ++i)
+        {
+            const size_t idx = vIndexes[i];
+            const ComPtr<ICloudMachine> &pMachine = vMachines[idx];
+
+            if (i != 0)
+                RTPrintf("\n");
+            printMachineInfo(pMachine);
+        }
     }
 
     return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE
+handleCloudMachineInfo(HandlerArg *a, int iFirst,
+                       const ComPtr<ICloudProfile> &pProfile)
+{
+    HRESULT hrc;
+
+    if (a->argc == iFirst)
+    {
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                   "cloud machine info: machine id required\n"
+                   "Try '--help' for more information.");
+    }
+
+    for (int i = iFirst; i < a->argc; ++i)
+    {
+        ComPtr<ICloudMachine> pMachine;
+        hrc = getMachineById(pMachine, pProfile, a->argv[i]);
+        if (FAILED(hrc))
+            return RTEXITCODE_FAILURE;
+
+        hrc = printMachineInfo(pMachine);
+        if (FAILED(hrc))
+            return RTEXITCODE_FAILURE;
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static HRESULT
+printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
+{
+    HRESULT hrc;
+
+    /*
+     * Check if the machine is accessible and print the error
+     * message if not.
+     */
+    BOOL fAccessible = FALSE;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        COMGETTER(Accessible)(&fAccessible), hrc);
+
+    if (!fAccessible)
+    {
+        RTMsgError("machine is not accessible"); // XXX: Id?
+
+        ComPtr<IVirtualBoxErrorInfo> pErrorInfo;
+        CHECK_ERROR2_RET(hrc, pMachine,
+            COMGETTER(AccessError)(pErrorInfo.asOutParam()), hrc);
+
+        while (!pErrorInfo.isNull())
+        {
+            com::Bstr bstrText;
+            CHECK_ERROR2_RET(hrc, pErrorInfo,
+                COMGETTER(Text)(bstrText.asOutParam()), hrc);
+            RTStrmPrintf(g_pStdErr, "%ls\n", bstrText.raw());
+
+            CHECK_ERROR2_RET(hrc, pErrorInfo,
+                COMGETTER(Next)(pErrorInfo.asOutParam()), hrc);
+        }
+
+        return E_FAIL;
+    }
+
+
+    /*
+     * The machine seems to be ok, print its details.
+     */
+    ComPtr<IForm> pDetails;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        GetDetailsForm(pDetails.asOutParam()), hrc);
+
+    if (RT_UNLIKELY(pDetails.isNull()))
+    {
+        RTMsgError("null details"); /* better error message? */
+        return E_FAIL;
+    }
+
+    com::SafeIfaceArray<IFormValue> aValues;
+    CHECK_ERROR2_RET(hrc, pDetails,
+        COMGETTER(Values)(ComSafeArrayAsOutParam(aValues)), hrc);
+    for (size_t i = 0; i < aValues.size(); ++i)
+    {
+        hrc = printFormValue(aValues[i]);
+        if (FAILED(hrc))
+            return hrc;
+    }
+
+    return S_OK;
+}
+
+
+static HRESULT
+printFormValue(const ComPtr<IFormValue> &pValue)
+{
+    HRESULT hrc;
+
+    BOOL fVisible = FALSE;
+    CHECK_ERROR2_RET(hrc, pValue,
+        COMGETTER(Visible)(&fVisible), hrc);
+    if (!fVisible)
+        return S_OK;
+
+
+    com::Bstr bstrLabel;
+    CHECK_ERROR2_RET(hrc, pValue,
+        COMGETTER(Label)(bstrLabel.asOutParam()), hrc);
+
+    FormValueType_T enmType;
+    CHECK_ERROR2_RET(hrc, pValue,
+        COMGETTER(Type)(&enmType), hrc);
+
+    switch (enmType)
+    {
+        case FormValueType_Boolean:
+        {
+            ComPtr<IBooleanFormValue> pBoolValue;
+            hrc = pValue.queryInterfaceTo(pBoolValue.asOutParam());
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdErr,
+                    "%ls: unable to obtain boolean value\n", bstrLabel.raw());
+                break;
+            }
+
+            BOOL fSelected;
+            hrc = pBoolValue->GetSelected(&fSelected);
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: %Rhra", bstrLabel.raw(), hrc);
+                break;
+            }
+
+            RTPrintf("%ls: %RTbool\n",
+                bstrLabel.raw(), RT_BOOL(fSelected));
+            break;
+        }
+
+        case FormValueType_String:
+        {
+            ComPtr<IStringFormValue> pStrValue;
+            hrc = pValue.queryInterfaceTo(pStrValue.asOutParam());
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdErr,
+                    "%ls: unable to obtain string value\n", bstrLabel.raw());
+                break;
+            }
+
+            /*
+             * GUI hack: if clipboard string is set, it contains
+             * untruncated long value, usually full OCID, so check it
+             * first.  Make this selectable with an option?
+             */
+            com::Bstr bstrValue;
+            hrc = pStrValue->GetClipboardString(bstrValue.asOutParam());
+            if (FAILED(hrc))
+            {
+                RTStrmPrintf(g_pStdOut,
+                    "%ls: %Rhra", bstrLabel.raw(), hrc);
+                break;
+            }
+
+            if (bstrValue.isEmpty())
+            {
+                hrc = pStrValue->GetString(bstrValue.asOutParam());
+                if (FAILED(hrc))
+                {
+                    RTStrmPrintf(g_pStdOut,
+                        "%ls: %Rhra", bstrLabel.raw(), hrc);
+                    break;
+                }
+            }
+
+            RTPrintf("%ls: %ls\n",
+                bstrLabel.raw(), bstrValue.raw());
+            break;
+        }
+
+        case FormValueType_RangedInteger:
+            RTStrmPrintf(g_pStdOut, "integer\n");
+            break;
+
+        case FormValueType_Choice:
+            RTStrmPrintf(g_pStdOut, "choice\n");
+            break;
+
+        default:
+            RTStrmPrintf(g_pStdOut, "unknown value type %RU32\n", enmType);
+            break;
+    }
+
+    return S_OK;
 }
