@@ -84,6 +84,7 @@ class UIDiskVariantGroupBox : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
+    void sigMediumVariantChanged(qulonglong uVariant);
 
 public:
 
@@ -94,6 +95,10 @@ public:
     void setWidgetVisibility(CMediumFormat &mediumFormat);
     bool isComplete() const;
 
+private slots:
+
+    void sltVariantChanged();
+
 private:
 
     void prepare();
@@ -101,7 +106,6 @@ private:
 
     QCheckBox *m_pFixedCheckBox;
     QCheckBox *m_pSplitBox;
-
 };
 
 

@@ -84,6 +84,7 @@ private slots:
     void sltMediumFormatChanged();
     void sltMediumSizeChanged(qulonglong uSize);
     void sltMediumPathChanged(const QString &strPath);
+    void sltMediumVariantChanged(qulonglong uVariant);
     void sltSelectedDiskSourceChanged();
     void sltSelectLocationButtonClicked();
 
