@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_UINotificationProgressTask_h
-#define FEQT_INCLUDED_SRC_globals_UINotificationProgressTask_h
+#ifndef FEQT_INCLUDED_SRC_notificationcenter_UINotificationProgressTask_h
+#define FEQT_INCLUDED_SRC_notificationcenter_UINotificationProgressTask_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -63,4 +63,4 @@ private:
     QString  m_strErrorMessage;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_globals_UINotificationProgressTask_h */
+#endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationProgressTask_h */
