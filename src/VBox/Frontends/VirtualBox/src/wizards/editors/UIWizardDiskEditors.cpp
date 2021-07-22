@@ -371,11 +371,16 @@ void UIMediumSizeAndPathGroupBox::prepare()
     connect(m_pLocationEditor, &QILineEdit::textChanged,
             this, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged);
 
+    connect(m_pLocationOpenButton, &QIToolButton::clicked,
+            this, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked);
+
     retranslateUi();
 }
 void UIMediumSizeAndPathGroupBox::retranslateUi()
 {
     setTitle(tr("Hard Disk File Location and Size"));
+    if (m_pLocationOpenButton)
+        m_pLocationOpenButton->setToolTip(tr("Choose a location for new virtual hard disk file..."));
 }
 
 QString UIMediumSizeAndPathGroupBox::mediumPath() const

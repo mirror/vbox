@@ -26,6 +26,7 @@
 #include <QSet>
 
 /* GUI includes: */
+#include "QIFileDialog.h"
 #include "UINativeWizardPage.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageVariant.h"
@@ -61,6 +62,7 @@ namespace UIWizardNewVMDiskPage
                                 QWidget *pCaller);
     QString absoluteFilePath(const QString &strFileName, const QString &strPath);
     bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
+    QString selectNewMediumLocation(UIWizardNewVM *pWizard);
 }
 
 

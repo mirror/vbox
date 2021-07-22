@@ -133,6 +133,57 @@ bool UIWizardNewVMDiskPage::checkFATSizeLimitation(const qulonglong uVariant, co
     return true;
 }
 
+QString UIWizardNewVMDiskPage::selectNewMediumLocation(UIWizardNewVM *pWizard)
+{
+    AssertReturn(pWizard, QString());
+    QString strChosenFilePath;
+    /* Get current folder and filename: */
+    QFileInfo fullFilePath(pWizard->mediumPath());
+    QDir folder = fullFilePath.path();
+    QString strFileName = fullFilePath.fileName();
+
+    /* Set the first parent folder that exists as the current: */
+    while (!folder.exists() && !folder.isRoot())
+    {
+        QFileInfo folderInfo(folder.absolutePath());
+        if (folder == QDir(folderInfo.absolutePath()))
+            break;
+        folder = folderInfo.absolutePath();
+    }
+    AssertReturn(folder.exists() && !folder.isRoot(), strChosenFilePath);
+
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    CMediumFormat mediumFormat = pWizard->mediumFormat();
+    mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    QStringList validExtensionList;
+    for (int i = 0; i < fileExtensions.size(); ++i)
+        if (deviceTypes[i] == KDeviceType_HardDisk)
+            validExtensionList << QString("*.%1").arg(fileExtensions[i]);
+    /* Compose full filter list: */
+    QString strBackendsList = QString("%1 (%2)").arg(mediumFormat.GetName()).arg(validExtensionList.join(" "));
+
+    strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
+                                                              strBackendsList, pWizard,
+                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
+
+    // if (!strChosenFilePath.isEmpty())
+    // {
+    //     /* If valid file extension is missed, append it: */
+    //     if (QFileInfo(strChosenFilePath).suffix().isEmpty())
+    //          strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
+    // }
+    return strChosenFilePath;
+    //     if (m_pLocationEditor)
+    //     {
+    //         m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
+    //         m_pLocationEditor->selectAll();
+    //         m_pLocationEditor->setFocus();
+    //     }
+    // }
+}
+
+
 UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
     : m_pDiskSourceButtonGroup(0)
     , m_pDiskEmpty(0)

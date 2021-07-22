@@ -117,6 +117,7 @@ signals:
 
     void sigMediumSizeChanged(qulonglong uSize);
     void sigMediumPathChanged(const QString &strPath);
+    void sigMediumLocationButtonClicked();
 
 public:
 

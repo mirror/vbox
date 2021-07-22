@@ -86,8 +86,7 @@ private slots:
     void sltMediumPathChanged(const QString &strPath);
     void sltMediumVariantChanged(qulonglong uVariant);
     void sltSelectedDiskSourceChanged();
-    void sltSelectLocationButtonClicked();
-
+    void sltMediumLocationButtonClicked();
     void sltMemorySizeChanged(int iValue);
     void sltCPUCountChanged(int iCount);
     void sltEFIEnabledChanged(bool fEnabled);
