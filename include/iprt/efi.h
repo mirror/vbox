@@ -166,7 +166,7 @@ typedef enum RTEFISIGTYPE
     /** First invalid type (do not use). */
     RTEFISIGTYPE_FIRST_INVALID,
     /** 32bit blowup hack.*/
-    RTEFISIGTYPE_32BIT_HACK = 0x7fffffff,
+    RTEFISIGTYPE_32BIT_HACK = 0x7fffffff
 } RTEFISIGTYPE;
 
 
