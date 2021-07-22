@@ -59,7 +59,7 @@ typedef struct RTEFISIGNATURE
     /** The signature owner. */
     RTUUID                  UuidOwner;
     /** Size of the signature data in bytes. */
-    size_t                  cbSignature;
+    uint32_t                cbSignature;
     /** The signature data (variable in size). */
     RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t                 abSignature[RT_FLEXIBLE_ARRAY];
@@ -90,10 +90,10 @@ typedef struct RTEFISIGDBDESC
     /** The EFI GUID identifying the signature type. */
     EFI_GUID                GuidSignatureType;
     /** The additional signature header for this signature type. */
-    size_t                  cbSigHdr;
+    uint32_t                cbSigHdr;
     /** Size of the signature data (including EFI_SIGNATURE_DATA),
      * can be 0 size varies with each signature (X.509 for example). */
-    size_t                  cbSig;
+    uint32_t                cbSig;
     /** The internal signature type enum. */
     RTEFISIGTYPE            enmSigType;
     /** Human readable string of the signature type. */
@@ -377,7 +377,7 @@ static int rtEfiSigDbWriteList(PRTLISTANCHOR pLst, PCRTEFISIGDBDESC pDesc, RTVFS
  * @param   pUuidOwner          The UUID of the signature owner.
  * @param   cbSig               Size of the signature data in bytes.
  */
-static PRTEFISIGNATURE rtEfiSigDbAllocSignature(PCRTUUID pUuidOwner, size_t cbSig)
+static PRTEFISIGNATURE rtEfiSigDbAllocSignature(PCRTUUID pUuidOwner, uint32_t cbSig)
 {
     PRTEFISIGNATURE pSig = (PRTEFISIGNATURE)RTMemAllocZ(RT_UOFFSETOF_DYN(RTEFISIGNATURE, abSignature[cbSig]));
     if (pSig)
@@ -462,13 +462,14 @@ RTDECL(int) RTEfiSigDbAddSignatureFromFile(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE en
     int rc = RTVfsFileQuerySize(hVfsFileIn, &cbSig);
     if (RT_SUCCESS(rc))
     {
-        if (   !pDesc->cbSig
-            || pDesc->cbSig - sizeof(EFI_SIGNATURE_DATA) == cbSig)
+        if (   (   !pDesc->cbSig
+                || pDesc->cbSig - sizeof(EFI_SIGNATURE_DATA) == cbSig)
+            && cbSig < UINT32_MAX)
         {
-            PRTEFISIGNATURE pSig = rtEfiSigDbAllocSignature(pUuidOwner, cbSig);
+            PRTEFISIGNATURE pSig = rtEfiSigDbAllocSignature(pUuidOwner, (uint32_t)cbSig);
             if (pSig)
             {
-                rc = RTVfsFileRead(hVfsFileIn, &pSig->abSignature[0], cbSig, NULL /*pcbRead*/);
+                rc = RTVfsFileRead(hVfsFileIn, &pSig->abSignature[0], (size_t)cbSig, NULL /*pcbRead*/);
                 if (RT_SUCCESS(rc))
                     RTListAppend(&pThis->aLstSigTypes[enmSigType], &pSig->NdLst);
                 else
@@ -493,7 +494,7 @@ RTDECL(int) RTEfiSigDbAddSignatureFromBuf(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enm
     AssertReturn(enmSigType >= RTEFISIGTYPE_FIRST_VALID && enmSigType < RTEFISIGTYPE_FIRST_INVALID, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pUuidOwner, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(cbBuf && cbBuf < UINT32_MAX, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
     PCRTEFISIGDBDESC pDesc = &g_aGuid2SigTypeMapping[enmSigType];
