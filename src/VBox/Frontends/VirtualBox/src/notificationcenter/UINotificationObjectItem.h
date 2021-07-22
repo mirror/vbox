@@ -27,10 +27,12 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QLabel;
+class QProgressBar;
 class QVBoxLayout;
 class QIRichTextLabel;
 class QIToolButton;
 class UINotificationObject;
+class UINotificationProgress;
 
 /** QWidget-based notification-object item. */
 class UINotificationObjectItem : public QWidget
@@ -69,6 +71,38 @@ protected:
     bool  m_fHovered;
     /** Holds whether item is toggled. */
     bool  m_fToggled;
+};
+
+/** UINotificationObjectItem extension for notification-progress. */
+class UINotificationProgressItem : public UINotificationObjectItem
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs notification-progress item, passing @a pParent to the base-class.
+      * @param  pProgress  Brings the notification-progress this item created for. */
+    UINotificationProgressItem(QWidget *pParent, UINotificationProgress *pProgress = 0);
+
+protected:
+
+    /** Holds the progress-bar instance. */
+    QProgressBar *m_pProgressBar;
+
+private slots:
+
+    /** Handles signal about progress started. */
+    void sltHandleProgressStarted();
+    /** Handles signal about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sltHandleProgressChange(ulong uPercent);
+    /** Handles signal about progress finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the notification-progress this item created for. */
+    UINotificationProgress *progress() const;
 };
 
 /** Notification-object factory. */

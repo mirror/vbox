@@ -27,6 +27,12 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
+/* COM includes: */
+#include "CProgress.h"
+
+/* Forward declarations: */
+class UINotificationProgressTask;
+
 /** QObject-based notification-object. */
 class SHARED_LIBRARY_STUFF UINotificationObject : public QObject
 {
@@ -53,6 +59,63 @@ public slots:
 
     /** Notifies model about closing. */
     virtual void close();
+};
+
+/** UINotificationObject extension for notification-progress. */
+class SHARED_LIBRARY_STUFF UINotificationProgress : public UINotificationObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about progress started. */
+    void sigProgressStarted();
+    /** Notifies listeners about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about progress finished. */
+    void sigProgressFinished();
+
+public:
+
+    /** Constructs notification-progress. */
+    UINotificationProgress();
+    /** Destructs notification-progress. */
+    virtual ~UINotificationProgress() /* override final */;
+
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) = 0;
+
+    /** Returns current progress percentage value. */
+    ulong percent() const;
+    /** Returns whether progress is cancelable. */
+    bool isCancelable() const;
+    /** Returns error-message if any. */
+    QString error() const;
+
+    /** Handles notification-object being added. */
+    virtual void handle() /* override final */;
+
+public slots:
+
+    /** Stops the progress and notifies model about closing. */
+    virtual void close() /* override final */;
+
+private slots:
+
+    /** Handles signal about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sltHandleProgressChange(ulong uPercent);
+    /** Handles signal about progress finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the instance of progress-task being wrapped by this notification-progress. */
+    UINotificationProgressTask *m_pTask;
+
+    /** Holds the last cached progress percentage value. */
+    ulong  m_uPercent;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObject_h */

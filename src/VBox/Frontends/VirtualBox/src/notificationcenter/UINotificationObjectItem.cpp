@@ -22,6 +22,7 @@
 #include <QLabel>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QProgressBar>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -160,11 +161,102 @@ void UINotificationObjectItem::paintEvent(QPaintEvent *pPaintEvent)
 
 
 /*********************************************************************************************************************************
-*   Namespace UINotificationItem implementation.                                                                                 *
+*   Class UINotificationProgressItem implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UINotificationProgressItem::UINotificationProgressItem(QWidget *pParent, UINotificationProgress *pProgress /* = 0 */)
+    : UINotificationObjectItem(pParent, pProgress)
+    , m_pProgressBar(0)
+{
+    /* Main layout was prepared in base-class: */
+    if (m_pLayoutMain)
+    {
+        /* Name label was prepared in base-class: */
+        if (m_pLabelName)
+            m_pLabelName->setText(progress()->name());
+        /* Details label was prepared in base-class: */
+        if (m_pLabelDetails)
+        {
+            m_pLabelDetails->setText(progress()->details());
+            int iHint = m_pLabelName->minimumSizeHint().width()
+                      + m_pLayoutUpper->spacing()
+                      + m_pButtonClose->minimumSizeHint().width();
+            m_pLabelDetails->setMinimumTextWidth(iHint);
+        }
+
+        /* Prepare progress-bar: */
+        m_pProgressBar = new QProgressBar(this);
+        if (m_pProgressBar)
+        {
+            m_pProgressBar->setMinimum(0);
+            m_pProgressBar->setMaximum(100);
+            m_pProgressBar->setValue(progress()->percent());
+
+            m_pLayoutMain->addWidget(m_pProgressBar);
+        }
+    }
+
+    /* Prepare progress connections: */
+    connect(progress(), &UINotificationProgress::sigProgressStarted,
+            this, &UINotificationProgressItem::sltHandleProgressStarted);
+    connect(progress(), &UINotificationProgress::sigProgressChange,
+            this, &UINotificationProgressItem::sltHandleProgressChange);
+    connect(progress(), &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressItem::sltHandleProgressFinished);
+}
+
+void UINotificationProgressItem::sltHandleProgressStarted()
+{
+    /* Init close-button and progress-bar states: */
+    if (m_pButtonClose)
+        m_pButtonClose->setEnabled(progress()->isCancelable());
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(0);
+}
+
+void UINotificationProgressItem::sltHandleProgressChange(ulong uPercent)
+{
+    /* Update close-button and progress-bar states: */
+    if (m_pButtonClose)
+        m_pButtonClose->setEnabled(progress()->isCancelable());
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(uPercent);
+}
+
+void UINotificationProgressItem::sltHandleProgressFinished()
+{
+    /* Finalize close-button and progress-bar states: */
+    if (m_pButtonClose)
+        m_pButtonClose->setEnabled(true);
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(100);
+    /* Update details with error text if any: */
+    if (m_pLabelDetails)
+    {
+        const QString strDetails = progress()->details();
+        const QString strError = progress()->error();
+        const QString strFullDetails = strError.isNull()
+                                     ? strDetails
+                                     : QString("%1<br>%2").arg(strDetails, strError);
+        m_pLabelDetails->setText(strFullDetails);
+    }
+}
+
+UINotificationProgress *UINotificationProgressItem::progress() const
+{
+    return qobject_cast<UINotificationProgress*>(m_pObject);
+}
+
+
+/*********************************************************************************************************************************
+*   Namespace UINotificationProgressItem implementation.                                                                         *
 *********************************************************************************************************************************/
 
 UINotificationObjectItem *UINotificationItem::create(QWidget *pParent, UINotificationObject *pObject)
 {
+    /* Handle known types: */
+    if (pObject->inherits("UINotificationProgress"))
+        return new UINotificationProgressItem(pParent, static_cast<UINotificationProgress*>(pObject));
     /* Handle defaults: */
     return new UINotificationObjectItem(pParent, pObject);
 }

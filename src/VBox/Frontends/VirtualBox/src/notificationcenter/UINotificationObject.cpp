@@ -17,7 +17,12 @@
 
 /* GUI includes: */
 #include "UINotificationObject.h"
+#include "UINotificationProgressTask.h"
 
+
+/*********************************************************************************************************************************
+*   Class UINotificationObject implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 UINotificationObject::UINotificationObject()
 {
@@ -26,4 +31,74 @@ UINotificationObject::UINotificationObject()
 void UINotificationObject::close()
 {
     emit sigAboutToClose();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgress implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+UINotificationProgress::UINotificationProgress()
+    : m_pTask(0)
+    , m_uPercent(0)
+{
+}
+
+UINotificationProgress::~UINotificationProgress()
+{
+    delete m_pTask;
+    m_pTask = 0;
+}
+
+ulong UINotificationProgress::percent() const
+{
+    return m_uPercent;
+}
+
+bool UINotificationProgress::isCancelable() const
+{
+    return m_pTask->isCancelable();
+}
+
+QString UINotificationProgress::error() const
+{
+    return m_pTask->errorMessage();
+}
+
+void UINotificationProgress::handle()
+{
+    /* Prepare task: */
+    m_pTask = new UINotificationProgressTask(this);
+    if (m_pTask)
+    {
+        connect(m_pTask, &UIProgressTask::sigProgressStarted,
+                this, &UINotificationProgress::sigProgressStarted);
+        connect(m_pTask, &UIProgressTask::sigProgressChange,
+                this, &UINotificationProgress::sltHandleProgressChange);
+        connect(m_pTask, &UIProgressTask::sigProgressFinished,
+                this, &UINotificationProgress::sltHandleProgressFinished);
+    }
+
+    /* And start it finally: */
+    m_pTask->start();
+}
+
+void UINotificationProgress::close()
+{
+    /* Cancel task: */
+    m_pTask->cancel();
+    /* Call to base-class: */
+    UINotificationObject::close();
+}
+
+void UINotificationProgress::sltHandleProgressChange(ulong uPercent)
+{
+    m_uPercent = uPercent;
+    emit sigProgressChange(uPercent);
+}
+
+void UINotificationProgress::sltHandleProgressFinished()
+{
+    m_uPercent = 100;
+    emit sigProgressFinished();
 }
