@@ -1543,7 +1543,7 @@ static DECLCALLBACK(int) cueRead(void *pBackendData, uint64_t uOffset, size_t cb
         cbToRead = RT_MIN(cbToRead, pRegion->cRegionBlocksOrBytes - offRead);
         Assert(!(cbToRead % pRegion->cbBlock));
 
-        /* Need to convert audio data samples to big endian. */
+        /* Need to convert audio data samples to little endian. */
         if (   pRegion->enmDataForm == VDREGIONDATAFORM_CDDA
             && !pThis->fLittleEndian)
         {
