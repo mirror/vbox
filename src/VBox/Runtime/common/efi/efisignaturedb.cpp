@@ -501,7 +501,7 @@ RTDECL(int) RTEfiSigDbAddSignatureFromBuf(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enm
     if (   !pDesc->cbSig
         || pDesc->cbSig - sizeof(EFI_SIGNATURE_DATA) == cbBuf)
     {
-        PRTEFISIGNATURE pSig = rtEfiSigDbAllocSignature(pUuidOwner, cbBuf);
+        PRTEFISIGNATURE pSig = rtEfiSigDbAllocSignature(pUuidOwner, (uint32_t)cbBuf);
         if (pSig)
         {
             memcpy(&pSig->abSignature[0], pvBuf, cbBuf);
