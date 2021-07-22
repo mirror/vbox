@@ -178,7 +178,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-void UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
+bool UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
 {
     CHost host = uiCommon().host();
     bool fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -190,12 +190,15 @@ void UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNa
 
     /* Search for a matching OS type based on the string the user typed already. */
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
+    {
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
             if (pNameAndSystemEditor)
                 pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-            break;
+            return true;
         }
+    }
+    return false;
 }
 
 void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
@@ -366,7 +369,12 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
     if (!m_userModifiedParameters.contains("GuestOSType"))
-        UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
+    {
+        m_pNameAndSystemEditor->blockSignals(true);
+        if (UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
+            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+        m_pNameAndSystemEditor->blockSignals(false);
+    }
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
     emit completeChanged();
 }

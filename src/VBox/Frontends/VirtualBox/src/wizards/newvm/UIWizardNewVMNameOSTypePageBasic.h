@@ -39,7 +39,7 @@ class UIWizardNewVM;
 
 namespace UIWizardNewVMNameOSTypePage
 {
-    void guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
+    bool guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
     bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
                              UINativeWizardPage *pCaller,
                              UIWizardNewVM *pWizard);

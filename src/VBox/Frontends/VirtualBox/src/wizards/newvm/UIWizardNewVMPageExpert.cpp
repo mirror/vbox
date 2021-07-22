@@ -94,8 +94,17 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
 {
-    if (!m_userModifiedParameters.contains("GuestOSType"))
-        UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName);
+    if (!m_userModifiedParameters.contains("GuestOSType") && m_pNameAndSystemEditor)
+    {
+        m_pNameAndSystemEditor->blockSignals(true);
+        if (UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
+        {
+            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            /* Since the type `possibly` changed: */
+            setOSTypeDependedValues();
+        }
+        m_pNameAndSystemEditor->blockSignals(false);
+    }
     UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
     if (!m_userModifiedParameters.contains("MediumPath"))
         updateVirtualMediumPathFromMachinePathName();
@@ -117,7 +126,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
         newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
-    //setOSTypeDependedValues() ??!!!
+    setOSTypeDependedValues();
 }
 
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
@@ -252,11 +261,14 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltStartHeadlessChanged);
     }
 
+    /* Virtual disk related connections: */
     if (m_pDiskSourceButtonGroup)
         connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
 
-    connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
+    if (m_pSkipUnattendedCheckBox)
+        connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled,
+        this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 
     if (m_pSizeAndLocationGroup)
     {
@@ -265,11 +277,9 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pSizeAndLocationGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
                 this, &UIWizardNewVMPageExpert::sltMediumPathChanged);
 
-    // /* Virtual disk related connections: */
-
-    // if (m_pDiskSelectionButton)
-    //     connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-    //             this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+    if (m_pDiskSelectionButton)
+        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
+               this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 
     // if (m_pDiskSelector)
     //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
@@ -307,6 +317,7 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->blockSignals(false);
     }
     LONG64 iRecommendedDiskSize = type.GetRecommendedHDD();
+
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {

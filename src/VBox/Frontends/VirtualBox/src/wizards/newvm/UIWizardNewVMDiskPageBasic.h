@@ -63,14 +63,6 @@ namespace UIWizardNewVMDiskPage
     bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
 }
 
-//     SelectedDiskSource selectedDiskSource() const;
-//     void setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource);
-//     bool getWithNewVirtualDiskWizard();
-//     virtual QWidget *createDiskWidgets();
-//     virtual QWidget *createNewDiskWidgets();
-//     void getWithFileOpenDialog();
-//     void retranslateWidgets();
-//     void setEnableDiskSelectionWidgets(bool fEnable);
 
 class UIWizardNewVMDiskPageBasic : public UINativeWizardPage
 {
