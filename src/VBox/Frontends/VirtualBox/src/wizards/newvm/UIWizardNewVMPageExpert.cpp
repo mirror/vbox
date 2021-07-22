@@ -276,6 +276,7 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
         connect(m_pSizeAndLocationGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
                 this, &UIWizardNewVMPageExpert::sltMediumPathChanged);
+    }
 
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
@@ -285,7 +286,7 @@ void UIWizardNewVMPageExpert::createConnections()
     //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
     //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
-    }
+
     connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
 
@@ -567,7 +568,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
         }
     }
 
-    if (m_enmSelectedDiskSource == SelectedDiskSource_New && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (m_enmSelectedDiskSource == SelectedDiskSource_Existing && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
@@ -816,7 +817,7 @@ void UIWizardNewVMPageExpert::updateDiskWidgetsAfterMediumFormatChange()
 
     m_pSizeAndLocationGroup->blockSignals(true);
     m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatButtonGroup->formatExtensions());
-    m_pSizeAndLocationGroup->blockSignals(true);
+    m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
     newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
     newVMWizardPropertySet(MediumVariant, m_pDiskVariantGroupBox->mediumVariant());
