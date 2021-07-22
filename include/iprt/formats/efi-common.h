@@ -50,6 +50,10 @@ typedef EFI_GUID *PEFI_GUID;
 typedef const EFI_GUID *PCEFI_GUID;
 
 
+/** A Null GUID. */
+#define EFI_NULL_GUID { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 }}
+
+
 /**
  * EFI time value.
  */

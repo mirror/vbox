@@ -2572,6 +2572,14 @@ typedef RTSHMEM                             RT_FAR *PRTSHMEM;
 /** A NIL shared memory object handle. */
 #define NIL_RTSHMEM                                ((RTSHMEM)~(uintptr_t)0)
 
+/** EFI signature database handle. */
+typedef struct RTEFISIGDBINT                RT_FAR *RTEFISIGDB;
+/** Pointer to a EFI signature database handle. */
+typedef RTEFISIGDB                          RT_FAR *PRTEFISIGDB;
+/** A NIL EFI signature database handle. */
+#define NIL_RTEFISIGDB                             ((RTEFISIGDB)~(uintptr_t)0)
+
+
 /**
  * Handle type.
  *

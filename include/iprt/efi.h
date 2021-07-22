@@ -90,6 +90,16 @@ RTDECL(PEFI_GUID) RTEfiGuidFromUuid(PEFI_GUID pEfiGuid, PCRTUUID pUuid);
 
 
 /**
+ * Compares two EFI GUID values.
+ *
+ * @returns 0 if eq, < 0 or > 0.
+ * @param   pGuid1          First value to compare.
+ * @param   pGuid2          Second value to compare.
+ */
+RTDECL(int)  RTEfiGuidCompare(PCEFI_GUID pGuid1, PCEFI_GUID pGuid2);
+
+
+/**
  * Opens an EFI variable store.
  *
  * @returns IPRT status code.
@@ -129,6 +139,145 @@ RTDECL(int) RTEfiVarStoreOpenAsVfs(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uin
  */
 RTDECL(int) RTEfiVarStoreCreate(RTVFSFILE hVfsFile, uint64_t offStore, uint64_t cbStore, uint32_t fFlags, uint32_t cbBlock,
                                 PRTERRINFO pErrInfo);
+
+
+/**
+ * EFI signature type.
+ */
+typedef enum RTEFISIGTYPE
+{
+    /** Invalid type, do not use. */
+    RTEFISIGTYPE_INVALID = 0,
+    /** First valid signature type. */
+    RTEFISIGTYPE_FIRST_VALID,
+    /** Signature contains a SHA256 hash. */
+    RTEFISIGTYPE_SHA256 = RTEFISIGTYPE_FIRST_VALID,
+    /** Signature contains a RSA2048 key (only the modulus in big endian form,
+     * the exponent is always 65537/0x10001). */
+    RTEFISIGTYPE_RSA2048,
+    /** Signature contains a RSA2048 signature of a SHA256 hash. */
+    RTEFISIGTYPE_RSA2048_SHA256,
+    /** Signature contains a SHA1 hash. */
+    RTEFISIGTYPE_SHA1,
+    /** Signature contains a RSA2048 signature of a SHA1 hash. */
+    RTEFISIGTYPE_RSA2048_SHA1,
+    /** Signature contains a DER encoded X.509 certificate. */
+    RTEFISIGTYPE_X509,
+    /** First invalid type (do not use). */
+    RTEFISIGTYPE_FIRST_INVALID,
+    /** 32bit blowup hack.*/
+    RTEFISIGTYPE_32BIT_HACK = 0x7fffffff,
+} RTEFISIGTYPE;
+
+
+/**
+ * EFI signature database enumeration callback.
+ *
+ * @returns IPRT status code, any status code other than VINF_SUCCESS will abort the enumeration.
+ * @param   hEfiSigDb           Handle to the EFI signature database this callback is called on.
+ * @param   enmSigType          The signature type.
+ * @param   pUuidOwner          Signature owner UUID.
+ * @param   pvSig               The signature data (dependent on the type).
+ * @param   cbSig               Size of the signature in bytes.
+ * @param   pvUser              Opaque user data passed in RTEfiSigDbEnum().
+ */
+typedef DECLCALLBACKTYPE(int, FNRTEFISIGDBENUMSIG,(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enmSigType, PCRTUUID pUuidOwner,
+                                                   const void *pvSig, size_t cbSig, void *pvUser));
+/** Pointer to a EFI signature database enumeration callback. */
+typedef FNRTEFISIGDBENUMSIG *PFNRTEFISIGDBENUMSIG;
+
+
+/**
+ * Creates an empty EFI signature database.
+ *
+ * @returns IPRT status code.
+ * @param   phEfiSigDb          Where to store the handle to the empty EFI signature database on success.
+ */
+RTDECL(int) RTEfiSigDbCreate(PRTEFISIGDB phEfiSigDb);
+
+
+/**
+ * Destroys the given EFI signature database handle.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle to destroy.
+ */
+RTDECL(int) RTEfiSigDbDestroy(RTEFISIGDB hEfiSigDb);
+
+
+/**
+ * Adds the signatures from an existing signature database contained in the given file.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle.
+ * @param   hVfsFile            The file handle containing the existing signature database.
+ */
+RTDECL(int) RTEfiSigDbAddFromExistingDb(RTEFISIGDB hEfiSigDb, RTVFSFILE hVfsFileIn);
+
+
+/**
+ * Adds a new signature to the given signature database from the given file.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle.
+ * @param   enmSigType          Type of the signature.
+ * @param   pUuidOwner          The UUID of the signature owner.
+ * @param   hVfsFileIn          File handle containing the signature data.
+ */
+RTDECL(int) RTEfiSigDbAddSignatureFromFile(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enmSigType, PCRTUUID pUuidOwner, RTVFSFILE hVfsFileIn);
+
+
+/**
+ * Adds a new signature to the given signature database from the given buffer.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle.
+ * @param   enmSigType          Type of the signature.
+ * @param   pUuidOwner          The UUID of the signature owner.
+ * @param   pvBuf               Pointer to the signature data.
+ * @param   cbBuf               Size of the signature data in bytes.
+ */
+RTDECL(int) RTEfiSigDbAddSignatureFromBuf(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enmSigType, PCRTUUID pUuidOwner,
+                                          const void *pvBuf, size_t cbBuf);
+
+
+/**
+ * Writes the given EFI signature database to the given file.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle.
+ * @param   hVfsFileOut         The file handle to write the signature database to.
+ */
+RTDECL(int) RTEfiSigDbWriteToFile(RTEFISIGDB hEfiSigDb, RTVFSFILE hVfsFileOut);
+
+
+/**
+ * Enumerate all signatures in the given EFI signature database.
+ *
+ * @returns IPRT status code.
+ * @param   hEfiSigDb           The EFI signature database handle.
+ * @param   pfnEnumSig          The callback to call for each signature.
+ * @param   pvUser              Opaque user data to pass to the callback.
+ */
+RTDECL(int) RTEfiSigDbEnum(RTEFISIGDB hEfiSigDb, PFNRTEFISIGDBENUMSIG pfnEnumSig, void *pvUser);
+
+
+/**
+ * Returns a human readable string of the given signature type.
+ *
+ * @returns Human readable string.
+ * @param   enmSigType          The signature type.
+ */
+RTDECL(const char *) RTEfiSigDbTypeStringify(RTEFISIGTYPE enmSigType);
+
+
+/**
+ * Returns a pointer to the EFI GUID identifying the given signature type.
+ *
+ * @returns Pointer to the EFI GUID.
+ * @param   enmSigType          The signature type.
+ */
+RTDECL(PCEFI_GUID) RTEfiSigDbTypeGetGuid(RTEFISIGTYPE enmSigType);
 
 #endif /* IN_RING3 */
 

@@ -82,3 +82,42 @@ RTDECL(PEFI_GUID) RTEfiGuidFromUuid(PEFI_GUID pEfiGuid, PCRTUUID pUuid)
     return pEfiGuid;
 }
 
+
+RTDECL(int) RTEfiGuidCompare(PCEFI_GUID pGuid1, PCEFI_GUID pGuid2)
+{
+    /*
+     * Special cases.
+     */
+    if (pGuid1 == pGuid2)
+        return 0;
+    AssertPtrReturn(pGuid1, -1);
+    AssertPtrReturn(pGuid2, 1);
+
+    /*
+     * Standard cases.
+     */
+    if (pGuid1->u32Data1 != pGuid2->u32Data1)
+        return pGuid1->u32Data1 < pGuid2->u32Data1 ? -1 : 1;
+    if (pGuid1->u16Data2 != pGuid2->u16Data2)
+        return pGuid1->u16Data2 < pGuid2->u16Data2 ? -1 : 1;
+    if (pGuid1->u16Data3 != pGuid2->u16Data3)
+        return pGuid1->u16Data3 < pGuid2->u16Data3 ? -1 : 1;
+    if (pGuid1->abData4[0] != pGuid2->abData4[0])
+        return pGuid1->abData4[0] < pGuid2->abData4[0] ? -1 : 1;
+    if (pGuid1->abData4[1] != pGuid2->abData4[1])
+        return pGuid1->abData4[1] < pGuid2->abData4[1] ? -1 : 1;
+    if (pGuid1->abData4[2] != pGuid2->abData4[2])
+        return pGuid1->abData4[2] < pGuid2->abData4[2] ? -1 : 1;
+    if (pGuid1->abData4[3] != pGuid2->abData4[3])
+        return pGuid1->abData4[3] < pGuid2->abData4[3] ? -1 : 1;
+    if (pGuid1->abData4[4] != pGuid2->abData4[4])
+        return pGuid1->abData4[4] < pGuid2->abData4[4] ? -1 : 1;
+    if (pGuid1->abData4[5] != pGuid2->abData4[5])
+        return pGuid1->abData4[5] < pGuid2->abData4[5] ? -1 : 1;
+    if (pGuid1->abData4[6] != pGuid2->abData4[6])
+        return pGuid1->abData4[6] < pGuid2->abData4[6] ? -1 : 1;
+    if (pGuid1->abData4[7] != pGuid2->abData4[7])
+        return pGuid1->abData4[7] < pGuid2->abData4[7] ? -1 : 1;
+    return 0;
+}
+
