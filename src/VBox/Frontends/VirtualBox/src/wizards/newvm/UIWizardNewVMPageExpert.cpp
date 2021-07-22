@@ -280,11 +280,11 @@ void UIWizardNewVMPageExpert::createConnections()
 
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-               this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+                this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 
-    // if (m_pDiskSelector)
-    //     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-    //             this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
+    if (m_pDiskSelector)
+        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+                this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
 
     connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
