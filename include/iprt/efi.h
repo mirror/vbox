@@ -210,7 +210,7 @@ RTDECL(int) RTEfiSigDbDestroy(RTEFISIGDB hEfiSigDb);
  *
  * @returns IPRT status code.
  * @param   hEfiSigDb           The EFI signature database handle.
- * @param   hVfsFile            The file handle containing the existing signature database.
+ * @param   hVfsFileIn          The file handle containing the existing signature database.
  */
 RTDECL(int) RTEfiSigDbAddFromExistingDb(RTEFISIGDB hEfiSigDb, RTVFSFILE hVfsFileIn);
 
