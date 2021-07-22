@@ -234,6 +234,11 @@ if !defined(VBOX_ONLY_BUILD)
  RTEfiFatExtract_TEMPLATE = VBoxR3Tool
  RTEfiFatExtract_SOURCES = RTEfiFatExtract.cpp
 
+ # RTEfiSigDb - EFI signature database management tool.
+ PROGRAMS += RTEfiSigDb
+ RTEfiSigDb_TEMPLATE = VBoxR3Tool
+ RTEfiSigDb_SOURCES = RTEfiSigDb.cpp
+
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
   # RTKrnlModInfo - our lsmod/kextstat clone (for testing the RTKrnlMod code).
   PROGRAMS += RTKrnlModInfo
