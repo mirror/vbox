@@ -171,6 +171,12 @@
           <arg choice="plain">ich9</arg>
           <arg choice="plain">piix3</arg>
         </group></arg>
+    <arg>--iommu=<group choice="plain">
+        <arg choice="plain">none</arg>
+        <arg choice="plain">automatic</arg>
+        <arg choice="plain">amd</arg>
+        <arg choice="plain">intel</arg>
+      </group></arg>
       <arg>--bioslogofadein=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
@@ -1011,6 +1017,35 @@
               chipset constraints. See
               <xref linkend="settings-motherboard" />.
             </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--iommu=none | automatic | amd | intel</option></term>
+          <listitem><para>
+              Specifies the IOMMU type for &product-name; to emulate.
+              Both Intel and AMD IOMMU emulation currently require the
+              use of the Intel ICH9 chipset (see
+              <option>--chipset</option> option).
+            </para><para>
+              Valid values are as follows:
+            </para><itemizedlist>
+              <listitem><para>
+                  <literal>none</literal> &ndash; No IOMMU is present
+                  and is the default value.
+                </para></listitem>
+              <listitem><para>
+                  <literal>automatic</literal> &ndash; An IOMMU is
+                  present but its type is automatically chosen to match
+                  the host CPU vendor when the VM is powered on.
+                </para></listitem>
+              <listitem><para>
+                  <literal>amd</literal> &ndash; An AMD IOMMU is
+                  present.
+                </para></listitem>
+              <listitem><para>
+                  <literal>intel</literal> &ndash; An Intel IOMMU is
+                  present.
+                </para></listitem>
+            </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--bioslogofacein=on | off</option></term>
