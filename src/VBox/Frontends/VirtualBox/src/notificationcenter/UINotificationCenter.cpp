@@ -168,8 +168,7 @@ void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
 void UINotificationCenter::sltModelChanged()
 {
     /* Cleanup layout first: */
-    QLayoutItem *pChild;
-    while (pChild = m_pLayoutItems->takeAt(0))
+    while (QLayoutItem *pChild = m_pLayoutItems->takeAt(0))
     {
         delete pChild->widget();
         delete pChild;
