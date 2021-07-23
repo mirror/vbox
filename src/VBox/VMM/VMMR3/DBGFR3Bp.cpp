@@ -2676,7 +2676,6 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->dbgf.s.fBpInvokeOwnerCallback)
     {
         DBGFBP hBp = pVCpu->dbgf.s.hBpActive;
-        pVCpu->dbgf.s.hBpActive              = NIL_DBGFBP;
         pVCpu->dbgf.s.fBpInvokeOwnerCallback = false;
 
         PDBGFBPINT pBp = dbgfR3BpGetByHnd(pVM->pUVM, hBp);
@@ -2690,7 +2689,10 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
             {
                 VBOXSTRICTRC rcStrict = dbgfR3BpHit(pVM, pVCpu, hBp, pBp, pBpOwner);
                 if (VBOXSTRICTRC_VAL(rcStrict) == VINF_SUCCESS)
+                {
+                    pVCpu->dbgf.s.hBpActive = NIL_DBGFBP;
                     return VINF_SUCCESS;
+                }
                 else if (VBOXSTRICTRC_VAL(rcStrict) != VINF_DBGF_BP_HALT) /* Guru meditation. */
                     return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
                 /* else: Halt in the debugger. */
