@@ -9,7 +9,7 @@
             <usagepage>0x01</usagepage>
             <scancodeprefix></scancodeprefix>
             <scancode></scancode>
-            <staticcaption>⏻</staticcaption>
+            <staticcaption>⭘</staticcaption>
         </key>
         <key><!-- WWW back -->
             <position>300</position>
