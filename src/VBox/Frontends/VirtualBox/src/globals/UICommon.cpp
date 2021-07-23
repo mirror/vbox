@@ -4148,6 +4148,12 @@ void UICommon::sltGUILanguageChange(QString strLanguage)
     loadLanguage(strLanguage);
 }
 
+void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
+{
+    /* Make sure we cached created medium in GUI: */
+    createMedium(UIMedium(comMedium, UIMediumDeviceType_HardDisk, KMediumState_Created));
+}
+
 bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /** @todo Just use the QIWithRetranslateUI3 template wrapper. */

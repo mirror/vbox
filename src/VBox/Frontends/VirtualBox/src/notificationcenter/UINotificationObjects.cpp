@@ -19,6 +19,10 @@
 #include "UINotificationObjects.h"
 
 
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMediumMove implementation.                                                                       *
+*********************************************************************************************************************************/
+
 UINotificationProgressMediumMove::UINotificationProgressMediumMove(const CMedium &comMedium,
                                                                    const QString &strFrom,
                                                                    const QString &strTo)
@@ -46,4 +50,47 @@ CProgress UINotificationProgressMediumMove::createProgress(COMResult &comResult)
     comResult = m_comMedium;
     /* Return progress-wrapper: */
     return comProgress;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMediumCopy implementation.                                                                       *
+*********************************************************************************************************************************/
+
+UINotificationProgressMediumCopy::UINotificationProgressMediumCopy(const CMedium &comSource,
+                                                                   const CMedium &comTarget,
+                                                                   const QVector<KMediumVariant> &variants)
+    : m_comSource(comSource)
+    , m_comTarget(comTarget)
+    , m_variants(variants)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMediumCopy::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressMediumCopy::name() const
+{
+    return UINotificationProgress::tr("Copying medium ...");
+}
+
+QString UINotificationProgressMediumCopy::details() const
+{
+    return UINotificationProgress::tr("<b>From</b>: %1<br><b>To</b>: %2")
+                                     .arg(m_comSource.GetLocation(), m_comTarget.GetLocation());
+}
+
+CProgress UINotificationProgressMediumCopy::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comSource.CloneTo(m_comTarget, m_variants, CMedium());
+    /* Store COM result: */
+    comResult = m_comSource;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressMediumCopy::sltHandleProgressFinished()
+{
+    if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
+        emit sigMediumCopied(m_comTarget);
 }

@@ -728,6 +728,12 @@ public slots:
         void sltGUILanguageChange(QString strLanguage);
     /** @} */
 
+    /** @name Media related stuff.
+     * @{ */
+        /** Handles signal about medium was created. */
+        void sltHandleMediumCreated(const CMedium &comMedium);
+    /** @} */
+
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */

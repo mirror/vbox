@@ -19,6 +19,7 @@
 #include "UICommon.h"
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVDPageBasic2.h"
@@ -74,26 +75,13 @@ bool UIWizardCloneVD::copyVirtualDisk()
         variants[i] = (KMediumVariant)temp;
     }
 
-    /* Copy source image to new one: */
-    CProgress comProgress = m_comSourceVirtualDisk.CloneTo(comVirtualDisk, variants, CMedium());
-    if (!m_comSourceVirtualDisk.isOk())
-    {
-        msgCenter().cannotCreateMediumStorage(m_comSourceVirtualDisk, strMediumPath, this);
-        return false;
-    }
-
-    /* Show creation progress: */
-    msgCenter().showModalProgressDialog(comProgress, windowTitle(), ":/progress_media_create_90px.png", this);
-    if (comProgress.GetCanceled())
-        return false;
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotCreateMediumStorage(comProgress, strMediumPath, this);
-        return false;
-    }
-
-    /* Make sure we register the medium to VBox: */
-    uiCommon().createMedium(UIMedium(comVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    /* Copy medium: */
+    UINotificationProgressMediumCopy *pNotification = new UINotificationProgressMediumCopy(m_comSourceVirtualDisk,
+                                                                                           comVirtualDisk,
+                                                                                           variants);
+    connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
+            &uiCommon(), &UICommon::sltHandleMediumCreated);
+    notificationCenter().append(pNotification);
 
     /* Positive: */
     return true;
