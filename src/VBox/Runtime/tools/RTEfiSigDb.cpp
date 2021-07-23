@@ -283,7 +283,7 @@ static RTEXITCODE rtEfiSgDbCmdAdd(const char *pszArg0, int cArgs, char **papszAr
                     rc = rtEfiSigDbOpen(pszSigDataPath, &hVfsFileSigData);
                     if (RT_FAILURE(rc))
                     {
-                        RTPrintf("Opening '%s' failed with %Rrc\n", pszSigDataPath);
+                        RTPrintf("Opening '%s' failed with %Rrc\n", pszSigDataPath, rc);
                         break;
                     }
 
