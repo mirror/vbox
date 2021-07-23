@@ -537,9 +537,7 @@ static void apicSignalNextPendingIntr(PVMCPUCC pVCpu)
                 apicSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
             else
-            {
                 Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal yet. uVector=%#x uIsrVec=%#x\n", pVCpu->idCpu, uVector, uIsrVec));
-            }
         }
     }
     else
@@ -2680,9 +2678,9 @@ VMM_INT_DECL(int) APICBusDeliver(PVMCC pVM, uint8_t uDest, uint8_t uDestMode, ui
     uint32_t          fDestMask       = uDest;
     uint32_t          fBroadcastMask  = UINT32_C(0xff);
 
-    Log2(("APIC: apicBusDeliver: fDestMask=%#x enmDestMode=%s enmTriggerMode=%s enmDeliveryMode=%s uVector=%#x\n", fDestMask,
-          apicGetDestModeName(enmDestMode), apicGetTriggerModeName(enmTriggerMode), apicGetDeliveryModeName(enmDeliveryMode),
-          uVector));
+    Log2(("APIC: apicBusDeliver: fDestMask=%#x enmDestMode=%s enmTriggerMode=%s enmDeliveryMode=%s uVector=%#x uSrcTag=%#x\n",
+          fDestMask, apicGetDestModeName(enmDestMode), apicGetTriggerModeName(enmTriggerMode),
+          apicGetDeliveryModeName(enmDeliveryMode), uVector, uSrcTag));
 
     bool     fIntrAccepted;
     VMCPUSET DestCpuSet;
@@ -2927,16 +2925,14 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Vector, uint32_t 
                 *puSrcTag = pApicCpu->auSrcTags[uVector];
                 pApicCpu->auSrcTags[uVector] = 0;
 
-                Log2(("APIC%u: apicGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
+                Log2(("APIC%u: apicGetInterrupt: Valid Interrupt. uVector=%#x uSrcTag=%#x\n", pVCpu->idCpu, uVector, *puSrcTag));
                 *pu8Vector = uVector;
                 return VINF_SUCCESS;
             }
-            else
-            {
-                STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByPpr);
-                Log2(("APIC%u: apicGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
-                      pVCpu->idCpu, uVector, uPpr));
-            }
+
+            STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByPpr);
+            Log2(("APIC%u: apicGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
+                  pVCpu->idCpu, uVector, uPpr));
         }
         else
             Log2(("APIC%u: apicGetInterrupt: No pending bits in IRR\n", pVCpu->idCpu));
@@ -3025,6 +3021,8 @@ static void apicSetInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
     /*
      * We need to wake up the target CPU if we're not on EMT.
      */
+    /** @todo r=bird: Why do we skip this waking up for PDMAPICIRQ_HARDWARE? */
+    /** @todo r=bird: We could just use RTThreadNativeSelf() here, couldn't we? */
 #if defined(IN_RING0)
     PVMCC   pVM   = pVCpu->CTX_SUFF(pVM);
     VMCPUID idCpu = pVCpu->idCpu;
@@ -3034,20 +3032,29 @@ static void apicSetInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
         switch (VMCPU_GET_STATE(pVCpu))
         {
             case VMCPUSTATE_STARTED_EXEC:
+                Log7Func(("idCpu=%u VMCPUSTATE_STARTED_EXEC\n", idCpu));
                 GVMMR0SchedPokeNoGVMNoLock(pVM, idCpu);
                 break;
 
             case VMCPUSTATE_STARTED_HALTED:
+                Log7Func(("idCpu=%u VMCPUSTATE_STARTED_HALTED\n", idCpu));
                 GVMMR0SchedWakeUpNoGVMNoLock(pVM, idCpu);
                 break;
 
             default:
+                Log7Func(("idCpu=%u enmState=%d\n", idCpu, pVCpu->enmState));
                 break; /* nothing to do in other states. */
         }
     }
 #elif defined(IN_RING3)
-    if (enmType != PDMAPICIRQ_HARDWARE)
+    PVMCC   pVM   = pVCpu->CTX_SUFF(pVM);
+    VMCPUID idCpu = pVCpu->idCpu;
+    if (   enmType != PDMAPICIRQ_HARDWARE
+        && VMMGetCpuId(pVM) != idCpu)
+    {
+        Log7Func(("idCpu=%u enmState=%d\n", idCpu, pVCpu->enmState));
         VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
+    }
 #endif
 }
 
@@ -3334,6 +3341,9 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPUCC pVCpu)
             {
                 uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
                 uint32_t const u32FragmentHi = RT_HI_U32(u64Fragment);
+                Log6Func(("edge[%u/%u]: %'016RX64: irr=%08RX32'%08RX32 |; tmr=%08RX32'%08RX32 &~\n", idxPib, idxReg, u64Fragment,
+                          pXApicPage->irr.u[idxReg].u32Reg, pXApicPage->irr.u[idxReg + 1].u32Reg,
+                          pXApicPage->tmr.u[idxReg].u32Reg, pXApicPage->tmr.u[idxReg + 1].u32Reg));
 
                 pXApicPage->irr.u[idxReg].u32Reg     |=  u32FragmentLo;
                 pXApicPage->irr.u[idxReg + 1].u32Reg |=  u32FragmentHi;
@@ -3359,6 +3369,9 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPUCC pVCpu)
             uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->au64VectorBitmap[idxPib], 0);
             if (u64Fragment)
             {
+                Log6Func(("level[%u/%u]: %'016RX64: irr=%08RX32'%08RX32 |; tmr=%08RX32'%08RX32 |\n", idxPib, idxReg, u64Fragment,
+                          pXApicPage->irr.u[idxReg].u32Reg, pXApicPage->irr.u[idxReg + 1].u32Reg,
+                          pXApicPage->tmr.u[idxReg].u32Reg, pXApicPage->tmr.u[idxReg + 1].u32Reg));
                 uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
                 uint32_t const u32FragmentHi = RT_HI_U32(u64Fragment);
 
