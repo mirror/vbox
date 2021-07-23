@@ -1882,7 +1882,11 @@ static DECLCALLBACK(int) rtEfiVarStore_Close(void *pvThis)
     if (pThis->paVars)
     {
         for (uint32_t i = 0; i < pThis->cVars; i++)
+        {
             RTStrFree(pThis->paVars[i].pszName);
+            if (pThis->paVars[i].pvData)
+                RTMemFree(pThis->paVars[i].pvData);
+        }
 
         RTMemFree(pThis->paVars);
         pThis->paVars   = NULL;
@@ -2088,7 +2092,7 @@ static int rtEfiVarStoreAuthVar_Validate(PRTEFIVARSTORE pThis, PCEFI_AUTH_VAR_HE
     uint64_t cbVarMax = pThis->cbBacking - offVar - sizeof(*pVarHdr);
     if (   cbVarMax <= cbName
         || cbVarMax - cbName <= cbData)
-        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable exceeds remaining space in store (cbName=%llu cbData=%llu cbVarMax=%llu)",
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable exceeds remaining space in store (cbName=%u cbData=%u cbVarMax=%llu)",
                                    cbName, cbData, cbVarMax);
 
     return VINF_SUCCESS;
@@ -2145,7 +2149,10 @@ static int rtEfiVarStoreLoadAuthVar(PRTEFIVARSTORE pThis, uint64_t offVar, uint6
 
     PRTEFIVAR pVar = &pThis->paVars[pThis->cVars++];
     pVar->pVarStore  = pThis;
-    pVar->offVarData = offVar + sizeof(VarHdr) + RT_LE2H_U32(VarHdr.cbName);
+    if (RT_LE2H_U32(VarHdr.cbData))
+        pVar->offVarData = offVar + sizeof(VarHdr) + RT_LE2H_U32(VarHdr.cbName);
+    else
+        pVar->offVarData = 0;
     pVar->fAttr      = RT_LE2H_U32(VarHdr.fAttr);
     pVar->cMonotonic = RT_LE2H_U64(VarHdr.cMonotonic);
     pVar->idPubKey   = RT_LE2H_U32(VarHdr.idPubKey);
