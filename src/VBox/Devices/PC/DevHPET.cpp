@@ -526,8 +526,10 @@ static void hpetProgramTimer(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTi
     uint64_t u64TickLimit = pThis->fIch9 ? HPET_TICKS_IN_100YR_ICH9 : HPET_TICKS_IN_100YR_PIIX;
     if (uHpetDelta <= u64TickLimit)
     {
-        uint64_t const tsDeadline = tsNow + hpetTicksToNs(pThis, uHpetDelta);
-        Log4(("HPET[%u]: next IRQ in %lld ticks (at %llu)\n", pHpetTimer->idxTimer, uHpetDelta, tsDeadline));
+        uint64_t const cTicksDelta = hpetTicksToNs(pThis, uHpetDelta);
+        uint64_t const tsDeadline  = tsNow + cTicksDelta;
+        Log4(("HPET[%u]: next IRQ in %lld hpet ticks (TM %lld ticks, at %llu)\n",
+              pHpetTimer->idxTimer, uHpetDelta, cTicksDelta, tsDeadline));
         PDMDevHlpTimerSet(pDevIns, pHpetTimer->hTimer, tsDeadline);
         hpetTimerSetFrequencyHint(pDevIns, pThis, pHpetTimer, fConfig, uPeriod);
         STAM_REL_COUNTER_INC(&pHpetTimer->StatSetTimer);
@@ -1326,14 +1328,13 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
             if (cTicksDiff <= u64TickLimit)
             {
                 uint64_t const tsDeadline = tsNow + hpetTicksToNs(pThis, cTicksDiff);
-                Log4(("HPET: periodic: next in %llu\n", tsDeadline));
+                Log4(("HPET[%u]: periodic: next in %llu\n", pHpetTimer->idxTimer, tsDeadline));
                 PDMDevHlpTimerSet(pDevIns, hTimer, tsDeadline);
                 STAM_REL_COUNTER_INC(&pHpetTimer->StatSetTimer);
             }
             else
-            {
-                LogRelMax(10, ("HPET: Not scheduling periodic interrupt more than 100 years in the future.\n"));
-            }
+                LogRelMax(10, ("HPET[%u]: Not scheduling periodic interrupt more than 100 years in the future.\n",
+                               pHpetTimer->idxTimer));
         }
     }
     /* For 32-bit non-periodic timers, generate wrap-around interrupts. */
@@ -1344,7 +1345,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
         uint64_t const uHpetNow   = nsToHpetTicks(pThis, tsNow + pThis->u64HpetOffset);
         uint64_t const cTicksDiff = hpetComputeDiff(fConfig, uCmp, uHpetNow);
         uint64_t const tsDeadline = tsNow + hpetTicksToNs(pThis, cTicksDiff);
-        Log4(("HPET: post-wrap deadline: %llu\n", tsDeadline));
+        Log4(("HPET[%u]: post-wrap deadline: %llu\n", pHpetTimer->idxTimer, tsDeadline));
         PDMDevHlpTimerSet(pDevIns, pHpetTimer->hTimer, tsDeadline);
     }
 
@@ -1364,7 +1365,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
             AssertReturnVoid(pThisCC);
 
             uint32_t const uIrq = hpetR3TimerGetIrq(pThis, pHpetTimer, fConfig);
-            Log4(("HPET: raising IRQ %u\n", uIrq));
+            Log4(("HPET[%u]: raising IRQ %u\n", pHpetTimer->idxTimer, uIrq));
 
             pThisCC->pHpetHlp->pfnSetIrq(pDevIns, uIrq, PDM_IRQ_LEVEL_FLIP_FLOP);
             STAM_REL_COUNTER_INC(&pHpetTimer->StatSetIrq);
