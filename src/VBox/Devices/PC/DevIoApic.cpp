@@ -860,6 +860,12 @@ static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
     {
         uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
+/** @todo r=bird: bugref:10073: Ignore edge triggered entries here since
+ * the APIC will only call us for those?  Not doing so confuses ended up
+ * with spurious HPET/RTC IRQs in SMP linux because of it sharing the vector
+ * with a level-triggered IRQ (like vboxguest) delivered on a different CPU.
+ * Alternatively, make the call specify the APIC number of use that in the
+ * filter too/instead. */
         if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
         {
 #ifdef DEBUG_ramshankar
@@ -895,8 +901,8 @@ static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     RT_NOREF(uBusDevFn);    /** @todo r=ramshankar: Remove this argument if it's also unnecessary with Intel IOMMU. */
-#define IOAPIC_ASSERT_IRQ(a_uBusDevFn, a_idxRte, a_PinMask) do { \
-        pThis->au32TagSrc[(a_idxRte)] = !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
+#define IOAPIC_ASSERT_IRQ(a_uBusDevFn, a_idxRte, a_PinMask, a_fForceTag) do { \
+        pThis->au32TagSrc[(a_idxRte)] = (a_fForceTag) || !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
         pThis->uIrr |= a_PinMask; \
         ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, (a_idxRte)); \
     } while (0)
@@ -927,14 +933,15 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
         if (!fActive)
         {
             pThis->uIrr &= ~uPinMask;
+            pThis->au32TagSrc[idxRte] = 0;
             IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
             return;
         }
 
-        bool const     fFlipFlop = ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP);
-        uint32_t const uPrevIrr  = pThis->uIrr & uPinMask;
+        bool const fFlipFlop = ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP);
         if (!fFlipFlop)
         {
+            uint32_t const uPrevIrr = pThis->uIrr & uPinMask;
             if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE)
             {
                 /*
@@ -942,7 +949,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
                  * See ICH9 spec. 13.5.7 "REDIR_TBL: Redirection Table (LPC I/F-D31:F0)".
                  */
                 if (!uPrevIrr)
-                    IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
+                    IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask, false);
                 else
                 {
                     STAM_COUNTER_INC(&pThis->StatRedundantEdgeIntr);
@@ -966,7 +973,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
                     Log2(("IOAPIC: Redundant level-triggered interrupt %#x (%u)\n", idxRte, idxRte));
                 }
 
-                IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
+                IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask, false);
             }
         }
         else
@@ -977,7 +984,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
              * after a flip-flop request. The de-assert is a NOP wrts to signaling an interrupt
              * hence just the assert is done.
              */
-            IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
+            IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask, true);
         }
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
@@ -993,7 +1000,8 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
 {
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
     PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
-    LogFlow(("IOAPIC: ioapicSendMsi: uBusDevFn=%#x Addr=%#RX64 Data=%#RX32\n", uBusDevFn, pMsi->Addr.u64, pMsi->Data.u32));
+    LogFlow(("IOAPIC: ioapicSendMsi: uBusDevFn=%#x Addr=%#RX64 Data=%#RX32 uTagSrc=%#x\n",
+             uBusDevFn, pMsi->Addr.u64, pMsi->Data.u32, uTagSrc));
 
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
