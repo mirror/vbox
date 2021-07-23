@@ -5586,6 +5586,14 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     PVGASTATECC     pThisCC    = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
 
+    /* VMSVGA is working via VBVA interface, therefore it needs to be
+     * enabled on saved state restore. See @bugref{10071#c7}. */
+    if (pThis->svga.fEnabled)
+    {
+        for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+            pThisCC->pDrv->pfnVBVAEnable(pThisCC->pDrv, idScreen, NULL /*pHostFlags*/);
+    }
+
     /* Set the active cursor. */
     if (pSVGAState->Cursor.fActive)
     {
@@ -5614,14 +5622,6 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     if (!pThis->svga.fVRAMTracking)
     {
         vgaR3UnregisterVRAMHandler(pDevIns, pThis);
-    }
-
-    /* VMSVGA is working via VBVA interface, therefore it needs to be
-     * enabled on saved state restore. See @bugref{10071#c7}. */
-    if (pThis->svga.fEnabled)
-    {
-        for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
-            pThisCC->pDrv->pfnVBVAEnable(pThisCC->pDrv, idScreen, NULL /*pHostFlags*/);
     }
 
     /* Let the FIFO thread deal with changing the mode. */
