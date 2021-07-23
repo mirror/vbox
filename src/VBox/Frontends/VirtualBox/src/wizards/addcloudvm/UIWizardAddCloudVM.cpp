@@ -18,6 +18,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardAddCloudVMPageBasic1.h"
 #include "UIWizardAddCloudVMPageExpert.h"
@@ -56,45 +57,19 @@ bool UIWizardAddCloudVM::addCloudVMs()
     {
         /* Initiate cloud VM add procedure: */
         CCloudMachine comMachine;
-        CProgress comProgress = comClient.AddCloudMachine(strInstanceName, comMachine);
-        /* Check for immediate errors: */
-        if (!comClient.isOk())
-        {
-            msgCenter().cannotCreateCloudMachine(comClient, this);
-            break;
-        }
-        else
-        {
-            /* Show "Add cloud machine" progress: */
-            msgCenter().showModalProgressDialog(comProgress, QString(),
-                                                ":/progress_new_cloud_vm_90px.png", this, 0);
-            /* Check for canceled progress: */
-            if (comProgress.GetCanceled())
-                break;
-            else
-            {
-                /* Check for progress errors: */
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    msgCenter().cannotCreateCloudMachine(comProgress, this);
-                    break;
-                }
-                else
-                {
-                    /* Check whether VM really added: */
-                    if (comMachine.isNotNull())
-                    {
-                        /* Notify GUI about VM was added: */
-                        uiCommon().notifyCloudMachineRegistered(shortProviderName(),
-                                                                profileName(),
-                                                                comMachine);
 
-                        /* Finally, success: */
-                        fResult = true;
-                    }
-                }
-            }
-        }
+        /* Add cloud VM: */
+        UINotificationProgressCloudMachineAdd *pNotification = new UINotificationProgressCloudMachineAdd(comClient,
+                                                                                                         comMachine,
+                                                                                                         strInstanceName,
+                                                                                                         shortProviderName(),
+                                                                                                         profileName());
+        connect(pNotification, &UINotificationProgressCloudMachineAdd::sigCloudMachineAdded,
+                &uiCommon(), &UICommon::sltHandleCloudMachineAdded);
+        notificationCenter().append(pNotification);
+
+        /* Positive: */
+        fResult = true;
     }
 
     /* Return result: */

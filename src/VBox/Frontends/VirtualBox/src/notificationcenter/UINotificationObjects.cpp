@@ -39,7 +39,7 @@ QString UINotificationProgressMediumMove::name() const
 
 QString UINotificationProgressMediumMove::details() const
 {
-    return UINotificationProgress::tr("<b>From</b>: %1<br><b>To</b>: %2").arg(m_strFrom, m_strTo);
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strFrom, m_strTo);
 }
 
 CProgress UINotificationProgressMediumMove::createProgress(COMResult &comResult)
@@ -75,7 +75,7 @@ QString UINotificationProgressMediumCopy::name() const
 
 QString UINotificationProgressMediumCopy::details() const
 {
-    return UINotificationProgress::tr("<b>From</b>: %1<br><b>To</b>: %2")
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
                                      .arg(m_comSource.GetLocation(), m_comTarget.GetLocation());
 }
 
@@ -93,4 +93,51 @@ void UINotificationProgressMediumCopy::sltHandleProgressFinished()
 {
     if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
         emit sigMediumCopied(m_comTarget);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachineAdd implementation.                                                                  *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachineAdd::UINotificationProgressCloudMachineAdd(const CCloudClient &comClient,
+                                                                             const CCloudMachine &comMachine,
+                                                                             const QString &strInstanceName,
+                                                                             const QString &strShortProviderName,
+                                                                             const QString &strProfileName)
+    : m_comClient(comClient)
+    , m_comMachine(comMachine)
+    , m_strInstanceName(strInstanceName)
+    , m_strShortProviderName(strShortProviderName)
+    , m_strProfileName(strProfileName)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudMachineAdd::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudMachineAdd::name() const
+{
+    return UINotificationProgress::tr("Adding cloud VM ...");
+}
+
+QString UINotificationProgressCloudMachineAdd::details() const
+{
+    return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>Instance Name:</b> %3")
+                                     .arg(m_strShortProviderName, m_strProfileName, m_strInstanceName);
+}
+
+CProgress UINotificationProgressCloudMachineAdd::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.AddCloudMachine(m_strInstanceName, m_comMachine);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudMachineAdd::sltHandleProgressFinished()
+{
+    if (m_comMachine.isNotNull() && !m_comMachine.GetId().isNull())
+        emit sigCloudMachineAdded(m_strShortProviderName, m_strProfileName, m_comMachine);
 }

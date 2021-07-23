@@ -26,6 +26,8 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudClient.h"
+#include "CCloudMachine.h"
 #include "CMedium.h"
 
 /** UINotificationProgress extension for medium move functionality. */
@@ -104,6 +106,62 @@ private:
     CMedium                  m_comTarget;
     /** Holds the target medium options. */
     QVector<KMediumVariant>  m_variants;
+};
+
+/** UINotificationProgress extension for cloud machine add functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineAdd : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about cloud @a comMachine was added.
+      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProfileName        Brings the profile name. */
+    void sigCloudMachineAdded(const QString &strShortProviderName,
+                              const QString &strProfileName,
+                              const CCloudMachine &comMachine);
+
+public:
+
+    /** Constructs cloud machine add notification-progress.
+      * @param  comClient             Brings the cloud client being adding machine.
+      * @param  comMachine            Brings the cloud machine being added.
+      * @param  strInstanceName       Brings the instance name.
+      * @param  strShortProviderName  Brings the short provider name.
+      * @param  strProfileName        Brings the profile name. */
+    UINotificationProgressCloudMachineAdd(const CCloudClient &comClient,
+                                          const CCloudMachine &comMachine,
+                                          const QString &strInstanceName,
+                                          const QString &strShortProviderName,
+                                          const QString &strProfileName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being adding machine. */
+    CCloudClient   m_comClient;
+    /** Holds the cloud machine being added. */
+    CCloudMachine  m_comMachine;
+    /** Holds the instance name. */
+    QString        m_strInstanceName;
+    /** Holds the short provider name. */
+    QString        m_strShortProviderName;
+    /** Holds the profile name. */
+    QString        m_strProfileName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */

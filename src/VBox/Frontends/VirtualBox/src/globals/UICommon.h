@@ -734,6 +734,14 @@ public slots:
         void sltHandleMediumCreated(const CMedium &comMedium);
     /** @} */
 
+    /** @name Cloud Machine related stuff.
+     * @{ */
+        /** Handles signal about cloud machine was added. */
+        void sltHandleCloudMachineAdded(const QString &strShortProviderName,
+                                        const QString &strProfileName,
+                                        const CCloudMachine &comMachine);
+    /** @} */
+
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */

@@ -4154,6 +4154,16 @@ void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
     createMedium(UIMedium(comMedium, UIMediumDeviceType_HardDisk, KMediumState_Created));
 }
 
+void UICommon::sltHandleCloudMachineAdded(const QString &strShortProviderName,
+                                          const QString &strProfileName,
+                                          const CCloudMachine &comMachine)
+{
+    /* Make sure we cached added cloud VM in GUI: */
+    notifyCloudMachineRegistered(strShortProviderName,
+                                 strProfileName,
+                                 comMachine);
+}
+
 bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /** @todo Just use the QIWithRetranslateUI3 template wrapper. */
