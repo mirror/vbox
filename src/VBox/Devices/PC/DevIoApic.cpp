@@ -259,6 +259,8 @@ typedef struct IOAPIC
     uint64_t                au64RedirTable[IOAPIC_NUM_INTR_PINS];
     /** The IRQ tags and source IDs for each pin (tracing purposes). */
     uint32_t                au32TagSrc[IOAPIC_NUM_INTR_PINS];
+    /** Bitmap keeping the flip-flop-ness of pending interrupts. */
+    uint64_t                bmFlipFlop[(IOAPIC_NUM_INTR_PINS + 63) / 64];
 
     /** The internal IRR reflecting state of the interrupt lines. */
     uint32_t                uIrr;
@@ -663,22 +665,34 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         AssertMsgFailed(("APIC: Interrupt discarded u8Vector=%#x (%u) u64Rte=%#RX64\n", u8Vector, u8Vector, u64Rte));
 #endif
 
-    /*
-     * For level-triggered interrupts, we set the remote IRR bit to indicate
-     * the local APIC has accepted the interrupt.
-     *
-     * For edge-triggered interrupts, we should not clear the IRR bit as it
-     * should remain intact to reflect the state of the interrupt line.
-     * The device will explicitly transition to inactive state via the
-     * ioapicSetIrq() callback.
-     */
-    if (   u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL
-        && rc == VINF_SUCCESS)
+    if (rc == VINF_SUCCESS)
     {
-        Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
-        pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
-        STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
-        STAM_PROFILE_ADV_START(&pThis->aStatLevelAct[idxRte], a);
+        /*
+         * For level-triggered interrupts, we set the remote IRR bit to indicate
+         * the local APIC has accepted the interrupt.
+         *
+         * For edge-triggered interrupts, we should not clear the IRR bit as it
+         * should remain intact to reflect the state of the interrupt line.
+         * The device will explicitly transition to inactive state via the
+         * ioapicSetIrq() callback.
+         */
+        if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL)
+        {
+            Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
+            pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
+            STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
+            STAM_PROFILE_ADV_START(&pThis->aStatLevelAct[idxRte], a);
+        }
+        /*
+         * Edge-triggered flip-flops gets cleaned up here as the device code will
+         * not do any explicit ioapicSetIrq and we won't receive any EOI either.
+         */
+        else if (ASMBitTest(pThis->bmFlipFlop, idxRte))
+        {
+            Log2(("IOAPIC: Clearing IRR for edge flip-flop %#x uTagSrc=%#x\n", idxRte, pThis->au32TagSrc[idxRte]));
+            pThis->au32TagSrc[idxRte] = 0;
+            pThis->uIrr &= ~RT_BIT_32(idxRte);
+        }
     }
 }
 
@@ -941,6 +955,8 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
         bool const fFlipFlop = ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP);
         if (!fFlipFlop)
         {
+            ASMBitClear(pThis->bmFlipFlop, idxRte);
+
             uint32_t const uPrevIrr = pThis->uIrr & uPinMask;
             if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE)
             {
@@ -984,6 +1000,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
              * after a flip-flop request. The de-assert is a NOP wrts to signaling an interrupt
              * hence just the assert is done.
              */
+            ASMBitSet(pThis->bmFlipFlop, idxRte);
             IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask, true);
         }
 
