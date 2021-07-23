@@ -272,32 +272,29 @@ static int rtEfiSigDbWriteListSingle(PRTLISTANCHOR pLst, PCRTEFISIGDBDESC pDesc,
     RTListForEach(pLst, pIt, RTEFISIGNATURE, NdLst)
     {
         EFI_SIGNATURE_LIST LstHdr;
+        EFI_SIGNATURE_DATA SigData;
         LstHdr.GuidSigType = pDesc->GuidSignatureType;
-        LstHdr.cbSigLst    = RT_H2LE_U32(sizeof(LstHdr) + pDesc->cbSigHdr + pIt->cbSignature);
+        LstHdr.cbSigLst    = RT_H2LE_U32(sizeof(LstHdr) + sizeof(SigData) + pDesc->cbSigHdr + pIt->cbSignature);
         LstHdr.cbSigHdr    = RT_H2LE_U32(pDesc->cbSigHdr);
-        LstHdr.cbSig       = RT_H2LE_U32(pIt->cbSignature);
+        LstHdr.cbSig       = RT_H2LE_U32(pIt->cbSignature + sizeof(SigData));
+        RTEfiGuidFromUuid(&SigData.GuidOwner, &pIt->UuidOwner);
 
-        rc = RTVfsFileWrite(hVfsFileOut, &LstHdr, sizeof(LstHdr), NULL /*pcbWritten*/);
-        if (RT_SUCCESS(rc))
-        {
-            RTSGSEG aSegs[2];
-            RTSGBUF SgBuf;
-            EFI_SIGNATURE_DATA SigData;
-            RTEfiGuidFromUuid(&SigData.GuidOwner, &pIt->UuidOwner);
+        RTSGSEG aSegs[3];
+        RTSGBUF SgBuf;
 
-            Assert(pDesc->cbSig == pIt->cbSignature);
-            aSegs[0].pvSeg = &SigData;
-            aSegs[0].cbSeg = sizeof(SigData);
-            aSegs[1].pvSeg = &pIt->abSignature[0];
-            aSegs[1].cbSeg = pIt->cbSignature;
-            RTSgBufInit(&SgBuf, &aSegs[0], RT_ELEMENTS(aSegs));
-            rc = RTVfsFileSgWrite(hVfsFileOut, -1, &SgBuf, true /*fBlocking*/, NULL /*pcbWritten*/);
-        }
-
+        Assert(!pDesc->cbSigHdr);
+        aSegs[0].pvSeg = &LstHdr;
+        aSegs[0].cbSeg = sizeof(LstHdr);
+        aSegs[1].pvSeg = &SigData;
+        aSegs[1].cbSeg = sizeof(SigData);
+        aSegs[2].pvSeg = &pIt->abSignature[0];
+        aSegs[2].cbSeg = pIt->cbSignature;
+        RTSgBufInit(&SgBuf, &aSegs[0], RT_ELEMENTS(aSegs));
+        rc = RTVfsFileSgWrite(hVfsFileOut, -1, &SgBuf, true /*fBlocking*/, NULL /*pcbWritten*/);
         if (RT_FAILURE(rc))
             break;
 
-        cbWritten += sizeof(LstHdr) + pDesc->cbSigHdr + pIt->cbSignature;
+        cbWritten += sizeof(LstHdr) + sizeof(SigData) + pDesc->cbSigHdr + pIt->cbSignature;
     }
 
     if (RT_SUCCESS(rc))
