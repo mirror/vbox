@@ -892,8 +892,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventHaltEmtWorker(PVM pVM, PVMCPU pVCpu
  * Halts all vCPUs of the given VM except for the given one.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The vCPU cross context structure of the vCPU to exclude.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpuExclude    The vCPU cross context structure of the vCPU to exclude.
  */
 static int dbgfR3EventHaltAllVCpus(PVM pVM, PVMCPU pVCpuExclude)
 {
