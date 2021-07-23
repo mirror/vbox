@@ -550,7 +550,7 @@ static void queryMonitorPositions()
                 continue;
             }
 
-            int iMonitorID = getMonitorIdFromName(pszMonitorName);
+            int iMonitorID = getMonitorIdFromName(pszMonitorName) - 1;
             XFree((void *)pszMonitorName);
             pszMonitorName = NULL;
 
