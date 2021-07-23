@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
+#include "UINotificationObjects.h"
 
 /* Forward declarations: */
 class QHBoxLayout;

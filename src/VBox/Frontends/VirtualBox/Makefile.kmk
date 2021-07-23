@@ -845,6 +845,7 @@ UICommon_QT_MOCHDRS = \
 	src/notificationcenter/UINotificationModel.h \
 	src/notificationcenter/UINotificationObject.h \
 	src/notificationcenter/UINotificationObjectItem.h \
+	src/notificationcenter/UINotificationObjects.h \
 	src/notificationcenter/UINotificationProgressTask.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
@@ -1395,6 +1396,7 @@ UICommon_SOURCES = \
 	src/notificationcenter/UINotificationModel.cpp \
 	src/notificationcenter/UINotificationObject.cpp \
 	src/notificationcenter/UINotificationObjectItem.cpp \
+	src/notificationcenter/UINotificationObjects.cpp \
 	src/notificationcenter/UINotificationProgressTask.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/settings/UISettingsDefs.cpp \

@@ -119,6 +119,11 @@ protected:
     /** Returns default text. */
     virtual QString defaultText() const /* override */;
 
+protected slots:
+
+    /** Handles medium move progress result. */
+    void sltHandleMoveProgressFinished();
+
 private:
 
     /** A simple struct used to save some parameters of machine device attachment.

@@ -27,6 +27,7 @@
 #include "UIIconPool.h"
 #include "UIMediumItem.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -77,40 +78,13 @@ bool UIMediumItem::move()
     if (comMedium.isNull() || !comMedium.isOk())
         return false;
 
-    /* Try to assign new medium location: */
-    if (   comMedium.isOk()
-        && strFileName != location())
-    {
-        /* Prepare move storage progress: */
-        CProgress comProgress = comMedium.MoveTo(strFileName);
-
-        /* Show error message if necessary: */
-        if (!comMedium.isOk())
-        {
-            msgCenter().cannotMoveMediumStorage(comMedium, location(),
-                                                strFileName, treeWidget());
-            /* Negative if failed: */
-            return false;
-        }
-        else
-        {
-            /* Show move storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, tr("Moving medium ..."),
-                                                ":/progress_media_move_90px.png", treeWidget());
-
-            /* Show error message if necessary: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotMoveMediumStorage(comProgress, location(),
-                                                    strFileName, treeWidget());
-                /* Negative if failed: */
-                return false;
-            }
-        }
-    }
-
-    /* Recache item: */
-    refreshAll();
+    /* Assign new medium location: */
+    UINotificationProgressMediumMove *pNotification = new UINotificationProgressMediumMove(comMedium,
+                                                                                           location(),
+                                                                                           strFileName);
+    connect(pNotification, &UINotificationProgressMediumMove::sigProgressFinished,
+            this, &UIMediumItem::sltHandleMoveProgressFinished);
+    notificationCenter().append(pNotification);
 
     /* Positive: */
     return true;
@@ -259,6 +233,12 @@ QString UIMediumItem::defaultText() const
               .arg(text(0))
               .arg(parentTree()->headerItem()->text(1)).arg(text(1))
               .arg(parentTree()->headerItem()->text(2)).arg(text(2));
+}
+
+void UIMediumItem::sltHandleMoveProgressFinished()
+{
+    /* Recache item: */
+    refreshAll();
 }
 
 void UIMediumItem::refresh()
