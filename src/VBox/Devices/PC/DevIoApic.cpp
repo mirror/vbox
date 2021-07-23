@@ -874,13 +874,15 @@ static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
     {
         uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
-/** @todo r=bird: bugref:10073: Ignore edge triggered entries here since
- * the APIC will only call us for those?  Not doing so confuses ended up
- * with spurious HPET/RTC IRQs in SMP linux because of it sharing the vector
- * with a level-triggered IRQ (like vboxguest) delivered on a different CPU.
- * Alternatively, make the call specify the APIC number of use that in the
- * filter too/instead. */
-        if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
+/** @todo r=bird: bugref:10073: I've changed it to ignore edge triggered
+ * entries here since the APIC will only call us for those?  Not doing so
+ * confuses ended up with spurious HPET/RTC IRQs in SMP linux because of it
+ * sharing the vector with a level-triggered IRQ (like vboxguest) delivered on a
+ * different CPU.
+ *
+ * Maybe we should also/instead filter on the source APIC number? */
+        if (   IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector
+            && IOAPIC_RTE_GET_TRIGGER_MODE(u64Rte) != IOAPIC_RTE_TRIGGER_MODE_EDGE)
         {
 #ifdef DEBUG_ramshankar
             /* This assertion may trigger when restoring saved-states created using the old, incorrect I/O APIC code. */
