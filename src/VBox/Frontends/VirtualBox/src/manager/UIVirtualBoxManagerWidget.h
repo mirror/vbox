@@ -303,6 +303,8 @@ private:
 
         /** Cleanups connections. */
         void cleanupConnections();
+        /** Cleanups widgets. */
+        void cleanupWidgets();
         /** Cleanups all. */
         void cleanup();
     /** @} */

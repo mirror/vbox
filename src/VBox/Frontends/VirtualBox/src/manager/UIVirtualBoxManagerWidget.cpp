@@ -29,6 +29,7 @@
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
@@ -718,6 +719,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         }
     }
 
+    /* Create notification-center: */
+    UINotificationCenter::create(this);
+
     /* Update toolbar finally: */
     updateToolbar();
 
@@ -1041,10 +1045,16 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
                this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
 }
 
+void UIVirtualBoxManagerWidget::cleanupWidgets()
+{
+    UINotificationCenter::destroy();
+}
+
 void UIVirtualBoxManagerWidget::cleanup()
 {
     /* Cleanup everything: */
     cleanupConnections();
+    cleanupWidgets();
 }
 
 void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)
