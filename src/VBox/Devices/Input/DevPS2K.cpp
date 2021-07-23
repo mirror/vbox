@@ -744,7 +744,7 @@ static int ps2kR3HidToInternalCode(uint32_t u32HidCode, key_def const **ppKeyDef
     else if (u8HidPage == USB_HID_DC_PAGE)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aPS2DCKeys); ++i)
-            if (aPS2CCKeys[i].usageId == u16HidUsage)
+            if (aPS2DCKeys[i].usageId == u16HidUsage)
             {
                 pKeyDef   = &aPS2DCKeys[i].kdef;
                 iKeyIndex = PS2K_PAGE_DC_START + i;
