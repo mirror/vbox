@@ -1,8 +1,16 @@
 <?xml version="1.0"?>
-<physicallayout defaultHeight="30" defaultWidth="50">
+<physicallayout defaultHeight="30" defaultWidth="52">
     <name>multimedia keys</name>
     <id>80b4c26e-43fc-44f8-b515-351cff9269ce</id>
     <row>
+        <key><!-- Power -->
+            <position>317</position>
+            <usageid>0x81</usageid>
+            <usagepage>0x01</usagepage>
+            <scancodeprefix></scancodeprefix>
+            <scancode></scancode>
+            <staticcaption>⏻</staticcaption>
+        </key>
         <key><!-- WWW back -->
             <position>300</position>
             <usageid>0x0224</usageid>
@@ -52,7 +60,7 @@
             <staticcaption>🔍</staticcaption>
         </key>
         <space>
-            <width>25</width>
+            <width>0</width>
         </space>
         <key><!-- Previous Media Track-->
             <position>307</position>
@@ -88,7 +96,7 @@
             <staticcaption>⏯️</staticcaption>
         </key>
         <space>
-            <width>25</width>
+            <width>0</width>
         </space>
         <key><!-- Mail -->
             <position>303</position>
@@ -123,7 +131,7 @@
             <staticcaption>♬</staticcaption>
         </key>
         <space>
-            <width>25</width>
+            <width>0</width>
         </space>
         <key><!-- Mute -->
             <position>304</position>

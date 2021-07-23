@@ -2418,6 +2418,7 @@ void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
 
 void UISoftKeyboardWidget::retranslateUi()
 {
+    m_keyTooltips[317] = UISoftKeyboard::tr("Power off");
     m_keyTooltips[300] = UISoftKeyboard::tr("Web browser go back");
     m_keyTooltips[301] = UISoftKeyboard::tr("Web browser go the home page");
     m_keyTooltips[302] = UISoftKeyboard::tr("Web browser go forward");
