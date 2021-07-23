@@ -116,6 +116,7 @@ static int dbgfR3CpuWait(PVMCPU pVCpu);
 static int dbgfR3CpuCmd(PVMCPU pVCpu, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution);
 static DBGFSTEPINSTRTYPE dbgfStepGetCurInstrType(PVM pVM, PVMCPU pVCpu);
 static bool dbgfStepAreWeThereYet(PVM pVM, PVMCPU pVCpu);
+static int dbgfR3EventHaltAllVCpus(PVM pVM, PVMCPU pVCpuExclude);
 
 
 
@@ -773,6 +774,14 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
         return rc;
 
     /*
+     * Halt all other vCPUs as well to give the user the ability to inspect other
+     * vCPU states as well.
+     */
+    rc = dbgfR3EventHaltAllVCpus(pVM, pVCpu);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
      * Send the event and process the reply communication.
      */
     DBGFEVENT DbgEvent;
@@ -857,6 +866,38 @@ DECLINLINE(int) dbgfR3CpuSetCmdAndNotify(PUVMCPU pUVCpu, DBGFCMD enmCmd)
 
     VMR3NotifyCpuFFU(pUVCpu, 0 /*fFlags*/);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventHaltEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    PUVMCPU pUVCpu = pVCpu->pUVCpu;
+    if (   pVCpu != (PVMCPU)pvUser
+        && !dbgfR3CpuIsHalted(pUVCpu))
+        dbgfR3CpuSetCmdAndNotify(pUVCpu, DBGFCMD_HALT);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Halts all vCPUs of the given VM except for the given one.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The vCPU cross context structure of the vCPU to exclude.
+ */
+static int dbgfR3EventHaltAllVCpus(PVM pVM, PVMCPU pVCpuExclude)
+{
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventHaltEmtWorker, pVCpuExclude);
 }
 
 
