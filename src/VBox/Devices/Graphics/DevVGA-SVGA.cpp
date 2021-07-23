@@ -5616,6 +5616,14 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
         vgaR3UnregisterVRAMHandler(pDevIns, pThis);
     }
 
+    /* VMSVGA is working via VBVA interface, therefore it needs to be
+     * enabled on saved state restore. See @bugref{10071#c7}. */
+    if (pThis->svga.fEnabled)
+    {
+        for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+            pThisCC->pDrv->pfnVBVAEnable(pThisCC->pDrv, idScreen, NULL /*pHostFlags*/);
+    }
+
     /* Let the FIFO thread deal with changing the mode. */
     ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 
