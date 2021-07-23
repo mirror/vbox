@@ -29,6 +29,7 @@
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
 #include "CMedium.h"
+#include "CVirtualSystemDescription.h"
 
 /** UINotificationProgress extension for medium move functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressMediumMove : public UINotificationProgress
@@ -162,6 +163,64 @@ private:
     QString        m_strShortProviderName;
     /** Holds the profile name. */
     QString        m_strProfileName;
+};
+
+/** UINotificationProgress extension for cloud machine create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about cloud @a comMachine was created.
+      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProfileName        Brings the profile name. */
+    void sigCloudMachineCreated(const QString &strShortProviderName,
+                                const QString &strProfileName,
+                                const CCloudMachine &comMachine);
+
+public:
+
+    /** Constructs cloud machine create notification-progress.
+      * @param  comClient             Brings the cloud client being adding machine.
+      * @param  comMachine            Brings the cloud machine being added.
+      * @param  comVSD                Brings the virtual system description.
+      * @param  strShortProviderName  Brings the short provider name.
+      * @param  strProfileName        Brings the profile name. */
+    UINotificationProgressCloudMachineCreate(const CCloudClient &comClient,
+                                             const CCloudMachine &comMachine,
+                                             const CVirtualSystemDescription &comVSD,
+                                             const QString &strShortProviderName,
+                                             const QString &strProfileName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being adding machine. */
+    CCloudClient               m_comClient;
+    /** Holds the cloud machine being added. */
+    CCloudMachine              m_comMachine;
+    /** Holds the the virtual system description. */
+    CVirtualSystemDescription  m_comVSD;
+    /** Holds the name acquired from VSD. */
+    QString                    m_strName;
+    /** Holds the short provider name. */
+    QString                    m_strShortProviderName;
+    /** Holds the profile name. */
+    QString                    m_strProfileName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
