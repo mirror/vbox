@@ -35,7 +35,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** The current IO APIC saved state version. */
-#define IOAPIC_SAVED_STATE_VERSION              2
+#define IOAPIC_SAVED_STATE_VERSION                  3
+/** The current IO APIC saved state version. */
+#define IOAPIC_SAVED_STATE_VERSION_NO_FLIPFLOP_MAP  2
 /** The saved state version used by VirtualBox 5.0 and
  *  earlier.  */
 #define IOAPIC_SAVED_STATE_VERSION_VBOX_50      1
@@ -1432,6 +1434,9 @@ static DECLCALLBACK(int) ioapicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
         pHlp->pfnSSMPutU64(pSSM, pThis->au64RedirTable[idxRte]);
 
+    for (uint8_t idx = 0; idx < RT_ELEMENTS(pThis->bmFlipFlop); idx++)
+        pHlp->pfnSSMPutU64(pSSM, pThis->bmFlipFlop[idx]);
+
     return VINF_SUCCESS;
 }
 
@@ -1450,19 +1455,24 @@ static DECLCALLBACK(int) ioapicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 
     /* Weed out invalid versions. */
     if (   uVersion != IOAPIC_SAVED_STATE_VERSION
+        && uVersion != IOAPIC_SAVED_STATE_VERSION_NO_FLIPFLOP_MAP
         && uVersion != IOAPIC_SAVED_STATE_VERSION_VBOX_50)
     {
         LogRel(("IOAPIC: ioapicR3LoadExec: Invalid/unrecognized saved-state version %u (%#x)\n", uVersion, uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    if (uVersion == IOAPIC_SAVED_STATE_VERSION)
+    if (uVersion >= IOAPIC_SAVED_STATE_VERSION_NO_FLIPFLOP_MAP)
         pHlp->pfnSSMGetU32(pSSM, &pThis->uIrr);
 
     pHlp->pfnSSMGetU8V(pSSM, &pThis->u8Id);
     pHlp->pfnSSMGetU8V(pSSM, &pThis->u8Index);
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
         pHlp->pfnSSMGetU64(pSSM, &pThis->au64RedirTable[idxRte]);
+
+    if (uVersion > IOAPIC_SAVED_STATE_VERSION_NO_FLIPFLOP_MAP)
+        for (uint8_t idx = 0; idx < RT_ELEMENTS(pThis->bmFlipFlop); idx++)
+            pHlp->pfnSSMGetU64(pSSM, &pThis->bmFlipFlop[idx]);
 
     return VINF_SUCCESS;
 }
