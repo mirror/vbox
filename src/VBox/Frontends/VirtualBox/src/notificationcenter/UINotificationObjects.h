@@ -28,6 +28,7 @@
 #include "COMEnums.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
+#include "CMachine.h"
 #include "CMedium.h"
 #include "CVirtualSystemDescription.h"
 
@@ -107,6 +108,54 @@ private:
     CMedium                  m_comTarget;
     /** Holds the target medium options. */
     QVector<KMediumVariant>  m_variants;
+};
+
+/** UINotificationProgress extension for machine copy functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachineCopy : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about @a comMachine was copied. */
+    void sigMachineCopied(const CMachine &comMachine);
+
+public:
+
+    /** Constructs medium move notification-progress.
+      * @param  comSource     Brings the machine being copied.
+      * @param  comTarget     Brings the machine being the target.
+      * @param  enmCloneMode  Brings the cloning mode.
+      * @param  options       Brings the cloning options. */
+    UINotificationProgressMachineCopy(const CMachine &comSource,
+                                      const CMachine &comTarget,
+                                      const KCloneMode &enmCloneMode,
+                                      const QVector<KCloneOptions> &options);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine being copied. */
+    CMachine                m_comSource;
+    /** Holds the machine being the target. */
+    CMachine                m_comTarget;
+    /** Holds the machine cloning mode. */
+    KCloneMode              m_enmCloneMode;
+    /** Holds the target machine options. */
+    QVector<KCloneOptions>  m_options;
 };
 
 /** UINotificationProgress extension for cloud machine add functionality. */

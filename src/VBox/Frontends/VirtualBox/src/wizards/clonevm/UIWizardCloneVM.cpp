@@ -16,13 +16,14 @@
  */
 
 /* GUI includes: */
+#include "UICommon.h"
+#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMPageBasic1.h"
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVMPageBasic3.h"
 #include "UIWizardCloneVMPageExpert.h"
-#include "UICommon.h"
-#include "UIMessageCenter.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -146,31 +147,14 @@ bool UIWizardCloneVM::cloneVM()
     if (fLinked)
         options.append(KCloneOptions_Link);
 
-    /* Start cloning. */
-    CProgress progress = srcMachine.CloneTo(cloneMachine, cloneMode, options);
-    if (!srcMachine.isOk())
-    {
-        msgCenter().cannotCreateClone(srcMachine, this);
-        return false;
-    }
-
-    /* Wait until done. */
-    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_clone_90px.png", this);
-    if (progress.GetCanceled())
-        return false;
-    if (!progress.isOk() || progress.GetResultCode() != 0)
-    {
-        msgCenter().cannotCreateClone(progress, srcMachine.GetName(), this);
-        return false;
-    }
-
-    /* Finally register the clone machine. */
-    vbox.RegisterMachine(cloneMachine);
-    if (!vbox.isOk())
-    {
-        msgCenter().cannotRegisterMachine(vbox, cloneMachine.GetName(), this);
-        return false;
-    }
+    /* Clone VM: */
+    UINotificationProgressMachineCopy *pNotification = new UINotificationProgressMachineCopy(srcMachine,
+                                                                                             cloneMachine,
+                                                                                             cloneMode,
+                                                                                             options);
+    connect(pNotification, &UINotificationProgressMachineCopy::sigMachineCopied,
+            &uiCommon(), &UICommon::sltHandleMachineCreated);
+    notificationCenter().append(pNotification);
 
     return true;
 }

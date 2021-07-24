@@ -4154,6 +4154,15 @@ void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
     createMedium(UIMedium(comMedium, UIMediumDeviceType_HardDisk, KMediumState_Created));
 }
 
+void UICommon::sltHandleMachineCreated(const CMachine &comMachine)
+{
+    /* Register created machine. */
+    CVirtualBox comVBox = virtualBox();
+    comVBox.RegisterMachine(comMachine);
+    if (!comVBox.isOk())
+        msgCenter().cannotRegisterMachine(comVBox, comMachine.GetName());
+}
+
 void UICommon::sltHandleCloudMachineAdded(const QString &strShortProviderName,
                                           const QString &strProfileName,
                                           const CCloudMachine &comMachine)

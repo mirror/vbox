@@ -734,6 +734,12 @@ public slots:
         void sltHandleMediumCreated(const CMedium &comMedium);
     /** @} */
 
+    /** @name Machine related stuff.
+     * @{ */
+        /** Handles signal about machine was created. */
+        void sltHandleMachineCreated(const CMachine &comMachine);
+    /** @} */
+
     /** @name Cloud Machine related stuff.
      * @{ */
         /** Handles signal about cloud machine was added. */

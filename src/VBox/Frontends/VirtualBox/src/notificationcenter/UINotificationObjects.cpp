@@ -97,6 +97,51 @@ void UINotificationProgressMediumCopy::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressMachineCopy implementation.                                                                      *
+*********************************************************************************************************************************/
+
+UINotificationProgressMachineCopy::UINotificationProgressMachineCopy(const CMachine &comSource,
+                                                                     const CMachine &comTarget,
+                                                                     const KCloneMode &enmCloneMode,
+                                                                     const QVector<KCloneOptions> &options)
+    : m_comSource(comSource)
+    , m_comTarget(comTarget)
+    , m_enmCloneMode(enmCloneMode)
+    , m_options(options)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMachineCopy::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressMachineCopy::name() const
+{
+    return UINotificationProgress::tr("Copying machine ...");
+}
+
+QString UINotificationProgressMachineCopy::details() const
+{
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
+                                     .arg(m_comSource.GetName(), m_comTarget.GetName());
+}
+
+CProgress UINotificationProgressMachineCopy::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comSource.CloneTo(m_comTarget, m_enmCloneMode, m_options);
+    /* Store COM result: */
+    comResult = m_comSource;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressMachineCopy::sltHandleProgressFinished()
+{
+    if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
+        emit sigMachineCopied(m_comTarget);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudMachineAdd implementation.                                                                  *
 *********************************************************************************************************************************/
 
