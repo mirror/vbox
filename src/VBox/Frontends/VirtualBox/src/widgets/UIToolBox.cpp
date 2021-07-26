@@ -87,7 +87,7 @@ public:
     void setIndex(int iIndex);
     int totalHeight() const;
     int titleHeight() const;
-    int pageWidgetHeight() const;
+    QSize pageWidgetSize() const;
     void setTitleIcon(const QIcon &icon, const QString &strToolTip);
 
 protected:
@@ -267,7 +267,7 @@ void UIToolBoxPage::setIndex(int iIndex)
 
 int UIToolBoxPage::totalHeight() const
 {
-    return pageWidgetHeight() + titleHeight();
+    return pageWidgetSize().height() + titleHeight();
 }
 
 void UIToolBoxPage::setTitleIcon(const QIcon &icon, const QString &strToolTip)
@@ -291,11 +291,11 @@ int UIToolBoxPage::titleHeight() const
     return 0;
 }
 
-int UIToolBoxPage::pageWidgetHeight() const
+QSize UIToolBoxPage::pageWidgetSize() const
 {
-    if (m_pWidget && m_pWidget->isVisible() && m_pWidget->sizeHint().isValid())
-        return m_pWidget->sizeHint().height();
-    return 0;
+    if (m_pWidget && m_pWidget->sizeHint().isValid())
+        return m_pWidget->sizeHint();
+    return QSize();
 }
 
 bool UIToolBoxPage::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -375,21 +375,29 @@ bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle
     connect(pNewPage, &UIToolBoxPage::sigShowPageWidget,
             this, &UIToolBox::sltHandleShowPageWidget);
 
-    static int iMaxPageHeight = 0;
-    int iTotalTitleHeight = 0;
-    foreach(UIToolBoxPage *pPage, m_pages)
-    {
-        if (pWidget && pWidget->sizeHint().isValid())
-            iMaxPageHeight = qMax(iMaxPageHeight, pWidget->sizeHint().height());
-        iTotalTitleHeight += pPage->titleHeight();
-    }
-    setMinimumHeight(m_iPageCount * (qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
-                                     qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin)) +
-                     iTotalTitleHeight +
-                     iMaxPageHeight);
     /* Add stretch at the end: */
     m_pMainLayout->addStretch();
     return iIndex;
+}
+
+QSize UIToolBox::minimumSizeHint() const
+{
+
+    int iMaxPageHeight = 0;
+    int iTotalTitleHeight = 0;
+    int iWidth = 0;
+    foreach(UIToolBoxPage *pPage, m_pages)
+    {
+        QSize pageWidgetSize(pPage->pageWidgetSize());
+        iMaxPageHeight = qMax(iMaxPageHeight, pageWidgetSize.height());
+        iTotalTitleHeight += pPage->titleHeight();
+        iWidth = qMax(pageWidgetSize.width(), iWidth);
+    }
+    int iHeight = m_iPageCount * (qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
+                                  qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin)) +
+        iTotalTitleHeight +
+        iMaxPageHeight;
+    return QSize(iWidth, iHeight);
 }
 
 void UIToolBox::setPageEnabled(int iIndex, bool fEnabled)

@@ -51,6 +51,7 @@ public:
     void setPageTitle(int iIndex, const QString &strTitle);
     void setPageTitleIcon(int iIndex, const QIcon &icon, const QString &strIconToolTip = QString());
     void setCurrentPage(int iIndex);
+    virtual QSize minimumSizeHint() const /* override */;
 
 protected:
 
