@@ -107,7 +107,7 @@ PDMBOTHCBDECL(int) drvNetShaperUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnW
     PDRVNETSHAPER pThis = RT_FROM_MEMBER(pInterface, DRVNETSHAPER, CTX_SUFF(INetworkUp));
     if (RT_UNLIKELY(!pThis->CTX_SUFF(pIBelowNet)))
     {
-        int rc = PDMCritSectTryEnter(&pThis->XmitLock);
+        int rc = PDMDrvHlpCritSectTryEnter(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock);
         if (RT_UNLIKELY(rc == VERR_SEM_BUSY))
             rc = VERR_TRY_AGAIN;
         return rc;
@@ -178,7 +178,7 @@ PDMBOTHCBDECL(void) drvNetShaperUp_EndXmit(PPDMINETWORKUP pInterface)
     if (RT_LIKELY(pThis->CTX_SUFF(pIBelowNet)))
         pThis->CTX_SUFF(pIBelowNet)->pfnEndXmit(pThis->CTX_SUFF(pIBelowNet));
     else
-        PDMCritSectLeave(&pThis->XmitLock);
+        PDMDrvHlpCritSectLeave(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock);
 }
 
 
@@ -342,10 +342,10 @@ static DECLCALLBACK(void) drvR3NetShaperDetach(PPDMDRVINS pDrvIns, uint32_t fFla
     PDRVNETSHAPER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSHAPER);
 
     LogFlow(("drvNetShaperDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
-    PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+    PDMDrvHlpCritSectEnter(pDrvIns, &pThis->XmitLock, VERR_IGNORED);
     pThis->pIBelowNetR3 = NULL;
     pThis->pIBelowNetR0 = NIL_RTR0PTR;
-    PDMCritSectLeave(&pThis->XmitLock);
+    PDMDrvHlpCritSectLeave(pDrvIns, &pThis->XmitLock);
 }
 
 
@@ -356,7 +356,7 @@ static DECLCALLBACK(int) drvR3NetShaperAttach(PPDMDRVINS pDrvIns, uint32_t fFlag
 {
     PDRVNETSHAPER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSHAPER);
     LogFlow(("drvNetShaperAttach/#%#x: fFlags=%#x\n", pDrvIns->iInstance, fFlags));
-    PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+    PDMDrvHlpCritSectEnter(pDrvIns, &pThis->XmitLock, VERR_IGNORED);
 
     /*
      * Query the network connector interface.
@@ -388,7 +388,7 @@ static DECLCALLBACK(int) drvR3NetShaperAttach(PPDMDRVINS pDrvIns, uint32_t fFlag
     else
         AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
 
-    PDMCritSectLeave(&pThis->XmitLock);
+    PDMDrvHlpCritSectLeave(pDrvIns, &pThis->XmitLock);
     return VINF_SUCCESS;
 }
 
@@ -403,8 +403,8 @@ static DECLCALLBACK(void) drvR3NetShaperDestruct(PPDMDRVINS pDrvIns)
 
     PDMDrvHlpNetShaperDetach(pDrvIns, &pThis->Filter);
 
-    if (PDMCritSectIsInitialized(&pThis->XmitLock))
-        PDMR3CritSectDelete(&pThis->XmitLock);
+    if (PDMDrvHlpCritSectIsInitialized(pDrvIns, &pThis->XmitLock))
+        PDMDrvHlpCritSectDelete(pDrvIns, &pThis->XmitLock);
 }
 
 

@@ -291,7 +291,7 @@ DECLINLINE(int) drvR0IntNetSignalXmit(PDRVINTNET pThis)
  */
 DECLINLINE(int) drvIntNetProcessXmit(PDRVINTNET pThis)
 {
-    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+    Assert(PDMDrvHlpCritSectIsOwner(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock));
 
 #ifdef IN_RING3
     INTNETIFSENDREQ SendReq;
@@ -324,7 +324,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWork
     Assert(!fOnWorkerThread);
 #endif
 
-    int rc = PDMCritSectTryEnter(&pThis->XmitLock);
+    int rc = PDMDrvHlpCritSectTryEnter(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock);
     if (RT_SUCCESS(rc))
     {
         if (fOnWorkerThread)
@@ -366,7 +366,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
     int         rc    = VINF_SUCCESS;
     Assert(cbMin < UINT32_MAX / 2);
-    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+    Assert(PDMDrvHlpCritSectIsOwner(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock));
 
     /*
      * Allocate a S/G descriptor.
@@ -467,7 +467,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
     Assert(   pHdr->u8Type == INTNETHDR_TYPE_FRAME
            || pHdr->u8Type == INTNETHDR_TYPE_GSO);
-    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+    Assert(PDMDrvHlpCritSectIsOwner(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock));
 
     /** @todo LATER: try unalloc the frame. */
     pHdr->u8Type = INTNETHDR_TYPE_PADDING;
@@ -494,7 +494,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
     AssertPtr(pSgBuf);
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
-    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+    Assert(PDMDrvHlpCritSectIsOwner(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock));
 
     if (pSgBuf->pvUser)
         STAM_COUNTER_INC(&pThis->StatSentGso);
@@ -527,7 +527,7 @@ PDMBOTHCBDECL(void) drvIntNetUp_EndXmit(PPDMINETWORKUP pInterface)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
     ASMAtomicUoWriteBool(&pThis->fXmitOnXmitThread, false);
-    PDMCritSectLeave(&pThis->XmitLock);
+    PDMDrvHlpCritSectLeave(pThis->CTX_SUFF(pDrvIns), &pThis->XmitLock);
 }
 
 
@@ -605,9 +605,9 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
         if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
         {
             STAM_REL_COUNTER_INC(&pThis->StatXmitProcessRing);
-            PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+            PDMDrvHlpCritSectEnter(pDrvIns, &pThis->XmitLock, VERR_IGNORED);
             drvIntNetProcessXmit(pThis);
-            PDMCritSectLeave(&pThis->XmitLock);
+            PDMDrvHlpCritSectLeave(pDrvIns, &pThis->XmitLock);
         }
 
         pThis->pIAboveNet->pfnXmitPending(pThis->pIAboveNet);
@@ -615,9 +615,9 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
         if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
         {
             STAM_REL_COUNTER_INC(&pThis->StatXmitProcessRing);
-            PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+            PDMDrvHlpCritSectEnter(pDrvIns, &pThis->XmitLock, VERR_IGNORED);
             drvIntNetProcessXmit(pThis);
-            PDMCritSectLeave(&pThis->XmitLock);
+            PDMDrvHlpCritSectLeave(pDrvIns, &pThis->XmitLock);
         }
 
         /*
@@ -1272,8 +1272,8 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
     RTMemCacheDestroy(pThis->hSgCache);
     pThis->hSgCache = NIL_RTMEMCACHE;
 
-    if (PDMCritSectIsInitialized(&pThis->XmitLock))
-        PDMR3CritSectDelete(&pThis->XmitLock);
+    if (PDMDrvHlpCritSectIsInitialized(pDrvIns, &pThis->XmitLock))
+        PDMDrvHlpCritSectDelete(pDrvIns, &pThis->XmitLock);
 }
 
 
