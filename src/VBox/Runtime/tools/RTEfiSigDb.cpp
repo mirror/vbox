@@ -427,31 +427,27 @@ static int rtEfiSigDbSetVarAttr(RTVFS hVfsVarStore, const char *pszVar, uint32_t
 
 
 /**
- * Adds the given signature to the given signature database of the given EFI variable store.
+ * Adds the given variable to the variable store.
  *
  * @returns IPRT status code.
  * @param   hVfsVarStore        Handle of the EFI variable store VFS.
- * @param   pszDb               The signature database to update.
- * @param   fWipeDbBefore       Flag whether to wipe the database before adding the signature.
- * @param   cSigs               Number of signatures following.
- * @param   ...                 A triple of signature path, signature type and owner uuid string pointers for each
- *                              signature.
+ * @param   pGuid               The EFI GUID of the variable.
+ * @param   pszVar              The variable name.
+ * @param   fAttr               Attributes for the variable.
+ * @param   phVfsFile           Where to return the VFS file handle to the created variable on success.
  */
-static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool fWipeDbBefore, uint32_t cSigs,
-                                     ... /*const char *pszSigPath, const char *pszSigType, const char *pszUuidOwner*/)
+static int rtEfiSigDbVarStoreAddVar(RTVFS hVfsVarStore, PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, PRTVFSFILE phVfsFile)
 {
-    EFI_GUID GuidSecurityDb = EFI_IMAGE_SECURITY_DATABASE_GUID;
-    RTUUID UuidSecurityDb;
-    RTEfiGuidToUuid(&UuidSecurityDb, &GuidSecurityDb);
+    RTUUID UuidVar;
+    RTEfiGuidToUuid(&UuidVar, pGuid);
 
-    char szDbPath[_1K];
-    ssize_t cch = RTStrPrintf2(szDbPath, sizeof(szDbPath), "/by-uuid/%RTuuid/%s", &UuidSecurityDb, pszDb);
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/by-uuid/%RTuuid/%s", &UuidVar, pszVar);
     Assert(cch > 0); RT_NOREF(cch);
 
-    RTVFSFILE hVfsFileSigDb = NIL_RTVFSFILE;
-    int rc = RTVfsFileOpen(hVfsVarStore, szDbPath,
+    int rc = RTVfsFileOpen(hVfsVarStore, szVarPath,
                            RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
-                           &hVfsFileSigDb);
+                           phVfsFile);
     if (   rc == VERR_PATH_NOT_FOUND
         || rc == VERR_FILE_NOT_FOUND)
     {
@@ -464,7 +460,7 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
         if (RT_SUCCESS(rc))
         {
             char szGuidPath[_1K];
-            cch = RTStrPrintf2(szGuidPath, sizeof(szGuidPath), "by-uuid/%RTuuid", &UuidSecurityDb);
+            cch = RTStrPrintf2(szGuidPath, sizeof(szGuidPath), "by-uuid/%RTuuid", &UuidVar);
             Assert(cch > 0);
 
             RTVFSDIR hVfsDirGuid = NIL_RTVFSDIR;
@@ -481,21 +477,73 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
 
         if (RT_SUCCESS(rc))
         {
-            rc = RTVfsFileOpen(hVfsVarStore, szDbPath,
+            rc = RTVfsFileOpen(hVfsVarStore, szVarPath,
                                RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_CREATE,
-                               &hVfsFileSigDb);
+                               phVfsFile);
             if (RT_SUCCESS(rc))
-                rc = rtEfiSigDbSetVarAttr(hVfsVarStore, pszDb,
-                                            EFI_VAR_HEADER_ATTR_NON_VOLATILE
-                                          | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
-                                          | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
-                                          | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS);
+                rc = rtEfiSigDbSetVarAttr(hVfsVarStore, pszVar, fAttr);
         }
 
         if (RT_FAILURE(rc))
-            rc = RTMsgErrorRc(rc, "Creating the signature database '%s' failed: %Rrc", pszDb, rc);
+            rc = RTMsgErrorRc(rc, "Creating the variable '%s' failed: %Rrc", pszVar, rc);
     }
 
+    return rc;
+}
+
+
+/**
+ * Creates the given variable and sets the data.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsVarStore        Handle of the EFI variable store VFS.
+ * @param   pGuid               The EFI GUID of the variable.
+ * @param   pszVar              The variable name.
+ * @param   fAttr               Attributes for the variable.
+ * @param   pvBuf               The data to write.
+ * @param   cbBuf               Number of bytes of data.
+ */
+static int rtEfiSigDbVarStoreSetVar(RTVFS hVfsVarStore, PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr,
+                                    const void *pvBuf, size_t cbBuf)
+{
+    RTVFSFILE hVfsFileVar = NIL_RTVFSFILE;
+    int rc = rtEfiSigDbVarStoreAddVar(hVfsVarStore, pGuid, pszVar, fAttr, &hVfsFileVar);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTVfsFileWrite(hVfsFileVar, pvBuf, cbBuf, NULL /*pcbWritten*/);
+        if (RT_FAILURE(rc))
+            rc = RTMsgErrorRc(rc, "Writing variable '%s' failed: %Rrc", pszVar, rc);
+        RTVfsFileRelease(hVfsFileVar);
+    }
+    else
+        rc = RTMsgErrorRc(rc, "Creating variable '%s' failed: %Rrc", pszVar, rc);
+
+    return rc;
+}
+
+
+/**
+ * Adds the given signature to the given signature database of the given EFI variable store.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsVarStore        Handle of the EFI variable store VFS.
+ * @param   pGuid               The EFI GUID of the variable.
+ * @param   pszDb               The signature database to update.
+ * @param   fWipeDbBefore       Flag whether to wipe the database before adding the signature.
+ * @param   cSigs               Number of signatures following.
+ * @param   ...                 A triple of signature path, signature type and owner uuid string pointers for each
+ *                              signature.
+ */
+static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, PCEFI_GUID pGuid, const char *pszDb, bool fWipeDbBefore, uint32_t cSigs,
+                                     ... /*const char *pszSigPath, const char *pszSigType, const char *pszUuidOwner*/)
+{
+    RTVFSFILE hVfsFileSigDb = NIL_RTVFSFILE;
+    int rc = rtEfiSigDbVarStoreAddVar(hVfsVarStore, pGuid, pszDb,
+                                        EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                      | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                      | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
+                                      | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS,
+                                      &hVfsFileSigDb);
     if (RT_SUCCESS(rc))
     {
         RTEFISIGDB hEfiSigDb;
@@ -541,7 +589,7 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
         RTVfsFileRelease(hVfsFileSigDb);
     }
     else
-        rc = RTMsgErrorRc(rc, "Opening signature database '%s' failed: %Rrc", szDbPath, rc);
+        rc = RTMsgErrorRc(rc, "Opening signature database '%s' failed: %Rrc", pszDb, rc);
 
     return rc;
 }
@@ -665,11 +713,14 @@ static RTEXITCODE rtEfiSgDbCmdInitNvram(const char *pszArg0, int cArgs, char **p
         rc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, 0 /*fMntFlags*/, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore, RTErrInfoInitStatic(&ErrInfo));
         if (RT_SUCCESS(rc))
         {
+            EFI_GUID GuidSecurityDb = EFI_IMAGE_SECURITY_DATABASE_GUID;
+            EFI_GUID GuidGlobalVar = EFI_GLOBAL_VARIABLE_GUID;
+
             if (pszPkPath)
-                rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, "PK", true /*fWipeDbBefore*/, 1 /*cSigs*/, pszPkPath, "x509", pszUuidPkOwner);
+                rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, &GuidGlobalVar, "PK", true /*fWipeDbBefore*/, 1 /*cSigs*/, pszPkPath, "x509", pszUuidPkOwner);
             if (   RT_SUCCESS(rc)
                 && pszKekPath)
-                rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, "KEK", true /*fWipeDbBefore*/, 1 /*cSigs*/, pszKekPath, "x509", pszUuidKekOwner);
+                rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, &GuidGlobalVar ,"KEK", true /*fWipeDbBefore*/, 1 /*cSigs*/, pszKekPath, "x509", pszUuidKekOwner);
 
             if (   RT_SUCCESS(rc)
                 && cDbEntries)
@@ -695,7 +746,7 @@ static RTEXITCODE rtEfiSgDbCmdInitNvram(const char *pszArg0, int cArgs, char **p
 
                         if (   pszSigTypeFree
                             && pszUuidOwnerFree)
-                            rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, "db",
+                            rc = rtEfiSigDbVarStoreAddToDb(hVfsEfiVarStore, &GuidSecurityDb, "db",
                                                            i == 0 ? true : false /*fWipeDbBefore*/,
                                                            1 /*cSigs*/,
                                                            pszSigPath, pszSigTypeFree, pszUuidOwnerFree);
@@ -715,6 +766,18 @@ static RTEXITCODE rtEfiSgDbCmdInitNvram(const char *pszArg0, int cArgs, char **p
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Initializing the NVRAM '%s' failed: %Rrc", pszNvram, rc);
             }
 
+            if (   RT_SUCCESS(rc)
+                && fSetSecureBoot)
+            {
+                EFI_GUID GuidSecureBootEnable = EFI_SECURE_BOOT_ENABLE_DISABLE_GUID;
+                uint8_t bVar = fSecureBoot ? 0x1 : 0x0;
+                rtEfiSigDbVarStoreSetVar(hVfsEfiVarStore, &GuidSecureBootEnable, "SecureBootEnable",
+                                           EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                         | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                         | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS,
+                                         &bVar, sizeof(bVar));
+            }
+
             RTVfsRelease(hVfsEfiVarStore);
         }
 
@@ -725,6 +788,7 @@ static RTEXITCODE rtEfiSgDbCmdInitNvram(const char *pszArg0, int cArgs, char **p
         RTMemFree(papszDb);
     return rcExit;
 }
+
 
 int main(int argc, char **argv)
 {
