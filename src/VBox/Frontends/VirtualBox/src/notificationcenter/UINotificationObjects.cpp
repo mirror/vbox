@@ -285,3 +285,35 @@ void UINotificationProgressCloudMachineCreate::sltHandleProgressFinished()
     if (m_comMachine.isNotNull() && !m_comMachine.GetId().isNull())
         emit sigCloudMachineCreated(m_strShortProviderName, m_strProfileName, m_comMachine);
 }
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressApplianceImport implementation.                                                                  *
+*********************************************************************************************************************************/
+
+UINotificationProgressApplianceImport::UINotificationProgressApplianceImport(const CAppliance &comAppliance,
+                                                                             const QVector<KImportOptions> &options)
+    : m_comAppliance(comAppliance)
+    , m_options(options)
+{
+}
+
+QString UINotificationProgressApplianceImport::name() const
+{
+    return UINotificationProgress::tr("Importing appliance ...");
+}
+
+QString UINotificationProgressApplianceImport::details() const
+{
+    return UINotificationProgress::tr("<b>From:</b> %1").arg(m_comAppliance.GetPath());
+}
+
+CProgress UINotificationProgressApplianceImport::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comAppliance.ImportMachines(m_options);
+    /* Store COM result: */
+    comResult = m_comAppliance;
+    /* Return progress-wrapper: */
+    return comProgress;
+}

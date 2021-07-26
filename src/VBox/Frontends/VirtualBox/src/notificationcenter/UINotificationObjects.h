@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CAppliance.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
 #include "CMachine.h"
@@ -314,6 +315,36 @@ private:
     QString                    m_strShortProviderName;
     /** Holds the profile name. */
     QString                    m_strProfileName;
+};
+
+/** UINotificationProgress extension for import appliance functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressApplianceImport : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs import appliance notification-progress.
+      * @param  comAppliance  Brings the appliance being imported.
+      * @param  options       Brings the import options to be taken into account. */
+    UINotificationProgressApplianceImport(const CAppliance &comAppliance,
+                                          const QVector<KImportOptions> &options);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the medium being moved. */
+    CAppliance               m_comAppliance;
+    /** Holds the initial location. */
+    QVector<KImportOptions>  m_options;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
