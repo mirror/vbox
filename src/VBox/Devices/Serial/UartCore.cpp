@@ -1631,10 +1631,10 @@ static DECLCALLBACK(int) uartR3DataSentNotify(PPDMISERIALPORT pInterface)
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     /* Set the transmitter empty bit because everything was sent. */
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
     uartIrqUpdate(pDevIns, pThis, pThisCC);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1651,9 +1651,9 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
 
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     uartR3TxQueueCopyFrom(pDevIns, pThis, pThisCC, pvBuf, cbRead, pcbRead);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
     return VINF_SUCCESS;
@@ -1670,9 +1670,9 @@ static DECLCALLBACK(int) uartR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface,
     PUARTCORE   pThis   = pThisCC->pShared;
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fNewStatusLines);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1687,10 +1687,10 @@ static DECLCALLBACK(int) uartR3NotifyBrk(PPDMISERIALPORT pInterface)
     PUARTCORE   pThis   = pThisCC->pShared;
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_BI);
     uartIrqUpdate(pDevIns, pThis, pThisCC);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 

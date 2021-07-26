@@ -315,7 +315,7 @@ static void vmmdevMaybeSetIRQ(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThis
 static void vmmdevNotifyGuestWorker(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, uint32_t fAddEvents)
 {
     Log3(("vmmdevNotifyGuestWorker: fAddEvents=%#010x.\n", fAddEvents));
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
     if (!VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
     {
@@ -3182,7 +3182,7 @@ vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
                 }
                 else
                 {
-                    Log(("vmmdevFastRequestHandler: PDMCritSectEnter -> %Rrc\n", rc2));
+                    Log(("vmmdevFastRequestHandler: PDMDevHlpPDMCritSectEnter -> %Rrc\n", rc2));
                     rcStrict = rc2;
                 }
             }

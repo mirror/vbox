@@ -1529,8 +1529,8 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
     /*
      * Destroy the RTE critical section.
      */
-    if (PDMCritSectIsInitialized(&pThis->CritSect))
-        PDMR3CritSectDelete(&pThis->CritSect);
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSect);
 # else
     RT_NOREF_PV(pThis);
 # endif

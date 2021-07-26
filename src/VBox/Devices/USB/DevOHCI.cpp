@@ -6023,7 +6023,7 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
 
     if (RTCritSectIsInitialized(&pThisCC->CritSect))
         RTCritSectDelete(&pThisCC->CritSect);
-    PDMR3CritSectDelete(&pThis->CsIrq);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->CsIrq);
 
     /*
      * Tear down the per endpoint in-flight tracking...

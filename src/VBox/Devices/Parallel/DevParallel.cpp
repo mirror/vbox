@@ -303,9 +303,9 @@ static DECLCALLBACK(int) parallelR3NotifyInterrupt(PPDMIHOSTPARALLELPORT pInterf
     PPDMDEVINS      pDevIns = pThisCC->pDevIns;
     PPARALLELPORT   pThis   = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VINF_SUCCESS);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VINF_SUCCESS);
     parallelR3IrqSet(pDevIns, pThis);
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
     return VINF_SUCCESS;
 }
