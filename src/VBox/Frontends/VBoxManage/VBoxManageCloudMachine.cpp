@@ -36,6 +36,9 @@ static int selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
                                          const ComPtr<ICloudProfile> &pProfile);
+
+static RTEXITCODE handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
+                                                   const ComPtr<ICloudProfile> &pProfile);
 static RTEXITCODE listCloudMachinesImpl(HandlerArg *a, int iFirst,
                                         const ComPtr<ICloudProfile> &pProfile);
 static RTEXITCODE handleCloudMachineInfo(HandlerArg *a, int iFirst,
@@ -272,14 +275,17 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
     enum
     {
         kMachineIota = 1000,
+        kMachine_ConsoleHistory,
         kMachine_Info,
         kMachine_List,
     };
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "info",           kMachine_Info,          RTGETOPT_REQ_NOTHING },
-        { "list",           kMachine_List,          RTGETOPT_REQ_NOTHING },
+        { "console-history",    kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
+        { "consolehistory",     kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
+        { "info",               kMachine_Info,              RTGETOPT_REQ_NOTHING },
+        { "list",               kMachine_List,              RTGETOPT_REQ_NOTHING },
           CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
@@ -301,6 +307,9 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
     {
         switch (ch)
         {
+            case kMachine_ConsoleHistory:
+                return handleCloudMachineConsoleHistory(a, OptState.iNext, pProfile);
+
             case kMachine_Info:
                 return handleCloudMachineInfo(a, OptState.iNext, pProfile);
 
@@ -516,13 +525,16 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
 }
 
 
+/*
+ * cloud machine info "id" ...
+ */
 static RTEXITCODE
 handleCloudMachineInfo(HandlerArg *a, int iFirst,
                        const ComPtr<ICloudProfile> &pProfile)
 {
     HRESULT hrc;
 
-    if (a->argc == iFirst)
+    if (iFirst == a->argc)
     {
         return RTMsgErrorExit(RTEXITCODE_SYNTAX,
                    "cloud machine info: machine id required\n"
@@ -771,4 +783,60 @@ printFormValue(const ComPtr<IFormValue> &pValue)
     }
 
     return S_OK;
+}
+
+
+/*
+ * cloud machine console-history "id"
+ */
+static RTEXITCODE
+handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
+                                 const ComPtr<ICloudProfile> &pProfile)
+{
+    HRESULT hrc;
+
+    if (iFirst == a->argc)
+    {
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                   "cloud machine info: machine id required\n"
+                   "Try '--help' for more information.");
+    }
+
+    if (a->argc - iFirst > 1)
+    {
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                   "cloud machine info: too many arguments\n"
+                   "Try '--help' for more information.");
+    }
+
+    ComPtr<ICloudMachine> pMachine;
+    hrc = getMachineById(pMachine, pProfile, a->argv[iFirst]);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    ComPtr<IDataStream> pHistoryStream;
+    ComPtr<IProgress> pHistoryProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        GetConsoleHistory(pHistoryStream.asOutParam(),
+                          pHistoryProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pHistoryProgress, SHOW_PROGRESS_NONE);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    bool fEOF = false;
+    while (!fEOF)
+    {
+        com::SafeArray<BYTE> aChunk;
+        CHECK_ERROR2_RET(hrc, pHistoryStream,
+            Read(64 *_1K, 0, ComSafeArrayAsOutParam(aChunk)),
+                RTEXITCODE_FAILURE);
+        if (aChunk.size() == 0)
+            break;
+
+        RTStrmWrite(g_pStdOut, aChunk.raw(), aChunk.size());
+    }
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
