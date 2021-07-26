@@ -409,7 +409,7 @@ static int rtEfiSigDbSetVarAttr(RTVFS hVfsVarStore, const char *pszVar, uint32_t
 {
     char szVarPath[_1K];
     ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/raw/%s/attr", pszVar);
-    Assert(cch > 0);
+    Assert(cch > 0); RT_NOREF(cch);
 
     RTVFSFILE hVfsFileAttr = NIL_RTVFSFILE;
     int rc = RTVfsFileOpen(hVfsVarStore, szVarPath,
@@ -446,7 +446,7 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
 
     char szDbPath[_1K];
     ssize_t cch = RTStrPrintf2(szDbPath, sizeof(szDbPath), "/by-uuid/%RTuuid/%s", &UuidSecurityDb, pszDb);
-    Assert(cch > 0);
+    Assert(cch > 0); RT_NOREF(cch);
 
     RTVFSFILE hVfsFileSigDb = NIL_RTVFSFILE;
     int rc = RTVfsFileOpen(hVfsVarStore, szDbPath,
