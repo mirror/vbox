@@ -3152,9 +3152,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     case AudioDriverType_DirectSound:
                         /* Use the windows audio session (WAS) API rather than Direct Sound on windows
                            versions we've tested it on (currently W7+).  Since Vista, Direct Sound has
-                           been emulated on top of WAS according to the docs, so better use WAS directly. */
+                           been emulated on top of WAS according to the docs, so better use WAS directly.
+
+                           Set extradata value "VBoxInternal2/Audio/WindowsDrv" "dsound" to no use WasAPI. */
                         pszAudioDriver = "DSoundAudio";
-                        if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,1,0))
+                        GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/WindowsDrv", &strTmp); H();
+                        if (   RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,1,0)
+                            && (   strTmp.isEmpty()
+                                || strTmp.equalsIgnoreCase("was")
+                                || strTmp.equalsIgnoreCase("wasapi")) )
                             pszAudioDriver = "HostAudioWas";
                         break;
 #endif /* RT_OS_WINDOWS */
