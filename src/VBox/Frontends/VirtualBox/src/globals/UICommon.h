@@ -580,18 +580,16 @@ public:
                                      const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID = QUuid());
 
         /** Creates and shows a dialog (wizard) to create a medium of type @a enmMediumType.
-          * @param  parent                   Passes the parent of the dialog,
-          * @param  enmMediumType            Passes the medium type.
+          * @param  pParent                  Passes the parent of the dialog,
+          * @param  enmMediumType            Passes the medium type,
           * @param  strMachineName           Passes the name of the machine,
           * @param  strMachineFolder         Passes the machine folder,
           * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
-          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
-          * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
-          *         UUID of the selected medium is stored in @param outUuid.*/
-        QUuid openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                      const QString &strMachineFolder = QString(), const QString &strMachineName = QString(),
-                                      const QString &strMachineGuestOSTypeId = QString());
-
+          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog. */
+        void openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                     const QString &strMachineFolder = QString(),
+                                     const QString &strMachineName = QString(),
+                                     const QString &strMachineGuestOSTypeId = QString());
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
@@ -804,13 +802,14 @@ private:
                                          const QString &strMachineName = QString());
 
         /** Creates and shows a UIWizardNewVD wizard.
-          * @param  parent                    Passes the parent of the wizard,
+          * @param  pParent                   Passes the parent of the wizard,
           * @param  strMachineFolder          Passes the machine folder,
           * @param  strMachineName            Passes the name of the machine,
-          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
-          * returns the ID of the  created hard disk if successful, a null QUuid otherwise.*/
-        QUuid createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineFolder = QString(),
-                                      const QString &strMachineName = QString(), const QString &strMachineGuestOSTypeId = QString());
+          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID. */
+        void createVDWithWizard(QWidget *pParent,
+                                const QString &strMachineFolder = QString(),
+                                const QString &strMachineName = QString(),
+                                const QString &strMachineGuestOSTypeId = QString());
     /** @} */
 
     /** @name Common stuff.

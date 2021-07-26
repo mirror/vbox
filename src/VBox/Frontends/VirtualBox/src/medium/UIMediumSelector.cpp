@@ -233,6 +233,8 @@ void UIMediumSelector::prepareMenuAndToolBar()
 void UIMediumSelector::prepareConnections()
 {
     /* Configure medium-enumeration connections: */
+    connect(&uiCommon(), &UICommon::sigMediumCreated,
+            this, &UIMediumSelector::sltHandleMediumCreated);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
             this, &UIMediumSelector::sltHandleMediumEnumerationStart);
     connect(&uiCommon(), &UICommon::sigMediumEnumerated,
@@ -447,16 +449,8 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
-                                                           m_strMachineName, m_strMachineGuestOSTypeId);
-    if (uMediumId.isNull())
-        return;
-    /* Update the tree widget making sure we show the new item: */
-    repopulateTreeWidget();
-    /* Select the new item: */
-    selectMedium(uMediumId);
-    /* Update the search: */
-    m_pSearchWidget->search(m_pTreeWidget);
+    uiCommon().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
+                                       m_strMachineName, m_strMachineGuestOSTypeId);
 }
 
 void UIMediumSelector::sltHandleItemSelectionChanged()
@@ -472,6 +466,15 @@ void UIMediumSelector::sltHandleTreeWidgetDoubleClick(QTreeWidgetItem * item, in
     accept();
 }
 
+void UIMediumSelector::sltHandleMediumCreated(const QUuid &uMediumId)
+{
+    /* Update the tree widget making sure we show the new item: */
+    repopulateTreeWidget();
+    /* Select the new item: */
+    selectMedium(uMediumId);
+    /* Update the search: */
+    m_pSearchWidget->search(m_pTreeWidget);
+}
 
 void UIMediumSelector::sltHandleMediumEnumerationStart()
 {

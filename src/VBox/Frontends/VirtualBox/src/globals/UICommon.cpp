@@ -2954,35 +2954,33 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
 }
 
 
-QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                          const QString &strDefaultFolder /* = QString() */, const QString &strMachineName /* = QString() */,
-                                          const QString &strMachineGuestOSTypeId /*= QString() */)
+void UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmMediumType,
+                                       const QString &strDefaultFolder /* = QString() */,
+                                       const QString &strMachineName /* = QString() */,
+                                       const QString &strMachineGuestOSTypeId /*= QString() */)
 {
+    /* Depending on medium-type: */
     QUuid uMediumId;
-
     switch (enmMediumType)
     {
-        case UIMediumDeviceType_Floppy:
-            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
-            break;
         case UIMediumDeviceType_HardDisk:
-            uMediumId = createHDWithNewHDWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
+            createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
             uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
             break;
+        case UIMediumDeviceType_Floppy:
+            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
+            break;
         default:
             break;
     }
-    if (!uMediumId.isNull())
-    {
-        /* Update the recent medium list only if the mdium type is DVD or floppy. In case of hard disk
-           update those only if there is no vm context: */
-        if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy ||
-            (enmMediumType == UIMediumDeviceType_HardDisk && strMachineName.isEmpty()))
-            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
-    }
-    return uMediumId;
+    if (uMediumId.isNull())
+        return;
+
+    /* Update the recent medium list only if the medium type is DVD or floppy: */
+    if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
+        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
 }
 
 QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
@@ -3131,32 +3129,36 @@ int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enm
     return static_cast<int>(returnCode);
 }
 
-QUuid UICommon::createHDWithNewHDWizard(QWidget *pParent,  const QString &strMachineFolder /* = QString() */,
-                                          const QString &strMachineName /* = QString() */,
-                                          const QString &strMachineGuestOSTypeId  /* = QString() */)
+void UICommon::createVDWithWizard(QWidget *pParent,
+                                  const QString &strMachineFolder /* = QString() */,
+                                  const QString &strMachineName /* = QString() */,
+                                  const QString &strMachineGuestOSTypeId  /* = QString() */)
 {
     /* Initialize variables: */
-    QString strDefaultFolder(strMachineFolder);
+    QString strDefaultFolder = strMachineFolder;
     if (strDefaultFolder.isEmpty())
         strDefaultFolder = defaultFolderPathForType(UIMediumDeviceType_HardDisk);
 
     /* In case we dont have a 'guest os type id' default back to 'Other': */
-    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(!strMachineGuestOSTypeId.isEmpty() ? strMachineGuestOSTypeId : "Other");
-    QString strDiskName = findUniqueFileName(strDefaultFolder,
-                                             !strMachineName.isEmpty() ? strMachineName : "NewVirtualDisk");
-    /* Show New VD wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, strDiskName, strDefaultFolder, comGuestOSType.GetRecommendedHDD());
+    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(  !strMachineGuestOSTypeId.isEmpty()
+                                                                    ? strMachineGuestOSTypeId
+                                                                    : "Other");
+    const QString strDiskName = findUniqueFileName(strDefaultFolder,   !strMachineName.isEmpty()
+                                                                     ? strMachineName
+                                                                     : "NewVirtualDisk");
 
+    /* Show New VD wizard: */
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent,
+                                                         strDiskName,
+                                                         strDefaultFolder,
+                                                         comGuestOSType.GetRecommendedHDD());
     if (!pWizard)
-        return QUuid();
+        return;
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     windowManager().registerNewParent(pWizard, pDialogParent);
     pWizard->prepare();
-
-    const QUuid uResult = pWizard->exec() == QDialog::Accepted ? pWizard->virtualDisk().GetId() : QUuid();
-    if (pWizard)
-        delete pWizard;
-    return uResult;
+    pWizard->exec();
+    delete pWizard;
 }
 
 void UICommon::prepareStorageMenu(QMenu &menu,
