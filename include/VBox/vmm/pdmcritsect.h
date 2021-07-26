@@ -56,14 +56,14 @@ typedef union PDMCRITSECT
 
 VMMR3_INT_DECL(int)     PDMR3CritSectBothTerm(PVM pVM);
 VMMR3_INT_DECL(void)    PDMR3CritSectLeaveAll(PVM pVM);
-VMM_INT_DECL(void)      PDMCritSectBothFF(PVMCPUCC pVCpu);
+VMM_INT_DECL(void)      PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu);
 
 
 VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames);
 
 VMMR3DECL(int)      PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
                                       const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(6, 7);
-VMMR3DECL(int)      PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3);
+VMMR3DECL(int)      PDMR3CritSectEnterEx(PVM pVM, PPDMCRITSECT pCritSect, bool fCallRing3);
 VMMR3DECL(bool)     PDMR3CritSectYield(PVM pVM, PPDMCRITSECT pCritSect);
 VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect);
 VMMR3DECL(int)      PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
@@ -71,16 +71,16 @@ VMMR3DECL(int)      PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)        PDMHCCritSectScheduleExitEvent(PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal);
 #endif
 
-VMMDECL(int)        PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
-VMMDECL(int)        PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectTryEnter(PPDMCRITSECT pCritSect);
-VMMDECL(int)        PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectLeave(PPDMCRITSECT pCritSect);
+VMMDECL(int)        PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy);
+VMMDECL(int)        PDMCritSectEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect);
+VMMDECL(int)        PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect);
 
-VMMDECL(bool)       PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
-VMMDECL(bool)       PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu);
+VMMDECL(bool)       PDMCritSectIsOwner(PVMCC pVM, PCPDMCRITSECT pCritSect);
+VMMDECL(bool)       PDMCritSectIsOwnerEx(PVMCPUCC pVCpu, PCPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
-VMMDECL(bool)       PDMCritSectHasWaiters(PCPDMCRITSECT pCritSect);
+VMMDECL(bool)       PDMCritSectHasWaiters(PVMCC pVM, PCPDMCRITSECT pCritSect);
 VMMDECL(uint32_t)   PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect);
 
 VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM);
@@ -90,11 +90,11 @@ VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
 /* Strict build: Remap the two enter calls to the debug versions. */
 #ifdef VBOX_STRICT
 # ifdef IPRT_INCLUDED_asm_h
-#  define PDMCritSectEnter(pCritSect, rcBusy)   PDMCritSectEnterDebug((pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define PDMCritSectTryEnter(pCritSect)        PDMCritSectTryEnterDebug((pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectEnter(a_pVM, pCritSect, rcBusy)   PDMCritSectEnterDebug((a_pVM), (pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectTryEnter(a_pVM, pCritSect)        PDMCritSectTryEnterDebug((a_pVM), (pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 # else
-#  define PDMCritSectEnter(pCritSect, rcBusy)   PDMCritSectEnterDebug((pCritSect), (rcBusy), 0, RT_SRC_POS)
-#  define PDMCritSectTryEnter(pCritSect)        PDMCritSectTryEnterDebug((pCritSect), 0, RT_SRC_POS)
+#  define PDMCritSectEnter(a_pVM, pCritSect, rcBusy)   PDMCritSectEnterDebug((a_pVM), (pCritSect), (rcBusy), 0, RT_SRC_POS)
+#  define PDMCritSectTryEnter(a_pVM, pCritSect)        PDMCritSectTryEnterDebug((a_pVM), (pCritSect), 0, RT_SRC_POS)
 # endif
 #endif
 

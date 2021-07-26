@@ -165,7 +165,7 @@ static int mmHyperLock(PVMCC pVM)
 #else
     Assert(PDMCritSectIsInitialized(&pHeap->Lock));
 #endif
-    int rc = PDMCritSectEnter(&pHeap->Lock, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(pVM, &pHeap->Lock, VERR_SEM_BUSY);
 #ifdef IN_RING0
     if (rc == VERR_SEM_BUSY)
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_MMHYPER_LOCK, 0);
@@ -180,7 +180,7 @@ static int mmHyperLock(PVMCC pVM)
  *
  * @param   pVM     The cross context VM structure.
  */
-static void mmHyperUnlock(PVM pVM)
+static void mmHyperUnlock(PVMCC pVM)
 {
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 
@@ -189,7 +189,7 @@ static void mmHyperUnlock(PVM pVM)
         return;     /* early init */
 #endif
     Assert(PDMCritSectIsInitialized(&pHeap->Lock));
-    PDMCritSectLeave(&pHeap->Lock);
+    PDMCritSectLeave(pVM, &pHeap->Lock);
 }
 
 /**

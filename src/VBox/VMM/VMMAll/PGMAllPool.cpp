@@ -58,9 +58,9 @@ static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSH
 #endif
 
 int             pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage);
-PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt);
-void            pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt);
-void            pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt);
+PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVMCC pVM, uint16_t *piPhysExt);
+void            pgmPoolTrackPhysExtFree(PVMCC pVM, uint16_t iPhysExt);
+void            pgmPoolTrackPhysExtFreeList(PVMCC pVM, uint16_t iPhysExt);
 
 RT_C_DECLS_END
 
@@ -1792,7 +1792,7 @@ void pgmPoolAddDirtyPage(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Guest physical address
  */
-bool pgmPoolIsDirtyPageSlow(PVM pVM, RTGCPHYS GCPhys)
+bool pgmPoolIsDirtyPageSlow(PVMCC pVM, RTGCPHYS GCPhys)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PGM_LOCK_ASSERT_OWNER(pVM);
@@ -1860,7 +1860,7 @@ void pgmPoolResetDirtyPages(PVMCC pVM)
  * @param   pVM             The cross context VM structure.
  * @param   GCPtrPage       Guest page to invalidate
  */
-void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
+void pgmPoolResetDirtyPage(PVMCC pVM, RTGCPTR GCPtrPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PGM_LOCK_ASSERT_OWNER(pVM);
@@ -3391,7 +3391,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iPhysExt    The physical cross reference extent list to flush.
  */
-static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iPhysExt)
+static void pgmPoolTrackFlushGCPhysPTs(PVMCC pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iPhysExt)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -3867,7 +3867,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   pVM         The cross context VM structure.
  * @param   piPhysExt   Where to store the phys ext index.
  */
-PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
+PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVMCC pVM, uint16_t *piPhysExt)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -3891,7 +3891,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
  * @param   pVM         The cross context VM structure.
  * @param   iPhysExt    The extent to free.
  */
-void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
+void pgmPoolTrackPhysExtFree(PVMCC pVM, uint16_t iPhysExt)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -3913,7 +3913,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
  * @param   pVM         The cross context VM structure.
  * @param   iPhysExt    The extent to free.
  */
-void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
+void pgmPoolTrackPhysExtFreeList(PVMCC pVM, uint16_t iPhysExt)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -3950,7 +3950,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  * @param   iPte        Page table entry
  *
  */
-static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT, uint16_t iPte)
+static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t iShwPT, uint16_t iPte)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);

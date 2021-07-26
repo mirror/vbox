@@ -1245,9 +1245,9 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
-        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
         tmTimerQueueSchedule(pVM, pQueue, pQueue);
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
     }
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3Reset");
@@ -1878,14 +1878,14 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 
     AssertMsg(   !pTimer->pCritSect
               || VMR3GetState(pVM) != VMSTATE_RUNNING
-              || PDMCritSectIsOwner(pTimer->pCritSect), ("%s\n", pTimer->szName));
+              || PDMCritSectIsOwner(pVM, pTimer->pCritSect), ("%s\n", pTimer->szName));
 
     /*
      * The rest of the game happens behind the lock, just
      * like create does. All the work is done here.
      */
     PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+    PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
 
     for (int cRetries = 1000;; cRetries--)
     {
@@ -1923,7 +1923,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                 AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
-                PDMCritSectLeave(&pQueue->TimerLock);
+                PDMCritSectLeave(pVM, &pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
 
                 AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
@@ -1932,7 +1932,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                     RTThreadSleep(1);
 
                 PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-                PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+                PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
                 continue;
 
             /*
@@ -1940,13 +1940,13 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
              */
             case TMTIMERSTATE_FREE:
             case TMTIMERSTATE_DESTROY:
-                PDMCritSectLeave(&pQueue->TimerLock);
+                PDMCritSectLeave(pVM, &pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
                 AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
 
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
-                PDMCritSectLeave(&pQueue->TimerLock);
+                PDMCritSectLeave(pVM, &pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
                 return VERR_TM_UNKNOWN_STATE;
         }
@@ -1960,14 +1960,14 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
         if (fRc)
             break;
         AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
         PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
 
         AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                         VERR_TM_UNSTABLE_STATE);
 
         PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
     }
 
     /*
@@ -2024,7 +2024,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerDestroy");
 #endif
-    PDMCritSectLeave(&pQueue->TimerLock);
+    PDMCritSectLeave(pVM, &pQueue->TimerLock);
     PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
     return VINF_SUCCESS;
 }
@@ -2318,7 +2318,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
         if (pCritSect)
         {
             STAM_PROFILE_START(&pTimer->StatCritSectEnter, Locking);
-            PDMCritSectEnter(pCritSect, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
@@ -2363,7 +2363,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
         if (pCritSect)
-            PDMCritSectLeave(pCritSect);
+            PDMCritSectLeave(pVM, pCritSect);
 
         /* Advance? */
         pTimer = pNext;
@@ -2389,7 +2389,7 @@ static void tmR3TimerQueueDoOne(PVM pVM, PTMTIMERQUEUE pQueue)
     if (ASMAtomicCmpXchgBool(&pQueue->fBeingProcessed, true, false))
     {
         STAM_PROFILE_START(&pQueue->StatDo, s);
-        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
 
         if (pQueue->idxSchedule != UINT32_MAX)
             tmTimerQueueSchedule(pVM, pQueue, pQueue);
@@ -2398,7 +2398,7 @@ static void tmR3TimerQueueDoOne(PVM pVM, PTMTIMERQUEUE pQueue)
         if (pHead)
             tmR3TimerQueueRun(pVM, pQueue, pHead);
 
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
         STAM_PROFILE_STOP(&pQueue->StatDo, s);
         ASMAtomicWriteBool(&pQueue->fBeingProcessed, false);
     }
@@ -2422,7 +2422,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 {
     PTMTIMERQUEUE const pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC];
     VM_ASSERT_EMT(pVM);
-    Assert(PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock));
+    Assert(PDMCritSectIsOwner(pVM, &pVM->tm.s.VirtualSyncLock));
 
     /*
      * Any timers?
@@ -2547,7 +2547,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         if (pCritSect)
         {
             STAM_PROFILE_START(&pTimer->StatCritSectEnter, Locking);
-            PDMCritSectEnter(pCritSect, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
 
@@ -2593,7 +2593,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 
         /* Leave the associated lock. */
         if (pCritSect)
-            PDMCritSectLeave(pCritSect);
+            PDMCritSectLeave(pVM, pCritSect);
     } /* run loop */
 
 
@@ -2750,20 +2750,20 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
     {
 /** @todo Optimize for SMP   */
         STAM_PROFILE_START(&pVM->tm.s.StatVirtualSyncFF, a);
-        PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
         if (pVM->tm.s.fVirtualSyncTicking)
         {
             STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
-            PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+            PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
             Log2(("TMR3VirtualSyncFF: ticking\n"));
         }
         else
         {
-            PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+            PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
 
             /* try run it. */
-            PDMCritSectEnter(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock, VERR_IGNORED);
-            PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+            PDMCritSectEnter(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock, VERR_IGNORED);
+            PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
             if (pVM->tm.s.fVirtualSyncTicking)
                 Log2(("TMR3VirtualSyncFF: ticking (2)\n"));
             else
@@ -2778,9 +2778,9 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 
                 ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
             }
-            PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+            PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
             STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
-            PDMCritSectLeave(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock);
+            PDMCritSectLeave(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock);
         }
     }
 }
@@ -2789,7 +2789,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 /**
  * Service the special virtual sync timer queue.
  *
- * @param   pVM     The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpuDst    The destination VCpu.
  */
 static void tmR3TimerQueueDoVirtualSync(PVM pVM, PVMCPU pVCpuDst)
@@ -2798,8 +2798,8 @@ static void tmR3TimerQueueDoVirtualSync(PVM pVM, PVMCPU pVCpuDst)
     if (ASMAtomicCmpXchgBool(&pQueue->fBeingProcessed, true, false))
     {
         STAM_PROFILE_START(&pQueue->StatDo, s1);
-        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
-        PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
         ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
         VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
 
@@ -2809,8 +2809,8 @@ static void tmR3TimerQueueDoVirtualSync(PVM pVM, PVMCPU pVCpuDst)
             VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
         ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
-        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
         STAM_PROFILE_STOP(&pQueue->StatDo, s1);
         ASMAtomicWriteBool(&pQueue->fBeingProcessed, false);
     }
@@ -2973,10 +2973,10 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 
     /* Enter the critical sections to make TMTimerSet/Stop happy. */
     if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
-        PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
     PPDMCRITSECT pCritSect = pTimer->pCritSect;
     if (pCritSect)
-        PDMCritSectEnter(pCritSect, VERR_IGNORED);
+        PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
 
     if (u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
     {
@@ -3004,9 +3004,9 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
     }
 
     if (pCritSect)
-        PDMCritSectLeave(pCritSect);
+        PDMCritSectLeave(pVM, pCritSect);
     if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
-        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+        PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
 
     /*
      * On failure set SSM status.
@@ -3182,13 +3182,13 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
 VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
+    PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
 
     /*
      * The shared virtual clock (includes virtual sync which is tied to it).
      */
     int rc = tmVirtualPauseLocked(pVM);
-    AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
+    AssertRCReturnStmt(rc, PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock), rc);
 
     /*
      * Pause the TSC last since it is normally linked to the virtual
@@ -3197,7 +3197,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
         rc = tmCpuTickPauseLocked(pVM, pVCpu);
-        AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
+        AssertRCReturnStmt(rc, PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock), rc);
     }
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
@@ -3223,7 +3223,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
     ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
 #endif
 
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return VINF_SUCCESS;
 }
 
@@ -3239,7 +3239,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
+    PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
@@ -3260,7 +3260,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
         int rc = tmCpuTickResumeLocked(pVM, pVCpu);
-        AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
+        AssertRCReturnStmt(rc, PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock), rc);
     }
 
     /*
@@ -3268,7 +3268,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
      */
     int rc = tmVirtualResumeLocked(pVM);
 
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return rc;
 }
 
@@ -3310,7 +3310,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 /** @todo This isn't a feature specific to virtual time, move the variables to
  * TM level and make it affect TMR3UTCNow as well! */
 
-    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
+    PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
 
     /*
      * If the time is running we'll have to pause it before we can change
@@ -3329,7 +3329,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
     if (fPaused)
         TMR3NotifyResume(pVM, pVCpu);
 
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return VINF_SUCCESS;
 }
 
@@ -3933,7 +3933,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
         PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
         const char * const  pszClock = tmR3Get5CharClockName(pQueue->enmClock);
         PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
-        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
 
         for (PTMTIMERR3 pTimer = tmTimerQueueGetHead(pQueue, pQueue);
              pTimer;
@@ -3953,7 +3953,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             pTimer->szName);
         }
 
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
         PDMCritSectRwLeaveShared(&pQueue->AllocLock);
     }
 }

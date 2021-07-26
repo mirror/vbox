@@ -597,7 +597,7 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
  * @param   pVM     The cross context VM structure.
  * @param   GCPhys  GCPhys entry to flush
  */
-void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
+void pgmPhysInvalidatePageMapTLBEntry(PVMCC pVM, RTGCPHYS GCPhys)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
 

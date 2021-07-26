@@ -659,11 +659,21 @@ typedef struct PDMDRVHLPRC
     DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
     /** @} */
 
+    /**
+     * Obtains bandwidth in a bandwidth group.
+     *
+     * @returns True if bandwidth was allocated, false if not.
+     * @param   pDrvIns         The driver instance.
+     * @param   pFilter         Pointer to the filter that allocates bandwidth.
+     * @param   cbTransfer      Number of bytes to allocate.
+     */
+    DECLRCCALLBACKMEMBER(bool, pfnNetShaperAllocateBandwidth,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPRC;
 /** Current PDMDRVHLPRC version number. */
-#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 4, 0)
+#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 5, 0)
 
 
 /**
@@ -764,11 +774,21 @@ typedef struct PDMDRVHLPR0
     DECLR0CALLBACKMEMBER(int,      pfnCritSectScheduleExitEvent,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal));
     /** @} */
 
+    /**
+     * Obtains bandwidth in a bandwidth group.
+     *
+     * @returns True if bandwidth was allocated, false if not.
+     * @param   pDrvIns         The driver instance.
+     * @param   pFilter         Pointer to the filter that allocates bandwidth.
+     * @param   cbTransfer      Number of bytes to allocate.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnNetShaperAllocateBandwidth,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR0;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 4, 0)
+#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 5, 0)
 
 
 #ifdef IN_RING3
@@ -1235,6 +1255,16 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnNetShaperDetach,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter));
 
     /**
+     * Obtains bandwidth in a bandwidth group.
+     *
+     * @returns True if bandwidth was allocated, false if not.
+     * @param   pDrvIns         The driver instance.
+     * @param   pFilter         Pointer to the filter that allocates bandwidth.
+     * @param   cbTransfer      Number of bytes to allocate.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnNetShaperAllocateBandwidth,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer));
+
+    /**
      * Resolves the symbol for a raw-mode context interface.
      *
      * @returns VBox status code.
@@ -1400,7 +1430,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 6, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 7, 0)
 
 #endif /* IN_RING3 */
 
@@ -1853,7 +1883,11 @@ DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDM
 }
 # endif
 
-# ifdef VBOX_WITH_NETSHAPER
+#endif /* IN_RING3 */
+
+#ifdef VBOX_WITH_NETSHAPER
+# ifdef IN_RING3
+
 /**
  * @copydoc PDMDRVHLPR3::pfnNetShaperAttach
  */
@@ -1869,8 +1903,20 @@ DECLINLINE(int) PDMDrvHlpNetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilte
 {
     return pDrvIns->pHlpR3->pfnNetShaperDetach(pDrvIns, pFilter);
 }
-# endif
 
+# endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnNetShaperAllocateBandwidth
+ */
+DECLINLINE(bool) PDMDrvHlpNetShaperAllocateBandwidth(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnNetShaperAllocateBandwidth(pDrvIns, pFilter, cbTransfer);
+}
+
+#endif /* VBOX_WITH_NETSHAPER*/
+
+#ifdef IN_RING3
 /**
  * @copydoc PDMDRVHLPR3::pfnCritSectInit
  */
@@ -1878,7 +1924,6 @@ DECLINLINE(int) PDMDrvHlpCritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect
 {
     return pDrvIns->pHlpR3->pfnCritSectInit(pDrvIns, pCritSect, RT_SRC_POS_ARGS, pszName);
 }
-
 #endif /* IN_RING3 */
 
 /**

@@ -2370,7 +2370,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
      * when entering other critsects here.
      */
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PDM_CRITSECT))
-        PDMCritSectBothFF(pVCpu);
+        PDMCritSectBothFF(pVM, pVCpu);
 
     switch (pVCpu->vmm.s.enmCallRing3Operation)
     {
@@ -2379,7 +2379,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PDM_CRIT_SECT_ENTER:
         {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectEnterEx((PPDMCRITSECT)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
+            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectEnterEx(pVM, (PPDMCRITSECT)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
                                                             true /*fCallRing3*/);
             break;
         }

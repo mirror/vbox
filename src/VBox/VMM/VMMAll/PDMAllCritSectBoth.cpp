@@ -35,9 +35,10 @@
 /**
  * Process the critical sections (both types) queued for ring-3 'leave'.
  *
+ * @param   pVM           The cross context VM structure.
  * @param   pVCpu         The cross context virtual CPU structure.
  */
-VMM_INT_DECL(void) PDMCritSectBothFF(PVMCPUCC pVCpu)
+VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
 {
     uint32_t i;
     Assert(   pVCpu->pdm.s.cQueuedCritSectLeaves       > 0
@@ -87,7 +88,7 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCPUCC pVCpu)
         PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC(pVCpu->CTX_SUFF(pVM), pVCpu->pdm.s.apQueuedCritSectLeaves[i]);
 # endif
 
-        PDMCritSectLeave(pCritSect);
+        PDMCritSectLeave(pVM, pCritSect);
         LogFlow(("PDMR3CritSectFF: %p\n", pCritSect));
     }
 

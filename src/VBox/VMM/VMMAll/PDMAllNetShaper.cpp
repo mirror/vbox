@@ -35,14 +35,14 @@
  * @param   pFilter         Pointer to the filter that allocates bandwidth.
  * @param   cbTransfer      Number of bytes to allocate.
  */
-VMMDECL(bool) PDMNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
+VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     AssertPtrReturn(pFilter, true);
     if (!VALID_PTR(pFilter->CTX_SUFF(pBwGroup)))
         return true;
 
     PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->CTX_SUFF(pBwGroup), PPDMNSBWGROUP);
-    int rc = PDMCritSectEnter(&pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
+    int rc = PDMCritSectEnter(pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
     if (RT_UNLIKELY(rc == VERR_SEM_BUSY))
         return true;
 
@@ -71,7 +71,7 @@ VMMDECL(bool) PDMNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
         Log2(("pdmNsAllocateBandwidth: BwGroup=%#p{%s} disabled fAllowed=%RTbool\n",
               pBwGroup, R3STRING(pBwGroup->pszNameR3), fAllowed));
 
-    rc = PDMCritSectLeave(&pBwGroup->Lock); AssertRC(rc);
+    rc = PDMCritSectLeave(pVM, &pBwGroup->Lock); AssertRC(rc);
     return fAllowed;
 }
 

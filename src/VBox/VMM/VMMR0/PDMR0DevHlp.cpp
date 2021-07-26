@@ -496,14 +496,15 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock2(PPDMDEVINS pDevIns
                                                               PPDMCRITSECT pCritSect, int rcBusy)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VBOXSTRICTRC rc = TMTimerLock(pDevIns->Internal.s.pGVM, hTimer, rcBusy);
+    PGVM const pGVM = pDevIns->Internal.s.pGVM;
+    VBOXSTRICTRC rc = TMTimerLock(pGVM, hTimer, rcBusy);
     if (rc == VINF_SUCCESS)
     {
-        rc = PDMCritSectEnter(pCritSect, rcBusy);
+        rc = PDMCritSectEnter(pGVM, pCritSect, rcBusy);
         if (rc == VINF_SUCCESS)
             return rc;
         AssertRC(VBOXSTRICTRC_VAL(rc));
-        TMTimerUnlock(pDevIns->Internal.s.pGVM, hTimer);
+        TMTimerUnlock(pGVM, hTimer);
     }
     else
         AssertRC(VBOXSTRICTRC_VAL(rc));
@@ -579,8 +580,9 @@ static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock(PPDMDEVINS pDevIns, TMTIM
 static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    TMTimerUnlock(pDevIns->Internal.s.pGVM, hTimer);
-    int rc = PDMCritSectLeave(pCritSect);
+    PGVM const pGVM = pDevIns->Internal.s.pGVM;
+    TMTimerUnlock(pGVM, hTimer);
+    int rc = PDMCritSectLeave(pGVM, pCritSect);
     AssertRC(rc);
 }
 
@@ -862,8 +864,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
 static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectEnter(pCritSect, rcBusy);
+    return PDMCritSectEnter(pDevIns->Internal.s.pGVM, pCritSect, rcBusy);
 }
 
 
@@ -871,8 +872,7 @@ static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnter(PPDMDEVINS pDevIns, PPDM
 static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectEnterDebug(pDevIns->Internal.s.pGVM, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -880,8 +880,7 @@ static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnterDebug(PPDMDEVINS pDevIns,
 static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectTryEnter(pCritSect);
+    return PDMCritSectTryEnter(pDevIns->Internal.s.pGVM, pCritSect);
 }
 
 
@@ -889,8 +888,7 @@ static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnter(PPDMDEVINS pDevIns, P
 static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectTryEnterDebug(pDevIns->Internal.s.pGVM, pCritSect, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -898,8 +896,7 @@ static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnterDebug(PPDMDEVINS pDevI
 static DECLCALLBACK(int)      pdmR0DevHlp_CritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectLeave(pCritSect);
+    return PDMCritSectLeave(pDevIns->Internal.s.pGVM, pCritSect);
 }
 
 
@@ -907,8 +904,7 @@ static DECLCALLBACK(int)      pdmR0DevHlp_CritSectLeave(PPDMDEVINS pDevIns, PPDM
 static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectIsOwner(pCritSect);
+    return PDMCritSectIsOwner(pDevIns->Internal.s.pGVM, pCritSect);
 }
 
 
@@ -925,8 +921,7 @@ static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsInitialized(PPDMDEVINS pDevI
 static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns);
-    return PDMCritSectHasWaiters(pCritSect);
+    return PDMCritSectHasWaiters(pDevIns->Internal.s.pGVM, pCritSect);
 }
 
 

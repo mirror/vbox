@@ -866,7 +866,7 @@ VMMR3DECL(bool) PDMR3CritSectYield(PVM pVM, PPDMCRITSECT pCritSect)
 #ifdef PDMCRITSECT_STRICT
     RTLOCKVALSRCPOS const SrcPos = pCritSect->s.Core.pValidatorRec->SrcPos;
 #endif
-    PDMCritSectLeave(pCritSect);
+    PDMCritSectLeave(pVM, pCritSect);
 
     /*
      * If we're lucky, then one of the waiters has entered the lock already.
@@ -888,10 +888,10 @@ VMMR3DECL(bool) PDMR3CritSectYield(PVM pVM, PPDMCRITSECT pCritSect)
     }
 
 #ifdef PDMCRITSECT_STRICT
-    int rc = PDMCritSectEnterDebug(pCritSect, VERR_IGNORED,
+    int rc = PDMCritSectEnterDebug(pVM, pCritSect, VERR_IGNORED,
                                    SrcPos.uId, SrcPos.pszFile, SrcPos.uLine, SrcPos.pszFunction);
 #else
-    int rc = PDMCritSectEnter(pCritSect, VERR_IGNORED);
+    int rc = PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
 #endif
     AssertLogRelRC(rc);
     return true;
@@ -1035,7 +1035,7 @@ VMMR3_INT_DECL(void) PDMR3CritSectLeaveAll(PVM pVM)
     {
         while (     pCur->Core.NativeThreadOwner == hNativeSelf
                &&   pCur->Core.cNestings > 0)
-            PDMCritSectLeave((PPDMCRITSECT)pCur);
+            PDMCritSectLeave(pVM, (PPDMCRITSECT)pCur);
     }
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 }

@@ -888,7 +888,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
  */
 VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pRegFrame->cs.Sel, (RTGCPTR)pRegFrame->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, a);
@@ -1539,7 +1539,7 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
  */
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
 {
-    PVM pVM   = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM   = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
@@ -1709,7 +1709,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
  */
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
@@ -3489,9 +3489,9 @@ VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
  * @returns bool owner/not owner
  * @param   pVM         The cross context VM structure.
  */
-VMMDECL(bool) PGMIsLockOwner(PVM pVM)
+VMMDECL(bool) PGMIsLockOwner(PVMCC pVM)
 {
-    return PDMCritSectIsOwner(&pVM->pgm.s.CritSectX);
+    return PDMCritSectIsOwner(pVM, &pVM->pgm.s.CritSectX);
 }
 
 
@@ -3525,9 +3525,9 @@ int pgmLock(PVMCC pVM)
 #endif
 {
 #if defined(VBOX_STRICT) && defined(IN_RING3)
-    int rc = PDMCritSectEnterDebug(&pVM->pgm.s.CritSectX, VERR_SEM_BUSY, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+    int rc = PDMCritSectEnterDebug(pVM, &pVM->pgm.s.CritSectX, VERR_SEM_BUSY, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
 #else
-    int rc = PDMCritSectEnter(&pVM->pgm.s.CritSectX, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(pVM, &pVM->pgm.s.CritSectX, VERR_SEM_BUSY);
 #endif
 #ifdef IN_RING0
     if (rc == VERR_SEM_BUSY)
@@ -3544,11 +3544,11 @@ int pgmLock(PVMCC pVM)
  * @returns VBox status code
  * @param   pVM         The cross context VM structure.
  */
-void pgmUnlock(PVM pVM)
+void pgmUnlock(PVMCC pVM)
 {
     uint32_t cDeprecatedPageLocks = pVM->pgm.s.cDeprecatedPageLocks;
     pVM->pgm.s.cDeprecatedPageLocks = 0;
-    int rc = PDMCritSectLeave(&pVM->pgm.s.CritSectX);
+    int rc = PDMCritSectLeave(pVM, &pVM->pgm.s.CritSectX);
     if (rc == VINF_SEM_NESTED)
         pVM->pgm.s.cDeprecatedPageLocks = cDeprecatedPageLocks;
 }

@@ -423,7 +423,7 @@ VMMR3DECL(int) MMR3LockCall(PVM pVM)
 {
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 
-    int rc = PDMR3CritSectEnterEx(&pHeap->Lock, true /* fHostCall */);
+    int rc = PDMR3CritSectEnterEx(pVM, &pHeap->Lock, true /* fHostCall */);
     AssertRC(rc);
     return rc;
 }

@@ -306,9 +306,9 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 void pdmLock(PVMCC pVM)
 {
 #ifdef IN_RING3
-    int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_IGNORED);
+    int rc = PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, VERR_IGNORED);
 #else
-    int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
+    int rc = PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
     if (rc == VERR_GENERAL_FAILURE)
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_LOCK, 0);
 #endif
@@ -326,7 +326,7 @@ void pdmLock(PVMCC pVM)
  */
 int pdmLockEx(PVMCC pVM, int rc)
 {
-    return PDMCritSectEnter(&pVM->pdm.s.CritSect, rc);
+    return PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, rc);
 }
 
 
@@ -337,7 +337,7 @@ int pdmLockEx(PVMCC pVM, int rc)
  */
 void pdmUnlock(PVMCC pVM)
 {
-    PDMCritSectLeave(&pVM->pdm.s.CritSect);
+    PDMCritSectLeave(pVM, &pVM->pdm.s.CritSect);
 }
 
 
@@ -347,9 +347,9 @@ void pdmUnlock(PVMCC pVM)
  * @returns @c true if the lock is taken, @c false otherwise.
  * @param   pVM     The cross context VM structure.
  */
-bool pdmLockIsOwner(PCVMCC pVM)
+bool pdmLockIsOwner(PVMCC pVM)
 {
-    return PDMCritSectIsOwner(&pVM->pdm.s.CritSect);
+    return PDMCritSectIsOwner(pVM, &pVM->pdm.s.CritSect);
 }
 
 

@@ -1699,7 +1699,7 @@ int         pdmR3BlkCacheResume(PVM pVM);
 void        pdmLock(PVMCC pVM);
 int         pdmLockEx(PVMCC pVM, int rc);
 void        pdmUnlock(PVMCC pVM);
-bool        pdmLockIsOwner(PCVMCC pVM);
+bool        pdmLockIsOwner(PVMCC pVM);
 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
 bool        pdmIommuIsPresent(PPDMDEVINS pDevIns);

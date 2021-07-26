@@ -248,12 +248,13 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
 static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 {
     PPDMNSBWGROUP pBwGroup = pFilter->pBwGroupR3;
-    int rc = PDMCritSectEnter(&pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
+    PVM const     pVM      = pBwGroup->pShaperR3->pVM;
+    int rc = PDMCritSectEnter(pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
 
     pFilter->pNextR3 = pBwGroup->pFiltersHeadR3;
     pBwGroup->pFiltersHeadR3 = pFilter;
 
-    rc = PDMCritSectLeave(&pBwGroup->Lock); AssertRC(rc);
+    rc = PDMCritSectLeave(pVM, &pBwGroup->Lock); AssertRC(rc);
 }
 
 
@@ -268,7 +269,8 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
     AssertPtr(pBwGroup);
     AssertPtr(pBwGroup->pShaperR3);
     Assert(RTCritSectIsOwner(&pBwGroup->pShaperR3->Lock));
-    int rc = PDMCritSectEnter(&pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
+    PVM const pVM = pBwGroup->pShaperR3->pVM;
+    int rc = PDMCritSectEnter(pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
 
     if (pFilter == pBwGroup->pFiltersHeadR3)
         pBwGroup->pFiltersHeadR3 = pFilter->pNextR3;
@@ -283,7 +285,7 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
         pPrev->pNextR3 = pFilter->pNextR3;
     }
 
-    rc = PDMCritSectLeave(&pBwGroup->Lock); AssertRC(rc);
+    rc = PDMCritSectLeave(pVM, &pBwGroup->Lock); AssertRC(rc);
 }
 
 
@@ -382,7 +384,7 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_
     PPDMNSBWGROUP pBwGroup = pdmNsBwGroupFindById(pShaper, pszBwGroup);
     if (pBwGroup)
     {
-        rc = PDMCritSectEnter(&pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
+        rc = PDMCritSectEnter(pUVM->pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             pdmNsBwGroupSetLimit(pBwGroup, cbPerSecMax);
@@ -391,7 +393,7 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_
             if (pBwGroup->cbTokensLast > pBwGroup->cbBucket)
                 pBwGroup->cbTokensLast = pBwGroup->cbBucket;
 
-            int rc2 = PDMCritSectLeave(&pBwGroup->Lock); AssertRC(rc2);
+            int rc2 = PDMCritSectLeave(pUVM->pVM, &pBwGroup->Lock); AssertRC(rc2);
         }
     }
     else

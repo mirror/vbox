@@ -1681,7 +1681,7 @@ typedef struct PGMAHAFIS
  * @returns Number of mismatches.
  * @param   pVM     The cross context VM structure.
  */
-VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
+VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVMCC pVM)
 {
     PPGM        pPGM = &pVM->pgm.s;
     PGMAHAFIS   State;

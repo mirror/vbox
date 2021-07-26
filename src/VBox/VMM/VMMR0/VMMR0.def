@@ -20,13 +20,6 @@ EXPORTS
 
     ; code
     GIMGetMmio2Regions
-    PDMCritSectEnter
-    PDMCritSectEnterDebug
-    PDMCritSectIsOwner
-    PDMCritSectLeave
-    PDMHCCritSectScheduleExitEvent
-    PDMCritSectTryEnter
-    PDMCritSectTryEnterDebug
     PDMQueueAlloc
     PDMQueueInsert
     PGMHandlerPhysicalPageTempOff
@@ -83,9 +76,6 @@ EXPORTS
     IntNetR0IfSetActive
     IntNetR0IfSend
     IntNetR0IfWait
-
-    ; Network Shaper
-    PDMNsAllocateBandwidth
 
     ; runtime
     RTAssertMsg1Weak

@@ -61,10 +61,10 @@ typedef struct PDMNSFILTER
     R3PTRTYPE(PPDMINETWORKDOWN)         pIDrvNetR3;
 } PDMNSFILTER;
 
-VMMDECL(bool)       PDMNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer);
-VMMR3_INT_DECL(int) PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup, PPDMNSFILTER pFilter);
-VMMR3_INT_DECL(int) PDMR3NsDetach(PUVM pUVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
-VMMR3DECL(int)      PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_t cbPerSecMax);
+VMM_INT_DECL(bool)      PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter, size_t cbTransfer);
+VMMR3_INT_DECL(int)     PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup, PPDMNSFILTER pFilter);
+VMMR3_INT_DECL(int)     PDMR3NsDetach(PUVM pUVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
+VMMR3DECL(int)          PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_t cbPerSecMax);
 
 /** @} */
 

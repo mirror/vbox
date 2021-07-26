@@ -933,9 +933,9 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
                 {
                     if (pLun->pDevIns->pReg->pfnDetach)
                     {
-                        PDMCritSectEnter(pLun->pDevIns->pCritSectRoR3, VERR_IGNORED);
+                        PDMCritSectEnter(pVM, pLun->pDevIns->pCritSectRoR3, VERR_IGNORED);
                         pLun->pDevIns->pReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
-                        PDMCritSectLeave(pLun->pDevIns->pCritSectRoR3);
+                        PDMCritSectLeave(pVM, pLun->pDevIns->pCritSectRoR3);
                     }
                 }
                 else
@@ -1657,10 +1657,10 @@ static DECLCALLBACK(int) pdmR3DrvHlp_AsyncCompletionTemplateCreate(PPDMDRVINS pD
 }
 
 
-#ifdef VBOX_WITH_NETSHAPER
 /** @interface_method_impl{PDMDRVHLPR3,pfnNetShaperAttach} */
 static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperAttach(PPDMDRVINS pDrvIns, const char *pszBwGroup, PPDMNSFILTER pFilter)
 {
+#ifdef VBOX_WITH_NETSHAPER
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     LogFlow(("pdmR3DrvHlp_NetShaperAttach: caller='%s'/%d: pFilter=%p pszBwGroup=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter, pszBwGroup, pszBwGroup));
@@ -1670,12 +1670,17 @@ static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperAttach(PPDMDRVINS pDrvIns, const c
     LogFlow(("pdmR3DrvHlp_NetShaperAttach: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));
     return rc;
+#else
+    RT_NOREF(pDrvIns, pszBwGroup, pFilter);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
 /** @interface_method_impl{PDMDRVHLPR3,pfnNetShaperDetach} */
 static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 {
+#ifdef VBOX_WITH_NETSHAPER
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: pFilter=%p\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter));
@@ -1685,8 +1690,30 @@ static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSF
     LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));
     return rc;
+#else
+    RT_NOREF(pDrvIns, pFilter);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
-#endif /* VBOX_WITH_NETSHAPER */
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnNetShaperAllocateBandwidth} */
+static DECLCALLBACK(bool) pdmR3DrvHlp_NetShaperAllocateBandwidth(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer)
+{
+#ifdef VBOX_WITH_NETSHAPER
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: pFilter=%p cbTransfer=%#zx\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter, cbTransfer));
+
+    bool const fRc = PDMNetShaperAllocateBandwidth(pDrvIns->Internal.s.pVMR3, pFilter, cbTransfer);
+
+    LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: returns %RTbool\n", pDrvIns->pReg->szName, pDrvIns->iInstance, fRc));
+    return fRc;
+#else
+    RT_NOREF(pDrvIns, pFilter, cbTransfer);
+    return true;
+#endif
+}
 
 
 /** @interface_method_impl{PDMDRVHLPR3,pfnLdrGetRCInterfaceSymbols} */
@@ -1795,8 +1822,7 @@ static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectYield(PPDMDRVINS pDrvIns, PPDM
 static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectEnter(pCritSect, rcBusy);
+    return PDMCritSectEnter(pDrvIns->Internal.s.pVMR3, pCritSect, rcBusy);
 }
 
 
@@ -1805,8 +1831,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns,
                                                              RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectEnterDebug(pDrvIns->Internal.s.pVMR3, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -1814,8 +1839,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns,
 static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectTryEnter(pCritSect);
+    return PDMCritSectTryEnter(pDrvIns->Internal.s.pVMR3, pCritSect);
 }
 
 
@@ -1824,8 +1848,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvI
                                                                 RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectTryEnterDebug(pDrvIns->Internal.s.pVMR3, pCritSect, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -1833,8 +1856,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvI
 static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectLeave(pCritSect);
+    return PDMCritSectLeave(pDrvIns->Internal.s.pVMR3, pCritSect);
 }
 
 
@@ -1842,8 +1864,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDM
 static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectIsOwner(pCritSect);
+    return PDMCritSectIsOwner(pDrvIns->Internal.s.pVMR3, pCritSect);
 }
 
 
@@ -1860,8 +1881,7 @@ static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectIsInitialized(PPDMDRVINS pDrvI
 static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMCritSectHasWaiters(pCritSect);
+    return PDMCritSectHasWaiters(pDrvIns->Internal.s.pVMR3, pCritSect);
 }
 
 
@@ -2043,10 +2063,9 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_AsyncNotificationCompleted,
     pdmR3DrvHlp_ThreadCreate,
     pdmR3DrvHlp_AsyncCompletionTemplateCreate,
-#ifdef VBOX_WITH_NETSHAPER
     pdmR3DrvHlp_NetShaperAttach,
     pdmR3DrvHlp_NetShaperDetach,
-#endif /* VBOX_WITH_NETSHAPER */
+    pdmR3DrvHlp_NetShaperAllocateBandwidth,
     pdmR3DrvHlp_LdrGetRCInterfaceSymbols,
     pdmR3DrvHlp_LdrGetR0InterfaceSymbols,
     pdmR3DrvHlp_CritSectInit,

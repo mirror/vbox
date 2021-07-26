@@ -367,14 +367,14 @@ VBOXSTRICTRC iomR3MmioCommitWorker(PVM pVM, PVMCPU pVCpu, PIOMMMIOENTRYR3 pRegEn
     PIOMMMIOSTATSENTRY const pStats = iomMmioGetStats(pVM, pRegEntry);
 # endif
     PPDMDEVINS const         pDevIns = pRegEntry->pDevIns;
-    int rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VERR_IGNORED);
+    int rc = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VERR_IGNORED);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict = iomMmioDoWrite(pVM, pVCpu, pRegEntry, pVCpu->iom.s.PendingMmioWrite.GCPhys, offRegion,
                                            pVCpu->iom.s.PendingMmioWrite.abValue, pVCpu->iom.s.PendingMmioWrite.cbValue
                                            IOM_MMIO_STATS_COMMA_ARG);
 
-    PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+    PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
     STAM_PROFILE_STOP(&pStats->ProfWriteR3, Prf);
     return rcStrict;
 }
@@ -669,7 +669,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
          * Enter the device critsect prior to engaging IOM in case of lock contention.
          * Note! Perhaps not a good move?
          */
-        rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_MMIO_READ_WRITE);
+        rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_MMIO_READ_WRITE);
         if (rcStrict == VINF_SUCCESS)
         {
 #endif /* !IN_RING3 */
@@ -680,7 +680,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
             rcStrict = IEMExecOne(pVCpu);
 
 #ifndef IN_RING3
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 #endif
             if (RT_SUCCESS(rcStrict))
             { /* likely */ }
@@ -909,7 +909,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
      * Note! We may end up locking the device even when the relevant callback is
      *       NULL.  This is supposed to be an unlikely case, so not optimized yet.
      */
-    VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), rcToRing3);
+    VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), rcToRing3);
     if (rcStrict == VINF_SUCCESS)
     {
         if (enmAccessType == PGMACCESSTYPE_READ)
@@ -919,7 +919,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
              */
             rcStrict = iomMmioDoRead(pVM, pRegEntry, GCPhysFault, offRegion, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
 
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 #ifndef IN_RING3
             if (rcStrict == VINF_IOM_R3_MMIO_READ)
             {
@@ -937,7 +937,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
              * Write.
              */
             rcStrict = iomMmioDoWrite(pVM, pVCpu, pRegEntry, GCPhysFault, offRegion, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 #ifndef IN_RING3
             if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
                 rcStrict = iomMmioRing3WritePending(pVCpu, GCPhysFault, pvBuf, cbBuf, pRegEntry->idxSelf);

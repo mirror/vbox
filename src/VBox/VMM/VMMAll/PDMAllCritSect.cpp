@@ -66,19 +66,19 @@
  * Gets the ring-3 native thread handle of the calling thread.
  *
  * @returns native thread handle (ring-3).
- * @param   pCritSect           The critical section. This is used in R0 and RC.
+ * @param   pVM         The cross context VM structure.
+ * @param   pCritSect   The critical section. This is used in R0 and RC.
  */
-DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSect)
+DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PVMCC pVM, PCPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
-    NOREF(pCritSect);
+    RT_NOREF(pVM, pCritSect);
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
 #else
     AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pCritSect->s.Core.u32Magic),
                     NIL_RTNATIVETHREAD);
-    PVMCC           pVM         = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
-    PVMCPUCC        pVCpu       = VMMGetCpu(pVM);             AssertPtr(pVCpu);
-    RTNATIVETHREAD  hNativeSelf = pVCpu->hNativeThread;       Assert(hNativeSelf != NIL_RTNATIVETHREAD);
+    PVMCPUCC        pVCpu       = VMMGetCpu(pVM);                                       AssertPtr(pVCpu);
+    RTNATIVETHREAD  hNativeSelf = pVCpu ? pVCpu->hNativeThread : NIL_RTNATIVETHREAD;    Assert(hNativeSelf != NIL_RTNATIVETHREAD);
 #endif
     return hNativeSelf;
 }
@@ -124,11 +124,12 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_DESTROYED if destroyed.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  * @param   pSrcPos             The source position of the lock operation.
  */
-static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
+static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Start waiting.
@@ -200,10 +201,11 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
            Note! We've incremented cLockers already and cannot safely decrement
                  it without creating a race with PDMCritSectLeave, resulting in
                  spurious wakeups. */
-        PVMCC     pVM   = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
-        PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+        PVMCPUCC pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
         rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
         AssertRC(rc);
+# else
+        RT_NOREF(pVM);
 # endif
     }
     /* won't get here */
@@ -219,11 +221,12 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in GC or R0
  * @param   pSrcPos             The source position of the lock operation.
  */
-DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
     Assert(pCritSect->s.Core.cNestings >= 0);
@@ -244,7 +247,8 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
     else
         return VINF_SUCCESS;
 
-    RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
+    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM); RT_NOREF(pVM);
+    RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
@@ -285,7 +289,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      * Take the slow path.
      */
     NOREF(rcBusy);
-    return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
 
 #else
 # ifdef IN_RING0
@@ -319,7 +323,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
         if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
         {
             STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock,    1000000);
-            rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
         }
         else
         {
@@ -329,7 +333,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
             HMR0Leave(pVM, pVCpu);
             RTThreadPreemptRestore(NIL_RTTHREAD, XXX);
 
-            rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
 
             RTThreadPreemptDisable(NIL_RTTHREAD, XXX);
             HMR0Enter(pVM, pVCpu);
@@ -342,7 +346,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
-        return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+        return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
 #  endif
 # endif /* IN_RING0 */
 
@@ -353,8 +357,8 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      */
     if (rcBusy == VINF_SUCCESS)
     {
-        PVMCC     pVM   = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
-        PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+        PVMCPUCC pVCpu = VMMGetCpu(pVM);
+        AssertReturn(pVCpu, VERR_PDM_CRITSECT_IPE);
         return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_ENTER, MMHyperCCToR3(pVM, pCritSect));
     }
 
@@ -375,19 +379,20 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in RC or R0
  *                              and the section is busy.  Pass VINF_SUCCESS to
  *                              acquired the critical section thru a ring-3
  *                              call if necessary.
  */
-VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
+VMMDECL(int) PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy)
 {
 #ifndef PDMCRITSECT_STRICT
-    return pdmCritSectEnter(pCritSect, rcBusy, NULL);
+    return pdmCritSectEnter(pVM, pCritSect, rcBusy, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
+    return pdmCritSectEnter(pVM, pCritSect, rcBusy, &SrcPos);
 #endif
 }
 
@@ -400,6 +405,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in RC or R0
  *                              and the section is busy.   Pass VINF_SUCCESS to
@@ -410,14 +416,14 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  * @param   SRC_POS             The source position where to lock is being
  *                              acquired from.  Optional.
  */
-VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
+    return pdmCritSectEnter(pVM, pCritSect, rcBusy, &SrcPos);
 #else
     NOREF(uId); RT_SRC_POS_NOREF();
-    return pdmCritSectEnter(pCritSect, rcBusy, NULL);
+    return pdmCritSectEnter(pVM, pCritSect, rcBusy, NULL);
 #endif
 }
 
@@ -431,10 +437,11 @@ VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTP
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  * @param   pSrcPos     The source position of the lock operation.
  */
-static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
+static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * If the critical section has already been destroyed, then inform the caller.
@@ -452,7 +459,8 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos
     else
         return VINF_SUCCESS;
 
-    RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
+    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM);
+    RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
@@ -494,15 +502,16 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  */
-VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
+VMMDECL(int) PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect)
 {
 #ifndef PDMCRITSECT_STRICT
-    return pdmCritSectTryEnter(pCritSect, NULL);
+    return pdmCritSectTryEnter(pVM, pCritSect, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectTryEnter(pCritSect, &SrcPos);
+    return pdmCritSectTryEnter(pVM, pCritSect, &SrcPos);
 #endif
 }
 
@@ -516,20 +525,21 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The critical section.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
  * @param   SRC_POS             The source position where to lock is being
  *                              acquired from.  Optional.
  */
-VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectTryEnter(pCritSect, &SrcPos);
+    return pdmCritSectTryEnter(pVM, pCritSect, &SrcPos);
 #else
     NOREF(uId); RT_SRC_POS_NOREF();
-    return pdmCritSectTryEnter(pCritSect, NULL);
+    return pdmCritSectTryEnter(pVM, pCritSect, NULL);
 #endif
 }
 
@@ -543,12 +553,13 @@ VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, R
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM critical section to enter.
  * @param   fCallRing3          Whether this is a VMMRZCallRing3()request.
  */
-VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
+VMMR3DECL(int) PDMR3CritSectEnterEx(PVM pVM, PPDMCRITSECT pCritSect, bool fCallRing3)
 {
-    int rc = PDMCritSectEnter(pCritSect, VERR_IGNORED);
+    int rc = PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
     if (    rc == VINF_SUCCESS
         &&  fCallRing3
         &&  pCritSect->s.Core.pValidatorRec
@@ -567,9 +578,10 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
  * @retval  VINF_SEM_NESTED if we only reduced the nesting count.
  * @retval  VERR_NOT_OWNER if you somehow ignore release assertions.
  *
- * @param   pCritSect           The PDM critical section to leave.
+ * @param   pVM         The cross context VM structure.
+ * @param   pCritSect   The PDM critical section to leave.
  */
-VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
+VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
 {
     AssertMsg(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic));
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
@@ -583,7 +595,8 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     /*
      * Always check that the caller is the owner (screw performance).
      */
-    RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
+    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM); RT_NOREF(pVM);
+    RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
                            ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
                             pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
@@ -647,7 +660,7 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         {
             /* Someone is waiting, wake up one of them. */
             SUPSEMEVENT     hEvent   = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
-            PSUPDRVSESSION  pSession = pCritSect->s.CTX_SUFF(pVM)->pSession;
+            PSUPDRVSESSION  pSession = pVM->pSession;
             int rc = SUPSemEventSignal(pSession, hEvent);
             AssertRC(rc);
         }
@@ -658,7 +671,7 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         else
         {
             Log8(("Signalling %#p\n", hEventToSignal));
-            int rc = SUPSemEventSignal(pCritSect->s.CTX_SUFF(pVM)->pSession, hEventToSignal);
+            int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
             AssertRC(rc);
         }
 
@@ -706,7 +719,6 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         /*
          * Queue the request.
          */
-        PVMCC       pVM   = pCritSect->s.CTX_SUFF(pVM);     AssertPtr(pVM);
         PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
         uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
         LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
@@ -761,16 +773,18 @@ VMMDECL(int) PDMHCCritSectScheduleExitEvent(PPDMCRITSECT pCritSect, SUPSEMEVENT 
  *
  * @returns true if owner.
  * @returns false if not owner.
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  */
-VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
+VMMDECL(bool) PDMCritSectIsOwner(PVMCC pVM, PCPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
+    RT_NOREF(pVM);
     return RTCritSectIsOwner(&pCritSect->s.Core);
 #else
-    PVMCC     pVM   = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
-    PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
-    if (pCritSect->s.Core.NativeThreadOwner != pVCpu->hNativeThread)
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    if (   !pVCpu
+        || pCritSect->s.Core.NativeThreadOwner != pVCpu->hNativeThread)
         return false;
     return (pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK) == 0
         || pCritSect->s.Core.cNestings > 1;
@@ -783,10 +797,10 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
  *
  * @returns true if owner.
  * @returns false if not owner.
- * @param   pCritSect   The critical section.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCritSect   The critical section.
  */
-VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
+VMMDECL(bool) PDMCritSectIsOwnerEx(PVMCPUCC pVCpu, PCPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
     NOREF(pVCpu);
@@ -806,12 +820,13 @@ VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
  *
  * @returns true if someone is waiting.
  * @returns false if no one is waiting.
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  */
-VMMDECL(bool) PDMCritSectHasWaiters(PCPDMCRITSECT pCritSect)
+VMMDECL(bool) PDMCritSectHasWaiters(PVMCC pVM, PCPDMCRITSECT pCritSect)
 {
     AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, false);
-    Assert(pCritSect->s.Core.NativeThreadOwner == pdmCritSectGetNativeSelf(pCritSect));
+    Assert(pCritSect->s.Core.NativeThreadOwner == pdmCritSectGetNativeSelf(pVM, pCritSect)); RT_NOREF(pVM);
     return pCritSect->s.Core.cLockers >= pCritSect->s.Core.cNestings;
 }
 

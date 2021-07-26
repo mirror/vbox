@@ -308,7 +308,7 @@ typedef enum PGMMODE
       || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
 
-VMMDECL(bool)           PGMIsLockOwner(PVM pVM);
+VMMDECL(bool)           PGMIsLockOwner(PVMCC pVM);
 
 VMMDECL(int)            PGMRegisterStringFormatTypes(void);
 VMMDECL(void)           PGMDeregisterStringFormatTypes(void);
@@ -639,7 +639,7 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC VCpu, uint8_t u
 
 
 #ifdef VBOX_STRICT
-VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVM pVM);
+VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVMCC pVM);
 VMMDECL(unsigned)   PGMAssertNoMappingConflicts(PVM pVM);
 VMMDECL(unsigned)   PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4);
 #endif /* VBOX_STRICT */

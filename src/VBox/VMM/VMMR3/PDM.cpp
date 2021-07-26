@@ -1306,17 +1306,18 @@ DECLINLINE(int) pdmR3PowerOnUsb(PPDMUSBINS pUsbIns)
  * Worker for PDMR3PowerOn that deals with one device instance.
  *
  * @returns VBox status code.
- * @param   pDevIns             The device instance.
+ * @param   pVM     The cross context VM structure.
+ * @param   pDevIns The device instance.
  */
-DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
+DECLINLINE(int) pdmR3PowerOnDev(PVM pVM, PPDMDEVINS pDevIns)
 {
     Assert(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED);
     if (pDevIns->pReg->pfnPowerOn)
     {
         LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
-        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+        PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
         int rc = VINF_SUCCESS; pDevIns->pReg->pfnPowerOn(pDevIns);
-        PDMCritSectLeave(pDevIns->pCritSectRoR3);
+        PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3PowerOn: Device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -1349,7 +1350,7 @@ VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
                 rc = pdmR3PowerOnDrv(pDrvIns, pDevIns->pReg->szName, pDevIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
-            rc = pdmR3PowerOnDev(pDevIns);
+            rc = pdmR3PowerOnDev(pVM, pDevIns);
     }
 
 #ifdef VBOX_WITH_USB
@@ -1591,11 +1592,11 @@ DECLINLINE(void) pdmR3ResetUsb(PPDMUSBINS pUsbIns, PPDMNOTIFYASYNCSTATS pAsync)
 /**
  * Worker for PDMR3Reset that deals with one device instance.
  *
- * @param   pDevIns             The device instance.
- * @param   pAsync              The structure for recording asynchronous
- *                              notification tasks.
+ * @param   pVM     The cross context VM structure.
+ * @param   pDevIns The device instance.
+ * @param   pAsync  The structure for recording asynchronous notification tasks.
  */
-DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
+DECLINLINE(void) pdmR3ResetDev(PVM pVM, PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
 {
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_RESET))
     {
@@ -1603,7 +1604,7 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
         if (pDevIns->pReg->pfnReset)
         {
             uint64_t cNsElapsed = RTTimeNanoTS();
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
@@ -1623,7 +1624,7 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
 
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
                 LogRel(("PDMR3Reset: Device '%s'/%d took %'llu ns to reset\n",
@@ -1697,7 +1698,7 @@ VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
             unsigned const cAsyncStart = Async.cAsync;
 
             if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION)
-                pdmR3ResetDev(pDevIns, &Async);
+                pdmR3ResetDev(pVM, pDevIns, &Async);
 
             if (Async.cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
@@ -1707,7 +1708,7 @@ VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
 
             if (   Async.cAsync == cAsyncStart
                 && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION))
-                pdmR3ResetDev(pDevIns, &Async);
+                pdmR3ResetDev(pVM, pDevIns, &Async);
         }
 
 #ifdef VBOX_WITH_USB
@@ -1760,9 +1761,9 @@ VMMR3_INT_DECL(void) PDMR3MemSetup(PVM pVM, bool fAtReset)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
         if (pDevIns->pReg->pfnMemSetup)
         {
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
             pDevIns->pReg->pfnMemSetup(pDevIns, enmCtx);
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
         }
 
     LogFlow(("PDMR3MemSetup: returns void\n"));
@@ -1838,9 +1839,9 @@ VMMR3_INT_DECL(void) PDMR3SoftReset(PVM pVM, uint32_t fResetFlags)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
         if (pDevIns->pReg->pfnSoftReset)
         {
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
             pDevIns->pReg->pfnSoftReset(pDevIns, fResetFlags);
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
         }
 
     LogFlow(("PDMR3SoftReset: returns void\n"));
@@ -1946,11 +1947,11 @@ DECLINLINE(void) pdmR3SuspendUsb(PPDMUSBINS pUsbIns, PPDMNOTIFYASYNCSTATS pAsync
 /**
  * Worker for PDMR3Suspend that deals with one device instance.
  *
- * @param   pDevIns             The device instance.
- * @param   pAsync              The structure for recording asynchronous
- *                              notification tasks.
+ * @param   pVM     The cross context VM structure.
+ * @param   pDevIns The device instance.
+ * @param   pAsync  The structure for recording asynchronous notification tasks.
  */
-DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
+DECLINLINE(void) pdmR3SuspendDev(PVM pVM, PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
 {
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED))
     {
@@ -1958,7 +1959,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
         if (pDevIns->pReg->pfnSuspend)
         {
             uint64_t cNsElapsed = RTTimeNanoTS();
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
@@ -1978,7 +1979,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
 
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
                 LogRel(("PDMR3Suspend: Device '%s'/%d took %'llu ns to suspend\n",
@@ -2029,7 +2030,7 @@ VMMR3_INT_DECL(void) PDMR3Suspend(PVM pVM)
             unsigned const cAsyncStart = Async.cAsync;
 
             if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION)
-                pdmR3SuspendDev(pDevIns, &Async);
+                pdmR3SuspendDev(pVM, pDevIns, &Async);
 
             if (Async.cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
@@ -2039,7 +2040,7 @@ VMMR3_INT_DECL(void) PDMR3Suspend(PVM pVM)
 
             if (    Async.cAsync == cAsyncStart
                 && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION))
-                pdmR3SuspendDev(pDevIns, &Async);
+                pdmR3SuspendDev(pVM, pDevIns, &Async);
         }
 
 #ifdef VBOX_WITH_USB
@@ -2128,17 +2129,18 @@ DECLINLINE(int) pdmR3ResumeUsb(PPDMUSBINS pUsbIns)
  * Worker for PDMR3Resume that deals with one device instance.
  *
  * @returns VBox status code.
- * @param   pDevIns             The device instance.
+ * @param   pVM     The cross context VM structure.
+ * @param   pDevIns The device instance.
  */
-DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
+DECLINLINE(int) pdmR3ResumeDev(PVM pVM, PPDMDEVINS pDevIns)
 {
     Assert(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED);
     if (pDevIns->pReg->pfnResume)
     {
         LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
-        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+        PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
         int rc = VINF_SUCCESS; pDevIns->pReg->pfnResume(pDevIns);
-        PDMCritSectLeave(pDevIns->pCritSectRoR3);
+        PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3Resume: Device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -2171,7 +2173,7 @@ VMMR3_INT_DECL(void) PDMR3Resume(PVM pVM)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
                 rc = pdmR3ResumeDrv(pDrvIns, pDevIns->pReg->szName, pDevIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
-            rc = pdmR3ResumeDev(pDevIns);
+            rc = pdmR3ResumeDev(pVM, pDevIns);
     }
 
 #ifdef VBOX_WITH_USB
@@ -2309,11 +2311,11 @@ DECLINLINE(void) pdmR3PowerOffUsb(PPDMUSBINS pUsbIns, PPDMNOTIFYASYNCSTATS pAsyn
 /**
  * Worker for PDMR3PowerOff that deals with one device instance.
  *
- * @param   pDevIns             The device instance.
- * @param   pAsync              The structure for recording asynchronous
- *                              notification tasks.
+ * @param   pVM     The cross context VM structure.
+ * @param   pDevIns The device instance.
+ * @param   pAsync  The structure for recording asynchronous notification tasks.
  */
-DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
+DECLINLINE(void) pdmR3PowerOffDev(PVM pVM, PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
 {
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED))
     {
@@ -2321,7 +2323,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
         if (pDevIns->pReg->pfnPowerOff)
         {
             uint64_t cNsElapsed = RTTimeNanoTS();
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
@@ -2341,7 +2343,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
 
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMPOWEROFF_WARN_AT_NS)
                 LogFlow(("PDMR3PowerOff: Device '%s'/%d took %'llu ns to power off\n",
@@ -2410,7 +2412,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
             unsigned const cAsyncStart = Async.cAsync;
 
             if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION)
-                pdmR3PowerOffDev(pDevIns, &Async);
+                pdmR3PowerOffDev(pVM, pDevIns, &Async);
 
             if (Async.cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
@@ -2420,7 +2422,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
 
             if (    Async.cAsync == cAsyncStart
                 && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION))
-                pdmR3PowerOffDev(pDevIns, &Async);
+                pdmR3PowerOffDev(pVM, pDevIns, &Async);
         }
 
 #ifdef VBOX_WITH_USB
@@ -2671,7 +2673,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
  */
 VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
 {
-    return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
+    return PDMR3CritSectEnterEx(pVM, &pVM->pdm.s.CritSect, true /* fHostCall */);
 }
 
 

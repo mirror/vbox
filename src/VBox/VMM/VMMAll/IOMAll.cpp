@@ -107,13 +107,13 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
         /*
          * Call the device.
          */
-        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_READ);
+        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_READ);
         if (rcStrict == VINF_SUCCESS)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
             rcStrict = pfnInCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? Port : offPort, pu32Value, (unsigned)cbValue);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifndef IN_RING3
             if (rcStrict == VINF_IOM_R3_IOPORT_READ)
@@ -235,7 +235,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
         /*
          * Call the device.
          */
-        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_READ);
+        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_READ);
         if (rcStrict == VINF_SUCCESS)
         {
             /*
@@ -281,7 +281,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
                 } while (   *pcTransfers > 0
                          && rcStrict == VINF_SUCCESS);
             }
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
 # ifndef IN_RING3
@@ -407,14 +407,14 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
         /*
          * Call the device.
          */
-        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_WRITE);
+        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_WRITE);
         if (rcStrict == VINF_SUCCESS)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
             rcStrict = pfnOutCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? Port : offPort, u32Value, (unsigned)cbValue);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
 
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
 # ifndef IN_RING3
@@ -521,7 +521,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
         /*
          * Call the device.
          */
-        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_WRITE);
+        VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_IOPORT_WRITE);
         if (rcStrict == VINF_SUCCESS)
         {
             /*
@@ -561,7 +561,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
                          && rcStrict == VINF_SUCCESS);
             }
 
-            PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+            PDMCritSectLeave(pVM, pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
 # ifndef IN_RING3

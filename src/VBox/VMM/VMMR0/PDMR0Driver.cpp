@@ -116,8 +116,7 @@ static DECLCALLBACK(bool) pdmR0DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
 static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectEnter(pCritSect, rcBusy);
+    return PDMCritSectEnter(pDrvIns->Internal.s.pVMR0, pCritSect, rcBusy);
 }
 
 
@@ -126,8 +125,7 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns,
                                                              RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectEnterDebug(pDrvIns->Internal.s.pVMR0, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -135,8 +133,7 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns,
 static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectTryEnter(pCritSect);
+    return PDMCritSectTryEnter(pDrvIns->Internal.s.pVMR0, pCritSect);
 }
 
 
@@ -145,8 +142,7 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvI
                                                                 RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+    return PDMCritSectTryEnterDebug(pDrvIns->Internal.s.pVMR0, pCritSect, uId, RT_SRC_POS_ARGS);
 }
 
 
@@ -154,8 +150,7 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvI
 static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectLeave(pCritSect);
+    return PDMCritSectLeave(pDrvIns->Internal.s.pVMR0, pCritSect);
 }
 
 
@@ -163,8 +158,7 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDM
 static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectIsOwner(pCritSect);
+    return PDMCritSectIsOwner(pDrvIns->Internal.s.pVMR0, pCritSect);
 }
 
 
@@ -181,8 +175,7 @@ static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectIsInitialized(PPDMDRVINS pDrvI
 static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    NOREF(pDrvIns);
-    return PDMCritSectHasWaiters(pCritSect);
+    return PDMCritSectHasWaiters(pDrvIns->Internal.s.pVMR0, pCritSect);
 }
 
 
@@ -205,7 +198,23 @@ static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectScheduleExitEvent(PPDMDRVINS p
 }
 
 
-/** @interface_method_impl{PDMDRVHLPR0,pfn} */
+/** @interface_method_impl{PDMDRVHLPR0,pfnNetShaperAllocateBandwidth} */
+static DECLCALLBACK(bool) pdmR0DrvHlp_NetShaperAllocateBandwidth(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter, size_t cbTransfer)
+{
+#ifdef VBOX_WITH_NETSHAPER
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR0DrvHlp_NetShaperDetach: caller='%s'/%d: pFilter=%p cbTransfer=%#zx\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter, cbTransfer));
+
+    bool const fRc = PDMNetShaperAllocateBandwidth(pDrvIns->Internal.s.pVMR0, pFilter, cbTransfer);
+
+    LogFlow(("pdmR0DrvHlp_NetShaperDetach: caller='%s'/%d: returns %RTbool\n", pDrvIns->pReg->szName, pDrvIns->iInstance, fRc));
+    return fRc;
+#else
+    RT_NOREF(pDrvIns, pFilter, cbTransfer);
+    return true;
+#endif
+}
 
 
 /**
@@ -230,6 +239,7 @@ extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
     pdmR0DrvHlp_CritSectHasWaiters,
     pdmR0DrvHlp_CritSectGetRecursion,
     pdmR0DrvHlp_CritSectScheduleExitEvent,
+    pdmR0DrvHlp_NetShaperAllocateBandwidth,
     PDM_DRVHLPRC_VERSION
 };
 

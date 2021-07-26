@@ -73,7 +73,7 @@
             VMSTATE      enmState; \
             PPDMCRITSECT pCritSect = TMTIMER_GET_CRITSECT(a_pVM, a_pTimer); \
             AssertMsg(   pCritSect \
-                      && (   PDMCritSectIsOwner(pCritSect) \
+                      && (   PDMCritSectIsOwner((a_pVM), pCritSect) \
                           || (enmState = (a_pVM)->enmVMState) == VMSTATE_CREATING \
                           || enmState == VMSTATE_RESETTING \
                           || enmState == VMSTATE_RESETTING_LS ),\
@@ -106,8 +106,8 @@
             VMSTATE      enmState; \
             PPDMCRITSECT pCritSect = TMTIMER_GET_CRITSECT(pVM, pTimer); \
             AssertMsg(   pCritSect \
-                      && (   !PDMCritSectIsOwner(pCritSect) \
-                          || PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock) \
+                      && (   !PDMCritSectIsOwner((pVM), pCritSect) \
+                          || PDMCritSectIsOwner((pVM), &(pVM)->tm.s.VirtualSyncLock) \
                           || (enmState = (pVM)->enmVMState) == VMSTATE_CREATING \
                           || enmState == VMSTATE_RESETTING \
                           || enmState == VMSTATE_RESETTING_LS ),\
@@ -362,7 +362,7 @@ DECLINLINE(void) tmScheduleNotify(PVMCC pVM)
  */
 DECLINLINE(void) tmSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
-    int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+    int rc = PDMCritSectTryEnter(pVM, &pQueue->TimerLock);
     if (RT_SUCCESS_NP(rc))
     {
         STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
@@ -372,7 +372,7 @@ DECLINLINE(void) tmSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE p
         tmTimerQueuesSanityChecks(pVM, "tmSchedule");
 #endif
         STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
         return;
     }
 
@@ -620,7 +620,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PT
  */
 void tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQueue)
 {
-    Assert(PDMCritSectIsOwner(&pQueue->TimerLock));
+    Assert(PDMCritSectIsOwner(pVM, &pQueue->TimerLock));
 
     /*
      * Dequeue the scheduling list and iterate it.
@@ -665,11 +665,11 @@ void tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere)
         PTMTIMERQUEUECC const pQueueCC = TM_GET_TIMER_QUEUE_CC(pVM, idxQueue, pQueue);
         Assert(pQueue->enmClock == (TMCLOCK)idxQueue);
 
-        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+        int rc = PDMCritSectTryEnter(pVM, &pQueue->TimerLock);
         if (RT_SUCCESS(rc))
         {
             if (   pQueue->enmClock != TMCLOCK_VIRTUAL_SYNC
-                || PDMCritSectTryEnter(&pVM->tm.s.VirtualSyncLock) == VINF_SUCCESS)
+                || PDMCritSectTryEnter(pVM, &pVM->tm.s.VirtualSyncLock) == VINF_SUCCESS)
             {
                 /* Check the linking of the active lists. */
                 PTMTIMER pPrev = NULL;
@@ -768,9 +768,9 @@ void tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere)
 # endif /* IN_RING3 */
 
                 if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
-                    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+                    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
             }
-            PDMCritSectLeave(&pQueue->TimerLock);
+            PDMCritSectLeave(pVM, &pQueue->TimerLock);
         }
     }
 }
@@ -1146,7 +1146,7 @@ VMMDECL(int) TMTimerLock(PVMCC pVM, TMTIMERHANDLE hTimer, int rcBusy)
 {
     TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     AssertReturn(idxQueue == TMCLOCK_VIRTUAL_SYNC, VERR_NOT_SUPPORTED);
-    return PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, rcBusy);
+    return PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, rcBusy);
 }
 
 
@@ -1160,7 +1160,7 @@ VMMDECL(void) TMTimerUnlock(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
     TMTIMER_HANDLE_TO_VARS_RETURN_VOID(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     AssertReturnVoid(idxQueue == TMCLOCK_VIRTUAL_SYNC);
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
 }
 
 
@@ -1175,7 +1175,7 @@ VMMDECL(bool) TMTimerIsLockOwner(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
     TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, false); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     AssertReturn(idxQueue == TMCLOCK_VIRTUAL_SYNC, false);
-    return PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock);
+    return PDMCritSectIsOwner(pVM, &pVM->tm.s.VirtualSyncLock);
 }
 
 
@@ -1235,7 +1235,7 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
     VM_ASSERT_EMT(pVM);
     TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
-    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    int rc = PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
     PTMTIMERQUEUE const     pQueue   = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC];
@@ -1286,7 +1286,7 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
     }
 
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return rc;
 }
 
@@ -1343,17 +1343,17 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
              && pTimer->pCritSect))
     {
         /* Try take the TM lock and check the state again. */
-        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+        int rc = PDMCritSectTryEnter(pVM, &pQueue->TimerLock);
         if (RT_SUCCESS_NP(rc))
         {
             if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState1)))
             {
                 tmTimerSetOptimizedStart(pVM, pTimer, u64Expire, pQueue, idxQueue);
                 STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
-                PDMCritSectLeave(&pQueue->TimerLock);
+                PDMCritSectLeave(pVM, &pQueue->TimerLock);
                 return VINF_SUCCESS;
             }
-            PDMCritSectLeave(&pQueue->TimerLock);
+            PDMCritSectLeave(pVM, &pQueue->TimerLock);
         }
     }
 #endif
@@ -1542,7 +1542,7 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
     STAM_PROFILE_START(pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
     VM_ASSERT_EMT(pVM);
     TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
-    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    int rc = PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
     /* Calculate the expiration tick. */
@@ -1597,7 +1597,7 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
     }
 
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return rc;
 }
 
@@ -1661,7 +1661,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
      * Note! Lock ordering doesn't apply when we only _try_ to
      *       get the innermost locks.
      */
-    bool fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(&pQueue->TimerLock));
+    bool fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(pVM, &pQueue->TimerLock));
 #if 1
     if (    fOwnTMLock
         &&  pTimer->pCritSect)
@@ -1673,7 +1673,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
         {
             tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now, pQueueCC, pQueue);
             STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
-            PDMCritSectLeave(&pQueue->TimerLock);
+            PDMCritSectLeave(pVM, &pQueue->TimerLock);
             return VINF_SUCCESS;
         }
 
@@ -1813,7 +1813,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
          * Retry to gain locks.
          */
         if (!fOwnTMLock)
-            fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(&pQueue->TimerLock));
+            fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(pVM, &pQueue->TimerLock));
 
     } /* for (;;) */
 
@@ -1821,7 +1821,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
      * Clean up and return.
      */
     if (fOwnTMLock)
-        PDMCritSectLeave(&pQueue->TimerLock);
+        PDMCritSectLeave(pVM, &pQueue->TimerLock);
 
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     return rc;
@@ -1892,7 +1892,7 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
     VM_ASSERT_EMT(pVM);
     TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
-    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    int rc = PDMCritSectEnter(pVM, &pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
     /* Reset the HZ hint. */
@@ -1946,7 +1946,7 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
     }
 
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(pVM, &pVM->tm.s.VirtualSyncLock);
     return rc;
 }
 
@@ -2616,7 +2616,7 @@ DECL_NO_INLINE(static, uint32_t) tmGetFrequencyHintSlow(PVMCC pVM, uint32_t uOld
         /* Get the max Hz hint for the queue. */
         uint32_t uMaxHzHintQueue;
         if (  !(ASMAtomicUoReadU64(&pVM->tm.s.HzHint.u64Combined) & (RT_BIT_32(idxQueue) | RT_BIT_32(idxQueue + 16)))
-            || RT_FAILURE_NP(PDMCritSectTryEnter(&pQueue->TimerLock)))
+            || RT_FAILURE_NP(PDMCritSectTryEnter(pVM, &pQueue->TimerLock)))
             uMaxHzHintQueue = ASMAtomicReadU32(&pQueue->uMaxHzHint);
         else
         {
@@ -2666,7 +2666,7 @@ DECL_NO_INLINE(static, uint32_t) tmGetFrequencyHintSlow(PVMCC pVM, uint32_t uOld
             else
                 uMaxHzHintQueue = ASMAtomicUoReadU32(&pQueue->uMaxHzHint);
 
-            PDMCritSectLeave(&pQueue->TimerLock);
+            PDMCritSectLeave(pVM, &pQueue->TimerLock);
         }
 
         /* Update the global max Hz hint. */
