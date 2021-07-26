@@ -44,6 +44,7 @@
 #include <iprt/vfs.h>
 
 #include <iprt/formats/efi-signature.h>
+#include <iprt/formats/efi-varstore.h>
 
 
 /*********************************************************************************************************************************
@@ -55,7 +56,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Signature type identifier to internal type mapping. */
-struct
+struct RTEFISIGDBID2TYPEENTRY
 {
     const char   *pszId;
     RTEFISIGTYPE enmType;
@@ -397,6 +398,35 @@ static int rtEfiSigDbAddSig(RTEFISIGDB hEfiSigDb, const char *pszSigPath, const 
 
 
 /**
+ * Sets the given attributes for the given EFI variable store variable.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsVarStore        Handle of the EFI variable store VFS.
+ * @param   pszVar              The variable to set the attributes for.
+ * @param   fAttr               The attributes to set, see EFI_VAR_HEADER_ATTR_XXX.
+ */
+static int rtEfiSigDbSetVarAttr(RTVFS hVfsVarStore, const char *pszVar, uint32_t fAttr)
+{
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/raw/%s/attr", pszVar);
+    Assert(cch > 0);
+
+    RTVFSFILE hVfsFileAttr = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpen(hVfsVarStore, szVarPath,
+                           RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                           &hVfsFileAttr);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t fAttrLe = RT_H2LE_U32(fAttr);
+        rc = RTVfsFileWrite(hVfsFileAttr, &fAttrLe, sizeof(fAttrLe), NULL /*pcbWritten*/);
+        RTVfsFileRelease(hVfsFileAttr);
+    }
+
+    return rc;
+}
+
+
+/**
  * Adds the given signature to the given signature database of the given EFI variable store.
  *
  * @returns IPRT status code.
@@ -422,7 +452,8 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
     int rc = RTVfsFileOpen(hVfsVarStore, szDbPath,
                            RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
                            &hVfsFileSigDb);
-    if (rc == VERR_PATH_NOT_FOUND)
+    if (   rc == VERR_PATH_NOT_FOUND
+        || rc == VERR_FILE_NOT_FOUND)
     {
         /*
          * Try to create the owner GUID of the variable by creating the appropriate directory,
@@ -440,6 +471,8 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
             rc = RTVfsDirCreateDir(hVfsDirRoot, szGuidPath, 0755, 0 /*fFlags*/, &hVfsDirGuid);
             if (RT_SUCCESS(rc))
                 RTVfsDirRelease(hVfsDirGuid);
+            else if (rc == VERR_ALREADY_EXISTS)
+                rc = VINF_SUCCESS;
 
             RTVfsDirRelease(hVfsDirRoot);
         }
@@ -447,9 +480,17 @@ static int rtEfiSigDbVarStoreAddToDb(RTVFS hVfsVarStore, const char *pszDb, bool
             rc = RTMsgErrorRc(rc, "Opening variable storage root directory failed: %Rrc", rc);
 
         if (RT_SUCCESS(rc))
+        {
             rc = RTVfsFileOpen(hVfsVarStore, szDbPath,
                                RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_CREATE,
                                &hVfsFileSigDb);
+            if (RT_SUCCESS(rc))
+                rc = rtEfiSigDbSetVarAttr(hVfsVarStore, pszDb,
+                                            EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                          | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                          | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
+                                          | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS);
+        }
 
         if (RT_FAILURE(rc))
             rc = RTMsgErrorRc(rc, "Creating the signature database '%s' failed: %Rrc", pszDb, rc);
