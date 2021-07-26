@@ -218,16 +218,15 @@ UIAdditionalUnattendedOptions::UIAdditionalUnattendedOptions(QWidget *pParent /*
 
 void UIAdditionalUnattendedOptions::prepare()
 {
-    QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(this);
-    pAdditionalOptionsContainerLayout->setColumnStretch(0, 0);
-    pAdditionalOptionsContainerLayout->setColumnStretch(1, 1);
-
+    m_pMainLayout = new QGridLayout(this);
+    m_pMainLayout->setColumnStretch(0, 0);
+    m_pMainLayout->setColumnStretch(1, 1);
     m_pProductKeyLabel = new QLabel;
     if (m_pProductKeyLabel)
     {
         m_pProductKeyLabel->setAlignment(Qt::AlignRight);
         m_pProductKeyLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 0, 0);
+        m_pMainLayout->addWidget(m_pProductKeyLabel, 0, 0);
     }
     m_pProductKeyLineEdit = new QILineEdit;
     if (m_pProductKeyLineEdit)
@@ -235,16 +234,16 @@ void UIAdditionalUnattendedOptions::prepare()
         m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
         if (m_pProductKeyLabel)
             m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
+        m_pMainLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
     }
 
     m_pHostnameDomainNameEditor = new UIHostnameDomainNameEditor;
     if (m_pHostnameDomainNameEditor)
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameDomainNameEditor, 1, 0, 2, 3);
+        m_pMainLayout->addWidget(m_pHostnameDomainNameEditor, 1, 0, 2, 3);
 
     m_pStartHeadlessCheckBox = new QCheckBox;
     if (m_pStartHeadlessCheckBox)
-        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
+        m_pMainLayout->addWidget(m_pStartHeadlessCheckBox, 3, 1);
 
     if (m_pHostnameDomainNameEditor)
         connect(m_pHostnameDomainNameEditor, &UIHostnameDomainNameEditor::sigHostnameDomainNameChanged,
@@ -271,6 +270,17 @@ void UIAdditionalUnattendedOptions::retranslateUi()
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
         m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
                                                                "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
+    }
+
+    int iMaxWidth = 0;
+    if (m_pProductKeyLabel)
+        iMaxWidth = qMax(m_pProductKeyLabel->minimumSizeHint().width(), iMaxWidth);
+    if (m_pHostnameDomainNameEditor)
+        iMaxWidth = qMax(m_pHostnameDomainNameEditor->firstColumnWidth(), iMaxWidth);
+    if (iMaxWidth > 0)
+    {
+        m_pMainLayout->setColumnMinimumWidth(0, iMaxWidth);
+        m_pHostnameDomainNameEditor->setFirstColumnWidth(iMaxWidth);
     }
 }
 

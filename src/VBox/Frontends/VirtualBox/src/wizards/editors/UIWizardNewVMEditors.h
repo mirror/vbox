@@ -141,6 +141,7 @@ private:
     QILineEdit *m_pProductKeyLineEdit;
     UIHostnameDomainNameEditor *m_pHostnameDomainNameEditor;
     QCheckBox *m_pStartHeadlessCheckBox;
+    QGridLayout *m_pMainLayout;
 };
 
 

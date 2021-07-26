@@ -40,6 +40,7 @@ UIHostnameDomainNameEditor::UIHostnameDomainNameEditor(QWidget *pParent /*  = 0 
     , m_pDomainNameLineEdit(0)
     , m_pHostnameLabel(0)
     , m_pDomainNameLabel(0)
+    , m_pMainLayout(0)
 {
     prepare();
 }
@@ -93,6 +94,22 @@ QString UIHostnameDomainNameEditor::hostnameDomainName() const
     return QString();
 }
 
+int UIHostnameDomainNameEditor::firstColumnWidth() const
+{
+    int iWidth = 0;
+    if (m_pHostnameLabel)
+        iWidth = qMax(iWidth, m_pHostnameLabel->minimumSizeHint().width());
+    if (m_pDomainNameLabel)
+        iWidth = qMax(iWidth, m_pDomainNameLabel->minimumSizeHint().width());
+    return iWidth;
+}
+
+void UIHostnameDomainNameEditor::setFirstColumnWidth(int iWidth)
+{
+    if (m_pMainLayout)
+        m_pMainLayout->setColumnMinimumWidth(0, iWidth);
+}
+
 void UIHostnameDomainNameEditor::retranslateUi()
 {
     QString strHostnameTooltip(tr("Type the hostname which will be used in attended install:"));
@@ -106,7 +123,7 @@ void UIHostnameDomainNameEditor::retranslateUi()
         m_pHostnameLineEdit->setToolTip(strHostnameTooltip);
     if (m_pDomainNameLabel)
     {
-        m_pDomainNameLabel->setText(tr("&Domain Name"));
+        m_pDomainNameLabel->setText(tr("&Domain Name:"));
         m_pDomainNameLabel->setToolTip(strDomainTooltip);
     }
     m_pDomainNameLineEdit->setToolTip(strDomainTooltip);
@@ -121,7 +138,7 @@ void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineE
     pLabel = new QLabel;
     AssertReturnVoid(pLabel);
     pLabel->setAlignment(Qt::AlignRight);
-    pLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    //pLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
     pLayout->addWidget(pLabel, iRow, 0, 1, 1);
 
@@ -136,15 +153,15 @@ void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineE
 
 void UIHostnameDomainNameEditor::prepare()
 {
-    QGridLayout *pMainLayout = new QGridLayout;
-    pMainLayout->setColumnStretch(0, 0);
-    pMainLayout->setColumnStretch(1, 1);
-    if (!pMainLayout)
+    m_pMainLayout = new QGridLayout;
+    m_pMainLayout->setColumnStretch(0, 0);
+    m_pMainLayout->setColumnStretch(1, 1);
+    if (!m_pMainLayout)
         return;
-    setLayout(pMainLayout);
+    setLayout(m_pMainLayout);
     int iRow = 0;
-    addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, pMainLayout);
-    addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, pMainLayout);
+    addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, m_pMainLayout);
+    addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
 
     // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
     /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.': */
@@ -155,7 +172,6 @@ void UIHostnameDomainNameEditor::prepare()
             this, &UIHostnameDomainNameEditor::sltHostnameChanged);
     connect(m_pDomainNameLineEdit, &QILineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltDomainChanged);
-
 
     retranslateUi();
 }
