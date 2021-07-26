@@ -317,6 +317,44 @@ private:
     QString                    m_strProfileName;
 };
 
+/** UINotificationProgress extension for export appliance functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressApplianceExport : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs export appliance notification-progress.
+      * @param  comAppliance  Brings the appliance being exported.
+      * @param  strFormat     Brings the appliance format.
+      * @param  options       Brings the export options to be taken into account.
+      * @param  strPath       Brings the appliance path. */
+    UINotificationProgressApplianceExport(const CAppliance &comAppliance,
+                                          const QString &strFormat,
+                                          const QVector<KExportOptions> &options,
+                                          const QString &strPath);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the appliance being exported. */
+    CAppliance               m_comAppliance;
+    /** Holds the appliance format. */
+    QString                  m_strFormat;
+    /** Holds the export options to be taken into account. */
+    QVector<KExportOptions>  m_options;
+    /** Holds the appliance path. */
+    QString                  m_strPath;
+};
+
 /** UINotificationProgress extension for import appliance functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressApplianceImport : public UINotificationProgress
 {
@@ -341,9 +379,9 @@ protected:
 
 private:
 
-    /** Holds the medium being moved. */
+    /** Holds the appliance being imported. */
     CAppliance               m_comAppliance;
-    /** Holds the initial location. */
+    /** Holds the import options to be taken into account. */
     QVector<KImportOptions>  m_options;
 };
 

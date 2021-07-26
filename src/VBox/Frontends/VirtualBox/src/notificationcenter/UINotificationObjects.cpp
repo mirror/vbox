@@ -288,6 +288,42 @@ void UINotificationProgressCloudMachineCreate::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressApplianceExport implementation.                                                                  *
+*********************************************************************************************************************************/
+
+UINotificationProgressApplianceExport::UINotificationProgressApplianceExport(const CAppliance &comAppliance,
+                                                                             const QString &strFormat,
+                                                                             const QVector<KExportOptions> &options,
+                                                                             const QString &strPath)
+    : m_comAppliance(comAppliance)
+    , m_strFormat(strFormat)
+    , m_options(options)
+    , m_strPath(strPath)
+{
+}
+
+QString UINotificationProgressApplianceExport::name() const
+{
+    return UINotificationProgress::tr("Exporting appliance ...");
+}
+
+QString UINotificationProgressApplianceExport::details() const
+{
+    return UINotificationProgress::tr("<b>To:</b> %1").arg(m_strPath);
+}
+
+CProgress UINotificationProgressApplianceExport::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comAppliance.Write(m_strFormat, m_options, m_strPath);
+    /* Store COM result: */
+    comResult = m_comAppliance;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressApplianceImport implementation.                                                                  *
 *********************************************************************************************************************************/
 
