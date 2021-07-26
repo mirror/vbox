@@ -18,15 +18,17 @@
 /* Qt includes: */
 #include <QVariant>
 #include <QPushButton>
+
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIMedium.h"
+#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVDPageExpert.h"
-#include "UIMessageCenter.h"
-#include "UIMedium.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
@@ -53,58 +55,43 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
 bool UIWizardNewVD::createVirtualDisk()
 {
     /* Gather attributes: */
-    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    qulonglong uVariant = field("mediumVariant").toULongLong();
-    QString strMediumPath = field("mediumPath").toString();
-    qulonglong uSize = field("mediumSize").toULongLong();
+    const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
+    const qulonglong uVariant = field("mediumVariant").toULongLong();
+    const QString strMediumPath = field("mediumPath").toString();
+    const qulonglong uSize = field("mediumSize").toULongLong();
     /* Check attributes: */
     AssertReturn(!strMediumPath.isNull(), false);
     AssertReturn(uSize > 0, false);
 
     /* Get VBox object: */
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
-    /* Create new virtual hard-disk: */
-    CMedium virtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
-    if (!vbox.isOk())
+    /* Create new virtual disk image: */
+    CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
+        msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
         return false;
     }
 
     /* Compose medium-variant: */
-    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
     for (int i = 0; i < variants.size(); ++i)
     {
         qulonglong temp = uVariant;
-        temp &= UINT64_C(1)<<i;
+        temp &= Q_UINT64_C(1) << i;
         variants[i] = (KMediumVariant)temp;
     }
 
-    /* Create base storage for the new virtual-disk: */
-    CProgress progress = virtualDisk.CreateBaseStorage(uSize, variants);
-    if (!virtualDisk.isOk())
-    {
-        msgCenter().cannotCreateHardDiskStorage(virtualDisk, strMediumPath, this);
-        return false;
-    }
+    /* Copy medium: */
+    UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
+                                                                                               uSize,
+                                                                                               variants);
+    connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
+            &uiCommon(), &UICommon::sltHandleMediumCreated);
+    notificationCenter().append(pNotification);
 
-    /* Show creation progress: */
-    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this);
-    if (progress.GetCanceled())
-        return false;
-    if (!progress.isOk() || progress.GetResultCode() != 0)
-    {
-        msgCenter().cannotCreateHardDiskStorage(progress, strMediumPath, this);
-        return false;
-    }
-
-    /* Remember created virtual-disk: */
-    m_virtualDisk = virtualDisk;
-
-    /* Inform UICommon about it: */
-    uiCommon().createMedium(UIMedium(m_virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
-
+    /* Positive: */
     return true;
 }
 

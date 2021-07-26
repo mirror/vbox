@@ -66,6 +66,50 @@ private:
     QString  m_strTo;
 };
 
+/** UINotificationProgress extension for medium create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMediumCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about @a comMedium was created. */
+    void sigMediumCreated(const CMedium &comMedium);
+
+public:
+
+    /** Constructs medium create notification-progress.
+      * @param  comTarget  Brings the medium being the target.
+      * @param  uSize      Brings the target medium size.
+      * @param  variants   Brings the target medium options. */
+    UINotificationProgressMediumCreate(const CMedium &comTarget,
+                                       qulonglong uSize,
+                                       const QVector<KMediumVariant> &variants);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the medium being the target. */
+    CMedium                  m_comTarget;
+    /** Holds the target medium size. */
+    qulonglong               m_uSize;
+    /** Holds the target medium options. */
+    QVector<KMediumVariant>  m_variants;
+};
+
 /** UINotificationProgress extension for medium copy functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressMediumCopy : public UINotificationProgress
 {
@@ -78,7 +122,7 @@ signals:
 
 public:
 
-    /** Constructs medium move notification-progress.
+    /** Constructs medium copy notification-progress.
       * @param  comSource  Brings the medium being copied.
       * @param  comTarget  Brings the medium being the target.
       * @param  variants   Brings the target medium options. */

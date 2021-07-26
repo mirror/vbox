@@ -58,9 +58,6 @@ public:
     /* Pages related stuff: */
     void prepare();
 
-    /* Returns virtual-disk: */
-    CMedium virtualDisk() const { return m_virtualDisk; }
-
 protected:
 
     /* Creates virtual-disk: */
@@ -76,10 +73,9 @@ private:
     void retranslateUi();
 
     /* Variables: */
-    QString m_strDefaultName;
-    QString m_strDefaultPath;
-    qulonglong m_uDefaultSize;
-    CMedium m_virtualDisk;
+    QString     m_strDefaultName;
+    QString     m_strDefaultPath;
+    qulonglong  m_uDefaultSize;
 };
 
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;
