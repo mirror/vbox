@@ -1908,8 +1908,7 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectScheduleExitEvent(PPDMDRVINS p
 static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectDelete(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    RT_NOREF(pDrvIns);
-    return PDMR3CritSectDelete(pCritSect);
+    return PDMR3CritSectDelete(pDrvIns->Internal.s.pVMR3, pCritSect);
 }
 
 

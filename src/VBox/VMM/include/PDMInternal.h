@@ -422,12 +422,6 @@ typedef struct PDMCRITSECTINT
      * This is pDevIns if the owner is a device. Similarly for a driver or service.
      * PDMR3CritSectInit() sets this to point to the critsect itself. */
     RTR3PTR                         pvKey;
-    /** Pointer to the VM - R3Ptr. */
-    PVMR3                           pVMR3;
-    /** Pointer to the VM - R0Ptr. */
-    R0PTRTYPE(PVMCC)                pVMR0;
-    /** Pointer to the VM - GCPtr. */
-    PVMRC                           pVMRC;
     /** Set if this critical section is the automatically created default
      * section of a device. */
     bool                            fAutomaticDefaultCritsect;
@@ -435,7 +429,7 @@ typedef struct PDMCRITSECTINT
      * See PDMR3DevGetCritSect.  */
     bool                            fUsedByTimerOrSimilar;
     /** Alignment padding. */
-    bool                            afPadding[2];
+    bool                            afPadding[2+4];
     /** Support driver event semaphore that is scheduled to be signaled upon leaving
      * the critical section. This is only for Ring-3 and Ring-0. */
     SUPSEMEVENT                     hEventToSignal;
@@ -475,16 +469,6 @@ typedef struct PDMCRITSECTRWINT
      * This is pDevIns if the owner is a device. Similarly for a driver or service.
      * PDMR3CritSectInit() sets this to point to the critsect itself. */
     RTR3PTR                             pvKey;
-    /** Pointer to the VM - R3Ptr. */
-    PVMR3                               pVMR3;
-    /** Pointer to the VM - R0Ptr. */
-    R0PTRTYPE(PVMCC)                    pVMR0;
-    /** Pointer to the VM - GCPtr. */
-    PVMRC                               pVMRC;
-#if HC_ARCH_BITS == 64
-    /** Alignment padding. */
-    RTRCPTR                             RCPtrPadding;
-#endif
     /** The lock name. */
     R3PTRTYPE(const char *)             pszName;
     /** R0/RC write lock contention. */
@@ -1614,7 +1598,6 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 bool        pdmR3IsValidName(const char *pszName);
 
 int         pdmR3CritSectBothInitStats(PVM pVM);
-void        pdmR3CritSectBothRelocate(PVM pVM);
 int         pdmR3CritSectBothDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
 int         pdmR3CritSectBothDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);
 int         pdmR3CritSectInitDevice(        PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,

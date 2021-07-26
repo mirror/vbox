@@ -584,11 +584,6 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pdm.s.pDevHlpQueueRC = PDMQueueRCPtr(pVM->pdm.s.pDevHlpQueueR3);
 
     /*
-     * Critical sections.
-     */
-    pdmR3CritSectBothRelocate(pVM);
-
-    /*
      * The registered PIC.
      */
     if (pVM->pdm.s.Pic.pDevInsRC)
@@ -893,7 +888,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
     /*
      * Destroy the PDM lock.
      */
-    PDMR3CritSectDelete(&pVM->pdm.s.CritSect);
+    PDMR3CritSectDelete(pVM, &pVM->pdm.s.CritSect);
     /* The MiscCritSect is deleted by PDMR3CritSectBothTerm later. */
 
     LogFlow(("PDMR3Term: returns %Rrc\n", VINF_SUCCESS));

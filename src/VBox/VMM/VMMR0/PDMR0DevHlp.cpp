@@ -844,7 +844,6 @@ static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
              pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pCritSect->s.pszName));
     AssertReturn(PDMCritSectIsInitialized(pCritSect), VERR_INVALID_PARAMETER);
     PGVM pGVM = pDevIns->Internal.s.pGVM;
-    AssertReturn(pCritSect->s.pVMR0 == pGVM, VERR_INVALID_PARAMETER);
 
     VM_ASSERT_EMT(pGVM);
     VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);

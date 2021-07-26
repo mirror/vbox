@@ -61,30 +61,6 @@ int pdmR3CritSectBothInitStats(PVM pVM)
 
 
 /**
- * Relocates all the critical sections.
- *
- * @param   pVM         The cross context VM structure.
- */
-void pdmR3CritSectBothRelocate(PVM pVM)
-{
-    PUVM pUVM = pVM->pUVM;
-    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
-
-    for (PPDMCRITSECTINT pCur = pUVM->pdm.s.pCritSects;
-         pCur;
-         pCur = pCur->pNext)
-        pCur->pVMRC = pVM->pVMRC;
-
-    for (PPDMCRITSECTRWINT pCur = pUVM->pdm.s.pRwCritSects;
-         pCur;
-         pCur = pCur->pNext)
-        pCur->pVMRC = pVM->pVMRC;
-
-    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
-}
-
-
-/**
  * Deletes all remaining critical sections.
  *
  * This is called at the very end of the termination process.  It is also called
@@ -181,9 +157,6 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->Core.cNestings            = 0;
                 pCritSect->Core.cLockers             = -1;
                 pCritSect->Core.NativeThreadOwner    = NIL_RTNATIVETHREAD;
-                pCritSect->pVMR3                     = pVM;
-                pCritSect->pVMR0                     = pVM->pVMR0ForCall;
-                pCritSect->pVMRC                     = pVM->pVMRC;
                 pCritSect->pvKey                     = pvKey;
                 pCritSect->fAutomaticDefaultCritsect = false;
                 pCritSect->fUsedByTimerOrSimilar     = false;
@@ -278,9 +251,6 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
 #if HC_ARCH_BITS == 32
                     pCritSect->Core.HCPtrPadding         = NIL_RTHCPTR;
 #endif
-                    pCritSect->pVMR3                     = pVM;
-                    pCritSect->pVMR0                     = pVM->pVMR0ForCall;
-                    pCritSect->pVMRC                     = pVM->pVMRC;
                     pCritSect->pvKey                     = pvKey;
                     pCritSect->pszName                   = pszName;
 
@@ -533,9 +503,6 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
     RTLockValidatorRecExclDestroy(&pCritSect->Core.pValidatorRec);
     pCritSect->pNext   = NULL;
     pCritSect->pvKey   = NULL;
-    pCritSect->pVMR3   = NULL;
-    pCritSect->pVMR0   = NIL_RTR0PTR;
-    pCritSect->pVMRC   = NIL_RTRCPTR;
     if (!fFinal)
         STAMR3DeregisterF(pVM->pUVM, "/PDM/CritSects/%s/*", pCritSect->pszName);
     RTStrFree((char *)pCritSect->pszName);
@@ -604,9 +571,6 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
 
     pCritSect->pNext   = NULL;
     pCritSect->pvKey   = NULL;
-    pCritSect->pVMR3   = NULL;
-    pCritSect->pVMR0   = NIL_RTR0PTR;
-    pCritSect->pVMRC   = NIL_RTRCPTR;
     if (!fFinal)
         STAMR3DeregisterF(pVM->pUVM, "/PDM/CritSectsRw/%s/*", pCritSect->pszName);
     RTStrFree((char *)pCritSect->pszName);
@@ -730,9 +694,10 @@ int pdmR3CritSectBothDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns)
  * Deletes the critical section.
  *
  * @returns VBox status code.
- * @param   pCritSect           The PDM critical section to destroy.
+ * @param   pVM         The cross context VM structure.
+ * @param   pCritSect   The PDM critical section to destroy.
  */
-VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
+VMMR3DECL(int) PDMR3CritSectDelete(PVM pVM, PPDMCRITSECT pCritSect)
 {
     if (!RTCritSectIsInitialized(&pCritSect->s.Core))
         return VINF_SUCCESS;
@@ -740,7 +705,6 @@ VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
     /*
      * Find and unlink it.
      */
-    PVM             pVM   = pCritSect->s.pVMR3;
     PUVM            pUVM  = pVM->pUVM;
     AssertReleaseReturn(pVM, VERR_PDM_CRITSECT_IPE);
     PPDMCRITSECTINT pPrev = NULL;
@@ -780,7 +744,6 @@ VMMR3DECL(int) PDMR3CritSectRwDelete(PVM pVM, PPDMCRITSECTRW pCritSect)
     /*
      * Find and unlink it.
      */
-    Assert(pCritSect->s.pVMR3 == pVM);
     PUVM                pUVM  = pVM->pUVM;
     AssertReleaseReturn(pVM, VERR_PDM_CRITSECT_IPE);
     PPDMCRITSECTRWINT   pPrev = NULL;

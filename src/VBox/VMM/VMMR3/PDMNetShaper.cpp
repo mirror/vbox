@@ -152,14 +152,14 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pszBwGroup, uin
     PPDMNSBWGROUP pBwGroup = pdmNsBwGroupFindById(pShaper, pszBwGroup);
     if (!pBwGroup)
     {
-        rc = MMHyperAlloc(pShaper->pVM, sizeof(PDMNSBWGROUP), 64,
-                          MM_TAG_PDM_NET_SHAPER, (void **)&pBwGroup);
+        PVM const pVM = pShaper->pVM;
+        rc = MMHyperAlloc(pVM, sizeof(PDMNSBWGROUP), 64, MM_TAG_PDM_NET_SHAPER, (void **)&pBwGroup);
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3CritSectInit(pShaper->pVM, &pBwGroup->Lock, RT_SRC_POS, "BWGRP-%s", pszBwGroup);
+            rc = PDMR3CritSectInit(pVM, &pBwGroup->Lock, RT_SRC_POS, "BWGRP-%s", pszBwGroup);
             if (RT_SUCCESS(rc))
             {
-                pBwGroup->pszNameR3 = MMR3HeapStrDup(pShaper->pVM, MM_TAG_PDM_NET_SHAPER, pszBwGroup);
+                pBwGroup->pszNameR3 = MMR3HeapStrDup(pVM, MM_TAG_PDM_NET_SHAPER, pszBwGroup);
                 if (pBwGroup->pszNameR3)
                 {
                     pBwGroup->pShaperR3             = pShaper;
@@ -175,9 +175,9 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pszBwGroup, uin
                     pdmNsBwGroupLink(pBwGroup);
                     return VINF_SUCCESS;
                 }
-                PDMR3CritSectDelete(&pBwGroup->Lock);
+                PDMR3CritSectDelete(pVM, &pBwGroup->Lock);
             }
-            MMHyperFree(pShaper->pVM, pBwGroup);
+            MMHyperFree(pVM, pBwGroup);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -190,11 +190,11 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pszBwGroup, uin
 }
 
 
-static void pdmNsBwGroupTerminate(PPDMNSBWGROUP pBwGroup)
+static void pdmNsBwGroupTerminate(PVM pVM, PPDMNSBWGROUP pBwGroup)
 {
     Assert(pBwGroup->cRefs == 0);
     if (PDMCritSectIsInitialized(&pBwGroup->Lock))
-        PDMR3CritSectDelete(&pBwGroup->Lock);
+        PDMR3CritSectDelete(pVM, &pBwGroup->Lock);
 }
 
 
@@ -468,7 +468,7 @@ int pdmR3NetShaperTerm(PVM pVM)
     {
         PPDMNSBWGROUP pFree = pBwGroup;
         pBwGroup = pBwGroup->pNextR3;
-        pdmNsBwGroupTerminate(pFree);
+        pdmNsBwGroupTerminate(pVM, pFree);
         MMR3HeapFree(pFree->pszNameR3);
         MMHyperFree(pVM, pFree);
     }

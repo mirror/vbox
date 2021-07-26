@@ -2736,7 +2736,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
              pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pCritSect->s.pszName));
     AssertReturn(PDMCritSectIsInitialized(pCritSect), VERR_INVALID_PARAMETER);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    AssertReturn(pCritSect->s.pVMR3 == pVM, VERR_INVALID_PARAMETER);
 
     VM_ASSERT_EMT(pVM);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
@@ -2767,7 +2766,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
         AssertLogRelRCReturn(rc, rc);
     }
 
-    PDMR3CritSectDelete(pOldCritSect);
+    PDMR3CritSectDelete(pVM, pOldCritSect);
     Assert((uintptr_t)pOldCritSect - (uintptr_t)pDevIns < pDevIns->cbRing3);
 
     LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
@@ -2871,8 +2870,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectScheduleExitEvent(PPDMDEVINS pDevIn
 static DECLCALLBACK(int) pdmR3DevHlp_CritSectDelete(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns);
-    return PDMR3CritSectDelete(pCritSect);
+    return PDMR3CritSectDelete(pDevIns->Internal.s.pVMR3, pCritSect);
 }
 
 

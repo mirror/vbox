@@ -145,7 +145,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
     /*
      * The wait loop.
      */
-    PSUPDRVSESSION  pSession    = pCritSect->s.CTX_SUFF(pVM)->pSession;
+    PSUPDRVSESSION  pSession    = pVM->pSession;
     SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef IN_RING3
 #  ifdef PDMCRITSECT_STRICT
@@ -247,7 +247,6 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
     else
         return VINF_SUCCESS;
 
-    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM); RT_NOREF(pVM);
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
@@ -459,7 +458,6 @@ static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRC
     else
         return VINF_SUCCESS;
 
-    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM);
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
@@ -595,7 +593,6 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
     /*
      * Always check that the caller is the owner (screw performance).
      */
-    Assert(pCritSect->s.CTX_SUFF(pVM) == pVM); RT_NOREF(pVM);
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
     AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
                            ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),

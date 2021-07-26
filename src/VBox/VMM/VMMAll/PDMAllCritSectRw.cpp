@@ -126,12 +126,12 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
 /**
  * Go back to ring-3 so the kernel can do signals, APCs and other fun things.
  *
- * @param   pThis       Pointer to the read/write critical section.
+ * @param   pVM         The cross context VM structure.
  */
-static void pdmR0CritSectRwYieldToRing3(PPDMCRITSECTRW pThis)
+static void pdmR0CritSectRwYieldToRing3(PVMCC pVM)
 {
-    PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-    PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    AssertPtrReturnVoid(pVCpu);
     int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
     AssertRC(rc);
 }
@@ -157,7 +157,6 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(pSrcPos);
@@ -301,7 +300,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                                     || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
                                     break;
 # ifdef IN_RING0
-                                pdmR0CritSectRwYieldToRing3(pThis);
+                                pdmR0CritSectRwYieldToRing3(pVM);
 # endif
                             }
 # ifdef IN_RING3
@@ -566,7 +565,6 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(fNoVal);
@@ -720,7 +718,6 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(pSrcPos);
@@ -872,7 +869,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                             || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
                             break;
 # ifdef IN_RING0
-                        pdmR0CritSectRwYieldToRing3(pThis);
+                        pdmR0CritSectRwYieldToRing3(pVM);
 # endif
                     }
 # ifdef IN_RING3
@@ -1121,7 +1118,6 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(fNoVal);

@@ -214,7 +214,7 @@ int mmR3HyperInit(PVM pVM)
 int mmR3HyperTerm(PVM pVM)
 {
     if (pVM->mm.s.pHyperHeapR3)
-        PDMR3CritSectDelete(&pVM->mm.s.pHyperHeapR3->Lock);
+        PDMR3CritSectDelete(pVM, &pVM->mm.s.pHyperHeapR3->Lock);
 
     return VINF_SUCCESS;
 }
