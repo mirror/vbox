@@ -52,6 +52,12 @@ typedef const EFI_GUID *PCEFI_GUID;
 
 /** A Null GUID. */
 #define EFI_NULL_GUID { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 }}
+/** Global variable GUID. */
+#define EFI_GLOBAL_VARIABLE_GUID \
+    { 0x8be4df61, 0x93ca, 0x11d2, { 0xaa, 0x0d, 0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c }}
+/** SecureBootEnable variable GUID. */
+#define EFI_SECURE_BOOT_ENABLE_DISABLE_GUID \
+    { 0xf0a30bc7, 0xaf08, 0x4556, { 0x99, 0xc4, 0x0, 0x10, 0x9, 0xc9, 0x3a, 0x44 } }
 
 
 /**
