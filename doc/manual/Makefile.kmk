@@ -155,9 +155,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   USES += qt5
   INSTALLS += VBox-docs-usermanual-qhc
   INSTALLS += VBox-docs-usermanual-qch
+  QHELPGENERATOR_VERSION_MINOR = $(shell $(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$(PATH_SDK_QT5)/plugins -- $(PATH_TOOL_QT5_BIN)/qhelpgenerator -v 2>/dev/null | $(SED) -ne 's/.*(Qt [1-9][0-9]*\.\([1-9][0-9]*\)\.[1-9][0-9]*).*$$/\1/p')
+  QHELPGENERATOR = $(PATH_TOOL_QT5_BIN)/$(if-expr $(QHELPGENERATOR_VERSION_MINOR) >= 12,qhelpgenerator,qcollectiongenerator)
+ endif
+ ifdef VBOX_WITH_DOCS_QHELP_PACKING
   VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch
   VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc
- else  # Do not install qhelp.
+ else  # Do not install/pack qhelp.
   VBOX_PATH_BIN_QHELP =
  endif
 
@@ -935,9 +939,9 @@ ifdef VBOX_WITH_DOCS_QHELP
 		$$(out_dir)/qhelp/UserManual.qhp \
 		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
 		| $$$$(dir $$$$@)
-	$$(call MSG_L1,qhelpgenerator $$<,=> $$@)
+	$$(call MSG_L1,$$(notdir $$(QHELPGENERATOR)) $$<,=> $$@)
 	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(PATH_TOOL_QT5_BIN)/qhelpgenerator $$<
+	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(QHELPGENERATOR) $$<
 	$$(call MSG_L1,Fresh QCH is now at $$@)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_qhp_to_qch))
