@@ -2389,8 +2389,8 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL:
         {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterExclEx((PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
-                                                                    true /*fCallRing3*/);
+            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterExclEx(pVM, (PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
+                                                                  true /*fCallRing3*/);
             break;
         }
 
@@ -2399,7 +2399,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED:
         {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterSharedEx((PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
+            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterSharedEx(pVM, (PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
                                                                     true /*fCallRing3*/);
             break;
         }

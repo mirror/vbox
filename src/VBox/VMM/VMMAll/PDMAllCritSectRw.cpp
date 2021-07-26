@@ -73,17 +73,17 @@
  * @param   pThis       The read/write critical section.  This is only used in
  *                      R0 and RC.
  */
-DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PCPDMCRITSECTRW pThis)
+DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PVMCC pVM, PCPDMCRITSECTRW pThis)
 {
 #ifdef IN_RING3
-    NOREF(pThis);
+    RT_NOREF(pVM, pThis);
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
 #else
     AssertMsgReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, ("%RX32\n", pThis->s.Core.u32Magic),
                     NIL_RTNATIVETHREAD);
-    PVMCC           pVM         = pThis->s.CTX_SUFF(pVM);   AssertPtr(pVM);
-    PVMCPUCC        pVCpu       = VMMGetCpu(pVM);           AssertPtr(pVCpu);
-    RTNATIVETHREAD  hNativeSelf = pVCpu->hNativeThread;     Assert(hNativeSelf != NIL_RTNATIVETHREAD);
+    PVMCPUCC        pVCpu       = VMMGetCpu(pVM); AssertPtr(pVCpu);
+    RTNATIVETHREAD  hNativeSelf = pVCpu ? pVCpu->hNativeThread : NIL_RTNATIVETHREAD;
+    Assert(hNativeSelf != NIL_RTNATIVETHREAD);
 #endif
     return hNativeSelf;
 }
@@ -142,19 +142,22 @@ static void pdmR0CritSectRwYieldToRing3(PPDMCRITSECTRW pThis)
  * Worker that enters a read/write critical section with shard access.
  *
  * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The busy return code for ring-0 and ring-3.
  * @param   fTryOnly    Only try enter it, don't wait.
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
+static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
+                                    PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 {
     /*
      * Validate input.
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(pSrcPos);
@@ -162,6 +165,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
 #endif
 #ifdef IN_RING3
     NOREF(rcBusy);
+    NOREF(pVM);
 #endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -171,7 +175,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
         int            rc9;
         RTNATIVETHREAD hNativeWriter;
         ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
-        if (hNativeWriter != NIL_RTTHREAD && hNativeWriter == pdmCritSectRwGetNativeSelf(pThis))
+        if (hNativeWriter != NIL_RTTHREAD && hNativeWriter == pdmCritSectRwGetNativeSelf(pVM, pThis))
             rc9 = RTLockValidatorRecExclCheckOrder(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
         else
             rc9 = RTLockValidatorRecSharedCheckOrder(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
@@ -223,7 +227,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
         else
         {
             /* Is the writer perhaps doing a read recursion? */
-            RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pThis);
+            RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
             RTNATIVETHREAD hNativeWriter;
             ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
             if (hNativeSelf == hNativeWriter)
@@ -290,7 +294,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
                         {
                             for (;;)
                             {
-                                rc = SUPSemEventMultiWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
+                                rc = SUPSemEventMultiWaitNoResume(pVM->pSession,
                                                                   (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
                                                                   RT_INDEFINITE_WAIT);
                                 if (   rc != VERR_INTERRUPTED
@@ -348,8 +352,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
                             {
                                 if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
                                 {
-                                    int rc = SUPSemEventMultiReset(pThis->s.CTX_SUFF(pVM)->pSession,
-                                                                   (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                                    int rc = SUPSemEventMultiReset(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
                                     AssertRCReturn(rc, rc);
                                 }
                             }
@@ -378,8 +381,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
                 STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
                 if (rcBusy == VINF_SUCCESS)
                 {
-                    PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-                    PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                    PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
                     /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
                      *        back to ring-3. Goes for both kind of crit sects. */
                     return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
@@ -415,6 +417,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The status code to return when we're in RC or R0 and the
  *                      section is busy.   Pass VINF_SUCCESS to acquired the
@@ -423,13 +426,13 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
  *          PDMCritSectRwTryEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwEnterShared.
  */
-VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
+VMMDECL(int) PDMCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -444,6 +447,7 @@ VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The status code to return when we're in RC or R0 and the
  *                      section is busy.   Pass VINF_SUCCESS to acquired the
@@ -454,14 +458,14 @@ VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
  *          PDMCritSectRwTryEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwEnterSharedDebug.
  */
-VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectRwEnterSharedDebug(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     NOREF(uId); NOREF(pszFile); NOREF(iLine); NOREF(pszFunction);
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -476,18 +480,19 @@ VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTH
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @sa      PDMCritSectRwTryEnterSharedDebug, PDMCritSectRwEnterShared,
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwTryEnterShared.
  */
-VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
+VMMDECL(int) PDMCritSectRwTryEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -502,6 +507,7 @@ VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   uId         Where we're entering the section.
  * @param   SRC_POS     The source position.
@@ -509,14 +515,14 @@ VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwTryEnterSharedDebug.
  */
-VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PVMCC pVM, PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     NOREF(uId); NOREF(pszFile); NOREF(iLine); NOREF(pszFunction);
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterShared(pVM, pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -529,12 +535,13 @@ VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR 
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   fCallRing3  Whether this is a VMMRZCallRing3()request.
  */
-VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing3)
+VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PVM pVM, PPDMCRITSECTRW pThis, bool fCallRing3)
 {
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, false /*fTryAgain*/, NULL, fCallRing3);
+    return pdmCritSectRwEnterShared(pVM, pThis, VERR_SEM_BUSY, false /*fTryAgain*/, NULL, fCallRing3);
 }
 #endif
 
@@ -545,19 +552,21 @@ VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing
  * @returns VBox status code.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwEnterShared, PDMCritSectRwTryEnterShared,
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
  *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
  */
-static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
+static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 {
     /*
      * Validate handle.
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(fNoVal);
@@ -608,7 +617,7 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
                     u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
                     if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
                     {
-                        int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                        int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
                         AssertRC(rc);
                         break;
                     }
@@ -620,7 +629,6 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
 # endif
                 {
                     /* Queue the exit request (ring-3). */
-                    PVMCC       pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
                     PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
                     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
                     LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
@@ -642,7 +650,7 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
     }
     else
     {
-        RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pThis);
+        RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
         RTNATIVETHREAD hNativeWriter;
         ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
@@ -667,14 +675,15 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
  * @returns VBox status code.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @sa      PDMCritSectRwEnterShared, PDMCritSectRwTryEnterShared,
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
  *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
  */
-VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
+VMMDECL(int) PDMCritSectRwLeaveShared(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
-    return pdmCritSectRwLeaveSharedWorker(pThis, false /*fNoVal*/);
+    return pdmCritSectRwLeaveSharedWorker(pVM, pThis, false /*fNoVal*/);
 }
 
 
@@ -682,11 +691,12 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
 /**
  * PDMCritSectBothFF interface.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  */
-void pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis)
+void pdmCritSectRwLeaveSharedQueued(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
-    pdmCritSectRwLeaveSharedWorker(pThis, true /*fNoVal*/);
+    pdmCritSectRwLeaveSharedWorker(pVM, pThis, true /*fNoVal*/);
 }
 #endif
 
@@ -695,19 +705,22 @@ void pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis)
  * Worker that enters a read/write critical section with exclusive access.
  *
  * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The busy return code for ring-0 and ring-3.
  * @param   fTryOnly    Only try enter it, don't wait.
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
+static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
+                                  PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 {
     /*
      * Validate input.
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(pSrcPos);
@@ -715,6 +728,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
 #endif
 #ifdef IN_RING3
     NOREF(rcBusy);
+    NOREF(pVM);
 #endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -731,7 +745,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
     /*
      * Check if we're already the owner and just recursing.
      */
-    RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pThis);
+    RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
     RTNATIVETHREAD hNativeWriter;
     ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
     if (hNativeSelf == hNativeWriter)
@@ -851,7 +865,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
                 {
                     for (;;)
                     {
-                        rc = SUPSemEventWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
+                        rc = SUPSemEventWaitNoResume(pVM->pSession,
                                                      (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
                                                      RT_INDEFINITE_WAIT);
                         if (   rc != VERR_INTERRUPTED
@@ -921,8 +935,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
             if (rcBusy == VINF_SUCCESS)
             {
                 Assert(!fTryOnly);
-                PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-                PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
                 /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
                  *        back to ring-3. Goes for both kind of crit sects. */
                 return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
@@ -959,6 +972,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The status code to return when we're in RC or R0 and the
  *                      section is busy.   Pass VINF_SUCCESS to acquired the
@@ -968,13 +982,13 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
  *          PDMCritSectEnterDebug, PDMCritSectEnter,
  * RTCritSectRwEnterExcl.
  */
-VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
+VMMDECL(int) PDMCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -989,6 +1003,7 @@ VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   rcBusy      The status code to return when we're in RC or R0 and the
  *                      section is busy.   Pass VINF_SUCCESS to acquired the
@@ -1000,14 +1015,14 @@ VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
  *          PDMCritSectEnterDebug, PDMCritSectEnter,
  *          RTCritSectRwEnterExclDebug.
  */
-VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectRwEnterExclDebug(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     NOREF(uId); NOREF(pszFile); NOREF(iLine); NOREF(pszFunction);
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -1021,19 +1036,20 @@ VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCU
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @sa      PDMCritSectRwEnterExcl, PDMCritSectRwTryEnterExclDebug,
  *          PDMCritSectRwEnterExclDebug,
  *          PDMCritSectTryEnter, PDMCritSectTryEnterDebug,
  *          RTCritSectRwTryEnterExcl.
  */
-VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
+VMMDECL(int) PDMCritSectRwTryEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -1047,6 +1063,7 @@ VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   uId         Where we're entering the section.
  * @param   SRC_POS     The source position.
@@ -1055,14 +1072,14 @@ VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
  *          PDMCritSectTryEnterDebug, PDMCritSectTryEnter,
  *          RTCritSectRwTryEnterExclDebug.
  */
-VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PVMCC pVM, PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     NOREF(uId); NOREF(pszFile); NOREF(iLine); NOREF(pszFunction);
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -1075,12 +1092,13 @@ VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uI
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   fCallRing3  Whether this is a VMMRZCallRing3()request.
  */
-VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3)
+VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bool fCallRing3)
 {
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, false /*fTryAgain*/, NULL, fCallRing3 /*fNoVal*/);
+    return pdmCritSectRwEnterExcl(pVM, pThis, VERR_SEM_BUSY, false /*fTryAgain*/, NULL, fCallRing3 /*fNoVal*/);
 }
 #endif /* IN_RING3 */
 
@@ -1091,23 +1109,25 @@ VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3)
  * @returns VBox status code.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
  */
-static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
+static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 {
     /*
      * Validate handle.
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+    Assert(pThis->s.CTX_SUFF(pVM) == pVM);
 
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(fNoVal);
 #endif
 
-    RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pThis);
+    RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
     RTNATIVETHREAD hNativeWriter;
     ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
@@ -1160,7 +1180,7 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
                     {
                         if (c > 0)
                         {
-                            int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                            int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
                             AssertRC(rc);
                         }
                         break;
@@ -1175,7 +1195,7 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
                     {
                         Assert(!pThis->s.Core.fNeedReset);
                         ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
-                        int rc = SUPSemEventMultiSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                        int rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
                         AssertRC(rc);
                         break;
                     }
@@ -1196,8 +1216,7 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
              * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
              * so queue the exit request (ring-3).
              */
-            PVMCC       pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
-            PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+            PVMCPUCC    pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
             uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
             LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
             AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
@@ -1238,12 +1257,13 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
  * @returns VBox status code.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
  */
-VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
+VMMDECL(int) PDMCritSectRwLeaveExcl(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
-    return pdmCritSectRwLeaveExclWorker(pThis, false /*fNoVal*/);
+    return pdmCritSectRwLeaveExclWorker(pVM, pThis, false /*fNoVal*/);
 }
 
 
@@ -1251,11 +1271,12 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
 /**
  * PDMCritSectBothFF interface.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  */
-void pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis)
+void pdmCritSectRwLeaveExclQueued(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
-    pdmCritSectRwLeaveExclWorker(pThis, true /*fNoVal*/);
+    pdmCritSectRwLeaveExclWorker(pVM, pThis, true /*fNoVal*/);
 }
 #endif
 
@@ -1265,11 +1286,12 @@ void pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis)
  *
  * @retval  true if owner.
  * @retval  false if not owner.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @sa      PDMCritSectRwIsReadOwner, PDMCritSectIsOwner,
  *          RTCritSectRwIsWriteOwner.
  */
-VMMDECL(bool) PDMCritSectRwIsWriteOwner(PPDMCRITSECTRW pThis)
+VMMDECL(bool) PDMCritSectRwIsWriteOwner(PVMCC pVM, PPDMCRITSECTRW pThis)
 {
     /*
      * Validate handle.
@@ -1284,7 +1306,7 @@ VMMDECL(bool) PDMCritSectRwIsWriteOwner(PPDMCRITSECTRW pThis)
     ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
     if (hNativeWriter == NIL_RTNATIVETHREAD)
         return false;
-    return hNativeWriter == pdmCritSectRwGetNativeSelf(pThis);
+    return hNativeWriter == pdmCritSectRwGetNativeSelf(pVM, pThis);
 }
 
 
@@ -1302,12 +1324,13 @@ VMMDECL(bool) PDMCritSectRwIsWriteOwner(PPDMCRITSECTRW pThis)
  *          In short, only use this for assertions.
  *
  * @returns @c true if reader, @c false if not.
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       Pointer to the read/write critical section.
  * @param   fWannaHear  What you'd like to hear when lock validation is not
  *                      available.  (For avoiding asserting all over the place.)
  * @sa      PDMCritSectRwIsWriteOwner, RTCritSectRwIsReadOwner.
  */
-VMMDECL(bool) PDMCritSectRwIsReadOwner(PPDMCRITSECTRW pThis, bool fWannaHear)
+VMMDECL(bool) PDMCritSectRwIsReadOwner(PVMCC pVM, PPDMCRITSECTRW pThis, bool fWannaHear)
 {
     /*
      * Validate handle.
@@ -1329,7 +1352,7 @@ VMMDECL(bool) PDMCritSectRwIsReadOwner(PPDMCRITSECTRW pThis, bool fWannaHear)
         ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hWriter);
         if (hWriter == NIL_RTNATIVETHREAD)
             return false;
-        return hWriter == pdmCritSectRwGetNativeSelf(pThis);
+        return hWriter == pdmCritSectRwGetNativeSelf(pVM, pThis);
     }
 
     /*

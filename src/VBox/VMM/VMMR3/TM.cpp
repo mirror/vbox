@@ -1133,12 +1133,12 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[s_aExtra[i].idxQueue];
         if (s_aExtra[i].cExtra > pQueue->cTimersFree)
         {
-            PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
+            PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
             uint32_t cTimersAlloc = pQueue->cTimersAlloc + s_aExtra[i].cExtra - pQueue->cTimersFree;
             rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
                                 RT_MAKE_U64(cTimersAlloc, s_aExtra[i].idxQueue), NULL);
             AssertLogRelMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc cTimersAlloc=%u %s\n", rc, cTimersAlloc, pQueue->szName), rc);
-            PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+            PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
         }
     }
 
@@ -1616,7 +1616,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
      * Note! This means that it is not possible to allocate timers from a timer callback.
      */
     PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[enmClock];
-    int rc = PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
+    int rc = PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1629,8 +1629,8 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
         Assert(cTimersAlloc < _32K);
         rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
                             RT_MAKE_U64(cTimersAlloc, (uint64_t)(pQueue - &pVM->tm.s.aTimerQueues[0])), NULL);
-        AssertLogRelRCReturnStmt(rc, PDMCritSectRwLeaveExcl(&pQueue->AllocLock), rc);
-        AssertReturnStmt(pQueue->cTimersAlloc >= cTimersAlloc, PDMCritSectRwLeaveExcl(&pQueue->AllocLock), VERR_TM_IPE_3);
+        AssertLogRelRCReturnStmt(rc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), rc);
+        AssertReturnStmt(pQueue->cTimersAlloc >= cTimersAlloc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), VERR_TM_IPE_3);
     }
 
     /* Scan the array for free timers. */
@@ -1656,7 +1656,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     }
     AssertLogRelMsgReturnStmt(pTimer != NULL, ("cTimersFree=%u cTimersAlloc=%u enmClock=%s\n", pQueue->cTimersFree,
                                                pQueue->cTimersAlloc, pQueue->szName),
-                              PDMCritSectRwLeaveExcl(&pQueue->AllocLock), VERR_INTERNAL_ERROR_3);
+                              PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), VERR_INTERNAL_ERROR_3);
     pQueue->cTimersFree -= 1;
 
     /*
@@ -1685,7 +1685,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     tmTimerQueuesSanityChecks(pVM, "tmR3TimerCreate");
 #endif
 
-    PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+    PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1884,7 +1884,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
      * The rest of the game happens behind the lock, just
      * like create does. All the work is done here.
      */
-    PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
+    PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
     PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
 
     for (int cRetries = 1000;; cRetries--)
@@ -1924,14 +1924,14 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                 AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
                 PDMCritSectLeave(pVM, &pQueue->TimerLock);
-                PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+                PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
 
                 AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                                 VERR_TM_UNSTABLE_STATE);
                 if (!RTThreadYield())
                     RTThreadSleep(1);
 
-                PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
+                PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
                 PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
                 continue;
 
@@ -1941,13 +1941,13 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
             case TMTIMERSTATE_FREE:
             case TMTIMERSTATE_DESTROY:
                 PDMCritSectLeave(pVM, &pQueue->TimerLock);
-                PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+                PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
                 AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
 
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 PDMCritSectLeave(pVM, &pQueue->TimerLock);
-                PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+                PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
                 return VERR_TM_UNKNOWN_STATE;
         }
 
@@ -1961,12 +1961,12 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
             break;
         AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
         PDMCritSectLeave(pVM, &pQueue->TimerLock);
-        PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+        PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
 
         AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                         VERR_TM_UNSTABLE_STATE);
 
-        PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
         PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
     }
 
@@ -2025,7 +2025,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerDestroy");
 #endif
     PDMCritSectLeave(pVM, &pQueue->TimerLock);
-    PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
+    PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
     return VINF_SUCCESS;
 }
 
@@ -2063,7 +2063,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
-        PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
         uint32_t idxTimer = pQueue->cTimersAlloc;
         while (idxTimer-- > 0)
         {
@@ -2072,15 +2072,15 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
                 && pTimer->u.Dev.pDevIns == pDevIns
                 && pTimer->enmState < TMTIMERSTATE_DESTROY)
             {
-                PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+                PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
 
                 int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
-                PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+                PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
             }
         }
-        PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+        PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
     }
 
     LogFlow(("TMR3TimerDestroyDevice: returns VINF_SUCCESS\n"));
@@ -2104,7 +2104,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
-        PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
         uint32_t idxTimer = pQueue->cTimersAlloc;
         while (idxTimer-- > 0)
         {
@@ -2113,15 +2113,15 @@ VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
                 && pTimer->u.Usb.pUsbIns == pUsbIns
                 && pTimer->enmState < TMTIMERSTATE_DESTROY)
             {
-                PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+                PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
 
                 int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
-                PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+                PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
             }
         }
-        PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+        PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
     }
 
     LogFlow(("TMR3TimerDestroyUsb: returns VINF_SUCCESS\n"));
@@ -2145,7 +2145,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
-        PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
         uint32_t idxTimer = pQueue->cTimersAlloc;
         while (idxTimer-- > 0)
         {
@@ -2154,15 +2154,15 @@ VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
                 && pTimer->u.Drv.pDrvIns == pDrvIns
                 && pTimer->enmState < TMTIMERSTATE_DESTROY)
             {
-                PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+                PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
 
                 int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
-                PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+                PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
             }
         }
-        PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+        PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
     }
 
     LogFlow(("TMR3TimerDestroyDriver: returns VINF_SUCCESS\n"));
@@ -3882,7 +3882,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     {
         PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
         const char * const  pszClock = tmR3Get5CharClockName(pQueue->enmClock);
-        PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
         for (uint32_t idxTimer = 0; idxTimer < pQueue->cTimersAlloc; idxTimer++)
         {
             PTMTIMER     pTimer   = &pQueue->paTimers[idxTimer];
@@ -3901,7 +3901,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                 tmTimerState(enmState),
                                 pTimer->szName);
         }
-        PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+        PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
     }
 }
 
@@ -3932,7 +3932,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
     {
         PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
         const char * const  pszClock = tmR3Get5CharClockName(pQueue->enmClock);
-        PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
+        PDMCritSectRwEnterShared(pVM, &pQueue->AllocLock, VERR_IGNORED);
         PDMCritSectEnter(pVM, &pQueue->TimerLock, VERR_IGNORED);
 
         for (PTMTIMERR3 pTimer = tmTimerQueueGetHead(pQueue, pQueue);
@@ -3954,7 +3954,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
         }
 
         PDMCritSectLeave(pVM, &pQueue->TimerLock);
-        PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+        PDMCritSectRwLeaveShared(pVM, &pQueue->AllocLock);
     }
 }
 

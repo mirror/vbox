@@ -55,24 +55,24 @@ typedef union PDMCRITSECTRW
 
 VMMR3DECL(int)      PDMR3CritSectRwInit(PVM pVM, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
                                         const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(6, 7);
-VMMR3DECL(int)      PDMR3CritSectRwDelete(PPDMCRITSECTRW pCritSect);
+VMMR3DECL(int)      PDMR3CritSectRwDelete(PVM pVM, PPDMCRITSECTRW pCritSect);
 VMMR3DECL(const char *) PDMR3CritSectRwName(PCPDMCRITSECTRW pCritSect);
-VMMR3DECL(int)      PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing3);
-VMMR3DECL(int)      PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3);
+VMMR3DECL(int)      PDMR3CritSectRwEnterSharedEx(PVM pVM, PPDMCRITSECTRW pThis, bool fCallRing3);
+VMMR3DECL(int)      PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bool fCallRing3);
 
-VMMDECL(int)        PDMCritSectRwEnterShared(PPDMCRITSECTRW pCritSect, int rcBusy);
-VMMDECL(int)        PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pCritSect);
+VMMDECL(int)        PDMCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy);
+VMMDECL(int)        PDMCritSectRwEnterSharedDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectRwTryEnterShared(PVMCC pVM, PPDMCRITSECTRW pCritSect);
 VMMDECL(int)        PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectRwLeaveShared(PPDMCRITSECTRW pCritSect);
-VMMDECL(int)        PDMCritSectRwEnterExcl(PPDMCRITSECTRW pCritSect, int rcBusy);
-VMMDECL(int)        PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pCritSect);
-VMMDECL(int)        PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pCritSect);
+VMMDECL(int)        PDMCritSectRwLeaveShared(PVMCC pVM, PPDMCRITSECTRW pCritSect);
+VMMDECL(int)        PDMCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy);
+VMMDECL(int)        PDMCritSectRwEnterExclDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectRwTryEnterExcl(PVMCC pVM, PPDMCRITSECTRW pCritSect);
+VMMDECL(int)        PDMCritSectRwTryEnterExclDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectRwLeaveExcl(PVMCC pVM, PPDMCRITSECTRW pCritSect);
 
-VMMDECL(bool)       PDMCritSectRwIsWriteOwner(PPDMCRITSECTRW pCritSect);
-VMMDECL(bool)       PDMCritSectRwIsReadOwner(PPDMCRITSECTRW pCritSect, bool fWannaHear);
+VMMDECL(bool)       PDMCritSectRwIsWriteOwner(PVMCC pVM, PPDMCRITSECTRW pCritSect);
+VMMDECL(bool)       PDMCritSectRwIsReadOwner(PVMCC pVM, PPDMCRITSECTRW pCritSect, bool fWannaHear);
 VMMDECL(uint32_t)   PDMCritSectRwGetWriteRecursion(PPDMCRITSECTRW pCritSect);
 VMMDECL(uint32_t)   PDMCritSectRwGetWriterReadRecursion(PPDMCRITSECTRW pCritSect);
 VMMDECL(uint32_t)   PDMCritSectRwGetReadCount(PPDMCRITSECTRW pCritSect);
@@ -81,15 +81,15 @@ VMMDECL(bool)       PDMCritSectRwIsInitialized(PCPDMCRITSECTRW pCritSect);
 /* Lock strict build: Remap the three enter calls to the debug versions. */
 #ifdef VBOX_STRICT
 # ifdef IPRT_INCLUDED_asm_h
-#  define PDMCritSectRwEnterExcl(pCritSect, rcBusy)     PDMCritSectRwEnterExclDebug(pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define PDMCritSectRwTryEnterExcl(pCritSect)          PDMCritSectRwTryEnterExclDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define PDMCritSectRwEnterShared(pCritSect, rcBusy)   PDMCritSectRwEnterSharedDebug(pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define PDMCritSectRwTryEnterShared(pCritSect)        PDMCritSectRwTryEnterSharedDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectRwEnterExcl(a_pVM, pCritSect, rcBusy)      PDMCritSectRwEnterExclDebug((a_pVM), pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectRwTryEnterExcl(a_pVM, pCritSect)           PDMCritSectRwTryEnterExclDebug((a_pVM), pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectRwEnterShared(a_pVM, pCritSect, rcBusy)    PDMCritSectRwEnterSharedDebug((a_pVM), pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMCritSectRwTryEnterShared(a_pVM, pCritSect)         PDMCritSectRwTryEnterSharedDebug((a_pVM), pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 # else
-#  define PDMCritSectRwEnterExcl(pCritSect, rcBusy)     PDMCritSectRwEnterExclDebug(pCritSect, rcBusy, 0, RT_SRC_POS)
-#  define PDMCritSectRwTryEnterExcl(pCritSect)          PDMCritSectRwTryEnterExclDebug(pCritSect, 0, RT_SRC_POS)
-#  define PDMCritSectRwEnterShared(pCritSect, rcBusy)   PDMCritSectRwEnterSharedDebug(pCritSect, rcBusy, 0, RT_SRC_POS)
-#  define PDMCritSectRwTryEnterShared(pCritSect)        PDMCritSectRwTryEnterSharedDebug(pCritSect, 0, RT_SRC_POS)
+#  define PDMCritSectRwEnterExcl(a_pVM, pCritSect, rcBusy)      PDMCritSectRwEnterExclDebug((a_pVM), pCritSect, rcBusy, 0, RT_SRC_POS)
+#  define PDMCritSectRwTryEnterExcl(a_pVM, pCritSect)           PDMCritSectRwTryEnterExclDebug((a_pVM), pCritSect, 0, RT_SRC_POS)
+#  define PDMCritSectRwEnterShared(a_pVM, pCritSect, rcBusy)    PDMCritSectRwEnterSharedDebug((a_pVM), pCritSect, rcBusy, 0, RT_SRC_POS)
+#  define PDMCritSectRwTryEnterShared(a_pVM, pCritSect)         PDMCritSectRwTryEnterSharedDebug((a_pVM), pCritSect, 0, RT_SRC_POS)
 # endif
 #endif
 

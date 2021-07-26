@@ -57,7 +57,7 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
                                                                    pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i]);
 # endif
 
-        pdmCritSectRwLeaveSharedQueued(pCritSectRw);
+        pdmCritSectRwLeaveSharedQueued(pVM, pCritSectRw);
         LogFlow(("PDMR3CritSectFF: %p (R/W)\n", pCritSectRw));
     }
 
@@ -73,7 +73,7 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
                                                                    pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i]);
 # endif
 
-        pdmCritSectRwLeaveExclQueued(pCritSectRw);
+        pdmCritSectRwLeaveExclQueued(pVM, pCritSectRw);
         LogFlow(("PDMR3CritSectFF: %p (R/W)\n", pCritSectRw));
     }
 

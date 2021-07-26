@@ -769,9 +769,10 @@ VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
  * Deletes the read/write critical section.
  *
  * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM read/write critical section to destroy.
  */
-VMMR3DECL(int) PDMR3CritSectRwDelete(PPDMCRITSECTRW pCritSect)
+VMMR3DECL(int) PDMR3CritSectRwDelete(PVM pVM, PPDMCRITSECTRW pCritSect)
 {
     if (!PDMCritSectRwIsInitialized(pCritSect))
         return VINF_SUCCESS;
@@ -779,7 +780,7 @@ VMMR3DECL(int) PDMR3CritSectRwDelete(PPDMCRITSECTRW pCritSect)
     /*
      * Find and unlink it.
      */
-    PVM                 pVM   = pCritSect->s.pVMR3;
+    Assert(pCritSect->s.pVMR3 == pVM);
     PUVM                pUVM  = pVM->pUVM;
     AssertReleaseReturn(pVM, VERR_PDM_CRITSECT_IPE);
     PPDMCRITSECTRWINT   pPrev = NULL;
@@ -1004,7 +1005,7 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
          pCur = pCur->pNext)
     {
         if (   pCur->Core.hNativeWriter == hNativeThread
-            || PDMCritSectRwIsReadOwner((PPDMCRITSECTRW)pCur, false /*fWannaHear*/) )
+            || PDMCritSectRwIsReadOwner(pVM, (PPDMCRITSECTRW)pCur, false /*fWannaHear*/) )
         {
             cCritSects++;
             pdmR3CritSectAppendNameToList(pCur->pszName, &pszNames, &cchLeft, cCritSects == 1);
