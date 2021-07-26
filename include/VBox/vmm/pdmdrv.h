@@ -646,11 +646,24 @@ typedef struct PDMDRVHLPRC
      */
     DECLRCCALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
+    /** @name Exported PDM Critical Section Functions
+     * @{ */
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    /** @} */
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPRC;
 /** Current PDMDRVHLPRC version number. */
-#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 3, 0)
+#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 4, 0)
 
 
 /**
@@ -737,11 +750,25 @@ typedef struct PDMDRVHLPR0
      */
     DECLR0CALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
+    /** @name Exported PDM Critical Section Functions
+     * @{ */
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectScheduleExitEvent,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal));
+    /** @} */
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR0;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 3, 0)
+#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 4, 0)
 
 
 #ifdef IN_RING3
@@ -1263,6 +1290,22 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszName));
 
+    /** @name Exported PDM Critical Section Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectYield,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectScheduleExitEvent,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectDelete,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect));
+    /** @} */
+
     /**
      * Call the ring-0 request handler routine of the driver.
      *
@@ -1357,7 +1400,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 2)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 6, 0)
 
 #endif /* IN_RING3 */
 
@@ -1834,6 +1877,122 @@ DECLINLINE(int) PDMDrvHlpNetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilte
 DECLINLINE(int) PDMDrvHlpCritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszName)
 {
     return pDrvIns->pHlpR3->pfnCritSectInit(pDrvIns, pCritSect, RT_SRC_POS_ARGS, pszName);
+}
+
+#endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMCritSectEnter
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int) PDMDrvHlpCritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectEnter(pDrvIns, pCritSect, rcBusy);
+}
+
+/**
+ * @copydoc PDMCritSectEnterDebug
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int) PDMDrvHlpCritSectEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectEnterDebug(pDrvIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @copydoc PDMCritSectTryEnter
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int)      PDMDrvHlpCritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectTryEnter(pDrvIns, pCritSect);
+}
+
+/**
+ * @copydoc PDMCritSectTryEnterDebug
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int)      PDMDrvHlpCritSectTryEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectTryEnterDebug(pDrvIns, pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @copydoc PDMCritSectLeave
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int)      PDMDrvHlpCritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectLeave(pDrvIns, pCritSect);
+}
+
+/**
+ * @copydoc PDMCritSectIsOwner
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(bool)     PDMDrvHlpCritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectIsOwner(pDrvIns, pCritSect);
+}
+
+/**
+ * @copydoc PDMCritSectIsInitialized
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(bool)     PDMDrvHlpCritSectIsInitialized(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectIsInitialized(pDrvIns, pCritSect);
+}
+
+/**
+ * @copydoc PDMCritSectHasWaiters
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(bool)     PDMDrvHlpCritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectHasWaiters(pDrvIns, pCritSect);
+}
+
+/**
+ * @copydoc PDMCritSectGetRecursion
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(uint32_t) PDMDrvHlpCritSectGetRecursion(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectGetRecursion(pDrvIns, pCritSect);
+}
+
+#if defined(IN_RING3) || defined(IN_RING0)
+/**
+ * @copydoc PDMHCCritSectScheduleExitEvent
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int) PDMDrvHlpCritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnCritSectScheduleExitEvent(pDrvIns, pCritSect, hEventToSignal);
+}
+#endif
+
+/* Strict build: Remap the two enter calls to the debug versions. */
+#ifdef VBOX_STRICT
+# ifdef IPRT_INCLUDED_asm_h
+#  define PDMDrvHlpCritSectEnter(pDrvIns, pCritSect, rcBusy) PDMDrvHlpCritSectEnterDebug((pDrvIns), (pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMDrvHlpCritSectTryEnter(pDrvIns, pCritSect)      PDMDrvHlpCritSectTryEnterDebug((pDrvIns), (pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+# else
+#  define PDMDrvHlpCritSectEnter(pDrvIns, pCritSect, rcBusy) PDMDrvHlpCritSectEnterDebug((pDrvIns), (pCritSect), (rcBusy), 0, RT_SRC_POS)
+#  define PDMDrvHlpCritSectTryEnter(pDrvIns, pCritSect)      PDMDrvHlpCritSectTryEnterDebug((pDrvIns), (pCritSect), 0, RT_SRC_POS)
+# endif
+#endif
+
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
+
+/**
+ * @copydoc PDMR3CritSectDelete
+ * @param   pDrvIns  The device instance.
+ */
+DECLINLINE(int) PDMDrvHlpCritSectDelete(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    return pDrvIns->pHlpR3->pfnCritSectDelete(pDrvIns, pCritSect);
 }
 
 /**

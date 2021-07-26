@@ -289,6 +289,18 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
 
 #else
 # ifdef IN_RING0
+    /*
+     * In ring-0 context we have to take the special VT-x/AMD-V HM context into
+     * account when waiting on contended locks.
+     *
+     * While we usually (it can be VINF_SUCCESS) have to option via the rcBusy
+     * parameter of going to back to ring-3 and to re-start the work there, it's
+     * almost always more efficient to try wait for the lock here.  The rcBusy
+     * will be used if we encounter an VERR_INTERRUPTED situation though.
+     *
+     * We must never block if VMMRZCallRing3Disable is active.
+     */
+
     /** @todo If preemption is disabled it means we're in VT-x/AMD-V context
      *        and would be better off switching out of that while waiting for
      *        the lock.  Several of the locks jumps back to ring-3 just to
@@ -332,7 +344,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
         && ASMIntAreEnabled())
         return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 #  endif
-#endif /* IN_RING0 */
+# endif /* IN_RING0 */
 
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
 

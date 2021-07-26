@@ -1782,6 +1782,116 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSE
     return rc;
 }
 
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectYield} */
+static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectYield(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMR3CritSectYield(pDrvIns->Internal.s.pVMR3, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectEnter} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectEnter(pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectEnterDebug} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy,
+                                                             RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectTryEnter} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectTryEnter(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectTryEnterDebug} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                                                RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectLeave} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectLeave(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectIsOwner} */
+static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectIsOwner(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectIsInitialized} */
+static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectIsInitialized(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectIsInitialized(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectHasWaiters} */
+static DECLCALLBACK(bool)     pdmR3DrvHlp_CritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectHasWaiters(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectGetRecursion} */
+static DECLCALLBACK(uint32_t) pdmR3DrvHlp_CritSectGetRecursion(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMCritSectGetRecursion(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectScheduleExitEvent} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                                                    SUPSEMEVENT hEventToSignal)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMHCCritSectScheduleExitEvent(pCritSect, hEventToSignal);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnCritSectDelete} */
+static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectDelete(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    RT_NOREF(pDrvIns);
+    return PDMR3CritSectDelete(pCritSect);
+}
+
 
 /** @interface_method_impl{PDMDRVHLPR3,pfnCallR0} */
 static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
@@ -1940,6 +2050,18 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_LdrGetRCInterfaceSymbols,
     pdmR3DrvHlp_LdrGetR0InterfaceSymbols,
     pdmR3DrvHlp_CritSectInit,
+    pdmR3DrvHlp_CritSectYield,
+    pdmR3DrvHlp_CritSectEnter,
+    pdmR3DrvHlp_CritSectEnterDebug,
+    pdmR3DrvHlp_CritSectTryEnter,
+    pdmR3DrvHlp_CritSectTryEnterDebug,
+    pdmR3DrvHlp_CritSectLeave,
+    pdmR3DrvHlp_CritSectIsOwner,
+    pdmR3DrvHlp_CritSectIsInitialized,
+    pdmR3DrvHlp_CritSectHasWaiters,
+    pdmR3DrvHlp_CritSectGetRecursion,
+    pdmR3DrvHlp_CritSectScheduleExitEvent,
+    pdmR3DrvHlp_CritSectDelete,
     pdmR3DrvHlp_CallR0,
     pdmR3DrvHlp_BlkCacheRetain,
     pdmR3DrvHlp_VMGetSuspendReason,

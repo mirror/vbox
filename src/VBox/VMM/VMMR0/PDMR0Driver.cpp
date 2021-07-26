@@ -112,6 +112,102 @@ static DECLCALLBACK(bool) pdmR0DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
 }
 
 
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectEnter} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectEnter(pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectEnterDebug} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy,
+                                                             RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectTryEnter} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectTryEnter(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectTryEnterDebug} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectTryEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                                                RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectLeave} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectLeave(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectIsOwner} */
+static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectIsOwner(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectIsInitialized} */
+static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectIsInitialized(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectIsInitialized(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectHasWaiters} */
+static DECLCALLBACK(bool)     pdmR0DrvHlp_CritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectHasWaiters(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectGetRecursion} */
+static DECLCALLBACK(uint32_t) pdmR0DrvHlp_CritSectGetRecursion(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMCritSectGetRecursion(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfn} */
+static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                                                    SUPSEMEVENT hEventToSignal)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    NOREF(pDrvIns);
+    return PDMHCCritSectScheduleExitEvent(pCritSect, hEventToSignal);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfn} */
+
+
 /**
  * The Ring-0 Context Driver Helper Callbacks.
  */
@@ -124,6 +220,16 @@ extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
     pdmR0DrvHlp_VMSetRuntimeErrorV,
     pdmR0DrvHlp_AssertEMT,
     pdmR0DrvHlp_AssertOther,
+    pdmR0DrvHlp_CritSectEnter,
+    pdmR0DrvHlp_CritSectEnterDebug,
+    pdmR0DrvHlp_CritSectTryEnter,
+    pdmR0DrvHlp_CritSectTryEnterDebug,
+    pdmR0DrvHlp_CritSectLeave,
+    pdmR0DrvHlp_CritSectIsOwner,
+    pdmR0DrvHlp_CritSectIsInitialized,
+    pdmR0DrvHlp_CritSectHasWaiters,
+    pdmR0DrvHlp_CritSectGetRecursion,
+    pdmR0DrvHlp_CritSectScheduleExitEvent,
     PDM_DRVHLPRC_VERSION
 };
 
