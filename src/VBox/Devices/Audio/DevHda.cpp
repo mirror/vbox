@@ -1604,7 +1604,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         LogFunc(("[SD%RU8] Reset enter\n", uSD));
 
         STAM_REL_PROFILE_START_NS(&pStreamR3->State.StatReset, a);
-        Assert(PDMCritSectIsOwner(&pThis->CritSect));
+        Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
         PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
         if (pMixSink)
             AudioMixerSinkLock(pMixSink);
@@ -1634,7 +1634,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             Assert(!fReset && !fInReset); /* (code change paranoia, currently impossible ) */
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
-            Assert(PDMCritSectIsOwner(&pThis->CritSect));
+            Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
             /** @todo bird: It's not clear to me when the pMixSink is actually
              *        assigned to the stream, so being paranoid till I find out... */
             PAUDMIXSINK const pMixSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
@@ -2775,7 +2775,8 @@ DECLHIDDEN(int) hdaR3MixerRemoveStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmM
 DECLHIDDEN(int) hdaR3MixerControl(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
     PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
-    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PHDASTATE);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     LogFunc(("enmMixerCtl=%s, uSD=%RU8, uChannel=%RU8\n", PDMAudioMixerCtlGetName(enmMixerCtl), uSD, uChannel));
 
     if (uSD == 0) /* Stream number 0 is reserved. */
@@ -2825,7 +2826,7 @@ DECLHIDDEN(int) hdaR3MixerControl(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerC
         {
             LogFunc(("Sink '%s' was assigned to stream #%RU8 (channel %RU8) before\n",
                      pSink->pMixSink->pszName, pOldStreamShared->u8SD, pOldStreamShared->u8Channel));
-            Assert(PDMCritSectIsOwner(&pThis->CritSect));
+            Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
             /* Only disable the stream if the stream descriptor # has changed. */
             if (pOldStreamShared->u8SD != uSD)
@@ -2853,7 +2854,7 @@ DECLHIDDEN(int) hdaR3MixerControl(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerC
 
             PHDASTREAMR3 pStreamR3     = &pThisCC->aStreams[uSD];
             PHDASTREAM   pStreamShared = &pThis->aStreams[uSD];
-            Assert(PDMCritSectIsOwner(&pThis->CritSect));
+            Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
             pSink->pStreamR3     = pStreamR3;
             pSink->pStreamShared = pStreamShared;
@@ -2937,7 +2938,7 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
 static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC)
 {
     LogFlowFuncEnter();
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
     /*
      * Make sure all streams have stopped as these have both timers and
@@ -4750,8 +4751,8 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
 
-    if (PDMCritSectIsInitialized(&pThis->CritSect))
-        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThisCC->lstDrv))
@@ -4774,10 +4775,10 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
         pThisCC->pMixer = NULL;
     }
 
-    if (PDMCritSectIsInitialized(&pThis->CritSect))
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
     {
-        PDMCritSectLeave(&pThis->CritSect);
-        PDMR3CritSectDelete(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSect);
     }
     return VINF_SUCCESS;
 }
