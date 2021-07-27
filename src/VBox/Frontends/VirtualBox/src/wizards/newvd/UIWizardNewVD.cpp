@@ -62,6 +62,7 @@ void UIWizardNewVD::populatePages()
         {
             addPage(new UIWizardNewVDPageFileType);
             addPage(new UIWizardNewVDPageVariant);
+            addPage(new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
 

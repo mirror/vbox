@@ -27,6 +27,7 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "QIToolButton.h"
+#include "QIRichTextLabel.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIFilePathSelector.h"
@@ -42,14 +43,26 @@
 #include "iprt/assert.h"
 #include "CSystemProperties.h"
 
+
+/*********************************************************************************************************************************
+*   UIDiskEditorGroupBox implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIDiskEditorGroupBox::UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_fExpertMode(fExpertMode)
+{
+    if (!m_fExpertMode)
+        setFlat(true);
+}
+
 /*********************************************************************************************************************************
 *   UIDiskFormatsGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
 UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : UIDiskEditorGroupBox(fExpertMode, pParent)
     , m_pFormatButtonGroup(0)
-    , m_fExpertMode(fExpertMode)
 {
     prepare();
 }
@@ -77,8 +90,6 @@ const CMediumFormat &UIDiskFormatsGroupBox::VDIMediumFormat() const
 void UIDiskFormatsGroupBox::prepare()
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
-    if (!m_fExpertMode)
-        setFlat(true);
 
     m_pFormatButtonGroup = new QButtonGroup;
     AssertReturnVoid(m_pFormatButtonGroup);
@@ -211,18 +222,15 @@ QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumForma
 
 
 UIDiskVariantGroupBox::UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : UIDiskEditorGroupBox(fExpertMode, pParent)
     , m_pFixedCheckBox(0)
     , m_pSplitBox(0)
-    , m_fExpertMode(fExpertMode)
 {
     prepare();
 }
 
 void UIDiskVariantGroupBox::prepare()
 {
-    if (!m_fExpertMode)
-        setFlat(true);
     QVBoxLayout *pVariantLayout = new QVBoxLayout(this);
     AssertReturnVoid(pVariantLayout);
     m_pFixedCheckBox = new QCheckBox;
@@ -352,24 +360,24 @@ void UIDiskVariantGroupBox::sltVariantChanged()
 *   UIMediumSizeAndPathGroupBox implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
-    , m_pLocationLabel(0)
+UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
+    : UIDiskEditorGroupBox(fExpertMode, pParent)
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
-    , m_pMediumSizeEditorLabel(0)
     , m_pMediumSizeEditor(0)
+    , m_pLocationLabel(0)
+    , m_pSizeLabel(0)
 {
     prepare();
 }
 
 void UIMediumSizeAndPathGroupBox::prepare()
 {
-    QGridLayout *pDiskContainerLayout = new QGridLayout(this);
-
-    /* Disk location widgets: */
-    m_pLocationLabel = new QLabel;
-    m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    /* Location widgets: */
+    if (!m_fExpertMode)
+        m_pLocationLabel = new QIRichTextLabel;
+    QHBoxLayout *pLocationLayout = new QHBoxLayout;
     m_pLocationEditor = new QILineEdit;
     m_pLocationOpenButton = new QIToolButton;
     if (m_pLocationOpenButton)
@@ -377,21 +385,22 @@ void UIMediumSizeAndPathGroupBox::prepare()
         m_pLocationOpenButton->setAutoRaise(true);
         m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
     }
-    m_pLocationLabel->setBuddy(m_pLocationEditor);
+    pLocationLayout->addWidget(m_pLocationEditor);
+    pLocationLayout->addWidget(m_pLocationOpenButton);
 
-    /* Disk file size widgets: */
-    m_pMediumSizeEditorLabel = new QLabel;
-    m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
-    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    /* Size widgets: */
+    if (!m_fExpertMode)
+        m_pSizeLabel = new QIRichTextLabel;
     m_pMediumSizeEditor = new UIMediumSizeEditor;
-    m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
 
-    pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
-    pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
-    pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
+    /* Add widgets to main layout: */
+    if (m_pLocationLabel)
+        pMainLayout->addWidget(m_pLocationLabel);
+    pMainLayout->addLayout(pLocationLayout);
 
-    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
-    pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
+    if (m_pSizeLabel)
+        pMainLayout->addWidget(m_pSizeLabel);
+    pMainLayout->addWidget(m_pMediumSizeEditor);
 
     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
             this, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged);
@@ -406,9 +415,18 @@ void UIMediumSizeAndPathGroupBox::prepare()
 }
 void UIMediumSizeAndPathGroupBox::retranslateUi()
 {
-    setTitle(tr("Hard Disk File Location and Size"));
+    if (m_fExpertMode)
+        setTitle(tr("Hard Disk File Location and Size"));
     if (m_pLocationOpenButton)
         m_pLocationOpenButton->setToolTip(tr("Choose a location for new virtual hard disk file..."));
+
+    if (!m_fExpertMode && m_pLocationLabel)
+        m_pLocationLabel->setText(tr("Please type the name of the new virtual hard disk file into the box below or "
+                                                    "click on the folder icon to select a different folder to create the file in."));
+    if (!m_fExpertMode && m_pSizeLabel)
+        m_pSizeLabel->setText(tr("Select the size of the virtual hard disk in megabytes. "
+                                                "This size is the limit on the amount of file data "
+                                                "that a virtual machine will be able to store on the hard disk."));
 }
 
 QString UIMediumSizeAndPathGroupBox::mediumPath() const

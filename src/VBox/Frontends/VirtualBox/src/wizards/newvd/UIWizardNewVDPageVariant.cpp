@@ -232,5 +232,5 @@ void UIWizardNewVDPageVariant::initializePage()
 bool UIWizardNewVDPageVariant::isComplete() const
 {
     //return mediumVariant() != (qulonglong)KMediumVariant_Max;
-    return false;
+    return true;
 }

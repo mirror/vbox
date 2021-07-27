@@ -299,6 +299,7 @@ void UIWizardNewVDPageSizeLocation::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
+    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false, 0);
 //     {
 //         m_pLocationLabel = new QIRichTextLabel(this);
 //         QHBoxLayout *pLocationLayout = new QHBoxLayout;
@@ -318,8 +319,8 @@ void UIWizardNewVDPageSizeLocation::prepare()
 //         pMainLayout->addWidget(m_pLocationLabel);
 //         pMainLayout->addLayout(pLocationLayout);
 //         pMainLayout->addWidget(m_pSizeLabel);
-//         pMainLayout->addWidget(m_pMediumSizeEditor);
-//         pMainLayout->addStretch();
+    pMainLayout->addWidget(m_pMediumSizePathGroup);
+    pMainLayout->addStretch();
 //     }
     retranslateUi();
 }
@@ -333,13 +334,6 @@ void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 void UIWizardNewVDPageSizeLocation::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("File location and size"));
-    // if (m_pLocationLabel)
-    //     m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
-    //                                                 "click on the folder icon to select a different folder to create the file in."));
-    // if (m_pSizeLabel)
-    //     m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
-    //                                             "This size is the limit on the amount of file data "
-    //                                             "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVDPageSizeLocation::initializePage()

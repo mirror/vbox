@@ -36,6 +36,7 @@ class QCheckBox;
 class QGridLayout;
 class QLabel;
 class QVBoxLayout;
+class QIRichTextLabel;
 class QILineEdit;
 class QIToolButton;
 class UIFilePathSelector;
@@ -48,7 +49,20 @@ class UIMediumSizeEditor;
 #include "COMEnums.h"
 #include "CMediumFormat.h"
 
-class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIDiskEditorGroupBox : public QIWithRetranslateUI<QGroupBox>
+{
+    Q_OBJECT;
+
+public:
+
+    UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent = 0);
+
+protected:
+
+    bool m_fExpertMode;
+};
+
+class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public UIDiskEditorGroupBox
 {
     Q_OBJECT;
 
@@ -77,10 +91,9 @@ private:
     QStringList           m_formatNames;
     QStringList m_formatExtensions;
     QButtonGroup *m_pFormatButtonGroup;
-    bool m_fExpertMode;
 };
 
-class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public UIDiskEditorGroupBox
 {
     Q_OBJECT;
 
@@ -108,11 +121,10 @@ private:
 
     QCheckBox *m_pFixedCheckBox;
     QCheckBox *m_pSplitBox;
-    bool m_fExpertMode;
 };
 
 
-class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public UIDiskEditorGroupBox
 {
     Q_OBJECT;
 
@@ -124,14 +136,12 @@ signals:
 
 public:
 
-    UIMediumSizeAndPathGroupBox(QWidget *pParent = 0);
-
+    UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent = 0);
     QString mediumPath() const;
     void setMediumPath(const QString &strMediumPath);
     void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uSize);
-
 
 private:
 
@@ -140,12 +150,11 @@ private:
     static QString stripFormatExtension(const QString &strFileName,
                                         const QStringList &formatExtensions);
 
-
-    QLabel *m_pLocationLabel;
     QILineEdit *m_pLocationEditor;
     QIToolButton *m_pLocationOpenButton;
-    QLabel *m_pMediumSizeEditorLabel;
     UIMediumSizeEditor *m_pMediumSizeEditor;
+    QIRichTextLabel *m_pLocationLabel;
+    QIRichTextLabel *m_pSizeLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardDiskEditors_h */
