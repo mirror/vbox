@@ -1144,7 +1144,7 @@ typedef enum VUSBSTATUS
     VUSBSTATUS_DNR,
     /** CRC error. */
     VUSBSTATUS_CRC,
-    /** Data overrun error. */
+    /** Data underrun error. */
     VUSBSTATUS_DATA_UNDERRUN,
     /** Data overrun error. */
     VUSBSTATUS_DATA_OVERRUN,
