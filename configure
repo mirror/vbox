@@ -566,7 +566,7 @@ check_open_watcom()
   test_header "Open Watcom"
 
   if [ -z "$WATCOM" ]; then
-    WATCOM=`/bin/ls -rd1 $PWD/tools/common/openwatcom/* 2> /dev/null | head -1`
+    WATCOM=`/bin/ls -rd1 $DEVDIR/common/openwatcom/* 2> /dev/null | head -1`
     if [ -z "$WATCOM" ]; then
       if [ $OSE -eq 0 -a $OS = "linux" ]; then
         log_failure "Open Watcom was not found"
@@ -1547,7 +1547,7 @@ EOF
   if [ "$OS" = "darwin" ]; then
     # First check if there is the internal version of Qt. If yes nothing else
     # has to be done.
-    QT_INTERNAL=`/bin/ls -rd1 $PWD/tools/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
+    QT_INTERNAL=`/bin/ls -rd1 $DEVDIR/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
     for t in $QT_INTERNAL; do
       if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
         cnf_append "VBOX_WITH_ORACLE_QT" "1"
@@ -1587,12 +1587,12 @@ EOF
         qt5_ver=`pkg-config Qt5Core --modversion 2>> $LOG`
         if [ $? -eq 0 ]; then
           echo "(Qt5 from pkg-config)" >> $LOG
-          FLGQT5=`pkg-config Qt5Core --cflags`
+          FLGQT5=`pkg-config Qt5Core Qt5Gui --cflags`
           # gcc 4.8 is able to compile with C++11 (see also VBOX_GCC_std in Config.kmk)
           [ $(($cc_maj * 100 + $cc_min)) -ge 408 ] && FLGQT5="$FLGQT5 -std=c++11"
           INCQT5=`strip_I "$FLGQT5"`
           LIBDIR5=`pkg-config Qt5Core --variable=libdir`
-          LIBQT5=`pkg-config Qt5Core --libs`
+          LIBQT5=`pkg-config Qt5Core Qt5Gui --libs`
           LIBQT5="-L$LIBDIR5 $LIBQT5"
           TOOLQT5=`pkg-config Qt5Core --variable=prefix`
           TOOLQT5BIN=`pkg-config Qt5Core --variable=host_bins`
@@ -1607,19 +1607,19 @@ EOF
     fi
     if [ -z "$foundqt5" ]; then
       # Do it the old way (e.g. user has specified QT5DIR):
-      for q in $QT5DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v5.*; do
+      for q in $QT5DIR "$DEVDIR/linux.$TARGET_MACHINE"/qt/v5.*; do
         echo "(Qt5 from '$q')" >> $LOG
         INCQT5="$q/include $q/include/QtCore"
         FLGQT5="-DQT_SHARED -std=c++11"
         I_INCQT5=`prefix_I "$INCQT5"`
-        LIBQT5="-L$q/lib -lQt5CoreVBox"
+        LIBQT5="-L$q/lib -lQt5CoreVBox -lQt5GuiVBox"
         TOOLQT5="$q"
         if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal &&
             test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal; then
           foundqt5=2 # internal
           break;
         fi
-        LIBQT5="-L$q/lib -lQt5Core"
+        LIBQT5="-L$q/lib -lQt5Core lQt5Gui"
         if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal &&
             test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal; then
           foundqt5=1 # no pkg-config, Qt directory
