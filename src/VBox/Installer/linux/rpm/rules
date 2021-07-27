@@ -58,7 +58,6 @@ verfile  := $(builddir)/version-generated.mk
 ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
 chrarch  := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "x86"; fi)
 -include $(vboxroot)/SVN_REVISION
-svnrev   := $(if $(svn_revision),$(svn_revision),)
 
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
@@ -184,8 +183,8 @@ bld_flags := AUTOCFG=$(bldbase)/AutoConfig.kmk \
     $(if $(filter el5,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1) \
     $(doc_dir) \
     VBOX_PACKAGE_DIST=$(rpmdist) \
-    $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
-    $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
+    $(if $(svn_revision),VBOX_SVN_REV=$(svn_revision),) \
+    $(if $(NODOCS),VBOX_WITH_DOCS=,) \
     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,)
 

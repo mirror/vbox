@@ -118,8 +118,8 @@ bld_flags := AUTOCFG=$(bldbase)/AutoConfig.kmk \
     VBOX_WITH_VMSVGA3D=1 \
     VBOX_DO_STRIP= \
     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
-    $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
-    $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
+    $(if $(svn_revision),VBOX_SVN_REV=$(svn_revision),) \
+    $(if $(NODOCS),VBOX_WITH_DOCS=,) \
     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,)
 
