@@ -82,6 +82,11 @@ private slots:
         void sltHandleCurrentItemChange();
         /** Handles context-menu request for tree-widget @a position. */
         void sltHandleContextMenuRequest(const QPoint &position);
+
+        /** Handles signal about extension pack @a strName installed. */
+        void sltHandleExtensionPackInstalled(const QString &strName);
+        /** Handles signal about extension pack @a strName uninstalled. */
+        void sltHandleExtensionPackUninstalled(const QString &strName);
     /** @} */
 
 private:

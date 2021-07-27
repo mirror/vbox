@@ -86,6 +86,12 @@ signals:
         void sigAskToDetachCOM();
     /** @} */
 
+    /** @name COM: Extension Pack stuff.
+     * @{ */
+        /** Notifies listeners about extension pack @a strName was installed. */
+        void sigExtensionPackInstalled(const QString &strName);
+    /** @} */
+
     /** @name Cloud Virtual Machine stuff.
      * @{ */
         /** Notifies listeners about cloud VM was unregistered.

@@ -61,6 +61,7 @@
 #include "QIDialogButtonBox.h"
 #include "UIFDCreationDialog.h"
 #include "UIIconPool.h"
+#include "UINotificationCenter.h"
 #include "UIThreadPool.h"
 #include "UIShortcutPool.h"
 #include "UIExtraDataManager.h"
@@ -3778,9 +3779,8 @@ QString UICommon::toolTip(const CHostVideoInputDevice &comWebcam)
     return records.join("<br>");
 }
 
-/* static */
 void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &strDigest,
-                                       QWidget *pParent, QString *pstrExtPackName) const
+                                     QWidget *pParent, QString *pstrExtPackName) const
 {
     /* If the extension pack manager isn't available, skip any attempts to install: */
     CExtPackManager extPackManager = virtualBox().GetExtensionPackManager();
@@ -3845,26 +3845,18 @@ void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &
     if (pParent)
         strDisplayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
 #endif
-    /* Prepare installation progress: */
-    CProgress comProgress = comExtPackFile.Install(fReplaceIt, strDisplayInfo);
-    if (comExtPackFile.isOk())
-    {
-        /* Show installation progress: */
-        /** @todo move this tr into UIUpdateManager context */
-        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIExtensionPackManagerWidget",
-                                                                                 "Extensions"),
-                                            ":/progress_install_guest_additions_90px.png", pParent);
-        if (!comProgress.GetCanceled())
-        {
-            if (comProgress.isOk() && comProgress.GetResultCode() == 0)
-                msgCenter().warnAboutExtPackInstalled(strPackName, pParent);
-            else
-                msgCenter().cannotInstallExtPack(comProgress, strFilePath, pParent);
-        }
-    }
-    else
-        msgCenter().cannotInstallExtPack(comExtPackFile, strFilePath, pParent);
 
+    /* Install extension pack: */
+    UINotificationProgressExtensionPackInstall *pNotification =
+            new UINotificationProgressExtensionPackInstall(comExtPackFile,
+                                                           fReplaceIt,
+                                                           strPackName,
+                                                           strDisplayInfo);
+    connect(pNotification, &UINotificationProgressExtensionPackInstall::sigExtensionPackInstalled,
+            this, &UICommon::sigExtensionPackInstalled);
+    notificationCenter().append(pNotification);
+
+    /* Store the name: */
     if (pstrExtPackName)
         *pstrExtPackName = strPackName;
 }

@@ -23,9 +23,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-//#include "QIDialogButtonBox.h"
-//#include "QIInputDialog.h"
-//#include "QIMessageBox.h"
 #include "QIFileDialog.h"
 #include "QIToolBar.h"
 #include "QITreeWidget.h"
@@ -35,7 +32,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-//#include "UIVirtualBoxEventHandler.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -231,37 +228,7 @@ void UIExtensionPackManagerWidget::sltInstallExtensionPack()
 
     /* Install the chosen package: */
     if (!strFilePath.isEmpty())
-    {
-        QString strExtensionPackName;
-        uiCommon().doExtPackInstallation(strFilePath, QString(), this, &strExtensionPackName);
-
-        /* Since we might be reinstalling an existing package, we have to
-         * do a little refreshing regardless of what the user chose. */
-        if (!strExtensionPackName.isNull())
-        {
-            /* Remove it from the tree: */
-            for (int i = 0; i < m_pTreeWidget->topLevelItemCount(); ++i)
-            {
-                UIItemExtensionPack *pItem = qobject_cast<UIItemExtensionPack*>(m_pTreeWidget->childItem(i));
-                if (!strExtensionPackName.compare(pItem->name(), Qt::CaseInsensitive))
-                {
-                    delete pItem;
-                    break;
-                }
-            }
-
-            /* [Re]insert it into the tree: */
-            CExtPackManager comManager = uiCommon().virtualBox().GetExtensionPackManager();
-            const CExtPack &comExtensionPack = comManager.Find(strExtensionPackName);
-            if (comExtensionPack.isOk())
-            {
-                /* Load extension pack data: */
-                UIDataExtensionPack extensionPackData;
-                loadExtensionPack(comExtensionPack, extensionPackData);
-                createItemForExtensionPack(extensionPackData, true /* choose item? */);
-            }
-        }
-    }
+        uiCommon().doExtPackInstallation(strFilePath, QString(), this, NULL);
 }
 
 void UIExtensionPackManagerWidget::sltUninstallExtensionPack()
@@ -298,29 +265,14 @@ void UIExtensionPackManagerWidget::sltUninstallExtensionPack()
                 stream << "hwnd=" << winId();
 #endif
 
-                /* Uninstall extension pack finally: */
-                CProgress comProgress = comEPManager.Uninstall(strSelectedPackageName, false /* forced removal? */, displayInfo);
-
-                /* Show error message if necessary: */
-                if (!comEPManager.isOk() || comProgress.isNull())
-                    msgCenter().cannotUninstallExtPack(comEPManager, strSelectedPackageName, this);
-                else
-                {
-                    /* Show uninstallation progress: */
-                    msgCenter().showModalProgressDialog(comProgress, tr("Extensions"), ":/progress_install_guest_additions_90px.png", this);
-
-                    /* Show error message if necessary: */
-                    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                        msgCenter().cannotUninstallExtPack(comProgress, strSelectedPackageName, this);
-                    else
-                    {
-                        /* Remove package from tree: */
-                        delete pItem;
-
-                        /* Adjust tree-widget: */
-                        sltAdjustTreeWidget();
-                    }
-                }
+                /* Uninstall extension pack: */
+                UINotificationProgressExtensionPackUninstall *pNotification =
+                        new UINotificationProgressExtensionPackUninstall(comEPManager,
+                                                                         strSelectedPackageName,
+                                                                         displayInfo);
+                connect(pNotification, &UINotificationProgressExtensionPackUninstall::sigExtensionPackUninstalled,
+                        this, &UIExtensionPackManagerWidget::sltHandleExtensionPackUninstalled);
+                notificationCenter().append(pNotification);
             }
         }
     }
@@ -374,10 +326,52 @@ void UIExtensionPackManagerWidget::sltHandleContextMenuRequest(const QPoint &pos
     menu.exec(m_pTreeWidget->viewport()->mapToGlobal(position));
 }
 
+void UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled(const QString &strName)
+{
+    /* Make sure the name was set: */
+    if (strName.isNull())
+        return;
+
+    /* Look for a list of items matching strName: */
+    const QList<QTreeWidgetItem*> items = m_pTreeWidget->findItems(strName, Qt::MatchCaseSensitive, ExtensionPackColumn_Name);
+    /* Remove first found item from the list if present: */
+    if (!items.isEmpty())
+        delete items.first();
+
+    /* [Re]insert it into the tree: */
+    CExtPackManager comManager = uiCommon().virtualBox().GetExtensionPackManager();
+    const CExtPack comExtensionPack = comManager.Find(strName);
+    if (comExtensionPack.isOk())
+    {
+        /* Load extension pack data: */
+        UIDataExtensionPack extensionPackData;
+        loadExtensionPack(comExtensionPack, extensionPackData);
+        createItemForExtensionPack(extensionPackData, true /* choose item? */);
+    }
+}
+
+void UIExtensionPackManagerWidget::sltHandleExtensionPackUninstalled(const QString &strName)
+{
+    /* Make sure the name was set: */
+    if (strName.isNull())
+        return;
+
+    /* Look for a list of items matching strName: */
+    const QList<QTreeWidgetItem*> items = m_pTreeWidget->findItems(strName, Qt::MatchCaseSensitive, ExtensionPackColumn_Name);
+    AssertReturnVoid(!items.isEmpty());
+    /* Remove first found item from the list: */
+    delete items.first();
+
+    /* Adjust tree-widget: */
+    sltAdjustTreeWidget();
+}
+
 void UIExtensionPackManagerWidget::prepare()
 {
     /* Prepare self: */
     uiCommon().setHelpKeyword(this, "extensionsdetails"); /// @todo use proper help tag
+    connect(&uiCommon(), &UICommon::sigExtensionPackInstalled,
+            this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
 
     /* Prepare stuff: */
     prepareActions();

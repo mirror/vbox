@@ -29,6 +29,8 @@
 #include "CAppliance.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
+#include "CExtPackFile.h"
+#include "CExtPackManager.h"
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CVirtualSystemDescription.h"
@@ -383,6 +385,100 @@ private:
     CAppliance               m_comAppliance;
     /** Holds the import options to be taken into account. */
     QVector<KImportOptions>  m_options;
+};
+
+/** UINotificationProgress extension for extension pack install functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressExtensionPackInstall : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about extension pack installed.
+      * @param  strExtensionPackName  Brigns extension pack name. */
+    void sigExtensionPackInstalled(const QString &strExtensionPackName);
+
+public:
+
+    /** Constructs extension pack install notification-progress.
+      * @param  comExtPackFile        Brings the extension pack file to install.
+      * @param  fReplace              Brings whether extension pack should be replaced.
+      * @param  strExtensionPackName  Brings the extension pack name.
+      * @param  strDisplayInfo        Brings the display info. */
+    UINotificationProgressExtensionPackInstall(const CExtPackFile &comExtPackFile,
+                                               bool fReplace,
+                                               const QString &strExtensionPackName,
+                                               const QString &strDisplayInfo);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the extension pack file to install. */
+    CExtPackFile     m_comExtPackFile;
+    /** Holds whether extension pack should be replaced. */
+    bool             m_fReplace;
+    /** Holds the extension pack name. */
+    QString          m_strExtensionPackName;
+    /** Holds the display info. */
+    QString          m_strDisplayInfo;
+};
+
+/** UINotificationProgress extension for extension pack uninstall functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressExtensionPackUninstall : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about extension pack uninstalled.
+      * @param  strExtensionPackName  Brigns extension pack name. */
+    void sigExtensionPackUninstalled(const QString &strExtensionPackName);
+
+public:
+
+    /** Constructs extension pack uninstall notification-progress.
+      * @param  comExtPackManager     Brings the extension pack manager.
+      * @param  strExtensionPackName  Brings the extension pack name.
+      * @param  strDisplayInfo        Brings the display info. */
+    UINotificationProgressExtensionPackUninstall(const CExtPackManager &comExtPackManager,
+                                                 const QString &strExtensionPackName,
+                                                 const QString &strDisplayInfo);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the extension pack manager. */
+    CExtPackManager  m_comExtPackManager;
+    /** Holds the extension pack name. */
+    QString          m_strExtensionPackName;
+    /** Holds the display info. */
+    QString          m_strDisplayInfo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
