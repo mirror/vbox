@@ -437,26 +437,11 @@ QModelIndex QITreeWidget::itemIndex(QTreeWidgetItem *pItem)
     return indexFromItem(pItem);
 }
 
-QList<QTreeWidgetItem*> QITreeWidget::filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem* pParent /* = 0 */)
+QList<QTreeWidgetItem*> QITreeWidget::filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent /* = 0 */)
 {
     QList<QTreeWidgetItem*> filteredItemList;
-    if (!pParent)
-        filterItemsInternal(filter, invisibleRootItem(), filteredItemList);
-    else
-        filterItemsInternal(filter, pParent, filteredItemList);
+    filterItemsInternal(filter, pParent ? pParent : invisibleRootItem(), filteredItemList);
     return filteredItemList;
-}
-
-void QITreeWidget::filterItemsInternal(const QITreeWidgetItemFilter &filter,
-                                           QTreeWidgetItem* pParent, QList<QTreeWidgetItem*> &filteredItemList)
-{
-    if (!pParent)
-        return;
-    if (filter(pParent))
-        filteredItemList.append(pParent);
-
-    for (int i = 0; i < pParent->childCount(); ++i)
-        filterItemsInternal(filter, pParent->child(i), filteredItemList);
 }
 
 void QITreeWidget::paintEvent(QPaintEvent *pEvent)
@@ -487,4 +472,16 @@ void QITreeWidget::resizeEvent(QResizeEvent *pEvent)
 
     /* Notify listeners about resizing: */
     emit resized(pEvent->size(), pEvent->oldSize());
+}
+
+void QITreeWidget::filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent,
+                                       QList<QTreeWidgetItem*> &filteredItemList)
+{
+    if (!pParent)
+        return;
+    if (filter(pParent))
+        filteredItemList.append(pParent);
+
+    for (int i = 0; i < pParent->childCount(); ++i)
+        filterItemsInternal(filter, pParent->child(i), filteredItemList);
 }

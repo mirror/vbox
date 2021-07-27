@@ -31,12 +31,16 @@
 /* Forward declarations: */
 class QITreeWidget;
 
-/** A functor base to be passed to QITabWidget::filterItems(..). Overload operator()(..) to filter out
- *  tree items. */
+/** A functor base to be passed to QITabWidget::filterItems(..).
+  * Overload operator()(..) to filter out tree items. */
 class SHARED_LIBRARY_STUFF QITreeWidgetItemFilter
 {
 public:
+
+    /** Destructs item filter. */
     virtual ~QITreeWidgetItemFilter() { /* Make VC++ 19.2 happy. */ }
+
+    /** Returns whether item can pass the filter. */
     virtual bool operator()(QTreeWidgetItem*) const
     {
         return true;
@@ -96,7 +100,7 @@ signals:
     /** Notifies about tree-widget being resized from @a oldSize to @a size. */
     void resized(const QSize &size, const QSize &oldSize);
 
- public:
+public:
 
     /** Constructs tree-widget passing @a pParent to the base-class. */
     QITreeWidget(QWidget *pParent = 0);
@@ -108,10 +112,11 @@ signals:
     int childCount() const;
     /** Returns the child item with @a iIndex. */
     QITreeWidgetItem *childItem(int iIndex) const;
+    /** Returns a model-index of @a pItem specified. */
     QModelIndex itemIndex(QTreeWidgetItem *pItem);
-    /** Recurses thru the subtree with a root pParent and returns a list of tree items filtered by @a filter.
-     *  When @a pParent is null than QTreeWidget::invisibleRootItem() is used as the root item. */
-    QList<QTreeWidgetItem*> filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem* pParent = 0);
+    /** Recurses thru the subtree with a root @a pParent and returns a list of tree-items filtered by @a filter.
+      * When @a pParent is null then QTreeWidget::invisibleRootItem() is used as the root item. */
+    QList<QTreeWidgetItem*> filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent = 0);
 
 protected:
 
@@ -120,10 +125,11 @@ protected:
     /** Handles resize @a pEvent. */
     void resizeEvent(QResizeEvent *pEvent);
 
- private:
+private:
 
-    /* Recurses thru the tree and append filtered items to @a filteredItemList. */
-    void filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem* pParent,
+    /** Recurses thru the subtree with a root @a pParent and appends a
+      * list of tree-items filtered by @a filter to @a filteredItemList. */
+    void filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent,
                              QList<QTreeWidgetItem*> &filteredItemList);
 };
 
