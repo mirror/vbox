@@ -250,7 +250,7 @@ binary: build
 	    -e 's|%NETTOOLS%|$(if $(filter fedora18 fedora19 fedora20 fedora21 el5 openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114,$(rpmrel)),net-tools,iproute)|g' \
 	    $(instlin)/rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
 	mv $(bldbase)/VirtualBox-$(ver) $(bldbase)/$(rpmname)
-	cp ../../../../tools/linux.$(chrarch)/bin/chrpath $(bldbase)/$(rpmname) || true
+	cp $(vboxroot)/tools/linux.$(chrarch)/bin/chrpath $(bldbase)/$(rpmname) || true
 	tar -cf $(bldbase)/VirtualBox.tar -C $(bldbase) $(rpmname)
 	rm -f $(stagedir)/RPMS/*/VirtualBox*rpm
 	rm -f $(stagedir)/SPECS/*

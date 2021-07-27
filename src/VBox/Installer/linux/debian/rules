@@ -287,7 +287,7 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp-keymaps $(prefix)/usr/share/$(package))
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	if [ -f $(prefix)/usr/lib/$(package)/libQt5CoreVBox.so.5 ]; then \
-	    ../../../../tools/linux.$(chrarch)/bin/chrpath \
+	    $(vboxroot)/tools/linux.$(chrarch)/bin/chrpath \
 	        --keepgoing --replace /usr/lib/$(package) \
 	        $(prefix)/usr/lib/$(package)/*.so.5 \
 	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \
