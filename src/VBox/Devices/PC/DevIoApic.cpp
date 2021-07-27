@@ -261,7 +261,9 @@ typedef struct IOAPIC
     uint64_t                au64RedirTable[IOAPIC_NUM_INTR_PINS];
     /** The IRQ tags and source IDs for each pin (tracing purposes). */
     uint32_t                au32TagSrc[IOAPIC_NUM_INTR_PINS];
-    /** Bitmap keeping the flip-flop-ness of pending interrupts. */
+    /** Bitmap keeping the flip-flop-ness of pending interrupts.
+     * The information held here is only relevan between SetIrq and the
+     * delivery, thus no real need to initialize or reset this. */
     uint64_t                bmFlipFlop[(IOAPIC_NUM_INTR_PINS + 63) / 64];
 
     /** The internal IRR reflecting state of the interrupt lines. */
@@ -1003,7 +1005,15 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
              * and assert the interrupt line. The interrupt line is left in the asserted state
              * after a flip-flop request. The de-assert is a NOP wrts to signaling an interrupt
              * hence just the assert is done.
-             */
+             *
+             * Update @bugref{10073}: We now de-assert the interrupt line once it has been
+             * delivered to the APIC to prevent it from getting re-delivered by accident (e.g.
+             * on RTE write or by buggy EOI code).  The XT-PIC works differently because of the
+             * INTA, so it's set IRQ function will do what's described above: first lower the
+             * interrupt line and then immediately raising it again, leaving the IRR flag set
+             * most of the time.  (How a real HPET/IOAPIC does this is a really good question
+             * and would be observable if we could get at the IRR register of the IOAPIC...
+             * Maybe by modifying the RTE? Our code will retrigger the interrupt that way.) */
             ASMBitSet(pThis->bmFlipFlop, idxRte);
             IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask, true);
         }
