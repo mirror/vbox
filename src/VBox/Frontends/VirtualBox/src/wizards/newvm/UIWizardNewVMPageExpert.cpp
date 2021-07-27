@@ -465,9 +465,9 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
     m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox;
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
-    m_pFormatButtonGroup = new UIDiskFormatsGroupBox;
+    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(true, 0);
     pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 2, 0, 4, 1);
-    m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox;
+    m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox(true, 0);
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 2, 1);
 
     return pNewDiskContainerWidget;

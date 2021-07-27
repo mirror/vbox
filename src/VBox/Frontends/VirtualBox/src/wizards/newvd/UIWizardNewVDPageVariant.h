@@ -22,50 +22,36 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class CMediumFormat;
 class QButtonGroup;
 class QCheckBox;
 class QIRichTextLabel;
+class UIDiskVariantGroupBox;
 
+// /* 2nd page of the New Virtual Hard Drive wizard (base part): */
+// class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseVariant : public UIWizardPageBase
+// {
+// protected:
 
-/* 2nd page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseVariant : public UIWizardPageBase
-{
-protected:
+//     /** Constructor: */
+//     UIWizardNewVDPageBaseVariant();
 
-    /** Constructor: */
-    UIWizardNewVDPageBaseVariant();
+//     QWidget *createMediumVariantWidgets(bool fWithLabels);
+//     qulonglong mediumVariant() const;
+//     void setMediumVariant(qulonglong uMediumVariant);
+//     void retranslateWidgets();
+//     /** Check Medium format capability and decide if certain widgets can be shown. */
+//     void setWidgetVisibility(CMediumFormat &mediumFormat);
+//     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
 
-    QWidget *createMediumVariantWidgets(bool fWithLabels);
-    qulonglong mediumVariant() const;
-    void setMediumVariant(qulonglong uMediumVariant);
-    void retranslateWidgets();
-    /** Check Medium format capability and decide if certain widgets can be shown. */
-    void setWidgetVisibility(CMediumFormat &mediumFormat);
-    void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
-    /** @name Widgets
-     * @{ */
-        QCheckBox *m_pFixedCheckBox;
-        QCheckBox *m_pSplitBox;
-    /** @} */
+// };
 
-    /** @name Rich text labels. Declared/defined here since the are shared in more than one child class
-     * @{ */
-        QIRichTextLabel *m_pDescriptionLabel;
-        QIRichTextLabel *m_pDynamicLabel;
-        QIRichTextLabel *m_pFixedLabel;
-        QIRichTextLabel *m_pSplitLabel;
-    /** @} */
-};
-
-/* 2nd page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UIWizardPage, public UIWizardNewVDPageBaseVariant
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
 
 public:
 
@@ -76,6 +62,13 @@ private:
     void retranslateUi();
     void initializePage();
     bool isComplete() const;
+    void prepare();
+
+    QIRichTextLabel *m_pDescriptionLabel;
+    QIRichTextLabel *m_pDynamicLabel;
+    QIRichTextLabel *m_pFixedLabel;
+    QIRichTextLabel *m_pSplitLabel;
+    UIDiskVariantGroupBox *m_pVariantGroupBox;
 };
 
 

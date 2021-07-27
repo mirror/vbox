@@ -35,61 +35,86 @@
 
 
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
-                             const QString &strDefaultName, const QString &strDefaultPath,
+                             const QString &strDefaultName,
+                             const QString &strDefaultPath,
                              qulonglong uDefaultSize,
                              WizardMode mode)
-    : UIWizard(pParent, WizardType_NewVD, mode)
+    : UINativeWizard(pParent, WizardType_NewVD, mode)
     , m_strDefaultName(strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/wizard_new_harddisk.png");
+    setPixmapName(":/wizard_new_harddisk.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/wizard_new_harddisk_bg.png");
+    setPixmapName(":/wizard_new_harddisk_bg.png");
 #endif /* VBOX_WS_MAC */
+}
+
+void UIWizardNewVD::populatePages()
+{
+    switch (mode())
+    {
+        case WizardMode_Basic:
+        case WizardMode_Expert:
+        {
+            addPage(new UIWizardNewVDPageFileType);
+            addPage(new UIWizardNewVDPageVariant);
+            break;
+        }
+
+        // {
+        //     //addPage(new UIWizardNewVMPageExpert);
+        //     break;
+        // }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
+    }
 }
 
 bool UIWizardNewVD::createVirtualDisk()
 {
     /* Gather attributes: */
-    const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
-    const qulonglong uVariant = field("mediumVariant").toULongLong();
-    const QString strMediumPath = field("mediumPath").toString();
-    const qulonglong uSize = field("mediumSize").toULongLong();
-    /* Check attributes: */
-    AssertReturn(!strMediumPath.isNull(), false);
-    AssertReturn(uSize > 0, false);
+    // const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
+    // const qulonglong uVariant = field("mediumVariant").toULongLong();
+    // const QString strMediumPath = field("mediumPath").toString();
+    // const qulonglong uSize = field("mediumSize").toULongLong();
+    // /* Check attributes: */
+    // AssertReturn(!strMediumPath.isNull(), false);
+    // AssertReturn(uSize > 0, false);
 
-    /* Get VBox object: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    // /* Get VBox object: */
+    // CVirtualBox comVBox = uiCommon().virtualBox();
 
-    /* Create new virtual disk image: */
-    CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
-    if (!comVBox.isOk())
-    {
-        msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
-        return false;
-    }
+    // /* Create new virtual disk image: */
+    // CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    // if (!comVBox.isOk())
+    // {
+    //     msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
+    //     return false;
+    // }
 
-    /* Compose medium-variant: */
-    QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
-    for (int i = 0; i < variants.size(); ++i)
-    {
-        qulonglong temp = uVariant;
-        temp &= Q_UINT64_C(1) << i;
-        variants[i] = (KMediumVariant)temp;
-    }
+    // /* Compose medium-variant: */
+    // QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
+    // for (int i = 0; i < variants.size(); ++i)
+    // {
+    //     qulonglong temp = uVariant;
+    //     temp &= Q_UINT64_C(1) << i;
+    //     variants[i] = (KMediumVariant)temp;
+    // }
 
-    /* Copy medium: */
-    UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
-                                                                                               uSize,
-                                                                                               variants);
-    connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
-            &uiCommon(), &UICommon::sltHandleMediumCreated);
-    notificationCenter().append(pNotification);
+    // /* Copy medium: */
+    // UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
+    //                                                                                            uSize,
+    //                                                                                            variants);
+    // connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
+    //         &uiCommon(), &UICommon::sltHandleMediumCreated);
+    // notificationCenter().append(pNotification);
 
     /* Positive: */
     return true;
@@ -97,37 +122,32 @@ bool UIWizardNewVD::createVirtualDisk()
 
 void UIWizardNewVD::retranslateUi()
 {
-    /* Call to base-class: */
-    UIWizard::retranslateUi();
-
-    /* Translate wizard: */
+    UINativeWizard::retranslateUi();
     setWindowTitle(tr("Create Virtual Hard Disk"));
-    setButtonText(QWizard::FinishButton, tr("Create"));
 }
 
 void UIWizardNewVD::prepare()
 {
-    /* Create corresponding pages: */
-    switch (mode())
-    {
-        case WizardMode_Basic:
-        {
-            setPage(Page1, new UIWizardNewVDPageFileType);
-            setPage(Page2, new UIWizardNewVDPageVariant);
-            setPage(Page3, new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
-            break;
-        }
-        case WizardMode_Expert:
-        {
-            setPage(PageExpert, new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("Invalid mode: %d", mode()));
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIWizard::prepare();
+    // /* Create corresponding pages: */
+    // switch (mode())
+    // {
+    //     case WizardMode_Basic:
+    //     {
+    //         setPage(Page1, new UIWizardNewVDPageFileType);
+    //         setPage(Page2, new UIWizardNewVDPageVariant);
+    //         setPage(Page3, new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+    //         break;
+    //     }
+    //     case WizardMode_Expert:
+    //     {
+    //         setPage(PageExpert, new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+    //         break;
+    //     }
+    //     default:
+    //     {
+    //         AssertMsgFailed(("Invalid mode: %d", mode()));
+    //         break;
+    //     }
+    // }
+
 }

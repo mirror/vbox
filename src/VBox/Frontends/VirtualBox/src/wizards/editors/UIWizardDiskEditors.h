@@ -48,7 +48,7 @@ class UIMediumSizeEditor;
 #include "COMEnums.h"
 #include "CMediumFormat.h"
 
-class UIDiskFormatsGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
@@ -58,11 +58,12 @@ signals:
 
 public:
 
-    UIDiskFormatsGroupBox(QWidget *pParent = 0);
+    UIDiskFormatsGroupBox(bool fExpertMode, QWidget *pParent = 0);
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
     const CMediumFormat &VDIMediumFormat() const;
     const QStringList formatExtensions() const;
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
 
 private:
 
@@ -76,9 +77,10 @@ private:
     QStringList           m_formatNames;
     QStringList m_formatExtensions;
     QButtonGroup *m_pFormatButtonGroup;
+    bool m_fExpertMode;
 };
 
-class UIDiskVariantGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
@@ -88,7 +90,7 @@ signals:
 
 public:
 
-    UIDiskVariantGroupBox(QWidget *pParent = 0);
+    UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent = 0);
     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
@@ -106,10 +108,11 @@ private:
 
     QCheckBox *m_pFixedCheckBox;
     QCheckBox *m_pSplitBox;
+    bool m_fExpertMode;
 };
 
 
-class UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 

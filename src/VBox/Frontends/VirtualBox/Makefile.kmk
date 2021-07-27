@@ -652,7 +652,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.h \
 	src/wizards/editors/UIHostnameDomainNameEditor.h \
 	src/wizards/editors/UIUserNamePasswordEditor.h \
-	src/wizards/editors/UIWizardDiskEditors.h \
 	src/wizards/editors/UIWizardNewVMEditors.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.h \
@@ -916,6 +915,7 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/UINativeWizardPage.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
+	src/wizards/editors/UIWizardDiskEditors.h \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDPageFileType.h \
 	src/wizards/newvd/UIWizardNewVDPageVariant.h \
@@ -1469,6 +1469,7 @@ UICommon_SOURCES = \
 	src/wizards/UINativeWizardPage.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
+	src/wizards/editors/UIWizardDiskEditors.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDPageFileType.cpp \
 	src/wizards/newvd/UIWizardNewVDPageVariant.cpp \

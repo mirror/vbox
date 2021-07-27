@@ -22,6 +22,7 @@
 
 /* GUI includes: */
 #include "UIConverter.h"
+#include "UIWizardDiskEditors.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVD.h"
@@ -31,159 +32,113 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
+// UIWizardNewVDPageBaseFileType::UIWizardNewVDPageBaseFileType()
+//     : m_pFormatButtonGroup(0)
+// {
+// }
 
-UIWizardNewVDPageBaseFileType::UIWizardNewVDPageBaseFileType()
-    : m_pFormatButtonGroup(0)
-{
-}
+// void UIWizardNewVDPageBaseFileType::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
+// {
+//     /* Check that medium format supports creation: */
+//     ULONG uFormatCapabilities = 0;
+//     QVector<KMediumFormatCapabilities> capabilities;
+//     capabilities = medFormat.GetCapabilities();
+//     for (int i = 0; i < capabilities.size(); i++)
+//         uFormatCapabilities |= capabilities[i];
 
-void UIWizardNewVDPageBaseFileType::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
-{
-    /* Check that medium format supports creation: */
-    ULONG uFormatCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = medFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uFormatCapabilities |= capabilities[i];
+//     if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
+//           uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
+//         return;
 
-    if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
-          uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
-        return;
+//     /* Check that medium format supports creation of virtual hard-disks: */
+//     QVector<QString> fileExtensions;
+//     QVector<KDeviceType> deviceTypes;
+//     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+//     if (!deviceTypes.contains(KDeviceType_HardDisk))
+//         return;
 
-    /* Check that medium format supports creation of virtual hard-disks: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(KDeviceType_HardDisk))
-        return;
+//     /* Create/add corresponding radio-button: */
+//     QRadioButton *pFormatButton = new QRadioButton(pParent);
+//     AssertPtrReturnVoid(pFormatButton);
+//     {
+//         /* Make the preferred button font bold: */
+//         if (fPreferred)
+//         {
+//             QFont font = pFormatButton->font();
+//             font.setBold(true);
+//             pFormatButton->setFont(font);
+//         }
+//         pFormatLayout->addWidget(pFormatButton);
+//         m_formats << medFormat;
+//         m_formatNames << medFormat.GetName();
+//         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
+//         m_formatExtensions << UIWizardNewVDPageBaseSizeLocation::defaultExtension(medFormat);
+//     }
+// }
 
-    /* Create/add corresponding radio-button: */
-    QRadioButton *pFormatButton = new QRadioButton(pParent);
-    AssertPtrReturnVoid(pFormatButton);
-    {
-        /* Make the preferred button font bold: */
-        if (fPreferred)
-        {
-            QFont font = pFormatButton->font();
-            font.setBold(true);
-            pFormatButton->setFont(font);
-        }
-        pFormatLayout->addWidget(pFormatButton);
-        m_formats << medFormat;
-        m_formatNames << medFormat.GetName();
-        m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-        m_formatExtensions << UIWizardNewVDPageBaseSizeLocation::defaultExtension(medFormat);
-    }
-}
 
-QWidget *UIWizardNewVDPageBaseFileType::createFormatButtonGroup(bool fExpertMode)
-{
-    QWidget *pContainerWidget = new QWidget;
-    QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
-    pContainerLayout->setContentsMargins(0, 0, 0, 0);
+// CMediumFormat UIWizardNewVDPageBaseFileType::mediumFormat() const
+// {
+//     return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
+// }
 
-    m_pFormatButtonGroup = new QButtonGroup;
-    if (m_pFormatButtonGroup)
-    {
-        /* Enumerate medium formats in special order: */
-        CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-        const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-        QMap<QString, CMediumFormat> vdi, preferred, others;
-        foreach (const CMediumFormat &format, formats)
-        {
-            /* VDI goes first: */
-            if (format.GetName() == "VDI")
-                vdi[format.GetId()] = format;
-            else
-            {
-                const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-                /* Then goes preferred: */
-                if (capabilities.contains(KMediumFormatCapabilities_Preferred))
-                    preferred[format.GetId()] = format;
-                /* Then others: */
-                else
-                    others[format.GetId()] = format;
-            }
-        }
+// void UIWizardNewVDPageBaseFileType::setMediumFormat(const CMediumFormat &mediumFormat)
+// {
+//     int iPosition = m_formats.indexOf(mediumFormat);
+//     if (iPosition >= 0)
+//     {
+//         m_pFormatButtonGroup->button(iPosition)->click();
+//         m_pFormatButtonGroup->button(iPosition)->setFocus();
+//     }
+// }
 
-        /* Create buttons for VDI, preferred and others: */
-        foreach (const QString &strId, vdi.keys())
-            addFormatButton(pContainerWidget, pContainerLayout, vdi.value(strId), fExpertMode);
-        foreach (const QString &strId, preferred.keys())
-            addFormatButton(pContainerWidget, pContainerLayout, preferred.value(strId), fExpertMode);
-        if (fExpertMode)
-        {
-            foreach (const QString &strId, others.keys())
-                addFormatButton(pContainerWidget, pContainerLayout, others.value(strId));
-        }
-
-        if (!m_pFormatButtonGroup->buttons().isEmpty())
-        {
-            m_pFormatButtonGroup->button(0)->click();
-            m_pFormatButtonGroup->button(0)->setFocus();
-        }
-    }
-    return pContainerWidget;
-}
-
-CMediumFormat UIWizardNewVDPageBaseFileType::mediumFormat() const
-{
-    return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
-}
-
-void UIWizardNewVDPageBaseFileType::setMediumFormat(const CMediumFormat &mediumFormat)
-{
-    int iPosition = m_formats.indexOf(mediumFormat);
-    if (iPosition >= 0)
-    {
-        m_pFormatButtonGroup->button(iPosition)->click();
-        m_pFormatButtonGroup->button(iPosition)->setFocus();
-    }
-}
-
-void UIWizardNewVDPageBaseFileType::retranslateWidgets()
-{
-    if (m_pFormatButtonGroup)
-    {
-        QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-        for (int i = 0; i < buttons.size(); ++i)
-        {
-            QAbstractButton *pButton = buttons[i];
-            UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-            pButton->setText(gpConverter->toString(enmFormat));
-        }
-    }
-}
+// void UIWizardNewVDPageBaseFileType::retranslateWidgets()
+// {
+//     if (m_pFormatButtonGroup)
+//     {
+//         QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
+//         for (int i = 0; i < buttons.size(); ++i)
+//         {
+//             QAbstractButton *pButton = buttons[i];
+//             UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+//             pButton->setText(gpConverter->toString(enmFormat));
+//         }
+//     }
+// }
 
 UIWizardNewVDPageFileType::UIWizardNewVDPageFileType()
+    : m_pLabel(0)
+    , m_pFormatButtonGroup(0)
 {
+    prepare();
     /* Create widgets: */
+
+    // /* Setup connections: */
+    // connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    //         this, &UIWizardNewVDPageFileType::completeChanged);
+
+    // /* Register classes: */
+    // qRegisterMetaType<CMediumFormat>();
+    // /* Register fields: */
+    // registerField("mediumFormat", this, "mediumFormat");
+}
+
+void UIWizardNewVDPageFileType::prepare()
+{
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    {
-        m_pLabel = new QIRichTextLabel(this);
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(createFormatButtonGroup(false));
+    m_pLabel = new QIRichTextLabel(this);
+    pMainLayout->addWidget(m_pLabel);
+    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(false, 0);
+    pMainLayout->addWidget(m_pFormatButtonGroup, false);
 
-        pMainLayout->addStretch();
-    }
-
-    /* Setup connections: */
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-            this, &UIWizardNewVDPageFileType::completeChanged);
-
-    /* Register classes: */
-    qRegisterMetaType<CMediumFormat>();
-    /* Register fields: */
-    registerField("mediumFormat", this, "mediumFormat");
+    pMainLayout->addStretch();
+    retranslateUi();
 }
 
 void UIWizardNewVDPageFileType::retranslateUi()
 {
-    retranslateWidgets();
-    /* Translate page: */
     setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
 
-    /* Translate widgets: */
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
                                         "for the new virtual hard disk. If you do not need to use it "
                                         "with other virtualization software you can leave this setting unchanged."));
@@ -198,35 +153,36 @@ void UIWizardNewVDPageFileType::initializePage()
 bool UIWizardNewVDPageFileType::isComplete() const
 {
     /* Make sure medium format is correct: */
-    return !mediumFormat().isNull();
+    //return !mediumFormat().isNull();
+    return true;
 }
 
-int UIWizardNewVDPageFileType::nextId() const
-{
-    /* Show variant page only if there is something to show: */
-    CMediumFormat mf = mediumFormat();
-    if (mf.isNull())
-    {
-        AssertMsgFailed(("No medium format set!"));
-    }
-    else
-    {
-        ULONG uCapabilities = 0;
-        QVector<KMediumFormatCapabilities> capabilities;
-        capabilities = mf.GetCapabilities();
-        for (int i = 0; i < capabilities.size(); i++)
-            uCapabilities |= capabilities[i];
+// int UIWizardNewVDPageFileType::nextId() const
+// {
+//     /* Show variant page only if there is something to show: */
+//     CMediumFormat mf = mediumFormat();
+//     if (mf.isNull())
+//     {
+//         AssertMsgFailed(("No medium format set!"));
+//     }
+//     else
+//     {
+//         ULONG uCapabilities = 0;
+//         QVector<KMediumFormatCapabilities> capabilities;
+//         capabilities = mf.GetCapabilities();
+//         for (int i = 0; i < capabilities.size(); i++)
+//             uCapabilities |= capabilities[i];
 
-        int cTest = 0;
-        if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
-            ++cTest;
-        if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
-            ++cTest;
-        if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
-            ++cTest;
-        if (cTest > 1)
-            return UIWizardNewVD::Page2;
-    }
-    /* Skip otherwise: */
-    return UIWizardNewVD::Page3;
-}
+//         int cTest = 0;
+//         if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
+//             ++cTest;
+//         if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
+//             ++cTest;
+//         if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
+//             ++cTest;
+//         if (cTest > 1)
+//             return UIWizardNewVD::Page2;
+//     }
+//     /* Skip otherwise: */
+//     return UIWizardNewVD::Page3;
+// }

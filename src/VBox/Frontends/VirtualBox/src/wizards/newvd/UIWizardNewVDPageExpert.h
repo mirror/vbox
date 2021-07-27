@@ -22,24 +22,15 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardNewVDPageFileType.h"
-#include "UIWizardNewVDPageVariant.h"
-#include "UIWizardNewVDPageSizeLocation.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class QGroupBox;
 
 /* Expert page of the New Virtual Hard Drive wizard: */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UIWizardPage,
-                                                     public UIWizardNewVDPageBaseFileType,
-                                                     public UIWizardNewVDPageBaseVariant,
-                                                     public UIWizardNewVDPageBaseSizeLocation
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
-    Q_PROPERTY(QString mediumPath READ mediumPath);
-    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
@@ -48,10 +39,6 @@ public:
 
 protected:
 
-    /* Wrapper to access 'this' from base part: */
-    UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 

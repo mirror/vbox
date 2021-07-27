@@ -22,14 +22,14 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMedium.h"
 
 /* New Virtual Hard Drive wizard: */
-class SHARED_LIBRARY_STUFF UIWizardNewVD : public UIWizard
+class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
 {
     Q_OBJECT;
 
@@ -63,9 +63,7 @@ protected:
     /* Creates virtual-disk: */
     bool createVirtualDisk();
 
-    /* Who will be able to create virtual-disk: */
-    friend class UIWizardNewVDPageSizeLocation;
-    friend class UIWizardNewVDPageExpert;
+    virtual void populatePages() /* final override */;
 
 private:
 

@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -33,39 +33,29 @@ class QVBoxLayout;
 class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
+class UIDiskFormatsGroupBox;
 
-
-/* 1st page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseFileType : public UIWizardPageBase
+namespace UIWizardNewVDFileType
 {
-protected:
+//     void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
 
-    /* Constructor: */
-    UIWizardNewVDPageBaseFileType();
+   // QWidget *createFormatButtonGroup(QButtonGroup *&pFormatButtonGroup, bool fExperMode);
 
-    /* Helping stuff: */
-    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
+//     CMediumFormat mediumFormat() const;
+//     void setMediumFormat(const CMediumFormat &mediumFormat);
+//     void retranslateWidgets();
 
-    QWidget *createFormatButtonGroup(bool fExperMode);
 
-    /* Stuff for 'mediumFormat' field: */
-    CMediumFormat mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &mediumFormat);
-    void retranslateWidgets();
-
-    /* Variables: */
-    QButtonGroup *m_pFormatButtonGroup;
-    QList<CMediumFormat> m_formats;
-    QStringList m_formatNames;
-    QStringList m_formatExtensions;
-};
+//     QList<CMediumFormat> m_formats;
+//     QStringList m_formatNames;
+//     QStringList m_formatExtensions;
+}
 
 
 /* 1st page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageFileType : public UIWizardPage, public UIWizardNewVDPageBaseFileType
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageFileType : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
 
 public:
 
@@ -74,20 +64,16 @@ public:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
-    /* Prepare stuff: */
+    void prepare();
     void initializePage();
 
     /* Validation stuff: */
     bool isComplete() const;
 
-    /* Navigation stuff: */
-    int nextId() const;
 
-    /* Widgets: */
     QIRichTextLabel *m_pLabel;
+    UIDiskFormatsGroupBox *m_pFormatButtonGroup;
 };
 
 

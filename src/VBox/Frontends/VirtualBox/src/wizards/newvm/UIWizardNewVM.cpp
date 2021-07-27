@@ -52,7 +52,7 @@ UIUnattendedInstallData::UIUnattendedInstallData()
 
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /* = QString() */,
                              WizardMode enmMode /* = WizardMode_Auto */)
-    : UINativeWizard(pParent, WizardType_NewCloudVM, enmMode)
+    : UINativeWizard(pParent, WizardType_NewVM, enmMode)
     , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)

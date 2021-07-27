@@ -36,6 +36,7 @@
 #include "QIToolButton.h"
 #include "QILineEdit.h"
 #include "UIMediumSizeEditor.h"
+#include "UIWizardDiskEditors.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -46,313 +47,321 @@
 #include <iprt/path.h>
 
 
-UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath)
-    : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
-    , m_strDefaultPath(strDefaultPath)
-    , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_pLocationEditor(0)
-    , m_pLocationOpenButton(0)
-    , m_pMediumSizeEditor(0)
-    , m_pMediumSizeEditorLabel(0)
-    , m_pLocationLabel(0)
-    , m_pSizeLabel(0)
+// UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath)
+//     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
+//     , m_strDefaultPath(strDefaultPath)
+//     , m_uMediumSizeMin(_4M)
+//     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+//     , m_pLocationEditor(0)
+//     , m_pLocationOpenButton(0)
+//     , m_pMediumSizeEditor(0)
+//     , m_pMediumSizeEditorLabel(0)
+//     , m_pLocationLabel(0)
+//     , m_pSizeLabel(0)
+// {
+// }
+
+// UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation()
+//     : m_uMediumSizeMin(_4M)
+//     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+//     , m_pLocationEditor(0)
+//     , m_pLocationOpenButton(0)
+//     , m_pMediumSizeEditor(0)
+//     , m_pMediumSizeEditorLabel(0)
+//     , m_pLocationLabel(0)
+//     , m_pSizeLabel(0)
+// {
+// }
+
+// void UIWizardNewVDPageBaseSizeLocation::onSelectLocationButtonClicked()
+// {
+//     /* Get current folder and filename: */
+//     QFileInfo fullFilePath(mediumPath());
+//     QDir folder = fullFilePath.path();
+//     QString strFileName = fullFilePath.fileName();
+
+//     /* Set the first parent folder that exists as the current: */
+//     while (!folder.exists() && !folder.isRoot())
+//     {
+//         QFileInfo folderInfo(folder.absolutePath());
+//         if (folder == QDir(folderInfo.absolutePath()))
+//             break;
+//         folder = folderInfo.absolutePath();
+//     }
+
+//     /* But if it doesn't exists at all: */
+//     if (!folder.exists() || folder.isRoot())
+//     {
+//         /* Use recommended one folder: */
+//         QFileInfo defaultFilePath(absoluteFilePath(strFileName, m_strDefaultPath));
+//         folder = defaultFilePath.path();
+//     }
+
+//     /* Prepare backends list: */
+//     QVector<QString> fileExtensions;
+//     QVector<KDeviceType> deviceTypes;
+//     CMediumFormat mediumFormat = fieldImp("mediumFormat").value<CMediumFormat>();
+//     mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+//     QStringList validExtensionList;
+//     for (int i = 0; i < fileExtensions.size(); ++i)
+//         if (deviceTypes[i] == KDeviceType_HardDisk)
+//             validExtensionList << QString("*.%1").arg(fileExtensions[i]);
+//     /* Compose full filter list: */
+//     QString strBackendsList = QString("%1 (%2)").arg(mediumFormat.GetName()).arg(validExtensionList.join(" "));
+
+//     /* Open corresponding file-dialog: */
+//     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
+//                                                               strBackendsList, thisImp(),
+//                                                               UICommon::tr("Please choose a location for new virtual hard disk file"));
+
+//     /* If there was something really chosen: */
+//     if (!strChosenFilePath.isEmpty())
+//     {
+//         /* If valid file extension is missed, append it: */
+//         if (QFileInfo(strChosenFilePath).suffix().isEmpty())
+//             strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
+//         if (m_pLocationEditor)
+//         {
+//             m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
+//             m_pLocationEditor->selectAll();
+//             m_pLocationEditor->setFocus();
+//         }
+//     }
+// }
+
+// /* static */
+// QString UIWizardNewVDPageBaseSizeLocation::toFileName(const QString &strName, const QString &strExtension)
+// {
+//     /* Convert passed name to native separators (it can be full, actually): */
+//     QString strFileName = QDir::toNativeSeparators(strName);
+
+//     /* Remove all trailing dots to avoid multiple dots before extension: */
+//     int iLen;
+//     while (iLen = strFileName.length(), iLen > 0 && strFileName[iLen - 1] == '.')
+//         strFileName.truncate(iLen - 1);
+
+//     /* Add passed extension if its not done yet: */
+//     if (QFileInfo(strFileName).suffix().toLower() != strExtension)
+//         strFileName += QString(".%1").arg(strExtension);
+
+//     /* Return result: */
+//     return strFileName;
+// }
+
+// /* static */
+// QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath)
+// {
+//     /* Wrap file-info around received file name: */
+//     QFileInfo fileInfo(strFileName);
+//     /* If path-info is relative or there is no path-info at all: */
+//     if (fileInfo.fileName() == strFileName || fileInfo.isRelative())
+//     {
+//         /* Resolve path on the basis of  path we have: */
+//         fileInfo = QFileInfo(strPath, strFileName);
+//     }
+//     /* Return full absolute hard disk file path: */
+//     return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+// }
+
+// /*static */
+// QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension)
+// {
+//     QString strFilePath = absoluteFilePath(strFileName, strPath);
+//     if (QFileInfo(strFilePath).suffix().isEmpty())
+//         strFilePath += QString(".%1").arg(strExtension);
+//     return strFilePath;
+// }
+
+// /* static */
+// QString UIWizardNewVDPageBaseSizeLocation::defaultExtension(const CMediumFormat &mediumFormatRef)
+// {
+//     if (!mediumFormatRef.isNull())
+//     {
+//         /* Load extension / device list: */
+//         QVector<QString> fileExtensions;
+//         QVector<KDeviceType> deviceTypes;
+//         CMediumFormat mediumFormat(mediumFormatRef);
+//         mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+//         for (int i = 0; i < fileExtensions.size(); ++i)
+//             if (deviceTypes[i] == KDeviceType_HardDisk)
+//                 return fileExtensions[i].toLower();
+//     }
+//     AssertMsgFailed(("Extension can't be NULL!\n"));
+//     return QString();
+// }
+
+// /* static */
+// bool UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
+// {
+//     /* If the hard disk is split into 2GB parts then no need to make further checks: */
+//     if (uVariant & KMediumVariant_VmdkSplit2G)
+//         return true;
+
+//     RTFSTYPE enmType;
+//     int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
+//     if (RT_SUCCESS(rc))
+//     {
+//         if (enmType == RTFSTYPE_FAT)
+//         {
+//             /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
+//             qulonglong fatLimit = _4G - _128M;
+//             if (uSize >= fatLimit)
+//                 return false;
+//         }
+//     }
+
+//     return true;
+// }
+
+// QString UIWizardNewVDPageBaseSizeLocation::mediumPath() const
+// {
+//     if (!m_pLocationEditor)
+//         return QString();
+//     return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
+// }
+
+// qulonglong UIWizardNewVDPageBaseSizeLocation::mediumSize() const
+// {
+//     return m_pMediumSizeEditor ? m_pMediumSizeEditor->mediumSize() : 0;
+// }
+
+// void UIWizardNewVDPageBaseSizeLocation::setMediumSize(qulonglong uMediumSize)
+// {
+//     if (m_pMediumSizeEditor)
+//         m_pMediumSizeEditor->setMediumSize(uMediumSize);
+// }
+
+// /* static */
+// QString UIWizardNewVDPageBaseSizeLocation::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
+// {
+//     QString result(strFileName);
+//     foreach (const QString &strExtension, formatExtensions)
+//     {
+//         if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
+//         {
+//             /* Add the dot to extenstion: */
+//             QString strExtensionWithDot(strExtension);
+//             strExtensionWithDot.prepend('.');
+//             int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
+//             result.remove(iIndex, strExtensionWithDot.length());
+//         }
+//     }
+//     return result;
+// }
+
+// void UIWizardNewVDPageBaseSizeLocation::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
+// {
+//     /* Compose virtual-disk extension: */
+//     m_strDefaultExtension = defaultExtension(mediumFormat);
+//     /* Update m_pLocationEditor's text if necessary: */
+//     if (!m_pLocationEditor->text().isEmpty() && !m_strDefaultExtension.isEmpty())
+//     {
+//         QFileInfo fileInfo(m_pLocationEditor->text());
+//         if (fileInfo.suffix() != m_strDefaultExtension)
+//         {
+//             QFileInfo newFileInfo(fileInfo.absolutePath(),
+//                                   QString("%1.%2").
+//                                   arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
+//                                   arg(m_strDefaultExtension));
+//             m_pLocationEditor->setText(newFileInfo.absoluteFilePath());
+//         }
+//     }
+// }
+
+// void UIWizardNewVDPageBaseSizeLocation::retranslateWidgets()
+// {
+//     if (m_pLocationOpenButton)
+//         m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
+
+
+//     if (m_pMediumSizeEditorLabel)
+//         m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
+// }
+
+UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &/*strDefaultName*/, const QString &/*strDefaultPath*/, qulonglong /*uDefaultSize*/)
+    : m_pMediumSizePathGroup(0)
 {
+
+
+
+//     /* Setup connections: */
+//     connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageSizeLocation::completeChanged);
+//     connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
+//     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageSizeLocation::completeChanged);
+
+//     /* Register fields: */
+//     registerField("mediumPath", this, "mediumPath");
+//     registerField("mediumSize", this, "mediumSize");
+    prepare();
 }
 
-UIWizardNewVDPageBaseSizeLocation::UIWizardNewVDPageBaseSizeLocation()
-    : m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_pLocationEditor(0)
-    , m_pLocationOpenButton(0)
-    , m_pMediumSizeEditor(0)
-    , m_pMediumSizeEditorLabel(0)
-    , m_pLocationLabel(0)
-    , m_pSizeLabel(0)
+void UIWizardNewVDPageSizeLocation::prepare()
 {
-}
-
-void UIWizardNewVDPageBaseSizeLocation::onSelectLocationButtonClicked()
-{
-    /* Get current folder and filename: */
-    QFileInfo fullFilePath(mediumPath());
-    QDir folder = fullFilePath.path();
-    QString strFileName = fullFilePath.fileName();
-
-    /* Set the first parent folder that exists as the current: */
-    while (!folder.exists() && !folder.isRoot())
-    {
-        QFileInfo folderInfo(folder.absolutePath());
-        if (folder == QDir(folderInfo.absolutePath()))
-            break;
-        folder = folderInfo.absolutePath();
-    }
-
-    /* But if it doesn't exists at all: */
-    if (!folder.exists() || folder.isRoot())
-    {
-        /* Use recommended one folder: */
-        QFileInfo defaultFilePath(absoluteFilePath(strFileName, m_strDefaultPath));
-        folder = defaultFilePath.path();
-    }
-
-    /* Prepare backends list: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    CMediumFormat mediumFormat = fieldImp("mediumFormat").value<CMediumFormat>();
-    mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    QStringList validExtensionList;
-    for (int i = 0; i < fileExtensions.size(); ++i)
-        if (deviceTypes[i] == KDeviceType_HardDisk)
-            validExtensionList << QString("*.%1").arg(fileExtensions[i]);
-    /* Compose full filter list: */
-    QString strBackendsList = QString("%1 (%2)").arg(mediumFormat.GetName()).arg(validExtensionList.join(" "));
-
-    /* Open corresponding file-dialog: */
-    QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
-                                                              strBackendsList, thisImp(),
-                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
-
-    /* If there was something really chosen: */
-    if (!strChosenFilePath.isEmpty())
-    {
-        /* If valid file extension is missed, append it: */
-        if (QFileInfo(strChosenFilePath).suffix().isEmpty())
-            strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
-        if (m_pLocationEditor)
-        {
-            m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
-            m_pLocationEditor->selectAll();
-            m_pLocationEditor->setFocus();
-        }
-    }
-}
-
-/* static */
-QString UIWizardNewVDPageBaseSizeLocation::toFileName(const QString &strName, const QString &strExtension)
-{
-    /* Convert passed name to native separators (it can be full, actually): */
-    QString strFileName = QDir::toNativeSeparators(strName);
-
-    /* Remove all trailing dots to avoid multiple dots before extension: */
-    int iLen;
-    while (iLen = strFileName.length(), iLen > 0 && strFileName[iLen - 1] == '.')
-        strFileName.truncate(iLen - 1);
-
-    /* Add passed extension if its not done yet: */
-    if (QFileInfo(strFileName).suffix().toLower() != strExtension)
-        strFileName += QString(".%1").arg(strExtension);
-
-    /* Return result: */
-    return strFileName;
-}
-
-/* static */
-QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath)
-{
-    /* Wrap file-info around received file name: */
-    QFileInfo fileInfo(strFileName);
-    /* If path-info is relative or there is no path-info at all: */
-    if (fileInfo.fileName() == strFileName || fileInfo.isRelative())
-    {
-        /* Resolve path on the basis of  path we have: */
-        fileInfo = QFileInfo(strPath, strFileName);
-    }
-    /* Return full absolute hard disk file path: */
-    return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
-}
-
-/*static */
-QString UIWizardNewVDPageBaseSizeLocation::absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension)
-{
-    QString strFilePath = absoluteFilePath(strFileName, strPath);
-    if (QFileInfo(strFilePath).suffix().isEmpty())
-        strFilePath += QString(".%1").arg(strExtension);
-    return strFilePath;
-}
-
-/* static */
-QString UIWizardNewVDPageBaseSizeLocation::defaultExtension(const CMediumFormat &mediumFormatRef)
-{
-    if (!mediumFormatRef.isNull())
-    {
-        /* Load extension / device list: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        CMediumFormat mediumFormat(mediumFormatRef);
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == KDeviceType_HardDisk)
-                return fileExtensions[i].toLower();
-    }
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
-}
-
-/* static */
-bool UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
-{
-    /* If the hard disk is split into 2GB parts then no need to make further checks: */
-    if (uVariant & KMediumVariant_VmdkSplit2G)
-        return true;
-
-    RTFSTYPE enmType;
-    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
-    if (RT_SUCCESS(rc))
-    {
-        if (enmType == RTFSTYPE_FAT)
-        {
-            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
-            qulonglong fatLimit = _4G - _128M;
-            if (uSize >= fatLimit)
-                return false;
-        }
-    }
-
-    return true;
-}
-
-QString UIWizardNewVDPageBaseSizeLocation::mediumPath() const
-{
-    if (!m_pLocationEditor)
-        return QString();
-    return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
-}
-
-qulonglong UIWizardNewVDPageBaseSizeLocation::mediumSize() const
-{
-    return m_pMediumSizeEditor ? m_pMediumSizeEditor->mediumSize() : 0;
-}
-
-void UIWizardNewVDPageBaseSizeLocation::setMediumSize(qulonglong uMediumSize)
-{
-    if (m_pMediumSizeEditor)
-        m_pMediumSizeEditor->setMediumSize(uMediumSize);
-}
-
-/* static */
-QString UIWizardNewVDPageBaseSizeLocation::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
-{
-    QString result(strFileName);
-    foreach (const QString &strExtension, formatExtensions)
-    {
-        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
-        {
-            /* Add the dot to extenstion: */
-            QString strExtensionWithDot(strExtension);
-            strExtensionWithDot.prepend('.');
-            int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
-            result.remove(iIndex, strExtensionWithDot.length());
-        }
-    }
-    return result;
-}
-
-void UIWizardNewVDPageBaseSizeLocation::updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
-{
-    /* Compose virtual-disk extension: */
-    m_strDefaultExtension = defaultExtension(mediumFormat);
-    /* Update m_pLocationEditor's text if necessary: */
-    if (!m_pLocationEditor->text().isEmpty() && !m_strDefaultExtension.isEmpty())
-    {
-        QFileInfo fileInfo(m_pLocationEditor->text());
-        if (fileInfo.suffix() != m_strDefaultExtension)
-        {
-            QFileInfo newFileInfo(fileInfo.absolutePath(),
-                                  QString("%1.%2").
-                                  arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
-                                  arg(m_strDefaultExtension));
-            m_pLocationEditor->setText(newFileInfo.absoluteFilePath());
-        }
-    }
-}
-
-void UIWizardNewVDPageBaseSizeLocation::retranslateWidgets()
-{
-    if (m_pLocationOpenButton)
-        m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
-
-    if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
-                                                    "click on the folder icon to select a different folder to create the file in."));
-    if (m_pSizeLabel)
-        m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
-                                                "This size is the limit on the amount of file data "
-                                                "that a virtual machine will be able to store on the hard disk."));
-    if (m_pMediumSizeEditorLabel)
-        m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
-}
-
-UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
-    : UIWizardNewVDPageBaseSizeLocation(strDefaultName, strDefaultPath)
-{
-    /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    {
-        m_pLocationLabel = new QIRichTextLabel(this);
-        QHBoxLayout *pLocationLayout = new QHBoxLayout;
-        {
-            m_pLocationEditor = new QLineEdit(this);
-            m_pLocationOpenButton = new QIToolButton(this);
-            {
-                m_pLocationOpenButton->setAutoRaise(true);
-                m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
-            }
-            pLocationLayout->addWidget(m_pLocationEditor);
-            pLocationLayout->addWidget(m_pLocationOpenButton);
-        }
-        m_pSizeLabel = new QIRichTextLabel(this);
-        m_pMediumSizeEditor = new UIMediumSizeEditor;
-        setMediumSize(uDefaultSize);
-        pMainLayout->addWidget(m_pLocationLabel);
-        pMainLayout->addLayout(pLocationLayout);
-        pMainLayout->addWidget(m_pSizeLabel);
-        pMainLayout->addWidget(m_pMediumSizeEditor);
-        pMainLayout->addStretch();
-    }
-
-    /* Setup connections: */
-    connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageSizeLocation::completeChanged);
-    connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
-    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageSizeLocation::completeChanged);
-
-    /* Register fields: */
-    registerField("mediumPath", this, "mediumPath");
-    registerField("mediumSize", this, "mediumSize");
+    AssertReturnVoid(pMainLayout);
+//     {
+//         m_pLocationLabel = new QIRichTextLabel(this);
+//         QHBoxLayout *pLocationLayout = new QHBoxLayout;
+//         {
+//             m_pLocationEditor = new QLineEdit(this);
+//             m_pLocationOpenButton = new QIToolButton(this);
+//             {
+//                 m_pLocationOpenButton->setAutoRaise(true);
+//                 m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
+//             }
+//             pLocationLayout->addWidget(m_pLocationEditor);
+//             pLocationLayout->addWidget(m_pLocationOpenButton);
+//         }
+//         m_pSizeLabel = new QIRichTextLabel(this);
+//         m_pMediumSizeEditor = new UIMediumSizeEditor;
+//         setMediumSize(uDefaultSize);
+//         pMainLayout->addWidget(m_pLocationLabel);
+//         pMainLayout->addLayout(pLocationLayout);
+//         pMainLayout->addWidget(m_pSizeLabel);
+//         pMainLayout->addWidget(m_pMediumSizeEditor);
+//         pMainLayout->addStretch();
+//     }
+    retranslateUi();
 }
 
 void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 {
     /* Call to base-class: */
-    onSelectLocationButtonClicked();
+    //onSelectLocationButtonClicked();
 }
 
 void UIWizardNewVDPageSizeLocation::retranslateUi()
 {
-    retranslateWidgets();
-    /* Translate page: */
     setTitle(UIWizardNewVD::tr("File location and size"));
+    // if (m_pLocationLabel)
+    //     m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
+    //                                                 "click on the folder icon to select a different folder to create the file in."));
+    // if (m_pSizeLabel)
+    //     m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
+    //                                             "This size is the limit on the amount of file data "
+    //                                             "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVDPageSizeLocation::initializePage()
 {
-    /* Translate page: */
-    retranslateUi();
+    // /* Translate page: */
+    // retranslateUi();
 
-    /* Get default extension for new virtual-disk: */
-    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
-    /* Set default name as text for location editor: */
-    if (m_pLocationEditor)
-        m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
+    // /* Get default extension for new virtual-disk: */
+    // m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
+    // /* Set default name as text for location editor: */
+    // if (m_pLocationEditor)
+    //     m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
 bool UIWizardNewVDPageSizeLocation::isComplete() const
 {
-    if (!m_pLocationEditor)
-        return false;
-    /* Make sure current name is not empty and current size fits the bounds: */
-    return !m_pLocationEditor->text().trimmed().isEmpty() &&
-           mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+    // if (!m_pLocationEditor)
+    //     return false;
+    // /* Make sure current name is not empty and current size fits the bounds: */
+    // return !m_pLocationEditor->text().trimmed().isEmpty() &&
+    //        mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+    return false;
 }
 
 bool UIWizardNewVDPageSizeLocation::validatePage()
@@ -360,31 +369,31 @@ bool UIWizardNewVDPageSizeLocation::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Make sure such file doesn't exist already: */
-    const QString strMediumPath(mediumPath());
-    fResult = !QFileInfo(strMediumPath).exists();
-    if (!fResult)
-    {
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-        return fResult;
-    }
+    // /* Make sure such file doesn't exist already: */
+    // const QString strMediumPath(mediumPath());
+    // fResult = !QFileInfo(strMediumPath).exists();
+    // if (!fResult)
+    // {
+    //     msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+    //     return fResult;
+    // }
 
-    /* Make sure we are passing FAT size limitation: */
-    fResult = checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-                                     fieldImp("mediumPath").toString(),
-                                     fieldImp("mediumSize").toULongLong());
-    if (!fResult)
-    {
-        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-        return fResult;
-    }
+    // /* Make sure we are passing FAT size limitation: */
+    // fResult = checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+    //                                  fieldImp("mediumPath").toString(),
+    //                                  fieldImp("mediumSize").toULongLong());
+    // if (!fResult)
+    // {
+    //     msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+    //     return fResult;
+    // }
 
-    /* Lock finish button: */
-    startProcessing();
-    /* Try to create virtual-disk: */
-    fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
-    /* Unlock finish button: */
-    endProcessing();
+    // /* Lock finish button: */
+    // startProcessing();
+    // /* Try to create virtual-disk: */
+    // fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+    // /* Unlock finish button: */
+    // endProcessing();
 
     /* Return result: */
     return fResult;

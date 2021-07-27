@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class CMediumFormat;
@@ -31,68 +31,65 @@ class QLineEdit;
 class QIToolButton;
 class QIRichTextLabel;
 class UIMediumSizeEditor;
+class UIMediumSizeAndPathGroupBox;
 
+// /* 3rd page of the New Virtual Hard Drive wizard (base part): */
+// class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseSizeLocation : public UIWizardPageBase
+// {
 
-/* 3rd page of the New Virtual Hard Drive wizard (base part): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseSizeLocation : public UIWizardPageBase
-{
+// public:
 
-public:
+//     static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+//     /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
+//     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
 
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
-    /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
-    static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
+// protected:
 
-protected:
+//     UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath);
+//     UIWizardNewVDPageBaseSizeLocation();
 
-    UIWizardNewVDPageBaseSizeLocation(const QString &strDefaultName, const QString &strDefaultPath);
-    UIWizardNewVDPageBaseSizeLocation();
+//     void onSelectLocationButtonClicked();
 
-    void onSelectLocationButtonClicked();
+//     static QString toFileName(const QString &strName, const QString &strExtension);
+//     /** Returns the full image file path except the extension. */
+//     static QString absoluteFilePath(const QString &strFileName, const QString &strPath);
+//     /** Returns the full image file path including the extension. */
+//     static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
 
-    static QString toFileName(const QString &strName, const QString &strExtension);
-    /** Returns the full image file path except the extension. */
-    static QString absoluteFilePath(const QString &strFileName, const QString &strPath);
-    /** Returns the full image file path including the extension. */
-    static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
+//     virtual QString mediumPath() const;
+//     /** A utility function thar strips the format extension from the @p strFileName.
+//       * foo.dd.vdi becomes foo.dd. any extension which is not a format extension is left alone. */
+//     static QString stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions);
+//     void updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
 
-    virtual QString mediumPath() const;
-    /** A utility function thar strips the format extension from the @p strFileName.
-      * foo.dd.vdi becomes foo.dd. any extension which is not a format extension is left alone. */
-    static QString stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions);
-    void updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
+//     qulonglong mediumSize() const;
+//     void setMediumSize(qulonglong uMediumSize);
+//     void retranslateWidgets();
 
-    qulonglong mediumSize() const;
-    void setMediumSize(qulonglong uMediumSize);
-    void retranslateWidgets();
+//     /** @name Widgets
+//      * @{ */
+//        QString m_strDefaultName;
+//        QString m_strDefaultPath;
+//        QString m_strDefaultExtension;
+//        qulonglong m_uMediumSizeMin;
+//        qulonglong m_uMediumSizeMax;
+//     /** @} */
 
-    /** @name Widgets
-     * @{ */
-       QString m_strDefaultName;
-       QString m_strDefaultPath;
-       QString m_strDefaultExtension;
-       qulonglong m_uMediumSizeMin;
-       qulonglong m_uMediumSizeMax;
-    /** @} */
+//     /** @name Widgets
+//      * @{ */
+//        QLineEdit *m_pLocationEditor;
+//        QIToolButton *m_pLocationOpenButton;
+//        UIMediumSizeEditor *m_pMediumSizeEditor;
+//        QLabel          *m_pMediumSizeEditorLabel;
 
-    /** @name Widgets
-     * @{ */
-       QLineEdit *m_pLocationEditor;
-       QIToolButton *m_pLocationOpenButton;
-       UIMediumSizeEditor *m_pMediumSizeEditor;
-       QLabel          *m_pMediumSizeEditorLabel;
-       QIRichTextLabel *m_pLocationLabel;
-       QIRichTextLabel *m_pSizeLabel;
-    /** @} */
-};
+//     /** @} */
+// };
 
 
 /* 3rd page of the New Virtual Hard Drive wizard (basic extension): */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UIWizardPage, public UIWizardNewVDPageBaseSizeLocation
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(QString mediumPath READ mediumPath);
-    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
@@ -100,10 +97,6 @@ public:
 
 protected:
 
-    /** Wrapper to access 'this' from base part: */
-    UIWizardPage* thisImp() { return this; }
-    /** Wrapper to access 'wizard-field' from base part: */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
@@ -116,6 +109,9 @@ private:
     void initializePage();
     bool isComplete() const;
     bool validatePage();
+    void prepare();
+
+    UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroup;
 };
 
 

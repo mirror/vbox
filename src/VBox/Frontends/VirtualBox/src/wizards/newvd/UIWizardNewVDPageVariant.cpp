@@ -22,6 +22,7 @@
 #include <QCheckBox>
 
 /* GUI includes: */
+#include "UIWizardDiskEditors.h"
 #include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVD.h"
 #include "QIRichTextLabel.h"
@@ -29,97 +30,181 @@
 /* COM includes: */
 #include "CMediumFormat.h"
 
-UIWizardNewVDPageBaseVariant::UIWizardNewVDPageBaseVariant()
-    : m_pFixedCheckBox(0)
-    , m_pSplitBox(0)
-    , m_pDescriptionLabel(0)
+// UIWizardNewVDPageBaseVariant::UIWizardNewVDPageBaseVariant()
+//     : m_pFixedCheckBox(0)
+//     , m_pSplitBox(0)
+//     , m_pDescriptionLabel(0)
+//     , m_pDynamicLabel(0)
+//     , m_pFixedLabel(0)
+//     , m_pSplitLabel(0)
+// {
+// }
+
+// QWidget *UIWizardNewVDPageBaseVariant::createMediumVariantWidgets(bool fWithLabels)
+// {
+//     QWidget *pContainerWidget = new QWidget;
+//     return pContainerWidget;
+// }
+
+// qulonglong UIWizardNewVDPageBaseVariant::mediumVariant() const
+// {
+//     /* Initial value: */
+//     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
+
+//     /* Exclusive options: */
+//     if (m_pFixedCheckBox && m_pFixedCheckBox->isChecked())
+//         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
+//     else
+//         uMediumVariant = (qulonglong)KMediumVariant_Standard;
+
+//     /* Additional options: */
+//     if (m_pSplitBox && m_pSplitBox->isChecked())
+//         uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
+
+//     /* Return options: */
+//     return uMediumVariant;
+// }
+
+// void UIWizardNewVDPageBaseVariant::setMediumVariant(qulonglong uMediumVariant)
+// {
+//     /* Exclusive options: */
+//     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
+//     {
+//         m_pFixedCheckBox->click();
+//         m_pFixedCheckBox->setFocus();
+//     }
+
+//     /* Additional options: */
+//     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
+// }
+
+// void UIWizardNewVDPageBaseVariant::retranslateWidgets()
+// {
+//     if (m_pFixedCheckBox)
+//     {
+//         m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-allocate &Full Size"));
+//         m_pFixedCheckBox->setToolTip(UIWizardNewVD::tr("<p>When checked, the virtual disk image will be fully allocated at "
+//                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
+//     }
+
+//     if (m_pSplitBox)
+//         m_pSplitBox->setText(UIWizardNewVD::tr("&Split Into Files of Less Than 2GB"));
+
+
+// }
+
+// void UIWizardNewVDPageBaseVariant::setWidgetVisibility(CMediumFormat &mediumFormat)
+// {
+//     ULONG uCapabilities = 0;
+//     QVector<KMediumFormatCapabilities> capabilities;
+//     capabilities = mediumFormat.GetCapabilities();
+//     for (int i = 0; i < capabilities.size(); i++)
+//         uCapabilities |= capabilities[i];
+
+//     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+//     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+//     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+//     if (m_pFixedCheckBox)
+//     {
+//         if (!fIsCreateDynamicPossible)
+//         {
+//             m_pFixedCheckBox->setChecked(true);
+//             m_pFixedCheckBox->setEnabled(false);
+//         }
+//         if (!fIsCreateFixedPossible)
+//         {
+//             m_pFixedCheckBox->setChecked(false);
+//             m_pFixedCheckBox->setEnabled(false);
+//         }
+//     }
+//     if (m_pDynamicLabel)
+//         m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
+//     if (m_pFixedLabel)
+//         m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
+//     if (m_pFixedCheckBox)
+//         m_pFixedCheckBox->setHidden(!fIsCreateFixedPossible);
+//     if (m_pSplitLabel)
+//         m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
+//     if (m_pSplitBox)
+//         m_pSplitBox->setHidden(!fIsCreateSplitPossible);
+// }
+
+// void UIWizardNewVDPageBaseVariant::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
+// {
+//     /* Enable/disable widgets: */
+//     ULONG uCapabilities = 0;
+//     QVector<KMediumFormatCapabilities> capabilities;
+//     capabilities = mediumFormat.GetCapabilities();
+//     for (int i = 0; i < capabilities.size(); i++)
+//         uCapabilities |= capabilities[i];
+
+//     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+//     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+//     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+
+//     if (m_pFixedCheckBox)
+//     {
+//         m_pFixedCheckBox->setEnabled(fIsCreateDynamicPossible || fIsCreateFixedPossible);
+//         if (!fIsCreateDynamicPossible)
+//             m_pFixedCheckBox->setChecked(true);
+//         if (!fIsCreateFixedPossible)
+//             m_pFixedCheckBox->setChecked(false);
+//     }
+//     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
+// }
+
+UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
+    : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
     , m_pSplitLabel(0)
+    , m_pVariantGroupBox(0)
 {
+    prepare();
 }
 
-QWidget *UIWizardNewVDPageBaseVariant::createMediumVariantWidgets(bool fWithLabels)
+void UIWizardNewVDPageVariant::prepare()
 {
-    QWidget *pContainerWidget = new QWidget;
-    QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
-    if (pMainLayout)
-    {
-        if (fWithLabels)
-        {
-            m_pDescriptionLabel = new QIRichTextLabel;
-            m_pDynamicLabel = new QIRichTextLabel;
-            m_pFixedLabel = new QIRichTextLabel;
-            m_pSplitLabel = new QIRichTextLabel;
-        }
-        QVBoxLayout *pVariantLayout = new QVBoxLayout;
-        if (pVariantLayout)
-        {
-            m_pFixedCheckBox = new QCheckBox;
-            m_pSplitBox = new QCheckBox;
-            pVariantLayout->addWidget(m_pFixedCheckBox);
-            pVariantLayout->addWidget(m_pSplitBox);
-        }
-        if (fWithLabels)
-        {
-            pMainLayout->addWidget(m_pDescriptionLabel);
-            pMainLayout->addWidget(m_pDynamicLabel);
-            pMainLayout->addWidget(m_pFixedLabel);
-            pMainLayout->addWidget(m_pSplitLabel);
-        }
-        pMainLayout->addLayout(pVariantLayout);
-        pMainLayout->addStretch();
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-    }
-    return pContainerWidget;
+
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+
+    m_pDescriptionLabel = new QIRichTextLabel;
+    m_pDynamicLabel = new QIRichTextLabel;
+    m_pFixedLabel = new QIRichTextLabel;
+    m_pSplitLabel = new QIRichTextLabel;
+
+    pMainLayout->addWidget(m_pDescriptionLabel);
+    pMainLayout->addWidget(m_pDynamicLabel);
+    pMainLayout->addWidget(m_pFixedLabel);
+    pMainLayout->addWidget(m_pSplitLabel);
+
+    m_pVariantGroupBox = new UIDiskVariantGroupBox(false, 0);
+    pMainLayout->addWidget(m_pVariantGroupBox);
+
+    pMainLayout->addStretch();
+
+    retranslateUi();
+
+    /* Create widgets: */
+    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    // pMainLayout->addWidget(createMediumVariantWidgets(true));
+    // pMainLayout->addStretch();
+
+    // /* Setup connections: */
+    // connect(m_pFixedCheckBox, &QAbstractButton::toggled,
+    //         this, &UIWizardNewVDPageVariant::completeChanged);
+    // connect(m_pSplitBox, &QCheckBox::stateChanged,
+    //         this, &UIWizardNewVDPageVariant::completeChanged);
+
+    // /* Register fields: */
+    // registerField("mediumVariant", this, "mediumVariant");
 }
 
-qulonglong UIWizardNewVDPageBaseVariant::mediumVariant() const
+void UIWizardNewVDPageVariant::retranslateUi()
 {
-    /* Initial value: */
-    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
+    setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
 
-    /* Exclusive options: */
-    if (m_pFixedCheckBox && m_pFixedCheckBox->isChecked())
-        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
-    else
-        uMediumVariant = (qulonglong)KMediumVariant_Standard;
-
-    /* Additional options: */
-    if (m_pSplitBox && m_pSplitBox->isChecked())
-        uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
-
-    /* Return options: */
-    return uMediumVariant;
-}
-
-void UIWizardNewVDPageBaseVariant::setMediumVariant(qulonglong uMediumVariant)
-{
-    /* Exclusive options: */
-    if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
-    {
-        m_pFixedCheckBox->click();
-        m_pFixedCheckBox->setFocus();
-    }
-
-    /* Additional options: */
-    m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
-}
-
-void UIWizardNewVDPageBaseVariant::retranslateWidgets()
-{
-    if (m_pFixedCheckBox)
-    {
-        m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(UIWizardNewVD::tr("<p>When checked, the virtual disk image will be fully allocated at "
-                                                       "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
-    }
-
-    if (m_pSplitBox)
-        m_pSplitBox->setText(UIWizardNewVD::tr("&Split Into Files of Less Than 2GB"));
-
-
-    /* Translate rich text labels: */
     if (m_pDescriptionLabel)
         m_pDescriptionLabel->setText(UIWizardNewVD::tr("Please choose whether the new virtual hard disk file should grow as it is used "
                                                        "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
@@ -137,100 +222,15 @@ void UIWizardNewVDPageBaseVariant::retranslateWidgets()
                                                  "handle very large files."));
 }
 
-void UIWizardNewVDPageBaseVariant::setWidgetVisibility(CMediumFormat &mediumFormat)
-{
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = mediumFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
-
-    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-    if (m_pFixedCheckBox)
-    {
-        if (!fIsCreateDynamicPossible)
-        {
-            m_pFixedCheckBox->setChecked(true);
-            m_pFixedCheckBox->setEnabled(false);
-        }
-        if (!fIsCreateFixedPossible)
-        {
-            m_pFixedCheckBox->setChecked(false);
-            m_pFixedCheckBox->setEnabled(false);
-        }
-    }
-    if (m_pDynamicLabel)
-        m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
-    if (m_pFixedLabel)
-        m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
-    if (m_pFixedCheckBox)
-        m_pFixedCheckBox->setHidden(!fIsCreateFixedPossible);
-    if (m_pSplitLabel)
-        m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
-    if (m_pSplitBox)
-        m_pSplitBox->setHidden(!fIsCreateSplitPossible);
-}
-
-void UIWizardNewVDPageBaseVariant::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
-{
-    /* Enable/disable widgets: */
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = mediumFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
-
-    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-
-    if (m_pFixedCheckBox)
-    {
-        m_pFixedCheckBox->setEnabled(fIsCreateDynamicPossible || fIsCreateFixedPossible);
-        if (!fIsCreateDynamicPossible)
-            m_pFixedCheckBox->setChecked(true);
-        if (!fIsCreateFixedPossible)
-            m_pFixedCheckBox->setChecked(false);
-    }
-    m_pSplitBox->setEnabled(fIsCreateSplitPossible);
-}
-
-UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
-{
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->addWidget(createMediumVariantWidgets(true));
-    pMainLayout->addStretch();
-
-    /* Setup connections: */
-    connect(m_pFixedCheckBox, &QAbstractButton::toggled,
-            this, &UIWizardNewVDPageVariant::completeChanged);
-    connect(m_pSplitBox, &QCheckBox::stateChanged,
-            this, &UIWizardNewVDPageVariant::completeChanged);
-
-    /* Register fields: */
-    registerField("mediumVariant", this, "mediumVariant");
-}
-
-void UIWizardNewVDPageVariant::retranslateUi()
-{
-    retranslateWidgets();
-    /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
-}
-
 void UIWizardNewVDPageVariant::initializePage()
 {
-    /* Translate page: */
-    retranslateUi();
-    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    setWidgetVisibility(mediumFormat);
+    // retranslateUi();
+    // CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
+    // setWidgetVisibility(mediumFormat);
 }
 
 bool UIWizardNewVDPageVariant::isComplete() const
 {
-    /* Make sure medium variant is correct: */
-    return mediumVariant() != (qulonglong)KMediumVariant_Max;
+    //return mediumVariant() != (qulonglong)KMediumVariant_Max;
+    return false;
 }

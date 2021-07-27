@@ -46,9 +46,10 @@
 *   UIDiskFormatsGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(QWidget *pParent /* = 0 */)
+UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pFormatButtonGroup(0)
+    , m_fExpertMode(fExpertMode)
 {
     prepare();
 }
@@ -76,6 +77,8 @@ const CMediumFormat &UIDiskFormatsGroupBox::VDIMediumFormat() const
 void UIDiskFormatsGroupBox::prepare()
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
+    if (!m_fExpertMode)
+        setFlat(true);
 
     m_pFormatButtonGroup = new QButtonGroup;
     AssertReturnVoid(m_pFormatButtonGroup);
@@ -105,8 +108,12 @@ void UIDiskFormatsGroupBox::prepare()
         addFormatButton(pContainerLayout, vdi.value(strId), true);
     foreach (const QString &strId, preferred.keys())
         addFormatButton(pContainerLayout, preferred.value(strId), true);
-    foreach (const QString &strId, others.keys())
-        addFormatButton(pContainerLayout, others.value(strId));
+
+    if (m_fExpertMode)
+    {
+        foreach (const QString &strId, others.keys())
+            addFormatButton(pContainerLayout, others.value(strId));
+    }
 
     /* Select VDI: */
     if (!m_pFormatButtonGroup->buttons().isEmpty())
@@ -123,17 +130,15 @@ void UIDiskFormatsGroupBox::prepare()
 
 void UIDiskFormatsGroupBox::retranslateUi()
 {
-    setTitle(tr("Hard Disk File &Type"));
+    if (m_fExpertMode)
+        setTitle(tr("Hard Disk File &Type"));
 
-    if (m_pFormatButtonGroup)
+    QList<QAbstractButton*> buttons = m_pFormatButtonGroup ? m_pFormatButtonGroup->buttons() : QList<QAbstractButton*>();
+    for (int i = 0; i < buttons.size(); ++i)
     {
-        QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-        for (int i = 0; i < buttons.size(); ++i)
-        {
-            QAbstractButton *pButton = buttons[i];
-            UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-            pButton->setText(gpConverter->toString(enmFormat));
-        }
+        QAbstractButton *pButton = buttons[i];
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        pButton->setText(gpConverter->toString(enmFormat));
     }
 }
 
@@ -162,7 +167,7 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
     AssertPtrReturnVoid(pFormatButton);
     {
         /* Make the preferred button font bold: */
-        if (fPreferred)
+        if (fPreferred && m_fExpertMode)
         {
             QFont font = pFormatButton->font();
             font.setBold(true);
@@ -172,7 +177,7 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
         m_formats << medFormat;
         m_formatNames << medFormat.GetName();
         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-        m_formatExtensions << UIWizardNewVMDiskPage::defaultExtension(medFormat);
+        m_formatExtensions << defaultExtension(medFormat);
     }
 }
 
@@ -181,21 +186,43 @@ const QStringList UIDiskFormatsGroupBox::formatExtensions() const
     return m_formatExtensions;
 }
 
+/* static */
+QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef)
+{
+    if (!mediumFormatRef.isNull())
+    {
+        /* Load extension / device list: */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+        CMediumFormat mediumFormat(mediumFormatRef);
+        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+        for (int i = 0; i < fileExtensions.size(); ++i)
+            if (deviceTypes[i] == KDeviceType_HardDisk)
+                return fileExtensions[i].toLower();
+    }
+    AssertMsgFailed(("Extension can't be NULL!\n"));
+    return QString();
+}
+
+
 /*********************************************************************************************************************************
 *   UIDiskVariantGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
 
-UIDiskVariantGroupBox::UIDiskVariantGroupBox(QWidget *pParent /* = 0 */)
+UIDiskVariantGroupBox::UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pFixedCheckBox(0)
     , m_pSplitBox(0)
+    , m_fExpertMode(fExpertMode)
 {
     prepare();
 }
 
 void UIDiskVariantGroupBox::prepare()
 {
+    if (!m_fExpertMode)
+        setFlat(true);
     QVBoxLayout *pVariantLayout = new QVBoxLayout(this);
     AssertReturnVoid(pVariantLayout);
     m_pFixedCheckBox = new QCheckBox;
@@ -210,7 +237,8 @@ void UIDiskVariantGroupBox::prepare()
 
 void UIDiskVariantGroupBox::retranslateUi()
 {
-    setTitle(tr("Storage on Physical Hard Disk"));
+    if (m_fExpertMode)
+        setTitle(tr("Storage on Physical Hard Disk"));
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
@@ -400,7 +428,7 @@ void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
 void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
 {
     /* Compose virtual-disk extension: */
-    QString strDefaultExtension = UIWizardNewVMDiskPage::defaultExtension(mediumFormat);
+    QString strDefaultExtension = UIDiskFormatsGroupBox::defaultExtension(mediumFormat);
     /* Update m_pLocationEditor's text if necessary: */
     if (!m_pLocationEditor->text().isEmpty() && !strDefaultExtension.isEmpty())
     {
