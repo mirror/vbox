@@ -1619,7 +1619,7 @@ EOF
           foundqt5=2 # internal
           break;
         fi
-        LIBQT5="-L$q/lib -lQt5Core lQt5Gui"
+        LIBQT5="-L$q/lib -lQt5Core -lQt5Gui"
         if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal &&
             test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal; then
           foundqt5=1 # no pkg-config, Qt directory
