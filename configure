@@ -81,7 +81,6 @@ WITH_PYTHON=1
 WITH_JAVA=1
 WITH_VMMRAW=1
 WITH_LIBIDL=1
-WITH_GSOAP=0
 WITH_QT5=1
 WITH_SDL=1
 WITH_SDL_TTF=1
@@ -2374,7 +2373,6 @@ EOF
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
 [ $WITH_QT5     -eq 0 ] && echo "  --enable-qt5             enable Qt5 detection"
-[ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
 [ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
 [ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
@@ -2409,10 +2407,10 @@ EOF
 [ "$OS"   = "darwin" ] && echo "                           only, ignored for the rest)"
 [ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
 [ $WITH_QT5    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt headers/libraries [pkgconfig]"
-[ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries"
-[ $WITH_GSOAP  -eq 1 ] && echo "                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)"
-[ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
 cat << EOF
+  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries
+                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)
+  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)
   --with-openssl-dir=DIR   directory for OpenSSL headers/libraries
   --with-ow-dir=DIR        directory where Open Watcom can be found [$WATCOM]
   --out-base-dir=DIR       directory where configuration and build output
@@ -2591,7 +2589,6 @@ for option in "$@"; do
       [ $WITH_OPENGL -eq 1 ] && WITH_OPENGL=0
       ;;
     --enable-webservice)
-      [ $WITH_GSOAP -eq 0 ] && WITH_GSOAP=1
       ;;
     --enable-vnc)
       WITH_VNC=1
@@ -2908,12 +2905,10 @@ fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
 
-if [ $ONLY_ADDITIONS -eq 0 -a $WITH_GSOAP -eq 1 ]; then
+if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_gsoap
 else
-  if [ $OSE -ge 1 ]; then
-    cnf_append "VBOX_WITH_WEBSERVICES" ""
-  fi
+  cnf_append "VBOX_WITH_WEBSERVICES" ""
 fi
 
 # UDPTUNNEL
