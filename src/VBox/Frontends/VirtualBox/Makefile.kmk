@@ -1158,7 +1158,6 @@ VirtualBox_SOURCES = \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.cpp \
 	src/wizards/editors/UIHostnameDomainNameEditor.cpp \
 	src/wizards/editors/UIUserNamePasswordEditor.cpp \
-	src/wizards/editors/UIWizardDiskEditors.cpp \
 	src/wizards/editors/UIWizardNewVMEditors.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp \
