@@ -66,7 +66,7 @@ NOQT     ?= $(HEADLESS)
 NOSDL    ?= $(HEADLESS)
 NOWEBSVC ?=
 EFI      ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxEFI32.fd $(vboxroot)/prebuild/VBoxEFI64.fd),1,)
-NODOCS   ?= $(if $(wildcard $(addprefix $(vboxroot)/prebuild/,UserManual*.pdf UserManual*.qch UserManual.qhc)),1,)
+NODOCS   ?= $(if $(wildcard $(addprefix $(vboxroot)/prebuild/,UserManual*.pdf UserManual*.qch UserManual*.qhc)),1,)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
 NOWINE   := $(if $(STAGEDISO),1,$(ose))
 PYTHON   := $(firstword $(shell which python3) $(shell which python))
@@ -136,7 +136,7 @@ $(bldbase)/build-stamp $(verfile): $(bldbase)/configure-stamp
 	. $(bldbase)/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	# Files from prebuild go to (builddir)/bin to be used during the
 	# packing stage, overriding what the build did/would produce.
-	$(if $(NODOCS),cp $(addprefix $(vboxroot)/prebuild/,UserManual*.pdf UserManual*.qch UserManual.qhc) $(builddir)/bin,)
+	$(if $(NODOCS),cp $(addprefix $(vboxroot)/prebuild/,UserManual*.pdf UserManual*.qch UserManual*.qhc) $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
