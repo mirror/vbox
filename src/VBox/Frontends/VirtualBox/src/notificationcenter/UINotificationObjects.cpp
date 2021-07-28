@@ -185,6 +185,38 @@ void UINotificationProgressMachineCopy::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressMachineMediaRemove implementation.                                                                    *
+*********************************************************************************************************************************/
+
+UINotificationProgressMachineMediaRemove::UINotificationProgressMachineMediaRemove(const CMachine &comMachine,
+                                                                                   const CMediumVector &media)
+    : m_comMachine(comMachine)
+    , m_media(media)
+{
+}
+
+QString UINotificationProgressMachineMediaRemove::name() const
+{
+    return UINotificationProgress::tr("Removing machine media ...");
+}
+
+QString UINotificationProgressMachineMediaRemove::details() const
+{
+    return UINotificationProgress::tr("<b>Machine Name:</b> %1").arg(m_comMachine.GetName());
+}
+
+CProgress UINotificationProgressMachineMediaRemove::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.DeleteConfig(m_media);
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudMachineAdd implementation.                                                                  *
 *********************************************************************************************************************************/
 
