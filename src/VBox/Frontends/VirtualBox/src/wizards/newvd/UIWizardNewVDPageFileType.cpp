@@ -102,33 +102,3 @@ bool UIWizardNewVDPageFileType::isComplete() const
     //return !mediumFormat().isNull();
     return true;
 }
-
-// int UIWizardNewVDPageFileType::nextId() const
-// {
-//     /* Show variant page only if there is something to show: */
-//     CMediumFormat mf = mediumFormat();
-//     if (mf.isNull())
-//     {
-//         AssertMsgFailed(("No medium format set!"));
-//     }
-//     else
-//     {
-//         ULONG uCapabilities = 0;
-//         QVector<KMediumFormatCapabilities> capabilities;
-//         capabilities = mf.GetCapabilities();
-//         for (int i = 0; i < capabilities.size(); i++)
-//             uCapabilities |= capabilities[i];
-
-//         int cTest = 0;
-//         if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
-//             ++cTest;
-//         if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
-//             ++cTest;
-//         if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
-//             ++cTest;
-//         if (cTest > 1)
-//             return UIWizardNewVD::Page2;
-//     }
-//     /* Skip otherwise: */
-//     return UIWizardNewVD::Page3;
-// }

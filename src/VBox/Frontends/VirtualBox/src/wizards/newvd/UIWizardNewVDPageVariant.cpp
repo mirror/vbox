@@ -145,9 +145,10 @@ void UIWizardNewVDPageVariant::prepare()
 
     m_pVariantGroupBox = new UIDiskVariantGroupBox(false, 0);
     pMainLayout->addWidget(m_pVariantGroupBox);
-
     pMainLayout->addStretch();
 
+    connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+            this, &UIWizardNewVDPageVariant::sltMediumVariantChanged);
     retranslateUi();
 
     /* Create widgets: */
@@ -190,16 +191,17 @@ void UIWizardNewVDPageVariant::initializePage()
 {
     retranslateUi();
     UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
-    AssertReturnVoid(pWizard);
+    AssertReturnVoid(pWizard && m_pVariantGroupBox);
     setWidgetVisibility(pWizard->mediumFormat());
+    newVDWizardPropertySet(MediumVariant, m_pVariantGroupBox->mediumVariant());
 }
 
 bool UIWizardNewVDPageVariant::isComplete() const
 {
-    //return mediumVariant() != (qulonglong)KMediumVariant_Max;
-    return true;
+    if (m_pVariantGroupBox && m_pVariantGroupBox->mediumVariant() != (qulonglong)KMediumVariant_Max)
+        return true;
+    return false;
 }
-
 
 void UIWizardNewVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
@@ -213,4 +215,9 @@ void UIWizardNewVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFo
         m_pFixedLabel->setHidden(!m_pVariantGroupBox->isCreateFixedPossible());
     if (m_pSplitLabel)
         m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
+}
+
+void UIWizardNewVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
+{
+    newVDWizardPropertySet(MediumVariant, uVariant);
 }

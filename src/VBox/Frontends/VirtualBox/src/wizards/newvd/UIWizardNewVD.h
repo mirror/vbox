@@ -71,9 +71,9 @@ protected:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
+    /** Check medium capabilities and decide if medium variant page should be hidden. */
+    void setMediumVariantPageVisibility();
     qulonglong m_uMediumVariant;
     CMediumFormat m_comMediumFormat;
     QString m_strMediumPath;
@@ -83,6 +83,7 @@ private:
     QString     m_strDefaultName;
     QString     m_strDefaultPath;
     qulonglong  m_uDefaultSize;
+    int m_iMediumVariantPageIndex;
 };
 
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;

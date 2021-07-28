@@ -57,6 +57,10 @@ public:
 
     UIWizardNewVDPageVariant();
 
+private slots:
+
+    void sltMediumVariantChanged(qulonglong uVariant);
+
 private:
 
     void retranslateUi();

@@ -81,7 +81,6 @@ public:
     bool createVirtualDisk();
     void deleteVirtualDisk();
 
-
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
     void setVirtualDisk(const QUuid &mediumId);

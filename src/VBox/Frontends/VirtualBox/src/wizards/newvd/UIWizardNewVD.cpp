@@ -43,6 +43,7 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
     , m_strDefaultName(strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
+    , m_iMediumVariantPageIndex(-1)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -71,6 +72,8 @@ const CMediumFormat &UIWizardNewVD::mediumFormat()
 void UIWizardNewVD::setMediumFormat(const CMediumFormat &mediumFormat)
 {
     m_comMediumFormat = mediumFormat;
+    if (mode() == WizardMode_Basic)
+        setMediumVariantPageVisibility();
 }
 
 const QString &UIWizardNewVD::mediumPath() const
@@ -101,7 +104,7 @@ void UIWizardNewVD::populatePages()
         case WizardMode_Expert:
         {
             addPage(new UIWizardNewVDPageFileType);
-            addPage(new UIWizardNewVDPageVariant);
+            m_iMediumVariantPageIndex = addPage(new UIWizardNewVDPageVariant);
             addPage(new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
@@ -165,4 +168,23 @@ void UIWizardNewVD::retranslateUi()
 {
     UINativeWizard::retranslateUi();
     setWindowTitle(tr("Create Virtual Hard Disk"));
+}
+
+void UIWizardNewVD::setMediumVariantPageVisibility()
+{
+    AssertReturnVoid(!m_comMediumFormat.isNull());
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = m_comMediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    int cTest = 0;
+    if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
+        ++cTest;
+    if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
+        ++cTest;
+    if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
+        ++cTest;
+    setPageVisible(m_iMediumVariantPageIndex, cTest > 1);
 }
