@@ -137,7 +137,7 @@ bool UINotificationCenter::event(QEvent *pEvent)
             break;
     }
 
-    /* */
+    /* Call to base-class: */
     return QWidget::event(pEvent);
 }
 

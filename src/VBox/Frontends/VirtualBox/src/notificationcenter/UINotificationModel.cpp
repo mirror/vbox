@@ -60,7 +60,7 @@ QUuid UINotificationModel::appendObject(UINotificationObject *pObject)
 void UINotificationModel::revokeObject(const QUuid &uId)
 {
     /* Remove ID and object: */
-    m_objects.remove(uId);
+    delete m_objects.take(uId);
     m_ids.removeAll(uId);
     /* Notify listeners: */
     emit sigChanged();
