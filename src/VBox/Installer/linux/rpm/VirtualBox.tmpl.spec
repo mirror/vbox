@@ -49,9 +49,6 @@ Requires:  %INITSCRIPTS% %LIBASOUND% %NETTOOLS%
 %{!?rpm_suse: %define vbox_python_sitelib %{python_sitelib}}
 %endif
 
-# our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
-%undefine _missing_build_ids_terminate_build
-
 # Remove source code from debuginfo package, needed for Fedora 27 and later
 # as we build the binaries before creating the RPMs.
 %if 0%{?fedora} >= 27
@@ -124,6 +121,12 @@ rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 %if %{?is_ose:0}%{!?is_ose:1}
+%if "%BUILDREL%" == "el7"
+# For el7 we use gcc from devtoolset-4, which is not suitable for kernel work.
+old_path="$PATH"
+PATH=${PATH%/opt/rh/devtoolset-4/root/bin:}
+PATH=${PATH%/opt/rh/devtoolset-4/root/usr/bin:}
+%endif
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then
     rm -f /tmp/vboxdrv-Module.symvers
@@ -151,6 +154,11 @@ for d in /lib/modules/*; do
     fi
   fi
 done
+%if "%BUILDREL%" == "el7"
+# For el7 restore PATH, see above.
+PATH="$old_path"
+unset old_path
+%endif
 rm -r src
 %endif
 %if %{?is_ose:0}%{!?is_ose:1}
