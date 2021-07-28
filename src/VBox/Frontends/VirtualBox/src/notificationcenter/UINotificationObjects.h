@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QUuid>
+
 /* GUI includes: */
 #include "UINotificationObject.h"
 
@@ -33,6 +36,7 @@
 #include "CExtPackManager.h"
 #include "CMachine.h"
 #include "CMedium.h"
+#include "CSession.h"
 #include "CVirtualSystemDescription.h"
 
 /** UINotificationProgress extension for medium create functionality. */
@@ -203,6 +207,49 @@ private:
     KCloneMode              m_enmCloneMode;
     /** Holds the target machine options. */
     QVector<KCloneOptions>  m_options;
+};
+
+/** UINotificationProgress extension for machine move functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachineMove : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs medium move notification-progress.
+      * @param  uId             Brings the machine id.
+      * @param  strDestination  Brings the move destination.
+      * @param  strType         Brings the moving type. */
+    UINotificationProgressMachineMove(const QUuid &uId,
+                                      const QString &strDestination,
+                                      const QString &strType);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine id. */
+    QUuid     m_uId;
+    /** Holds the session being opened. */
+    CSession  m_comSession;
+    /** Holds the machine source. */
+    QString   m_strSource;
+    /** Holds the machine destination. */
+    QString   m_strDestination;
+    /** Holds the moving type. */
+    QString   m_strType;
 };
 
 /** UINotificationProgress extension for machine media remove functionality. */

@@ -51,6 +51,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkManager.h"
+#include "UINotificationCenter.h"
 #include "UIQObjectStuff.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVirtualBoxManager.h"
@@ -1149,35 +1150,18 @@ void UIVirtualBoxManager::sltPerformMachineMove()
     UIVirtualMachineItem *pItem = currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    /* Open a session thru which we will modify the machine: */
-    CSession comSession = uiCommon().openSession(pItem->id(), KLockType_Write);
-    if (comSession.isNull())
-        return;
-
-    /* Get session machine: */
-    CMachine comMachine = comSession.GetMachine();
-    AssertMsgReturnVoid(comSession.isOk() && comMachine.isNotNull(), ("Unable to acquire machine!\n"));
-
     /* Open a file dialog for the user to select a destination folder. Start with the default machine folder: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
-    QString strTitle = tr("Select a destination folder to move the selected virtual machine");
-    QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
+    const QString strBaseFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    const QString strTitle = tr("Select a destination folder to move the selected virtual machine");
+    const QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
     if (!strDestinationFolder.isEmpty())
     {
-        /* Prepare machine move progress: */
-        CProgress comProgress = comMachine.MoveTo(strDestinationFolder, "basic");
-        if (comMachine.isOk() && comProgress.isNotNull())
-        {
-            /* Show machine move progress: */
-            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_dnd_hg_90px.png");
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
-        }
-        else
-            msgCenter().cannotMoveMachine(comMachine);
+        /* Move machine: */
+        UINotificationProgressMachineMove *pNotification = new UINotificationProgressMachineMove(pItem->id(),
+                                                                                                 strDestinationFolder,
+                                                                                                 "basic");
+        notificationCenter().append(pNotification);
     }
-    comSession.UnlockMachine();
 }
 
 void UIVirtualBoxManager::sltPerformMachineRemove()

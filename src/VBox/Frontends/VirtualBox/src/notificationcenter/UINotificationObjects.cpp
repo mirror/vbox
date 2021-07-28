@@ -15,7 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QDir>
+#include <QFileInfo>
+
 /* GUI includes: */
+#include "UICommon.h"
 #include "UINotificationObjects.h"
 
 
@@ -181,6 +186,71 @@ void UINotificationProgressMachineCopy::sltHandleProgressFinished()
 {
     if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
         emit sigMachineCopied(m_comTarget);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMachineMove implementation.                                                                      *
+*********************************************************************************************************************************/
+
+UINotificationProgressMachineMove::UINotificationProgressMachineMove(const QUuid &uId,
+                                                                     const QString &strDestination,
+                                                                     const QString &strType)
+    : m_uId(uId)
+    , m_strDestination(QDir::toNativeSeparators(strDestination))
+    , m_strType(strType)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMachineMove::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressMachineMove::name() const
+{
+    return UINotificationProgress::tr("Moving machine ...");
+}
+
+QString UINotificationProgressMachineMove::details() const
+{
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
+                                     .arg(m_strSource, m_strDestination);
+}
+
+CProgress UINotificationProgressMachineMove::createProgress(COMResult &comResult)
+{
+    /* Open a session thru which we will modify the machine: */
+    m_comSession = uiCommon().openSession(m_uId, KLockType_Write);
+
+    /* Get session machine: */
+    CMachine comMachine = m_comSession.GetMachine();
+    if (!m_comSession.isOk())
+    {
+        comResult = m_comSession;
+        return CProgress();
+    }
+
+    /* Acquire VM source: */
+    const QString strSettingFilePath = comMachine.GetSettingsFilePath();
+    if (!comMachine.isOk())
+    {
+        comResult = comMachine;
+        return CProgress();
+    }
+    QDir parentDir = QFileInfo(strSettingFilePath).absoluteDir();
+    parentDir.cdUp();
+    m_strSource = QDir::toNativeSeparators(parentDir.absolutePath());
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = comMachine.MoveTo(m_strDestination, m_strType);
+    /* Store COM result: */
+    comResult = comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressMachineMove::sltHandleProgressFinished()
+{
+    /* Unlock session finally: */
+    m_comSession.UnlockMachine();
 }
 
 
