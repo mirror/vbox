@@ -185,7 +185,7 @@ void UINotificationProgressMachineCopy::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressMachineMediaRemove implementation.                                                                    *
+*   Class UINotificationProgressMachineMediaRemove implementation.                                                               *
 *********************************************************************************************************************************/
 
 UINotificationProgressMachineMediaRemove::UINotificationProgressMachineMediaRemove(const CMachine &comMachine,
