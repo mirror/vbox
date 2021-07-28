@@ -1340,6 +1340,17 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
     root()->resetDragToken();
 }
 
+void UIChooserModel::sltHandleCloudMachineRemoved(const QString &strShortProviderName,
+                                                  const QString &strProfileName,
+                                                  const QString &strName)
+{
+    Q_UNUSED(strName);
+
+    /* Update profile to make sure it has no stale instances: */
+    const UICloudEntityKey cloudEntityKeyForProfile = UICloudEntityKey(strShortProviderName, strProfileName);
+    createReadCloudMachineListTask(cloudEntityKeyForProfile, false /* with refresh? */);
+}
+
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
     /* For every selected item: */
@@ -1877,7 +1888,7 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
                 msgCenter().cannotRemoveMachine(comMachine);
                 continue;
             }
-            /* Remove machine: */
+            /* Removing machine: */
             UINotificationProgressMachineMediaRemove *pNotification = new UINotificationProgressMachineMediaRemove(comMachine, media);
             notificationCenter().append(pNotification);
         }
@@ -1907,27 +1918,25 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
     foreach (UIChooserItemMachine *pMachineItem, machineItems)
         machines << pMachineItem->cache()->toCloud()->machine();
 
-    /* Stop cloud update prematurely: */
+    /* Stop cloud profile update prematurely: */
     m_pTimerCloudProfileUpdate->stop();
 
     /* Confirm machine removal: */
     const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
     {
-        /* Resume cloud update if cancelled: */
+        /* Resume cloud profile update if cancelled: */
         m_pTimerCloudProfileUpdate->start(10000);
         return;
     }
 
     /* For every selected machine-item: */
-    QSet<UICloudEntityKey> changedCloudEntityKeys;
     foreach (UIChooserItemMachine *pMachineItem, machineItems)
     {
         /* Compose cloud entity keys for profile and machine: */
         const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
         const QString strProfileName = pMachineItem->parentItem()->name();
         const QUuid uMachineId = pMachineItem->id();
-        const UICloudEntityKey cloudEntityKeyForProfile = UICloudEntityKey(strProviderShortName, strProfileName);
         const UICloudEntityKey cloudEntityKeyForMachine = UICloudEntityKey(strProviderShortName, strProfileName, uMachineId);
 
         /* Stop refreshing machine being deleted: */
@@ -1936,34 +1945,17 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
 
         /* Acquire cloud machine: */
         CCloudMachine comMachine = pMachineItem->cache()->toCloud()->machine();
-        CProgress comProgress;
-        /* Prepare remove progress: */
-        if (iResultCode == AlertButton_Choice1)
-            comProgress = comMachine.Remove();
-        /* Prepare unregister progress: */
-        else if (iResultCode == AlertButton_Choice2)
-            comProgress = comMachine.Unregister();
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotRemoveCloudMachine(comMachine);
-            continue;
-        }
-        /* And show unregister progress finally: */
-        msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_cloud_vm_90px.png", 0, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);
-            continue;
-        }
 
-        /* Append cloud entity key for profile to update: */
-        if (!changedCloudEntityKeys.contains(cloudEntityKeyForProfile))
-            changedCloudEntityKeys.insert(cloudEntityKeyForProfile);
+        /* Removing cloud machine: */
+        UINotificationProgressCloudMachineRemove *pNotification =
+            new UINotificationProgressCloudMachineRemove(comMachine,
+                                                         iResultCode == AlertButton_Choice1,
+                                                         strProviderShortName,
+                                                         strProfileName);
+        connect(pNotification, &UINotificationProgressCloudMachineRemove::sigCloudMachineRemoved,
+                this, &UIChooserModel::sltHandleCloudMachineRemoved);
+        notificationCenter().append(pNotification);
     }
-
-    /* Restart List Cloud Machines task for required profile keys: */
-    foreach (const UICloudEntityKey &guiCloudProfileKey, changedCloudEntityKeys)
-        createReadCloudMachineListTask(guiCloudProfileKey, false /* with refresh? */);
 }
 
 bool UIChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)

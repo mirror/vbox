@@ -340,6 +340,14 @@ private slots:
 
     /** @name Cloud stuff.
       * @{ */
+        /** Handles cloud machine removal.
+          * @param  strShortProviderName  Brigns the provider short name.
+          * @param  strProfileName        Brings the profile name.
+          * @param  strName               Brings the machine name. */
+        void sltHandleCloudMachineRemoved(const QString &strShortProviderName,
+                                          const QString &strProfileName,
+                                          const QString &strName);
+
         /** Updates selected cloud profiles. */
         void sltUpdateSelectedCloudProfiles();
     /** @} */

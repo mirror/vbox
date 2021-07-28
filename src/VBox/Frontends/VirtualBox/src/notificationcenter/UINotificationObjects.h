@@ -349,6 +349,59 @@ private:
     QString                    m_strProfileName;
 };
 
+/** UINotificationProgress extension for cloud machine remove functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineRemove : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about cloud machine was removed.
+      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProfileName        Brings the profile name.
+      * @param  strName               Brings the machine name. */
+    void sigCloudMachineRemoved(const QString &strShortProviderName,
+                                const QString &strProfileName,
+                                const QString &strName);
+
+public:
+
+    /** Constructs cloud machine remove notification-progress.
+      * @param  comMachine    Brings the cloud machine being removed.
+      * @param  fFullRemoval  Brings whether cloud machine should be removed fully. */
+    UINotificationProgressCloudMachineRemove(const CCloudMachine &comMachine,
+                                             bool fFullRemoval,
+                                             const QString &strShortProviderName,
+                                             const QString &strProfileName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud machine being removed. */
+    CCloudMachine  m_comMachine;
+    /** Holds the name acquired from cloud machine. */
+    QString        m_strName;
+    /** Holds whether cloud machine should be removed fully. */
+    bool           m_fFullRemoval;
+    /** Holds the short provider name. */
+    QString        m_strShortProviderName;
+    /** Holds the profile name. */
+    QString        m_strProfileName;
+};
+
 /** UINotificationProgress extension for export appliance functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressApplianceExport : public UINotificationProgress
 {
