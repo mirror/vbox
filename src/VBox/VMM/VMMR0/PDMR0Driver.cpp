@@ -188,7 +188,7 @@ static DECLCALLBACK(uint32_t) pdmR0DrvHlp_CritSectGetRecursion(PPDMDRVINS pDrvIn
 }
 
 
-/** @interface_method_impl{PDMDRVHLPR0,pfn} */
+/** @interface_method_impl{PDMDRVHLPR0,pfnCritSectScheduleExitEvent} */
 static DECLCALLBACK(int)      pdmR0DrvHlp_CritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
                                                                     SUPSEMEVENT hEventToSignal)
 {

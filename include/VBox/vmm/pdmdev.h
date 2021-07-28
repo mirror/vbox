@@ -7859,8 +7859,20 @@ DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCri
 }
 
 /**
- * @copydoc PDMCritSectEnter
- * @param   pDevIns  The device instance.
+ * Enters a PDM critical section.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @returns rcBusy when encountering a busy critical section in RC/R0.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pCritSect           The PDM critical section to enter.
+ * @param   rcBusy              The status code to return when we're in RC or R0
+ *                              and the section is busy.  Pass VINF_SUCCESS to
+ *                              acquired the critical section thru a ring-3
+ *                              call if necessary.
+ * @sa      PDMCritSectEnter
  */
 DECLINLINE(int) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
@@ -7868,8 +7880,24 @@ DECLINLINE(int) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSec
 }
 
 /**
- * @copydoc PDMCritSectEnterDebug
+ * Enters a PDM critical section, with location information for debugging.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @returns rcBusy when encountering a busy critical section in RC/R0.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
  * @param   pDevIns  The device instance.
+ * @param   pCritSect           The PDM critical section to enter.
+ * @param   rcBusy              The status code to return when we're in RC or R0
+ *                              and the section is busy.   Pass VINF_SUCCESS to
+ *                              acquired the critical section thru a ring-3
+ *                              call if necessary.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   SRC_POS             The source position where to lock is being
+ *                              acquired from.  Optional.
+ * @sa      PDMCritSectEnterDebug
  */
 DECLINLINE(int) PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
@@ -7877,8 +7905,17 @@ DECLINLINE(int) PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCr
 }
 
 /**
- * @copydoc PDMCritSectTryEnter
- * @param   pDevIns  The device instance.
+ * Try enter a critical section.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_BUSY if the critsect was owned.
+ * @retval  VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pCritSect   The critical section.
+ * @sa      PDMCritSectTryEnter
  */
 DECLINLINE(int)      PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
@@ -7886,8 +7923,21 @@ DECLINLINE(int)      PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT 
 }
 
 /**
- * @copydoc PDMCritSectTryEnterDebug
- * @param   pDevIns  The device instance.
+ * Try enter a critical section, with location information for debugging.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_BUSY if the critsect was owned.
+ * @retval  VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pCritSect           The critical section.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   SRC_POS             The source position where to lock is being
+ *                              acquired from.  Optional.
+ * @sa      PDMCritSectTryEnterDebug
  */
 DECLINLINE(int)      PDMDevHlpCritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
@@ -7895,8 +7945,16 @@ DECLINLINE(int)      PDMDevHlpCritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRIT
 }
 
 /**
- * @copydoc PDMCritSectLeave
- * @param   pDevIns  The device instance.
+ * Leaves a critical section entered with PDMCritSectEnter().
+ *
+ * @returns Indication whether we really exited the critical section.
+ * @retval  VINF_SUCCESS if we really exited.
+ * @retval  VINF_SEM_NESTED if we only reduced the nesting count.
+ * @retval  VERR_NOT_OWNER if you somehow ignore release assertions.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pCritSect   The PDM critical section to leave.
+ * @sa      PDMCritSectLeave
  */
 DECLINLINE(int)      PDMDevHlpCritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
@@ -7904,8 +7962,7 @@ DECLINLINE(int)      PDMDevHlpCritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCr
 }
 
 /**
- * @copydoc PDMCritSectIsOwner
- * @param   pDevIns  The device instance.
+ * @see PDMCritSectIsOwner
  */
 DECLINLINE(bool)     PDMDevHlpCritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
@@ -7913,8 +7970,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT 
 }
 
 /**
- * @copydoc PDMCritSectIsInitialized
- * @param   pDevIns  The device instance.
+ * @see PDMCritSectIsInitialized
  */
 DECLINLINE(bool)     PDMDevHlpCritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
@@ -7922,8 +7978,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRI
 }
 
 /**
- * @copydoc PDMCritSectHasWaiters
- * @param   pDevIns  The device instance.
+ * @see PDMCritSectHasWaiters
  */
 DECLINLINE(bool)     PDMDevHlpCritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
@@ -7931,8 +7986,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSE
 }
 
 /**
- * @copydoc PDMCritSectGetRecursion
- * @param   pDevIns  The device instance.
+ * @see PDMCritSectGetRecursion
  */
 DECLINLINE(uint32_t) PDMDevHlpCritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
@@ -7941,8 +7995,7 @@ DECLINLINE(uint32_t) PDMDevHlpCritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRIT
 
 #if defined(IN_RING3) || defined(IN_RING0)
 /**
- * @copydoc PDMHCCritSectScheduleExitEvent
- * @param   pDevIns  The device instance.
+ * @see PDMHCCritSectScheduleExitEvent
  */
 DECLINLINE(int) PDMDevHlpCritSectScheduleExitEvent(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal)
 {
@@ -7964,8 +8017,12 @@ DECLINLINE(int) PDMDevHlpCritSectScheduleExitEvent(PPDMDEVINS pDevIns, PPDMCRITS
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
- * @copydoc PDMR3CritSectDelete
- * @param   pDevIns  The device instance.
+ * Deletes the critical section.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pCritSect   The PDM critical section to destroy.
+ * @sa      PDMR3CritSectDelete
  */
 DECLINLINE(int) PDMDevHlpCritSectDelete(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {

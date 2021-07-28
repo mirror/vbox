@@ -1240,7 +1240,7 @@ typedef struct PDMDRVHLPR3
      *
      * @returns VBox status code.
      * @param   pDrvIns         The driver instance.
-     * @param   pcszBwGroup     Name of the bandwidth group to attach to.
+     * @param   pszBwGroup      Name of the bandwidth group to attach to.
      * @param   pFilter         Pointer to the filter we attach.
      */
     DECLR3CALLBACKMEMBER(int, pfnNetShaperAttach,(PPDMDRVINS pDrvIns, const char *pszBwGroup, PPDMNSFILTER pFilter));
