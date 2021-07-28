@@ -1094,9 +1094,6 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu);
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_dbgf_bp_r0    The DBGF Breakpoint Host Context Ring-0 API
  * @{ */
-VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM);
-VMMR0_INT_DECL(void) DBGFR0CleanupVM(PGVM pGVM);
-
 VMMR0_INT_DECL(int)  DBGFR0BpOwnerSetUpContext(PGVM pGVM, DBGFBPOWNER hBpOwner, PFNDBGFBPHIT pfnBpHit, PFNDBGFBPIOHIT pfnBpIoHit);
 VMMR0_INT_DECL(int)  DBGFR0BpOwnerDestroyContext(PGVM pGVM, DBGFBPOWNER hBpOwner);
 
