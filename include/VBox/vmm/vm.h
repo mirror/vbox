@@ -119,14 +119,8 @@ typedef struct VMCPU
     /** The CPU state. */
     VMCPUSTATE volatile     enmState;
 
-    /** Which host CPU ID is this EMT running on.
-     * Only valid when in RC or HMR0 with scheduling disabled. */
-    RTCPUID volatile        idHostCpu;
-    /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
-     * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
-    uint32_t volatile       iHostCpuSet;
     /** Padding up to 64 bytes. */
-    uint8_t                 abAlignment0[64 - 20];
+    uint8_t                 abAlignment0[64 - 12];
     /** @} */
 
     /** IEM part.

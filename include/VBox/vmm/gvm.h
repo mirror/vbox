@@ -56,23 +56,34 @@ typedef struct GVMCPU
 #endif
 
     /** VCPU id (0 - (pVM->cCpus - 1). */
-    VMCPUID         idCpu;
+    VMCPUID             idCpu;
     /** Padding. */
-    uint32_t        uPadding;
+    uint32_t            uPadding0;
 
     /** Handle to the EMT thread. */
-    RTNATIVETHREAD  hEMT;
+    RTNATIVETHREAD      hEMT;
 
     /** Pointer to the global (ring-0) VM structure this CPU belongs to. */
-    R0PTRTYPE(PGVM) pGVM;
+    R0PTRTYPE(PGVM)     pGVM;
     /** Pointer to the GVM structure, for CTX_SUFF use in VMMAll code.  */
-    PGVM            pVMR0;
+    PGVM                pVMR0;
     /** The ring-3 address of this structure (only VMCPU part). */
-    PVMCPUR3        pVCpuR3;
+    PVMCPUR3            pVCpuR3;
+
+    /** Padding so the noisy stuff on a 64 byte boundrary.
+     * @note Keeping this working for 32-bit header syntax checking.  */
+    uint8_t             abPadding1[HC_ARCH_BITS == 32 ? 40 : 24];
+
+    /** Which host CPU ID is this EMT running on.
+     * Only valid when in RC or HMR0 with scheduling disabled. */
+    RTCPUID volatile    idHostCpu;
+    /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
+     * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
+    uint32_t volatile   iHostCpuSet;
 
     /** Padding so gvmm starts on a 64 byte boundrary.
      * @note Keeping this working for 32-bit header syntax checking.  */
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 40 : 24];
+    uint8_t             abPadding2[56];
 
     /** The GVMM per vcpu data. */
     union
@@ -108,14 +119,14 @@ typedef struct GVMCPU
 #if defined(VMM_INCLUDED_SRC_include_VMMInternal_h) && defined(IN_RING0)
         struct VMMR0PERVCPU s;
 #endif
-        uint8_t             padding[128];
+        uint8_t             padding[64];
     } vmmr0;
 
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding2[4096 - 64 - 64 - 1024 - 64 - 128];
+    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 64 - 64];
 #else
-    uint8_t                 abPadding2[4096 - 64 - 64 - 1024 - 128];
+    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 64];
 #endif
 } GVMCPU;
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)

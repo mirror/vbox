@@ -45,8 +45,6 @@ struc VMCPU
     .fLocalForcedActions    resd 1
     alignb 8
     .enmState               resd 1
-    .idHostCpu              resd 1
-    .iHostCpuSet            resd 1
 
     alignb 64
     .iem                    resb 18496

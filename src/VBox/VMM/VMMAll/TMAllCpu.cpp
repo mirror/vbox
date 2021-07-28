@@ -367,7 +367,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
  * @param   cNsToDeadline   The number of nano seconds to the next virtual
  *                          sync deadline.
  */
-DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadline)
+DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPUCC pVCpu, uint64_t cNsToDeadline)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL <= _4G);
 # ifdef IN_RING3

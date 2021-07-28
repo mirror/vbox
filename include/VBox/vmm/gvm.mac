@@ -39,6 +39,10 @@ struc GVMCPU
         .pVCpuR3            RTR3PTR_RES 1
 
         alignb 64
+        .idHostCpu          resd 1
+        .iHostCpuSet        resd 1
+
+        alignb 64
         .gvmm               resb 64
         alignb 64
         .hmr0               resb 1024
@@ -46,7 +50,7 @@ struc GVMCPU
         .nemr0              resb 64
 %endif
         alignb 64
-        .vmmr0              resb 128
+        .vmmr0              resb 64
         alignb 4096
 endstruc
 

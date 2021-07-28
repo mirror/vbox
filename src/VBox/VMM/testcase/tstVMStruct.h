@@ -1457,7 +1457,6 @@
     GEN_CHECK_OFF(VMCPU, idCpu);
     GEN_CHECK_OFF(VMCPU, hNativeThread);
     GEN_CHECK_OFF(VMCPU, hNativeThreadR0);
-    GEN_CHECK_OFF(VMCPU, idHostCpu);
     GEN_CHECK_OFF(VMCPU, fTraceGroups);
     GEN_CHECK_OFF(VMCPU, uAdHoc);
     GEN_CHECK_OFF(VMCPU, aStatAdHoc);

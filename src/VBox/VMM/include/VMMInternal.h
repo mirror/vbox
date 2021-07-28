@@ -459,12 +459,6 @@ typedef VMMCPU *PVMMCPU;
  */
 typedef struct VMMR0PERVCPU
 {
-    /** Which host CPU ID is this EMT running on.
-     * Only valid when in RC or HMR0 with scheduling disabled. */
-    RTCPUID volatile                    idHostCpu;
-    /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
-     * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
-    uint32_t volatile                   iHostCpuSet;
     /** Set if we've entered HM context. */
     bool volatile                       fInHmContext;
 

@@ -367,8 +367,8 @@ VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM)
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        pGVCpu->vmmr0.s.idHostCpu       = NIL_RTCPUID;
-        pGVCpu->vmmr0.s.iHostCpuSet     = UINT32_MAX;
+        Assert(pGVCpu->idHostCpu == NIL_RTCPUID);
+        Assert(pGVCpu->iHostCpuSet == UINT32_MAX);
         pGVCpu->vmmr0.s.fInHmContext    = false;
         pGVCpu->vmmr0.s.pPreemptState   = NULL;
         pGVCpu->vmmr0.s.hCtxHook        = NIL_RTTHREADCTXHOOK;
@@ -1005,8 +1005,6 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             /* We need to update the VCPU <-> host CPU mapping. */
             RTCPUID idHostCpu;
             uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
-            pVCpu->vmmr0.s.iHostCpuSet = iHostCpuSet;
-            ASMAtomicWriteU32(&pVCpu->vmmr0.s.idHostCpu, idHostCpu);
             pVCpu->iHostCpuSet = iHostCpuSet;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
@@ -1035,8 +1033,6 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
              * Sigh. See VMMGetCpu() used by VMCPU_ASSERT_EMT(). We cannot let several VCPUs
              * have the same host CPU associated with it.
              */
-            pVCpu->vmmr0.s.iHostCpuSet = UINT32_MAX;
-            ASMAtomicWriteU32(&pVCpu->vmmr0.s.idHostCpu, NIL_RTCPUID);
             pVCpu->iHostCpuSet = UINT32_MAX;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
             break;
@@ -1108,7 +1104,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT(pVCpu)
  *
- * @remarks This also clears VMCPU::idHostCpu, so the mapping is invalid after
+ * @remarks This also clears GVMCPU::idHostCpu, so the mapping is invalid after
  *          this call.  This means you have to be careful with what you do!
  */
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu)
@@ -1120,15 +1116,13 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu)
      *      VMXR0CallRing3Callback/SVMR0CallRing3Callback &
      *      hmR0VmxLeaveSession/hmR0SvmLeaveSession disables context hooks during
      *      longjmp & normal return to ring-3, which opens a window where we may be
-     *      rescheduled without changing VMCPUID::idHostCpu and cause confusion if
+     *      rescheduled without changing GVMCPUID::idHostCpu and cause confusion if
      *      the CPU starts executing a different EMT.  Both functions first disables
      *      preemption and then calls HMR0LeaveCpu which invalids idHostCpu, leaving
      *      an opening for getting preempted.
      */
     /** @todo Make HM not need this API!  Then we could leave the hooks enabled
      *        all the time. */
-    /** @todo move this into the context hook disabling if(). */
-    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
     /*
      * Disable the context hook, if we got one.
@@ -1136,7 +1130,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu)
     if (pVCpu->vmmr0.s.hCtxHook != NIL_RTTHREADCTXHOOK)
     {
         Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-        ASMAtomicWriteU32(&pVCpu->vmmr0.s.idHostCpu, NIL_RTCPUID);
+        ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
         int rc = RTThreadCtxHookDisable(pVCpu->vmmr0.s.hCtxHook);
         AssertRC(rc);
     }
@@ -1457,9 +1451,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                 if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
                               && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
                 {
-                    pGVCpu->vmmr0.s.iHostCpuSet = iHostCpuSet;
-                    ASMAtomicWriteU32(&pGVCpu->vmmr0.s.idHostCpu, idHostCpu);
-
                     pGVCpu->iHostCpuSet = iHostCpuSet;
                     ASMAtomicWriteU32(&pGVCpu->idHostCpu, idHostCpu);
 
@@ -1551,9 +1542,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                          * Invalidate the host CPU identifiers before we disable the context
                          * hook / restore preemption.
                          */
-                        pGVCpu->vmmr0.s.iHostCpuSet = UINT32_MAX;
-                        ASMAtomicWriteU32(&pGVCpu->vmmr0.s.idHostCpu, NIL_RTCPUID);
-
                         pGVCpu->iHostCpuSet = UINT32_MAX;
                         ASMAtomicWriteU32(&pGVCpu->idHostCpu, NIL_RTCPUID);
 
@@ -1565,19 +1553,16 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                          *       when we get here, but the IPRT API handles that.
                          */
                         if (pGVCpu->vmmr0.s.hCtxHook != NIL_RTTHREADCTXHOOK)
-                        {
-                            ASMAtomicWriteU32(&pGVCpu->idHostCpu, NIL_RTCPUID);
                             RTThreadCtxHookDisable(pGVCpu->vmmr0.s.hCtxHook);
-                        }
                     }
                     /*
                      * The system is about to go into suspend mode; go back to ring 3.
                      */
                     else
                     {
-                        rc = VINF_EM_RAW_INTERRUPT;
                         pGVCpu->iHostCpuSet = UINT32_MAX;
                         ASMAtomicWriteU32(&pGVCpu->idHostCpu, NIL_RTCPUID);
+                        rc = VINF_EM_RAW_INTERRUPT;
                     }
 
                     /** @todo When HM stops messing with the context hook state, we'll disable
@@ -1617,8 +1602,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                 else
                 {
                     pGVCpu->vmmr0.s.pPreemptState = NULL;
-                    pGVCpu->vmmr0.s.iHostCpuSet = UINT32_MAX;
-                    ASMAtomicWriteU32(&pGVCpu->vmmr0.s.idHostCpu, NIL_RTCPUID);
                     pGVCpu->iHostCpuSet = UINT32_MAX;
                     ASMAtomicWriteU32(&pGVCpu->idHostCpu, NIL_RTCPUID);
                     RTThreadPreemptRestore(&PreemptState);
@@ -2634,9 +2617,9 @@ VMMR0_INT_DECL(int) VMMR0EmtPrepareToBlock(PVMCPUCC pVCpu, int rcBusy, const cha
         /*
          * Are we in HM context and w/o a context hook?  If so work the context hook.
          */
-        if (pVCpu->vmmr0.s.idHostCpu != NIL_RTCPUID)
+        if (pVCpu->idHostCpu != NIL_RTCPUID)
         {
-            Assert(pVCpu->vmmr0.s.iHostCpuSet != UINT32_MAX);
+            Assert(pVCpu->iHostCpuSet != UINT32_MAX);
             Assert(pVCpu->vmmr0.s.fInHmContext);
 
             if (pVCpu->vmmr0.s.hCtxHook == NIL_RTTHREADCTXHOOK)
