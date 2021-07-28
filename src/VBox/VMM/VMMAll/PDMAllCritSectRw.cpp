@@ -70,6 +70,7 @@
  * Gets the ring-3 native thread handle of the calling thread.
  *
  * @returns native thread handle (ring-3).
+ * @param   pVM         The cross context VM structure.
  * @param   pThis       The read/write critical section.  This is only used in
  *                      R0 and RC.
  */
