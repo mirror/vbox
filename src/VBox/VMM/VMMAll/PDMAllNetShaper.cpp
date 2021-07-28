@@ -32,6 +32,7 @@
  * Obtain bandwidth in a bandwidth group.
  *
  * @returns True if bandwidth was allocated, false if not.
+ * @param   pVM             The cross context VM structure.
  * @param   pFilter         Pointer to the filter that allocates bandwidth.
  * @param   cbTransfer      Number of bytes to allocate.
  */
