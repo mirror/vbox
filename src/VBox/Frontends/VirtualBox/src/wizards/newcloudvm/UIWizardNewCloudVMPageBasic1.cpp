@@ -555,9 +555,9 @@ void UIWizardNewCloudVMPageBasic1::sltHandleSourceImageChange()
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageBasic1::setShortProviderName(const QString &strShortProviderName)
+void UIWizardNewCloudVMPageBasic1::setShortProviderName(const QString &strProviderShortName)
 {
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strShortProviderName);
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strProviderShortName);
 }
 
 QString UIWizardNewCloudVMPageBasic1::shortProviderName() const

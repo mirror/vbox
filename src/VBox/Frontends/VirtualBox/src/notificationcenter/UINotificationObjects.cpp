@@ -223,12 +223,12 @@ CProgress UINotificationProgressMachineMediaRemove::createProgress(COMResult &co
 UINotificationProgressCloudMachineAdd::UINotificationProgressCloudMachineAdd(const CCloudClient &comClient,
                                                                              const CCloudMachine &comMachine,
                                                                              const QString &strInstanceName,
-                                                                             const QString &strShortProviderName,
+                                                                             const QString &strProviderShortName,
                                                                              const QString &strProfileName)
     : m_comClient(comClient)
     , m_comMachine(comMachine)
     , m_strInstanceName(strInstanceName)
-    , m_strShortProviderName(strShortProviderName)
+    , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
@@ -243,7 +243,7 @@ QString UINotificationProgressCloudMachineAdd::name() const
 QString UINotificationProgressCloudMachineAdd::details() const
 {
     return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>Instance Name:</b> %3")
-                                     .arg(m_strShortProviderName, m_strProfileName, m_strInstanceName);
+                                     .arg(m_strProviderShortName, m_strProfileName, m_strInstanceName);
 }
 
 CProgress UINotificationProgressCloudMachineAdd::createProgress(COMResult &comResult)
@@ -259,7 +259,7 @@ CProgress UINotificationProgressCloudMachineAdd::createProgress(COMResult &comRe
 void UINotificationProgressCloudMachineAdd::sltHandleProgressFinished()
 {
     if (m_comMachine.isNotNull() && !m_comMachine.GetId().isNull())
-        emit sigCloudMachineAdded(m_strShortProviderName, m_strProfileName, m_comMachine);
+        emit sigCloudMachineAdded(m_strProviderShortName, m_strProfileName, m_comMachine);
 }
 
 
@@ -270,12 +270,12 @@ void UINotificationProgressCloudMachineAdd::sltHandleProgressFinished()
 UINotificationProgressCloudMachineCreate::UINotificationProgressCloudMachineCreate(const CCloudClient &comClient,
                                                                                    const CCloudMachine &comMachine,
                                                                                    const CVirtualSystemDescription &comVSD,
-                                                                                   const QString &strShortProviderName,
+                                                                                   const QString &strProviderShortName,
                                                                                    const QString &strProfileName)
     : m_comClient(comClient)
     , m_comMachine(comMachine)
     , m_comVSD(comVSD)
-    , m_strShortProviderName(strShortProviderName)
+    , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
 {
     /* Parse cloud VM name: */
@@ -299,7 +299,7 @@ QString UINotificationProgressCloudMachineCreate::name() const
 QString UINotificationProgressCloudMachineCreate::details() const
 {
     return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>Name:</b> %3")
-                                      .arg(m_strShortProviderName, m_strProfileName, m_strName);
+                                      .arg(m_strProviderShortName, m_strProfileName, m_strName);
 }
 
 CProgress UINotificationProgressCloudMachineCreate::createProgress(COMResult &comResult)
@@ -315,7 +315,7 @@ CProgress UINotificationProgressCloudMachineCreate::createProgress(COMResult &co
 void UINotificationProgressCloudMachineCreate::sltHandleProgressFinished()
 {
     if (m_comMachine.isNotNull() && !m_comMachine.GetId().isNull())
-        emit sigCloudMachineCreated(m_strShortProviderName, m_strProfileName, m_comMachine);
+        emit sigCloudMachineCreated(m_strProviderShortName, m_strProfileName, m_comMachine);
 }
 
 
@@ -325,11 +325,11 @@ void UINotificationProgressCloudMachineCreate::sltHandleProgressFinished()
 
 UINotificationProgressCloudMachineRemove::UINotificationProgressCloudMachineRemove(const CCloudMachine &comMachine,
                                                                                    bool fFullRemoval,
-                                                                                   const QString &strShortProviderName,
+                                                                                   const QString &strProviderShortName,
                                                                                    const QString &strProfileName)
     : m_comMachine(comMachine)
     , m_fFullRemoval(fFullRemoval)
-    , m_strShortProviderName(strShortProviderName)
+    , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
 {
     /* Acquire cloud VM name: */
@@ -367,7 +367,7 @@ CProgress UINotificationProgressCloudMachineRemove::createProgress(COMResult &co
 void UINotificationProgressCloudMachineRemove::sltHandleProgressFinished()
 {
     if (error().isEmpty())
-        emit sigCloudMachineRemoved(m_strShortProviderName, m_strProfileName, m_strName);
+        emit sigCloudMachineRemoved(m_strProviderShortName, m_strProfileName, m_strName);
 }
 
 

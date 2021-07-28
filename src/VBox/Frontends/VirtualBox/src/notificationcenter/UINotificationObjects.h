@@ -243,9 +243,9 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineAdd : public UINoti
 signals:
 
     /** Notifies listeners about cloud @a comMachine was added.
-      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProviderShortName  Brigns the short provider name.
       * @param  strProfileName        Brings the profile name. */
-    void sigCloudMachineAdded(const QString &strShortProviderName,
+    void sigCloudMachineAdded(const QString &strProviderShortName,
                               const QString &strProfileName,
                               const CCloudMachine &comMachine);
 
@@ -255,12 +255,12 @@ public:
       * @param  comClient             Brings the cloud client being adding machine.
       * @param  comMachine            Brings the cloud machine being added.
       * @param  strInstanceName       Brings the instance name.
-      * @param  strShortProviderName  Brings the short provider name.
+      * @param  strProviderShortName  Brings the short provider name.
       * @param  strProfileName        Brings the profile name. */
     UINotificationProgressCloudMachineAdd(const CCloudClient &comClient,
                                           const CCloudMachine &comMachine,
                                           const QString &strInstanceName,
-                                          const QString &strShortProviderName,
+                                          const QString &strProviderShortName,
                                           const QString &strProfileName);
 
 protected:
@@ -286,7 +286,7 @@ private:
     /** Holds the instance name. */
     QString        m_strInstanceName;
     /** Holds the short provider name. */
-    QString        m_strShortProviderName;
+    QString        m_strProviderShortName;
     /** Holds the profile name. */
     QString        m_strProfileName;
 };
@@ -299,9 +299,9 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineCreate : public UIN
 signals:
 
     /** Notifies listeners about cloud @a comMachine was created.
-      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProviderShortName  Brigns the short provider name.
       * @param  strProfileName        Brings the profile name. */
-    void sigCloudMachineCreated(const QString &strShortProviderName,
+    void sigCloudMachineCreated(const QString &strProviderShortName,
                                 const QString &strProfileName,
                                 const CCloudMachine &comMachine);
 
@@ -311,12 +311,12 @@ public:
       * @param  comClient             Brings the cloud client being adding machine.
       * @param  comMachine            Brings the cloud machine being added.
       * @param  comVSD                Brings the virtual system description.
-      * @param  strShortProviderName  Brings the short provider name.
+      * @param  strProviderShortName  Brings the short provider name.
       * @param  strProfileName        Brings the profile name. */
     UINotificationProgressCloudMachineCreate(const CCloudClient &comClient,
                                              const CCloudMachine &comMachine,
                                              const CVirtualSystemDescription &comVSD,
-                                             const QString &strShortProviderName,
+                                             const QString &strProviderShortName,
                                              const QString &strProfileName);
 
 protected:
@@ -344,7 +344,7 @@ private:
     /** Holds the name acquired from VSD. */
     QString                    m_strName;
     /** Holds the short provider name. */
-    QString                    m_strShortProviderName;
+    QString                    m_strProviderShortName;
     /** Holds the profile name. */
     QString                    m_strProfileName;
 };
@@ -357,10 +357,10 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineRemove : public UIN
 signals:
 
     /** Notifies listeners about cloud machine was removed.
-      * @param  strShortProviderName  Brigns the short provider name.
+      * @param  strProviderShortName  Brigns the short provider name.
       * @param  strProfileName        Brings the profile name.
       * @param  strName               Brings the machine name. */
-    void sigCloudMachineRemoved(const QString &strShortProviderName,
+    void sigCloudMachineRemoved(const QString &strProviderShortName,
                                 const QString &strProfileName,
                                 const QString &strName);
 
@@ -371,7 +371,7 @@ public:
       * @param  fFullRemoval  Brings whether cloud machine should be removed fully. */
     UINotificationProgressCloudMachineRemove(const CCloudMachine &comMachine,
                                              bool fFullRemoval,
-                                             const QString &strShortProviderName,
+                                             const QString &strProviderShortName,
                                              const QString &strProfileName);
 
 protected:
@@ -397,7 +397,7 @@ private:
     /** Holds whether cloud machine should be removed fully. */
     bool           m_fFullRemoval;
     /** Holds the short provider name. */
-    QString        m_strShortProviderName;
+    QString        m_strProviderShortName;
     /** Holds the profile name. */
     QString        m_strProfileName;
 };

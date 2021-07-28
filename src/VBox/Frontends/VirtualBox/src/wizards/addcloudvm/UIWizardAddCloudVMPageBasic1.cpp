@@ -480,9 +480,9 @@ void UIWizardAddCloudVMPageBasic1::sltHandleSourceInstanceChange()
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageBasic1::setShortProviderName(const QString &strShortProviderName)
+void UIWizardAddCloudVMPageBasic1::setShortProviderName(const QString &strProviderShortName)
 {
-    qobject_cast<UIWizardAddCloudVM*>(wizard())->setShortProviderName(strShortProviderName);
+    qobject_cast<UIWizardAddCloudVM*>(wizard())->setShortProviderName(strProviderShortName);
 }
 
 QString UIWizardAddCloudVMPageBasic1::shortProviderName() const

@@ -116,7 +116,7 @@ private slots:
 private:
 
     /** Defines short provider name. */
-    void setShortProviderName(const QString &strShortProviderName);
+    void setShortProviderName(const QString &strProviderShortName);
     /** Returns profile name. */
     QString shortProviderName() const;
 

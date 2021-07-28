@@ -747,7 +747,7 @@ public slots:
     /** @name Cloud Machine related stuff.
      * @{ */
         /** Handles signal about cloud machine was added. */
-        void sltHandleCloudMachineAdded(const QString &strShortProviderName,
+        void sltHandleCloudMachineAdded(const QString &strProviderShortName,
                                         const QString &strProfileName,
                                         const CCloudMachine &comMachine);
     /** @} */

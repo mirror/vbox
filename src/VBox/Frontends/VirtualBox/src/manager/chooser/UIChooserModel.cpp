@@ -1340,14 +1340,14 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
     root()->resetDragToken();
 }
 
-void UIChooserModel::sltHandleCloudMachineRemoved(const QString &strShortProviderName,
+void UIChooserModel::sltHandleCloudMachineRemoved(const QString &strProviderShortName,
                                                   const QString &strProfileName,
                                                   const QString &strName)
 {
     Q_UNUSED(strName);
 
     /* Update profile to make sure it has no stale instances: */
-    const UICloudEntityKey cloudEntityKeyForProfile = UICloudEntityKey(strShortProviderName, strProfileName);
+    const UICloudEntityKey cloudEntityKeyForProfile = UICloudEntityKey(strProviderShortName, strProfileName);
     createReadCloudMachineListTask(cloudEntityKeyForProfile, false /* with refresh? */);
 }
 

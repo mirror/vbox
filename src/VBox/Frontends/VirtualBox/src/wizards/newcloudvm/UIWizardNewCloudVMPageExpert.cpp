@@ -348,9 +348,9 @@ void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::setShortProviderName(const QString &strShortProviderName)
+void UIWizardNewCloudVMPageExpert::setShortProviderName(const QString &strProviderShortName)
 {
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strShortProviderName);
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strProviderShortName);
 }
 
 QString UIWizardNewCloudVMPageExpert::shortProviderName() const
