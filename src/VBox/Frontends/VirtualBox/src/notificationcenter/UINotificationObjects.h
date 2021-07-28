@@ -35,40 +35,6 @@
 #include "CMedium.h"
 #include "CVirtualSystemDescription.h"
 
-/** UINotificationProgress extension for medium move functionality. */
-class SHARED_LIBRARY_STUFF UINotificationProgressMediumMove : public UINotificationProgress
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs medium move notification-progress.
-      * @param  comMedium  Brings the medium being moved.
-      * @param  strFrom    Brings the initial location.
-      * @param  strTo      Brings the final location. */
-    UINotificationProgressMediumMove(const CMedium &comMedium,
-                                     const QString &strFrom,
-                                     const QString &strTo);
-
-protected:
-
-    /** Returns object name. */
-    virtual QString name() const /* override final */;
-    /** Returns object details. */
-    virtual QString details() const /* override final */;
-    /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
-
-private:
-
-    /** Holds the medium being moved. */
-    CMedium  m_comMedium;
-    /** Holds the initial location. */
-    QString  m_strFrom;
-    /** Holds the final location. */
-    QString  m_strTo;
-};
-
 /** UINotificationProgress extension for medium create functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressMediumCreate : public UINotificationProgress
 {
@@ -155,6 +121,40 @@ private:
     CMedium                  m_comTarget;
     /** Holds the target medium options. */
     QVector<KMediumVariant>  m_variants;
+};
+
+/** UINotificationProgress extension for medium move functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMediumMove : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs medium move notification-progress.
+      * @param  comMedium  Brings the medium being moved.
+      * @param  strFrom    Brings the initial location.
+      * @param  strTo      Brings the final location. */
+    UINotificationProgressMediumMove(const CMedium &comMedium,
+                                     const QString &strFrom,
+                                     const QString &strTo);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the medium being moved. */
+    CMedium  m_comMedium;
+    /** Holds the initial location. */
+    QString  m_strFrom;
+    /** Holds the final location. */
+    QString  m_strTo;
 };
 
 /** UINotificationProgress extension for machine copy functionality. */

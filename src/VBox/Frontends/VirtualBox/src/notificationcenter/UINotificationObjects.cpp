@@ -20,40 +20,6 @@
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressMediumMove implementation.                                                                       *
-*********************************************************************************************************************************/
-
-UINotificationProgressMediumMove::UINotificationProgressMediumMove(const CMedium &comMedium,
-                                                                   const QString &strFrom,
-                                                                   const QString &strTo)
-    : m_comMedium(comMedium)
-    , m_strFrom(strFrom)
-    , m_strTo(strTo)
-{
-}
-
-QString UINotificationProgressMediumMove::name() const
-{
-    return UINotificationProgress::tr("Moving medium ...");
-}
-
-QString UINotificationProgressMediumMove::details() const
-{
-    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strFrom, m_strTo);
-}
-
-CProgress UINotificationProgressMediumMove::createProgress(COMResult &comResult)
-{
-    /* Initialize progress-wrapper: */
-    CProgress comProgress = m_comMedium.MoveTo(m_strTo);
-    /* Store COM result: */
-    comResult = m_comMedium;
-    /* Return progress-wrapper: */
-    return comProgress;
-}
-
-
-/*********************************************************************************************************************************
 *   Class UINotificationProgressMediumCreate implementation.                                                                     *
 *********************************************************************************************************************************/
 
@@ -136,6 +102,40 @@ void UINotificationProgressMediumCopy::sltHandleProgressFinished()
 {
     if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
         emit sigMediumCopied(m_comTarget);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMediumMove implementation.                                                                       *
+*********************************************************************************************************************************/
+
+UINotificationProgressMediumMove::UINotificationProgressMediumMove(const CMedium &comMedium,
+                                                                   const QString &strFrom,
+                                                                   const QString &strTo)
+    : m_comMedium(comMedium)
+    , m_strFrom(strFrom)
+    , m_strTo(strTo)
+{
+}
+
+QString UINotificationProgressMediumMove::name() const
+{
+    return UINotificationProgress::tr("Moving medium ...");
+}
+
+QString UINotificationProgressMediumMove::details() const
+{
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strFrom, m_strTo);
+}
+
+CProgress UINotificationProgressMediumMove::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMedium.MoveTo(m_strTo);
+    /* Store COM result: */
+    comResult = m_comMedium;
+    /* Return progress-wrapper: */
+    return comProgress;
 }
 
 
