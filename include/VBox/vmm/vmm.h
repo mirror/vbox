@@ -472,9 +472,29 @@ typedef struct GCFGMVALUEREQ
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
+
+/**
+ * Structure VMMR0EmtPrepareToBlock uses to pass info to
+ * VMMR0EmtResumeAfterBlocking.
+ */
+typedef struct VMMR0EMTBLOCKCTX
+{
+    /** Magic value (VMMR0EMTBLOCKCTX_MAGIC). */
+    uint32_t    uMagic;
+    /** Set if we were in HM context, clear if not. */
+    bool        fWasInHmContext;
+} VMMR0EMTBLOCKCTX;
+/** Pointer to a VMMR0EmtPrepareToBlock context structure. */
+typedef VMMR0EMTBLOCKCTX *PVMMR0EMTBLOCKCTX;
+/** Magic value for VMMR0EMTBLOCKCTX::uMagic (Paul Desmond). */
+#define VMMR0EMTBLOCKCTX_MAGIC          UINT32_C(0x19261125)
+/** Magic value for VMMR0EMTBLOCKCTX::uMagic when its out of context. */
+#define VMMR0EMTBLOCKCTX_MAGIC_DEAD     UINT32_C(0x19770530)
+
 VMMR0DECL(void)      VMMR0EntryFast(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)       VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                                   PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
+VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(int)  VMMR0TermVM(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu);
@@ -482,6 +502,9 @@ VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)  VMMR0EmtPrepareToBlock(PVMCPUCC pVCpu, int rcBusy, const char *pszCaller, void *pvLock,
+                                            PVMMR0EMTBLOCKCTX pCtx);
+VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKCTX pCtx);
 VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
 
 # ifdef LOG_ENABLED

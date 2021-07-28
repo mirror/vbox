@@ -248,6 +248,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
         return VINF_SUCCESS;
 
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_VM_THREAD_NOT_EMT);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
@@ -290,8 +291,8 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
     NOREF(rcBusy);
     return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
 
-#else
-# ifdef IN_RING0
+#elif defined(IN_RING0)
+# if 0 /* new code */
     /*
      * In ring-0 context we have to take the special VT-x/AMD-V HM context into
      * account when waiting on contended locks.
@@ -303,51 +304,35 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      *
      * We must never block if VMMRZCallRing3Disable is active.
      */
-
-    /** @todo If preemption is disabled it means we're in VT-x/AMD-V context
-     *        and would be better off switching out of that while waiting for
-     *        the lock.  Several of the locks jumps back to ring-3 just to
-     *        get the lock, the ring-3 code will then call the kernel to do
-     *        the lock wait and when the call return it will call ring-0
-     *        again and resume via in setjmp style.  Not very efficient. */
-#  if 0
-    if (ASMIntAreEnabled()) /** @todo this can be handled as well by changing
-                             * callers not prepared for longjmp/blocking to
-                             * use PDMCritSectTryEnter. */
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    if (pVCpu)
     {
-        /*
-         * Leave HM context while waiting if necessary.
-         */
-        int rc;
-        if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        VMMR0EMTBLOCKCTX Ctx;
+        int rc = VMMR0EmtPrepareToBlock(pVCpu, rcBusy, __FUNCTION__, pCritSect, &Ctx);
+        if (rc == VINF_SUCCESS)
         {
-            STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock,    1000000);
+            Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
             rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+
+            VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
         }
         else
-        {
-            STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock, 1000000000);
-            PVMCC     pVM   = pCritSect->s.CTX_SUFF(pVM);
-            PVMCPUCC  pVCpu = VMMGetCpu(pVM);
-            HMR0Leave(pVM, pVCpu);
-            RTThreadPreemptRestore(NIL_RTTHREAD, XXX);
-
-            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
-
-            RTThreadPreemptDisable(NIL_RTTHREAD, XXX);
-            HMR0Enter(pVM, pVCpu);
-        }
+            STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLockBusy);
         return rc;
     }
-#  else
+
+    /* Non-EMT. */
+    Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+
+# else /* old code: */
     /*
      * We preemption hasn't been disabled, we can block here in ring-0.
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
         return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
-#  endif
-# endif /* IN_RING0 */
 
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
 
@@ -366,7 +351,10 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      */
     LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
     return rcBusy;
-#endif /* !IN_RING3 */
+# endif  /* old code */
+#else
+# error "Unsupported context"
+#endif
 }
 
 
@@ -459,6 +447,7 @@ static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRC
         return VINF_SUCCESS;
 
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_VM_THREAD_NOT_EMT);
     /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
@@ -484,7 +473,7 @@ static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRC
 #ifdef IN_RING3
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionR3);
 #else
-    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLockBusy);
 #endif
     LogFlow(("PDMCritSectTryEnter: locked\n"));
     return VERR_SEM_BUSY;
@@ -594,7 +583,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
      * Always check that the caller is the owner (screw performance).
      */
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
-    AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
+    AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf || hNativeSelf == NIL_RTNATIVETHREAD,
                            ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
                             pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
                             pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings),

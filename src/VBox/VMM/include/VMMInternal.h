@@ -266,6 +266,8 @@ typedef struct VMM
     /** The RTThreadPreemptIsPossible() result,  set by vmmR0InitVM() for
      * release logging purposes.  */
     bool                        fIsPreemptPossible : 1;
+    /** Set if ring-0 uses context hooks.  */
+    bool                        fIsUsingContextHooks : 1;
 
     bool                        afAlignment2[2]; /**< Alignment padding. */
 
@@ -378,15 +380,12 @@ typedef struct VMMCPU
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0RelLoggerR0;
 
-    /** Thread context switching hook (ring-0). */
-    RTTHREADCTXHOOK             hCtxHook;
-
     /** @name Rendezvous
      * @{ */
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding1[10];
+    bool                        afPadding1[2];
     /** @} */
 
     /** Whether we can HLT in VMMR0 rather than having to return to EM.
@@ -460,16 +459,32 @@ typedef VMMCPU *PVMMCPU;
  */
 typedef struct VMMR0PERVCPU
 {
+    /** Which host CPU ID is this EMT running on.
+     * Only valid when in RC or HMR0 with scheduling disabled. */
+    RTCPUID volatile                    idHostCpu;
+    /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
+     * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
+    uint32_t volatile                   iHostCpuSet;
+    /** Set if we've entered HM context. */
+    bool volatile                       fInHmContext;
+
+    bool                                afPadding[7];
+    /** Pointer to the VMMR0EntryFast preemption state structure.
+     * This is used to temporarily restore preemption before blocking.  */
+    R0PTRTYPE(PRTTHREADPREEMPTSTATE)    pPreemptState;
+    /** Thread context switching hook (ring-0). */
+    RTTHREADCTXHOOK                     hCtxHook;
+
     /** @name Arguments passed by VMMR0EntryEx via vmmR0CallRing3SetJmpEx.
      * @note Cannot be put on the stack as the location may change and upset the
      *       validation of resume-after-ring-3-call logic.
      * @{ */
-    PGVM                pGVM;
-    VMCPUID             idCpu;
-    VMMR0OPERATION      enmOperation;
-    PSUPVMMR0REQHDR     pReq;
-    uint64_t            u64Arg;
-    PSUPDRVSESSION      pSession;
+    PGVM                                pGVM;
+    VMCPUID                             idCpu;
+    VMMR0OPERATION                      enmOperation;
+    PSUPVMMR0REQHDR                     pReq;
+    uint64_t                            u64Arg;
+    PSUPDRVSESSION                      pSession;
     /** @} */
 } VMMR0PERVCPU;
 /** Pointer to VMM ring-0 VMCPU instance data. */

@@ -45,6 +45,8 @@ struc GVMCPU
 %ifdef VBOX_WITH_NEM_R0
         .nemr0              resb 64
 %endif
+        alignb 64
+        .vmmr0              resb 128
         alignb 4096
 endstruc
 

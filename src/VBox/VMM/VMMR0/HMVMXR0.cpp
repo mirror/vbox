@@ -9350,7 +9350,11 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
 
 
 /**
- * The thread-context callback (only on platforms which support it).
+ * The thread-context callback.
+ *
+ * This is used together with RTThreadCtxHookCreate() on platforms which
+ * supports it, and directly from VMMR0EmtPrepareForBlocking() and
+ * VMMR0EmtResumeAfterBlocking() on platforms which don't.
  *
  * @param   enmEvent        The thread-context event.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -9367,7 +9371,6 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
         case RTTHREADCTXEVENT_OUT:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             /* No longjmps (logger flushes, locks) in this fragile context. */
@@ -9398,7 +9401,6 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
         case RTTHREADCTXEVENT_IN:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             /* Do the EMT scheduled L1D and MDS flush here if needed. */

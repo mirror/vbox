@@ -120,10 +120,8 @@ struc VMMCPU
         .pR0RelLoggerR3         RTR3PTR_RES 1
         .pR0RelLoggerR0         RTR0PTR_RES 1
 
-        .hCtxHook               RTR0PTR_RES 1
-
         .fInRendezvous          resb 1
-        .afPadding1             resb 10
+        .afPadding1             resb 2
         .fMayHaltInRing0        resb 1
         .cNsSpinBlockThreshold  resd 1
         .cR0Halts               resd 1

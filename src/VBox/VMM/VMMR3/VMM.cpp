@@ -626,7 +626,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     }
 
     /* Log whether thread-context hooks are used (on Linux this can depend on how the kernel is configured). */
-    if (pVM->apCpusR3[0]->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+    if (pVM->vmm.s.fIsUsingContextHooks)
         LogRel(("VMM: Enabled thread-context hooks\n"));
     else
         LogRel(("VMM: Thread-context hooks unavailable\n"));

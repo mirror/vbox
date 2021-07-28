@@ -1301,6 +1301,8 @@
 #define VERR_VMM_WRONG_NEM_VMCPU_STATE      (-2718)
 /** Got back from vmmR0CallRing3SetJmp with the context hook still enabled. */
 #define VERR_VMM_CONTEXT_HOOK_STILL_ENABLED (-2719)
+/** Cannot block in ring-0. */
+#define VERR_VMM_CANNOT_BLOCK               (-2720)
 /** @} */
 
 
