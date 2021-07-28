@@ -1927,8 +1927,7 @@ DECLINLINE(int) PDMDrvHlpCritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect
 #endif /* IN_RING3 */
 
 /**
- * @copydoc PDMCritSectEnter
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectEnter
  */
 DECLINLINE(int) PDMDrvHlpCritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
@@ -1936,8 +1935,7 @@ DECLINLINE(int) PDMDrvHlpCritSectEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSec
 }
 
 /**
- * @copydoc PDMCritSectEnterDebug
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectEnterDebug
  */
 DECLINLINE(int) PDMDrvHlpCritSectEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
@@ -1945,8 +1943,7 @@ DECLINLINE(int) PDMDrvHlpCritSectEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCr
 }
 
 /**
- * @copydoc PDMCritSectTryEnter
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectTryEnter
  */
 DECLINLINE(int)      PDMDrvHlpCritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
@@ -1954,8 +1951,7 @@ DECLINLINE(int)      PDMDrvHlpCritSectTryEnter(PPDMDRVINS pDrvIns, PPDMCRITSECT 
 }
 
 /**
- * @copydoc PDMCritSectTryEnterDebug
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectTryEnterDebug
  */
 DECLINLINE(int)      PDMDrvHlpCritSectTryEnterDebug(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
@@ -1963,8 +1959,7 @@ DECLINLINE(int)      PDMDrvHlpCritSectTryEnterDebug(PPDMDRVINS pDrvIns, PPDMCRIT
 }
 
 /**
- * @copydoc PDMCritSectLeave
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectLeave
  */
 DECLINLINE(int)      PDMDrvHlpCritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
@@ -1972,8 +1967,7 @@ DECLINLINE(int)      PDMDrvHlpCritSectLeave(PPDMDRVINS pDrvIns, PPDMCRITSECT pCr
 }
 
 /**
- * @copydoc PDMCritSectIsOwner
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectIsOwner
  */
 DECLINLINE(bool)     PDMDrvHlpCritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
@@ -1981,8 +1975,7 @@ DECLINLINE(bool)     PDMDrvHlpCritSectIsOwner(PPDMDRVINS pDrvIns, PCPDMCRITSECT 
 }
 
 /**
- * @copydoc PDMCritSectIsInitialized
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectIsInitialized
  */
 DECLINLINE(bool)     PDMDrvHlpCritSectIsInitialized(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
@@ -1990,8 +1983,7 @@ DECLINLINE(bool)     PDMDrvHlpCritSectIsInitialized(PPDMDRVINS pDrvIns, PCPDMCRI
 }
 
 /**
- * @copydoc PDMCritSectHasWaiters
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectHasWaiters
  */
 DECLINLINE(bool)     PDMDrvHlpCritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
@@ -1999,8 +1991,7 @@ DECLINLINE(bool)     PDMDrvHlpCritSectHasWaiters(PPDMDRVINS pDrvIns, PCPDMCRITSE
 }
 
 /**
- * @copydoc PDMCritSectGetRecursion
- * @param   pDrvIns  The device instance.
+ * @see PDMCritSectGetRecursion
  */
 DECLINLINE(uint32_t) PDMDrvHlpCritSectGetRecursion(PPDMDRVINS pDrvIns, PCPDMCRITSECT pCritSect)
 {
@@ -2009,8 +2000,7 @@ DECLINLINE(uint32_t) PDMDrvHlpCritSectGetRecursion(PPDMDRVINS pDrvIns, PCPDMCRIT
 
 #if defined(IN_RING3) || defined(IN_RING0)
 /**
- * @copydoc PDMHCCritSectScheduleExitEvent
- * @param   pDrvIns  The device instance.
+ * @see PDMHCCritSectScheduleExitEvent
  */
 DECLINLINE(int) PDMDrvHlpCritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal)
 {
@@ -2032,8 +2022,7 @@ DECLINLINE(int) PDMDrvHlpCritSectScheduleExitEvent(PPDMDRVINS pDrvIns, PPDMCRITS
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
- * @copydoc PDMR3CritSectDelete
- * @param   pDrvIns  The device instance.
+ * @see PDMR3CritSectDelete
  */
 DECLINLINE(int) PDMDrvHlpCritSectDelete(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect)
 {
