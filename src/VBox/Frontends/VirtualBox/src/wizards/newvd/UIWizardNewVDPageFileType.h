@@ -37,9 +37,6 @@ class UIDiskFormatsGroupBox;
 
 namespace UIWizardNewVDFileType
 {
-//     void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
-
-   // QWidget *createFormatButtonGroup(QButtonGroup *&pFormatButtonGroup, bool fExperMode);
 
 //     CMediumFormat mediumFormat() const;
 //     void setMediumFormat(const CMediumFormat &mediumFormat);
@@ -61,6 +58,10 @@ public:
 
     /* Constructor: */
     UIWizardNewVDPageFileType();
+
+private slots:
+
+    void sltMediumFormatChanged();
 
 private:
 

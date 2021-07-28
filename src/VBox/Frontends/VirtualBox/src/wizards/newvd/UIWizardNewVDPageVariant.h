@@ -63,6 +63,7 @@ private:
     void initializePage();
     bool isComplete() const;
     void prepare();
+    void setWidgetVisibility(const CMediumFormat &mediumFormat);
 
     QIRichTextLabel *m_pDescriptionLabel;
     QIRichTextLabel *m_pDynamicLabel;
@@ -70,6 +71,5 @@ private:
     QIRichTextLabel *m_pSplitLabel;
     UIDiskVariantGroupBox *m_pVariantGroupBox;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h */

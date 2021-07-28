@@ -27,6 +27,16 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMedium.h"
+#include "CMediumFormat.h"
+
+#define newVDWizardPropertySet(functionName, value)                      \
+    do                                                                   \
+    {                                                                    \
+        UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard()); \
+        if (pWizard)                                                     \
+            pWizard->set##functionName(value);                           \
+    }                                                                    \
+    while(0)
 
 /* New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
@@ -35,28 +45,22 @@ class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
 
 public:
 
-    /* Page IDs: */
-    enum
-    {
-        Page1,
-        Page2,
-        Page3
-    };
-
-    /* Page IDs: */
-    enum
-    {
-        PageExpert
-    };
-
-    /* Constructor: */
     UIWizardNewVD(QWidget *pParent,
                   const QString &strDefaultName, const QString &strDefaultPath,
-                  qulonglong uDefaultSize,
-                  WizardMode mode = WizardMode_Auto);
+                  qulonglong uDefaultSize, WizardMode mode = WizardMode_Auto);
 
-    /* Pages related stuff: */
-    void prepare();
+
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
+
+    const CMediumFormat &mediumFormat();
+    void setMediumFormat(const CMediumFormat &mediumFormat);
+
+    const QString &mediumPath() const;
+    void setMediumPath(const QString &strMediumPath);
+
+    qulonglong mediumSize() const;
+    void setMediumSize(qulonglong mediumSize);
 
 protected:
 
@@ -70,7 +74,12 @@ private:
     /* Translation stuff: */
     void retranslateUi();
 
-    /* Variables: */
+    qulonglong m_uMediumVariant;
+    CMediumFormat m_comMediumFormat;
+    QString m_strMediumPath;
+    qulonglong m_uMediumSize;
+
+
     QString     m_strDefaultName;
     QString     m_strDefaultPath;
     qulonglong  m_uDefaultSize;

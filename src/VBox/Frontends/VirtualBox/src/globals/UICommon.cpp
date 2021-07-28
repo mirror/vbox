@@ -3157,7 +3157,6 @@ void UICommon::createVDWithWizard(QWidget *pParent,
         return;
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     windowManager().registerNewParent(pWizard, pDialogParent);
-    pWizard->prepare();
     pWizard->exec();
     delete pWizard;
 }

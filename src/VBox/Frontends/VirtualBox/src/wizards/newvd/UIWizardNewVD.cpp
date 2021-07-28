@@ -53,6 +53,46 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
 #endif /* VBOX_WS_MAC */
 }
 
+qulonglong UIWizardNewVD::mediumVariant() const
+{
+    return m_uMediumVariant;
+}
+
+void UIWizardNewVD::setMediumVariant(qulonglong uMediumVariant)
+{
+    m_uMediumVariant = uMediumVariant;
+}
+
+const CMediumFormat &UIWizardNewVD::mediumFormat()
+{
+    return m_comMediumFormat;
+}
+
+void UIWizardNewVD::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    m_comMediumFormat = mediumFormat;
+}
+
+const QString &UIWizardNewVD::mediumPath() const
+{
+    return m_strMediumPath;
+}
+
+void UIWizardNewVD::setMediumPath(const QString &strMediumPath)
+{
+    m_strMediumPath = strMediumPath;
+}
+
+qulonglong UIWizardNewVD::mediumSize() const
+{
+    return m_uMediumSize;
+}
+
+void UIWizardNewVD::setMediumSize(qulonglong uMediumSize)
+{
+    m_uMediumSize = uMediumSize;
+}
+
 void UIWizardNewVD::populatePages()
 {
     switch (mode())
@@ -67,7 +107,7 @@ void UIWizardNewVD::populatePages()
         }
 
         // {
-        //     //addPage(new UIWizardNewVMPageExpert);
+        //     //addPage(new UIWizardNewVDPageExpert);
         //     break;
         // }
         default:
@@ -125,30 +165,4 @@ void UIWizardNewVD::retranslateUi()
 {
     UINativeWizard::retranslateUi();
     setWindowTitle(tr("Create Virtual Hard Disk"));
-}
-
-void UIWizardNewVD::prepare()
-{
-    // /* Create corresponding pages: */
-    // switch (mode())
-    // {
-    //     case WizardMode_Basic:
-    //     {
-    //         setPage(Page1, new UIWizardNewVDPageFileType);
-    //         setPage(Page2, new UIWizardNewVDPageVariant);
-    //         setPage(Page3, new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
-    //         break;
-    //     }
-    //     case WizardMode_Expert:
-    //     {
-    //         setPage(PageExpert, new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
-    //         break;
-    //     }
-    //     default:
-    //     {
-    //         AssertMsgFailed(("Invalid mode: %d", mode()));
-    //         break;
-    //     }
-    // }
-
 }

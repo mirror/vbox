@@ -32,56 +32,6 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-// UIWizardNewVDPageBaseFileType::UIWizardNewVDPageBaseFileType()
-//     : m_pFormatButtonGroup(0)
-// {
-// }
-
-// void UIWizardNewVDPageBaseFileType::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
-// {
-//     /* Check that medium format supports creation: */
-//     ULONG uFormatCapabilities = 0;
-//     QVector<KMediumFormatCapabilities> capabilities;
-//     capabilities = medFormat.GetCapabilities();
-//     for (int i = 0; i < capabilities.size(); i++)
-//         uFormatCapabilities |= capabilities[i];
-
-//     if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
-//           uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
-//         return;
-
-//     /* Check that medium format supports creation of virtual hard-disks: */
-//     QVector<QString> fileExtensions;
-//     QVector<KDeviceType> deviceTypes;
-//     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-//     if (!deviceTypes.contains(KDeviceType_HardDisk))
-//         return;
-
-//     /* Create/add corresponding radio-button: */
-//     QRadioButton *pFormatButton = new QRadioButton(pParent);
-//     AssertPtrReturnVoid(pFormatButton);
-//     {
-//         /* Make the preferred button font bold: */
-//         if (fPreferred)
-//         {
-//             QFont font = pFormatButton->font();
-//             font.setBold(true);
-//             pFormatButton->setFont(font);
-//         }
-//         pFormatLayout->addWidget(pFormatButton);
-//         m_formats << medFormat;
-//         m_formatNames << medFormat.GetName();
-//         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-//         m_formatExtensions << UIWizardNewVDPageBaseSizeLocation::defaultExtension(medFormat);
-//     }
-// }
-
-
-// CMediumFormat UIWizardNewVDPageBaseFileType::mediumFormat() const
-// {
-//     return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
-// }
-
 // void UIWizardNewVDPageBaseFileType::setMediumFormat(const CMediumFormat &mediumFormat)
 // {
 //     int iPosition = m_formats.indexOf(mediumFormat);
@@ -92,19 +42,6 @@
 //     }
 // }
 
-// void UIWizardNewVDPageBaseFileType::retranslateWidgets()
-// {
-//     if (m_pFormatButtonGroup)
-//     {
-//         QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-//         for (int i = 0; i < buttons.size(); ++i)
-//         {
-//             QAbstractButton *pButton = buttons[i];
-//             UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-//             pButton->setText(gpConverter->toString(enmFormat));
-//         }
-//     }
-// }
 
 UIWizardNewVDPageFileType::UIWizardNewVDPageFileType()
     : m_pLabel(0)
@@ -132,7 +69,15 @@ void UIWizardNewVDPageFileType::prepare()
     pMainLayout->addWidget(m_pFormatButtonGroup, false);
 
     pMainLayout->addStretch();
+    connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+            this, &UIWizardNewVDPageFileType::sltMediumFormatChanged);
     retranslateUi();
+}
+
+void UIWizardNewVDPageFileType::sltMediumFormatChanged()
+{
+    AssertReturnVoid(m_pFormatButtonGroup);
+    newVDWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
 }
 
 void UIWizardNewVDPageFileType::retranslateUi()
@@ -146,8 +91,9 @@ void UIWizardNewVDPageFileType::retranslateUi()
 
 void UIWizardNewVDPageFileType::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
+    if (m_pFormatButtonGroup)
+        newVDWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
 }
 
 bool UIWizardNewVDPageFileType::isComplete() const
