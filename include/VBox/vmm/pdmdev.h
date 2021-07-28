@@ -774,7 +774,9 @@ typedef PDMDEVMODREGR0 *PPDMDEVMODREGR0;
 #define PDM_IRQ_LEVEL_HIGH                      RT_BIT(0)
 /** Deassert the IRQ (can assume value 0). */
 #define PDM_IRQ_LEVEL_LOW                       0
-/** flip-flop - deassert and then assert the IRQ again immediately. */
+/** flip-flop - deassert and then assert the IRQ again immediately (PIC) /
+ * automatically deasserts it after delivery to the APIC (IOAPIC).
+ * @note Only suitable for edge trigger interrupts. */
 #define PDM_IRQ_LEVEL_FLIP_FLOP                 (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
 /** @} */
 
